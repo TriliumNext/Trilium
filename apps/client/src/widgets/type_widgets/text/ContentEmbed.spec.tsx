@@ -689,6 +689,39 @@ describe("ContentEmbed", () => {
         expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
     });
 
+    it("titles a video with the menu of its embed, or no menu, and no fullscreen", () => {
+        const openMenu = vi.fn();
+        const video = { notePath: undefined, boxSize: "medium", contentType: "videoEmbed" };
+        renderBox({ ...video, openMenu });
+        expect(titleRow()).toEqual([
+            "include-note-title-label", "include-note-badges", "include-note-menu"
+        ]);
+        expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
+
+        const menu = button("include-note-menu");
+        expect(click(menu).isStopped).toBe(true);
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith({ below: menu });
+        openMenu.mockClear();
+        const row = container.querySelector(".include-note-title-row");
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            row?.dispatchEvent(event);
+        });
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith(event);
+        expect(event.defaultPrevented).toBe(true);
+        expect(openContextMenu).not.toHaveBeenCalled();
+
+        // Outside a text editor, the embed has no menu of its own.
+        act(() => render(null, container));
+        renderBox(video);
+        expect(titleRow()).toEqual([ "include-note-title-label", "include-note-badges" ]);
+        const unhandled = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            container.querySelector(".include-note-title-row")?.dispatchEvent(unhandled);
+        });
+        expect(unhandled.defaultPrevented).toBe(false);
+    });
+
     it("keeps its content behind a backdrop until a click on it focuses what is under it", async () => {
         const content = element(
             `<div class="rendered-content"><p>body</p><div tabindex="0"><img></div></div>`

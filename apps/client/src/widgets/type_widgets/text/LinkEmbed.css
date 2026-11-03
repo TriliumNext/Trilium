@@ -114,13 +114,6 @@ body.light-theme .link-embed-favicon-light {
     display: block;
 }
 
-.link-embed-preview-wrapper:has(> .link-embed-video) {
-    display: flex;
-    justify-content: center;
-    background: black;
-    border-radius: 8px;
-}
-
 /* ---------- Video embed (YouTube iframe) ---------- */
 
 .link-embed-video {
@@ -136,9 +129,16 @@ body.light-theme .link-embed-favicon-light {
     }
 }
 
-.link-embed-preview-wrapper > .link-embed-video {
-    padding: 8px;
-    background: var(--main-background-color);
+.include-note.video-embed {
+    --_link-embed-top-border-radius: var(--_include-note-content-top-radius);
+    --_link-embed-bottom-border-radius: var(--_include-note-content-bottom-radius);
+
+    .include-note-content.type-videoEmbed {
+        padding: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
 }
 
 .link-embed-video iframe {

@@ -10,6 +10,7 @@ A link preview can be displayed in one of three modes:
 *   **Embed** — a block-level interactive embed.
     *   Currently supported for YouTube videos, which render interactively (via an `iframe`).
     *   To prevent unwanted remote requests, the video is shown only after clicking on it first. Until then, the video's thumbnail is shown with a play button.
+    *   The video can be resized and aligned (see _Videos_ below).
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1-1">
 <div class="trilium-multicolumn-column">
@@ -74,12 +75,27 @@ When _Autogenerate link previews_ is turned off, the tabs are saved as a list of
 
 ## Altering an existing link preview
 
-Click on an inserted link preview to select it, and a small toolbar will appear with the following options:
+Click on an inserted _Inline_ or _Card_ link preview to select it, and a small toolbar will appear with the following options:
 
 *   The normal link operations (opening in a new tab, copying the link, unlinking).
 *   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
 *   A way to switch between the link preview modes (Inline, Card or Embed) as well as to convert it to a normal link instead.
     *   The Embed option is only enabled when the URL points to a supported service (YouTube today).
+
+### Videos
+
+A YouTube video shown as an _Embed_ has a size, a position and a title, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. In the editor, the first click on the video selects it and the next one plays it. The toolbar of a selected video offers:
+
+*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
+*   The _Display_ menu, which turns the video into an _Inline_ or _Card_ link preview, or a _Plain link_.
+*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
+    *   _Size_: a _Medium_ video can be resized, a _Full_ video takes the width of the note. A new video is _Medium_. A video inserted in an earlier version is _Full_.
+    *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default.
+    *   _Show title_ shows the title of the video above it, as a link to the video. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
+
+To resize a _Medium_ video, select it and drag the handle in its bottom-right corner, or its bottom-left corner for a video aligned to the right. The height follows the width. Choosing _Medium_ again returns the video to its first size.
+
+On a [shared page](../../Advanced%20Usage/Sharing.md), the video keeps its width and position, but not its title. In the mobile layout, a video with a position other than _Align center_ takes the full width.
 
 ## Where the preview data comes from
 

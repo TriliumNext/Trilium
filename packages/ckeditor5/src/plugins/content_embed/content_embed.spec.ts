@@ -1015,7 +1015,8 @@ describe("ContentEmbed with attachments", () => {
         const states = [ embed, note, tiny, unsized ]
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
         const notEditable = {
-            isEditable: false, isEditableToggleable: false, displayMode: null, position: null
+            isEditable: false, isEditableToggleable: false, displayMode: null, position: null,
+            isTitleSupported: true, isCaptionSupported: true
         };
         expect(states).toEqual([ {
             ...notEditable, boxSize: "small", isTitleShown: true, isTitleToggleable: true,

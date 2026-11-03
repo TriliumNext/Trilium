@@ -58,8 +58,8 @@ describe("YouTubeVideoPlugin", () => {
 
         expect(release).toHaveBeenCalledOnce();
         expect(balloon().visibleView).toBeNull();
-        await vi.waitFor(() => expect(findElement(editor, "linkEmbed")).toBeDefined());
-        const embed = findElement(editor, "linkEmbed");
+        await vi.waitFor(() => expect(findElement(editor, "contentEmbed")).toBeDefined());
+        const embed = findElement(editor, "contentEmbed");
         expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
         expect(embed?.getAttribute("embedType")).toBe("youtube");
         expect(linkEmbed.fetchMetadata).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);

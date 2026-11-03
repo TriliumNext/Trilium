@@ -68,7 +68,7 @@ export default class YouTubeVideoPlugin extends Plugin {
     }
 }
 
-/** Enabled wherever a block link preview can go, with a host to ask for the address. */
+/** Enabled wherever an embed can go, with a host to ask for the address. */
 class YouTubeVideoCommand extends Command {
 
     override refresh() {
@@ -78,7 +78,7 @@ class YouTubeVideoCommand extends Command {
         this.isEnabled = !!this.editor.config.get("youtubeVideo")
             && !!position
             && !position.findAncestor("codeBlock")
-            && model.schema.findAllowedParent(position, "linkEmbed") !== null;
+            && model.schema.findAllowedParent(position, "contentEmbed") !== null;
     }
 
     override execute() {

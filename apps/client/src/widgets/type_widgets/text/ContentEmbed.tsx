@@ -3,7 +3,7 @@ import type { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
-import linkContextMenu from "../../../menus/link_context_menu";
+import linkContextMenu, { type LinkMenuOrigin } from "../../../menus/link_context_menu";
 import content_renderer from "../../../services/content_renderer";
 import keyboard_actions from "../../../services/keyboard_actions";
 import { t } from "../../../services/i18n";
@@ -48,6 +48,11 @@ export interface ContentEmbedProps {
     /** The note opened by the buttons in the title row. */
     notePath?: string;
     viewScope?: ViewScope;
+    /**
+     * Opens the menu of the title row of content that shows no note, such as a video. Without it,
+     * that title row has no menu.
+     */
+    openMenu?: (origin: LinkMenuOrigin) => void;
     /** Whether the embed shows only some blocks of its note, from a block reference. */
     isExcerpt?: boolean;
     /** Gives the focus to the content once mounted, as for a canvas drawing just added. */
@@ -69,7 +74,8 @@ export interface TinyContentEmbedProps {
 
 /** The title row and the content of an embedded note or attachment. */
 export default function ContentEmbed({
-    boxSize, title, content, contentType, notePath, viewScope, isExcerpt, isFocusedOnMount
+    boxSize, title, content, contentType, notePath, viewScope, openMenu, isExcerpt,
+    isFocusedOnMount
 }: ContentEmbedProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
@@ -84,7 +90,9 @@ export default function ContentEmbed({
     const isExpandable = boxSize === "expandable" && !!title && !!notePath;
     const hasBackdrop = !isContentActive && !isDraggedOver
         && !DIRECT_CONTENT_TYPES.has(contentType);
-    const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
+    const hasFullscreen = !isExcerpt && !OWN_FULLSCREEN_CONTENT_TYPES.has(contentType)
+        && (boxSize === "medium" || boxSize === "full");
+    const openTitleMenu = notePath ? getNoteMenu(notePath, viewScope) : openMenu;
     const toggleExpanded = () => {
         setIsExpanded(!isOpen);
         setIsRevealed(false);
@@ -114,14 +122,14 @@ export default function ContentEmbed({
 
     return (
         <>
-            {title && notePath && <div
+            {title && <div
                 className="include-note-title-row"
                 onClick={(e) => {
                     if (isExpandable && isTogglingClick(e)) {
                         toggleExpanded();
                     }
                 }}
-                onContextMenu={(e) => openMenuOnRightClick(e, notePath, viewScope)}
+                onContextMenu={(e) => openMenuOnRightClick(e, openTitleMenu)}
             >
                 {isExpandable && (
                     <ActionButton
@@ -143,10 +151,10 @@ export default function ContentEmbed({
                 {(!isExpandable || isOpen) && (
                     <DisplayModeButtons contentRef={contentRef} content={content} />
                 )}
-                <ContentEmbedActionButton
+                {notePath && <ContentEmbedActionButton
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
-                />
+                />}
                 {isExcerpt && (
                     <ExcerptEditButton
                         contentRef={contentRef}
@@ -169,7 +177,7 @@ export default function ContentEmbed({
                         }}
                     />
                 )}
-                <MoreActionsButton notePath={notePath} viewScope={viewScope} />
+                {openTitleMenu && <MoreActionsButton openMenu={openTitleMenu} />}
             </div>}
             <div
                 ref={bodyRef}
@@ -221,10 +229,11 @@ export default function ContentEmbed({
 export function TinyContentEmbed({
     icon, title, description, notePath, viewScope, actions
 }: TinyContentEmbedProps) {
+    const openMenu = getNoteMenu(notePath, viewScope);
     return (
         <div
             className="include-note-title-row"
-            onContextMenu={(e) => openMenuOnRightClick(e, notePath, viewScope)}
+            onContextMenu={(e) => openMenuOnRightClick(e, openMenu)}
         >
             <Icon className="include-note-icon" icon={icon} />
             <div className="include-note-heading">
@@ -238,7 +247,7 @@ export function TinyContentEmbed({
                     action={action}
                 />
             ))}
-            <MoreActionsButton notePath={notePath} viewScope={viewScope} />
+            <MoreActionsButton openMenu={openMenu} />
         </div>
     );
 }
@@ -474,6 +483,9 @@ const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
 /** The content types that take the first click themselves, with no backdrop over them. */
 const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock" ]);
 
+/** The content types with a fullscreen control of their own, such as a video player. */
+const OWN_FULLSCREEN_CONTENT_TYPES = new Set([ "videoEmbed" ]);
+
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that
  * point in `content`, which is focusable itself.
@@ -615,21 +627,30 @@ function isTogglingClick(e: MouseEvent) {
         && e.currentTarget instanceof HTMLElement && !findTextEditorAround(e.currentTarget);
 }
 
+/** Opens the menu of the note at `notePath` from an origin. */
+function getNoteMenu(notePath: string, viewScope?: ViewScope) {
+    return (origin: LinkMenuOrigin) => {
+        void linkContextMenu.openContextMenu(notePath, origin, viewScope);
+    };
+}
+
 /**
- * Opens the menu of the embed for a right click on its title row. The title link is left to the
+ * Opens `openMenu` for a right click on the title row of the embed. The title link is left to the
  * handler of every link, which opens the same menu, or a quick edit with Ctrl.
  */
-function openMenuOnRightClick(e: MouseEvent, notePath: string, viewScope?: ViewScope) {
-    if (e.target instanceof Element && e.target.closest("a")) {
+function openMenuOnRightClick(
+    e: MouseEvent, openMenu: ((origin: LinkMenuOrigin) => void) | undefined
+) {
+    if (!openMenu || (e.target instanceof Element && e.target.closest("a"))) {
         return;
     }
 
     e.preventDefault();
     e.stopPropagation();
-    void linkContextMenu.openContextMenu(notePath, e, viewScope);
+    openMenu(e);
 }
 
-function MoreActionsButton({ notePath, viewScope }: { notePath: string; viewScope?: ViewScope }) {
+function MoreActionsButton({ openMenu }: { openMenu: (origin: LinkMenuOrigin) => void }) {
     return (
         <ActionButton
             className="include-note-menu"
@@ -637,8 +658,7 @@ function MoreActionsButton({ notePath, viewScope }: { notePath: string; viewScop
             text={t("common.more_actions")}
             onClick={(e) => {
                 e.stopPropagation();
-                const origin = linkContextMenu.getOriginBelow(e.currentTarget);
-                void linkContextMenu.openContextMenu(notePath, origin, viewScope);
+                openMenu(linkContextMenu.getOriginBelow(e.currentTarget));
             }}
         />
     );

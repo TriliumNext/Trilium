@@ -1,8 +1,12 @@
+import { VIDEO_EMBED_CLASS } from "@triliumnext/commons";
 import {
     BalloonPanelView, isWidget, Plugin, type PositioningFunction, type ViewDocumentSelection,
     type ViewElement, WidgetToolbarRepository
 } from "ckeditor5";
 
+import {
+    LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
+} from "../link_embed/link_embed_toolbar.js";
 import type { ResizeAnchor } from "../resizable_widgets/resizable_widgets.js";
 import ContentEmbed, {
     CONVERT_EMBED_TO_LINK_COMMAND,
@@ -29,7 +33,8 @@ export default class ContentEmbedToolbar extends Plugin {
     static get requires() {
         return [
             WidgetToolbarRepository, ContentEmbed, ContentEmbedBoxSizeDropdown,
-            ContentEmbedPositionDropdown, ContentEmbedTools, ExtendedCodeBlock
+            ContentEmbedPositionDropdown, ContentEmbedTools, ExtendedCodeBlock,
+            LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
         ] as const;
     }
 
@@ -37,10 +42,19 @@ export default class ContentEmbedToolbar extends Plugin {
         const editor = this.editor;
         const widgetToolbarRepository = editor.plugins.get(WidgetToolbarRepository);
         const getAnchor = () => {
-            const embed = findRelatedEmbed(editor.editing.view.document.selection);
+            const selection = editor.editing.view.document.selection;
+            const embed = findRelatedEmbed(selection) ?? findRelatedVideo(selection);
             const modelEmbed = embed && editor.editing.mapper.toModelElement(embed);
             return modelEmbed ? getEmbedAnchor(modelEmbed) : "center";
         };
+
+        // A video has the copy and display items of a link preview, and the menu of an embed.
+        widgetToolbarRepository.register("videoEmbed", {
+            items: [ "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU ],
+            balloonClassName: "ck-toolbar-container include-note-toolbar",
+            positions: getToolbarPositions(getAnchor),
+            getRelatedElement: findRelatedVideo
+        });
 
         widgetToolbarRepository.register("contentEmbed", {
             items: [
@@ -81,8 +95,15 @@ function findRelatedEmbed(selection: ViewDocumentSelection) {
     return null;
 }
 
+/** The video embed that the selection is on, which has a toolbar of its own. */
+function findRelatedVideo(selection: ViewDocumentSelection) {
+    const selected = selection.getSelectedElement();
+    return selected && isWidget(selected) && selected.hasClass(VIDEO_EMBED_CLASS) ? selected : null;
+}
+
 function isContentEmbedWidget(element: ViewElement): boolean {
-    return isWidget(element) && element.hasClass("include-note");
+    return isWidget(element) && element.hasClass("include-note")
+        && !element.hasClass(VIDEO_EMBED_CLASS);
 }
 
 /**

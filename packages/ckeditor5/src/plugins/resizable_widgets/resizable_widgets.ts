@@ -16,6 +16,9 @@ import {
 
 export type { ResizeAnchor } from "./resize_gesture.js";
 
+/** Whether an axis can be resized: always, never, or depending on the state of `element`. */
+export type ResizableAxisFlag = boolean | ((element: ModelElement) => boolean);
+
 /** How the widgets of a model element are resized. */
 export interface ResizableWidgetConfig {
     /**
@@ -23,8 +26,8 @@ export interface ResizableWidgetConfig {
      * `<prefix>-width` and `<prefix>-height`. The widget's stylesheet applies them.
      */
     propertyPrefix: string;
-    isWidthResizable?: boolean;
-    isHeightResizable?: boolean;
+    isWidthResizable?: ResizableAxisFlag;
+    isHeightResizable?: ResizableAxisFlag;
     /**
      * The edge of `element` that stays in place while its width changes, as its stylesheet places
      * the widget. The inline start by default. The handles go on the opposite edge.
@@ -60,6 +63,11 @@ const ANCHOR_CLASSES = {
     left: "ck-widget_resize-anchor-left",
     right: "ck-widget_resize-anchor-right"
 } as const;
+/** The classes of a widget whose state fixes an axis, which hide the handles of that axis. */
+const FIXED_CLASSES: Record<Axis, string> = {
+    width: "ck-widget_fixed-width",
+    height: "ck-widget_fixed-height"
+};
 const RESIZING_CLASS = "ck-widget_resizing";
 const TOOLBAR_LOCK = "ResizableWidgets";
 const DEFAULT_MIN_SIZE = 2;
@@ -119,7 +127,7 @@ export default class ResizableWidgets extends Plugin {
                 updateWidgetClasses(api.writer, viewElement, item, config);
             }, { priority: "low" });
 
-            if (config.isResizable || config.getAnchor) {
+            if (config.isResizable || config.getAnchor || hasStatefulAxes(config)) {
                 dispatcher.on<DowncastAttributeEvent>("attribute", (_evt, { item }, api) => {
                     if (!item.is("element", modelName)) {
                         return;
@@ -176,8 +184,13 @@ export default class ResizableWidgets extends Plugin {
             return;
         }
 
-        const heightTarget = handleAxes.height ? findHeightTarget(widget, config) : null;
-        const axes = { width: handleAxes.width, height: !!heightTarget };
+        const heightTarget = handleAxes.height && isAxisResizable(config, "height", element)
+            ? findHeightTarget(widget, config)
+            : null;
+        const axes = {
+            width: handleAxes.width && isAxisResizable(config, "width", element),
+            height: !!heightTarget
+        };
         if (!axes.width && !axes.height) {
             return;
         }
@@ -304,7 +317,19 @@ function getAxes(config: ResizableWidgetConfig) {
     return axes;
 }
 
-/** Sets the resizable and anchor classes of the widget from the state of `element`. */
+/** Whether an axis of `config` depends on the state of the element. */
+function hasStatefulAxes(config: ResizableWidgetConfig) {
+    return typeof config.isWidthResizable === "function"
+        || typeof config.isHeightResizable === "function";
+}
+
+/** Whether `axis` of `element` can be resized in its current state. */
+function isAxisResizable(config: ResizableWidgetConfig, axis: Axis, element: ModelElement) {
+    const flag = axis === "width" ? config.isWidthResizable : config.isHeightResizable;
+    return typeof flag === "function" ? flag(element) : !!flag;
+}
+
+/** Sets the resizable, anchor and fixed axis classes of the widget from the state of `element`. */
 function updateWidgetClasses(
     writer: ViewDowncastWriter,
     viewElement: ViewElement,
@@ -315,6 +340,10 @@ function updateWidgetClasses(
     toggleClass(writer, viewElement, RESIZABLE_CLASS, config.isResizable?.(element) ?? true);
     for (const [ name, className ] of Object.entries(ANCHOR_CLASSES)) {
         toggleClass(writer, viewElement, className, name === anchor);
+    }
+    for (const axis of getAxes(config)) {
+        toggleClass(writer, viewElement, FIXED_CLASSES[axis],
+            !isAxisResizable(config, axis, element));
     }
 }
 

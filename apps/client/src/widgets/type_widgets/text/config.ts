@@ -446,6 +446,7 @@ function bindContentEmbedHandlers(
         loadInline: (...args) => getHandlers()?.loadInline(...args),
         flushInline: () => getHandlers()?.flushInline(),
         loadUnknown: (...args) => getHandlers()?.loadUnknown(...args),
+        loadVideo: (...args) => getHandlers()?.loadVideo(...args),
         focusAttachment: (attachmentId) => getHandlers()?.focusAttachment(attachmentId),
         getAttachmentHref: async (attachmentId) =>
             (await getHandlers()?.getAttachmentHref(attachmentId)) ?? null,

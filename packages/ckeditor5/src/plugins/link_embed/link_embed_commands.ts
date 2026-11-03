@@ -1,8 +1,10 @@
-import { isHttpUrl } from '@triliumnext/commons';
+import { getLinkPreviewVideoId, isHttpUrl } from '@triliumnext/commons';
 import {
     Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
     type ModelWriter
 } from 'ckeditor5';
+
+import { createVideoEmbed, isVideoEmbed } from '../content_embed/video_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
@@ -276,12 +278,10 @@ async function replaceLinkWithPreview(
             }
             if (!linkStillThere) return;
 
-            const element = writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
+            const element = createLinkPreview(writer, mode, {
                 url: metadata.url,
-                // A card is an embed that declines to play: forcing "opengraph" is what tells the
-                // renderer to draw the static card rather than the provider's player.
-                embedType: mode === 'card' ? 'opengraph'
-                    : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
+                embedType: mode === 'embed'
+                    ? getLinkEmbedHost(editor).detectEmbedType(href)
                     : metadata.embedType,
                 title: title || metadata.title,
                 description: description || metadata.description,
@@ -317,18 +317,58 @@ function rebuildLinkWidget(
     }
     if (title) attrs.title = title;
     if (description) attrs.description = description;
-    if (mode !== 'inline') {
-        // A card is an embed that declines to play.
-        attrs.embedType = mode === 'card' ? 'opengraph'
-            : getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
+    if (mode === 'card') {
+        attrs.embedType = 'opengraph';
+    } else if (mode === 'embed') {
+        attrs.embedType = getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
     }
 
     // Replaced rather than given new attributes: the editing downcast is elementToElement, which
-    // does not re-render on attribute changes.
-    const name = mode === 'inline' ? 'linkMention' : 'linkEmbed';
-    const replacement = writer.createElement(name, attrs);
+    // does not re-render on attribute changes. A preview that keeps its shape keeps its other
+    // attributes, such as the box of a video.
+    const ownAttributes = Object.fromEntries(element.getAttributes());
+    const replacement = getLinkPreviewName(mode, attrs) === element.name
+        ? writer.createElement(element.name, { ...ownAttributes, ...attrs })
+        : createLinkPreview(writer, mode, attrs);
     editor.model.insertContent(replacement, writer.createRangeOn(element));
     return replacement;
+}
+
+/**
+ * Creates the element of the `mode` shape for a link preview with the fields `attributes`: a
+ * `linkMention`, a `linkEmbed`, or a video embed (`ContentEmbedVideo`) for the embed of a URL
+ * with a video.
+ */
+export function createLinkPreview(
+    writer: ModelWriter,
+    mode: Exclude<LinkDisplayMode, 'plain'>,
+    attributes: Record<string, unknown>
+) {
+    switch (getLinkPreviewName(mode, attributes)) {
+        case 'linkMention':
+            return writer.createElement('linkMention', attributes);
+        case 'contentEmbed':
+            return createVideoEmbed(writer, attributes);
+        default:
+            // The renderers draw the `opengraph` type as a card, also for a URL with a video.
+            return writer.createElement('linkEmbed', {
+                ...attributes,
+                embedType: mode === 'card' ? 'opengraph' : attributes.embedType
+            });
+    }
+}
+
+/** The element of a link preview of the `mode` shape with the fields `attributes`. */
+function getLinkPreviewName(
+    mode: Exclude<LinkDisplayMode, 'plain'>, attributes: Record<string, unknown>
+) {
+    if (mode === 'inline') {
+        return 'linkMention';
+    }
+    const embedType = attributes.embedType as string | undefined;
+    const hasVideo = mode === 'embed'
+        && !!getLinkPreviewVideoId({ url: attributes.url as string, embedType });
+    return hasVideo ? 'contentEmbed' : 'linkEmbed';
 }
 
 /** The display mode of the link preview `element`. */
@@ -337,10 +377,13 @@ export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMod
     return element.getAttribute('embedType') === 'opengraph' ? 'card' : 'embed';
 }
 
-/** Returns the currently selected linkEmbed/linkMention element, or null. */
+/** Returns the selected linkEmbed or linkMention element, or video embed, or null. */
 export function getSelectedLinkWidget(editor: Editor): ModelElement | null {
     const selected = editor.model.document.selection.getSelectedElement();
     if (selected && (selected.name === 'linkMention' || selected.name === 'linkEmbed')) {
+        return selected;
+    }
+    if (selected?.name === 'contentEmbed' && isVideoEmbed(selected)) {
         return selected;
     }
     return null;

@@ -1,4 +1,6 @@
+import { LINK_PREVIEW_DATA_ATTRIBUTES } from '@triliumnext/commons';
 import { Plugin, toWidget, viewToModelPositionOutsideModelElement, Widget } from 'ckeditor5';
+import ContentEmbed from '../content_embed/content_embed.js';
 import { preventCKEditorHandling, restoreRendererFocusOnInput } from '../widget_utils.js';
 import {
     CHANGE_LINK_DISPLAY_COMMAND,
@@ -13,11 +15,12 @@ import {
 } from './link_embed_commands.js';
 
 /**
- * Schema, converters and command registration for linkEmbed (block) and linkMention (inline).
+ * Schema, converters and command registration for linkEmbed (block) and linkMention (inline). The
+ * embed of a URL with a video is a video embed of `ContentEmbed`.
  */
 export default class LinkEmbedEditing extends Plugin {
     static get requires() {
-        return [Widget];
+        return [Widget, ContentEmbed];
     }
 
     init() {
@@ -183,16 +186,6 @@ export default class LinkEmbedEditing extends Plugin {
     }
 }
 
-const DATA_ATTR_NAMES: Record<MetaKey, string> = {
-    url: 'data-url',
-    embedType: 'data-embed-type',
-    title: 'data-title',
-    description: 'data-description',
-    favicon: 'data-favicon',
-    siteName: 'data-site-name',
-    image: 'data-image'
-};
-
 /**
  * Builds the widget wrapper's class + `data-*` attributes from a linkEmbed/linkMention element.
  *
@@ -212,7 +205,7 @@ function metadataViewAttributes(
     for (const key of META_KEYS) {
         const val = modelElement.getAttribute(key) as string | undefined;
         if (val || requiredKeys.includes(key)) {
-            attrs[DATA_ATTR_NAMES[key]] = val as string;
+            attrs[LINK_PREVIEW_DATA_ATTRIBUTES[key]] = val as string;
         }
     }
     return attrs;

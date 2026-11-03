@@ -125,7 +125,12 @@ describe("AutoLinkToMention", () => {
             await flushFetch();
 
             expect(findElement(editor, "linkMention")).toBeUndefined();
-            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(embed?.getAttribute("embedType")).toBe("youtube");
+            expect(embed?.getAttribute("title")).toBe(META.title);
+            expect(embed?.getAttribute("boxSize")).toBe("medium");
         });
 
         it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {

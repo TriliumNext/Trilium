@@ -78,9 +78,11 @@ export function unresolvedMetadata(url: string): EmbedMetadata {
 
 /**
  * Draws a block link preview into `container` from stored metadata, making no network request.
- * Used by the editor for its link embed widget, with `editable` set.
+ * Used by the editor for its link embed widget and video embeds, with `editable` set.
  */
-export function renderEmbedPreview(container: HTMLElement, meta: EmbedMetadata, editable?: boolean) {
+export function renderEmbedPreview(
+    container: HTMLElement, meta: LinkPreviewData, editable?: boolean
+) {
     container.innerHTML = renderLinkEmbedHtml(meta, markupOptions(editable));
     enhanceLinkPreviews(container);
 }

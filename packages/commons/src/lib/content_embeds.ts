@@ -36,6 +36,9 @@ export const EXTENDED_CODE_BLOCK_CLASS = "extended-code-block";
 /** The language of an extended code block that names none, as a CKEditor code block language. */
 export const EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE = "text-plain";
 
+/** The class of the embed box of a video, in the editor and in read-only views. */
+export const VIDEO_EMBED_CLASS = "video-embed";
+
 /**
  * The attribute that marks a `<section>` as a content embed and names its kind, for kinds added
  * after include notes and source embeds. A version that does not know the kind keeps the section

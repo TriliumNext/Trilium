@@ -31,6 +31,12 @@
     display: none;
 }
 
+/* The corner, the only handle with a grip on every screen, resizes the axis left. */
+.ck :is(.ck-widget_fixed-width, .ck-widget_fixed-height) > .ck-widget__resize-handles
+    > :not(.ck-widget__resize-handle_corner) {
+    display: none;
+}
+
 .ck .ck-widget__resize-handle {
     --_offset: calc(var(--ck-resize-handle-hit-size) / -2);
 

@@ -22,25 +22,60 @@ export interface LinkPreviewMarkupOptions {
     playVideoLabel: string;
 }
 
+/** The `data-*` attribute that stores each field of a link preview. */
+export const LINK_PREVIEW_DATA_ATTRIBUTES = {
+    url: "data-url",
+    embedType: "data-embed-type",
+    title: "data-title",
+    description: "data-description",
+    image: "data-image",
+    favicon: "data-favicon",
+    siteName: "data-site-name"
+} as const satisfies Record<keyof LinkPreviewData, string>;
+
 /**
  * The preview stored on a `section.link-embed` or `span.link-mention`, or `null` when it carries no
  * URL. A missing embed type reads as `opengraph`.
  */
 export function readLinkPreviewData(getAttribute: (name: string) => string | null | undefined) {
-    const url = getAttribute("data-url");
+    const attributes = LINK_PREVIEW_DATA_ATTRIBUTES;
+    const url = getAttribute(attributes.url);
     if (!url) {
         return null;
     }
 
     return {
         url,
-        embedType: getAttribute("data-embed-type") || "opengraph",
-        title: getAttribute("data-title"),
-        description: getAttribute("data-description"),
-        image: getAttribute("data-image"),
-        favicon: getAttribute("data-favicon"),
-        siteName: getAttribute("data-site-name")
+        embedType: getAttribute(attributes.embedType) || "opengraph",
+        title: getAttribute(attributes.title),
+        description: getAttribute(attributes.description),
+        image: getAttribute(attributes.image),
+        favicon: getAttribute(attributes.favicon),
+        siteName: getAttribute(attributes.siteName)
     } satisfies LinkPreviewData;
+}
+
+/** The box sizes of a video embed. */
+export const VIDEO_EMBED_BOX_SIZES = [ "medium", "full" ] as const;
+
+/**
+ * The box size of a video saved as a link preview, and whether its title is hidden. A video saved
+ * before videos were embeds has no box size: it is Full and untitled.
+ */
+export function readVideoEmbedBox(getAttribute: (name: string) => string | null | undefined) {
+    const savedBoxSize = getAttribute("data-box-size");
+    const boxSize = VIDEO_EMBED_BOX_SIZES.find((size) => size === savedBoxSize) ?? "full";
+    return {
+        boxSize,
+        isTitleHidden: !savedBoxSize || getAttribute("data-hide-title") === "true"
+    };
+}
+
+/** The YouTube ID of the video that a link preview plays, or `null` for a card. */
+export function getLinkPreviewVideoId(
+    { url, embedType }: Pick<LinkPreviewData, "url" | "embedType">
+) {
+    return embedType !== "opengraph" ? extractYouTubeVideoId(url) : null;
 }
 
 /**
@@ -64,7 +99,7 @@ export function renderLinkMentionHtml(data: LinkPreviewData, options: LinkPrevie
  * player on the reader's click.
  */
 export function renderLinkEmbedHtml(data: LinkPreviewData, options: LinkPreviewMarkupOptions) {
-    const videoId = data.embedType !== "opengraph" ? extractYouTubeVideoId(data.url) : null;
+    const videoId = getLinkPreviewVideoId(data);
     if (videoId) {
         const label = escapeHtml(options.playVideoLabel);
         return `<div class="link-embed-video">`

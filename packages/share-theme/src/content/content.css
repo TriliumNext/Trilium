@@ -343,12 +343,15 @@ body:not(.math-loaded) .math-tex {
     object-fit: contain;
 }
 
-/* An include with a caption: the included content, then the caption. */
-.ck-content figure.include-note {
+/* An include, or the video of a link preview, placed and sized as the editor saved it. */
+.ck-content :is(figure.include-note, section.link-embed:where([data-embed-type="youtube"])) {
     clear: both;
     margin: 1em 0;
 
-    &:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"]) {
+    &:is(
+        [data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"],
+        .link-embed
+    ) {
         margin-inline: auto;
         max-width: 100%;
         width: var(--include-note-width, auto);
@@ -386,7 +389,7 @@ body:not(.math-loaded) .math-tex {
 }
 
 @media (max-width: 48em) {
-    .ck-content figure.include-note[data-position] {
+    .ck-content :is(figure.include-note, section.link-embed)[data-position] {
         float: none;
         clear: both;
         margin: 1em 0;

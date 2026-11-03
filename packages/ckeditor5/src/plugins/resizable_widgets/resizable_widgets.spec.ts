@@ -2,6 +2,7 @@ import {
     _getModelData as getModelData,
     type ClassicEditor,
     Essentials,
+    type ModelElement,
     Paragraph,
     Plugin,
     Undo,
@@ -220,6 +221,48 @@ describe("ResizableWidgets", () => {
         editor.model.change((writer) => writer.setAttribute("kind", "fixed", paragraph));
         editor.model.change((writer) => writer.removeAttribute("kind", box));
         expect(getBox().classList.contains("ck-widget_resizable")).toBe(true);
+    });
+
+    it("resizes only the axes that the state of the widget allows", async () => {
+        const isRound = (element: ModelElement) => element.getAttribute("kind") !== "fixed";
+        const getDisplays = () => [ "width", "height", "corner" ]
+            .map((name) => getComputedStyle(getHandle(name)).display);
+
+        await createEditor({ isHeightResizable: isRound });
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box?.is("element")) {
+            throw new Error("Expected a box.");
+        }
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(getDisplays).toEqual([ "block", "block", "block" ]);
+
+        // Only the corner is left, which changes the width alone.
+        editor.model.change((writer) => writer.setAttribute("kind", "fixed", box));
+        expect(getBox().classList.contains("ck-widget_fixed-height")).toBe(true);
+        expect(getDisplays()).toEqual([ "none", "none", "block" ]);
+        expect(getComputedStyle(getHandle("corner"), "::after").content).toBe("\"\"");
+        press(getHandle("height"));
+        move(100, 400);
+        expect(getBox().classList.contains("ck-widget_resizing")).toBe(false);
+        press(getHandle("corner"));
+        move(150, 400);
+        release();
+        expect(getSize())
+            .toBe("<testBox customHeight=\"8em\" customWidth=\"35em\" kind=\"fixed\"></testBox>");
+
+        editor.model.change((writer) => writer.removeAttribute("kind", box));
+        expect(getBox().classList.contains("ck-widget_fixed-height")).toBe(false);
+
+        await createEditor({ isWidthResizable: () => false });
+        editor.setData(RESIZED);
+        expect(getBox().classList.contains("ck-widget_fixed-width")).toBe(true);
+        expect(getDisplays()).toEqual([ "none", "none", "block" ]);
+        press(getHandle("corner"));
+        move(150, 330);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"11em\" customWidth=\"30em\"></testBox>");
     });
 
     it("resizes from the corner, previewing in the view and saving in one undo step", async () => {

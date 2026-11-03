@@ -476,8 +476,9 @@ describe("openContextMenu", () => {
             selectEmbedAt.mockReset().mockReturnValue(true);
             hasPlugin = true;
             state = {
-                boxSize: "medium", isTitleShown: false, isTitleToggleable: true,
-                hasCaption: true, isCaptionToggleable: true, isConvertibleToLink: true
+                boxSize: "medium", isTitleSupported: true, isTitleShown: false,
+                isTitleToggleable: true, isCaptionSupported: true, hasCaption: true,
+                isCaptionToggleable: true, isConvertibleToLink: true
             };
             mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
             mocks.getAttachmentActionGroups.mockReturnValue([
@@ -724,11 +725,35 @@ describe("openContextMenu", () => {
             expect(mocks.getAttachmentOfNote).not.toHaveBeenCalled();
         });
 
+        it("leaves out the title and the caption of an embed that has none", async () => {
+            embed().removeAttribute("data-attachment-id");
+            state = {
+                ...state, isTitleSupported: true, isCaptionSupported: false,
+                position: "center", isConvertibleToLink: false
+            };
+            expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" },
+                { title: "link_context_menu.show_title", enabled: true, checked: false }
+            ]);
+
+            state = { ...state, isTitleSupported: false };
+            const items = await openOn(editable.querySelector("a"), {});
+            expect(items.slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" }
+            ]);
+            expect(items).toHaveLength(7);
+        });
+
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {
             embed().removeAttribute("data-attachment-id");
             state = {
-                boxSize: "tiny", isTitleShown: true, isTitleToggleable: false,
-                hasCaption: false, isCaptionToggleable: false, isConvertibleToLink: false
+                boxSize: "tiny", isTitleSupported: true, isTitleShown: true,
+                isTitleToggleable: false, isCaptionSupported: true, hasCaption: false,
+                isCaptionToggleable: false, isConvertibleToLink: false
             };
             expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
                 { kind: "separator" },

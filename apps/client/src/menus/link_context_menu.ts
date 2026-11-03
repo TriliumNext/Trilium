@@ -350,14 +350,14 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             uiIcon: "bx bx-expand-vertical"
         }, sizeItems),
         ...getPositionItems(embed),
-        {
+        ...(state.isTitleSupported ? [ {
             title: t("link_context_menu.show_title"),
             uiIcon: "bx bx-window-alt",
             enabled: state.isTitleToggleable,
             checked: state.isTitleShown,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedTitle")
-        },
-        {
+        } ] : []),
+        ...(state.isCaptionSupported ? [ {
             title: t("link_context_menu.show_caption"),
             uiIcon: "bx bx-captions",
             enabled: state.isCaptionToggleable,
@@ -365,7 +365,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             handler: () => runEmbedCommand(embed, "toggleContentEmbedCaption", {
                 focusCaptionOnShow: true
             })
-        }
+        } ] : [])
     ];
 }
 

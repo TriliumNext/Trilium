@@ -1520,7 +1520,14 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     }
 }
 
-.include-note {
+.link-embed:where([data-embed-type="youtube"]) {
+    margin-inline: auto;
+    max-width: 100%;
+    width: var(--include-note-width, auto);
+}
+
+.include-note,
+.link-embed:where([data-embed-type="youtube"]) {
     clear: both;
 
     &[data-position="left"] {
@@ -1553,7 +1560,7 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     }
 }
 
-body.mobile .include-note[data-position] {
+body.mobile :is(.include-note, .link-embed)[data-position] {
     float: none;
     clear: both;
     margin-inline: 0;
