@@ -876,13 +876,25 @@
   transform-origin: 0 0;
 
   &[data-main-rotation="90"] .norotate {
-    transform: rotate(270deg) translateX(-100%);
+    transform: rotate(270deg);
+
+    &.popupAnnotation {
+      transform: rotate(270deg) translateX(-100%);
+    }
   }
   &[data-main-rotation="180"] .norotate {
-    transform: rotate(180deg) translate(-100%, -100%);
+    transform: rotate(180deg);
+
+    &.popupAnnotation {
+      transform: rotate(180deg) translate(-100%, -100%);
+    }
   }
   &[data-main-rotation="270"] .norotate {
-    transform: rotate(90deg) translateY(-100%);
+    transform: rotate(90deg);
+
+    &.popupAnnotation {
+      transform: rotate(90deg) translateY(-100%);
+    }
   }
 
   &.disabled {
@@ -1584,121 +1596,6 @@
             appearance: none;
     text-indent: 1px;
     text-overflow: "";
-  }
-}
-
-.canvasWrapper {
-  svg {
-    transform: none;
-
-    &.moving {
-      z-index: 100000;
-    }
-
-    &.highlight,
-    &.highlightOutline {
-      &[data-main-rotation="90"] {
-        mask,
-        use:not(.clip, .mask) {
-          transform: matrix(0, 1, -1, 0, 1, 0);
-        }
-      }
-
-      &[data-main-rotation="180"] {
-        mask,
-        use:not(.clip, .mask) {
-          transform: matrix(-1, 0, 0, -1, 1, 1);
-        }
-      }
-
-      &[data-main-rotation="270"] {
-        mask,
-        use:not(.clip, .mask) {
-          transform: matrix(0, -1, 1, 0, 0, 1);
-        }
-      }
-    }
-
-    &.draw {
-      position: absolute;
-      mix-blend-mode: normal;
-
-      &[data-draw-rotation="90"] {
-        transform: rotate(90deg);
-      }
-
-      &[data-draw-rotation="180"] {
-        transform: rotate(180deg);
-      }
-
-      &[data-draw-rotation="270"] {
-        transform: rotate(270deg);
-      }
-    }
-
-    &.highlight {
-      --blend-mode: multiply;
-
-      @media screen and (forced-colors: active) {
-        --blend-mode: difference;
-      }
-
-      position: absolute;
-      mix-blend-mode: var(--blend-mode);
-
-      &:not(.free) {
-        fill-rule: evenodd;
-      }
-    }
-
-    &.highlightOutline {
-      position: absolute;
-      mix-blend-mode: normal;
-      fill-rule: evenodd;
-      fill: none;
-
-      &:not(.free) {
-        &.hovered:not(.selected) {
-          stroke: var(--hover-outline-color);
-          stroke-width: var(--outline-width);
-        }
-
-        &.selected {
-          .mainOutline {
-            stroke: var(--outline-around-color);
-            stroke-width: calc(
-              var(--outline-width) + 2 * var(--outline-around-width)
-            );
-          }
-
-          .secondaryOutline {
-            stroke: var(--outline-color);
-            stroke-width: var(--outline-width);
-          }
-        }
-      }
-
-      &.free {
-        &.hovered:not(.selected) {
-          stroke: var(--hover-outline-color);
-          stroke-width: calc(2 * var(--outline-width));
-        }
-
-        &.selected {
-          .mainOutline {
-            stroke: var(--outline-around-color);
-            stroke-width: calc(
-              2 * (var(--outline-width) + var(--outline-around-width))
-            );
-          }
-
-          .secondaryOutline {
-            stroke: var(--outline-color);
-            stroke-width: calc(2 * var(--outline-width));
-          }
-        }
-      }
-    }
   }
 }
 
@@ -3369,55 +3266,133 @@
   }
 }
 
+.canvasWrapper {
+  svg {
+    transform: none;
+
+    &.moving {
+      z-index: 100000;
+    }
+
+    &.highlight,
+    &.highlightOutline {
+      &[data-main-rotation="90"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(0, 1, -1, 0, 1, 0);
+        }
+      }
+
+      &[data-main-rotation="180"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(-1, 0, 0, -1, 1, 1);
+        }
+      }
+
+      &[data-main-rotation="270"] {
+        mask,
+        use:not(.clip, .mask) {
+          transform: matrix(0, -1, 1, 0, 0, 1);
+        }
+      }
+    }
+
+    &.draw {
+      position: absolute;
+      mix-blend-mode: normal;
+
+      &[data-draw-rotation="90"] {
+        transform: rotate(90deg);
+      }
+
+      &[data-draw-rotation="180"] {
+        transform: rotate(180deg);
+      }
+
+      &[data-draw-rotation="270"] {
+        transform: rotate(270deg);
+      }
+    }
+
+    &.highlight {
+      --blend-mode: multiply;
+
+      @media screen and (forced-colors: active) {
+        --blend-mode: difference;
+      }
+
+      position: absolute;
+      mix-blend-mode: var(--blend-mode);
+
+      &:not(.free) {
+        fill-rule: evenodd;
+      }
+    }
+
+    &.highlightOutline {
+      position: absolute;
+      mix-blend-mode: normal;
+      fill-rule: evenodd;
+      fill: none;
+
+      &:not(.free) {
+        &.hovered:not(.selected) {
+          stroke: var(--hover-outline-color);
+          stroke-width: var(--outline-width);
+        }
+
+        &.selected {
+          .mainOutline {
+            stroke: var(--outline-around-color);
+            stroke-width: calc(
+              var(--outline-width) + 2 * var(--outline-around-width)
+            );
+          }
+
+          .secondaryOutline {
+            stroke: var(--outline-color);
+            stroke-width: var(--outline-width);
+          }
+        }
+      }
+
+      &.free {
+        &.hovered:not(.selected) {
+          stroke: var(--hover-outline-color);
+          stroke-width: calc(2 * var(--outline-width));
+        }
+
+        &.selected {
+          .mainOutline {
+            stroke: var(--outline-around-color);
+            stroke-width: calc(
+              2 * (var(--outline-width) + var(--outline-around-width))
+            );
+          }
+
+          .secondaryOutline {
+            stroke: var(--outline-color);
+            stroke-width: calc(2 * var(--outline-width));
+          }
+        }
+      }
+    }
+  }
+}
+
 :root {
-  --editor-toolbar-vert-offset: 6px;
-  --outline-width: 2px;
-  --outline-color: var(--color-blue-60, #0060df);
-  --outline-around-width: 1px;
-  --outline-around-color: var(--color-gray-20, #f0f0f4);
-  --hover-outline-around-color: var(--outline-around-color);
   --editor-selection-outline: solid var(--outline-width) var(--outline-color);
   --unfocus-outline: solid var(--outline-width) transparent;
   --focus-outline-around: solid var(--outline-around-width)
     var(--outline-around-color);
-  --hover-outline-color: var(--color-gray-60, #8f8f9d);
   --hover-outline: solid var(--outline-width) var(--hover-outline-color);
   --hover-outline-around: solid var(--outline-around-width)
     var(--hover-outline-around-color);
-  --freetext-line-height: 1.35;
-  --freetext-padding: 2px;
-  --resizer-bg-color: var(--outline-color);
-  --resizer-size: 6px;
   --resizer-shift: calc(
     0px - (var(--outline-width) + var(--resizer-size)) / 2 -
       var(--outline-around-width)
   );
-  --editorFreeText-editing-cursor: text;
-  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
-  --editorHighlight-editing-cursor:
-    url(images/cursor-editorTextHighlight.svg) 24 24, text;
-  --editorFreeHighlight-editing-cursor:
-    url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
-
-  --new-alt-text-warning-image: url(images/altText_warning.svg);
-}
-
-.textLayer {
-  &.highlighting {
-    cursor: var(--editorFreeHighlight-editing-cursor);
-
-    &:not(.free) span {
-      cursor: var(--editorHighlight-editing-cursor);
-
-      &[role="img"] {
-        cursor: var(--editorFreeHighlight-editing-cursor);
-      }
-    }
-
-    &.free span {
-      cursor: var(--editorFreeHighlight-editing-cursor);
-    }
-  }
 }
 
 .page:has(.annotationEditorLayer.nonEditing)
@@ -3425,30 +3400,6 @@
   .editorAnnotation {
   position: absolute;
   pointer-events: none;
-}
-
-#viewerContainer.pdfPresentationMode:fullscreen,
-.annotationEditorLayer.disabled {
-  .noAltTextBadge {
-    display: none !important;
-  }
-}
-
-@media (min-resolution: 1.1dppx) {
-  :root {
-    --editorFreeText-editing-cursor:
-      url(images/cursor-editorFreeText.svg) 0 16, text;
-  }
-}
-
-@media screen and (forced-colors: active) {
-  :root {
-    --outline-color: CanvasText;
-    --outline-around-color: ButtonFace;
-    --resizer-bg-color: ButtonText;
-    --hover-outline-color: var(--color-accent-primary-hover, Highlight);
-    --hover-outline-around-color: SelectedItemText;
-  }
 }
 
 [data-editor-rotation="90"] {
@@ -3511,14 +3462,6 @@
   }
 }
 
-.annotationEditorLayer.freetextEditing {
-  cursor: var(--editorFreeText-editing-cursor);
-}
-
-.annotationEditorLayer.inkEditing {
-  cursor: var(--editorInk-editing-cursor);
-}
-
 .annotationEditorLayer .draw {
   box-sizing: border-box;
 }
@@ -3562,6 +3505,138 @@
       border: var(--focus-outline-around);
     }
   }
+
+  & > .resizers {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+
+    &.hidden {
+      display: none;
+    }
+
+    & > .resizer {
+      width: var(--resizer-size);
+      height: var(--resizer-size);
+      background: content-box var(--resizer-bg-color);
+      border: var(--focus-outline-around);
+      border-radius: var(--resizer-border-radius);
+      position: absolute;
+
+      &.topLeft {
+        top: var(--resizer-shift);
+        left: var(--resizer-shift);
+      }
+
+      &.topMiddle {
+        top: var(--resizer-shift);
+        left: calc(50% + var(--resizer-shift));
+      }
+
+      &.topRight {
+        top: var(--resizer-shift);
+        right: var(--resizer-shift);
+      }
+
+      &.middleRight {
+        top: calc(50% + var(--resizer-shift));
+        right: var(--resizer-shift);
+      }
+
+      &.bottomRight {
+        bottom: var(--resizer-shift);
+        right: var(--resizer-shift);
+      }
+
+      &.bottomMiddle {
+        bottom: var(--resizer-shift);
+        left: calc(50% + var(--resizer-shift));
+      }
+
+      &.bottomLeft {
+        bottom: var(--resizer-shift);
+        left: var(--resizer-shift);
+      }
+
+      &.middleLeft {
+        top: calc(50% + var(--resizer-shift));
+        left: var(--resizer-shift);
+      }
+    }
+  }
+}
+
+:root {
+  --editor-toolbar-vert-offset: 6px;
+  --outline-width: 2px;
+  --outline-color: var(--color-blue-60, #0060df);
+  --outline-around-width: 1px;
+  --outline-around-color: var(--color-gray-20, #f0f0f4);
+  --hover-outline-around-color: var(--outline-around-color);
+  --hover-outline-color: var(--color-gray-60, #8f8f9d);
+  --freetext-line-height: 1.35;
+  --freetext-padding: 2px;
+  --resizer-bg-color: var(--outline-color);
+  --resizer-size: 6px;
+  --resizer-border-radius: 2px;
+  --editorFreeText-editing-cursor: text;
+  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
+  --editorHighlight-editing-cursor:
+    url(images/cursor-editorTextHighlight.svg) 24 24, text;
+  --editorFreeHighlight-editing-cursor:
+    url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
+
+  --new-alt-text-warning-image: url(images/altText_warning.svg);
+}
+
+.textLayer {
+  &.highlighting {
+    cursor: var(--editorFreeHighlight-editing-cursor);
+
+    &:not(.free) span {
+      cursor: var(--editorHighlight-editing-cursor);
+
+      &[role="img"] {
+        cursor: var(--editorFreeHighlight-editing-cursor);
+      }
+    }
+
+    &.free span {
+      cursor: var(--editorFreeHighlight-editing-cursor);
+    }
+  }
+}
+
+#viewerContainer.pdfPresentationMode:fullscreen,
+.annotationEditorLayer.disabled {
+  .noAltTextBadge {
+    display: none !important;
+  }
+}
+
+@media (min-resolution: 1.1dppx) {
+  :root {
+    --editorFreeText-editing-cursor:
+      url(images/cursor-editorFreeText.svg) 0 16, text;
+  }
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --outline-color: CanvasText;
+    --outline-around-color: ButtonFace;
+    --resizer-bg-color: ButtonText;
+    --hover-outline-color: var(--color-accent-primary-hover, Highlight);
+    --hover-outline-around-color: SelectedItemText;
+  }
+}
+
+.annotationEditorLayer.freetextEditing {
+  cursor: var(--editorFreeText-editing-cursor);
+}
+
+.annotationEditorLayer.inkEditing {
+  cursor: var(--editorInk-editing-cursor);
 }
 
 .annotationEditorLayer
@@ -4008,67 +4083,6 @@
 }
 
 .annotationEditorLayer {
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
-    & > .resizers {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-
-      &.hidden {
-        display: none;
-      }
-
-      & > .resizer {
-        width: var(--resizer-size);
-        height: var(--resizer-size);
-        background: content-box var(--resizer-bg-color);
-        border: var(--focus-outline-around);
-        border-radius: 2px;
-        position: absolute;
-
-        &.topLeft {
-          top: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
-
-        &.topMiddle {
-          top: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
-
-        &.topRight {
-          top: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
-
-        &.middleRight {
-          top: calc(50% + var(--resizer-shift));
-          right: var(--resizer-shift);
-        }
-
-        &.bottomRight {
-          bottom: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
-
-        &.bottomMiddle {
-          bottom: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
-
-        &.bottomLeft {
-          bottom: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
-
-        &.middleLeft {
-          top: calc(50% + var(--resizer-shift));
-          left: var(--resizer-shift);
-        }
-      }
-    }
-  }
-
   &[data-main-rotation="0"]
     :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
   &[data-main-rotation="90"]
@@ -6346,6 +6360,9 @@ button.hasPopupMenu {
       height: 100%;
       pointer-events: none;
       background: rgb(0 90 255 / 0.22);
+      svg {
+        display: block;
+      }
     }
   }
 }
@@ -6365,6 +6382,9 @@ button.hasPopupMenu {
   border: var(--page-border);
   background-clip: content-box;
   background-color: var(--page-bg-color, rgb(255 255 255));
+  &:has(> .canvasWrapper > canvas[role="presentation"]) {
+    background-color: transparent;
+  }
 }
 
 .pdfViewer .dummyPage {
@@ -6850,10 +6870,13 @@ button.hasPopupMenu {
     --button-background-color-toolbar-hover,
     color-mix(in srgb, currentColor 17%, transparent)
   );
+  --button-hover-text-color: var(--toggled-btn-text-color);
   --toggled-btn-color: light-dark(rgb(0 0 0), rgb(255 255 255));
+  --toggled-btn-text-color: var(--toggled-btn-color);
   --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
   --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
   --toggled-hover-btn-outline: none;
+  --toggled-hover-btn-outline-offset: 0;
   --dropdown-btn-bg-color: light-dark(rgb(215 215 219), rgb(74 74 79));
   --dropdown-btn-border: none;
   --separator-color: rgb(0 0 0 / 0.3);
@@ -6923,15 +6946,18 @@ button.hasPopupMenu {
 @media screen and (forced-colors: active) {
   :root {
     --button-hover-color: Highlight;
+    --button-hover-text-color: HighlightText;
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
     --toolbar-icon-hover-bg-color: ButtonFace;
     --toggled-hover-active-btn-color: ButtonText;
     --toggled-hover-btn-outline: 2px solid ButtonBorder;
+    --toggled-hover-btn-outline-offset: -2px;
     --toolbar-border-color: CanvasText;
     --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
     --toolbar-box-shadow: none;
-    --toggled-btn-color: HighlightText;
+    --toggled-btn-color: Canvas;
+    --toggled-btn-text-color: Canvas;
     --toggled-btn-bg-color: LinkText;
     --doorhanger-hover-color: ButtonFace;
     --doorhanger-border-color-whcm: 1px solid ButtonText;
@@ -7313,12 +7339,12 @@ body {
   display: inline;
 
   &:has(> input:checked) {
-    color: var(--toggled-btn-color);
+    color: var(--toggled-btn-text-color);
     background-color: var(--toggled-btn-bg-color);
   }
 
   &:is(:hover, :has(> input:focus-visible)) {
-    color: var(--toggled-btn-color);
+    color: var(--button-hover-text-color);
     background-color: var(--button-hover-color);
   }
 
@@ -7551,7 +7577,7 @@ dialog :link {
 
   &.toggled {
     background-color: var(--toggled-btn-bg-color);
-    color: var(--toggled-btn-color);
+    color: var(--toggled-btn-text-color);
 
     &::before {
       background-color: var(--toggled-btn-color);
@@ -7559,6 +7585,7 @@ dialog :link {
 
     &:hover {
       outline: var(--toggled-hover-btn-outline) !important;
+      outline-offset: var(--toggled-hover-btn-outline-offset);
 
       &:active {
         background-color: var(--toggled-hover-active-btn-color);
@@ -7635,8 +7662,8 @@ dialog :link {
   .menuContainer {
     height: auto;
     max-height: calc(
-      var(--viewer-container-height) - var(--toolbar-height) -
-        var(--doorhanger-height)
+      var(--viewer-container-height) + var(--pfn-bar-height, 0px) -
+        var(--toolbar-height) - var(--doorhanger-height)
     );
     display: flex;
     flex-direction: column;
@@ -7731,7 +7758,9 @@ dialog :link {
   z-index: 30000;
   cursor: default;
   min-height: 26px;
-  max-height: calc(var(--viewer-container-height) - 40px);
+  max-height: calc(
+    var(--viewer-container-height) + var(--pfn-bar-height, 0px) - 40px
+  );
 
   #secondaryToolbarButtonContainer {
     #secondaryOpenFile::before {
@@ -8108,7 +8137,7 @@ dialog :link {
 
     &:is(:hover, :focus-visible) {
       background-color: var(--button-hover-color);
-      color: var(--toggled-btn-color);
+      color: var(--button-hover-text-color);
     }
   }
 
@@ -8243,7 +8272,7 @@ dialog :link {
     display: none !important;
   }
   #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
-    display: inline-block !important;
+    display: contents !important;
   }
 }
 
