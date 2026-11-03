@@ -238,7 +238,8 @@ describe("ContentEmbedVideo", () => {
     });
 
     it("has the shape of its video, and at Medium the width of that shape 20em high", () => {
-        const vertical = SAVED_PREVIEW.replace(">", ` data-aspect-ratio="9/16">`);
+        const vertical = `<section class="link-embed" ${PREVIEW_ATTRIBUTES} data-aspect-ratio="9/16">`
+            + `&nbsp;</section>`;
         editor.setData(`<p>Text</p>${SAVED_PREVIEW}${vertical}`);
         const figures = editor.editing.view.getDomRoot()
             ?.querySelectorAll<HTMLElement>("figure.include-note") ?? [];

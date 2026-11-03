@@ -357,6 +357,10 @@ body:not(.math-loaded) .math-tex {
         width: var(--include-note-width, auto);
     }
 
+    &.link-embed[data-box-size="full"] {
+        max-width: min(100%, 70vh * var(--video-aspect-ratio, 16 / 9));
+    }
+
     &[data-position="left"] {
         margin-right: auto;
         margin-left: 0;

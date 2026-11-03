@@ -1076,6 +1076,23 @@ describe("content_renderer", () => {
             expect(content).toContain(`<img class="link-embed-video-thumbnail" src="data:image/jpeg;base64,BBB"`);
         });
 
+        it("gives a video the box size and the shape that the app draws it with", () => {
+            const video = `<section class="link-embed" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const note = buildShareNote({
+                content: `<p>Videos</p>`
+                    + `${video} data-aspect-ratio="9/16" data-box-size="medium" style="--include-note-width:11.3em;"></section>`
+                    + `${video}></section>`
+            });
+
+            const sections = parse(String(getContent(note).content)).querySelectorAll("section");
+            expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
+                .toEqual([
+                    [ "medium", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
+                    [ "full", undefined ]
+                ]);
+        });
+
         it("neuters a hostile scheme in the stored URL, on a page served to anyone", () => {
             // `data-*` values pass through the save-time sanitizer verbatim, so a note that arrives
             // by import, ETAPI or sync can carry `data-url="javascript:…"`. It must not become a

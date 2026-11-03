@@ -67,8 +67,10 @@ All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-siz
   The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
   server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short
   answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
-  editing figure, `applyVideoEmbeds()`, `renderLinkEmbedHtml()`) writes it as
-  `--video-aspect-ratio`, which the player's `aspect-ratio` and the 70vh cap of Full read. A
+  editing figure, `applyVideoEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
+  `setVideoBox()`) writes it as `--video-aspect-ratio`, which the player's `aspect-ratio` and the
+  70vh cap of Full read. Only Full is capped; Medium keeps its saved width. `setVideoBox()` also
+  writes `data-box-size` on the shared section, Full for a video saved before box sizes. A
   preview without one is 16:9. A new link preview field goes into `LINK_PREVIEW_DATA_ATTRIBUTES`
   and `readLinkPreviewData()`, both `LinkEmbedMetadata` types (commons and the editor's
   `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the

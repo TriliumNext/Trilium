@@ -70,7 +70,6 @@ html.theme-light .link-embed-favicon-light {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     position: relative;
-    max-width: min(var(--include-note-width, 640px), 70vh * var(--video-aspect-ratio, 16 / 9));
     margin: auto;
     border-radius: 8px;
     overflow: hidden;
