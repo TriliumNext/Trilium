@@ -135,8 +135,7 @@ function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] 
         },
         { kind: "separator" },
         ...getEmbedItems(embed),
-        { kind: "separator" },
-        getDeleteEmbedItem(embed)
+        ...getDeleteEmbedGroup(embed)
     ];
 }
 
@@ -149,16 +148,19 @@ function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         return getEmbedItems(embed);
     }
 
-    return [ ...getEmbedItems(embed), { kind: "separator" }, getDeleteEmbedItem(embed) ];
+    return [ ...getEmbedItems(embed), ...getDeleteEmbedGroup(embed) ];
 }
 
-/** "Delete", which removes the embed from the note. */
-function getDeleteEmbedItem(embed: MenuEmbed): MenuItem<CommandNames> {
-    return {
-        title: t("link_context_menu.delete"),
-        uiIcon: "bx bx-trash destructive-action-icon",
-        handler: () => runEmbedCommand(embed, "deleteContentEmbed")
-    };
+/** "Delete", which removes the embed from the note, in a group of its own. */
+function getDeleteEmbedGroup(embed: MenuEmbed): MenuItem<CommandNames>[] {
+    return [
+        { kind: "separator" },
+        {
+            title: t("link_context_menu.delete"),
+            uiIcon: "bx bx-trash destructive-action-icon",
+            handler: () => runEmbedCommand(embed, "deleteContentEmbed")
+        }
+    ];
 }
 
 /** The origin of a menu that opens below `anchor` and acts from `target`. */
@@ -263,8 +265,8 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group. A menu opened in a note shown
- * read-only has only the actions that leave the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, and deleting the embed last.
+ * A menu opened in a note shown read-only has only the actions that leave the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
@@ -301,13 +303,13 @@ async function getAttachmentItems(
     );
     const conversionItems = [ embedItem, embed && getConvertToLinkItem(embed) ]
         .filter((item) => !!item);
-    return [ ...actionItems, ...conversionItems ];
+    return [ ...actionItems, ...conversionItems, ...(embed ? getDeleteEmbedGroup(embed) : []) ];
 }
 
 /**
- * The commands of an embedded note that the menu is opened on, in a group of their own, and
- * converting it in another. A menu opened on a link to the note offers converting the link, to an
- * excerpt for a link to blocks of the note.
+ * The commands of an embedded note that the menu is opened on, in a group of their own, converting
+ * it in another, and deleting it last. A menu opened on a link to the note offers converting the
+ * link, to an excerpt for a link to blocks of the note.
  */
 async function getNoteItems(
     noteId: string,
@@ -331,7 +333,8 @@ async function getNoteItems(
     return [
         { kind: "separator" },
         ...getEmbedItems(embed),
-        ...(linkItem ? [ { kind: "separator" } as const, linkItem ] : [])
+        ...(linkItem ? [ { kind: "separator" } as const, linkItem ] : []),
+        ...getDeleteEmbedGroup(embed)
     ];
 }
 

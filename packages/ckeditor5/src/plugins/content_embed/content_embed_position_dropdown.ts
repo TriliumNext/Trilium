@@ -10,7 +10,8 @@ export const CONTENT_EMBED_POSITION_DROPDOWN = "contentEmbedPositionDropdown";
 
 /**
  * The toolbar dropdown that sets where an embed is placed in the text, with the rows and icons of
- * the image position dropdown. Shown for content that has positions and does not hide it.
+ * the image position dropdown. Shown for content whose tools opt in to positions and do not hide
+ * it.
  */
 export default class ContentEmbedPositionDropdown extends Plugin {
 
@@ -59,7 +60,7 @@ export default class ContentEmbedPositionDropdown extends Plugin {
             dropdown.bind("class").to(
                 command, "isEnabled", contentEmbed, "selectedEmbedTools",
                 (isEnabled, tools) => {
-                    const isShown = isEnabled
+                    const isShown = isEnabled && !!tools?.hasPositions
                         && !isToolbarItemHidden(tools, CONTENT_EMBED_POSITION_DROPDOWN);
                     return isShown ? undefined : "ck-hidden";
                 }

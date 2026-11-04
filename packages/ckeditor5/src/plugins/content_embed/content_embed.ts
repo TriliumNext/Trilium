@@ -1532,11 +1532,11 @@ export function toDisplayMode( value: unknown ): DisplayModeValue | null {
 }
 
 /**
- * Whether the content of `embed` can be positioned: a video can, other content when its type opts
- * in to it.
+ * Whether `embed` can be positioned: an embed of a note, an attachment or a video can, an embed of
+ * a source when its content opts in to it.
  */
 function hasEmbedPositions( editor: Editor, embed: ModelElement ) {
-	return isVideoEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions;
+	return !isInlineSourceEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions;
 }
 
 /** Where `embed` is placed in the text: its saved position, or centered. */

@@ -172,8 +172,9 @@ widgets inside the selection.
    model, the converters, the commands (`contentEmbedBoxSize`, `toggleContentEmbedTitle`,
    `toggleContentEmbedCaption`, `toggleContentEmbedEditable`, `contentEmbedDisplayMode`,
    `convertEmbedToLink`, `deleteContentEmbed`), the box-size rules and observables such as
-   `isSelectedEmbedInline`. `deleteContentEmbed` serves any kind: a ⋮ menu offers it through
-   `getDeleteEmbedItem()` in `menus/link_context_menu.ts`, which only the video menu uses so far.
+   `isSelectedEmbedInline`. `deleteContentEmbed` serves any kind: `getDeleteEmbedGroup()` in
+   `menus/link_context_menu.ts` ends the ⋮ menu of a note, an attachment, a video and an extended
+   code block with it. Other inline sources (Mermaid) do not offer it.
    `content_embed_toolbar.ts` lists the toolbar items; `content_embed_tools.ts` turns the
    content's tools into buttons; `content_embed_box_size_dropdown.ts` the size menu. The editing
    view renders an `.include-note-wrapper` and asks the **host** to fill it.
@@ -209,6 +210,9 @@ embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the so
   `getTools()`, `execute(id)`, `subscribe()`, plus
   - `hasEditableFlag` — shows the Editable toggle; the embed carries `data-editable="true"`.
   - `hasDisplayModes` — shows Source/Split/Preview; the embed carries `data-display-mode`.
+  - `hasPositions` — gives an inline source the Position submenu of the ⋮ menu and the toolbar's
+    position dropdown; the embed carries `data-position`. A note, attachment or video embed has
+    the submenu without it (`hasEmbedPositions()`), and the dropdown only with it.
   - `hiddenToolbarItems` — moves box size, title, convert-to-link or Editable from the toolbar to
     the ⋮ menu (an extended code block hides box size and Editable).
   - `boxSizeIcon` — an SVG the box size dropdown shows in place of the size name, which moves to

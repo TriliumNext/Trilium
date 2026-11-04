@@ -539,7 +539,7 @@ describe("openContextMenu", () => {
             return execute.mock.calls;
         }
 
-        it("puts the commands of an embed after its first group, converting it last", async () => {
+        it("puts the commands of an embed after its first group, deleting it last", async () => {
             // From the title, from the menu button beside it, and from a control acting on the
             // whole embed, as its toolbar does.
             for (const target of [ "a", "button.include-note-menu", "figure" ]) {
@@ -571,9 +571,14 @@ describe("openContextMenu", () => {
                     },
                     { kind: "separator" },
                     { title: "Rename" },
-                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" }
+                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
+                    { kind: "separator" },
+                    {
+                        title: "link_context_menu.delete",
+                        uiIcon: "bx bx-trash destructive-action-icon"
+                    }
                 ]);
-                expect(items).toHaveLength(13);
+                expect(items).toHaveLength(15);
             }
             expect(selectEmbedAt).not.toHaveBeenCalled();
 
@@ -585,6 +590,7 @@ describe("openContextMenu", () => {
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
             expect(pick(items[12])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            expect(pick(items[14])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
 
             // An embed the editor cannot select is left as it is.
             selectEmbedAt.mockReturnValue(false);
@@ -606,7 +612,7 @@ describe("openContextMenu", () => {
                 },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(14);
+            expect(items).toHaveLength(16);
             expect(pick(items[7])).toEqual([ [ "toggleContentEmbedEditable", undefined ] ]);
 
             state = { ...state, isEditable: false };
@@ -626,7 +632,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(17);
+            expect(items).toHaveLength(19);
             expect(pick(items[9]))
                 .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
 
@@ -665,7 +671,7 @@ describe("openContextMenu", () => {
                     ]
                 }
             ]);
-            expect(items).toHaveLength(14);
+            expect(items).toHaveLength(16);
             expect(pick(items[8].items[2]))
                 .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
             expect(pick(items[8].items[6]))
@@ -711,7 +717,7 @@ describe("openContextMenu", () => {
             }
         });
 
-        it("appends the commands of an embedded note, its conversion in a group of its own", async () => {
+        it("ends the menu of an embedded note with converting and deleting it", async () => {
             embed().removeAttribute("data-attachment-id");
             embed().setAttribute("data-note-id", "n1");
 
@@ -723,9 +729,12 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.show_title" },
                 { title: "link_context_menu.show_caption" },
                 { kind: "separator" },
-                { title: "link_context_menu.convert_embed_to_link" }
+                { title: "link_context_menu.convert_embed_to_link" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
-            expect(items).toHaveLength(10);
+            expect(items).toHaveLength(12);
+            expect(pick(items[11])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
             expect(mocks.getAttachmentOfNote).not.toHaveBeenCalled();
         });
 
@@ -739,7 +748,9 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.include_position" },
-                { title: "link_context_menu.show_title", enabled: true, checked: false }
+                { title: "link_context_menu.show_title", enabled: true, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
 
             state = { ...state, isTitleSupported: false };
@@ -747,9 +758,11 @@ describe("openContextMenu", () => {
             expect(items.slice(4)).toMatchObject([
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
-                { title: "link_context_menu.include_position" }
+                { title: "link_context_menu.include_position" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
-            expect(items).toHaveLength(7);
+            expect(items).toHaveLength(9);
         });
 
         it("opens a video externally first in its menu, and deletes it last", async () => {
@@ -823,7 +836,9 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title", enabled: false, checked: true },
-                { title: "link_context_menu.show_caption", enabled: false, checked: false }
+                { title: "link_context_menu.show_caption", enabled: false, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
 
             // A link in the embedded content, an embed the editor does not know, and an editor

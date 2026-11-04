@@ -1070,7 +1070,7 @@ describe("ContentEmbed with attachments", () => {
         const states = [ embed, note, tiny, unsized ]
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
         const notEditable = {
-            isEditable: false, isEditableToggleable: false, displayMode: null, position: null,
+            isEditable: false, isEditableToggleable: false, displayMode: null, position: "center",
             isTitleSupported: true, isCaptionSupported: true, url: null
         };
         expect(states).toEqual([ {
@@ -2081,16 +2081,37 @@ describe("ContentEmbed position", () => {
         }
     });
 
-    it("is offered only for content that has positions", () => {
-        insertContentEmbed(editor, "n1", "medium");
+    it("is offered for a note, an attachment, and a source whose content has positions", () => {
         const contentEmbed = editor.plugins.get(ContentEmbed);
-        expect(contentEmbed.getEmbedStateAt(getRenderedEmbed()))
-            .toMatchObject({ position: "center" });
-
+        const getOffered = () => [
+            getCommand().isEnabled, getCommand().value,
+            contentEmbed.getEmbedStateAt(getRenderedEmbed())?.position
+        ];
         getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+
+        for (const data of [ WRAPPED, WRAPPED.replace("data-attachment-id", "data-note-id") ]) {
+            editor.setData(data);
+            editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
+            expect(getOffered(), data).toEqual([ true, "wrap-left", "wrap-left" ]);
+        }
+
+        editor.model.change((writer) => {
+            const root = editor.model.document.getRoot();
+            if (!root) {
+                throw new Error("The editor has no root.");
+            }
+            const embed = writer.createElement("contentEmbed", {
+                language: "mermaid", source: "graph TD", boxSize: "medium"
+            });
+            writer.remove(writer.createRangeIn(root));
+            writer.insert(embed, root, 0);
+            writer.setSelection(embed, "on");
+        });
+        expect(getOffered()).toEqual([ false, null, null ]);
+
+        getContentEmbedTools.mockReturnValue({ hasPositions: true });
         editor.ui.update();
-        expect([ getCommand().isEnabled, getCommand().value ]).toEqual([ false, null ]);
-        expect(contentEmbed.getEmbedStateAt(getRenderedEmbed())).toMatchObject({ position: null });
+        expect(getOffered()).toEqual([ true, "center", "center" ]);
     });
 
     it("changes nothing when no embed is selected", () => {
