@@ -33,7 +33,7 @@ A new include gets the size that suits what it shows:
 *   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
 *   _Medium_ for anything else.
 
-The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
+The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. The dialog has no _Small_ button, so audio starts at _Medium_ there; choose _Small_ from the include's _Box size_ menu afterwards. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
 
 ## Resizing
 

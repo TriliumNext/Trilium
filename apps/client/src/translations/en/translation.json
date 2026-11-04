@@ -383,8 +383,6 @@
     "box_size": "Box size",
     "size_tiny": "Tiny",
     "size_tiny_description": "A single row with the title and the actions.",
-    "size_small": "Small",
-    "size_small_description": "A box of about 10 lines.",
     "size_medium": "Medium",
     "size_medium_description": "A box of about 30 lines.",
     "size_full": "Full",

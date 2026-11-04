@@ -92,8 +92,8 @@ describe("ContentEmbedDialog", () => {
         expect(labels).toStrictEqual([ "include_note.label_note", "include_note.box_size" ]);
         expect(container.querySelector(".include-note-note input")).not.toBeNull();
         expect(sizeButtons().map((button) => button.textContent?.trim())).toStrictEqual([
-            "include_note.size_tiny", "include_note.size_small", "include_note.size_medium",
-            "include_note.size_full", "include_note.size_expandable"
+            "include_note.size_tiny", "include_note.size_medium", "include_note.size_full",
+            "include_note.size_expandable"
         ]);
         expect(sizeButtons().every((button) => button.querySelector("svg"))).toBe(true);
         // The name is written on the button, so a tooltip would only repeat it.
@@ -103,7 +103,7 @@ describe("ContentEmbedDialog", () => {
         // chosen one is shown.
         expect(container.querySelector(".include-note-size .tn-card-option-label small")).toBeNull();
         const descriptions = [ ...container.querySelectorAll(".include-note-size-description > *") ];
-        expect(descriptions).toHaveLength(5);
+        expect(descriptions).toHaveLength(4);
         const description = () => {
             const shown = descriptions.filter((d) => d.getAttribute("aria-hidden") !== "true");
             return shown.length === 1 ? shown[0]?.textContent : `${shown.length} shown`;
@@ -125,9 +125,10 @@ describe("ContentEmbedDialog", () => {
         await choose("tiny");
         expect(checkedSize()).toBe("tiny");
 
-        // Another note drops the size chosen by hand.
+        // Another note drops the size chosen by hand. Audio suits `small`, which the dialog leaves
+        // out, so it starts at `medium`.
         await pick(song);
-        expect(checkedSize()).toBe("small");
+        expect(checkedSize()).toBe("medium");
         await choose("expandable");
         await submit();
         expect(editorApi.addContentEmbed).toHaveBeenCalledWith(song.noteId, "expandable");
