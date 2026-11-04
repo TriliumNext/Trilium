@@ -66,7 +66,21 @@
     "button_edit_link": "Enregistrer le lien",
     "fix_link": "Corriger le lien",
     "button_fix_link": "Corriger le lien",
-    "web_link": "Lien Web"
+    "web_link": "Lien Web",
+    "display_as": "Montrer comme",
+    "url": "Adresse (URL)",
+    "display_plain": "Lien brut",
+    "display_card": "Carte",
+    "page_title": "Titre de la page web",
+    "title_from_url": "Identique à l'URL",
+    "title_from_note": "Si non précisé, correspondra toujours au titre de la note",
+    "description": "Description",
+    "page_description": "Description de la page web",
+    "anchors": "Rubriques et ancres",
+    "target_anchor": "Ancres",
+    "headings": "Rubriques",
+    "no_headings_or_anchors": "Ce note ne contient ni rubrique ni ancre.",
+    "title_from_heading": "Si non précisé, correspondra toujours au texte de la rubrique"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Modifier le préfixe de branche",
@@ -85,11 +99,11 @@
     "bulk_actions": "Actions groupées",
     "include_descendants": "Inclure les descendants des notes sélectionnées",
     "chosen_actions": "Actions choisies",
-    "execute_bulk_actions_one": "Exécuter des Actions groupées",
-    "execute_bulk_actions_many": "",
-    "execute_bulk_actions_other": "",
+    "execute_bulk_actions_one": "S'applique à {{count}} note",
+    "execute_bulk_actions_many": "S'applique à {{count}} notes",
+    "execute_bulk_actions_other": "S'applique à {{count}} notes",
     "bulk_actions_executed": "Les actions groupées ont été exécutées avec succès.",
-    "none_yet": "Aucune pour l'instant... ajoutez une action en cliquant sur l'une des actions disponibles ci-dessus.",
+    "none_yet": "Pas d'action pour l'instant... Utilisez Ajouter une action ci-dessous pour en choisir une.",
     "labels": "Labels",
     "relations": "Relations",
     "notes": "Notes",
@@ -97,7 +111,12 @@
     "selected_notes": "Notes sélectionnées",
     "remove_from_selection": "Retirer de la sélection",
     "remove_action": "Retirer cette action",
-    "add_action": "Ajouter une action"
+    "add_action": "Ajouter une action",
+    "affected_note_count_one": "Les actions s'appliquent à {{count}} note.",
+    "affected_note_count_many": "Les actions s'appliquent à {{count}} notes.",
+    "affected_note_count_other": "Les actions s'appliquent à {{count}} notes.",
+    "no_actions_to_execute": "Ajoutez d'abord une action.",
+    "no_notes_to_execute_on": "Les notes sélectionnées n'existent plus."
   },
   "clone_to": {
     "clone_notes_to": "Cloner les notes dans...",
@@ -120,11 +139,13 @@
     "also_delete_note": "Supprimer également la note",
     "delete_note_keeps_note_one": "Cette note a {{count}} autre clone, cette note sera donc conservée.",
     "delete_note_keeps_note_many": "Cette note a {{count}} autres clones, cette note sera donc conservée.",
-    "delete_note_keeps_note_other": "Cette note a {{count}} autres clones, cette note sera donc conservée."
+    "delete_note_keeps_note_other": "Cette note a {{count}} autres clones, cette note sera donc conservée.",
+    "delete_note_deletes_note": "C'est le seul emplacement de la note dans l'arborescence, donc la note elle-même sera supprimée. Cela ne peut pas être annulé dans les modifications récentes.",
+    "delete_note_deletes_clones": "La note sera supprimée des {{places}} endroits dans lesquels elle apparaît. Cela ne peut être annulé dans les modifications récentes."
   },
   "delete_notes": {
     "close": "Fermer",
-    "delete_all_clones_description": "Supprimer aussi les clones (peut être annulé dans des modifications récentes)",
+    "delete_all_clones_description": "Supprimer aussi les clones (peut être annulé dans les modifications récentes)",
     "erase_notes_description": "Efface immédiatement les notes, sans possibilité de les restaurer.",
     "erase_notes_warning": "Efface les notes de manière permanente (ne peut pas être annulée), y compris les clones. L'application va être rechargée.",
     "notes_to_be_deleted": "Notes à supprimer ({{notesCount}})",
@@ -134,7 +155,7 @@
     "title": "Supprimer les notes",
     "clones_label": "Clone",
     "erase_notes_label": "Effacer définitivement",
-    "delete_clones_description_one": "Supprimer aussi {{count}} autre clone. Peut être annulé dans les modifications récentes.",
+    "delete_clones_description_one": "Supprimer aussi l'autre clone. Peut être annulé dans les modifications récentes.",
     "delete_clones_description_many": "Supprimer aussi {{count}} autres clones. Peut être annulé dans les modifications récentes.",
     "delete_clones_description_other": "Supprimer aussi {{count}} autres clones. Peut être annulé dans les modifications récentes.",
     "table_note_with_relation": "Note avec relation",
@@ -152,9 +173,9 @@
     "export_finished_successfully": "L'exportation s'est terminée avec succès.",
     "format_pdf": "PDF - pour l'impression ou le partage de documents.",
     "what_to_export": "exporter quoi",
-    "format_html_description": "garder tout le formatage",
+    "format_html_description": "Garde tout le formatage",
     "format_markdown_name": "Markdown",
-    "format_markdown_description": "préserver la plupart du formatage",
+    "format_markdown_description": "Préserve la plupart du formatage",
     "format_opml_name": "OPML",
     "format_opml_description": "format extérieur avec contenu HTML",
     "format_share_name": "HTML pour internet",
@@ -165,7 +186,9 @@
     "result_subtree_html": "Une archive ZIP où les notes de texte sont enregistrées en HTML. Le code, les images et les autres fichiers conservent leur format d'origine.",
     "result_single_html": "Un fichier HTML unique. Les images et pièces jointes y sont intégrées.",
     "export_in_progress_with_total": "{{progressCount}} notes exportées sur {{totalCount}}",
-    "preparing_export": "Préparation de l'exportation…"
+    "preparing_export": "Préparation de l'exportation…",
+    "result_subtree_markdown": "Une archive ZIP où les notes de texte sont enregistrées en Markdown. Le code, les images et les autres fichiers conservent leur format d'origine.",
+    "result_share": "Une archive ZIP contenant un site web statique publiable qui utilise le thème des notes partagées."
   },
   "help": {
     "noteNavigation": "Navigation dans les notes",
@@ -289,7 +312,8 @@
   },
   "note_type_chooser": {
     "modal_title": "Choisissez le type de note",
-    "templates": "Modèles"
+    "templates": "Modèles",
+    "location": "Emplacement"
   },
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
@@ -315,7 +339,8 @@
     "deleted_notes_message": "Les notes supprimées ont été effacées.",
     "no_changes_message": "Aucun changement pour l'instant...",
     "undelete_link": "annuler la suppression",
-    "confirm_undelete": "Voulez-vous restaurer cette note et ses notes enfants ?"
+    "confirm_undelete": "Voulez-vous restaurer cette note et ses notes enfants ?",
+    "deleted_notes_title": "Notes supprimées"
   },
   "sort_child_notes": {
     "sort_children_by": "Trier les enfants par...",
@@ -377,7 +402,7 @@
     "disable_versioning": "désactive la gestion automatique des versions. Utile pour les notes volumineuses mais sans importance - par ex. grandes bibliothèques JS utilisées pour les scripts",
     "calendar_root": "indique la note qui doit être utilisée comme racine pour les notes du jour. Une seule note doit être marquée comme telle.",
     "archived": "les notes portant ce label ne seront pas visibles par défaut dans les résultats de recherche (ou dans les boîtes de dialogue Aller à, Ajouter un lien, etc.).",
-    "exclude_from_export": "les notes (avec leurs sous-arbres) ne seront incluses dans aucune exportation de notes",
+    "exclude_from_export": "Les notes (avec leurs sous-arbres) ne seront incluses dans aucune exportation de notes.",
     "run": "définit sur quels événements le script doit s'exécuter. Les valeurs possibles sont :\n<ul>\n<li>frontendStartup - lorsque l'interface Trilium démarre (ou est actualisée), mais pas sur mobile.</li>\n<li>mobileStartup - lorsque l'interface Trilium démarre (ou est actualisée), sur mobile.</li>\n<li>backendStartup - lorsque le backend de Trilium démarre.</li>\n<li>hourly - exécute le script une fois par heure. Vous pouvez utiliser le label supplémentaire <code>runAtHour</code> pour spécifier l'heure d’exécution.</li>\n<li>daily - exécute le script une fois par jour.</li>\n</ul>",
     "run_on_instance": "Définissez quelle instance de Trilium doit exécuter cette note. Par défaut, toutes les instances.",
     "run_at_hour": "À quelle heure la note doit-elle s'exécuter. Doit être utilisé avec <code>#run=hourly</code>. Peut être défini plusieurs fois pour plus d'occurrences au cours de la journée.",
@@ -426,9 +451,9 @@
     "color": "définit la couleur de la note dans l'arborescence des notes, les liens, etc. Utilisez n'importe quelle valeur de couleur CSS valide comme « rouge » ou #a13d5f",
     "keyboard_shortcut": "Définit un raccourci clavier qui ouvrira immédiatement cette note. Exemple : 'ctrl+alt+e'. Nécessite un rechargement du frontend pour que la modification prenne effet.",
     "keep_current_hoisting": "L'ouverture de ce lien ne modifiera pas le focus même si la note n'est pas affichable dans le sous-arbre actuellement focus.",
-    "execute_button": "Titre du bouton qui exécutera la note de code en cours",
+    "execute_button": "Titre du bouton qui exécutera la note de code en cours.",
     "execute_description": "Description plus longue de la note de code actuelle affichée avec le bouton d'exécution",
-    "exclude_from_note_map": "Les notes avec ce label seront masquées de la carte des notes",
+    "exclude_from_note_map": "Les notes avec ce label seront masquées de la carte des notes.",
     "new_notes_on_top": "Les nouvelles notes seront créées en haut de la note parent, et non en bas.",
     "run_on_note_creation": "s'exécute lorsque la note est créée dans le backend. Utilisez cette relation si vous souhaitez exécuter le script pour toutes les notes créées sous un sous-arbre spécifique. Dans ce cas, créez-le sur la note racine du sous-arbre et rendez-la héritable. Une nouvelle note créée dans le sous-arbre (peu importe la profondeur) déclenchera le script.",
     "run_on_child_note_creation": "s'exécute lorsqu'une nouvelle note est créée sous la note où cette relation est définie",
@@ -590,7 +615,20 @@
     "list": "Liste",
     "today": "Aujourd'hui",
     "pin_date": "Épinglez la date actuelle pour que le calendrier s'ouvre toujours sur cette plage plutôt que sur aujourd'hui",
-    "unpin_date": "Désépinglez la date pour que le calendrier s'ouvre à nouveau sur la date d'aujourd'hui"
+    "unpin_date": "Désépinglez la date pour que le calendrier s'ouvre à nouveau sur la date d'aujourd'hui",
+    "recurrence": {
+      "custom_rule": "Règle",
+      "weekly": "Chaque semaine",
+      "monthly": "Chaque mois",
+      "yearly": "Chaque année",
+      "custom": "Personnalisé",
+      "repeat_every": "Répéter chaque",
+      "unit_days": "jour",
+      "unit_weeks": "semaine",
+      "unit_months": "mois",
+      "unit_years": "année",
+      "count_years": "Afficher le nombre années dans le titre"
+    }
   },
   "close_pane_button": {
     "close_this_pane": "Fermer ce volet"
@@ -601,36 +639,40 @@
   "global_menu": {
     "menu": "Menu",
     "options": "Paramètres",
-    "open_new_window": "Ouvrir une nouvelle fenêtre",
+    "open_new_window": "Nouvelle fenêtre",
     "switch_to_mobile_version": "Passer à la version mobile",
-    "switch_to_desktop_version": "Passer à la version de bureau",
+    "switch_to_desktop_version": "Passer à la version bureau",
     "zoom": "Zoom",
-    "toggle_fullscreen": "Basculer en plein écran",
+    "toggle_fullscreen": "Plein écran",
     "zoom_out": "Zoom arrière",
     "reset_zoom_level": "Réinitialiser le niveau de zoom",
     "zoom_in": "Zoomer",
-    "configure_launchbar": "Configurer la Barre de raccourcis",
-    "show_shared_notes_subtree": "Afficher le Sous-arbre des Notes Partagées",
+    "configure_launchbar": "Configurer la barre de raccourcis...",
+    "show_shared_notes_subtree": "Notes partagées",
     "advanced": "Avancé",
-    "open_dev_tools": "Ouvrir les Outils de dév",
-    "open_sql_console": "Ouvrir la Console SQL",
-    "open_sql_console_history": "Ouvrir l'Historique de la console SQL",
-    "open_search_history": "Ouvrir l'Historique de recherche",
-    "show_backend_log": "Afficher les logs du backend",
+    "open_dev_tools": "Outils de développement",
+    "open_sql_console": "Console SQL",
+    "open_sql_console_history": "Historique de la console SQL",
+    "open_search_history": "Ouvrir l'historique de recherche",
+    "show_backend_log": "Logs du backend",
     "reload_hint": "Recharger l'interface peut aider à résoudre certains problèmes visuels sans redémarrer l'application.",
     "reload_frontend": "Recharger l'interface",
-    "show_hidden_subtree": "Afficher le Sous-arbre caché",
-    "show_help": "Afficher l'aide",
+    "show_hidden_subtree": "Notes cachées",
+    "show_help": "Aide",
     "about": "À propos de Trilium Notes",
     "logout": "Déconnexion",
-    "show-cheatsheet": "Afficher l'aide rapide",
-    "toggle-zen-mode": "Zen Mode",
+    "show-cheatsheet": "Raccourcis clavier",
+    "toggle-zen-mode": "Mode zen",
     "new-version-available": "Nouvelle mise à jour disponible",
     "download-update": "Obtenir la version {{latestVersion}}",
-    "search_notes": "Rechercher des notes"
+    "search_notes": "Rechercher des notes",
+    "show_deleted_notes": "Notes supprimées",
+    "show_space_usage": "Utilisation de l'espace",
+    "fullscreen": "Plein écran",
+    "theme": "Thème"
   },
   "zen_mode": {
-    "button_exit": "Sortir du Zen mode"
+    "button_exit": "Sortir du mode zen"
   },
   "sync_status": {
     "unknown": "<p>Le statut de la synchronisation sera connu à la prochaine tentative de synchronisation.</p><p>Cliquez pour lancer la synchronisation immediatement.</p>",
@@ -1587,7 +1629,11 @@
     "new_tab": "Nouvel onglet",
     "pin_tab": "Épingler l'onglet",
     "unpin_tab": "Désépingler l'onglet",
-    "pinned_prefix": "Épinglé : "
+    "pinned_prefix": "Épinglé : ",
+    "show_all_recent_changes": "Toutes les modifications récentes",
+    "recently_changed_notes": "Notes récemment modifiées",
+    "add_new_tab_hint": "Cliquer droit ou maintenir pour plus d'options.",
+    "leave_full_screen": "Quitter le plein écran"
   },
   "toc": {
     "table_of_contents": "Table des matières",
@@ -2122,7 +2168,8 @@
     "attach_file": "Joindre une image, un PDF ou un fichier texte",
     "remove_attachment": "Supprimer la pièce jointe",
     "attachment_upload_failed": "Impossible de téléverser \"{{name}}\".",
-    "attachment_unsupported_type": "\"{{name}}\" n'est pas un type de pièce jointe pris en charge. Utilisez une image (PNG, JPEG, GIF, WebP), un PDF, ou un fichier texte/source."
+    "attachment_unsupported_type": "\"{{name}}\" n'est pas un type de pièce jointe pris en charge. Utilisez une image (PNG, JPEG, GIF, WebP), un PDF, ou un fichier texte/source.",
+    "delete_message_confirm": "Supprimer ce message ? Cette opération ne peut pas être annulée."
   },
   "sidebar_chat": {
     "title": "discussion IA",
@@ -2471,7 +2518,10 @@
       "table_column": "Colonne {{number}}"
     },
     "page_break": "Insérer un saut de page (pour l'impression)",
-    "table": "Insérer un tableau"
+    "table": "Insérer un tableau",
+    "titles": {
+      "todo": "Tâche : {{title}}"
+    }
   },
   "search": {
     "title": "Rechercher",
@@ -2599,7 +2649,17 @@
       "summary": "Résumé",
       "toggle-collapsible-block": "Ouvrir/fermer le bloc repliable",
       "type-the-content-here": "Saisissez le contenu ici...",
-      "undefined-custom-task-state": "État personnalisé non défini"
+      "undefined-custom-task-state": "État personnalisé non défini",
+      "copy-formatting": "Copier le formatage",
+      "copy-to-clipboard": "Copier dans le presse-papier",
+      "create-a-new-child-note": "Créer une nouvelle note enfant",
+      "columns": "Colonnes",
+      "card": "Carte",
+      "ask-ai": "Demander à l'IA…",
+      "ask-ai-to": "Demander à l'IA de…",
+      "apply-formatting": "Appliquer le formatage",
+      "anchors": "Ancres",
+      "add-tab": "Ajouter un onglet"
     }
   },
   "image_navigation": {
@@ -2693,7 +2753,10 @@
   },
   "options": {
     "title": "Options",
-    "back": "Retour à toutes les options"
+    "back": "Retour à toutes les options",
+    "search_clear": "Effacer la recherche",
+    "search_placeholder": "Paramètres de la recherche",
+    "search_hint": "Tapez un mot clé pour rechercher dans tous les paramètres."
   },
   "full_content_width_switch": {
     "title": "Pleine largeur"
@@ -2728,5 +2791,31 @@
     "partially_downloaded": "{{downloaded}} de {{size}} téléchargé",
     "delete": "Supprimer",
     "no_resources": "Rien n'a encore été téléchargé."
+  },
+  "note_chips": {
+    "more": "+{{count}} de plus"
+  },
+  "template_selection": {
+    "new-name": "Nouveau modèle",
+    "remove": "Supprimer de la liste"
+  },
+  "template_properties": {
+    "new_notes": "Nouvelles notes",
+    "title": "Propriétés du modèle"
+  },
+  "template_field": {
+    "member_is_protected": "Si la note est protégée ou non",
+    "member_title": "Le titre de la note",
+    "member_type": "Le type de note, par exemple texte ou code",
+    "member_utc_date_created": "Date de création de la note (UTC)",
+    "member_utc_date_modified": "Date de dernière modification de la note (UTC)",
+    "variable_note": "La note qui est renommée",
+    "preview": "Aperçu : {{result}}",
+    "error_method_not_allowed": "La méthode “{{name}}” ne peut pas être utilisée dans un modèle.",
+    "error_method_not_on_value": "La valeur avant “{{name}}” ne dispose pas de cette méthode.",
+    "error_property_not_allowed": "La propriété “{{name}}” ne peut pas être utilisée dans un modèle."
+  },
+  "transcription_options": {
+    "european_languages": "Langues européennes"
   }
 }
