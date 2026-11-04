@@ -7,27 +7,18 @@ State as of 2026-11-01. Re-verify with `git log` before relying on it.
 | Phase | PR / ref | Scope |
 |---|---|---|
 | 1 — identity | #10273, merged into `milestone/multi_user` | `users`, `user_groups`, `user_group_members`, `oauth_enrollment` (split out of old `user_data`); nullable `notes.ownerId`, `entity_changes.userId`, `etapi_tokens.userId`; `seedAdminUser()`; `session.userId` on both login paths → CLS; `getUserId()`; admin-only `/api/users` (list/create/soft-delete). Migration 243 (was 239). |
-| 2 — isolation | #10348, merged into `milestone/multi_user` | `ownerId` stamped on create; per-user Becca + cache; `getBecca()` replacing the default import across core; `note_permissions` + `permission_service` (ancestor inheritance across clones, write ⇒ read); admin-only `/api/permissions`; WS clients tagged with `userId`, `sendMessageToUserClients`. Migration 244 (was 240). |
+| 2 — isolation | #10348, merged into `milestone/multi_user` | `ownerId` stamped on create; per-user Becca + cache and `getBecca()` (both removed again on 2026-11-04, see below); `note_permissions` + `permission_service` (ancestor inheritance across clones, write ⇒ read); admin-only `/api/permissions`; WS clients tagged with `userId`, `sendMessageToUserClients`. Migration 244 (was 240). |
 | 3 — sync/ETAPI/protected | `sashank/phase3` (one commit, not a PR yet) | Stamps `entity_changes.userId`; filters sync pull and WS frontend updates by it; ETAPI tokens bound to a user (`etapi_tokens.userId`, `BEtapiToken`); per-user protected-session data keys. |
 
 Agreed deferrals from #4956: attributes inherit their note's visibility (no per-attribute ACL); search-index filtering is phase 3+.
 
 ## Known gaps (do not rediscover as new bugs)
 
-**Isolation is incomplete.**
-- `loadBeccaForUser()` still starts from every `_`-prefixed note, so the `_hidden` subtree (options, launchers, LLM chats, …) is shared; it needs per-user variants or explicit carve-outs.
-- `export default adminBecca` in `becca.ts` lets unconverted call sites read unfiltered data: ETAPI (`apps/server/src/etapi/*`), LLM tools and chat title (`packages/trilium-core/src/services/llm/`), share (`packages/trilium-core/src/share/`, `services/export/zip/share_*`), board/spreadsheet/database_info/OCR routes, image services, `routes/custom.ts`, OneNote import, `space_usage.ts`. Fix: drop the default export and convert what the compiler flags. Run `grep -rlE "import becca from" apps/server/src packages/trilium-core/src` for the current list.
-- Search, note map, similar notes, recent changes etc. run over whatever `getBecca()` returns, so they're only as filtered as the Becca is.
+**No isolation.** The per-user Becca copies were removed on 2026-11-04, so the single Becca serves every note to every user until the visibility filter (SKILL.md, "Mental model") lands. Homes and grants are still stored, and `permission_service` still resolves them, but nothing reads them to hide notes; Shared with me is gone with the per-user load and comes back as an overlay on `root`. Once the filter exists, these remain to decide: the `_hidden` subtree (options, launchers, LLM chats, …) is shared by all users and needs per-user variants or carve-outs, and raw SQL over `notes`/`blobs` (full-text content search, recent changes, revisions) needs the visibility set too.
 
-**Inheritance stops at a grant.** A member's Becca holds a shared note and its subtree but not its ancestors, so for the recipient the owner's inheritable labels from above (`#iconClass`, `#cssClass`, `#sorted`, `#readOnly`, …), `child:` labels on the hidden parent, and `~template` targets they cannot see do not apply: promoted attributes from such a template show as plain attributes. Nothing is lost or leaked, only rendering differs. Deferred deliberately: with a single Becca and a per-user visibility filter it comes for free, so it waits on the open Becca decision below. A cheaper spot fix, if needed first, is loading the template notes that shared notes point to.
-
-**No write enforcement.** `permission_service.canUserWriteNote()` is not called anywhere; a user with read access (or any note in their Becca) can modify it through normal routes.
+**No write enforcement.** `permission_service.canUserWriteNote()` is not called anywhere; a user with read access can modify a note through normal routes.
 
 **No admin gate on dangerous routes.** Script exec/run, SQL console, backup download, options, password change, ETAPI token management, and similar are reachable by any authenticated user. Planned fix: a non-admin route allowlist in `route_api.ts` rather than per-handler checks.
-
-**Cross-Becca coherence.**
-- The `ENTITY_CHANGED` / `ENTITY_CHANGE_SYNCED` / `ENTITY_DELETED` subscribers in `becca_loader.ts` update only the admin Becca (`becca` default import). An entity created in a user's request registers into that user's Becca (via `getBecca()` in the constructor) and the DB, but not into the admin Becca; other users' cached Beccas stay stale until evicted (30 min idle, or a grant/revoke touching them).
-- Open decision: keep per-user Becca copies (memory × users, coherence fan-out) or move to a single Becca with a per-user visibility filter. Raise this rather than silently picking one.
 
 **Not synced.** `note_permissions`, `users`, `user_groups` are plain tables, not Becca entities, so they produce no `EntityChange` and don't replicate to sync peers/desktop clients.
 

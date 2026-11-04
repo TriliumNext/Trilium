@@ -7,7 +7,6 @@ import { decodeBase64, encodeBase64 } from "./utils/binary.js";
 import optionService from "./options.js";
 import { getCrypto } from "./encryption/crypto.js";
 import scrypt from "./encryption/scrypt.js";
-import { evictUser } from "../becca/becca_cache.js";
 
 /** Salt for the scrypt round spent on an unknown username, which only has to cost the same. */
 const UNKNOWN_USER_SALT = "unknown-user";
@@ -97,7 +96,7 @@ function createUser(username: string, email: string | null, isAdmin: boolean): s
 }
 
 function updateUser(userId: string, changes: UserChanges): void {
-    // Demoting the seeded admin would leave every login holding a filtered, non-admin view.
+    // The instance password and SSO sign in as the seeded admin, so it must stay an admin.
     if (changes.isAdmin === false && userId === getAdminUserId()) {
         throw new PrimaryAdminDemotionError();
     }
@@ -117,11 +116,6 @@ function updateUser(userId: string, changes: UserChanges): void {
             userId
         ]
     );
-
-    // Admins read the unfiltered Becca; a cached filtered one must not outlive a role change.
-    if (changes.isAdmin !== undefined && !!user.isAdmin !== changes.isAdmin) {
-        evictUser(userId);
-    }
 }
 
 /**
@@ -244,7 +238,6 @@ function deleteUser(userId: string): void {
         `UPDATE users SET isDeleted = 1, utcDateModified = ? WHERE userId = ?`,
         [dateUtils.utcNowDateTime(), userId]
     );
-    evictUser(userId);
 }
 
 export default {

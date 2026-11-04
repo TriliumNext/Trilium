@@ -1,4 +1,4 @@
-import { getBecca } from "./becca.js";
+import becca from "./becca.js";
 import { getLog } from "../services/log.js";
 import beccaService from "./becca_service.js";
 import dateUtils from "../services/utils/date";
@@ -254,7 +254,7 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[]> {
     const results: SimilarNote[] = [];
     let i = 0;
 
-    const baseNote = getBecca().notes[noteId];
+    const baseNote = becca.notes[noteId];
 
     if (!baseNote || !baseNote.utcDateCreated) {
         return [];
@@ -423,7 +423,7 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[]> {
         return score;
     }
 
-    for (const candidateNote of Object.values(getBecca().notes)) {
+    for (const candidateNote of Object.values(becca.notes)) {
         if (candidateNote.noteId === baseNote.noteId
             || candidateNote.isHiddenCompletely()
             || hasConnectingRelation(candidateNote, baseNote)
@@ -462,7 +462,7 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[]> {
 
         if (results.length >= 1) {
             for (const { noteId } of results) {
-                const note = getBecca().notes[noteId];
+                const note = becca.notes[noteId];
 
                 displayRewards = true;
                 ancestorRewardCache = {}; // reset cache

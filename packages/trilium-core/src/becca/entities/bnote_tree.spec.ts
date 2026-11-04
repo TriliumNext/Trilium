@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../becca.js";
+import becca from "../becca.js";
 import attributeService from "../../services/attributes.js";
 import cloningService from "../../services/cloning.js";
 import { getContext } from "../../services/context.js";
@@ -199,7 +199,7 @@ describe("BNote tree / note-path / subtree methods (real DB)", () => {
 
             // _hidden short-circuit (line 860): _hidden is never included in its
             // own templated subtree.
-            const hidden = getBecca().getNoteOrThrow("_hidden");
+            const hidden = becca.getNoteOrThrow("_hidden");
             expect(hidden.getSubtreeNotesIncludingTemplated()).not.toContain(hidden);
         });
 
@@ -273,7 +273,7 @@ describe("BNote tree / note-path / subtree methods (real DB)", () => {
         });
 
         it("skips the _hidden subtree by default but includes it when requested", () => {
-            const root = getBecca().getNoteOrThrow("root");
+            const root = becca.getNoteOrThrow("root");
 
             // Default (includeHidden: false) skips _hidden (line 917-920).
             const withoutHidden = root.getSubtree().notes.map((n) => n.noteId);
@@ -536,7 +536,7 @@ describe("BNote tree / note-path / subtree methods (real DB)", () => {
             // The "_"-prefixed branch of the filter (line 1745): every visible
             // child branch under _hidden must be a non-underscore note, since all
             // of _hidden's system children are filtered out.
-            const hidden = getBecca().getNoteOrThrow("_hidden");
+            const hidden = becca.getNoteOrThrow("_hidden");
             expect(hidden.getVisibleChildBranches().every((b) => !b.noteId.startsWith("_"))).toBe(true);
 
             // A note whose only child is underscore-prefixed has no visible

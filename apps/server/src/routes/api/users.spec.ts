@@ -1,5 +1,5 @@
 import type { CreateUserResponse, UserListItem } from "@triliumnext/commons";
-import { cls, getBecca, getSql, user_homes, user_service } from "@triliumnext/core";
+import { cls, becca, getSql, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -87,7 +87,7 @@ describe("Users API", () => {
             expect(cls.init(() => user_service.getUserById(memberId))).toMatchObject({
                 username: "renamed-spec", email: null, isAdmin: 1
             });
-            expect(getBecca().getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
+            expect(becca.getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
 
             // Keeping one's own username is not a clash with oneself.
             expect(update(memberId, { username: "renamed-spec", isAdmin: false })).toBeUndefined();
@@ -95,7 +95,7 @@ describe("Users API", () => {
 
             // A change that leaves the username out leaves the home's title alone.
             expect(update(memberId, { email: "new@example.com" })).toBeUndefined();
-            expect(getBecca().getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
+            expect(becca.getNote(`home_${memberId}`)?.title).toBe("renamed-spec");
 
             cls.init(() => user_service.deleteUser(memberId));
         });
@@ -132,7 +132,7 @@ describe("Users API", () => {
             const listed = (cls.init(() => usersRoute.getUsers(req({}, {}, sess))) as UserListItem[])
                 .find((user) => user.userId === userId);
             expect(listed).toMatchObject({ hasPassword: false, setupLinkExpiresAt: setupLink.expiresAt });
-            expect(getBecca().getNote(`home_${userId}`)).toMatchObject({ title: "new-spec-user", ownerId: userId });
+            expect(becca.getNote(`home_${userId}`)).toMatchObject({ title: "new-spec-user", ownerId: userId });
         });
     });
 

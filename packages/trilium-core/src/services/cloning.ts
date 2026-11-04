@@ -3,17 +3,17 @@
 import eventChangesService from "./entity_changes.js";
 import treeService from "./tree.js";
 import BBranch from "../becca/entities/bbranch.js";
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import { getLog } from "./log.js";
 import { CloneResponse } from "@triliumnext/commons";
 import { getSql } from "./sql/index.js";
 
 function cloneNoteToParentNote(noteId: string, parentNoteId: string, prefix: string | null = null): CloneResponse {
-    if (!(noteId in getBecca().notes) || !(parentNoteId in getBecca().notes)) {
+    if (!(noteId in becca.notes) || !(parentNoteId in becca.notes)) {
         return { success: false, message: "Note cannot be cloned because either the cloned note or the intended parent is deleted." };
     }
 
-    const parentNote = getBecca().getNote(parentNoteId);
+    const parentNote = becca.getNote(parentNoteId);
     if (!parentNote) {
         return { success: false, message: "Note cannot be cloned because the parent note could not be found." };
     }
@@ -48,7 +48,7 @@ function cloneNoteToParentNote(noteId: string, parentNoteId: string, prefix: str
 }
 
 function cloneNoteToBranch(noteId: string, parentBranchId: string, prefix?: string) {
-    const parentBranch = getBecca().getBranch(parentBranchId);
+    const parentBranch = becca.getBranch(parentBranchId);
 
     if (!parentBranch) {
         return { success: false, message: `Parent branch '${parentBranchId}' does not exist.` };
@@ -65,13 +65,13 @@ function cloneNoteToBranch(noteId: string, parentBranchId: string, prefix?: stri
 }
 
 function ensureNoteIsPresentInParent(noteId: string, parentNoteId: string, prefix?: string) {
-    if (!(noteId in getBecca().notes)) {
+    if (!(noteId in becca.notes)) {
         return { branch: null, success: false, message: `Note '${noteId}' is deleted.` };
-    } else if (!(parentNoteId in getBecca().notes)) {
+    } else if (!(parentNoteId in becca.notes)) {
         return { branch: null, success: false, message: `Note '${parentNoteId}' is deleted.` };
     }
 
-    const parentNote = getBecca().getNote(parentNoteId);
+    const parentNote = becca.getNote(parentNoteId);
 
     if (!parentNote) {
         return { branch: null, success: false, message: "Can't find parent note." };
@@ -100,7 +100,7 @@ function ensureNoteIsPresentInParent(noteId: string, parentNoteId: string, prefi
 
 function ensureNoteIsAbsentFromParent(noteId: string, parentNoteId: string) {
     const branchId = getSql().getValue<string>(/*sql*/`SELECT branchId FROM branches WHERE noteId = ? AND parentNoteId = ? AND isDeleted = 0`, [noteId, parentNoteId]);
-    const branch = getBecca().getBranch(branchId);
+    const branch = becca.getBranch(branchId);
 
     if (branch) {
         if (!branch.isWeak && branch.getNote().getStrongParentBranches().length <= 1) {
@@ -140,7 +140,7 @@ function cloneNoteNextToBranch(noteId: string, siblingBranchId: string, side: "b
         return { success: false, message: `Cloning the note '${noteId}' is forbidden.` };
     }
 
-    const siblingBranch = getBecca().getBranch(siblingBranchId);
+    const siblingBranch = becca.getBranch(siblingBranchId);
 
     if (!siblingBranch) {
         return { success: false, message: `Branch '${siblingBranchId}' does not exist.` };
@@ -152,19 +152,19 @@ function cloneNoteNextToBranch(noteId: string, siblingBranchId: string, side: "b
 
     const { parentNoteId } = siblingBranch;
 
-    if (!(noteId in getBecca().notes)) {
+    if (!(noteId in becca.notes)) {
         return {
             success: false,
             message: `Note to be cloned '${noteId}' is deleted or does not exist.`
         };
-    } else if (!(parentNoteId in getBecca().notes)) {
+    } else if (!(parentNoteId in becca.notes)) {
         return {
             success: false,
             message: `Parent note '${parentNoteId}' is deleted or does not exist.`
         };
     }
 
-    const parentNote = getBecca().getNote(parentNoteId);
+    const parentNote = becca.getNote(parentNoteId);
 
     if (!parentNote || parentNote.type === "search") {
         return {

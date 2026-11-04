@@ -104,7 +104,7 @@ export { default as user_homes } from "./services/user_homes";
 export * from "./services/messaging/index";
 export type { MessagingProvider, ServerMessagingProvider, MessageClient, MessageHandler } from "./services/messaging/types";
 
-export { default as becca, getBecca, warmBeccaForUser } from "./becca/becca";
+export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
 export { default as permission_service } from "./services/permission_service";
 export { default as becca_service } from "./becca/becca_service";

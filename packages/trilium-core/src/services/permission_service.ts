@@ -3,7 +3,6 @@ import { getLog } from "./log.js";
 import { newEntityId } from "./utils/index.js";
 import dateUtils from "./utils/date.js";
 import userService from "./user_service.js";
-import { evictUser } from "../becca/becca_cache.js";
 import ws from "./ws.js";
 
 export interface PermissionRow {
@@ -101,7 +100,7 @@ function canUserWriteNote(noteId: string, userId: string): boolean {
     return getEffectivePermission(noteId, userId)?.canWrite ?? false;
 }
 
-function evictAffectedUsers(userId: string | null, groupId: string | null): void {
+function refreshAffectedUsers(userId: string | null, groupId: string | null): void {
     if (userId) {
         refreshUser(userId);
     }
@@ -115,9 +114,8 @@ function evictAffectedUsers(userId: string | null, groupId: string | null): void
     }
 }
 
-/** Drops the user's cached Becca and has their open clients load the notes they can now see. */
+/** Has the user's open clients reload the notes they can now see. */
 function refreshUser(userId: string): void {
-    evictUser(userId);
     ws.reloadFrocaForUser(userId, "access changed");
 }
 
@@ -142,7 +140,7 @@ function grantPermission(
 
     // Permission changes affect the whole inheritance chain; clear everything.
     clearPermissionCache();
-    evictAffectedUsers(userId, groupId);
+    refreshAffectedUsers(userId, groupId);
     return permissionId;
 }
 
@@ -160,7 +158,7 @@ function revokePermission(permissionId: string): void {
     getSql().execute("DELETE FROM note_permissions WHERE permissionId = ?", [permissionId]);
     // Permission changes affect the whole inheritance chain; clear everything.
     clearPermissionCache();
-    evictAffectedUsers(row.userId, row.groupId);
+    refreshAffectedUsers(row.userId, row.groupId);
 }
 
 /** Gives the user read access to the note, plus write access when `canWrite`, replacing their earlier grants on it. */

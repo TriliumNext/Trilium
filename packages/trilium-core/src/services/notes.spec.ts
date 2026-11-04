@@ -1,7 +1,7 @@
 import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
@@ -95,7 +95,7 @@ describe("OCR text across (un)protection", () => {
         protectedSessionService.setDataKey(PROTECTED_KEY);
         protect(note, true);
 
-        const protectedAttachment = getBecca().getAttachmentOrThrow(attachment.attachmentId);
+        const protectedAttachment = becca.getAttachmentOrThrow(attachment.attachmentId);
         expect(protectedAttachment.isProtected).toBe(true);
         expect(blobService.decryptTextRepresentation(storedText(protectedAttachment.blobId), true))
             .toBe("text read out of the attachment");
@@ -122,7 +122,7 @@ describe("notes service (real DB)", () => {
         it("creates a text note under root with content, branch and derived mime", () => {
             const { note, branch } = createNote("root", { title: "spec-create-basic", content: "<p>body</p>" });
 
-            expect(getBecca().notes[note.noteId]).toBe(note);
+            expect(becca.notes[note.noteId]).toBe(note);
             expect(note.title).toBe("spec-create-basic");
             expect(note.type).toBe("text");
             expect(note.mime).toBe("text/html");
@@ -133,7 +133,7 @@ describe("notes service (real DB)", () => {
             // position derives from MAX existing position + 10 and is therefore positive.
             expect(branch.notePosition).toBeGreaterThan(0);
 
-            // The note row is persisted in the DB, not just getBecca().
+            // The note row is persisted in the DB, not just becca.
             const row = getSql().getRow<{ title: string }>("SELECT title FROM notes WHERE noteId = ?", [note.noteId]);
             expect(row.title).toBe("spec-create-basic");
         });
@@ -185,7 +185,7 @@ describe("notes service (real DB)", () => {
                 const { note } = createNote("root", { title: "spec-forced-id", noteId });
 
                 expect(note.noteId).toBe(noteId);
-                expect(getBecca().notes[noteId]).toBe(note);
+                expect(becca.notes[noteId]).toBe(note);
             }
 
             for (const noteId of [ null as unknown as string, "", undefined as unknown as string ]) {
@@ -197,7 +197,7 @@ describe("notes service (real DB)", () => {
                 getSql().getValue("SELECT COUNT(*) FROM notes WHERE noteId = ?", [ noteId ]);
             for (const noteId of [ dashedId, "abc", "bad/id01", "bad id01" ]) {
                 expect(() => createNote("root", { noteId }), noteId).toThrow(/is not valid/);
-                expect(getBecca().notes[noteId]).toBeUndefined();
+                expect(becca.notes[noteId]).toBeUndefined();
                 expect(countRows(noteId)).toBe(0);
             }
 
@@ -214,20 +214,20 @@ describe("notes service (real DB)", () => {
 
             expect(() => createNote("root", { noteId: note.noteId, title: "spec-overwrite", content: "x" }))
                 .toThrow(ValidationError);
-            expect(getBecca().getNoteOrThrow(note.noteId).title).toBe("spec-existing");
+            expect(becca.getNoteOrThrow(note.noteId).title).toBe("spec-existing");
             expect(getContext().init(() => note.getContent())).toBe("<p>keep</p>");
             expect(note.getParentNotes().map((parent) => parent.noteId)).toStrictEqual([ "root" ]);
 
             expect(() => createNote("root", { noteId: "root", title: "spec-root" })).toThrow(/already exists/);
-            expect(getBecca().getNoteOrThrow("root").title).not.toBe("spec-root");
-            expect(getBecca().getBranch("root_root")).toBeNull();
+            expect(becca.getNoteOrThrow("root").title).not.toBe("spec-root");
+            expect(becca.getBranch("root_root")).toBeNull();
 
             // A virtual note, such as an in-app help page, has no row in the database.
-            const virtualNote = Object.values(getBecca().notes).find((candidate) => candidate.isVirtual);
+            const virtualNote = Object.values(becca.notes).find((candidate) => candidate.isVirtual);
             expect(virtualNote).toBeDefined();
             const virtualNoteId = virtualNote?.noteId ?? "";
             expect(() => createNote("root", { noteId: virtualNoteId, title: "spec-virtual" })).toThrow(/already exists/);
-            expect(getBecca().getNoteOrThrow(virtualNoteId).isVirtual).toBe(true);
+            expect(becca.getNoteOrThrow(virtualNoteId).isVirtual).toBe(true);
         });
 
         it("inherits the template's mime and adds a template relation when creating from a template", () => {
@@ -702,7 +702,7 @@ describe("notes service (real DB)", () => {
                 ({ ...attachment, attachmentId, ownerId: note.noteId, content });
             // `becca.getAttachment()` reads the row again, with its current blob.
             const contentOf = (attachmentId: string | undefined) =>
-                attachmentId ? getBecca().getAttachment(attachmentId)?.getContent() : undefined;
+                attachmentId ? becca.getAttachment(attachmentId)?.getContent() : undefined;
 
             getContext().init(() => noteService.updateNoteData(note.noteId, "<p>x</p>", [
                 row(own.attachmentId, "new"),
@@ -723,7 +723,7 @@ describe("notes service (real DB)", () => {
             const content = "<figure class=\"include-note\" "
                 + `data-attachment-id="${drawing.attachmentId}"></figure>`;
             const isScheduled = () =>
-                !!getBecca().getAttachment(image.attachmentId ?? "")?.utcDateScheduledForErasureSince;
+                !!becca.getAttachment(image.attachmentId ?? "")?.utcDateScheduledForErasureSince;
 
             getContext().init(() => noteService.updateNoteData(note.noteId, content));
             expect(isScheduled()).toBe(true);

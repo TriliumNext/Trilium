@@ -4,7 +4,7 @@ import LZString from "lz-string";
 import { PassThrough } from "stream";
 import { describe, expect, it } from "vitest";
 
-import { getBecca } from "../../../becca/becca.js";
+import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import TaskContext from "../../task_context.js";
@@ -54,7 +54,7 @@ async function importObsidian(files: Record<string, string | Buffer>, fileName?:
     return new Promise<BNote>((resolve, reject) => {
         void getContext().init(async () => {
             try {
-                const root = getBecca().getNoteOrThrow("root");
+                const root = becca.getNoteOrThrow("root");
                 resolve(await obsidianImporter.importObsidian(taskContext, new Uint8Array(buffer), root, fileName));
             } catch (e) {
                 reject(e);

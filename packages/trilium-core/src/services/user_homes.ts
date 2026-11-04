@@ -1,21 +1,12 @@
 import { HOME_NOTE_ID_PREFIX, USERS_NOTE_ID } from "@triliumnext/commons";
 import { t } from "i18next";
 
-import { getBecca } from "../becca/becca.js";
-import { evictUser } from "../becca/becca_cache.js";
+import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getUserId } from "./context.js";
-import eventService from "./events.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
-import ws from "./ws.js";
-
-/**
- * The virtual note at the top of a member's tree that lists the notes they can see but not reach:
- * notes shared with them whose parents they cannot see. It exists only in their Becca.
- */
-export const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
 
 /** The ID of a user's home note, derived from the user so that no column has to store it. */
 export function getHomeNoteId(userId: string) {
@@ -32,12 +23,12 @@ export function getActingUserHomeNoteId(): string | null {
         return null;
     }
 
-    return getBecca().getNote(getHomeNoteId(userId))?.noteId ?? null;
+    return becca.getNote(getHomeNoteId(userId))?.noteId ?? null;
 }
 
 /** Returns the user's home note, creating it (and the Users note) when missing. */
 function ensureUserHome(userId: string, username: string): BNote {
-    const existing = getBecca().getNote(getHomeNoteId(userId));
+    const existing = becca.getNote(getHomeNoteId(userId));
     if (existing) {
         return existing;
     }
@@ -69,7 +60,7 @@ function ensureUserHomes() {
 }
 
 function renameUserHome(userId: string, username: string) {
-    const home = getBecca().getNote(getHomeNoteId(userId));
+    const home = becca.getNote(getHomeNoteId(userId));
     if (home && home.title !== username) {
         home.title = username;
         home.save();
@@ -113,7 +104,7 @@ export default {
 };
 
 function getOrCreateUsersNote(): BNote {
-    const existing = getBecca().getNote(USERS_NOTE_ID);
+    const existing = becca.getNote(USERS_NOTE_ID);
     if (existing) {
         return existing;
     }
@@ -128,17 +119,3 @@ function getOrCreateUsersNote(): BNote {
         attributes: [{ type: "label", name: "iconClass", value: "bx bx-group" }]
     }).note;
 }
-
-
-// A note the member places in their own tree leaves Shared with me, which only a load of their
-// Becca builds, so the Becca is dropped and their clients reload it.
-eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => {
-    const userId = getUserId();
-    if (entityName !== "branches" || !userId
-            || !getBecca().getBranchFromChildAndParent(entity.noteId, SHARED_WITH_ME_NOTE_ID)) {
-        return;
-    }
-
-    evictUser(userId);
-    ws.reloadFrocaForUser(userId, "shared note placed");
-});

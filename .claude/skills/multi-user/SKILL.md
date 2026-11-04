@@ -1,6 +1,6 @@
 ---
 name: multi-user
-description: Use when working on Trilium's multi-user support (#4956) — the `milestone/multi_user` branch, users/groups/note_permissions tables, `ownerId`/`userId` columns, per-user Becca (`getBecca()`, `warmBeccaForUser`, `becca_cache`), `permission_service`, `/api/users` and `/api/permissions`, session/CLS `userId`, admin seeding, or reviewing/merging a multi-user phase PR. Covers the data model, how a request picks its Becca, the rules for touching Becca from new code, migrations, testing, the phase roadmap, and the known gaps that are not bugs to rediscover.
+description: Use when working on Trilium's multi-user support (#4956) — the `milestone/multi_user` branch, users/groups/note_permissions tables, `ownerId`/`userId` columns, note visibility over the single Becca, `permission_service`, `/api/users` and `/api/permissions`, session/CLS `userId`, admin seeding, or reviewing/merging a multi-user phase PR. Covers the data model, the planned per-user visibility filter, the rules for touching Becca from new code, migrations, testing, the phase roadmap, and the known gaps that are not bugs to rediscover.
 ---
 
 # Multi-user support in Trilium
@@ -16,11 +16,9 @@ The branch is shared with an external contributor (SashankBhamidi) whose next ph
 
 ## Mental model in one paragraph
 
-Every authenticated request carries `session.userId`. `route_api.ts` copies it into CLS and, before the handler runs, calls `warmBeccaForUser(userId)`, which resolves either the global **admin Becca** (admins) or a **filtered per-user Becca** (non-admins) loaded by `loadBeccaForUser()` and cached for 30 min idle in `becca_cache.ts`. From then on, every `getBecca()` call in that request — including the `this.becca` getter on every entity — returns that resolved instance. No `userId` in CLS (ETAPI, desktop/Electron without login, schedulers, `cls.init()` blocks, startup) means **admin Becca**. Visibility = notes the user owns (`notes.ownerId`) plus anything reachable below a `note_permissions` grant (direct or via group), plus the shared `_`-prefixed system notes. `root` is loaded but not descended into, and neither are owned notes: as in `permission_service`, owning an ancestor grants nothing, so a member's clone of a shared note does not outlive the grant. A note created in a member's home by someone else (the admin, a `cls.init()` job) is therefore invisible to the member.
+Every authenticated request carries `session.userId`, which `route_api.ts` copies into CLS (`getUserId()`). There is **one Becca**, the default export of `becca.ts`, and it is currently **unprotected**: every user reads every note. Phase 2's per-user Becca copies (`getBecca()`, `warmBeccaForUser`, `becca_cache`, `loadBeccaForUser`, Shared with me) were removed on 2026-11-04 in favour of a single Becca with a per-user visibility filter that reads the CLS `userId`; that filter is being built step by step and does not exist yet. The design it follows: the only per-user state is a visibility set (`Set<noteId>` for read and write), recomputed on branch, grant and `ownerId` changes; Becca's lookups and the BNote relationship getters (`parents`, `children`, `parentBranches`, `ownedAttributes`, `targetRelations`, backed by private fields) filter through it on read, while inheritance inside BNote walks the unfiltered graph. No `userId` in CLS (ETAPI, desktop/Electron without login, schedulers, `cls.init()` blocks, startup) means unfiltered.
 
-**Shared with me.** `injectSharedWithMe()` lists, under a virtual `_sharedWithMe` note below `root` (`SHARED_WITH_ME_NOTE_ID`), every note in the member's Becca that has no loaded parent: grants whose parents they cannot see, and their own notes left under a revoked grant. It exists only when non-empty. Cloning an entry into the home takes it off the list. Grant changes call `ws.reloadFrocaForUser()`, so the member's open tabs reload.
-
-**Homes.** Every user except the primary admin has a home note `home_<userId>` (`getHomeNoteId()`), owned by them, under the admin-only Users note (`USERS_NOTE_ID = "users"`, no `_` prefix because it holds user content). `user_homes.ensureUserHome()` runs when the Users API creates a user and `ensureUserHomes()` at startup; the Users note appears only once a second user exists, so single-user instances never see it. A member cannot see the Users note, so `loadBeccaForUser()` injects a virtual `root → home` branch (`injectHomeBranch()`), which cannot be saved, moved or deleted. The primary admin's notes stay directly under `root`; for everyone else `createNewNote()` swaps a `root` parent for the home (`getActingUserHomeNoteId()`, an after/before target becomes "into"), and `validateParentChild()` refuses moves and clones to `root`. There is no relocation of older top-level notes: multi-user is unreleased, so only development databases have any.
+**Homes.** Every user except the primary admin has a home note `home_<userId>` (`getHomeNoteId()`), owned by them, under the admin-only Users note (`USERS_NOTE_ID = "users"`, no `_` prefix because it holds user content). `user_homes.ensureUserHome()` runs when the Users API creates a user and `ensureUserHomes()` at startup; the Users note appears only once a second user exists, so single-user instances never see it. Until the visibility filter lands, a member sees the home in its stored place under the Users note; the filter is to show it under `root` and list unreachable shared notes under Shared with me, both as an overlay on `root`'s children. The primary admin's notes stay directly under `root`; for everyone else `createNewNote()` swaps a `root` parent for the home (`getActingUserHomeNoteId()`, an after/before target becomes "into"), and `validateParentChild()` refuses moves and clones to `root`. There is no relocation of older top-level notes: multi-user is unreleased, so only development databases have any.
 
 ## Data model (schema.sql + migrations 239/240)
 
@@ -42,14 +40,11 @@ Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/
 
 | Concern | File |
 |---|---|
-| Becca selection (`getBecca`, `warmBeccaForUser`, `adminBecca`) | `packages/trilium-core/src/becca/becca.ts` |
-| Per-user Becca cache (30 min idle TTL, `evictUser`, `evictIdle` every 5 min) | `packages/trilium-core/src/becca/becca_cache.ts` |
-| Filtered load (`loadBeccaForUser`, recursive CTE, `injectHomeBranch`) | `packages/trilium-core/src/becca/becca_loader.ts` |
 | Users note and per-user homes | `packages/trilium-core/src/services/user_homes.ts` |
 | Permission resolution / grant / revoke | `packages/trilium-core/src/services/permission_service.ts` |
 | User CRUD, `isUserAdmin`, `getAdminUserId` | `packages/trilium-core/src/services/user_service.ts` |
 | CLS `getUserId()` | `packages/trilium-core/src/services/context.ts` |
-| Request → CLS userId → warm Becca | `apps/server/src/routes/route_api.ts` (`internalRoute`) |
+| Request → CLS userId | `apps/server/src/routes/route_api.ts` (`internalRoute`) |
 | Admin-only REST | `apps/server/src/routes/api/users.ts`, `apps/server/src/routes/api/permissions.ts` (registered in `routes.ts`) |
 | WS client → userId at handshake, `sendMessageToUserClients` | `apps/server/src/services/ws_messaging_provider.ts`, `packages/trilium-core/src/services/messaging/types.ts` |
 | Admin seed + backfill | `packages/trilium-core/src/services/sql_init.ts` |
@@ -57,14 +52,12 @@ Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/
 
 ## Rules for code you write on this branch
 
-1. **Never import the default `becca`** in new code. Use `getBecca()` (`import { getBecca } from "../becca/becca.js"` in core, `getBecca` from `@triliumnext/core` in server). The default export is the unfiltered admin Becca; ~40 non-spec files (ETAPI, LLM tools, share, board, spreadsheet, OCR, image services, `custom.ts`, OneNote import) still import it and leak every note — when you touch one, convert it. Merging `main` keeps adding more, because the compiler doesn't flag them. Inside entities use `this.becca`.
-2. **`getBecca()` throws for a non-admin with no warmed Becca.** Any new entry point that runs with a non-admin `userId` in CLS (custom router, WS handler, background job) must `await warmBeccaForUser(userId)` first, the way `internalRoute` does. Conversely, `cls.init(...)` starts a fresh context with no `userId`, so code inside it silently runs as admin.
-3. **Do not use `getBecca()` during load.** `loadBeccaForUser` sets CLS `loadingBecca` so entity constructors register into the Becca being built; anything that calls `getBecca()` mid-load gets that partial instance.
-4. **Permission checks go through `permission_service`**, never ad-hoc SQL on `note_permissions`. Admin and owner short-circuit to full access; otherwise grants on the note *and every ancestor across all branches* are merged, highest privilege wins, write implies read.
-5. **After any grant/revoke or group-membership change, clear caches**: `permission_service.clearPermissionCache()` plus `evictUser()` for every affected user (`grantPermission`/`revokePermission` already do this — a new mutation path such as group membership must too).
-6. **Admin gating**: today each admin-only handler checks `user_service.getUserById(req.session.userId)?.isAdmin` itself and returns `[403, { message }]`. Follow that shape until a central gate exists (see gaps).
-7. **Ownership on creation**: create notes through `notes.createNewNote()` so `ownerId` gets stamped. Raw `new BNote({...}).save()` without `ownerId` ends up admin-owned after the next restart's backfill.
-8. **Core must stay platform-agnostic** (CLAUDE.md rules). `becca.ts` deliberately queries `users` via raw SQL instead of `user_service` to avoid an options→becca import cycle — keep that pattern if you add checks there.
+1. **Visibility belongs in the Becca layer, not at call sites.** Import the default `becca` as on `main`, and inside entities use `this.becca`; don't add per-route `canUserAccessNote()` filtering, which the visibility filter replaces. `cls.init(...)` starts a fresh context with no `userId`, so code inside it runs unfiltered.
+2. **Permission checks go through `permission_service`**, never ad-hoc SQL on `note_permissions`. Admin and owner short-circuit to full access; otherwise grants on the note *and every ancestor across all branches* are merged, highest privilege wins, write implies read.
+3. **After any grant/revoke or group-membership change, clear caches**: `permission_service.clearPermissionCache()` plus `ws.reloadFrocaForUser()` for every affected user (`grantPermission`/`revokePermission` already do this — a new mutation path such as group membership must too).
+4. **Admin gating**: today each admin-only handler checks `user_service.getUserById(req.session.userId)?.isAdmin` itself and returns `[403, { message }]`. Follow that shape until a central gate exists (see gaps).
+5. **Ownership on creation**: create notes through `notes.createNewNote()` so `ownerId` gets stamped. Raw `new BNote({...}).save()` without `ownerId` ends up admin-owned after the next restart's backfill.
+6. **Core must stay platform-agnostic** (CLAUDE.md rules). Anything in `becca/` that needs a user's role queries `users` via raw SQL instead of `user_service`, which would close an options→becca import cycle.
 
 ## Migrations
 
@@ -76,14 +69,13 @@ Older JS migrations call `becca_loader.load()` / save notes before `ownerId` exi
 
 - Core permission/Becca tests use a real in-memory DB inside `cls.init` and insert users/notes/branches/grants with raw SQL — see `packages/trilium-core/src/services/permission_service.spec.ts` for the helper set (`insertUser`, `insertNote`, `insertBranch`, `insertGroup`, ...). Set `cls.set("userId", ...)` to impersonate.
 - Route tests: `apps/server/src/routes/api/users.spec.ts`, `permissions.spec.ts`.
-- Specs that previously imported default `becca` now import `getBecca` — follow suit in new specs.
 - Run: core specs execute through the server's vitest config (core has no runner of its own): `pnpm --filter @triliumnext/server test ../../packages/trilium-core/src/services/permission_service.spec.ts`, `pnpm --filter @triliumnext/server test src/routes/api/permissions.spec.ts`.
 - `notes` and `attachments` both have an `ownerId` column (on attachments it means the owning note, not a user). Qualify it in any SQL that joins the two, or it fails with "ambiguous column name". Follow the `writing-unit-tests` skill for harness details.
 
 ## Merging `main` into the milestone
 
-Merge, never rebase. Most conflicts are phase 2's `becca` → `getBecca()` rename colliding with main's edits: render them with `git checkout --conflict=zdiff3`, and where *ours* equals *base* once the rename is undone, take main's side and apply the rename. Then run `pnpm typecheck`: every `Cannot find name 'becca'` is main's new code in a file whose default import phase 2 removed, so switch those to `getBecca()`. Renumber migrations (above), check that `becca_loader` changes on main also reach `loadBeccaForUser`, and run the full `pnpm --filter @triliumnext/server test`.
+Merge, never rebase. Render conflicts with `git checkout --conflict=zdiff3` and diff both sides against the base. Renumber migrations (above), check that `becca_loader` changes on `main` keep the `ownerId` column probe, run `pnpm typecheck`, and run the full `pnpm --filter @triliumnext/server test`.
 
 ## Phases and what is still open
 
-See [roadmap-and-gaps.md](roadmap-and-gaps.md) for the per-phase scope, the phase 3 contents, and the list of **known, deliberate-or-deferred gaps** (no write enforcement, cross-Becca staleness, everyone sees the `_hidden` subtree, no admin gate on dangerous routes, ...). Check it before reporting any of those as a new bug.
+See [roadmap-and-gaps.md](roadmap-and-gaps.md) for the per-phase scope, the phase 3 contents, and the list of **known, deliberate-or-deferred gaps** (no visibility filter yet, no write enforcement, no admin gate on dangerous routes, ...). Check it before reporting any of those as a new bug.

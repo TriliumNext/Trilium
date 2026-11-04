@@ -17,7 +17,6 @@ import passwordService from "./encryption/password";
 import dateUtils from "./utils/date";
 import { newEntityId } from "./utils/index";
 import { SqlService } from "./sql/sql";
-import { evictIdle } from "../becca/becca_cache.js";
 import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 
 export const dbReady = deferred<void>();
@@ -172,8 +171,6 @@ function initializeDb() {
         setTimeout(() => optimize(), 60 * 60 * 1000);
 
         setInterval(() => optimize(), 10 * 60 * 60 * 1000);
-
-        setInterval(() => evictIdle(), 5 * 60 * 1000);
     });
 }
 

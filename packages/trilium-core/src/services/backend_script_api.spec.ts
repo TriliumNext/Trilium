@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import BackendScriptApi from "./backend_script_api.js";
 import ws from "./ws.js";
 
 describe("BackendScriptApi.log", () => {
     beforeEach(() => {
-        getBecca().reset();
+        becca.reset();
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
     });
 
@@ -34,7 +34,7 @@ describe("BackendScriptApi.log", () => {
 });
 
 describe("BackendScriptApi.transactional", () => {
-    beforeEach(() => getBecca().reset());
+    beforeEach(() => becca.reset());
 
     it("runs the callback inside a transaction and returns its result", () => {
         const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
@@ -52,7 +52,7 @@ describe("BackendScriptApi.transactional", () => {
 });
 
 describe("BackendScriptApi markdown conversion", () => {
-    beforeEach(() => getBecca().reset());
+    beforeEach(() => becca.reset());
 
     function makeApi() {
         const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
@@ -69,7 +69,7 @@ describe("BackendScriptApi markdown conversion", () => {
 });
 
 describe("BackendScriptApi removed libraries", () => {
-    beforeEach(() => getBecca().reset());
+    beforeEach(() => becca.reset());
 
     function makeApi() {
         const startNote = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
