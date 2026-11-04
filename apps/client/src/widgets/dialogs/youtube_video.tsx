@@ -7,7 +7,7 @@ import { t } from "../../services/i18n";
 import toast from "../../services/toast";
 import Button from "../react/Button";
 import { Card, OptionCardSection } from "../react/Card";
-import FormTextBox from "../react/FormTextBox";
+import { FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
@@ -141,7 +141,7 @@ function useYouTubeVideoForm() {
                     label={t("add_link.url")}
                     error={text.trim() && !url ? t("youtube_video.not_a_video") : undefined}
                 >
-                    <FormTextBox
+                    <FormTextBoxWithPaste
                         inputRef={inputRef}
                         inputMode="url"
                         autoCapitalize="off"

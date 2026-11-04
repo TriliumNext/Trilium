@@ -7,10 +7,17 @@ import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import YouTubeVideoDialog, { getYouTubeVideoUrl, YouTubeVideoBalloon } from "./youtube_video";
 
-const { showError } = vi.hoisted(() => ({ showError: vi.fn() }));
+const { showError, readClipboardText } = vi.hoisted(() => ({
+    showError: vi.fn(),
+    readClipboardText: vi.fn(async () => "")
+}));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../../services/toast", () => ({ default: { showError } }));
+vi.mock("../../services/clipboard_ext", () => ({
+    canReadClipboardText: async () => true,
+    readClipboardText
+}));
 // Raises the modal at once, so that it has the Bootstrap instance it closes through.
 vi.mock("../../services/dialog", () => ({
     openDialog: async (dialog: JQuery<HTMLElement>) => dialog
@@ -98,6 +105,28 @@ describe("YouTubeVideoBalloon", () => {
         expect(errorOf(container)).toBeUndefined();
         await submit(form);
         expect(onInsert).toHaveBeenCalledExactlyOnceWith("https://youtu.be/dQw4w9WgXcQ");
+    });
+
+    it("pastes the clipboard over the field and selects it", async () => {
+        readClipboardText.mockResolvedValue(VIDEO_URL);
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+        });
+        // The effect calling `canReadClipboardText()` runs as the first `act()` ends.
+        await settle();
+        const field = container.querySelector<HTMLInputElement>(".youtube-video-url input");
+        const label = container.querySelector(".youtube-video-url label");
+        const button = container.querySelector<HTMLButtonElement>(".youtube-video-url .bx-paste");
+        if (!field || !button) throw new Error("The field has no paste button.");
+        expect(label?.getAttribute("for")).toBe(field.id);
+
+        await type(field, "typed");
+        button.click();
+        await settle();
+        expect(field.value).toBe(VIDEO_URL);
+        expect([ field.selectionStart, field.selectionEnd ]).toEqual([ 0, VIDEO_URL.length ]);
+        expect(insertButton(container)?.disabled).toBe(false);
     });
 });
 
@@ -194,8 +223,15 @@ function insertButton(container: HTMLElement) {
 
 /** The error shown under the URL field, if any. */
 function errorOf(container: HTMLElement) {
-    return container.querySelector(".youtube-video-url > input + .form-field-error")
+    return container.querySelector(".youtube-video-url > .input-group + .form-field-error")
         ?.textContent ?? undefined;
+}
+
+/** Waits a task, so that what a pending promise renders is in the DOM. */
+function settle() {
+    return act(async () => {
+        await new Promise((resolve) => setTimeout(resolve));
+    });
 }
 
 async function submit(form: HTMLFormElement) {

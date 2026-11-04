@@ -1,10 +1,12 @@
+import type { ElectronApi } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import toast from "./toast.js";
 import utils from "./utils.js";
 import { buildNote } from "../test/easy-froca";
 import {
-    copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText, copyTextWithToast
+    canReadClipboardText, copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText,
+    copyTextWithToast, readClipboardText
 } from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
@@ -257,5 +259,57 @@ describe("copyReferenceWithToast", () => {
         // What a Markdown or code note pastes, where the rich flavour is of no use.
         expect(plainText).toBe(href);
         expect(showMessage).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("reading the clipboard text", () => {
+    const originalPermissions = Object.getOwnPropertyDescriptor(navigator, "permissions");
+
+    function setPermissionQuery(query: (descriptor: PermissionDescriptor) => Promise<unknown>) {
+        Object.defineProperty(navigator, "permissions", {
+            value: { query },
+            configurable: true,
+            writable: true
+        });
+    }
+
+    afterEach(() => {
+        delete window.electronApi;
+        if (originalPermissions) {
+            Object.defineProperty(navigator, "permissions", originalPermissions);
+        }
+    });
+
+    it("can read on desktop, and in a browser only through navigator.clipboard.readText()", async () => {
+        setPermissionQuery(async () => ({ state: "granted" }));
+        setClipboard(undefined);
+        expect(await canReadClipboardText()).toBe(false);
+        setClipboard({ writeText: vi.fn() });
+        expect(await canReadClipboardText()).toBe(false);
+
+        window.electronApi = {} as unknown as ElectronApi;
+        expect(await canReadClipboardText()).toBe(true);
+    });
+
+    it("follows the clipboard-read permission where the browser knows it", async () => {
+        setClipboard({ readText: vi.fn() });
+        const query = vi.fn(async (_descriptor: PermissionDescriptor) => ({ state: "denied" }));
+        setPermissionQuery(query);
+        expect(await canReadClipboardText()).toBe(false);
+        expect(query).toHaveBeenCalledExactlyOnceWith({ name: "clipboard-read" });
+
+        query.mockResolvedValue({ state: "prompt" });
+        expect(await canReadClipboardText()).toBe(true);
+        query.mockRejectedValue(new TypeError("'clipboard-read' is not a valid PermissionName"));
+        expect(await canReadClipboardText()).toBe(true);
+    });
+
+    it("reads through the main process on desktop, and navigator.clipboard elsewhere", async () => {
+        setClipboard({ readText: vi.fn(async () => "from the browser") });
+        expect(await readClipboardText()).toBe("from the browser");
+
+        const readText = vi.fn(async () => "from the main process");
+        window.electronApi = { clipboard: { readText } } as unknown as ElectronApi;
+        expect(await readClipboardText()).toBe("from the main process");
     });
 });
