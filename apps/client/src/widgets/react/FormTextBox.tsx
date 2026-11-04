@@ -105,15 +105,20 @@ export function FormTextBoxWithUnit(props: FormTextBoxProps & { unit: string }) 
     )
 }
 
-/** A text box with a {@link PasteButton} at its end. */
-export function FormTextBoxWithPaste(props: FormTextBoxProps) {
+/**
+ * A text box with a {@link PasteButton} at its end. `onPasted` is called once the button put the
+ * clipboard text in it.
+ */
+export function FormTextBoxWithPaste({ onPasted, ...props }: FormTextBoxProps & {
+    onPasted?(): void;
+}) {
     const ownRef = useRef<HTMLInputElement | null>(null);
     const inputRef = props.inputRef ?? ownRef;
 
     return (
         <div className="input-group">
             <FormTextBox {...props} inputRef={inputRef} />
-            <PasteButton inputRef={inputRef} />
+            <PasteButton inputRef={inputRef} onPasted={onPasted} />
         </div>
     );
 }

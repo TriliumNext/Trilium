@@ -5,6 +5,7 @@ To create a link without a custom text:
 
 *   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>:
     *   Since v0.107.0, the _Add link_ dialog opens on _Web link_, in a popup next to the cursor on desktop. Type or paste the address, and optionally a _Link title_; without one, the link shows its address. The <span class="tn-icon bx bx-paste"></span> _Paste_ button at the end of the address field replaces its text with the text on the clipboard. This button is shown only where Trilium can read the clipboard: in the desktop app, and in a browser over HTTPS unless access to the clipboard was blocked.
+    *   When you leave the address field, or paste with the _Paste_ button, an empty _Link title_ is filled with the title of the web page; a spinner at its end shows while it loads. A title you type is kept. To turn this off, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and turn off _Automatically retrieve titles for plain links_ in the _Features_ section.
     *   _Display as_ inserts the address as a _Plain link_, or as one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>: _Inline_, _Card_ or, for a YouTube video, _YouTube embed_.
     *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
 *   A simpler way is to paste the raw link and press space to turn it automatically into a link.

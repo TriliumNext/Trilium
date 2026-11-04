@@ -4,12 +4,14 @@ import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
 import clsx from "clsx";
+import type { ComponentProps } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { detectEmbedType } from "../../services/link_embed";
+import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
+import options from "../../services/options";
 import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
@@ -17,8 +19,9 @@ import Button from "../react/Button";
 import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
-import FormTextBox, { FormTextBoxWithPaste } from "../react/FormTextBox";
+import FormTextBox, { type FormTextBoxProps, FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
+import { InputGroupSpinner } from "../react/LoadingSpinner";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoItems from "../react/NoItems";
@@ -219,10 +222,16 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const linkTargetsFade = useScrollFade(linkTargetsRef);
     const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
     const initialBookmarkRef = useRef("");
-    // The title of the link preview being edited, while the title field still shows it.
+    // The page's own title, of the link preview being edited or retrieved from the page, while the
+    // title field still shows it.
     const previewTitleRef = useRef<string | null>(null);
-    // The description of the link preview being edited, while the description field still shows it.
+    // The page's own description, as `previewTitleRef`.
     const previewDescriptionRef = useRef<string | null>(null);
+    // The details of the web pages read since the dialog opened, by URL.
+    const pageDetailsRef = useRef(new Map<string, Promise<PageDetails | null>>());
+    // The URL whose page details are being read.
+    const [ retrievingUrl, setRetrievingUrl ] = useState<string | null>(null);
+    const [ isRetrievalPending, setIsRetrievalPending ] = useState(false);
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
 
@@ -243,6 +252,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setLinkTitle(opts?.currentTitle ?? "");
         previewDescriptionRef.current = opts?.currentDescription ?? null;
         setLinkDescription(opts?.currentDescription ?? "");
+        pageDetailsRef.current = new Map();
+        setRetrievingUrl(null);
 
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
@@ -255,8 +266,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setWebLink(text);
         const link = normalizeWebLink(text);
         setSuggestion(link ? { externalLink: link } : null);
-        // A preview's title and description are its page's, so another address takes those of its
-        // own page.
+        // A title and description of a page belong to its address, so another address takes those
+        // of its own page.
         if (previewTitleRef.current !== null && linkTitle === previewTitleRef.current) {
             setLinkTitle("");
         }
@@ -409,6 +420,59 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // Only a card shows a description.
     const showsDescription = showsTitle && showsDisplay && shownDisplay === "card";
 
+    const webLinkUrl = target === "url" ? suggestion?.externalLink : undefined;
+    // The fields shown blank that take their value from the web page, as the options allow.
+    const retrievesTitle = showsWebLinkTitle && !linkTitle.trim() && options.is(isPreview
+        ? "textNoteLinkDetailsRetrievalEnabled" : "textNoteLinkTitleRetrievalEnabled");
+    const retrievesDescription = showsDescription && !linkDescription.trim()
+        && options.is("textNoteLinkDetailsRetrievalEnabled");
+    const isRetrieving = !!webLinkUrl && webLinkUrl === retrievingUrl;
+
+    // Runs one render after a request, so `retrievePageDetails()` reads the address pasted or the
+    // display picked.
+    useEffect(() => {
+        if (!isRetrievalPending) return;
+        setIsRetrievalPending(false);
+        retrievePageDetails();
+    }, [ isRetrievalPending ]);
+
+    /** Fills the blank fields that take their value from the web page, reading each page once. */
+    function retrievePageDetails() {
+        const url = webLinkUrl;
+        if (!url || !isHttpUrl(url) || (!retrievesTitle && !retrievesDescription)) return;
+
+        let details = pageDetailsRef.current.get(url);
+        if (!details) {
+            details = fetchPageDetails(url);
+            pageDetailsRef.current.set(url, details);
+        }
+
+        setRetrievingUrl(url);
+        void details.then((result) => {
+            setRetrievingUrl((current) => current === url ? null : current);
+            fillPageDetailsRef.current?.(url, result);
+        });
+    }
+
+    // Holds the latest render's `fillPageDetails()`, so a page that loads later fills the fields as
+    // they are by then.
+    const fillPageDetailsRef = useRef<typeof fillPageDetails | undefined>(undefined);
+    fillPageDetailsRef.current = fillPageDetails;
+
+    /** Fills the fields from the `details` of the page at `url`, while it is the address shown. */
+    function fillPageDetails(url: string, details: PageDetails | null) {
+        if (url !== webLinkUrl || !details) return;
+
+        if (retrievesTitle && details.title) {
+            setLinkTitle(details.title);
+            previewTitleRef.current = details.title;
+        }
+        if (retrievesDescription && details.description) {
+            setLinkDescription(details.description);
+            previewDescriptionRef.current = details.description;
+        }
+    }
+
     /** Applies the link picked, through `opts.addLink` or `opts.addLinkPreview`. */
     function applyLink() {
         if (!opts) return;
@@ -483,11 +547,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         <OptionCardSection
             className="edit-link-text" name="link-title" label={t("add_link.link_title")}
         >
-            <FormTextBox
+            <RetrievedTextBox
                 inputRef={titleRef}
                 currentValue={linkTitle}
                 placeholder={getTitlePlaceholder()}
                 onChange={setLinkTitle}
+                isRetrieving={isRetrieving && retrievesTitle}
             />
         </OptionCardSection>
     );
@@ -615,6 +680,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 placeholder="https://"
                                 currentValue={webLink}
                                 onChange={changeWebLink}
+                                onBlur={() => setIsRetrievalPending(true)}
+                                onPasted={() => setIsRetrievalPending(true)}
                             />
                         </OptionCardSection>
 
@@ -625,11 +692,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 className="edit-link-description" name="link-description"
                                 label={t("add_link.description")}
                             >
-                                <FormTextArea
+                                <RetrievedTextArea
                                     rows={2}
                                     currentValue={linkDescription}
                                     placeholder={t("add_link.page_description")}
                                     onChange={setLinkDescription}
+                                    isRetrieving={isRetrieving && retrievesDescription}
                                     onKeyDown={(e) => {
                                         // A card shows its description as one paragraph, so
                                         // Enter saves the link as in the other fields.
@@ -652,7 +720,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                     titleProperty="title"
                                     currentValue={shownDisplay}
                                     disabled={!canPreview(suggestion?.externalLink)}
-                                    onChange={(next) => setDisplay(next as LinkDisplayMode)}
+                                    onChange={(next) => {
+                                        setDisplay(next as LinkDisplayMode);
+                                        setIsRetrievalPending(true);
+                                    }}
                                 />
                             </OptionCardSection>
                         )}
@@ -708,6 +779,33 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             </Card>
         </>)
     };
+}
+
+/**
+ * A text box of the dialog, with a spinner at its end while its value is retrieved from the web
+ * page. The input group stays without the spinner, so the field keeps its focus when it goes.
+ */
+function RetrievedTextBox({ isRetrieving, ...props }: FormTextBoxProps & {
+    isRetrieving: boolean;
+}) {
+    return (
+        <div className="input-group">
+            <FormTextBox {...props} />
+            {isRetrieving && <InputGroupSpinner label={t("add_link.retrieving_from_page")} />}
+        </div>
+    );
+}
+
+/** A text area of the dialog, as {@link RetrievedTextBox}. */
+function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof FormTextArea> & {
+    isRetrieving: boolean;
+}) {
+    return (
+        <div className="input-group">
+            <FormTextArea {...props} />
+            {isRetrieving && <InputGroupSpinner label={t("add_link.retrieving_from_page")} />}
+        </div>
+    );
 }
 
 /**

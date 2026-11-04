@@ -46,6 +46,7 @@
     }
 
     .edit-link-description textarea {
+        flex-basis: 0;
         resize: none;
     }
 

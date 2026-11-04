@@ -62,6 +62,24 @@ export async function fetchMetadata(url: string, ownerNoteId: string): Promise<E
     }
 }
 
+/** The title and description of a web page, as {@link fetchPageDetails} reads them. */
+export type PageDetails = Pick<EmbedMetadata, "title" | "description">;
+
+/**
+ * Reads the title and description of the web page at `url`, without its pictures, so nothing is
+ * stored on a note. `null` when the page could not be read or has no title.
+ */
+export async function fetchPageDetails(url: string): Promise<PageDetails | null> {
+    try {
+        const details = await server.post<LinkEmbedMetadata>("link-embed/details", { url });
+        return details.unresolved
+            ? null
+            : { title: details.title, description: details.description };
+    } catch {
+        return null;
+    }
+}
+
 /**
  * What a URL is worth when nothing could be learned about it: the hostname, and a flag saying so.
  *
@@ -123,6 +141,7 @@ function markupOptions(editable: boolean | undefined) {
 
 export default {
     fetchMetadata,
+    fetchPageDetails,
     unresolvedMetadata,
     detectEmbedType,
     safeHostname,

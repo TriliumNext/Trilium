@@ -5,6 +5,7 @@ import {
     applyLinkEmbeds,
     detectEmbedType,
     fetchMetadata,
+    fetchPageDetails,
     renderEmbedPreview,
     renderMentionPreview,
     safeHostname
@@ -129,6 +130,27 @@ describe("fetchMetadata", () => {
 
         expect(result.favicon).toBe("api/attachments/att1/image/example.com.ico");
         expect(result.image).toBe("api/attachments/att2/image/example.com-1a2b3c4d.jpeg");
+    });
+});
+
+describe("fetchPageDetails", () => {
+    it("reads a page's title and description, and nothing for a page not read", async () => {
+        const url = "https://example.com/path?a=b";
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "Title", description: "Desc", siteName: "Example"
+        })) as typeof server.post;
+        expect(await fetchPageDetails(url)).toStrictEqual({ title: "Title", description: "Desc" });
+        expect(server.post).toHaveBeenCalledExactlyOnceWith("link-embed/details", { url });
+
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "example.com", unresolved: true
+        })) as typeof server.post;
+        expect(await fetchPageDetails(url)).toBeNull();
+
+        server.post = vi.fn(async () => {
+            throw new Error("network down");
+        }) as typeof server.post;
+        expect(await fetchPageDetails(url)).toBeNull();
     });
 });
 

@@ -1020,6 +1020,67 @@ describe("link-embed getMetadata", () => {
     });
 });
 
+describe("link-embed getPageDetails", () => {
+    function req(url?: unknown) { return { body: { url } } as unknown as Request; }
+
+    beforeEach(() => safeFetch.mockReset());
+
+    it("reads a page's title and description alone, fetching and storing no picture", async () => {
+        const html = `<html><head>
+            <meta property="og:title" content="OG Title">
+            <meta name="twitter:description" content="Card Desc">
+            <meta property="og:image" content="https://site/img.png">
+            <meta property="og:site_name" content="Example">
+            <link rel="icon" href="/fav.ico">
+        </head></html>`;
+        safeFetch.mockResolvedValue(fakeResponse(html, { contentType: "text/html" }));
+
+        expect(await linkEmbedRoute.getPageDetails(req("https://example.com/page"))).toStrictEqual({
+            url: "https://example.com/page",
+            embedType: "opengraph",
+            title: "OG Title",
+            description: "Card Desc",
+            siteName: "Example"
+        });
+        expect(safeFetch)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com/page", expect.anything());
+        expect(saveImageToAttachment).not.toHaveBeenCalled();
+    });
+
+    it("reads a YouTube video's title and channel from oEmbed, without its thumbnail", async () => {
+        safeFetch.mockResolvedValue(
+            fakeResponse("", { json: { title: "Cool Video", author_name: "Channel" } })
+        );
+
+        const result = await linkEmbedRoute.getPageDetails(req("https://youtu.be/dQw4w9WgXcQ"));
+        expect(result)
+            .toMatchObject({ embedType: "youtube", title: "Cool Video", description: "Channel" });
+        expect(result.unresolved).toBeUndefined();
+        expect(safeFetch).toHaveBeenCalledOnce();
+        expect(String(safeFetch.mock.calls[0]?.[0])).toContain("youtube.com/oembed");
+    });
+
+    it("answers unresolved for a page it cannot read or an address it refuses", async () => {
+        await expect(linkEmbedRoute.getPageDetails(req())).rejects.toBeInstanceOf(ValidationError);
+
+        const unresolved = async (url: string) =>
+            (await linkEmbedRoute.getPageDetails(req(url))).unresolved;
+        safeFetch.mockResolvedValue(fakeResponse("", { ok: false }));
+        expect(await unresolved("https://broken.example.com/x")).toBe(true);
+        // No generic title stands in for a video whose oEmbed fails.
+        expect(await unresolved("https://youtu.be/dQw4w9WgXcQ")).toBe(true);
+        safeFetch.mockResolvedValue(
+            fakeResponse("<html><body>nope</body></html>", { contentType: "text/html" })
+        );
+        expect(await unresolved("https://example.com/untitled")).toBe(true);
+        safeFetch.mockResolvedValue(fakeResponse("not html", { contentType: "application/json" }));
+        expect(await unresolved("https://example.com/data.json")).toBe(true);
+        expect(await unresolved("https://user:secret@example.com/")).toBe(true);
+        expect(await unresolved("ftp://example.com/file")).toBe(true);
+        expect(saveImageToAttachment).not.toHaveBeenCalled();
+    });
+});
+
 describe("storeFavicon", () => {
     it("stores a favicon the caller holds, trimmed and named after the site", async () => {
         const fat = makeMultiSizeIco([

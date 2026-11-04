@@ -3,7 +3,9 @@ import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../components/component";
+import type { PageDetails } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
+import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
@@ -16,11 +18,18 @@ const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
 }));
 const { readClipboardText } = vi.hoisted(() => ({ readClipboardText: vi.fn(async () => "") }));
+const { fetchPageDetails } = vi.hoisted(() => ({
+    fetchPageDetails: vi.fn<(url: string) => Promise<PageDetails | null>>(async () => null)
+}));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../../services/clipboard_ext", () => ({
     canReadClipboardText: async () => true,
     readClipboardText
+}));
+vi.mock("../../services/link_embed", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../services/link_embed")>(),
+    fetchPageDetails
 }));
 vi.mock("../react/NoteAutocomplete", () => ({
     default: ({ onChange, inputRef }: {
@@ -31,6 +40,12 @@ vi.mock("../react/NoteAutocomplete", () => ({
         return <input ref={inputRef} className="note-autocomplete" />;
     }
 }));
+
+beforeEach(() => {
+    fetchPageDetails.mockReset();
+    options.set("textNoteLinkTitleRetrievalEnabled", "false");
+    options.set("textNoteLinkDetailsRetrievalEnabled", "false");
+});
 
 describe("normalizeWebLink", () => {
     it("adds https:// to an address without a scheme, and keeps any other scheme", () => {
@@ -520,6 +535,112 @@ describe("EditLinkDialog", () => {
         expect(description()?.value).toBe("About");
     });
 
+    /** The spinner at the end of the title or the description field, if it shows one. */
+    function spinner(name: "text" | "description") {
+        return container.querySelector(`.edit-link-${name} .input-group > .tn-input-group-spinner`);
+    }
+
+    // Each test submits last: Bootstrap's own `hidden` event follows a submit a few timers later,
+    // and closes a dialog opened again by then.
+    it("fills a blank title from the page when the address is left, unless typed", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const slow = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(slow.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        expect(fetchPageDetails).not.toHaveBeenCalled();
+        await leave(field("url"));
+        expect(fetchPageDetails).toHaveBeenCalledExactlyOnceWith("https://example.com");
+        expect(spinner("text")?.getAttribute("title")).toBe("add_link.retrieving_from_page");
+        // Typing hides the spinner, and the title typed stays.
+        await type(field("text"), "Mine");
+        expect(spinner("text")).toBeNull();
+        slow.resolve({ title: "Example" });
+        await settle();
+        expect(field("text")?.value).toBe("Mine");
+
+        // A page that cannot be read leaves the field blank.
+        await open({ target: "url" });
+        await type(field("url"), "unreadable.example");
+        await leave(field("url"));
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("");
+
+        // Nothing is read for an address that is not a web page, or with the option off.
+        await type(field("url"), "mailto:someone@example.com");
+        await leave(field("url"));
+        options.set("textNoteLinkTitleRetrievalEnabled", "false");
+        await type(field("url"), "example.net");
+        await leave(field("url"));
+        expect(fetchPageDetails).toHaveBeenCalledTimes(2);
+
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(spinner("text")).not.toBeNull();
+        page.resolve({ title: "Example", description: "About" });
+        await settle();
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("Example");
+
+        // Another address takes the title of its own page.
+        fetchPageDetails.mockResolvedValueOnce({ title: "Other" });
+        await type(field("url"), "example.org");
+        expect(field("text")?.value).toBe("");
+        await leave(field("url"));
+        expect(field("text")?.value).toBe("Other");
+        await nextFrame();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.org", "Other", true);
+    });
+
+    it("fills a preview's blank title and description, reading each page once", async () => {
+        // A preview follows its own option, which a plain link does not.
+        options.set("textNoteLinkDetailsRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(fetchPageDetails).not.toHaveBeenCalled();
+        await pickDisplay("card");
+        await settle();
+        expect(fetchPageDetails).toHaveBeenCalledOnce();
+        expect([ spinner("text"), spinner("description") ]).not.toContain(null);
+        page.resolve({ title: "Example", description: "About" });
+        await settle();
+        expect([ spinner("text"), spinner("description") ]).toStrictEqual([ null, null ]);
+        expect([ field("text")?.value, description()?.value ])
+            .toStrictEqual([ "Example", "About" ]);
+
+        options.set("textNoteLinkDetailsRetrievalEnabled", "false");
+        await open({ target: "url", display: "inline", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        await pickDisplay("card");
+        await settle();
+        expect(fetchPageDetails).toHaveBeenCalledOnce();
+
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        options.set("textNoteLinkDetailsRetrievalEnabled", "true");
+        fetchPageDetails.mockResolvedValue({ title: "Example", description: "About" });
+        await open({ target: "url", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(field("text")?.value).toBe("Example");
+        await pickDisplay("card");
+        await settle();
+        expect(description()?.value).toBe("About");
+        expect(fetchPageDetails).toHaveBeenCalledTimes(2);
+        await nextFrame();
+        await submit();
+        expect(addLinkPreview)
+            .toHaveBeenLastCalledWith("https://example.com", "card", "Example", "About");
+    });
+
     it("offers no web link when fixing a link to a missing note", async () => {
         await open({ text: "Gone", fixLink: true });
         expect(choice()).toStrictEqual([]);
@@ -803,6 +924,21 @@ describe("EditLinkBalloon", () => {
         );
     });
 
+    it("fills the title from the page of an address pasted with the button", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        fetchPageDetails.mockResolvedValue({ title: "Pasted" });
+        readClipboardText.mockResolvedValue("example.com/pasted");
+        const form = await show({ target: "url" });
+        await settle();
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        const title = form.querySelector<HTMLInputElement>(".edit-link-text input");
+        form.querySelector<HTMLButtonElement>(".edit-link-url .bx-paste")?.click();
+        await vi.waitFor(() => expect(title?.value).toBe("Pasted"));
+        expect(fetchPageDetails).toHaveBeenCalledExactlyOnceWith("https://example.com/pasted");
+        expect(document.activeElement).toBe(url);
+        expect(form.querySelector(".edit-link-text label")?.getAttribute("for")).toBe(title?.id);
+    });
+
     it("opens on an edited link with its address selected, and applies it left alone", async () => {
         const form = await show({
             currentLink: { externalLink: "https://example.com/page" }, currentTitle: "Page"
@@ -880,6 +1016,33 @@ async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value:
         input.value = value;
         input.dispatchEvent(new Event("input", { bubbles: true }));
     });
+}
+
+/** Moves the focus out of `input`, and waits for what that sets off. */
+async function leave(input: HTMLInputElement | null) {
+    if (!input) throw new Error("The field is not shown.");
+    await act(async () => {
+        // Preact listens for the bubbling `focusout` in place of `blur`.
+        input.dispatchEvent(new Event("focusout", { bubbles: true }));
+    });
+    await settle();
+}
+
+/**
+ * Waits a frame, so that the effects of a render outside `act()` have run, as they have before
+ * any real submit. `Modal` registers the `onHidden` of each render in such an effect.
+ */
+function nextFrame() {
+    return act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    });
+}
+
+/** A promise, with the function that resolves it. */
+function deferred<T>() {
+    let resolve: (value: T) => void = () => {};
+    const promise = new Promise<T>((done) => { resolve = done; });
+    return { promise, resolve };
 }
 
 /** Waits a task, so that what a pending promise renders is in the DOM. */

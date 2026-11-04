@@ -12,8 +12,10 @@ import toast from "../../services/toast";
  * selects it. The field receives an `input` event, as for a paste by the user. Goes inside an
  * `.input-group`, after the field, and shows only where the clipboard can be read.
  */
-export default function PasteButton({ inputRef }: {
+export default function PasteButton({ inputRef, onPasted }: {
     inputRef: RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
+    /** Called once the clipboard text is in the field. */
+    onPasted?(): void;
 }) {
     const [ canPaste, setCanPaste ] = useState(false);
 
@@ -45,6 +47,7 @@ export default function PasteButton({ inputRef }: {
         }));
         input.focus();
         input.select();
+        onPasted?.();
     }
 
     if (!canPaste) return null;

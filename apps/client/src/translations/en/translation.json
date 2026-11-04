@@ -82,7 +82,8 @@
     "target_anchor": "Anchors",
     "headings": "Headings",
     "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
-    "title_from_heading": "If not set, will always reflect the heading's text"
+    "title_from_heading": "If not set, will always reflect the heading's text",
+    "retrieving_from_page": "Retrieving from the web page..."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
@@ -3646,7 +3647,11 @@
     "html_support_enabled": "Preserve unsupported HTML tags",
     "html_support_description": "Keep the HTML tags that the editor has no feature of its own for, as listed under Options → Other → HTML import tags. They appear as blocks that cannot be edited directly, and an unrecognised tag may not be visible at all while editing. With this off, such tags are dropped from a note the first time it is edited and saved; importing is unaffected either way.",
     "sticky_table_headers_enabled": "Use sticky header rows for tables",
-    "sticky_table_headers_description": "Keep the header rows of a table at the top of the note while scrolling through the rest of the table."
+    "sticky_table_headers_description": "Keep the header rows of a table at the top of the note while scrolling through the rest of the table.",
+    "link_title_retrieval_enabled": "Automatically retrieve titles for plain links",
+    "link_title_retrieval_description": "In the link editor, fill an empty title of a plain web link with the title of the web page.",
+    "link_details_retrieval_enabled": "Automatically retrieve title, description and icon for inline links and cards",
+    "link_details_retrieval_description": "In the link editor, fill an empty title or description of an inline link or a card with those of the web page."
   },
   "table_view": {
     "new-row": "New row",
