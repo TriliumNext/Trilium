@@ -1,18 +1,17 @@
 ---
 name: multi-user
-description: Use when working on Trilium's multi-user support (#4956) — the `milestone/multi_user` branch, users/groups/note_permissions tables, `ownerId`/`userId` columns, note visibility over the single Becca, `permission_service`, `/api/users` and `/api/permissions`, session/CLS `userId`, admin seeding, or reviewing/merging a multi-user phase PR. Covers the data model, the planned per-user visibility filter, the rules for touching Becca from new code, migrations, testing, the phase roadmap, and the known gaps that are not bugs to rediscover.
+description: Use when working on Trilium's multi-user support (#4956) — the `milestone/multi_user` branch, users/groups/note_permissions tables, `ownerId`/`userId` columns, note visibility over the single Becca, `permission_service`, `/api/users` and `/api/permissions`, session/CLS `userId`, admin seeding, or reviewing/merging a multi-user phase PR. Covers the data model, the per-user visibility filter, the rules for touching Becca from new code, migrations, testing, the phase roadmap, and the known gaps that are not bugs to rediscover.
 ---
 
 # Multi-user support in Trilium
 
-Multi-user (#4956) is built in **phases** that target `milestone/multi_user`, never `main`. Phases 1 (#10273) and 2 (#10348) are merged there; phase 3 exists only as a single commit on the contributor's fork (`sashank/phase3` ref). Before trusting anything below, re-check the phase state:
+Multi-user (#4956) is built in **phases** that target `milestone/multi_user`, never `main`. Phases 1 (#10273) and 2 (#10348) are merged there, and #12478 replaces phase 2's per-user Becca copies with the single filtered Becca described below. Before trusting anything below, re-check what has landed:
 
 ```bash
 git log --oneline main..milestone/multi_user        # what has landed
-git log --oneline milestone/multi_user..sashank/phase3   # phase 3 delta (if the ref is fetched)
 ```
 
-The branch is shared with an external contributor (SashankBhamidi) whose next phase is stacked on it: **merge, never rebase**, and don't force-push.
+The milestone branch is published and PRs target it: **merge, never rebase**, and don't force-push.
 
 ## Mental model in one paragraph
 
@@ -33,7 +32,7 @@ Through a view, `becca.notes`, `branches`, `attributes` and `childParentToBranch
 | `note_permissions` (`noteId`, `userId` XOR-ish `groupId`, `canRead`, `canWrite`) | ACL grants. `CHECK (userId IS NOT NULL OR groupId IS NOT NULL)`. Inherited down the tree. | **No** — known gap |
 | `oauth_enrollment` (single row `id = 0`) | Replaces old `user_data`: scrypt verification hash + encrypted data key for OpenID. Server-only, must never sync. | Never |
 | `notes.ownerId` | Stamped in `notes.createNewNote()` from `cls.getUserId() ?? adminUserId`. | Yes (part of note row/hash) |
-| `entity_changes.userId`, `etapi_tokens.userId` | Added in 239, backfilled to admin. **Not stamped on new rows** in phase 2 — phase 3 starts writing/filtering them. | — |
+| `entity_changes.userId`, `etapi_tokens.userId` | Added in 239, backfilled to admin. **Not stamped on new rows** yet. | — |
 | option `adminUserId` (`isSynced = 0`) | The primary (seeded) admin. Cannot be deleted (`PrimaryAdminDeletionError`). | No |
 
 `seedAdminUser()` (`packages/trilium-core/src/services/sql_init.ts`) runs on **every** `initDbConnection()`: ensures one admin exists (promotes an existing non-admin `admin` row if the insert collides), backfills NULL `ownerId`/`userId` to it, and writes `adminUserId`. So NULL `ownerId` is transient — anything created without it is reassigned to the admin on next boot.
@@ -83,4 +82,4 @@ Merge, never rebase. Render conflicts with `git checkout --conflict=zdiff3` and 
 
 ## Phases and what is still open
 
-See [roadmap-and-gaps.md](roadmap-and-gaps.md) for the per-phase scope, the phase 3 contents, and the list of **known, deliberate-or-deferred gaps** (no visibility filter yet, no write enforcement, no admin gate on dangerous routes, ...). Check it before reporting any of those as a new bug.
+See [roadmap-and-gaps.md](roadmap-and-gaps.md) for the per-phase scope and the list of **known, deliberate-or-deferred gaps** (no write enforcement, unfiltered sync and WebSocket pushes, no admin gate on dangerous routes, ...). Check it before reporting any of those as a new bug.
