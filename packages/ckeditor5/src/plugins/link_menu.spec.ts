@@ -21,7 +21,7 @@ const IN_NOTE_LINK = `<paragraph><$text linkHref="${NOTE}">fo[]o</$text></paragr
 const ON_REFERENCE = `<paragraph>a [<reference href="${NOTE}"></reference>] b</paragraph>`;
 const ATTACHMENT = "#root/abc?viewMode=attachments&attachmentId=def";
 /** `ATTACHMENT`, escaped for the model data of `_setModelData()`. */
-const ATTACHMENT_DATA = ATTACHMENT.replace("&", "&amp;");
+const ATTACHMENT_DATA = ATTACHMENT.replaceAll("&", "&amp;");
 const IN_ATTACHMENT_LINK =
     `<paragraph><$text linkHref="${ATTACHMENT_DATA}">fo[]o</$text></paragraph>`;
 
@@ -392,10 +392,14 @@ describe("LinkMenu", () => {
             run(request?.items ?? [], "Unlink");
             expect(editor.getData()).toBe("<p>a foo b</p>");
 
-            // A caret that is in the link already stays where it is.
+            // A caret or a selection that is in the link already stays where it is.
             setModelData(editor.model, IN_WEB_LINK);
             expect((await rightClick(find(editor, "a"))).isTaken).toBe(true);
             expect(selection.getFirstPosition()?.offset).toBe(2);
+            const inLink = `<paragraph><$text linkHref="${URL}">f[o]o</$text></paragraph>`;
+            setModelData(editor.model, inLink);
+            expect((await rightClick(find(editor, "a"))).isTaken).toBe(true);
+            expect(getModelData(editor.model)).toBe(inLink);
         });
 
         it("selects a reference link or a link preview whole, and opens its menu", async () => {
@@ -437,6 +441,15 @@ describe("LinkMenu", () => {
                 `<paragraph>[a <$text linkHref="${URL}">foo</$text> b]</paragraph>`);
             expect(await isTaken(find(editor, "a"))).toBe(false);
             expect(editor.model.document.selection.isCollapsed).toBe(false);
+            // So does one that holds part of the link, from either side.
+            for (const data of [
+                `<paragraph>[a <$text linkHref="${URL}">f]oo</$text> b</paragraph>`,
+                `<paragraph>a <$text linkHref="${URL}">f[oo</$text> b]</paragraph>`
+            ]) {
+                setModelData(editor.model, data);
+                expect(await isTaken(find(editor, "a"))).toBe(false);
+                expect(editor.model.document.selection.isCollapsed).toBe(false);
+            }
             setModelData(editor.model,
                 `<paragraph>[a] <$text linkHref="${URL}">foo</$text> b</paragraph>`);
             expect(await isTaken(find(editor, "a"))).toBe(true);

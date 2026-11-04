@@ -729,6 +729,30 @@ describe("ToolbarGroupMenu", () => {
         expect(host.show).toHaveBeenCalledTimes(1);
     });
 
+    it("drops a menu described later as the selection moves or the editor goes", async () => {
+        const { host, config } = createHost();
+        const editor = await createTestEditor(PLUGINS, {
+            ...config,
+            toolbar: { items: ["bold", "slow"] }
+        });
+        const dropdown = groupDropdown(getToolbar(editor), "Slow");
+        const settle = () => new Promise((resolve) => setTimeout(resolve));
+        editor.setData("<p>foo</p>");
+        const paragraph = editor.model.document.getRoot()?.getChild(0) ?? null;
+
+        dropdown.buttonView.fire("open");
+        editor.model.change((writer) => writer.setSelection(paragraph, "end"));
+        answerSlowMenu([{ kind: "entry", label: "Elsewhere", isEnabled: true }]);
+        await settle();
+        expect(host.show).not.toHaveBeenCalled();
+
+        dropdown.buttonView.fire("open");
+        await editor.destroy();
+        answerSlowMenu([{ kind: "entry", label: "Gone", isEnabled: true }]);
+        await settle();
+        expect(host.show).not.toHaveBeenCalled();
+    });
+
     it("opens a context menu at a point, focusing the text on Escape", async () => {
         const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {

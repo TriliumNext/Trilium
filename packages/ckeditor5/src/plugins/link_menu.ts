@@ -167,7 +167,7 @@ export default class LinkMenu extends Plugin {
     /**
      * Moves the selection onto the link at `target`, unless it is on that link already. Returns
      * whether the selection is on the link, which it is not outside a link, nor for a selection
-     * that holds the link among other content.
+     * that holds any of the link among other content.
      */
     private selectLinkAt(target: ViewElement | undefined): boolean {
         const model = this.editor.model;
@@ -180,15 +180,17 @@ export default class LinkMenu extends Plugin {
         const range = link instanceof ModelElement ? model.createRangeOn(link) : link;
         // A document selection always has a position.
         const position = selection.getFirstPosition() as ModelPosition;
+        const ranges = [ ...selection.getRanges() ];
         const isOnLink = link instanceof ModelElement
             ? selection.getSelectedElement() === link
             : findAttributeRange(position, "linkHref", selection.getAttribute("linkHref"), model)
-                .isEqual(range);
+                .isEqual(range)
+                && (selection.isCollapsed
+                    || ranges.every((held) => range.containsRange(held, true)));
         if (isOnLink) {
             return true;
         }
-        const ranges = [ ...selection.getRanges() ];
-        if (!selection.isCollapsed && ranges.some((held) => held.containsRange(range, true))) {
+        if (!selection.isCollapsed && ranges.some((held) => held.isIntersecting(range))) {
             return false;
         }
 

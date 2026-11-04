@@ -158,7 +158,11 @@ export default class ToolbarGroupMenu extends Plugin {
             return;
         }
         const createHost = () => menuConfig.host(editor);
-        const watchToolbar = (toolbar: ToolbarView) => {
+        // Entries that arrive after the selection moves describe what it was on before.
+        this.listenTo(editor.model.document.selection, "change:range", () => {
+            this.pending = null;
+        });
+        const watchToolbar =(toolbar: ToolbarView) => {
             for (const item of toolbar.items) {
                 this.watchGroupDropdown(toolbar, item, groups, createHost);
             }
@@ -199,6 +203,7 @@ export default class ToolbarGroupMenu extends Plugin {
 
     destroy() {
         super.destroy();
+        this.pending = null;
         this.host?.destroy();
     }
 
