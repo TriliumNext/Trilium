@@ -743,8 +743,8 @@ importers:
         specifier: 3.4.0
         version: 3.4.0(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2)
       express-rate-limit:
-        specifier: 8.7.1
-        version: 8.7.1(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2)
+        specifier: 8.7.2
+        version: 8.7.2(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2)
       express-session:
         specifier: 1.19.0
         version: 1.19.0(supports-color@10.2.2)
@@ -7371,8 +7371,8 @@ packages:
     peerDependencies:
       express: '>= 4.17.0'
 
-  express-rate-limit@8.7.1:
-    resolution: {integrity: sha512-2FXbqkygil3mZiXzEtM0IjE/UBmBNot0J1GEVrJT4JbrvwOSoEtqtO+wHbiMQELWe1eNvHoYRg2dkjOid+6JkA==}
+  express-rate-limit@8.7.2:
+    resolution: {integrity: sha512-U1ScocxDD9WI09LaBVypvNkOtNR5yWAmZLkuKJdAzIchA4YKFYF6GT5IKER7epG58oXtjvGlV0/6ii0F83EyZg==}
     engines: {node: '>= 16'}
     peerDependencies:
       express: '>= 4.11'
@@ -14605,7 +14605,7 @@ snapshots:
       eventsource: 3.0.7
       eventsource-parser: 3.1.1
       express: 5.3.0(supports-color@10.2.2)
-      express-rate-limit: 8.7.1(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2)
+      express-rate-limit: 8.7.2(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2)
       hono: 4.13.13
       jose: 6.2.12
       json-schema-typed: 8.0.2
@@ -19139,7 +19139,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  express-rate-limit@8.7.1(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2):
+  express-rate-limit@8.7.2(express@5.3.0(supports-color@10.2.2))(supports-color@10.2.2):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
       express: 5.3.0(supports-color@10.2.2)
