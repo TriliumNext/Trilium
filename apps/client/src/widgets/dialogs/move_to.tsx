@@ -52,7 +52,7 @@ export default function MoveToDialog() {
                 <Button text={t("move_to.move_button")} keyboardShortcut="Enter" />
             </>}
             onSubmit={onSubmit}
-            onShown={() => autocompleteRef.current?.showRecentNotes()}
+            onShown={() => autocompleteRef.current?.focus()}
             onHidden={() => setShown(false)}
             show={shown}
         >

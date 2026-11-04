@@ -56,7 +56,7 @@ export default function ContentEmbedDialog() {
             title={t("include_note.dialog_title")}
             size="lg"
             helpPageId="nBAXQFj20hS1"
-            onShown={() => autocompleteRef.current?.showRecentNotes()}
+            onShown={() => autocompleteRef.current?.focus()}
             onHidden={() => setShown(false)}
             onSubmit={async () => {
                 if (!suggestion?.notePath || !editorApiRef.current) return;

@@ -395,14 +395,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
         // A link already there fills the field the way text handed to the dialog does: a note by the
         // name it goes by, an address as it stands. Through the autocomplete rather than around it —
-        // a value the field is given behind its back is one it does not know it holds, so nothing is
-        // searched for it and it is wiped the moment the field is left.
+        // a value the field is given behind its back is one it does not know it holds, so it is
+        // wiped the moment the field is left.
         const text = (currentNoteId ? await tree.getNoteTitle(currentNoteId) : opts?.currentLink?.externalLink)
             || opts?.text;
 
-        if (!text) {
-            if (autoFocus) handleRef.current?.showRecentNotes();
-        } else {
+        if (text) {
             // The note the dialog opens on is picked already, so the field selects it.
             handleRef.current?.setText(text, currentNotePath);
         }

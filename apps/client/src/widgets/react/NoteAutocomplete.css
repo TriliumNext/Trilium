@@ -11,7 +11,8 @@
 
 /* One class, so the next theme's input-group rules override these. */
 .go-to-selected-note-button,
-.input-clearer-button {
+.input-clearer-button,
+.note-autocomplete-expand-button {
     cursor: pointer;
 }
 
@@ -27,14 +28,18 @@
 
 .input-group > .go-to-selected-note-button {
     padding-inline: 4px 3px;
+}
 
-    &.disabled,
-    &.disabled:hover {
-        cursor: inherit;
-        color: var(--button-disabled-text-color) !important;
-        background-color: var(--button-disabled-background-color) !important;
-        text-decoration: none;
-    }
+/* The arrow of the Next theme's combo boxes, in forms.css, drawn in the button's color. */
+.note-autocomplete-expand-button::before {
+    content: "";
+    width: 15px;
+    height: 20px;
+    background-color: currentColor;
+    mask-image: var(--select-arrow-svg, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='transparent' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/></svg>"));
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: 15px 20px;
 }
 
 /*
