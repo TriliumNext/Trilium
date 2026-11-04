@@ -44,15 +44,14 @@ export interface LinkMenuHost {
     /**
      * The entries about the note or the attachment that `href` links to: `target`, which head the
      * menu, such as the places to open the note in, `actions`, the groups of entries after Edit
-     * link, such as the actions on an attachment, `deletion`, which follow Unlink, such as deleting
-     * an attachment, and `conversion`, which end the menu. `element` is the reference link, or the
-     * editable for a link in the text.
+     * link, such as the actions on an attachment, and `afterUnlink`, which end the menu after
+     * Unlink, such as deleting an attachment or converting the link. `element` is the reference
+     * link, or the editable for a link in the text.
      */
     describeNoteLink(href: string, element: HTMLElement, run: RunEntry): Promise<{
         target: ToolbarGroupMenuItem[];
         actions: ToolbarGroupMenuItem[][];
-        deletion: ToolbarGroupMenuItem[];
-        conversion: ToolbarGroupMenuItem[];
+        afterUnlink: ToolbarGroupMenuItem[];
     }>;
     /**
      * Opens what `href` links to in place of the note of `element`, as a click on the first
@@ -241,7 +240,7 @@ function describeWebLinkMenu(
 /**
  * The entries of the menu of a link to a note: the first button of the toolbar, which opens the
  * note in place, the host's places to open it in, Edit link, the host's actions on what the link
- * points to, and Unlink, followed by the host's deletions and conversions.
+ * points to, and Unlink, followed by the host's entries for after it.
  */
 async function describeNoteLinkMenu(
     editor: Editor, run: RunEntry
@@ -251,9 +250,9 @@ async function describeNoteLinkMenu(
     const reference = getSelectedReference(editor);
     const element = getNoteLinkElement(editor, reference);
     const host = editor.config.get("linkMenu");
-    const { target, actions, deletion, conversion } = host
+    const { target, actions, afterUnlink } = host
         ? await host.describeNoteLink(href, element, run)
-        : { target: [], actions: [], deletion: [], conversion: [] };
+        : { target: [], actions: [], afterUnlink: [] };
     const open: ToolbarGroupMenuEntry = {
         kind: "entry", label: getOpenLinkLabel(editor, href),
         iconClass: "bx bx-right-arrow-circle", isEnabled: true,
@@ -270,7 +269,7 @@ async function describeNoteLinkMenu(
         ? [ [ open, editLink ] ]
         : [ [ open, ...target ], [ editLink ] ];
     const unlink = describeUnlink(editor, reference ? UNLINK_REFERENCE_COMMAND : "unlink", run);
-    return joinGroups([ ...head, ...actions, [ unlink, ...deletion, ...conversion ] ]);
+    return joinGroups([ ...head, ...actions, [ unlink, ...afterUnlink ] ]);
 }
 
 function describeEditLink(editor: Editor, run: RunEntry): ToolbarGroupMenuEntry {

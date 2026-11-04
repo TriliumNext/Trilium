@@ -101,7 +101,7 @@ async function openContextMenu(
     hoistedNoteId: string | null = null
 ) {
     const request = ++lastMenuRequest;
-    const noteId = notePath.split("/").at(-1) ?? notePath;
+    const noteId = getNoteId(notePath);
     const editor = await getEditingTextEditor(getTarget(e));
     const embed = editor && getMenuEmbed(e, editor);
     const ownItems = viewScope.viewMode === "attachments" && viewScope.attachmentId
@@ -147,10 +147,10 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
 /**
  * The entries of the menu of the toolbar of a link to `notePath` in a text note being edited, for
  * the editor's `linkMenu`: `target`, the places to open the note in, `actions`, the groups of the
- * actions on an attachment the link points to, `deletion`, deleting the attachment, and
- * `conversion`, converting a reference link to an embed, then the attachment into a note.
- * `element` is the reference link, or the editable for a link in the text. `run` wraps the action
- * of an entry, as the menu runs it.
+ * actions on an attachment the link points to, and `afterUnlink`, deleting the attachment,
+ * converting a reference link to an embed, then the attachment into a note. `element` is the
+ * reference link, or the editable for a link in the text. `run` wraps the action of an entry, as
+ * the menu runs it.
  */
 async function getLinkToolbarEntries(
     notePath: string,
@@ -160,11 +160,10 @@ async function getLinkToolbarEntries(
 ): Promise<{
     target: ToolbarGroupMenuItem[];
     actions: ToolbarGroupMenuItem[][];
-    deletion: ToolbarGroupMenuItem[];
-    conversion: ToolbarGroupMenuItem[];
+    afterUnlink: ToolbarGroupMenuItem[];
 }> {
     const e: LinkMenuOrigin = { pageX: 0, pageY: 0, target: element };
-    const noteId = notePath.split("/").at(-1) ?? notePath;
+    const noteId = getNoteId(notePath);
     const editor = await getEditingTextEditor(element);
     const toEntry = (
         item: MenuCommandItem<CommandNames>, action: () => void
@@ -179,35 +178,29 @@ async function getLinkToolbarEntries(
         toEntry(item, () => handleLinkContextMenuItem(item.command, e, notePath, viewScope)));
 
     let actions: ActionItem[][] = [];
-    let deletion: (ActionItem | null)[] = [];
-    let conversion: (ActionItem | null)[] = [];
+    let afterUnlink: (ActionItem | null)[] = [];
     if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
         const linked = await getLinkedAttachment(noteId, viewScope.attachmentId, e);
         if (linked) {
             const { attachment, isReadOnly, getLinkedAttachmentActions } = linked;
-            const { groups, deletion: deleteAttachment, conversion: toNote } =
+            const { view, change, image, deletion, conversion } =
                 getLinkedAttachmentActions(attachment, { isReadOnly });
-            actions = groups.map((group) => group.map(toActionItem));
-            deletion = [ deleteAttachment && toActionItem(deleteAttachment) ];
-            conversion = [
+            actions = [ view, change, image ].map((group) => group.map(toActionItem));
+            afterUnlink = [
+                ...deletion.map(toActionItem),
                 await getConvertToEmbedItem(e, editor,
                     t("link_context_menu.convert_link_to_embed"), async () => attachment),
-                toNote && toActionItem(toNote)
+                ...conversion.map(toActionItem)
             ];
         }
     } else {
-        conversion = [ await getConvertNoteLinkItem(e, editor, noteId, !!viewScope.block) ];
+        afterUnlink = [ await getConvertNoteLinkItem(e, editor, noteId, !!viewScope.block) ];
     }
 
     const toEntries = (items: (ActionItem | null)[]) => items
         .filter((item) => item !== null)
         .map((item) => toEntry(item, item.handler));
-    return {
-        target,
-        actions: actions.map(toEntries),
-        deletion: toEntries(deletion),
-        conversion: toEntries(conversion)
-    };
+    return { target, actions: actions.map(toEntries), afterUnlink: toEntries(afterUnlink) };
 }
 
 /**
@@ -215,9 +208,8 @@ async function getLinkToolbarEntries(
  * toolbar of the link. Does nothing for an attachment deleted since.
  */
 async function downloadLinkedAttachment(notePath: string, viewScope: ViewScope) {
-    const noteId = notePath.split("/").at(-1) ?? notePath;
     const attachment = viewScope.attachmentId
-        ? await froca.getAttachmentOfNote(noteId, viewScope.attachmentId)
+        ? await froca.getAttachmentOfNote(getNoteId(notePath), viewScope.attachmentId)
         : null;
     if (attachment) {
         open.downloadAttachment(attachment.attachmentId);
@@ -259,7 +251,7 @@ function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] 
         }, displayModeItems),
         { kind: "separator" },
         ...getEmbedItems(embed),
-        ...getDeleteEmbedGroup(embed)
+        ...getDeleteAndConvertGroup(embed)
     ];
 }
 
@@ -272,18 +264,33 @@ function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         return getEmbedItems(embed);
     }
 
-    return [ ...getEmbedItems(embed), ...getDeleteEmbedGroup(embed) ];
+    return [ ...getEmbedItems(embed), ...getDeleteAndConvertGroup(embed) ];
 }
 
-/** "Delete", which removes the embed from the note, after a separator. */
-function getDeleteEmbedGroup(embed: MenuEmbed): MenuItem<CommandNames>[] {
+/**
+ * The last group of the menu of an embed, after a separator: "Delete", which removes the embed
+ * from the note, then `deletion`, then "Convert to link" for an embed that names a note or an
+ * attachment, then `conversion`.
+ */
+function getDeleteAndConvertGroup(
+    embed: MenuEmbed,
+    deletion: AttachmentAction[] = [],
+    conversion: AttachmentAction[] = []
+): MenuItem<CommandNames>[] {
     return [
         { kind: "separator" },
         {
             title: t("link_context_menu.delete"),
             uiIcon: "bx bx-trash destructive-action-icon",
             handler: () => runEmbedCommand(embed, "deleteContentEmbed")
-        }
+        },
+        ...deletion.map(toActionItem),
+        ...(embed.state.isConvertibleToLink ? [ {
+            title: t("link_context_menu.convert_embed_to_link"),
+            uiIcon: "bx bx-link",
+            handler: () => runEmbedCommand(embed, "convertEmbedToLink")
+        } ] : []),
+        ...conversion.map(toActionItem)
     ];
 }
 
@@ -384,7 +391,7 @@ function handleLinkContextMenuItem(command: string | undefined, e: EventOrigin, 
 
 /** Opens the shared page of the note at `notePath` in a new browser tab or window. */
 function openSharedPage(command: string | undefined, notePath: string) {
-    const link = resolveShareLink?.(notePath.split("/").at(-1) ?? notePath);
+    const link = resolveShareLink?.(getNoteId(notePath));
     if (!link || (command !== "openNoteInNewTab" && command !== "openNoteInNewWindow")) {
         return false;
     }
@@ -395,10 +402,9 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group, then, in a group of their
- * own, deleting the embed, then the attachment, and converting the embed to a link, then the
- * attachment into a note. A menu opened in a note shown read-only has only the actions that leave
- * the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, and ends with the group of
+ * `getDeleteAndConvertGroup()`, which deletes and converts the embed and the attachment. A menu
+ * opened in a note shown read-only has only the actions that leave the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
@@ -417,16 +423,12 @@ async function getAttachmentItems(
             .map((group) => group.map(toActionItem)));
     }
 
-    const { groups, deletion, conversion } =
+    const { view, change, image, deletion, conversion } =
         linked.getLinkedAttachmentActions(attachment, { isReadOnly });
-    const [ firstGroup = [], ...otherGroups ] = groups.map((group) => group.map(toActionItem));
-    const linkItem = getConvertToLinkItem(embed);
+    const toItems = (actions: AttachmentAction[]) => actions.map(toActionItem);
     return [
-        ...separateGroups([ firstGroup, getEmbedItems(embed), ...otherGroups ]),
-        ...getDeleteEmbedGroup(embed),
-        ...(deletion ? [ toActionItem(deletion) ] : []),
-        ...(linkItem ? [ linkItem ] : []),
-        ...(conversion ? [ toActionItem(conversion) ] : [])
+        ...separateGroups([ toItems(view), getEmbedItems(embed), toItems(change), toItems(image) ]),
+        ...getDeleteAndConvertGroup(embed, deletion, conversion)
     ];
 }
 
@@ -476,13 +478,7 @@ function getNoteItems(embed: MenuEmbed | null): MenuItem<CommandNames>[] {
         return [];
     }
 
-    const linkItem = getConvertToLinkItem(embed);
-    return [
-        { kind: "separator" },
-        ...getEmbedItems(embed),
-        ...getDeleteEmbedGroup(embed),
-        ...(linkItem ? [ linkItem ] : [])
-    ];
+    return [ { kind: "separator" }, ...getEmbedItems(embed), ...getDeleteAndConvertGroup(embed) ];
 }
 
 /**
@@ -663,17 +659,9 @@ function getConvertNoteLinkItem(
     );
 }
 
-/** "Convert to link", for an embed that names a note or an attachment. */
-function getConvertToLinkItem(embed: MenuEmbed): MenuItem<CommandNames> | null {
-    if (!embed.state.isConvertibleToLink) {
-        return null;
-    }
-
-    return {
-        title: t("link_context_menu.convert_embed_to_link"),
-        uiIcon: "bx bx-link",
-        handler: () => runEmbedCommand(embed, "convertEmbedToLink")
-    };
+/** The ID of the note that `notePath` ends with, or `notePath` itself for a note ID alone. */
+function getNoteId(notePath: string) {
+    return notePath.slice(notePath.lastIndexOf("/") + 1);
 }
 
 function getTarget(e: LinkMenuOrigin) {

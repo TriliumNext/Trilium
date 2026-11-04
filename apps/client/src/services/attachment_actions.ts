@@ -32,6 +32,20 @@ export interface AttachmentActionOptions {
     isReadOnly?: boolean;
 }
 
+/** The actions on an attachment, by what they do. */
+export interface LinkedAttachmentActions {
+    /** The actions that leave the attachment unchanged. */
+    view: AttachmentAction[];
+    /** Replacing or renaming the attachment. */
+    change: AttachmentAction[];
+    /** Compressing the attachment, for an image. */
+    image: AttachmentAction[];
+    /** Deleting the attachment. */
+    deletion: AttachmentAction[];
+    /** Converting the attachment into a note. */
+    conversion: AttachmentAction[];
+}
+
 /**
  * The actions on `attachment`, in the groups a menu separates with a divider. The attachment page
  * and the context menu of an attachment link both list them.
@@ -40,48 +54,40 @@ export function getAttachmentActionGroups(
     attachment: FAttachment,
     options: AttachmentActionOptions = {}
 ): AttachmentAction[][] {
-    const { groups, deletion, conversion } = getLinkedAttachmentActions(attachment, options);
-    if (!deletion || !conversion) {
-        return groups;
-    }
-
-    const [ viewActions, changeActions, imageActions ] = groups;
-    return [ viewActions, [ ...changeActions, deletion ], [ ...imageActions, conversion ] ];
+    const { view, change, image, deletion, conversion } =
+        getLinkedAttachmentActions(attachment, options);
+    return [ view, [ ...change, ...deletion ], [ ...image, ...conversion ] ]
+        .filter((group) => group.length > 0);
 }
 
 /**
- * The actions on `attachment` for the menu of a link to it or of an embed of it, which lists
- * `deletion`, deleting the attachment, after Unlink or deleting the embed, and `conversion`,
- * converting the attachment into a note, after converting the link or the embed. `groups` holds
- * the others, in the groups a menu separates with a divider; the last group, compressing an image,
- * is empty for another attachment. A note shown read-only has only the actions that leave the
- * attachment unchanged, and neither `deletion` nor `conversion`.
+ * The actions on `attachment` by what they do, for the menu of a link to it or of an embed of
+ * it, which lists deleting and converting the attachment apart from the others. A note shown
+ * read-only has only the actions that leave the attachment unchanged.
  */
 export function getLinkedAttachmentActions(
     attachment: FAttachment,
     { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
-): {
-    groups: AttachmentAction[][];
-    deletion: AttachmentAction | null;
-    conversion: AttachmentAction | null;
-} {
-    const viewActions = getViewActions(attachment, copyReference);
+): LinkedAttachmentActions {
+    const view = getViewActions(attachment, copyReference);
     if (isReadOnly) {
-        return { groups: [ viewActions ], deletion: null, conversion: null };
+        return { view, change: [], image: [], deletion: [], conversion: [] };
     }
 
     return {
-        groups: [ viewActions, getChangeActions(attachment), getImageActions(attachment) ],
-        deletion: {
+        view,
+        change: getChangeActions(attachment),
+        image: getImageActions(attachment),
+        deletion: [ {
             title: t("attachments_actions.delete_attachment"),
             icon: "bx bx-trash destructive-action-icon",
             run: () => deleteAttachment(attachment)
-        },
-        conversion: {
+        } ],
+        conversion: [ {
             title: t("attachments_actions.convert_attachment_into_note"),
             icon: "bx bx-note",
             run: () => convertAttachmentToNote(attachment)
-        }
+        } ]
     };
 }
 

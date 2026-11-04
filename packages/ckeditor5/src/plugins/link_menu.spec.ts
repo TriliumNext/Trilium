@@ -225,10 +225,8 @@ describe("LinkMenu", () => {
                     [],
                     [ { kind: "entry", label: "Rename", isEnabled: true } ]
                 ],
-                deletion: [
-                    { kind: "entry", label: "Delete", isEnabled: true, run: wrap(remove) }
-                ],
-                conversion: [
+                afterUnlink: [
+                    { kind: "entry", label: "Delete", isEnabled: true, run: wrap(remove) },
                     { kind: "entry", label: "Convert", isEnabled: true, run: wrap(convert) }
                 ]
             })
@@ -411,7 +409,7 @@ describe("LinkMenu", () => {
 
         it("selects a reference link or a link preview whole, and opens its menu", async () => {
             const describeNoteLink = vi.fn<LinkMenuHost["describeNoteLink"]>(async () => ({
-                target: [], actions: [], deletion: [], conversion: []
+                target: [], actions: [], afterUnlink: []
             }));
             const { editor, rightClick } = await createMenuEditor({
                 linkMenu: { describeNoteLink, openNote: vi.fn() }
@@ -506,9 +504,7 @@ describe("LinkMenu", () => {
                     CopyLinkUrlButton
                 ],
                 linkMenu: {
-                    describeNoteLink: async () => ({
-                        target: [], actions: [], deletion: [], conversion: []
-                    }),
+                    describeNoteLink: async () => ({ target: [], actions: [], afterUnlink: [] }),
                     openNote: vi.fn(),
                     downloadAttachment: vi.fn()
                 }

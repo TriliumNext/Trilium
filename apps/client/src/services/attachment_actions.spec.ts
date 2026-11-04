@@ -151,31 +151,29 @@ describe("getAttachmentActionGroups", () => {
         ] ]);
     });
 
-    it("gives the menu of a link or an embed the deletion and the conversion apart", () => {
-        const split = (attachment: FAttachment, isReadOnly = false) => {
-            const { groups, deletion, conversion } =
-                getLinkedAttachmentActions(attachment, { isReadOnly });
-            return [
-                groups.map((group) => group.map((action) => action.title)),
-                deletion?.title ?? null,
-                conversion?.title ?? null
-            ];
+    it("gives the menu of a link or an embed the actions by what they do", () => {
+        const KINDS = [ "view", "change", "image", "deletion", "conversion" ] as const;
+        const byKind = (attachment: FAttachment, isReadOnly = false) => {
+            const actions = getLinkedAttachmentActions(attachment, { isReadOnly });
+            return Object.fromEntries(KINDS.map((kind) =>
+                [ kind, actions[kind].map((action) => action.title) ]));
         };
-        const [ viewActions ] = titles(attachmentOf("file"));
+        const [ view ] = titles(attachmentOf("file"));
 
-        expect(split(attachmentOf("file"))).toEqual([
-            [
-                viewActions,
-                [ "attachments_actions.upload_new_revision", "attachments_actions.rename_attachment" ],
-                []
+        expect(byKind(attachmentOf("file"))).toStrictEqual({
+            view,
+            change: [
+                "attachments_actions.upload_new_revision", "attachments_actions.rename_attachment"
             ],
-            "attachments_actions.delete_attachment",
-            "attachments_actions.convert_attachment_into_note"
-        ]);
-        expect(split(attachmentOf("image", "image/png"))[0]).toContainEqual([
-            "compress-image-menu"
-        ]);
-        expect(split(attachmentOf("file"), true)).toEqual([ [ viewActions ], null, null ]);
+            image: [],
+            deletion: [ "attachments_actions.delete_attachment" ],
+            conversion: [ "attachments_actions.convert_attachment_into_note" ]
+        });
+        expect(byKind(attachmentOf("image", "image/png")).image)
+            .toStrictEqual([ "compress-image-menu" ]);
+        expect(byKind(attachmentOf("file"), true)).toStrictEqual({
+            view, change: [], image: [], deletion: [], conversion: []
+        });
     });
 
     it("renames, deletes and converts only once the user has agreed", async () => {
