@@ -589,8 +589,11 @@ describe("buildTriliumSlashCommands", () => {
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
-        [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
-        [ "link-preview", "Link preview", INTERNAL_LINK_COMMAND ],
+        [ "web-link", "Link to a web page", INTERNAL_LINK_COMMAND ],
+        [ "web-link-icon", "Link to a web page (with icon)", INTERNAL_LINK_COMMAND ],
+        [ "web-link-card", "Link to a web page (as a card)", INTERNAL_LINK_COMMAND ],
+        [ "note-link", "Link to a note (internal link)", INTERNAL_LINK_COMMAND ],
+        [ "anchor-link", "Link to a heading or anchor", INTERNAL_LINK_COMMAND ],
         [ "youtube-video", "Insert YouTube video", YOUTUBE_VIDEO_COMMAND ],
         [ "attach-file", "Attach file as a link", "fileUpload" ],
         [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
@@ -831,11 +834,23 @@ describe("buildTriliumSlashCommands", () => {
         expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
     });
 
-    it("finds the link preview entry by the words people type for a web page or a video", () => {
-        const entries = [ definition("link-preview") ];
+    it("lists the link entries first for /link, and finds each by the words people type", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+        const ids = (query: string) => matchSlashCommands(definitions, query)
+            .map((entry) => entry.id);
+        const webLinks = [ "web-link", "web-link-icon", "web-link-card" ];
 
-        for (const query of [ "preview", "embed", "url", "website", "youtube", "video" ]) {
-            expect(matchSlashCommands(entries, query)).toHaveLength(1);
+        expect(ids("link").slice(0, 5)).toEqual([ ...webLinks, "note-link", "anchor-link" ]);
+        for (const query of [ "url", "website", "hyperlink", "external link" ]) {
+            expect(ids(query)).toEqual(expect.arrayContaining(webLinks));
+        }
+        expect(ids("link preview")).toEqual([ "web-link-icon", "web-link-card" ]);
+        expect(ids("card")[0]).toBe("web-link-card");
+        for (const query of [ "internal link", "trilium link", "reference link" ]) {
+            expect(ids(query)[0]).toBe("note-link");
+        }
+        for (const query of [ "heading", "anchor", "section" ]) {
+            expect(ids(query)).toContain("anchor-link");
         }
     });
 
@@ -847,14 +862,18 @@ describe("buildTriliumSlashCommands", () => {
         }
     });
 
-    it("opens the link dialog for a web link displayed as a preview", () => {
+    it.each([
+        [ "web-link", { target: "url", display: "textLink" } ],
+        [ "web-link-icon", { target: "url", display: "iconAndTextLink" } ],
+        [ "web-link-card", { target: "url", display: "cardLink" } ],
+        [ "note-link", { target: "note" } ],
+        [ "anchor-link", { target: "anchor" } ]
+    ])("%s opens the link dialog on its page, displaying the link as picked", (id, options) => {
         const { fake, executeSpy } = makeFakeEditor();
 
-        definition("link-preview").execute?.(fake);
+        definition(id).execute?.(fake);
 
-        expect(executeSpy).toHaveBeenCalledExactlyOnceWith(
-            INTERNAL_LINK_COMMAND, { target: "url", display: "embedLink" }
-        );
+        expect(executeSpy).toHaveBeenCalledExactlyOnceWith(INTERNAL_LINK_COMMAND, options);
     });
 
     it("opens the math balloon rather than running a command", () => {

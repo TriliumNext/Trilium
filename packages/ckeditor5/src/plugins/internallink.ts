@@ -19,8 +19,11 @@ export const COMMAND_NAME = 'insertInternalLink';
 const LINK_KEYSTROKE = 'Ctrl+K';
 
 export interface InternalLinkDialogOptions {
-    /** The side the dialog opens on for a new link: a note, or a web address. */
-    target?: 'note' | 'url';
+    /**
+     * The page the dialog opens on for a new link: a note, a web address, or a heading or an
+     * anchor of the document.
+     */
+    target?: 'note' | 'url' | 'anchor';
     /**
      * How a new web link is displayed. `embedLink` falls back to a card for an address without a
      * player.

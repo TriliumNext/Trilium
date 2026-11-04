@@ -92,10 +92,10 @@ export interface EditLinkOpts {
     /** The heading in `headings` that the link being edited points at. */
     currentHeading?: LinkHeading;
     /**
-     * The side a new link opens on, the note side by default. A selected URL opens on the web link
+     * The page a new link opens on, the note side by default. A selected URL opens on the web link
      * side.
      */
-    target?: Exclude<LinkTarget, "anchor">;
+    target?: LinkTarget;
     /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
@@ -826,13 +826,15 @@ function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof For
 
 /**
  * The page the dialog opens on: Headings & anchors for an edited link to a heading or an anchor,
- * Web link when there is an `initialWebLink`, and Note otherwise.
+ * Web link when there is an `initialWebLink`, Headings & anchors for a new link that asks for it,
+ * and Note otherwise.
  */
 function getInitialTarget(
     opts: EditLinkOpts | undefined, initialWebLink: string | null
 ): LinkTarget {
     if (opts?.currentAnchor || opts?.currentHeading) return "anchor";
-    return initialWebLink !== null ? "url" : "note";
+    if (initialWebLink !== null) return "url";
+    return opts?.target === "anchor" && !opts.currentLink ? "anchor" : "note";
 }
 
 /**

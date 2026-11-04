@@ -13,6 +13,7 @@ import {
     IconHeading6,
     IconHorizontalLine,
     IconIndent,
+    IconLink,
     IconNumberedList,
     IconOutdent,
     IconPageBreak,
@@ -30,6 +31,8 @@ import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
+import bxGlobe from "boxicons/svg/regular/bx-globe.svg?raw";
+import bxHash from "boxicons/svg/regular/bx-hash.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
 import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
@@ -58,7 +61,9 @@ import { insertDrawingCanvas } from "../file_upload/file_upload_ui.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, getDateTimeFormatOptions } from "../insert_date_time.js";
-import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
+import {
+    COMMAND_NAME as INTERNAL_LINK_COMMAND, type InternalLinkDialogOptions
+} from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
 import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
@@ -400,14 +405,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             commandName: "InsertFootnote"
         },
         ...buildDateTimeSlashCommands(editor),
-        {
-            id: "internal-link",
-            title: t("Internal link"),
-            description: t("Insert a link to another Trilium note"),
-            aliases: [ "internal link", "trilium link", "reference link" ],
-            icon: internalLinkIcon,
-            commandName: INTERNAL_LINK_COMMAND
-        },
+        ...buildLinkSlashCommands(editor),
         {
             id: "youtube-video",
             title: t("Insert YouTube video"),
@@ -415,18 +413,6 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             aliases: [ "youtube", "video", "embed" ],
             icon: youtubeIcon,
             commandName: YOUTUBE_VIDEO_COMMAND
-        },
-        {
-            id: "link-preview",
-            title: t("Link preview"),
-            description: t("Insert a preview of a web page or a video"),
-            aliases: [ "embed", "url", "website", "youtube", "video" ],
-            icon: linkPreviewIcon,
-            commandName: INTERNAL_LINK_COMMAND,
-            // The link dialog on the web link side, with a video player or else a card.
-            execute: (target: Editor) => {
-                target.execute(INTERNAL_LINK_COMMAND, { target: "url", display: "embedLink" });
-            }
         },
         {
             id: "attach-file",
@@ -657,6 +643,74 @@ function buildDateTimeSlashCommands(editor: Editor): SlashCommandDefinition[] {
     }));
 
     return [ defaultEntry, ...presetEntries ];
+}
+
+/**
+ * The entries that open the link dialog: one per page of the dialog, and one per way a web link is
+ * displayed. `commandName` supplies the enabled state; `execute` passes the page and display along.
+ */
+function buildLinkSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    const t = editor.locale.t;
+    const webLinkAliases = [ "url", "website", "hyperlink", "external link" ];
+
+    return [
+        {
+            id: "web-link",
+            title: t("Link to a web page"),
+            description: t("Create a link to a web page or other internet resource"),
+            aliases: webLinkAliases,
+            icon: IconLink,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "textLink" })
+        },
+        {
+            id: "web-link-icon",
+            title: t("Link to a web page (with icon)"),
+            description: t(
+                "Create a link to a web page or other internet resource, displayed with an icon"
+            ),
+            aliases: [ ...webLinkAliases, "link preview", "favicon" ],
+            icon: bxGlobe,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "iconAndTextLink" })
+        },
+        {
+            id: "web-link-card",
+            title: t("Link to a web page (as a card)"),
+            description: t(
+                "Create a link to a web page or other internet resource, displayed as a card"
+            ),
+            aliases: [ ...webLinkAliases, "link preview", "card" ],
+            icon: linkPreviewIcon,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "cardLink" })
+        },
+        {
+            id: "note-link",
+            title: t("Link to a note (internal link)"),
+            description: t("Create a link to another Trilium note"),
+            aliases: [ "internal link", "trilium link", "reference link" ],
+            icon: internalLinkIcon,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "note" })
+        },
+        {
+            id: "anchor-link",
+            title: t("Link to a heading or anchor"),
+            description: t("Create a link to a heading or anchor belonging to the current note"),
+            aliases: [ "heading", "anchor", "section" ],
+            icon: bxHash,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "anchor" })
+        }
+    ];
+}
+
+/** The `execute` of an entry that opens the link dialog with `options`. */
+function openLinkDialog(options: InternalLinkDialogOptions) {
+    return (editor: Editor) => {
+        editor.execute(INTERNAL_LINK_COMMAND, options);
+    };
 }
 
 function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {

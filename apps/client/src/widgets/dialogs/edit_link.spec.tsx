@@ -299,9 +299,20 @@ describe("EditLinkDialog", () => {
         expect(addLink)
             .toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
 
+        await open({ target: "anchor", anchors: [ "intro" ] });
+        expect(current()).toBe("add_link.anchors");
+        expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro" ]);
+        await act(async () => anchorRows()[0]?.click());
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
+
         const note = buildNote({ title: "Target" });
-        await open({ target: "url", currentLink: { notePath: `root/${note.noteId}` } });
-        expect(current()).toBe("add_link.note");
+        for (const target of [ "url", "anchor" ] as const) {
+            await open({
+                target, anchors: [ "intro" ], currentLink: { notePath: `root/${note.noteId}` }
+            });
+            expect(current()).toBe("add_link.note");
+        }
     });
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {

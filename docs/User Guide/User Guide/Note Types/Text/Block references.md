@@ -26,7 +26,7 @@ In a browser, the context menu of the text editor opens only when right-clicking
 Since v0.107.0, a link to a heading of the same note can be created from the _Add link_ dialog:
 
 *   Place the cursor at the desired position of the link, or select the text to turn into a link.
-*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the dialog.
+*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the dialog. Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
 *   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading and start collapsed; expand or collapse a heading with the arrow in front of it, or with <kbd>→</kbd> and <kbd>←</kbd> while it is focused. Optionally, type a _Link title_.
 *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
 

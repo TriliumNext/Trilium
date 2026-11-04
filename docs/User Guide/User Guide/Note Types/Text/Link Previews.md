@@ -67,7 +67,7 @@ Since v0.107.0, a link preview is created from the same _Add link_ dialog as any
 
 To keep the dialog from reading the page, go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and, in the _Features_ section, turn off _Automatically retrieve titles for text links_ (for _Text_) or _Automatically retrieve title, description and icon for icon & text links and cards_ (for _Icon & text_ and _Card_). Both are on by default. While they are on, Trilium contacts the page as soon as you leave the address field, also for a text link.
 
-Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_). It opens the same dialog with a preview already picked: a _YouTube embed_ for a YouTube video, a _Card_ for any other page.
+Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page (with icon)_ or _Link to a web page (as a card)_ (both are also found by _link preview_). Each opens the same dialog on _Web link_, with _Icon & text_ or _Card_ already picked.
 
 To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 

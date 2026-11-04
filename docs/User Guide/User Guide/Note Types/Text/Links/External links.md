@@ -8,6 +8,7 @@ To create a link without a custom text:
     *   When you leave the address field, or paste with the _Paste_ button, an empty _Link title_ is filled with the title of the web page; a spinner at its end shows while it loads. A title you type is kept. To turn this off, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and turn off _Automatically retrieve titles for text links_ in the _Features_ section.
     *   _Display as_ inserts the address as _Text_, or as one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>: _Icon & text_, _Card_ or, for a YouTube video, _YouTube embed_.
     *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
+*   Alternatively, use <a class="reference-link" href="../Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page_, which opens the same dialog. _Link to a web page (with icon)_ and _Link to a web page (as a card)_ open it with that display already picked.
 *   A simpler way is to paste the raw link and press space to turn it automatically into a link.
 *   The <span class="tn-icon cke cke-trilium"></span> button and <kbd>Ctrl</kbd>+<kbd>L</kbd> of <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> open the same dialog on _Note_. Select _Web link_ at the top of the dialog to create an external link from there.
 

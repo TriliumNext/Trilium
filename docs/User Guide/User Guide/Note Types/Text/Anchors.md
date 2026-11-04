@@ -14,7 +14,7 @@ This feature was introduced in TriliumNext v0.94.0 and augmented in v0.103.0 to 
     *   Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _anchor_.
 *   To place a link to an anchor in the same note:
     *   Place the cursor at the desired position of the link, or select the text to turn into a link.
-    *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the [_Add link_ dialog](Links.md).
+    *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the [_Add link_ dialog](Links.md). Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
     *   Under _Anchors_, click the desired anchor to check it. Optionally, type a _Link title_; without one, the link shows the anchor's name.
     *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
 *   Clicking a link to an anchor of the same note scrolls to the anchor and briefly highlights the block that holds it, while editing as well as in read-only notes and on shared pages.

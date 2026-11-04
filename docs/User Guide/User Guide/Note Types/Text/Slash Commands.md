@@ -17,4 +17,5 @@ Apart from the common set of commands, some features are specially integrated wi
 
 *   For [admonitions](Block%20quotes%20%26%20admonitions.md), each admonition type (e.g. note, tip) will be individually displayed.
 *   Every <a class="reference-link" href="Text%20Snippets.md">Text Snippets</a> will also appear individually, making it easy to insert them.
+*   For [links](Links.md), _Link to a web page_, _Link to a note (internal link)_ and _Link to a heading or anchor_ open the _Add link_ dialog on the matching page. _Link to a web page (with icon)_ and _Link to a web page (as a card)_ also pick how the web link is displayed, as described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>.
 *   <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>: dedicated _Ask AI_ item as well as all the predefined and [custom quick actions](In-editor%20AI%20assistant/Custom%20AI%20quick%20actions.md).
