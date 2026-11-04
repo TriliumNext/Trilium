@@ -1724,7 +1724,9 @@
     "wrap_text": "テキストを回り込ませる",
     "align_left": "左揃え",
     "align_center": "中央揃え",
-    "align_right": "右揃え"
+    "align_right": "右揃え",
+    "open_externally": "外部で開く",
+    "delete": "削除"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -1854,7 +1856,8 @@
     "copy_failed": "権限の問題で、クリップボードにコピーできません。",
     "copy_success": "クリップボードにコピーしました。",
     "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。",
-    "paste_notes": "ノートを貼り付け"
+    "paste_notes": "ノートを貼り付け",
+    "paste_failed": "クリップボードを読み込めませんでした。"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -4009,7 +4012,9 @@
       "box-position": "ボックスの位置",
       "youtube-video": "YouTube 動画",
       "insert-youtube-video": "YouTube 動画を挿入",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します"
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します",
+      "caption-for-the-video": "動画のキャプション",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4938,6 +4943,7 @@
   "youtube_video": {
     "title": "YouTube 動画を挿入",
     "button_insert": "動画を挿入",
-    "not_a_video": "これは YouTube 動画のアドレスではありません。"
+    "not_a_video": "これは YouTube 動画のアドレスではありません。",
+    "insert_failed": "動画を読み込めませんでした。アドレスと接続状況を確認してから、もう一度お試しください。"
   }
 }
