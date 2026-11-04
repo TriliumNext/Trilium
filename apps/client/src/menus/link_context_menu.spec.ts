@@ -506,6 +506,7 @@ describe("openContextMenu", () => {
         const CHECK = "bx bx-check";
         const execute = vi.fn();
         const focus = vi.fn();
+        const copy = vi.fn();
         const selectEmbedAt = vi.fn();
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
@@ -513,6 +514,11 @@ describe("openContextMenu", () => {
             { value: "tiny", label: "Tiny" },
             { value: "medium", label: "Medium" }
         ]);
+        const getDisplayModes = () => [
+            { value: "textLink", label: "Text" },
+            { value: "cardLink", label: "Card" },
+            { value: "embedLink", label: "Embed" }
+        ];
         let editable: HTMLElement;
 
         beforeEach(() => {
@@ -534,10 +540,12 @@ describe("openContextMenu", () => {
                     get: () => ({
                         selectEmbedAt,
                         getEmbedStateAt: () => state,
-                        getBoxSizes
+                        getBoxSizes,
+                        getDisplayModes
                     })
                 },
                 commands: { get: () => undefined },
+                config: { get: (name: string) => (name === "clipboard" ? { copy } : undefined) },
                 execute,
                 editing: { view: { focus } }
             });
@@ -812,7 +820,7 @@ describe("openContextMenu", () => {
             expect(items).toHaveLength(9);
         });
 
-        it("opens a video externally first in its menu, and deletes it last", async () => {
+        it("heads the menu of a video with the entries of a link preview", async () => {
             const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
             state = {
                 ...state, url, isCaptionSupported: true, isCaptionToggleable: true,
@@ -827,6 +835,18 @@ describe("openContextMenu", () => {
             expect(items).toMatchObject([
                 { title: "link_context_menu.open_externally", uiIcon: "bx bx-link-external" },
                 { kind: "separator" },
+                { title: "link_context_menu.copy_url", uiIcon: "cke cke-trilium-copy" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.display_as",
+                    uiIcon: "cke cke-trilium-link-preview",
+                    items: [
+                        { title: "Text", trailingIcon: undefined },
+                        { title: "Card", trailingIcon: undefined },
+                        { title: "Embed", trailingIcon: CHECK }
+                    ]
+                },
+                { kind: "separator" },
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title" },
                 { title: "link_context_menu.show_caption", enabled: true, checked: false },
@@ -836,10 +856,14 @@ describe("openContextMenu", () => {
                     uiIcon: "bx bx-trash destructive-action-icon"
                 }
             ]);
-            expect(items).toHaveLength(7);
+            expect(items).toHaveLength(11);
             items[0].handler();
             expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
-            expect(pick(items[6])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            items[2].handler();
+            expect(copy).toHaveBeenCalledExactlyOnceWith(url);
+            expect(pick(items[4].items[1]))
+                .toEqual([ [ "changeLinkDisplay", { value: "cardLink" } ] ]);
+            expect(pick(items[10])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
 
             // An embed of a source has neither, nor a caption.
             state = { ...state, url: null, isCaptionSupported: false };

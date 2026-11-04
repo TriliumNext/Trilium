@@ -131,6 +131,10 @@ is one of those few.
   `apps/client/src/menus/link_context_menu.ts`.
 - `link_menu.spec.ts` ("beside the toolbar of a link") fails when a toolbar shows an action that
   the menu lacks. A new toolbar item whose menu entry has another label goes in its `MENU_LABELS`.
+- A video, a link preview shown as Embed, follows the same rule with the toolbar and menu of an
+  embed: the `videoEmbed` widget toolbar in `content_embed/content_embed_toolbar.ts`, and
+  `getVideoItems()` in `link_context_menu.ts`, which the client draws and tests on its own. Its
+  entries take the labels and the groups of the link preview's menu.
 
 ## Component catalog
 

@@ -197,16 +197,38 @@ async function downloadLinkedAttachment(notePath: string, viewScope: ViewScope) 
 }
 
 /**
- * The menu of an embed that plays the video at `url`: opening the video outside Trilium, the
- * commands of the embed, and deleting it, each in a group of its own.
+ * The menu of an embed that plays the video at `url`: opening the video outside Trilium, copying
+ * its address and Display as, in the groups of the menu of a link preview, then the commands of
+ * the embed, and deleting it, each in a group of its own.
  */
 function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
+    const { editor } = embed;
+    // A video is a link preview shown as Embed.
+    const displayModeItems = editor.plugins.get("LinkEmbed").getDisplayModes()
+        .map(({ value, label }): MenuItem<CommandNames> => ({
+            title: escapeHtml(label),
+            trailingIcon: value === "embedLink" ? CHECK_ICON : undefined,
+            handler: () => runEmbedCommand(embed, "changeLinkDisplay", { value })
+        }));
+
     return [
         {
             title: t("link_context_menu.open_externally"),
             uiIcon: "bx bx-link-external",
             handler: () => openUrlExternally(url)
         },
+        { kind: "separator" },
+        {
+            title: t("link_context_menu.copy_url"),
+            uiIcon: "cke cke-trilium-copy",
+            // As the Copy address (URL) button of the toolbar of the video does.
+            handler: () => editor.config.get("clipboard")?.copy(url)
+        },
+        { kind: "separator" },
+        submenuItem({
+            title: t("link_context_menu.display_as"),
+            uiIcon: "cke cke-trilium-link-preview"
+        }, displayModeItems),
         { kind: "separator" },
         ...getEmbedItems(embed),
         ...getDeleteEmbedGroup(embed)

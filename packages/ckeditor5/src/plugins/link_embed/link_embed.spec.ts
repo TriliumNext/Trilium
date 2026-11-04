@@ -20,6 +20,15 @@ describe("LinkEmbed", () => {
         expect(editor.ui.componentFactory.has("linkEmbed")).toBe(false);
     });
 
+    it("lists the display modes with their labels, for a host reaching it by name", () => {
+        expect(editor.plugins.get("LinkEmbed").getDisplayModes()).toEqual([
+            { value: "textLink", label: "Text" },
+            { value: "iconAndTextLink", label: "Icon & text" },
+            { value: "cardLink", label: "Card" },
+            { value: "embedLink", label: "Embed" }
+        ]);
+    });
+
     it("shows previews as their title or URL, and inserts unresolved cards, without linkEmbed", async () => {
         const plainEditor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
         setModelData(plainEditor.model, "<paragraph>"

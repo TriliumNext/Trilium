@@ -3187,6 +3187,8 @@
     "align_center": "Align center",
     "align_right": "Align right",
     "open_externally": "Open externally",
+    "copy_url": "Copy address (URL)",
+    "display_as": "Display as",
     "delete": "Delete"
   },
   "electron_integration": {

@@ -1,5 +1,8 @@
 import { Plugin } from 'ckeditor5';
 import AutoLinkToMention from './link_embed_autodetect.js';
+import {
+    getLinkDisplayModeLabel, LINK_DISPLAY_MODES, type LinkDisplayMode
+} from './link_embed_commands.js';
 import LinkEmbedEditing from './link_embed_editing.js';
 
 export {
@@ -27,5 +30,22 @@ export {
 export default class LinkEmbed extends Plugin {
     static get requires() {
         return [LinkEmbedEditing, AutoLinkToMention];
+    }
+
+    static get pluginName() {
+        return 'LinkEmbed' as const;
+    }
+
+    /** The display modes, with their labels, as the Display dropdown lists them. */
+    getDisplayModes(): { value: LinkDisplayMode; label: string }[] {
+        return LINK_DISPLAY_MODES.map(value => ({
+            value, label: getLinkDisplayModeLabel(this.editor.t, value)
+        }));
+    }
+}
+
+declare module 'ckeditor5' {
+    interface PluginsMap {
+        [LinkEmbed.pluginName]: LinkEmbed;
     }
 }
