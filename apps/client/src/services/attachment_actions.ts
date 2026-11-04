@@ -38,10 +38,41 @@ export interface AttachmentActionOptions {
  */
 export function getAttachmentActionGroups(
     attachment: FAttachment,
-    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+    options: AttachmentActionOptions = {}
 ): AttachmentAction[][] {
+    const { groups, conversion } = getLinkedAttachmentActions(attachment, options);
+    if (!conversion) {
+        return groups;
+    }
+
+    const [ viewActions, changeActions, imageActions ] = groups;
+    return [ viewActions, changeActions, [ ...imageActions, conversion ] ];
+}
+
+/**
+ * The actions on `attachment` for the menu of a link to it, which lists `conversion`, converting
+ * the attachment into a note, beside the conversions of the link. `groups` holds the others, in
+ * the groups a menu separates with a divider; the last group, compressing an image, is empty for
+ * another attachment. A note shown read-only has only the actions that leave the attachment
+ * unchanged, and no conversion.
+ */
+export function getLinkedAttachmentActions(
+    attachment: FAttachment,
+    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+): { groups: AttachmentAction[][]; conversion: AttachmentAction | null } {
     const viewActions = getViewActions(attachment, copyReference);
-    return isReadOnly ? [ viewActions ] : [ viewActions, ...getEditActionGroups(attachment) ];
+    if (isReadOnly) {
+        return { groups: [ viewActions ], conversion: null };
+    }
+
+    return {
+        groups: [ viewActions, getChangeActions(attachment), getImageActions(attachment) ],
+        conversion: {
+            title: t("attachments_actions.convert_attachment_into_note"),
+            icon: "bx bx-note",
+            run: () => convertAttachmentToNote(attachment)
+        }
+    };
 }
 
 /** The actions that leave the attachment unchanged. */
@@ -81,46 +112,39 @@ function getViewActions(
     ];
 }
 
-/** The actions that change, delete or convert the attachment, in their groups. */
-function getEditActionGroups(attachment: FAttachment): AttachmentAction[][] {
-    const { attachmentId, mime } = attachment;
-
+/** The actions that replace, rename or delete the attachment. */
+function getChangeActions(attachment: FAttachment): AttachmentAction[] {
     return [
-        [
-            {
-                title: t("attachments_actions.upload_new_revision"),
-                icon: "bx bx-upload",
-                run: () => pickFile((file) => uploadNewRevision(attachment, file))
-            },
-            {
-                title: t("attachments_actions.rename_attachment"),
-                icon: "bx bx-rename",
-                run: () => renameAttachment(attachment)
-            },
-            {
-                title: t("attachments_actions.delete_attachment"),
-                icon: "bx bx-trash destructive-action-icon",
-                run: () => deleteAttachment(attachment)
-            }
-        ],
-        [
-            // A link preview's pictures are left out: the server already sized them.
-            ...(attachment.role === "image" ? [ {
-                title: t("compress-image-menu"),
-                icon: "bx bx-collapse-alt",
-                run: () => void showImageCompressionDialog({
-                    type: "attachment",
-                    attachmentId,
-                    mime
-                })
-            } ] : []),
-            {
-                title: t("attachments_actions.convert_attachment_into_note"),
-                icon: "bx bx-note",
-                run: () => convertAttachmentToNote(attachment)
-            }
-        ]
+        {
+            title: t("attachments_actions.upload_new_revision"),
+            icon: "bx bx-upload",
+            run: () => pickFile((file) => uploadNewRevision(attachment, file))
+        },
+        {
+            title: t("attachments_actions.rename_attachment"),
+            icon: "bx bx-rename",
+            run: () => renameAttachment(attachment)
+        },
+        {
+            title: t("attachments_actions.delete_attachment"),
+            icon: "bx bx-trash destructive-action-icon",
+            run: () => deleteAttachment(attachment)
+        }
     ];
+}
+
+/** Compressing the attachment, for an image. */
+function getImageActions({ attachmentId, mime, role }: FAttachment): AttachmentAction[] {
+    // A link preview's pictures are left out: the server already sized them.
+    if (role !== "image") {
+        return [];
+    }
+
+    return [ {
+        title: t("compress-image-menu"),
+        icon: "bx bx-collapse-alt",
+        run: () => void showImageCompressionDialog({ type: "attachment", attachmentId, mime })
+    } ];
 }
 
 export function getOpenExternallyAction({ attachmentId, mime }: FAttachment): AttachmentAction {

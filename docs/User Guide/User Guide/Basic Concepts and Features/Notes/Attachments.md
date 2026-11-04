@@ -42,7 +42,7 @@ Dragging a file that is not a picture from the file explorer onto the text also 
 
 ## Acting on an attachment link
 
-Right-clicking a link to an attachment shows the ways to open it, followed by actions on the attachment: opening it externally, downloading it, uploading a new revision, renaming or deleting it, and converting it into a note.
+Right-clicking a link to an attachment shows the ways to open it, followed by actions on the attachment: opening it externally, downloading it, uploading a new revision, renaming or deleting it, and converting it into a note. In a text note being edited, the same entries are in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the popup of the link, which right-clicking the link opens. The popup also has a <span class="tn-icon cke cke-trilium-download"></span> _Download_ button.
 
 Links follow changes to their attachment: renaming it updates the title they show, and deleting it removes them from the text notes open for editing at that moment. Converting it into a note turns its links into links to the new note.
 
@@ -51,7 +51,7 @@ Links follow changes to their attachment: renaming it updates the title they sho
 An attachment can be shown in the text instead of linked, the way <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a> shows a note: a picture is displayed, a PDF, a video or a document is previewed, a code or text file is shown with syntax highlighting, and a Markdown file such as a `.md` file is shown rendered. An embedded code file can also be edited in place (see _Editing an include in place_ in <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>), and an embedded Markdown file shows its source, its rendering or both, as an included Markdown note does (see _Included Markdown_ there).
 
 *   To attach files and embed them straight away, press the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button and choose _Attach and embed file_. Each file gets an embed of its own, which shows the file name while the file uploads.
-*   To embed an attachment that is already linked, right-click a link to it in a text note being edited and select _Convert link to an embed_, at the end of the menu.
+*   To embed an attachment that is already linked, right-click a link to it in a text note being edited and select _Convert link to an embed_, near the end of the menu.
 *   A drawing canvas, inserted with <span class="tn-icon bx bx-pen"></span>_Drawing canvas_ in the <span class="tn-icon cke cke-plus"></span>_Insert_ menu, is an embed of a `Canvas.excalidraw` attachment that can be drawn on in place. An attached Excalidraw file (`.excalidraw`) is embedded as a drawing canvas too (see _Drawing canvases_ in <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>).
 *   An embed gets the box size that suits the attachment, as a new included note does (see _Box sizes_ there). To change its size, select the embed and use the box size menu in its toolbar, or the _Size_ submenu of its <span class="tn-icon bx bx-dots-vertical-rounded"></span>_More actions_ menu. A _Small_, _Medium_ or _Expandable_ embed can also be resized by dragging its handles (see _Resizing_ there), and placed at the left or the right of the note, with or without the text running beside it, from the _Position_ submenu of its menu (see _Positioning_ there).
 *   An embed can have a caption, as an included note can (see _Caption_ there).

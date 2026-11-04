@@ -1,3 +1,4 @@
+import type { ToolbarGroupMenuItem } from "@triliumnext/ckeditor5";
 import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -21,9 +22,11 @@ const mocks = vi.hoisted(() => ({
     getAttachmentOfNote: vi.fn(),
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
+    getLinkedAttachmentActions: vi.fn(),
     getTextEditorContaining: vi.fn(),
     getEmbedBoxSize: vi.fn(),
-    openUrlExternally: vi.fn()
+    openUrlExternally: vi.fn(),
+    downloadAttachment: vi.fn()
 }));
 
 vi.mock("./text_editor_context_menu", async (importOriginal) => ({
@@ -47,12 +50,16 @@ vi.mock("../services/froca", () => ({
 }));
 
 vi.mock("../services/attachment_actions", () => ({
-    getAttachmentActionGroups: mocks.getAttachmentActionGroups
+    getAttachmentActionGroups: mocks.getAttachmentActionGroups,
+    getLinkedAttachmentActions: mocks.getLinkedAttachmentActions
 }));
 
 vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
 
-vi.mock("../services/open", () => ({ openUrlExternally: mocks.openUrlExternally }));
+vi.mock("../services/open", () => ({
+    default: { downloadAttachment: mocks.downloadAttachment },
+    openUrlExternally: mocks.openUrlExternally
+}));
 
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
@@ -267,6 +274,151 @@ describe("handleLinkContextMenuItem", () => {
     });
 });
 
+describe("getLinkToolbarEntries", () => {
+    /** Wraps an action as the editor's menu does, recording that it ran through it. */
+    const run = vi.fn((action: () => void) => action);
+
+    /** An entry as its label, marked `(off)`; a rule as `---`. */
+    function labels(items: ToolbarGroupMenuItem[]) {
+        return items.map((item) => (item.kind === "entry"
+            ? `${item.label}${item.isEnabled ? "" : " (off)"}`
+            : "---"));
+    }
+
+    function editableWith(html: string) {
+        const editable = document.createElement("div");
+        editable.className = "ck-editor__editable";
+        editable.setAttribute("contenteditable", "true");
+        editable.innerHTML = html;
+        return editable;
+    }
+
+    it("opens the note in the places of the context menu, from a link in the text", async () => {
+        const editable = editableWith("<p><a href=\"#root/n1\">Note</a></p>");
+        const { target, conversion } = await linkContextMenu.getLinkToolbarEntries(
+            "root/n1", {}, editable, run);
+
+        expect(labels(target)).toStrictEqual([
+            "link_context_menu.open_note_in_new_tab", "link_context_menu.open_note_in_new_split",
+            "link_context_menu.open_note_in_new_window", "link_context_menu.open_note_in_popup"
+        ]);
+        expect(target[0]).toMatchObject({ iconClass: "bx bx-link-external" });
+        // Only a reference link converts into an embed.
+        expect(conversion).toStrictEqual([]);
+
+        const [ newTab ] = target;
+        if (newTab.kind === "entry") newTab.run?.();
+        expect(run).toHaveBeenCalled();
+        expect(mocks.openContextWithNote).toHaveBeenCalledWith("root/n1", {
+            hoistedNoteId: "hoistedNote", viewScope: {}, placement: "afterCurrent"
+        });
+    });
+
+    it("lists the actions on an attachment, ending with converting the link, then it", async () => {
+        const execute = vi.fn();
+        mocks.getEmbedBoxSize.mockReturnValue("small");
+        mocks.getTextEditorContaining.mockResolvedValue({
+            commands: { get: () => ({ isEnabled: true }) },
+            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
+            execute
+        });
+        const editable = editableWith("<a class=\"reference-link\" href=\"#\">report.pdf</a>");
+        const link = editable.querySelector("a");
+        if (!link) return;
+
+        const attachment = { attachmentId: "att-1" };
+        const convertAttachment = vi.fn();
+        mocks.getAttachmentOfNote.mockResolvedValue(attachment);
+        mocks.getLinkedAttachmentActions.mockReturnValue({
+            groups: [
+                [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
+                [ { title: "Rename", icon: "bx bx-rename", disabledReason: "No", run: vi.fn() } ]
+            ],
+            conversion: { title: "Convert", icon: "bx bx-note", run: convertAttachment }
+        });
+        const { target, actions, conversion } = await linkContextMenu.getLinkToolbarEntries(
+            "root/n1", VIEW_SCOPE, link, run);
+        expect(mocks.getLinkedAttachmentActions)
+            .toHaveBeenCalledWith(attachment, { isReadOnly: false });
+        expect(target).toHaveLength(4);
+        expect(actions.map(labels)).toStrictEqual([ [ "Download" ], [ "Rename (off)" ] ]);
+        expect(labels(conversion))
+            .toStrictEqual([ "link_context_menu.convert_link_to_embed", "Convert" ]);
+        const [ convertLink, convert ] = conversion;
+        if (convertLink.kind === "entry") convertLink.run?.();
+        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
+            domElement: link, boxSize: "small"
+        });
+        if (convert.kind === "entry") convert.run?.();
+        expect(convertAttachment).toHaveBeenCalledOnce();
+
+        // A link to an attachment deleted since, and a reference link to a note.
+        mocks.getAttachmentOfNote.mockResolvedValue(null);
+        const deleted = await linkContextMenu.getLinkToolbarEntries(
+            "root/n1", VIEW_SCOPE, link, run);
+        expect([ deleted.target.length, deleted.actions, deleted.conversion ])
+            .toStrictEqual([ 4, [], [] ]);
+        mocks.getNote.mockResolvedValue({ noteId: "n1" });
+        const note = await linkContextMenu.getLinkToolbarEntries("root/n1", {}, link, run);
+        expect(note.actions).toStrictEqual([]);
+        expect(labels(note.conversion))
+            .toStrictEqual([ "link_context_menu.convert_link_to_included_note" ]);
+    });
+
+    it("converts a reference link to an included note, or to an excerpt for blocks", async () => {
+        const execute = vi.fn();
+        mocks.getEmbedBoxSize.mockReturnValue("medium");
+        mocks.getTextEditorContaining.mockResolvedValue({
+            commands: { get: () => ({ isEnabled: true }) },
+            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
+            execute
+        });
+        const link = editableWith("<a class=\"reference-link\" href=\"#\">Note</a>")
+            .querySelector("a");
+        if (!link) throw new Error("Expected a link.");
+        const note = { noteId: "n1" };
+        mocks.getNote.mockResolvedValue(note);
+        /** Runs the conversion of the link for `viewScope`, and returns its label. */
+        const convert = async (viewScope: ViewScope) => {
+            const [ entry ] = (await linkContextMenu.getLinkToolbarEntries(
+                "root/n1", viewScope, link, run)).conversion;
+            if (entry?.kind !== "entry") throw new Error("Expected a conversion.");
+            entry.run?.();
+            return entry.label;
+        };
+
+        expect(await convert({})).toBe("link_context_menu.convert_link_to_included_note");
+        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(note);
+        expect(await convert({ block: "b1" }))
+            .toBe("link_context_menu.convert_link_to_note_excerpt");
+        expect(execute.mock.calls).toStrictEqual([
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "medium" } ],
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "full" } ]
+        ]);
+
+        // A note deleted since has nothing to embed.
+        mocks.getNote.mockResolvedValue(null);
+        const deleted = await linkContextMenu.getLinkToolbarEntries("root/n1", {}, link, run);
+        expect(deleted.conversion).toStrictEqual([]);
+    });
+});
+
+describe("downloadLinkedAttachment", () => {
+    it("downloads the attachment a link points to, unless it is deleted", async () => {
+        mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
+        await linkContextMenu.downloadLinkedAttachment("root/n1", VIEW_SCOPE);
+        expect(mocks.getAttachmentOfNote).toHaveBeenCalledWith("n1", "att-1");
+        expect(mocks.downloadAttachment).toHaveBeenCalledExactlyOnceWith("att-1");
+
+        mocks.downloadAttachment.mockClear();
+        mocks.getAttachmentOfNote.mockResolvedValue(null);
+        await linkContextMenu.downloadLinkedAttachment("root/n1", VIEW_SCOPE);
+        await linkContextMenu.downloadLinkedAttachment("root/n1", {});
+        expect(mocks.getAttachmentOfNote).toHaveBeenCalledTimes(2);
+        expect(mocks.downloadAttachment).not.toHaveBeenCalled();
+    });
+});
+
 describe("getOriginBelow", () => {
     it("opens a menu below the anchor, from the anchor or from another element", () => {
         const anchor = document.createElement("button");
@@ -348,119 +500,6 @@ describe("openContextMenu", () => {
             [ attachment, { isReadOnly: false } ],
             [ attachment, { isReadOnly: false } ]
         ]);
-    });
-
-    it("ends with converting an attachment link to an embed, only in a note being edited", async () => {
-        const execute = vi.fn();
-        const attachment = { attachmentId: "att-1" };
-        mocks.getAttachmentOfNote.mockResolvedValue(attachment);
-        mocks.getEmbedBoxSize.mockReturnValue("small");
-        mocks.getAttachmentActionGroups.mockReturnValue([
-            [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ]
-        ]);
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<a class="reference-link" href="#"><span>report.pdf</span></a>`;
-        const link = editable.querySelector("a");
-
-        const title = link?.querySelector("span") ?? undefined;
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(title), VIEW_SCOPE);
-
-        const { items } = mocks.show.mock.calls[0][0];
-        expect(items.slice(4)).toMatchObject([
-            { kind: "separator" },
-            { title: "Download" },
-            { title: "link_context_menu.convert_link_to_embed" }
-        ]);
-        items.at(-1).handler();
-        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(attachment);
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "small"
-        });
-
-        editable.removeAttribute("contenteditable");
-        const event = contextMenuEvent(link ?? undefined);
-        await linkContextMenu.openContextMenu("root/n1", event, VIEW_SCOPE);
-        expect(mocks.show.mock.calls[1][0].items).toHaveLength(6);
-        expect(mocks.getTextEditorContaining).toHaveBeenCalledTimes(1);
-    });
-
-    it("ends with converting a note link to an embed, if the editor can convert it", async () => {
-        const execute = vi.fn();
-        const canConvertLinkToEmbed = vi.fn(() => true);
-        const note = { noteId: "n1" };
-        mocks.getNote.mockResolvedValue(note);
-        mocks.getEmbedBoxSize.mockReturnValue("full");
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<p><a class="reference-link" href="#root/n1">Note</a></p>`;
-        const link = editable.querySelector("a");
-        if (!link) return;
-
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(link));
-        expect(canConvertLinkToEmbed).toHaveBeenCalledWith(link);
-        const { items } = mocks.show.mock.calls[0][0];
-        expect(items.slice(4)).toMatchObject([
-            { kind: "separator" },
-            { title: "link_context_menu.convert_link_to_included_note", uiIcon: "bx bx-window-alt" }
-        ]);
-        items.at(-1).handler();
-        expect(mocks.getNote).toHaveBeenCalledWith("n1");
-        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(note);
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "full"
-        });
-
-        // Such as one with a query, which names a part of the note.
-        canConvertLinkToEmbed.mockReturnValue(false);
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(link));
-        expect(mocks.show.mock.calls[1][0].items).toHaveLength(4);
-    });
-
-    it("offers converting a link to blocks of a note to an excerpt of full size", async () => {
-        const execute = vi.fn();
-        mocks.getNote.mockResolvedValue({ noteId: "n1" });
-        mocks.getEmbedBoxSize.mockReturnValue("medium");
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<p><a class="reference-link" href="#root/n1?block=b1">Note</a></p>`;
-        const link = editable.querySelector("a");
-        expect(link).not.toBeNull();
-
-        await linkContextMenu.openContextMenu(
-            "root/n1", contextMenuEvent(link ?? undefined), { block: "b1" }
-        );
-
-        const item = mocks.show.mock.calls[0][0].items.at(-1);
-        expect(item).toMatchObject({
-            title: "link_context_menu.convert_link_to_note_excerpt",
-            uiIcon: "bx bx-window-alt"
-        });
-        item.handler();
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "full"
-        });
     });
 
     describe("opened on an embed in a note being edited", () => {
@@ -597,6 +636,14 @@ describe("openContextMenu", () => {
             execute.mockClear();
             items[12].handler();
             expect(execute).not.toHaveBeenCalled();
+
+            // An embed that cannot turn into a link ends its last group with the actions.
+            state = { ...state, isConvertibleToLink: false };
+            expect((await openOn(editable.querySelector("a"))).slice(-3)).toMatchObject([
+                { title: "Rename" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
+            ]);
         });
 
         it("offers Editable above the size, for content that has an editable mode", async () => {
@@ -823,6 +870,19 @@ describe("openContextMenu", () => {
             ]);
             expect(items).toHaveLength(4);
             expect(pick(items[3])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+        });
+
+        it("opens no menu of an embed off one, or once a later menu opened", async () => {
+            const first = linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            await linkContextMenu.openContextMenu("root/n2", contextMenuEvent());
+            await first;
+            expect(mocks.show).toHaveBeenCalledOnce();
+
+            // Outside a note being edited, and on an embed the editor does not know.
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent());
+            state = null;
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            expect(mocks.show).toHaveBeenCalledOnce();
         });
 
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {

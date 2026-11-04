@@ -6,9 +6,11 @@ You can open an internal link by clicking it. You can also see a read-only previ
 Since v0.107.0, clicking an internal link while editing a text note shows its popup instead, as clicking an external link does:
 
 *   _Open note_ opens the linked note, or _Open attachment_ for a link to an attachment. A link into the same note reads _Jump to heading_, _Jump to block_ or _Jump to anchor_ instead, and scrolls to it without leaving the note.
-*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_ copies the address of the link.
+*   <span class="tn-icon cke cke-trilium-download"></span> _Download_, for a link to an attachment, downloads the attachment.
 *   <span class="tn-icon cke cke-pencil"></span> _Edit link_ changes the link, as described below.
-*   <span class="tn-icon cke cke-unlink"></span> _Unlink_ turns the link into plain text.
+*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu, with <span class="tn-icon bx bx-right-arrow-circle"></span> _Open note_ first, which does what the first button does, then <span class="tn-icon bx bx-link-external"></span> _Open note in a new tab_, <span class="tn-icon bx bx-dock-right"></span> _Open note in a new split_, <span class="tn-icon bx bx-window-open"></span> _Open note in a new window_ and <span class="tn-icon bx bx-edit"></span> _Quick edit_, then _Edit link_ and <span class="tn-icon cke cke-unlink"></span> _Unlink_, which turns the link into plain text. A link that shows the title of the note ends with _Convert link to an included note_, described in <a class="reference-link" href="../Include%20Note.md">Include Note</a>. A link to an attachment lists the actions on the attachment between _Edit link_ and _Unlink_, and ends with converting the attachment into a note. A link to blocks of the same note leaves out the ways to open the note elsewhere.
+
+In a note being edited, right-clicking a link also opens this menu.
 
 To open the note in a new tab without the popup, <kbd>Ctrl</kbd>+click or double-click the link. The preview does not show while the popup is open.
 

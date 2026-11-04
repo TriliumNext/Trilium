@@ -1,13 +1,15 @@
 import {
     type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale,
-    type IconPickerRequest, type LinkDialogRequest, type LinkEmbedHost, SnippetDefinition,
-    type TextTransformationConfig, type YouTubeVideoRequest
+    type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
+    type LinkMenuHost, SnippetDefinition, type TextTransformationConfig, type YouTubeVideoRequest
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import i18next from "i18next";
 
 import type { CommandMappings, CommandNames } from "../../../components/app_context.js";
+import { openInCurrentNoteContext } from "../../../components/note_context.js";
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { getUploadBoxSize } from "../../../services/content_renderer.js";
@@ -223,9 +225,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         link: {
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS,
-            // linkEmbedDisplayDropdown is the same Display dropdown the link-preview widget toolbar
-            // shows: on a native link it reads "Text" and converts to a preview shape.
-            toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink", "|", "linkEmbedDisplayDropdown"]
+            toolbar: LINK_TOOLBAR
         },
         bookmark: {
             toolbar: [
@@ -282,6 +282,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
         internalLink: { showDialog: (request) => opts.showLinkDialog?.(request) ?? null },
+        linkMenu: buildLinkMenuHost(),
         // The link dialog's note suggestions render in the page's body.
         hostedBalloon: { keepOpenSelector: FLOATING_LAYER_SELECTOR },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
@@ -484,6 +485,29 @@ function buildAttachmentUploadHost(getComponentId?: () => string | undefined): A
         },
         getLocalUpload: server.getLocalUpload,
         getEmbedBoxSize: getUploadBoxSize
+    };
+}
+
+/**
+ * What the menu of the toolbar of a link to a note takes from the app: the entries of its context
+ * menu, and opening the note in place.
+ */
+function buildLinkMenuHost(): LinkMenuHost {
+    return {
+        describeNoteLink(href, element, run) {
+            const { notePath = "", viewScope = {} } = linkService.parseNavigationStateFromUrl(href);
+            return linkContextMenu.getLinkToolbarEntries(notePath, viewScope, element, run);
+        },
+        openNote(href, element) {
+            const { notePath, viewScope } = linkService.parseNavigationStateFromUrl(href);
+            if (notePath) {
+                openInCurrentNoteContext({ target: element }, notePath, viewScope);
+            }
+        },
+        downloadAttachment(href) {
+            const { notePath = "", viewScope = {} } = linkService.parseNavigationStateFromUrl(href);
+            void linkContextMenu.downloadLinkedAttachment(notePath, viewScope);
+        }
     };
 }
 

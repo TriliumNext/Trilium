@@ -86,7 +86,7 @@ widgets inside the selection.
   high), which the box size command sets again. Height follows width (`isHeightResizable` is
   per element). A size change only restyles the figure: the `attribute:boxSize` converter
   skips `reloadEmbeddedContent()` for a video, since a new player stops the playback. A caption is saved in the captioned figure (above). The video toolbar also
-  shows while the caret is in the caption (`findRelatedVideo()`), and its Copy URL and Display
+  shows while the caret is in the caption (`findRelatedVideo()`), and its Copy address (URL) and Display
   act on the video through `ChangeLinkDisplayCommand._getTarget()`: the selected preview, else,
   unless the caret is on a link, the video of the caption (`getCaptionedEmbed()`).
   `getSelectedLinkWidget()` itself reads only the selected element, as the link balloon shares
@@ -105,7 +105,7 @@ widgets inside the selection.
   `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the
   converters follow the map. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
   opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
-  `content_embed_toolbar.ts`): Copy URL, the link preview's Display dropdown and ⋮. The caption
+  `content_embed_toolbar.ts`): Copy address (URL), the link preview's Display dropdown and ⋮. The caption
   is toggled from ⋮ only. Its ⋮ menu
   (`getVideoItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
   (`openUrlExternally()` in `services/open.ts`) above the embed's commands and _Delete_ below.

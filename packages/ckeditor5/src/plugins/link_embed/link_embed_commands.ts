@@ -14,12 +14,12 @@ export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
 export const REMOVE_LINK_EMBED_COMMAND = 'removeLinkEmbed';
 
 export const LINK_DISPLAY_MODES = [
-    'iconAndTextLink',
-    'cardLink',
-    'embedLink',
     // The way out of the preview system: an ordinary <a> link, no widget. Offered in the same
     // dropdowns as the real modes so "back to a normal URL" is found where the user looks for it.
-    'textLink'
+    'textLink',
+    'iconAndTextLink',
+    'cardLink',
+    'embedLink'
 ] as const;
 
 export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number];

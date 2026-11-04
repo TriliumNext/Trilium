@@ -18,6 +18,8 @@ const blankInserts = vi.fn();
 let now = "";
 /** The row of the `level` list that is on, and the one its `execute` picks. */
 let level = "";
+/** Answers the `slow` entry below with the entries of its menu. */
+let answerSlowMenu: (items: ToolbarGroupMenuItem[]) => void = () => {};
 
 beforeEach(() => {
     insertedSamples.length = 0;
@@ -196,6 +198,18 @@ class SampleDropdown extends Plugin {
                     { kind: "heading", label: "Later" },
                     { kind: "entry", label: "Never", isEnabled: false }
                 ]
+            });
+            return dropdown;
+        });
+
+        // A dropdown whose entries come from somewhere that answers later.
+        this.editor.ui.componentFactory.add("slow", (locale: Locale) => {
+            const dropdown = createDropdown(locale);
+            dropdown.buttonView.set({ label: "Slow", icon: "<svg />" });
+            openListAsMenu(dropdown, {
+                describe: () => new Promise((resolve) => {
+                    answerSlowMenu = resolve;
+                })
             });
             return dropdown;
         });
@@ -583,6 +597,40 @@ describe("ToolbarGroupMenu", () => {
         expect(labels(last().items)).toStrictEqual(["In line", "Wrap text", "Align left"]);
     });
 
+    it("converts a dropdown of the link toolbar, built as LinkUI first shows it", async () => {
+        const {
+            _setModelData: setModelData, ContextualBalloon, Link, LinkUI
+        } = await import("ckeditor5");
+        const { host, config, last } = createHost();
+        const editor = await createTestEditor([...PLUGINS, Link], {
+            ...config,
+            toolbar: { items: ["bold"] },
+            link: { toolbar: ["described"] }
+        });
+
+        // A balloon of another feature, shown before the link toolbar exists.
+        const balloon = editor.plugins.get(ContextualBalloon);
+        const other = new View();
+        other.setTemplate({ tag: "div" });
+        balloon.add({ view: other, position: { target: document.body } });
+        balloon.remove(other);
+
+        setModelData(editor.model,
+            "<paragraph><$text linkHref=\"https://a.b\">li[]nk</$text></paragraph>");
+        const linkUI = editor.plugins.get(LinkUI);
+        (linkUI as unknown as { _showUI(): void })._showUI();
+        const toolbar = linkUI.toolbarView;
+        if (!toolbar) {
+            throw new Error("LinkUI showed no toolbar.");
+        }
+        const dropdown = groupDropdown(toolbar, "Described");
+        dropdown.buttonView.fire("open");
+
+        expect(dropdown.isOpen).toBe(false);
+        expect(host.show).toHaveBeenCalledTimes(1);
+        expect(labels(last().items)).toStrictEqual(["Now: noon", "Later", "Never"]);
+    });
+
     it("opens a dropdown handed to openListAsMenu as a menu of its rows, with the one on checked", async () => {
         const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
@@ -655,6 +703,64 @@ describe("ToolbarGroupMenu", () => {
         expect(labels(last().items)[0]).toBe("Now: dusk");
     });
 
+    it("opens a menu described later once its entries arrive, unless closed before", async () => {
+        const { host, config, last } = createHost();
+        const editor = await createTestEditor(PLUGINS, {
+            ...config,
+            toolbar: { items: ["bold", "slow"] }
+        });
+        const dropdown = groupDropdown(getToolbar(editor), "Slow");
+        const settle = () => new Promise((resolve) => setTimeout(resolve));
+
+        dropdown.buttonView.fire("open");
+        expect(dropdown.isOpen).toBe(false);
+        expect(host.show).not.toHaveBeenCalled();
+        answerSlowMenu([{ kind: "entry", label: "Late", isEnabled: true }]);
+        await settle();
+        expect(host.show).toHaveBeenCalledTimes(1);
+        expect(labels(last().items)).toStrictEqual(["Late"]);
+
+        // A second press while the entries are on their way closes the menu before it shows.
+        last().onClose(false);
+        dropdown.buttonView.fire("open");
+        dropdown.buttonView.fire("open");
+        answerSlowMenu([{ kind: "entry", label: "Too late", isEnabled: true }]);
+        await settle();
+        expect(host.show).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens a context menu at a point, focusing the text on Escape", async () => {
+        const { host, config, last } = createHost();
+        const editor = await createTestEditor(PLUGINS, {
+            ...config,
+            toolbar: { items: ["bold", "described"] }
+        });
+        const plugin = editor.plugins.get(ToolbarGroupMenu);
+        const focusText = vi.spyOn(editor.editing.view, "focus");
+        const act = vi.fn();
+        const describe = (run: (action: () => void) => () => void): ToolbarGroupMenuItem[] => [
+            { kind: "entry", label: "Act", isEnabled: true, run: run(act) }
+        ];
+
+        expect(plugin.openContextMenu({ x: 10, y: 20 }, describe)).toBe(true);
+        expect(last().anchor).toStrictEqual({ x: 10, y: 20 });
+        expect(labels(last().items)).toStrictEqual(["Act"]);
+        last().onClose(true);
+        expect(focusText).toHaveBeenCalledOnce();
+
+        // The menu hides before the entry runs, as for a toolbar item.
+        plugin.openContextMenu({ x: 10, y: 20 }, describe);
+        entry(last().items, "Act").run?.();
+        expect(host.hide).toHaveBeenCalledOnce();
+        expect(act).toHaveBeenCalledOnce();
+
+        // A group's button opens the group's menu in its place.
+        plugin.openContextMenu({ x: 10, y: 20 }, describe);
+        groupDropdown(getToolbar(editor), "Described").buttonView.fire("open");
+        expect(host.hide).toHaveBeenCalledTimes(2);
+        expect(labels(last().items)[0]).toBe("Now: noon");
+    });
+
     it("leaves a dropdown handed to openListAsMenu to CKEditor when no host is configured", async () => {
         const editor = await createTestEditor(PLUGINS, {
             toolbar: { items: ["level"] }
@@ -673,6 +779,12 @@ describe("ToolbarGroupMenu", () => {
         const dropdown = groupDropdown(getToolbar(editor), "Insert");
         dropdown.isOpen = true;
         expect(dropdown.isOpen).toBe(true);
+    });
+
+    it("opens no context menu when no host is configured", async () => {
+        const editor = await createTestEditor(PLUGINS, { toolbar: { items: ["bold"] } });
+        expect(editor.plugins.get(ToolbarGroupMenu).openContextMenu({ x: 0, y: 0 }, () => []))
+            .toBe(false);
     });
 });
 

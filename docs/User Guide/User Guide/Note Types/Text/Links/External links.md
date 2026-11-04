@@ -24,6 +24,8 @@ Once a link is inserted:
 
 *   The text inside the link can be changed if needed but the link itself will remain.
 *   To modify the link, click on the link to display the popup and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button. It opens the _Edit link_ dialog, filled with the link's address and text, as do placing the cursor inside the link and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd>, <kbd>Ctrl</kbd>+<kbd>L</kbd> or one of the link buttons. _Save link_ changes the whole link, its text included, and the dialog can also turn it into a link to a note.
-*   To remove a link, click on it and press the <span class="tn-icon cke cke-unlink"></span> _Unlink_ button.
+*   To remove a link, click on it, open the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu at the end of the popup and choose <span class="tn-icon cke cke-unlink"></span> _Unlink_. The text stays, without the link.
+*   The same menu has _Open link_, _Edit link_ and _Copy address (URL)_, and _Display as_, which turns the link into one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>, as does the _Display_ menu of the popup.
+*   Right-clicking a link opens the same menu.
 
-You can follow external link by either double clicking (will open new tab/window) it or right clicking on them and choosing "Open in new tab".
+To follow an external link, double-click it, which opens it in a new tab or window, or right-click it in a note being edited and choose _Open link_.

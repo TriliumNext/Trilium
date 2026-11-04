@@ -72,6 +72,7 @@ import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.j
 import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
 import ExtendedCodeBlock from "./plugins/content_embed/extended_code_block.js";
 import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
+import LinkMenu from "./plugins/link_menu.js";
 import NoteLinkToolbar from "./plugins/note_link_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
@@ -137,6 +138,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ExtendedCodeBlock,
     LinkEmbedToolbar,
     NoteLinkToolbar,
+    LinkMenu,
     TodoListMultistate,
     CollapsibleListItems,
     ListItemAlignment,

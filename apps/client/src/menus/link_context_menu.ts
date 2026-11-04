@@ -1,4 +1,6 @@
-import type { CKTextEditor, ContentEmbedState, PositionValue } from "@triliumnext/ckeditor5";
+import type {
+    CKTextEditor, ContentEmbedState, PositionValue, ToolbarGroupMenuItem
+} from "@triliumnext/ckeditor5";
 import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
@@ -6,15 +8,16 @@ import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 import appContext, { type CommandNames } from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
+import type { AttachmentAction } from "../services/attachment_actions.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
-import { openUrlExternally } from "../services/open.js";
+import open, { openUrlExternally } from "../services/open.js";
 import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
 import { DISPLAY_MODE_OPTIONS } from "../widgets/type_widgets/helpers/split_editor_mode.js";
 import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools.js";
 import { getClosestNtxId } from "../widgets/widget_utils.js";
-import contextMenu, { type MenuItem } from "./context_menu.js";
+import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
 import { getTextEditorContaining, keepEditorFocused } from "./text_editor_context_menu.js";
 
@@ -83,8 +86,8 @@ async function openContextMenu(
     const editor = await getEditingTextEditor(getTarget(e));
     const embed = editor && getMenuEmbed(e, editor);
     const ownItems = viewScope.viewMode === "attachments" && viewScope.attachmentId
-        ? await getAttachmentItems(noteId, viewScope.attachmentId, e, editor, embed)
-        : await getNoteItems(noteId, e, editor, embed, !!viewScope.block);
+        ? await getAttachmentItems(noteId, viewScope.attachmentId, e, embed)
+        : getNoteItems(embed);
     // A later right-click opened its own menu while this one waited for the editor or the
     // attachment.
     if (request !== lastMenuRequest) {
@@ -120,6 +123,77 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
+}
+
+/**
+ * The entries of the menu of the toolbar of a link to `notePath` in a text note being edited, for
+ * the editor's `linkMenu`: `target`, the places to open the note in, `actions`, the groups of the
+ * actions on an attachment the link points to, and `conversion`, converting a reference link to an
+ * embed, then the attachment into a note. `element` is the reference link, or the editable for a
+ * link in the text. `run` wraps the action of an entry, as the menu runs it.
+ */
+async function getLinkToolbarEntries(
+    notePath: string,
+    viewScope: ViewScope,
+    element: HTMLElement,
+    run: (action: () => void) => () => void
+): Promise<{
+    target: ToolbarGroupMenuItem[];
+    actions: ToolbarGroupMenuItem[][];
+    conversion: ToolbarGroupMenuItem[];
+}> {
+    const e: LinkMenuOrigin = { pageX: 0, pageY: 0, target: element };
+    const noteId = notePath.split("/").at(-1) ?? notePath;
+    const editor = await getEditingTextEditor(element);
+    const toEntry = (
+        item: MenuCommandItem<CommandNames>, action: () => void
+    ): ToolbarGroupMenuItem => ({
+        kind: "entry",
+        label: item.title,
+        iconClass: item.uiIcon,
+        isEnabled: item.enabled ?? true,
+        run: run(action)
+    });
+    const target = [ ...getOpenItems(e), getQuickEditItem() ].map((item) =>
+        toEntry(item, () => handleLinkContextMenuItem(item.command, e, notePath, viewScope)));
+
+    let actions: ActionItem[][] = [];
+    let conversion: (ActionItem | null)[] = [];
+    if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
+        const linked = await getLinkedAttachment(noteId, viewScope.attachmentId, e);
+        if (linked) {
+            const { attachment, isReadOnly, getLinkedAttachmentActions } = linked;
+            const { groups, conversion: toNote } =
+                getLinkedAttachmentActions(attachment, { isReadOnly });
+            actions = groups.map((group) => group.map(toActionItem));
+            conversion = [
+                await getConvertToEmbedItem(e, editor,
+                    t("link_context_menu.convert_link_to_embed"), async () => attachment),
+                toNote && toActionItem(toNote)
+            ];
+        }
+    } else {
+        conversion = [ await getConvertNoteLinkItem(e, editor, noteId, !!viewScope.block) ];
+    }
+
+    const toEntries = (items: (ActionItem | null)[]) => items
+        .filter((item) => item !== null)
+        .map((item) => toEntry(item, item.handler));
+    return { target, actions: actions.map(toEntries), conversion: toEntries(conversion) };
+}
+
+/**
+ * Downloads the attachment that a link to `notePath` points to, for the Download button of the
+ * toolbar of the link. Does nothing for an attachment deleted since.
+ */
+async function downloadLinkedAttachment(notePath: string, viewScope: ViewScope) {
+    const noteId = notePath.split("/").at(-1) ?? notePath;
+    const attachment = viewScope.attachmentId
+        ? await froca.getAttachmentOfNote(noteId, viewScope.attachmentId)
+        : null;
+    if (attachment) {
+        open.downloadAttachment(attachment.attachmentId);
+    }
 }
 
 /**
@@ -189,8 +263,14 @@ function setShareLinkResolver(resolver: ((noteId: string) => string | null) | un
     resolveShareLink = resolver;
 }
 
+/** A menu item that opens the note in a place, which `handleLinkContextMenuItem()` handles. */
+type OpenItem = MenuCommandItem<CommandNames> & { command: CommandNames };
+
+/** A menu item that acts by itself, needing neither the item nor the event. */
+type ActionItem = MenuCommandItem<CommandNames> & { handler(): void };
+
 /** The places the note can be opened in, without the quick edit popup. */
-function getOpenItems(e: LinkMenuOrigin | GeoMouseEvent): MenuItem<CommandNames>[] {
+function getOpenItems(e: LinkMenuOrigin | GeoMouseEvent): OpenItem[] {
     const ntxId = getNtxId(e);
     const isMobileSplitOpen = isMobile() && appContext.tabManager.getNoteContextById(ntxId).getMainContext().getSubContexts().length > 1;
 
@@ -202,7 +282,7 @@ function getOpenItems(e: LinkMenuOrigin | GeoMouseEvent): MenuItem<CommandNames>
 }
 
 /** Opens the note in a popup over the current one. */
-function getQuickEditItem(): MenuItem<CommandNames> {
+function getQuickEditItem(): OpenItem {
     return { title: t("link_context_menu.open_note_in_popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit" };
 }
 
@@ -265,68 +345,74 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group, and deleting the embed last.
- * A menu opened in a note shown read-only has only the actions that leave the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, converting the embed to a
+ * link at the end of the last group, and deleting the embed last. A menu opened in a note shown
+ * read-only has only the actions that leave the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
     attachmentId: string,
     e: LinkMenuOrigin,
-    editor: CKTextEditor | null,
     embed: MenuEmbed | null
 ): Promise<MenuItem<CommandNames>[]> {
+    const linked = await getLinkedAttachment(noteId, attachmentId, e);
+    if (!linked) {
+        return [];
+    }
+
+    const { attachment, isReadOnly, getAttachmentActionGroups } = linked;
+    const actionGroups = getAttachmentActionGroups(attachment, { isReadOnly })
+        .map((group) => group.map(toActionItem));
+    const [ firstGroup = [], ...otherGroups ] = actionGroups;
+    const groups = [ firstGroup, embed ? getEmbedItems(embed) : [], ...otherGroups ];
+    const actionItems = groups
+        .filter((group) => group.length > 0)
+        .flatMap((group): MenuItem<CommandNames>[] => [ { kind: "separator" }, ...group ]);
+    if (!embed) {
+        return actionItems;
+    }
+
+    const linkItem = getConvertToLinkItem(embed);
+    return [ ...actionItems, ...(linkItem ? [ linkItem ] : []), ...getDeleteEmbedGroup(embed) ];
+}
+
+/**
+ * The attachment a link at `e` points to, with the functions that list the actions on it, or
+ * `null` once it is deleted. `isReadOnly` is set for a link in a note shown read-only, which has
+ * only the actions that leave the attachment unchanged.
+ */
+async function getLinkedAttachment(noteId: string, attachmentId: string, e: LinkMenuOrigin) {
     // Imported on demand: `attachment_actions` imports `link`, which imports this module.
-    const [ attachment, { getAttachmentActionGroups }, isReadOnly ] = await Promise.all([
+    const [ attachment, actions, isReadOnly ] = await Promise.all([
         froca.getAttachmentOfNote(noteId, attachmentId),
         import("../services/attachment_actions.js"),
         isInReadOnlyNote(getTarget(e))
     ]);
     if (!attachment) {
-        return [];
+        return null;
     }
 
-    const actionGroups = getAttachmentActionGroups(attachment, { isReadOnly });
-    const [ firstGroup = [], ...otherGroups ] = actionGroups
-        .map((group) => group.map((action): MenuItem<CommandNames> => ({
-            title: action.title,
-            uiIcon: action.icon,
-            enabled: !action.disabledReason,
-            handler: () => void action.run()
-        })));
-    const groups = [ firstGroup, embed ? getEmbedItems(embed) : [], ...otherGroups ];
-    const actionItems = groups
-        .filter((group) => group.length > 0)
-        .flatMap((group): MenuItem<CommandNames>[] => [ { kind: "separator" }, ...group ]);
+    const { getAttachmentActionGroups, getLinkedAttachmentActions } = actions;
+    return { attachment, isReadOnly, getAttachmentActionGroups, getLinkedAttachmentActions };
+}
 
-    const embedItem = await getConvertToEmbedItem(
-        e, editor, t("link_context_menu.convert_link_to_embed"), async () => attachment
-    );
-    const conversionItems = [ embedItem, embed && getConvertToLinkItem(embed) ]
-        .filter((item) => !!item);
-    return [ ...actionItems, ...conversionItems, ...(embed ? getDeleteEmbedGroup(embed) : []) ];
+/** `action` as an item of a menu, disabled where it cannot run. */
+function toActionItem(action: AttachmentAction): ActionItem {
+    return {
+        title: action.title,
+        uiIcon: action.icon,
+        enabled: !action.disabledReason,
+        handler: () => void action.run()
+    };
 }
 
 /**
- * The commands of an embedded note that the menu is opened on, in a group of their own, converting
- * it in another, and deleting it last. A menu opened on a link to the note offers converting the
- * link, to an excerpt for a link to blocks of the note.
+ * The commands of the embedded note that the menu is opened on, in a group of their own,
+ * converting it in another, and deleting it last, or none for a menu opened on a link.
  */
-async function getNoteItems(
-    noteId: string,
-    e: LinkMenuOrigin,
-    editor: CKTextEditor | null,
-    embed: MenuEmbed | null,
-    isBlockReference: boolean
-): Promise<MenuItem<CommandNames>[]> {
+function getNoteItems(embed: MenuEmbed | null): MenuItem<CommandNames>[] {
     if (!embed) {
-        const embedItem = await getConvertToEmbedItem(
-            e, editor, isBlockReference
-                ? t("link_context_menu.convert_link_to_note_excerpt")
-                : t("link_context_menu.convert_link_to_included_note"),
-            () => froca.getNote(noteId),
-            isBlockReference
-        );
-        return embedItem ? [ { kind: "separator" }, embedItem ] : [];
+        return [];
     }
 
     const linkItem = getConvertToLinkItem(embed);
@@ -462,7 +548,7 @@ async function getConvertToEmbedItem(
     title: string,
     getLinkedEntity: () => Promise<FNote | FAttachment | null>,
     isExcerpt = false
-): Promise<MenuItem<CommandNames> | null> {
+): Promise<ActionItem | null> {
     const link = getTarget(e)?.closest<HTMLElement>("a.reference-link");
     if (!link || !editor?.commands.get("convertLinkToEmbed")?.isEnabled
             || !editor.plugins.get("ContentEmbed").canConvertLinkToEmbed(link)) {
@@ -486,6 +572,25 @@ async function getConvertToEmbedItem(
             boxSize: isExcerpt ? EXCERPT_BOX_SIZE : getEmbedBoxSize(entity)
         })
     };
+}
+
+/**
+ * The item that converts a reference link to the note `noteId` into an included note, or into an
+ * excerpt for a link to blocks of the note, where the editor can convert it.
+ */
+function getConvertNoteLinkItem(
+    e: LinkMenuOrigin,
+    editor: CKTextEditor | null,
+    noteId: string,
+    isBlockReference: boolean
+) {
+    return getConvertToEmbedItem(
+        e, editor, isBlockReference
+            ? t("link_context_menu.convert_link_to_note_excerpt")
+            : t("link_context_menu.convert_link_to_included_note"),
+        () => froca.getNote(noteId),
+        isBlockReference
+    );
 }
 
 /** "Convert to link", for an embed that names a note or an attachment. */
@@ -547,7 +652,9 @@ function getNtxId(e: EventOrigin) {
 }
 
 export default {
+    downloadLinkedAttachment,
     getItems,
+    getLinkToolbarEntries,
     getOriginBelow,
     getQuickEditItem,
     getOpenNoteItem,

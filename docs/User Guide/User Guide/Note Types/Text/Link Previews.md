@@ -85,16 +85,19 @@ When _Autogenerate link previews_ is turned off, the tabs are saved as a list of
 
 Click on an inserted _Icon & text_ or _Card_ link preview to select it, and a small toolbar will appear with the following options:
 
-*   The normal link operations (opening in a new tab, copying the link, unlinking).
+*   _Open link_, which opens the page in a new tab, and <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
 *   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
-*   A way to switch between the link display modes (Icon & text, Card or Embed) as well as to convert it to a normal link (Text) instead.
-    *   The Embed option is only enabled when the URL points to a supported service (YouTube today).
+*   The _Display_ menu, which converts the preview to a normal link (_Text_) or switches it to another display mode (_Icon & text_, _Card_ or _Embed_).
+    *   The Embed option is only shown when the URL points to a supported service (YouTube today).
+*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu, with <span class="tn-icon cke cke-web"></span> _Open link_, <span class="tn-icon cke cke-pencil"></span> _Edit link_, <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_, the same display modes under <span class="tn-icon cke cke-trilium-link-preview"></span> _Display as_, and <span class="tn-icon cke cke-unlink"></span> _Unlink_, which replaces the preview with its address as plain text.
+
+Right-clicking a link preview selects it and opens its _More actions_ menu.
 
 ### Videos
 
 A YouTube video shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player. The toolbar of a selected video offers:
 
-*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
+*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
 *   The _Display_ menu, which turns the video into an _Icon & text_ or _Card_ link preview, or a _Text_ link. The text of its caption stays, as a paragraph after it.
 *   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
     *   <span class="tn-icon bx bx-link-external"></span> _Open externally_ opens the video outside Trilium: in the browser, or in the app that handles the link, such as the YouTube app on Android.

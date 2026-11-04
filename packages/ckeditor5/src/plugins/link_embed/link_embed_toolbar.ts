@@ -9,28 +9,31 @@ import {
     addListToDropdown,
     ButtonView,
     DropdownButtonView,
-    IconPencil,
-    IconUnlink,
+    LinkUI,
     type ListDropdownButtonDefinition,
     type Locale,
     type Command
 } from "ckeditor5";
-import { COMMAND_NAME as LINK_DIALOG_COMMAND } from "../internallink.js";
+import InternalLinkPlugin from "../internallink.js";
 import LinkEmbed, {
     CHANGE_LINK_DISPLAY_COMMAND,
     getLinkDisplayModeLabel,
     LINK_DISPLAY_MODES,
-    REMOVE_LINK_EMBED_COMMAND,
     type LinkDisplayMode
 } from "./link_embed.js";
+import { EMBEDDABLE_URL_REGEX } from "./link_embed_commands.js";
 import { createCopyUrlButton } from "../copy_link_url.js";
 
+/**
+ * The toolbar of a selected link preview. Its `editLink` item comes from `InternalLinkPlugin`, and
+ * its `linkMenu` item from `LinkMenu`, which holds Unlink.
+ */
 export default class LinkEmbedToolbar extends Plugin {
 
     static get requires() {
         return [
-            WidgetToolbarRepository, LinkEmbed, LinkEmbedLinkButton, LinkEmbedCopyUrlButton,
-            LinkEmbedEditLinkButton, LinkEmbedUnlinkButton, LinkEmbedDisplayDropdown
+            WidgetToolbarRepository, InternalLinkPlugin, LinkEmbed, LinkEmbedLinkButton,
+            LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
         ] as const;
     }
 
@@ -39,8 +42,8 @@ export default class LinkEmbedToolbar extends Plugin {
 
         widgetToolbarRepository.register("linkEmbed", {
             items: [
-                "linkEmbedLink", "linkEmbedCopyUrl", "linkEmbedEditLink", "linkEmbedUnlink", "|",
-                "linkEmbedDisplayDropdown"
+                "linkEmbedLink", "linkEmbedCopyUrl", "editLink", "|",
+                "linkEmbedDisplayDropdown", "linkMenu"
             ],
             balloonClassName: "ck-toolbar-container link-embed-toolbar",
             getRelatedElement(selection) {
@@ -149,8 +152,9 @@ export class LinkEmbedDisplayDropdown extends Plugin {
 
 /**
  * Registers the `linkEmbedLink` toolbar item: the leading segment of the link
- * embed balloon that shows the widget's URL and opens it in a new tab when
- * clicked — mirroring CKEditor's own link toolbar preview button.
+ * embed balloon, named "Open link", that opens the widget's URL in a new tab when
+ * clicked — mirroring CKEditor's own link toolbar preview button. The `linkPreview`
+ * button of `LinkUI` has the same name on a link in the text to a web page.
  */
 class LinkEmbedLinkButton extends Plugin {
 
@@ -165,16 +169,37 @@ class LinkEmbedLinkButton extends Plugin {
         editor.ui.componentFactory.add("linkEmbedLink", locale => {
             const button = new LinkEmbedPreviewButtonView(locale);
 
-            button.set("tooltip", locale.t("Open link in new tab"));
+            button.set({
+                label: editor.t("Open link"),
+                tooltip: locale.t("Open link in new tab")
+            });
 
             /* v8 ignore next -- LinkEmbedEditing always registers CHANGE_LINK_DISPLAY_COMMAND (this plugin requires LinkEmbed), so the no-command branch is unreachable */
             if (command) {
                 button.bind("isEnabled").to(command, "url", url => !!url);
-                button.bind("label").to(command, "url", url => url ?? undefined);
                 button.bind("href").to(command, "url", url => url ?? undefined);
             }
 
             return button;
+        });
+    }
+
+    public afterInit() {
+        const editor = this.editor;
+        if (!editor.plugins.has(LinkUI)) {
+            return;
+        }
+
+        // `LinkUI` names its `linkPreview` button after the item of the provider that knows the
+        // link, and after the address of any other link.
+        editor.plugins.get(LinkUI).registerLinksListProvider({
+            label: editor.t("Link to a web page"),
+            getListItems: () => [],
+            getItem: (href) => (EMBEDDABLE_URL_REGEX.test(href)
+                ? {
+                    href, label: editor.t("Open link"), tooltip: editor.t("Open link in new tab")
+                }
+                : null)
         });
     }
 }
@@ -196,79 +221,6 @@ export class LinkEmbedCopyUrlButton extends Plugin {
         editor.ui.componentFactory.add("linkEmbedCopyUrl", locale =>
             createCopyUrlButton(editor, locale, () => command?.url)
         );
-    }
-}
-
-/**
- * Registers the `linkEmbedUnlink` toolbar item: removes the link preview, leaving
- * the bare URL as plain text — mirroring the default link toolbar's unlink button
- * (same icon, same "remove the link" semantics).
- */
-class LinkEmbedUnlinkButton extends Plugin {
-
-    static get requires() {
-        return [LinkEmbed] as const;
-    }
-
-    public init() {
-        const editor = this.editor;
-        const command = editor.commands.get(REMOVE_LINK_EMBED_COMMAND);
-
-        editor.ui.componentFactory.add("linkEmbedUnlink", locale => {
-            const button = new ButtonView(locale);
-            button.set({
-                label: locale.t("Unlink"),
-                icon: IconUnlink,
-                tooltip: true
-            });
-
-            /* v8 ignore next -- LinkEmbedEditing always registers REMOVE_LINK_EMBED_COMMAND (this plugin requires LinkEmbed), so the no-command branch is unreachable */
-            if (command) {
-                button.bind("isEnabled").to(command, "isEnabled");
-            }
-
-            button.on("execute", () => {
-                editor.execute(REMOVE_LINK_EMBED_COMMAND);
-                editor.editing.view.focus();
-            });
-
-            return button;
-        });
-    }
-}
-
-/**
- * Registers the `linkEmbedEditLink` toolbar item: opens the host's link dialog on the selected
- * preview, as the `editLink` button of the link toolbar does on a native link. The dialog edits its
- * address, title and display.
- */
-class LinkEmbedEditLinkButton extends Plugin {
-
-    static get requires() {
-        return [LinkEmbed] as const;
-    }
-
-    public init() {
-        const editor = this.editor;
-
-        editor.ui.componentFactory.add("linkEmbedEditLink", (locale) => {
-            const command = editor.commands.get(LINK_DIALOG_COMMAND);
-            const button = new ButtonView(locale);
-
-            button.set({
-                label: editor.t("Edit link"),
-                icon: IconPencil,
-                tooltip: true,
-                isEnabled: false
-            });
-
-            if (command) {
-                button.bind("isEnabled").to(command, "isEnabled");
-            }
-
-            button.on("execute", () => editor.execute(LINK_DIALOG_COMMAND));
-            return button;
-        });
     }
 }
 

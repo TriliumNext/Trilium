@@ -36,7 +36,9 @@ vi.mock("../widgets/dialogs/image_compression/image_compression_dialog", () => (
     showImageCompressionDialog: mocks.showImageCompressionDialog
 }));
 
-const { copyAttachmentReference, getAttachmentActionGroups } = await import("./attachment_actions");
+const {
+    copyAttachmentReference, getAttachmentActionGroups, getLinkedAttachmentActions
+} = await import("./attachment_actions");
 
 function attachmentOf(role: string, mime = "application/pdf") {
     const title = "report.pdf";
@@ -147,6 +149,23 @@ describe("getAttachmentActionGroups", () => {
             "attachments_actions.download",
             "ocr.view_extracted_text"
         ] ]);
+    });
+
+    it("gives the menu of a link the conversion apart from the other actions", () => {
+        const split = (attachment: FAttachment, isReadOnly = false) => {
+            const { groups, conversion } = getLinkedAttachmentActions(attachment, { isReadOnly });
+            return [ groups.map((group) => group.map((action) => action.title)), conversion ];
+        };
+        const [ viewActions, changeActions ] = titles(attachmentOf("file"));
+
+        expect(split(attachmentOf("file"))).toEqual([
+            [ viewActions, changeActions, [] ],
+            expect.objectContaining({ title: "attachments_actions.convert_attachment_into_note" })
+        ]);
+        expect(split(attachmentOf("image", "image/png"))[0]).toContainEqual([
+            "compress-image-menu"
+        ]);
+        expect(split(attachmentOf("file"), true)).toEqual([ [ viewActions ], null ]);
     });
 
     it("renames, deletes and converts only once the user has agreed", async () => {
