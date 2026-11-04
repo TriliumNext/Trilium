@@ -12,6 +12,7 @@ import { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import Button from "../react/Button";
 import { Card, OptionCardSection } from "../react/Card";
+import HelpButton from "../react/HelpButton";
 import { useNote, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
@@ -41,7 +42,7 @@ export default function ContentEmbedDialog() {
             className="include-note-dialog"
             title={t("include_note.dialog_title")}
             size="lg"
-            helpPageId="nBAXQFj20hS1"
+            helpPageId={HELP_PAGE_ID}
             onShown={form.focus}
             onHidden={() => setShown(false)}
             onSubmit={async () => {
@@ -89,6 +90,7 @@ export function ContentEmbedBalloon({ opts, onClose }: {
         >
             {form.body}
             <div className="include-note-actions">
+                <HelpButton helpPage={HELP_PAGE_ID} />
                 <Button
                     text={t("include_note.button_include")}
                     keyboardShortcut="Enter"
@@ -184,6 +186,8 @@ function useContentEmbedForm(opts: ContentEmbedOpts | undefined) {
         )
     };
 }
+
+const HELP_PAGE_ID = "nBAXQFj20hS1";
 
 const BOX_SIZES = [ "tiny", "medium", "full", "expandable" ] as const satisfies readonly BoxSize[];
 type OfferedBoxSize = typeof BOX_SIZES[number];

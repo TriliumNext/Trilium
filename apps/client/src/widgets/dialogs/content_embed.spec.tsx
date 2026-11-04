@@ -16,8 +16,13 @@ const autocomplete = vi.hoisted(() => ({
     clear: vi.fn(),
     focus: vi.fn()
 }));
+const openInAppHelpFromUrl = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/utils", async (importActual) => ({
+    ...await importActual<typeof import("../../services/utils")>(),
+    openInAppHelpFromUrl
+}));
 vi.mock("../react/NoteAutocomplete", () => ({
     default: ({ onChange, handleRef }: {
         onChange: (suggestion: Suggestion | null) => void;
@@ -204,7 +209,7 @@ describe("ContentEmbedBalloon", () => {
         vi.clearAllMocks();
     });
 
-    it("focuses the note field, and includes the picked note once the balloon closes", async () => {
+    it("focuses the note field, opens help, and includes the picked note once closed", async () => {
         const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
         let container = document.body;
         await act(async () => {
@@ -213,7 +218,7 @@ describe("ContentEmbedBalloon", () => {
             );
         });
         const form = container.querySelector("form");
-        const button = container.querySelector<HTMLButtonElement>(".include-note-actions button");
+        const button = container.querySelector<HTMLButtonElement>(".include-note-actions .btn");
         if (!form || !button) throw new Error("The balloon has no form or no include button.");
         const submit = () => act(async () => {
             form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -223,6 +228,14 @@ describe("ContentEmbedBalloon", () => {
         expect(container.querySelector(".include-note-size-hint")?.textContent)
             .toBe("include_note.size_hint");
         expect(button.disabled).toBe(true);
+
+        // The help button sits on the left of the include button.
+        const help = container.querySelector<HTMLButtonElement>(
+            ".include-note-actions > .bx-help-circle:first-child"
+        );
+        if (!help) throw new Error("The balloon has no help button before the include button.");
+        await act(async () => help.click());
+        expect(openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("nBAXQFj20hS1");
 
         await submit();
         expect(onClose).not.toHaveBeenCalled();
