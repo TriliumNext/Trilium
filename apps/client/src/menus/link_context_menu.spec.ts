@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
     getAttachmentOfNote: vi.fn(),
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
+    getEmbeddedAttachmentActions: vi.fn(),
     getLinkedAttachmentActions: vi.fn(),
     getTextEditorContaining: vi.fn(),
     getEmbedBoxSize: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock("../services/froca", () => ({
 
 vi.mock("../services/attachment_actions", () => ({
     getAttachmentActionGroups: mocks.getAttachmentActionGroups,
+    getEmbeddedAttachmentActions: mocks.getEmbeddedAttachmentActions,
     getLinkedAttachmentActions: mocks.getLinkedAttachmentActions
 }));
 
@@ -512,6 +514,8 @@ describe("openContextMenu", () => {
         const execute = vi.fn();
         const focus = vi.fn();
         const copy = vi.fn();
+        const deleteAttachment = vi.fn();
+        const convertAttachment = vi.fn();
         const selectEmbedAt = vi.fn();
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
@@ -535,10 +539,18 @@ describe("openContextMenu", () => {
                 isCaptionToggleable: true, isConvertibleToLink: true
             };
             mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
-            mocks.getAttachmentActionGroups.mockReturnValue([
-                [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
-                [ { title: "Rename", icon: "bx bx-rename", run: vi.fn() } ]
-            ]);
+            mocks.getEmbeddedAttachmentActions.mockReturnValue({
+                groups: [
+                    [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
+                    [ { title: "Rename", icon: "bx bx-rename", run: vi.fn() } ]
+                ],
+                deletion: {
+                    title: "Delete attachment",
+                    icon: "bx bx-trash destructive-action-icon",
+                    run: deleteAttachment
+                },
+                conversion: { title: "Convert attachment", icon: "bx bx-note", run: convertAttachment }
+            });
             mocks.getTextEditorContaining.mockResolvedValue({
                 plugins: {
                     has: () => hasPlugin,
@@ -591,7 +603,7 @@ describe("openContextMenu", () => {
             return execute.mock.calls;
         }
 
-        it("puts an embed's commands after its first group, converting it last", async () => {
+        it("orders an embed's menu, with the attachment's under Delete and Convert", async () => {
             // From the title, from the menu button beside it, and from a control acting on the
             // whole embed, as its toolbar does.
             for (const target of [ "a", "button.include-note-menu", "figure" ]) {
@@ -630,11 +642,16 @@ describe("openContextMenu", () => {
                         title: "link_context_menu.delete",
                         uiIcon: "bx bx-trash destructive-action-icon"
                     },
-                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" }
+                    { title: "Delete attachment", uiIcon: "bx bx-trash destructive-action-icon" },
+                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
+                    { title: "Convert attachment", uiIcon: "bx bx-note" }
                 ]);
-                expect(items).toHaveLength(15);
+                expect(items).toHaveLength(17);
             }
             expect(selectEmbedAt).not.toHaveBeenCalled();
+            expect(mocks.getEmbeddedAttachmentActions)
+                .toHaveBeenCalledWith({ attachmentId: "att-1" }, { isReadOnly: false });
+            expect(mocks.getAttachmentActionGroups).not.toHaveBeenCalled();
 
             const items = await openOn(editable.querySelector("a"));
             expect(pick(items[7].items[0]))
@@ -644,20 +661,27 @@ describe("openContextMenu", () => {
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
             expect(pick(items[13])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
-            expect(pick(items[14])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            expect(pick(items[15])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            items[14].handler();
+            items[16].handler();
+            expect([ deleteAttachment, convertAttachment ].map((run) => run.mock.calls.length))
+                .toEqual([ 1, 1 ]);
 
             // An embed the editor cannot select is left as it is.
             selectEmbedAt.mockReturnValue(false);
             execute.mockClear();
-            items[14].handler();
+            items[15].handler();
             expect(execute).not.toHaveBeenCalled();
 
-            // An embed that cannot turn into a link ends with Delete.
+            // An embed that cannot turn into a link has the attachment's conversion after the
+            // deletions.
             state = { ...state, isConvertibleToLink: false };
-            expect((await openOn(editable.querySelector("a"))).slice(-3)).toMatchObject([
+            expect((await openOn(editable.querySelector("a"))).slice(-5)).toMatchObject([
                 { title: "Rename" },
                 { kind: "separator" },
-                { title: "link_context_menu.delete" }
+                { title: "link_context_menu.delete" },
+                { title: "Delete attachment" },
+                { title: "Convert attachment" }
             ]);
         });
 
@@ -675,7 +699,7 @@ describe("openContextMenu", () => {
                 },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(16);
+            expect(items).toHaveLength(18);
             expect(pick(items[7])).toEqual([ [ "toggleContentEmbedEditable", undefined ] ]);
 
             state = { ...state, isEditable: false };
@@ -695,7 +719,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(19);
+            expect(items).toHaveLength(21);
             expect(pick(items[9]))
                 .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
 
@@ -746,7 +770,7 @@ describe("openContextMenu", () => {
             ]);
             expect(new Set([ leftIcon, centerIcon, rightIcon, wrapLeftIcon, wrapRightIcon ]).size)
                 .toBe(5);
-            expect(items).toHaveLength(16);
+            expect(items).toHaveLength(18);
             expect(items[8].items).toHaveLength(4);
             expect(items[8].items[1].items).toHaveLength(3);
             expect(items[8].items[3].items).toHaveLength(2);

@@ -58,15 +58,43 @@ export function getAttachmentActionGroups(
  */
 export function getLinkedAttachmentActions(
     attachment: FAttachment,
-    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+    options: AttachmentActionOptions = {}
 ): { groups: AttachmentAction[][]; conversion: AttachmentAction | null } {
+    const { groups, deletion, conversion } = getEmbeddedAttachmentActions(attachment, options);
+    if (!deletion) {
+        return { groups, conversion };
+    }
+
+    const [ viewActions, changeActions, imageActions ] = groups;
+    return { groups: [ viewActions, [ ...changeActions, deletion ], imageActions ], conversion };
+}
+
+/**
+ * The actions on `attachment` for the menu of an embed of it, which lists `deletion` and
+ * `conversion` under deleting the embed and converting it to a link. `groups` holds the others, as
+ * {@link getLinkedAttachmentActions} lists them. A note shown read-only has only the actions that
+ * leave the attachment unchanged, and neither `deletion` nor `conversion`.
+ */
+export function getEmbeddedAttachmentActions(
+    attachment: FAttachment,
+    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+): {
+    groups: AttachmentAction[][];
+    deletion: AttachmentAction | null;
+    conversion: AttachmentAction | null;
+} {
     const viewActions = getViewActions(attachment, copyReference);
     if (isReadOnly) {
-        return { groups: [ viewActions ], conversion: null };
+        return { groups: [ viewActions ], deletion: null, conversion: null };
     }
 
     return {
         groups: [ viewActions, getChangeActions(attachment), getImageActions(attachment) ],
+        deletion: {
+            title: t("attachments_actions.delete_attachment"),
+            icon: "bx bx-trash destructive-action-icon",
+            run: () => deleteAttachment(attachment)
+        },
         conversion: {
             title: t("attachments_actions.convert_attachment_into_note"),
             icon: "bx bx-note",
@@ -112,7 +140,7 @@ function getViewActions(
     ];
 }
 
-/** The actions that replace, rename or delete the attachment. */
+/** The actions that replace or rename the attachment. */
 function getChangeActions(attachment: FAttachment): AttachmentAction[] {
     return [
         {
@@ -124,11 +152,6 @@ function getChangeActions(attachment: FAttachment): AttachmentAction[] {
             title: t("attachments_actions.rename_attachment"),
             icon: "bx bx-rename",
             run: () => renameAttachment(attachment)
-        },
-        {
-            title: t("attachments_actions.delete_attachment"),
-            icon: "bx bx-trash destructive-action-icon",
-            run: () => deleteAttachment(attachment)
         }
     ];
 }

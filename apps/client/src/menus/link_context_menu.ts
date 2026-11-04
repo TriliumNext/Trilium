@@ -386,9 +386,10 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group, then deleting the embed and
- * converting it to a link in a group of their own. A menu opened in a note shown read-only has
- * only the actions that leave the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, then, in a group of their
+ * own, deleting the embed, then the attachment, and converting the embed to a link, then the
+ * attachment into a note. A menu opened in a note shown read-only has only the actions that leave
+ * the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
@@ -401,20 +402,30 @@ async function getAttachmentItems(
         return [];
     }
 
-    const { attachment, isReadOnly, getAttachmentActionGroups } = linked;
-    const actionGroups = getAttachmentActionGroups(attachment, { isReadOnly })
-        .map((group) => group.map(toActionItem));
-    const [ firstGroup = [], ...otherGroups ] = actionGroups;
-    const groups = [ firstGroup, embed ? getEmbedItems(embed) : [], ...otherGroups ];
-    const actionItems = groups
-        .filter((group) => group.length > 0)
-        .flatMap((group): MenuItem<CommandNames>[] => [ { kind: "separator" }, ...group ]);
+    const { attachment, isReadOnly } = linked;
     if (!embed) {
-        return actionItems;
+        return separateGroups(linked.getAttachmentActionGroups(attachment, { isReadOnly })
+            .map((group) => group.map(toActionItem)));
     }
 
+    const { groups, deletion, conversion } =
+        linked.getEmbeddedAttachmentActions(attachment, { isReadOnly });
+    const [ firstGroup = [], ...otherGroups ] = groups.map((group) => group.map(toActionItem));
     const linkItem = getConvertToLinkItem(embed);
-    return [ ...actionItems, ...getDeleteEmbedGroup(embed), ...(linkItem ? [ linkItem ] : []) ];
+    return [
+        ...separateGroups([ firstGroup, getEmbedItems(embed), ...otherGroups ]),
+        ...getDeleteEmbedGroup(embed),
+        ...(deletion ? [ toActionItem(deletion) ] : []),
+        ...(linkItem ? [ linkItem ] : []),
+        ...(conversion ? [ toActionItem(conversion) ] : [])
+    ];
+}
+
+/** The items of each group that has any, after a separator. */
+function separateGroups(groups: MenuItem<CommandNames>[][]): MenuItem<CommandNames>[] {
+    return groups
+        .filter((group) => group.length > 0)
+        .flatMap((group): MenuItem<CommandNames>[] => [ { kind: "separator" }, ...group ]);
 }
 
 /**
@@ -433,8 +444,16 @@ async function getLinkedAttachment(noteId: string, attachmentId: string, e: Link
         return null;
     }
 
-    const { getAttachmentActionGroups, getLinkedAttachmentActions } = actions;
-    return { attachment, isReadOnly, getAttachmentActionGroups, getLinkedAttachmentActions };
+    const {
+        getAttachmentActionGroups, getEmbeddedAttachmentActions, getLinkedAttachmentActions
+    } = actions;
+    return {
+        attachment,
+        isReadOnly,
+        getAttachmentActionGroups,
+        getEmbeddedAttachmentActions,
+        getLinkedAttachmentActions
+    };
 }
 
 /** `action` as an item of a menu, disabled where it cannot run. */
