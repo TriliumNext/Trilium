@@ -527,7 +527,7 @@ describe("EditLinkDialog", () => {
         await open({ target: "url", addLinkPreview });
         expect(headings()).toStrictEqual([]);
         expect(displays()).toStrictEqual(
-            [ "add_link.display_text", "add_link.display_icon_and_text", "add_link.display_card" ]
+            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
         );
         const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
         await type(field("url"), video);
@@ -597,7 +597,7 @@ describe("EditLinkDialog", () => {
         expect(field("url")?.value).toBe(url);
         expect(field("text")?.value).toBe("Page");
         expect(displays()).toStrictEqual(
-            [ "add_link.display_text", "add_link.display_icon_and_text", "add_link.display_card" ]
+            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
         );
         await submit();
         expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
@@ -718,6 +718,31 @@ describe("EditLinkDialog", () => {
         await nextFrame();
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("https://example.org", "Other", true);
+    });
+
+    it("shows the spinner on the web page's title alone, filling it in the background", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(spinner("text")).not.toBeNull();
+
+        // The note page shares the title field, which the web page does not fill.
+        await act(async () => choice()[1]?.click());
+        expect(field("text")).not.toBeNull();
+        expect(spinner("text")).toBeNull();
+        page.resolve({ title: "Example" });
+        await settle();
+        expect(field("text")?.value).toBe("");
+
+        await act(async () => choice()[0]?.click());
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("Example");
+        await nextFrame();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
     });
 
     it("fills a preview's blank title and description, reading each page once", async () => {
@@ -1161,12 +1186,14 @@ async function leave(input: HTMLInputElement | null) {
 }
 
 /**
- * Waits a frame, so that the effects of a render outside `act()` have run, as they have before
- * any real submit. `Modal` registers the `onHidden` of each render in such an effect.
+ * Waits until the effects of a render outside `act()` have run, as they have before any real
+ * submit. `Modal` registers the `onHidden` of each render in such an effect, which Preact runs in a
+ * timeout it sets from the next frame.
  */
 function nextFrame() {
     return act(async () => {
         await new Promise((resolve) => requestAnimationFrame(resolve));
+        await new Promise((resolve) => setTimeout(resolve));
     });
 }
 

@@ -571,7 +571,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 currentValue={linkTitle}
                 placeholder={getTitlePlaceholder()}
                 onChange={(title) => setLinkTitle(target, title)}
-                isRetrieving={isRetrieving && retrievesTitle}
+                isRetrieving={target === "url" && isRetrieving && retrievesTitle}
             />
         </OptionCardSection>
     );
@@ -659,8 +659,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
     );
     const displays = [
-        { value: "textLink", title: t("add_link.display_text") },
-        { value: "iconAndTextLink", title: t("add_link.display_icon_and_text") },
+        { value: "textLink", title: t("add_link.display_plain") },
+        { value: "iconAndTextLink", title: t("add_link.display_inline") },
         { value: "cardLink", title: t("add_link.display_card") },
         ...(hasPlayer(webLinkUrl)
             ? [ { value: "embedLink", title: t("add_link.display_embed") } ]

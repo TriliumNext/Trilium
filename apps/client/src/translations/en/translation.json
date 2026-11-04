@@ -71,8 +71,8 @@
     "invalid_url": "This is not a valid URL.",
     "script_link_not_allowed": "Links that start with {{scheme}} can run code, so they are not allowed.",
     "display_as": "Display as",
-    "display_text": "Text",
-    "display_icon_and_text": "Icon & text",
+    "display_plain": "Text",
+    "display_inline": "Icon & text",
     "display_card": "Card",
     "display_embed": "YouTube embed",
     "page_title": "Title of the web page",
@@ -3653,7 +3653,7 @@
     "sticky_table_headers_description": "Keep the header rows of a table at the top of the note while scrolling through the rest of the table.",
     "link_title_retrieval_enabled": "Automatically retrieve titles for text links",
     "link_title_retrieval_description": "In the link editor, fill an empty title of a text link with the title of the web page.",
-    "link_details_retrieval_enabled": "Automatically retrieve title, description and icon for icon & text links and cards",
+    "link_details_retrieval_enabled": "Automatically retrieve title and description for icon & text links and cards",
     "link_details_retrieval_description": "In the link editor, fill an empty title or description of an icon & text link or a card with those of the web page."
   },
   "table_view": {
