@@ -147,9 +147,10 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
 /**
  * The entries of the menu of the toolbar of a link to `notePath` in a text note being edited, for
  * the editor's `linkMenu`: `target`, the places to open the note in, `actions`, the groups of the
- * actions on an attachment the link points to, and `conversion`, converting a reference link to an
- * embed, then the attachment into a note. `element` is the reference link, or the editable for a
- * link in the text. `run` wraps the action of an entry, as the menu runs it.
+ * actions on an attachment the link points to, `deletion`, deleting the attachment, and
+ * `conversion`, converting a reference link to an embed, then the attachment into a note.
+ * `element` is the reference link, or the editable for a link in the text. `run` wraps the action
+ * of an entry, as the menu runs it.
  */
 async function getLinkToolbarEntries(
     notePath: string,
@@ -159,6 +160,7 @@ async function getLinkToolbarEntries(
 ): Promise<{
     target: ToolbarGroupMenuItem[];
     actions: ToolbarGroupMenuItem[][];
+    deletion: ToolbarGroupMenuItem[];
     conversion: ToolbarGroupMenuItem[];
 }> {
     const e: LinkMenuOrigin = { pageX: 0, pageY: 0, target: element };
@@ -177,14 +179,16 @@ async function getLinkToolbarEntries(
         toEntry(item, () => handleLinkContextMenuItem(item.command, e, notePath, viewScope)));
 
     let actions: ActionItem[][] = [];
+    let deletion: (ActionItem | null)[] = [];
     let conversion: (ActionItem | null)[] = [];
     if (viewScope.viewMode === "attachments" && viewScope.attachmentId) {
         const linked = await getLinkedAttachment(noteId, viewScope.attachmentId, e);
         if (linked) {
             const { attachment, isReadOnly, getLinkedAttachmentActions } = linked;
-            const { groups, conversion: toNote } =
+            const { groups, deletion: deleteAttachment, conversion: toNote } =
                 getLinkedAttachmentActions(attachment, { isReadOnly });
             actions = groups.map((group) => group.map(toActionItem));
+            deletion = [ deleteAttachment && toActionItem(deleteAttachment) ];
             conversion = [
                 await getConvertToEmbedItem(e, editor,
                     t("link_context_menu.convert_link_to_embed"), async () => attachment),
@@ -198,7 +202,12 @@ async function getLinkToolbarEntries(
     const toEntries = (items: (ActionItem | null)[]) => items
         .filter((item) => item !== null)
         .map((item) => toEntry(item, item.handler));
-    return { target, actions: actions.map(toEntries), conversion: toEntries(conversion) };
+    return {
+        target,
+        actions: actions.map(toEntries),
+        deletion: toEntries(deletion),
+        conversion: toEntries(conversion)
+    };
 }
 
 /**
@@ -409,7 +418,7 @@ async function getAttachmentItems(
     }
 
     const { groups, deletion, conversion } =
-        linked.getEmbeddedAttachmentActions(attachment, { isReadOnly });
+        linked.getLinkedAttachmentActions(attachment, { isReadOnly });
     const [ firstGroup = [], ...otherGroups ] = groups.map((group) => group.map(toActionItem));
     const linkItem = getConvertToLinkItem(embed);
     return [
@@ -444,16 +453,8 @@ async function getLinkedAttachment(noteId: string, attachmentId: string, e: Link
         return null;
     }
 
-    const {
-        getAttachmentActionGroups, getEmbeddedAttachmentActions, getLinkedAttachmentActions
-    } = actions;
-    return {
-        attachment,
-        isReadOnly,
-        getAttachmentActionGroups,
-        getEmbeddedAttachmentActions,
-        getLinkedAttachmentActions
-    };
+    const { getAttachmentActionGroups, getLinkedAttachmentActions } = actions;
+    return { attachment, isReadOnly, getAttachmentActionGroups, getLinkedAttachmentActions };
 }
 
 /** `action` as an item of a menu, disabled where it cannot run. */

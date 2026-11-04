@@ -40,42 +40,24 @@ export function getAttachmentActionGroups(
     attachment: FAttachment,
     options: AttachmentActionOptions = {}
 ): AttachmentAction[][] {
-    const { groups, conversion } = getLinkedAttachmentActions(attachment, options);
-    if (!conversion) {
+    const { groups, deletion, conversion } = getLinkedAttachmentActions(attachment, options);
+    if (!deletion || !conversion) {
         return groups;
     }
 
     const [ viewActions, changeActions, imageActions ] = groups;
-    return [ viewActions, changeActions, [ ...imageActions, conversion ] ];
+    return [ viewActions, [ ...changeActions, deletion ], [ ...imageActions, conversion ] ];
 }
 
 /**
- * The actions on `attachment` for the menu of a link to it, which lists `conversion`, converting
- * the attachment into a note, beside the conversions of the link. `groups` holds the others, in
- * the groups a menu separates with a divider; the last group, compressing an image, is empty for
- * another attachment. A note shown read-only has only the actions that leave the attachment
- * unchanged, and no conversion.
+ * The actions on `attachment` for the menu of a link to it or of an embed of it, which lists
+ * `deletion`, deleting the attachment, after Unlink or deleting the embed, and `conversion`,
+ * converting the attachment into a note, after converting the link or the embed. `groups` holds
+ * the others, in the groups a menu separates with a divider; the last group, compressing an image,
+ * is empty for another attachment. A note shown read-only has only the actions that leave the
+ * attachment unchanged, and neither `deletion` nor `conversion`.
  */
 export function getLinkedAttachmentActions(
-    attachment: FAttachment,
-    options: AttachmentActionOptions = {}
-): { groups: AttachmentAction[][]; conversion: AttachmentAction | null } {
-    const { groups, deletion, conversion } = getEmbeddedAttachmentActions(attachment, options);
-    if (!deletion) {
-        return { groups, conversion };
-    }
-
-    const [ viewActions, changeActions, imageActions ] = groups;
-    return { groups: [ viewActions, [ ...changeActions, deletion ], imageActions ], conversion };
-}
-
-/**
- * The actions on `attachment` for the menu of an embed of it, which lists `deletion` and
- * `conversion` under deleting the embed and converting it to a link. `groups` holds the others, as
- * {@link getLinkedAttachmentActions} lists them. A note shown read-only has only the actions that
- * leave the attachment unchanged, and neither `deletion` nor `conversion`.
- */
-export function getEmbeddedAttachmentActions(
     attachment: FAttachment,
     { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
 ): {

@@ -475,7 +475,7 @@ describe("CK config - tables", () => {
 
     it("hands the menu of a link the path and the view scope of the note it links to", async () => {
         const getEntries = vi.spyOn(linkContextMenu, "getLinkToolbarEntries")
-            .mockResolvedValue({ target: [], actions: [], conversion: [] });
+            .mockResolvedValue({ target: [], actions: [], deletion: [], conversion: [] });
         const download = vi.spyOn(linkContextMenu, "downloadLinkedAttachment")
             .mockResolvedValue();
         onTestFinished(() => {

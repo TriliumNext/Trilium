@@ -212,6 +212,7 @@ describe("LinkMenu", () => {
     describe("on a link to a note", () => {
         const openInTab = vi.fn();
         const download = vi.fn();
+        const remove = vi.fn();
         const convert = vi.fn();
         const openNote = vi.fn();
         const describeNoteLink = vi.fn<LinkMenuHost["describeNoteLink"]>(
@@ -224,6 +225,9 @@ describe("LinkMenu", () => {
                     [],
                     [ { kind: "entry", label: "Rename", isEnabled: true } ]
                 ],
+                deletion: [
+                    { kind: "entry", label: "Delete", isEnabled: true, run: wrap(remove) }
+                ],
                 conversion: [
                     { kind: "entry", label: "Convert", isEnabled: true, run: wrap(convert) }
                 ]
@@ -233,6 +237,7 @@ describe("LinkMenu", () => {
         beforeEach(() => {
             openInTab.mockClear();
             download.mockClear();
+            remove.mockClear();
             convert.mockClear();
             openNote.mockClear();
             describeNoteLink.mockClear();
@@ -241,7 +246,7 @@ describe("LinkMenu", () => {
         /** The entries with a host, after "Open note", the label of the toolbar's first button. */
         const WITH_HOST = [
             "Open in a tab", "---", "Edit link", "---", "Download", "---", "Rename", "---",
-            "Unlink", "Convert"
+            "Unlink", "Delete", "Convert"
         ];
 
         it("puts the host's entries around those of a link, without web ones", async () => {
@@ -267,6 +272,8 @@ describe("LinkMenu", () => {
             expect(openInTab).toHaveBeenCalledOnce();
             run(await open(), "Download");
             expect(download).toHaveBeenCalledOnce();
+            run(await open(), "Delete");
+            expect(remove).toHaveBeenCalledOnce();
             run(await open(), "Convert");
             expect(convert).toHaveBeenCalledOnce();
             run(await open(), "Unlink");
@@ -404,7 +411,7 @@ describe("LinkMenu", () => {
 
         it("selects a reference link or a link preview whole, and opens its menu", async () => {
             const describeNoteLink = vi.fn<LinkMenuHost["describeNoteLink"]>(async () => ({
-                target: [], actions: [], conversion: []
+                target: [], actions: [], deletion: [], conversion: []
             }));
             const { editor, rightClick } = await createMenuEditor({
                 linkMenu: { describeNoteLink, openNote: vi.fn() }
@@ -499,7 +506,9 @@ describe("LinkMenu", () => {
                     CopyLinkUrlButton
                 ],
                 linkMenu: {
-                    describeNoteLink: async () => ({ target: [], actions: [], conversion: [] }),
+                    describeNoteLink: async () => ({
+                        target: [], actions: [], deletion: [], conversion: []
+                    }),
                     openNote: vi.fn(),
                     downloadAttachment: vi.fn()
                 }

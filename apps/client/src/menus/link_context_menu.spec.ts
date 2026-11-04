@@ -27,7 +27,6 @@ const mocks = vi.hoisted(() => ({
     getAttachmentOfNote: vi.fn(),
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
-    getEmbeddedAttachmentActions: vi.fn(),
     getLinkedAttachmentActions: vi.fn(),
     getTextEditorContaining: vi.fn(),
     getEmbedBoxSize: vi.fn(),
@@ -57,7 +56,6 @@ vi.mock("../services/froca", () => ({
 
 vi.mock("../services/attachment_actions", () => ({
     getAttachmentActionGroups: mocks.getAttachmentActionGroups,
-    getEmbeddedAttachmentActions: mocks.getEmbeddedAttachmentActions,
     getLinkedAttachmentActions: mocks.getLinkedAttachmentActions
 }));
 
@@ -321,7 +319,7 @@ describe("getLinkToolbarEntries", () => {
         });
     });
 
-    it("lists the actions on an attachment, ending with converting the link, then it", async () => {
+    it("lists the actions on an attachment, its deletion and conversion apart", async () => {
         const execute = vi.fn();
         mocks.getEmbedBoxSize.mockReturnValue("small");
         mocks.getTextEditorContaining.mockResolvedValue({
@@ -334,6 +332,7 @@ describe("getLinkToolbarEntries", () => {
         if (!link) return;
 
         const attachment = { attachmentId: "att-1" };
+        const deleteAttachment = vi.fn();
         const convertAttachment = vi.fn();
         mocks.getAttachmentOfNote.mockResolvedValue(attachment);
         mocks.getLinkedAttachmentActions.mockReturnValue({
@@ -341,14 +340,16 @@ describe("getLinkToolbarEntries", () => {
                 [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
                 [ { title: "Rename", icon: "bx bx-rename", disabledReason: "No", run: vi.fn() } ]
             ],
+            deletion: { title: "Delete", icon: "bx bx-trash", run: deleteAttachment },
             conversion: { title: "Convert", icon: "bx bx-note", run: convertAttachment }
         });
-        const { target, actions, conversion } = await linkContextMenu.getLinkToolbarEntries(
-            "root/n1", VIEW_SCOPE, link, run);
+        const { target, actions, deletion, conversion } =
+            await linkContextMenu.getLinkToolbarEntries("root/n1", VIEW_SCOPE, link, run);
         expect(mocks.getLinkedAttachmentActions)
             .toHaveBeenCalledWith(attachment, { isReadOnly: false });
         expect(target).toHaveLength(4);
         expect(actions.map(labels)).toStrictEqual([ [ "Download" ], [ "Rename (off)" ] ]);
+        expect(labels(deletion)).toStrictEqual([ "Delete" ]);
         expect(labels(conversion))
             .toStrictEqual([ "link_context_menu.convert_link_to_embed", "Convert" ]);
         const [ convertLink, convert ] = conversion;
@@ -357,17 +358,19 @@ describe("getLinkToolbarEntries", () => {
             domElement: link, boxSize: "small"
         });
         if (convert.kind === "entry") convert.run?.();
-        expect(convertAttachment).toHaveBeenCalledOnce();
+        if (deletion[0]?.kind === "entry") deletion[0].run?.();
+        expect([ deleteAttachment, convertAttachment ].map((action) => action.mock.calls.length))
+            .toStrictEqual([ 1, 1 ]);
 
         // A link to an attachment deleted since, and a reference link to a note.
         mocks.getAttachmentOfNote.mockResolvedValue(null);
         const deleted = await linkContextMenu.getLinkToolbarEntries(
             "root/n1", VIEW_SCOPE, link, run);
-        expect([ deleted.target.length, deleted.actions, deleted.conversion ])
-            .toStrictEqual([ 4, [], [] ]);
+        expect([ deleted.target.length, deleted.actions, deleted.deletion, deleted.conversion ])
+            .toStrictEqual([ 4, [], [], [] ]);
         mocks.getNote.mockResolvedValue({ noteId: "n1" });
         const note = await linkContextMenu.getLinkToolbarEntries("root/n1", {}, link, run);
-        expect(note.actions).toStrictEqual([]);
+        expect([ note.actions, note.deletion ]).toStrictEqual([ [], [] ]);
         expect(labels(note.conversion))
             .toStrictEqual([ "link_context_menu.convert_link_to_included_note" ]);
     });
@@ -539,7 +542,7 @@ describe("openContextMenu", () => {
                 isCaptionToggleable: true, isConvertibleToLink: true
             };
             mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
-            mocks.getEmbeddedAttachmentActions.mockReturnValue({
+            mocks.getLinkedAttachmentActions.mockReturnValue({
                 groups: [
                     [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
                     [ { title: "Rename", icon: "bx bx-rename", run: vi.fn() } ]
@@ -649,7 +652,7 @@ describe("openContextMenu", () => {
                 expect(items).toHaveLength(17);
             }
             expect(selectEmbedAt).not.toHaveBeenCalled();
-            expect(mocks.getEmbeddedAttachmentActions)
+            expect(mocks.getLinkedAttachmentActions)
                 .toHaveBeenCalledWith({ attachmentId: "att-1" }, { isReadOnly: false });
             expect(mocks.getAttachmentActionGroups).not.toHaveBeenCalled();
 

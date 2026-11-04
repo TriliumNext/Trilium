@@ -37,8 +37,7 @@ vi.mock("../widgets/dialogs/image_compression/image_compression_dialog", () => (
 }));
 
 const {
-    copyAttachmentReference, getAttachmentActionGroups, getEmbeddedAttachmentActions,
-    getLinkedAttachmentActions
+    copyAttachmentReference, getAttachmentActionGroups, getLinkedAttachmentActions
 } = await import("./attachment_actions");
 
 function attachmentOf(role: string, mime = "application/pdf") {
@@ -152,40 +151,31 @@ describe("getAttachmentActionGroups", () => {
         ] ]);
     });
 
-    it("gives the menu of a link the conversion apart from the other actions", () => {
+    it("gives the menu of a link or an embed the deletion and the conversion apart", () => {
         const split = (attachment: FAttachment, isReadOnly = false) => {
-            const { groups, conversion } = getLinkedAttachmentActions(attachment, { isReadOnly });
-            return [ groups.map((group) => group.map((action) => action.title)), conversion ];
+            const { groups, deletion, conversion } =
+                getLinkedAttachmentActions(attachment, { isReadOnly });
+            return [
+                groups.map((group) => group.map((action) => action.title)),
+                deletion?.title ?? null,
+                conversion?.title ?? null
+            ];
         };
-        const [ viewActions, changeActions ] = titles(attachmentOf("file"));
+        const [ viewActions ] = titles(attachmentOf("file"));
 
         expect(split(attachmentOf("file"))).toEqual([
-            [ viewActions, changeActions, [] ],
-            expect.objectContaining({ title: "attachments_actions.convert_attachment_into_note" })
+            [
+                viewActions,
+                [ "attachments_actions.upload_new_revision", "attachments_actions.rename_attachment" ],
+                []
+            ],
+            "attachments_actions.delete_attachment",
+            "attachments_actions.convert_attachment_into_note"
         ]);
         expect(split(attachmentOf("image", "image/png"))[0]).toContainEqual([
             "compress-image-menu"
         ]);
-        expect(split(attachmentOf("file"), true)).toEqual([ [ viewActions ], null ]);
-    });
-
-    it("gives the menu of an embed the deletion and the conversion apart from the others", () => {
-        const [ viewActions ] = titles(attachmentOf("file"));
-        const { groups, deletion, conversion } = getEmbeddedAttachmentActions(attachmentOf("file"));
-
-        expect(groups.map((group) => group.map((action) => action.title))).toEqual([
-            viewActions,
-            [ "attachments_actions.upload_new_revision", "attachments_actions.rename_attachment" ],
-            []
-        ]);
-        expect([ deletion?.title, conversion?.title ]).toEqual([
-            "attachments_actions.delete_attachment",
-            "attachments_actions.convert_attachment_into_note"
-        ]);
-
-        const readOnly = getEmbeddedAttachmentActions(attachmentOf("file"), { isReadOnly: true });
-        expect([ readOnly.groups.length, readOnly.deletion, readOnly.conversion ])
-            .toEqual([ 1, null, null ]);
+        expect(split(attachmentOf("file"), true)).toEqual([ [ viewActions ], null, null ]);
     });
 
     it("renames, deletes and converts only once the user has agreed", async () => {
