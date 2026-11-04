@@ -616,8 +616,8 @@ importers:
   apps/server:
     dependencies:
       '@agentclientprotocol/codex-acp':
-        specifier: 2.3.0
-        version: 2.3.0
+        specifier: 2.5.0
+        version: 2.5.0
       '@ai-sdk/anthropic':
         specifier: 4.0.94
         version: 4.0.94(zod@4.6.7)
@@ -1528,14 +1528,18 @@ packages:
   '@actions/io@3.0.2':
     resolution: {integrity: sha512-nRBchcMM+QK1pdjO7/idu86rbJI5YHUKCvKs0KxnSYbVe3F51UfGxuZX4Qy/fWlp6l7gWFwIkrOzN+oUK03kfw==}
 
-  '@agentclientprotocol/codex-acp@2.3.0':
-    resolution: {integrity: sha512-VdTYaOGXqLh/aVuAKIgFG7BIzbeq537FHGo28kgBhybDbeOdFVFTtc43k/tCpScFhZyqPQWHuWf8w/QQd0qtXQ==}
+  '@agentclientprotocol/codex-acp@2.5.0':
+    resolution: {integrity: sha512-7e/4OhJwpvSTqsjiokoVYRV7O1XGem1CAsQgO1opmGYbRD5LvmydwDlJrldzQYO5TcPWueGzQ2Jdvyvp6l3qDw==}
     hasBin: true
 
-  '@agentclientprotocol/sdk@2.0.2':
-    resolution: {integrity: sha512-jLywRB42hZMRMc4aUgt0uRjkY9FQnMdybv4XgLl+ddi75QuJn8Vbl0+CHcVHJDC0+WDfi1KQXRWtHaR5vp6gHw==}
+  '@agentclientprotocol/sdk@2.1.0':
+    resolution: {integrity: sha512-IuKjJmHLPzbmbg26eK9Jopd8AVxgLuu8fX114YzYAU6tLYclCo2DUzLL4vbCpYGr9mzvs2T0kigE3ZCueL06tg==}
     peerDependencies:
+      '@modelcontextprotocol/server': ^2.4.0
       zod: 4.6.7
+    peerDependenciesMeta:
+      '@modelcontextprotocol/server':
+        optional: true
 
   '@ai-sdk/anthropic@4.0.94':
     resolution: {integrity: sha512-gD0KmsUZTRuhiYleM2SdMrY0c7m+VeRckLX2VVPnEAlQmaKqSw8+noHiK5ED+SHy4tuDf9VQqcHxlGeObzMNyw==}
@@ -11831,16 +11835,18 @@ snapshots:
 
   '@actions/io@3.0.2': {}
 
-  '@agentclientprotocol/codex-acp@2.3.0':
+  '@agentclientprotocol/codex-acp@2.5.0':
     dependencies:
-      '@agentclientprotocol/sdk': 2.0.2(zod@4.6.7)
+      '@agentclientprotocol/sdk': 2.1.0(zod@4.6.7)
       cross-spawn: 7.0.6
       diff: 9.0.0
       open: 11.0.4
       vscode-jsonrpc: 9.0.3
       zod: 4.6.7
+    transitivePeerDependencies:
+      - '@modelcontextprotocol/server'
 
-  '@agentclientprotocol/sdk@2.0.2(zod@4.6.7)':
+  '@agentclientprotocol/sdk@2.1.0(zod@4.6.7)':
     dependencies:
       zod: 4.6.7
 
