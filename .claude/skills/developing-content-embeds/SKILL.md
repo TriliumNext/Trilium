@@ -91,7 +91,7 @@ widgets inside the selection.
   unless the caret is on a link, the video of the caption (`getCaptionedEmbed()`).
   `getSelectedLinkWidget()` itself reads only the selected element, as the link balloon shares
   the command and Ctrl+K in a caption must edit the caption's own link. `rebuildLinkWidget()`
-  copies the caption into a preview that keeps its shape; a Card, Inline or Plain link has no
+  copies the caption into a preview that keeps its shape; a Card, Icon & text or Text link has no
   caption, so `keepCaptionText()` moves its content into a paragraph after the video.
   The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
   server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short

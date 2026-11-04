@@ -97,7 +97,7 @@ describe("fetchMetadata", () => {
             url: "https://youtu.be/abcdefghijk",
             embedType: "youtube",
             title: "youtu.be",
-            // Nothing was actually read about the page, so callers can keep a plain link instead.
+            // Nothing was actually read about the page, so callers can keep a text link instead.
             unresolved: true
         });
     });

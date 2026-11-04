@@ -306,10 +306,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
-    /** Whether the link editor fills the empty title of a plain web link with the page's title. */
+    /** Whether the link editor fills the empty title of a text link with the page's title. */
     textNoteLinkTitleRetrievalEnabled: boolean;
     /**
-     * Whether the link editor fills the empty title and description of an inline link or a card
+     * Whether the link editor fills the empty title and description of an icon & text link or a card
      * with the page's own.
      */
     textNoteLinkDetailsRetrievalEnabled: boolean;

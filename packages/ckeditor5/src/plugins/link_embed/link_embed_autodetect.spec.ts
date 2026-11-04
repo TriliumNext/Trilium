@@ -41,7 +41,7 @@ describe("AutoLinkToMention", () => {
         expect(mention?.getAttribute("title")).toBe(META.title);
     });
 
-    it("leaves the plain link untouched when the metadata could not be resolved, and says why", async () => {
+    it("leaves the text link untouched when the metadata could not be resolved, and says why", async () => {
         const url = "https://blocked.example.com/article";
         fetchMetadata.mockResolvedValueOnce({ url, embedType: "opengraph", title: "blocked.example.com", unresolved: true });
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -75,7 +75,7 @@ describe("AutoLinkToMention", () => {
         expect(editor.getData()).toContain(`<a href="${url}">${url}</a>`);
 
         // Inserting a preview by hand is unaffected by the option: only auto-detection is gated.
-        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "cardLink" });
         expect(findElement(editor, "linkEmbed")?.getAttribute("url")).toBe(url);
     });
 

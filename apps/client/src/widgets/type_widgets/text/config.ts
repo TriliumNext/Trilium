@@ -224,7 +224,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS,
             // linkEmbedDisplayDropdown is the same Display dropdown the link-preview widget toolbar
-            // shows: on a native link it reads "Plain link" and converts to a preview shape.
+            // shows: on a native link it reads "Text" and converts to a preview shape.
             toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink", "|", "linkEmbedDisplayDropdown"]
         },
         bookmark: {
@@ -492,7 +492,7 @@ function buildLinkEmbedHost(getNoteId?: () => string | undefined): LinkEmbedHost
     return {
         async fetchMetadata(url) {
             // The pictures of a preview are stored as attachments of the note being edited, so
-            // without a note the URL stays a plain link, as for any preview that cannot be built.
+            // without a note the URL stays a text link, as for any preview that cannot be built.
             const noteId = getNoteId?.();
             return noteId ? await fetchMetadata(url, noteId) : unresolvedMetadata(url);
         },

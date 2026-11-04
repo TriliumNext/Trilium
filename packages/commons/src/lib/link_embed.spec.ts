@@ -246,19 +246,19 @@ describe("chooseLinkPreviewKind", () => {
 
     it("gives a URL left alone on its own line a block preview, keyed by the URL", () => {
         // An embeddable URL becomes a player; anything else becomes a card.
-        expect(chooseLinkPreviewKind("youtube", leftAloneOnItsOwnLine)).toBe("embed");
-        expect(chooseLinkPreviewKind("opengraph", leftAloneOnItsOwnLine)).toBe("card");
+        expect(chooseLinkPreviewKind("youtube", leftAloneOnItsOwnLine)).toBe("embedLink");
+        expect(chooseLinkPreviewKind("opengraph", leftAloneOnItsOwnLine)).toBe("cardLink");
     });
 
     it("keeps every other placement inline, embeddable or not", () => {
         for (const embedType of ["youtube", "opengraph"]) {
             // Text either side of it: a block preview cannot go mid-sentence.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, urlAloneInBlock: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, urlAloneInBlock: false })).toBe("iconAndTextLink");
             // Inside a list, table, quote or heading.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, blockIsStandalone: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, blockIsStandalone: false })).toBe("iconAndTextLink");
             // The caret is still in the block, so the user may yet type on that line — the URL has
             // not been *left* alone, it merely happens to be alone right now.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, caretLeftBlock: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, caretLeftBlock: false })).toBe("iconAndTextLink");
         }
     });
 });

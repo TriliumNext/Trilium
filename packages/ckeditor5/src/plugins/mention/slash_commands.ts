@@ -425,7 +425,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             commandName: INTERNAL_LINK_COMMAND,
             // The link dialog on the web link side, with a video player or else a card.
             execute: (target: Editor) => {
-                target.execute(INTERNAL_LINK_COMMAND, { target: "url", display: "embed" });
+                target.execute(INTERNAL_LINK_COMMAND, { target: "url", display: "embedLink" });
             }
         },
         {

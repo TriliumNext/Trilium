@@ -12,9 +12,9 @@ export {
 } from './link_embed_commands.js';
 
 /**
- * Link previews: rich widgets for external URLs, in three shapes — an inline mention (favicon +
- * title pill), a block card (thumbnail, title, description) and a block embed (a player, for URLs
- * that have one). A fourth mode, "Plain link", converts back to an ordinary link.
+ * Link previews: rich widgets for external URLs, in three link display modes: "Icon & text"
+ * (favicon + title pill), "Card" (thumbnail, title, description) and "Embed" (a player, for URLs
+ * that have one). A fourth mode, "Text", converts back to an ordinary link.
  *
  * The feature is assembled from:
  *   - {@link LinkEmbedEditing} — schema, converters and the commands ({@link module:link_embed_commands});

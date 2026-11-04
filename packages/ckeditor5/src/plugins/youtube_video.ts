@@ -103,8 +103,8 @@ async function insertVideo(editor: Editor, url: string) {
         }
 
         model.change((writer) => {
-            const video = createLinkPreview(writer, "embed",
-                getPreviewAttributes(editor, "embed", url, metadata));
+            const video = createLinkPreview(writer, "embedLink",
+                getPreviewAttributes(editor, "embedLink", url, metadata));
             const isRemoved = place.root === model.document.graveyard;
             model.insertContent(video, isRemoved ? model.document.selection : place.toRange());
             writer.setSelection(video, "on");

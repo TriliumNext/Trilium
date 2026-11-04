@@ -136,7 +136,7 @@ export class LinkEmbedDisplayDropdown extends Plugin {
             });
 
             // Hide "Embed" when the URL doesn't support it.
-            if (mode === "embed") {
+            if (mode === "embedLink") {
                 definition.model.bind("isVisible").to(command, "embedAvailable");
             }
 

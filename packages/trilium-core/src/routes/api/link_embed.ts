@@ -759,7 +759,7 @@ export async function storeFavicon(noteId: string, pageUrl: string, bytes: Uint8
 
 /**
  * The degraded result for a URL whose page told us nothing: everything the caller gets back is
- * derived from the URL itself. Flagged so the caller can keep a plain link instead of rendering a
+ * derived from the URL itself. Flagged so the caller can keep a text link instead of rendering a
  * preview that would show less than the link did.
  */
 function unresolvedMetadata(url: URL): LinkEmbedMetadata {

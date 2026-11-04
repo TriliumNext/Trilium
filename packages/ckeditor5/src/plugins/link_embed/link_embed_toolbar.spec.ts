@@ -392,7 +392,7 @@ describe("LinkEmbedToolbar", () => {
             writer.setSelection(embed, "on");
         });
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
-        // embedType "opengraph" maps to mode "card". No dictionary is configured, so the label
+        // embedType "opengraph" maps to mode "cardLink". No dictionary is configured, so the label
         // renders its English message id.
         expect(dropdown.buttonView.label).toBe("Card");
     });
@@ -428,7 +428,7 @@ describe("LinkEmbedToolbar", () => {
         }
 
         // No dictionary is configured, so each label renders its English message id.
-        expect(labels).toEqual([ "Inline", "Card", "Embed", "Plain link" ]);
+        expect(labels).toEqual([ "Icon & text", "Card", "Embed", "Text" ]);
     });
 
     it("list item isOn is true for the matching mode when a card linkEmbed is selected", () => {
@@ -448,17 +448,17 @@ describe("LinkEmbedToolbar", () => {
         });
 
         const command = editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND) as { value: string | null };
-        // embedType "opengraph" → mode "card"
-        expect(command.value).toBe("card");
+        // embedType "opengraph" → mode "cardLink"
+        expect(command.value).toBe("cardLink");
 
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
         const listView = openDropdown(dropdown);
 
-        // Find the "card" item and verify it is on.
+        // Find the "cardLink" item and verify it is on.
         let cardButton: ListButtonView | null = null;
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "card") {
+            if (button._displayMode === "cardLink") {
                 cardButton = button;
                 break;
             }
@@ -488,7 +488,7 @@ describe("LinkEmbedToolbar", () => {
 
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode !== "card") {
+            if (button._displayMode !== "cardLink") {
                 expect(button.isOn).toBe(false);
             }
         }
@@ -506,7 +506,7 @@ describe("LinkEmbedToolbar", () => {
         let embedButton: ListButtonView | null = null;
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "embed") {
+            if (button._displayMode === "embedLink") {
                 embedButton = button;
                 break;
             }
@@ -539,16 +539,16 @@ describe("LinkEmbedToolbar", () => {
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
         const listView = openDropdown(dropdown);
 
-        // Find the "inline" button and fire execute.
+        // Find the "iconAndTextLink" button and fire execute.
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "inline") {
+            if (button._displayMode === "iconAndTextLink") {
                 button.fire("execute");
                 break;
             }
         }
 
-        expect(spy).toHaveBeenCalledWith(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" });
+        expect(spy).toHaveBeenCalledWith(CHANGE_LINK_DISPLAY_COMMAND, { value: "iconAndTextLink" });
     });
 
     it("focuses the editing view after dropdown execute", () => {

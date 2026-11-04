@@ -180,7 +180,7 @@ export interface LinkEmbedMetadata {
      * True when the page could not be read at all — a network error, a bot challenge (many sites
      * answer a server-side fetch with a Cloudflare interstitial), a non-HTML response, or a page
      * carrying no title of its own. The remaining fields then hold nothing but a hostname-derived
-     * placeholder, so an auto-detected URL is left as a plain link rather than becoming a preview
+     * placeholder, so an auto-detected URL is left as a text link rather than becoming a preview
      * that shows less than the URL itself did. Never persisted into the note's HTML.
      */
     unresolved?: boolean;
@@ -215,7 +215,7 @@ export function isUrlAloneInBlock(children: Iterable<BlockChildLike>, url: strin
     return text.trim() === url;
 }
 
-export type LinkPreviewKind = "embed" | "card" | "mention";
+export type LinkPreviewKind = "embedLink" | "cardLink" | "iconAndTextLink";
 
 /** Where an auto-detected URL sits, and what the user did right after typing it. */
 export interface LinkPreviewPlacement {
@@ -239,15 +239,15 @@ export interface LinkPreviewPlacement {
  * A URL only becomes a block-level preview when the user deliberately left it alone on its own
  * line — sole content of a plain paragraph, then Enter. That gesture is the signal; anything else
  * (text either side, a list/table/quote, or a caret still sitting in the block because the user is
- * still typing) yields an unobtrusive inline mention.
+ * still typing) yields an unobtrusive icon & text link.
  *
  * Given that gesture, the URL decides which block form: an embeddable one (e.g. YouTube) becomes a
  * player, everything else a card.
  */
 export function chooseLinkPreviewKind(embedType: string, placement: LinkPreviewPlacement): LinkPreviewKind {
     if (!placement.urlAloneInBlock || !placement.blockIsStandalone || !placement.caretLeftBlock) {
-        return "mention";
+        return "iconAndTextLink";
     }
 
-    return embedType !== "opengraph" ? "embed" : "card";
+    return embedType !== "opengraph" ? "embedLink" : "cardLink";
 }

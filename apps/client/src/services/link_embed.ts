@@ -83,7 +83,7 @@ export async function fetchPageDetails(url: string): Promise<PageDetails | null>
 /**
  * What a URL is worth when nothing could be learned about it: the hostname, and a flag saying so.
  *
- * The caller keeps it as a plain link rather than rendering a preview that shows less than the URL
+ * The caller keeps it as a text link rather than rendering a preview that shows less than the URL
  * did. Reached when the metadata request fails, and when there is no note yet to store the
  * preview's pictures on.
  */
@@ -107,7 +107,7 @@ export function renderEmbedPreview(
     enhanceLinkPreviews(container);
 }
 
-/** Draws an inline link mention into `container`, like {@link renderEmbedPreview}. */
+/** Draws an icon & text link into `container`, like {@link renderEmbedPreview}. */
 export function renderMentionPreview(container: HTMLElement, meta: LinkPreviewData, editable?: boolean) {
     container.innerHTML = renderLinkMentionHtml(meta, markupOptions(editable));
     enhanceLinkPreviews(container);

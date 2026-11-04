@@ -22,7 +22,7 @@ export interface InternalLinkDialogOptions {
     /** The side the dialog opens on for a new link: a note, or a web address. */
     target?: 'note' | 'url';
     /**
-     * How a new web link is displayed. `embed` falls back to a card for an address without a
+     * How a new web link is displayed. `embedLink` falls back to a card for an address without a
      * player.
      */
     display?: LinkDisplayMode;
@@ -213,7 +213,7 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
         return {
             href,
             text: getReferenceTitleSync(editor, href, storedTitle),
-            display: 'plain',
+            display: 'textLink',
             isReference: true
         };
     }
@@ -239,7 +239,7 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
             text += item.data;
         }
     }
-    return { href: found.href, text, display: 'plain' };
+    return { href: found.href, text, display: 'textLink' };
 }
 
 /**

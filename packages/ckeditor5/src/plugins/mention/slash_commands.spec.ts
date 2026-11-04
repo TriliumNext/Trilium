@@ -853,7 +853,7 @@ describe("buildTriliumSlashCommands", () => {
         definition("link-preview").execute?.(fake);
 
         expect(executeSpy).toHaveBeenCalledExactlyOnceWith(
-            INTERNAL_LINK_COMMAND, { target: "url", display: "embed" }
+            INTERNAL_LINK_COMMAND, { target: "url", display: "embedLink" }
         );
     });
 

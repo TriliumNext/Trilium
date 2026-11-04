@@ -102,8 +102,8 @@ export interface EditLinkOpts {
      */
     fixLink?: boolean;
     /**
-     * How the web link is displayed: a plain link by default, or as the link preview being edited.
-     * `embed` falls back to a card for an address without a player.
+     * How the web link is displayed: a text link by default, or as the link preview being edited.
+     * `embedLink` falls back to a card for an address without a player.
      */
     display?: LinkDisplayMode;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
@@ -209,7 +209,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ noteTitle, setNoteTitle ] = useState("");
     const [ target, setTarget ] = useState<LinkTarget>("note");
     const [ webLink, setWebLink ] = useState("");
-    const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
+    const [ display, setDisplay ] = useState<LinkDisplayMode>("textLink");
     const [ anchor, setAnchor ] = useState("");
     const [ heading, setHeading ] = useState<LinkHeading | null>(null);
     const [ expandedHeadings, setExpandedHeadings ] = useState<ReadonlySet<LinkHeading>>(
@@ -242,14 +242,14 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
         setTarget(getInitialTarget(opts, initialWebLink));
         setWebLink(initialWebLink ?? "");
-        setDisplay(opts?.display ?? "plain");
+        setDisplay(opts?.display ?? "textLink");
         setAnchor(opts?.currentAnchor ?? "");
         setHeading(opts?.currentHeading ?? null);
         // Sub-headings start collapsed, except the ones above the heading being edited.
         setExpandedHeadings(new Set(
             opts?.currentHeading ? getParentHeadings(headingTree, opts.currentHeading) : []
         ));
-        previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
+        previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "textLink"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
         setLinkTitle(opts?.currentTitle ?? "");
@@ -418,12 +418,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // A link on a selection keeps the selected text, which a preview would replace.
     const showsDisplay = target === "url" && !!opts?.addLinkPreview && !opts.hasSelection;
     const shownDisplay = getShownDisplay(display, suggestion?.externalLink);
-    const isPreview = showsDisplay && shownDisplay !== "plain";
+    const isPreview = showsDisplay && shownDisplay !== "textLink";
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     // A video player shows no title.
-    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embed");
+    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embedLink");
     // Only a card shows a description.
-    const showsDescription = showsTitle && showsDisplay && shownDisplay === "card";
+    const showsDescription = showsTitle && showsDisplay && shownDisplay === "cardLink";
 
     const webLinkUrl = target === "url" ? suggestion?.externalLink : undefined;
     // The fields shown blank that take their value from the web page, as the options allow.
@@ -524,7 +524,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             const text = linkTitle.trim();
             if (isPreview && opts.addLinkPreview) {
                 // A text that only repeats the address leaves the page's own title.
-                const title = shownDisplay !== "embed" && text && text !== url ? text : null;
+                const title = shownDisplay !== "embedLink" && text && text !== url ? text : null;
                 const description = showsDescription ? linkDescription.trim() || null : null;
                 void opts.addLinkPreview(url, shownDisplay, title, description);
                 return;
@@ -656,11 +656,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
     );
     const displays = [
-        { value: "plain", title: t("add_link.display_plain") },
-        { value: "inline", title: t("add_link.display_inline") },
-        { value: "card", title: t("add_link.display_card") },
+        { value: "textLink", title: t("add_link.display_text") },
+        { value: "iconAndTextLink", title: t("add_link.display_icon_and_text") },
+        { value: "cardLink", title: t("add_link.display_card") },
         ...(hasPlayer(suggestion?.externalLink)
-            ? [ { value: "embed", title: t("add_link.display_embed") } ]
+            ? [ { value: "embedLink", title: t("add_link.display_embed") } ]
             : [])
     ];
 
@@ -914,14 +914,14 @@ function findAnchorIds(content: string): string[] {
 }
 
 /**
- * How the web link to `url` is displayed when `display` is picked: as a plain link when the address
+ * How the web link to `url` is displayed when `display` is picked: as a text link when the address
  * is not a web page, and as a card in place of a player that the address does not have.
  *
  * Exported for testing.
  */
 export function getShownDisplay(display: LinkDisplayMode, url: string | undefined): LinkDisplayMode {
-    if (!canPreview(url)) return "plain";
-    return display === "embed" && !hasPlayer(url) ? "card" : display;
+    if (!canPreview(url)) return "textLink";
+    return display === "embedLink" && !hasPlayer(url) ? "cardLink" : display;
 }
 
 /** Whether a web link to `url` can be a preview: a web page, or no address typed yet. */

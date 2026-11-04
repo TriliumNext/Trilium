@@ -33,7 +33,9 @@ describe("LinkEmbed", () => {
         expect(domRoot?.querySelector(".link-embed-preview-wrapper")?.textContent).toBe("https://c.example/");
 
         setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
-        await plainEditor.execute(LINK_EMBED_COMMAND, { url: "https://youtube.com/watch?v=x", mode: "embed" });
+        await plainEditor.execute(LINK_EMBED_COMMAND, {
+            url: "https://youtube.com/watch?v=x", mode: "embedLink"
+        });
         expect(findElement(plainEditor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
     });
 });

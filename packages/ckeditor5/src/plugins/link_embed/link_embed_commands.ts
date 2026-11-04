@@ -14,12 +14,12 @@ export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
 export const REMOVE_LINK_EMBED_COMMAND = 'removeLinkEmbed';
 
 export const LINK_DISPLAY_MODES = [
-    'inline',
-    'card',
-    'embed',
+    'iconAndTextLink',
+    'cardLink',
+    'embedLink',
     // The way out of the preview system: an ordinary <a> link, no widget. Offered in the same
     // dropdowns as the real modes so "back to a normal URL" is found where the user looks for it.
-    'plain'
+    'textLink'
 ] as const;
 
 export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number];
@@ -36,14 +36,14 @@ export type LinkDisplayMode = typeof LINK_DISPLAY_MODES[number];
  */
 export function getLinkDisplayModeLabel(t: (message: string) => string, mode: LinkDisplayMode): string {
     switch (mode) {
-        case 'inline':
-            return t('Inline');
-        case 'card':
+        case 'iconAndTextLink':
+            return t('Icon & text');
+        case 'cardLink':
             return t('Card');
-        case 'embed':
+        case 'embedLink':
             return t('Embed');
-        case 'plain':
-            return t('Plain link');
+        case 'textLink':
+            return t('Text');
         default:
             return mode;
     }
@@ -71,12 +71,12 @@ export function getMetadataAttributes(metadata: LinkEmbedMetadata): Record<strin
  * fetched `metadata`. `title` and `description` replace the page's own.
  */
 export function getPreviewAttributes(
-    editor: Editor, mode: Exclude<LinkDisplayMode, 'plain'>, href: string,
+    editor: Editor, mode: Exclude<LinkDisplayMode, 'textLink'>, href: string,
     metadata: LinkEmbedMetadata, title?: string, description?: string
 ): Record<string, unknown> {
     return {
         ...getMetadataAttributes(metadata),
-        embedType: mode === 'embed'
+        embedType: mode === 'embedLink'
             ? getLinkEmbedHost(editor).detectEmbedType(href)
             : metadata.embedType,
         title: title || metadata.title,
@@ -87,7 +87,7 @@ export function getPreviewAttributes(
 /**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
  * is in, and turns it into a preview of the `mode` shape once the page's metadata arrives. `title`
- * replaces the page's own title, and is the text of a plain link. `description` replaces the page's
+ * replaces the page's own title, and is the text of a `textLink`. `description` replaces the page's
  * own description.
  *
  * A selected preview of `url` changes its shape, title and description from the metadata it
@@ -105,7 +105,7 @@ export class InsertLinkEmbedCommand extends Command {
         const model = editor.model;
         const selection = model.document.selection;
         const selected = getSelectedLinkWidget(editor);
-        if (selected && mode !== 'plain' && selected.getAttribute('url') === url) {
+        if (selected && mode !== 'textLink' && selected.getAttribute('url') === url) {
             model.change((writer) => {
                 writer.setSelection(
                     rebuildLinkWidget(editor, writer, selected, mode, title, description), 'on'
@@ -120,7 +120,7 @@ export class InsertLinkEmbedCommand extends Command {
             ? findAttributeRange(position, 'linkHref', href, model)
             : selection;
 
-        // The plain link shows at once; the metadata fetch reads the page server-side and can take
+        // The text link shows at once; the metadata fetch reads the page server-side and can take
         // seconds.
         const linkRange = model.change((writer) => {
             const link = writer.createText(title || url, { linkHref: url });
@@ -129,7 +129,7 @@ export class InsertLinkEmbedCommand extends Command {
             return range;
         });
 
-        if (mode !== 'plain') {
+        if (mode !== 'textLink') {
             await replaceLinkWithPreview(editor, linkRange, url, mode, title, description);
         }
     }
@@ -173,11 +173,11 @@ export class ChangeLinkDisplayCommand extends Command {
 
         const url = selected.getAttribute('url') as string;
 
-        // "Plain link" leaves the preview system: the widget becomes an ordinary link whose text is
+        // "Text" leaves the preview system: the widget becomes an ordinary link whose text is
         // the URL. Inserted as new content (not an attribute change), so AutoLinkToMention does not
         // see it and immediately convert it back. A URL we would never link to (see the isHttpUrl
         // note in refresh()) degrades to bare text instead, as the unlink button does.
-        if (targetMode === 'plain') {
+        if (targetMode === 'textLink') {
             model.change(writer => {
                 const text = isHttpUrl(url) ? writer.createText(url, { linkHref: url }) : writer.createText(url);
                 keepCaptionText(writer, selected);
@@ -208,11 +208,11 @@ export class ChangeLinkDisplayCommand extends Command {
         }
 
         // A native link under the caret: the same dropdown, hosted in the link balloon this time,
-        // offers to convert it into a preview. Its current display mode is by definition "plain".
+        // offers to convert it into a preview. Its current display mode is "textLink".
         const href = this.editor.model.document.selection.getAttribute('linkHref');
         if (typeof href === 'string' && EMBEDDABLE_URL_REGEX.test(href)) {
             this.isEnabled = true;
-            this.value = 'plain';
+            this.value = 'textLink';
             this.embedAvailable = this._detectEmbedType(href) !== 'opengraph';
             this.url = href;
             return;
@@ -226,7 +226,7 @@ export class ChangeLinkDisplayCommand extends Command {
 
     /**
      * Converts the native link under the caret — the one whose balloon toolbar hosts the dropdown —
-     * into the chosen preview shape: the deliberate inverse of "Plain link". Unlike auto-detection
+     * into the chosen preview shape: the deliberate inverse of "Text". Unlike auto-detection
      * there is no gesture to interpret and no unresolved-page veto: the mode was picked outright,
      * so the conversion always happens (Ctrl+Z brings the link back), and a labeled link's display
      * text is replaced by the preview.
@@ -238,7 +238,7 @@ export class ChangeLinkDisplayCommand extends Command {
         /* v8 ignore next -- refresh() disables the command unless the selection carries a linkHref */
         if (typeof href !== 'string' || !position) return;
         // The link already is one.
-        if (targetMode === 'plain') return;
+        if (targetMode === 'textLink') return;
 
         const range = findAttributeRange(position, 'linkHref', href, model);
         await replaceLinkWithPreview(this.editor, range, href, targetMode);
@@ -296,7 +296,7 @@ export class RemoveLinkEmbedCommand extends Command {
  */
 async function replaceLinkWithPreview(
     editor: Editor, range: ModelRange, href: string,
-    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string, description?: string
+    mode: Exclude<LinkDisplayMode, 'textLink'>, title?: string, description?: string
 ) {
     const model = editor.model;
     const liveRange = ModelLiveRange.fromRange(range);
@@ -341,7 +341,7 @@ async function replaceLinkWithPreview(
  */
 function rebuildLinkWidget(
     editor: Editor, writer: ModelWriter, element: ModelElement,
-    mode: Exclude<LinkDisplayMode, 'plain'>, title?: string, description?: string
+    mode: Exclude<LinkDisplayMode, 'textLink'>, title?: string, description?: string
 ) {
     const attrs: Record<string, unknown> = {};
     for (const key of META_KEYS) {
@@ -350,9 +350,9 @@ function rebuildLinkWidget(
     }
     if (title) attrs.title = title;
     if (description) attrs.description = description;
-    if (mode === 'card') {
+    if (mode === 'cardLink') {
         attrs.embedType = 'opengraph';
-    } else if (mode === 'embed') {
+    } else if (mode === 'embedLink') {
         attrs.embedType = getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
     }
 
@@ -397,7 +397,7 @@ function keepCaptionText(writer: ModelWriter, element: ModelElement) {
  */
 export function createLinkPreview(
     writer: ModelWriter,
-    mode: Exclude<LinkDisplayMode, 'plain'>,
+    mode: Exclude<LinkDisplayMode, 'textLink'>,
     attributes: Record<string, unknown>
 ) {
     switch (getLinkPreviewName(mode, attributes)) {
@@ -409,28 +409,28 @@ export function createLinkPreview(
             // The renderers draw the `opengraph` type as a card, also for a URL with a video.
             return writer.createElement('linkEmbed', {
                 ...attributes,
-                embedType: mode === 'card' ? 'opengraph' : attributes.embedType
+                embedType: mode === 'cardLink' ? 'opengraph' : attributes.embedType
             });
     }
 }
 
 /** The element of a link preview of the `mode` shape with the fields `attributes`. */
 function getLinkPreviewName(
-    mode: Exclude<LinkDisplayMode, 'plain'>, attributes: Record<string, unknown>
+    mode: Exclude<LinkDisplayMode, 'textLink'>, attributes: Record<string, unknown>
 ) {
-    if (mode === 'inline') {
+    if (mode === 'iconAndTextLink') {
         return 'linkMention';
     }
     const embedType = attributes.embedType as string | undefined;
-    const hasVideo = mode === 'embed'
+    const hasVideo = mode === 'embedLink'
         && !!getLinkPreviewVideoId({ url: attributes.url as string, embedType });
     return hasVideo ? 'contentEmbed' : 'linkEmbed';
 }
 
 /** The display mode of the link preview `element`. */
-export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMode, 'plain'> {
-    if (element.name === 'linkMention') return 'inline';
-    return element.getAttribute('embedType') === 'opengraph' ? 'card' : 'embed';
+export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMode, 'textLink'> {
+    if (element.name === 'linkMention') return 'iconAndTextLink';
+    return element.getAttribute('embedType') === 'opengraph' ? 'cardLink' : 'embedLink';
 }
 
 /** Returns the selected linkEmbed or linkMention element, or video embed, or null. */

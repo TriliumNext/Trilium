@@ -96,7 +96,7 @@ export function getLinkPreviewVideoId(
 }
 
 /**
- * The markup of an inline link mention: the site's favicon and the page title, or the host when
+ * The markup of an icon & text link: the site's favicon and the page title, or the host when
  * the note stores no title.
  */
 export function renderLinkMentionHtml(data: LinkPreviewData, options: LinkPreviewMarkupOptions) {

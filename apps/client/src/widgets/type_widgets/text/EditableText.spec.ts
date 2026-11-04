@@ -532,26 +532,26 @@ describe("getEditLinkOpts", () => {
 
     it("edits the link at the caret, rewriting it on save", async () => {
         const api = createApi({
-            href: "#root/abc?bookmark=part", text: "See there", display: "plain"
+            href: "#root/abc?bookmark=part", text: "See there", display: "textLink"
         });
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             text: "See there", hasSelection: false, currentTitle: "See there",
-            currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "plain"
+            currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "textLink"
         });
 
         await opts.addLink("root/def", "Elsewhere");
         expect(api.updateLink).toHaveBeenCalledExactlyOnceWith("root/def", "Elsewhere", undefined);
         expect(api.addLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "card", "Example", "About");
+        await opts.addLinkPreview?.("https://example.com", "cardLink", "Example", "About");
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example", "About");
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "cardLink", "Example", "About");
     });
 
     it("edits a selected reference link with its title still mirroring the note's", () => {
         const api = createApi({
-            href: "#root/abc", text: "Target", display: "plain", isReference: true
+            href: "#root/abc", text: "Target", display: "textLink", isReference: true
         });
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({ text: "Target", currentLink: { notePath: "root/abc" } });
@@ -560,11 +560,11 @@ describe("getEditLinkOpts", () => {
 
     it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
         const api = createApi({
-            href: "https://example.com", text: "Example", description: "About", display: "card"
+            href: "https://example.com", text: "Example", description: "About", display: "cardLink"
         });
-        expect(getEditLinkOpts(api, ready, { display: "inline" })).toMatchObject({
+        expect(getEditLinkOpts(api, ready, { display: "iconAndTextLink" })).toMatchObject({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example",
-            currentDescription: "About", display: "card"
+            currentDescription: "About", display: "cardLink"
         });
     });
 
@@ -578,9 +578,9 @@ describe("getEditLinkOpts", () => {
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "inline", null, null);
+        await opts.addLinkPreview?.("https://example.com", "iconAndTextLink", null, null);
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null, null);
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "iconAndTextLink", null, null);
     });
 
     it("offers the document's anchors, and edits a link to one of them as that anchor", () => {
@@ -588,7 +588,7 @@ describe("getEditLinkOpts", () => {
             anchors: [ "intro" ]
         });
 
-        const api = createApi({ href: "#intro", text: "Start", display: "plain" }, [ "intro" ]);
+        const api = createApi({ href: "#intro", text: "Start", display: "textLink" }, [ "intro" ]);
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Start"
@@ -616,7 +616,7 @@ describe("getEditLinkOpts", () => {
     it("edits a link to a heading of the note as that heading", () => {
         const intro = { element: {} as ModelElement, level: 2, text: "Intro", blockId: "a" };
         const edit = (href: string, isReference?: boolean) => getEditLinkOpts(
-            createApi({ href, text: "See intro", display: "plain", isReference }, [], [ intro ]),
+            createApi({ href, text: "See intro", display: "textLink", isReference }, [], [ intro ]),
             ready, { notePath: "root/abc" }
         );
 
@@ -643,8 +643,10 @@ describe("getEditLinkOpts", () => {
     });
 
     it("opens a new link on the side and with the display it is asked for", () => {
-        const opts = getEditLinkOpts(createApi(null), ready, { target: "url", display: "embed" });
-        expect(opts).toMatchObject({ target: "url", display: "embed" });
+        const opts = getEditLinkOpts(
+            createApi(null), ready, { target: "url", display: "embedLink" }
+        );
+        expect(opts).toMatchObject({ target: "url", display: "embedLink" });
         expect(getEditLinkOpts(createApi(null), ready)).toMatchObject({
             target: undefined, display: undefined
         });

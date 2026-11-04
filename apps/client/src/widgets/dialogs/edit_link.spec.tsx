@@ -76,14 +76,14 @@ describe("getWebLinkError", () => {
 });
 
 describe("getShownDisplay", () => {
-    it("shows the display picked, a card for a player the address lacks, a plain link off the web", () => {
+    it("shows the display picked, a card for a player the address lacks, a text link off the web", () => {
         const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-        expect(getShownDisplay("inline", "https://example.com")).toBe("inline");
-        expect(getShownDisplay("embed", video)).toBe("embed");
-        expect(getShownDisplay("card", video)).toBe("card");
-        expect(getShownDisplay("embed", "https://example.com")).toBe("card");
-        expect(getShownDisplay("embed", undefined)).toBe("card");
-        expect(getShownDisplay("card", "mailto:someone@example.com")).toBe("plain");
+        expect(getShownDisplay("iconAndTextLink", "https://example.com")).toBe("iconAndTextLink");
+        expect(getShownDisplay("embedLink", video)).toBe("embedLink");
+        expect(getShownDisplay("cardLink", video)).toBe("cardLink");
+        expect(getShownDisplay("embedLink", "https://example.com")).toBe("cardLink");
+        expect(getShownDisplay("embedLink", undefined)).toBe("cardLink");
+        expect(getShownDisplay("cardLink", "mailto:someone@example.com")).toBe("textLink");
     });
 });
 
@@ -443,30 +443,30 @@ describe("EditLinkDialog", () => {
         await open({ target: "url", addLinkPreview });
         expect(headings()).toStrictEqual([]);
         expect(displays()).toStrictEqual(
-            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
+            [ "add_link.display_text", "add_link.display_icon_and_text", "add_link.display_card" ]
         );
         const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
         await type(field("url"), video);
         expect(displays()).toContain("add_link.display_embed");
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await type(field("text"), "Never gonna");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "card", "Never gonna", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "cardLink", "Never gonna", null);
         expect(addLink).not.toHaveBeenCalled();
 
         // A player shows no title.
-        await open({ target: "url", display: "embed", addLinkPreview });
+        await open({ target: "url", display: "embedLink", addLinkPreview });
         await type(field("url"), video);
         expect(field("text")).toBeNull();
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embed", null, null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", null, null);
 
-        // A plain link, and any address that is not a web page, stays a link.
+        // A text link, and any address that is not a web page, stays a link.
         await open({ target: "url", addLinkPreview });
         await type(field("url"), "example.com");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
-        await open({ target: "url", display: "card", addLinkPreview });
+        await open({ target: "url", display: "cardLink", addLinkPreview });
         await type(field("url"), "mailto:someone@example.com");
         expect(displaySelect()?.disabled).toBe(true);
         await submit();
@@ -477,7 +477,8 @@ describe("EditLinkDialog", () => {
 
         // A link on a selection keeps the selected text, so it is never a preview.
         await open({
-            target: "url", text: "some words", hasSelection: true, display: "card", addLinkPreview
+            target: "url", text: "some words", hasSelection: true, display: "cardLink",
+            addLinkPreview
         });
         expect(displaySelect()).toBeNull();
         await type(field("url"), "https://example.com");
@@ -492,32 +493,34 @@ describe("EditLinkDialog", () => {
     it("turns an edited link into a preview with the page's own title unless it has a text", async () => {
         const url = "https://example.com/page";
         await open({ currentLink: { externalLink: url }, currentTitle: url, addLinkPreview });
-        await pickDisplay("inline");
+        await pickDisplay("iconAndTextLink");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", null, null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "iconAndTextLink", null, null);
 
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
         expect(addLink).not.toHaveBeenCalled();
     });
 
     it("edits a link preview, giving another address the title of its own page", async () => {
         const url = "https://example.com/page";
         await open({
-            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "cardLink",
+            addLinkPreview
         });
         expect(field("url")?.value).toBe(url);
         expect(field("text")?.value).toBe("Page");
         expect(displays()).toStrictEqual(
-            [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
+            [ "add_link.display_text", "add_link.display_icon_and_text", "add_link.display_card" ]
         );
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
 
         await open({
-            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "cardLink",
+            addLinkPreview
         });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("");
@@ -526,9 +529,9 @@ describe("EditLinkDialog", () => {
         expect(field("text")?.value).toBe("Mine");
         await submit();
         expect(addLinkPreview)
-            .toHaveBeenLastCalledWith("https://example.com/third", "card", "Mine", null);
+            .toHaveBeenLastCalledWith("https://example.com/third", "cardLink", "Mine", null);
 
-        // A plain link keeps its text for another address.
+        // A text link keeps its text for another address.
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("Page");
@@ -540,29 +543,29 @@ describe("EditLinkDialog", () => {
             currentLink: { externalLink: url }, currentTitle: "Page", currentDescription: "About",
             addLinkPreview
         };
-        await open({ ...preview, display: "inline" });
+        await open({ ...preview, display: "iconAndTextLink" });
         expect(description()).toBeNull();
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         expect(description()?.value).toBe("About");
         expect(description()?.getAttribute("rows")).toBe("2");
         const order = ".edit-link-text + .edit-link-description + .edit-link-display";
         expect(container.querySelector(order)).not.toBeNull();
         await type(description(), " Mine ");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", "Mine");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", "Mine");
 
         // An emptied description leaves the stored one, and only a card shows one.
-        await open({ ...preview, display: "card" });
+        await open({ ...preview, display: "cardLink" });
         await type(description(), " ");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
-        await open({ ...preview, display: "card" });
-        await pickDisplay("inline");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
+        await open({ ...preview, display: "cardLink" });
+        await pickDisplay("iconAndTextLink");
         expect(description()).toBeNull();
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "iconAndTextLink", "Page", null);
 
-        await open({ ...preview, display: "card" });
+        await open({ ...preview, display: "cardLink" });
         await type(field("url"), "https://example.com/other");
         expect(description()?.value).toBe("");
         // Typed after the change, even the old description stays.
@@ -634,7 +637,7 @@ describe("EditLinkDialog", () => {
     });
 
     it("fills a preview's blank title and description, reading each page once", async () => {
-        // A preview follows its own option, which a plain link does not.
+        // A preview follows its own option, which a text link does not.
         options.set("textNoteLinkDetailsRetrievalEnabled", "true");
         const page = deferred<PageDetails | null>();
         fetchPageDetails.mockReturnValueOnce(page.promise);
@@ -642,7 +645,7 @@ describe("EditLinkDialog", () => {
         await type(field("url"), "example.com");
         await leave(field("url"));
         expect(fetchPageDetails).not.toHaveBeenCalled();
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await settle();
         expect(fetchPageDetails).toHaveBeenCalledOnce();
         expect([ spinner("text"), spinner("description") ]).not.toContain(null);
@@ -653,10 +656,10 @@ describe("EditLinkDialog", () => {
             .toStrictEqual([ "Example", "About" ]);
 
         options.set("textNoteLinkDetailsRetrievalEnabled", "false");
-        await open({ target: "url", display: "inline", addLinkPreview });
+        await open({ target: "url", display: "iconAndTextLink", addLinkPreview });
         await type(field("url"), "example.com");
         await leave(field("url"));
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await settle();
         expect(fetchPageDetails).toHaveBeenCalledOnce();
 
@@ -667,14 +670,14 @@ describe("EditLinkDialog", () => {
         await type(field("url"), "example.com");
         await leave(field("url"));
         expect(field("text")?.value).toBe("Example");
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await settle();
         expect(description()?.value).toBe("About");
         expect(fetchPageDetails).toHaveBeenCalledTimes(2);
         await nextFrame();
         await submit();
         expect(addLinkPreview)
-            .toHaveBeenLastCalledWith("https://example.com", "card", "Example", "About");
+            .toHaveBeenLastCalledWith("https://example.com", "cardLink", "Example", "About");
     });
 
     it("offers no web link when fixing a link to a missing note", async () => {
@@ -1029,7 +1032,7 @@ describe("EditLinkBalloon", () => {
 
     it("applies a card on Enter in its description, but not mid-composition", async () => {
         const addLinkPreview = vi.fn<NonNullable<EditLinkOpts["addLinkPreview"]>>(async () => {});
-        const form = await show({ target: "url", display: "card", addLinkPreview });
+        const form = await show({ target: "url", display: "cardLink", addLinkPreview });
         await type(form.querySelector<HTMLInputElement>(".edit-link-url input"), "example.com");
         const textarea = form.querySelector<HTMLTextAreaElement>(".edit-link-description textarea");
         await type(textarea, "About");
@@ -1048,7 +1051,7 @@ describe("EditLinkBalloon", () => {
         expect(await pressEnter(false)).toBe(true);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", null, "About");
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "cardLink", null, "About");
     });
 });
 
