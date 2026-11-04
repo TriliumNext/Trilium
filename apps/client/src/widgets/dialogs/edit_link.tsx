@@ -17,7 +17,7 @@ import Button from "../react/Button";
 import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
-import FormTextBox from "../react/FormTextBox";
+import FormTextBox, { FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
@@ -601,7 +601,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                         <OptionCardSection
                             className="edit-link-url" name="url" label={t("add_link.url")}
                         >
-                            <FormTextBox
+                            <FormTextBoxWithPaste
                                 inputRef={webLinkRef}
                                 inputMode="url"
                                 autoCapitalize="off"

@@ -15,8 +15,13 @@ import EditLinkDialog, {
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
 }));
+const { readClipboardText } = vi.hoisted(() => ({ readClipboardText: vi.fn(async () => "") }));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/clipboard_ext", () => ({
+    canReadClipboardText: async () => true,
+    readClipboardText
+}));
 vi.mock("../react/NoteAutocomplete", () => ({
     default: ({ onChange, inputRef }: {
         onChange: (suggestion: Suggestion | null) => void;
@@ -750,6 +755,28 @@ describe("EditLinkBalloon", () => {
         expect(document.activeElement).toBe(form.querySelector(".edit-link-url input"));
     });
 
+    it("pastes the clipboard over the address, selects it and applies it", async () => {
+        readClipboardText.mockResolvedValue("example.com/pasted");
+        const form = await show({ target: "url" });
+        // The effect calling `canReadClipboardText()` runs as the first `act()` ends.
+        await settle();
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        const button = form.querySelector<HTMLButtonElement>(".edit-link-url .bx-paste");
+        if (!url || !button) throw new Error("The address has no paste button.");
+        expect(form.querySelector(".edit-link-url label")?.getAttribute("for")).toBe(url.id);
+
+        await type(url, "typed");
+        button.click();
+        await settle();
+        expect(url.value).toBe("example.com/pasted");
+        expect([ url.selectionStart, url.selectionEnd ]).toStrictEqual([ 0, url.value.length ]);
+
+        await submit(form);
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(
+            "https://example.com/pasted", "https://example.com/pasted", true
+        );
+    });
+
     it("opens on an edited link with its address selected, and applies it left alone", async () => {
         const form = await show({
             currentLink: { externalLink: "https://example.com/page" }, currentTitle: "Page"
@@ -826,5 +853,12 @@ async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value:
     await act(async () => {
         input.value = value;
         input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}
+
+/** Waits a task, so that what a pending promise renders is in the DOM. */
+function settle() {
+    return act(async () => {
+        await new Promise((resolve) => setTimeout(resolve));
     });
 }
