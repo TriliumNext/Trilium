@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"i18next": "26.6.0",
-		"preact": "11.1.0",
+		"preact": "11.1.1",
 		"preact-iso": "2.12.2",
 		"preact-render-to-string": "6.8.2",
 		"react-i18next": "17.1.9"
