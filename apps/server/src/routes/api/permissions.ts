@@ -3,7 +3,7 @@ import { getSql, permission_service, user_homes, type UserRecord, user_service }
 import type { Request } from "express";
 
 function callerIsAdmin(): boolean {
-    return !!user_service.getCurrentUser()?.isAdmin;
+    return !!user_service.getCurrentUser().isAdmin;
 }
 
 function listPermissions(req: Request<{ noteId: string }>) {
@@ -120,7 +120,6 @@ function checkCanManageAccess(req: Request<{ noteId: string }>):
     | { error: [number, { message: string }]; noteId?: undefined; ownerId?: undefined }
     | { error?: undefined; noteId: string; ownerId: string | null } {
     const caller = user_service.getCurrentUser();
-    if (!caller) return { error: [403, { message: "Sign-in required." }] };
 
     const { noteId } = req.params;
     if (noteId === "root" || noteId.startsWith("_") || user_homes.isHomeOrUsersNote(noteId)) {

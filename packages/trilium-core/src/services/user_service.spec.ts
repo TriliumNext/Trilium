@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 
+import { ForbiddenError } from "../errors.js";
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
 
 describe("getCurrentUser", () => {
-    it("looks up the user in CLS once per context and follows a change of user", () => {
+    it("looks up the user in CLS once per context, follows a change of user and refuses a missing one", () => {
         const adminId = cls.init(() => userService.getAdminUserId());
         const memberId = cls.init(() => userService.createUser("current-user-spec", null, false));
 
         cls.init(() => {
-            expect(userService.getCurrentUser()).toBeNull();
+            expect(() => userService.getCurrentUser()).toThrow(ForbiddenError);
 
             cls.set("userId", memberId);
             const member = userService.getCurrentUser();
@@ -19,9 +20,14 @@ describe("getCurrentUser", () => {
 
             cls.set("userId", adminId);
             expect(userService.getCurrentUser()).toMatchObject({ userId: adminId, isAdmin: 1 });
+
+            const deletedId = userService.createUser("current-user-deleted-spec", null, false);
+            userService.deleteUser(deletedId);
+            cls.set("userId", deletedId);
+            expect(() => userService.getCurrentUser()).toThrow(ForbiddenError);
         });
 
-        expect(cls.init(() => userService.getCurrentUser())).toBeNull();
+        expect(() => cls.init(() => userService.getCurrentUser())).toThrow(ForbiddenError);
     });
 });
 

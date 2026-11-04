@@ -1,5 +1,5 @@
 import type { CreateUserResponse, UserListItem } from "@triliumnext/commons";
-import { cls, becca, getSql, user_homes, user_service } from "@triliumnext/core";
+import { cls, becca, ForbiddenError, getSql, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -31,9 +31,8 @@ describe("Users API", () => {
     });
 
     describe("getUsers", () => {
-        it("returns 403 when session has no userId", () => {
-            const result = getUsers();
-            expect(Array.isArray(result) ? result[0] : null).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => getUsers()).toThrow(ForbiddenError);
         });
 
         it("returns 403 when session userId is not an admin", () => {
@@ -111,9 +110,8 @@ describe("Users API", () => {
     });
 
     describe("createUser", () => {
-        it("returns 403 without admin session", () => {
-            const result = cls.init(() => usersRoute.createUser(req({ username: "test" })));
-            expect(Array.isArray(result) && result[0]).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => cls.init(() => usersRoute.createUser(req({ username: "test" })))).toThrow(ForbiddenError);
         });
 
         it("returns 400 when username is missing or blank", () => {
@@ -162,9 +160,8 @@ describe("Users API", () => {
     });
 
     describe("deleteUser", () => {
-        it("returns 403 without admin session", () => {
-            const result = cls.init(() => usersRoute.deleteUser(req({}, { userId: "x" })));
-            expect(Array.isArray(result) && result[0]).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => cls.init(() => usersRoute.deleteUser(req({}, { userId: "x" })))).toThrow(ForbiddenError);
         });
 
         it("returns 400 when trying to delete self", () => {

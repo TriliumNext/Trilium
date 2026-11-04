@@ -1,5 +1,6 @@
 import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
 
+import { ForbiddenError } from "../errors.js";
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
@@ -73,21 +74,26 @@ function getUserById(userId: string): User | null {
 }
 
 /**
- * The user whose `userId` is in CLS, looked up once per context and kept there. Returns `null` without
- * a user in CLS (ETAPI, the desktop app without sign-in, a timer started at boot) and for a deleted user.
+ * The user whose `userId` is in CLS, looked up once per context and kept there. Throws a
+ * `ForbiddenError` without a user in CLS (ETAPI, the desktop app without sign-in, a timer started at
+ * boot) and for a deleted user.
  */
-function getCurrentUser(): User | null {
+function getCurrentUser(): User {
     const userId = cls.getUserId();
     if (!userId) {
-        return null;
+        throw new ForbiddenError("No user is signed in.");
     }
 
-    const cached = cls.get<User | null>("currentUser");
+    const cached = cls.get<User>("currentUser");
     if (cached?.userId === userId) {
         return cached;
     }
 
     const user = getUserById(userId);
+    if (!user) {
+        throw new ForbiddenError(`User '${userId}' does not exist.`);
+    }
+
     cls.set("currentUser", user);
     return user;
 }
