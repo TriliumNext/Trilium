@@ -1,5 +1,6 @@
 import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
 
+import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId, randomSecureToken } from "./utils/index.js";
@@ -69,6 +70,26 @@ function getUserById(userId: string): User | null {
            FROM users WHERE userId = ? AND isDeleted = 0`,
         [userId]
     ) ?? null;
+}
+
+/**
+ * The user whose `userId` is in CLS, looked up once per context and kept there. Returns `null` without
+ * a user in CLS (ETAPI, the desktop app without sign-in, a `cls.init()` job) and for a deleted user.
+ */
+function getCurrentUser(): User | null {
+    const userId = cls.getUserId();
+    if (!userId) {
+        return null;
+    }
+
+    const cached = cls.get<User | null>("currentUser");
+    if (cached?.userId === userId) {
+        return cached;
+    }
+
+    const user = getUserById(userId);
+    cls.set("currentUser", user);
+    return user;
 }
 
 function isUserAdmin(userId: string): boolean {
@@ -241,7 +262,7 @@ function deleteUser(userId: string): void {
 }
 
 export default {
-    getAdminUserId, getUserById, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
+    getAdminUserId, getUserById, getCurrentUser, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
     createSetupLink, getUserBySetupToken, completeSetup, verifyUserPassword, hasUsersWithOwnPassword,
     getSignedInUser
 };

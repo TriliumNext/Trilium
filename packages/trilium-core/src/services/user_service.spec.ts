@@ -4,6 +4,27 @@ import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
 
+describe("getCurrentUser", () => {
+    it("looks up the user in CLS once per context and follows a change of user", () => {
+        const adminId = cls.init(() => userService.getAdminUserId());
+        const memberId = cls.init(() => userService.createUser("current-user-spec", null, false));
+
+        cls.init(() => {
+            expect(userService.getCurrentUser()).toBeNull();
+
+            cls.set("userId", memberId);
+            const member = userService.getCurrentUser();
+            expect(member).toMatchObject({ userId: memberId, username: "current-user-spec", isAdmin: 0 });
+            expect(userService.getCurrentUser()).toBe(member);
+
+            cls.set("userId", adminId);
+            expect(userService.getCurrentUser()).toMatchObject({ userId: adminId, isAdmin: 1 });
+        });
+
+        expect(cls.init(() => userService.getCurrentUser())).toBeNull();
+    });
+});
+
 describe("getSignedInUser", () => {
     it("describes the signed-in user once someone other than the admin can sign in", async () => {
         const adminId = cls.init(() => userService.getAdminUserId());

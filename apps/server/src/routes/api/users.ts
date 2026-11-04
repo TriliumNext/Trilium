@@ -4,13 +4,8 @@ import type { Request } from "express";
 
 import { revokeUserSessions } from "../session_parser.js";
 
-function getCallerUser(req: Request) {
-    const userId = req.session?.userId;
-    return userId ? user_service.getUserById(userId) : null;
-}
-
-function getUsers(req: Request) {
-    const caller = getCallerUser(req);
+function getUsers() {
+    const caller = user_service.getCurrentUser();
     if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
 
     const adminUserId = user_service.getAdminUserId();
@@ -28,7 +23,7 @@ function getUsers(req: Request) {
 }
 
 function createUser(req: Request) {
-    const caller = getCallerUser(req);
+    const caller = user_service.getCurrentUser();
     if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
 
     const input = parseUserInput(req.body, true);
@@ -47,7 +42,7 @@ function createUser(req: Request) {
 
 /** Issues a new setup link for a user, replacing any earlier one; for a user with a password, a reset. */
 function createSetupLink(req: Request<{ userId: string }>) {
-    const caller = getCallerUser(req);
+    const caller = user_service.getCurrentUser();
     if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
 
     const { userId } = req.params;
@@ -62,7 +57,7 @@ function createSetupLink(req: Request<{ userId: string }>) {
 }
 
 function updateUser(req: Request<{ userId: string }>) {
-    const caller = getCallerUser(req);
+    const caller = user_service.getCurrentUser();
     if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
 
     const { userId } = req.params;
@@ -99,7 +94,7 @@ function updateUser(req: Request<{ userId: string }>) {
 }
 
 function deleteUser(req: Request<{ userId: string }>) {
-    const caller = getCallerUser(req);
+    const caller = user_service.getCurrentUser();
     if (!caller?.isAdmin) return [403, { message: "Admin access required." }];
 
     const { userId } = req.params;

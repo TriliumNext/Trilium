@@ -2,21 +2,18 @@ import { getAvatarHues, type NoteAccessGrant, type NoteAccessResponse, type Note
 import { getSql, permission_service, user_homes, type UserRecord, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 
-function callerIsAdmin(req: Request): boolean {
-    const userId = req.session?.userId;
-    if (!userId) return false;
-    const caller = user_service.getUserById(userId);
-    return !!caller?.isAdmin;
+function callerIsAdmin(): boolean {
+    return !!user_service.getCurrentUser()?.isAdmin;
 }
 
 function listPermissions(req: Request<{ noteId: string }>) {
-    if (!callerIsAdmin(req)) return [403, { message: "Admin access required." }];
+    if (!callerIsAdmin()) return [403, { message: "Admin access required." }];
     const { noteId } = req.params;
     return permission_service.getPermissionsForNote(noteId);
 }
 
 function createPermission(req: Request) {
-    if (!callerIsAdmin(req)) return [403, { message: "Admin access required." }];
+    if (!callerIsAdmin()) return [403, { message: "Admin access required." }];
 
     const { noteId, userId, groupId, canWrite } = req.body as {
         noteId?: unknown;
@@ -52,7 +49,7 @@ function createPermission(req: Request) {
 }
 
 function deletePermission(req: Request<{ permissionId: string }>) {
-    if (!callerIsAdmin(req)) return [403, { message: "Admin access required." }];
+    if (!callerIsAdmin()) return [403, { message: "Admin access required." }];
 
     const { permissionId } = req.params;
     permission_service.revokePermission(permissionId);
@@ -122,8 +119,8 @@ export default {
 function checkCanManageAccess(req: Request<{ noteId: string }>):
     | { error: [number, { message: string }]; noteId?: undefined; ownerId?: undefined }
     | { error?: undefined; noteId: string; ownerId: string | null } {
-    const callerId = req.session?.userId;
-    if (!callerId) return { error: [403, { message: "Sign-in required." }] };
+    const caller = user_service.getCurrentUser();
+    if (!caller) return { error: [403, { message: "Sign-in required." }] };
 
     const { noteId } = req.params;
     if (noteId === "root" || noteId.startsWith("_") || user_homes.isHomeOrUsersNote(noteId)) {
@@ -135,7 +132,7 @@ function checkCanManageAccess(req: Request<{ noteId: string }>):
     );
     if (!note) return { error: [404, { message: "Note not found." }] };
 
-    if (note.ownerId !== callerId && !user_service.getUserById(callerId)?.isAdmin) {
+    if (note.ownerId !== caller.userId && !caller.isAdmin) {
         return { error: [403, { message: "Only the note's owner or an admin can manage access to it." }] };
     }
 

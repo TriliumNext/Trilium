@@ -6,8 +6,17 @@ import { beforeAll, describe, expect, it } from "vitest";
 import sqlInit from "../../services/sql_init.js";
 import usersRoute from "./users.js";
 
+/** Builds the request and, as `internalRoute` does, puts the session's user in CLS. Call it inside `cls.init()`. */
 function req(body: Record<string, unknown> = {}, params: Record<string, string> = {}, session: Record<string, unknown> = {}) {
+    cls.set("userId", session.userId);
     return { body, params, session } as unknown as Request<{ userId: string }>;
+}
+
+function getUsers(session: Record<string, unknown> = {}) {
+    return cls.init(() => {
+        req({}, {}, session);
+        return usersRoute.getUsers();
+    });
 }
 
 function adminSession(): Record<string, unknown> {
@@ -23,26 +32,26 @@ describe("Users API", () => {
 
     describe("getUsers", () => {
         it("returns 403 when session has no userId", () => {
-            const result = cls.init(() => usersRoute.getUsers(req()));
+            const result = getUsers();
             expect(Array.isArray(result) ? result[0] : null).toBe(403);
         });
 
         it("returns 403 when session userId is not an admin", () => {
             const nonAdminId = cls.init(() => user_service.createUser("non-admin-spec", null, false));
-            const result = cls.init(() => usersRoute.getUsers(req({}, {}, { userId: nonAdminId })));
+            const result = getUsers({ userId: nonAdminId });
             expect(Array.isArray(result) ? result[0] : null).toBe(403);
             cls.init(() => user_service.deleteUser(nonAdminId));
         });
 
         it("returns the user list for an admin session", () => {
-            const result = cls.init(() => usersRoute.getUsers(req({}, {}, adminSession())));
+            const result = getUsers(adminSession());
             expect(Array.isArray(result)).toBe(true);
             expect(typeof (result as unknown[])[0]).not.toBe("number");
         });
 
         it("marks the primary admin and the caller, with booleans rather than SQLite integers", () => {
             const sess = adminSession();
-            const result = cls.init(() => usersRoute.getUsers(req({}, {}, sess))) as UserListItem[];
+            const result = getUsers(sess) as UserListItem[];
             const self = result.find((user) => user.userId === sess.userId);
             expect(self).toMatchObject({ isAdmin: true, isPrimaryAdmin: true, isCurrentUser: true });
             expect(result.filter((user) => user.isCurrentUser)).toHaveLength(1);
@@ -129,7 +138,7 @@ describe("Users API", () => {
             expect(result).toMatchObject({ setupLink: { token: expect.any(String), expiresAt: expect.any(String) } });
 
             const { userId, setupLink } = result as CreateUserResponse;
-            const listed = (cls.init(() => usersRoute.getUsers(req({}, {}, sess))) as UserListItem[])
+            const listed = (getUsers(sess) as UserListItem[])
                 .find((user) => user.userId === userId);
             expect(listed).toMatchObject({ hasPassword: false, setupLinkExpiresAt: setupLink.expiresAt });
             expect(becca.getNote(`home_${userId}`)).toMatchObject({ title: "new-spec-user", ownerId: userId });
