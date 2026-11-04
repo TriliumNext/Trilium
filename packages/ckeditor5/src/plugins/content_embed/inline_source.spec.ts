@@ -299,6 +299,9 @@ describe("ContentEmbedInlineSource", () => {
         expect(editor.commands.get(TOGGLE_TITLE_COMMAND_NAME)?.isEnabled).toBe(false);
         expect(editor.commands.get(TOGGLE_CAPTION_COMMAND_NAME)?.isEnabled).toBe(false);
         expect(editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND)?.isEnabled).toBe(false);
+        const figure = editor.editing.view.getDomRoot()?.querySelector(".include-note");
+        expect(figure && editor.plugins.get(ContentEmbed).getEmbedStateAt(figure))
+            .toMatchObject({ isTitleSupported: false, isCaptionSupported: false });
     });
 
     describe("extended code blocks", () => {

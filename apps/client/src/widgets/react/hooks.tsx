@@ -1243,13 +1243,19 @@ export function useFocusWithin(ref: RefObject<HTMLElement | null>) {
         update();
         element.addEventListener("focusin", update);
         element.addEventListener("focusout", updateLater);
-        // A frame taking or returning the focus fires no focus event inside the document.
+        // A frame taking or returning the focus fires no focus event inside the document. The
+        // text editor dispatches `focus` and `blur` at a frame in an embed that the focus moves to
+        // or from, which only a capturing listener hears.
+        element.addEventListener("focus", update, true);
+        element.addEventListener("blur", updateLater, true);
         window.addEventListener("blur", updateLater);
         window.addEventListener("focus", updateLater);
         return () => {
             window.clearTimeout(timer);
             element.removeEventListener("focusin", update);
             element.removeEventListener("focusout", updateLater);
+            element.removeEventListener("focus", update, true);
+            element.removeEventListener("blur", updateLater, true);
             window.removeEventListener("blur", updateLater);
             window.removeEventListener("focus", updateLater);
         };

@@ -1,6 +1,8 @@
 import { chooseLinkPreviewKind, isUrlAloneInBlock, type BlockChildLike } from '@triliumnext/commons';
 import { Plugin } from 'ckeditor5';
-import { EMBEDDABLE_URL_REGEX, getLinkEmbedHost } from './link_embed_commands.js';
+import {
+    createLinkPreview, EMBEDDABLE_URL_REGEX, getLinkEmbedHost, getMetadataAttributes
+} from './link_embed_commands.js';
 
 /**
  * Auto-converts typed/pasted URLs to link preview widgets.
@@ -133,15 +135,7 @@ export default class AutoLinkToMention extends Plugin {
                             caretLeftBlock: this._caretLeftBlock(parentEl)
                         });
 
-                        const attributes = {
-                            url: metadata.url,
-                            embedType: metadata.embedType,
-                            title: metadata.title,
-                            description: metadata.description,
-                            favicon: metadata.favicon,
-                            siteName: metadata.siteName,
-                            image: metadata.image
-                        };
+                        const attributes = getMetadataAttributes(metadata);
 
                         if (kind === 'mention') {
                             // The URL's own range is passed to insertContent rather than selected
@@ -156,9 +150,8 @@ export default class AutoLinkToMention extends Plugin {
                         // but the URL. Swapped with writer.insert/remove rather than insertContent: the
                         // caret has moved on to the next line (that is what made this a block preview in
                         // the first place) and may already be mid-word, so it must not be dragged back.
-                        // 'card' vs 'embed' needs no branch here — the renderer keys off embedType,
-                        // which is "opengraph" for a card and the provider's own type for an embed.
-                        writer.insert(writer.createElement('linkEmbed', attributes), parentEl, 'before');
+                        const preview = createLinkPreview(writer, kind, attributes);
+                        writer.insert(preview, parentEl, 'before');
                         writer.remove(parentEl);
                         return;
                     }

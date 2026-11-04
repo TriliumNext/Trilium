@@ -1,0 +1,5 @@
+.input-group > .tn-paste-button {
+    padding-inline: 5px;
+    font-size: 1.3em;
+    cursor: pointer;
+}

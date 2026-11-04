@@ -4,27 +4,32 @@ import { extractYouTubeVideoId, isHttpUrl } from "@triliumnext/commons";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import toast from "../../services/toast";
 import Button from "../react/Button";
 import { Card, OptionCardSection } from "../react/Card";
-import FormTextBox from "../react/FormTextBox";
+import { FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 
 export interface YouTubeVideoOpts {
-    /** Inserts a player of the YouTube video at `url`. */
-    onInsert(url: string): void;
+    /**
+     * Inserts a player of the YouTube video at `url` once it is ready, unless the editor holds
+     * other content by then, and rejects when it cannot be loaded.
+     */
+    onInsert(url: string): Promise<void>;
 }
 
 /**
  * Asks for the address of a YouTube video in a modal, on the `showYouTubeVideoDialog` event. The
- * text editor uses it on mobile, where it has no room for its balloon.
+ * text editor uses it on mobile, where it has no room for its balloon. The modal closes once the
+ * video is inserted.
  */
 export default function YouTubeVideoDialog() {
     const [ opts, setOpts ] = useState<YouTubeVideoOpts>();
     const [ isShown, setIsShown ] = useState(false);
-    const submittedUrlRef = useRef<string | null>(null);
     const form = useYouTubeVideoForm();
+    const { isInserting, insert } = useVideoInsertion();
 
     useTriliumEvent("showYouTubeVideoDialog", (newOpts) => {
         setOpts(newOpts);
@@ -37,20 +42,15 @@ export default function YouTubeVideoDialog() {
             className="youtube-video-dialog"
             size="lg"
             title={t("youtube_video.title")}
-            footer={<InsertButton isEnabled={!!form.url} />}
-            onSubmit={() => {
-                if (!form.url) return;
+            footer={<InsertButton isEnabled={!!form.url && !isInserting} />}
+            onSubmit={async () => {
+                if (!form.url || !opts || isInserting) return;
 
-                submittedUrlRef.current = form.url;
-                setIsShown(false);
+                if (await insert(opts.onInsert, form.url)) {
+                    setIsShown(false);
+                }
             }}
-            onHidden={() => {
-                // Inserted once the modal is gone, so the editor can take the focus back.
-                const url = submittedUrlRef.current;
-                submittedUrlRef.current = null;
-                setIsShown(false);
-                if (url) opts?.onInsert(url);
-            }}
+            onHidden={() => setIsShown(false)}
             show={isShown}
         >
             {form.body}
@@ -58,11 +58,15 @@ export default function YouTubeVideoDialog() {
     );
 }
 
-/** The form of the prompt in the balloon that the text editor places at the caret. */
+/**
+ * The form of the prompt in the balloon that the text editor places at the caret, which the editor
+ * closes once the video is inserted.
+ */
 export function YouTubeVideoBalloon({ onInsert }: YouTubeVideoOpts) {
     // Lets the field take focus inside a modal, such as the quick edit popup.
     useEffect(() => suspendModalFocusTraps(), []);
     const form = useYouTubeVideoForm();
+    const { isInserting, insert } = useVideoInsertion();
 
     useEffect(() => {
         form.inputRef.current?.focus();
@@ -72,15 +76,39 @@ export function YouTubeVideoBalloon({ onInsert }: YouTubeVideoOpts) {
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                if (form.url) onInsert(form.url);
+                if (form.url && !isInserting) void insert(onInsert, form.url);
             }}
         >
             {form.body}
             <div className="youtube-video-actions">
-                <InsertButton isEnabled={!!form.url} />
+                <InsertButton isEnabled={!!form.url && !isInserting} />
             </div>
         </form>
     );
+}
+
+/**
+ * Inserts a video through `onInsert`, with `isInserting` set until it settles, and shows an error
+ * toast when it fails. `insert()` resolves to whether the video was inserted.
+ */
+function useVideoInsertion() {
+    const [ isInserting, setIsInserting ] = useState(false);
+
+    async function insert(onInsert: YouTubeVideoOpts["onInsert"], url: string) {
+        setIsInserting(true);
+        try {
+            await onInsert(url);
+            return true;
+        } catch (e) {
+            console.error("Failed to insert the YouTube video:", e);
+            toast.showError(t("youtube_video.insert_failed"));
+            return false;
+        } finally {
+            setIsInserting(false);
+        }
+    }
+
+    return { isInserting, insert };
 }
 
 /** The button that submits the form, enabled once the field holds the address of a video. */
@@ -111,9 +139,9 @@ function useYouTubeVideoForm() {
                     className="youtube-video-url"
                     name="youtube-video-url"
                     label={t("add_link.url")}
-                    description={text.trim() && !url ? t("youtube_video.not_a_video") : undefined}
+                    error={text.trim() && !url ? t("youtube_video.not_a_video") : undefined}
                 >
-                    <FormTextBox
+                    <FormTextBoxWithPaste
                         inputRef={inputRef}
                         inputMode="url"
                         autoCapitalize="off"

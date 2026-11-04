@@ -587,6 +587,16 @@ describe("Markdown export", () => {
             .toBe(`Before\n\n${captioned}\n\nAfter`);
     });
 
+    it("preserves a video saved with its caption, with the fallback link of the video", () => {
+        const url = "https://www.youtube.com/watch?v=abc";
+        const section = `<section class="link-embed" data-url="${url}" data-embed-type="youtube">`;
+        const figure = (content: string) => `<figure class="captioned-content-embed">${section}`
+            + `${content}</section><figcaption>A <strong>caption</strong></figcaption></figure>`;
+
+        expect(markdownExportService.toMarkdown(`<p>Before</p>${figure("")}<p>After</p>`))
+            .toBe(`Before\n\n${figure(`<a href="${url}">${url}</a>`)}\n\nAfter`);
+    });
+
     it("exports todo lists properly", () => {
         const html = trimIndentation/*html*/`\
             <ul class="todo-list">

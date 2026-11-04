@@ -1,7 +1,8 @@
 :where(:root) {
     --ck-resize-handle-color: var(--ck-color-focus-border);
+    --ck-resize-handle-outline-color: var(--main-border-color, var(--ck-color-base-border));
     --ck-resize-handle-hit-size: 12px;
-    --ck-resize-handle-grip-size: 8px;
+    --ck-resize-handle-grip-size: 10px;
     --ck-resize-handle-grip-length: 32px;
     --ck-resize-handle-grip-thickness: 4px;
 }
@@ -13,6 +14,9 @@
 }
 
 .ck .ck-widget > .ck-widget__resize-handles {
+    /* Redeclared so the handles follow a `--ck-color-focus-border` the widget sets. */
+    --ck-resize-handle-color: var(--ck-color-focus-border);
+
     display: none;
     position: absolute;
     inset: 0;
@@ -20,14 +24,33 @@
 }
 
 /* A widget stays selected while the editor is blurred. */
-.ck.ck-editor__editable.ck-focused .ck-widget_resizable.ck-widget_selected,
+.ck.ck-editor__editable.ck-focused:not(.ck-read-only) .ck-widget_resizable.ck-widget_selected,
 .ck .ck-widget_resizable.ck-widget_resizing {
     > .ck-widget__resize-handles {
         display: block;
     }
+
+    /* A widget that hides its corner handle sets `--ck-resize-corner-radius` to its radius. */
+    &:not(.ck-widget_resize-anchor-left, .ck-widget_resize-anchor-right) {
+        border-end-end-radius: var(--ck-resize-corner-radius, 0px);
+    }
+
+    &.ck-widget_resize-anchor-left {
+        border-bottom-right-radius: var(--ck-resize-corner-radius, 0px);
+    }
+
+    &.ck-widget_resize-anchor-right {
+        border-bottom-left-radius: var(--ck-resize-corner-radius, 0px);
+    }
 }
 
 .ck.ck-editor__editable.ck-read-only .ck-widget > .ck-widget__resize-handles {
+    display: none;
+}
+
+/* The corner, the only handle with a grip on every screen, resizes the axis left. */
+.ck :is(.ck-widget_fixed-width, .ck-widget_fixed-height) > .ck-widget__resize-handles
+    > :not(.ck-widget__resize-handle_corner) {
     display: none;
 }
 
@@ -91,9 +114,16 @@
 
         &::after {
             content: "";
+            outline: 2px solid var(--ck-resize-handle-outline-color);
             border-radius: 50%;
             width: var(--ck-resize-handle-grip-size);
             height: var(--ck-resize-handle-grip-size);
+        }
+
+        &:hover::after {
+            box-shadow: 0 0 0 6px
+                color-mix(in srgb, var(--ck-resize-handle-color) 25%, transparent);
+            outline-color: transparent;
         }
     }
 }

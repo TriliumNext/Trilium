@@ -1,12 +1,13 @@
 import {
-    _setModelData as setModelData, ButtonView, type ClassicEditor, CodeBlock, ContextualBalloon,
-    Essentials, LinkEditing, Paragraph
+    _getModelData as getModelData, _setModelData as setModelData, ButtonView, type ClassicEditor,
+    CodeBlock, ContextualBalloon, Essentials, LinkEditing, type ModelRootElement, type ModelWriter,
+    Paragraph
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import {
-    createLinkEmbedHost, findElement, type LinkEmbedHostMocks
+    createLinkEmbedHost, findElement, flushFetch, type LinkEmbedHostMocks, META, useDeferredFetch
 } from "../../test/link-embed-kit.js";
 import YouTubeVideoPlugin, { COMMAND_NAME, type YouTubeVideoRequest } from "./youtube_video.js";
 
@@ -31,6 +32,12 @@ describe("YouTubeVideoPlugin", () => {
         return editor.plugins.get(ContextualBalloon);
     }
 
+    function getRoot() {
+        const root = editor.model.document.getRoot();
+        if (!root) throw new Error("The editor has no root.");
+        return root;
+    }
+
     it("opens the prompt from a button bound to the command", () => {
         const button = editor.ui.componentFactory.create(COMMAND_NAME);
         if (!(button instanceof ButtonView)) {
@@ -51,18 +58,96 @@ describe("YouTubeVideoPlugin", () => {
         expect(button.isEnabled).toBe(false);
     });
 
-    it("inserts a player of the video given, and closes the balloon", async () => {
+    /** Opens the prompt, and returns the request the host gets. */
+    function openPrompt() {
         editor.execute(COMMAND_NAME);
+        const request = showPrompt.mock.lastCall?.[0];
+        if (!request) throw new Error("The prompt did not open.");
+        return request;
+    }
 
-        showPrompt.mock.calls[0][0].onInsert(VIDEO_URL);
+    /** The model data, with each player shortened to `<video/>`. */
+    function getData() {
+        return getModelData(editor.model)
+            .replace(/<contentEmbed [^>]*><\/contentEmbed>/g, "<video/>");
+    }
 
+    it("inserts nothing while the video loads, then its player, and closes the balloon", async () => {
+        const { resolveFetch } = useDeferredFetch(linkEmbed.fetchMetadata);
+
+        const inserted = openPrompt().onInsert(VIDEO_URL);
+        await flushFetch();
+        expect(getData()).toBe("<paragraph>[]</paragraph>");
+        expect(release).not.toHaveBeenCalled();
+        expect(balloon().visibleView).not.toBeNull();
+
+        resolveFetch({ ...META, url: VIDEO_URL });
+        await inserted;
         expect(release).toHaveBeenCalledOnce();
         expect(balloon().visibleView).toBeNull();
-        await vi.waitFor(() => expect(findElement(editor, "linkEmbed")).toBeDefined());
-        const embed = findElement(editor, "linkEmbed");
+        expect(getData()).toBe("[<video/>]");
+        const embed = findElement(editor, "contentEmbed");
         expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
         expect(embed?.getAttribute("embedType")).toBe("youtube");
         expect(linkEmbed.fetchMetadata).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+    });
+
+    it("rejects, inserting nothing and keeping the balloon, for a video it cannot load", async () => {
+        linkEmbed.fetchMetadata.mockResolvedValue({ url: VIDEO_URL, unresolved: true });
+        const { onInsert } = openPrompt();
+
+        await expect(onInsert(VIDEO_URL)).rejects.toThrow();
+        linkEmbed.fetchMetadata.mockRejectedValue(new Error("Offline"));
+        await expect(onInsert(VIDEO_URL)).rejects.toThrow("Offline");
+
+        expect(getData()).toBe("<paragraph>[]</paragraph>");
+        expect(release).not.toHaveBeenCalled();
+        expect(balloon().visibleView).not.toBeNull();
+    });
+
+    it("inserts the video where the prompt opened, or at the selection once that is gone", async () => {
+        const { resolveFetch } = useDeferredFetch(linkEmbed.fetchMetadata);
+        const insertAfter = async (edit: (writer: ModelWriter, root: ModelRootElement) => void) => {
+            setModelData(editor.model,
+                "<paragraph>one</paragraph><paragraph>[]</paragraph><paragraph>two</paragraph>");
+            const inserted = openPrompt().onInsert(VIDEO_URL);
+            await flushFetch();
+            editor.model.change((writer) => edit(writer, getRoot()));
+            resolveFetch({ ...META, url: VIDEO_URL });
+            await inserted;
+            return getData();
+        };
+
+        expect(await insertAfter((writer, root) => {
+            writer.insertElement("paragraph", root, 0);
+        })).toBe("<paragraph></paragraph><paragraph>one</paragraph>[<video/>]"
+            + "<paragraph>two</paragraph>");
+
+        expect(await insertAfter((writer, root) => {
+            writer.remove(root.getNodeByPath([ 1 ]));
+            writer.setSelection(root.getNodeByPath([ 1 ]), 0);
+        })).toBe("<paragraph>one</paragraph>[<video/>]<paragraph>two</paragraph>");
+    });
+
+    it("inserts nothing once the editor has other content or is destroyed", async () => {
+        const { resolveFetch } = useDeferredFetch(linkEmbed.fetchMetadata);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        const insertAfter = async (change: () => Promise<void>) => {
+            const inserted = openPrompt().onInsert(VIDEO_URL);
+            await flushFetch();
+            await change();
+            resolveFetch({ ...META, url: VIDEO_URL });
+            await inserted;
+        };
+
+        // Another note loads into the editor, which removes the place of the video.
+        await insertAfter(async () => editor.setData("<p>Another note</p>"));
+        expect(getData()).toBe("<paragraph>[]Another note</paragraph>");
+        expect(release).toHaveBeenCalledOnce();
+        expect(focus).not.toHaveBeenCalled();
+
+        await insertAfter(() => editor.destroy());
+        expect(focus).not.toHaveBeenCalled();
     });
 
     it("closes the balloon again for a host that shows the prompt its own way", () => {

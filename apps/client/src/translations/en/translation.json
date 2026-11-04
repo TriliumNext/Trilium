@@ -2995,7 +2995,8 @@
     "copied_without_links": "Note(s) have been copied into clipboard, but the note links could not be placed on the system clipboard.",
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
     "copy_success": "Copied to clipboard.",
-    "paste_notes": "Paste note(s)"
+    "paste_notes": "Paste note(s)",
+    "paste_failed": "The clipboard could not be read."
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",
@@ -3181,7 +3182,9 @@
     "wrap_text": "Wrap text",
     "align_left": "Align left",
     "align_center": "Align center",
-    "align_right": "Align right"
+    "align_right": "Align right",
+    "open_externally": "Open externally",
+    "delete": "Delete"
   },
   "electron_integration": {
     "desktop-application": "Desktop Application",
@@ -4505,9 +4508,11 @@
       "box-size-0": "Box size: %0",
       "bulleted-list": "Bulleted list",
       "caption-for-the-included-note": "Caption for the included note",
+      "caption-for-the-video": "Caption for the video",
       "card": "Card",
       "caution": "Caution",
       "changes": "Changes",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Click and drag to resize the block. Double-click to reset to the default size.",
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Click on the arrow or press %0 to collapse/expand.",
       "collapsible-block": "Collapsible block",
       "convert-image-to-a-drawing-canvas": "Convert image to a drawing canvas",
@@ -5027,6 +5032,7 @@
   "youtube_video": {
     "title": "Insert YouTube video",
     "button_insert": "Insert video",
-    "not_a_video": "This is not the address of a YouTube video."
+    "not_a_video": "This is not the address of a YouTube video.",
+    "insert_failed": "The video could not be loaded. Check the address and the connection, then try again."
   }
 }

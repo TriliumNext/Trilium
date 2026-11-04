@@ -16,6 +16,7 @@ const realWindow = window as any;
 function installElectronApi() {
     const shell = {
         downloadURL: vi.fn(),
+        openExternal: vi.fn(),
         openCustom: vi.fn(async () => true) as ReturnType<typeof vi.fn>,
         openPath: vi.fn(async () => "") as ReturnType<typeof vi.fn>
     };
@@ -241,6 +242,20 @@ describe("open service", () => {
             expect(window.open).toHaveBeenCalledWith(
                 expect.stringContaining("api/attachments/a4/download")
             );
+        });
+    });
+
+    describe("openUrlExternally", () => {
+        it("opens a URL in a new window in the browser, and through the system in Electron", () => {
+            const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            open.openUrlExternally(url);
+            expect(window.open)
+                .toHaveBeenCalledExactlyOnceWith(url, "_blank", "noopener,noreferrer");
+
+            const shell = installElectronApi();
+            open.openUrlExternally(url);
+            expect(shell.openExternal).toHaveBeenCalledExactlyOnceWith(url);
+            expect(window.open).toHaveBeenCalledOnce();
         });
     });
 

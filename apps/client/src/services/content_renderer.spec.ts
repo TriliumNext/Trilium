@@ -56,11 +56,13 @@ vi.mock("./protected_session_holder.js", () => ({
 const getUrlForDownload = vi.fn((...args: any[]) => `DL:${args[0]}`);
 const downloadFileNote = vi.fn((..._args: any[]) => {});
 const openNoteExternally = vi.fn(async (..._args: any[]) => {});
+const openUrlExternally = vi.fn();
 vi.mock("./open.js", () => ({
     default: {
         getUrlForDownload: (...a: any[]) => getUrlForDownload(...a),
         downloadFileNote: (...a: any[]) => downloadFileNote(...a),
-        openNoteExternally: (...a: any[]) => openNoteExternally(...a)
+        openNoteExternally: (...a: any[]) => openNoteExternally(...a),
+        openUrlExternally: (...a: any[]) => openUrlExternally(...a)
     }
 }));
 
@@ -1071,33 +1073,22 @@ describe("generic FNote fallback / webView", () => {
         }
     });
 
-    it("renders a webView footer that opens in a new window when not in electron", async () => {
+    it("renders a webView footer that opens the address externally", async () => {
+        openUrlExternally.mockClear();
         const note = buildNote({ title: "W", type: "webView", "#webViewSrc": "https://example.com" });
-        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
         const { $renderedContent } = await getRenderedContent(note);
         const $btn = $renderedContent.find(".webview-footer .file-open");
         expect($btn.length).toBe(1);
         $btn.trigger("click");
-        expect(openSpy).toHaveBeenCalledWith("https://example.com", "_blank", "noopener,noreferrer");
-        openSpy.mockRestore();
-    });
-
-    it("uses the electron shell when electronApi is present", async () => {
-        const note = buildNote({ title: "WE", type: "webView", "#webViewSrc": "https://el.example" });
-        const openExternal = vi.fn();
-        (window as any).electronApi = { shell: { openExternal } };
-        const { $renderedContent } = await getRenderedContent(note);
-        $renderedContent.find(".webview-footer .file-open").trigger("click");
-        expect(openExternal).toHaveBeenCalledWith("https://el.example");
+        expect(openUrlExternally).toHaveBeenCalledExactlyOnceWith("https://example.com");
     });
 
     it("does nothing on click when webViewSrc label value is missing", async () => {
+        openUrlExternally.mockClear();
         const note = buildNote({ title: "WNull", type: "webView", "#webViewSrc": "" });
-        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
         const { $renderedContent } = await getRenderedContent(note);
         $renderedContent.find(".webview-footer .file-open").trigger("click");
-        expect(openSpy).not.toHaveBeenCalled();
-        openSpy.mockRestore();
+        expect(openUrlExternally).not.toHaveBeenCalled();
     });
 
     it("renders a plain webView (no webViewSrc label) without a footer", async () => {

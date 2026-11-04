@@ -31,6 +31,8 @@ export interface ContentEmbedMenusOptions {
     boxSizeIcon?: string;
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+    /** Whether the toolbar and the menu of the embed set where it is placed in the text. */
+    hasPositions?: boolean;
 }
 
 /**
@@ -42,12 +44,16 @@ export function useContentEmbedMenus(
     rootRef: RefObject<HTMLElement | null>,
     menus: ContentEmbedMenu[],
     menuItems: MenuItem<CommandNames>[] = [],
-    { hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems }: ContentEmbedMenusOptions = {}
+    {
+        hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems, hasPositions = false
+    }: ContentEmbedMenusOptions = {}
 ) {
     // The toolbar reads the options when the provider of the selected embed changes.
     const provider = useMemo(
-        () => new ContentEmbedMenus(rootRef, { hasEditableFlag, boxSizeIcon, hiddenToolbarItems }),
-        [ rootRef, hasEditableFlag, boxSizeIcon, hiddenToolbarItems ]
+        () => new ContentEmbedMenus(rootRef, {
+            hasEditableFlag, boxSizeIcon, hiddenToolbarItems, hasPositions
+        }),
+        [ rootRef, hasEditableFlag, boxSizeIcon, hiddenToolbarItems, hasPositions ]
     );
 
     useEffect(() => provider.setMenus(menus, menuItems));
@@ -65,6 +71,7 @@ export class ContentEmbedMenus implements ContentEmbedToolProvider {
     readonly hasEditableFlag: boolean;
     readonly boxSizeIcon: string | undefined;
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] | undefined;
+    readonly hasPositions: boolean;
     private menus: ContentEmbedMenu[] = [];
     private menuItems: MenuItem<CommandNames>[] = [];
     /** The menu that is open, whose button shows as on. */
@@ -77,11 +84,14 @@ export class ContentEmbedMenus implements ContentEmbedToolProvider {
 
     constructor(
         private readonly rootRef: RefObject<HTMLElement | null>,
-        { hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems }: ContentEmbedMenusOptions = {}
+        {
+            hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems, hasPositions = false
+        }: ContentEmbedMenusOptions = {}
     ) {
         this.hasEditableFlag = hasEditableFlag;
         this.boxSizeIcon = boxSizeIcon;
         this.hiddenToolbarItems = hiddenToolbarItems;
+        this.hasPositions = hasPositions;
     }
 
     /** Sets the menus of the buttons, and the items of the menu of the embed. */

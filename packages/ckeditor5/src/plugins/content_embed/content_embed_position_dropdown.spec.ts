@@ -93,7 +93,7 @@ describe("ContentEmbedPositionDropdown", () => {
         expect(editor.commands.get(POSITION_COMMAND_NAME)?.value).toBe("wrap-right");
     });
 
-    it("shows for content that has positions, unless the content hides it", () => {
+    it("shows for content whose tools opt in to positions, unless they hide it", () => {
         const dropdown = createDropdown();
         const isShown = () => !dropdown.element?.classList.contains("ck-hidden");
         expect(isShown()).toBe(false);
@@ -105,9 +105,12 @@ describe("ContentEmbedPositionDropdown", () => {
         editor.ui.update();
         expect(isShown()).toBe(false);
 
-        tools = null;
-        editor.ui.update();
-        expect([ isShown(), dropdown.isEnabled ]).toEqual([ false, false ]);
+        // An included note sets its position from its menu only.
+        for (const other of [ createTools({ hasPositions: false }), null ]) {
+            tools = other;
+            editor.ui.update();
+            expect([ isShown(), dropdown.isEnabled ]).toEqual([ false, true ]);
+        }
     });
 });
 

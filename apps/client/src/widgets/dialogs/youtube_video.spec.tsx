@@ -1,12 +1,31 @@
+import { Modal as BootstrapModal } from "bootstrap";
 import { act } from "preact/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import Component from "../../components/component";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 import YouTubeVideoDialog, { getYouTubeVideoUrl, YouTubeVideoBalloon } from "./youtube_video";
 
+const { showError, readClipboardText } = vi.hoisted(() => ({
+    showError: vi.fn(),
+    readClipboardText: vi.fn(async () => "")
+}));
+
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/toast", () => ({ default: { showError } }));
+vi.mock("../../services/clipboard_ext", () => ({
+    canReadClipboardText: async () => true,
+    readClipboardText
+}));
+// Raises the modal at once, so that it has the Bootstrap instance it closes through.
+vi.mock("../../services/dialog", () => ({
+    openDialog: async (dialog: JQuery<HTMLElement>) => dialog
+}));
+
+beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+});
 
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
@@ -28,10 +47,36 @@ describe("getYouTubeVideoUrl", () => {
 });
 
 describe("YouTubeVideoBalloon", () => {
-    const onInsert = vi.fn();
+    const onInsert = vi.fn(async (_url: string) => {});
 
     beforeEach(() => {
         vi.clearAllMocks();
+        onInsert.mockReset();
+    });
+
+    it("disables Insert while the video loads, and shows a toast when it fails", async () => {
+        const insertion = deferInsertion(onInsert);
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+        });
+        const form = container.querySelector("form");
+        if (!form) throw new Error("The balloon has no form.");
+        await type(container.querySelector(".youtube-video-url input"), VIDEO_URL);
+
+        await submit(form);
+        expect(insertButton(container)?.disabled).toBe(true);
+        await submit(form);
+        expect(onInsert).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+
+        await insertion.fail();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        expect(insertButton(container)?.disabled).toBe(false);
+
+        await submit(form);
+        await insertion.succeed();
+        expect(onInsert).toHaveBeenCalledTimes(2);
+        expect(showError).toHaveBeenCalledOnce();
     });
 
     it("focuses the field, and inserts only the address of a video", async () => {
@@ -44,29 +89,56 @@ describe("YouTubeVideoBalloon", () => {
         if (!form || !field) throw new Error("The balloon has no form.");
         expect(document.activeElement).toBe(field);
         expect(insertButton(container)?.disabled).toBe(true);
-        expect(description(container)).toBeUndefined();
+        expect(errorOf(container)).toBeUndefined();
 
         await type(field, "https://example.com");
         expect(insertButton(container)?.disabled).toBe(true);
-        expect(description(container)).toBe("youtube_video.not_a_video");
+        expect(errorOf(container)).toBe("youtube_video.not_a_video");
+        expect(container.querySelector(".youtube-video-url .tn-card-option-description"))
+            .toBeNull();
+        expect(document.activeElement).toBe(field);
         await submit(form);
         expect(onInsert).not.toHaveBeenCalled();
 
         await type(field, "youtu.be/dQw4w9WgXcQ");
         expect(insertButton(container)?.disabled).toBe(false);
-        expect(description(container)).toBeUndefined();
+        expect(errorOf(container)).toBeUndefined();
         await submit(form);
         expect(onInsert).toHaveBeenCalledExactlyOnceWith("https://youtu.be/dQw4w9WgXcQ");
+    });
+
+    it("pastes the clipboard over the field and selects it", async () => {
+        readClipboardText.mockResolvedValue(VIDEO_URL);
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+        });
+        // The effect calling `canReadClipboardText()` runs as the first `act()` ends.
+        await settle();
+        const field = container.querySelector<HTMLInputElement>(".youtube-video-url input");
+        const label = container.querySelector(".youtube-video-url label");
+        const button = container.querySelector<HTMLButtonElement>(".youtube-video-url .bx-paste");
+        if (!field || !button) throw new Error("The field has no paste button.");
+        expect(label?.getAttribute("for")).toBe(field.id);
+
+        await type(field, "typed");
+        button.click();
+        await settle();
+        expect(field.value).toBe(VIDEO_URL);
+        expect([ field.selectionStart, field.selectionEnd ]).toEqual([ 0, VIDEO_URL.length ]);
+        expect(insertButton(container)?.disabled).toBe(false);
     });
 });
 
 describe("YouTubeVideoDialog", () => {
-    const onInsert = vi.fn();
+    const onInsert = vi.fn(async (_url: string) => {});
     let host: Component;
     let container: HTMLElement;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        onInsert.mockReset();
+        vi.spyOn(BootstrapModal.prototype, "hide").mockImplementation(() => {});
         host = new Component();
         container = renderInto(
             <ParentComponent.Provider value={host}>
@@ -91,16 +163,27 @@ describe("YouTubeVideoDialog", () => {
         });
     }
 
-    it("inserts the video once the modal is gone, and opens again on an empty field", async () => {
+    it("closes once the video is inserted, and stays open with a toast when it fails", async () => {
+        const insertion = deferInsertion(onInsert);
         await open();
         const form = container.querySelector("form");
         if (!form) throw new Error("The dialog has no form.");
 
         await type(field(), VIDEO_URL);
         await submit(form);
-        expect(onInsert).not.toHaveBeenCalled();
-        await hide();
         expect(onInsert).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+        expect(insertButton(container)?.disabled).toBe(true);
+        await insertion.fail();
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        expect(insertButton(container)?.disabled).toBe(false);
+        expect(BootstrapModal.prototype.hide).not.toHaveBeenCalled();
+
+        await submit(form);
+        expect(onInsert).toHaveBeenCalledTimes(2);
+        expect(BootstrapModal.prototype.hide).not.toHaveBeenCalled();
+        await insertion.succeed();
+        expect(BootstrapModal.prototype.hide).toHaveBeenCalledOnce();
+        await hide();
 
         await open();
         expect(field()?.value).toBe("");
@@ -115,14 +198,40 @@ describe("YouTubeVideoDialog", () => {
     });
 });
 
+/**
+ * Makes each call of `onInsert` wait until `succeed()` or `fail()` settles it. Both wait a task,
+ * so that what the component does after the insertion renders before they return.
+ */
+function deferInsertion(onInsert: Mock<(url: string) => Promise<void>>) {
+    let settle: (error?: Error) => void = () => {};
+    onInsert.mockImplementation(() => new Promise<void>((resolve, reject) => {
+        settle = (error) => error ? reject(error) : resolve();
+    }));
+    const settleWith = (error?: Error) => act(async () => {
+        settle(error);
+        await new Promise((resolve) => setTimeout(resolve));
+    });
+    return {
+        succeed: () => settleWith(),
+        fail: () => settleWith(new Error("Offline"))
+    };
+}
+
 function insertButton(container: HTMLElement) {
     return container.querySelector<HTMLButtonElement>("button[type=submit]");
 }
 
-/** The text under the label of the URL field, if any. */
-function description(container: HTMLElement) {
-    return container.querySelector(".youtube-video-url .tn-card-option-description")
+/** The error shown under the URL field, if any. */
+function errorOf(container: HTMLElement) {
+    return container.querySelector(".youtube-video-url > .input-group + .form-field-error")
         ?.textContent ?? undefined;
+}
+
+/** Waits a task, so that what a pending promise renders is in the DOM. */
+function settle() {
+    return act(async () => {
+        await new Promise((resolve) => setTimeout(resolve));
+    });
 }
 
 async function submit(form: HTMLFormElement) {

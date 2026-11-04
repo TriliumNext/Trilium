@@ -1,7 +1,12 @@
 import {
 	ButtonView,
 	Command,
+	type DomEmitter,
+	DomEmitterMixin,
+	type DowncastCleanSelectionEvent,
 	type DowncastConversionApi,
+	type DowncastInsertEvent,
+	type DowncastSelectionEvent,
 	type Editor,
 	enableViewPlaceholder,
 	IconCaption,
@@ -12,15 +17,19 @@ import {
 	ModelElement,
 	type ModelNode,
 	type ModelDocumentFragment,
+	type ModelPosition,
 	type ModelWriter,
 	type PlaceholderableViewElement,
 	Plugin,
 	toWidget,
 	toWidgetEditable,
+	type UpcastElementEvent,
 	View,
 	type ViewEditableElement,
 	type ViewElement,
+	ViewPosition,
 	Widget,
+	WIDGET_SELECTED_CLASS_NAME,
 	type Observable
 } from 'ckeditor5';
 import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
@@ -30,7 +39,9 @@ import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
-	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, normalizeMimeTypeForCKEditor, parseBlockRange
+	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
+	type LinkPreviewData, normalizeMimeTypeForCKEditor, parseBlockRange, VIDEO_EMBED_BOX_SIZES,
+	VIDEO_EMBED_CLASS
 } from '@triliumnext/commons';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, {
@@ -44,6 +55,9 @@ import ContentEmbedInlineSource, {
 } from './inline_source.js';
 import './nested_editor_events.js';
 import UnknownContentEmbed from './unknown_embed.js';
+import ContentEmbedVideo, {
+	getVideoMediumWidth, getVideoPreview, getVideoShapeAttributes, isVideoEmbed
+} from './video_embed.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
@@ -55,6 +69,7 @@ export const TOGGLE_EDITABLE_COMMAND_NAME = 'toggleContentEmbedEditable';
 export const CODE_VIEW_COMMAND_NAME = 'setContentEmbedCodeView';
 export const CONTENT_EMBED_DISPLAY_MODE_COMMAND = 'contentEmbedDisplayMode';
 export const POSITION_COMMAND_NAME = 'contentEmbedPosition';
+export const DELETE_COMMAND_NAME = 'deleteContentEmbed';
 /** The toolbar separator between the Editable toggle and the display modes. */
 export const CONTENT_EMBED_DISPLAY_MODE_SEPARATOR = 'contentEmbedDisplayModeSeparator';
 /** The toolbar button that opens the context menu of an embed whose title is hidden. */
@@ -105,6 +120,9 @@ const RESIZABLE_BOX_SIZES: unknown[] = [ 'small', 'medium', 'expandable' ];
 /** The least size that an embed can be resized to, in `em`. */
 export const MIN_EMBED_SIZE = { width: 10, height: 3 };
 
+/** The class of an Expandable embed that shows only its title row. */
+const COLLAPSED_EMBED_CLASS = 'include-note_collapsed';
+
 /** The flags of an embed, each saved as `"true"` in a `data-*` attribute while it is on. */
 const FLAG_ATTRIBUTES = [
 	[ 'hideTitle', 'data-hide-title' ],
@@ -150,12 +168,18 @@ export interface ContentEmbedState {
 	boxSize: BoxSizeValue | null;
 	/** Where the embed is placed in the text, for content that has positions, otherwise `null`. */
 	position: PositionValue | null;
+	/** Whether the embed has a title row, which an embed of a source has not. */
+	isTitleSupported: boolean;
 	/** Whether the title shows, which a Tiny or an Expandable embed always does. */
 	isTitleShown: boolean;
 	isTitleToggleable: boolean;
+	/** Whether the embed can have a caption, which an embed of a source cannot. */
+	isCaptionSupported: boolean;
 	hasCaption: boolean;
 	isCaptionToggleable: boolean;
 	isConvertibleToLink: boolean;
+	/** The address of the video that the embed plays, otherwise `null`. */
+	url: string | null;
 }
 
 /**
@@ -206,7 +230,7 @@ export default class ContentEmbed extends Plugin {
 	static get requires() {
 		return [
 			ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource, EmbedHistory,
-			UnknownContentEmbed
+			UnknownContentEmbed, ContentEmbedVideo
 		];
 	}
 
@@ -267,12 +291,36 @@ export default class ContentEmbed extends Plugin {
 				: null,
 			boxSize: embed.getAttribute( 'boxSize' ) as BoxSizeValue | undefined ?? null,
 			position: hasEmbedPositions( editor, embed ) ? getEmbedPosition( embed ) : null,
+			isTitleSupported: hasTitleRow( embed ),
 			isTitleShown: !isTitleToggleable || !embed.getAttribute( 'hideTitle' ),
 			isTitleToggleable,
+			isCaptionSupported: hasCaptionSupport( embed ),
 			hasCaption: !!getCaption( embed ),
 			isCaptionToggleable: isEmbedCaptionToggleable( editor, embed ),
-			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed )
+			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed ),
+			url: embed.getAttribute( 'url' ) as string | undefined ?? null
 		};
+	}
+
+	/**
+	 * Marks the embed that `domElement` is part of as collapsed while `isCollapsed` is `true`, as
+	 * an Expandable embed that shows only its title row.
+	 */
+	setEmbedCollapsedAt( domElement: Element, isCollapsed: boolean ) {
+		const editor = this.editor;
+		const embed = editor.state === 'ready' ? getContentEmbedAt( editor, domElement ) : null;
+		const view = embed && editor.editing.mapper.toViewElement( embed );
+		if ( !view ) {
+			return;
+		}
+
+		editor.editing.view.change( writer => {
+			if ( isCollapsed ) {
+				writer.addClass( COLLAPSED_EMBED_CLASS, view );
+			} else {
+				writer.removeClass( COLLAPSED_EMBED_CLASS, view );
+			}
+		} );
 	}
 
 	/** Whether `domElement` is a reference link that `convertLinkToEmbed` turns into an embed. */
@@ -509,6 +557,9 @@ class ContentEmbedEditing extends Plugin {
 	/** The embeds whose saved caption a Tiny box size removed. */
 	private readonly tinyEmbeds = new WeakSet<ModelElement>();
 
+	/** Listens to the window for frames in embeds that take or give back the focus. */
+	private readonly windowEmitter = new ( DomEmitterMixin() )();
+
 	init() {
 		this._defineSchema();
 		this._defineConverters();
@@ -517,7 +568,8 @@ class ContentEmbedEditing extends Plugin {
 		editor.plugins.get( ResizableWidgets ).register( 'contentEmbed', {
 			propertyPrefix: '--include-note',
 			isWidthResizable: true,
-			isHeightResizable: true,
+			// A video takes its height from its width.
+			isHeightResizable: embed => !isVideoEmbed( embed ),
 			getAnchor: getEmbedAnchor,
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
@@ -538,10 +590,18 @@ class ContentEmbedEditing extends Plugin {
 		commands.add(
 			CONTENT_EMBED_DISPLAY_MODE_COMMAND, new ContentEmbedDisplayModeCommand( editor ) );
 		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
+		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
+		this.markEmbedOfSelectedCaption();
 
 		restoreRendererFocusOnInput( this );
+		fireFrameFocusEvents( editor, this.windowEmitter );
+	}
+
+	override destroy() {
+		this.windowEmitter.stopListening();
+		super.destroy();
 	}
 
 	/** Keeps a copy of `caption`, for `embed` to show again. */
@@ -642,17 +702,15 @@ class ContentEmbedEditing extends Plugin {
 
 				const boxSize = modelElement.getAttribute( 'boxSize' ) as string | undefined;
 
-				const extendedClass = isExtendedCodeBlock( editor, modelElement )
-					? ' ' + EXTENDED_CODE_BLOCK_CLASS
-					: '';
 				const figure = viewWriter.createContainerElement( 'figure', {
-					class: 'include-note box-size-' + boxSize + extendedClass,
+					class: getEditingClasses( editor, modelElement ),
 					...getEmbeddedEntityAttributes( modelElement ),
-					'data-box-size': boxSize,
+					...( boxSize ? { 'data-box-size': boxSize } : {} ),
 					...getFlagAttributes( modelElement ),
 					...getDisplayModeAttributes( modelElement ),
 					...getPositionAttributes( modelElement ),
-					...getCodeViewAttributes( modelElement )
+					...getCodeViewAttributes( modelElement ),
+					...getVideoShapeAttributes( modelElement )
 				} );
 
 				const embedWrapper = viewWriter.createUIElement( 'div', {
@@ -674,7 +732,9 @@ class ContentEmbedEditing extends Plugin {
 				// The label is announced by screen readers; lowercase to match the "image widget" /
 				// "table widget" labels CKEditor gives its own widgets.
 				return toWidget( figure, viewWriter, {
-					label: editor.t( 'include note widget' ),
+					label: isVideoEmbed( modelElement )
+						? editor.t( 'link embed widget' )
+						: editor.t( 'include note widget' ),
 					hasSelectionHandle: true
 				} );
 			}
@@ -705,7 +765,11 @@ class ContentEmbedEditing extends Plugin {
 					// directly from the converter (rather than observing the DOM attribute) so the
 					// content is only rebuilt on a genuine box-size change — not whenever CKEditor
 					// re-applies unrelated attributes (e.g. `draggable` while selecting the widget).
-					reloadEmbeddedContent( editor, viewElement, data.item as ModelElement, newBoxSize );
+					// A player takes its size from the stylesheet, and a redraw stops the video.
+					const embed = data.item as ModelElement;
+					if ( !isVideoEmbed( embed ) ) {
+						reloadEmbeddedContent( editor, viewElement, embed, newBoxSize );
+					}
 				}
 			} );
 
@@ -772,7 +836,8 @@ class ContentEmbedEditing extends Plugin {
 		conversion.for( 'editingDowncast' ).elementToElement( {
 			model: 'caption',
 			view: ( modelElement, { writer: viewWriter } ) => {
-				if ( !isContentEmbed( modelElement.parent ) ) {
+				const embed = modelElement.parent;
+				if ( !isContentEmbed( embed ) ) {
 					return null;
 				}
 
@@ -786,10 +851,13 @@ class ContentEmbedEditing extends Plugin {
 				} );
 
 				return toWidgetEditable( figcaption, viewWriter, {
-					label: t( 'Caption for the included note' )
+					label: isVideoEmbed( embed )
+						? t( 'Caption for the video' )
+						: t( 'Caption for the included note' )
 				} );
 			}
 		} );
+		this._defineCaptionedEmbedConverters();
 
 		// The default mapping places model offset 0 before the content wrapper, which has no model
 		// length. The caption goes after it.
@@ -809,6 +877,120 @@ class ContentEmbedEditing extends Plugin {
 					viewElement, Math.min( offset, viewElement.childCount ) );
 			}
 		);
+	}
+
+	/**
+	 * Saves an embed whose own element is not a `<figure>`, such as the `<section>` of a video,
+	 * in a `<figure class="captioned-content-embed">` while it has a caption, with the
+	 * `<figcaption>` after the element, and loads it back.
+	 */
+	_defineCaptionedEmbedConverters() {
+		const editor = this.editor;
+		const { downcastDispatcher, mapper, upcastDispatcher } = editor.data;
+
+		// Runs after the converter of the embed's kind draws its element, and before the default
+		// converter of the `lowest` priority converts the caption.
+		downcastDispatcher.on<DowncastInsertEvent<ModelElement>>( 'insert:contentEmbed',
+			( _evt, { item }, api ) => {
+				const element = api.mapper.toViewElement( item );
+				if ( !element || element.is( 'element', 'figure' ) || !getCaption( item ) ) {
+					return;
+				}
+
+				const writer = api.writer;
+				const figure = writer.createContainerElement( 'figure', {
+					class: CAPTIONED_CONTENT_EMBED_CLASS
+				} );
+				writer.insert( writer.createPositionBefore( element ), figure );
+				writer.move( writer.createRangeOn( element ),
+					writer.createPositionAt( figure, 0 ) );
+				// The figure maps to the embed, so the mapper counts it as one model node. The
+				// embed still maps to its element, which the attribute converters write to.
+				api.mapper.bindElements( item, figure );
+				api.mapper.bindElements( item, element );
+			}, { priority: 'low' } );
+
+		// The children of such an embed, its caption, go after its element in the figure.
+		mapper.on<MapperModelToViewPositionEvent>( 'modelToViewPosition', ( _evt, data ) => {
+			const embed = data.modelPosition.parent;
+			const element = isContentEmbed( embed )
+				? data.mapper.toViewElement( embed )
+				: undefined;
+			const figure = element?.parent;
+			if ( !element || !figure?.is( 'element' ) || !isCaptionedEmbedView( figure ) ) {
+				return;
+			}
+
+			const offset = figure.getChildIndex( element ) + 1 + data.modelPosition.offset;
+			data.viewPosition = new ViewPosition( figure, offset );
+		} );
+
+		upcastDispatcher.on<UpcastElementEvent>( 'element:figure', ( _evt, data, api ) => {
+			const figure = data.viewItem;
+			if ( !isCaptionedEmbedView( figure )
+				|| !api.consumable.test( figure, { name: true } ) ) {
+				return;
+			}
+
+			const children = [ ...figure.getChildren() ]
+				.filter( ( child ): child is ViewElement => child.is( 'element' ) );
+			const figcaption = children.find( child => child.name === 'figcaption' );
+			const element = children.find( child => child !== figcaption );
+			if ( !element ) {
+				return;
+			}
+
+			api.consumable.consume( figure, {
+				name: true, classes: CAPTIONED_CONTENT_EMBED_CLASS
+			} );
+			const converted = api.convertItem( element, data.modelCursor );
+			const modelRange = converted.modelRange;
+			/* v8 ignore next 3 -- the default element converter gives every element a range */
+			if ( !modelRange ) {
+				return;
+			}
+
+			const embed = modelRange.start.nodeAfter;
+			let modelCursor = converted.modelCursor;
+			if ( figcaption && isContentEmbed( embed )
+				&& isEmbedCaptionToggleable( editor, embed ) ) {
+				const caption = api.writer.createElement( 'caption' );
+				api.writer.append( caption, embed );
+				api.consumable.consume( figcaption, { name: true } );
+				api.convertChildren( figcaption, caption );
+			} else if ( figcaption ) {
+				// Content that takes no caption keeps the text of the caption after it.
+				modelCursor = api.convertItem( figcaption, modelCursor ).modelCursor;
+			}
+
+			data.modelRange = api.writer.createRange( modelRange.start, modelCursor );
+			data.modelCursor = modelCursor;
+		}, { priority: 'high' } );
+	}
+
+	/**
+	 * Marks the embed whose caption has the selection as selected, as `Widget` marks the embed
+	 * that the selection is on, such as one whose player has the focus.
+	 */
+	private markEmbedOfSelectedCaption() {
+		const dispatcher = this.editor.editing.downcastDispatcher;
+		let marked: ViewElement | null = null;
+
+		dispatcher.on<DowncastCleanSelectionEvent>( 'cleanSelection', ( _evt, _data, api ) => {
+			if ( marked ) {
+				api.writer.removeClass( WIDGET_SELECTED_CLASS_NAME, marked );
+				marked = null;
+			}
+		} );
+		// After `Widget` marks the widgets in the selection.
+		dispatcher.on<DowncastSelectionEvent>( 'selection', ( _evt, { selection }, api ) => {
+			const embed = getCaptionedEmbed( selection.getFirstPosition() );
+			const view = embed && api.mapper.toViewElement( embed );
+			if ( view ) {
+				api.writer.addClass( WIDGET_SELECTED_CLASS_NAME, view );
+				marked = view;
+			}
+		}, { priority: 'lowest' } );
 	}
 
 	/**
@@ -862,7 +1044,8 @@ class ContentEmbedBoxSizeCommand extends Command {
 
 	/**
 	 * Sets the box size of the selected embed and resets its height. Tiny and Full reset the
-	 * width too. Tiny takes the caption away, and a larger size shows it again.
+	 * width too, and Medium sets the width of a Medium video. Tiny takes the caption away, and a
+	 * larger size shows it again.
 	 */
 	override execute( options: { value: BoxSizeValue } ) {
 		const editor = this.editor;
@@ -875,6 +1058,9 @@ class ContentEmbedBoxSizeCommand extends Command {
 				writer.removeAttribute( SIZE_ATTRIBUTES.height, embedElement );
 				if ( !RESIZABLE_BOX_SIZES.includes( options.value ) ) {
 					writer.removeAttribute( SIZE_ATTRIBUTES.width, embedElement );
+				} else if ( isVideoEmbed( embedElement ) ) {
+					writer.setAttribute( SIZE_ATTRIBUTES.width,
+						getVideoMediumWidth( getVideoPreview( embedElement ) ), embedElement );
 				}
 
 				if ( options.value === 'tiny' ) {
@@ -1189,6 +1375,38 @@ class ConvertEmbedToLinkCommand extends Command {
 }
 
 /**
+ * Deletes the selected embed, and puts the caret at the start of the block after it, else at the
+ * end of the block before it. A parent left empty, such as a table cell, gets an empty paragraph.
+ */
+export class DeleteContentEmbedCommand extends Command {
+	override refresh() {
+		this.isEnabled = !!getSelectedContentEmbed( this.editor );
+	}
+
+	override execute() {
+		const embed = getSelectedContentEmbed( this.editor );
+		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
+		if ( !embed ) {
+			return;
+		}
+
+		const model = this.editor.model;
+		model.change( writer => {
+			const position = writer.createPositionBefore( embed );
+			writer.remove( embed );
+
+			const parent = position.parent as ModelElement;
+			if ( parent.isEmpty && model.schema.checkChild( parent, 'paragraph' ) ) {
+				writer.insertElement( 'paragraph', position );
+			}
+
+			writer.setSelection( model.schema.getNearestSelectionRange( position, 'forward' )
+				?? model.schema.getNearestSelectionRange( position, 'backward' ) );
+		} );
+	}
+}
+
+/**
  * The reference link that `domElement` renders, and the attributes of an embed showing what it
  * points to, or `null`. Of the links to a part of a note, an embed shows only blocks.
  */
@@ -1263,7 +1481,17 @@ export function isContentEmbed(
 /** Whether the title of `embed` can be hidden: a Tiny or an Expandable one always shows it. */
 function isEmbedTitleToggleable( embed: ModelElement ) {
 	const boxSize = embed.getAttribute( 'boxSize' );
-	return boxSize !== 'tiny' && boxSize !== 'expandable' && !isInlineSourceEmbed( embed );
+	return boxSize !== 'tiny' && boxSize !== 'expandable' && hasTitleRow( embed );
+}
+
+/** Whether `embed` has a title row: an embed of a source has none. */
+function hasTitleRow( embed: ModelElement ) {
+	return !isInlineSourceEmbed( embed );
+}
+
+/** Whether `embed` can have a caption: an embed of a source has none. */
+function hasCaptionSupport( embed: ModelElement ) {
+	return !isInlineSourceEmbed( embed );
 }
 
 /** Whether the content of `embed` has an editable mode, which its content type opts in to. */
@@ -1273,7 +1501,13 @@ function isEmbedEditableToggleable( editor: Editor, embed: ModelElement ) {
 
 /** The box sizes that `embed` can take, or all of them without an embed. */
 export function getEmbedBoxSizes( embed: ModelElement | null ): readonly BoxSizeValue[] {
-	return embed && isInlineSourceEmbed( embed ) ? INLINE_BOX_SIZES : BOX_SIZES;
+	if ( !embed ) {
+		return BOX_SIZES;
+	}
+	if ( isVideoEmbed( embed ) ) {
+		return VIDEO_EMBED_BOX_SIZES;
+	}
+	return isInlineSourceEmbed( embed ) ? INLINE_BOX_SIZES : BOX_SIZES;
 }
 
 /** Whether the content of `embed` has display modes, which its content type opts in to. */
@@ -1297,9 +1531,12 @@ export function toDisplayMode( value: unknown ): DisplayModeValue | null {
 	return DISPLAY_MODES.find( mode => mode === value ) ?? null;
 }
 
-/** Whether the content of `embed` can be positioned, which its content type opts in to. */
+/**
+ * Whether `embed` can be positioned: an embed of a note, an attachment or a video can, an embed of
+ * a source when its content opts in to it.
+ */
 function hasEmbedPositions( editor: Editor, embed: ModelElement ) {
-	return !!getEmbedTools( editor, embed )?.hasPositions;
+	return !isInlineSourceEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions;
 }
 
 /** Where `embed` is placed in the text: its saved position, or centered. */
@@ -1320,9 +1557,9 @@ export function getEmbedAnchor( embed: ModelElement ): ResizeAnchor {
 	return position === 'right' || position === 'wrap-right' ? 'right' : 'center';
 }
 
-/** Whether `embed` can have a caption. A Tiny embed has none. */
+/** Whether `embed` can have a caption now. A Tiny embed has none. */
 function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
-	return embed.getAttribute( 'boxSize' ) !== 'tiny' && !isInlineSourceEmbed( embed )
+	return embed.getAttribute( 'boxSize' ) !== 'tiny' && hasCaptionSupport( embed )
 		&& editor.model.schema.checkChild( embed, 'caption' );
 }
 
@@ -1330,6 +1567,12 @@ function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
 function isEmbedConvertibleToLink( editor: Editor, embed: ModelElement ) {
 	return ( !!embed.getAttribute( 'attachmentId' ) || !!embed.getAttribute( 'noteId' ) )
 		&& editor.model.schema.isRegistered( 'reference' );
+}
+
+/** The embed whose caption holds `position`, or `null`. */
+export function getCaptionedEmbed( position: ModelPosition | null ): ModelElement | null {
+	const embed = position?.findAncestor( 'caption' )?.parent ?? null;
+	return isContentEmbed( embed ) ? embed : null;
 }
 
 /** The caption of `embed`, or `null`. */
@@ -1345,10 +1588,31 @@ function isContentEmbedCaptionView( element: ViewElement ) {
 		&& parent.hasClass( 'include-note' );
 }
 
+/** Whether `element` is the `<figure>` that holds an embed saved with its caption. */
+function isCaptionedEmbedView( element: ViewElement ) {
+	return element.name === 'figure' && element.hasClass( CAPTIONED_CONTENT_EMBED_CLASS );
+}
+
 /** The index of the content wrapper among the children of an embed's view, or `-1`. */
 function getWrapperIndex( viewElement: ViewElement ) {
 	return Array.from( viewElement.getChildren() )
 		.findIndex( child => child.is( 'uiElement' ) && child.hasClass( 'include-note-wrapper' ) );
+}
+
+/** The classes of the view of `embed` in the editor. */
+function getEditingClasses( editor: Editor, embed: ModelElement ) {
+	const boxSize = embed.getAttribute( 'boxSize' ) as string | undefined;
+	const classes = [ 'include-note' ];
+	if ( boxSize ) {
+		classes.push( `box-size-${ boxSize }` );
+	}
+	if ( isExtendedCodeBlock( editor, embed ) ) {
+		classes.push( EXTENDED_CODE_BLOCK_CLASS );
+	}
+	if ( isVideoEmbed( embed ) ) {
+		classes.push( VIDEO_EMBED_CLASS );
+	}
+	return classes.join( ' ' );
 }
 
 /** Adds `node`, when it is an embed, and every embed inside it to `embeds`. */
@@ -1598,6 +1862,10 @@ function loadEmbeddedContent(
 		editor.plugins.get( ContentEmbedInlineSource ).load( element, wrapper, boxSize );
 		return;
 	}
+	if ( isVideoEmbed( element ) ) {
+		editor.plugins.get( ContentEmbedVideo ).load( element, wrapper );
+		return;
+	}
 
 	const host = editor.config.get( 'contentEmbed' );
 	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
@@ -1724,6 +1992,67 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 	}
 }
 
+/** How often `frameFocusChecks` run while a frame has the focus, in milliseconds. */
+const FRAME_FOCUS_CHECK_INTERVAL = 200;
+
+/** The check of each editor for the frame in its embeds that has the focus. */
+const frameFocusChecks = new Set<() => void>();
+let frameFocusTimer: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * Fires `focus` at a frame in an embed of `editor`, such as a video player, that a click focuses,
+ * and `blur` once the focus leaves it. Chromium fires them only for a frame that a script
+ * focuses. The listeners of the embed then select it, and the editor stays focused.
+ */
+function fireFrameFocusEvents( editor: Editor, windowEmitter: DomEmitter ) {
+	let focusedFrame: Element | null = null;
+	const setFocusedFrame = ( frame: Element | null ) => {
+		if ( frame !== focusedFrame ) {
+			focusedFrame?.dispatchEvent( new FocusEvent( 'blur' ) );
+			focusedFrame = frame;
+			frame?.dispatchEvent( new FocusEvent( 'focus' ) );
+		}
+	};
+	const checkFocusedFrame = () => setFocusedFrame( getFocusedEmbedFrame( editor ) );
+
+	frameFocusChecks.add( checkFocusedFrame );
+	editor.on( 'destroy', () => frameFocusChecks.delete( checkFocusedFrame ) );
+	windowEmitter.listenTo( window, 'blur', () => {
+		checkFocusedFrame();
+		// Firefox makes the frame the active element only after the window blurs.
+		setTimeout( checkFocusedFrame );
+		watchFrameFocus();
+	} );
+	windowEmitter.listenTo( window, 'focus', () => {
+		clearInterval( frameFocusTimer );
+		setFocusedFrame( null );
+	} );
+}
+
+/**
+ * Runs `frameFocusChecks` while a frame has the focus. A click moves the focus from one frame to
+ * another with no event in this page.
+ */
+function watchFrameFocus() {
+	clearInterval( frameFocusTimer );
+	frameFocusTimer = setInterval( () => {
+		for ( const check of frameFocusChecks ) {
+			check();
+		}
+		if ( !document.activeElement?.matches( 'iframe, webview' ) ) {
+			clearInterval( frameFocusTimer );
+		}
+	}, FRAME_FOCUS_CHECK_INTERVAL );
+}
+
+/** The `<iframe>` or `<webview>` in the content of an embed of `editor` that has the focus. */
+function getFocusedEmbedFrame( editor: Editor ) {
+	const active = document.activeElement;
+	const isEmbedFrame = !!active?.matches( 'iframe, webview' ) && isInEmbedContent( active )
+		&& [ ...editor.editing.view.domRoots.values() ].some( root => root.contains( active ) );
+	return isEmbedFrame ? active : null;
+}
+
 /** Whether `target` is in the content box of an embed, rather than in its title row. */
 function isInEmbedContent( target: EventTarget | null ): boolean {
 	return target instanceof Element && !!target.closest( '.include-note-content' );
@@ -1786,6 +2115,7 @@ declare module 'ckeditor5' {
 		toggleContentEmbedEditable: ToggleContentEmbedEditableCommand;
 		setContentEmbedCodeView: SetContentEmbedCodeViewCommand;
 		contentEmbedDisplayMode: ContentEmbedDisplayModeCommand;
+		deleteContentEmbed: DeleteContentEmbedCommand;
 	}
 
 	interface EditorConfig {
@@ -1837,6 +2167,8 @@ export interface ContentEmbedHost {
 	sanitizeHtml( html: string ): string;
 	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
 	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
+	/** Fills `wrapper` with the player of the video of a link preview. */
+	loadVideo( preview: LinkPreviewData, wrapper: HTMLElement ): void;
 	/** Opens the context menu of what `embed` shows, below `anchor`. */
 	openMenu( embed: HTMLElement, anchor: HTMLElement ): void;
 	/** The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. */

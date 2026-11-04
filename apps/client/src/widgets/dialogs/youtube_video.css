@@ -18,14 +18,12 @@
 :is(.modal.youtube-video-dialog, .youtube-video-balloon) {
     @container (min-width: 501px) {
         .youtube-video-url {
-            > .tn-card-option-label {
-                flex: 0 0 8em;
-                min-width: max-content;
-            }
+            display: grid;
+            grid-template-columns: minmax(8em, max-content) minmax(0, 1fr);
+            row-gap: 4px;
 
-            > .form-control {
-                flex: 1 1 auto;
-                min-width: 0;
+            > .form-field-error {
+                grid-column: 2;
             }
         }
     }

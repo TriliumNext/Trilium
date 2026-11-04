@@ -300,11 +300,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
                 .on("click", () => {
                     const webViewSrc = entity.getLabelValue("webViewSrc");
                     if (webViewSrc) {
-                        if (window.electronApi) {
-                            window.electronApi.shell.openExternal(webViewSrc);
-                        } else {
-                            window.open(webViewSrc, '_blank', 'noopener,noreferrer');
-                        }
+                        openService.openUrlExternally(webViewSrc);
                     }
                 });
             $footer.appendTo($renderedContent);

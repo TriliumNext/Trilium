@@ -6,9 +6,9 @@ import {
     applyStickyTableHeaders
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CONTENT_EMBED_KIND_ATTRIBUTE, type ContentEmbedContext,
-    getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, KATEX_MACROS,
-    resolveContentEmbed, sliceToBlockReference
+    BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
+    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
+    getNoteEmbedHref, KATEX_MACROS, resolveContentEmbed, sliceToBlockReference
 } from "@triliumnext/commons";
 
 import FAttachment from "../entities/fattachment.js";
@@ -231,6 +231,25 @@ export function getEmbedCaption(embedEl: Element) {
     }
 
     return embedEl.querySelector<HTMLElement>(":scope > figcaption");
+}
+
+/**
+ * Replaces `element`, the saved element of an embed, with `box`, its `.include-note` box. The
+ * `<figure class="captioned-content-embed">` that holds `element` with a caption is replaced
+ * too, and the caption moves into `box`.
+ */
+export function replaceWithEmbedBox(element: Element, box: HTMLElement) {
+    const figure = element.parentElement;
+    if (!figure?.matches(`figure.${CAPTIONED_CONTENT_EMBED_CLASS}`)) {
+        element.replaceWith(box);
+        return;
+    }
+
+    const caption = figure.querySelector(":scope > figcaption");
+    if (caption) {
+        box.append(caption);
+    }
+    figure.replaceWith(box);
 }
 
 function replaceWithReferenceLink(embedEl: Element, href: string) {

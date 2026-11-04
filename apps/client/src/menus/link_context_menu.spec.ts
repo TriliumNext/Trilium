@@ -1,3 +1,4 @@
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link";
@@ -21,7 +22,8 @@ const mocks = vi.hoisted(() => ({
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getEmbedBoxSize: vi.fn()
+    getEmbedBoxSize: vi.fn(),
+    openUrlExternally: vi.fn()
 }));
 
 vi.mock("./text_editor_context_menu", async (importOriginal) => ({
@@ -49,6 +51,8 @@ vi.mock("../services/attachment_actions", () => ({
 }));
 
 vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
+
+vi.mock("../services/open", () => ({ openUrlExternally: mocks.openUrlExternally }));
 
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
@@ -476,8 +480,9 @@ describe("openContextMenu", () => {
             selectEmbedAt.mockReset().mockReturnValue(true);
             hasPlugin = true;
             state = {
-                boxSize: "medium", isTitleShown: false, isTitleToggleable: true,
-                hasCaption: true, isCaptionToggleable: true, isConvertibleToLink: true
+                boxSize: "medium", isTitleSupported: true, isTitleShown: false,
+                isTitleToggleable: true, isCaptionSupported: true, hasCaption: true,
+                isCaptionToggleable: true, isConvertibleToLink: true
             };
             mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
             mocks.getAttachmentActionGroups.mockReturnValue([
@@ -534,7 +539,7 @@ describe("openContextMenu", () => {
             return execute.mock.calls;
         }
 
-        it("puts the commands of an embed after its first group, converting it last", async () => {
+        it("puts the commands of an embed after its first group, deleting it last", async () => {
             // From the title, from the menu button beside it, and from a control acting on the
             // whole embed, as its toolbar does.
             for (const target of [ "a", "button.include-note-menu", "figure" ]) {
@@ -566,9 +571,14 @@ describe("openContextMenu", () => {
                     },
                     { kind: "separator" },
                     { title: "Rename" },
-                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" }
+                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
+                    { kind: "separator" },
+                    {
+                        title: "link_context_menu.delete",
+                        uiIcon: "bx bx-trash destructive-action-icon"
+                    }
                 ]);
-                expect(items).toHaveLength(13);
+                expect(items).toHaveLength(15);
             }
             expect(selectEmbedAt).not.toHaveBeenCalled();
 
@@ -580,6 +590,7 @@ describe("openContextMenu", () => {
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
             expect(pick(items[12])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            expect(pick(items[14])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
 
             // An embed the editor cannot select is left as it is.
             selectEmbedAt.mockReturnValue(false);
@@ -601,7 +612,7 @@ describe("openContextMenu", () => {
                 },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(14);
+            expect(items).toHaveLength(16);
             expect(pick(items[7])).toEqual([ [ "toggleContentEmbedEditable", undefined ] ]);
 
             state = { ...state, isEditable: false };
@@ -621,7 +632,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(17);
+            expect(items).toHaveLength(19);
             expect(pick(items[9]))
                 .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
 
@@ -660,7 +671,7 @@ describe("openContextMenu", () => {
                     ]
                 }
             ]);
-            expect(items).toHaveLength(14);
+            expect(items).toHaveLength(16);
             expect(pick(items[8].items[2]))
                 .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
             expect(pick(items[8].items[6]))
@@ -706,7 +717,7 @@ describe("openContextMenu", () => {
             }
         });
 
-        it("appends the commands of an embedded note, its conversion in a group of its own", async () => {
+        it("ends the menu of an embedded note with converting and deleting it", async () => {
             embed().removeAttribute("data-attachment-id");
             embed().setAttribute("data-note-id", "n1");
 
@@ -718,23 +729,116 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.show_title" },
                 { title: "link_context_menu.show_caption" },
                 { kind: "separator" },
-                { title: "link_context_menu.convert_embed_to_link" }
+                { title: "link_context_menu.convert_embed_to_link" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
-            expect(items).toHaveLength(10);
+            expect(items).toHaveLength(12);
+            expect(pick(items[11])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
             expect(mocks.getAttachmentOfNote).not.toHaveBeenCalled();
+        });
+
+        it("leaves out the title and the caption of an embed that has none", async () => {
+            embed().removeAttribute("data-attachment-id");
+            state = {
+                ...state, isTitleSupported: true, isCaptionSupported: false,
+                position: "center", isConvertibleToLink: false
+            };
+            expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" },
+                { title: "link_context_menu.show_title", enabled: true, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
+            ]);
+
+            state = { ...state, isTitleSupported: false };
+            const items = await openOn(editable.querySelector("a"), {});
+            expect(items.slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
+            ]);
+            expect(items).toHaveLength(9);
+        });
+
+        it("opens a video externally first in its menu, and deletes it last", async () => {
+            const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            state = {
+                ...state, url, isCaptionSupported: true, isCaptionToggleable: true,
+                hasCaption: false, isConvertibleToLink: false
+            };
+            const openMenu = async () => {
+                await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+                return mocks.show.mock.lastCall?.[0].items;
+            };
+
+            const items = await openMenu();
+            expect(items).toMatchObject([
+                { title: "link_context_menu.open_externally", uiIcon: "bx bx-link-external" },
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" },
+                { title: "link_context_menu.show_caption", enabled: true, checked: false },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash destructive-action-icon"
+                }
+            ]);
+            expect(items).toHaveLength(7);
+            items[0].handler();
+            expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
+            expect(pick(items[6])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+
+            // An embed of a source has neither, nor a caption.
+            state = { ...state, url: null, isCaptionSupported: false };
+            expect(await openMenu()).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" }
+            ]);
+        });
+
+        it("deletes an extended code block last, after its position", async () => {
+            embed().removeAttribute("data-attachment-id");
+            embed().classList.add(EXTENDED_CODE_BLOCK_CLASS);
+            state = {
+                ...state, url: null, position: "right", isTitleSupported: false,
+                isCaptionSupported: false, isConvertibleToLink: false
+            };
+
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            const items = mocks.show.mock.lastCall?.[0].items;
+            expect(items).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position", uiIcon: "cke cke-object-right" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash destructive-action-icon"
+                }
+            ]);
+            expect(items).toHaveLength(4);
+            expect(pick(items[3])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
         });
 
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {
             embed().removeAttribute("data-attachment-id");
             state = {
-                boxSize: "tiny", isTitleShown: true, isTitleToggleable: false,
-                hasCaption: false, isCaptionToggleable: false, isConvertibleToLink: false
+                boxSize: "tiny", isTitleSupported: true, isTitleShown: true,
+                isTitleToggleable: false, isCaptionSupported: true, hasCaption: false,
+                isCaptionToggleable: false, isConvertibleToLink: false
             };
             expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title", enabled: false, checked: true },
-                { title: "link_context_menu.show_caption", enabled: false, checked: false }
+                { title: "link_context_menu.show_caption", enabled: false, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
 
             // A link in the embedded content, an embed the editor does not know, and an editor

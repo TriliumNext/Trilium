@@ -9,6 +9,7 @@ declare global {
         favicon?: string;
         siteName?: string;
         image?: string;
+        aspectRatio?: string;
         /**
          * True when the host could not read the page (network error, bot challenge, non-HTML
          * response, or a page with no title of its own) and the fields above hold nothing but a
@@ -80,8 +81,9 @@ declare global {
          */
         hasDisplayModes?: boolean;
         /**
-         * Whether the content can be positioned in the text, which the toolbar and the menu of the
-         * embed then set. The embed saves a position other than centered as `data-position`.
+         * Whether the toolbar and the menu of the embed set where the content is placed in the
+         * text. The menu of an embed of a note, an attachment or a video sets it either way. The
+         * embed saves a position other than centered as `data-position`.
          */
         hasPositions?: boolean;
     }

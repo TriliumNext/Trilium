@@ -174,6 +174,8 @@ export interface LinkEmbedMetadata {
     favicon?: string;
     siteName?: string;
     embedType: "youtube" | "opengraph";
+    /** The shape of a video, as its width and height in whole numbers, such as `9/16`. */
+    aspectRatio?: string;
     /**
      * True when the page could not be read at all — a network error, a bot challenge (many sites
      * answer a server-side fetch with a Cloudflare interstitial), a non-HTML response, or a page

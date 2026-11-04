@@ -14,7 +14,9 @@ import {
 import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import {
-    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
+    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewVideoId,
+    getVideoAspectRatio, readLinkPreviewData, readVideoEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY,
+    VIDEO_EMBED_CLASS
 } from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
@@ -25,7 +27,7 @@ import FNote from "../../../entities/fnote";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import {
-    applyInlineMermaid, emptyUnknownEmbeds, rewriteMermaidDiagramsInContainer
+    applyInlineMermaid, emptyUnknownEmbeds, replaceWithEmbedBox, rewriteMermaidDiagramsInContainer
 } from "../../../services/content_renderer_text";
 import { t } from "../../../services/i18n";
 import { applyNoteImageVersions } from "../../../services/image_urls";
@@ -49,6 +51,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
+    loadVideoEmbed,
     refreshEmbeddedNote,
     setupImageOpening,
     watchContentEmbeds
@@ -137,7 +140,7 @@ export function ReadOnlyTextContent({
     html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false
 }: ReadOnlyTextContentProps) {
     // Printing snapshots the page, before an embed box would have drawn its diagram.
-    const hasDiagramEmbeds = !isChanging && glob.device !== "print";
+    const hasEmbedBoxes = !isChanging && glob.device !== "print";
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -165,8 +168,8 @@ export function ReadOnlyTextContent({
         trackPendingRender(container, Promise.all([
             // First, so that no other pass renders the content of these embeds.
             applyUnknownEmbeds(container),
-            ...(hasDiagramEmbeds
-                ? [ applySourceEmbeds(container) ]
+            ...(hasEmbedBoxes
+                ? [ applySourceEmbeds(container), applyVideoEmbeds(container) ]
                 : [ rewriteMermaidDiagramsInContainer(container), applyInlineMermaid(container) ]),
             applyContentEmbeds(container),
             applyLinkEmbeds(container),
@@ -200,12 +203,12 @@ export function ReadOnlyTextContent({
                 dispose();
             }
         };
-    }, [ html, noteId, ntxId, contentRef, hasDiagramEmbeds ]);
+    }, [ html, noteId, ntxId, contentRef, hasEmbedBoxes ]);
 
     useEffect(() => {
         if (!contentRef.current) return;
         return watchContentEmbeds(contentRef.current);
-    }, [ contentRef, hasDiagramEmbeds ]);
+    }, [ contentRef, hasEmbedBoxes ]);
 
     useTriliumEvent("entitiesReloaded", () => {
         if (contentRef.current) applyNoteImageVersions(contentRef.current);
@@ -226,7 +229,7 @@ export function ReadOnlyTextContent({
     return (
         <RawHtmlBlock
             // The drawings in place replace the code blocks, which the embed boxes need again.
-            key={hasDiagramEmbeds ? "embeds" : "drawings"}
+            key={hasEmbedBoxes ? "embeds" : "drawings"}
             containerRef={contentRef}
             className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap", className)}
             tabindex={100}
@@ -259,6 +262,42 @@ function applyContentEmbeds(container: HTMLDivElement) {
         }
     }
     return Promise.all(loaded);
+}
+
+/**
+ * Shows each video of a link preview in the embed box the editor shows it in, with its title row
+ * and caption, and without the menu of the editor.
+ */
+function applyVideoEmbeds(container: HTMLDivElement) {
+    for (const section of container.querySelectorAll<HTMLElement>("section.link-embed")) {
+        const getAttribute = (name: string) => section.getAttribute(name);
+        const preview = readLinkPreviewData(getAttribute);
+        if (!preview || !getLinkPreviewVideoId(preview)) continue;
+
+        const figure = document.createElement("figure");
+        figure.className = `include-note ${VIDEO_EMBED_CLASS}`;
+        const { boxSize, isTitleHidden } = readVideoEmbedBox(getAttribute);
+        figure.dataset.boxSize = boxSize;
+        if (isTitleHidden) {
+            figure.dataset.hideTitle = "true";
+        }
+        const { position, triliumBlockId } = section.dataset;
+        for (const [ name, value ] of Object.entries({ position, triliumBlockId })) {
+            if (value) {
+                figure.dataset[name] = value;
+            }
+        }
+        const style = section.getAttribute("style");
+        if (style) {
+            figure.setAttribute("style", style);
+        }
+        const aspectRatio = getVideoAspectRatio(preview);
+        if (aspectRatio) {
+            figure.style.setProperty(VIDEO_ASPECT_RATIO_PROPERTY, String(aspectRatio));
+        }
+        replaceWithEmbedBox(section, figure);
+        loadVideoEmbed(preview, figure);
+    }
 }
 
 /** Shows each embed of a kind that this version does not know as the editor does: an error box. */

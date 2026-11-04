@@ -343,15 +343,25 @@ body:not(.math-loaded) .math-tex {
     object-fit: contain;
 }
 
-/* An include with a caption: the included content, then the caption. */
-.ck-content figure.include-note {
+/* An include, or the video of a link preview, placed and sized as the editor saved it. */
+.ck-content :is(
+    figure.include-note, figure.captioned-content-embed,
+    section.link-embed:where([data-embed-type="youtube"])
+) {
     clear: both;
     margin: 1em 0;
 
-    &:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"]) {
+    &:is(
+        [data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"],
+        .link-embed, .captioned-content-embed
+    ) {
         margin-inline: auto;
         max-width: 100%;
         width: var(--include-note-width, auto);
+    }
+
+    &:is(.link-embed, :has(> .link-embed))[data-box-size="full"] {
+        max-width: min(100%, 70vh * var(--video-aspect-ratio, 16 / 9));
     }
 
     &[data-position="left"] {
@@ -385,8 +395,15 @@ body:not(.math-loaded) .math-tex {
     }
 }
 
+.ck-content figure.captioned-content-embed > section.link-embed {
+    margin: 0;
+    width: auto;
+}
+
 @media (max-width: 48em) {
-    .ck-content figure.include-note[data-position] {
+    .ck-content :is(
+        figure.include-note, figure.captioned-content-embed, section.link-embed
+    )[data-position] {
         float: none;
         clear: both;
         margin: 1em 0;
@@ -394,7 +411,7 @@ body:not(.math-loaded) .math-tex {
     }
 }
 
-.ck-content .include-note > figcaption {
+.ck-content :is(.include-note, .captioned-content-embed) > figcaption {
     margin-top: .5em;
     border-top: 1px solid var(--background-active);
     padding-top: .5em;

@@ -107,6 +107,27 @@ describe("enhanceLinkPreviews", () => {
         expect(iframe?.isConnected).toBe(true);
     });
 
+    it("gives the player the focus of the clicked facade, while the facade still has it", () => {
+        vi.spyOn(Element.prototype, "animate").mockReturnValue(new EventTarget() as Animation);
+        // A click in happy-dom focuses nothing, as in Safari and Firefox on macOS.
+        const play = () => {
+            const container = render(renderLinkEmbedHtml(VIDEO, OPTIONS));
+            container.querySelector<HTMLButtonElement>(".link-embed-video-facade")?.click();
+            return container.querySelector("iframe");
+        };
+
+        const player = play();
+        player?.dispatchEvent(new Event("load"));
+        expect(document.activeElement).toBe(player);
+
+        const otherPlayer = play();
+        const input = document.createElement("input");
+        document.body.append(input);
+        input.focus();
+        otherPlayer?.dispatchEvent(new Event("load"));
+        expect(document.activeElement).toBe(input);
+    });
+
     it("removes the facade without fading it for a user who asks for reduced motion", () => {
         vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
         const animate = vi.spyOn(Element.prototype, "animate");

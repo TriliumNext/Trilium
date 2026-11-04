@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import LinkEmbed from "../link_embed/link_embed.js";
+import {
+    LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
+} from "../link_embed/link_embed_toolbar.js";
 import ContentEmbed, {
     CONVERT_EMBED_TO_LINK_COMMAND,
     CONTENT_EMBED_MENU,
@@ -106,6 +109,56 @@ describe("ContentEmbedToolbar", () => {
         expect(requires).toContain(ContentEmbedPositionDropdown);
         expect(requires).toContain(ContentEmbedTools);
         expect(requires).toContain(ExtendedCodeBlock);
+        expect(requires).toContain(LinkEmbedCopyUrlButton);
+        expect(requires).toContain(LinkEmbedDisplayDropdown);
+    });
+
+    it("gives a video the copy and display items of a link preview, and its menu", () => {
+        const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
+            _toolbarDefinitions: Map<string, {
+                itemsConfig: string[];
+                getRelatedElement: (selection: unknown) => unknown;
+                positions: PositioningFunction[];
+            }>;
+        };
+        const definition = repository._toolbarDefinitions.get("videoEmbed");
+        expect(definition?.itemsConfig).toEqual([
+            "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU
+        ]);
+
+        editor.setData(`<section class="link-embed" data-position="right"`
+            + ` data-url="https://youtube.com/watch?v=abc12345678" data-embed-type="youtube">`
+            + `</section><p>Text</p>`);
+        editor.model.change((writer) => {
+            const embed = editor.model.document.getRoot()?.getChild(0);
+            if (embed?.is("element")) {
+                writer.setSelection(embed, "on");
+            }
+        });
+        const selection = editor.editing.view.document.selection;
+        expect(definition?.getRelatedElement(selection))
+            .toBe(editor.editing.view.document.getRoot()?.getChild(0));
+        expect(getRelatedElementFn(editor)(selection)).toBeNull();
+
+        const target = new Rect({
+            left: 100, top: 300, right: 400, bottom: 500, width: 300, height: 200
+        });
+        const balloon = new Rect({
+            left: 0, top: 0, right: 200, bottom: 40, width: 200, height: 40
+        });
+        expect(definition?.positions[0](target, balloon, new Rect(window)))
+            .toMatchObject({ name: "arrow_se", left: 200 });
+
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        expect(definition?.getRelatedElement(editor.editing.view.document.selection)).toBeNull();
+
+        // The caption of a video keeps its toolbar, as its player does.
+        setModelData(editor.model, `<contentEmbed embedType="youtube"`
+            + ` url="https://youtube.com/watch?v=abc12345678"><caption>A [] caption</caption>`
+            + `</contentEmbed>`);
+        expect(definition?.getRelatedElement(selection))
+            .toBe(editor.editing.view.document.getRoot()?.getChild(0));
+        expect(getRelatedElementFn(editor)(selection)).toBeNull();
     });
 
     it("offers Editable, the display modes, the content's tools, then the embed's items", () => {

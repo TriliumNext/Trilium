@@ -15,8 +15,13 @@ import EditLinkDialog, {
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
 }));
+const { readClipboardText } = vi.hoisted(() => ({ readClipboardText: vi.fn(async () => "") }));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/clipboard_ext", () => ({
+    canReadClipboardText: async () => true,
+    readClipboardText
+}));
 vi.mock("../react/NoteAutocomplete", () => ({
     default: ({ onChange, inputRef }: {
         onChange: (suggestion: Suggestion | null) => void;
@@ -319,6 +324,29 @@ describe("EditLinkDialog", () => {
         expect(paste.defaultPrevented).toBe(true);
         expect(current()).toBe("add_link.web_link");
         expect(field("url")?.value).toBe("https://pasted.example");
+    });
+
+    it("enables its button only once the side shown has a note, an address or an anchor", async () => {
+        const button = () => container.querySelector<HTMLButtonElement>(".modal-footer button");
+        await open({ anchors: [ "intro" ] });
+        expect(button()?.disabled).toBe(true);
+        const note = buildNote({ title: "Note" });
+        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
+        expect(button()?.disabled).toBe(false);
+        await act(async () => autocomplete.onChange?.(null));
+        expect(button()?.disabled).toBe(true);
+
+        await act(async () => choice()[0]?.click());
+        expect(button()?.disabled).toBe(true);
+        await type(field("url"), "example.com");
+        expect(button()?.disabled).toBe(false);
+        await type(field("url"), " ");
+        expect(button()?.disabled).toBe(true);
+
+        await act(async () => choice()[2]?.click());
+        expect(button()?.disabled).toBe(true);
+        await act(async () => anchorRows()[0]?.click());
+        expect(button()?.disabled).toBe(false);
     });
 
     it("focuses the field of the side shown, except on mobile, where it waits for a tap", async () => {
@@ -641,6 +669,7 @@ describe("EditLinkDialog", () => {
             return { top: isChecked ? 400 - (list?.scrollTop ?? 0) : 0 } as DOMRect;
         });
         vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(240);
+        vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(640);
         vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(40);
         onTestFinished(() => {
             vi.restoreAllMocks();
@@ -657,7 +686,11 @@ describe("EditLinkDialog", () => {
         expect(headings()).toStrictEqual([ "add_link.headings" ]);
         expect(checkedHeading()).toBe("Usage");
         expect(field("text")?.value).toBe("See usage");
-        expect(container.querySelector(".edit-link-targets")?.scrollTop).toBe(300);
+        const list = container.querySelector(".edit-link-targets");
+        expect(list?.scrollTop).toBe(300);
+        // Rows lie past both edges of the list, so both edges fade.
+        expect([ "scroll-fade", "scroll-fade-start", "scroll-fade-end" ]
+            .map((name) => list?.classList.contains(name))).toStrictEqual([ true, true, true ]);
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("root/note?block=Usage", "See usage");
 
@@ -725,10 +758,13 @@ describe("EditLinkBalloon", () => {
         expect(url).not.toBeNull();
         expect(document.activeElement).toBe(url);
 
+        const button = form.querySelector<HTMLButtonElement>(".edit-link-actions button");
+        expect(button?.disabled).toBe(true);
         await submit(form);
         expect(onClose).not.toHaveBeenCalled();
 
         await type(url, "example.com");
+        expect(button?.disabled).toBe(false);
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink)
@@ -743,6 +779,28 @@ describe("EditLinkBalloon", () => {
 
         const form = await show({ target: "url" });
         expect(document.activeElement).toBe(form.querySelector(".edit-link-url input"));
+    });
+
+    it("pastes the clipboard over the address, selects it and applies it", async () => {
+        readClipboardText.mockResolvedValue("example.com/pasted");
+        const form = await show({ target: "url" });
+        // The effect calling `canReadClipboardText()` runs as the first `act()` ends.
+        await settle();
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        const button = form.querySelector<HTMLButtonElement>(".edit-link-url .bx-paste");
+        if (!url || !button) throw new Error("The address has no paste button.");
+        expect(form.querySelector(".edit-link-url label")?.getAttribute("for")).toBe(url.id);
+
+        await type(url, "typed");
+        button.click();
+        await settle();
+        expect(url.value).toBe("example.com/pasted");
+        expect([ url.selectionStart, url.selectionEnd ]).toStrictEqual([ 0, url.value.length ]);
+
+        await submit(form);
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(
+            "https://example.com/pasted", "https://example.com/pasted", true
+        );
     });
 
     it("opens on an edited link with its address selected, and applies it left alone", async () => {
@@ -821,5 +879,12 @@ async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value:
     await act(async () => {
         input.value = value;
         input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}
+
+/** Waits a task, so that what a pending promise renders is in the DOM. */
+function settle() {
+    return act(async () => {
+        await new Promise((resolve) => setTimeout(resolve));
     });
 }

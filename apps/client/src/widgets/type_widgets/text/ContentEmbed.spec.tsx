@@ -177,13 +177,14 @@ const EDITABLE_TOOLS = {
  */
 function placeInHostEditor() {
     const selectEmbedAt = vi.fn((_element: Element) => true);
+    const setEmbedCollapsedAt = vi.fn((_element: Element, _isCollapsed: boolean) => {});
     const execute = vi.fn();
     const focus = vi.fn();
     const editable = document.createElement("div");
     editable.className = "ck-editor__editable";
     Object.assign(editable, {
         ckeditorInstance: {
-            plugins: { get: () => ({ selectEmbedAt }) },
+            plugins: { get: () => ({ selectEmbedAt, setEmbedCollapsedAt }) },
             execute,
             editing: { view: { focus } }
         }
@@ -195,7 +196,7 @@ function placeInHostEditor() {
     document.body.append(editable);
     onTestFinished(() => editable.remove());
 
-    return { editor: { selectEmbedAt, execute, focus }, embed };
+    return { editor: { selectEmbedAt, setEmbedCollapsedAt, execute, focus }, embed };
 }
 
 /** Tools of content with display modes, which the title row of its embed switches. */
@@ -385,6 +386,25 @@ describe("ContentEmbed", () => {
         renderBox({ boxSize: "expandable" });
         click(titleRow().row);
         expect(contentBox().hidden).toBe(true);
+    });
+
+    it("marks a collapsed expandable box in the text editor until it opens or leaves", () => {
+        const { editor } = placeInHostEditor();
+        const marks = () => editor.setEmbedCollapsedAt.mock.calls
+            .map(([ target, isCollapsed ]) => [ target === contentBox(), isCollapsed ]);
+        renderBox({ boxSize: "full" });
+        expect(marks()).toEqual([]);
+
+        act(() => render(null, container));
+        renderBox({ boxSize: "expandable" });
+        expect(marks()).toEqual([ [ true, true ] ]);
+        click(button("include-note-toggle"));
+        expect(marks()).toEqual([ [ true, true ], [ true, false ] ]);
+        click(button("include-note-toggle"));
+        const box = contentBox();
+        act(() => render(null, container));
+        expect(editor.setEmbedCollapsedAt).toHaveBeenLastCalledWith(box, false);
+        expect(editor.setEmbedCollapsedAt).toHaveBeenCalledTimes(4);
     });
 
     it("opens the note in a new tab, and its context menu, from the title row", () => {
@@ -689,6 +709,39 @@ describe("ContentEmbed", () => {
         expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
     });
 
+    it("titles a video with the menu of its embed, or no menu, and no fullscreen", () => {
+        const openMenu = vi.fn();
+        const video = { notePath: undefined, boxSize: "medium", contentType: "videoEmbed" };
+        renderBox({ ...video, openMenu });
+        expect(titleRow()).toEqual([
+            "include-note-title-label", "include-note-badges", "include-note-menu"
+        ]);
+        expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
+
+        const menu = button("include-note-menu");
+        expect(click(menu).isStopped).toBe(true);
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith({ below: menu });
+        openMenu.mockClear();
+        const row = container.querySelector(".include-note-title-row");
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            row?.dispatchEvent(event);
+        });
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith(event);
+        expect(event.defaultPrevented).toBe(true);
+        expect(openContextMenu).not.toHaveBeenCalled();
+
+        // Outside a text editor, the embed has no menu of its own.
+        act(() => render(null, container));
+        renderBox(video);
+        expect(titleRow()).toEqual([ "include-note-title-label", "include-note-badges" ]);
+        const unhandled = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        act(() => {
+            container.querySelector(".include-note-title-row")?.dispatchEvent(unhandled);
+        });
+        expect(unhandled.defaultPrevented).toBe(false);
+    });
+
     it("keeps its content behind a backdrop until a click on it focuses what is under it", async () => {
         const content = element(
             `<div class="rendered-content"><p>body</p><div tabindex="0"><img></div></div>`
@@ -731,10 +784,13 @@ describe("ContentEmbed", () => {
         expect(isActive()).toBe(true);
     });
 
-    it("leaves an extended code block without a backdrop, so its code takes the first click", () => {
-        renderBox({ title: undefined, notePath: undefined, contentType: "extendedCodeBlock" });
-        expect(contentBox().classList.contains("type-extendedCodeBlock")).toBe(true);
-        expect(container.querySelector(".include-note-backdrop")).toBeNull();
+    it("leaves an extended code block and a video uncovered, to take the first click", () => {
+        for (const contentType of [ "extendedCodeBlock", "videoEmbed" ]) {
+            act(() => render(null, container));
+            renderBox({ title: undefined, notePath: undefined, contentType });
+            expect(contentBox().classList.contains(`type-${contentType}`)).toBe(true);
+            expect(container.querySelector(".include-note-backdrop")).toBeNull();
+        }
     });
 
     it("runs the window shortcuts from its content, whose keys the editor keeps to itself", async () => {

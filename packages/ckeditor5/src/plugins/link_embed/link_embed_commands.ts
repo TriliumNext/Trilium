@@ -1,8 +1,13 @@
-import { isHttpUrl } from '@triliumnext/commons';
+import {
+    getLinkPreviewVideoId, isHttpUrl, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData
+} from '@triliumnext/commons';
 import {
     Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
     type ModelWriter
 } from 'ckeditor5';
+
+import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
+import { createVideoEmbed, isVideoEmbed } from '../content_embed/video_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
@@ -51,10 +56,33 @@ export function getLinkDisplayModeLabel(t: (message: string) => string, mode: Li
  */
 export const EMBEDDABLE_URL_REGEX = /^https?:\/\/\S+$/;
 
-/** Every piece of fetched metadata a linkEmbed/linkMention element stores as a model attribute. */
-export const META_KEYS = ['url', 'embedType', 'title', 'description', 'favicon', 'siteName', 'image'] as const;
+export type MetaKey = keyof LinkPreviewData;
 
-export type MetaKey = (typeof META_KEYS)[number];
+/** Every piece of fetched metadata a linkEmbed/linkMention element stores as a model attribute. */
+export const META_KEYS = Object.keys(LINK_PREVIEW_DATA_ATTRIBUTES) as MetaKey[];
+
+/** The model attributes of a link preview made from the fetched `metadata`. */
+export function getMetadataAttributes(metadata: LinkEmbedMetadata): Record<string, unknown> {
+    return Object.fromEntries(META_KEYS.map((key) => [ key, metadata[key] ]));
+}
+
+/**
+ * The model attributes of a preview of the `mode` shape of the page at `href`, made from its
+ * fetched `metadata`. `title` and `description` replace the page's own.
+ */
+export function getPreviewAttributes(
+    editor: Editor, mode: Exclude<LinkDisplayMode, 'plain'>, href: string,
+    metadata: LinkEmbedMetadata, title?: string, description?: string
+): Record<string, unknown> {
+    return {
+        ...getMetadataAttributes(metadata),
+        embedType: mode === 'embed'
+            ? getLinkEmbedHost(editor).detectEmbedType(href)
+            : metadata.embedType,
+        title: title || metadata.title,
+        description: description || metadata.description
+    };
+}
 
 /**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
@@ -131,7 +159,7 @@ export class ChangeLinkDisplayCommand extends Command {
 
     override async execute(options: { value: LinkDisplayMode }) {
         const model = this.editor.model;
-        const selected = getSelectedLinkWidget(this.editor);
+        const selected = this._getTarget();
 
         // No widget selected means the dropdown sits in the link balloon, over a native link.
         if (!selected) {
@@ -152,6 +180,7 @@ export class ChangeLinkDisplayCommand extends Command {
         if (targetMode === 'plain') {
             model.change(writer => {
                 const text = isHttpUrl(url) ? writer.createText(url, { linkHref: url }) : writer.createText(url);
+                keepCaptionText(writer, selected);
                 model.insertContent(text, writer.createRangeOn(selected));
             });
             return;
@@ -163,7 +192,7 @@ export class ChangeLinkDisplayCommand extends Command {
     }
 
     override refresh() {
-        const selected = getSelectedLinkWidget(this.editor);
+        const selected = this._getTarget();
 
         if (selected) {
             this.isEnabled = true;
@@ -213,6 +242,21 @@ export class ChangeLinkDisplayCommand extends Command {
 
         const range = findAttributeRange(position, 'linkHref', href, model);
         await replaceLinkWithPreview(this.editor, range, href, targetMode);
+    }
+
+    /**
+     * The link preview that the command acts on: the selected one, else, unless the caret is on a
+     * link, the video whose caption has the selection, which keeps its toolbar there.
+     */
+    private _getTarget(): ModelElement | null {
+        const selection = this.editor.model.document.selection;
+        const selected = getSelectedLinkWidget(this.editor);
+        if (selected || selection.hasAttribute('linkHref')) {
+            return selected;
+        }
+
+        const video = getCaptionedEmbed(selection.getFirstPosition());
+        return video && isVideoEmbed(video) ? video : null;
     }
 
     /** Delegates to the host to avoid duplicating URL detection logic. */
@@ -276,19 +320,8 @@ async function replaceLinkWithPreview(
             }
             if (!linkStillThere) return;
 
-            const element = writer.createElement(mode === 'inline' ? 'linkMention' : 'linkEmbed', {
-                url: metadata.url,
-                // A card is an embed that declines to play: forcing "opengraph" is what tells the
-                // renderer to draw the static card rather than the provider's player.
-                embedType: mode === 'card' ? 'opengraph'
-                    : mode === 'embed' ? getLinkEmbedHost(editor).detectEmbedType(href)
-                    : metadata.embedType,
-                title: title || metadata.title,
-                description: description || metadata.description,
-                favicon: metadata.favicon,
-                siteName: metadata.siteName,
-                image: metadata.image
-            });
+            const element = createLinkPreview(writer, mode,
+                getPreviewAttributes(editor, mode, href, metadata, title, description));
 
             model.insertContent(element, currentRange);
             // The widget toolbar, with its Display dropdown, takes over from the link balloon.
@@ -317,18 +350,81 @@ function rebuildLinkWidget(
     }
     if (title) attrs.title = title;
     if (description) attrs.description = description;
-    if (mode !== 'inline') {
-        // A card is an embed that declines to play.
-        attrs.embedType = mode === 'card' ? 'opengraph'
-            : getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
+    if (mode === 'card') {
+        attrs.embedType = 'opengraph';
+    } else if (mode === 'embed') {
+        attrs.embedType = getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
     }
 
     // Replaced rather than given new attributes: the editing downcast is elementToElement, which
-    // does not re-render on attribute changes.
-    const name = mode === 'inline' ? 'linkMention' : 'linkEmbed';
-    const replacement = writer.createElement(name, attrs);
+    // does not re-render on attribute changes. A preview that keeps its shape keeps its other
+    // attributes, such as the box of a video, and its children, such as the caption of a video.
+    const ownAttributes = Object.fromEntries(element.getAttributes());
+    let replacement: ModelElement;
+    if (getLinkPreviewName(mode, attrs) === element.name) {
+        replacement = writer.createElement(element.name, { ...ownAttributes, ...attrs });
+        // The only child of a link preview is the caption of a video.
+        for (const caption of element.getChildren()) {
+            writer.append(writer.cloneElement(caption as ModelElement), replacement);
+        }
+    } else {
+        replacement = createLinkPreview(writer, mode, attrs);
+        keepCaptionText(writer, element);
+    }
     editor.model.insertContent(replacement, writer.createRangeOn(element));
     return replacement;
+}
+
+/**
+ * Moves the content of the caption of `element`, a video that a shape without a caption replaces,
+ * into a paragraph after it.
+ */
+function keepCaptionText(writer: ModelWriter, element: ModelElement) {
+    const caption = isContentEmbed(element) ? getCaption(element) : null;
+    if (!caption || caption.isEmpty) {
+        return;
+    }
+
+    const paragraph = writer.createElement('paragraph');
+    writer.insert(paragraph, writer.createPositionAfter(element));
+    writer.move(writer.createRangeIn(caption), writer.createPositionAt(paragraph, 0));
+}
+
+/**
+ * Creates the element of the `mode` shape for a link preview with the fields `attributes`: a
+ * `linkMention`, a `linkEmbed`, or a video embed (`ContentEmbedVideo`) for the embed of a URL
+ * with a video.
+ */
+export function createLinkPreview(
+    writer: ModelWriter,
+    mode: Exclude<LinkDisplayMode, 'plain'>,
+    attributes: Record<string, unknown>
+) {
+    switch (getLinkPreviewName(mode, attributes)) {
+        case 'linkMention':
+            return writer.createElement('linkMention', attributes);
+        case 'contentEmbed':
+            return createVideoEmbed(writer, attributes);
+        default:
+            // The renderers draw the `opengraph` type as a card, also for a URL with a video.
+            return writer.createElement('linkEmbed', {
+                ...attributes,
+                embedType: mode === 'card' ? 'opengraph' : attributes.embedType
+            });
+    }
+}
+
+/** The element of a link preview of the `mode` shape with the fields `attributes`. */
+function getLinkPreviewName(
+    mode: Exclude<LinkDisplayMode, 'plain'>, attributes: Record<string, unknown>
+) {
+    if (mode === 'inline') {
+        return 'linkMention';
+    }
+    const embedType = attributes.embedType as string | undefined;
+    const hasVideo = mode === 'embed'
+        && !!getLinkPreviewVideoId({ url: attributes.url as string, embedType });
+    return hasVideo ? 'contentEmbed' : 'linkEmbed';
 }
 
 /** The display mode of the link preview `element`. */
@@ -337,10 +433,13 @@ export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMod
     return element.getAttribute('embedType') === 'opengraph' ? 'card' : 'embed';
 }
 
-/** Returns the currently selected linkEmbed/linkMention element, or null. */
+/** Returns the selected linkEmbed or linkMention element, or video embed, or null. */
 export function getSelectedLinkWidget(editor: Editor): ModelElement | null {
     const selected = editor.model.document.selection.getSelectedElement();
     if (selected && (selected.name === 'linkMention' || selected.name === 'linkEmbed')) {
+        return selected;
+    }
+    if (selected?.name === 'contentEmbed' && isVideoEmbed(selected)) {
         return selected;
     }
     return null;

@@ -38,6 +38,7 @@ vi.mock("../../../services/attachment_actions", () => ({
 vi.mock("../../../menus/link_context_menu", () => ({
     default: {
         openContextMenu: vi.fn(),
+        openEmbedContextMenu: vi.fn(),
         getOriginBelow: vi.fn((anchor: Element, target: Element) => ({ anchor, target }))
     }
 }));
@@ -62,6 +63,7 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadUnknownEmbed,
+    loadVideoEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupTodoCheckboxTaps,
@@ -425,6 +427,49 @@ describe("loadUnknownEmbed", () => {
     });
 });
 
+describe("loadVideoEmbed", () => {
+    const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+
+    it("mounts the cover of the video under its title, even before it is in the page", () => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
+
+        loadVideoEmbed({
+            url,
+            embedType: "youtube",
+            title: "A <video>",
+            image: "api/attachments/abc123/image/youtube-dQw4w9WgXcQ.jpg"
+        }, wrapper);
+
+        const { type, props, container } = lastMount();
+        expect(type).toBe(ContentEmbed);
+        expect(container).toBe(wrapper);
+        expect(props).toEqual({
+            title: expect.any(HTMLElement),
+            content: expect.any(HTMLElement),
+            contentType: "videoEmbed"
+        });
+        expect(props.title?.outerHTML).toBe(`<span><span class="bx bxl-youtube"></span>`
+            + `<a href="${url}" target="_blank" rel="noopener noreferrer">A &lt;video&gt;</a>`
+            + `</span>`);
+        expect(props.content.className).toBe("rendered-content");
+        const facade = props.content.querySelector(".link-embed-video > .link-embed-video-facade");
+        expect(facade?.getAttribute("data-video-id")).toBe("dQw4w9WgXcQ");
+        expect(facade?.querySelector("img")?.getAttribute("src"))
+            .toBe("api/attachments/abc123/image/youtube-dQw4w9WgXcQ.jpg");
+    });
+
+    it("titles a video by its host without a title, and opens its menu in the editor", () => {
+        loadVideoEmbed({ url, embedType: "youtube" }, createWrapper(), { hasMenu: true });
+
+        const { props } = lastMount();
+        expect(props.title?.textContent).toBe("www.youtube.com");
+        const origin = { pageX: 1, pageY: 2, target: null };
+        props.openMenu?.(origin);
+        expect(linkContextMenu.openEmbedContextMenu).toHaveBeenCalledExactlyOnceWith(origin);
+    });
+});
+
 describe("the element an embed box is mounted in", () => {
     it("is a wrapper created in a read-only embed ahead of its caption", async () => {
         const figure = inPage(document.createElement("figure"));
@@ -621,6 +666,23 @@ describe("openContentEmbedMenu", () => {
             [ "noteY", { anchor, target: blockEmbed }, { block: "b1" } ],
             [ "owner", { anchor, target: embed }, ATTACHMENT_SCOPE ]
         ]);
+    });
+
+    it("opens the commands of the embed itself for a source or a video", async () => {
+        const anchor = document.createElement("button");
+        const source = inPage(document.createElement("figure"));
+        source.dataset.language = "mermaid";
+        const video = inPage(document.createElement("figure"));
+        video.className = "include-note video-embed";
+
+        await openContentEmbedMenu(source, anchor);
+        await openContentEmbedMenu(video, anchor);
+
+        expect(vi.mocked(linkContextMenu.openEmbedContextMenu).mock.calls).toEqual([
+            [ { anchor, target: source } ],
+            [ { anchor, target: video } ]
+        ]);
+        expect(linkContextMenu.openContextMenu).not.toHaveBeenCalled();
     });
 
     it("opens nothing for an embed of a deleted attachment, or of nothing", async () => {

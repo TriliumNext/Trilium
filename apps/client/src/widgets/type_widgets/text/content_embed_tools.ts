@@ -71,8 +71,9 @@ export interface ContentEmbedToolProvider {
      */
     hasDisplayModes?: boolean;
     /**
-     * Whether the content can be positioned in the text, which the toolbar and the menu of the
-     * embed then set. The embed saves a position other than centered as `data-position`.
+     * Whether the toolbar and the menu of the embed set where the content is placed in the text.
+     * The menu of an embed of a note, an attachment or a video sets it either way. The embed saves
+     * a position other than centered as `data-position`.
      */
     hasPositions?: boolean;
 }

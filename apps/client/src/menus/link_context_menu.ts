@@ -1,4 +1,5 @@
 import type { CKTextEditor, ContentEmbedState, PositionValue } from "@triliumnext/ckeditor5";
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
@@ -8,6 +9,7 @@ import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
+import { openUrlExternally } from "../services/open.js";
 import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
 import { DISPLAY_MODE_OPTIONS } from "../widgets/type_widgets/helpers/split_editor_mode.js";
 import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed_tools.js";
@@ -100,7 +102,7 @@ async function openContextMenu(
 
 /**
  * Opens the menu of the embed at `e` with its own commands only, for an embed that shows no note or
- * attachment, such as one that keeps its source in the note.
+ * attachment, such as one that keeps its source in the note or one that plays a video.
  */
 async function openEmbedContextMenu(e: LinkMenuOrigin) {
     const request = ++lastMenuRequest;
@@ -110,13 +112,55 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
         return;
     }
 
+    const { url } = embed.state;
     contextMenu.show({
         x: e.pageX,
         y: e.pageY,
-        items: getEmbedItems(embed),
+        items: url ? getVideoItems(embed, url) : getSourceItems(embed),
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
+}
+
+/**
+ * The menu of an embed that plays the video at `url`: opening the video outside Trilium, the
+ * commands of the embed, and deleting it, each in a group of its own.
+ */
+function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
+    return [
+        {
+            title: t("link_context_menu.open_externally"),
+            uiIcon: "bx bx-link-external",
+            handler: () => openUrlExternally(url)
+        },
+        { kind: "separator" },
+        ...getEmbedItems(embed),
+        ...getDeleteEmbedGroup(embed)
+    ];
+}
+
+/**
+ * The menu of an embed that keeps its source in the note: the commands of the embed, and for an
+ * extended code block, deleting it in a group of its own.
+ */
+function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
+    if (!embed.element.classList.contains(EXTENDED_CODE_BLOCK_CLASS)) {
+        return getEmbedItems(embed);
+    }
+
+    return [ ...getEmbedItems(embed), ...getDeleteEmbedGroup(embed) ];
+}
+
+/** "Delete", which removes the embed from the note, in a group of its own. */
+function getDeleteEmbedGroup(embed: MenuEmbed): MenuItem<CommandNames>[] {
+    return [
+        { kind: "separator" },
+        {
+            title: t("link_context_menu.delete"),
+            uiIcon: "bx bx-trash destructive-action-icon",
+            handler: () => runEmbedCommand(embed, "deleteContentEmbed")
+        }
+    ];
 }
 
 /** The origin of a menu that opens below `anchor` and acts from `target`. */
@@ -221,8 +265,8 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group. A menu opened in a note shown
- * read-only has only the actions that leave the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, and deleting the embed last.
+ * A menu opened in a note shown read-only has only the actions that leave the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
@@ -259,13 +303,13 @@ async function getAttachmentItems(
     );
     const conversionItems = [ embedItem, embed && getConvertToLinkItem(embed) ]
         .filter((item) => !!item);
-    return [ ...actionItems, ...conversionItems ];
+    return [ ...actionItems, ...conversionItems, ...(embed ? getDeleteEmbedGroup(embed) : []) ];
 }
 
 /**
- * The commands of an embedded note that the menu is opened on, in a group of their own, and
- * converting it in another. A menu opened on a link to the note offers converting the link, to an
- * excerpt for a link to blocks of the note.
+ * The commands of an embedded note that the menu is opened on, in a group of their own, converting
+ * it in another, and deleting it last. A menu opened on a link to the note offers converting the
+ * link, to an excerpt for a link to blocks of the note.
  */
 async function getNoteItems(
     noteId: string,
@@ -289,7 +333,8 @@ async function getNoteItems(
     return [
         { kind: "separator" },
         ...getEmbedItems(embed),
-        ...(linkItem ? [ { kind: "separator" } as const, linkItem ] : [])
+        ...(linkItem ? [ { kind: "separator" } as const, linkItem ] : []),
+        ...getDeleteEmbedGroup(embed)
     ];
 }
 
@@ -350,14 +395,14 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             uiIcon: "bx bx-expand-vertical"
         }, sizeItems),
         ...getPositionItems(embed),
-        {
+        ...(state.isTitleSupported ? [ {
             title: t("link_context_menu.show_title"),
             uiIcon: "bx bx-window-alt",
             enabled: state.isTitleToggleable,
             checked: state.isTitleShown,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedTitle")
-        },
-        {
+        } ] : []),
+        ...(state.isCaptionSupported ? [ {
             title: t("link_context_menu.show_caption"),
             uiIcon: "bx bx-captions",
             enabled: state.isCaptionToggleable,
@@ -365,7 +410,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             handler: () => runEmbedCommand(embed, "toggleContentEmbedCaption", {
                 focusCaptionOnShow: true
             })
-        }
+        } ] : [])
     ];
 }
 

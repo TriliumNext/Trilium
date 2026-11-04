@@ -1,4 +1,4 @@
-import { ComponentChild } from "preact";
+import { ComponentChild, render } from "preact";
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -99,6 +99,29 @@ describe("OptionCardSection", () => {
 
         expect(label?.firstChild?.textContent).toBe("Word wrapping");
         expect(label?.querySelector(".tn-card-option-description")?.textContent).toBe("Wraps long lines.");
+    });
+
+    it("shows an error after the control, outside the label, keeping the control mounted", () => {
+        const row = (error?: string) => (
+            <OptionCardSection
+                name="address" label="Address" description="Where it lives." error={error}
+            >
+                <input />
+            </OptionCardSection>
+        );
+        const container = renderInto(row());
+        const input = container.querySelector("input");
+        expect(container.querySelector(".form-field-error")).toBeNull();
+
+        act(() => render(row("Not an address."), container));
+        const error = container.querySelector(".tn-card-option > .form-field-error");
+        expect(error?.textContent).toBe("Not an address.");
+        expect(error?.getAttribute("role")).toBe("alert");
+        expect(error?.previousElementSibling).toBe(input);
+        expect(container.querySelector("input")).toBe(input);
+        expect(container.querySelector("label")?.getAttribute("for")).toBe(input?.id);
+        expect(container.querySelector(".tn-card-option-description")?.textContent)
+            .toBe("Where it lives.");
     });
 
     it("holds a name made of several things together, rather than stacking its parts", () => {

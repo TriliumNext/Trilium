@@ -1,5 +1,7 @@
 import type { CKTextEditor, InlineEmbedSource } from "@triliumnext/ckeditor5";
-import { attachmentIcon } from "@triliumnext/commons";
+import {
+    attachmentIcon, type LinkPreviewData, safeHostname, safeLinkPreviewHref, VIDEO_EMBED_CLASS
+} from "@triliumnext/commons";
 import { h, type JSX } from "preact";
 
 import appContext from "../../../components/app_context";
@@ -12,6 +14,7 @@ import { getEmbedCaption, getEmbedCodeView } from "../../../services/content_ren
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link, { ViewScope } from "../../../services/link";
+import { renderEmbedPreview } from "../../../services/link_embed";
 import { getInlineEmbedType } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
 import type { InlineSourceSaves } from "./attachment_saves";
@@ -253,6 +256,27 @@ export async function loadUnknownEmbed(el: HTMLElement, boxSize: string | undefi
 }
 
 /**
+ * Fills an embed box with the player of the video of a link preview, which loads on a click, under
+ * a title that links to the video. The title row opens the menu of the embed while `hasMenu`, as in
+ * the editor.
+ */
+export function loadVideoEmbed(
+    preview: LinkPreviewData, el: HTMLElement, { hasMenu = false }: { hasMenu?: boolean } = {}
+) {
+    const content = document.createElement("div");
+    content.className = "rendered-content";
+    renderEmbedPreview(content, preview, true);
+    const box = h(ContentEmbed, {
+        title: createVideoTitle(preview),
+        content,
+        contentType: "videoEmbed",
+        ...(hasMenu ? { openMenu: linkContextMenu.openEmbedContextMenu } : {})
+    });
+    // The editor calls this before the box is in the page, which `mountEmbedBox()` skips.
+    void content_renderer.mountInteractiveWidget(box, getWrapper(el));
+}
+
+/**
  * Mounts `box` in the embed `el`. An embed that left the page while it loaded gets no box,
  * and `content` rendered for it is disposed: `watchContentEmbeds()` has already passed it.
  */
@@ -276,6 +300,20 @@ async function mountEmbedBox(
     const wrapper = getWrapper(el);
     wrapper.classList.toggle("excerpt", isExcerpt);
     await content_renderer.mountInteractiveWidget(box, wrapper);
+}
+
+/** The title of a video: its icon and a link to it, named by its title or its host. */
+function createVideoTitle({ url, title }: LinkPreviewData) {
+    const icon = document.createElement("span");
+    icon.className = "bx bxl-youtube";
+    const link = document.createElement("a");
+    link.href = safeLinkPreviewHref(url);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = title || safeHostname(url);
+    const heading = document.createElement("span");
+    heading.append(icon, link);
+    return heading;
 }
 
 function getEmbedBoxSize(el: HTMLElement) {
@@ -305,14 +343,15 @@ function getWrapper(el: HTMLElement) {
 }
 
 /**
- * Opens the context menu of the note or attachment that `embed` shows, below `anchor`. The menu
- * opens from the embed, so that the text editor that contains it stays focused.
+ * Opens the context menu of the note or attachment that `embed` shows, or the commands of an embed
+ * of a source or a video, below `anchor`. The menu opens from the embed, so that the text editor
+ * that contains it stays focused.
  */
 export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLElement) {
     const { noteId, attachmentId, block, language } = embed.dataset;
     const origin = linkContextMenu.getOriginBelow(anchor, embed);
 
-    if (language) {
+    if (language || embed.classList.contains(VIDEO_EMBED_CLASS)) {
         await linkContextMenu.openEmbedContextMenu(origin);
         return;
     }
