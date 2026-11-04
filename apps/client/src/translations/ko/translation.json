@@ -2801,7 +2801,8 @@
     "copy_failed": "권한 문제로 인해 클립보드에 복사할 수 없습니다.",
     "copy_success": "클립보드에 복사했습니다.",
     "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다.",
-    "paste_notes": "노트 붙여넣기"
+    "paste_notes": "노트 붙여넣기",
+    "paste_failed": "클립보드의 내용을 읽을 수 없습니다."
   },
   "entrypoints": {
     "note-revision-created": "노트 수정본이 생성되었습니다.",
@@ -2941,7 +2942,9 @@
     "wrap_text": "텍스트 감싸기",
     "align_left": "왼쪽 정렬",
     "align_center": "가운데 정렬",
-    "align_right": "오른쪽 정렬"
+    "align_right": "오른쪽 정렬",
+    "open_externally": "외부에서 열기",
+    "delete": "삭제"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -4434,7 +4437,9 @@
       "box-position": "상자 위치",
       "youtube-video": "YouTube 동영상",
       "insert-youtube-video": "YouTube 동영상 삽입",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "노트에서 바로 시청할 수 있는 YouTube 동영상 삽입"
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "노트에서 바로 시청할 수 있는 YouTube 동영상 삽입",
+      "caption-for-the-video": "동영상 설명",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "클릭한 상태로 드래그하여 블록 크기를 조절할 수 있습니다. 두 번 클릭하면 기본 크기로 초기화됩니다."
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4938,6 +4943,7 @@
   "youtube_video": {
     "title": "YouTube 동영상 삽입",
     "button_insert": "동영상 삽입",
-    "not_a_video": "YouTube 동영상 주소가 아닙니다."
+    "not_a_video": "YouTube 동영상 주소가 아닙니다.",
+    "insert_failed": "동영상을 불러올 수 없습니다. 주소와 연결 상태를 확인한 후 다시 시도하세요."
   }
 }
