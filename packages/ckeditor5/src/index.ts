@@ -26,7 +26,9 @@ export type {
     EmbedHistoryEntry, EmbedHistoryStep
 } from "./plugins/content_embed/embed_history.js";
 export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
-export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js";
+export type {
+    ContentEmbedDialogRequest, ContentEmbedHost
+} from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { ChildNoteHost } from "./plugins/child_note.js";
 export {

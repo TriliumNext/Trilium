@@ -2,18 +2,20 @@ import "./content_embed.css";
 
 import clsx from "clsx";
 import type { JSX } from "preact";
-import { useCallback, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+
+import type FNote from "../../entities/fnote";
 import { getEmbedBoxSize } from "../../services/content_renderer";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { Card, OptionCardSection } from "../react/Card";
-import Modal from "../react/Modal";
-import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
-import Button from "../react/Button";
 import { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
-import froca from "../../services/froca";
-import type FNote from "../../entities/fnote";
+import Button from "../react/Button";
+import { Card, OptionCardSection } from "../react/Card";
 import { useNote, useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import { suspendModalFocusTraps } from "../react/modal_focustrap";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import SegmentedChoice from "../react/SegmentedChoice";
 import type { BoxSize, CKEditorApi } from "../type_widgets/text/CKEditor";
 
@@ -24,23 +26,86 @@ export interface ContentEmbedOpts {
 }
 
 export default function ContentEmbedDialog() {
-    const editorApiRef = useRef<Pick<CKEditorApi, "addContentEmbed" | "addImage">>(null);
+    const [opts, setOpts] = useState<ContentEmbedOpts>();
+    const [shown, setShown] = useState(false);
+    const form = useContentEmbedForm(opts);
+
+    useTriliumEvent("showContentEmbedDialog", (newOpts) => {
+        setOpts(newOpts);
+        form.reset();
+        setShown(true);
+    });
+
+    return (
+        <Modal
+            className="include-note-dialog"
+            title={t("include_note.dialog_title")}
+            size="lg"
+            helpPageId="nBAXQFj20hS1"
+            onShown={form.focus}
+            onHidden={() => setShown(false)}
+            onSubmit={async () => {
+                if (!form.hasNote) return;
+                setShown(false);
+                await form.include();
+            }}
+            footer={<Button
+                text={t("include_note.button_include")}
+                keyboardShortcut="Enter"
+                disabled={!form.hasNote}
+            />}
+            show={shown}
+        >
+            {form.body}
+        </Modal>
+    )
+}
+
+/**
+ * The form of the Include note dialog in the balloon that the text editor places at the caret.
+ * `onClose` closes the balloon.
+ */
+export function ContentEmbedBalloon({ opts, onClose }: {
+    opts: ContentEmbedOpts;
+    onClose(): void;
+}) {
+    // Lets the field take focus inside a modal, such as the quick edit popup.
+    useEffect(() => suspendModalFocusTraps(), []);
+    const form = useContentEmbedForm(opts);
+
+    useEffect(() => {
+        form.focus();
+    }, []);
+
+    return (
+        <form
+            onSubmit={(e) => {
+                e.preventDefault();
+                if (!form.hasNote) return;
+
+                onClose();
+                void form.include();
+            }}
+        >
+            {form.body}
+            <div className="include-note-actions">
+                <Button
+                    text={t("include_note.button_include")}
+                    keyboardShortcut="Enter"
+                    disabled={!form.hasNote}
+                />
+            </div>
+        </form>
+    );
+}
+
+/** The state and the fields of the Include note dialog, shared by the modal and the balloon. */
+function useContentEmbedForm(opts: ContentEmbedOpts | undefined) {
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
     // The size chosen by hand, otherwise the one that suits the picked note.
     const [chosenBoxSize, setChosenBoxSize] = useState<BoxSize | null>(null);
-    const [shown, setShown] = useState(false);
-    const [sizeEditable, setSizeEditable] = useState(false);
     const note = useNote(suggestion?.notePath ? tree.getNoteIdFromUrl(suggestion.notePath) : null);
     const boxSize = chosenBoxSize ?? (note ? getEmbedBoxSize(note) : "medium");
-
-    useTriliumEvent("showContentEmbedDialog", ({ editorApi, sizeEditable }) => {
-        editorApiRef.current = editorApi;
-        setSizeEditable(!!sizeEditable);
-        autocompleteRef.current?.clear();
-        setSuggestion(null);
-        setChosenBoxSize(null);
-        setShown(true);
-    });
 
     const changeSuggestion = useCallback((newSuggestion: Suggestion | null) => {
         setSuggestion(newSuggestion);
@@ -50,26 +115,22 @@ export default function ContentEmbedDialog() {
     const autocompleteRef = useRef<NoteAutocompleteHandle>(null);
     const asImage = !!note && insertsAsImage(note);
 
-    return (
-        <Modal
-            className="include-note-dialog"
-            title={t("include_note.dialog_title")}
-            size="lg"
-            helpPageId="nBAXQFj20hS1"
-            onShown={() => autocompleteRef.current?.focus()}
-            onHidden={() => setShown(false)}
-            onSubmit={async () => {
-                if (!suggestion?.notePath || !editorApiRef.current) return;
-                setShown(false);
-                await embedNote(suggestion.notePath, editorApiRef.current, boxSize);
-            }}
-            footer={<Button
-                text={t("include_note.button_include")}
-                keyboardShortcut="Enter"
-                disabled={!suggestion?.notePath}
-            />}
-            show={shown}
-        >
+    return {
+        /** Whether a note is picked, which the include button needs. */
+        hasNote: !!suggestion?.notePath,
+        focus: () => autocompleteRef.current?.focus(),
+        /** Empties the fields, for the modal opened again. */
+        reset() {
+            autocompleteRef.current?.clear();
+            setSuggestion(null);
+            setChosenBoxSize(null);
+        },
+        /** Includes the picked note at the selection, or inserts it as an image. */
+        async include() {
+            if (!suggestion?.notePath || !opts) return;
+            await embedNote(suggestion.notePath, opts.editorApi, boxSize);
+        },
+        body: (
             <Card>
                 <OptionCardSection
                     className="include-note-note" name="note" label={t("include_note.label_note")}
@@ -112,7 +173,7 @@ export default function ContentEmbedDialog() {
                                 ))}
                             </div>
                         </>)}
-                        {sizeEditable && (
+                        {opts?.sizeEditable && (
                             <small className="include-note-size-hint">
                                 {asImage ? t("include_note.image_size_hint") : t("include_note.size_hint")}
                             </small>
@@ -120,8 +181,8 @@ export default function ContentEmbedDialog() {
                     </div>
                 </OptionCardSection>
             </Card>
-        </Modal>
-    )
+        )
+    };
 }
 
 const BOX_SIZES: BoxSize[] = [ "tiny", "small", "medium", "full", "expandable" ];

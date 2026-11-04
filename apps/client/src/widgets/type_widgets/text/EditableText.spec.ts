@@ -19,6 +19,7 @@ import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import type LoadResults from "../../../services/load_results";
 import { renderInto } from "../../../test/render";
+import type { ContentEmbedBalloon } from "../../dialogs/content_embed";
 import type { EditLinkBalloon } from "../../dialogs/edit_link";
 import type CKEditor from "./CKEditor";
 
@@ -51,7 +52,8 @@ vi.mock("./utils", async (importOriginal) => ({
 // Stand-ins for what `EditableText` renders, which keep the props they receive.
 const rendered = vi.hoisted(() => ({
     editor: undefined as ComponentProps<typeof CKEditor> | undefined,
-    balloon: undefined as ComponentProps<typeof EditLinkBalloon> | undefined
+    balloon: undefined as ComponentProps<typeof EditLinkBalloon> | undefined,
+    includeBalloon: undefined as ComponentProps<typeof ContentEmbedBalloon> | undefined
 }));
 vi.mock("./CKEditor", () => ({
     default: (props: ComponentProps<typeof CKEditor>) => {
@@ -63,6 +65,12 @@ vi.mock("../../dialogs/edit_link", () => ({
     EditLinkBalloon: (props: ComponentProps<typeof EditLinkBalloon>) => {
         rendered.balloon = props;
         return "edit link balloon";
+    }
+}));
+vi.mock("../../dialogs/content_embed", () => ({
+    ContentEmbedBalloon: (props: ComponentProps<typeof ContentEmbedBalloon>) => {
+        rendered.includeBalloon = props;
+        return "include note balloon";
     }
 }));
 vi.mock("./snippets.js", () => ({ default: async () => [], updateTemplateCache: vi.fn() }));
@@ -494,6 +502,10 @@ describe("parseLinkHref", () => {
 });
 
 describe("EditableText", () => {
+    beforeEach(() => {
+        rendered.editor = undefined;
+    });
+
     it("opens the link balloon at the caret, on the headings of the note it edits", async () => {
         renderInto(h(EditableText, {
             note: { noteId: "abc" } as FNote,
@@ -521,6 +533,34 @@ describe("EditableText", () => {
         const opts = rendered.balloon?.opts;
         expect(opts).toMatchObject({ target: "note", headings: [ { title: "Intro" } ] });
         expect(opts?.headings?.[0]?.createLinkPath()).toBe("root/abc?block=new");
+
+        act(() => closeBalloon?.());
+        expect(request.container.textContent).toBe("");
+    });
+
+    it("opens the Include note balloon at the caret, on the editor's API", async () => {
+        renderInto(h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext: { notePath: "root/abc" } as NoteContext,
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined
+        }));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const api = createApi(null);
+        const editorApi = rendered.editor?.editorApi;
+        if (editorApi) {
+            editorApi.current = api;
+        }
+        const request = { container: document.createElement("div"), close: vi.fn() };
+
+        let closeBalloon: (() => void) | null | undefined;
+        act(() => {
+            closeBalloon = rendered.editor?.showContentEmbedDialog?.(request);
+        });
+        expect(request.container.textContent).toBe("include note balloon");
+        expect(rendered.includeBalloon?.onClose).toBe(request.close);
+        expect(rendered.includeBalloon?.opts).toStrictEqual({ editorApi: api, sizeEditable: true });
 
         act(() => closeBalloon?.());
         expect(request.container.textContent).toBe("");

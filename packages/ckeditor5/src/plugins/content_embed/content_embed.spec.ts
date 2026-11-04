@@ -5,6 +5,7 @@ import {
     Bold,
     ButtonView,
     ClassicEditor,
+    ContextualBalloon,
     Essentials,
     ImageBlock,
     ImageCaption,
@@ -35,6 +36,7 @@ import ContentEmbed, {
     CONTENT_EMBED_DISPLAY_MODE_COMMAND,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     CONTENT_EMBED_MENU,
+    type ContentEmbedDialogRequest,
     DELETE_COMMAND_NAME,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
@@ -219,9 +221,55 @@ describe("ContentEmbed", () => {
     // InsertContentEmbedCommand
     // -----------------------------------------------------------------------
 
-    it("has the host open the Include note dialog when the insert command executes", () => {
+    it("opens the host's dialog in a balloon at the caret, until the host closes it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        const balloon = editor.plugins.get(ContextualBalloon);
+
         editor.execute(COMMAND_NAME);
         expect(pickNote).toHaveBeenCalledOnce();
+        const request = pickNote.mock.lastCall?.[0] as ContentEmbedDialogRequest | undefined;
+        const container = request?.container;
+        expect(container?.classList.contains("include-note-balloon")).toBe(true);
+        expect(container && balloon.view.element?.contains(container)).toBe(true);
+
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        request?.close();
+        expect(release).toHaveBeenCalledOnce();
+        expect(balloon.visibleView).toBeNull();
+        expect(focus).toHaveBeenCalledOnce();
+    });
+
+    it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
+        pickNote.mockReturnValue(null);
+        const plugins = [ Essentials, Paragraph, Widget, ContentEmbed ];
+        const plainEditor = await createTestEditor(plugins);
+        const pickerlessEditor = await createTestEditor(plugins, {
+            contentEmbed: { loadNote: loadEmbeddedNote }
+        });
+
+        for (const testEditor of [ editor, plainEditor, pickerlessEditor ]) {
+            setModelData(testEditor.model, "<paragraph>foo[]</paragraph>");
+            const balloon = testEditor.plugins.get(ContextualBalloon);
+            const add = vi.spyOn(balloon, "add");
+
+            testEditor.execute(COMMAND_NAME);
+            expect(add).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(pickNote).toHaveBeenCalledOnce();
+    });
+
+    it("lets go of the dialog when the editor is torn down under it", async () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        editor.execute(COMMAND_NAME);
+        expect(editor.plugins.get(ContextualBalloon).visibleView).not.toBeNull();
+
+        await editor.destroy();
+        expect(release).toHaveBeenCalledOnce();
     });
 
     it("enables the insert command in a paragraph and disables it where blocks are disallowed", () => {

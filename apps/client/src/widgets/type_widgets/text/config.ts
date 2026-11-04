@@ -1,5 +1,6 @@
 import {
-    type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale,
+    type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
+    type EditorConfig, getCkLocale,
     type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
     type LinkMenuHost, SnippetDefinition, type TextTransformationConfig, type YouTubeVideoRequest
 } from "@triliumnext/ckeditor5";
@@ -83,6 +84,8 @@ export interface BuildEditorOptions {
     showIconPicker?: (request: IconPickerRequest) => (() => void) | null;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Shows the Include note dialog, as `contentEmbed.pickNote` does. */
+    showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
     /** Asks for the address of a YouTube video, as `youtubeVideo.showPrompt` does. */
     showYouTubeVideoPrompt?: (request: YouTubeVideoRequest) => (() => void) | null;
     /** The note that the block and tab references the editor copies point to. */
@@ -130,7 +133,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             samples: SAMPLE_DIAGRAMS
         },
         contentEmbed: {
-            pickNote: bindHostCommand(opts, "addIncludeNoteToText"),
+            pickNote: (request) => opts.showContentEmbedDialog?.(request) ?? null,
             inlineLanguages: SOURCE_EMBED_TYPES.map((type) => type.language),
             renderInlinePreview: (language, source, container) => {
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
@@ -283,7 +286,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
         internalLink: { showDialog: (request) => opts.showLinkDialog?.(request) ?? null },
         linkMenu: buildLinkMenuHost(),
-        // The link dialog's note suggestions render in the page's body.
+        // The note suggestions of the link and Include note dialogs render in the page's body.
         hostedBalloon: { keepOpenSelector: FLOATING_LAYER_SELECTOR },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },

@@ -9,11 +9,12 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
-import ContentEmbedDialog from "./content_embed";
+import ContentEmbedDialog, { ContentEmbedBalloon } from "./content_embed";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined,
-    clear: vi.fn()
+    clear: vi.fn(),
+    focus: vi.fn()
 }));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
@@ -23,7 +24,7 @@ vi.mock("../react/NoteAutocomplete", () => ({
         handleRef: RefObject<Partial<NoteAutocompleteHandle>>;
     }) => {
         autocomplete.onChange = onChange;
-        handleRef.current = { clear: autocomplete.clear };
+        handleRef.current = { clear: autocomplete.clear, focus: autocomplete.focus };
         return <input />;
     }
 }));
@@ -191,5 +192,47 @@ describe("ContentEmbedDialog", () => {
         expect(checkedSize()).toBe("medium");
         await submit();
         expect(editorApi.addContentEmbed).toHaveBeenCalledOnce();
+    });
+});
+
+describe("ContentEmbedBalloon", () => {
+    const editorApi = { addContentEmbed: vi.fn(), addImage: vi.fn() };
+    const onClose = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("focuses the note field, and includes the picked note once the balloon closes", async () => {
+        const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(
+                <ContentEmbedBalloon opts={{ editorApi, sizeEditable: true }} onClose={onClose} />
+            );
+        });
+        const form = container.querySelector("form");
+        const button = container.querySelector<HTMLButtonElement>(".include-note-actions button");
+        if (!form || !button) throw new Error("The balloon has no form or no include button.");
+        const submit = () => act(async () => {
+            form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(container.querySelector(".modal")).toBeNull();
+        expect(autocomplete.focus).toHaveBeenCalledOnce();
+        expect(container.querySelector(".include-note-size-hint")?.textContent)
+            .toBe("include_note.size_hint");
+        expect(button.disabled).toBe(true);
+
+        await submit();
+        expect(onClose).not.toHaveBeenCalled();
+
+        await act(async () => {
+            autocomplete.onChange?.({ notePath: `root/${script.noteId}` });
+        });
+        expect(button.disabled).toBe(false);
+        await submit();
+        expect(onClose).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full"));
     });
 });

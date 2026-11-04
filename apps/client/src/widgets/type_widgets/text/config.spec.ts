@@ -425,7 +425,6 @@ describe("CK config - tables", () => {
 
         const callbacks = [
             [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
-            [ config.contentEmbed?.pickNote, "addIncludeNoteToText" ],
             [ config.cutToNote?.cut, "cutIntoNote" ],
             [ config.cutToNote?.saveNow, "saveNoteDetailNow" ]
         ] as const;
@@ -461,6 +460,17 @@ describe("CK config - tables", () => {
         // The note suggestions of the dialog render in the page's body.
         expect((await buildConfig(baseOpts())).hostedBalloon)
             .toStrictEqual({ keepOpenSelector: FLOATING_LAYER_SELECTOR });
+    });
+
+    it("shows the Include note dialog the editor asks for, and none without a host", async () => {
+        const release = vi.fn();
+        const showContentEmbedDialog = vi.fn(() => release);
+        const request = { container: document.createElement("div"), close: vi.fn() };
+
+        const config = await buildConfig(baseOpts({ showContentEmbedDialog }));
+        expect(config.contentEmbed?.pickNote?.(request)).toBe(release);
+        expect(showContentEmbedDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).contentEmbed?.pickNote?.(request)).toBeNull();
     });
 
     it("hands the menu of a link the path and the view scope of the note it links to", async () => {
