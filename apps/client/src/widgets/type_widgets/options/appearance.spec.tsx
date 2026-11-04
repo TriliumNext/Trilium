@@ -81,9 +81,19 @@ describe("the layout orientation", () => {
         expect(host.querySelector(".orientation-illustration")).toBeNull();
     });
 
-    it("comes with the edited notes setting", () => {
+    it("comes with the edited notes settings, of which a phone gets only the AI chats one", () => {
+        const toggle = (name: string) => host.querySelector(`input.switch-toggle[id^='${name}-']`);
+        const expandToggle = () => toggle("edited-notes-open-in-ribbon");
+        const chatsToggle = () => toggle("edited-notes-include-llm-chats");
+
         open();
-        expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
+        expect(expandToggle()).not.toBeNull();
+        expect(chatsToggle()).not.toBeNull();
+
+        mocks.mobile = true;
+        open();
+        expect(expandToggle()).toBeNull();
+        expect(chatsToggle()).not.toBeNull();
     });
 });
 

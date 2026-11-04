@@ -116,6 +116,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "customSearchEngineName",
     "customSearchEngineUrl",
     "editedNotesOpenInRibbon",
+    "editedNotesIncludeLlmChats",
     "locale",
     "formattingLocale",
     "defaultContentLanguage",
