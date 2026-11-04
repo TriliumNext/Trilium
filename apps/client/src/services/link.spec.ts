@@ -1223,6 +1223,26 @@ describe("module-level click handlers", () => {
         $a.remove();
     });
 
+    it("leaves a link in the text being edited to the menu of its toolbar", () => {
+        const $editor = $(`<div class="ck-content note-detail-editable-text-editor">`
+            + `<p><a href='#root/aaaaaaaaaaaa'>link</a></p>`
+            + `<figure class="include-note"><a href='#root/bbbbbbbbbbbb'>title</a></figure></div>`);
+        $("body").append($editor);
+        const rightClick = (selector: string) => {
+            const event = $.Event("contextmenu", { button: 2 });
+            $editor.find(selector).trigger(event);
+            return event.isDefaultPrevented();
+        };
+
+        expect(rightClick("p a")).toBe(false);
+        expect(openContextMenu).not.toHaveBeenCalled();
+
+        // A link in an included note is not one of the text.
+        expect(rightClick("figure a")).toBe(true);
+        expect(openContextMenu).toHaveBeenCalledOnce();
+        $editor.remove();
+    });
+
     it("does nothing on context menu when the link has no resolvable note path", () => {
         const $a = $("<a href='https://example.com'>ext</a>");
         $("body").append($a);

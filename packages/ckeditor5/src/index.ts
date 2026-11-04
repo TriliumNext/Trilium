@@ -26,7 +26,9 @@ export type {
     EmbedHistoryEntry, EmbedHistoryStep
 } from "./plugins/content_embed/embed_history.js";
 export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
-export type { ContentEmbedHost } from "./plugins/content_embed/content_embed.js";
+export type {
+    ContentEmbedDialogRequest, ContentEmbedHost
+} from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { ChildNoteHost } from "./plugins/child_note.js";
 export {
@@ -44,6 +46,7 @@ export type { default as TextFormattingToolbar } from "./plugins/text_formatting
 export type { default as ContextToolbar } from "./plugins/context_toolbar.js";
 export type { default as MobileToolbarItems } from "./plugins/mobile_toolbar_items.js";
 export type { LinkDisplayMode, LinkEmbedHost } from "./plugins/link_embed/link_embed_commands.js";
+export { LINK_TOOLBAR, type LinkMenuHost } from "./plugins/link_menu.js";
 export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
 export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
 export type { YouTubeVideoRequest } from "./plugins/youtube_video.js";
@@ -69,6 +72,7 @@ import "./plugins/find_in_link_widgets.js";
 import "./plugins/find_reveal.js";
 import "./plugins/image_to_drawing.js";
 import "./plugins/insert_date_time.js";
+import "./plugins/link_menu.js";
 import "./plugins/markdownimport.js";
 import "./plugins/math/math.js";
 import "./plugins/tabs/tabs.js";

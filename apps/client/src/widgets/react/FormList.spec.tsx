@@ -269,7 +269,7 @@ describe("FormListToggleableItem", () => {
 
         row.click();
         row.click();
-        expect(onChange).toHaveBeenCalledExactlyOnceWith(true);
+        expect(onChange).toHaveBeenCalledExactlyOnceWith(true, expect.any(MouseEvent));
         // A menu around it stays open.
         expect(pageHeard).not.toHaveBeenCalled();
 

@@ -4,12 +4,14 @@ import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
 import clsx from "clsx";
+import type { ComponentProps } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { detectEmbedType } from "../../services/link_embed";
+import { detectEmbedType, fetchPageDetails, type PageDetails } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
+import options from "../../services/options";
 import tree from "../../services/tree";
 import { isMobile } from "../../services/utils";
 import { logError } from "../../services/ws";
@@ -17,8 +19,9 @@ import Button from "../react/Button";
 import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
-import FormTextBox, { FormTextBoxWithPaste } from "../react/FormTextBox";
+import FormTextBox, { type FormTextBoxProps, FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
+import { InputGroupSpinner } from "../react/LoadingSpinner";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoItems from "../react/NoItems";
@@ -32,6 +35,9 @@ import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedC
  * document.
  */
 export type LinkTarget = "note" | "url" | "anchor";
+
+/** An empty text of the link for each page. */
+const NO_LINK_TITLES: Readonly<Record<LinkTarget, string>> = { note: "", url: "", anchor: "" };
 
 /** A heading of the document that the link goes into. */
 export interface LinkHeading {
@@ -83,24 +89,24 @@ export interface EditLinkOpts {
     currentAnchor?: string;
     /**
      * The headings of the document that the link goes into, in document order. When given, the
-     * Headings & anchors page lists them.
+     * Heading / anchor page lists them.
      */
     headings?: LinkHeading[];
     /** The heading in `headings` that the link being edited points at. */
     currentHeading?: LinkHeading;
     /**
-     * The side a new link opens on, the note side by default. A selected URL opens on the web link
+     * The page a new link opens on, the note side by default. A selected URL opens on the web link
      * side.
      */
-    target?: Exclude<LinkTarget, "anchor">;
+    target?: LinkTarget;
     /**
      * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
      * `text`, and offers only notes, always as a reference link.
      */
     fixLink?: boolean;
     /**
-     * How the web link is displayed: a plain link by default, or as the link preview being edited.
-     * `embed` falls back to a card for an address without a player.
+     * How the web link is displayed: a text link by default, or as the link preview being edited.
+     * `embedLink` falls back to a card for an address without a player.
      */
     display?: LinkDisplayMode;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
@@ -130,6 +136,7 @@ export default function EditLinkDialog() {
             logError("No link to apply.");
             return;
         }
+        if (!form.validate()) return;
 
         hasSubmittedRef.current = true;
         // Insertion logic in onHidden because it needs focus.
@@ -181,7 +188,7 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                if (!form.hasLink) return;
+                if (!form.hasLink || !form.validate()) return;
 
                 onClose();
                 form.applyLink();
@@ -195,17 +202,21 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
     );
 }
 
-/** The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. */
+/**
+ * The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. Each
+ * page keeps its own state while another page is shown, and only the page shown is applied.
+ */
 function useEditLinkForm(opts: EditLinkOpts | undefined) {
-    const [ linkTitle, setLinkTitle ] = useState("");
+    const [ linkTitles, setLinkTitles ] = useState(NO_LINK_TITLES);
     const [ linkDescription, setLinkDescription ] = useState("");
+    // The note picked on the note page.
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
     const [ noteTitle, setNoteTitle ] = useState("");
     const [ target, setTarget ] = useState<LinkTarget>("note");
     const [ webLink, setWebLink ] = useState("");
-    const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
+    const [ display, setDisplay ] = useState<LinkDisplayMode>("textLink");
     const [ anchor, setAnchor ] = useState("");
     const [ heading, setHeading ] = useState<LinkHeading | null>(null);
     const [ expandedHeadings, setExpandedHeadings ] = useState<ReadonlySet<LinkHeading>>(
@@ -219,72 +230,81 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const linkTargetsFade = useScrollFade(linkTargetsRef);
     const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
     const initialBookmarkRef = useRef("");
-    // The title of the link preview being edited, while the title field still shows it.
+    // The page's own title, of the link preview being edited or retrieved from the page, while the
+    // title field still shows it.
     const previewTitleRef = useRef<string | null>(null);
-    // The description of the link preview being edited, while the description field still shows it.
+    // The page's own description, as `previewTitleRef`.
     const previewDescriptionRef = useRef<string | null>(null);
+    // The details of the web pages read since the dialog opened, by URL.
+    const pageDetailsRef = useRef(new Map<string, Promise<PageDetails | null>>());
+    // The URL whose page details are being read.
+    const [ retrievingUrl, setRetrievingUrl ] = useState<string | null>(null);
+    const [ isRetrievalPending, setIsRetrievalPending ] = useState(false);
+    // The fields show their errors from the first submit on.
+    const [ showsErrors, setShowsErrors ] = useState(false);
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
 
     useEffect(() => {
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
-        setTarget(getInitialTarget(opts, initialWebLink));
+        const initialTarget = getInitialTarget(opts, initialWebLink);
+        setTarget(initialTarget);
         setWebLink(initialWebLink ?? "");
-        setDisplay(opts?.display ?? "plain");
+        setDisplay(opts?.display ?? "textLink");
         setAnchor(opts?.currentAnchor ?? "");
         setHeading(opts?.currentHeading ?? null);
         // Sub-headings start collapsed, except the ones above the heading being edited.
         setExpandedHeadings(new Set(
             opts?.currentHeading ? getParentHeadings(headingTree, opts.currentHeading) : []
         ));
-        previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
+        previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "textLink"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
-        setLinkTitle(opts?.currentTitle ?? "");
+        setLinkTitles({ ...NO_LINK_TITLES, [initialTarget]: opts?.currentTitle ?? "" });
         previewDescriptionRef.current = opts?.currentDescription ?? null;
         setLinkDescription(opts?.currentDescription ?? "");
+        pageDetailsRef.current = new Map();
+        setRetrievingUrl(null);
+        setShowsErrors(false);
 
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
-        // offers, whether it is a link outside Trilium at all) is settled for it as well.
-        const initialLink = initialWebLink !== null ? normalizeWebLink(initialWebLink) : null;
-        setSuggestion(opts?.currentLink ?? (initialLink ? { externalLink: initialLink } : null));
+        // offers) is settled for it as well.
+        setSuggestion(opts?.currentLink?.notePath ? opts.currentLink : null);
     }, [ opts ]);
+
+    function setLinkTitle(page: LinkTarget, title: string) {
+        setLinkTitles((titles) => ({ ...titles, [page]: title }));
+    }
 
     function changeWebLink(text: string) {
         setWebLink(text);
-        const link = normalizeWebLink(text);
-        setSuggestion(link ? { externalLink: link } : null);
-        // A preview's title and description are its page's, so another address takes those of its
-        // own page.
-        if (previewTitleRef.current !== null && linkTitle === previewTitleRef.current) {
-            setLinkTitle("");
+        // A title and description of a page belong to its address, so another address takes those
+        // of its own page. Compared in the updaters: the paste listener calls this from an older
+        // render.
+        const previewTitle = previewTitleRef.current;
+        const previewDescription = previewDescriptionRef.current;
+        if (previewTitle !== null) {
+            setLinkTitles((titles) => titles.url === previewTitle ? { ...titles, url: "" } : titles);
         }
+        setLinkDescription((description) => description === previewDescription ? "" : description);
         previewTitleRef.current = null;
-        if (linkDescription === previewDescriptionRef.current) {
-            setLinkDescription("");
-        }
         previewDescriptionRef.current = null;
     }
 
-    function changeTarget(next: LinkTarget, text = "") {
-        setTarget(next);
-        setNoteTitle("");
-        setLinkTitle("");
-        setLinkDescription("");
-        setAnchor("");
-        setHeading(null);
-        if (next === "url") {
-            changeWebLink(text);
-        } else {
-            setWebLink("");
-            setSuggestion(null);
-        }
+    /** Shows the web link page with `url` as its address, for a URL found on the note page. */
+    function moveToWebLink(url: string) {
+        setTarget("url");
+        changeWebLink(url);
     }
 
     useEffect(() => {
         if (target === "anchor") {
             scrollToCheckedChoice(linkTargetsRef.current);
+        }
+        // The note field mounts empty when the note page is shown again.
+        if (target === "note" && suggestion?.notePath && noteTitle) {
+            handleRef.current?.setText(noteTitle, suggestion.notePath);
         }
 
         if (!autoFocus) return;
@@ -306,7 +326,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             const text = e.clipboardData?.getData("text/plain").trim();
             if (text && hasScheme(text)) {
                 e.preventDefault();
-                changeTarget("url", text);
+                moveToWebLink(text);
             }
         };
         input.addEventListener("paste", onPaste);
@@ -379,14 +399,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
         // A link already there fills the field the way text handed to the dialog does: a note by the
         // name it goes by, an address as it stands. Through the autocomplete rather than around it —
-        // a value the field is given behind its back is one it does not know it holds, so nothing is
-        // searched for it and it is wiped the moment the field is left.
+        // a value the field is given behind its back is one it does not know it holds, so it is
+        // wiped the moment the field is left.
         const text = (currentNoteId ? await tree.getNoteTitle(currentNoteId) : opts?.currentLink?.externalLink)
             || opts?.text;
 
-        if (!text) {
-            if (autoFocus) handleRef.current?.showRecentNotes();
-        } else {
+        if (text) {
             // The note the dialog opens on is picked already, so the field selects it.
             handleRef.current?.setText(text, currentNotePath);
         }
@@ -399,15 +417,81 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         }
     }
 
-    // A link on a selection keeps the selected text, which a preview would replace.
-    const showsDisplay = target === "url" && !!opts?.addLinkPreview && !opts.hasSelection;
-    const shownDisplay = getShownDisplay(display, suggestion?.externalLink);
-    const isPreview = showsDisplay && shownDisplay !== "plain";
+    const linkTitle = linkTitles[target];
+    const webLinkUrl = normalizeWebLink(webLink) ?? undefined;
+    // The web link page offers the display, except on a selection: a preview would replace the
+    // selected text.
+    const showsDisplay = !!opts?.addLinkPreview && !opts.hasSelection;
+    const shownDisplay = getShownDisplay(display, webLinkUrl);
+    const isPreview = showsDisplay && shownDisplay !== "textLink";
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     // A video player shows no title.
-    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embed");
+    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embedLink");
     // Only a card shows a description.
-    const showsDescription = showsTitle && showsDisplay && shownDisplay === "card";
+    const showsDescription = showsTitle && showsDisplay && shownDisplay === "cardLink";
+
+    // The fields shown blank that take their value from the web page, as the options allow.
+    const retrievesTitle = showsWebLinkTitle && !linkTitles.url.trim() && options.is(isPreview
+        ? "textNoteLinkDetailsRetrievalEnabled" : "textNoteLinkTitleRetrievalEnabled");
+    const retrievesDescription = showsDescription && !linkDescription.trim()
+        && options.is("textNoteLinkDetailsRetrievalEnabled");
+    const isRetrieving = !!webLinkUrl && webLinkUrl === retrievingUrl;
+    const webLinkError = webLinkUrl ? getWebLinkError(webLinkUrl) : undefined;
+
+    /** Shows the errors of the fields from now on, and returns whether the link can be applied. */
+    function validate() {
+        setShowsErrors(true);
+        if (target === "url" && webLinkError) {
+            webLinkRef.current?.focus();
+            return false;
+        }
+        return true;
+    }
+
+    // Runs one render after a request, so `retrievePageDetails()` reads the address pasted or the
+    // display picked.
+    useEffect(() => {
+        if (!isRetrievalPending) return;
+        setIsRetrievalPending(false);
+        retrievePageDetails();
+    }, [ isRetrievalPending ]);
+
+    /** Fills the blank fields that take their value from the web page, reading each page once. */
+    function retrievePageDetails() {
+        const url = webLinkUrl;
+        if (!url || !isHttpUrl(url) || (!retrievesTitle && !retrievesDescription)) return;
+
+        let details = pageDetailsRef.current.get(url);
+        if (!details) {
+            details = fetchPageDetails(url);
+            pageDetailsRef.current.set(url, details);
+        }
+
+        setRetrievingUrl(url);
+        void details.then((result) => {
+            setRetrievingUrl((current) => current === url ? null : current);
+            fillPageDetailsRef.current?.(url, result);
+        });
+    }
+
+    // Holds the latest render's `fillPageDetails()`, so a page that loads later fills the fields as
+    // they are by then.
+    const fillPageDetailsRef = useRef<typeof fillPageDetails | undefined>(undefined);
+    fillPageDetailsRef.current = fillPageDetails;
+
+    /** Fills the fields from the `details` of the page at `url`, while it is the address shown. */
+    function fillPageDetails(url: string, details: PageDetails | null) {
+        if (url !== webLinkUrl || !details) return;
+
+        if (retrievesTitle && details.title) {
+            setLinkTitle("url", details.title);
+            previewTitleRef.current = details.title;
+        }
+        if (retrievesDescription && details.description) {
+            setLinkDescription(details.description);
+            previewDescriptionRef.current = details.description;
+        }
+    }
 
     /** Applies the link picked, through `opts.addLink` or `opts.addLinkPreview`. */
     function applyLink() {
@@ -428,9 +512,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             return;
         }
 
-        if (!suggestion) return;
-
-        if (suggestion.notePath) {
+        if (target === "note") {
+            if (!suggestion?.notePath) return;
             // Handle note link, optionally with a bookmark anchor
             const path = selectedBookmark
                 ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
@@ -439,19 +522,20 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             // keeps its own text, but `addLink()` needs a title to link it rather than replace it.
             const title = opts.hasSelection ? opts.text || noteTitle : linkTitle.trim() || null;
             opts.addLink(path, title);
-        } else if (suggestion.externalLink) {
-            const url = suggestion.externalLink;
-            const text = linkTitle.trim();
-            if (isPreview && opts.addLinkPreview) {
-                // A text that only repeats the address leaves the page's own title.
-                const title = shownDisplay !== "embed" && text && text !== url ? text : null;
-                const description = showsDescription ? linkDescription.trim() || null : null;
-                void opts.addLinkPreview(url, shownDisplay, title, description);
-                return;
-            }
-            // An external link without a text of its own reads as its address.
-            opts.addLink(url, text || url, true);
+            return;
         }
+
+        if (!webLinkUrl) return;
+        const text = linkTitle.trim();
+        if (isPreview && opts.addLinkPreview) {
+            // A text that only repeats the address leaves the page's own title.
+            const title = shownDisplay !== "embedLink" && text && text !== webLinkUrl ? text : null;
+            const description = showsDescription ? linkDescription.trim() || null : null;
+            void opts.addLinkPreview(webLinkUrl, shownDisplay, title, description);
+            return;
+        }
+        // An external link without a text of its own reads as its address.
+        opts.addLink(webLinkUrl, text || webLinkUrl, true);
     }
 
     function reset() {
@@ -475,19 +559,19 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             return heading ? t("add_link.title_from_heading") : anchor || undefined;
         }
         if (target === "note") return t("add_link.title_from_note");
-        return isPreview ? t("add_link.page_title")
-            : suggestion?.externalLink ?? t("add_link.title_from_url");
+        return isPreview ? t("add_link.page_title") : webLinkUrl ?? t("add_link.title_from_url");
     }
 
     const titleSection = (
         <OptionCardSection
             className="edit-link-text" name="link-title" label={t("add_link.link_title")}
         >
-            <FormTextBox
+            <RetrievedTextBox
                 inputRef={titleRef}
                 currentValue={linkTitle}
                 placeholder={getTitlePlaceholder()}
-                onChange={setLinkTitle}
+                onChange={(title) => setLinkTitle(target, title)}
+                isRetrieving={target === "url" && isRetrieving && retrievesTitle}
             />
         </OptionCardSection>
     );
@@ -504,11 +588,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             className="edit-link-target"
             options={targets}
             currentValue={target}
-            onChange={(next) => changeTarget(next)}
+            onChange={setTarget}
         />
     );
 
-    /** The choice of `item` on the Headings & anchors page, with the headings under it. */
+    /** The choice of `item` on the Heading / anchor page, with the headings under it. */
     function renderHeadingChoice(item: LinkHeading, index: number) {
         const children = headingTree.get(item) ?? [];
         return (
@@ -575,11 +659,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
     );
     const displays = [
-        { value: "plain", title: t("add_link.display_plain") },
-        { value: "inline", title: t("add_link.display_inline") },
-        { value: "card", title: t("add_link.display_card") },
-        ...(hasPlayer(suggestion?.externalLink)
-            ? [ { value: "embed", title: t("add_link.display_embed") } ]
+        { value: "textLink", title: t("add_link.display_plain") },
+        { value: "iconAndTextLink", title: t("add_link.display_inline") },
+        { value: "cardLink", title: t("add_link.display_card") },
+        ...(hasPlayer(webLinkUrl)
+            ? [ { value: "embedLink", title: t("add_link.display_embed") } ]
             : [])
     ];
 
@@ -587,11 +671,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         title,
         buttonText,
         /** Whether the side shown has a link to apply: an address, a note, a heading or an anchor. */
-        hasLink: target === "url" ? !!suggestion?.externalLink
+        hasLink: target === "url" ? !!webLinkUrl
             : target === "note" ? !!suggestion?.notePath
             : !!heading || !!anchor,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
+        validate,
         applyLink,
         reset,
         body: target === "anchor" ? (<>
@@ -605,6 +690,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     <>
                         <OptionCardSection
                             className="edit-link-url" name="url" label={t("add_link.url")}
+                            error={showsErrors ? webLinkError : undefined}
                         >
                             <FormTextBoxWithPaste
                                 inputRef={webLinkRef}
@@ -615,6 +701,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 placeholder="https://"
                                 currentValue={webLink}
                                 onChange={changeWebLink}
+                                onBlur={() => setIsRetrievalPending(true)}
+                                onPasted={() => setIsRetrievalPending(true)}
                             />
                         </OptionCardSection>
 
@@ -625,11 +713,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 className="edit-link-description" name="link-description"
                                 label={t("add_link.description")}
                             >
-                                <FormTextArea
+                                <RetrievedTextArea
                                     rows={2}
                                     currentValue={linkDescription}
                                     placeholder={t("add_link.page_description")}
                                     onChange={setLinkDescription}
+                                    isRetrieving={isRetrieving && retrievesDescription}
                                     onKeyDown={(e) => {
                                         // A card shows its description as one paragraph, so
                                         // Enter saves the link as in the other fields.
@@ -651,8 +740,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                     keyProperty="value"
                                     titleProperty="title"
                                     currentValue={shownDisplay}
-                                    disabled={!canPreview(suggestion?.externalLink)}
-                                    onChange={(next) => setDisplay(next as LinkDisplayMode)}
+                                    disabled={!canPreview(webLinkUrl)}
+                                    onChange={(next) => {
+                                        setDisplay(next as LinkDisplayMode);
+                                        setIsRetrievalPending(true);
+                                    }}
                                 />
                             </OptionCardSection>
                         )}
@@ -669,12 +761,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 // A URL picked from the search belongs on the web link side.
                                 onChange={(picked) => {
                                     if (picked?.externalLink) {
-                                        changeTarget("url", picked.externalLink);
+                                        moveToWebLink(picked.externalLink);
                                         return;
                                     }
                                     // Another note drops the text, so the link mirrors its title.
                                     if (picked?.notePath !== suggestion?.notePath) {
-                                        setLinkTitle("");
+                                        setLinkTitle("note", "");
                                     }
                                     setSuggestion(picked);
                                 }}
@@ -711,14 +803,43 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 }
 
 /**
- * The page the dialog opens on: Headings & anchors for an edited link to a heading or an anchor,
- * Web link when there is an `initialWebLink`, and Note otherwise.
+ * A text box of the dialog, with a spinner at its end while its value is retrieved from the web
+ * page. The input group stays without the spinner, so the field keeps its focus when it goes.
+ */
+function RetrievedTextBox({ isRetrieving, ...props }: FormTextBoxProps & {
+    isRetrieving: boolean;
+}) {
+    return (
+        <div className="input-group">
+            <FormTextBox {...props} />
+            {isRetrieving && <InputGroupSpinner label={t("add_link.retrieving_from_page")} />}
+        </div>
+    );
+}
+
+/** A text area of the dialog, as {@link RetrievedTextBox}. */
+function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof FormTextArea> & {
+    isRetrieving: boolean;
+}) {
+    return (
+        <div className="input-group">
+            <FormTextArea {...props} />
+            {isRetrieving && <InputGroupSpinner label={t("add_link.retrieving_from_page")} />}
+        </div>
+    );
+}
+
+/**
+ * The page the dialog opens on: Heading / anchor for an edited link to a heading or an anchor,
+ * Web page when there is an `initialWebLink`, Heading / anchor for a new link that asks for it,
+ * and Note otherwise.
  */
 function getInitialTarget(
     opts: EditLinkOpts | undefined, initialWebLink: string | null
 ): LinkTarget {
     if (opts?.currentAnchor || opts?.currentHeading) return "anchor";
-    return initialWebLink !== null ? "url" : "note";
+    if (initialWebLink !== null) return "url";
+    return opts?.target === "anchor" && !opts.currentLink ? "anchor" : "note";
 }
 
 /**
@@ -798,14 +919,14 @@ function findAnchorIds(content: string): string[] {
 }
 
 /**
- * How the web link to `url` is displayed when `display` is picked: as a plain link when the address
+ * How the web link to `url` is displayed when `display` is picked: as a text link when the address
  * is not a web page, and as a card in place of a player that the address does not have.
  *
  * Exported for testing.
  */
 export function getShownDisplay(display: LinkDisplayMode, url: string | undefined): LinkDisplayMode {
-    if (!canPreview(url)) return "plain";
-    return display === "embed" && !hasPlayer(url) ? "card" : display;
+    if (!canPreview(url)) return "textLink";
+    return display === "embedLink" && !hasPlayer(url) ? "cardLink" : display;
 }
 
 /** Whether a web link to `url` can be a preview: a web page, or no address typed yet. */
@@ -835,4 +956,21 @@ export function normalizeWebLink(text: string): string | null {
     // Trilium allows, as in `tel:123`.
     const hasScheme = scheme && (!scheme[2] || ALLOWED_PROTOCOLS.includes(scheme[1].toLowerCase()));
     return hasScheme ? link : `https://${link}`;
+}
+
+/**
+ * Why the web link `link` cannot be applied: it is a `javascript:`, `vbscript:` or `data:` link,
+ * which can run code, or `new URL()` cannot parse it. `undefined` for a link that can be applied.
+ *
+ * Exported for testing.
+ */
+export function getWebLinkError(link: string): string | undefined {
+    let url: URL;
+    try {
+        url = new URL(link);
+    } catch {
+        return t("add_link.invalid_url");
+    }
+    const runsCode = [ "javascript:", "vbscript:", "data:" ].includes(url.protocol);
+    return runsCode ? t("add_link.script_link_not_allowed", { scheme: url.protocol }) : undefined;
 }

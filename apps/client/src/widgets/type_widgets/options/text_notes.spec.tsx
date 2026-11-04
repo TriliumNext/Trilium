@@ -103,16 +103,31 @@ describe("the formatting toolbar", () => {
 });
 
 describe("the editor features", () => {
-    it("offers sticky table header rows after link previews, and writes the switch back", () => {
+    it("offers link retrieval and sticky headers after link previews, writing them back", () => {
         open();
         const labels = optionLabels();
-        expect(labels.indexOf("editorfeatures.sticky_table_headers_enabled"))
-            .toBe(labels.indexOf("editorfeatures.auto_link_previews_enabled") + 1);
+        const linkPreviews = labels.indexOf("editorfeatures.auto_link_previews_enabled");
+        expect(linkPreviews).not.toBe(-1);
+        expect(labels.slice(linkPreviews + 1, linkPreviews + 4)).toStrictEqual([
+            "editorfeatures.link_title_retrieval_enabled",
+            "editorfeatures.link_details_retrieval_enabled",
+            "editorfeatures.sticky_table_headers_enabled"
+        ]);
 
-        const stickyHeaders = toggle("sticky-table-headers-enabled");
-        expect(stickyHeaders).not.toBeNull();
-        act(() => stickyHeaders?.click());
-        expect(mocks.saved).toContainEqual([ "textNoteStickyTableHeadersEnabled", true ]);
+        const switches = [
+            "link-title-retrieval-enabled",
+            "link-details-retrieval-enabled",
+            "sticky-table-headers-enabled"
+        ].map(toggle);
+        expect(switches).not.toContain(null);
+        for (const toggled of switches) {
+            act(() => toggled?.click());
+        }
+        expect(mocks.saved).toEqual(expect.arrayContaining([
+            [ "textNoteLinkTitleRetrievalEnabled", true ],
+            [ "textNoteLinkDetailsRetrievalEnabled", true ],
+            [ "textNoteStickyTableHeadersEnabled", true ]
+        ]));
     });
 });
 

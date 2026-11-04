@@ -26,13 +26,13 @@ In a browser, the context menu of the text editor opens only when right-clicking
 Since v0.107.0, a link to a heading of the same note can be created from the _Add link_ dialog:
 
 *   Place the cursor at the desired position of the link, or select the text to turn into a link.
-*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the dialog.
+*   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Heading / anchor_ at the top of the dialog. Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
 *   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading and start collapsed; expand or collapse a heading with the arrow in front of it, or with <kbd>→</kbd> and <kbd>←</kbd> while it is focused. Optionally, type a _Link title_.
 *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
 
 When the link title is not set, the link displays the text of the heading. If the heading gets changed, the link is renamed automatically to the new text, shortly after you stop typing. A link with a title of its own keeps that title.
 
-The link is a block reference to the heading, so it keeps working when the heading is moved. To change the link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> works too. The dialog opens on _Headings & anchors_, with the heading checked. Emptying the _Link title_ there makes the link display the text of the heading again.
+The link is a block reference to the heading, so it keeps working when the heading is moved. To change the link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> works too. The dialog opens on _Heading / anchor_, with the heading checked. Emptying the _Link title_ there makes the link display the text of the heading again.
 
 ## Following a reference
 

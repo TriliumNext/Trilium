@@ -1,12 +1,11 @@
 import { parseBlockRange } from '@triliumnext/commons/src/lib/block_reference.js';
 import {
-    BookmarkEditing, ButtonView, Command, type Editor, IconUnlink, LinkUI, type ModelElement,
-    Plugin, type ViewElement, WidgetToolbarRepository
+    BookmarkEditing, Command, type Editor, LinkUI, type ModelElement, Plugin, type ViewElement,
+    WidgetToolbarRepository
 } from 'ckeditor5';
 
 import { BLOCK_ID } from './block_reference/block_reference_editing.js';
 import { showAnchorElement, showBlocks } from './block_reference/block_reference_read_only.js';
-import { createCopyUrlButton } from './copy_link_url.js';
 import InternalLinkPlugin from './internallink.js';
 import {
     LinkEmbedPreviewButtonView, type LinkEmbedPreviewNavigateEvent
@@ -19,9 +18,9 @@ export const UNLINK_REFERENCE_COMMAND = 'unlinkReference';
 
 /**
  * The toolbar of a link to a note. A link in the text shows the link toolbar of `LinkUI`, and a
- * reference link shows a widget toolbar with the same buttons. In both, the first button reads
- * "Open note" instead of the address. A link into the same note reads "Jump to heading", "Jump to
- * block" or "Jump to anchor", as does an anchor link.
+ * reference link shows a widget toolbar with the same buttons, `linkMenu` of `LinkMenu` holding
+ * Unlink. In both, the first button reads "Open note" instead of the address. A link into the same
+ * note reads "Jump to heading", "Jump to block" or "Jump to anchor", as does an anchor link.
  */
 export default class NoteLinkToolbar extends Plugin {
 
@@ -39,8 +38,7 @@ export default class NoteLinkToolbar extends Plugin {
     init() {
         const editor = this.editor;
         const factory = editor.ui.componentFactory;
-        const unlinkCommand = new UnlinkReferenceCommand(editor);
-        editor.commands.add(UNLINK_REFERENCE_COMMAND, unlinkCommand);
+        editor.commands.add(UNLINK_REFERENCE_COMMAND, new UnlinkReferenceCommand(editor));
 
         this.set('referenceHref', null);
         this.listenTo(editor.model.document, 'change', () => {
@@ -57,25 +55,6 @@ export default class NoteLinkToolbar extends Plugin {
                 if (jumpInNote(editor, href)) {
                     cancel();
                 }
-            });
-            return button;
-        });
-
-        factory.add('referenceLinkCopyUrl', locale =>
-            createCopyUrlButton(editor, locale, () => this.referenceHref)
-        );
-
-        factory.add('referenceLinkUnlink', locale => {
-            const button = new ButtonView(locale);
-            button.set({
-                label: editor.t('Unlink'),
-                icon: IconUnlink,
-                tooltip: true
-            });
-            button.bind('isEnabled').to(unlinkCommand);
-            button.on('execute', () => {
-                editor.execute(UNLINK_REFERENCE_COMMAND);
-                editor.editing.view.focus();
             });
             return button;
         });
@@ -104,9 +83,7 @@ export default class NoteLinkToolbar extends Plugin {
         }
 
         editor.plugins.get(WidgetToolbarRepository).register('referenceLink', {
-            items: [
-                'referenceLinkPreview', 'referenceLinkCopyUrl', '|', 'editLink', 'referenceLinkUnlink'
-            ],
+            items: [ 'referenceLinkPreview', 'linkDownload', '|', 'editLink', 'linkMenu' ],
             balloonClassName: 'ck-toolbar-container reference-link-toolbar',
             getRelatedElement(selection) {
                 const element = selection.getSelectedElement();
@@ -140,13 +117,13 @@ class UnlinkReferenceCommand extends Command {
 }
 
 /** A link to a note or to an attachment of one, as opposed to a web address or an anchor. */
-const NOTE_LINK = /^#root(?:[/?]|$)/;
+export const NOTE_LINK = /^#root(?:[/?]|$)/;
 
 /**
  * The text of the button that follows the link `href` to a note, an attachment, or blocks or an
  * anchor of the note in the editor.
  */
-function getOpenLinkLabel(editor: Editor, href: string) {
+export function getOpenLinkLabel(editor: Editor, href: string) {
     if (getAttachmentId(href)) {
         return editor.t('Open attachment');
     }
@@ -166,7 +143,7 @@ function getOpenLinkLabel(editor: Editor, href: string) {
  * The `block` and `bookmark` parameters of `href` when it links to the note in the editor, or
  * `null` for a link elsewhere.
  */
-function getInNoteTarget(editor: Editor, href: string) {
+export function getInNoteTarget(editor: Editor, href: string) {
     const noteId = editor.config.get('getNoteId')?.();
     if (!noteId || !NOTE_LINK.test(href) || getNoteId(href) !== noteId) {
         return null;
@@ -230,7 +207,7 @@ function toDomElement(editor: Editor, element: ModelElement) {
  * The targets are found in the model, as the editing view also renders the content of included
  * notes, with block ids and anchor names of their own.
  */
-function jumpInNote(editor: Editor, href: string) {
+export function jumpInNote(editor: Editor, href: string) {
     // The `navigate` event of `LinkUI` does not pass the click, so it is read from `window`.
     const click = window.event;
     if (click instanceof MouseEvent && (click.ctrlKey || click.metaKey || click.shiftKey)) {

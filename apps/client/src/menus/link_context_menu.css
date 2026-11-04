@@ -1,0 +1,18 @@
+:where(:root) {
+    --embed-position-text-color: var(--muted-text-color);
+    --embed-position-content-color: var(
+        --quick-search-result-highlight-color, var(--admonition-warning-accent-color)
+    );
+}
+
+.tn-menu-actions.embed-position-tiles > .tn-menu-action > .tn-menu-action-icon {
+    font-size: 2.25em;
+
+    & .embed-position-text {
+        stroke: var(--embed-position-text-color);
+    }
+
+    & .embed-position-content {
+        stroke: var(--embed-position-content-color);
+    }
+}

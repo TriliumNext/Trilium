@@ -216,16 +216,16 @@ export function getShownToolbarIsland() {
 /**
  * Closes a menu of the toolbar as a tap on another item of {@link MOBILE_TOOLBAR_ROW} clicks, before
  * the item runs. The menu's `Popup` keeps it open on a press there, which can start a scroll; the
- * menu's own button, at `anchor`, toggles it in the editor.
+ * menu's own button, at `anchor`, toggles it in the editor. A context menu has no button.
  */
-export function useClosedByToolbarTap(anchor: HTMLElement, close: () => void) {
+export function useClosedByToolbarTap(anchor: HTMLElement | null, close: () => void) {
     const closeRef = useRef(close);
     closeRef.current = close;
 
     useLayoutEffect(() => {
         const onClick = (event: MouseEvent) => {
             const target = event.target;
-            if (!(target instanceof Element) || anchor.contains(target)) return;
+            if (!(target instanceof Element) || anchor?.contains(target)) return;
             if (!target.closest(MOBILE_TOOLBAR_ROW)) return;
             isClosingInClick = true;
             try {

@@ -15,9 +15,9 @@ import {
  *   - a URL left alone on its own line — sole content of a plain paragraph, then Enter — becomes a
  *     block preview: a player if the URL is embeddable (YouTube), a card otherwise;
  *   - anything else — text either side of it, a list/table/quote/heading, or a caret still in the
- *     block because the user is mid-sentence — becomes an inline linkMention.
+ *     block because the user is mid-sentence — becomes an icon & text link (`linkMention`).
  *
- * The user can Ctrl+Z to revert back to a plain link.
+ * The user can Ctrl+Z to revert back to a text link.
  */
 export default class AutoLinkToMention extends Plugin {
     /** Guard against re-entrant changes triggered by our own model writes. */
@@ -91,12 +91,12 @@ export default class AutoLinkToMention extends Plugin {
 
         getLinkEmbedHost(editor).fetchMetadata(url).then((metadata: LinkEmbedMetadata) => {
             // The page told us nothing (bot challenge, network error, no title of its own): leave the
-            // plain link AutoLink already created. A preview built from a hostname placeholder would
+            // text link AutoLink already created. A preview built from a hostname placeholder would
             // show strictly less than the URL it replaced.
             if (metadata.unresolved) {
                 // The URL is left out on purpose — a browser console gets screenshotted and pasted
                 // into bug reports too, and the link is right there in the note anyway.
-                console.warn('Link preview dropped: no metadata could be read from the page (the link was kept as a plain link).');
+                console.warn('Link preview dropped: no metadata could be read from the page (the link was kept as a text link).');
                 return;
             }
 
@@ -137,7 +137,7 @@ export default class AutoLinkToMention extends Plugin {
 
                         const attributes = getMetadataAttributes(metadata);
 
-                        if (kind === 'mention') {
+                        if (kind === 'iconAndTextLink') {
                             // The URL's own range is passed to insertContent rather than selected
                             // first: the fetch was async and the caret may be words away by now, so
                             // the replacement must not drag it back to the mention.

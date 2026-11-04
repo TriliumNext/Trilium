@@ -1,6 +1,7 @@
 import {
 	ButtonView,
 	Command,
+	ContextualBalloon,
 	type DomEmitter,
 	DomEmitterMixin,
 	type DowncastCleanSelectionEvent,
@@ -10,7 +11,6 @@ import {
 	type Editor,
 	enableViewPlaceholder,
 	IconCaption,
-	IconLink,
 	IconThreeVerticalDots,
 	type Locale,
 	type MapperModelToViewPositionEvent,
@@ -36,13 +36,13 @@ import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
 import editIcon from 'boxicons/svg/regular/bx-edit-alt.svg?raw';
 import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
 import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
-import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
 	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
 	type LinkPreviewData, normalizeMimeTypeForCKEditor, parseBlockRange, VIDEO_EMBED_BOX_SIZES,
 	VIDEO_EMBED_CLASS
 } from '@triliumnext/commons';
+import HostedBalloon from '../../hosted_balloon.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, {
 	type ResizeAnchor, SIZE_ATTRIBUTES
@@ -229,14 +229,16 @@ export default class ContentEmbed extends Plugin {
 
 	static get requires() {
 		return [
-			ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource, EmbedHistory,
-			UnknownContentEmbed, ContentEmbedVideo
+			ContextualBalloon, ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource,
+			EmbedHistory, UnknownContentEmbed, ContentEmbedVideo
 		];
 	}
 
 	static get pluginName() {
 		return 'ContentEmbed' as const;
 	}
+
+	private dialog = new HostedBalloon( this.editor, 'include-note-balloon' );
 
 	constructor( editor: Editor ) {
 		super( editor );
@@ -252,6 +254,27 @@ export default class ContentEmbed extends Plugin {
 			const embed = getSelectedContentEmbed( this.editor );
 			this.isSelectedEmbedInline = !!embed && isInlineSourceEmbed( embed );
 		}, { priority: 'high' } );
+	}
+
+	override destroy() {
+		this.dialog.hide();
+		super.destroy();
+	}
+
+	/**
+	 * Opens the host's Include note dialog in a balloon at the caret. A host that shows the
+	 * dialog its own way leaves the balloon empty, which closes it again.
+	 */
+	showDialog() {
+		const editor = this.editor;
+
+		this.dialog.show( container => editor.config.get( 'contentEmbed' )?.pickNote?.( {
+			container,
+			close: () => {
+				this.dialog.hide();
+				editor.editing.view.focus();
+			}
+		} ) ?? null );
 	}
 
 	/**
@@ -372,31 +395,6 @@ class ContentEmbedUI extends Plugin {
 			return buttonView;
 		} );
 
-		editor.ui.componentFactory.add( CONVERT_EMBED_TO_LINK_COMMAND, locale => {
-			const command = editor.commands.get( CONVERT_EMBED_TO_LINK_COMMAND );
-			const buttonView = new ButtonView( locale );
-
-			buttonView.set( {
-				label: t( 'Convert to link' ),
-				icon: IconLink,
-				tooltip: true
-			} );
-
-			// Shown only on an embed that names a note or an attachment.
-			if ( command ) {
-				buttonView.bind( 'isEnabled' ).to( command );
-				bindToolbarItemVisibility(
-					editor, buttonView, command, CONVERT_EMBED_TO_LINK_COMMAND
-				);
-			}
-
-			this.listenTo( buttonView, 'execute', () => {
-				editor.execute( CONVERT_EMBED_TO_LINK_COMMAND );
-			} );
-
-			return buttonView;
-		} );
-
 		editor.ui.componentFactory.add( TOGGLE_CAPTION_COMMAND_NAME, locale => {
 			const command = editor.commands.get( TOGGLE_CAPTION_COMMAND_NAME );
 			const buttonView = new ButtonView( locale );
@@ -485,30 +483,6 @@ class ContentEmbedUI extends Plugin {
 				return buttonView;
 			} );
 		}
-
-		editor.ui.componentFactory.add( TOGGLE_TITLE_COMMAND_NAME, locale => {
-			const command = editor.commands.get( TOGGLE_TITLE_COMMAND_NAME );
-			const buttonView = new ButtonView( locale );
-
-			buttonView.set( {
-				label: t( 'Show title' ),
-				icon: windowIcon,
-				tooltip: true,
-				isToggleable: true
-			} );
-
-			if ( command ) {
-				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
-				bindToolbarItemVisibility( editor, buttonView, command, TOGGLE_TITLE_COMMAND_NAME );
-			}
-
-			this.listenTo( buttonView, 'execute', () => {
-				editor.execute( TOGGLE_TITLE_COMMAND_NAME );
-				editor.editing.view.focus();
-			} );
-
-			return buttonView;
-		} );
 
 		editor.ui.componentFactory.add( CONTENT_EMBED_MENU, locale => {
 			const command = editor.commands.get( TOGGLE_TITLE_COMMAND_NAME );
@@ -1026,7 +1000,7 @@ class ContentEmbedEditing extends Plugin {
 
 class InsertContentEmbedCommand extends Command {
 	override execute() {
-		this.editor.config.get( 'contentEmbed' )?.pickNote?.();
+		this.editor.plugins.get( ContentEmbed ).showDialog();
 	}
 
 	override refresh() {
@@ -2123,10 +2097,22 @@ declare module 'ckeditor5' {
 	}
 }
 
+/** The request that the editor passes to the host's Include note dialog. */
+export interface ContentEmbedDialogRequest {
+	/** The element to render the dialog into, which the editor owns and places at the caret. */
+	container: HTMLElement;
+	/** Closes the balloon and focuses the editor. The host calls it before it inserts the note. */
+	close(): void;
+}
+
 /** What the host of the editor renders into embeds, and does with them. */
 export interface ContentEmbedHost {
-	/** Opens the dialog that picks a note to include at the selection. */
-	pickNote(): void;
+	/**
+	 * Renders the dialog that picks a note to include at the selection into `request.container`,
+	 * and returns the function that removes it. A host that shows the dialog somewhere else (a
+	 * phone, which has no room for a balloon) leaves the container alone and returns `null`.
+	 */
+	pickNote( request: ContentEmbedDialogRequest ): ( () => void ) | null;
 	/**
 	 * The languages whose `<pre><code class="language-…">` code blocks show as embeds of their
 	 * source, rendered by `loadInline()`.

@@ -183,8 +183,7 @@ export function useExcalidrawTranslation() {
  */
 export class CanvasTools implements ContentEmbedToolProvider {
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
-        "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown", "toggleContentEmbedTitle",
-        "convertEmbedToLink"
+        "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
     ];
     readonly hasEditableFlag = true;
     readonly hasPositions = true;

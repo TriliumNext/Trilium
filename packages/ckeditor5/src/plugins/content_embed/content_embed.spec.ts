@@ -5,6 +5,7 @@ import {
     Bold,
     ButtonView,
     ClassicEditor,
+    ContextualBalloon,
     Essentials,
     ImageBlock,
     ImageCaption,
@@ -19,7 +20,6 @@ import bxCode from "boxicons/svg/regular/bx-code.svg?raw";
 import bxEditAlt from "boxicons/svg/regular/bx-edit-alt.svg?raw";
 import bxShow from "boxicons/svg/regular/bx-show.svg?raw";
 import bxsDockLeft from "boxicons/svg/solid/bxs-dock-left.svg?raw";
-import bxWindowAlt from "boxicons/svg/regular/bx-window-alt.svg?raw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -35,6 +35,7 @@ import ContentEmbed, {
     CONTENT_EMBED_DISPLAY_MODE_COMMAND,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     CONTENT_EMBED_MENU,
+    type ContentEmbedDialogRequest,
     DELETE_COMMAND_NAME,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
@@ -219,9 +220,55 @@ describe("ContentEmbed", () => {
     // InsertContentEmbedCommand
     // -----------------------------------------------------------------------
 
-    it("has the host open the Include note dialog when the insert command executes", () => {
+    it("opens the host's dialog in a balloon at the caret, until the host closes it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        const balloon = editor.plugins.get(ContextualBalloon);
+
         editor.execute(COMMAND_NAME);
         expect(pickNote).toHaveBeenCalledOnce();
+        const request = pickNote.mock.lastCall?.[0] as ContentEmbedDialogRequest | undefined;
+        const container = request?.container;
+        expect(container?.classList.contains("include-note-balloon")).toBe(true);
+        expect(container && balloon.view.element?.contains(container)).toBe(true);
+
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        request?.close();
+        expect(release).toHaveBeenCalledOnce();
+        expect(balloon.visibleView).toBeNull();
+        expect(focus).toHaveBeenCalledOnce();
+    });
+
+    it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
+        pickNote.mockReturnValue(null);
+        const plugins = [ Essentials, Paragraph, Widget, ContentEmbed ];
+        const plainEditor = await createTestEditor(plugins);
+        const pickerlessEditor = await createTestEditor(plugins, {
+            contentEmbed: { loadNote: loadEmbeddedNote }
+        });
+
+        for (const testEditor of [ editor, plainEditor, pickerlessEditor ]) {
+            setModelData(testEditor.model, "<paragraph>foo[]</paragraph>");
+            const balloon = testEditor.plugins.get(ContextualBalloon);
+            const add = vi.spyOn(balloon, "add");
+
+            testEditor.execute(COMMAND_NAME);
+            expect(add).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(pickNote).toHaveBeenCalledOnce();
+    });
+
+    it("lets go of the dialog when the editor is torn down under it", async () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        editor.execute(COMMAND_NAME);
+        expect(editor.plugins.get(ContextualBalloon).visibleView).not.toBeNull();
+
+        await editor.destroy();
+        expect(release).toHaveBeenCalledOnce();
     });
 
     it("enables the insert command in a paragraph and disables it where blocks are disallowed", () => {
@@ -817,8 +864,8 @@ describe("ContentEmbed", () => {
         // returns undefined, the button must still be created (just without the binding).
         const realGet = editor.commands.get.bind(editor.commands);
         const absent: string[] = [
-            COMMAND_NAME, CONVERT_EMBED_TO_LINK_COMMAND, TOGGLE_CAPTION_COMMAND_NAME,
-            TOGGLE_TITLE_COMMAND_NAME, TOGGLE_EDITABLE_COMMAND_NAME
+            COMMAND_NAME, TOGGLE_CAPTION_COMMAND_NAME, TOGGLE_TITLE_COMMAND_NAME,
+            TOGGLE_EDITABLE_COMMAND_NAME
         ];
         const getSpy = vi
             .spyOn(editor.commands, "get")
@@ -827,12 +874,8 @@ describe("ContentEmbed", () => {
         try {
             const view = editor.ui.componentFactory.create("contentEmbed") as unknown as { label: string };
             expect(view.label).toBe("Include note");
-            const convert = editor.ui.componentFactory.create(CONVERT_EMBED_TO_LINK_COMMAND);
-            expect((convert as unknown as { label: string }).label).toBe("Convert to link");
             const caption = editor.ui.componentFactory.create(TOGGLE_CAPTION_COMMAND_NAME);
             expect((caption as unknown as { label: string }).label).toBe("Toggle caption on");
-            const title = editor.ui.componentFactory.create(TOGGLE_TITLE_COMMAND_NAME);
-            expect((title as unknown as { label: string }).label).toBe("Show title");
             const editable = editor.ui.componentFactory.create(TOGGLE_EDITABLE_COMMAND_NAME);
             expect((editable as unknown as { label: string }).label).toBe("Editable");
             const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
@@ -1016,23 +1059,16 @@ describe("ContentEmbed with attachments", () => {
 
     it("turns an embed of an attachment or a note into a link, and nothing else", async () => {
         const command = editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND);
-        const button = editor.ui.componentFactory.create(CONVERT_EMBED_TO_LINK_COMMAND);
-        if (!(button instanceof ButtonView)) {
-            throw new Error("Expected a button.");
-        }
-        expect(button.label).toBe("Convert to link");
 
         editor.setData("<figure class=\"include-note\" data-box-size=\"small\"></figure>");
         selectEmbed();
         expect(command?.isEnabled).toBe(false);
-        expect(button.isVisible).toBe(false);
 
         editor.setData(embedHtml());
         selectEmbed();
         expect(command?.isEnabled).toBe(true);
-        expect(button.isVisible).toBe(true);
 
-        button.fire("execute");
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
 
         expect(getAttachmentHref).toHaveBeenCalledWith("att1");
         await vi.waitFor(() => expect(getModelData(editor.model, { withoutSelection: true }))
@@ -1042,7 +1078,7 @@ describe("ContentEmbed with attachments", () => {
             + " data-box-size=\"small\"></figure>");
         selectEmbed();
         expect(command?.isEnabled).toBe(true);
-        button.fire("execute");
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
 
         await vi.waitFor(() => expect(getModelData(editor.model, { withoutSelection: true }))
             .toBe("<paragraph><reference href=\"#root/noteX\"></reference></paragraph>"));
@@ -1531,29 +1567,23 @@ describe("ContentEmbed title", () => {
         }
     });
 
-    it("offers a Show title button, and a menu button while the title is hidden", () => {
-        const toggle = editor.ui.componentFactory.create(TOGGLE_TITLE_COMMAND_NAME);
+    it("offers a menu button while the title is hidden", () => {
         const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
-        if (!(toggle instanceof ButtonView) || toggle instanceof SwitchButtonView
-                || !(menu instanceof ButtonView)) {
-            throw new Error("Expected two buttons.");
+        if (!(menu instanceof ButtonView)) {
+            throw new Error("Expected a button.");
         }
         menu.render();
         insertContentEmbed(editor, "n1", "medium");
-        expect([ toggle.icon, toggle.withText, toggle.tooltip, toggle.isToggleable ])
-            .toEqual([ bxWindowAlt, false, true, true ]);
-        expect([ toggle.label, toggle.isOn, toggle.isVisible ]).toEqual([ "Show title", true, true ]);
         expect([ menu.label, menu.isVisible ]).toEqual([ "More actions", false ]);
 
-        toggle.fire("execute");
-        expect(toggle.isOn).toBe(false);
+        editor.execute(TOGGLE_TITLE_COMMAND_NAME);
         expect(menu.isVisible).toBe(true);
 
         menu.fire("execute");
         expect(openContentEmbedMenu).toHaveBeenCalledWith(getRenderedEmbed(), menu.element);
 
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "tiny" });
-        expect([ toggle.isVisible, menu.isVisible ]).toEqual([ false, false ]);
+        expect(menu.isVisible).toBe(false);
     });
 
     it("opens no menu from a button not rendered yet, or with no embed selected", () => {

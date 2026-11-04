@@ -150,6 +150,10 @@ function EditorFeatures() {
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
+    const [linkTitleRetrievalEnabled, setLinkTitleRetrievalEnabled] =
+        useTriliumOptionBool("textNoteLinkTitleRetrievalEnabled");
+    const [linkDetailsRetrievalEnabled, setLinkDetailsRetrievalEnabled] =
+        useTriliumOptionBool("textNoteLinkDetailsRetrievalEnabled");
     const [stickyTableHeadersEnabled, setStickyTableHeadersEnabled] =
         useTriliumOptionBool("textNoteStickyTableHeadersEnabled");
     const [htmlSupportEnabled, setHtmlSupportEnabled] = useTriliumOptionBool("textNoteHtmlSupportEnabled");
@@ -178,6 +182,28 @@ function EditorFeatures() {
                 description={t("editorfeatures.auto_link_previews_description")}
             >
                 <FormToggle currentValue={autoLinkPreviewsEnabled} onChange={setAutoLinkPreviewsEnabled} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="link-title-retrieval-enabled"
+                label={t("editorfeatures.link_title_retrieval_enabled")}
+                description={t("editorfeatures.link_title_retrieval_description")}
+            >
+                <FormToggle
+                    currentValue={linkTitleRetrievalEnabled}
+                    onChange={setLinkTitleRetrievalEnabled}
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="link-details-retrieval-enabled"
+                label={t("editorfeatures.link_details_retrieval_enabled")}
+                description={t("editorfeatures.link_details_retrieval_description")}
+            >
+                <FormToggle
+                    currentValue={linkDetailsRetrievalEnabled}
+                    onChange={setLinkDetailsRetrievalEnabled}
+                />
             </OptionCardSection>
 
             <OptionCardSection

@@ -29,6 +29,8 @@ import { renderShortcutKbds } from "./shortcut_kbd";
 
 /** Wide enough for a note path a few levels deep to fit on one line. */
 const DROPDOWN_MIN_WIDTH = 500;
+/** The fewest characters typed that open the dropdown. */
+const MIN_TYPED_LENGTH = 2;
 /** Keyboard hints are left out on mobile, as `Button` leaves out its shortcut. */
 const cachedIsMobile = isMobile();
 /**
@@ -85,12 +87,14 @@ export interface NoteAutocompleteHandle {
     /** Puts `>` in the field, lists every command and focuses the field. */
     showAllCommands(): void;
     /**
-     * Puts `text`, trimmed, in the field and lists its suggestions, leaving the focus where it is.
-     * `selectedPath` is the note the text stands for, where it names one already.
+     * Puts `text`, trimmed, in the field, leaving the focus where it is. `selectedPath` is the note
+     * the text stands for, where it names one already. Only a list in the host's container opens.
      */
     setText(text: string, selectedPath?: string): void;
     /** Empties the field and drops its selection without reporting either, as after a pick a host spends. */
     clear(): void;
+    /** Focuses the field, leaving the dropdown closed. */
+    focus(): void;
 }
 
 export default function NoteAutocomplete({
@@ -250,36 +254,52 @@ export default function NoteAutocomplete({
         inputRef.current?.focus();
     }
 
-    /** Puts `query` in the field with `selectedPath` as its selection, and lists the suggestions. */
-    function showSuggestionsFor(query: string, selectedPath = "") {
+    /** Puts `query` in the field with `selectedPath` as its selection. */
+    function fillField(query: string, selectedPath = "") {
         setFullTextSearchCount(0);
         setNotePath(selectedPath);
         setValue(query);
         // Written at once as well, so a caller can select the text right after the call.
         if (inputRef.current) inputRef.current.value = query;
         onTextChange?.(query);
-        autocomplete.open();
     }
 
     function showAndFocus(query: string) {
-        showSuggestionsFor(query);
+        fillField(query);
+        autocomplete.open();
+        inputRef.current?.focus();
+    }
+
+    /** Opens the dropdown or closes it, from the expand button. */
+    function toggleList() {
+        if (autocomplete.isOpen) {
+            autocomplete.close();
+        } else {
+            autocomplete.open();
+        }
         inputRef.current?.focus();
     }
 
     // An empty query is answered with the recently visited notes.
     const showRecentNotes = () => showAndFocus("");
     const showAllCommands = () => showAndFocus(">");
-    const setText = (newText: string, selectedPath?: string) => showSuggestionsFor(newText.trim(), selectedPath);
+    const setText = (newText: string, selectedPath?: string) => {
+        fillField(newText.trim(), selectedPath);
+        if (container) autocomplete.open();
+    };
     const clear = () => {
         setFullTextSearchCount(0);
         setNotePath("");
         setValue("");
         if (inputRef.current) inputRef.current.value = "";
     };
+    const focus = () => inputRef.current?.focus();
 
     // Refreshed on every render, so a call from outside reaches the current callbacks.
     useLayoutEffect(() => {
-        if (handleRef) handleRef.current = { showRecentNotes, showAllCommands, setText, clear };
+        if (handleRef) {
+            handleRef.current = { showRecentNotes, showAllCommands, setText, clear, focus };
+        }
     });
 
     useEffect(() => {
@@ -296,8 +316,12 @@ export default function NoteAutocomplete({
 
     const anchor = anchorRef?.current ?? groupRef.current;
     const showsList = autocomplete.isShown || (autocomplete.isOpen && isSearchingFullText);
+    const hasNote = !!notePath.trim();
     const showButtons = !opts?.hideAllButtons;
-    const showGoToButton = showButtons && !opts?.hideGoToSelectedNoteButton;
+    const showGoToButton = showButtons && !opts?.hideGoToSelectedNoteButton && hasNote;
+    // A search box listing into the host's container clears its query, a note field its note.
+    const showClearButton = showButtons && (hasNote || !!container);
+    const showExpandButton = !container && !readOnly;
 
     return (
         <div ref={groupRef} className="input-group" style={containerStyle}>
@@ -319,7 +343,11 @@ export default function NoteAutocomplete({
                     const newValue = e.currentTarget.value;
                     setValue(newValue);
                     setFullTextSearchCount(0);
-                    autocomplete.handleInput();
+                    // A closed dropdown opens only once the text is long enough to search by.
+                    const isLongEnough = newValue.trim().length >= MIN_TYPED_LENGTH;
+                    if (container || autocomplete.isOpen || isLongEnough) {
+                        autocomplete.handleInput();
+                    }
                     onTextChange?.(newValue);
                 }}
                 onChange={(e) => {
@@ -362,11 +390,6 @@ export default function NoteAutocomplete({
                 }}
                 onCompositionStart={autocomplete.handleCompositionStart}
                 onCompositionEnd={autocomplete.handleCompositionEnd}
-                onFocus={(e) => {
-                    // An empty field lists the recently visited notes. A filled one waits for typing,
-                    // so that focus returning from the note type chooser does not search again.
-                    if (!e.currentTarget.value.trim()) autocomplete.open();
-                }}
                 onBlur={() => {
                     // A list in the host's container stays open until a pick.
                     if (!container) autocomplete.handleBlur();
@@ -376,20 +399,34 @@ export default function NoteAutocomplete({
 
             {showGoToButton && (
                 <a
-                    className={clsx("input-group-text go-to-selected-note-button bx bx-arrow-to-right", !notePath.trim() && "disabled")}
+                    className="input-group-text go-to-selected-note-button bx bx-arrow-to-right"
                     href={`#${notePath}`}
                 />
             )}
 
             {hasSearchFooter && <SearchFooterShortcutHints allowFullSearch={!!allowJumpToSearchNotes} />}
 
-            {showButtons && <>
+            {showClearButton && (
                 <a
                     className="input-group-text input-clearer-button bx bxs-tag-x"
                     title={t("note_autocomplete.clear-text-field")}
                     onClick={clearText}
                 />
-            </>}
+            )}
+
+            {showExpandButton && (
+                <button
+                    type="button"
+                    className="input-group-text note-autocomplete-expand-button"
+                    title={t("note_autocomplete.suggestions")}
+                    aria-expanded={autocomplete.isShown}
+                    // Out of the Tab order: the field opens the list with the arrow keys.
+                    tabIndex={-1}
+                    // Keeps the focus in the field, so its blur does not close the list first.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={toggleList}
+                />
+            )}
 
             {container
                 ? autocomplete.isOpen && container.current && createPortal(<>

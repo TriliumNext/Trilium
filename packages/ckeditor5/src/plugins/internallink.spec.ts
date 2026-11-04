@@ -255,7 +255,7 @@ describe("the link at the selection", () => {
     it("reads the address and whole text of the link around the caret, and none outside", () => {
         setModelData(editor.model, LINKED);
         expect(getLinkAtSelection(editor))
-            .toStrictEqual({ href: "https://a.example", text: "foo", display: "plain" });
+            .toStrictEqual({ href: "https://a.example", text: "foo", display: "textLink" });
 
         setModelData(editor.model,
             "<paragraph>a[] <$text linkHref=\"https://a.example\">foo</$text></paragraph>");
@@ -272,7 +272,7 @@ describe("the link at the selection", () => {
             + "<reference href=\"#root/abc\" linkHref=\"https://a.example\"></reference>"
             + "<$text linkHref=\"https://a.example\">c</$text></paragraph>");
         expect(getLinkAtSelection(editor))
-            .toStrictEqual({ href: "https://a.example", text: "abc", display: "plain" });
+            .toStrictEqual({ href: "https://a.example", text: "abc", display: "textLink" });
     });
 
     it("reads a selected reference link, and replaces it with a link or a reference", async () => {
@@ -280,7 +280,7 @@ describe("the link at the selection", () => {
         const SELECTED = "<paragraph>a [<reference href=\"#root/abc\"></reference>] b</paragraph>";
         setModelData(editor.model, SELECTED);
         expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: "#root/abc", text: "Target", display: "plain", isReference: true }
+            { href: "#root/abc", text: "Target", display: "textLink", isReference: true }
         );
 
         await replaceLinkAtSelection(editor, "#root/def", "See there");
@@ -300,20 +300,23 @@ describe("the link at the selection", () => {
         setModelData(editor.model, "<paragraph>a [<linkMention url=\"https://a.example\""
             + " title=\"A\" description=\"About A\"></linkMention>]</paragraph>");
         expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: "https://a.example", text: "A", description: "About A", display: "inline" }
+            {
+                href: "https://a.example", text: "A", description: "About A",
+                display: "iconAndTextLink"
+            }
         );
 
         setModelData(editor.model,
             "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\"></linkEmbed>]");
         expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: "https://a.example", text: "", description: "", display: "card" }
+            { href: "https://a.example", text: "", description: "", display: "cardLink" }
         );
 
         const videoUrl = "https://youtube.com/watch?v=abc12345678";
         setModelData(editor.model, `[<contentEmbed url="${videoUrl}" embedType="youtube"`
             + " title=\"V\"></contentEmbed>]");
         expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: videoUrl, text: "V", description: "", display: "embed" }
+            { href: videoUrl, text: "V", description: "", display: "embedLink" }
         );
     });
 

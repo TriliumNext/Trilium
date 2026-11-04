@@ -43,9 +43,21 @@
                 min-width: 0;
             }
         }
+
+        .edit-link-url {
+            display: grid;
+            grid-template-columns:
+                minmax(var(--edit-link-label-width), max-content) minmax(0, 1fr);
+            row-gap: 4px;
+
+            > .form-field-error {
+                grid-column: 2;
+            }
+        }
     }
 
     .edit-link-description textarea {
+        flex-basis: 0;
         resize: none;
     }
 

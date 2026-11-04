@@ -19,10 +19,13 @@ export const COMMAND_NAME = 'insertInternalLink';
 const LINK_KEYSTROKE = 'Ctrl+K';
 
 export interface InternalLinkDialogOptions {
-    /** The side the dialog opens on for a new link: a note, or a web address. */
-    target?: 'note' | 'url';
     /**
-     * How a new web link is displayed. `embed` falls back to a card for an address without a
+     * The page the dialog opens on for a new link: a note, a web address, or a heading or an
+     * anchor of the document.
+     */
+    target?: 'note' | 'url' | 'anchor';
+    /**
+     * How a new web link is displayed. `embedLink` falls back to a card for an address without a
      * player.
      */
     display?: LinkDisplayMode;
@@ -98,11 +101,7 @@ export default class InternalLinkPlugin extends Plugin {
         }
 
         const linkUI = editor.plugins.get(LinkUI);
-        const openLinkDialog = () => {
-            // `_hideUI()` is private, and the only way to close the toolbar with its listeners.
-            (linkUI as unknown as { _hideUI(updateFocus?: boolean): void })._hideUI(false);
-            editor.execute(COMMAND_NAME, { target: 'url' });
-        };
+        const openLinkDialog = () => editor.execute(COMMAND_NAME, { target: 'url' });
 
         editor.ui.componentFactory.add('link', locale => {
             const linkCommand = editor.commands.get('link') as LinkCommand;
@@ -160,11 +159,19 @@ export default class InternalLinkPlugin extends Plugin {
     }
 
     /**
-     * Opens the link dialog in a balloon at the caret. A host that shows the dialog its own way
-     * leaves the balloon empty, which closes it again.
+     * Opens the link dialog in a balloon at the caret, in place of the link toolbar of `LinkUI`. A
+     * host that shows the dialog its own way leaves the balloon empty, which closes it again.
      */
     showDialog(options: InternalLinkDialogOptions = {}) {
         const editor = this.editor;
+
+        if (editor.plugins.has(LinkUI)) {
+            // `_hideUI()` is private, and the only way to close the toolbar with its listeners.
+            const linkUI = editor.plugins.get(LinkUI) as unknown as {
+                _hideUI(updateFocus?: boolean): void;
+            };
+            linkUI._hideUI(false);
+        }
 
         this.dialog.show(container => editor.config.get('internalLink')?.showDialog({
             ...options,
@@ -213,7 +220,7 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
         return {
             href,
             text: getReferenceTitleSync(editor, href, storedTitle),
-            display: 'plain',
+            display: 'textLink',
             isReference: true
         };
     }
@@ -239,7 +246,7 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
             text += item.data;
         }
     }
-    return { href: found.href, text, display: 'plain' };
+    return { href: found.href, text, display: 'textLink' };
 }
 
 /**

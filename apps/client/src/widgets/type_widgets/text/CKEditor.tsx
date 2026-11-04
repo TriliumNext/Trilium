@@ -1,5 +1,6 @@
 import {
-    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor, type DocumentHeading,
+    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor,
+    type ContentEmbedDialogRequest, type DocumentHeading,
     getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
     type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
     replaceLinkAtSelection, SnippetDefinition, type YouTubeVideoRequest
@@ -91,6 +92,8 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     contentEmbedHandlers?: ContentEmbedHandlers;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Shows the Include note dialog, as `contentEmbed.pickNote` does. */
+    showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
     /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
     isExcerpt?: boolean;
 }
@@ -99,7 +102,7 @@ export default function CKEditor({
     containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
     editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
     onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
-    showLinkDialog, isExcerpt
+    showLinkDialog, showContentEmbedDialog, isExcerpt
 }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
@@ -172,6 +175,8 @@ export default function CKEditor({
     contentEmbedHandlersRef.current = contentEmbedHandlers;
     const showLinkDialogRef = useRef(showLinkDialog);
     showLinkDialogRef.current = showLinkDialog;
+    const showContentEmbedDialogRef = useRef(showContentEmbedDialog);
+    showContentEmbedDialogRef.current = showContentEmbedDialog;
     const isExcerptRef = useRef(isExcerpt);
     isExcerptRef.current = isExcerpt;
     /** The open icon picker request and its balloon container, or `null` when none is open. */
@@ -387,7 +392,9 @@ export default function CKEditor({
                     save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
                 },
                 getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
-                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null
+                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null,
+                showContentEmbedDialog:
+                    (request) => showContentEmbedDialogRef.current?.(request) ?? null
             });
 
             if (isStale) {

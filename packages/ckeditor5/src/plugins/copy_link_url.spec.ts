@@ -1,4 +1,6 @@
-import { _setModelData as setModelData, ClassicEditor, Essentials, Link, Paragraph } from "ckeditor5";
+import {
+    _setModelData as setModelData, type ButtonView, ClassicEditor, Essentials, Link, Paragraph
+} from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
@@ -19,6 +21,22 @@ describe("CopyLinkUrlButton", () => {
     it("registers the copyLinkUrl component in the UI factory", async () => {
         editor = await createEditor();
         expect(editor.ui.componentFactory.has("copyLinkUrl")).toBe(true);
+    });
+
+    it("shows only on a link to a web page", async () => {
+        editor = await createEditor();
+        const button = editor.ui.componentFactory.create("copyLinkUrl") as ButtonView;
+        const linkTo = (href: string) => setModelData(editor.model,
+            `<paragraph><$text linkHref="${href}">a[]b</$text></paragraph>`);
+
+        linkTo("https://example.com");
+        expect(button.isVisible).toBe(true);
+        // A note, a heading, an attachment and an anchor.
+        const inAppLinks = [ "#root/a", "#root/a?block=b", "#root/a?viewMode=attachments", "#top" ];
+        for (const href of inAppLinks) {
+            linkTo(href);
+            expect(button.isVisible, href).toBe(false);
+        }
     });
 
     describe("button execution — with config.clipboard.copy", () => {
@@ -141,7 +159,9 @@ describe("CopyLinkUrlButton", () => {
         it("comes from the editor's dictionary when one is configured", async () => {
             // Keyed by `en`, the language the editor resolves messages under when none is configured.
             editor = await createEditor({
-                translations: [ {}, { en: { dictionary: { "Copy URL": "Copiază adresa" } } } ]
+                translations: [
+                    {}, { en: { dictionary: { "Copy address (URL)": "Copiază adresa" } } }
+                ]
             });
 
             const button = editor.ui.componentFactory.create("copyLinkUrl") as { label: string };
@@ -154,7 +174,7 @@ describe("CopyLinkUrlButton", () => {
             editor = await createEditor();
 
             const button = editor.ui.componentFactory.create("copyLinkUrl") as { label: string };
-            expect(button.label).toBe("Copy URL");
+            expect(button.label).toBe("Copy address (URL)");
         });
     });
 });

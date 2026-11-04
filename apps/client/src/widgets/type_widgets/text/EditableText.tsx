@@ -5,6 +5,7 @@ import {
     type AttachmentLinkChange,
     type CKEditorError,
     CKTextEditor,
+    type ContentEmbedDialogRequest,
     type FileUploadData,
     type FileUploadEvent,
     type LinkDialogRequest,
@@ -28,6 +29,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
+import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
 import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
@@ -284,6 +286,26 @@ export default function EditableText({
         return () => setLinkDialog(null);
     }
 
+    const [ contentEmbedDialog, setContentEmbedDialog ] = useState<{
+        opts: ContentEmbedOpts;
+        request: ContentEmbedDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `ContentEmbedBalloon` renders into its container.
+    // On mobile, `showContentEmbedDialog` opens the form in a modal instead.
+    function showContentEmbedDialog(request: ContentEmbedDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = { editorApi: editorApiRef.current, sizeEditable: true };
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showContentEmbedDialog", opts);
+            return null;
+        }
+
+        setContentEmbedDialog({ opts, request });
+        return () => setContentEmbedDialog(null);
+    }
+
     useLegacyImperativeHandlers({
         // Keyboard shortcut
         async addLinkToTextCommand() {
@@ -301,13 +323,10 @@ export default function EditableText({
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
         },
-        // Include note functionality note
-        addIncludeNoteToTextCommand() {
-            if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showContentEmbedDialog", {
-                editorApi: editorApiRef.current,
-                sizeEditable: true
-            });
+        // Keyboard shortcut
+        async addIncludeNoteToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertContentEmbed");
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -547,6 +566,7 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 showLinkDialog={showLinkDialog}
+                showContentEmbedDialog={showContentEmbedDialog}
                 isExcerpt={block !== undefined}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
@@ -595,6 +615,13 @@ export default function EditableText({
             {linkDialog && createPortal(
                 <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
                 linkDialog.request.container
+            )}
+
+            {contentEmbedDialog && createPortal(
+                <ContentEmbedBalloon
+                    opts={contentEmbedDialog.opts} onClose={contentEmbedDialog.request.close}
+                />,
+                contentEmbedDialog.request.container
             )}
         </>
     );

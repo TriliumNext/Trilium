@@ -375,7 +375,8 @@ export function FormListToggleableItem({
     helpPage?: string;
     /** What the setting does, shown beside the menu while the row is hovered. */
     helpTooltip?: string;
-    onChange(newValue: boolean): void | Promise<void>;
+    /** Called with the click that flipped the switch, which a press of Enter stands in for. */
+    onChange(newValue: boolean, e: MouseEvent): void | Promise<void>;
 }) {
     const isWaiting = useRef(false);
 
@@ -393,7 +394,7 @@ export function FormListToggleableItem({
                 e.stopPropagation();
                 if (!disabled && !isWaiting.current) {
                     isWaiting.current = true;
-                    await onChange(!currentValue);
+                    await onChange(!currentValue, e);
                     isWaiting.current = false;
                 }
             }}>

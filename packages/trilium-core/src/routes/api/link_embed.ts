@@ -505,20 +505,25 @@ async function fetchYouTubeMetadata(url: string, videoId: string): Promise<Fetch
     ]);
 
     return {
-        metadata: { url, siteName: "YouTube", embedType: "youtube", ...details },
+        metadata: {
+            url,
+            siteName: "YouTube",
+            embedType: "youtube",
+            ...(details ?? { title: "YouTube Video" })
+        },
         favicon,
         image
     };
 }
 
 /**
- * The video's title, channel name and shape from oEmbed, or a generic title when oEmbed fails.
+ * The video's title, channel name and shape from oEmbed, or `undefined` when oEmbed fails.
  * oEmbed reads the `/shorts/` address of the video, which reports the shape of the video itself:
  * the watch address of a Short reports the 16:9 player of the watch page.
  */
 async function fetchYouTubeDetails(
     videoId: string
-): Promise<Pick<LinkEmbedMetadata, "title" | "description" | "aspectRatio">> {
+): Promise<Pick<LinkEmbedMetadata, "title" | "description" | "aspectRatio"> | undefined> {
     try {
         const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
         const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}`
@@ -534,7 +539,7 @@ async function fetchYouTubeDetails(
             aspectRatio: toAspectRatio(data.width, data.height)
         };
     } catch {
-        return { title: "YouTube Video" };
+        return undefined;
     }
 }
 
@@ -584,6 +589,20 @@ async function downloadYouTubeThumbnail(videoId: string): Promise<DownloadedPict
 }
 
 async function fetchOpenGraphData(url: string) {
+    const document = await fetchPage(url);
+    const favicon = await resolveFavicon(document, url);
+
+    const imageUrl = toAbsoluteUrl(getMeta(document, "og:image"), url);
+    // A site with no og:image (or one that fails to download) still usually has a large home-screen
+    // icon, which makes a far better card than an empty placeholder.
+    const image = (imageUrl ? await downloadPreviewImage(imageUrl) : undefined)
+        ?? await resolveIconAsImage(document, url);
+
+    return { ...readPageText(document), image, favicon };
+}
+
+/** Fetches the web page at `url` and parses it. Throws for a failed request or a non-HTML page. */
+async function fetchPage(url: string) {
     const response = await request.fetchResource(url, {
         maxBytes: MAX_RESPONSE_SIZE,
         headers: {
@@ -599,28 +618,25 @@ async function fetchOpenGraphData(url: string) {
         throw new Error(`Unexpected Content-Type: ${contentType}`);
     }
 
-    const document = parse(asText(response));
+    return parse(asText(response));
+}
 
-    const getMeta = (property: string): string | undefined => {
-        const ogEl = document.querySelector(`meta[property="${property}"]`);
-        if (ogEl) return ogEl.getAttribute("content") || undefined;
+/** The `content` of the `<meta>` tag of `property`, written as `property=` or `name=`. */
+function getMeta(document: ReturnType<typeof parse>, property: string): string | undefined {
+    const ogEl = document.querySelector(`meta[property="${property}"]`);
+    if (ogEl) return ogEl.getAttribute("content") || undefined;
 
-        const nameEl = document.querySelector(`meta[name="${property}"]`);
-        if (nameEl) return nameEl.getAttribute("content") || undefined;
+    const nameEl = document.querySelector(`meta[name="${property}"]`);
+    if (nameEl) return nameEl.getAttribute("content") || undefined;
 
-        return undefined;
-    };
+    return undefined;
+}
 
-    const favicon = await resolveFavicon(document, url);
-
-    const imageUrl = toAbsoluteUrl(getMeta("og:image"), url);
-    // A site with no og:image (or one that fails to download) still usually has a large home-screen
-    // icon, which makes a far better card than an empty placeholder.
-    const image = (imageUrl ? await downloadPreviewImage(imageUrl) : undefined)
-        ?? await resolveIconAsImage(document, url);
-
+/** The title, description and site name that the page `document` gives itself. */
+function readPageText(document: ReturnType<typeof parse>) {
     return {
-        title: getMeta("og:title") || document.querySelector("title")?.textContent?.trim() || undefined,
+        title: getMeta(document, "og:title")
+            || document.querySelector("title")?.textContent?.trim() || undefined,
         // A Twitter card's description before the generic one: both of the first two are written to
         // be read on a card, which is what this is, whereas `name="description"` is written for a
         // search result and is often keyword-stuffed or cut off mid-sentence. Sites that ship only
@@ -630,11 +646,10 @@ async function fetchOpenGraphData(url: string) {
         // ...and the page's own opening sentence where it publishes no description at all, which a
         // Wikipedia article does not. See findPageDescription: only ever reached when the site has
         // said nothing, a description written for the purpose being what it wants shown.
-        description: getMeta("og:description") || getMeta("twitter:description") || getMeta("description")
+        description: getMeta(document, "og:description")
+            || getMeta(document, "twitter:description") || getMeta(document, "description")
             || findPageDescription(document),
-        siteName: getMeta("og:site_name") || undefined,
-        image,
-        favicon
+        siteName: getMeta(document, "og:site_name") || undefined
     };
 }
 
@@ -693,6 +708,40 @@ async function getMetadata(req: Request) {
 }
 
 /**
+ * The title and description of the web page at the `url` of the body, for the link editor to fill
+ * its fields with. Unlike `getMetadata`, it downloads no pictures, so it needs no note to store
+ * them on and stores nothing.
+ *
+ * `unresolved` where the page could not be read or has no title, and also for an address that
+ * cannot be fetched, which the editor then leaves alone without showing an error.
+ */
+async function getPageDetails(req: Request): Promise<LinkEmbedMetadata> {
+    const urlParam = req.body?.url;
+    if (!urlParam || typeof urlParam !== "string") {
+        throw new ValidationError("'url' is required");
+    }
+
+    const unresolved: LinkEmbedMetadata = {
+        url: urlParam, embedType: "opengraph", unresolved: true
+    };
+    try {
+        const url = validateFetchableUrl(urlParam).toString();
+        const videoId = extractYouTubeVideoId(url);
+        const details = videoId
+            ? {
+                siteName: "YouTube",
+                embedType: "youtube" as const,
+                ...await fetchYouTubeDetails(videoId)
+            }
+            : { embedType: "opengraph" as const, ...readPageText(await fetchPage(url)) };
+        return details.title ? { url, ...details } : unresolved;
+    } catch (e: unknown) {
+        getLog().info(`Failed to fetch link details: ${e}`);
+        return unresolved;
+    }
+}
+
+/**
  * The metadata of a preview for a YouTube video, with its thumbnail and favicon stored as attachments
  * of the note `noteId`.
  */
@@ -710,7 +759,7 @@ export async function storeFavicon(noteId: string, pageUrl: string, bytes: Uint8
 
 /**
  * The degraded result for a URL whose page told us nothing: everything the caller gets back is
- * derived from the URL itself. Flagged so the caller can keep a plain link instead of rendering a
+ * derived from the URL itself. Flagged so the caller can keep a text link instead of rendering a
  * preview that would show less than the link did.
  */
 function unresolvedMetadata(url: URL): LinkEmbedMetadata {
@@ -722,4 +771,4 @@ function unresolvedMetadata(url: URL): LinkEmbedMetadata {
     };
 }
 
-export default { getMetadata };
+export default { getMetadata, getPageDetails };

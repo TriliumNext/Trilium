@@ -718,6 +718,11 @@ function linkContextMenu(e: PointerEvent) {
         return;
     }
 
+    // The text editor opens the menu of the link toolbar for a link in the text being edited.
+    if (isInEditableText($link) && !$link.closest(".include-note").length) {
+        return;
+    }
+
     e.preventDefault();
 
     linkContextMenuService.openContextMenu(notePath, e, viewScope, null);

@@ -3,34 +3,65 @@ import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../components/component";
+import type { PageDetails } from "../../services/link_embed";
 import type { Suggestion } from "../../services/note_autocomplete";
+import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
+import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
-    EditLinkBalloon, type EditLinkOpts, getShownDisplay, type LinkHeading, normalizeWebLink
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, type LinkHeading,
+    normalizeWebLink
 } from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined
 }));
 const { readClipboardText } = vi.hoisted(() => ({ readClipboardText: vi.fn(async () => "") }));
+const { fetchPageDetails } = vi.hoisted(() => ({
+    fetchPageDetails: vi.fn<(url: string) => Promise<PageDetails | null>>(async () => null)
+}));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../../services/clipboard_ext", () => ({
     canReadClipboardText: async () => true,
     readClipboardText
 }));
+vi.mock("../../services/link_embed", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../services/link_embed")>(),
+    fetchPageDetails
+}));
 vi.mock("../react/NoteAutocomplete", () => ({
-    default: ({ onChange, inputRef }: {
+    default: ({ onChange, inputRef, handleRef }: {
         onChange: (suggestion: Suggestion | null) => void;
         inputRef?: RefObject<HTMLInputElement>;
+        handleRef?: RefObject<NoteAutocompleteHandle | null>;
     }) => {
         autocomplete.onChange = onChange;
+        if (handleRef) {
+            handleRef.current = {
+                showRecentNotes: vi.fn(),
+                showAllCommands: vi.fn(),
+                setText(text, selectedPath = "") {
+                    if (!inputRef?.current) return;
+                    inputRef.current.value = text;
+                    inputRef.current.dataset.notePath = selectedPath;
+                },
+                clear: vi.fn(),
+                focus: () => inputRef?.current?.focus()
+            };
+        }
         return <input ref={inputRef} className="note-autocomplete" />;
     }
 }));
+
+beforeEach(() => {
+    fetchPageDetails.mockReset();
+    options.set("textNoteLinkTitleRetrievalEnabled", "false");
+    options.set("textNoteLinkDetailsRetrievalEnabled", "false");
+});
 
 describe("normalizeWebLink", () => {
     it("adds https:// to an address without a scheme, and keeps any other scheme", () => {
@@ -46,15 +77,31 @@ describe("normalizeWebLink", () => {
     });
 });
 
+describe("getWebLinkError", () => {
+    it("refuses a link that can run code and an address that new URL() cannot parse", () => {
+        const refused = "add_link.script_link_not_allowed";
+        expect(getWebLinkError("https://example.com/a b")).toBeUndefined();
+        expect(getWebLinkError("mailto:someone@example.com")).toBeUndefined();
+        expect(getWebLinkError("javascript:alert(1)")).toBe(refused);
+        expect(getWebLinkError("JavaScript:void(0)")).toBe(refused);
+        // `new URL()` drops the tab, as the browser does when it follows the link.
+        expect(getWebLinkError("java\tscript:alert(1)")).toBe(refused);
+        expect(getWebLinkError("VBScript:msgbox(1)")).toBe(refused);
+        expect(getWebLinkError("data:text/html,<script>alert(1)</script>")).toBe(refused);
+        expect(getWebLinkError("https://exa mple.com")).toBe("add_link.invalid_url");
+        expect(getWebLinkError("https://example.com:99999")).toBe("add_link.invalid_url");
+    });
+});
+
 describe("getShownDisplay", () => {
-    it("shows the display picked, a card for a player the address lacks, a plain link off the web", () => {
+    it("shows the display picked, a card for a player the address lacks, a text link off the web", () => {
         const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-        expect(getShownDisplay("inline", "https://example.com")).toBe("inline");
-        expect(getShownDisplay("embed", video)).toBe("embed");
-        expect(getShownDisplay("card", video)).toBe("card");
-        expect(getShownDisplay("embed", "https://example.com")).toBe("card");
-        expect(getShownDisplay("embed", undefined)).toBe("card");
-        expect(getShownDisplay("card", "mailto:someone@example.com")).toBe("plain");
+        expect(getShownDisplay("iconAndTextLink", "https://example.com")).toBe("iconAndTextLink");
+        expect(getShownDisplay("embedLink", video)).toBe("embedLink");
+        expect(getShownDisplay("cardLink", video)).toBe("cardLink");
+        expect(getShownDisplay("embedLink", "https://example.com")).toBe("cardLink");
+        expect(getShownDisplay("embedLink", undefined)).toBe("cardLink");
+        expect(getShownDisplay("cardLink", "mailto:someone@example.com")).toBe("textLink");
     });
 });
 
@@ -270,9 +317,20 @@ describe("EditLinkDialog", () => {
         expect(addLink)
             .toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
 
+        await open({ target: "anchor", anchors: [ "intro" ] });
+        expect(current()).toBe("add_link.anchors");
+        expect(anchorRows().map((row) => row.textContent)).toStrictEqual([ "intro" ]);
+        await act(async () => anchorRows()[0]?.click());
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("#intro", "intro", true);
+
         const note = buildNote({ title: "Target" });
-        await open({ target: "url", currentLink: { notePath: `root/${note.noteId}` } });
-        expect(current()).toBe("add_link.note");
+        for (const target of [ "url", "anchor" ] as const) {
+            await open({
+                target, anchors: [ "intro" ], currentLink: { notePath: `root/${note.noteId}` }
+            });
+            expect(current()).toBe("add_link.note");
+        }
     });
 
     it("edits a link with its own text, keeping that text and its anchor", async () => {
@@ -349,6 +407,83 @@ describe("EditLinkDialog", () => {
         expect(button()?.disabled).toBe(false);
     });
 
+    it("keeps the state of each page while another is shown, and applies the page shown", async () => {
+        const note = buildNote({ title: "Target", "#internalBookmark": "part" });
+        const path = `root/${note.noteId}`;
+        const noteField = () => container.querySelector<HTMLInputElement>(".note-autocomplete");
+
+        await open({ anchors: [ "intro" ] });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await act(async () => choice()[2]?.click());
+        await act(async () => anchorRows()[0]?.click());
+        await act(async () => choice()[0]?.click());
+        await type(field("url"), "example.com");
+        await submit();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(
+            "https://example.com", "https://example.com", true
+        );
+
+        await open({ anchors: [ "intro" ] });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        const bookmark = await vi.waitFor(() => {
+            const select = container.querySelector("select");
+            if (!select) throw new Error("The note page offers no anchor.");
+            return select;
+        });
+        await act(async () => {
+            bookmark.value = "part";
+            bookmark.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        await type(field("text"), "Note text");
+
+        await act(async () => choice()[0]?.click());
+        expect([ field("url")?.value, field("text")?.value ]).toStrictEqual([ "", "" ]);
+        // A refused address blocks only its own page.
+        await type(field("url"), "exa mple.com");
+        await type(field("text"), "Web text");
+
+        await act(async () => choice()[2]?.click());
+        expect([ checkedAnchor(), field("text")?.value ]).toStrictEqual([ undefined, "" ]);
+        await act(async () => anchorRows()[0]?.click());
+        await type(field("text"), "Anchor text");
+
+        await act(async () => choice()[1]?.click());
+        expect([ noteField()?.value, noteField()?.dataset.notePath, field("text")?.value ])
+            .toStrictEqual([ "Target", path, "Note text" ]);
+        await act(async () => choice()[0]?.click());
+        expect([ field("url")?.value, field("text")?.value ])
+            .toStrictEqual([ "exa mple.com", "Web text" ]);
+        await act(async () => choice()[2]?.click());
+        expect([ checkedAnchor(), field("text")?.value ]).toStrictEqual([ "intro", "Anchor text" ]);
+
+        await act(async () => choice()[1]?.click());
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?bookmark=part`, "Note text");
+        expect(addLink).toHaveBeenCalledTimes(2);
+    });
+
+    it("stays open on a refused address and updates the error as it is edited", async () => {
+        const error = () => container
+            .querySelector(".edit-link-url > .input-group + .form-field-error")?.textContent;
+        await open({ target: "url" });
+        await type(field("url"), "javascript:alert(1)");
+        expect(error()).toBeUndefined();
+        await act(async () => {
+            container.querySelector("form")
+                ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(field("url")).not.toBeNull();
+        expect(error()).toBe("add_link.script_link_not_allowed");
+
+        await type(field("url"), "exa mple.com");
+        expect(error()).toBe("add_link.invalid_url");
+        await type(field("url"), "example.com");
+        expect(error()).toBeUndefined();
+        await submit();
+        expect(addLink)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "https://example.com", true);
+    });
+
     it("focuses the field of the side shown, except on mobile, where it waits for a tap", async () => {
         async function openAndShow() {
             await open();
@@ -397,25 +532,25 @@ describe("EditLinkDialog", () => {
         const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
         await type(field("url"), video);
         expect(displays()).toContain("add_link.display_embed");
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await type(field("text"), "Never gonna");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "card", "Never gonna", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "cardLink", "Never gonna", null);
         expect(addLink).not.toHaveBeenCalled();
 
         // A player shows no title.
-        await open({ target: "url", display: "embed", addLinkPreview });
+        await open({ target: "url", display: "embedLink", addLinkPreview });
         await type(field("url"), video);
         expect(field("text")).toBeNull();
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embed", null, null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", null, null);
 
-        // A plain link, and any address that is not a web page, stays a link.
+        // A text link, and any address that is not a web page, stays a link.
         await open({ target: "url", addLinkPreview });
         await type(field("url"), "example.com");
         await submit();
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "https://example.com", true);
-        await open({ target: "url", display: "card", addLinkPreview });
+        await open({ target: "url", display: "cardLink", addLinkPreview });
         await type(field("url"), "mailto:someone@example.com");
         expect(displaySelect()?.disabled).toBe(true);
         await submit();
@@ -426,7 +561,8 @@ describe("EditLinkDialog", () => {
 
         // A link on a selection keeps the selected text, so it is never a preview.
         await open({
-            target: "url", text: "some words", hasSelection: true, display: "card", addLinkPreview
+            target: "url", text: "some words", hasSelection: true, display: "cardLink",
+            addLinkPreview
         });
         expect(displaySelect()).toBeNull();
         await type(field("url"), "https://example.com");
@@ -441,21 +577,22 @@ describe("EditLinkDialog", () => {
     it("turns an edited link into a preview with the page's own title unless it has a text", async () => {
         const url = "https://example.com/page";
         await open({ currentLink: { externalLink: url }, currentTitle: url, addLinkPreview });
-        await pickDisplay("inline");
+        await pickDisplay("iconAndTextLink");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", null, null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "iconAndTextLink", null, null);
 
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
         expect(addLink).not.toHaveBeenCalled();
     });
 
     it("edits a link preview, giving another address the title of its own page", async () => {
         const url = "https://example.com/page";
         await open({
-            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "cardLink",
+            addLinkPreview
         });
         expect(field("url")?.value).toBe(url);
         expect(field("text")?.value).toBe("Page");
@@ -463,10 +600,11 @@ describe("EditLinkDialog", () => {
             [ "add_link.display_plain", "add_link.display_inline", "add_link.display_card" ]
         );
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
 
         await open({
-            currentLink: { externalLink: url }, currentTitle: "Page", display: "card", addLinkPreview
+            currentLink: { externalLink: url }, currentTitle: "Page", display: "cardLink",
+            addLinkPreview
         });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("");
@@ -475,9 +613,9 @@ describe("EditLinkDialog", () => {
         expect(field("text")?.value).toBe("Mine");
         await submit();
         expect(addLinkPreview)
-            .toHaveBeenLastCalledWith("https://example.com/third", "card", "Mine", null);
+            .toHaveBeenLastCalledWith("https://example.com/third", "cardLink", "Mine", null);
 
-        // A plain link keeps its text for another address.
+        // A text link keeps its text for another address.
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("Page");
@@ -489,35 +627,166 @@ describe("EditLinkDialog", () => {
             currentLink: { externalLink: url }, currentTitle: "Page", currentDescription: "About",
             addLinkPreview
         };
-        await open({ ...preview, display: "inline" });
+        await open({ ...preview, display: "iconAndTextLink" });
         expect(description()).toBeNull();
-        await pickDisplay("card");
+        await pickDisplay("cardLink");
         expect(description()?.value).toBe("About");
         expect(description()?.getAttribute("rows")).toBe("2");
         const order = ".edit-link-text + .edit-link-description + .edit-link-display";
         expect(container.querySelector(order)).not.toBeNull();
         await type(description(), " Mine ");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", "Mine");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", "Mine");
 
         // An emptied description leaves the stored one, and only a card shows one.
-        await open({ ...preview, display: "card" });
+        await open({ ...preview, display: "cardLink" });
         await type(description(), " ");
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "card", "Page", null);
-        await open({ ...preview, display: "card" });
-        await pickDisplay("inline");
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "cardLink", "Page", null);
+        await open({ ...preview, display: "cardLink" });
+        await pickDisplay("iconAndTextLink");
         expect(description()).toBeNull();
         await submit();
-        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "inline", "Page", null);
+        expect(addLinkPreview).toHaveBeenLastCalledWith(url, "iconAndTextLink", "Page", null);
 
-        await open({ ...preview, display: "card" });
+        await open({ ...preview, display: "cardLink" });
         await type(field("url"), "https://example.com/other");
         expect(description()?.value).toBe("");
         // Typed after the change, even the old description stays.
         await type(description(), "About");
         await type(field("url"), "https://example.com/third");
         expect(description()?.value).toBe("About");
+    });
+
+    /** The spinner at the end of the title or the description field, if it shows one. */
+    function spinner(name: "text" | "description") {
+        return container.querySelector(`.edit-link-${name} .input-group > .tn-input-group-spinner`);
+    }
+
+    // Each test submits last: Bootstrap's own `hidden` event follows a submit a few timers later,
+    // and closes a dialog opened again by then.
+    it("fills a blank title from the page when the address is left, unless typed", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const slow = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(slow.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        expect(fetchPageDetails).not.toHaveBeenCalled();
+        await leave(field("url"));
+        expect(fetchPageDetails).toHaveBeenCalledExactlyOnceWith("https://example.com");
+        expect(spinner("text")?.getAttribute("title")).toBe("add_link.retrieving_from_page");
+        // Typing hides the spinner, and the title typed stays.
+        await type(field("text"), "Mine");
+        expect(spinner("text")).toBeNull();
+        slow.resolve({ title: "Example" });
+        await settle();
+        expect(field("text")?.value).toBe("Mine");
+
+        // A page that cannot be read leaves the field blank.
+        await open({ target: "url" });
+        await type(field("url"), "unreadable.example");
+        await leave(field("url"));
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("");
+
+        // Nothing is read for an address that is not a web page, or with the option off.
+        await type(field("url"), "mailto:someone@example.com");
+        await leave(field("url"));
+        options.set("textNoteLinkTitleRetrievalEnabled", "false");
+        await type(field("url"), "example.net");
+        await leave(field("url"));
+        expect(fetchPageDetails).toHaveBeenCalledTimes(2);
+
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(spinner("text")).not.toBeNull();
+        page.resolve({ title: "Example", description: "About" });
+        await settle();
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("Example");
+
+        // Another address takes the title of its own page.
+        fetchPageDetails.mockResolvedValueOnce({ title: "Other" });
+        await type(field("url"), "example.org");
+        expect(field("text")?.value).toBe("");
+        await leave(field("url"));
+        expect(field("text")?.value).toBe("Other");
+        await nextFrame();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.org", "Other", true);
+    });
+
+    it("shows the spinner on the web page's title alone, filling it in the background", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url" });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(spinner("text")).not.toBeNull();
+
+        // The note page shares the title field, which the web page does not fill.
+        await act(async () => choice()[1]?.click());
+        expect(field("text")).not.toBeNull();
+        expect(spinner("text")).toBeNull();
+        page.resolve({ title: "Example" });
+        await settle();
+        expect(field("text")?.value).toBe("");
+
+        await act(async () => choice()[0]?.click());
+        expect(spinner("text")).toBeNull();
+        expect(field("text")?.value).toBe("Example");
+        await nextFrame();
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
+    });
+
+    it("fills a preview's blank title and description, reading each page once", async () => {
+        // A preview follows its own option, which a text link does not.
+        options.set("textNoteLinkDetailsRetrievalEnabled", "true");
+        const page = deferred<PageDetails | null>();
+        fetchPageDetails.mockReturnValueOnce(page.promise);
+        await open({ target: "url", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(fetchPageDetails).not.toHaveBeenCalled();
+        await pickDisplay("cardLink");
+        await settle();
+        expect(fetchPageDetails).toHaveBeenCalledOnce();
+        expect([ spinner("text"), spinner("description") ]).not.toContain(null);
+        page.resolve({ title: "Example", description: "About" });
+        await settle();
+        expect([ spinner("text"), spinner("description") ]).toStrictEqual([ null, null ]);
+        expect([ field("text")?.value, description()?.value ])
+            .toStrictEqual([ "Example", "About" ]);
+
+        options.set("textNoteLinkDetailsRetrievalEnabled", "false");
+        await open({ target: "url", display: "iconAndTextLink", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        await pickDisplay("cardLink");
+        await settle();
+        expect(fetchPageDetails).toHaveBeenCalledOnce();
+
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        options.set("textNoteLinkDetailsRetrievalEnabled", "true");
+        fetchPageDetails.mockResolvedValue({ title: "Example", description: "About" });
+        await open({ target: "url", addLinkPreview });
+        await type(field("url"), "example.com");
+        await leave(field("url"));
+        expect(field("text")?.value).toBe("Example");
+        await pickDisplay("cardLink");
+        await settle();
+        expect(description()?.value).toBe("About");
+        expect(fetchPageDetails).toHaveBeenCalledTimes(2);
+        await nextFrame();
+        await submit();
+        expect(addLinkPreview)
+            .toHaveBeenLastCalledWith("https://example.com", "cardLink", "Example", "About");
     });
 
     it("offers no web link when fixing a link to a missing note", async () => {
@@ -554,11 +823,6 @@ describe("EditLinkDialog", () => {
 
         await open({ anchors: [ "intro", "outro" ] });
         await act(async () => choice()[2]?.click());
-        await act(async () => anchorRows()[0]?.click());
-        // Another page drops the checked anchor.
-        await act(async () => choice()[1]?.click());
-        await act(async () => choice()[2]?.click());
-        expect(checkedAnchor()).toBeUndefined();
         await act(async () => anchorRows()[0]?.click());
         await type(field("text"), "Read the intro");
         await submit();
@@ -803,6 +1067,21 @@ describe("EditLinkBalloon", () => {
         );
     });
 
+    it("fills the title from the page of an address pasted with the button", async () => {
+        options.set("textNoteLinkTitleRetrievalEnabled", "true");
+        fetchPageDetails.mockResolvedValue({ title: "Pasted" });
+        readClipboardText.mockResolvedValue("example.com/pasted");
+        const form = await show({ target: "url" });
+        await settle();
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        const title = form.querySelector<HTMLInputElement>(".edit-link-text input");
+        form.querySelector<HTMLButtonElement>(".edit-link-url .bx-paste")?.click();
+        await vi.waitFor(() => expect(title?.value).toBe("Pasted"));
+        expect(fetchPageDetails).toHaveBeenCalledExactlyOnceWith("https://example.com/pasted");
+        expect(document.activeElement).toBe(url);
+        expect(form.querySelector(".edit-link-text label")?.getAttribute("for")).toBe(title?.id);
+    });
+
     it("opens on an edited link with its address selected, and applies it left alone", async () => {
         const form = await show({
             currentLink: { externalLink: "https://example.com/page" }, currentTitle: "Page"
@@ -814,6 +1093,20 @@ describe("EditLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink).toHaveBeenCalledExactlyOnceWith("https://example.com/page", "Page", true);
+    });
+
+    it("refuses an invalid address on submit and focuses its field", async () => {
+        const form = await show({ target: "url" });
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        await type(url, "exa mple.com");
+        await act(async () => url?.blur());
+        expect(document.activeElement).not.toBe(url);
+        await submit(form);
+        expect(form.querySelector(".edit-link-url .form-field-error")?.textContent)
+            .toBe("add_link.invalid_url");
+        expect(document.activeElement).toBe(url);
+        expect(onClose).not.toHaveBeenCalled();
+        expect(addLink).not.toHaveBeenCalled();
     });
 
     it("focuses the title of the Anchors page and applies once an anchor is checked", async () => {
@@ -843,7 +1136,7 @@ describe("EditLinkBalloon", () => {
 
     it("applies a card on Enter in its description, but not mid-composition", async () => {
         const addLinkPreview = vi.fn<NonNullable<EditLinkOpts["addLinkPreview"]>>(async () => {});
-        const form = await show({ target: "url", display: "card", addLinkPreview });
+        const form = await show({ target: "url", display: "cardLink", addLinkPreview });
         await type(form.querySelector<HTMLInputElement>(".edit-link-url input"), "example.com");
         const textarea = form.querySelector<HTMLTextAreaElement>(".edit-link-description textarea");
         await type(textarea, "About");
@@ -862,7 +1155,7 @@ describe("EditLinkBalloon", () => {
         expect(await pressEnter(false)).toBe(true);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", null, "About");
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "cardLink", null, "About");
     });
 });
 
@@ -880,6 +1173,35 @@ async function type(input: HTMLInputElement | HTMLTextAreaElement | null, value:
         input.value = value;
         input.dispatchEvent(new Event("input", { bubbles: true }));
     });
+}
+
+/** Moves the focus out of `input`, and waits for what that sets off. */
+async function leave(input: HTMLInputElement | null) {
+    if (!input) throw new Error("The field is not shown.");
+    await act(async () => {
+        // Preact listens for the bubbling `focusout` in place of `blur`.
+        input.dispatchEvent(new Event("focusout", { bubbles: true }));
+    });
+    await settle();
+}
+
+/**
+ * Waits until the effects of a render outside `act()` have run, as they have before any real
+ * submit. `Modal` registers the `onHidden` of each render in such an effect, which Preact runs in a
+ * timeout it sets from the next frame.
+ */
+function nextFrame() {
+    return act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        await new Promise((resolve) => setTimeout(resolve));
+    });
+}
+
+/** A promise, with the function that resolves it. */
+function deferred<T>() {
+    let resolve: (value: T) => void = () => {};
+    const promise = new Promise<T>((done) => { resolve = done; });
+    return { promise, resolve };
 }
 
 /** Waits a task, so that what a pending promise renders is in the DOM. */

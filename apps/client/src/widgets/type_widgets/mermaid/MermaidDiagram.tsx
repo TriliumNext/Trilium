@@ -163,9 +163,7 @@ function useIsEmbedFullscreen(ref: RefObject<HTMLElement | null>) {
 
 /** The zoom and fullscreen of a Mermaid diagram, as buttons of the toolbar of its embed. */
 class MermaidDiagramTools implements ContentEmbedToolProvider {
-    readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
-        "contentEmbedBoxSizeDropdown", "toggleContentEmbedTitle", "convertEmbedToLink"
-    ];
+    readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [ "contentEmbedBoxSizeDropdown" ];
     readonly hasEditableFlag = true;
     readonly hasDisplayModes = true;
     private zoom: SvgZoom | null = null;
