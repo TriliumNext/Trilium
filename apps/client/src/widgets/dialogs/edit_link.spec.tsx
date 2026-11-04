@@ -326,6 +326,29 @@ describe("EditLinkDialog", () => {
         expect(field("url")?.value).toBe("https://pasted.example");
     });
 
+    it("enables its button only once the side shown has a note, an address or an anchor", async () => {
+        const button = () => container.querySelector<HTMLButtonElement>(".modal-footer button");
+        await open({ anchors: [ "intro" ] });
+        expect(button()?.disabled).toBe(true);
+        const note = buildNote({ title: "Note" });
+        await act(async () => autocomplete.onChange?.({ notePath: `root/${note.noteId}` }));
+        expect(button()?.disabled).toBe(false);
+        await act(async () => autocomplete.onChange?.(null));
+        expect(button()?.disabled).toBe(true);
+
+        await act(async () => choice()[0]?.click());
+        expect(button()?.disabled).toBe(true);
+        await type(field("url"), "example.com");
+        expect(button()?.disabled).toBe(false);
+        await type(field("url"), " ");
+        expect(button()?.disabled).toBe(true);
+
+        await act(async () => choice()[2]?.click());
+        expect(button()?.disabled).toBe(true);
+        await act(async () => anchorRows()[0]?.click());
+        expect(button()?.disabled).toBe(false);
+    });
+
     it("focuses the field of the side shown, except on mobile, where it waits for a tap", async () => {
         async function openAndShow() {
             await open();
@@ -735,10 +758,13 @@ describe("EditLinkBalloon", () => {
         expect(url).not.toBeNull();
         expect(document.activeElement).toBe(url);
 
+        const button = form.querySelector<HTMLButtonElement>(".edit-link-actions button");
+        expect(button?.disabled).toBe(true);
         await submit(form);
         expect(onClose).not.toHaveBeenCalled();
 
         await type(url, "example.com");
+        expect(button?.disabled).toBe(false);
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink)

@@ -142,7 +142,9 @@ export default function EditLinkDialog() {
             size="lg"
             title={form.title}
             helpPageId="QEAPj01N5f7w"
-            footer={<Button text={form.buttonText} keyboardShortcut="Enter" />}
+            footer={
+                <Button text={form.buttonText} keyboardShortcut="Enter" disabled={!form.hasLink} />
+            }
             onSubmit={onSubmit}
             onShown={form.onShown}
             onHidden={() => {
@@ -187,7 +189,7 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
         >
             {form.body}
             <div className="edit-link-actions">
-                <Button text={form.buttonText} keyboardShortcut="Enter" />
+                <Button text={form.buttonText} keyboardShortcut="Enter" disabled={!form.hasLink} />
             </div>
         </form>
     );
@@ -584,7 +586,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     return {
         title,
         buttonText,
-        hasLink: target === "anchor" ? !!heading || !!anchor : !!suggestion,
+        /** Whether the side shown has a link to apply: an address, a note, a heading or an anchor. */
+        hasLink: target === "url" ? !!suggestion?.externalLink
+            : target === "note" ? !!suggestion?.notePath
+            : !!heading || !!anchor,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
         applyLink,
