@@ -133,6 +133,7 @@ export default function EditLinkDialog() {
             logError("No link to apply.");
             return;
         }
+        if (!form.validate()) return;
 
         hasSubmittedRef.current = true;
         // Insertion logic in onHidden because it needs focus.
@@ -184,7 +185,7 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                if (!form.hasLink) return;
+                if (!form.hasLink || !form.validate()) return;
 
                 onClose();
                 form.applyLink();
@@ -232,6 +233,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // The URL whose page details are being read.
     const [ retrievingUrl, setRetrievingUrl ] = useState<string | null>(null);
     const [ isRetrievalPending, setIsRetrievalPending ] = useState(false);
+    // The fields show their errors from the first submit on.
+    const [ showsErrors, setShowsErrors ] = useState(false);
     // On mobile, focusing a field opens the keyboard, so a field waits for a tap.
     const autoFocus = !isMobile();
 
@@ -254,6 +257,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setLinkDescription(opts?.currentDescription ?? "");
         pageDetailsRef.current = new Map();
         setRetrievingUrl(null);
+        setShowsErrors(false);
 
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
@@ -280,6 +284,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     function changeTarget(next: LinkTarget, text = "") {
         setTarget(next);
+        setShowsErrors(false);
         setNoteTitle("");
         setLinkTitle("");
         setLinkDescription("");
@@ -427,6 +432,17 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const retrievesDescription = showsDescription && !linkDescription.trim()
         && options.is("textNoteLinkDetailsRetrievalEnabled");
     const isRetrieving = !!webLinkUrl && webLinkUrl === retrievingUrl;
+    const webLinkError = webLinkUrl ? getWebLinkError(webLinkUrl) : undefined;
+
+    /** Shows the errors of the fields from now on, and returns whether the link can be applied. */
+    function validate() {
+        setShowsErrors(true);
+        if (webLinkError) {
+            webLinkRef.current?.focus();
+            return false;
+        }
+        return true;
+    }
 
     // Runs one render after a request, so `retrievePageDetails()` reads the address pasted or the
     // display picked.
@@ -657,6 +673,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             : !!heading || !!anchor,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
+        validate,
         applyLink,
         reset,
         body: target === "anchor" ? (<>
@@ -670,6 +687,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     <>
                         <OptionCardSection
                             className="edit-link-url" name="url" label={t("add_link.url")}
+                            error={showsErrors ? webLinkError : undefined}
                         >
                             <FormTextBoxWithPaste
                                 inputRef={webLinkRef}
@@ -933,4 +951,20 @@ export function normalizeWebLink(text: string): string | null {
     // Trilium allows, as in `tel:123`.
     const hasScheme = scheme && (!scheme[2] || ALLOWED_PROTOCOLS.includes(scheme[1].toLowerCase()));
     return hasScheme ? link : `https://${link}`;
+}
+
+/**
+ * Why the web link `link` cannot be applied: it is a `javascript:` link, or `new URL()` cannot
+ * parse it. `undefined` for a link that can be applied.
+ *
+ * Exported for testing.
+ */
+export function getWebLinkError(link: string): string | undefined {
+    let url: URL;
+    try {
+        url = new URL(link);
+    } catch {
+        return t("add_link.invalid_url");
+    }
+    return url.protocol === "javascript:" ? t("add_link.javascript_not_allowed") : undefined;
 }

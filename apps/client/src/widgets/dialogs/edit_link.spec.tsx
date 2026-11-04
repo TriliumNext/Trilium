@@ -11,7 +11,8 @@ import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
-    EditLinkBalloon, type EditLinkOpts, getShownDisplay, type LinkHeading, normalizeWebLink
+    EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, type LinkHeading,
+    normalizeWebLink
 } from "./edit_link";
 
 const autocomplete = vi.hoisted(() => ({
@@ -58,6 +59,19 @@ describe("normalizeWebLink", () => {
         expect(normalizeWebLink("geo:47.6,-122.3")).toBe("geo:47.6,-122.3");
         expect(normalizeWebLink("example.com:443/a")).toBe("https://example.com:443/a");
         expect(normalizeWebLink("  ")).toBeNull();
+    });
+});
+
+describe("getWebLinkError", () => {
+    it("refuses a javascript: link and an address that new URL() cannot parse", () => {
+        expect(getWebLinkError("https://example.com/a b")).toBeUndefined();
+        expect(getWebLinkError("mailto:someone@example.com")).toBeUndefined();
+        expect(getWebLinkError("javascript:alert(1)")).toBe("add_link.javascript_not_allowed");
+        expect(getWebLinkError("JavaScript:void(0)")).toBe("add_link.javascript_not_allowed");
+        // `new URL()` drops the tab, as the browser does when it follows the link.
+        expect(getWebLinkError("java\tscript:alert(1)")).toBe("add_link.javascript_not_allowed");
+        expect(getWebLinkError("https://exa mple.com")).toBe("add_link.invalid_url");
+        expect(getWebLinkError("https://example.com:99999")).toBe("add_link.invalid_url");
     });
 });
 
@@ -362,6 +376,28 @@ describe("EditLinkDialog", () => {
         expect(button()?.disabled).toBe(true);
         await act(async () => anchorRows()[0]?.click());
         expect(button()?.disabled).toBe(false);
+    });
+
+    it("stays open on a refused address and updates the error as it is edited", async () => {
+        const error = () => container
+            .querySelector(".edit-link-url > .input-group + .form-field-error")?.textContent;
+        await open({ target: "url" });
+        await type(field("url"), "javascript:alert(1)");
+        expect(error()).toBeUndefined();
+        await act(async () => {
+            container.querySelector("form")
+                ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(field("url")).not.toBeNull();
+        expect(error()).toBe("add_link.javascript_not_allowed");
+
+        await type(field("url"), "exa mple.com");
+        expect(error()).toBe("add_link.invalid_url");
+        await type(field("url"), "example.com");
+        expect(error()).toBeUndefined();
+        await submit();
+        expect(addLink)
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "https://example.com", true);
     });
 
     it("focuses the field of the side shown, except on mobile, where it waits for a tap", async () => {
@@ -950,6 +986,20 @@ describe("EditLinkBalloon", () => {
         await submit(form);
         expect(onClose).toHaveBeenCalledOnce();
         expect(addLink).toHaveBeenCalledExactlyOnceWith("https://example.com/page", "Page", true);
+    });
+
+    it("refuses an invalid address on submit and focuses its field", async () => {
+        const form = await show({ target: "url" });
+        const url = form.querySelector<HTMLInputElement>(".edit-link-url input");
+        await type(url, "exa mple.com");
+        await act(async () => url?.blur());
+        expect(document.activeElement).not.toBe(url);
+        await submit(form);
+        expect(form.querySelector(".edit-link-url .form-field-error")?.textContent)
+            .toBe("add_link.invalid_url");
+        expect(document.activeElement).toBe(url);
+        expect(onClose).not.toHaveBeenCalled();
+        expect(addLink).not.toHaveBeenCalled();
     });
 
     it("focuses the title of the Anchors page and applies once an anchor is checked", async () => {

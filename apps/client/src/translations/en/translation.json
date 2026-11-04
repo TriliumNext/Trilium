@@ -68,6 +68,8 @@
     "button_fix_link": "Fix link",
     "web_link": "Web link",
     "url": "Address (URL)",
+    "invalid_url": "This is not a valid URL.",
+    "javascript_not_allowed": "Links that run JavaScript are not allowed.",
     "display_as": "Display as",
     "display_plain": "Plain link",
     "display_inline": "Inline",
