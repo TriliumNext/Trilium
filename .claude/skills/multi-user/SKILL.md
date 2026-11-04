@@ -28,7 +28,7 @@ Through a view, `becca.notes`, `branches`, `attributes` and `childParentToBranch
 
 | Table / column | Purpose | Synced? |
 |---|---|---|
-| `users` (`userId`, `username`, `email`, `isAdmin`, `isDeleted`, `passwordHash/Salt`) | Identity. Soft delete; partial unique index on `username WHERE isDeleted = 0` so deleted names can be reused. `passwordHash` is unused so far (login still uses the instance password). | No (not an entity) |
+| `users` (`userId`, `username`, `email`, `isAdmin`, `isDeleted`, `passwordHash/Salt`) | Identity. Soft delete; partial unique index on `username WHERE isDeleted = 0` so deleted names can be reused. Members sign in with `username` and their own password; the primary admin keeps the instance password. | No (not an entity) |
 | `user_groups`, `user_group_members` | Groups. No API/UI yet — only rows inserted in tests. | No |
 | `note_permissions` (`noteId`, `userId` XOR-ish `groupId`, `canRead`, `canWrite`) | ACL grants. `CHECK (userId IS NOT NULL OR groupId IS NOT NULL)`. Inherited down the tree. | **No** — known gap |
 | `oauth_enrollment` (single row `id = 0`) | Replaces old `user_data`: scrypt verification hash + encrypted data key for OpenID. Server-only, must never sync. | Never |
@@ -38,7 +38,7 @@ Through a view, `becca.notes`, `branches`, `attributes` and `childParentToBranch
 
 `seedAdminUser()` (`packages/trilium-core/src/services/sql_init.ts`) runs on **every** `initDbConnection()`: ensures one admin exists (promotes an existing non-admin `admin` row if the insert collides), backfills NULL `ownerId`/`userId` to it, and writes `adminUserId`. So NULL `ownerId` is transient — anything created without it is reassigned to the admin on next boot.
 
-Both login paths (`apps/server/src/routes/login.ts` password/TOTP, `apps/server/src/services/open_id.ts` SSO) set `req.session.userId = user_service.getAdminUserId()` — there is **no per-user login yet**; only the admin can actually sign in. Non-admin sessions exist only in tests or by hand-editing the session.
+The password login (`apps/server/src/routes/login.ts`) sets `req.session.userId` to whoever signed in: a member by username and their own password, the primary admin by the instance password and TOTP. SSO (`apps/server/src/services/open_id.ts`) still signs in only as the primary admin. Auth checks `session.loggedIn`, not `userId`, so a logged-in session without a `userId` still reaches the handlers, in a plain scope.
 
 ## Key files
 
