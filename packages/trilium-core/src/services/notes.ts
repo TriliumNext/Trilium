@@ -299,7 +299,7 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
-    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+    if (typeof forcedNoteId === "string" && forcedNoteId && becca.allNotes[forcedNoteId]) {
         throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
     }
 

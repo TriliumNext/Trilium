@@ -5,10 +5,13 @@ import becca from "../becca/becca.js";
 import cloningService from "./cloning.js";
 import * as cls from "./context.js";
 import noteService from "./notes.js";
+import permissionService from "./permission_service.js";
 import { getSql } from "./sql/index.js";
 import treeService from "./tree.js";
 import userHomes, { getHomeNoteId } from "./user_homes.js";
 import userService from "./user_service.js";
+
+const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
 
 describe("user homes", () => {
     it("creates nothing while the primary admin is the only user", () => {
@@ -123,6 +126,76 @@ describe("user homes", () => {
             "SELECT title, ownerId FROM notes WHERE noteId = ?", [ secret.noteId ]
         ));
         expect(row).toEqual({ title: "bob secret", ownerId: bobId });
+    });
+});
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
+    it("takes a note off Shared with me once a member pastes it into their home", async () => {
+        const aliceId = cls.init(() => userService.createUser("paste-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("paste-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "paste-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "paste-bob-spec"));
+        const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
+        cls.init(() => permissionService.setUserAccess(project.noteId, aliceId, false));
+
+        const result = await asUser(aliceId, () => {
+            expect(becca.getNote(SHARED_WITH_ME_NOTE_ID)?.getChildNotes().map((child) => child.noteId))
+                .toEqual([ project.noteId ]);
+            return cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
+        });
+        expect(result.success).toBe(true);
+
+        const [ sharedWithMe, parentNoteIds ] = await asUser(aliceId, () => [
+            becca.getNote(SHARED_WITH_ME_NOTE_ID),
+            project.getParentNotes().map((parent) => parent.noteId)
+        ]);
+        expect(sharedWithMe).toBeNull();
+        expect(parentNoteIds).toEqual([ aliceHome.noteId ]);
+    });
+
+    it("deletes a member's notes and notes inside a shared one, but only their copy of a shared note", async () => {
+        const aliceId = cls.init(() => userService.createUser("unclone-alice-spec", null, false));
+        const bobId = cls.init(() => userService.createUser("unclone-bob-spec", null, false));
+        const aliceHome = cls.init(() => userHomes.ensureUserHome(aliceId, "unclone-alice-spec"));
+        const bobHome = cls.init(() => userHomes.ensureUserHome(bobId, "unclone-bob-spec"));
+        const draft = createOwnedNote(aliceHome.noteId, aliceId, "alice draft");
+        const project = createOwnedNote(bobHome.noteId, bobId, "uncloned project");
+        const spec = createOwnedNote(project.noteId, bobId, "uncloned spec");
+        const event = createOwnedNote(project.noteId, bobId, "uncloned event");
+        cls.init(() => {
+            permissionService.setUserAccess(project.noteId, aliceId, true);
+            cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
+        });
+
+        const [ draftDeleted, eventDeleted, projectDeleted, remaining ] = await asUser(aliceId, () => {
+            const copy = becca.getBranchFromChildAndParent(project.noteId, aliceHome.noteId);
+            expect(project.getParentBranches()).toEqual([ copy ]);
+            return [
+                becca.getBranchFromChildAndParent(draft.noteId, aliceHome.noteId)?.deleteBranch(),
+                becca.getBranchFromChildAndParent(event.noteId, project.noteId)?.deleteBranch(),
+                copy?.deleteBranch(),
+                [ draft.noteId, event.noteId, project.noteId ].filter((noteId) => becca.getNote(noteId))
+            ];
+        });
+        expect(draftDeleted).toBe(true);
+        expect(eventDeleted).toBe(true);
+        expect(projectDeleted).toBe(false);
+        expect(remaining).toEqual([ project.noteId ]);
+
+        const deletedNoteIds = cls.init(() => getSql().getColumn<string>(
+            "SELECT noteId FROM notes WHERE noteId IN (?, ?) AND isDeleted = 1", [ draft.noteId, event.noteId ]
+        ));
+        expect(deletedNoteIds.sort()).toEqual([ draft.noteId, event.noteId ].sort());
+        const live = cls.init(() => getSql().getColumn<string>(
+            "SELECT noteId || ' in ' || parentNoteId FROM branches WHERE noteId IN (?, ?) AND isDeleted = 0 ORDER BY noteId",
+            [ project.noteId, spec.noteId ]
+        ));
+        expect(live).toEqual([
+            `${project.noteId} in ${bobHome.noteId}`, `${spec.noteId} in ${project.noteId}`
+        ].sort());
     });
 });
 

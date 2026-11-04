@@ -1,5 +1,6 @@
 import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
 
+import { invalidateNoteVisibility } from "../becca/note_visibility_version.js";
 import { ForbiddenError } from "../errors.js";
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
@@ -119,6 +120,7 @@ function createUser(username: string, email: string | null, isAdmin: boolean): s
          VALUES (?, ?, ?, ?, 0, ?, ?)`,
         [userId, username, email, isAdmin ? 1 : 0, now, now]
     );
+    invalidateNoteVisibility();
     return userId;
 }
 
@@ -143,6 +145,8 @@ function updateUser(userId: string, changes: UserChanges): void {
             userId
         ]
     );
+    // A change of role changes which notes the user sees.
+    invalidateNoteVisibility();
 }
 
 /**
@@ -265,6 +269,7 @@ function deleteUser(userId: string): void {
         `UPDATE users SET isDeleted = 1, utcDateModified = ? WHERE userId = ?`,
         [dateUtils.utcNowDateTime(), userId]
     );
+    invalidateNoteVisibility();
 }
 
 export default {

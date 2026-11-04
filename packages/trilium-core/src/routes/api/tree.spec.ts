@@ -147,3 +147,36 @@ describe("Tree API (core)", () => {
         });
     });
 });
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("Tree API (core) for a member", () => {
+    let memberId: string;
+    let secretId: string;
+    let sharedId: string;
+
+    beforeAll(async () => {
+        api = CoreApiTester.build();
+        memberId = getContext().init(() => userService.createUser(`tree-member-${Date.now()}`, null, false));
+        secretId = (await createTextNote(api, { title: "tree member secret" })).noteId;
+        sharedId = (await createTextNote(api, { title: "tree member shared" })).noteId;
+        getContext().init(() => permissionService.setUserAccess(sharedId, memberId, false));
+    });
+
+    it("sends a member only the notes they can see, on every way the client loads them", async () => {
+        const session = { userId: memberId };
+        const noteIdsOf = (res: { body: TreeResponse }) => res.body.notes.map((note) => note.noteId);
+
+        const tree = await api.get<TreeResponse>("/api/tree", { session });
+        expect(noteIdsOf(tree)).toContain(sharedId);
+        expect(noteIdsOf(tree)).not.toContain(secretId);
+
+        const loaded = await api.post<TreeResponse>("/api/tree/load", { body: { noteIds: [ secretId, sharedId ] }, session });
+        expect(noteIdsOf(loaded)).toContain(sharedId);
+        expect(noteIdsOf(loaded)).not.toContain(secretId);
+
+        expect((await api.get(`/api/notes/${secretId}`, { session })).status).toBe(404);
+        expect((await api.get(`/api/notes/${sharedId}`, { session })).status).toBe(200);
+    });
+});
