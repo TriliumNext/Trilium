@@ -69,7 +69,7 @@
     "web_link": "Web page",
     "url": "Address (URL)",
     "invalid_url": "This is not a valid URL.",
-    "javascript_not_allowed": "Links that run JavaScript are not allowed.",
+    "script_link_not_allowed": "Links that start with {{scheme}} can run code, so they are not allowed.",
     "display_as": "Display as",
     "display_text": "Text",
     "display_icon_and_text": "Icon & text",
@@ -3207,6 +3207,7 @@
     "create-child-note": "Create child note \"{{term}}\"",
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
+    "suggestions": "Suggestions",
     "include-note-contents": "Include note contents in the results for \"{{term}}\"",
     "include-contents": "Include note contents",
     "hints": {

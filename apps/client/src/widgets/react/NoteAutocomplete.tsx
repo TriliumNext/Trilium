@@ -415,8 +415,13 @@ export default function NoteAutocomplete({
             )}
 
             {showExpandButton && (
-                <a
+                <button
+                    type="button"
                     className="input-group-text note-autocomplete-expand-button"
+                    title={t("note_autocomplete.suggestions")}
+                    aria-expanded={autocomplete.isShown}
+                    // Out of the Tab order: the field opens the list with the arrow keys.
+                    tabIndex={-1}
                     // Keeps the focus in the field, so its blur does not close the list first.
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={toggleList}

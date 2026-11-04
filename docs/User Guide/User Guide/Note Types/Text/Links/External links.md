@@ -12,7 +12,7 @@ To create a link without a custom text:
 *   A simpler way is to paste the raw link and press space to turn it automatically into a link.
 *   The <span class="tn-icon cke cke-trilium"></span> button and <kbd>Ctrl</kbd>+<kbd>L</kbd> of <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> open the same dialog on _Note_. Select _Web page_ at the top of the dialog to create an external link from there.
 
-An address without a scheme, such as `example.com`, gets `https://`. The dialog does not insert an address that is not a valid URL, or a `javascript:` link, and shows the reason under the address field. A URL pasted into the _Note_ field, or picked from its search, switches the dialog to _Web page_. The dialog also opens on _Web page_ when the selected text is a URL.
+An address without a scheme, such as `example.com`, gets `https://`. The dialog does not insert an address that is not a valid URL, or a `javascript:`, `vbscript:` or `data:` link, since those can run code, and shows the reason under the address field. A URL pasted into the _Note_ field, or picked from its search, switches the dialog to _Web page_. The dialog also opens on _Web page_ when the selected text is a URL.
 
 To create a link with a custom text:
 

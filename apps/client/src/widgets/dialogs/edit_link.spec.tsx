@@ -78,13 +78,16 @@ describe("normalizeWebLink", () => {
 });
 
 describe("getWebLinkError", () => {
-    it("refuses a javascript: link and an address that new URL() cannot parse", () => {
+    it("refuses a link that can run code and an address that new URL() cannot parse", () => {
+        const refused = "add_link.script_link_not_allowed";
         expect(getWebLinkError("https://example.com/a b")).toBeUndefined();
         expect(getWebLinkError("mailto:someone@example.com")).toBeUndefined();
-        expect(getWebLinkError("javascript:alert(1)")).toBe("add_link.javascript_not_allowed");
-        expect(getWebLinkError("JavaScript:void(0)")).toBe("add_link.javascript_not_allowed");
+        expect(getWebLinkError("javascript:alert(1)")).toBe(refused);
+        expect(getWebLinkError("JavaScript:void(0)")).toBe(refused);
         // `new URL()` drops the tab, as the browser does when it follows the link.
-        expect(getWebLinkError("java\tscript:alert(1)")).toBe("add_link.javascript_not_allowed");
+        expect(getWebLinkError("java\tscript:alert(1)")).toBe(refused);
+        expect(getWebLinkError("VBScript:msgbox(1)")).toBe(refused);
+        expect(getWebLinkError("data:text/html,<script>alert(1)</script>")).toBe(refused);
         expect(getWebLinkError("https://exa mple.com")).toBe("add_link.invalid_url");
         expect(getWebLinkError("https://example.com:99999")).toBe("add_link.invalid_url");
     });
@@ -470,7 +473,7 @@ describe("EditLinkDialog", () => {
                 ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         });
         expect(field("url")).not.toBeNull();
-        expect(error()).toBe("add_link.javascript_not_allowed");
+        expect(error()).toBe("add_link.script_link_not_allowed");
 
         await type(field("url"), "exa mple.com");
         expect(error()).toBe("add_link.invalid_url");

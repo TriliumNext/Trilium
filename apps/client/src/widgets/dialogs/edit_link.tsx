@@ -959,8 +959,8 @@ export function normalizeWebLink(text: string): string | null {
 }
 
 /**
- * Why the web link `link` cannot be applied: it is a `javascript:` link, or `new URL()` cannot
- * parse it. `undefined` for a link that can be applied.
+ * Why the web link `link` cannot be applied: it is a `javascript:`, `vbscript:` or `data:` link,
+ * which can run code, or `new URL()` cannot parse it. `undefined` for a link that can be applied.
  *
  * Exported for testing.
  */
@@ -971,5 +971,6 @@ export function getWebLinkError(link: string): string | undefined {
     } catch {
         return t("add_link.invalid_url");
     }
-    return url.protocol === "javascript:" ? t("add_link.javascript_not_allowed") : undefined;
+    const runsCode = [ "javascript:", "vbscript:", "data:" ].includes(url.protocol);
+    return runsCode ? t("add_link.script_link_not_allowed", { scheme: url.protocol }) : undefined;
 }

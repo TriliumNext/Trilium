@@ -15,6 +15,11 @@ vi.mock("../../services/note_autocomplete", async (importOriginal) => ({
     createNoteFromSuggestion
 }));
 
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/i18n")>()),
+    t: (key: string) => key
+}));
+
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import type { NoteSuggestionOptions, Suggestion } from "../../services/note_autocomplete";
@@ -42,7 +47,8 @@ async function render(props: NoteAutocompleteProps = {}) {
 
 /** The classes of the buttons after the input, in document order. */
 function buttonClasses(container: HTMLElement) {
-    return [ ...container.querySelectorAll(".input-group > a") ].map((button) => button.className);
+    return [ ...container.querySelectorAll(".input-group > a, .input-group > button") ]
+        .map((button) => button.className);
 }
 
 describe("NoteAutocomplete", () => {
@@ -464,6 +470,12 @@ describe("NoteAutocomplete's suggestion list", () => {
     it("opens and closes from the expand button, keeping the focus in the field", async () => {
         const input = await mount();
         const expand = button(".note-autocomplete-expand-button");
+        // A named button outside the Tab order, as the field opens the list with the arrow keys.
+        expect(expand.tagName).toBe("BUTTON");
+        expect(expand.getAttribute("type")).toBe("button");
+        expect(expand.title).toBe("note_autocomplete.suggestions");
+        expect(expand.tabIndex).toBe(-1);
+        expect(expand.getAttribute("aria-expanded")).toBe("false");
 
         const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
         expand.dispatchEvent(mouseDown);
@@ -474,11 +486,13 @@ describe("NoteAutocomplete's suggestion list", () => {
         expect(queries()).toEqual([ "" ]);
         expect(rows()).toHaveLength(2);
         expect(document.activeElement).toBe(input);
+        expect(expand.getAttribute("aria-expanded")).toBe("true");
 
         await act(async () => { expand.click(); });
         await settle();
         expect(rows()).toHaveLength(0);
         expect(document.activeElement).toBe(input);
+        expect(expand.getAttribute("aria-expanded")).toBe("false");
 
         // A filled field lists the suggestions for its text, the note it names highlighted.
         await type(input, "Beta");
