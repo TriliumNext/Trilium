@@ -59,7 +59,7 @@ If the link is not accessible to the Trilium server (or the network request fail
 
 Since v0.107.0, a link preview is created from the same _Add link_ dialog as any other link (see <a class="reference-link" href="Links/External%20links.md">External links</a>):
 
-*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web link_.
+*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web page_.
 *   Type or paste the address, then pick the preview in _Display as_: _Icon & text_, _Card_ or, for a YouTube video, _YouTube embed_. _Text_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
 *   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
 *   When you leave the address field, or paste the address with the <span class="tn-icon bx bx-paste"></span> _Paste_ button, Trilium reads the page and fills an empty _Link title_, and the empty _Description_ of a card, with the page's own. A spinner at the end of a field shows that its value is loading; once you type in the field, what you type is kept. Switching _Display as_ to _Card_ fills the _Description_ the same way, without reading the page again.
@@ -67,7 +67,7 @@ Since v0.107.0, a link preview is created from the same _Add link_ dialog as any
 
 To keep the dialog from reading the page, go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and, in the _Features_ section, turn off _Automatically retrieve titles for text links_ (for _Text_) or _Automatically retrieve title, description and icon for icon & text links and cards_ (for _Icon & text_ and _Card_). Both are on by default. While they are on, Trilium contacts the page as soon as you leave the address field, also for a text link.
 
-Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page (with icon)_ or _Link to a web page (as a card)_ (both are also found by _link preview_). Each opens the same dialog on _Web link_, with _Icon & text_ or _Card_ already picked.
+Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page (with icon)_ or _Link to a web page (as a card)_ (both are also found by _link preview_). Each opens the same dialog on _Web page_, with _Icon & text_ or _Card_ already picked.
 
 To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 

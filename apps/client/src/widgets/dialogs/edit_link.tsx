@@ -89,7 +89,7 @@ export interface EditLinkOpts {
     currentAnchor?: string;
     /**
      * The headings of the document that the link goes into, in document order. When given, the
-     * Headings & anchors page lists them.
+     * Heading / anchor page lists them.
      */
     headings?: LinkHeading[];
     /** The heading in `headings` that the link being edited points at. */
@@ -592,7 +592,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         />
     );
 
-    /** The choice of `item` on the Headings & anchors page, with the headings under it. */
+    /** The choice of `item` on the Heading / anchor page, with the headings under it. */
     function renderHeadingChoice(item: LinkHeading, index: number) {
         const children = headingTree.get(item) ?? [];
         return (
@@ -830,8 +830,8 @@ function RetrievedTextArea({ isRetrieving, ...props }: ComponentProps<typeof For
 }
 
 /**
- * The page the dialog opens on: Headings & anchors for an edited link to a heading or an anchor,
- * Web link when there is an `initialWebLink`, Headings & anchors for a new link that asks for it,
+ * The page the dialog opens on: Heading / anchor for an edited link to a heading or an anchor,
+ * Web page when there is an `initialWebLink`, Heading / anchor for a new link that asks for it,
  * and Note otherwise.
  */
 function getInitialTarget(

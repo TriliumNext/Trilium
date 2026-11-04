@@ -7,7 +7,7 @@ There are two types of links:
 
 ## The link dialog
 
-The _Add link_ dialog has a page for each kind of link, selected at its top: _Web link_, _Note_ and, in a text note, _Headings & anchors_. Each page keeps what you entered on it while you look at another one. _Insert link_ (_Save link_ when changing a link) creates only the link of the page shown.
+The _Add link_ dialog has a page for each kind of link, selected at its top: _Web page_, _Note_ and, in a text note, _Heading / anchor_. Each page keeps what you entered on it while you look at another one. _Insert link_ (_Save link_ when changing a link) creates only the link of the page shown.
 
 ## Note map
 
