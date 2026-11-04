@@ -318,6 +318,29 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     }
 }
 
+.tn-menu-actions.tn-menu-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    & > .tn-menu-action > .tn-menu-action-title {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        white-space: normal;
+        text-align: center;
+        text-wrap: balance;
+    }
+
+    & > .tn-menu-action[aria-checked="true"] {
+        color: var(--left-pane-item-selected-color, var(--active-item-text-color));
+        background-image: linear-gradient(
+            var(--left-pane-item-selected-background, var(--active-item-background-color)),
+            var(--left-pane-item-selected-background, var(--active-item-background-color))
+        );
+    }
+}
+
 /* The gaps and the card background match `.form-list-row` and the mobile `.dropdown-item` in theme-next/menus.css. */
 body.mobile .tn-menu-actions.tn-menu-actions-cards {
     gap: 1em;

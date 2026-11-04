@@ -69,10 +69,10 @@ An include can have a caption, shown centered at the bottom of its box. The capt
 
 ## Title
 
-The title row of an include links to the included note and holds its buttons. To show only the content, select the include and press the <span class="tn-icon bx bx-window-alt"></span> _Show title_ button in its toolbar. Pressing it again shows the title.
+The title row of an include links to the included note and holds its buttons. To show only the content, turn off _Show title_ in the menu of the include, which right-clicking the title row or pressing its <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button opens (see _Opening an included note_ below).
 
-*   While the title is hidden, the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ button in the toolbar of the include opens the menu of the included note.
-*   A _Tiny_ or _Expandable_ include always shows its title, and its toolbar has no _Show title_ button.
+*   While the title is hidden, select the include and press the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ button in its toolbar to open the same menu, where turning on _Show title_ shows the title again.
+*   A _Tiny_ or _Expandable_ include always shows its title, so _Show title_ is unavailable in its menu.
 
 ## Opening an included note
 
@@ -80,7 +80,7 @@ To open an included note in a new tab, press the <span class="tn-icon bx bx-link
 
 The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button at the end of the title row opens the same menu as right-clicking anywhere on the title row: the other places to open the note in and, for an embedded attachment, the actions on the attachment.
 
-In a note being edited, the menu also has the commands of the include's toolbar: the _Size_ submenu, _Show title_ and _Show caption_, each checked while it is in effect, and _Convert to link_. It also has the _Position_ submenu after _Size_ (see _Positioning_ above), and <span class="tn-icon bx bx-trash"></span> _Delete_ at the end, which removes the include from the note. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
+In a note being edited, the menu also has the _Size_ submenu, _Show title_ and _Show caption_, each a switch that is on while it is in effect, and the _Position_ submenu after _Size_ (see _Positioning_ above). The menu ends with <span class="tn-icon bx bx-trash"></span> _Delete_, which removes the include from the note, followed by _Convert to link_. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
 
 To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
@@ -91,7 +91,7 @@ A _Tiny_ include has these buttons instead, followed by the same _More actions_ 
 
 ## Converting an include to a link
 
-To replace an include with a link to the included note, select it and press the <span class="tn-icon cke cke-link"></span> _Convert to link_ button in its toolbar, or choose _Convert to link_ in its _More actions_ menu, above _Delete_. An embedded attachment turns into a link to the attachment the same way.
+To replace an include with a link to the included note, choose _Convert to link_ at the end of its _More actions_ menu, after _Delete_. An embedded attachment turns into a link to the attachment the same way.
 
 ## Missing notes and attachments
 
@@ -130,7 +130,7 @@ In a _Small_ or _Medium_ box, the image is scaled down to fit the height of the 
 
 An included text note, an included code note and an embedded code file such as a `.js`, `.py` or `.txt` attachment can be edited without leaving the note that includes them. Until then, a code note or file is shown read-only in the code editor, where its code can be selected and copied, and its blocks folded and unfolded with the arrows in its gutter. Included Markdown can be edited too, see _Included Markdown_ below.
 
-*   To edit, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or check _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. Turn _Editable_ off to stop editing.
+*   To edit, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or turn on _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. Turn _Editable_ off to stop editing.
 *   While _Editable_ is on, the arrow keys move the caret into the include and back out, as through the rest of the text. Entering from above or from the left puts the caret at the start of the include, and entering from below or from the right puts it at the end. A collapsed _Expandable_ include is skipped.
 *   While an included text note has the focus, the formatting toolbar applies to it. The notes it includes in turn stay read-only.
 *   Code is edited in the same code editor as a <a class="reference-link" href="../Code.md">Code</a> note, with its theme, indentation and line wrapping settings.
@@ -177,8 +177,8 @@ A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-
 *   The canvas toolbar replaces the Excalidraw menu: _Export image_, _Find on canvas_, _Library_ and _Help_ are at the end of its <span class="tn-icon bx bx-category"></span> _More tools_ menu. In fullscreen, the Excalidraw menu shows again.
 *   The changes to the drawing are part of the undo history of the text note (see _Editing an include in place_ above). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> and the <span class="tn-icon bx bx-undo"></span> _Undo_ and <span class="tn-icon bx bx-redo"></span> _Redo_ buttons of the canvas toolbar undo and redo the last change of the note, in the drawing or in the text.
 *   A new drawing has the background color of the note. A background chosen from the Excalidraw menu replaces it.
-*   To protect a finished drawing from accidental changes, select it and turn off the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or uncheck _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn _Editable_ back on.
-*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size, _Show title_ and _Convert to link_ to its _More actions_ menu, which also sets its position (see _Positioning_ above).
+*   To protect a finished drawing from accidental changes, select it and turn off the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or turn off _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn _Editable_ back on.
+*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size and the position to its _More actions_ menu (see _Positioning_ above).
 *   In the desktop layout, Excalidraw keeps its desktop interface however small the box is. In the mobile layout, a narrow or short box switches it to a compact interface. For more room, choose _Full_, or show the title and press <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_.
 *   Pictures added to the drawing are stored in the same attachment. A converted image is kept as an image attachment of the note instead, named with a generated code.
 *   In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the drawing shows as a still picture too.

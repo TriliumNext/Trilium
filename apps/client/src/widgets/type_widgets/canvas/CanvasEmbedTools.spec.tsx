@@ -88,8 +88,7 @@ describe("CanvasEmbedTools", () => {
 
         expect(getContentEmbedTools(document.createElement("figure"))).toBeNull();
         expect(provider.hiddenToolbarItems).toEqual([
-            "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown",
-            "toggleContentEmbedTitle", "convertEmbedToLink"
+            "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
         ]);
         expect([ provider.hasEditableFlag, provider.hasPositions ]).toEqual([ true, true ]);
         const tools = provider.getTools();

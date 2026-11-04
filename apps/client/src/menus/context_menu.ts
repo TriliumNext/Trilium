@@ -100,6 +100,11 @@ export interface MenuCommandItem<T> {
      */
     uiIconBadge?: string;
     /**
+     * An SVG icon in place of {@link uiIcon}, for an icon that a font cannot draw, such as one of
+     * more than one color. Drawn in a row of actions only.
+     */
+    uiIconSvg?: string;
+    /**
      * What the row shows as a tooltip on hover, in place of its title: for a short title that
      * needs a word of explanation, whether the row is a menu row or one of a row of actions.
      */
@@ -129,6 +134,11 @@ export interface MenuCommandItem<T> {
      * edge when the item has a {@link uiIcon} of its own, and in place of the icon when it has none.
      */
     checked?: boolean;
+    /**
+     * Draws the item as a switch, as in the note menu, on while {@link checked} is set. Its title
+     * is text, not HTML.
+     */
+    isSwitch?: boolean;
     /** Classes put on the item itself, for a menu styling one of its entries differently. */
     className?: string;
     /** Plain text at the trailing edge of the item, where a shortcut would go, such as a note's path. */

@@ -152,6 +152,27 @@ describe("Menu with declared rows", () => {
         expect(trailingText?.previousElementSibling?.textContent).toBe("Plan");
     });
 
+    it("draws an item marked as a switch with a switch, on while it is checked", () => {
+        const onSelect = vi.fn();
+        const items: MenuItem<string>[] = [
+            { title: "Editable", uiIcon: "bx bx-edit-alt", isSwitch: true, checked: true },
+            { title: "Show title", uiIcon: "bx bx-window-alt", isSwitch: true, checked: false, enabled: false }
+        ];
+        render(<Menu anchor={{ x: 10, y: 10 }} items={items} onSelect={onSelect} onClose={vi.fn()} />, host);
+        const rows = [ ...document.querySelectorAll<HTMLElement>("li.dropdown-item.tn-menu-toggle") ];
+        expect(rows.map((row) => [
+            row.querySelector(".switch-name")?.textContent,
+            row.querySelector(".switch-button")?.classList.contains("on"),
+            row.classList.contains("disabled")
+        ])).toEqual([ [ "Editable", true, false ], [ "Show title", false, true ] ]);
+        expect(document.querySelector(".dropdown-item .bx-check")).toBeNull();
+
+        rows[1]?.click();
+        expect(onSelect).not.toHaveBeenCalled();
+        rows[0]?.click();
+        expect(onSelect).toHaveBeenCalledExactlyOnceWith(items[0], expect.any(MouseEvent));
+    });
+
     it("closes the menu after running a row, but not for a row that opens a submenu or is disabled", async () => {
         const { menu, calls } = renderMenu();
 
@@ -583,6 +604,55 @@ describe("Menu with an action row", () => {
             "tn-icon bx bx-copy",
             "tn-icon bx bx-trash tn-menu-action-badged + tn-menu-action-badge bx bx-x"
         ]);
+    });
+
+    it("marks an action as checked or not, for an item that is checkable", () => {
+        render((
+            <Menu
+                anchor={{ x: 10, y: 10 }} onClose={vi.fn()}
+                items={[ {
+                    kind: "actions",
+                    className: "tn-menu-tiles",
+                    items: [
+                        { title: "Left", command: "left", checked: true },
+                        { title: "Right", command: "right", checked: false },
+                        { title: "Copy", command: "copy" }
+                    ]
+                } ]}
+            />
+        ), host);
+        const actions = [
+            ...document.querySelectorAll(".tn-menu-actions.tn-menu-tiles > .tn-menu-action")
+        ];
+
+        expect(actions.map((action) => [
+            action.getAttribute("role"), action.getAttribute("aria-checked")
+        ])).toEqual([
+            [ "menuitemcheckbox", "true" ],
+            [ "menuitemcheckbox", "false" ],
+            [ "menuitem", null ]
+        ]);
+    });
+
+    it("draws an action's SVG icon in place of its icon classes", () => {
+        const svg = "<svg viewBox=\"0 0 20 20\"><rect class=\"content\"/></svg>";
+        render((
+            <Menu
+                anchor={{ x: 10, y: 10 }} onClose={vi.fn()}
+                items={[ {
+                    kind: "actions",
+                    items: [
+                        { title: "Left", command: "left", uiIcon: "bx bx-left", uiIconSvg: svg },
+                        { title: "Copy", command: "copy", uiIcon: "bx bx-copy" }
+                    ]
+                } ]}
+            />
+        ), host);
+        const [ left, copy ] = document.querySelectorAll(".tn-menu-action-icon");
+
+        expect(left?.querySelector(".tn-svg-icon > svg > rect.content")).not.toBeNull();
+        expect(left?.querySelector(".bx")).toBeNull();
+        expect(copy?.querySelector(".tn-icon.bx.bx-copy")).not.toBeNull();
     });
 
     it("names or describes each action in its tooltip, with the shortcut on line 1", async () => {

@@ -152,7 +152,7 @@ function MenuTileGroups({ items }: { items: ToolbarGroupMenuItem[] }) {
             {groups.filter(({ entries }) => entries.length).map(({ heading, entries }, index) => (
                 <Fragment key={index}>
                     {heading && <FormListHeader text={heading} />}
-                    <li className="tn-menu-actions tn-menu-actions-cards toolbar-group-menu-tiles" role="group">
+                    <li className="tn-menu-actions tn-menu-tiles tn-menu-actions-cards toolbar-group-menu-tiles" role="group">
                         {entries.map(({ label, icon, iconClass, isEnabled, isOn, run, children }, tileIndex) => (children
                             ? (
                                 <FormDropdownSubmenu key={tileIndex} tile icon={iconClass} iconSvg={icon} title={label} disabled={!isEnabled}>

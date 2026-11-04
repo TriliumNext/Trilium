@@ -4,6 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link";
 import type { ContextMenuEvent } from "./context_menu";
+import centerIcon from "./icons/position-center.svg?raw";
+import leftIcon from "./icons/position-left.svg?raw";
+import rightIcon from "./icons/position-right.svg?raw";
+import wrapLeftIcon from "./icons/position-wrap-left.svg?raw";
+import wrapRightIcon from "./icons/position-wrap-right.svg?raw";
 
 const mocks = vi.hoisted(() => ({
     show: vi.fn(),
@@ -586,7 +591,7 @@ describe("openContextMenu", () => {
             return execute.mock.calls;
         }
 
-        it("puts the commands of an embed after its first group, deleting it last", async () => {
+        it("puts an embed's commands after its first group, converting it last", async () => {
             // From the title, from the menu button beside it, and from a control acting on the
             // whole embed, as its toolbar does.
             for (const target of [ "a", "button.include-note-menu", "figure" ]) {
@@ -607,23 +612,25 @@ describe("openContextMenu", () => {
                     {
                         title: "link_context_menu.show_title",
                         uiIcon: "bx bx-window-alt",
+                        isSwitch: true,
                         enabled: true,
                         checked: false
                     },
                     {
                         title: "link_context_menu.show_caption",
                         uiIcon: "bx bx-captions",
+                        isSwitch: true,
                         enabled: true,
                         checked: true
                     },
                     { kind: "separator" },
                     { title: "Rename" },
-                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
                     { kind: "separator" },
                     {
                         title: "link_context_menu.delete",
                         uiIcon: "bx bx-trash destructive-action-icon"
-                    }
+                    },
+                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" }
                 ]);
                 expect(items).toHaveLength(15);
             }
@@ -636,16 +643,16 @@ describe("openContextMenu", () => {
             expect(pick(items[8])).toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
-            expect(pick(items[12])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
-            expect(pick(items[14])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(items[13])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(items[14])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
 
             // An embed the editor cannot select is left as it is.
             selectEmbedAt.mockReturnValue(false);
             execute.mockClear();
-            items[12].handler();
+            items[14].handler();
             expect(execute).not.toHaveBeenCalled();
 
-            // An embed that cannot turn into a link ends its last group with the actions.
+            // An embed that cannot turn into a link ends with Delete.
             state = { ...state, isConvertibleToLink: false };
             expect((await openOn(editable.querySelector("a"))).slice(-3)).toMatchObject([
                 { title: "Rename" },
@@ -663,6 +670,7 @@ describe("openContextMenu", () => {
                 {
                     title: "link_context_menu.editable",
                     uiIcon: "bx bx-edit-alt",
+                    isSwitch: true,
                     checked: true
                 },
                 { title: "link_context_menu.include_size" }
@@ -705,8 +713,14 @@ describe("openContextMenu", () => {
         it("offers the positions after the size, for content that has them", async () => {
             state = { ...state, position: "wrap-left" };
             const items = await openOn(editable.querySelector("a"));
-            const option = (key: string, icon: string, checked = false) => ({
-                title: `link_context_menu.${key}`, uiIcon: `cke cke-object-${icon}`, checked
+            const option = (key: string, icon: string, svg: string, checked = false) => ({
+                title: `link_context_menu.${key}`, uiIcon: `cke cke-object-${icon}`, uiIconSvg: svg,
+                checked
+            });
+            const tiles = (...options: ReturnType<typeof option>[]) => ({
+                kind: "actions",
+                className: "tn-menu-tiles tn-menu-actions-cards embed-position-tiles",
+                items: options
             });
 
             expect(items.slice(7, 9)).toMatchObject([
@@ -717,19 +731,28 @@ describe("openContextMenu", () => {
                     enabled: true,
                     items: [
                         { kind: "header", title: "link_context_menu.break_text" },
-                        option("align_left", "left"),
-                        option("align_center", "center"),
-                        option("align_right", "right"),
+                        tiles(
+                            option("align_left", "left", leftIcon),
+                            option("align_center", "center", centerIcon),
+                            option("align_right", "right", rightIcon)
+                        ),
                         { kind: "header", title: "link_context_menu.wrap_text" },
-                        option("align_left", "inline-left", true),
-                        option("align_right", "inline-right")
+                        tiles(
+                            option("align_left", "inline-left", wrapLeftIcon, true),
+                            option("align_right", "inline-right", wrapRightIcon)
+                        )
                     ]
                 }
             ]);
+            expect(new Set([ leftIcon, centerIcon, rightIcon, wrapLeftIcon, wrapRightIcon ]).size)
+                .toBe(5);
             expect(items).toHaveLength(16);
-            expect(pick(items[8].items[2]))
+            expect(items[8].items).toHaveLength(4);
+            expect(items[8].items[1].items).toHaveLength(3);
+            expect(items[8].items[3].items).toHaveLength(2);
+            expect(pick(items[8].items[1].items[1]))
                 .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
-            expect(pick(items[8].items[6]))
+            expect(pick(items[8].items[3].items[1]))
                 .toEqual([ [ "contentEmbedPosition", { value: "wrap-right" } ] ]);
         });
 
@@ -772,7 +795,7 @@ describe("openContextMenu", () => {
             }
         });
 
-        it("ends the menu of an embedded note with converting and deleting it", async () => {
+        it("ends the menu of an embedded note with deleting and converting it", async () => {
             embed().removeAttribute("data-attachment-id");
             embed().setAttribute("data-note-id", "n1");
 
@@ -784,12 +807,12 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.show_title" },
                 { title: "link_context_menu.show_caption" },
                 { kind: "separator" },
-                { title: "link_context_menu.convert_embed_to_link" },
-                { kind: "separator" },
-                { title: "link_context_menu.delete" }
+                { title: "link_context_menu.delete" },
+                { title: "link_context_menu.convert_embed_to_link" }
             ]);
-            expect(items).toHaveLength(12);
-            expect(pick(items[11])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(items).toHaveLength(11);
+            expect(pick(items[9])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(items[10])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
             expect(mocks.getAttachmentOfNote).not.toHaveBeenCalled();
         });
 

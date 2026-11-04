@@ -10,7 +10,10 @@ import { useCallback, useContext, useLayoutEffect, useRef, useState } from "prea
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, MenuList } from "./FormList";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem,
+    FormListToggleableItem, MenuList
+} from "./FormList";
 import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
 import Icon, { SvgIcon } from "./Icon";
 import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
@@ -648,6 +651,16 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
         );
     }
 
+    if (row.isSwitch) {
+        return (
+            <FormListToggleableItem
+                icon={uiIcon} title={title} currentValue={!!checked} disabled={enabled === false}
+                helpTooltip={tooltip} className={className} closeOnSelect={false}
+                onChange={(_, e) => select(e)}
+            />
+        );
+    }
+
     return (
         <FormListItem
             // An item with neither keeps no slot for an icon, as an all-text menu such as spelling fixes needs.
@@ -678,9 +691,10 @@ function MenuActions<T>({ items, className, onSelect }: { items: MenuCommandItem
 function MenuAction<T>({ item, onSelect }: { item: MenuCommandItem<T>, onSelect: MenuProps<T>["onSelect"] }) {
     return (
         <MenuTile
-            icon={item.uiIcon} iconBadge={item.uiIconBadge} title={item.title}
-            tooltip={item.tooltip} keyboardShortcut={item.keyboardShortcut}
-            disabled={item.enabled === false} onSelect={(e) => onSelect?.(item, e)}
+            icon={item.uiIcon} iconSvg={item.uiIconSvg} iconBadge={item.uiIconBadge}
+            title={item.title} tooltip={item.tooltip} keyboardShortcut={item.keyboardShortcut}
+            disabled={item.enabled === false} checked={item.checked}
+            onSelect={(e) => onSelect?.(item, e)}
         />
     );
 }

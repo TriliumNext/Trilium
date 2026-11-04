@@ -1,3 +1,5 @@
+import "./link_context_menu.css";
+
 import type {
     CKTextEditor, ContentEmbedState, PositionValue, ToolbarGroupMenuItem
 } from "@triliumnext/ckeditor5";
@@ -19,6 +21,11 @@ import { getContentEmbedTools } from "../widgets/type_widgets/text/content_embed
 import { getClosestNtxId } from "../widgets/widget_utils.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
+import centerIcon from "./icons/position-center.svg?raw";
+import leftIcon from "./icons/position-left.svg?raw";
+import rightIcon from "./icons/position-right.svg?raw";
+import wrapLeftIcon from "./icons/position-wrap-left.svg?raw";
+import wrapRightIcon from "./icons/position-wrap-right.svg?raw";
 import { getTextEditorContaining, keepEditorFocused } from "./text_editor_context_menu.js";
 
 /**
@@ -71,6 +78,18 @@ const POSITION_ICONS: Record<PositionValue, string> = {
     right: "cke cke-object-right",
     "wrap-left": "cke cke-object-inline-left",
     "wrap-right": "cke cke-object-inline-right"
+};
+
+/**
+ * The icons of the positions on the tiles of the _Position_ submenu. They are drawn larger than
+ * {@link POSITION_ICONS}, so with thinner lines, and the embed in them has a color of its own.
+ */
+const POSITION_TILE_ICONS: Record<PositionValue, string> = {
+    left: leftIcon,
+    center: centerIcon,
+    right: rightIcon,
+    "wrap-left": wrapLeftIcon,
+    "wrap-right": wrapRightIcon
 };
 
 let lastMenuRequest = 0;
@@ -247,7 +266,7 @@ function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     return [ ...getEmbedItems(embed), ...getDeleteEmbedGroup(embed) ];
 }
 
-/** "Delete", which removes the embed from the note, in a group of its own. */
+/** "Delete", which removes the embed from the note, after a separator. */
 function getDeleteEmbedGroup(embed: MenuEmbed): MenuItem<CommandNames>[] {
     return [
         { kind: "separator" },
@@ -367,9 +386,9 @@ function openSharedPage(command: string | undefined, notePath: string) {
 
 /**
  * The actions on the attachment a link points to, each group after a separator. A menu opened on
- * an embed of it has the commands of the embed after the first group, converting the embed to a
- * link at the end of the last group, and deleting the embed last. A menu opened in a note shown
- * read-only has only the actions that leave the attachment unchanged.
+ * an embed of it has the commands of the embed after the first group, then deleting the embed and
+ * converting it to a link in a group of their own. A menu opened in a note shown read-only has
+ * only the actions that leave the attachment unchanged.
  */
 async function getAttachmentItems(
     noteId: string,
@@ -395,7 +414,7 @@ async function getAttachmentItems(
     }
 
     const linkItem = getConvertToLinkItem(embed);
-    return [ ...actionItems, ...(linkItem ? [ linkItem ] : []), ...getDeleteEmbedGroup(embed) ];
+    return [ ...actionItems, ...getDeleteEmbedGroup(embed), ...(linkItem ? [ linkItem ] : []) ];
 }
 
 /**
@@ -429,8 +448,8 @@ function toActionItem(action: AttachmentAction): ActionItem {
 }
 
 /**
- * The commands of the embedded note that the menu is opened on, in a group of their own,
- * converting it in another, and deleting it last, or none for a menu opened on a link.
+ * The commands of the embedded note that the menu is opened on, in a group of their own, then
+ * deleting it and converting it to a link, or none for a menu opened on a link.
  */
 function getNoteItems(embed: MenuEmbed | null): MenuItem<CommandNames>[] {
     if (!embed) {
@@ -441,8 +460,8 @@ function getNoteItems(embed: MenuEmbed | null): MenuItem<CommandNames>[] {
     return [
         { kind: "separator" },
         ...getEmbedItems(embed),
-        ...(linkItem ? [ { kind: "separator" } as const, linkItem ] : []),
-        ...getDeleteEmbedGroup(embed)
+        ...getDeleteEmbedGroup(embed),
+        ...(linkItem ? [ linkItem ] : [])
     ];
 }
 
@@ -479,6 +498,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const editableItems: MenuItem<CommandNames>[] = state.isEditableToggleable ? [ {
         title: t("link_context_menu.editable"),
         uiIcon: "bx bx-edit-alt",
+        isSwitch: true,
         checked: state.isEditable,
         handler: () => runEmbedCommand(embed, "toggleContentEmbedEditable")
     } ] : [];
@@ -506,6 +526,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         ...(state.isTitleSupported ? [ {
             title: t("link_context_menu.show_title"),
             uiIcon: "bx bx-window-alt",
+            isSwitch: true,
             enabled: state.isTitleToggleable,
             checked: state.isTitleShown,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedTitle")
@@ -513,6 +534,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         ...(state.isCaptionSupported ? [ {
             title: t("link_context_menu.show_caption"),
             uiIcon: "bx bx-captions",
+            isSwitch: true,
             enabled: state.isCaptionToggleable,
             checked: state.hasCaption,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedCaption", {
@@ -524,7 +546,8 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
 
 /**
  * The submenu that sets where the embed is placed in the text, with the icon of its position, for
- * content that has positions.
+ * content that has positions. Each group is a grid of tiles under its heading, as in the image
+ * toolbar's _Image position_ menu.
  */
 function getPositionItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const position = embed.state.position;
@@ -534,12 +557,17 @@ function getPositionItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
 
     const items = POSITION_GROUPS.flatMap((group): MenuItem<CommandNames>[] => [
         { kind: "header", title: t(group.titleKey) },
-        ...group.positions.map(({ value, titleKey }): MenuItem<CommandNames> => ({
-            title: t(titleKey),
-            uiIcon: POSITION_ICONS[value],
-            checked: value === position,
-            handler: () => runEmbedCommand(embed, "contentEmbedPosition", { value })
-        }))
+        {
+            kind: "actions",
+            className: "tn-menu-tiles tn-menu-actions-cards embed-position-tiles",
+            items: group.positions.map(({ value, titleKey }): MenuCommandItem<CommandNames> => ({
+                title: t(titleKey),
+                uiIcon: POSITION_ICONS[value],
+                uiIconSvg: POSITION_TILE_ICONS[value],
+                checked: value === position,
+                handler: () => runEmbedCommand(embed, "contentEmbedPosition", { value })
+            }))
+        }
     ]);
     return [ submenuItem({
         title: t("link_context_menu.include_position"),

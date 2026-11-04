@@ -40,8 +40,7 @@ export interface ContentEmbedTool {
 
 /** An item of the embed toolbar that the content of an embed can hide. */
 export type ContentEmbedToolbarItem =
-    "contentEmbedBoxSizeDropdown" | "contentEmbedPositionDropdown" | "toggleContentEmbedTitle"
-    | "convertEmbedToLink" | "toggleContentEmbedEditable";
+    "contentEmbedBoxSizeDropdown" | "contentEmbedPositionDropdown" | "toggleContentEmbedEditable";
 
 /** The buttons that the content of an embed, such as a canvas drawing, adds to its toolbar. */
 export interface ContentEmbedToolProvider {

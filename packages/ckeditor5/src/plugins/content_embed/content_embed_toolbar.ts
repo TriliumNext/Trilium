@@ -9,15 +9,13 @@ import {
 } from "../link_embed/link_embed_toolbar.js";
 import type { ResizeAnchor } from "../resizable_widgets/resizable_widgets.js";
 import ContentEmbed, {
-    CONVERT_EMBED_TO_LINK_COMMAND,
     CONTENT_EMBED_MENU,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
     getEmbedAnchor,
     TOGGLE_CAPTION_COMMAND_NAME,
-    TOGGLE_EDITABLE_COMMAND_NAME,
-    TOGGLE_TITLE_COMMAND_NAME
+    TOGGLE_EDITABLE_COMMAND_NAME
 } from "./content_embed.js";
 import ContentEmbedBoxSizeDropdown, {
     CONTENT_EMBED_BOX_SIZE_DROPDOWN
@@ -63,11 +61,9 @@ export default class ContentEmbedToolbar extends Plugin {
                 ...DISPLAY_MODES.map((mode) => DISPLAY_MODE_BUTTONS[mode]),
                 CONTENT_EMBED_TOOLS,
                 EXTENDED_CODE_BLOCK_COPY_BUTTON,
+                TOGGLE_CAPTION_COMMAND_NAME,
                 CONTENT_EMBED_BOX_SIZE_DROPDOWN,
                 CONTENT_EMBED_POSITION_DROPDOWN,
-                TOGGLE_TITLE_COMMAND_NAME,
-                TOGGLE_CAPTION_COMMAND_NAME,
-                CONVERT_EMBED_TO_LINK_COMMAND,
                 CONTENT_EMBED_MENU
             ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",

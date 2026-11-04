@@ -321,8 +321,7 @@ describe("ContentEmbedTools", () => {
 
     it("hides the items of the embed toolbar that the content leaves to the embed menu", () => {
         const names = [
-            "contentEmbedBoxSizeDropdown", "toggleContentEmbedTitle", "convertEmbedToLink",
-            "toggleContentEmbedEditable", "toggleContentEmbedCaption"
+            "contentEmbedBoxSizeDropdown", "toggleContentEmbedEditable", "toggleContentEmbedCaption"
         ];
         const items = names.map((name) => {
             const item = editor.ui.componentFactory.create(name);
@@ -332,11 +331,11 @@ describe("ContentEmbedTools", () => {
         const getShown = () => items.map((item) => !item.element?.classList.contains("ck-hidden"));
         provider = { ...provider, hasEditableFlag: true };
         selectEmbed();
-        expect(getShown()).toEqual([ true, true, true, true, true ]);
+        expect(getShown()).toEqual([ true, true, true ]);
 
-        provider = { ...createProvider([ SELECTION ], names.slice(0, 4)), hasEditableFlag: true };
+        provider = { ...createProvider([ SELECTION ], names.slice(0, 2)), hasEditableFlag: true };
         editor.ui.update();
-        expect(getShown()).toEqual([ false, false, false, false, true ]);
+        expect(getShown()).toEqual([ false, false, true ]);
         const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
         expect(embed && editor.plugins.get(ContentEmbed).getEmbedStateAt(embed)).toMatchObject({
             boxSize: "medium", isTitleToggleable: true, isConvertibleToLink: true,
@@ -345,7 +344,7 @@ describe("ContentEmbedTools", () => {
 
         provider = { ...createProvider([ SELECTION ]), hasEditableFlag: true };
         editor.ui.update();
-        expect(getShown()).toEqual([ true, true, true, true, true ]);
+        expect(getShown()).toEqual([ true, true, true ]);
     });
 
     it("reads the tools again when the editor updates, as they can follow the embed", () => {

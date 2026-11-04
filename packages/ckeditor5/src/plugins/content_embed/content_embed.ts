@@ -11,7 +11,6 @@ import {
 	type Editor,
 	enableViewPlaceholder,
 	IconCaption,
-	IconLink,
 	IconThreeVerticalDots,
 	type Locale,
 	type MapperModelToViewPositionEvent,
@@ -37,7 +36,6 @@ import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
 import editIcon from 'boxicons/svg/regular/bx-edit-alt.svg?raw';
 import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
 import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
-import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
 	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
@@ -397,31 +395,6 @@ class ContentEmbedUI extends Plugin {
 			return buttonView;
 		} );
 
-		editor.ui.componentFactory.add( CONVERT_EMBED_TO_LINK_COMMAND, locale => {
-			const command = editor.commands.get( CONVERT_EMBED_TO_LINK_COMMAND );
-			const buttonView = new ButtonView( locale );
-
-			buttonView.set( {
-				label: t( 'Convert to link' ),
-				icon: IconLink,
-				tooltip: true
-			} );
-
-			// Shown only on an embed that names a note or an attachment.
-			if ( command ) {
-				buttonView.bind( 'isEnabled' ).to( command );
-				bindToolbarItemVisibility(
-					editor, buttonView, command, CONVERT_EMBED_TO_LINK_COMMAND
-				);
-			}
-
-			this.listenTo( buttonView, 'execute', () => {
-				editor.execute( CONVERT_EMBED_TO_LINK_COMMAND );
-			} );
-
-			return buttonView;
-		} );
-
 		editor.ui.componentFactory.add( TOGGLE_CAPTION_COMMAND_NAME, locale => {
 			const command = editor.commands.get( TOGGLE_CAPTION_COMMAND_NAME );
 			const buttonView = new ButtonView( locale );
@@ -510,30 +483,6 @@ class ContentEmbedUI extends Plugin {
 				return buttonView;
 			} );
 		}
-
-		editor.ui.componentFactory.add( TOGGLE_TITLE_COMMAND_NAME, locale => {
-			const command = editor.commands.get( TOGGLE_TITLE_COMMAND_NAME );
-			const buttonView = new ButtonView( locale );
-
-			buttonView.set( {
-				label: t( 'Show title' ),
-				icon: windowIcon,
-				tooltip: true,
-				isToggleable: true
-			} );
-
-			if ( command ) {
-				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
-				bindToolbarItemVisibility( editor, buttonView, command, TOGGLE_TITLE_COMMAND_NAME );
-			}
-
-			this.listenTo( buttonView, 'execute', () => {
-				editor.execute( TOGGLE_TITLE_COMMAND_NAME );
-				editor.editing.view.focus();
-			} );
-
-			return buttonView;
-		} );
 
 		editor.ui.componentFactory.add( CONTENT_EMBED_MENU, locale => {
 			const command = editor.commands.get( TOGGLE_TITLE_COMMAND_NAME );
