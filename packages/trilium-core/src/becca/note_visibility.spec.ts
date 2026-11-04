@@ -197,7 +197,16 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
             expect(sharedWithMe?.isVirtual).toBe(true);
             expect(sharedWithMe?.getParentNotes().map((note) => note.noteId)).toEqual([ "root" ]);
             expect(sharedWithMe?.getChildNotes().map((note) => note.noteId)).toEqual([ f.project.noteId ]);
+
+            // The tree route reaches the note and its icon through the branch and the attribute
+            // maps; neither may add it to the Becca every user reads.
+            const rootBranch = becca.getBranchFromChildAndParent(SHARED_WITH_ME_NOTE_ID, "root");
+            expect(rootBranch?.childNote).toBe(sharedWithMe);
+            const icon = sharedWithMe?.getOwnedLabel("iconClass");
+            expect(icon).toBeTruthy();
+            expect(becca.getAttribute(icon?.attributeId ?? "")).toBe(icon);
         });
+        expect(SHARED_WITH_ME_NOTE_ID in becca.allNotes).toBe(false);
         // Nothing is shared with Bob, so he has no list.
         expect(asUser(f.bobId, () => becca.getNote(SHARED_WITH_ME_NOTE_ID))).toBeNull();
     });

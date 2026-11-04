@@ -56,7 +56,8 @@ export class NoteView {
 
         this.notes = filteredRecord(() => becca.allNotes, (note) => this.canSeeNote(note.noteId), this.overlayNotes());
         this.branches = filteredRecord(() => becca.allBranches, (branch) => this.canSeeBranch(branch), this.overlayBranches("branchId"));
-        this.attributes = filteredRecord(() => becca.allAttributes, (attribute) => this.canSeeNote(attribute.noteId), {});
+        this.attributes = filteredRecord(() => becca.allAttributes, (attribute) => this.canSeeNote(attribute.noteId),
+            Object.fromEntries((this.sharedWithMe?.ownedAttributes ?? []).map((attribute) => [ attribute.attributeId, attribute ])));
         this.childParentToBranch = filteredRecord(() => becca.allChildParentToBranch, (branch) => this.canSeeBranch(branch),
             this.overlayBranches("childParent"));
     }

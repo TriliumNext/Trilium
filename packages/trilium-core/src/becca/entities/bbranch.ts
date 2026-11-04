@@ -96,6 +96,12 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
     }
 
     get childNote(): BNote {
+        // A virtual branch can lead to a note that exists only in a member's view, such as Shared with me.
+        const viewOnly = this.isVirtual && !(this.noteId in this.becca.allNotes) ? this.becca.notes[this.noteId] : undefined;
+        if (viewOnly) {
+            return viewOnly;
+        }
+
         if (!(this.noteId in this.becca.allNotes)) {
             // entities can come out of order in sync/import, create skeleton which will be filled later
             this.becca.addNote(this.noteId, new BNote({ noteId: this.noteId }));
