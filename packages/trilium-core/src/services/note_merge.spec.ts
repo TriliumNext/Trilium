@@ -8,6 +8,7 @@ import * as cls from "./context.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
 import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
+import { getZipProvider } from "./zip_provider.js";
 
 let api: CoreApiTester;
 
@@ -1179,5 +1180,146 @@ describe("Merging notes", () => {
         expect((await api.post(`/api/notes/${carried}/merge-undo`, {
             body: { entryId: hostEntry?.id }
         })).status).toBe(200);
+    });
+
+    it("does not fill the merged note from a template", async () => {
+        const template = await createTextNote(api, {
+            title: "Stencil template", content: "<p>FROM TEMPLATE</p>"
+        });
+        await createTextNote(api, {
+            parentNoteId: template.noteId, title: "Stencil", content: "<p>stencil</p>"
+        });
+        const parent = await createTextNote(api, { title: "Templated parent", content: "<p></p>" });
+        expect((await api.post(`/api/notes/${parent.noteId}/attributes`, {
+            body: {
+                type: "relation",
+                name: "child:template",
+                value: template.noteId,
+                isInheritable: false
+            }
+        })).status).toBe(204);
+
+        const alpha = await createTextNote(api, {
+            parentNoteId: parent.noteId, title: "Templated alpha", content: "<p>alpha body</p>"
+        });
+        const beta = await createTextNote(api, {
+            parentNoteId: parent.noteId, title: "Templated beta", content: "<p>beta body</p>"
+        });
+        const merged = becca.getNoteOrThrow(await mergeNotes(alpha.noteId, [ beta.noteId ]));
+        const content = String(merged.getContent());
+        expect(content).toContain("alpha body");
+        expect(content).toContain("beta body");
+        expect(content).not.toContain("FROM TEMPLATE");
+        expect(merged.getRelations("template").map((rel) => rel.value)).toContain(template.noteId);
+        expect(merged.getChildNotes().filter((child) => child.title === "Stencil")).toHaveLength(2);
+
+        const owned = await createTextNote(api, {
+            title: "Owns template", content: "<p>owned body</p>"
+        });
+        expect((await api.post(`/api/notes/${owned.noteId}/attributes`, {
+            body: {
+                type: "relation", name: "template", value: template.noteId, isInheritable: false
+            }
+        })).status).toBe(204);
+        const other = await createTextNote(api, {
+            title: "Beside template", content: "<p>other body</p>"
+        });
+        const copied = becca.getNoteOrThrow(await mergeNotes(owned.noteId, [ other.noteId ]));
+        const copiedContent = String(copied.getContent());
+        expect(copiedContent).toContain("owned body");
+        expect(copiedContent).toContain("other body");
+        expect(copiedContent).not.toContain("FROM TEMPLATE");
+        expect(copied.getChildNotes().filter((child) => child.title === "Stencil")).toHaveLength(1);
+        expect(copied.getRelations("template").map((rel) => rel.value)).toContain(template.noteId);
+    });
+
+    it("keeps a restored original when an intermediate note is restored later", async () => {
+        async function chain() {
+            const outsider = await createTextNote(api, { title: "Outsider", content: "<p>x</p>" });
+            const first = await createTextNote(api, { title: "Linked", content: "<p>a</p>" });
+            const second = await createTextNote(api, {
+                title: "Beside linked", content: "<p>b</p>"
+            });
+            const third = await createTextNote(api, { title: "Later", content: "<p>c</p>" });
+            expect((await api.post(`/api/notes/${outsider.noteId}/attributes`, {
+                body: {
+                    type: "relation", name: "refers", value: first.noteId, isInheritable: false
+                }
+            })).status).toBe(204);
+            const intermediate = await mergeNotes(first.noteId, [ second.noteId ]);
+            const result = await mergeNotes(intermediate, [ third.noteId ]);
+            return { outsider: outsider.noteId, first: first.noteId, intermediate, result };
+        }
+
+        function refersTo(noteId: string) {
+            return becca.getNoteOrThrow(noteId).getRelations("refers").map((rel) => rel.value);
+        }
+
+        async function undo(noteId: string, sourceNoteId: string) {
+            const history = await api.get<{ entries: { id: string; sourceNoteId: string }[] }>(
+                `/api/notes/${noteId}/merge-history`
+            );
+            const entry = history.body.entries.find((item) => item.sourceNoteId === sourceNoteId);
+            expect(entry).toBeTruthy();
+            expect((await api.post(`/api/notes/${noteId}/merge-undo`, {
+                body: { entryId: entry?.id }
+            })).status).toBe(200);
+        }
+
+        const forward = await chain();
+        await undo(forward.result, forward.first);
+        expect(refersTo(forward.outsider)).toEqual([ forward.first ]);
+        await undo(forward.result, forward.intermediate);
+        expect(refersTo(forward.outsider)).toEqual([ forward.first ]);
+
+        const reverse = await chain();
+        await undo(reverse.result, reverse.intermediate);
+        expect(refersTo(reverse.outsider)).toEqual([ reverse.intermediate ]);
+        await undo(reverse.result, reverse.first);
+        expect(refersTo(reverse.outsider)).toEqual([ reverse.first ]);
+    });
+
+    it("does not give an imported copy the original merge's undo", async () => {
+        const alpha = await createTextNote(api, { title: "Export alpha", content: "<p>alpha</p>" });
+        const beta = await createTextNote(api, { title: "Export beta", content: "<p>beta</p>" });
+        const merged = await mergeNotes(alpha.noteId, [ beta.noteId ]);
+        const branch = becca.getNoteOrThrow(merged).getParentBranches()
+            .find((item) => !item.isDeleted);
+        if (!branch) {
+            throw new Error("The merged note has no branch.");
+        }
+
+        const zip = await api.get<Buffer>(
+            `/api/branches/${branch.branchId}/export/subtree/html/exportTask`
+        );
+        expect(zip.status).toBe(200);
+        let meta = "";
+        await getZipProvider().readZipFile(zip.body, async (entry, read) => {
+            if (entry.fileName === "!!!meta.json") {
+                meta = decodeUtf8(await read());
+            }
+        });
+        expect(meta).not.toContain("mergeUndo");
+
+        const imported = await api.post<{ noteId: string }>(`/api/notes/root/notes-import`, {
+            body: {},
+            file: {
+                originalname: "merged.zip", mimetype: "application/zip", buffer: zip.body
+            }
+        });
+        expect(imported.status).toBe(200);
+        const copy = becca.getNoteOrThrow(imported.body.noteId);
+        expect(copy.getAttachments().some((item) => item.role === "mergeUndo")).toBe(false);
+        expect((await api.post(`/api/notes/${copy.noteId}/merge-undo`)).status).toBe(400);
+
+        const history = await api.get<{ entries: { id: string; sourceNoteId: string }[] }>(
+            `/api/notes/${merged}/merge-history`
+        );
+        const alphaEntry = history.body.entries.find((item) => item.sourceNoteId === alpha.noteId);
+        expect(alphaEntry).toBeTruthy();
+        expect((await api.post(`/api/notes/${merged}/merge-undo`, {
+            body: { entryId: alphaEntry?.id }
+        })).status).toBe(200);
+        expect(noteIsDeleted(alpha.noteId)).toBe(0);
     });
 });

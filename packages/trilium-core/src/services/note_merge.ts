@@ -9,7 +9,7 @@ import BAttachment from "../becca/entities/battachment.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
-import { getHoistedNoteId } from "./context.js";
+import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import noteService, { saveLinks } from "./notes.js";
 import { getSql } from "./sql/index.js";
@@ -68,6 +68,12 @@ interface MergeUndo {
      * which has the same length, so a later edit that leaves those characters alone can be reversed.
      */
     linkPatches: { noteId: string; indices: number[] }[];
+    /**
+     * The note this record was stored on before a later merge copied it. Restoring this
+     * original drops that note's claim on the same incoming relation, so bringing the
+     * intermediate note back does not point the relation at it again.
+     */
+    carriedFromNoteId?: string;
 }
 
 interface Placement {
@@ -94,6 +100,16 @@ interface CarriedIds {
  * revision from before the merge.
  */
 function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: string) {
+    const previous = cls.isTemplateApplicationSkipped();
+    cls.setTemplateApplicationSkipped(true);
+    try {
+        return mergeNotesNow(targetNoteId, sourceNoteIds, title);
+    } finally {
+        cls.setTemplateApplicationSkipped(previous);
+    }
+}
+
+function mergeNotesNow(targetNoteId: string, sourceNoteIds: string[], title?: string) {
     const first = becca.getNoteOrThrow(targetNoteId);
     const sources = loadSources(targetNoteId, sourceNoteIds);
     const notes = [ first, ...sources ];
@@ -188,6 +204,9 @@ function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: strin
         }
         for (const entry of readUndoStack(note)) {
             remapCarriedEntry(entry, carriedIds);
+            if (!entry.carriedFromNoteId) {
+                entry.carriedFromNoteId = note.noteId;
+            }
             // The copies now belong to the note that was merged earlier, not to this note's record.
             journal.createdBranchIds = journal.createdBranchIds
                 .filter((id) => !entry.createdBranchIds.includes(id));
@@ -337,7 +356,7 @@ function assertUserNote(note: BNote) {
 function assertMergeNote(first: BNote, note: BNote, noteIds: Set<string>) {
     assertUserNote(note);
     // Every merged note is deleted, including the one the merge was started from.
-    if (note.noteId === getHoistedNoteId()) {
+    if (note.noteId === cls.getHoistedNoteId()) {
         throw new ValidationError(t("merge.hoisted"));
     }
 
@@ -921,6 +940,26 @@ function rememberLinkPatch(journal: MergeUndo, noteId: string, indices: number[]
 }
 
 /**
+ * Drops `record`'s relation restores from every later note the record was carried through.
+ *
+ * Those notes recorded the same attribute pointing at themselves. Once `record`'s note is
+ * back, restoring one of them must not point the attribute there again.
+ */
+function releaseContainerRelationRestores(stack: MergeUndo[], record: MergeUndo) {
+    const released = new Set(record.relationRestores.map((change) => change.attributeId));
+    let containerId = record.carriedFromNoteId;
+    while (containerId) {
+        const container = stack.find((entry) => entry.sourceNoteId === containerId);
+        if (!container) {
+            break;
+        }
+        container.relationRestores = container.relationRestores
+            .filter((change) => !released.has(change.attributeId));
+        containerId = container.carriedFromNoteId;
+    }
+}
+
+/**
  * Puts `record`'s note back beside `merged`.
  *
  * `merged` keeps its text, title and place. Children, copied attributes and links that came from
@@ -1013,6 +1052,7 @@ function restoreMergedNote(merged: BNote, record: MergeUndo, stack: MergeUndo[])
         attribute.save();
     }
 
+    releaseContainerRelationRestores(stack, record);
     for (const change of record.relationRestores) {
         restoreRelationValue(change.attributeId, change.value);
     }

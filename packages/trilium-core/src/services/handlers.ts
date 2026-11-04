@@ -1,5 +1,6 @@
 import { parseSortCriteria } from "@triliumnext/commons";
 
+import * as cls from "./context.js";
 import eventService from "./events.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import scriptService from "./script.js";
@@ -90,7 +91,8 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
     if (entityName === "attributes") {
         runAttachedRelations(entity.getNote(), "runOnAttributeCreation", entity);
 
-        if (entity.type === "relation" && entity.name === "template") {
+        if (entity.type === "relation" && entity.name === "template"
+            && !cls.isTemplateApplicationSkipped()) {
             const note = becca.getNote(entity.noteId);
             if (!note) {
                 return;

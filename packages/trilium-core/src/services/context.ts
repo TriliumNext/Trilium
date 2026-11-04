@@ -91,6 +91,18 @@ export function isImportOrderPreserved() {
     return !!getContext().get("importOrderPreserved");
 }
 
+/**
+ * A merge copies a template relation onto the new note and then writes that note's text itself.
+ * While this is set, saving the relation does not fill the note from the template.
+ */
+export function setTemplateApplicationSkipped(skipped: boolean) {
+    getContext().set("skipTemplateApplication", skipped);
+}
+
+export function isTemplateApplicationSkipped() {
+    return !!getContext().get("skipTemplateApplication");
+}
+
 export function putEntityChange(entityChange: EntityChange) {
     if (getContext().get("ignoreEntityChangeIds")) {
         return;

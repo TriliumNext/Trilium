@@ -1,4 +1,7 @@
-import { getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, NoteType } from "@triliumnext/commons";
+import {
+    getImageAttachmentTitle, imageMimeForExtension, isAcceptedImageMime, isMergeHistoryRole,
+    NoteType
+} from "@triliumnext/commons";
 import mimeTypes from "mime-types";
 import sanitize from "sanitize-filename";
 
@@ -219,7 +222,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             meta.dataFileName = getDataFileName(note.type, note.mime, baseFileName, existingFileNames);
         }
 
-        const attachments = note.getAttachments().filter(isReadable);
+        const attachments = note.getAttachments().filter((attachment) =>
+            isReadable(attachment) && !isMergeHistoryRole(attachment.role));
         meta.attachments = attachments
             .toSorted((a, b) => ((a.attachmentId ?? "").localeCompare(b.attachmentId ?? "", "en") ?? 1))
             .map((attachment) => {

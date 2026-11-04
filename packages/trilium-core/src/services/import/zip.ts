@@ -1,6 +1,6 @@
 import {
-    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle, isNoteType,
-    type NoteType
+    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, getImageAttachmentTitle, isMergeHistoryRole,
+    isNoteType, type NoteType
 } from "@triliumnext/commons";
 import { basename, dirname } from "../utils/path.js";
 import { getZipProvider, type ZipSource } from "../zip_provider.js";
@@ -617,6 +617,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         const noteId = getNoteId(noteMeta, filePath);
 
         if (attachmentMeta && attachmentMeta.attachmentId) {
+            // An exported merge history names the original notes. Importing it would undo those.
+            if (isMergeHistoryRole(attachmentMeta.role)) {
+                return;
+            }
             const attachment = new BAttachment({
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 ownerId: noteId,
