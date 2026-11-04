@@ -114,12 +114,16 @@ function useEditedNotes(note: FNote) {
     const [ includeLlmChats ] = useTriliumOptionBool("editedNotesIncludeLlmChats");
 
     useEffect(() => {
+        let cancelled = false;
         server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async editedNotes => {
             editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);
             const noteIds = editedNotes.flatMap((n) => n.noteId);
             await froca.getNotes(noteIds, true); // preload all at once
-            setEditedNotes(editedNotes);
+            if (!cancelled) {
+                setEditedNotes(editedNotes);
+            }
         });
+        return () => { cancelled = true; };
     }, [ note, includeLlmChats ]);
 
     return editedNotes;
