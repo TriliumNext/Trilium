@@ -1,4 +1,5 @@
 import type { CKTextEditor, ContentEmbedState, PositionValue } from "@triliumnext/ckeditor5";
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
@@ -115,7 +116,7 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
     contextMenu.show({
         x: e.pageX,
         y: e.pageY,
-        items: url ? getVideoItems(embed, url) : getEmbedItems(embed),
+        items: url ? getVideoItems(embed, url) : getSourceItems(embed),
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
@@ -137,6 +138,18 @@ function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] 
         { kind: "separator" },
         getDeleteEmbedItem(embed)
     ];
+}
+
+/**
+ * The menu of an embed that keeps its source in the note: the commands of the embed, and for an
+ * extended code block, deleting it in a group of its own.
+ */
+function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
+    if (!embed.element.classList.contains(EXTENDED_CODE_BLOCK_CLASS)) {
+        return getEmbedItems(embed);
+    }
+
+    return [ ...getEmbedItems(embed), { kind: "separator" }, getDeleteEmbedItem(embed) ];
 }
 
 /** "Delete", which removes the embed from the note. */

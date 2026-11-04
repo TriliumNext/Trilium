@@ -1,3 +1,4 @@
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link";
@@ -786,6 +787,29 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.include_size" },
                 { title: "link_context_menu.show_title" }
             ]);
+        });
+
+        it("deletes an extended code block last, after its position", async () => {
+            embed().removeAttribute("data-attachment-id");
+            embed().classList.add(EXTENDED_CODE_BLOCK_CLASS);
+            state = {
+                ...state, url: null, position: "right", isTitleSupported: false,
+                isCaptionSupported: false, isConvertibleToLink: false
+            };
+
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            const items = mocks.show.mock.lastCall?.[0].items;
+            expect(items).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position", uiIcon: "cke cke-object-right" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash destructive-action-icon"
+                }
+            ]);
+            expect(items).toHaveLength(4);
+            expect(pick(items[3])).toEqual([ [ "deleteContentEmbed", undefined ] ]);
         });
 
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {
