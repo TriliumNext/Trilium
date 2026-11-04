@@ -1402,9 +1402,7 @@
     "no_headings": "Sem cabeçalhos."
   },
   "watched_file_update_status": {
-    "file_last_modified": "O ficheiro <code class=\"file-path\"></code> foi modificado pela última vez em <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Enviar ficheiro modificado",
-    "ignore_this_change": "Ignorar esta alteração"
+    "upload_modified_file": "Enviar ficheiro modificado"
   },
   "app_context": {
     "please_wait_for_save": "Por favor aguarde alguns segundos para finalizar a gravação e depois tente novamente."

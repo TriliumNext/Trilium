@@ -77,7 +77,8 @@
     "note-panels": "Paneles de notas",
     "show-note-map": "Mostrar el mapa de notas en el panel derecho",
     "focus-collection-properties": "Mover el foco al selector del tipo de vista de la colección",
-    "focus-formatting-toolbar": "Mover el foco entre la barra de formato fija y el editor"
+    "focus-formatting-toolbar": "Mover el foco entre la barra de formato fija y el editor",
+    "peek-left-pane": "Mostrar el árbol de notas como panel temporal que flota sobre el contenido"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -236,7 +237,9 @@
     "note-cannot-be-displayed": "Este tipo de nota no se puede mostrar.",
     "included-note-requires-credentials": "Esta nota incluida está protegida con contraseña y no puede mostrarse aquí.",
     "broken-block-reference": "Referencia no válida",
-    "play-video": "Reproducir vídeo"
+    "play-video": "Reproducir vídeo",
+    "content-not-available": "Este contenido no está disponible.",
+    "untitled-block": "Bloque"
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
@@ -293,7 +296,8 @@
     "hidden-subpages_many": "{{count}} subpáginas que están ocultas en el árbol",
     "hidden-subpages_other": "{{count}} subpáginas que están ocultas en el árbol",
     "previous-tabs": "Desplazarse a las pestañas anteriores",
-    "next-tabs": "Desplazarse a las pestañas siguientes"
+    "next-tabs": "Desplazarse a las pestañas siguientes",
+    "copy-code": "Copiar código"
   },
   "keyboard_action_names": {
     "jump-to-note": "Saltar a...",
@@ -403,7 +407,8 @@
     "show-note-map": "Mostrar mapa de notas",
     "show-note-info": "Mostrar información de la nota",
     "show-note-paths": "Mostrar rutas de la nota",
-    "toggle-similar-notes": "Mostrar/ocultar notas similares"
+    "toggle-similar-notes": "Mostrar/ocultar notas similares",
+    "peek-left-pane": "Vista rápida del panel del árbol"
   },
   "hidden_subtree_templates": {
     "board_note_first": "Primera nota",
@@ -453,7 +458,8 @@
       "cannot-compare-with": "no se puede comparar con \"{{- token}}\". Para buscar un valor literal, utilice comillas: \"{{- token}}\"",
       "misplaced-expression": "Expresión errónea o incompleta \"{{- token}}\"",
       "fulltext-after-expression": "\"{{- token}}\" no es una expresión válida. Para buscar texto, colóquelo antes de los filtros de atributos (por ejemplo, \"{{- token}} #label\" en lugar de \"#label {{- token}}\").",
-      "unrecognized-expression": "Expresión no reconocida \"{{- token}}\""
+      "unrecognized-expression": "Expresión no reconocida \"{{- token}}\"",
+      "regex-not-allowed": "El operador de expresión regular \"%=\" no está disponible aquí."
     }
   },
   "note_conversion": {
@@ -600,5 +606,12 @@
     "nothing-to-share": "Nada que compartir: no se ha recibido texto, enlace ni archivos.",
     "rejected": "Uso compartido rechazado: {{- reason}}",
     "other-page": "Solo el menú de compartir del sistema puede enviar contenido a esta dirección."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium se ejecuta como Flatpak, así que no puede iniciar programas instalados fuera de su entorno aislado, como {{- cli}}. Para usar {{- cli}}:\n\n1. Instálelo en este ordenador e inicie sesión en él desde un terminal.\n2. Permita que Trilium inicie programas fuera de su entorno aislado ejecutando esto en un terminal:\n\n{{- grantCommand}}\n\n3. Reinicie Trilium.\n\nEsto concede a Trilium el mismo acceso al ordenador que una instalación ajena a Flatpak. Para revocar ese permiso, ejecute:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "Elija una aplicación con la que abrir el archivo.",
+    "applications_filter": "Aplicaciones"
   }
 }

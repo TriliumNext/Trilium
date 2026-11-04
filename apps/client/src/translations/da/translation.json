@@ -2935,9 +2935,7 @@
     "no_headings": "Ingen overskrifter."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Filen <code class=\"file-path\"></code> blev senest ændret <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Upload den ændrede fil",
-    "ignore_this_change": "Ignorér denne ændring"
+    "upload_modified_file": "Upload den ændrede fil"
   },
   "app_context": {
     "please_wait_for_save": "Vent et par sekunder på, at gemningen afsluttes, og prøv derefter igen."

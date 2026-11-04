@@ -2707,9 +2707,7 @@
     "no_headings": "Başlık yok."
   },
   "watched_file_update_status": {
-    "file_last_modified": "<code class=\"file-path\"></code> dosyası en son <span class=\"file-last-modified\"></span> tarihinde değiştirildi.",
-    "upload_modified_file": "Değiştirilen dosyayı yükle",
-    "ignore_this_change": "Bu değişikliği yok say"
+    "upload_modified_file": "Değiştirilen dosyayı yükle"
   },
   "app_context": {
     "please_wait_for_save": "Kaydetmenin bitmesi için lütfen birkaç saniye bekleyin, ardından tekrar deneyebilirsiniz."

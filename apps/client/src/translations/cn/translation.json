@@ -59,7 +59,7 @@
     "note": "笔记",
     "search_note": "按名称搜索笔记",
     "link_title": "链接标题",
-    "button_add_link": "添加链接",
+    "button_add_link": "插入链接",
     "anchor": "锚点（可选）",
     "anchor_none": "无（笔记链接）",
     "edit_link": "编辑链接",
@@ -67,7 +67,22 @@
     "fix_link": "修复链接",
     "button_fix_link": "修复链接",
     "web_link": "网页链接",
-    "url": "URL"
+    "url": "地址（URL）",
+    "display_as": "显示为",
+    "display_plain": "纯链接",
+    "display_inline": "行内",
+    "display_card": "卡片",
+    "display_embed": "YouTube 嵌入",
+    "page_title": "网页标题",
+    "title_from_url": "与 URL 相同",
+    "title_from_note": "若未设置，将始终跟随笔记标题",
+    "description": "描述",
+    "page_description": "网页描述",
+    "anchors": "标题与锚点",
+    "target_anchor": "锚点",
+    "headings": "标题",
+    "no_headings_or_anchors": "此笔记不包含任何标题或锚点。",
+    "title_from_heading": "若未设置，将始终跟随标题的文本"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -298,7 +313,10 @@
     "size_expandable_description": "未展开时只显示标题。",
     "inserted_as_image": "此笔记以图片形式插入。",
     "size_hint": "之后可以更改尺寸。",
-    "image_size_hint": "之后可以调整图片大小。"
+    "image_size_hint": "之后可以调整图片大小。",
+    "missing_note": "找不到 ID 为 {{noteId}} 的笔记。",
+    "missing_attachment": "找不到 ID 为 {{attachmentId}} 的附件。",
+    "unknown_kind": "此内容需要更新版本的 Trilium。"
   },
   "info": {
     "modalTitle": "信息消息",
@@ -778,7 +796,7 @@
   "attachments_actions": {
     "open_externally": "用外部程序打开",
     "open_externally_title": "文件将会在外部应用程序中打开，并监视其更改。然后你可以将修改后的版本上传回 Trilium。",
-    "open_custom": "自定义打开方式...",
+    "open_custom": "打开方式...",
     "open_custom_title": "文件将会在外部应用程序中打开，并监视其更改。然后你可以将修改后的版本上传回 Trilium。",
     "download": "下载",
     "rename_attachment": "重命名附件...",
@@ -943,9 +961,9 @@
     "search_in_note": "在笔记中搜索",
     "note_source": "笔记源代码",
     "note_attachments": "笔记附件",
-    "open_note_externally": "用外部程序打开笔记",
+    "open_note_externally": "在外部打开",
     "open_note_externally_title": "文件将在外部应用程序中打开，并监视其更改。然后你可以将修改后的版本上传回 Trilium。",
-    "open_note_custom": "使用自定义程序打开笔记...",
+    "open_note_custom": "打开方式...",
     "import_files": "导入文件...",
     "export_note": "导出笔记...",
     "delete_note": "删除笔记...",
@@ -1019,7 +1037,8 @@
     "backlinks": "反链",
     "content_language_switcher": "内容语言: {{language}}",
     "insert_child_note_short": "子笔记",
-    "create_new_split_short": "新建分屏"
+    "create_new_split_short": "新建分屏",
+    "note_panel": "笔记面板"
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
@@ -1969,7 +1988,8 @@
     "clone-tooltip": "复制，以便在笔记树的其他位置粘贴为克隆，或作为链接粘贴进笔记",
     "delete-short": "删除",
     "paste-into-tooltip_other": "粘贴到此笔记\n笔记将以克隆的方式粘贴：它是同一条笔记（不是副本），只是同时出现在多个位置。",
-    "paste-after-tooltip_other": "粘贴到此后\n笔记将以克隆的方式粘贴：它是同一条笔记（不是副本），只是同时出现在多个位置。"
+    "paste-after-tooltip_other": "粘贴到此后\n笔记将以克隆的方式粘贴：它是同一条笔记（不是副本），只是同时出现在多个位置。",
+    "open": "打开"
   },
   "note_types": {
     "text": "文本",
@@ -2143,9 +2163,9 @@
     "no_headings": "无标题。"
   },
   "watched_file_update_status": {
-    "file_last_modified": "文件 <code class=\"file-path\"></code> 最后修改时间为 <span class=\"file-last-modified\"></span>。",
-    "upload_modified_file": "上传修改的文件",
-    "ignore_this_change": "忽略此更改"
+    "upload_modified_file": "上传",
+    "title": "文件在 Trilium 外被修改",
+    "message": "在外部打开的文件已于 {{time}} 保存。上传后将替换 Trilium 中的内容；当前版本会保留为修订版本。"
   },
   "app_context": {
     "please_wait_for_save": "请等待几秒钟以完成保存，然后你可以尝试再操作一次。"
@@ -2282,7 +2302,13 @@
     "line_numbers_auto": "自动",
     "line_numbers_on": "开",
     "line_numbers_off": "关",
-    "line_numbers_auto_description": "跟随全局设置"
+    "line_numbers_auto_description": "跟随全局设置",
+    "include_position": "位置",
+    "break_text": "拆分文本",
+    "wrap_text": "包裹文本",
+    "align_left": "左对齐",
+    "align_center": "居中",
+    "align_right": "右对齐"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2819,7 +2845,24 @@
   "presentation_view": {
     "edit-slide": "编辑此幻灯片",
     "start-presentation": "开始演示",
-    "slide-overview": "切换幻灯片概览"
+    "slide-overview": "切换幻灯片概览",
+    "finish-editing": "完成编辑",
+    "new-slide": "新建幻灯片",
+    "slide-sidebar": "幻灯片侧边栏",
+    "menu-edit-slide": "编辑幻灯片",
+    "menu-new-slide-after": "在其后新建幻灯片",
+    "menu-new-vertical-slide": "新建纵向幻灯片",
+    "menu-duplicate": "创建副本",
+    "menu-move-up": "上移",
+    "menu-move-down": "下移",
+    "menu-make-vertical": "转为纵向幻灯片",
+    "menu-make-top-level": "转为顶层幻灯片",
+    "menu-delete": "删除幻灯片…",
+    "slide-background": "幻灯片背景",
+    "no-slides": "此演示文稿没有幻灯片。",
+    "previous-slide": "上一张幻灯片",
+    "next-slide": "下一张幻灯片",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "calendar_view": {
     "delete_note": "删除笔记...",
@@ -3703,7 +3746,9 @@
     "current_note": "此笔记",
     "children_hidden": "子笔记已从笔记树中隐藏",
     "workspaces": "工作区",
-    "bookmarks": "书签"
+    "bookmarks": "书签",
+    "forward": "返回笔记",
+    "open": "打开"
   },
   "text-editor": {
     "validation-errors": {
@@ -3965,7 +4010,22 @@
       "header-rows": "表头行",
       "enter-a-whole-number-between-0-and-0": "请输入介于 0 和 %0 之间的整数。",
       "extended-code-block": "扩展代码块",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "插入一个以代码笔记方式编辑的代码块。"
+      "insert-a-code-block-that-is-edited-as-a-code-note": "插入一个以代码笔记方式编辑的代码块。",
+      "unknown-embed-widget": "未知嵌入组件",
+      "table-size": "表格大小",
+      "table-headers": "表格表头",
+      "new-child-note": "新建子笔记",
+      "create-a-new-child-note": "创建子笔记",
+      "create-a-new-child-note-and-insert-a-link-to-it": "创建子笔记",
+      "open-note": "打开笔记",
+      "open-attachment": "打开附件",
+      "jump-to-heading": "跳转到标题",
+      "jump-to-anchor": "跳转到锚点",
+      "jump-to-block": "跳转到块",
+      "box-position": "框位置",
+      "youtube-video": "YouTube 视频",
+      "insert-youtube-video": "插入 YouTube 视频",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "插入可直接在笔记中观看的 YouTube 视频"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4482,7 +4542,8 @@
   },
   "open": {
     "directory_failed": "无法打开 {{- directory}}: {{- reason}}",
-    "download_failed": "无法保存下载内容：{{- reason}}"
+    "download_failed": "无法保存下载内容：{{- reason}}",
+    "custom_failed": "无法显示应用选择器。\n\n使用「在外部打开」，用文件的默认应用打开它。"
   },
   "embedded_note": {
     "open-note": "打开笔记",
@@ -4700,7 +4761,8 @@
     "excerpt_description": "你目前看到的只是该笔记的一个片段。按 {{icon}} 按钮即可在新标签页中打开整条笔记。",
     "edit_excerpt": "编辑摘录",
     "copy_tab": "复制此标签页的链接",
-    "copy_share_link_other": "复制指向这 {{count}} 个块的公开链接"
+    "copy_share_link_other": "复制指向这 {{count}} 个块的公开链接",
+    "delete_other": "删除 {{count}} 个块"
   },
   "record_meeting": {
     "note_title": "会议 {{date}}",
@@ -4872,5 +4934,10 @@
     "sort_rows": "排序行",
     "ascending": "升序",
     "descending": "降序"
+  },
+  "youtube_video": {
+    "title": "插入 YouTube 视频",
+    "button_insert": "插入视频",
+    "not_a_video": "这不是 YouTube 视频的地址。"
   }
 }

@@ -57,7 +57,7 @@
     "add_link": "リンクを追加",
     "note": "ノート",
     "link_title": "リンクタイトル",
-    "button_add_link": "リンクを追加",
+    "button_add_link": "リンクを挿入",
     "help_on_links": "リンクに関するヘルプ",
     "search_note": "ノート名で検索",
     "anchor": "アンカー（任意）",
@@ -613,9 +613,9 @@
     "re_render_note": "ノートを再描画",
     "search_in_note": "ノート内検索",
     "note_source": "ノートのソース",
-    "open_note_externally": "外部でノートを開く",
+    "open_note_externally": "外部アプリで開く",
     "open_note_externally_title": "ファイルを外部アプリケーションで開き、変更を監視します。その後、変更されたバージョンをTriliumにアップロードできるようになります。",
-    "open_note_custom": "プログラムからノートを開く...",
+    "open_note_custom": "プログラムから開く...",
     "import_files": "ファイルをインポート...",
     "export_note": "ノートをエクスポート...",
     "delete_note": "ノートを削除...",
@@ -1718,7 +1718,15 @@
     "line_numbers_auto": "自動",
     "line_numbers_on": "オン",
     "line_numbers_off": "オフ",
-    "line_numbers_auto_description": "グローバル設定に従う"
+    "line_numbers_auto_description": "グローバル設定に従う",
+    "include_position": "位置",
+    "break_text": "テキストを上下に配置",
+    "wrap_text": "テキストを回り込ませる",
+    "align_left": "左揃え",
+    "align_center": "中央揃え",
+    "align_right": "右揃え",
+    "open_externally": "外部で開く",
+    "delete": "削除"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -1848,7 +1856,8 @@
     "copy_failed": "権限の問題で、クリップボードにコピーできません。",
     "copy_success": "クリップボードにコピーしました。",
     "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。",
-    "paste_notes": "ノートを貼り付け"
+    "paste_notes": "ノートを貼り付け",
+    "paste_failed": "クリップボードを読み込めませんでした。"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -2452,9 +2461,9 @@
     "content_load_stalled": "ノートの内容を読み込み中…"
   },
   "watched_file_update_status": {
-    "ignore_this_change": "この変更を無視する",
-    "file_last_modified": "ファイル <code class=\"file-path\"></code> は <span class=\"file-last-modified\"></span> に最後に変更されました。",
-    "upload_modified_file": "変更したファイルをアップロード"
+    "upload_modified_file": "アップロード",
+    "title": "Trilium の外部でファイルが変更されました",
+    "message": "Trilium の外部で開かれたファイルが {{time}} に保存されました。アップロードすると Trilium 内のコンテンツが置き換わりますが、現在のバージョンは変更履歴として保持されます。"
   },
   "image": {
     "copied-to-clipboard": "画像への参照がクリップボードにコピーされました。これは任意のテキストノートに貼り付けることができます。",
@@ -3999,7 +4008,13 @@
       "table-headers": "表のヘッダー",
       "jump-to-heading": "見出しへ移動",
       "jump-to-anchor": "アンカーへ移動",
-      "jump-to-block": "ブロックへ移動"
+      "jump-to-block": "ブロックへ移動",
+      "box-position": "ボックスの位置",
+      "youtube-video": "YouTube 動画",
+      "insert-youtube-video": "YouTube 動画を挿入",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します",
+      "caption-for-the-video": "動画のキャプション",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4516,7 +4531,8 @@
   },
   "open": {
     "directory_failed": "{{- directory}} を開けませんでした: {{- reason}}",
-    "download_failed": "ダウンロードを保存できませんでした: {{- reason}}"
+    "download_failed": "ダウンロードを保存できませんでした: {{- reason}}",
+    "custom_failed": "アプリケーション選択画面を表示できませんでした。\n\n\"外部アプリで開く\" を使用すると、そのファイルの既定のアプリケーションで開くことができます。"
   },
   "embedded_note": {
     "open-note": "ノートを開く",
@@ -4923,5 +4939,11 @@
     "sort_rows": "行を並べ替え",
     "ascending": "昇順",
     "descending": "降順"
+  },
+  "youtube_video": {
+    "title": "YouTube 動画を挿入",
+    "button_insert": "動画を挿入",
+    "not_a_video": "これは YouTube 動画のアドレスではありません。",
+    "insert_failed": "動画を読み込めませんでした。アドレスと接続状況を確認してから、もう一度お試しください。"
   }
 }

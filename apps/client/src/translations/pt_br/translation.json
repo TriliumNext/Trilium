@@ -1826,9 +1826,7 @@
     "no_headings": "Nenhum título."
   },
   "watched_file_update_status": {
-    "file_last_modified": "O arquivo <code class=\"file-path\"></code> foi modificado pela última vez em <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Enviar arquivo modificado",
-    "ignore_this_change": "Ignorar esta alteração"
+    "upload_modified_file": "Enviar arquivo modificado"
   },
   "app_context": {
     "please_wait_for_save": "Por favor aguarde alguns segundos para finalizar a gravação, e então tente novamente."
