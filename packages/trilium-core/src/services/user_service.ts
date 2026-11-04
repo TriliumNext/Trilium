@@ -74,7 +74,7 @@ function getUserById(userId: string): User | null {
 
 /**
  * The user whose `userId` is in CLS, looked up once per context and kept there. Returns `null` without
- * a user in CLS (ETAPI, the desktop app without sign-in, a `cls.init()` job) and for a deleted user.
+ * a user in CLS (ETAPI, the desktop app without sign-in, a timer started at boot) and for a deleted user.
  */
 function getCurrentUser(): User | null {
     const userId = cls.getUserId();
