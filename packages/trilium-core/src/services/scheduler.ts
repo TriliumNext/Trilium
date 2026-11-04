@@ -58,7 +58,7 @@ export function startScheduler() {
         // from, so on every path that opens one after start it is still on the fallback "en". A
         // no-op on an ordinary boot, where this has already been done.
         await reconcileLanguageAfterDbInit();
-        cls.getContext().init(() => {
+        cls.initAsSystem(() => {
             hiddenSubtreeService.checkHiddenSubtree();
             userHomes.ensureUserHomes();
         });
@@ -68,29 +68,29 @@ export function startScheduler() {
     sqlInit.dbReady.then(() => {
         if (!getPlatform().getEnv("TRILIUM_SAFE_MODE") && isScriptingEnabled()) {
             setTimeout(
-                cls.wrap(() => runNotesWithLabel("backendStartup")),
+                cls.wrapAsSystem(() => runNotesWithLabel("backendStartup")),
                 10 * 1000
             );
 
             setInterval(
-                cls.wrap(() => runNotesWithLabel("hourly")),
+                cls.wrapAsSystem(() => runNotesWithLabel("hourly")),
                 3600 * 1000
             );
 
             setInterval(
-                cls.wrap(() => runNotesWithLabel("daily")),
+                cls.wrapAsSystem(() => runNotesWithLabel("daily")),
                 24 * 3600 * 1000
             );
         }
 
         // Internal maintenance - always runs regardless of scripting setting
         setInterval(
-            cls.wrap(() => hiddenSubtreeService.checkHiddenSubtree()),
+            cls.wrapAsSystem(() => hiddenSubtreeService.checkHiddenSubtree()),
             7 * 3600 * 1000
         );
 
         setInterval(
-            cls.wrap(() => checkProtectedSessionExpiration()),
+            cls.wrapAsSystem(() => checkProtectedSessionExpiration()),
             30000
         );
     });

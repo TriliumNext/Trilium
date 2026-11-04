@@ -90,11 +90,14 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
             bindEmitter(req);
             bindEmitter(res);
 
-            const result = cls.init(() => {
+            const userId = req.session?.userId;
+            const openScope = !userId && auth.isSystemRequest(req) ? cls.initAsSystem : cls.init;
+
+            const result = openScope(() => {
                 cls.set("componentId", req.headers["trilium-component-id"]);
                 cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
                 cls.set("hoistedNoteId", req.headers["trilium-hoisted-note-id"] || "root");
-                cls.set("userId", req.session?.userId);
+                cls.set("userId", userId);
 
                 const cb = () => routeHandler(req, res, next);
 

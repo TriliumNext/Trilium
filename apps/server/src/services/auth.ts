@@ -138,6 +138,15 @@ function readSetupAuthToken(req: Request): string | undefined {
     return typeof token === "string" ? token : undefined;
 }
 
+/**
+ * Whether a request without a user acts for the instance itself: the desktop app's own renderer, an
+ * instance without authentication, an instance still being set up, or a sync peer.
+ */
+function isSystemRequest(req: Request): boolean {
+    return isInternalElectronRequest(req) || noAuthentication || !!req.session?.isSyncPeer
+        || mayPassAsUninitialized(req);
+}
+
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
@@ -278,7 +287,7 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
 
     // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
     // `verifyRecoveryCode()` write options when they accept a code.
-    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    const failedFactor = await cls.initAsSystem(() => verifyLoginCredentials(password, totpToken));
     if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
@@ -332,5 +341,6 @@ export default {
     checkSetupAuth,
     checkApiAuthOrElectron,
     checkEtapiToken,
-    checkCredentials
+    checkCredentials,
+    isSystemRequest
 };

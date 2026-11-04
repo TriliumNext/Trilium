@@ -1,8 +1,10 @@
 import i18next from "i18next";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { getContext } from "./context.js";
+import { getBackup } from "./backup.js";
+import { getContext, isSystem } from "./context.js";
 import eventService from "./events.js";
+import migrationService from "./migration.js";
 import { getSql } from "./sql/index.js";
 import sqlInit, { applySetupLanguage } from "./sql_init.js";
 import { SqlService } from "./sql/sql.js";
@@ -96,6 +98,28 @@ describe("sql_init (real DB)", () => {
             await applySetupLanguage("zz-not-a-locale");
 
             expect(changeLanguage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("initializeDb", () => {
+        it("opens the connection as the instance", async () => {
+            let migratedAsSystem: boolean | undefined;
+            const migrate = vi.spyOn(migrationService, "migrateIfNecessary").mockImplementation(async () => {
+                migratedAsSystem = isSystem();
+            });
+            const scheduleBackups = vi.spyOn(getBackup(), "scheduleBackups").mockImplementation(() => {});
+            const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockReturnValue(0 as unknown as ReturnType<typeof setTimeout>);
+            const setIntervalSpy = vi.spyOn(globalThis, "setInterval").mockReturnValue(0 as unknown as ReturnType<typeof setInterval>);
+
+            try {
+                sqlInit.initializeDb();
+                await sqlInit.dbReady;
+                await vi.waitFor(() => expect(migratedAsSystem).toBe(true));
+            } finally {
+                for (const spy of [ migrate, scheduleBackups, setTimeoutSpy, setIntervalSpy ]) {
+                    spy.mockRestore();
+                }
+            }
         });
     });
 

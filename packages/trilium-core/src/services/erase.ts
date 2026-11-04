@@ -216,20 +216,20 @@ function startScheduledCleanup() {
     sqlInit.dbReady.then(() => {
         // first cleanup kickoff 5 minutes after startup
         setTimeout(
-            cls.wrap(() => eraseDeletedEntities()),
+            cls.wrapAsSystem(() => eraseDeletedEntities()),
             5 * 60 * 1000
         );
         setTimeout(
-            cls.wrap(() => eraseScheduledAttachments()),
+            cls.wrapAsSystem(() => eraseScheduledAttachments()),
             6 * 60 * 1000
         );
 
         setInterval(
-            cls.wrap(() => eraseDeletedEntities()),
+            cls.wrapAsSystem(() => eraseDeletedEntities()),
             4 * 3600 * 1000
         );
         setInterval(
-            cls.wrap(() => eraseScheduledAttachments()),
+            cls.wrapAsSystem(() => eraseScheduledAttachments()),
             3600 * 1000
         );
     });

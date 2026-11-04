@@ -355,6 +355,28 @@ describe("Auth", () => {
             expect(next3).toHaveBeenCalled();
         });
 
+        it("isSystemRequest trusts the desktop renderer, no authentication, setup and a sync peer, not a session alone", () => {
+            expect(auth.isSystemRequest(makeReq({ session: { loggedIn: true } }))).toBe(false);
+            expect(auth.isSystemRequest(makeReq({ session: { loggedIn: true, isSyncPeer: true } }))).toBe(true);
+
+            const electronReq = makeReq();
+            markAsInternalElectronRequest(electronReq as object);
+            expect(auth.isSystemRequest(electronReq)).toBe(true);
+
+            const dbSpy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+            expect(auth.isSystemRequest(makeReq())).toBe(true);
+            dbSpy.mockRestore();
+
+            config.General.noAuthentication = true;
+            refreshAuth();
+            try {
+                expect(auth.isSystemRequest(makeReq())).toBe(true);
+            } finally {
+                config.General.noAuthentication = false;
+                refreshAuth();
+            }
+        });
+
         it("checkAppInitialized always calls next", () => {
             const next = vi.fn();
             auth.checkAppInitialized(makeReq(), makeRes() as never, next);
@@ -479,7 +501,11 @@ describe("Auth", () => {
         it("checkCredentials calls next when async verification succeeds", async () => {
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
             vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
-            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            let verifiedAsSystem: boolean | undefined;
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockImplementation(async () => {
+                verifiedAsSystem = cls.isSystem();
+                return true as never;
+            });
 
             const cred = Buffer.from("user:correctpass").toString("base64");
             const next = vi.fn();
@@ -487,6 +513,8 @@ describe("Auth", () => {
             await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), makeRes() as never, next);
 
             expect(next).toHaveBeenCalled();
+            // Nobody is signed in yet, so the instance checks its own password.
+            expect(verifiedAsSystem).toBe(true);
         });
 
         it("checkCredentials requires a valid second factor when TOTP is enabled", async () => {

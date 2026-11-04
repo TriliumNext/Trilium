@@ -123,7 +123,7 @@ async function runNativeImport(path: string, opts: ImportFromTokenOpts): Promise
 
     const file = await buildImportFile(path, options.explodeArchives, opts.format);
 
-    const note = await cls.init(async () => {
+    const note = await cls.initAsSystem(async () => {
         // Match the HTTP import route: skip per-entity events and change-id tracking during the bulk import.
         cls.disableEntityEvents();
         cls.ignoreEntityChangeIds();

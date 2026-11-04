@@ -5,7 +5,7 @@ import { getLog } from "./log";
 import { getBackup } from "./backup";
 import optionService from "./options";
 import eventService from "./events";
-import { getContext } from "./context";
+import { initAsSystem } from "./context";
 import config from "./config";
 import BNote from "../becca/entities/bnote";
 import BBranch from "../becca/entities/bbranch";
@@ -162,7 +162,7 @@ function optimize() {
 }
 
 function initializeDb() {
-    getContext().init(initDbConnection);
+    initAsSystem(initDbConnection);
 
     dbReady.then(() => {
         getBackup().scheduleBackups();
@@ -243,7 +243,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // Check hidden subtree.
     // This ensures the existence of system templates, for the demo content.
     console.log("Checking hidden subtree at first start.");
-    getContext().init(() => {
+    initAsSystem(() => {
         getSql().transactional(() => hidden_subtree.checkHiddenSubtree());
     });
 

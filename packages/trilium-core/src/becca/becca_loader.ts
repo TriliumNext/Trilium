@@ -13,7 +13,7 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
-import { getContext } from "../services/context.js";
+import { initAsSystem } from "../services/context.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -22,13 +22,18 @@ export const beccaLoaded = new Promise<void>(async (res, rej) => {
     const { initStartupOptions } = await import("../services/options_init.js");
 
     dbReady.then(() => {
-        getContext().init(() => {
-            load();
-            getSql().transactional(() => initStartupOptions());
-            res();
-        });
+        loadAtStartup(initStartupOptions);
+        res();
     });
 });
+
+/** Loads becca and applies the startup options, as the instance, once the database is ready. */
+export function loadAtStartup(initStartupOptions: () => void) {
+    initAsSystem(() => {
+        load();
+        getSql().transactional(() => initStartupOptions());
+    });
+}
 
 function notesHasOwnerIdColumn(): boolean {
     const cols = getSql().getColumn<string>(

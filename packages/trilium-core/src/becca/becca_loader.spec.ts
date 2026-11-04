@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getContext } from "../services/context.js";
+import { getContext, isSystem } from "../services/context.js";
 import eventService from "../services/events.js";
 import noteService from "../services/notes.js";
 import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
-import beccaLoader, { load, reload } from "./becca_loader.js";
+import beccaLoader, { load, loadAtStartup, reload } from "./becca_loader.js";
 import BAttribute from "./entities/battribute.js";
 import BNote from "./entities/bnote.js";
 
@@ -291,6 +291,16 @@ describe("becca_loader", () => {
             expect(note.getSearchableTitle().words).toEqual([ "renamed", "vienna" ]);
             expect(note.getFlatText()).toContain("renamed vienna");
         });
+    });
+
+    it("loads becca and the startup options as the instance", () => {
+        let optionsAsSystem: boolean | undefined;
+        loadAtStartup(() => {
+            optionsAsSystem = isSystem();
+        });
+
+        expect(becca.loaded).toBe(true);
+        expect(optionsAsSystem).toBe(true);
     });
 
     it("exposes load and reload through the default export", () => {
