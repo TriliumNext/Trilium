@@ -1285,7 +1285,9 @@
     "wrap_text": "Обтекать текст",
     "align_left": "Выравнивание по левому краю",
     "align_center": "Выравнивание по центру",
-    "align_right": "Выравнивание по правому краю"
+    "align_right": "Выравнивание по правому краю",
+    "delete": "Удалить",
+    "open_externally": "Открыть во внешнем"
   },
   "image_context_menu": {
     "copy_image_to_clipboard": "Копировать изображение в буфер обмена",
@@ -2740,7 +2742,8 @@
     "copied": "Заметки скопированы в буфер обмена.",
     "cut": "Заметки вырезаны в буфер обмена.",
     "copied_without_links": "Заметки были скопированы в буфер обмена, но ссылки на заметки не удалось поместить в системный буфер обмена.",
-    "paste_notes": "Вставить заметку(и)"
+    "paste_notes": "Вставить заметку(и)",
+    "paste_failed": "Не удалось прочитать буфера обмена."
   },
   "ws": {
     "encountered-error": "Обнаружена ошибка \"{{message}}\", проверьте консоль.",
@@ -4117,7 +4120,9 @@
       "box-position": "Положение блока",
       "youtube-video": "Видео на YouTube",
       "insert-youtube-video": "Вставить видео с YouTube",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Вставить видео с YouTube, которое можно посмотреть прямо в заметке"
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Вставить видео с YouTube, которое можно посмотреть прямо в заметке",
+      "caption-for-the-video": "Подпись к видео",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Для изменения размера блока нажмите и удерживайте его. Дважды нажмите, чтобы вернуть размер по умолчанию."
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -5116,6 +5121,7 @@
   "youtube_video": {
     "title": "Вставить видео с YouTube",
     "button_insert": "Вставить видео",
-    "not_a_video": "Это не адрес видео на YouTube."
+    "not_a_video": "Это не адрес видео на YouTube.",
+    "insert_failed": "Не удалось загрузить видео. Проверьте адрес и соединение, затем попробуйте снова."
   }
 }
