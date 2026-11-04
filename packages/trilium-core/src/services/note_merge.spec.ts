@@ -4,6 +4,7 @@ import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
 import { createTextNote } from "../test/api_fixtures.js";
 import { CoreApiTester } from "../test/api_tester.js";
+import config from "./config.js";
 import * as cls from "./context.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
@@ -1231,6 +1232,80 @@ describe("Merging notes", () => {
         expect(copiedContent).not.toContain("FROM TEMPLATE");
         expect(copied.getChildNotes().filter((child) => child.title === "Stencil")).toHaveLength(1);
         expect(copied.getRelations("template").map((rel) => rel.value)).toContain(template.noteId);
+    });
+
+    it("still fills a note a script creates while the merge runs", async () => {
+        const template = await createTextNote(api, {
+            title: "Script stencil", content: "<p>FROM TEMPLATE</p>"
+        });
+        await createTextNote(api, {
+            parentNoteId: template.noteId, title: "Stencil", content: "<p>stencil</p>"
+        });
+        const otherParent = await createTextNote(api, {
+            title: "Script parent", content: "<p></p>"
+        });
+        expect((await api.post(`/api/notes/${otherParent.noteId}/attributes`, {
+            body: {
+                type: "relation",
+                name: "child:template",
+                value: template.noteId,
+                isInheritable: false
+            }
+        })).status).toBe(204);
+
+        const parent = await createTextNote(api, { title: "Merge parent", content: "<p></p>" });
+        expect((await api.post(`/api/notes/${parent.noteId}/attributes`, {
+            body: {
+                type: "relation",
+                name: "child:template",
+                value: template.noteId,
+                isInheritable: false
+            }
+        })).status).toBe(204);
+        const alpha = await createTextNote(api, {
+            parentNoteId: parent.noteId, title: "Script alpha", content: "<p>alpha body</p>"
+        });
+        const beta = await createTextNote(api, {
+            parentNoteId: parent.noteId, title: "Script beta", content: "<p>beta body</p>"
+        });
+        const script = await createCodeNote(
+            "root",
+            "Create beside the merge",
+            "application/javascript;env=backend",
+            "api.createTextNote("
+            + `${JSON.stringify(otherParent.noteId)}, "Scripted during merge", "");`
+        );
+        expect((await api.post(`/api/notes/${parent.noteId}/attributes`, {
+            body: {
+                type: "relation",
+                name: "runOnChildNoteCreation",
+                value: script,
+                isInheritable: false
+            }
+        })).status).toBe(204);
+
+        const previous = config.Security.backendScriptingEnabled;
+        config.Security.backendScriptingEnabled = true;
+        try {
+            const merged = becca.getNoteOrThrow(await mergeNotes(alpha.noteId, [ beta.noteId ]));
+            expect(String(merged.getContent())).toContain("alpha body");
+            expect(String(merged.getContent())).not.toContain("FROM TEMPLATE");
+            expect(merged.getChildNotes().filter((child) => child.title === "Stencil"))
+                .toHaveLength(2);
+
+            const scripted = Object.values(becca.notes).filter((note) =>
+                !note.isDeleted && note.title === "Scripted during merge");
+            expect(scripted.length).toBeGreaterThan(0);
+            for (const created of scripted) {
+                expect(String(created.getContent())).toContain("FROM TEMPLATE");
+                expect(created.getChildNotes().filter((child) => child.title === "Stencil"))
+                    .toHaveLength(1);
+                expect(created.getRelations("template").map((rel) => rel.value))
+                    .toContain(template.noteId);
+            }
+        } finally {
+            config.Security.backendScriptingEnabled = previous;
+        }
     });
 
     it("keeps a restored original when an intermediate note is restored later", async () => {

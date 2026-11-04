@@ -17,7 +17,7 @@ import TaskContext from "./task_context.js";
 import treeService from "./tree.js";
 import { decodeUtf8 } from "./utils/binary.js";
 import dateUtils from "./utils/date.js";
-import { randomString } from "./utils/index.js";
+import { newEntityId, randomString } from "./utils/index.js";
 
 const BLANK_HTML = /^(?:<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>|<br\s*\/?>|\s)*$/i;
 
@@ -100,16 +100,19 @@ interface CarriedIds {
  * revision from before the merge.
  */
 function mergeNotes(targetNoteId: string, sourceNoteIds: string[], title?: string) {
-    const previous = cls.isTemplateApplicationSkipped();
-    cls.setTemplateApplicationSkipped(true);
+    const mergedNoteId = newEntityId();
+    const previous = cls.templateApplicationSkippedNoteId();
+    cls.setTemplateApplicationSkippedFor(mergedNoteId);
     try {
-        return mergeNotesNow(targetNoteId, sourceNoteIds, title);
+        return mergeNotesNow(targetNoteId, sourceNoteIds, title, mergedNoteId);
     } finally {
-        cls.setTemplateApplicationSkipped(previous);
+        cls.setTemplateApplicationSkippedFor(previous);
     }
 }
 
-function mergeNotesNow(targetNoteId: string, sourceNoteIds: string[], title?: string) {
+function mergeNotesNow(
+    targetNoteId: string, sourceNoteIds: string[], title: string | undefined, mergedNoteId: string
+) {
     const first = becca.getNoteOrThrow(targetNoteId);
     const sources = loadSources(targetNoteId, sourceNoteIds);
     const notes = [ first, ...sources ];
@@ -137,6 +140,7 @@ function mergeNotesNow(targetNoteId: string, sourceNoteIds: string[], title?: st
         .map((item) => item.note);
 
     const { note: merged } = noteService.createNewNote({
+        noteId: mergedNoteId,
         parentNoteId: primary.parentNoteId,
         title: trimmedTitle || first.getTitleOrProtected(),
         type: first.type,

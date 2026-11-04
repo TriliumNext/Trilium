@@ -92,7 +92,7 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
         runAttachedRelations(entity.getNote(), "runOnAttributeCreation", entity);
 
         if (entity.type === "relation" && entity.name === "template"
-            && !cls.isTemplateApplicationSkipped()) {
+            && cls.templateApplicationSkippedNoteId() !== entity.noteId) {
             const note = becca.getNote(entity.noteId);
             if (!note) {
                 return;

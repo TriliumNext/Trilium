@@ -92,15 +92,17 @@ export function isImportOrderPreserved() {
 }
 
 /**
- * A merge copies a template relation onto the new note and then writes that note's text itself.
- * While this is set, saving the relation does not fill the note from the template.
+ * `noteId` is the note a merge is building. A template relation saved on that note does not fill
+ * it, because the merge writes the note's text itself. A different note created while the merge
+ * runs, including one a script creates, still receives its template.
  */
-export function setTemplateApplicationSkipped(skipped: boolean) {
-    getContext().set("skipTemplateApplication", skipped);
+export function setTemplateApplicationSkippedFor(noteId: string | null) {
+    getContext().set("skipTemplateApplicationNoteId", noteId);
 }
 
-export function isTemplateApplicationSkipped() {
-    return !!getContext().get("skipTemplateApplication");
+export function templateApplicationSkippedNoteId() {
+    const noteId = getContext().get("skipTemplateApplicationNoteId");
+    return typeof noteId === "string" ? noteId : null;
 }
 
 export function putEntityChange(entityChange: EntityChange) {
