@@ -2,7 +2,7 @@ import { getSql } from "./sql/index.js";
 import { getLog } from "./log.js";
 import { newEntityId } from "./utils/index.js";
 import dateUtils from "./utils/date.js";
-import { invalidateNoteVisibility } from "../becca/note_visibility_version.js";
+import { invalidateNoteVisibility } from "../becca/note_visibility.js";
 import userService from "./user_service.js";
 import ws from "./ws.js";
 

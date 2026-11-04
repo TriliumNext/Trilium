@@ -22,7 +22,7 @@ import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
 import { getVirtualNoteContent, isVirtualNoteContentWritable, setVirtualNoteContent } from "../../services/virtual_notes.js";
-import { invalidateNoteVisibility } from "../note_visibility_version.js";
+import { invalidateNoteVisibility } from "../note_visibility.js";
 
 // ownerId exists only after migration 239. Saves that run during migrations 220-238
 // must skip it or the INSERT fails. Result is cached so the PRAGMA runs once per process.

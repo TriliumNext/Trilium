@@ -1,6 +1,6 @@
 import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
 
-import { invalidateNoteVisibility } from "../becca/note_visibility_version.js";
+import { invalidateNoteVisibility } from "../becca/note_visibility.js";
 import { ForbiddenError } from "../errors.js";
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";

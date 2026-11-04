@@ -6,7 +6,7 @@ import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
-import { invalidateNoteVisibility } from "./note_visibility_version.js";
+import { invalidateNoteVisibility } from "./note_visibility.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";

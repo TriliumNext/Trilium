@@ -9,7 +9,7 @@ import TaskContext from "../../services/task_context.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
 import { getHoistedNoteId } from "../../services/context";
-import { invalidateNoteVisibility } from "../note_visibility_version.js";
+import { invalidateNoteVisibility } from "../note_visibility.js";
 import { randomString } from "../../services/utils";
 
 /**

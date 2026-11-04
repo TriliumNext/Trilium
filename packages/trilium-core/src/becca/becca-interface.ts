@@ -14,8 +14,7 @@ import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import { getSql } from "../services/sql/index.js";
 import NoteSet from "../services/search/note_set.js";
-import { getNoteView } from "./note_visibility.js";
-import { invalidateNoteVisibility } from "./note_visibility_version.js";
+import { getNoteView, invalidateNoteVisibility } from "./note_visibility.js";
 
 /**
  * Becca is a backend cache of all notes, branches, and attributes.

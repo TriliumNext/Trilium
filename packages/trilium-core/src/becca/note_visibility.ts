@@ -6,7 +6,6 @@ import NoteSet from "../services/search/note_set.js";
 import { getSql } from "../services/sql/index.js";
 import dateUtils from "../services/utils/date.js";
 import type Becca from "./becca-interface.js";
-import { getNoteVisibilityVersion } from "./note_visibility_version.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
 import BNote from "./entities/bnote.js";
@@ -150,7 +149,6 @@ export class NoteView {
  * scope without a user.
  */
 export function getNoteView(becca: Becca): NoteView | null {
-    const version = getNoteVisibilityVersion();
     if (!hasMembers(version) || isSystem()) {
         return null;
     }
@@ -169,6 +167,15 @@ export function getNoteView(becca: Becca): NoteView | null {
     return cached.view;
 }
 
+/**
+ * Discards every member's view. Called on a change to which notes exist, where they sit or who may
+ * see them.
+ */
+export function invalidateNoteVisibility() {
+    version++;
+}
+
+let version = 0;
 const viewsByUser = new Map<string, { version: number; becca: Becca; view: NoteView | null }>();
 let members: { version: number; exist: boolean } | null = null;
 
