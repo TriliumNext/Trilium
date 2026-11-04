@@ -38,7 +38,7 @@ Through a view, `becca.notes`, `branches`, `attributes` and `childParentToBranch
 
 `seedAdminUser()` (`packages/trilium-core/src/services/sql_init.ts`) runs on **every** `initDbConnection()`: ensures one admin exists (promotes an existing non-admin `admin` row if the insert collides), backfills NULL `ownerId`/`userId` to it, and writes `adminUserId`. So NULL `ownerId` is transient — anything created without it is reassigned to the admin on next boot.
 
-The password login (`apps/server/src/routes/login.ts`) sets `req.session.userId` to whoever signed in: a member by username and their own password, the primary admin by the instance password and TOTP. SSO (`apps/server/src/services/open_id.ts`) still signs in only as the primary admin. Auth checks `session.loggedIn`, not `userId`, so a logged-in session without a `userId` still reaches the handlers, in a plain scope.
+The password login (`apps/server/src/routes/login.ts`) sets `req.session.userId` to whoever signed in: a member by username and their own password, the primary admin by the instance password and TOTP. SSO (`apps/server/src/services/open_id.ts`) still signs in only as the primary admin. Every session check (`checkAuth`, `checkApiAuth`, `checkApiAuthOrElectron`, bootstrap, the WebSocket handshake) goes through `auth.isSignedIn()`, which needs `loggedIn` plus a `userId` or `isSyncPeer`: a session without either counts as logged out. A new session check must use it too. Routes without session auth (login, setup, health, and the clipper and sender, which take an ETAPI token) still run in a plain scope.
 
 ## Key files
 

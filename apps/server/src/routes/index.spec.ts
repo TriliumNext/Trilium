@@ -85,10 +85,19 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
 
     it("treats a browser as logged in once it has a real session", () => {
         const { res, body } = makeRes();
-        bootstrap(makeReq({ loggedIn: true, internal: false }), res);
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", internal: false }), res);
 
         expect(body().loggedIn).toBe(true);
         expect(body().csrfToken).toBe("csrf-test-token");
+    });
+
+    it("serves the login screen to a logged-in session with no user", () => {
+        const { res, body } = makeRes();
+        bootstrap(makeReq({ loggedIn: true, internal: false }), res);
+
+        expect(body().loggedIn).toBe(false);
+        expect(body().login).toBeTruthy();
+        expect(body().csrfToken).toBeUndefined();
     });
 
     it("names the signed-in user for the global menu, and nobody without a session user", () => {

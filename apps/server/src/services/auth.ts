@@ -1,5 +1,6 @@
 import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
+import type { SessionData } from "express-session";
 
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
@@ -37,7 +38,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     if (isInternalElectronRequest(req) || noAuthentication) {
         next();
         return;
-    } else if (!req.session.loggedIn && !noAuthentication) {
+    } else if (!isSignedIn(req.session) && !noAuthentication) {
         // check redirectBareDomain option first
 
         // cannot use options.getOptionBool currently => it will throw an error on new installations
@@ -147,6 +148,14 @@ function isSystemRequest(req: Request): boolean {
         || mayPassAsUninitialized(req);
 }
 
+/**
+ * Whether a session belongs to someone signed in: a user, or a sync peer acting for the instance. A
+ * session marked `loggedIn` without either counts as logged out, so no request runs for nobody.
+ */
+export function isSignedIn(session: Partial<SessionData> | undefined): boolean {
+    return !!session?.loggedIn && (!!session.userId || !!session.isSyncPeer);
+}
+
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
@@ -154,7 +163,7 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         return next();
     }
 
-    if (!req.session.loggedIn && !isInternalElectronRequest(req) && !noAuthentication) {
+    if (!isSignedIn(req.session) && !isInternalElectronRequest(req) && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -177,7 +186,7 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         return next();
     }
 
-    if (!req.session.loggedIn) {
+    if (!isSignedIn(req.session)) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {

@@ -117,9 +117,16 @@ describe("WebSocketMessagingProvider", () => {
         it("allows a logged-in session", () => {
             const { server } = init();
             const done = vi.fn();
-            server.options.verifyClient({ req: { session: { loggedIn: true } } }, done);
+            server.options.verifyClient({ req: { session: { loggedIn: true, userId: "u" } } }, done);
             expect(done).toHaveBeenCalledWith(true);
             expect(getLogMock.error).not.toHaveBeenCalled();
+        });
+
+        it("rejects a logged-in session with no user", () => {
+            const { server } = init();
+            const done = vi.fn();
+            server.options.verifyClient({ req: { session: { loggedIn: true } } }, done);
+            expect(done).toHaveBeenCalledWith(false);
         });
 
         it("allows when authentication is disabled", () => {
