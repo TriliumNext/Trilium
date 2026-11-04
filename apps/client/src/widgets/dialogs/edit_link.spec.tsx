@@ -366,6 +366,34 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
     });
 
+    it("edits only the title of an attachment link, mirroring the attachment's title", async () => {
+        const note = buildNote({ title: "Owner", "#internalBookmark": "part" });
+        await open({ currentLink: { notePath: `root/${note.noteId}` } });
+        await vi.waitFor(() => expect(container.querySelector("select")).not.toBeNull());
+        await submit();
+
+        const path = `root/${note.noteId}?viewMode=attachments&attachmentId=abc123`;
+        await open({ currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ] });
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(choice()).toStrictEqual([]);
+        expect(container.querySelector(".note-autocomplete")).toBeNull();
+        expect(container.querySelector("select")).toBeNull();
+        expect(field("text")?.value).toBe("The file");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_attachment");
+        expect(document.activeElement).toBe(field("text"));
+        await type(field("text"), "Report");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "Report");
+
+        await open({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await type(field("text"), "");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+    });
+
     it("moves a URL typed or pasted on the note side over to the web link side", async () => {
         await open();
         await act(async () => autocomplete.onChange?.({ externalLink: "https://typed.example" }));

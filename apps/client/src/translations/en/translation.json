@@ -85,7 +85,8 @@
     "headings": "Headings",
     "no_headings_or_anchors": "This note doesn't contain any headings or anchors.",
     "title_from_heading": "If not set, will always reflect the heading's text",
-    "retrieving_from_page": "Retrieving from the web page..."
+    "retrieving_from_page": "Retrieving from the web page...",
+    "title_from_attachment": "If not set, will always reflect the attachment's title"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",

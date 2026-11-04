@@ -223,6 +223,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         new Set()
     );
     const [ isShowPending, setIsShowPending ] = useState(false);
+    // An edited attachment link keeps its target, so the form edits its title alone.
+    const isAttachmentLink = !opts?.targetOnly && isAttachmentPath(opts?.currentLink?.notePath);
     const webLinkRef = useRef<HTMLInputElement>(null);
     const titleRef = useRef<HTMLInputElement>(null);
     // The scrolling box around the Headings and Anchors cards.
@@ -384,7 +386,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             scrollToCheckedChoice(linkTargetsRef.current);
         }
 
-        if (target === "url" || target === "anchor") {
+        if (target === "url" || target === "anchor" || isAttachmentLink) {
             const field = target === "url" ? webLinkRef.current : titleRef.current;
             if (autoFocus) {
                 field?.focus();
@@ -558,6 +560,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (target === "anchor") {
             return heading ? t("add_link.title_from_heading") : anchor || undefined;
         }
+        if (isAttachmentLink) return t("add_link.title_from_attachment");
         if (target === "note") return t("add_link.title_from_note");
         return isPreview ? t("add_link.page_title") : webLinkUrl ?? t("add_link.title_from_url");
     }
@@ -583,7 +586,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     if (opts?.anchors || opts?.headings) {
         targets.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
     }
-    const switcher = !opts?.fixLink && (
+    const switcher = !opts?.fixLink && !isAttachmentLink && (
         <SegmentedChoice<LinkTarget>
             className="edit-link-target"
             options={targets}
@@ -751,33 +754,36 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     </>
                 ) : (
                     <>
-                        <OptionCardSection
-                            className="edit-link-note" name="note" label={t("add_link.note")}
-                        >
-                            <NoteAutocomplete
-                                inputRef={autocompleteRef}
-                                handleRef={handleRef}
-                                isListAsWideAsField
-                                // A URL picked from the search belongs on the web link side.
-                                onChange={(picked) => {
-                                    if (picked?.externalLink) {
-                                        moveToWebLink(picked.externalLink);
-                                        return;
-                                    }
-                                    // Another note drops the text, so the link mirrors its title.
-                                    if (picked?.notePath !== suggestion?.notePath) {
-                                        setLinkTitle("note", "");
-                                    }
-                                    setSuggestion(picked);
-                                }}
-                                opts={{
-                                    allowExternalLinks: !opts?.fixLink,
-                                    allowCreatingNotes: true
-                                }}
-                            />
-                        </OptionCardSection>
+                        {!isAttachmentLink && (
+                            <OptionCardSection
+                                className="edit-link-note" name="note" label={t("add_link.note")}
+                            >
+                                <NoteAutocomplete
+                                    inputRef={autocompleteRef}
+                                    handleRef={handleRef}
+                                    isListAsWideAsField
+                                    // A URL picked from the search belongs on the web link side.
+                                    onChange={(picked) => {
+                                        if (picked?.externalLink) {
+                                            moveToWebLink(picked.externalLink);
+                                            return;
+                                        }
+                                        // Another note drops the text, so the link mirrors its
+                                        // title.
+                                        if (picked?.notePath !== suggestion?.notePath) {
+                                            setLinkTitle("note", "");
+                                        }
+                                        setSuggestion(picked);
+                                    }}
+                                    opts={{
+                                        allowExternalLinks: !opts?.fixLink,
+                                        allowCreatingNotes: true
+                                    }}
+                                />
+                            </OptionCardSection>
+                        )}
 
-                        {bookmarks.length > 0 && !opts?.targetOnly && (
+                        {bookmarks.length > 0 && !opts?.targetOnly && !isAttachmentLink && (
                             <OptionCardSection name="anchor" label={t("add_link.anchor")}>
                                 <FormSelect
                                     values={[
@@ -937,6 +943,12 @@ function canPreview(url: string | undefined) {
 /** Whether `url` has a video player to embed. */
 function hasPlayer(url: string | undefined) {
     return !!url && detectEmbedType(url) !== "opengraph";
+}
+
+/** Whether `notePath` links to an attachment of the note, through its `attachmentId` parameter. */
+function isAttachmentPath(notePath: string | undefined) {
+    const query = notePath?.split("?", 2)[1];
+    return !!query && new URLSearchParams(query).has("attachmentId");
 }
 
 /** Whether `text` is a whole URL with a scheme, the way the note search tells URLs apart. */
