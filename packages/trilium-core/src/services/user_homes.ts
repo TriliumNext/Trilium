@@ -2,11 +2,14 @@ import { HOME_NOTE_ID_PREFIX, USERS_NOTE_ID } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
+import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getUserId } from "./context.js";
+import eventService from "./events.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 import userService from "./user_service.js";
+import ws from "./ws.js";
 
 /** The ID of a user's home note, derived from the user so that no column has to store it. */
 export function getHomeNoteId(userId: string) {
@@ -118,4 +121,31 @@ function getOrCreateUsersNote(): BNote {
         content: "",
         attributes: [{ type: "label", name: "iconClass", value: "bx bx-group" }]
     }).note;
+}
+
+// Shared with me exists only in the member's view, so a branch that moves a note onto or off it
+// produces no entity change their client could apply; the client reloads its tree instead.
+for (const event of [ eventService.ENTITY_CREATED, eventService.ENTITY_DELETED ]) {
+    eventService.subscribe(event, ({ entityName, entity }) => {
+        const userId = getUserId();
+        if (entityName === "branches" && userId && changesSharedWithMe(entity as BBranch, userId)) {
+            ws.reloadFrocaForUser(userId, "shared with me changed");
+        }
+    });
+}
+
+/**
+ * Whether adding or removing `branch` changes what Shared with me lists: the note keeps other
+ * branches, and the member can see none of their parents.
+ */
+function changesSharedWithMe(branch: BBranch, userId: string) {
+    const view = becca.getView();
+    const note = becca.allNotes[branch.noteId];
+    if (!view || !note || note.noteId.startsWith("_") || note.noteId === getHomeNoteId(userId)
+            || !view.canSeeNote(note.noteId) || !view.canSeeNote(branch.parentNoteId)) {
+        return false;
+    }
+
+    const others = note.allParentBranches.filter((other) => other.branchId !== branch.branchId && !other.isDeleted);
+    return others.length > 0 && !others.some((other) => view.canSeeNote(other.parentNoteId));
 }

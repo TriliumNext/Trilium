@@ -1,5 +1,5 @@
 import { USERS_NOTE_ID } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import cloningService from "./cloning.js";
@@ -10,6 +10,7 @@ import { getSql } from "./sql/index.js";
 import treeService from "./tree.js";
 import userHomes, { getHomeNoteId } from "./user_homes.js";
 import userService from "./user_service.js";
+import ws from "./ws.js";
 
 const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
 
@@ -141,12 +142,19 @@ describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
         const project = createOwnedNote(bobHome.noteId, bobId, "pasted project");
         cls.init(() => permissionService.setUserAccess(project.noteId, aliceId, false));
 
+        const reload = vi.spyOn(ws, "reloadFrocaForUser");
+        onTestFinished(() => reload.mockRestore());
+        // A note created in the home was never listed, so it changes nothing the client cannot see.
+        await asUser(aliceId, () => noteService.createNewNote({ parentNoteId: aliceHome.noteId, title: "paste draft", content: "", type: "text" }));
+        expect(reload).not.toHaveBeenCalled();
+
         const result = await asUser(aliceId, () => {
             expect(becca.getNote(SHARED_WITH_ME_NOTE_ID)?.getChildNotes().map((child) => child.noteId))
                 .toEqual([ project.noteId ]);
             return cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
         });
         expect(result.success).toBe(true);
+        expect(reload.mock.calls.map(([ userId ]) => userId)).toEqual([ aliceId ]);
 
         const [ sharedWithMe, parentNoteIds ] = await asUser(aliceId, () => [
             becca.getNote(SHARED_WITH_ME_NOTE_ID),
@@ -170,6 +178,8 @@ describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
             cloningService.cloneNoteToParentNote(project.noteId, aliceHome.noteId);
         });
 
+        const reload = vi.spyOn(ws, "reloadFrocaForUser");
+        onTestFinished(() => reload.mockRestore());
         const [ draftDeleted, eventDeleted, projectDeleted, remaining ] = await asUser(aliceId, () => {
             const copy = becca.getBranchFromChildAndParent(project.noteId, aliceHome.noteId);
             expect(project.getParentBranches()).toEqual([ copy ]);
@@ -184,6 +194,8 @@ describe.skipIf(isBrowserRuntime)("user homes as members see them", () => {
         expect(eventDeleted).toBe(true);
         expect(projectDeleted).toBe(false);
         expect(remaining).toEqual([ project.noteId ]);
+        // Only the project moves to Shared with me; the draft and the event are gone.
+        expect(reload.mock.calls.map(([ userId ]) => userId)).toEqual([ aliceId ]);
 
         const deletedNoteIds = cls.init(() => getSql().getColumn<string>(
             "SELECT noteId FROM notes WHERE noteId IN (?, ?) AND isDeleted = 1", [ draft.noteId, event.noteId ]
