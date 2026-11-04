@@ -36,6 +36,9 @@ import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedC
  */
 export type LinkTarget = "note" | "url" | "anchor";
 
+/** An empty text of the link for each page. */
+const NO_LINK_TITLES: Readonly<Record<LinkTarget, string>> = { note: "", url: "", anchor: "" };
+
 /** A heading of the document that the link goes into. */
 export interface LinkHeading {
     title: string;
@@ -199,10 +202,14 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
     );
 }
 
-/** The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. */
+/**
+ * The state and the fields of the link dialog for `opts`, shared by the modal and the balloon. Each
+ * page keeps its own state while another page is shown, and only the page shown is applied.
+ */
 function useEditLinkForm(opts: EditLinkOpts | undefined) {
-    const [ linkTitle, setLinkTitle ] = useState("");
+    const [ linkTitles, setLinkTitles ] = useState(NO_LINK_TITLES);
     const [ linkDescription, setLinkDescription ] = useState("");
+    // The note picked on the note page.
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ bookmarks, setBookmarks ] = useState<string[]>([]);
     const [ selectedBookmark, setSelectedBookmark ] = useState("");
@@ -240,7 +247,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
     useEffect(() => {
         const initialWebLink = opts ? getInitialWebLink(opts) : null;
-        setTarget(getInitialTarget(opts, initialWebLink));
+        const initialTarget = getInitialTarget(opts, initialWebLink);
+        setTarget(initialTarget);
         setWebLink(initialWebLink ?? "");
         setDisplay(opts?.display ?? "textLink");
         setAnchor(opts?.currentAnchor ?? "");
@@ -252,7 +260,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "textLink"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
-        setLinkTitle(opts?.currentTitle ?? "");
+        setLinkTitles({ ...NO_LINK_TITLES, [initialTarget]: opts?.currentTitle ?? "" });
         previewDescriptionRef.current = opts?.currentDescription ?? null;
         setLinkDescription(opts?.currentDescription ?? "");
         pageDetailsRef.current = new Map();
@@ -261,46 +269,42 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
 
         // Taken as though it had just been picked, so that a dialog opened on a link and left alone
         // has one to apply — and so that everything a pick settles (the title, the anchors a note
-        // offers, whether it is a link outside Trilium at all) is settled for it as well.
-        const initialLink = initialWebLink !== null ? normalizeWebLink(initialWebLink) : null;
-        setSuggestion(opts?.currentLink ?? (initialLink ? { externalLink: initialLink } : null));
+        // offers) is settled for it as well.
+        setSuggestion(opts?.currentLink?.notePath ? opts.currentLink : null);
     }, [ opts ]);
+
+    function setLinkTitle(page: LinkTarget, title: string) {
+        setLinkTitles((titles) => ({ ...titles, [page]: title }));
+    }
 
     function changeWebLink(text: string) {
         setWebLink(text);
-        const link = normalizeWebLink(text);
-        setSuggestion(link ? { externalLink: link } : null);
         // A title and description of a page belong to its address, so another address takes those
-        // of its own page.
-        if (previewTitleRef.current !== null && linkTitle === previewTitleRef.current) {
-            setLinkTitle("");
+        // of its own page. Compared in the updaters: the paste listener calls this from an older
+        // render.
+        const previewTitle = previewTitleRef.current;
+        const previewDescription = previewDescriptionRef.current;
+        if (previewTitle !== null) {
+            setLinkTitles((titles) => titles.url === previewTitle ? { ...titles, url: "" } : titles);
         }
+        setLinkDescription((description) => description === previewDescription ? "" : description);
         previewTitleRef.current = null;
-        if (linkDescription === previewDescriptionRef.current) {
-            setLinkDescription("");
-        }
         previewDescriptionRef.current = null;
     }
 
-    function changeTarget(next: LinkTarget, text = "") {
-        setTarget(next);
-        setShowsErrors(false);
-        setNoteTitle("");
-        setLinkTitle("");
-        setLinkDescription("");
-        setAnchor("");
-        setHeading(null);
-        if (next === "url") {
-            changeWebLink(text);
-        } else {
-            setWebLink("");
-            setSuggestion(null);
-        }
+    /** Shows the web link page with `url` as its address, for a URL found on the note page. */
+    function moveToWebLink(url: string) {
+        setTarget("url");
+        changeWebLink(url);
     }
 
     useEffect(() => {
         if (target === "anchor") {
             scrollToCheckedChoice(linkTargetsRef.current);
+        }
+        // The note field mounts empty when the note page is shown again.
+        if (target === "note" && suggestion?.notePath && noteTitle) {
+            handleRef.current?.setText(noteTitle, suggestion.notePath);
         }
 
         if (!autoFocus) return;
@@ -322,7 +326,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             const text = e.clipboardData?.getData("text/plain").trim();
             if (text && hasScheme(text)) {
                 e.preventDefault();
-                changeTarget("url", text);
+                moveToWebLink(text);
             }
         };
         input.addEventListener("paste", onPaste);
@@ -413,9 +417,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         }
     }
 
-    // A link on a selection keeps the selected text, which a preview would replace.
-    const showsDisplay = target === "url" && !!opts?.addLinkPreview && !opts.hasSelection;
-    const shownDisplay = getShownDisplay(display, suggestion?.externalLink);
+    const linkTitle = linkTitles[target];
+    const webLinkUrl = normalizeWebLink(webLink) ?? undefined;
+    // The web link page offers the display, except on a selection: a preview would replace the
+    // selected text.
+    const showsDisplay = !!opts?.addLinkPreview && !opts.hasSelection;
+    const shownDisplay = getShownDisplay(display, webLinkUrl);
     const isPreview = showsDisplay && shownDisplay !== "textLink";
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     // A video player shows no title.
@@ -423,9 +430,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     // Only a card shows a description.
     const showsDescription = showsTitle && showsDisplay && shownDisplay === "cardLink";
 
-    const webLinkUrl = target === "url" ? suggestion?.externalLink : undefined;
     // The fields shown blank that take their value from the web page, as the options allow.
-    const retrievesTitle = showsWebLinkTitle && !linkTitle.trim() && options.is(isPreview
+    const retrievesTitle = showsWebLinkTitle && !linkTitles.url.trim() && options.is(isPreview
         ? "textNoteLinkDetailsRetrievalEnabled" : "textNoteLinkTitleRetrievalEnabled");
     const retrievesDescription = showsDescription && !linkDescription.trim()
         && options.is("textNoteLinkDetailsRetrievalEnabled");
@@ -435,7 +441,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     /** Shows the errors of the fields from now on, and returns whether the link can be applied. */
     function validate() {
         setShowsErrors(true);
-        if (webLinkError) {
+        if (target === "url" && webLinkError) {
             webLinkRef.current?.focus();
             return false;
         }
@@ -478,7 +484,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (url !== webLinkUrl || !details) return;
 
         if (retrievesTitle && details.title) {
-            setLinkTitle(details.title);
+            setLinkTitle("url", details.title);
             previewTitleRef.current = details.title;
         }
         if (retrievesDescription && details.description) {
@@ -506,9 +512,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             return;
         }
 
-        if (!suggestion) return;
-
-        if (suggestion.notePath) {
+        if (target === "note") {
+            if (!suggestion?.notePath) return;
             // Handle note link, optionally with a bookmark anchor
             const path = selectedBookmark
                 ? `${suggestion.notePath}?bookmark=${encodeURIComponent(selectedBookmark)}`
@@ -517,19 +522,20 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             // keeps its own text, but `addLink()` needs a title to link it rather than replace it.
             const title = opts.hasSelection ? opts.text || noteTitle : linkTitle.trim() || null;
             opts.addLink(path, title);
-        } else if (suggestion.externalLink) {
-            const url = suggestion.externalLink;
-            const text = linkTitle.trim();
-            if (isPreview && opts.addLinkPreview) {
-                // A text that only repeats the address leaves the page's own title.
-                const title = shownDisplay !== "embedLink" && text && text !== url ? text : null;
-                const description = showsDescription ? linkDescription.trim() || null : null;
-                void opts.addLinkPreview(url, shownDisplay, title, description);
-                return;
-            }
-            // An external link without a text of its own reads as its address.
-            opts.addLink(url, text || url, true);
+            return;
         }
+
+        if (!webLinkUrl) return;
+        const text = linkTitle.trim();
+        if (isPreview && opts.addLinkPreview) {
+            // A text that only repeats the address leaves the page's own title.
+            const title = shownDisplay !== "embedLink" && text && text !== webLinkUrl ? text : null;
+            const description = showsDescription ? linkDescription.trim() || null : null;
+            void opts.addLinkPreview(webLinkUrl, shownDisplay, title, description);
+            return;
+        }
+        // An external link without a text of its own reads as its address.
+        opts.addLink(webLinkUrl, text || webLinkUrl, true);
     }
 
     function reset() {
@@ -553,8 +559,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             return heading ? t("add_link.title_from_heading") : anchor || undefined;
         }
         if (target === "note") return t("add_link.title_from_note");
-        return isPreview ? t("add_link.page_title")
-            : suggestion?.externalLink ?? t("add_link.title_from_url");
+        return isPreview ? t("add_link.page_title") : webLinkUrl ?? t("add_link.title_from_url");
     }
 
     const titleSection = (
@@ -565,7 +570,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                 inputRef={titleRef}
                 currentValue={linkTitle}
                 placeholder={getTitlePlaceholder()}
-                onChange={setLinkTitle}
+                onChange={(title) => setLinkTitle(target, title)}
                 isRetrieving={isRetrieving && retrievesTitle}
             />
         </OptionCardSection>
@@ -583,7 +588,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             className="edit-link-target"
             options={targets}
             currentValue={target}
-            onChange={(next) => changeTarget(next)}
+            onChange={setTarget}
         />
     );
 
@@ -657,7 +662,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         { value: "textLink", title: t("add_link.display_text") },
         { value: "iconAndTextLink", title: t("add_link.display_icon_and_text") },
         { value: "cardLink", title: t("add_link.display_card") },
-        ...(hasPlayer(suggestion?.externalLink)
+        ...(hasPlayer(webLinkUrl)
             ? [ { value: "embedLink", title: t("add_link.display_embed") } ]
             : [])
     ];
@@ -666,7 +671,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         title,
         buttonText,
         /** Whether the side shown has a link to apply: an address, a note, a heading or an anchor. */
-        hasLink: target === "url" ? !!suggestion?.externalLink
+        hasLink: target === "url" ? !!webLinkUrl
             : target === "note" ? !!suggestion?.notePath
             : !!heading || !!anchor,
         /** Fills and focuses the fields, once the form is on screen. */
@@ -735,7 +740,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                     keyProperty="value"
                                     titleProperty="title"
                                     currentValue={shownDisplay}
-                                    disabled={!canPreview(suggestion?.externalLink)}
+                                    disabled={!canPreview(webLinkUrl)}
                                     onChange={(next) => {
                                         setDisplay(next as LinkDisplayMode);
                                         setIsRetrievalPending(true);
@@ -756,12 +761,12 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                                 // A URL picked from the search belongs on the web link side.
                                 onChange={(picked) => {
                                     if (picked?.externalLink) {
-                                        changeTarget("url", picked.externalLink);
+                                        moveToWebLink(picked.externalLink);
                                         return;
                                     }
                                     // Another note drops the text, so the link mirrors its title.
                                     if (picked?.notePath !== suggestion?.notePath) {
-                                        setLinkTitle("");
+                                        setLinkTitle("note", "");
                                     }
                                     setSuggestion(picked);
                                 }}

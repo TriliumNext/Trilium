@@ -9,6 +9,7 @@ import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import Modal from "../react/Modal";
+import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
 import EditLinkDialog, {
     EditLinkBalloon, type EditLinkOpts, getShownDisplay, getWebLinkError, type LinkHeading,
@@ -33,11 +34,25 @@ vi.mock("../../services/link_embed", async (importOriginal) => ({
     fetchPageDetails
 }));
 vi.mock("../react/NoteAutocomplete", () => ({
-    default: ({ onChange, inputRef }: {
+    default: ({ onChange, inputRef, handleRef }: {
         onChange: (suggestion: Suggestion | null) => void;
         inputRef?: RefObject<HTMLInputElement>;
+        handleRef?: RefObject<NoteAutocompleteHandle | null>;
     }) => {
         autocomplete.onChange = onChange;
+        if (handleRef) {
+            handleRef.current = {
+                showRecentNotes: vi.fn(),
+                showAllCommands: vi.fn(),
+                setText(text, selectedPath = "") {
+                    if (!inputRef?.current) return;
+                    inputRef.current.value = text;
+                    inputRef.current.dataset.notePath = selectedPath;
+                },
+                clear: vi.fn(),
+                focus: () => inputRef?.current?.focus()
+            };
+        }
         return <input ref={inputRef} className="note-autocomplete" />;
     }
 }));
@@ -389,6 +404,61 @@ describe("EditLinkDialog", () => {
         expect(button()?.disabled).toBe(false);
     });
 
+    it("keeps the state of each page while another is shown, and applies the page shown", async () => {
+        const note = buildNote({ title: "Target", "#internalBookmark": "part" });
+        const path = `root/${note.noteId}`;
+        const noteField = () => container.querySelector<HTMLInputElement>(".note-autocomplete");
+
+        await open({ anchors: [ "intro" ] });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        await act(async () => choice()[2]?.click());
+        await act(async () => anchorRows()[0]?.click());
+        await act(async () => choice()[0]?.click());
+        await type(field("url"), "example.com");
+        await submit();
+        expect(addLink).toHaveBeenCalledExactlyOnceWith(
+            "https://example.com", "https://example.com", true
+        );
+
+        await open({ anchors: [ "intro" ] });
+        await act(async () => autocomplete.onChange?.({ notePath: path }));
+        const bookmark = await vi.waitFor(() => {
+            const select = container.querySelector("select");
+            if (!select) throw new Error("The note page offers no anchor.");
+            return select;
+        });
+        await act(async () => {
+            bookmark.value = "part";
+            bookmark.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        await type(field("text"), "Note text");
+
+        await act(async () => choice()[0]?.click());
+        expect([ field("url")?.value, field("text")?.value ]).toStrictEqual([ "", "" ]);
+        // A refused address blocks only its own page.
+        await type(field("url"), "exa mple.com");
+        await type(field("text"), "Web text");
+
+        await act(async () => choice()[2]?.click());
+        expect([ checkedAnchor(), field("text")?.value ]).toStrictEqual([ undefined, "" ]);
+        await act(async () => anchorRows()[0]?.click());
+        await type(field("text"), "Anchor text");
+
+        await act(async () => choice()[1]?.click());
+        expect([ noteField()?.value, noteField()?.dataset.notePath, field("text")?.value ])
+            .toStrictEqual([ "Target", path, "Note text" ]);
+        await act(async () => choice()[0]?.click());
+        expect([ field("url")?.value, field("text")?.value ])
+            .toStrictEqual([ "exa mple.com", "Web text" ]);
+        await act(async () => choice()[2]?.click());
+        expect([ checkedAnchor(), field("text")?.value ]).toStrictEqual([ "intro", "Anchor text" ]);
+
+        await act(async () => choice()[1]?.click());
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(`${path}?bookmark=part`, "Note text");
+        expect(addLink).toHaveBeenCalledTimes(2);
+    });
+
     it("stays open on a refused address and updates the error as it is edited", async () => {
         const error = () => container
             .querySelector(".edit-link-url > .input-group + .form-field-error")?.textContent;
@@ -725,11 +795,6 @@ describe("EditLinkDialog", () => {
 
         await open({ anchors: [ "intro", "outro" ] });
         await act(async () => choice()[2]?.click());
-        await act(async () => anchorRows()[0]?.click());
-        // Another page drops the checked anchor.
-        await act(async () => choice()[1]?.click());
-        await act(async () => choice()[2]?.click());
-        expect(checkedAnchor()).toBeUndefined();
         await act(async () => anchorRows()[0]?.click());
         await type(field("text"), "Read the intro");
         await submit();
