@@ -74,6 +74,10 @@ The source of the diagram stays in the note as a Mermaid code block, so the diag
 
 Diagrams created in earlier versions keep the view they were saved with, and open editable.
 
+## YouTube video
+
+Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ to insert a YouTube video that can be watched inside the note. Paste the address of the video, then press _Insert video_ or <kbd>Enter</kbd>. The video is inserted as a link preview in the _Embed_ display mode, described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>. The same action is available as _Insert YouTube video_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+
 ## Horizontal ruler
 
 This feature will display a horizontal line, generally useful to separate different sections of the text. To do so, press the <span class="tn-icon cke cke-horizontal-line"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>.

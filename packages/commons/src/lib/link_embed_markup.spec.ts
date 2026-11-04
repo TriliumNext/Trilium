@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    LINK_EMBED_CARD_IMAGE_PLACEHOLDER, readLinkPreviewData, renderLinkEmbedHtml,
+    getLinkPreviewVideoId, getVideoAspectRatio, LINK_EMBED_CARD_IMAGE_PLACEHOLDER,
+    LINK_PREVIEW_DATA_ATTRIBUTES, readLinkPreviewData, readVideoEmbedBox, renderLinkEmbedHtml,
     renderLinkMentionHtml
 } from "./link_embed_markup.js";
 
@@ -26,6 +27,48 @@ describe("readLinkPreviewData", () => {
             siteName: "Example"
         });
         expect(readLinkPreviewData(() => null)).toBeNull();
+    });
+
+    it("reads every field from the attribute that LINK_PREVIEW_DATA_ATTRIBUTES names", () => {
+        const data = readLinkPreviewData((name) => `value of ${name}`);
+
+        expect(data).toEqual(Object.fromEntries(Object.entries(LINK_PREVIEW_DATA_ATTRIBUTES)
+            .map(([ field, attribute ]) => [ field, `value of ${attribute}` ])));
+    });
+});
+
+describe("readVideoEmbedBox", () => {
+    it("reads the box size and the title, Full and untitled for a video saved before", () => {
+        const read = (attributes: Record<string, string>) =>
+            readVideoEmbedBox((name) => attributes[name]);
+
+        expect(read({ "data-box-size": "medium" }))
+            .toEqual({ boxSize: "medium", isTitleHidden: false });
+        expect(read({ "data-box-size": "full", "data-hide-title": "true" }))
+            .toEqual({ boxSize: "full", isTitleHidden: true });
+        expect(read({ "data-box-size": "tiny" }))
+            .toEqual({ boxSize: "full", isTitleHidden: false });
+        expect(read({})).toEqual({ boxSize: "full", isTitleHidden: true });
+    });
+});
+
+describe("getLinkPreviewVideoId", () => {
+    it("gives the ID of a video that plays, and nothing for a card or a page", () => {
+        expect(getLinkPreviewVideoId({ url: VIDEO_URL, embedType: "youtube" })).toBe("dQw4w9WgXcQ");
+        expect(getLinkPreviewVideoId({ url: VIDEO_URL })).toBe("dQw4w9WgXcQ");
+        expect(getLinkPreviewVideoId({ url: VIDEO_URL, embedType: "opengraph" })).toBeNull();
+        expect(getLinkPreviewVideoId({ url: "https://example.com", embedType: "youtube" }))
+            .toBeNull();
+    });
+});
+
+describe("getVideoAspectRatio", () => {
+    it("reads a width and a height in whole numbers, and nothing else", () => {
+        expect([ "9/16", "16/9", "4/3" ].map((aspectRatio) => getVideoAspectRatio({ aspectRatio })))
+            .toEqual([ 9 / 16, 16 / 9, 4 / 3 ]);
+        expect([ undefined, null, "", "1.5", "0/9", "9/0", "9 / 16", "1/2/3", "12345/1", "-9/16" ]
+            .map((aspectRatio) => getVideoAspectRatio({ aspectRatio })))
+            .toEqual(Array(10).fill(null));
     });
 });
 
@@ -74,6 +117,16 @@ describe("renderLinkEmbedHtml", () => {
             + ` loading="lazy" draggable="false">`
             + `<span class="link-embed-video-play" aria-hidden="true">`
             + `</span></button></div>`);
+    });
+
+    it("gives the player the shape of its video, when the preview stores a valid one", () => {
+        const render = (aspectRatio: string) => renderLinkEmbedHtml({
+            url: VIDEO_URL, embedType: "youtube", aspectRatio
+        }, OPTIONS);
+
+        expect(render("9/16")).toMatch(
+            /^<div class="link-embed-video" style="--video-aspect-ratio:0\.5625"><button /);
+        expect(render("9/16\"><script>")).toMatch(/^<div class="link-embed-video"><button /);
     });
 
     it("draws a card for a video URL stored as a card, and for an embed that is no video", () => {

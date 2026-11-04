@@ -1,7 +1,10 @@
+import "./editable_embed.css";
+
 import type { CKTextEditor, EmbedEdge } from "@triliumnext/ckeditor5";
+import clsx from "clsx";
 import { type ComponentChildren, createContext, type RefObject } from "preact";
 import { Suspense } from "preact/compat";
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
@@ -76,26 +79,44 @@ interface EditableEmbedContentProps {
     hasCaretNavigation?: boolean;
     /** The rendered content, shown while the content is not edited. */
     preview: HTMLElement;
-    /** The editor, loaded on demand, which replaces the preview while `isEditing`. */
+    /**
+     * The editor, loaded on demand, which replaces the preview while `isEditing`, once it calls
+     * the callback of `EmbedEditorShownContext`.
+     */
     children: ComponentChildren;
 }
 
-/** The content of an embed: its preview, replaced by its editor while it is edited. */
+/**
+ * The content of an embed: its preview, replaced by its editor while it is edited. The editor
+ * loads out of sight while the preview keeps its place, so that the box keeps its size.
+ */
 export function EditableEmbedContent({
     rootRef, className, isEditing, hasCaretNavigation, preview, children
 }: EditableEmbedContentProps) {
-    const previewView = <EmbedPreview element={preview} />;
+    const [ isEditorShown, setIsEditorShown ] = useState(false);
+    const showEditor = useCallback(() => setIsEditorShown(true), []);
+    useLayoutEffect(() => {
+        if (!isEditing) setIsEditorShown(false);
+    }, [ isEditing ]);
 
     return (
         <div ref={rootRef} className={className}>
-            {isEditing ? (
-                <CaretNavigationContext.Provider value={hasCaretNavigation ? rootRef : null}>
-                    <Suspense fallback={previewView}>{children}</Suspense>
-                </CaretNavigationContext.Provider>
-            ) : previewView}
+            {isEditing && (
+                <div className={clsx("editable-embed-editor", !isEditorShown && "loading")}>
+                    <CaretNavigationContext.Provider value={hasCaretNavigation ? rootRef : null}>
+                        <EmbedEditorShownContext.Provider value={showEditor}>
+                            <Suspense fallback={null}>{children}</Suspense>
+                        </EmbedEditorShownContext.Provider>
+                    </CaretNavigationContext.Provider>
+                </div>
+            )}
+            {(!isEditing || !isEditorShown) && <EmbedPreview element={preview} />}
         </div>
     );
 }
+
+/** Called by the editor in an `EditableEmbedContent` once it shows the content. */
+export const EmbedEditorShownContext = createContext<() => void>(() => {});
 
 /**
  * An editor in an embed that the caret enters from the text editor around the embed, and leaves,

@@ -71,7 +71,7 @@ function isLinkEmbedWidget(element: ViewElement): boolean {
     return false;
 }
 
-class LinkEmbedDisplayDropdown extends Plugin {
+export class LinkEmbedDisplayDropdown extends Plugin {
 
     static get requires() {
         return [LinkEmbed] as const;
@@ -183,7 +183,7 @@ class LinkEmbedLinkButton extends Plugin {
  * Registers the `linkEmbedCopyUrl` toolbar item: copies the selected widget's URL
  * to the clipboard, mirroring the default link toolbar's copy-URL button.
  */
-class LinkEmbedCopyUrlButton extends Plugin {
+export class LinkEmbedCopyUrlButton extends Plugin {
 
     static get requires() {
         return [LinkEmbed] as const;

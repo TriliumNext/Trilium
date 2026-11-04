@@ -49,6 +49,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
+    loadVideoEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -68,10 +69,12 @@ interface EditableTextProps extends TypeWidgetProps {
     block?: string;
     /** Receives the blocks that the editor of `block` holds, each time they change. */
     onBlockChange?: (block: string) => void;
+    /** Called each time the editor shows the content of the note, once it has loaded. */
+    onContentShown?: () => void;
 }
 
 export default function EditableText({
-    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange
+    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange, onContentShown
 }: EditableTextProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
@@ -147,6 +150,9 @@ export default function EditableText({
             editor?.setData(newContent);
             if (editor && note) {
                 applyPendingAttachmentChanges(editor, note.noteId, pendingAttachmentChangesRef);
+            }
+            if (editor) {
+                onContentShown?.();
             }
 
             // Jump to the first search match when navigated from search results.
@@ -241,6 +247,9 @@ export default function EditableText({
         flushInline: () => inlineSourceSaves.flush(),
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
+        },
+        loadVideo(preview, wrapper) {
+            loadVideoEmbed(preview, wrapper, { hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
@@ -575,6 +584,9 @@ export default function EditableText({
                         setEditorNoteId(editor, contentNoteIdRef.current);
                     }
                     editor.setData(contentRef.current);
+                    if (contentNoteIdRef.current) {
+                        onContentShown?.();
+                    }
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
 
                 }}

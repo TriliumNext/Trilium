@@ -499,7 +499,7 @@ function rankFavicon(rel: string, href: string, type: string | undefined, sizes:
  */
 async function fetchYouTubeMetadata(url: string, videoId: string): Promise<FetchedPreview> {
     const [ details, favicon, image ] = await Promise.all([
-        fetchYouTubeDetails(url),
+        fetchYouTubeDetails(videoId),
         downloadFavicon("https://www.youtube.com/favicon.ico"),
         downloadYouTubeThumbnail(videoId)
     ]);
@@ -511,22 +511,55 @@ async function fetchYouTubeMetadata(url: string, videoId: string): Promise<Fetch
     };
 }
 
-/** The video's title and channel name from oEmbed, or a generic title when oEmbed fails. */
+/**
+ * The video's title, channel name and shape from oEmbed, or a generic title when oEmbed fails.
+ * oEmbed reads the `/shorts/` address of the video, which reports the shape of the video itself:
+ * the watch address of a Short reports the 16:9 player of the watch page.
+ */
 async function fetchYouTubeDetails(
-    url: string
-): Promise<Pick<LinkEmbedMetadata, "title" | "description">> {
+    videoId: string
+): Promise<Pick<LinkEmbedMetadata, "title" | "description" | "aspectRatio">> {
     try {
-        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}`
+        const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}`
             + "&format=json";
         const response = await request.fetchResource(oembedUrl, { maxBytes: MAX_OEMBED_SIZE });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = JSON.parse(asText(response));
-        return { title: data.title || undefined, description: data.author_name || undefined };
+        return {
+            title: data.title || undefined,
+            description: data.author_name || undefined,
+            aspectRatio: toAspectRatio(data.width, data.height)
+        };
     } catch {
         return { title: "YouTube Video" };
     }
+}
+
+/**
+ * The simplest ratio `<width>/<height>` that oEmbed's whole-pixel `width` and `height` can round
+ * from, such as `16/9` for 200x113, or `undefined` when they are not whole numbers.
+ */
+function toAspectRatio(width: unknown, height: unknown) {
+    if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
+        return undefined;
+    }
+
+    const min = (width - 0.5) / (height + 0.5);
+    const max = (width + 0.5) / (height - 0.5);
+    // Ends by `height` at the latest, where `width` itself is in range.
+    for (let denominator = 1; ; denominator++) {
+        const numerator = Math.ceil(min * denominator);
+        if (numerator / denominator <= max) {
+            return `${numerator}/${denominator}`;
+        }
+    }
+}
+
+function isPositiveInteger(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
 /**

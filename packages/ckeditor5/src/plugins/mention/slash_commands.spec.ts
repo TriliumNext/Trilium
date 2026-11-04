@@ -32,6 +32,7 @@ import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
+import { COMMAND_NAME as YOUTUBE_VIDEO_COMMAND } from "../youtube_video.js";
 import TriliumSlashCommands, {
     buildDefaultSlashCommands,
     buildTriliumSlashCommands,
@@ -590,6 +591,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "footnote", "Footnote", "InsertFootnote" ],
         [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
         [ "link-preview", "Link preview", INTERNAL_LINK_COMMAND ],
+        [ "youtube-video", "Insert YouTube video", YOUTUBE_VIDEO_COMMAND ],
         [ "attach-file", "Attach file as a link", "fileUpload" ],
         [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
         [ "drawing-canvas", "Drawing canvas", "fileUpload" ],
@@ -834,6 +836,14 @@ describe("buildTriliumSlashCommands", () => {
 
         for (const query of [ "preview", "embed", "url", "website", "youtube", "video" ]) {
             expect(matchSlashCommands(entries, query)).toHaveLength(1);
+        }
+    });
+
+    it("lists the YouTube video entry first for the words people type for a video", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        for (const query of [ "youtube", "video" ]) {
+            expect(matchSlashCommands(definitions, query)[0]?.id).toBe("youtube-video");
         }
     });
 

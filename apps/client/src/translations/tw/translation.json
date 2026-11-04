@@ -1591,9 +1591,7 @@
     "no_headings": "無標題。"
   },
   "watched_file_update_status": {
-    "file_last_modified": "檔案 <code class=\"file-path\"></code> 最後修改時間為 <span class=\"file-last-modified\"></span>。",
-    "upload_modified_file": "上傳修改的檔案",
-    "ignore_this_change": "忽略此更改"
+    "upload_modified_file": "上傳修改的檔案"
   },
   "app_context": {
     "please_wait_for_save": "請等待幾秒鐘以完成儲存，然後再試一次。"

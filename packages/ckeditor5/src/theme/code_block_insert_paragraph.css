@@ -5,8 +5,9 @@
  * global mousedown handler claims every `.ck-widget__type-around__button` and would crash trying
  * to resolve a widget from our non-widget host. So we use our own classes, but avoid duplicating
  * any *values*: every size/colour/timing below comes from ckeditor5-widget's own design tokens
- * (the `--ck-widget-type-around-*` / `--ck-color-widget-*` custom properties) and its sonar
- * `@keyframes`, so the buttons match the real widget arrows and track the editor theme.
+ * (the `--ck-widget-type-around-*` / `--ck-color-widget-*` custom properties), so the buttons
+ * match the real widget arrows and track the editor theme. The hover ring matches the widget
+ * buttons' rule in apps/client/src/stylesheets/ckeditor-theme.css.
  *
  * Source of truth: @ckeditor/ckeditor5-widget/dist/index.css (.ck-widget__type-around__*).
  */
@@ -68,15 +69,16 @@
     stroke-dasharray: 10;
 }
 
-/* Reveal while hovering the code block; active colour + sonar pulse on the button itself. */
+/* Reveal while hovering the code block; active colour + hover ring on the button itself. */
 .ck.ck-editor__editable pre:hover .ck-code-block__type-around__button {
     opacity: 1;
     pointer-events: auto;
 }
 
 .ck.ck-editor__editable .ck-code-block__type-around__button:hover {
+    box-shadow: 0 0 0 6px
+        color-mix(in srgb, var(--ck-color-widget-type-around-button-active) 25%, transparent);
     background: var(--ck-color-widget-type-around-button-active);
-    animation: 1s infinite ck-widget-type-around-button-sonar;
 }
 
 /* Glossy highlight overlay on hover, matching the widget. */
@@ -95,10 +97,6 @@
 @media (prefers-reduced-motion: reduce) {
     .ck.ck-editor__editable .ck-code-block__type-around__button {
         transition: none;
-    }
-
-    .ck.ck-editor__editable .ck-code-block__type-around__button:hover {
-        animation: none;
     }
 }
 

@@ -110,15 +110,12 @@ body.light-theme .link-embed-favicon-light {
     --ck-color-focus-border: var(--link-color);
 }
 
-.link-embed-preview-wrapper {
-    display: block;
+.ck-widget.link-embed > .ck-widget__selection-handle {
+    margin-inline-start: var(--_link-embed-top-border-radius, 8px);
 }
 
-.link-embed-preview-wrapper:has(> .link-embed-video) {
-    display: flex;
-    justify-content: center;
-    background: black;
-    border-radius: 8px;
+.link-embed-preview-wrapper {
+    display: block;
 }
 
 /* ---------- Video embed (YouTube iframe) ---------- */
@@ -127,7 +124,9 @@ body.light-theme .link-embed-favicon-light {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     position: relative;
+    margin-inline: auto;
     width: 100%;
+    max-width: calc(var(--link-preview-video-max-height) * var(--video-aspect-ratio, 16 / 9));
     overflow: hidden;
 
     & > iframe,
@@ -136,16 +135,35 @@ body.light-theme .link-embed-favicon-light {
     }
 }
 
-.link-embed-preview-wrapper > .link-embed-video {
-    padding: 8px;
-    background: var(--main-background-color);
+.include-note.video-embed {
+    --_link-embed-top-border-radius: var(--_include-note-content-top-radius);
+    --_link-embed-bottom-border-radius: var(--_include-note-content-bottom-radius);
+
+    &[data-box-size="full"] {
+        max-width: min(100%, var(--link-preview-video-max-height)
+            * var(--video-aspect-ratio, 16 / 9));
+    }
+
+    .include-note-content.type-videoEmbed {
+        padding: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .link-embed-video {
+        max-width: none;
+    }
+}
+
+figure.include-note:where(.video-embed[data-box-size="full"]) {
+    margin-inline: auto;
 }
 
 .link-embed-video iframe {
     width: 100%;
     height: 100%;
-    max-height: var(--link-preview-video-max-height);
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     border: none;
     display: block;
 }
@@ -160,8 +178,7 @@ body.light-theme .link-embed-favicon-light {
     display: block;
     width: 100%;
     height: 100%;
-    max-height: var(--link-preview-video-max-height);
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     padding: 0;
     border: none;
     background: #000;
@@ -180,7 +197,7 @@ body.light-theme .link-embed-favicon-light {
 .link-embed-video-facade .link-embed-video-thumbnail {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
 }
 

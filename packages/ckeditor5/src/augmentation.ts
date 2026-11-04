@@ -9,6 +9,7 @@ declare global {
         favicon?: string;
         siteName?: string;
         image?: string;
+        aspectRatio?: string;
         /**
          * True when the host could not read the page (network error, bot challenge, non-HTML
          * response, or a page with no title of its own) and the fields above hold nothing but a
@@ -51,8 +52,8 @@ declare global {
 
     /** An item of the embed toolbar that the content of an embed can hide. */
     type ContentEmbedToolbarItem =
-        "contentEmbedBoxSizeDropdown" | "toggleContentEmbedTitle" | "convertEmbedToLink"
-        | "toggleContentEmbedEditable";
+        "contentEmbedBoxSizeDropdown" | "contentEmbedPositionDropdown" | "toggleContentEmbedTitle"
+        | "convertEmbedToLink" | "toggleContentEmbedEditable";
 
     /** The buttons that the content of an embed, such as a canvas drawing, adds to its toolbar. */
     interface ContentEmbedToolProvider {
@@ -79,6 +80,12 @@ declare global {
          * menu of the embed then switch. The embed carries the mode as `data-display-mode`.
          */
         hasDisplayModes?: boolean;
+        /**
+         * Whether the toolbar and the menu of the embed set where the content is placed in the
+         * text. The menu of an embed of a note, an attachment or a video sets it either way. The
+         * embed saves a position other than centered as `data-position`.
+         */
+        hasPositions?: boolean;
     }
 }
 

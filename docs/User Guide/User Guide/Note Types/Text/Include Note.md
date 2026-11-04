@@ -42,17 +42,27 @@ A _Small_, _Medium_ or _Expandable_ include can be resized to any width and heig
 *   To resize an include, select it and drag the handle in its bottom-right corner. To change only the width or only the height, drag the middle of its right or bottom edge instead, where a touch screen shows a handle too. In right-to-left text, the handle is in the bottom-left corner and the width changes from the left edge.
 *   Resizing works with a mouse, a pen or a finger.
 *   While the height changes, moving the handle near the top or the bottom of the note scrolls the note.
-*   An include narrower than the note is centered, so changing its width moves both of its sides. Making it as wide as the note returns it to the full width.
+*   An include narrower than the note is centered, so changing its width moves both of its sides. An include aligned to the left or the right keeps that side in place and has its handles on the other side (see _Positioning_ below). Making an include as wide as the note returns it to the full width.
 *   To cancel a resize, press <kbd>Esc</kbd> before releasing the handle.
 *   To reset the size, double-click the corner handle, or double-tap it on a touch screen. Double-clicking the right or bottom edge resets only the width or the height.
 *   Choosing a box size resets the height. Choosing _Tiny_ or _Full_ resets the width too.
 *   While an _Expandable_ include is collapsed, only its width can be changed.
 
+## Positioning
+
+An include can sit on lines of its own or have the text wrap around it, as an [image](Images.md) can.
+
+*   To change the position, open the _More actions_ menu of the include in a note being edited (see _Opening an included note_ below) and choose an entry of its _Position_ submenu:
+    *   Under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the include on lines of its own, at that side of the note. _Align center_ is the default.
+    *   Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place the include at that side and let the text run beside it.
+*   An include takes the full width of the note until it is resized, so a new position shows once a _Small_, _Medium_ or _Expandable_ include is resized narrower (see _Resizing_ above). The position is kept whatever the box size, and shows again when such an include is resized.
+*   In the mobile layout, an include with a position other than _Align center_ takes the full width, and only its height can be resized.
+
 ## Caption
 
 An include can have a caption, shown centered at the bottom of its box. The caption is part of the text note, so it can be formatted like the rest of the text, for example in bold or with a link.
 
-*   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption.
+*   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption. While the cursor is in the caption, the include stays selected and keeps its toolbar.
 *   To remove the caption, press the same button again. Pressing it once more brings back the text it had, as long as the note stays open.
 *   A _Tiny_ include has no caption. Switching an include to _Tiny_ removes its caption, and switching it back to a larger size restores the caption, as long as the note stays open.
 *   An _Expandable_ include shows its caption under the title while the content is collapsed, and under the content once it is expanded.
@@ -70,7 +80,7 @@ To open an included note in a new tab, press the <span class="tn-icon bx bx-link
 
 The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button at the end of the title row opens the same menu as right-clicking anywhere on the title row: the other places to open the note in and, for an embedded attachment, the actions on the attachment.
 
-In a note being edited, the menu also has the commands of the include's toolbar: the _Size_ submenu, _Show title_ and _Show caption_, each checked while it is in effect, and _Convert to link_ at the end. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note they end the menu.
+In a note being edited, the menu also has the commands of the include's toolbar: the _Size_ submenu, _Show title_ and _Show caption_, each checked while it is in effect, and _Convert to link_. It also has the _Position_ submenu after _Size_ (see _Positioning_ above), and <span class="tn-icon bx bx-trash"></span> _Delete_ at the end, which removes the include from the note. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
 
 To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
@@ -81,7 +91,7 @@ A _Tiny_ include has these buttons instead, followed by the same _More actions_ 
 
 ## Converting an include to a link
 
-To replace an include with a link to the included note, select it and press the <span class="tn-icon cke cke-link"></span> _Convert to link_ button in its toolbar, or choose _Convert to link_ at the end of its _More actions_ menu. An embedded attachment turns into a link to the attachment the same way.
+To replace an include with a link to the included note, select it and press the <span class="tn-icon cke cke-link"></span> _Convert to link_ button in its toolbar, or choose _Convert to link_ in its _More actions_ menu, above _Delete_. An embedded attachment turns into a link to the attachment the same way.
 
 ## Missing notes and attachments
 
@@ -91,7 +101,7 @@ Content added by a newer version of Trilium, which this version cannot show, app
 
 ## Included notes in the share functionality
 
-If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
 
 For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
 
@@ -152,7 +162,7 @@ An included <a class="reference-link" href="../Markdown.md">Markdown</a> note 
 *   The _Word wrap_ and _Line numbers_ submenus of the _More actions_ menu change how the source shows, as for code (see _Editing an include in place_ above).
 *   As in a Markdown note, the preview scrolls along with the source and highlights the block where the cursor is, and <kbd>Ctrl</kbd>+<kbd>B</kbd>, <kbd>Ctrl</kbd>+<kbd>I</kbd>, <kbd>Ctrl</kbd>+<kbd>M</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> format the selection.
 *   In a note being edited, the view is saved with the include, so two includes of the same note can show different views. In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the view can be changed too, until the note is opened again.
-*   While the source shows, the include has the height of its box size, or the height it was resized to. A _Full_ include fits its content instead.
+*   While the source shows, and wherever the Markdown can be edited, the include has the height of its box size, or the height it was resized to, so turning _Editable_ on or off keeps its size. Otherwise, as in a read-only note, the preview fits its text up to that height. A _Full_ include fits its content instead.
 *   <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search%20in%20note.md">Search in note</a> searches the source while it shows, and the preview otherwise.
 
 ## Drawing canvases
@@ -168,11 +178,11 @@ A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-
 *   The changes to the drawing are part of the undo history of the text note (see _Editing an include in place_ above). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> and the <span class="tn-icon bx bx-undo"></span> _Undo_ and <span class="tn-icon bx bx-redo"></span> _Redo_ buttons of the canvas toolbar undo and redo the last change of the note, in the drawing or in the text.
 *   A new drawing has the background color of the note. A background chosen from the Excalidraw menu replaces it.
 *   To protect a finished drawing from accidental changes, select it and turn off the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or uncheck _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn _Editable_ back on.
-*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size, _Show title_ and _Convert to link_ to its _More actions_ menu.
+*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size, _Show title_ and _Convert to link_ to its _More actions_ menu, which also sets its position (see _Positioning_ above).
 *   In the desktop layout, Excalidraw keeps its desktop interface however small the box is. In the mobile layout, a narrow or short box switches it to a compact interface. For more room, choose _Full_, or show the title and press <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_.
 *   Pictures added to the drawing are stored in the same attachment. A converted image is kept as an image attachment of the note instead, named with a generated code.
 *   In a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), the drawing shows as a still picture too.
-*   On a [shared page](../../Advanced%20Usage/Sharing.md), the drawing is shown as a picture at its own size, whatever the size of its box, in light or dark colors to match the page. Each change to the drawing saves this picture as an SVG image attachment of the note, also named with a generated code.
+*   On a [shared page](../../Advanced%20Usage/Sharing.md), the drawing is shown as a picture at its own size, up to the width its box was resized to, in light or dark colors to match the page. Each change to the drawing saves this picture as an SVG image attachment of the note, also named with a generated code, which the list of attachments shows under _Generated by Trilium_.
 
 ### Limitations
 

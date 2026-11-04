@@ -45,7 +45,7 @@ describe("LinkEmbed commands", () => {
         expect(mention?.getAttribute("siteName")).toBe(META.siteName);
     });
 
-    it("forces the opengraph type for a card, and keeps the detected one for an embed", async () => {
+    it("forces the opengraph type for a card, and embeds the video for an embed", async () => {
         const url = "https://youtube.com/watch?v=abc12345678";
         fetchMetadata.mockResolvedValue({ ...META, url, embedType: "youtube" });
 
@@ -56,7 +56,8 @@ describe("LinkEmbed commands", () => {
 
         setModelData(editor.model, "<paragraph>[]</paragraph>");
         await editor.execute(LINK_EMBED_COMMAND, { url, mode: "embed" });
-        expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+        expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        expect(findElement(editor, "contentEmbed")?.getAttribute("embedType")).toBe("youtube");
     });
 
     it("inserts an ordinary link for the 'plain' mode, without fetching any metadata", async () => {
@@ -316,6 +317,117 @@ describe("LinkEmbed commands", () => {
     });
 
     // -----------------------------------------------------------------------
+    // Video embeds: the embed mode of a link preview that has a video
+    // -----------------------------------------------------------------------
+
+    describe("video embeds", () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        const video = `<contentEmbed embedType="youtube" title="T" url="${url}"></contentEmbed>`;
+
+        it("embeds the video of a mention, and makes a card of an embed type without one", () => {
+            setModelData(editor.model, `<paragraph>[<linkMention url="${url}" embedType="youtube"`
+                + ` title="T"></linkMention>]</paragraph>`);
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
+                url, embedType: "youtube", title: "T",
+                boxSize: "medium", hideTitle: true, customWidth: "35.6em"
+            });
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+
+            setModelData(editor.model, `<paragraph>[<linkMention url="${url}" embedType="youtube"`
+                + ` aspectRatio="9/16"></linkMention>]</paragraph>`);
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+            const vertical = findElement(editor, "contentEmbed");
+            expect([ vertical?.getAttribute("aspectRatio"), vertical?.getAttribute("customWidth") ])
+                .toEqual([ "9/16", "11.3em" ]);
+
+            setModelData(editor.model, `<paragraph>[<linkMention url="https://youtube.com/watch"`
+                + ` embedType="youtube"></linkMention>]</paragraph>`);
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
+            expect(findElement(editor, "contentEmbed")).toBeUndefined();
+            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+        });
+
+        it("shows a selected video as a preview in the embed mode, which can change", () => {
+            setModelData(editor.model, `[${video}]`);
+            const command = changeCommand(editor);
+            expect([ command.isEnabled, command.value, command.embedAvailable, command.url ])
+                .toEqual([ true, "embed", true, url ]);
+
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+            expect(findElement(editor, "contentEmbed")).toBeUndefined();
+            const card = findElement(editor, "linkEmbed");
+            expect(card?.getAttribute("embedType")).toBe("opengraph");
+            expect(card?.getAttribute("title")).toBe("T");
+
+            setModelData(editor.model, `[${video}]`);
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "plain" });
+            expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
+        });
+
+        it("keeps the box, title, position and caption of a retitled video", async () => {
+            setModelData(editor.model, `[<contentEmbed boxSize="full" embedType="youtube"`
+                + ` position="right" title="T" url="${url}"><caption>Note</caption>`
+                + `</contentEmbed>]`);
+
+            await editor.execute(LINK_EMBED_COMMAND, { url, mode: "embed", title: "Mine" });
+
+            const embed = findElement(editor, "contentEmbed");
+            expect(fetchMetadata).not.toHaveBeenCalled();
+            expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
+                url, embedType: "youtube", title: "Mine", boxSize: "full", position: "right"
+            });
+            expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("keeps the caption of a video given another display as a paragraph after it", () => {
+            const captioned = (caption: string) => `<paragraph>Before</paragraph>[<contentEmbed`
+                + ` embedType="youtube" title="T" url="${url}"><caption>${caption}</caption>`
+                + `</contentEmbed>]`;
+            const kept = /<p>A <a href="https:\/\/example\.com\/">note<\/a><\/p>$/;
+            for (const value of [ "card", "inline", "plain" ] as const) {
+                setModelData(editor.model,
+                    captioned(`A <$text linkHref="https://example.com/">note</$text>`));
+                editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value });
+                expect(findElement(editor, "contentEmbed")).toBeUndefined();
+                expect(editor.getData()).toMatch(kept);
+            }
+
+            setModelData(editor.model, captioned(""));
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+            expect(editor.getData()).toMatch(/<\/section>$/);
+        });
+
+        it("acts on a video from its caption, and on a link in the caption from that link", () => {
+            const caption = (text: string) => `<contentEmbed embedType="youtube" title="T"`
+                + ` url="${url}"><caption>${text}</caption></contentEmbed>`;
+            const link = "https://example.com/";
+            setModelData(editor.model, caption("A [] caption"));
+            const command = changeCommand(editor);
+            expect([ command.isEnabled, command.value, command.url ])
+                .toEqual([ true, "embed", url ]);
+
+            editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "card" });
+            expect(findElement(editor, "contentEmbed")).toBeUndefined();
+            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
+
+            setModelData(editor.model, caption(`<$text linkHref="${link}">a[]b</$text>`));
+            expect([ command.isEnabled, command.value, command.url ])
+                .toEqual([ true, "plain", link ]);
+        });
+
+        it("leaves other embeds alone", () => {
+            setModelData(editor.model, "[<contentEmbed boxSize=\"medium\" noteId=\"n1\">"
+                + "</contentEmbed>]");
+            expect(changeCommand(editor).isEnabled).toBe(false);
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // RemoveLinkEmbedCommand (the toolbar's unlink button)
     // -----------------------------------------------------------------------
 
@@ -405,7 +517,7 @@ describe("LinkEmbed commands", () => {
 
         setModelData(editor.model, `<paragraph><$text linkHref="${url}">watch [] this</$text></paragraph>`);
         await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embed" });
-        const embed = findElement(editor, "linkEmbed");
+        const embed = findElement(editor, "contentEmbed");
         expect(embed?.getAttribute("embedType")).toBe("youtube");
         expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
     });

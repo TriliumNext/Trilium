@@ -233,6 +233,31 @@ describe("link-embed getMetadata", () => {
         expect(result.favicon).toMatch(/^api\/attachments\/att\d+\/image\/www\.youtube\.com\.ico$/);
     });
 
+    it("reads the shape of the video from oEmbed for its /shorts/ address", async () => {
+        const answers = [
+            [ { width: 200, height: 113 }, "16/9" ],
+            [ { width: 113, height: 200 }, "9/16" ],
+            [ { width: 200, height: 150 }, "4/3" ],
+            [ { width: 200, height: 83 }, "12/5" ],
+            [ { width: 200 }, undefined ],
+            [ { width: "200", height: "113" }, undefined ],
+            [ { width: 200.5, height: 113 }, undefined ]
+        ] as const;
+
+        const shapes: unknown[] = [];
+        for (const [ answer ] of answers) {
+            safeFetch.mockImplementation(async (url: string) => url.includes("oembed")
+                ? fakeResponse("", { json: { title: "A video", ...answer } })
+                : fakeResponse("", { ok: false }));
+            const result = await linkEmbedRoute.getMetadata(req("https://youtu.be/dQw4w9WgXcQ"));
+            shapes.push(result.aspectRatio);
+        }
+
+        expect(shapes).toEqual(answers.map(([ , shape ]) => shape));
+        expect(safeFetch).toHaveBeenCalledWith("https://www.youtube.com/oembed?url="
+            + "https%3A%2F%2Fwww.youtube.com%2Fshorts%2FdQw4w9WgXcQ&format=json", expect.anything());
+    });
+
     describe("YouTube thumbnails", () => {
         type ThumbnailName = "maxresdefault" | "sddefault" | "hqdefault";
 

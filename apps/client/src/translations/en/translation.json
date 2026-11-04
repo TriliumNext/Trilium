@@ -63,7 +63,7 @@
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
     "anchor_none": "None (link to note)",
-    "button_add_link": "Add link",
+    "button_add_link": "Insert link",
     "button_edit_link": "Save link",
     "button_fix_link": "Fix link",
     "web_link": "Web link",
@@ -1066,7 +1066,7 @@
   "attachments_actions": {
     "open_externally": "Open externally",
     "open_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
-    "open_custom": "Open custom...",
+    "open_custom": "Open with...",
     "open_custom_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "download": "Download",
     "rename_attachment": "Rename attachment...",
@@ -1248,9 +1248,9 @@
     "note_attributes": "Note attributes...",
     "note_attributes_title": "Note attributes",
     "view_ocr_text": "View OCR text",
-    "open_note_externally": "Open note externally",
+    "open_note_externally": "Open externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
-    "open_note_custom": "Open note custom...",
+    "open_note_custom": "Open with...",
     "open_note_on_server": "Open note on server",
     "import_files": "Import files...",
     "export_note": "Export note...",
@@ -2269,6 +2269,7 @@
     "mismatch": "The passwords do not match."
   },
   "open": {
+    "custom_failed": "Could not show the application chooser.\n\nUse \"Open externally\" to open the file in its default application.",
     "directory_failed": "Could not open {{- directory}}: {{- reason}}",
     "download_failed": "Could not save the download: {{- reason}}"
   },
@@ -2974,9 +2975,9 @@
     "no_headings": "No headings."
   },
   "watched_file_update_status": {
-    "file_last_modified": "File <code class=\"file-path\"></code> has been last modified on <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Upload modified file",
-    "ignore_this_change": "Ignore this change"
+    "title": "File changed outside Trilium",
+    "message": "The file opened externally was saved at {{time}}. Uploading it replaces the content in Trilium; the current version is kept as a revision.",
+    "upload_modified_file": "Upload"
   },
   "app_context": {
     "please_wait_for_save": "Please wait for a couple of seconds for the save to finish, then you can try again."
@@ -2998,7 +2999,8 @@
     "copied_without_links": "Note(s) have been copied into clipboard, but the note links could not be placed on the system clipboard.",
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
     "copy_success": "Copied to clipboard.",
-    "paste_notes": "Paste note(s)"
+    "paste_notes": "Paste note(s)",
+    "paste_failed": "The clipboard could not be read."
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",
@@ -3178,7 +3180,15 @@
     "line_numbers_auto": "Auto",
     "line_numbers_on": "On",
     "line_numbers_off": "Off",
-    "line_numbers_auto_description": "Follow the global setting"
+    "line_numbers_auto_description": "Follow the global setting",
+    "include_position": "Position",
+    "break_text": "Break text",
+    "wrap_text": "Wrap text",
+    "align_left": "Align left",
+    "align_center": "Align center",
+    "align_right": "Align right",
+    "open_externally": "Open externally",
+    "delete": "Delete"
   },
   "electron_integration": {
     "desktop-application": "Desktop Application",
@@ -4503,9 +4513,11 @@
       "box-size-0": "Box size: %0",
       "bulleted-list": "Bulleted list",
       "caption-for-the-included-note": "Caption for the included note",
+      "caption-for-the-video": "Caption for the video",
       "card": "Card",
       "caution": "Caution",
       "changes": "Changes",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Click and drag to resize the block. Double-click to reset to the default size.",
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Click on the arrow or press %0 to collapse/expand.",
       "collapsible-block": "Collapsible block",
       "convert-image-to-a-drawing-canvas": "Convert image to a drawing canvas",
@@ -4733,7 +4745,11 @@
       "open-attachment": "Open attachment",
       "jump-to-heading": "Jump to heading",
       "jump-to-anchor": "Jump to anchor",
-      "jump-to-block": "Jump to block"
+      "jump-to-block": "Jump to block",
+      "box-position": "Box position",
+      "youtube-video": "YouTube video",
+      "insert-youtube-video": "Insert YouTube video",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Insert a YouTube video that can be watched straight within the note"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -5084,5 +5100,11 @@
     "no_more_users": "Everyone who can be given access already has it.",
     "close": "Close",
     "user": "User"
+  },
+  "youtube_video": {
+    "title": "Insert YouTube video",
+    "button_insert": "Insert video",
+    "not_a_video": "This is not the address of a YouTube video.",
+    "insert_failed": "The video could not be loaded. Check the address and the connection, then try again."
   }
 }

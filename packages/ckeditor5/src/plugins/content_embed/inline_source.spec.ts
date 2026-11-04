@@ -96,17 +96,20 @@ describe("ContentEmbedInlineSource", () => {
         expect(getEmbed().getAttribute("displayMode")).toBe("source");
     });
 
-    it("keeps the box size, the flags and the size of the embed on the <pre>", () => {
+    it("keeps the box size, the flags, the position and the size of the embed on the <pre>", () => {
         const html = `<pre style="--include-note-height:12em;" data-box-size="small"`
-            + ` data-editable="true" data-hide-title="true"><code class="language-mermaid">x</code></pre>`;
+            + ` data-editable="true" data-hide-title="true" data-position="wrap-left">`
+            + `<code class="language-mermaid">x</code></pre>`;
         editor.setData(html);
 
         const embed = getEmbed();
         expect(embed.getAttribute("boxSize")).toBe("small");
         expect(embed.getAttribute("editable")).toBe(true);
+        expect(embed.getAttribute("position")).toBe("wrap-left");
         expect(embed.getAttribute(SIZE_ATTRIBUTES.height)).toBe("12em");
         expect(editor.getData()).toContain(`data-box-size="small"`);
         expect(editor.getData()).toContain(`data-editable="true"`);
+        expect(editor.getData()).toContain(`data-position="wrap-left"`);
         expect(editor.getData()).toContain("--include-note-height:12em");
     });
 
@@ -296,6 +299,9 @@ describe("ContentEmbedInlineSource", () => {
         expect(editor.commands.get(TOGGLE_TITLE_COMMAND_NAME)?.isEnabled).toBe(false);
         expect(editor.commands.get(TOGGLE_CAPTION_COMMAND_NAME)?.isEnabled).toBe(false);
         expect(editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND)?.isEnabled).toBe(false);
+        const figure = editor.editing.view.getDomRoot()?.querySelector(".include-note");
+        expect(figure && editor.plugins.get(ContentEmbed).getEmbedStateAt(figure))
+            .toMatchObject({ isTitleSupported: false, isCaptionSupported: false });
     });
 
     describe("extended code blocks", () => {

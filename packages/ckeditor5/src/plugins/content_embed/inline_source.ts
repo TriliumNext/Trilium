@@ -21,6 +21,8 @@ import {
 	getCodeViewOfView,
 	getDisplayModeAttributes,
 	getDisplayModeOfView,
+	getPositionAttributes,
+	getPositionOfView,
 	INLINE_BOX_SIZES,
 	toDisplayMode
 } from './content_embed.js';
@@ -66,8 +68,8 @@ const SIZE_PROPERTIES = [
  * Embeds whose content lives in the note, as `<pre><code class="language-…">` code blocks: the
  * diagrams of the languages in `contentEmbed.inlineLanguages`, and the extended code blocks, whose
  * `<pre>` has the `EXTENDED_CODE_BLOCK_CLASS` class. The embed keeps the language and the source as
- * attributes, and is saved as the code block, with its box size, flags and size on the `<pre>`,
- * so that anything reading the note sees a plain code block.
+ * attributes, and is saved as the code block, with its box size, flags, position and size on the
+ * `<pre>`, so that anything reading the note sees a plain code block.
  *
  * The content renders through the host's `contentEmbed.loadInline()`, which receives an
  * {@link InlineEmbedSource} rather than an ID.
@@ -193,6 +195,7 @@ export default class ContentEmbedInlineSource extends Plugin {
 			hideTitle: true,
 			...( isCodeBlock ? getCodeBlockModeOfView( pre ) : getModeOfSavedView( pre, code ) ),
 			...getFlagsOfView( pre ),
+			...getPositionOfView( pre ),
 			...getSizesOfView( pre ),
 			...getCodeViewOfView( pre )
 		} );
@@ -264,7 +267,8 @@ function downcastData( editor: Editor, embed: ModelElement, api: DowncastConvers
 	const preAttributes: Record<string, string> = {
 		...( isExtendedCodeBlock( editor, embed ) ? { class: EXTENDED_CODE_BLOCK_CLASS } : {} ),
 		'data-box-size': embed.getAttribute( 'boxSize' ) as string,
-		...getDisplayModeAttributes( embed )
+		...getDisplayModeAttributes( embed ),
+		...getPositionAttributes( embed )
 	};
 	for ( const [ flag, dataAttribute ] of FLAG_ATTRIBUTES ) {
 		if ( embed.getAttribute( flag ) ) {

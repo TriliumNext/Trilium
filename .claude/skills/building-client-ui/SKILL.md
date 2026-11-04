@@ -57,7 +57,8 @@ Three things people get wrong:
 
 Form controls:
 
-- `FormTextBox` — text input with validation and controlled input handling; `FormTextBoxWithUnit` for a unit suffix (`mm`, `px`). `FormTextArea`, `PasswordField`, `FormPasswordWithConfirmation` for their cases.
+- `FormTextBox` — text input with validation and controlled input handling; `FormTextBoxWithUnit` for a unit suffix (`mm`, `px`); `FormTextBoxWithPaste` for a paste button at its end. `FormTextArea`, `PasswordField`, `FormPasswordWithConfirmation` for their cases.
+- `PasteButton` — the input action button that replaces a field's value with the clipboard text, fires an `input` event (`inputType: "insertFromPaste"`) so the field's own handler sees it, and selects the text. Place it in an `.input-group` after any `<input>` or `<textarea>`, passing the field's ref. It renders only where `canReadClipboardText()` (`services/clipboard_ext.ts`) says the clipboard can be read.
 - `FormSelect` — dropdown/combobox taking an object array as data. `FormDropdownList` for a list of items with icons; `FormAutocomplete` / `NoteAutocomplete` for typeahead (the latter searches notes).
 - `FormCheckbox`, `FormToggle`, `FormRadioGroup` / `FormInlineRadioGroup` — boolean and exclusive choices. `SegmentedChoice` is a row of buttons acting as one exclusive choice (use where a dropdown would hide the alternatives).
 - `Slider` — range slider with label.

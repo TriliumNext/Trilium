@@ -38,7 +38,7 @@ const CodeEmbedEditor = lazy(() => import("./CodeEmbedEditor"));
 
 /** The items that the toolbar of an extended code block leaves to the menu of its embed. */
 const EXTENDED_CODE_BLOCK_HIDDEN_ITEMS: readonly ContentEmbedToolbarItem[] = [
-    "contentEmbedBoxSizeDropdown", "toggleContentEmbedEditable"
+    "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown", "toggleContentEmbedEditable"
 ];
 
 interface CodeEmbedProps {
@@ -122,6 +122,7 @@ export function InlineCodeEmbed({ content: savedContent, editor, language }: Sou
             hasLanguageLabel
             hasCopyButton
             hiddenToolbarItems={EXTENDED_CODE_BLOCK_HIDDEN_ITEMS}
+            hasPositions
         />
     );
 }
@@ -152,12 +153,14 @@ interface CodeEmbedContentProps {
     hasCopyButton?: boolean;
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+    /** Whether the embed can be placed in the text, at the left, the right or wrapped in it. */
+    hasPositions?: boolean;
 }
 
 /** CodeMirror over the code of an embed, and the tools of the embed toolbar for it. */
 function CodeEmbedContent({
     rootRef, note, ownerNote, editor, content, onContentChange, settings, mime, initialLines,
-    hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems
+    hasSaveStatus, hasLanguageLabel, hasCopyButton, hiddenToolbarItems, hasPositions
 }: CodeEmbedContentProps) {
     const viewRef = useRef<VanillaCodeMirror>(null);
     // The toolbar buttons come from `CodeTools`, with the Editable toggle.
@@ -227,6 +230,7 @@ function CodeEmbedContent({
                 menuItems={lines.menuItems}
                 getCodeText={getCodeText}
                 hiddenToolbarItems={hiddenToolbarItems}
+                hasPositions={hasPositions}
             />
         </>
     );
@@ -360,6 +364,8 @@ interface CodeToolsProps {
     getCodeText: () => CodeText;
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+    /** Whether the embed can be placed in the text. */
+    hasPositions?: boolean;
 }
 
 /**
@@ -368,7 +374,7 @@ interface CodeToolsProps {
  * and `menuItems` in the menu of the embed.
  */
 function CodeTools({
-    rootRef, settings, canEdit, menuItems, getCodeText, hiddenToolbarItems
+    rootRef, settings, canEdit, menuItems, getCodeText, hiddenToolbarItems, hasPositions
 }: CodeToolsProps) {
     const language = useCodeLanguageMenu(settings);
     const tabWidth = useTabWidthMenu(settings, async () => getCodeText());
@@ -378,7 +384,8 @@ function CodeTools({
     ] : [], canEdit ? menuItems : [], {
         hasEditableFlag: canEdit,
         boxSizeIcon: moveVerticalIcon,
-        hiddenToolbarItems
+        hiddenToolbarItems,
+        hasPositions
     });
 
     return canEdit ? language.modal : null;

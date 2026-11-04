@@ -183,9 +183,11 @@ export function useExcalidrawTranslation() {
  */
 export class CanvasTools implements ContentEmbedToolProvider {
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
-        "contentEmbedBoxSizeDropdown", "toggleContentEmbedTitle", "convertEmbedToLink"
+        "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown", "toggleContentEmbedTitle",
+        "convertEmbedToLink"
     ];
     readonly hasEditableFlag = true;
+    readonly hasPositions = true;
     private api: ExcalidrawImperativeAPI | null = null;
     private translate: Translate | null = null;
     /** Whether the drawing can be edited, which adds the drawing tools and the history. */

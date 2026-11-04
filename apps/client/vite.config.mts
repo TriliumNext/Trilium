@@ -168,7 +168,7 @@ export default defineConfig(() => ({
         },
         reporters: [
             "verbose",
-            ["html", { outputFile: "./test-output/vitest/html/index.html" }],
+            ["html", { outputDir: "./test-output/vitest/html" }],
             ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]
         ],
         coverage: {

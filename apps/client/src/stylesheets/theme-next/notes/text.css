@@ -1263,11 +1263,44 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     border-top: 1px solid var(--main-border-color) !important;
 }
 
-/* Table caption */
+/*
+ * Captions
+ */
+
+/* A caption takes the corners of its widget on the edge it sits on. */
+.ck-content :is(.image, .include-note) > figcaption {
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+}
 
 .ck-content .table > figcaption {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
     background: var(--accented-background-color);
     color: var(--main-text-color);
+}
+
+/* The states of the `.tn-input-field` text box in forms.css, with the outline drawn inside. */
+:root .ck-content :is(.image, .table, .include-note) > figcaption.ck-editor__nested-editable {
+    outline: 3px solid transparent;
+    outline-offset: 3px;
+    border-color: transparent;
+
+    &:hover {
+        /* Outranks the `!important` background of the image caption in style.css. */
+        background: var(--input-hover-background) !important;
+    }
+
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        box-shadow: none;
+        outline: 3px solid var(--input-focus-outline-color);
+        outline-offset: -3px;
+        border-color: transparent;
+        background: var(--input-focus-background) !important;
+        transition:
+            outline-color 50ms linear,
+            outline-offset 200ms ease-out;
+    }
 }
 
 /* Links */

@@ -72,7 +72,8 @@ describe("fetchMetadata", () => {
             description: "Desc",
             favicon: "https://example.com/favicon.ico",
             siteName: "Example",
-            image: "https://example.com/img.png"
+            image: "https://example.com/img.png",
+            aspectRatio: "9/16"
         };
         server.post = vi.fn(async () => fromServer) as typeof server.post;
 

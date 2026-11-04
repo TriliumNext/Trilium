@@ -59,7 +59,7 @@
     "search_note": "이름으로 노트 검색하기",
     "help_on_links": "링크 관련 도움말",
     "link_title": "링크 제목",
-    "button_add_link": "링크 추가",
+    "button_add_link": "링크 삽입",
     "anchor": "앵커(선택)",
     "anchor_none": "없음(노트 전체 링크)",
     "edit_link": "링크 편집",
@@ -1034,7 +1034,7 @@
   "attachments_actions": {
     "open_externally": "외부에서 열기",
     "open_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_custom": "사용자 지정 앱으로 열기...",
+    "open_custom": "다른 앱으로 열기...",
     "open_custom_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
     "download": "다운로드",
     "rename_attachment": "첨부 파일 이름 변경...",
@@ -1215,9 +1215,9 @@
     "note_attachments": "노트 첨부 파일",
     "note_attributes": "노트 속성...",
     "view_ocr_text": "OCR 텍스트 보기",
-    "open_note_externally": "노트를 외부에서 열기",
+    "open_note_externally": "외부에서 열기",
     "open_note_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_note_custom": "사용자 지정 앱으로 노트 열기...",
+    "open_note_custom": "다른 앱으로 열기...",
     "open_note_on_server": "서버에서 노트 열기",
     "import_files": "파일 가져오기...",
     "export_note": "노트 내보내기...",
@@ -2777,9 +2777,9 @@
     "no_headings": "제목이 없습니다."
   },
   "watched_file_update_status": {
-    "file_last_modified": "파일 <code class=\"file-path\"></code> 의 마지막 수정 시각은 <span class=\"file-last-modified\"></span> 입니다.",
-    "upload_modified_file": "수정된 파일 업로드",
-    "ignore_this_change": "이 변경 무시"
+    "upload_modified_file": "업로드",
+    "title": "Trilium 외부에서 파일이 변경되었습니다",
+    "message": "외부에서 연 파일이 {{time}}에 저장되었습니다. 업로드하면 Trilium의 기존 콘텐츠가 교체되며, 현재 버전은 수정 이력으로 보관됩니다."
   },
   "app_context": {
     "please_wait_for_save": "저장이 끝날 때까지 몇 초만 기다렸다가 다시 시도해 주세요."
@@ -2801,7 +2801,8 @@
     "copy_failed": "권한 문제로 인해 클립보드에 복사할 수 없습니다.",
     "copy_success": "클립보드에 복사했습니다.",
     "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다.",
-    "paste_notes": "노트 붙여넣기"
+    "paste_notes": "노트 붙여넣기",
+    "paste_failed": "클립보드의 내용을 읽을 수 없습니다."
   },
   "entrypoints": {
     "note-revision-created": "노트 수정본이 생성되었습니다.",
@@ -2935,7 +2936,15 @@
     "line_numbers_auto": "자동",
     "line_numbers_on": "켜기",
     "line_numbers_off": "끄기",
-    "line_numbers_auto_description": "전역 설정 따르기"
+    "line_numbers_auto_description": "전역 설정 따르기",
+    "include_position": "위치",
+    "break_text": "텍스트 줄 바꿈",
+    "wrap_text": "텍스트 감싸기",
+    "align_left": "왼쪽 정렬",
+    "align_center": "가운데 정렬",
+    "align_right": "오른쪽 정렬",
+    "open_externally": "외부에서 열기",
+    "delete": "삭제"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -4424,7 +4433,13 @@
       "table-headers": "표 머리글",
       "jump-to-heading": "제목으로 이동",
       "jump-to-anchor": "앵커로 이동",
-      "jump-to-block": "블록으로 이동"
+      "jump-to-block": "블록으로 이동",
+      "box-position": "상자 위치",
+      "youtube-video": "YouTube 동영상",
+      "insert-youtube-video": "YouTube 동영상 삽입",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "노트에서 바로 시청할 수 있는 YouTube 동영상 삽입",
+      "caption-for-the-video": "동영상 설명",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "클릭한 상태로 드래그하여 블록 크기를 조절할 수 있습니다. 두 번 클릭하면 기본 크기로 초기화됩니다."
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4505,7 +4520,8 @@
   },
   "open": {
     "directory_failed": "{{- directory}} 열기 실패: {{- reason}}",
-    "download_failed": "다운로드를 저장할 수 없습니다: {{- reason}}"
+    "download_failed": "다운로드를 저장할 수 없습니다: {{- reason}}",
+    "custom_failed": "애플리케이션 선택 창을 표시할 수 없습니다.\n\n\"외부에서 열기\"를 사용하여 기본 애플리케이션으로 파일을 여세요."
   },
   "embedded_note": {
     "open-note": "노트 열기",
@@ -4923,5 +4939,11 @@
   "canvas": {
     "thin_stroke": "얇은 펜 선",
     "thin_stroke_description": "손글씨에 적합하도록 펜 선을 더 얇게 그립니다. 이미 그린 선의 두께는 유지됩니다."
+  },
+  "youtube_video": {
+    "title": "YouTube 동영상 삽입",
+    "button_insert": "동영상 삽입",
+    "not_a_video": "YouTube 동영상 주소가 아닙니다.",
+    "insert_failed": "동영상을 불러올 수 없습니다. 주소와 연결 상태를 확인한 후 다시 시도하세요."
   }
 }

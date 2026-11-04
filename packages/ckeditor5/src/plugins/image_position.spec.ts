@@ -1,10 +1,10 @@
 import {
-    _setModelData as setModelData,
-    ButtonView, type ClassicEditor, DropdownView, Essentials, Image, ImageStyle, ListItemGroupView, ListItemView,
-    type ListView, Paragraph, type View
+    _setModelData as setModelData, type ClassicEditor, DropdownView, Essentials, Image, ImageStyle,
+    Paragraph
 } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
+import { getListRows as rows, pickListRow as pick } from "../../test/dropdown-kit.js";
 import { createTestEditor } from "../../test/editor-kit.js";
 import ImagePosition from "./image_position.js";
 
@@ -59,6 +59,9 @@ describe("ImagePosition", () => {
         setModelData(editor.model, BLOCK_IMAGE);
         expect(rows(dropdown)).toStrictEqual(["# Wrap text", "Align left", "Align right"]);
         expect(dropdown.buttonView.icon).toBe(styleIcon(editor, "alignLeft"));
+
+        const { dropdown: empty } = await createEditor(["side"]);
+        expect([ rows(empty), empty.buttonView.icon ]).toStrictEqual([ [], undefined ]);
     });
 });
 
@@ -70,27 +73,4 @@ function getDropdown(editor: ClassicEditor) {
 
 function styleIcon(editor: ClassicEditor, name: string) {
     return editor.plugins.get("ImageStyleEditing").normalizedStyles?.find((style) => style.name === name)?.icon;
-}
-
-/** The rows of the dropdown's list: a heading as `# label`, a row that is on with a check. */
-function rows(dropdown: DropdownView) {
-    dropdown.isOpen = true;
-    dropdown.isOpen = false;
-    const text = (items: Iterable<View>): string[] => [ ...items ].flatMap((item) => {
-        if (item instanceof ListItemGroupView) return [ `# ${item.label}`, ...text(item.items) ];
-        const button = item instanceof ListItemView ? item.children.first : null;
-        return button instanceof ButtonView ? [ button.isOn ? `${button.label} ✓` : button.label ?? "" ] : [];
-    });
-    return text((dropdown.listView as ListView).items);
-}
-
-function pick(dropdown: DropdownView, heading: string, label: string) {
-    dropdown.isOpen = true;
-    const group = [ ...(dropdown.listView as ListView).items ]
-        .find((item): item is ListItemGroupView => item instanceof ListItemGroupView && item.label === heading);
-    const button = [ ...group?.items ?? [] ]
-        .map((item) => (item instanceof ListItemView ? item.children.first : null))
-        .find((view): view is ButtonView => view instanceof ButtonView && view.label === label);
-    if (!button) throw new Error(`expected "${label}" under "${heading}"`);
-    button.fire("execute");
 }

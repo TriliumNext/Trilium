@@ -3,8 +3,27 @@
 ) {
     padding: var(--_include-note-content-top-inset) var(--_include-note-content-inset)
              var(--_include-note-content-bottom-inset);
-    box-sizing: content-box;
     max-height: none;
+}
+
+.include-note:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"])
+    > .include-note-wrapper > .include-note-body > .include-note-content:has(
+        > .rendered-content > .markdown-embed > .markdown-embed-content.fills-box
+    ) {
+    height: var(--include-note-height, 20em);
+}
+
+.include-note[data-box-size="small"] > .include-note-wrapper > .include-note-body
+    > .include-note-content:has(
+        > .rendered-content > .markdown-embed > .markdown-embed-content.fills-box
+    ) {
+    height: var(--include-note-height, 10em);
+}
+
+.include-note-content > .rendered-content:has(> .markdown-embed),
+.include-note-content > .rendered-content > .markdown-embed,
+.include-note-content > .rendered-content > .markdown-embed > .markdown-embed-content.with-source {
+    height: 100%;
 }
 
 .markdown-embed-content {
@@ -20,10 +39,6 @@
         overflow: visible;
         background-image: none;
     }
-}
-
-.include-note-content:fullscreen > .rendered-content > .markdown-embed {
-    height: 100%;
 }
 
 .include-note-content:not(:fullscreen) > .rendered-content > .markdown-embed

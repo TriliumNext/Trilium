@@ -19,6 +19,31 @@ export interface SlowSelector {
 
 /** Lists the selectors of the stylesheet `code` that have a {@link SlowShape}. */
 export function findSlowSelectors(code: string, filename: string): SlowSelector[] {
+    const found: SlowSelector[] = [];
+    for (const selector of flatSelectors(code, filename)) {
+        const shape = classifySelector(selector);
+        if (shape) {
+            found.push({ shape, selector: serializeSelector(selector) });
+        }
+    }
+    return found;
+}
+
+/**
+ * Lists the `::highlight()` selectors of the stylesheet `code` that name no class, id or
+ * attribute, and so apply to every element of the page. Chromium's renderer crashes on such a
+ * rule at some page zoom levels (#12021).
+ */
+export function findDocumentWideHighlights(code: string, filename: string): string[] {
+    return flatSelectors(code, filename)
+        .filter((selector) => selector.some((part) =>
+            part.type === "pseudo-element" && part.kind === "highlight-function"))
+        .filter((selector) => !splitCompounds(selector).some((compound) => hasKey(compound.parts)))
+        .map(serializeSelector);
+}
+
+/** The selectors of the style rules in `code`, with nesting resolved. */
+function flatSelectors(code: string, filename: string): Selector[] {
     // Lowering for an engine without nesting turns each `&` into the full selector.
     const flat = transform({
         filename,
@@ -26,7 +51,7 @@ export function findSlowSelectors(code: string, filename: string): SlowSelector[
         targets: { chrome: 100 << 16 },
         errorRecovery: true
     }).code;
-    const found: SlowSelector[] = [];
+    const selectors: Selector[] = [];
     transform({
         filename,
         code: flat,
@@ -34,17 +59,12 @@ export function findSlowSelectors(code: string, filename: string): SlowSelector[
         visitor: {
             Rule: {
                 style(rule) {
-                    for (const selector of rule.value.selectors) {
-                        const shape = classifySelector(selector);
-                        if (shape) {
-                            found.push({ shape, selector: serializeSelector(selector) });
-                        }
-                    }
+                    selectors.push(...rule.value.selectors);
                 }
             }
         }
     });
-    return found;
+    return selectors;
 }
 
 const NTH = new Set([
@@ -154,7 +174,10 @@ function serializeSelector(selector: Selector): string {
             case "type": return part.name;
             case "universal": return "*";
             case "attribute": return `[${part.name}]`;
-            case "pseudo-element": return `::${part.kind}`;
+            case "pseudo-element":
+                return part.kind === "highlight-function"
+                    ? `::highlight(${part.name})`
+                    : `::${part.kind}`;
             case "pseudo-class": {
                 const selectors = argumentsOf(part);
                 if (selectors.length) {

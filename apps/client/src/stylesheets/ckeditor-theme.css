@@ -109,10 +109,23 @@ html:root {
 
     --ck-color-widget-type-around-button: var(--main-border-color);
     --ck-color-widget-type-around-button-hover: var(--main-border-color);
+    --ck-color-widget-type-around-button-icon: var(--main-text-color);
 
     --ck-font-face: var(--main-font-family);
     --ck-input-label-height: 1.5em;
     --ck-mention-list-max-height: 500px;
+}
+
+/* Redeclared per widget so the buttons follow a `--ck-color-focus-border` the widget sets. */
+.ck-editor__editable.ck-focused .ck-widget.ck-widget_selected > .ck-widget__type-around {
+    --ck-color-widget-type-around-button-active: var(--ck-color-focus-border);
+    --ck-color-widget-type-around-button-icon: var(--main-background-color);
+}
+
+.ck .ck-widget > .ck-widget__type-around > .ck-widget__type-around__button:hover {
+    box-shadow: 0 0 0 6px
+        color-mix(in srgb, var(--ck-color-widget-type-around-button-active) 25%, transparent);
+    animation: none;
 }
 
 div.ck.ck-dialog {

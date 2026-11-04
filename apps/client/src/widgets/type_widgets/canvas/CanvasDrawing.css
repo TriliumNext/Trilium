@@ -79,6 +79,27 @@
     opacity: 0;
 }
 
+/* Not inherited, so that moving a panel restyles the panel and not its contents. */
+@property --side-panel-left {
+    syntax: "*";
+    inherits: false;
+}
+
+@property --side-panel-top {
+    syntax: "*";
+    inherits: false;
+}
+
+@property --side-panel-height {
+    syntax: "*";
+    inherits: false;
+}
+
+@property --side-panel-max-height {
+    syntax: "*";
+    inherits: false;
+}
+
 /* The library and the properties panel beside the drawing, in the top layer, placed by
    `useSidePanels()`. Resets the user agent style of a popover and Excalidraw's own placement. */
 .canvas-drawing-editor .excalidraw .Island[data-side-panel][popover] {

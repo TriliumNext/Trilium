@@ -27,8 +27,8 @@ Since v0.107.0, a link to a heading of the same note can be created from the _Ad
 
 *   Place the cursor at the desired position of the link, or select the text to turn into a link.
 *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Headings & anchors_ at the top of the dialog.
-*   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading, which can be collapsed with the arrow in front of it, or with <kbd>←</kbd> and <kbd>→</kbd> while it is focused. Optionally, type a _Link title_.
-*   Press <kbd>Enter</kbd> or _Add link_ to confirm.
+*   Under _Headings_, click the desired heading to check it. Sub-headings are listed under their heading and start collapsed; expand or collapse a heading with the arrow in front of it, or with <kbd>→</kbd> and <kbd>←</kbd> while it is focused. Optionally, type a _Link title_.
+*   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
 
 When the link title is not set, the link displays the text of the heading. If the heading gets changed, the link is renamed automatically to the new text, shortly after you stop typing. A link with a title of its own keeps that title.
 

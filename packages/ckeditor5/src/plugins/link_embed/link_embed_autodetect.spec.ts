@@ -119,13 +119,22 @@ describe("AutoLinkToMention", () => {
         });
 
         it("turns an embeddable URL left alone on its own line into a player", async () => {
-            embeddable(VIDEO_URL);
+            fetchMetadata.mockResolvedValueOnce({
+                ...META, url: VIDEO_URL, embedType: "youtube", aspectRatio: "9/16"
+            });
 
             autoLinkIn(editor, urlLeftAloneOnItsOwnLine(VIDEO_URL), VIDEO_URL);
             await flushFetch();
 
             expect(findElement(editor, "linkMention")).toBeUndefined();
-            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(embed?.getAttribute("embedType")).toBe("youtube");
+            expect(embed?.getAttribute("title")).toBe(META.title);
+            expect(embed?.getAttribute("boxSize")).toBe("medium");
+            expect(embed?.getAttribute("aspectRatio")).toBe("9/16");
+            expect(embed?.getAttribute("customWidth")).toBe("11.3em");
         });
 
         it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {

@@ -3,6 +3,7 @@ import "./edit_link.css";
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
+import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import froca from "../../services/froca";
@@ -16,13 +17,14 @@ import Button from "../react/Button";
 import { Card, ChoiceCardSection, OptionCardSection } from "../react/Card";
 import FormSelect from "../react/FormSelect";
 import FormTextArea from "../react/FormTextArea";
-import FormTextBox from "../react/FormTextBox";
+import FormTextBox, { FormTextBoxWithPaste } from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoItems from "../react/NoItems";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
+import { useScrollFade } from "../react/scroll_fade";
 import SegmentedChoice, { type SegmentedChoiceOption } from "../react/SegmentedChoice";
 
 /**
@@ -140,7 +142,9 @@ export default function EditLinkDialog() {
             size="lg"
             title={form.title}
             helpPageId="QEAPj01N5f7w"
-            footer={<Button text={form.buttonText} keyboardShortcut="Enter" />}
+            footer={
+                <Button text={form.buttonText} keyboardShortcut="Enter" disabled={!form.hasLink} />
+            }
             onSubmit={onSubmit}
             onShown={form.onShown}
             onHidden={() => {
@@ -185,7 +189,7 @@ export function EditLinkBalloon({ opts, onClose }: { opts: EditLinkOpts; onClose
         >
             {form.body}
             <div className="edit-link-actions">
-                <Button text={form.buttonText} keyboardShortcut="Enter" />
+                <Button text={form.buttonText} keyboardShortcut="Enter" disabled={!form.hasLink} />
             </div>
         </form>
     );
@@ -204,7 +208,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ display, setDisplay ] = useState<LinkDisplayMode>("plain");
     const [ anchor, setAnchor ] = useState("");
     const [ heading, setHeading ] = useState<LinkHeading | null>(null);
-    const [ collapsedHeadings, setCollapsedHeadings ] = useState<ReadonlySet<LinkHeading>>(
+    const [ expandedHeadings, setExpandedHeadings ] = useState<ReadonlySet<LinkHeading>>(
         new Set()
     );
     const [ isShowPending, setIsShowPending ] = useState(false);
@@ -212,6 +216,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const titleRef = useRef<HTMLInputElement>(null);
     // The scrolling box around the Headings and Anchors cards.
     const linkTargetsRef = useRef<HTMLDivElement>(null);
+    const linkTargetsFade = useScrollFade(linkTargetsRef);
     const headingTree = useMemo(() => nestHeadings(opts?.headings ?? []), [ opts ]);
     const initialBookmarkRef = useRef("");
     // The title of the link preview being edited, while the title field still shows it.
@@ -228,7 +233,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         setDisplay(opts?.display ?? "plain");
         setAnchor(opts?.currentAnchor ?? "");
         setHeading(opts?.currentHeading ?? null);
-        setCollapsedHeadings(new Set());
+        // Sub-headings start collapsed, except the ones above the heading being edited.
+        setExpandedHeadings(new Set(
+            opts?.currentHeading ? getParentHeadings(headingTree, opts.currentHeading) : []
+        ));
         previewTitleRef.current = opts?.currentLink && opts.display && opts.display !== "plain"
             ? opts.currentTitle ?? null : null;
         initialBookmarkRef.current = opts?.currentBookmark ?? "";
@@ -513,13 +521,13 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                     setAnchor("");
                 }}
                 subSections={children.map(renderHeadingChoice)}
-                isExpanded={!collapsedHeadings.has(item)}
-                onExpandedChange={(isExpanded) => setCollapsedHeadings((collapsed) => {
-                    const next = new Set(collapsed);
+                isExpanded={expandedHeadings.has(item)}
+                onExpandedChange={(isExpanded) => setExpandedHeadings((expanded) => {
+                    const next = new Set(expanded);
                     if (isExpanded) {
-                        next.delete(item);
-                    } else {
                         next.add(item);
+                    } else {
+                        next.delete(item);
                     }
                     return next;
                 })}
@@ -534,7 +542,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const anchorPage = topHeadings.length > 0 || anchors.length > 0 ? (<>
         {showsTitle && <Card>{titleSection}</Card>}
 
-        <div ref={linkTargetsRef} className="edit-link-targets">
+        <div
+            ref={linkTargetsRef}
+            className={clsx("edit-link-targets", linkTargetsFade.className)}
+            style={linkTargetsFade.style}
+        >
             {topHeadings.length > 0 && (
                 <Card className="edit-link-headings" heading={t("add_link.headings")}>
                     {topHeadings.map(renderHeadingChoice)}
@@ -560,7 +572,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
             )}
         </div>
     </>) : (
-        <NoItems icon="bx bx-heading" text={t("add_link.no_headings_or_anchors")} />
+        <NoItems icon="bx bx-bookmark" text={t("add_link.no_headings_or_anchors")} />
     );
     const displays = [
         { value: "plain", title: t("add_link.display_plain") },
@@ -574,7 +586,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     return {
         title,
         buttonText,
-        hasLink: target === "anchor" ? !!heading || !!anchor : !!suggestion,
+        /** Whether the side shown has a link to apply: an address, a note, a heading or an anchor. */
+        hasLink: target === "url" ? !!suggestion?.externalLink
+            : target === "note" ? !!suggestion?.notePath
+            : !!heading || !!anchor,
         /** Fills and focuses the fields, once the form is on screen. */
         onShown: () => setIsShowPending(true),
         applyLink,
@@ -591,7 +606,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                         <OptionCardSection
                             className="edit-link-url" name="url" label={t("add_link.url")}
                         >
-                            <FormTextBox
+                            <FormTextBoxWithPaste
                                 inputRef={webLinkRef}
                                 inputMode="url"
                                 autoCapitalize="off"
@@ -724,6 +739,20 @@ function nestHeadings(headings: LinkHeading[]) {
     }
 
     return tree;
+}
+
+/** The headings that `heading` nests under in `headingTree`, from its parent up. */
+function getParentHeadings(
+    headingTree: Map<LinkHeading | null, LinkHeading[]>, heading: LinkHeading
+) {
+    const parents: LinkHeading[] = [];
+    let child = heading;
+    for (;;) {
+        const parent = [ ...headingTree ].find(([ , children ]) => children.includes(child))?.[0];
+        if (!parent) return parents;
+        parents.push(parent);
+        child = parent;
+    }
 }
 
 /** Scrolls the checked choice in `container` to the middle of it, if there is one. */

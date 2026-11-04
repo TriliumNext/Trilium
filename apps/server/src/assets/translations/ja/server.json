@@ -603,5 +603,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium は Flatpak として動作するため、{{- cli}} などのサンドボックス外にインストールされたプログラムを起動できません。{{- cli}} を使用するには:\n\n1. このコンピュータにインストールし、ターミナルからサインインします。\n2. ターミナルで以下のコマンドを実行し、Triliumがサンドボックス外のプログラムを起動できるようにします:\n\n{{- grantCommand}}\n\n3. Trilium を再起動します。\n\nこれにより、Trilium は Flatpak 以外でインストールされた場合と同様に、コンピュータへのアクセス権を取得します。アクセス権を元に戻すには、以下のコマンドを実行してください:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "ファイルを開くアプリケーションを選択してください。",
+    "applications_filter": "アプリケーション"
   }
 }

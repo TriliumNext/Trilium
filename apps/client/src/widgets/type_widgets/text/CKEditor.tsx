@@ -2,7 +2,7 @@ import {
     assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor, type DocumentHeading,
     getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
     type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
-    replaceLinkAtSelection, SnippetDefinition
+    replaceLinkAtSelection, SnippetDefinition, type YouTubeVideoRequest
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -11,6 +11,7 @@ import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
 import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { YouTubeVideoBalloon } from "../../dialogs/youtube_video";
 import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
@@ -188,6 +189,22 @@ export default function CKEditor({
         return () => setIconPickerRequest(null);
     }
 
+    /** The open YouTube video prompt and its balloon container, or `null` when none is open. */
+    const [ youtubeVideoRequest, setYouTubeVideoRequest ] =
+        useState<YouTubeVideoRequest | null>(null);
+
+    // On mobile, `showYouTubeVideoDialog` opens the prompt in a modal instead of the balloon.
+    function showYouTubeVideoPrompt(request: YouTubeVideoRequest) {
+        if (isMobile()) {
+            const { onInsert } = request;
+            parentComponent?.triggerCommand("showYouTubeVideoDialog", { onInsert });
+            return null;
+        }
+
+        setYouTubeVideoRequest(request);
+        return () => setYouTubeVideoRequest(null);
+    }
+
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
 
     useImperativeHandle(editorApi, () => ({
@@ -362,6 +379,7 @@ export default function CKEditor({
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
                 showIconPicker,
+                showYouTubeVideoPrompt,
                 referenceSource: {
                     getEditor: () => editorRef.current,
                     getNote: () => noteRef.current,
@@ -500,6 +518,10 @@ export default function CKEditor({
                     onSelect={iconPickerRequest.onSelect}
                 />,
                 iconPickerRequest.container
+            )}
+            {youtubeVideoRequest && createPortal(
+                <YouTubeVideoBalloon onInsert={youtubeVideoRequest.onInsert} />,
+                youtubeVideoRequest.container
             )}
         </>
     );

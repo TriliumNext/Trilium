@@ -108,7 +108,7 @@ describe("getAttachmentActionGroups", () => {
         await actions["compress-image-menu"].run();
 
         expect(mocks.open.openAttachmentExternally).toHaveBeenCalledWith("att1", "image/png");
-        expect(mocks.open.openAttachmentCustom).toHaveBeenCalledWith("att1", "image/png");
+        expect(mocks.open.openAttachmentCustom).toHaveBeenCalledWith("att1");
         expect(mocks.open.downloadAttachment).toHaveBeenCalledWith("att1");
         expect(mocks.triggerCommand).toHaveBeenCalledWith("showOcrTextDialog", {
             textUrl: "ocr/attachments/att1/text",

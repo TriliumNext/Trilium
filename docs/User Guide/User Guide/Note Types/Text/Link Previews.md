@@ -10,6 +10,7 @@ A link preview can be displayed in one of three modes:
 *   **Embed** — a block-level interactive embed.
     *   Currently supported for YouTube videos, which render interactively (via an `iframe`).
     *   To prevent unwanted remote requests, the video is shown only after clicking on it first. Until then, the video's thumbnail is shown with a play button.
+    *   The video can be resized and aligned (see _Videos_ below).
 
 <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1-1">
 <div class="trilium-multicolumn-column">
@@ -31,7 +32,7 @@ A link preview can be displayed in one of three modes:
 
 ## Inserting a link preview
 
-There are three ways to create one:
+There are four ways to create one:
 
 ### 1\. By pasting a URL
 
@@ -56,13 +57,17 @@ Since v0.107.0, a link preview is created from the same _Add link_ dialog as any
 *   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, or press <kbd>Ctrl</kbd>+<kbd>K</kbd>, to open the dialog on _Web link_.
 *   Type or paste the address, then pick the preview in _Display as_: _Inline_, _Card_ or, for a YouTube video, _YouTube embed_. _Plain link_ inserts an ordinary link. _Display as_ is not shown when text is selected, since the link then keeps the selected text.
 *   Optionally, type a _Link title_ to show instead of the page's own title. A _Card_ also offers a _Description_ to show instead of the page's own description.
-*   Press <kbd>Enter</kbd> or _Add link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
+*   Press <kbd>Enter</kbd> or _Insert link_ to confirm. The link appears right away and turns into the preview once Trilium has read the page.
 
 Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and look for _link preview_ (it is also found by _embed_, _url_ or _video_). It opens the same dialog with a preview already picked: a _YouTube embed_ for a YouTube video, a _Card_ for any other page.
 
 To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
 
-### 3\. By saving browser tabs from the Web Clipper
+### 3\. From the Insert menu, for a YouTube video
+
+Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ from the <a class="reference-link" href="Insert%20buttons.md">Insert buttons</a> menu, or _Insert YouTube video_ from the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. Paste the address of the video and press _Insert video_ or <kbd>Enter</kbd> to insert it as an _Embed_. The <span class="tn-icon bx bx-paste"></span> _Paste_ button at the end of the field replaces its text with the text on the clipboard. This button is shown only where Trilium can read the clipboard: in the desktop app, and in a browser over HTTPS unless access to the clipboard was blocked. The video is inserted once its title and thumbnail have loaded, which can take a few seconds. When they cannot be loaded, an error is shown and the prompt stays open. Opening another note in the meantime cancels the insertion.
+
+### 4\. By saving browser tabs from the Web Clipper
 
 When the <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a> saves the tabs of a window, each tab becomes an _inline_ link preview showing the title and favicon the browser displays for it. Because this data comes from the browser, pages behind a login keep their real title, and the Trilium server does not contact the saved pages.
 
@@ -70,18 +75,36 @@ When _Autogenerate link previews_ is turned off, the tabs are saved as a list of
 
 ## Altering an existing link preview
 
-Click on an inserted link preview to select it, and a small toolbar will appear with the following options:
+Click on an inserted _Inline_ or _Card_ link preview to select it, and a small toolbar will appear with the following options:
 
 *   The normal link operations (opening in a new tab, copying the link, unlinking).
 *   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
 *   A way to switch between the link preview modes (Inline, Card or Embed) as well as to convert it to a normal link instead.
     *   The Embed option is only enabled when the URL points to a supported service (YouTube today).
 
+### Videos
+
+A YouTube video shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. It keeps the shape of the video, so a YouTube Short stands upright and an older video can be 4:3. A video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player. The toolbar of a selected video offers:
+
+*   <span class="tn-icon cke cke-trilium-copy"></span> _Copy URL_.
+*   The _Display_ menu, which turns the video into an _Inline_ or _Card_ link preview, or a _Plain link_. The text of its caption stays, as a paragraph after it.
+*   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
+    *   <span class="tn-icon bx bx-link-external"></span> _Open externally_ opens the video outside Trilium: in the browser, or in the app that handles the link, such as the YouTube app on Android.
+    *   _Size_: a _Medium_ video can be resized, a _Full_ video takes the width of the note, or less when it would be taller than most of the window. A new video is _Medium_. A video inserted in an earlier version is _Full_.
+    *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default.
+    *   _Show title_ shows the title of the video above it, as a link to the video. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
+    *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
+    *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
+
+To resize a _Medium_ video, select it and drag the handle in its bottom-right corner, or its bottom-left corner for a video aligned to the right. The height follows the width. Choosing _Medium_ again returns the video to its first size.
+
+On a [shared page](../../Advanced%20Usage/Sharing.md), the video keeps its width, position and caption, but not its title. In the mobile layout, a video with a position other than _Align center_ takes the full width.
+
 ## Where the preview data comes from
 
 When you insert a link preview, Trilium fetches metadata once and stores it with the note:
 
-*   **YouTube URLs**: the title and channel name are fetched via YouTube's public oEmbed endpoint, and the video's thumbnail is downloaded at up to 1280×720.
+*   **YouTube URLs**: the title, the channel name and the shape of the video are fetched via YouTube's public oEmbed endpoint, and the video's thumbnail is downloaded at up to 1280×720.
 *   **All other URLs**: Trilium fetches the page and reads OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:site_name`), falling back to the page's `<title>` and `<meta name="description">`. The site's favicon and the page's image are downloaded as well.
 
 The text is kept in the note's HTML. The images are kept as system <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> of the note, listed under _Generated by Trilium_.

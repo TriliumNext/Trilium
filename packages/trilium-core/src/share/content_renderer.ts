@@ -1,12 +1,14 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
-    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey,
-    getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
-    type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml,
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
+    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewVideoId,
+    getNestedEmbedOptions, getNoteEmbedHref, getVideoAspectRatio, isHttpUrl, isImageAttachmentRole,
+    MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData,
+    readVideoEmbedBox, renderLinkEmbedHtml,
     renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
     resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
-    sliceToBlockReference
+    sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -639,6 +641,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
         if (data) {
             embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
+            if (getLinkPreviewVideoId(data)) {
+                setVideoBox(embedEl, getVideoAspectRatio(data));
+                moveBoxToCaptionedFigure(embedEl);
+            }
         }
     }
 
@@ -785,6 +791,43 @@ function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options
         : "";
     const html = `<div class="include-note-unavailable"${blockAttribute}>${message}</div>`;
     embedEl.replaceWith(...parse(html, parseOpts).childNodes);
+}
+
+/**
+ * Writes the box size and the shape of a video on its section, which the share theme sizes it by,
+ * as `applyVideoEmbeds()` does for the app's read-only view. An older video is Full.
+ */
+function setVideoBox(section: HTMLElement, aspectRatio: number | null) {
+    const { boxSize } = readVideoEmbedBox((name) => section.getAttribute(name));
+    section.setAttribute("data-box-size", boxSize);
+    if (aspectRatio) {
+        const style = section.getAttribute("style")?.replace(/;\s*$/, "");
+        const shape = `${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}`;
+        section.setAttribute("style", style ? `${style};${shape}` : shape);
+    }
+}
+
+/** The attributes that size and place the box of an embed. */
+const EMBED_BOX_ATTRIBUTES = [ "style", "data-box-size", "data-position" ];
+
+/**
+ * Moves the box of `element`, an embed saved with a caption, onto the
+ * `<figure class="captioned-content-embed">` that holds both, which the share theme then places
+ * and sizes as it does the embed.
+ */
+function moveBoxToCaptionedFigure(element: HTMLElement) {
+    const figure = element.parentNode;
+    if (!figure?.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS)) {
+        return;
+    }
+
+    for (const name of EMBED_BOX_ATTRIBUTES) {
+        const value = element.getAttribute(name);
+        if (value !== undefined) {
+            figure.setAttribute(name, value);
+            element.removeAttribute(name);
+        }
+    }
 }
 
 /**

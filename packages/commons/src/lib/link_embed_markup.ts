@@ -13,6 +13,8 @@ export interface LinkPreviewData {
     image?: string | null;
     favicon?: string | null;
     siteName?: string | null;
+    /** The shape of a video, as its width and height in whole numbers, such as `9/16`. */
+    aspectRatio?: string | null;
 }
 
 export interface LinkPreviewMarkupOptions {
@@ -22,25 +24,75 @@ export interface LinkPreviewMarkupOptions {
     playVideoLabel: string;
 }
 
+/** The `data-*` attribute that stores each field of a link preview. */
+export const LINK_PREVIEW_DATA_ATTRIBUTES = {
+    url: "data-url",
+    embedType: "data-embed-type",
+    title: "data-title",
+    description: "data-description",
+    image: "data-image",
+    favicon: "data-favicon",
+    siteName: "data-site-name",
+    aspectRatio: "data-aspect-ratio"
+} as const satisfies Record<keyof LinkPreviewData, string>;
+
+/** The custom property that gives the player of a video, and its box, the shape of the video. */
+export const VIDEO_ASPECT_RATIO_PROPERTY = "--video-aspect-ratio";
+
 /**
  * The preview stored on a `section.link-embed` or `span.link-mention`, or `null` when it carries no
  * URL. A missing embed type reads as `opengraph`.
  */
 export function readLinkPreviewData(getAttribute: (name: string) => string | null | undefined) {
-    const url = getAttribute("data-url");
+    const attributes = LINK_PREVIEW_DATA_ATTRIBUTES;
+    const url = getAttribute(attributes.url);
     if (!url) {
         return null;
     }
 
     return {
         url,
-        embedType: getAttribute("data-embed-type") || "opengraph",
-        title: getAttribute("data-title"),
-        description: getAttribute("data-description"),
-        image: getAttribute("data-image"),
-        favicon: getAttribute("data-favicon"),
-        siteName: getAttribute("data-site-name")
+        embedType: getAttribute(attributes.embedType) || "opengraph",
+        title: getAttribute(attributes.title),
+        description: getAttribute(attributes.description),
+        image: getAttribute(attributes.image),
+        favicon: getAttribute(attributes.favicon),
+        siteName: getAttribute(attributes.siteName),
+        aspectRatio: getAttribute(attributes.aspectRatio)
     } satisfies LinkPreviewData;
+}
+
+/**
+ * The width of the video of `preview` divided by its height, or `null` when the preview stores
+ * no valid shape, as a video inserted before Trilium read the shape does. Its player is 16:9.
+ */
+export function getVideoAspectRatio({ aspectRatio }: Pick<LinkPreviewData, "aspectRatio">) {
+    const [ width, height ] = aspectRatio?.match(/^(\d{1,4})\/(\d{1,4})$/)?.slice(1).map(Number)
+        ?? [];
+    return width && height ? width / height : null;
+}
+
+/** The box sizes of a video embed. */
+export const VIDEO_EMBED_BOX_SIZES = [ "medium", "full" ] as const;
+
+/**
+ * The box size of a video saved as a link preview, and whether its title is hidden. A video saved
+ * before videos were embeds has no box size: it is Full and untitled.
+ */
+export function readVideoEmbedBox(getAttribute: (name: string) => string | null | undefined) {
+    const savedBoxSize = getAttribute("data-box-size");
+    const boxSize = VIDEO_EMBED_BOX_SIZES.find((size) => size === savedBoxSize) ?? "full";
+    return {
+        boxSize,
+        isTitleHidden: !savedBoxSize || getAttribute("data-hide-title") === "true"
+    };
+}
+
+/** The YouTube ID of the video that a link preview plays, or `null` for a card. */
+export function getLinkPreviewVideoId(
+    { url, embedType }: Pick<LinkPreviewData, "url" | "embedType">
+) {
+    return embedType !== "opengraph" ? extractYouTubeVideoId(url) : null;
 }
 
 /**
@@ -64,10 +116,12 @@ export function renderLinkMentionHtml(data: LinkPreviewData, options: LinkPrevie
  * player on the reader's click.
  */
 export function renderLinkEmbedHtml(data: LinkPreviewData, options: LinkPreviewMarkupOptions) {
-    const videoId = data.embedType !== "opengraph" ? extractYouTubeVideoId(data.url) : null;
+    const videoId = getLinkPreviewVideoId(data);
     if (videoId) {
         const label = escapeHtml(options.playVideoLabel);
-        return `<div class="link-embed-video">`
+        const aspectRatio = getVideoAspectRatio(data);
+        const style = aspectRatio ? ` style="${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}"` : "";
+        return `<div class="link-embed-video"${style}>`
             + `<button type="button" class="link-embed-video-facade"`
             + ` data-video-id="${escapeHtml(videoId)}"`
             + ` aria-label="${label}" title="${label}">`

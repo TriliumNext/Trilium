@@ -10,7 +10,15 @@ import {
     WidgetToolbarRepository
 } from "ckeditor5";
 
-import { type ResizeAxes, type ResizeSize, startResizeGesture } from "./resize_gesture.js";
+import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
+import {
+    type ResizeAnchor, type ResizeAxes, type ResizeSize, startResizeGesture
+} from "./resize_gesture.js";
+
+export type { ResizeAnchor } from "./resize_gesture.js";
+
+/** Whether an axis can be resized: always, never, or depending on the state of `element`. */
+export type ResizableAxisFlag = boolean | ((element: ModelElement) => boolean);
 
 /** How the widgets of a model element are resized. */
 export interface ResizableWidgetConfig {
@@ -19,10 +27,13 @@ export interface ResizableWidgetConfig {
      * `<prefix>-width` and `<prefix>-height`. The widget's stylesheet applies them.
      */
     propertyPrefix: string;
-    isWidthResizable?: boolean;
-    isHeightResizable?: boolean;
-    /** Whether the widget's stylesheet centers it, so that its width changes on both sides. */
-    isCentered?: boolean;
+    isWidthResizable?: ResizableAxisFlag;
+    isHeightResizable?: ResizableAxisFlag;
+    /**
+     * The edge of `element` that stays in place while its width changes, as its stylesheet places
+     * the widget. The inline start by default. The handles go on the opposite edge.
+     */
+    getAnchor?: (element: ModelElement) => ResizeAnchor;
     /** A selector for the element inside the widget whose height changes, or the widget. */
     heightTarget?: string;
     /** The smallest width, in `em`. */
@@ -48,24 +59,56 @@ const HANDLES: Record<string, ResizeAxes> = {
 };
 
 const RESIZABLE_CLASS = "ck-widget_resizable";
+/** The classes of a widget anchored to its left or right edge, which place its handles. */
+const ANCHOR_CLASSES = {
+    left: "ck-widget_resize-anchor-left",
+    right: "ck-widget_resize-anchor-right"
+} as const;
+/** The classes of a widget whose state fixes an axis, which hide the handles of that axis. */
+const FIXED_CLASSES: Record<Axis, string> = {
+    width: "ck-widget_fixed-width",
+    height: "ck-widget_fixed-height"
+};
 const RESIZING_CLASS = "ck-widget_resizing";
 const TOOLBAR_LOCK = "ResizableWidgets";
 const DEFAULT_MIN_SIZE = 2;
 const DOUBLE_TAP_MS = 400;
+const HINT_DWELL_MS = 200;
 const EM_PATTERN = /^\d+(\.\d+)?em$/;
 
 /**
- * Lets the user resize widgets by dragging handles on their inline-end edge, bottom edge and
- * corner, with a mouse, a pen or a finger. Double-clicking a handle resets its size.
+ * Lets the user resize widgets by dragging handles on the edge opposite their anchor, their bottom
+ * edge and the corner between them, with a mouse, a pen or a finger. Double-clicking a handle
+ * resets its size.
  */
 export default class ResizableWidgets extends Plugin {
 
     private lastTap: { handle: Element; time: number } | null = null;
     /** Cancels the resize under way, if any. */
     private cancelResize: (() => void) | null = null;
+    /** Shows the hints of the corner handles, or `null` while content hints are switched off. */
+    private hintManager: ContentHintManager | null = null;
+    /** The corner handle that the pointer rests on, and its hint. */
+    private hoveredHint: { handle: HTMLElement; hint: HintHandle } | null = null;
 
     static get pluginName() {
         return "ResizableWidgets" as const;
+    }
+
+    init() {
+        if (this.editor.config.get("contentHintsEnabled") !== false) {
+            this.hintManager = new ContentHintManager({
+                tooltipOptions: { customClass: "text-editor-content-tooltip" }
+            });
+            // The editor can hide or remove the hovered handle without a `pointerleave`.
+            this.listenTo(this.editor.editing.view, "render", () => {
+                const hovered = this.hoveredHint;
+                if (hovered && !hovered.handle.checkVisibility()) {
+                    hovered.hint.hide();
+                    this.hoveredHint = null;
+                }
+            });
+        }
     }
 
     /** Makes the widgets of `modelName` resizable. Call it from `init()` of the widget's plugin. */
@@ -103,10 +146,10 @@ export default class ResizableWidgets extends Plugin {
                 const subject = { element: item, viewElement, config };
                 const handles = this.createHandles(api.writer, subject, axes);
                 api.writer.insert(api.writer.createPositionAt(viewElement, "end"), handles);
-                updateResizableClass(api.writer, viewElement, item, config);
+                updateWidgetClasses(api.writer, viewElement, item, config);
             }, { priority: "low" });
 
-            if (config.isResizable) {
+            if (config.isResizable || config.getAnchor || hasStatefulAxes(config)) {
                 dispatcher.on<DowncastAttributeEvent>("attribute", (_evt, { item }, api) => {
                     if (!item.is("element", modelName)) {
                         return;
@@ -118,7 +161,7 @@ export default class ResizableWidgets extends Plugin {
                         return;
                     }
 
-                    updateResizableClass(api.writer, viewElement, item, config);
+                    updateWidgetClasses(api.writer, viewElement, item, config);
                 }, { priority: "low" });
             }
         });
@@ -126,6 +169,7 @@ export default class ResizableWidgets extends Plugin {
 
     override destroy() {
         this.cancelResize?.();
+        this.hintManager?.destroy();
         super.destroy();
     }
 
@@ -134,6 +178,7 @@ export default class ResizableWidgets extends Plugin {
         const startResize = (event: PointerEvent, handle: HTMLElement, name: string) => {
             this.startResize(event, handle, HANDLES[name], subject);
         };
+        const addHint = (handle: HTMLElement) => this.addCornerHint(handle);
 
         return writer.createUIElement("div", {
             class: "ck-widget__resize-handles",
@@ -145,10 +190,36 @@ export default class ResizableWidgets extends Plugin {
                 const handle = domDocument.createElement("div");
                 handle.className = `ck-widget__resize-handle ck-widget__resize-handle_${name}`;
                 handle.addEventListener("pointerdown", (event) => startResize(event, handle, name));
+                if (name === "corner") {
+                    addHint(handle);
+                }
                 domElement.append(handle);
             }
             return domElement;
         });
+    }
+
+    /** Shows the hint of `handle` while the pointer rests on it, until it is pressed. */
+    private addCornerHint(handle: HTMLElement) {
+        const t = this.editor.t;
+        const hint = this.hintManager?.createHandle(handle, t(
+            "Click and drag to resize the block. Double-click to reset to the default size."
+        ));
+        if (!hint) {
+            return;
+        }
+
+        const hide = () => {
+            this.hoveredHint = null;
+            hint.hide();
+        };
+        // A tap enters before its `pointerdown` cancels the dwell; its `mouseenter` comes after.
+        handle.addEventListener("pointerenter", () => {
+            this.hoveredHint = { handle, hint };
+            hint.showAfter(HINT_DWELL_MS);
+        });
+        handle.addEventListener("pointerleave", hide);
+        handle.addEventListener("pointerdown", hide);
     }
 
     private startResize(
@@ -163,8 +234,13 @@ export default class ResizableWidgets extends Plugin {
             return;
         }
 
-        const heightTarget = handleAxes.height ? findHeightTarget(widget, config) : null;
-        const axes = { width: handleAxes.width, height: !!heightTarget };
+        const heightTarget = handleAxes.height && isAxisResizable(config, "height", element)
+            ? findHeightTarget(widget, config)
+            : null;
+        const axes = {
+            width: handleAxes.width && isAxisResizable(config, "width", element),
+            height: !!heightTarget
+        };
         if (!axes.width && !axes.height) {
             return;
         }
@@ -193,7 +269,7 @@ export default class ResizableWidgets extends Plugin {
             handle,
             axes,
             widthTarget: targets.width,
-            isCentered: !!config.isCentered,
+            anchor: config.getAnchor?.(element) ?? "start",
             heightTarget: targets.height,
             minWidth: toPixels(config.minWidth ?? DEFAULT_MIN_SIZE, targets.width),
             minHeight: toPixels(config.minHeight ?? DEFAULT_MIN_SIZE, targets.height),
@@ -291,16 +367,46 @@ function getAxes(config: ResizableWidgetConfig) {
     return axes;
 }
 
-function updateResizableClass(
+/** Whether an axis of `config` depends on the state of the element. */
+function hasStatefulAxes(config: ResizableWidgetConfig) {
+    return typeof config.isWidthResizable === "function"
+        || typeof config.isHeightResizable === "function";
+}
+
+/** Whether `axis` of `element` can be resized in its current state. */
+function isAxisResizable(config: ResizableWidgetConfig, axis: Axis, element: ModelElement) {
+    const flag = axis === "width" ? config.isWidthResizable : config.isHeightResizable;
+    return typeof flag === "function" ? flag(element) : !!flag;
+}
+
+/** Sets the resizable, anchor and fixed axis classes of the widget from the state of `element`. */
+function updateWidgetClasses(
     writer: ViewDowncastWriter,
     viewElement: ViewElement,
     element: ModelElement,
     config: ResizableWidgetConfig
 ) {
-    if (config.isResizable?.(element) ?? true) {
-        writer.addClass(RESIZABLE_CLASS, viewElement);
+    const anchor = config.getAnchor?.(element);
+    toggleClass(writer, viewElement, RESIZABLE_CLASS, config.isResizable?.(element) ?? true);
+    for (const [ name, className ] of Object.entries(ANCHOR_CLASSES)) {
+        toggleClass(writer, viewElement, className, name === anchor);
+    }
+    for (const axis of getAxes(config)) {
+        toggleClass(writer, viewElement, FIXED_CLASSES[axis],
+            !isAxisResizable(config, axis, element));
+    }
+}
+
+function toggleClass(
+    writer: ViewDowncastWriter,
+    viewElement: ViewElement,
+    className: string,
+    isSet: boolean
+) {
+    if (isSet) {
+        writer.addClass(className, viewElement);
     } else {
-        writer.removeClass(RESIZABLE_CLASS, viewElement);
+        writer.removeClass(className, viewElement);
     }
 }
 

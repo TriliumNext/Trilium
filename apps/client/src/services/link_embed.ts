@@ -18,6 +18,7 @@ export interface EmbedMetadata {
     favicon?: string;
     siteName?: string;
     image?: string;
+    aspectRatio?: string;
     /** See {@link LinkEmbedMetadata.unresolved}. Not persisted into the note's HTML. */
     unresolved?: boolean;
 }
@@ -53,6 +54,7 @@ export async function fetchMetadata(url: string, ownerNoteId: string): Promise<E
             favicon: metadata.favicon,
             siteName: metadata.siteName,
             image: metadata.image,
+            aspectRatio: metadata.aspectRatio,
             unresolved: metadata.unresolved
         };
     } catch {
@@ -78,9 +80,11 @@ export function unresolvedMetadata(url: string): EmbedMetadata {
 
 /**
  * Draws a block link preview into `container` from stored metadata, making no network request.
- * Used by the editor for its link embed widget, with `editable` set.
+ * Used by the editor for its link embed widget and video embeds, with `editable` set.
  */
-export function renderEmbedPreview(container: HTMLElement, meta: EmbedMetadata, editable?: boolean) {
+export function renderEmbedPreview(
+    container: HTMLElement, meta: LinkPreviewData, editable?: boolean
+) {
     container.innerHTML = renderLinkEmbedHtml(meta, markupOptions(editable));
     enhanceLinkPreviews(container);
 }

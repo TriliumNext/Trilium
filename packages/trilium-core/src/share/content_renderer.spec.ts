@@ -1076,6 +1076,54 @@ describe("content_renderer", () => {
             expect(content).toContain(`<img class="link-embed-video-thumbnail" src="data:image/jpeg;base64,BBB"`);
         });
 
+        it("gives a video the box size and the shape that the app draws it with", () => {
+            const video = `<section class="link-embed" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const note = buildShareNote({
+                content: `<p>Videos</p>`
+                    + `${video} data-aspect-ratio="9/16" data-box-size="medium" style="--include-note-width:11.3em;"></section>`
+                    + `${video}></section>`
+                    + `${video} data-aspect-ratio="9/16"></section>`
+            });
+
+            const sections = parse(String(getContent(note).content)).querySelectorAll("section");
+            expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
+                .toEqual([
+                    [ "medium", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
+                    [ "full", undefined ],
+                    [ "full", "--video-aspect-ratio:0.5625" ]
+                ]);
+        });
+
+        it("places a video saved with a caption by the figure that holds both", () => {
+            const video = `<section class="link-embed"`
+                + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const captioned = (section: string) => `<figure class="captioned-content-embed">`
+                + `${section}&nbsp;</section><figcaption>A caption</figcaption></figure>`;
+            const note = buildShareNote({
+                content: captioned(`${video} style="--include-note-width:30em;"`
+                    + ` data-box-size="medium" data-position="wrap-right">`)
+                    + captioned(`${video}>`)
+            });
+
+            const figures = parse(String(getContent(note).content)).querySelectorAll("figure");
+            const box = (element: ReturnType<typeof parse> | null | undefined) => [
+                "style", "data-box-size", "data-position"
+            ].map((name) => element?.getAttribute(name));
+            expect(figures.map((figure) => [
+                box(figure), box(figure.querySelector("section.link-embed"))
+            ])).toEqual([
+                [
+                    [ "--include-note-width:30em;", "medium", "wrap-right" ],
+                    [ undefined, undefined, undefined ]
+                ],
+                [ [ undefined, "full", undefined ], [ undefined, undefined, undefined ] ]
+            ]);
+            expect(figures[0]?.querySelector(".link-embed-video-facade")).not.toBeNull();
+            expect(figures[0]?.querySelector("figcaption")?.textContent).toBe("A caption");
+        });
+
         it("neuters a hostile scheme in the stored URL, on a page served to anyone", () => {
             // `data-*` values pass through the save-time sanitizer verbatim, so a note that arrives
             // by import, ETAPI or sync can carry `data-url="javascript:…"`. It must not become a

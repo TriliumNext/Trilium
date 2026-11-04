@@ -1546,9 +1546,7 @@
     "no_headings": "Žádné nadpisy."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Soubor <code class=\"file-path\"></code> byl naposledy upraven <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Nahrát upravený soubor",
-    "ignore_this_change": "Ignorovat tuto změnu"
+    "upload_modified_file": "Nahrát upravený soubor"
   },
   "app_context": {
     "please_wait_for_save": "Počkejte prosím několik sekund, dokud se dokončí ukládání, poté můžete zkusit znovu."

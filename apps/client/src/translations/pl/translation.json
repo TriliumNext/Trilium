@@ -1656,9 +1656,7 @@
     "no_headings": "Brak nagłówków."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Plik <code class=\"file-path\"></code> został ostatnio zmodyfikowany <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Prześlij zmodyfikowany plik",
-    "ignore_this_change": "Ignoruj tę zmianę"
+    "upload_modified_file": "Prześlij zmodyfikowany plik"
   },
   "app_context": {
     "please_wait_for_save": "Poczekaj kilka sekund na zakończenie zapisu, a następnie spróbuj ponownie."

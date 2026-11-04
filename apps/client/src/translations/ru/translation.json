@@ -57,7 +57,7 @@
     "add_link": "Добавить ссылку",
     "note": "Заметка",
     "link_title": "Имя ссылки",
-    "button_add_link": "Добавить ссылку",
+    "button_add_link": "Вставить ссылку",
     "help_on_links": "Помощь по ссылкам",
     "search_note": "поиск заметки по её названию",
     "anchor": "Якорь (необязательно)",
@@ -67,7 +67,22 @@
     "fix_link": "Исправить ссылку",
     "button_fix_link": "Исправить ссылку",
     "web_link": "Веб-ссылка",
-    "url": "URL-адрес"
+    "url": "Адрес (URL)",
+    "display_as": "Отображать как",
+    "display_plain": "Простая ссылка",
+    "display_inline": "Встроенная",
+    "display_card": "Карточка",
+    "display_embed": "Встроенный YouTube",
+    "page_title": "Заголовок веб-страницы",
+    "title_from_url": "То же, что и URL",
+    "title_from_note": "Если не задано, всегда будет отражать название заметки",
+    "description": "Описание",
+    "page_description": "Описание веб-страницы",
+    "anchors": "Заголовки и якоря",
+    "target_anchor": "Якоря",
+    "headings": "Заголовки",
+    "no_headings_or_anchors": "В этой заметке отсутствуют заголовки или якоря.",
+    "title_from_heading": "Если не задано, всегда будет отражать текст заголовка"
   },
   "branch_prefix": {
     "save": "Сохранить",
@@ -1264,7 +1279,15 @@
     "line_numbers_auto": "Авто",
     "line_numbers_on": "Включены",
     "line_numbers_off": "Выключены",
-    "line_numbers_auto_description": "Следовать глобальной настройке"
+    "line_numbers_auto_description": "Следовать глобальной настройке",
+    "include_position": "Положение",
+    "break_text": "Разрывать текст",
+    "wrap_text": "Обтекать текст",
+    "align_left": "Выравнивание по левому краю",
+    "align_center": "Выравнивание по центру",
+    "align_right": "Выравнивание по правому краю",
+    "delete": "Удалить",
+    "open_externally": "Открыть во внешнем"
   },
   "image_context_menu": {
     "copy_image_to_clipboard": "Копировать изображение в буфер обмена",
@@ -1463,7 +1486,8 @@
     "paste-into-tooltip_many": "Вставить в эту заметку\nЗаметки будут вставлены как клоны, то есть это будут те же самые заметки (не дубликаты), но в нескольких местах одновременно.",
     "paste-after-tooltip_one": "Вставить после этой заметки\nЗаметка будут вставлена как клон, то есть это будут та же самая заметка (не дубликат), но в нескольких местах одновременно.",
     "paste-after-tooltip_few": "Вставить после этой заметки\nЗаметки будут вставлены как клоны, то есть это будут те же самые заметки (не дубликаты), но в нескольких местах одновременно.",
-    "paste-after-tooltip_many": "Вставить после этой заметки\nЗаметки будут вставлены как клоны, то есть это будут те же самые заметки (не дубликаты), но в нескольких местах одновременно."
+    "paste-after-tooltip_many": "Вставить после этой заметки\nЗаметки будут вставлены как клоны, то есть это будут те же самые заметки (не дубликаты), но в нескольких местах одновременно.",
+    "open": "Открыть"
   },
   "info": {
     "closeButton": "Закрыть",
@@ -1520,7 +1544,7 @@
     "rename_attachment": "Переименовать вложение...",
     "delete_attachment": "Удалить вложение...",
     "upload_new_revision": "Загрузить новую версию...",
-    "open_custom": "Открыть в другой программе...",
+    "open_custom": "Открыть с помощью...",
     "open_custom_client_only": "Открытие вложений другим способом возможно только в настольном приложении.",
     "open_externally_detail_page": "Открытие вложения извне доступно только из детальной страницы. Для этого сначала нажмите на сведения о вложении и повторите действие.",
     "open_custom_title": "Файл будет открыт во внешнем приложении и отслеживаться на наличие изменений. После этого вы сможете загрузить изменённую версию обратно в Trilium.",
@@ -2247,7 +2271,10 @@
     "size_expandable_description": "Только название, пока его не развёрнут.",
     "inserted_as_image": "Эта заметка вставлена в виде изображения.",
     "size_hint": "Размер можно изменить позже.",
-    "image_size_hint": "Размер изображения можно изменить позже."
+    "image_size_hint": "Размер изображения можно изменить позже.",
+    "missing_note": "Заметка с ID {{noteId}} отсутствует.",
+    "missing_attachment": "Вложение с ID {{attachmentId}} отсутствует.",
+    "unknown_kind": "Это содержимое требует более новой версии Trilium."
   },
   "execute_script": {
     "execute_script": "Выполнить скрипт",
@@ -2299,8 +2326,8 @@
     "convert_into_attachment_successful": "Примечание '{{title}}' преобразовано во вложение.",
     "convert_into_attachment_failed": "Не удалось преобразовать заметку '{{title}}'.",
     "open_note_externally_title": "Файл будет открыт во внешнем приложении и отслеживается на наличие изменений. После этого вы сможете загрузить изменённую версию обратно в Trilium.",
-    "open_note_externally": "Открыть заметку вне приложения",
-    "open_note_custom": "Открыть заметку в другой программе...",
+    "open_note_externally": "Открыть во внешнем",
+    "open_note_custom": "Открыть с помощью...",
     "export_as_image_svg": "SVG (вектор)",
     "export_as_image_png": "PNG (растр)",
     "export_as_image": "Экспорт изображения",
@@ -2522,7 +2549,8 @@
     "content_language_switcher": "Язык содержимого: {{language}}",
     "backlinks": "Обратные ссылки",
     "insert_child_note_short": "Дочерняя заметка",
-    "create_new_split_short": "Разделить"
+    "create_new_split_short": "Разделить",
+    "note_panel": "Панель заметки"
   },
   "note_launcher": {
     "this_launcher_doesnt_define_target_note": "У этого лаунчера не настроена целевая заметка, поэтому открывать нечего. Установите отношение \"target\", указывающую на заметку."
@@ -2704,9 +2732,9 @@
   },
   "open-help-page": "Открыть страницу справки",
   "watched_file_update_status": {
-    "upload_modified_file": "Загрузить измененный файл",
-    "ignore_this_change": "Игнорировать это изменение",
-    "file_last_modified": "Файл <code class=\"file-path\"></code> был последний раз изменен <span class=\"file-last-modified\"></span>."
+    "upload_modified_file": "Загрузить",
+    "title": "Файл изменён вне Trilium",
+    "message": "Файл, открытый во внешнем приложении, был сохранен в {{time}}. При его загрузке содержимое в Trilium будет заменено; текущий будет сохранён как версия."
   },
   "clipboard": {
     "copy_success": "Скопировано в буфер обмена.",
@@ -2714,7 +2742,8 @@
     "copied": "Заметки скопированы в буфер обмена.",
     "cut": "Заметки вырезаны в буфер обмена.",
     "copied_without_links": "Заметки были скопированы в буфер обмена, но ссылки на заметки не удалось поместить в системный буфер обмена.",
-    "paste_notes": "Вставить заметку(и)"
+    "paste_notes": "Вставить заметку(и)",
+    "paste_failed": "Не удалось прочитать буфера обмена."
   },
   "ws": {
     "encountered-error": "Обнаружена ошибка \"{{message}}\", проверьте консоль.",
@@ -3003,7 +3032,24 @@
   "presentation_view": {
     "start-presentation": "Начать презентацию",
     "edit-slide": "Редактировать слайд",
-    "slide-overview": "Переключить общий просмотр слайдов"
+    "slide-overview": "Переключить общий просмотр слайдов",
+    "finish-editing": "Завершить редактирование",
+    "new-slide": "Новый слайд",
+    "slide-sidebar": "Боковая панель слайдов",
+    "menu-edit-slide": "Редактировать слайд",
+    "menu-new-slide-after": "Новый слайд после",
+    "menu-new-vertical-slide": "Новый вертикальный слайд",
+    "menu-duplicate": "Дублировать",
+    "menu-move-up": "Передвинуть выше",
+    "menu-move-down": "Передвинуть ниже",
+    "menu-make-vertical": "Сделать вертикальным",
+    "menu-make-top-level": "Сделать верхнего уровня",
+    "menu-delete": "Удалить слайд...",
+    "slide-background": "Фон слайда",
+    "no-slides": "В этой презентации нет слайдов.",
+    "previous-slide": "Предыдущий слайд",
+    "next-slide": "Следующий слайд",
+    "slide-counter": "{{current}} / {{total}}"
   },
   "read-only-info": {
     "edit-note": "Изменить заметку"
@@ -3709,7 +3755,9 @@
     "current_note": "Эта заметка",
     "children_hidden": "Дочерние заметки скрыты из дерева",
     "workspaces": "Рабочие пространства",
-    "bookmarks": "Закладки"
+    "bookmarks": "Закладки",
+    "open": "Открыть",
+    "forward": "Вернуться к заметке"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Убрать с панели запуска",
@@ -4053,11 +4101,28 @@
       "list-type": "Тип списка",
       "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео",
       "use-headers": "Использовать заголовки",
-      "header-columns": "Заголовки столбцов",
-      "header-rows": "Заголовки строк",
+      "header-columns": "Столбцы заголовка",
+      "header-rows": "Строки заголовка",
       "enter-a-whole-number-between-0-and-0": "Введите целое число от 0 до %0.",
       "extended-code-block": "Расширенный блок кода",
-      "insert-a-code-block-that-is-edited-as-a-code-note": "Вставить блок кода, который редактируется как заметка с кодом."
+      "insert-a-code-block-that-is-edited-as-a-code-note": "Вставить блок кода, который редактируется как заметка с кодом.",
+      "unknown-embed-widget": "неизвестный встроенный виджет",
+      "table-size": "Размер таблицы",
+      "table-headers": "Заголовки таблицы",
+      "new-child-note": "Новая дочерняя заметка",
+      "create-a-new-child-note": "Создать новую дочернюю заметку",
+      "create-a-new-child-note-and-insert-a-link-to-it": "Создать новую дочернюю заметку и вставить ссылку на неё",
+      "open-note": "Открыть заметку",
+      "open-attachment": "Открыть вложение",
+      "jump-to-heading": "Перейти к заголовку",
+      "jump-to-anchor": "Перейти к якорю",
+      "jump-to-block": "Перейти к блоку",
+      "box-position": "Положение блока",
+      "youtube-video": "Видео на YouTube",
+      "insert-youtube-video": "Вставить видео с YouTube",
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Вставить видео с YouTube, которое можно посмотреть прямо в заметке",
+      "caption-for-the-video": "Подпись к видео",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Для изменения размера блока нажмите и удерживайте его. Дважды нажмите, чтобы вернуть размер по умолчанию."
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -4700,7 +4765,8 @@
   },
   "open": {
     "download_failed": "Не удалось сохранить: {{- reason}}",
-    "directory_failed": "Не удалось открыть {{- directory}}: {{- reason}}"
+    "directory_failed": "Не удалось открыть {{- directory}}: {{- reason}}",
+    "custom_failed": "Не удалось отобразить выбор приложения.\n\nИспользуйте \"Открыть во внешнем\", чтобы открыть файл в приложении по умолчанию."
   },
   "embedded_note": {
     "open-note": "Открыть заметку",
@@ -4860,7 +4926,10 @@
     "edit_excerpt": "Редактировать отрывок",
     "copy_share_link_one": "Копировать публичную ссылку на {{count}} блок",
     "copy_share_link_few": "Копировать публичную ссылку на {{count}} блока",
-    "copy_share_link_many": "Копировать публичную ссылку на {{count}} блоков"
+    "copy_share_link_many": "Копировать публичную ссылку на {{count}} блоков",
+    "delete_one": "Удалить {{count}} блок",
+    "delete_few": "Удалить {{count}} блока",
+    "delete_many": "Удалить {{count}} блоков"
   },
   "record_meeting": {
     "note_title": "Встреча {{date}}",
@@ -5048,5 +5117,11 @@
     "sort_rows": "Сортировать строки",
     "ascending": "По возрастанию",
     "descending": "По убыванию"
+  },
+  "youtube_video": {
+    "title": "Вставить видео с YouTube",
+    "button_insert": "Вставить видео",
+    "not_a_video": "Это не адрес видео на YouTube.",
+    "insert_failed": "Не удалось загрузить видео. Проверьте адрес и соединение, затем попробуйте снова."
   }
 }

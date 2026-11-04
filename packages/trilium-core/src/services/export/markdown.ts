@@ -1,6 +1,6 @@
 import {
-    getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO, MULTICOLUMN_COLUMN_CLASS,
-    MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
+    CAPTIONED_CONTENT_EMBED_CLASS, getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO,
+    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
 import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
@@ -331,10 +331,14 @@ function buildFigureFilter(): Rule {
     };
 }
 
-/** Whether `node` is an embed. Embeds saved before captions existed are `<section>`s. */
+/**
+ * Whether `node` is an embed, or the figure that holds an embed with its caption. Embeds saved
+ * before captions existed are `<section>`s.
+ */
 function isContentEmbed(node: Pick<LinkPreviewNodeLike, "nodeName" | "classList">) {
-    return (node.nodeName === "FIGURE" || node.nodeName === "SECTION")
-        && node.classList.contains("include-note");
+    return ((node.nodeName === "FIGURE" || node.nodeName === "SECTION")
+        && node.classList.contains("include-note"))
+        || (node.nodeName === "FIGURE" && node.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS));
 }
 
 /**
