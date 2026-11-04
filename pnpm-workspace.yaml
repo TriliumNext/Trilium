@@ -30,9 +30,9 @@ overrides:
   "@codemirror/autocomplete": "6.20.4"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
-  "@lezer/common": "1.5.4"
+  "@lezer/common": "1.5.5"
   "@lezer/highlight": "1.2.5"
-  "@lezer/lr": "1.4.11"
+  "@lezer/lr": "1.4.12"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in
   # step: `ai` and the OpenAI/Google providers ask for one, the Anthropic provider for another. Two
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
