@@ -29,7 +29,7 @@ function getWords(): Set<string> {
  * Saves the given words to the custom dictionary note, one per line.
  */
 function saveWords(words: Set<string>) {
-    cls.getContext().init(() => {
+    cls.initAsSystem(() => {
         const note = becca.getNote(DICTIONARY_NOTE_ID);
         if (!note) {
             getLog().error("Custom dictionary note not found.");

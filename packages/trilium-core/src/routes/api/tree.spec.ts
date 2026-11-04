@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../../becca/becca";
+import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
 import permissionService from "../../services/permission_service";
@@ -115,11 +115,11 @@ describe("Tree API (core)", () => {
 
         it("skips a collected branch id that is missing from the cache", async () => {
             // Force a dangling branchId into the collection (via the child-branch
-            // lookup in collectEntityIds) so the `getBecca().branches[branchId]` lookup
+            // lookup in collectEntityIds) so the `becca.branches[branchId]` lookup
             // misses and the guard runs. Use `load` so getTree's own collect()
             // recursion (which needs a real childNote) isn't affected.
-            const original = getBecca().getBranchFromChildAndParent.bind(getBecca());
-            vi.spyOn(getBecca(), "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
+            const original = becca.getBranchFromChildAndParent.bind(becca);
+            vi.spyOn(becca, "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
                 const branch = original(childNoteId, parentNoteId);
                 if (branch) {
                     Object.defineProperty(branch, "branchId", { value: "ghostBranch123", configurable: true });
@@ -134,8 +134,8 @@ describe("Tree API (core)", () => {
 
         it("skips a collected attribute id that is missing from the cache", async () => {
             const { noteId } = await createTextNote(api, { title: "Note with ghost attribute" });
-            const note = getBecca().notes[noteId];
-            // Replace the note's owned attributes with one whose id is absent from getBecca().attributes.
+            const note = becca.notes[noteId];
+            // Replace the note's owned attributes with one whose id is absent from becca.attributes.
             vi.spyOn(note, "ownedAttributes", "get").mockReturnValue([
                 { attributeId: "ghostAttr123", type: "label", name: "x", targetNote: undefined } as never
             ]);
@@ -145,5 +145,38 @@ describe("Tree API (core)", () => {
             const attrs = res.body.attributes as { attributeId?: string }[];
             expect(attrs.some((a) => a.attributeId === "ghostAttr123")).toBe(false);
         });
+    });
+});
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("Tree API (core) for a member", () => {
+    let memberId: string;
+    let secretId: string;
+    let sharedId: string;
+
+    beforeAll(async () => {
+        api = CoreApiTester.build();
+        memberId = getContext().init(() => userService.createUser(`tree-member-${Date.now()}`, null, false));
+        secretId = (await createTextNote(api, { title: "tree member secret" })).noteId;
+        sharedId = (await createTextNote(api, { title: "tree member shared" })).noteId;
+        getContext().init(() => permissionService.setUserAccess(sharedId, memberId, false));
+    });
+
+    it("sends a member only the notes they can see, on every way the client loads them", async () => {
+        const session = { userId: memberId };
+        const noteIdsOf = (res: { body: TreeResponse }) => res.body.notes.map((note) => note.noteId);
+
+        const tree = await api.get<TreeResponse>("/api/tree", { session });
+        expect(noteIdsOf(tree)).toContain(sharedId);
+        expect(noteIdsOf(tree)).not.toContain(secretId);
+
+        const loaded = await api.post<TreeResponse>("/api/tree/load", { body: { noteIds: [ secretId, sharedId ] }, session });
+        expect(noteIdsOf(loaded)).toContain(sharedId);
+        expect(noteIdsOf(loaded)).not.toContain(secretId);
+
+        expect((await api.get(`/api/notes/${secretId}`, { session })).status).toBe(404);
+        expect((await api.get(`/api/notes/${sharedId}`, { session })).status).toBe(200);
     });
 });

@@ -124,9 +124,24 @@ api.res.write("streaming");`
         coreConfig.Security.backendScriptingEnabled = originalCoreScripting;
     });
 
-    it("runs a custom request handler with captured path params", async () => {
-        const res = await supertest(app).get("/custom/greet/world").expect(200);
-        expect(res.text).toBe("handled:world");
+    it("runs a custom request handler with captured path params, acting for the instance", async () => {
+        const seen: boolean[] = [];
+        const getAttribute = becca.getAttribute.bind(becca);
+        const spy = vi.spyOn(becca, "getAttribute").mockImplementation((attributeId) => {
+            seen.push(cls.isSystem());
+            return getAttribute(attributeId);
+        });
+
+        try {
+            const res = await supertest(app).get("/custom/greet/world").expect(200);
+            expect(res.text).toBe("handled:world");
+        } finally {
+            spy.mockRestore();
+        }
+
+        // A custom request is not authenticated, so it has no user to act for.
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.every(Boolean)).toBe(true);
     });
 
     it("returns 500 when the custom handler throws", async () => {

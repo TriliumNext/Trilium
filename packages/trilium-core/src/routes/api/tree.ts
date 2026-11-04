@@ -1,7 +1,7 @@
 import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 
-import { getBecca } from "../../becca/becca.js";
+import becca from "../../becca/becca.js";
 import { NotFoundError } from "../../errors.js";
 import { getLog } from "../../services/log.js";
 import permissionService from "../../services/permission_service.js";
@@ -29,7 +29,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         }
 
         for (const childNote of note.children) {
-            const childBranch = getBecca().getBranchFromChildAndParent(childNote.noteId, note.noteId);
+            const childBranch = becca.getBranchFromChildAndParent(childNote.noteId, note.noteId);
             if (childBranch && childBranch.branchId) {
                 collectedBranchIds.add(childBranch.branchId);
             }
@@ -45,7 +45,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     }
 
     for (const noteId of noteIds) {
-        const note = getBecca().notes[noteId];
+        const note = becca.notes[noteId];
 
         if (!note) {
             continue;
@@ -58,7 +58,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const accessUsernamesByNote = permissionService.getAccessUsernamesByNote();
 
     for (const noteId of collectedNoteIds) {
-        const note = getBecca().notes[noteId];
+        const note = becca.notes[noteId];
         const accessUsernames = accessUsernamesByNote.get(noteId);
 
         notes.push({
@@ -89,7 +89,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     }
 
     for (const branchId of collectedBranchIds) {
-        const branch = getBecca().branches[branchId];
+        const branch = becca.branches[branchId];
 
         if (!branch) {
             getLog().error(`Could not find branch for branchId=${branchId}`);
@@ -109,7 +109,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const attributes: AttributeRow[] = [];
 
     for (const attributeId of collectedAttributeIds) {
-        const attribute = getBecca().attributes[attributeId];
+        const attribute = becca.attributes[attributeId];
 
         if (!attribute) {
             getLog().error(`Could not find attribute for attributeId=${attributeId}`);
@@ -187,7 +187,7 @@ function getTree(req: Request) {
         for (const childNote of parentNote.children) {
             collectedNoteIds.add(childNote.noteId);
 
-            const childBranch = getBecca().getBranchFromChildAndParent(childNote.noteId, parentNote.noteId);
+            const childBranch = becca.getBranchFromChildAndParent(childNote.noteId, parentNote.noteId);
 
             if (childBranch?.isExpanded) {
                 collect(childBranch.childNote);
@@ -195,11 +195,11 @@ function getTree(req: Request) {
         }
     }
 
-    if (!(subTreeNoteId in getBecca().notes)) {
+    if (!(subTreeNoteId in becca.notes)) {
         throw new NotFoundError(`Note '${subTreeNoteId}' not found in the cache`);
     }
 
-    collect(getBecca().notes[subTreeNoteId]);
+    collect(becca.notes[subTreeNoteId]);
 
     return getNotesAndBranchesAndAttributes(collectedNoteIds);
 }

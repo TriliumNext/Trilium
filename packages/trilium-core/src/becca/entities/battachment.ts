@@ -104,7 +104,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     getNote(): BNote {
-        return this.becca.notes[this.ownerId];
+        return this.becca.allNotes[this.ownerId];
     }
 
     /** @returns true if the note has string content (not binary) */
@@ -238,7 +238,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     override beforeSaving() {
-        if (this.becca.notes[this.ownerId]?.isVirtual) {
+        if (this.becca.allNotes[this.ownerId]?.isVirtual) {
             throw new ValidationError(`Cannot save an attachment of note '${this.ownerId}': virtual notes have no attachments.`);
         }
 

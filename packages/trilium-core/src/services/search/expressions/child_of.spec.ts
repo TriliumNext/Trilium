@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { getBecca } from "../../../becca/becca.js";
+import becca from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
@@ -33,7 +33,7 @@ let rootNote: NoteBuilder;
 
 describe("ChildOfExp", () => {
     beforeEach(() => {
-        getBecca().reset();
+        becca.reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({

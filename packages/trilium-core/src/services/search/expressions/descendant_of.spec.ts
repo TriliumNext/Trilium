@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { getBecca } from "../../../becca/becca.js";
+import becca from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
@@ -29,16 +29,16 @@ function noteIds(noteSet: NoteSet) {
     return noteSet.notes.map((n) => n.noteId).sort();
 }
 
-/** A NoteSet containing every note currently registered in getBecca(). */
+/** A NoteSet containing every note currently registered in becca. */
 function allNotesSet() {
-    return new NoteSet(Object.values(getBecca().notes));
+    return new NoteSet(Object.values(becca.notes));
 }
 
 let rootNote: NoteBuilder;
 
 describe("DescendantOfExp", () => {
     beforeEach(() => {
-        getBecca().reset();
+        becca.reset();
 
         rootNote = new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
         new BBranch({

@@ -1,6 +1,6 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import appInfo from "./app_info.js";
 import * as cls from "./context.js";
 import consistency_checks from "./consistency_checks.js";
@@ -759,7 +759,7 @@ function getMaxBlobContentSize(): number {
 }
 
 function setLastSyncedPull(entityChangeId: number) {
-    const lastSyncedPullOption = getBecca().getOption("lastSyncedPull");
+    const lastSyncedPullOption = becca.getOption("lastSyncedPull");
 
     if (lastSyncedPullOption) {
         // might be null in initial sync when becca is not loaded
@@ -781,7 +781,7 @@ function getLastSyncedPush() {
 function setLastSyncedPush(entityChangeId: number) {
     ws.setLastSyncedPush(entityChangeId);
 
-    const lastSyncedPushOption = getBecca().getOption("lastSyncedPush");
+    const lastSyncedPushOption = becca.getOption("lastSyncedPush");
 
     if (lastSyncedPushOption) {
         // might be null in initial sync when becca is not loaded
@@ -806,10 +806,10 @@ function getTotalPullCount() {
 
 function startSyncTimer() {
     becca_loader.beccaLoaded.then(() => {
-        setInterval(cls.wrap(sync), 60000);
+        setInterval(cls.wrapAsSystem(sync), 60000);
 
         // kickoff initial sync immediately
-        setTimeout(cls.wrap(sync), 5000);
+        setTimeout(cls.wrapAsSystem(sync), 5000);
 
         // called just so ws.setLastSyncedPush() is called
         getLastSyncedPush();

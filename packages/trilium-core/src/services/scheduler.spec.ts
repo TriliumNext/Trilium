@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import attributeService from "./attributes.js";
 import config from "./config.js";
+import * as cls from "./context.js";
 import events from "./events.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import options from "./options.js";
@@ -71,7 +72,7 @@ describe("scheduler", () => {
     let reloadFrontend: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        getBecca().reset();
+        becca.reset();
         vi.useFakeTimers();
         vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -98,10 +99,17 @@ describe("scheduler", () => {
         config.General.instanceName = originalInstanceName;
     });
 
-    it("runs backendStartup, hourly and daily scripts on their timers when scripting is enabled", async () => {
+    it("runs backendStartup, hourly and daily scripts on their timers when scripting is enabled, as the instance", async () => {
         isDbInitialized.mockReturnValue(true);
         const scriptNote = buildBackendScript();
-        getNotesWithLabel.mockReturnValue([scriptNote]);
+        const scopes: boolean[] = [];
+        getNotesWithLabel.mockImplementation(() => {
+            scopes.push(cls.isSystem());
+            return [scriptNote];
+        });
+        checkHiddenSubtree.mockImplementation(() => {
+            scopes.push(cls.isSystem());
+        });
 
         startScheduler();
         await settleDbReady();
@@ -120,6 +128,10 @@ describe("scheduler", () => {
         getNotesWithLabel.mockClear();
         await vi.advanceTimersByTimeAsync(24 * HOUR);
         expect(getNotesWithLabel).toHaveBeenCalledWith("run", "daily");
+
+        // The startup check, the seven-hourly checks and every script lookup ran in a system scope.
+        expect(checkHiddenSubtree.mock.calls.length).toBeGreaterThan(1);
+        expect(scopes).not.toContain(false);
     });
 
     it("still checks the hidden subtree where the database was opened after the scheduler started", async () => {
@@ -166,12 +178,17 @@ describe("scheduler", () => {
         getLastProtectedSessionOperationDate.mockReturnValue(1);
         getOptionInt.mockReturnValue(10); // 10s timeout
         const emit = vi.spyOn(events, "emit").mockImplementation(() => {});
+        let expiredAsSystem: boolean | undefined;
+        resetDataKey.mockImplementation(() => {
+            expiredAsSystem = cls.isSystem();
+        });
 
         startScheduler();
         await settleDbReady();
 
         await vi.advanceTimersByTimeAsync(30 * SECOND);
         expect(resetDataKey).toHaveBeenCalled();
+        expect(expiredAsSystem).toBe(true);
         // The event triggers the becca reload that re-encrypts in-memory titles;
         // manual logout emits it too, and the two paths must stay symmetric.
         expect(emit).toHaveBeenCalledWith(events.LEAVE_PROTECTED_SESSION);

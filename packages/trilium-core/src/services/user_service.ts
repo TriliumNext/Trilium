@@ -1,5 +1,8 @@
 import { type CurrentUser, getAvatarHues } from "@triliumnext/commons";
 
+import { invalidateNoteVisibility } from "../becca/note_visibility.js";
+import { ForbiddenError } from "../errors.js";
+import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId, randomSecureToken } from "./utils/index.js";
@@ -7,7 +10,6 @@ import { decodeBase64, encodeBase64 } from "./utils/binary.js";
 import optionService from "./options.js";
 import { getCrypto } from "./encryption/crypto.js";
 import scrypt from "./encryption/scrypt.js";
-import { evictUser } from "../becca/becca_cache.js";
 
 /** Salt for the scrypt round spent on an unknown username, which only has to cost the same. */
 const UNKNOWN_USER_SALT = "unknown-user";
@@ -72,6 +74,31 @@ function getUserById(userId: string): User | null {
     ) ?? null;
 }
 
+/**
+ * The user whose `userId` is in CLS, looked up once per context and kept there. Throws a
+ * `ForbiddenError` without a user in CLS (ETAPI, the desktop app without sign-in, a timer started at
+ * boot) and for a deleted user.
+ */
+function getCurrentUser(): User {
+    const userId = cls.getUserId();
+    if (!userId) {
+        throw new ForbiddenError("No user is signed in.");
+    }
+
+    const cached = cls.get<User>("currentUser");
+    if (cached?.userId === userId) {
+        return cached;
+    }
+
+    const user = getUserById(userId);
+    if (!user) {
+        throw new ForbiddenError(`User '${userId}' does not exist.`);
+    }
+
+    cls.set("currentUser", user);
+    return user;
+}
+
 function isUserAdmin(userId: string): boolean {
     return !!getSql().getValue<number>(
         "SELECT isAdmin FROM users WHERE userId = ? AND isDeleted = 0", [userId]
@@ -93,11 +120,12 @@ function createUser(username: string, email: string | null, isAdmin: boolean): s
          VALUES (?, ?, ?, ?, 0, ?, ?)`,
         [userId, username, email, isAdmin ? 1 : 0, now, now]
     );
+    invalidateNoteVisibility();
     return userId;
 }
 
 function updateUser(userId: string, changes: UserChanges): void {
-    // Demoting the seeded admin would leave every login holding a filtered, non-admin view.
+    // The instance password and SSO sign in as the seeded admin, so it must stay an admin.
     if (changes.isAdmin === false && userId === getAdminUserId()) {
         throw new PrimaryAdminDemotionError();
     }
@@ -117,11 +145,8 @@ function updateUser(userId: string, changes: UserChanges): void {
             userId
         ]
     );
-
-    // Admins read the unfiltered Becca; a cached filtered one must not outlive a role change.
-    if (changes.isAdmin !== undefined && !!user.isAdmin !== changes.isAdmin) {
-        evictUser(userId);
-    }
+    // A change of role changes which notes the user sees.
+    invalidateNoteVisibility();
 }
 
 /**
@@ -244,11 +269,11 @@ function deleteUser(userId: string): void {
         `UPDATE users SET isDeleted = 1, utcDateModified = ? WHERE userId = ?`,
         [dateUtils.utcNowDateTime(), userId]
     );
-    evictUser(userId);
+    invalidateNoteVisibility();
 }
 
 export default {
-    getAdminUserId, getUserById, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
+    getAdminUserId, getUserById, getCurrentUser, isUserAdmin, listUsers, createUser, updateUser, deleteUser,
     createSetupLink, getUserBySetupToken, completeSetup, verifyUserPassword, hasUsersWithOwnPassword,
     getSignedInUser
 };
