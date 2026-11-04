@@ -17,7 +17,7 @@
     "@ckeditor/ckeditor5-icons": "49.0.1",
     "boxicons": "2.1.4",
     "ckeditor5": "49.0.1",
-    "mathlive": "0.111.1"
+    "mathlive": "0.111.4"
   },
   "peerDependencies": {
     "bootstrap": "^5.3.0"

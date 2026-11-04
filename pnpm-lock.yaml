@@ -1055,8 +1055,8 @@ importers:
         specifier: 49.0.1
         version: 49.0.1(supports-color@10.2.2)
       mathlive:
-        specifier: 0.111.1
-        version: 0.111.1
+        specifier: 0.111.4
+        version: 0.111.4
     devDependencies:
       '@vitest/browser':
         specifier: 5.0.5
@@ -7536,7 +7536,7 @@ packages:
     resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
-      debug: '>=3.2.7'
+      debug: '*'
     peerDependenciesMeta:
       debug:
         optional: true
@@ -8893,8 +8893,8 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
-  mathlive@0.111.1:
-    resolution: {integrity: sha512-RVaC7NO02Lmx3ZNUxOHR2xCRpcvTfBb2BtdgV60cTanAMufaUkWcPPB2VxChcsNeL+0rTQKqOPDYxXLPOXJI+A==}
+  mathlive@0.111.4:
+    resolution: {integrity: sha512-1E5EOQnUHWn+KfEXaDTmuyxRWZrZw4WlQFyZLzJmjKEPdaX4WAnFqVfZb36mhulykcIl7/W7gKkTmutP2/9wjQ==}
 
   mathml-tag-names@4.0.0:
     resolution: {integrity: sha512-aa6AU2Pcx0VP/XWnh8IGL0SYSgQHDT6Ucror2j2mXeFAlN3ahaNs8EZtG1YiticMkSLj3Gt6VPFfZogt7G5iFQ==}
@@ -20844,7 +20844,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mathlive@0.111.1: {}
+  mathlive@0.111.4: {}
 
   mathml-tag-names@4.0.0: {}
 
