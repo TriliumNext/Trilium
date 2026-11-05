@@ -66,23 +66,26 @@
     "button_edit_link": "リンクを保存",
     "fix_link": "リンクを修正",
     "button_fix_link": "リンクを修正",
-    "web_link": "Web リンク",
+    "web_link": "Web ページ",
     "url": "アドレス (URL)",
     "display_as": "表示形式",
-    "display_plain": "プレーンリンク",
-    "display_inline": "インライン",
+    "display_plain": "テキスト",
+    "display_inline": "アイコンとテキスト",
     "display_card": "カード",
     "display_embed": "YouTube 埋め込み",
     "page_title": "web ページのタイトル",
     "title_from_url": "URL と同じ",
     "description": "説明",
     "page_description": "web ページの説明",
-    "anchors": "見出しとアンカー",
+    "anchors": "見出し / アンカー",
     "target_anchor": "アンカー",
     "title_from_note": "設定されていない場合は、常にノートのタイトルが反映されます",
     "headings": "見出し",
     "no_headings_or_anchors": "このノートには、見出しやアンカーが含まれていません。",
-    "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます"
+    "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます",
+    "invalid_url": "有効な URL ではありません。",
+    "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
+    "retrieving_from_page": "web ページから取得中..."
   },
   "branch_prefix": {
     "save": "保存",
@@ -1724,7 +1727,9 @@
     "align_center": "中央揃え",
     "align_right": "右揃え",
     "open_externally": "外部で開く",
-    "delete": "削除"
+    "delete": "削除",
+    "copy_url": "アドレス（URL）をコピー",
+    "display_as": "表示形式"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -1987,7 +1992,11 @@
     "mathlive_enabled": "MathLive ビジュアルエディター",
     "mathlive_description": "ビジュアルエディターを使用して数式を編集できます。",
     "sticky_table_headers_enabled": "表のヘッダー行を固定",
-    "sticky_table_headers_description": "表の残りの部分をスクロールしている間も、ヘッダー行がノートの上部に表示されたままになるようにします。"
+    "sticky_table_headers_description": "表の残りの部分をスクロールしている間も、ヘッダー行がノートの上部に表示されたままになるようにします。",
+    "link_title_retrieval_enabled": "テキストリンクのタイトルを自動的に取得",
+    "link_title_retrieval_description": "リンクエディターで、テキストリンクのタイトルが空の場合、Web ページのタイトルを自動入力します。",
+    "link_details_retrieval_enabled": "アイコンとテキスト のリンクやカードのタイトルと説明を自動的に取得",
+    "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -2533,7 +2542,8 @@
       "past_week": "過去 7 日間",
       "past_month": "過去 30 日間",
       "older": "それ以前"
-    }
+    },
+    "suggestions": "候補"
   },
   "geo-map": {
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
@@ -4004,7 +4014,22 @@
       "insert-youtube-video": "YouTube 動画を挿入",
       "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します",
       "caption-for-the-video": "動画のキャプション",
-      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。"
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。",
+      "copy-address-url": "アドレス（URL）をコピー",
+      "create-a-link-to-a-heading-or-anchor-belonging-to-the-current-note": "現在のノートの見出しまたはアンカーへのリンクを作成",
+      "create-a-link-to-a-web-page-or-other-internet-resource": "web ページまたはその他のインターネットリソースへのリンクを作成",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-as-a-card": "web ページまたはその他のインターネットリソースへのリンクを作成（カード形式で表示）",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-with-an-icon": "web ページまたはその他のインターネットリソースへのリンクを作成（アイコン付きで表示）",
+      "create-a-link-to-another-trilium-note": "別の Trilium ノートへのリンクを作成",
+      "download": "ダウンロード",
+      "icon-text": "アイコンとテキスト",
+      "link-to-a-heading-or-anchor": "見出しまたはアンカーへのリンク",
+      "link-to-a-note-internal-link": "ノートへのリンク（内部リンク）",
+      "link-to-a-web-page": "web ページへのリンク",
+      "link-to-a-web-page-as-a-card": "web ページへのリンク（カード形式）",
+      "link-to-a-web-page-with-icon": "web ページへのリンク（アイコン付き）",
+      "open-link": "リンクを開く",
+      "display-as": "表示形式"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
