@@ -309,18 +309,32 @@ describe("MediaPreview", () => {
             expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
         });
 
-        it("mounts an audio player that loads nothing, reads no waveform and taps no analyser", async () => {
+        it("mounts an audio player with no address until play is pressed", async () => {
             const { loadWaveform } = await import("./audio_waveform");
-            const source = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
+            const url = "https://example.com/a.mp3";
+            const source = getExternalMediaSource({ url }, "audio");
             await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
 
             const media = mediaElement();
-            expect([ media?.tagName, media?.getAttribute("preload") ]).toEqual([ "AUDIO", "none" ]);
+            expect([ media?.tagName, media?.hasAttribute("src") ]).toEqual([ "AUDIO", false ]);
             expect(container.querySelector(".audio-preview-visualization-wrapper")).toBeNull();
             expect(audioVisualizer).not.toHaveBeenCalled();
             expect(loadWaveform).not.toHaveBeenCalled();
             expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
             expect(play).not.toHaveBeenCalled();
+
+            let srcAtPlay: string | null = null;
+            play.mockImplementationOnce(async function (this: HTMLMediaElement) {
+                srcAtPlay = this.getAttribute("src");
+            });
+            const playButton =
+                container.querySelector<HTMLElement>(".media-compact-row .play-button");
+            expect(playButton).not.toBeNull();
+            await act(async () => playButton?.click());
+
+            // The address is set in the click itself, which the browser requires for `play()`.
+            expect(srcAtPlay).toBe(url);
+            expect(play).toHaveBeenCalledOnce();
         });
 
         it("says that the media cannot be played rather than naming a format", async () => {

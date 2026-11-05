@@ -82,6 +82,46 @@ describe("media proxy", () => {
         expect(safeFetch).toHaveBeenCalledTimes(2);
     });
 
+    it("ends a response at 32 MiB and stops reading the file", async () => {
+        const chunk = new Uint8Array(1024 * 1024);
+        let chunksLeft = 40;
+        let isCancelled = false;
+        safeFetch.mockResolvedValue(new Response(new ReadableStream<Uint8Array>({
+            pull(controller) {
+                if (chunksLeft-- > 0) {
+                    controller.enqueue(chunk);
+                } else {
+                    controller.close();
+                }
+            },
+            cancel() {
+                isCancelled = true;
+            }
+        }), { headers: { "content-type": "video/mp4" } }));
+        const res = fakeResponse();
+
+        await mediaProxy.streamProxy(get(createToken()), res.res);
+
+        expect([ res.size, res.isEnded, isCancelled ]).toEqual([ 32 * 1024 * 1024, true, true ]);
+    });
+
+    it("serves the requests of one frame capture per token, then answers 429", async () => {
+        safeFetch.mockImplementation(async () => new Response("abc", {
+            headers: { "content-type": "video/mp4" }
+        }));
+        const token = createToken();
+        const statuses: number[] = [];
+
+        for (let i = 0; i < 9; i++) {
+            const res = fakeResponse();
+            await mediaProxy.streamProxy(get(token), res.res);
+            statuses.push(res.status);
+        }
+
+        expect(statuses).toEqual([ ...Array(8).fill(200), 429 ]);
+        expect(safeFetch).toHaveBeenCalledTimes(8);
+    });
+
     it("lets go of the file without a stray rejection once the media element drops it", async () => {
         let source: ReadableStreamDefaultController<Uint8Array> | undefined;
         safeFetch.mockImplementation(async (_url: string, { signal }: RequestInit) => {
@@ -154,6 +194,7 @@ function fakeResponse() {
         status: 200,
         headers: {} as Record<string, string>,
         body: "",
+        size: 0,
         isEnded: false,
         res: undefined as unknown as express.Response
     };
@@ -171,6 +212,7 @@ function fakeResponse() {
         flushHeaders() {},
         write(chunk: Uint8Array) {
             state.body += new TextDecoder().decode(chunk);
+            state.size += chunk.byteLength;
             return true;
         },
         end() {

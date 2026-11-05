@@ -13,10 +13,16 @@ const TOKEN_LIFETIME_MS = 60 * 1000;
 /** How long a request through the proxy may take, the transfer of the file included. */
 const FETCH_TIMEOUT_MS = 30 * 1000;
 
+/** How much of the file one response streams: enough to reach a frame five seconds in. */
+const MAX_RESPONSE_BYTES = 32 * 1024 * 1024;
+
+/** How many requests can use one token: a frame capture loads the file and seeks in it. */
+const MAX_TOKEN_USES = 8;
+
 /** The headers of the media server's answer that a seeking `<video>` needs. */
 const PASSED_HEADERS = [ "content-length", "content-range", "accept-ranges" ];
 
-const proxiedUrls = new Map<string, { url: string; expiresAt: number }>();
+const proxiedUrls = new Map<string, { url: string; expiresAt: number; uses: number }>();
 
 /**
  * Returns the address under this server, as `url`, that streams the video file at the `url` of
@@ -40,7 +46,8 @@ function createProxy(req: express.Request) {
     const token = crypto.randomBytes(16).toString("hex");
     proxiedUrls.set(token, {
         url: validateFetchableUrl(url).toString(),
-        expiresAt: now + TOKEN_LIFETIME_MS
+        expiresAt: now + TOKEN_LIFETIME_MS,
+        uses: 0
     });
     return { url: `api/link-embed/media-proxy/${token}` };
 }
@@ -49,12 +56,17 @@ function createProxy(req: express.Request) {
  * Streams the file of the token in the path, with the `Range` of the request, so that a `<video>`
  * can seek in it. `safeFetch()` refuses private addresses, as for any URL from note content. Only
  * a body that can be a media file is passed on, as `nosniff` and under a sandbox policy, so it
- * cannot run as a page of this origin.
+ * cannot run as a page of this origin. A response ends after {@link MAX_RESPONSE_BYTES} and a
+ * token is valid for {@link MAX_TOKEN_USES} requests, so the route cannot relay whole files.
  */
 async function streamProxy(req: express.Request<{ token: string }>, res: express.Response) {
     const entry = proxiedUrls.get(req.params.token);
     if (!entry || entry.expiresAt <= Date.now()) {
         res.status(404).end();
+        return;
+    }
+    if (++entry.uses > MAX_TOKEN_USES) {
+        res.status(429).end();
         return;
     }
 
@@ -91,12 +103,15 @@ async function streamProxy(req: express.Request<{ token: string }>, res: express
         res.setHeader("Cache-Control", "no-store");
         res.flushHeaders();
 
-        for (;;) {
+        let sent = 0;
+        while (sent < MAX_RESPONSE_BYTES) {
             const { done, value } = await reader.read();
             if (done || controller.signal.aborted) {
                 break;
             }
-            if (!res.write(value)) {
+            const chunk = value.subarray(0, MAX_RESPONSE_BYTES - sent);
+            sent += chunk.byteLength;
+            if (!res.write(chunk)) {
                 await waitForDrain(res);
             }
         }

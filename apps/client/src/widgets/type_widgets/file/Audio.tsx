@@ -1,4 +1,5 @@
 import { RefObject } from "preact";
+import { flushSync } from "preact/compat";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -18,15 +19,22 @@ export default function AudioPreview({ source, entity, environment, noteContext,
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState(false);
+    // Media on another site gets its address only once the user presses play.
+    const [ pressedSourceId, setPressedSourceId ] = useState<string>();
+    const hasAddress = !source.isExternal || autoPlay || pressedSourceId === source.id;
     const togglePlayback = useCallback(() => {
         const audio = audioRef.current;
         if (!audio) return;
         if (audio.paused) {
+            // Renders the address before `play()`, which must run inside the click.
+            if (!audio.hasAttribute("src")) {
+                flushSync(() => setPressedSourceId(source.id));
+            }
             audio.play();
         } else {
             audio.pause();
         }
-    }, []);
+    }, [source.id]);
     const onKeyDown = useKeyboardShortcuts(audioRef, togglePlayback);
 
     useEffect(() => {
@@ -56,7 +64,7 @@ export default function AudioPreview({ source, entity, environment, noteContext,
         <div ref={wrapperRef} className={`audio-preview-wrapper ${playerRootClasses(environment)}`} onKeyDown={onKeyDown} tabIndex={0}>
             <audio
                 class="audio-preview"
-                src={source.streamUrl}
+                src={hasAddress ? source.streamUrl : undefined}
                 preload={source.isExternal ? "none" : preloadFor(environment)}
                 ref={audioRef}
                 onPlay={syncPlaying}

@@ -222,7 +222,7 @@ describe("BridgedRequestProvider.fetchResource", () => {
         expect(lastPosted().request).toMatchObject({
             method: "GET",
             url: "https://example.com/p",
-            headers: { "user-agent": "TriliumNotes" },
+            headers: { Range: "bytes=0-1000", "user-agent": "TriliumNotes" },
             responseType: "arraybuffer"
         });
 
@@ -233,6 +233,24 @@ describe("BridgedRequestProvider.fetchResource", () => {
             ok: true,
             contentType: "text/html",
             bytes: new TextEncoder().encode("<html/>")
+        });
+    });
+
+    it("asks the host for at most one byte past the ceiling, even for a media file", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            maxBytes: 10,
+            headers: { Accept: "*/*" },
+            prefixLength: () => 5
+        });
+
+        expect(lastPosted().request.headers).toEqual({ Range: "bytes=0-10", Accept: "*/*" });
+
+        respond({
+            status: 206, headers: { "content-type": "video/mp4" }, body: btoa("0123456789A")
+        });
+        await expect(promise).resolves.toMatchObject({
+            status: 206, ok: true, bytes: new TextEncoder().encode("01234")
         });
     });
 

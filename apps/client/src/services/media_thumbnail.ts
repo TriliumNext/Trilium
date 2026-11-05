@@ -2,6 +2,7 @@ import { toAspectRatio } from "@triliumnext/commons";
 
 import { getUrlForDownload } from "./open.js";
 import server from "./server.js";
+import { isStandalone } from "./utils.js";
 
 /** The longest edge of a thumbnail, in pixels, as of the largest YouTube thumbnail kept. */
 const MAX_THUMBNAIL_EDGE = 1280;
@@ -26,13 +27,15 @@ interface CapturedFrame {
  * preview in the note `noteId`, and resolves to its URL and the shape of the video, or to `null`
  * when the video cannot be read.
  *
- * The frame is read from the host itself when it sends CORS headers, else through the proxy of the
- * server: a frame read from another origin without them taints the canvas. Standalone has no
- * proxy, as its "server" reads other origins under CORS too.
+ * The frame is read through the proxy of the server, so that the host of the video sees the
+ * server rather than the browser, and a host without CORS headers does not taint the canvas.
+ * Standalone has no proxy and reads the frame from the host, which works with CORS headers only.
  */
 export async function captureVideoThumbnail(url: string, noteId: string) {
-    const frame = await captureFrame(url, { isCrossOrigin: true }).catch(() => null)
-        ?? await captureThroughProxy(url).catch(() => null);
+    const frame = await (isStandalone
+        ? captureFrame(url, { isCrossOrigin: true })
+        : captureThroughProxy(url)
+    ).catch(() => null);
     if (!frame) {
         return null;
     }
