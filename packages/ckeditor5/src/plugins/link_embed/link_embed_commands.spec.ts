@@ -1,11 +1,12 @@
 import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     changeCommand,
     createLinkEmbedHost,
     createTestEditor,
     findElement,
+    hostConfig,
     LINK_EMBED_TEST_PLUGINS,
     META,
     type LinkEmbedHostMocks,
@@ -404,6 +405,41 @@ describe("LinkEmbed commands", () => {
             });
             expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("shows the thumbnail and shape of another address, or a new frame", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            const file = "https://example.com/clip.mp4";
+            const cover = "api/attachments/new/image/youtube-xyz98765432.jpg";
+            const frame = "api/attachments/frame/image/clip.jpg";
+            const host = createLinkEmbedHost();
+            host.fetchMetadata.mockImplementation(async (address: string) => (address === file
+                ? { url: file, embedType: "video", title: "clip.mp4" }
+                : { ...META, url: address, embedType: "youtube", image: cover, aspectRatio: "9/16" }
+            ));
+            const captureVideoThumbnail = vi.fn(async () => ({ image: frame, aspectRatio: "4/3" }));
+            const media = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({
+                linkEmbed: host, contentEmbed: { captureVideoThumbnail }
+            }));
+            const shapeOf = () => {
+                const embed = findElement(media, "contentEmbed");
+                const figure = media.editing.view.getDomRoot()?.querySelector("figure");
+                return [
+                    embed?.getAttribute("image"), embed?.getAttribute("aspectRatio"),
+                    figure?.style.getPropertyValue("--video-aspect-ratio")
+                ];
+            };
+            setModelData(media.model, `[<contentEmbed aspectRatio="16/9" boxSize="full"`
+                + ` embedType="youtube" image="api/attachments/old/image/youtube-abc.jpg"`
+                + ` title="T" url="${url}"></contentEmbed>]`);
+
+            await media.execute(LINK_EMBED_COMMAND, { url: other, mode: "embedLink" });
+            expect(shapeOf()).toEqual([ cover, "9/16", String(9 / 16) ]);
+
+            await media.execute(LINK_EMBED_COMMAND, { url: file, mode: "embedLink" });
+            await vi.waitFor(() => expect(shapeOf()).toEqual([ frame, "4/3", String(4 / 3) ]));
+            expect(captureVideoThumbnail)
+                .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ url: file }));
         });
 
         it("gives other media the size of a new embed, and a Full video stays Full", async () => {
