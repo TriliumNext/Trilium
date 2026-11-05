@@ -3,6 +3,7 @@
  */
 
 import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
 import markdownImport from "../../../services/import/markdown.js";
 import noteTypesService from "../../../services/note_types.js";
 import noteService from "../../../services/notes.js";
@@ -13,6 +14,15 @@ import { z } from "zod";
 
 import { applyTextEdits, getContentPreview, getLlmNote, getLlmParentNotes, getNoteContentForLlm, getNoteMeta, getSvgImageError, isExcludedFromLlm, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
+
+/**
+ * Scans what a tool just wrote for links, as a save from the editor or through ETAPI does. Without
+ * it, the note gets no `internalLink` relations: backlinks, the note map and `~internalLink`
+ * searches miss every link an LLM wrote.
+ */
+function scanWrittenContent(note: BNote) {
+    void noteService.asyncPostProcessContent(note, note.getContent());
+}
 
 export const noteTools = defineTools({
     search_notes: {
@@ -149,6 +159,7 @@ export const noteTools = defineTools({
                 note.save();
             }
             setNoteContentFromLlm(note, content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -197,6 +208,7 @@ export const noteTools = defineTools({
 
             note.saveRevision({ source: "llm" });
             note.setContent(newContent);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -261,6 +273,7 @@ export const noteTools = defineTools({
 
             note.saveRevision({ source: "llm" });
             note.setContent(result.content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -333,6 +346,7 @@ export const noteTools = defineTools({
                     type,
                     ...(mime ? { mime } : {})
                 });
+                scanWrittenContent(note);
 
                 return {
                     success: true,
