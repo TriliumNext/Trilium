@@ -112,6 +112,12 @@ const { state, fakeHttp, fakeHttps, makeResponse, HttpProxyAgent, HttpsProxyAgen
         };
     });
 
+const safeFetch = vi.hoisted(() => vi.fn());
+
+vi.mock("./safe_fetch.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./safe_fetch.js")>(),
+    safeFetch
+}));
 vi.mock("http", () => fakeHttp);
 vi.mock("https", () => fakeHttps);
 vi.mock("http-proxy-agent", () => ({ HttpProxyAgent }));
@@ -639,5 +645,19 @@ describe("NodeRequestProvider.getImage", () => {
 
         expect(() => response.emitError(new Error("net::ERR_CONNECTION_RESET"))).not.toThrow();
         await expect(promise).rejects.toThrow(/ERR_CONNECTION_RESET/);
+    });
+});
+
+describe("NodeRequestProvider.fetchResource", () => {
+    it("asks with the method and headers it is given", async () => {
+        const url = "https://example.com/clip.mp4";
+        const headers = { "User-Agent": "TriliumNotes" };
+        safeFetch.mockResolvedValue(new Response(null));
+
+        await new NodeRequestProvider().fetchResource(url, {
+            method: "HEAD", maxBytes: 0, headers
+        });
+
+        expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, { method: "HEAD", headers });
     });
 });

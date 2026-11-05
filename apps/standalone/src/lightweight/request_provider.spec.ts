@@ -193,6 +193,16 @@ describe("FetchRequestProvider.fetchResource", () => {
         expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });
     });
 
+    it("asks with the method it is given", async () => {
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+
+        await provider.fetchResource("https://example.com/clip.mp4", {
+            method: "HEAD", maxBytes: 0
+        });
+
+        expect(spy.mock.calls[0][1]).toMatchObject({ method: "HEAD" });
+    });
+
     it("refuses an address before a request is made of it", async () => {
         const spy = vi.spyOn(globalThis, "fetch");
 

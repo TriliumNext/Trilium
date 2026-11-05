@@ -378,16 +378,22 @@ async function replaceLinkWithPreview(
     }
 }
 
+/** The latest call of `changeMediaUrl()` for each media embed. */
+const latestMediaChanges = new WeakMap<ModelElement, object>();
+
 /**
  * Makes the media embed `embed` play the media at `url` once its metadata arrives, keeping its box
  * and caption, and keeps it selected if it is still selected. `title` replaces the title of the
- * media. Changes nothing once `embed` has left the document. Rejects, changing nothing, when the
- * address plays nothing.
+ * media. Changes nothing once `embed` has left the document or a later call has given it another
+ * address. Rejects, changing nothing, when the address plays nothing.
  */
 async function changeMediaUrl(editor: Editor, embed: ModelElement, url: string, title?: string) {
     const model = editor.model;
+    const change = {};
+    latestMediaChanges.set(embed, change);
     const metadata = await getLinkEmbedHost(editor).fetchMetadata(url);
-    if (editor.state === 'destroyed' || embed.root === model.document.graveyard) {
+    if (editor.state === 'destroyed' || embed.root === model.document.graveyard
+        || latestMediaChanges.get(embed) !== change) {
         return;
     }
 

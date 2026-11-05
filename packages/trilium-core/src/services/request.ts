@@ -34,6 +34,8 @@ export interface FetchResourceOpts {
      * tab there is no second line of defence behind it.
      */
     maxBytes: number;
+    /** `HEAD` asks for the status and headers alone; `GET`, the default, also asks for the body. */
+    method?: "GET" | "HEAD";
     headers?: Record<string, string>;
     /**
      * How many bytes to read of a body of the media type `contentType`, or `undefined` to read it

@@ -1,3 +1,4 @@
+import type { LinkEmbedMetadata } from "@triliumnext/commons";
 import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -517,6 +518,36 @@ describe("LinkEmbed commands", () => {
             await replaced;
             expect(editor.model.document.version).toBe(version);
             expect(editor.getData()).toBe("<p>Other note</p>");
+        });
+
+        it("plays the address saved last when the edits of a video overlap", async () => {
+            const last = { ...META, url: "https://youtube.com/watch?v=def45678901" };
+            const fetches: ((metadata: LinkEmbedMetadata) => void)[] = [];
+            fetchMetadata.mockImplementation(() => new Promise<LinkEmbedMetadata>((resolve) => {
+                fetches.push(resolve);
+            }));
+            // Saves the address of each of `edits` in turn, then answers the fetches in that order.
+            const saveInTurn = async (...edits: LinkEmbedMetadata[]) => {
+                fetches.length = 0;
+                const changes = edits.map(({ url: address }) => editor.execute(
+                    LINK_EMBED_COMMAND, { url: address, mode: "embedLink" }
+                ) as unknown as Promise<void>);
+                for (const [ index, metadata ] of edits.entries()) {
+                    fetches[index]?.(metadata);
+                }
+                return await Promise.allSettled(changes);
+            };
+
+            setModelData(editor.model, `[${video}]`);
+            await saveInTurn({ ...META, url: "https://youtube.com/watch?v=xyz98765432" }, last);
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed?.getAttribute("url")).toBe(last.url);
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+
+            // An earlier edit that plays nothing reports no error once a later one replaces it.
+            setModelData(editor.model, `[${video}]`);
+            const settled = await saveInTurn({ ...META, url: "https://example.com/page" }, last);
+            expect(settled.map(({ status }) => status)).toEqual([ "fulfilled", "fulfilled" ]);
         });
 
         it("keeps the caption of a video given another display as a paragraph after it", () => {

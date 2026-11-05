@@ -1114,26 +1114,35 @@ describe("link-embed getHttpStatus", () => {
 
     beforeEach(() => safeFetch.mockReset());
 
-    it("answers the status of an address whatever its body, and none where it fails", async () => {
+    it("answers the status of a HEAD, or of a GET where the HEAD answers an error", async () => {
         await expect(linkEmbedRoute.getHttpStatus(req())).rejects.toBeInstanceOf(ValidationError);
 
         const url = "https://example.com/clip.mp4";
         const huge = String(1024 * 1024 * 1024);
-        safeFetch.mockResolvedValue(new Response("Gone", {
-            status: 404, headers: { "content-type": "text/html", "content-length": huge }
-        }));
-        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 404 });
+        const answer = (status: number) => new Response("Body", {
+            status, headers: { "content-type": "text/html", "content-length": huge }
+        });
+        const methods = () => safeFetch.mock.calls.map(([ , opts ]) => opts.method);
+        safeFetch.mockResolvedValueOnce(answer(200));
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 200 });
         expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, expect.objectContaining({
-            headers: { "User-Agent": expect.stringContaining("TriliumNotes") }
+            method: "HEAD", headers: { "User-Agent": expect.stringContaining("TriliumNotes") }
         }));
 
+        // A host can refuse a HEAD that it answers for a GET, such as an address signed for GET.
+        safeFetch.mockReset();
+        safeFetch.mockResolvedValueOnce(answer(403)).mockResolvedValueOnce(answer(404));
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 404 });
+        expect(methods()).toEqual([ "HEAD", "GET" ]);
+
+        safeFetch.mockReset();
         safeFetch.mockImplementationOnce(async () => {
             throw new Error("getaddrinfo ENOTFOUND example.com");
         });
         expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({});
         expect(await linkEmbedRoute.getHttpStatus(req("ftp://example.com/clip.mp4")))
             .toStrictEqual({});
-        expect(safeFetch).toHaveBeenCalledTimes(2);
+        expect(safeFetch).toHaveBeenCalledOnce();
     });
 });
 

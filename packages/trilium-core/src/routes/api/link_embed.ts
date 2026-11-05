@@ -762,8 +762,9 @@ async function getPageDetails(req: Request): Promise<LinkEmbedMetadata> {
 
 /**
  * The HTTP status that the host of the `url` of the body answers, as `status`, which a player
- * shows when the file at `url` does not play. The body of the answer is not read. No `status` for
- * an address that cannot be fetched or reached.
+ * shows when the file at `url` does not play. It asks with a HEAD, since the mobile app's transport
+ * downloads the whole body of a GET whose `Range` the host ignores, and again with a GET when the
+ * HEAD answers an error. No `status` for an address that cannot be fetched or reached.
  */
 async function getHttpStatus(req: Request): Promise<{ status?: number }> {
     const urlParam = req.body?.url;
@@ -773,12 +774,15 @@ async function getHttpStatus(req: Request): Promise<{ status?: number }> {
 
     try {
         const url = validateFetchableUrl(urlParam).toString();
-        const { status } = await request.fetchResource(url, {
+        const fetchStatus = async (method: "GET" | "HEAD") => (await request.fetchResource(url, {
+            method,
             maxBytes: 0,
             headers: { "User-Agent": USER_AGENT },
             prefixLength: () => 0
-        });
-        return { status };
+        })).status;
+        const status = await fetchStatus("HEAD");
+        // Some hosts refuse a HEAD that a GET passes, such as for an address signed for GET alone.
+        return { status: status >= 400 ? await fetchStatus("GET") : status };
     } catch {
         return {};
     }

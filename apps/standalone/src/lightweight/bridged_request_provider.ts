@@ -186,7 +186,7 @@ export default class BridgedRequestProvider implements RequestProvider {
                 type: "HTTP_REQUEST",
                 id,
                 request: {
-                    method: "GET",
+                    method: opts.method ?? "GET",
                     url: validated,
                     // One byte past the ceiling, so that a body over it is still refused.
                     headers: { Range: `bytes=0-${opts.maxBytes}`, ...opts.headers },

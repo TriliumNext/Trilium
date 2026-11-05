@@ -130,6 +130,7 @@ export default class FetchRequestProvider implements RequestProvider {
 
         try {
             const response = await fetch(validated, {
+                method: opts.method,
                 headers: opts.headers,
                 signal: controller.signal
             });

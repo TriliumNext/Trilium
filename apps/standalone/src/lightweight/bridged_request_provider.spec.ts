@@ -254,6 +254,17 @@ describe("BridgedRequestProvider.fetchResource", () => {
         });
     });
 
+    it("asks with the method it is given", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            method: "HEAD", maxBytes: 0
+        });
+
+        expect(lastPosted().request.method).toBe("HEAD");
+        respond({ status: 200, headers: {}, body: "" });
+        await promise;
+    });
+
     it("answers a non-2xx rather than throwing, the page having said something", async () => {
         const provider = new BridgedRequestProvider();
         const promise = provider.fetchResource("https://example.com/gone", { maxBytes: 1000 });
