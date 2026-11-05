@@ -115,6 +115,8 @@ export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLV
     // Pointer Events unify mouse and touch. Capturing the pointer keeps scrubbing live even when the finger or
     // cursor strays outside the canvas mid-drag.
     const onPointerDown = useCallback((e: PointerEvent) => {
+        // Only the primary button seeks; a right-click keeps its context menu.
+        if (e.button !== 0) return;
         e.preventDefault();
         // preventDefault suppresses the default focus-on-click, so focus explicitly to keep keyboard seeking
         // reachable after a mouse/touch interaction.
