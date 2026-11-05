@@ -66,11 +66,11 @@
     "button_edit_link": "保存链接",
     "fix_link": "修复链接",
     "button_fix_link": "修复链接",
-    "web_link": "网页链接",
+    "web_link": "网页",
     "url": "地址（URL）",
     "display_as": "显示为",
-    "display_plain": "纯链接",
-    "display_inline": "行内",
+    "display_plain": "文本",
+    "display_inline": "图标与文字",
     "display_card": "卡片",
     "display_embed": "YouTube 嵌入",
     "page_title": "网页标题",
@@ -78,11 +78,14 @@
     "title_from_note": "若未设置，将始终跟随笔记标题",
     "description": "描述",
     "page_description": "网页描述",
-    "anchors": "标题与锚点",
+    "anchors": "标题/锚点",
     "target_anchor": "锚点",
     "headings": "标题",
     "no_headings_or_anchors": "此笔记不包含任何标题或锚点。",
-    "title_from_heading": "若未设置，将始终跟随标题的文本"
+    "title_from_heading": "若未设置，将始终跟随标题的文本",
+    "invalid_url": "这不是有效的 URL。",
+    "script_link_not_allowed": "以 {{scheme}} 开头的链接可以执行代码，因此不允许使用。",
+    "retrieving_from_page": "正在从网页获取…"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -2185,7 +2188,8 @@
     "copy_failed": "由于权限问题，无法复制到剪贴板。",
     "copy_success": "已复制到剪贴板。",
     "copied_without_links": "笔记已复制到剪贴板，但笔记链接无法放入系统剪贴板。",
-    "paste_notes": "粘贴笔记"
+    "paste_notes": "粘贴笔记",
+    "paste_failed": "无法读取剪贴板。"
   },
   "entrypoints": {
     "note-revision-created": "笔记修订已创建。",
@@ -2306,7 +2310,11 @@
     "wrap_text": "包裹文本",
     "align_left": "左对齐",
     "align_center": "居中",
-    "align_right": "右对齐"
+    "align_right": "右对齐",
+    "open_externally": "在外部打开",
+    "copy_url": "复制地址（URL）",
+    "display_as": "显示为",
+    "delete": "删除"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2339,7 +2347,8 @@
       "past_week": "过去 7 天",
       "past_month": "过去 30 天",
       "older": "更早"
-    }
+    },
+    "suggestions": "建议"
   },
   "note_tooltip": {
     "note-has-been-deleted": "笔记已被删除。",
@@ -2550,7 +2559,11 @@
     "mathlive_enabled": "MathLive 可视化编辑器",
     "mathlive_description": "公式可以使用可视化编辑器进行编辑。",
     "sticky_table_headers_enabled": "为表格使用固定表头行",
-    "sticky_table_headers_description": "滚动浏览表格其余部分时，把表格的表头行固定在笔记顶部。"
+    "sticky_table_headers_description": "滚动浏览表格其余部分时，把表格的表头行固定在笔记顶部。",
+    "link_title_retrieval_enabled": "自动获取文本链接的标题",
+    "link_title_retrieval_description": "在链接编辑器中，用网页标题填充文本链接中为空的标题。",
+    "link_details_retrieval_enabled": "自动获取图标与文字链接和卡片的标题与描述",
+    "link_details_retrieval_description": "在链接编辑器中，用网页的标题和描述填充图标与文字链接或卡片中为空的标题或描述。"
   },
   "table_view": {
     "new-row": "新增行",
@@ -4015,7 +4028,24 @@
       "box-position": "框位置",
       "youtube-video": "YouTube 视频",
       "insert-youtube-video": "插入 YouTube 视频",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "插入可直接在笔记中观看的 YouTube 视频"
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "插入可直接在笔记中观看的 YouTube 视频",
+      "caption-for-the-video": "视频的题注",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "按住并拖动可调整块的大小。双击可恢复为默认大小。",
+      "copy-address-url": "复制地址（URL）",
+      "create-a-link-to-a-heading-or-anchor-belonging-to-the-current-note": "创建指向当前笔记中标题或锚点的链接",
+      "create-a-link-to-a-web-page-or-other-internet-resource": "创建指向网页或其他互联网资源的链接",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-as-a-card": "创建指向网页或其他互联网资源的链接，以卡片形式显示",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-with-an-icon": "创建指向网页或其他互联网资源的链接，以图标与文字形式显示",
+      "create-a-link-to-another-trilium-note": "创建指向另一篇 Trilium 笔记的链接",
+      "download": "下载",
+      "icon-text": "图标与文字",
+      "link-to-a-heading-or-anchor": "链接到标题或锚点",
+      "link-to-a-note-internal-link": "链接到笔记（内部链接）",
+      "link-to-a-web-page": "链接到网页",
+      "link-to-a-web-page-as-a-card": "链接到网页（卡片）",
+      "link-to-a-web-page-with-icon": "链接到网页（带图标）",
+      "open-link": "打开链接",
+      "display-as": "显示为"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4928,6 +4958,7 @@
   "youtube_video": {
     "title": "插入 YouTube 视频",
     "button_insert": "插入视频",
-    "not_a_video": "这不是 YouTube 视频的地址。"
+    "not_a_video": "这不是 YouTube 视频的地址。",
+    "insert_failed": "视频无法加载。请检查地址和网络连接，然后重试。"
   }
 }
