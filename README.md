@@ -5,7 +5,7 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)  
 [![Translation status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/LXxka8)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/triliumnext-notes)
 
 
 <!-- translate:off -->
