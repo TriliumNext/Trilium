@@ -37,7 +37,7 @@ export default function NoteActions({ paneButtons = true }: {
     /** Whether to show the buttons that move, close and create splits, which only a split has. */
     paneButtons?: boolean;
 }) {
-    const { note, ntxId, noteContext } = useNoteContext();
+    const { note, ntxId, noteContext, viewScope } = useNoteContext();
     return (
         <div className="note-actions-bar" style={{ contain: "none" }}>
             {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} />}
@@ -47,7 +47,9 @@ export default function NoteActions({ paneButtons = true }: {
                 <ClosePaneButton />
                 <CreatePaneButton />
             </>}
-            {note && note.type !== "launcher" && <NoteContextMenu note={note as FNote} noteContext={noteContext} />}
+            {/* Keyed by the view mode: noteContext keeps the same reference while navigation replaces
+                noteContext.viewScope, so the menu would otherwise keep the previous view's rows. */}
+            {note && note.type !== "launcher" && <NoteContextMenu key={viewScope?.viewMode ?? "default"} note={note as FNote} noteContext={noteContext} />}
         </div>
     );
 }
