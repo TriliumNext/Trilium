@@ -615,5 +615,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Ritheann Trilium mar Flatpak, mar sin ní féidir leis cláir a shuiteáiltear lasmuigh dá bhosca gainimh a thosú, mar shampla {{- cli}}. Chun {{- cli}} a úsáid:\n\n1. Suiteáil é ar an ríomhaire seo agus logáil isteach ann ó theirminéal.\n2. Tabhair cead do Trilium cláir a thosú lasmuigh dá bhosca gainimh tríd an méid seo a rith i dteirminéal:\n\n{{- grantCommand}}\n\n3. Atosaigh Trilium.\n\nLeis seo, bíonn an rochtain chéanna ag Trilium ar do ríomhaire is a bheadh aige dá mbeadh sé suiteáilte lasmuigh de Flatpak. Chun an cead sin a tharraingt siar, rith:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "Roghnaigh feidhmchlár chun an comhad a oscailt leis.",
+    "applications_filter": "Feidhmchláir"
   }
 }
