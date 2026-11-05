@@ -164,17 +164,21 @@ body.light-theme .link-embed-favicon-light {
     .include-note-content.type-mediaEmbed > .rendered-content > .rendered-media > :is(
         .media-proxy, .video-preview-wrapper:not(:fullscreen)
     ) {
+        border-radius: var(--_link-embed-top-border-radius) var(--_link-embed-top-border-radius)
+                       var(--_link-embed-bottom-border-radius)
+                       var(--_link-embed-bottom-border-radius);
         height: auto;
         aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+        overflow: hidden;
+
+        > .video-preview {
+            max-height: none;
+        }
     }
 }
 
-.include-note.audio-embed > .include-note-wrapper > .include-note-body >
-        .include-note-content.type-mediaEmbed {
-    padding: 0;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+.include-note.audio-embed .include-note-content.type-mediaEmbed .rendered-media {
+    min-height: 0;
 }
 
 figure.include-note:where(.video-embed[data-box-size="full"]) {

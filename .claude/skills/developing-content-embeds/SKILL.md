@@ -90,7 +90,10 @@ widgets inside the selection.
   for audio (`isHeightResizable` is per element). A size change only restyles the figure: the
   `attribute:boxSize` converter skips `reloadEmbeddedContent()` for media, since a new player
   stops the playback. The box carries `media-embed` and `video-embed` or `audio-embed`
-  (`getMediaEmbedClasses()`).
+  (`getMediaEmbedClasses()`). `LinkEmbed.css` rounds a video file's player and placeholder as
+  `.link-embed-video` is, and lifts `--include-note-media-max-height` off its `.video-preview`,
+  which would keep the video of a wider player at 20em, at the top. An audio box keeps the Small
+  rules of an audio attachment and drops only the 8rem floor of `.rendered-media`.
   A file plays in Trilium's `MediaPreview` with a `MediaSource` from `getExternalMediaSource()`
   (`isExternal`, `poster`): a video waits behind `MediaProxy` and its thumbnail, audio mounts with
   `preload="none"`, and neither reads the waveform or taps the visualizer's analyser, through
