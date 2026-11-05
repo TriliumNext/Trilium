@@ -1076,6 +1076,25 @@ describe("content_renderer", () => {
             expect(content).toContain(`<img class="link-embed-video-thumbnail" src="data:image/jpeg;base64,BBB"`);
         });
 
+        it("renders a video or audio file as a facade that loads nothing, in its box", () => {
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/clip.mp4"`
+                    + ` data-embed-type="video" data-aspect-ratio="4/3" data-box-size="medium"></section>`
+                    + `<section class="link-embed" data-url="https://example.com/song.mp3"`
+                    + ` data-embed-type="audio"></section>`
+            });
+
+            const content = String(getContent(note).content);
+            expect(content).not.toMatch(/<(video|audio)\b/);
+            expect(content).toContain(`<button type="button" class="link-embed-video-facade"`
+                + ` data-media-url="https://example.com/clip.mp4"`);
+            expect(content).toContain(`<button type="button" class="link-embed-audio-facade"`
+                + ` data-media-url="https://example.com/song.mp3"`);
+            const sections = parse(content).querySelectorAll("section");
+            expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
+                .toEqual([ [ "medium", `--video-aspect-ratio:${4 / 3}` ], [ "small", undefined ] ]);
+        });
+
         it("gives a video the box size and the shape that the app draws it with", () => {
             const video = `<section class="link-embed" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
                 + ` data-embed-type="youtube"`;

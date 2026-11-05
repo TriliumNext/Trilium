@@ -29,8 +29,11 @@ const NO_KEYS: readonly string[] = [];
 
 /** What {@link AudioPreview} and {@link VideoPreview} are given, whichever environment they render in. */
 export interface MediaPlayerProps {
-    /** What is being played: a file note, or an attachment. {@link source} is its resolved media. */
-    entity: FNote | FAttachment;
+    /**
+     * What is being played: a file note, or an attachment. {@link source} is its resolved media.
+     * Media on another site has none.
+     */
+    entity?: FNote | FAttachment;
     source: MediaSource;
     environment: MediaEnvironment;
     /**
@@ -47,6 +50,29 @@ export interface MediaPlayerProps {
     isVisible?: boolean;
     /** Start playing as soon as the media is ready — the user just activated a lazy preview. */
     autoPlay?: boolean;
+}
+
+/**
+ * Gives the player root `rootRef` the focus that the placeholder had once a click on it mounted the
+ * player (`autoPlay`): removing the focused placeholder moves the focus to the page, which blurs a
+ * text editor that holds the player.
+ */
+export function useFocusOnActivation(rootRef: RefObject<HTMLElement | null>, autoPlay?: boolean) {
+    useEffect(() => {
+        if (autoPlay && document.activeElement === document.body) {
+            rootRef.current?.focus({ preventScroll: true });
+        }
+    }, []);
+}
+
+/**
+ * What a player shows when its media cannot be played: the format, or for a file on another site,
+ * which also fails while its host is unreachable, that it cannot be played.
+ */
+export function getPlaybackError(source: MediaSource) {
+    return source.isExternal
+        ? t("media.external-unavailable")
+        : t("media.unsupported-format", { mime: source.mime.replace("/", "-") });
 }
 
 // Navigation is Page Up/Down only — the player reserves Home/End for seeking (edgeKeys: false), and
@@ -266,7 +292,7 @@ export function useMediaSessionController({ source, entity, noteContext, ownerNo
 }) {
     // A note cycles the playable siblings in its folder; an attachment cycles the owner note's playable
     // attachments. Either way it takes a tab to navigate in, so without one there is nothing to move between.
-    const note = "noteId" in entity ? entity : undefined;
+    const note = entity && "noteId" in entity ? entity : undefined;
     const navigation = useSiblingNavigation(note
         ? noteSiblingProvider(note, noteContext, { mimePrefix })
         : attachmentSiblingProvider(ownerNote, noteContext, viewScope ?? {}, { mimePrefix }));

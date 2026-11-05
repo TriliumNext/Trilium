@@ -544,7 +544,7 @@ describe("CK config - tables", () => {
             loadInline: vi.fn(),
             flushInline: vi.fn(),
             loadUnknown: vi.fn(),
-            loadVideo: vi.fn(),
+            loadMedia: vi.fn(),
             focusAttachment: vi.fn(),
             getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
             openMenu: vi.fn(),
@@ -568,7 +568,7 @@ describe("CK config - tables", () => {
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
         host?.flushInline?.();
         host?.loadUnknown?.(wrapper, "small");
-        host?.loadVideo?.(video, wrapper);
+        host?.loadMedia?.(video, wrapper);
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -578,7 +578,7 @@ describe("CK config - tables", () => {
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
         expect(first.flushInline).toHaveBeenCalledOnce();
         expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
-        expect(first.loadVideo).toHaveBeenCalledWith(video, wrapper);
+        expect(first.loadMedia).toHaveBeenCalledWith(video, wrapper);
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");

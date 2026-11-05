@@ -454,6 +454,7 @@ describe("useMediaSessionController", () => {
         id,
         title,
         mime: "audio/mpeg",
+        kind: "audio",
         streamUrl: `api/notes/${id}/open-partial?v=b`,
         fullUrl: `api/notes/${id}/open?v=b`
     });

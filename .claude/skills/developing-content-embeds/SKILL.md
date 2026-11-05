@@ -1,7 +1,7 @@
 ---
 name: developing-content-embeds
 description: >-
-  Use when building or changing an embed in a text note — an included note, an attachment embed such as a canvas drawing (`CanvasDrawing`), a source embed such as a Mermaid diagram (`MermaidDiagram`, `SOURCE_EMBED_TYPES`), or a YouTube video (`ContentEmbedVideo`) — or adding an embed kind. Covers the storage forms (`data-note-id`, `data-attachment-id`, inline `<pre><code class="language-…">`), the editor plugin (`packages/ckeditor5/src/plugins/content_embed/`: `content_embed.ts`, `inline_source.ts`, toolbar, box-size dropdown), the host contract (`contentEmbed.loadAttachment()`, `contentEmbed.loadInline()`), the client box (`ContentEmbed`, `text/utils.ts`), the content component contract (`useEditableEmbed()`, `ContentEmbedToolProvider`, Editable, display modes, fullscreen), reusing the note type's component as canvas and Mermaid do, the read-only paths (AI chat, Markdown preview, print, share), and traps hit (detached content, CodeMirror read-only fixed at creation, the CKEditor `:first-child` separator rule, untitled box sizes, class clashes).
+  Use when building or changing an embed in a text note — an included note, an attachment embed such as a canvas drawing (`CanvasDrawing`), a source embed such as a Mermaid diagram (`MermaidDiagram`, `SOURCE_EMBED_TYPES`), or media from a URL: a YouTube video, a video or an audio file (`ContentEmbedMedia`) — or adding an embed kind. Covers the storage forms (`data-note-id`, `data-attachment-id`, inline `<pre><code class="language-…">`), the editor plugin (`packages/ckeditor5/src/plugins/content_embed/`: `content_embed.ts`, `inline_source.ts`, toolbar, box-size dropdown), the host contract (`contentEmbed.loadAttachment()`, `contentEmbed.loadInline()`), the client box (`ContentEmbed`, `text/utils.ts`), the content component contract (`useEditableEmbed()`, `ContentEmbedToolProvider`, Editable, display modes, fullscreen), reusing the note type's component as canvas and Mermaid do, the read-only paths (AI chat, Markdown preview, print, share), and traps hit (detached content, CodeMirror read-only fixed at creation, the CKEditor `:first-child` separator rule, untitled box sizes, class clashes).
 ---
 
 # Developing content embeds
@@ -40,7 +40,7 @@ What the text note saves, and what the editor model holds (`contentEmbed` elemen
 | Included note | `<figure class="include-note" data-note-id="…" [data-block="…"]>` | `noteId`, `block` |
 | Attachment | `<figure class="include-note" data-attachment-id="…">` | `attachmentId` |
 | Inline source | `<pre data-box-size=… [data-display-mode=…] data-hide-title data-editable><code class="language-mermaid">…</code></pre>` | `language`, `source` |
-| Video | `<section class="link-embed" data-url=… data-embed-type="youtube" … [data-position=…]>` | the link preview fields: `url`, `embedType`, `title`, `image`, … |
+| Media | `<section class="link-embed" data-url=… data-embed-type="youtube" … [data-position=…]>`, or `"video"` or `"audio"` | the link preview fields: `url`, `embedType`, `title`, `image`, … |
 | Later kind | `<section data-trilium-embed="<kind>" …>fallback</section>` | `unknownContentEmbed`: `embedAttributes`, `embedContent` |
 
 All three carry `boxSize`, `hideTitle`, `editable`, `displayMode` (`data-box-size`,
@@ -77,16 +77,34 @@ widgets inside the selection.
   its history. It is converted only for languages in
   `contentEmbed.inlineLanguages` (from `SOURCE_EMBED_TYPES` in `text/config.ts`); a code block of
   another language stays a code block.
-- **Video** (`video_embed.ts`, `ContentEmbedVideo`) is the _Embed_ display mode of a link preview
-  whose URL has a video (`getLinkPreviewVideoId()` in commons). It keeps the saved form of the
-  link preview, so released versions still play it, and adds `data-box-size`, `data-hide-title`,
-  `data-position` and `--include-note-width`. Its sizes are Medium and Full
-  (`VIDEO_EMBED_BOX_SIZES`); `readVideoEmbedBox()` reads a video saved before as Full and
-  untitled, and `createVideoEmbed()` makes a new one Medium at `getVideoMediumWidth()` (20em
-  high), which the box size command sets again. Height follows width (`isHeightResizable` is
-  per element). A size change only restyles the figure: the `attribute:boxSize` converter
-  skips `reloadEmbeddedContent()` for a video, since a new player stops the playback. A caption is saved in the captioned figure (above). The video toolbar also
-  shows while the caret is in the caption (`findRelatedVideo()`), and its Copy address (URL) and Display
+- **Media** (`media_embed.ts`, `ContentEmbedMedia`) is the _Embed_ display mode of a link
+  preview that plays something (`getLinkPreviewPlayer()` in commons): a YouTube video
+  (`embedType` `youtube`), or the video or audio file at its URL (`video`, `audio`). It keeps the
+  saved form of the link preview, so released versions show a YouTube video as a player and a
+  file as a card, and adds `data-box-size`, `data-hide-title`, `data-position` and
+  `--include-note-width`. A video has Medium and Full, an audio file Small alone
+  (`getMediaEmbedBoxSizes()`; the ⋮ menu drops a one-size submenu). `readMediaEmbedBox()` reads a
+  YouTube video saved before as Full and untitled, and `createMediaEmbed()` makes a new video
+  Medium and untitled at `getVideoMediumWidth()` (20em high), which the box size command sets
+  again, and an audio file Small and titled. Height follows width for a video and the controls
+  for audio (`isHeightResizable` is per element). A size change only restyles the figure: the
+  `attribute:boxSize` converter skips `reloadEmbeddedContent()` for media, since a new player
+  stops the playback. The box carries `media-embed` and `video-embed` or `audio-embed`
+  (`getMediaEmbedClasses()`).
+  A file plays in Trilium's `MediaPreview` with a `MediaSource` from `getExternalMediaSource()`
+  (`isExternal`, `poster`): a video waits behind `MediaProxy` and its thumbnail, audio mounts with
+  `preload="none"`, and neither reads the waveform or taps the visualizer's analyser, through
+  which a cross-origin file without CORS headers plays silent. The server tells a file from a
+  page in the same fetch: `fetchPage()` reads only the first 64 KB of a media type
+  (`prefixLength`) and `probeMedia()` (`services/media_probe.ts`) reads the container header. The
+  client falls back on the extension (`getMediaFileTypeOfUrl()`) when the server answers
+  unresolved. A video file that `createMediaEmbed()` makes without an `image` gets a thumbnail:
+  after the change the plugin calls `contentEmbed.captureVideoThumbnail()` and writes `image`, and
+  `aspectRatio` when unset, in the batch that inserted the embed, so one undo removes both.
+  `services/media_thumbnail.ts` reads the frame from the host with `crossOrigin`, else through
+  the Node-only `api/link-embed/media-proxy` token route, and stores it through
+  `api/link-embed/thumbnail`. A caption is saved in the captioned figure (above). The video toolbar also
+  shows while the caret is in the caption (`findRelatedMedia()`), and its Copy address (URL) and Display
   act on the video through `ChangeLinkDisplayCommand._getTarget()`: the selected preview, else,
   unless the caret is on a link, the video of the caption (`getCaptionedEmbed()`).
   `getSelectedLinkWidget()` itself reads only the selected element, as the link balloon shares
@@ -96,20 +114,20 @@ widgets inside the selection.
   The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
   server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short
   answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
-  editing figure, `applyVideoEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
-  `setVideoBox()`) writes it as `--video-aspect-ratio`, which the player's `aspect-ratio` and the
-  70vh cap of Full read. Only Full is capped; Medium keeps its saved width. `setVideoBox()` also
+  editing figure, `applyMediaEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
+  `setMediaBox()`) writes it as `--video-aspect-ratio`, which the player's `aspect-ratio` and the
+  70vh cap of Full read. Only Full is capped; Medium keeps its saved width. `setMediaBox()` also
   writes `data-box-size` on the shared section, Full for a video saved before box sizes. A
   preview without one is 16:9. A new link preview field goes into `LINK_PREVIEW_DATA_ATTRIBUTES`
   and `readLinkPreviewData()`, both `LinkEmbedMetadata` types (commons and the editor's
   `augmentation.ts`) and the client's `fetchMetadata()`; `META_KEYS`, the schemas and the
-  converters follow the map. It renders through `contentEmbed.loadVideo()` (`loadVideoEmbed()`, whose title row
-  opens the embed menu only in the editor) and has a toolbar of its own (`videoEmbed` in
+  converters follow the map. It renders through `contentEmbed.loadMedia()` (`loadMediaEmbed()`, whose title row
+  opens the embed menu only in the editor) and has a toolbar of its own (`mediaEmbed` in
   `content_embed_toolbar.ts`): Copy address (URL), the link preview's Display dropdown and ⋮. The caption
   is toggled from ⋮ only. Its ⋮ menu
-  (`getVideoItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
+  (`getMediaItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
   (`openUrlExternally()` in `services/open.ts`) above the embed's commands and _Delete_ below.
-  `ReadOnlyText`'s `applyVideoEmbeds()` swaps the section for the same box.
+  `ReadOnlyText`'s `applyMediaEmbeds()` swaps the section for the same box.
   The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
   facade takes the focus on click and `playVideo()` hands it to the player once loaded:
   Chromium blurs the editor when a focused element is removed. A click into a frame fires no
@@ -123,9 +141,9 @@ widgets inside the selection.
   `useFocusWithin()`, which draws the `.include-note-body.active` outline, also listens to
   `focus`/`blur` in the capture phase.
   `createLinkPreview()` in `link_embed_commands.ts` is the one place that picks `linkMention`,
-  `linkEmbed` or a video embed for a display mode. The YouTube video prompt (`youtube_video.ts`)
+  `linkEmbed` or a media embed for a display mode. The Insert media prompt (`insert_media.ts`)
   inserts the player only once `fetchMetadata()` has returned, with no link meanwhile: its
-  `onInsert()` rejects on unresolved metadata, and the host's prompt keeps Insert disabled while
+  `onInsert()` rejects on unresolved metadata or an address that plays nothing, and the host's prompt keeps Insert disabled while
   it waits and shows an error toast when it rejects.
 - **Legacy blocks** — a `<pre>` without `data-box-size` predates the embed (the old Mermaid
   plugin). `getModeOfSavedView()` loads it editable, in the view of its

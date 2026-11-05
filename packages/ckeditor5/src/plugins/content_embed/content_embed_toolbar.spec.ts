@@ -119,7 +119,7 @@ describe("ContentEmbedToolbar", () => {
                 positions: PositioningFunction[];
             }>;
         };
-        const definition = repository._toolbarDefinitions.get("videoEmbed");
+        const definition = repository._toolbarDefinitions.get("mediaEmbed");
         expect(definition?.itemsConfig).toEqual([
             "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU
         ]);

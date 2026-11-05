@@ -940,7 +940,7 @@ function canPreview(url: string | undefined) {
     return !url || isHttpUrl(url);
 }
 
-/** Whether `url` has a video player to embed. */
+/** Whether `url` has a player to embed: a YouTube video, or a video or audio file. */
 function hasPlayer(url: string | undefined) {
     return !!url && detectEmbedType(url) !== "opengraph";
 }

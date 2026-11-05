@@ -124,7 +124,7 @@ async function openContextMenu(
 
 /**
  * Opens the menu of the embed at `e` with its own commands only, for an embed that shows no note or
- * attachment, such as one that keeps its source in the note or one that plays a video.
+ * attachment, such as one that keeps its source in the note or one that plays media.
  */
 async function openEmbedContextMenu(e: LinkMenuOrigin) {
     const request = ++lastMenuRequest;
@@ -138,7 +138,7 @@ async function openEmbedContextMenu(e: LinkMenuOrigin) {
     contextMenu.show({
         x: e.pageX,
         y: e.pageY,
-        items: url ? getVideoItems(embed, url) : getSourceItems(embed),
+        items: url ? getMediaItems(embed, url) : getSourceItems(embed),
         selectMenuItemHandler: () => {},
         ...keepEditorFocused(editor)
     });
@@ -217,13 +217,13 @@ async function downloadLinkedAttachment(notePath: string, viewScope: ViewScope) 
 }
 
 /**
- * The menu of an embed that plays the video at `url`: opening the video outside Trilium, copying
+ * The menu of an embed that plays the media at `url`: opening the media outside Trilium, copying
  * its address and Display as, in the groups of the menu of a link preview, then the commands of
  * the embed, and deleting it, each in a group of its own.
  */
-function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
+function getMediaItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
     const { editor } = embed;
-    // A video is a link preview shown as Embed.
+    // Media is a link preview shown as Embed.
     const displayModeItems = editor.plugins.get("LinkEmbed").getDisplayModes()
         .map(({ value, label }): MenuItem<CommandNames> => ({
             title: escapeHtml(label),
@@ -241,7 +241,7 @@ function getVideoItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] 
         {
             title: t("link_context_menu.copy_url"),
             uiIcon: "cke cke-trilium-copy",
-            // As the Copy address (URL) button of the toolbar of the video does.
+            // As the Copy address (URL) button of the toolbar of the media does.
             handler: () => editor.config.get("clipboard")?.copy(url)
         },
         { kind: "separator" },
@@ -534,10 +534,11 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         ...(contentItems.length ? [ { kind: "separator" } as const ] : []),
         ...displayModeItems,
         ...(displayModeItems.length ? [ { kind: "separator" } as const ] : []),
-        submenuItem({
+        // An audio file has a single box size.
+        ...(sizeItems.length > 1 ? [ submenuItem({
             title: t("link_context_menu.include_size"),
             uiIcon: "bx bx-expand-vertical"
-        }, sizeItems),
+        }, sizeItems) ] : []),
         ...getPositionItems(embed),
         ...(state.isTitleSupported ? [ {
             title: t("link_context_menu.show_title"),

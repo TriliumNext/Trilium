@@ -10,7 +10,7 @@ import { loadWaveform } from "./audio_waveform";
 import { AudioVisualizer } from "./AudioVisualizer";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, usesCompactControls } from "./media_environment";
-import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, getPlaybackError, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 import { WaveformSeekBar } from "./WaveformSeekBar";
 
 export default function AudioPreview({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible = true, autoPlay }: MediaPlayerProps) {
@@ -42,10 +42,12 @@ export default function AudioPreview({ source, entity, environment, noteContext,
     const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, audioRef, ownerNote?.noteId);
     const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible, autoPlay, mimePrefix: "audio/", mediaRef: audioRef, playMode });
     useMediaPlayerShortcutHints({ fullscreen: false });
-    const waveformPeaks = useWaveformPeaks(source.fullUrl);
+    useFocusOnActivation(wrapperRef, autoPlay);
+    // The host of a file on another site sends no CORS headers in general.
+    const waveformPeaks = useWaveformPeaks(source.isExternal ? null : source.fullUrl);
 
     if (error) {
-        return <NoItems icon="bx bx-volume-mute" text={t("media.unsupported-format", { mime: source.mime.replace("/", "-") })} />;
+        return <NoItems icon="bx bx-volume-mute" text={getPlaybackError(source)} />;
     }
 
     const compact = usesCompactControls(environment);
@@ -55,7 +57,7 @@ export default function AudioPreview({ source, entity, environment, noteContext,
             <audio
                 class="audio-preview"
                 src={source.streamUrl}
-                preload={preloadFor(environment)}
+                preload={source.isExternal ? "none" : preloadFor(environment)}
                 ref={audioRef}
                 onPlay={syncPlaying}
                 onPause={syncPlaying}
@@ -63,18 +65,19 @@ export default function AudioPreview({ source, entity, environment, noteContext,
                 onEmptied={syncPlaying}
                 onError={onError}
             />
-            <div className="audio-preview-visualization-wrapper">
+            {/* An analyser of a cross-origin file without CORS headers outputs silence. */}
+            {!source.isExternal && <div className="audio-preview-visualization-wrapper">
                 <AudioVisualizer mediaRef={audioRef} isPlaying={playing} compact={compact} />
                 {/* The compact player gives the whole band to the visualizer instead. */}
                 {!compact && <Icon icon="bx bx-music" className="audio-preview-icon" />}
-            </div>
+            </div>}
             <div className="media-preview-controls">
                 {compact ? (
                     <div class="media-compact-row">
                         <PlayPauseButton playing={playing} togglePlayback={togglePlayback} />
                         <WaveformSeekBar mediaRef={audioRef} peaks={waveformPeaks} />
                         <VolumeControl mediaRef={audioRef} />
-                        {showsFileActions(environment) && <MediaFileActions entity={entity} />}
+                        {entity && showsFileActions(environment) && <MediaFileActions entity={entity} />}
                     </div>
                 ) : (
                     <>
@@ -112,11 +115,12 @@ export default function AudioPreview({ source, entity, environment, noteContext,
 /** Decode the audio into a normalized waveform for the seek bar. Returns `null` while loading or when no
  *  waveform is available (oversized/undecodable file); the seek bar then falls back to a plain track. The fetch
  *  is aborted when the media changes so a slow decode for a previous one can't paint over the current one. */
-function useWaveformPeaks(fullUrl: string): number[] | null {
+function useWaveformPeaks(fullUrl: string | null): number[] | null {
     const [peaks, setPeaks] = useState<number[] | null>(null);
 
     useEffect(() => {
         setPeaks(null);
+        if (!fullUrl) return;
         const controller = new AbortController();
         loadWaveform(fullUrl, { signal: controller.signal })
             .then((waveform) => {

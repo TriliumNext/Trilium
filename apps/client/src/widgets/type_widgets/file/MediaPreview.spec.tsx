@@ -8,10 +8,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { audioVisualizer } = vi.hoisted(() => ({ audioVisualizer: vi.fn((_props: { compact?: boolean }) => null) }));
 vi.mock("./audio_waveform", () => ({ loadWaveform: vi.fn(async () => null) }));
 vi.mock("./AudioVisualizer", () => ({ AudioVisualizer: audioVisualizer }));
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string) => key
+}));
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
+import { getExternalMediaSource } from "./media_source";
 import MediaPreview from "./MediaPreview";
 
 const videoNote = { noteId: "vid1", title: "Holiday", mime: "video/mp4", blobId: "blobV" } as FNote;
@@ -270,6 +275,53 @@ describe("MediaPreview", () => {
             const { download, open } = fileActions();
             expect(download).toBeNull();
             expect(open).toBeNull();
+        });
+    });
+
+    describe("media on another site", () => {
+        const fileUrl = "https://example.com/clip.mp4";
+        const poster = "api/attachments/a1/image/clip.jpg";
+
+        it("shows a video behind its thumbnail, loading nothing, then plays it on a click", async () => {
+            const source = getExternalMediaSource({ url: fileUrl, image: poster }, "video");
+            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
+
+            expect(mediaElement()).toBeNull();
+            expect(container.querySelector(".media-proxy.has-poster > img.media-proxy-poster")
+                ?.getAttribute("src")).toBe(poster);
+            await act(async () => proxyPlayButton()?.click());
+
+            const media = mediaElement();
+            expect([ media?.tagName, media?.getAttribute("src"), media?.getAttribute("poster") ])
+                .toEqual([ "VIDEO", fileUrl, poster ]);
+            // The removed placeholder left the focus to the page, which would blur an editor.
+            expect(document.activeElement).toBe(container.querySelector(".video-preview-wrapper"));
+            await act(async () => { media?.dispatchEvent(new Event("canplay")); });
+            expect(play).toHaveBeenCalled();
+            expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
+        });
+
+        it("mounts an audio player that loads nothing, reads no waveform and taps no analyser", async () => {
+            const { loadWaveform } = await import("./audio_waveform");
+            const source = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
+            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
+
+            const media = mediaElement();
+            expect([ media?.tagName, media?.getAttribute("preload") ]).toEqual([ "AUDIO", "none" ]);
+            expect(container.querySelector(".audio-preview-visualization-wrapper")).toBeNull();
+            expect(audioVisualizer).not.toHaveBeenCalled();
+            expect(loadWaveform).not.toHaveBeenCalled();
+            expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
+            expect(play).not.toHaveBeenCalled();
+        });
+
+        it("says that the media cannot be played rather than naming a format", async () => {
+            const source = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
+            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
+
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+
+            expect(container.textContent).toContain("media.external-unavailable");
         });
     });
 

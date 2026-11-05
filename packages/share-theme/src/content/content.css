@@ -343,10 +343,12 @@ body:not(.math-loaded) .math-tex {
     object-fit: contain;
 }
 
-/* An include, or the video of a link preview, placed and sized as the editor saved it. */
+/* An include, or the media of a link preview, placed and sized as the editor saved it. */
 .ck-content :is(
     figure.include-note, figure.captioned-content-embed,
-    section.link-embed:where([data-embed-type="youtube"])
+    section.link-embed:where(
+        [data-embed-type="youtube"], [data-embed-type="video"], [data-embed-type="audio"]
+    )
 ) {
     clear: both;
     margin: 1em 0;

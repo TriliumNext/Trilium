@@ -7,6 +7,72 @@ export function extractYouTubeVideoId(url: string): string | null {
     return match ? match[1] : null;
 }
 
+/** The embed types of a link preview that plays the audio or video file at its URL. */
+export const MEDIA_FILE_EMBED_TYPES = [ "video", "audio" ] as const;
+
+export type MediaFileEmbedType = typeof MEDIA_FILE_EMBED_TYPES[number];
+
+/** Whether `embedType` is that of a preview that plays an audio or video file. */
+export function isMediaFileEmbedType(
+    embedType: string | null | undefined
+): embedType is MediaFileEmbedType {
+    return MEDIA_FILE_EMBED_TYPES.some((type) => type === embedType);
+}
+
+/** The file extensions that name a video or an audio file, as `<video>` and `<audio>` play them. */
+const MEDIA_FILE_EXTENSIONS: Record<string, MediaFileEmbedType> = {
+    mp4: "video", m4v: "video", webm: "video", ogv: "video", mov: "video", mkv: "video",
+    mp3: "audio", m4a: "audio", aac: "audio", oga: "audio", ogg: "audio", opus: "audio",
+    wav: "audio", flac: "audio", weba: "audio"
+};
+
+/**
+ * Whether the file at the http(s) `url` is a video or an audio file, as the extension of its path
+ * names it, or `null`. The type of a file without one is known only once it is fetched.
+ */
+export function getMediaFileTypeOfUrl(url: string): MediaFileEmbedType | null {
+    if (!isHttpUrl(url)) {
+        return null;
+    }
+
+    const extension = new URL(url).pathname.match(/\.([a-z0-9]+)$/i)?.[1].toLowerCase();
+    return (extension && MEDIA_FILE_EXTENSIONS[extension]) || null;
+}
+
+/**
+ * The simplest ratio `<width>/<height>` that the whole-pixel `width` and `height` can round from,
+ * such as `16/9` for 200x113, or `undefined` when they are not whole numbers.
+ */
+export function toAspectRatio(width: unknown, height: unknown) {
+    if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
+        return undefined;
+    }
+
+    const min = (width - 0.5) / (height + 0.5);
+    const max = (width + 0.5) / (height - 0.5);
+    // Ends by `height` at the latest, where `width` itself is in range.
+    for (let denominator = 1; ; denominator++) {
+        const numerator = Math.ceil(min * denominator);
+        if (numerator / denominator <= max) {
+            return `${numerator}/${denominator}`;
+        }
+    }
+}
+
+function isPositiveInteger(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+/** The name of the file at `url`: the last segment of its path, or its host. */
+export function getMediaFileTitle(url: string): string {
+    try {
+        const segment = new URL(url).pathname.split("/").filter(Boolean).pop();
+        return segment ? decodeURIComponent(segment) : safeHostname(url);
+    } catch {
+        return safeHostname(url);
+    }
+}
+
 /**
  * True when the URL is one a link preview may ever point at.
  *
@@ -173,7 +239,8 @@ export interface LinkEmbedMetadata {
     image?: string;
     favicon?: string;
     siteName?: string;
-    embedType: "youtube" | "opengraph";
+    /** `video` and `audio` play the file at `url`. */
+    embedType: "youtube" | "opengraph" | MediaFileEmbedType;
     /** The shape of a video, as its width and height in whole numbers, such as `9/16`. */
     aspectRatio?: string;
     /**

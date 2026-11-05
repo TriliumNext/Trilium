@@ -1,9 +1,11 @@
 import {
     extractYouTubeVideoId,
+    getMediaFileTitle,
     type ImageAttachmentRole,
     type LinkEmbedMetadata,
     linkPreviewImageName,
-    safeHostname
+    safeHostname,
+    toAspectRatio
 } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 import { parse } from "node-html-parser";
@@ -15,11 +17,16 @@ import { storePictureBytes } from "../../services/image_download.js";
 import { type InspectedImage, inspectImage, UNKNOWN_FORMAT } from "../../services/image_inspect.js";
 import { getImageProvider } from "../../services/image_provider.js";
 import { getLog } from "../../services/log.js";
+import {
+    isProbedContentType, MEDIA_PROBE_LENGTH, type ProbedMedia, probeMedia
+} from "../../services/media_probe.js";
 import { findPageDescription } from "../../services/page_description.js";
 import request, { type FetchedResource, validateFetchableUrl } from "../../services/request.js";
-import { decodeUtf8 } from "../../services/utils/binary.js";
+import { decodeBase64, decodeUtf8 } from "../../services/utils/binary.js";
 
 const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB
+/** The largest thumbnail of a video file that the client may store, base64. */
+const MAX_MEDIA_THUMBNAIL_BASE64_SIZE = 2 * 1024 * 1024; // 2MB
 /** An oEmbed answer is a handful of fields; anything approaching this is not one. */
 const MAX_OEMBED_SIZE = 64 * 1024; // 64KB
 /** Largest YouTube thumbnail kept. A larger one is skipped for the next size down. */
@@ -544,30 +551,6 @@ async function fetchYouTubeDetails(
 }
 
 /**
- * The simplest ratio `<width>/<height>` that oEmbed's whole-pixel `width` and `height` can round
- * from, such as `16/9` for 200x113, or `undefined` when they are not whole numbers.
- */
-function toAspectRatio(width: unknown, height: unknown) {
-    if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
-        return undefined;
-    }
-
-    const min = (width - 0.5) / (height + 0.5);
-    const max = (width + 0.5) / (height - 0.5);
-    // Ends by `height` at the latest, where `width` itself is in range.
-    for (let denominator = 1; ; denominator++) {
-        const numerator = Math.ceil(min * denominator);
-        if (numerator / denominator <= max) {
-            return `${numerator}/${denominator}`;
-        }
-    }
-}
-
-function isPositiveInteger(value: unknown): value is number {
-    return typeof value === "number" && Number.isInteger(value) && value > 0;
-}
-
-/**
  * Downloads the largest thumbnail YouTube has for the video, at most 1280x720. The JPEG is stored
  * as served, so no decoder is needed and every runtime keeps the same picture.
  */
@@ -588,8 +571,7 @@ async function downloadYouTubeThumbnail(videoId: string): Promise<DownloadedPict
     return undefined;
 }
 
-async function fetchOpenGraphData(url: string) {
-    const document = await fetchPage(url);
+async function fetchOpenGraphData(document: ReturnType<typeof parse>, url: string) {
     const favicon = await resolveFavicon(document, url);
 
     const imageUrl = toAbsoluteUrl(getMeta(document, "og:image"), url);
@@ -601,24 +583,50 @@ async function fetchOpenGraphData(url: string) {
     return { ...readPageText(document), image, favicon };
 }
 
-/** Fetches the web page at `url` and parses it. Throws for a failed request or a non-HTML page. */
-async function fetchPage(url: string) {
+/** A web page, parsed, or what an audio or video file is. */
+type FetchedPage =
+    | { document: ReturnType<typeof parse>; media?: undefined }
+    | { media: ProbedMedia; document?: undefined };
+
+/**
+ * Fetches the web page at `url` and parses it, or reads the header of the audio or video file at
+ * `url`, which is all of it that is fetched. Throws for a failed request or anything else.
+ */
+async function fetchPage(url: string): Promise<FetchedPage> {
     const response = await request.fetchResource(url, {
         maxBytes: MAX_RESPONSE_SIZE,
         headers: {
             "User-Agent": "TriliumNotes/1.0 (Link Preview; +https://triliumnotes.org/)",
-            "Accept": "text/html"
-        }
+            "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
+        },
+        prefixLength: (contentType) =>
+            isProbedContentType(contentType) ? MEDIA_PROBE_LENGTH : undefined
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const { contentType } = response;
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
-        throw new Error(`Unexpected Content-Type: ${contentType}`);
+    if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
+        return { document: parse(asText(response)) };
     }
 
-    return parse(asText(response));
+    const media = isProbedContentType(contentType)
+        ? probeMedia(response.bytes, contentType)
+        : null;
+    if (!media) {
+        throw new Error(`Unexpected Content-Type: ${contentType}`);
+    }
+    return { media };
+}
+
+/** The metadata of a preview that plays the media file at `url`, which `media` describes. */
+function getMediaMetadata(url: string, media: ProbedMedia): LinkEmbedMetadata {
+    return {
+        url,
+        embedType: media.type,
+        title: getMediaFileTitle(url),
+        aspectRatio: media.aspectRatio
+    };
 }
 
 /** The `content` of the `<meta>` tag of `property`, written as `property=` or `name=`. */
@@ -680,7 +688,11 @@ async function getMetadata(req: Request) {
     }
 
     try {
-        const ogData = await fetchOpenGraphData(url);
+        const page = await fetchPage(url);
+        if (page.media) {
+            return getMediaMetadata(url, page.media);
+        }
+        const ogData = await fetchOpenGraphData(page.document, url);
 
         // A page that answered but names itself nowhere (no og:title, no <title>) leaves us with
         // the hostname we already had, which is no better than a failed fetch. Nothing is stored
@@ -727,18 +739,49 @@ async function getPageDetails(req: Request): Promise<LinkEmbedMetadata> {
     try {
         const url = validateFetchableUrl(urlParam).toString();
         const videoId = extractYouTubeVideoId(url);
-        const details = videoId
-            ? {
-                siteName: "YouTube",
-                embedType: "youtube" as const,
-                ...await fetchYouTubeDetails(videoId)
-            }
-            : { embedType: "opengraph" as const, ...readPageText(await fetchPage(url)) };
-        return details.title ? { url, ...details } : unresolved;
+        if (videoId) {
+            const details = await fetchYouTubeDetails(videoId);
+            return details?.title
+                ? { url, siteName: "YouTube", embedType: "youtube", ...details }
+                : unresolved;
+        }
+
+        const page = await fetchPage(url);
+        if (page.media) {
+            return getMediaMetadata(url, page.media);
+        }
+        const text = readPageText(page.document);
+        return text.title ? { url, embedType: "opengraph", ...text } : unresolved;
     } catch (e: unknown) {
         getLog().info(`Failed to fetch link details: ${e}`);
         return unresolved;
     }
+}
+
+/**
+ * Stores the picture `image` of the body, base64, as the thumbnail of the video at `url` in the
+ * note `noteId`, and returns its URL as `image`. The client captures the picture from a frame of
+ * the video, which only it can decode.
+ */
+async function storeMediaThumbnail(req: Request) {
+    const { noteId, url, image } = req.body ?? {};
+    if (typeof noteId !== "string" || !noteId) {
+        throw new ValidationError("'noteId' is required");
+    }
+    if (typeof url !== "string" || !url) {
+        throw new ValidationError("'url' is required");
+    }
+    if (typeof image !== "string" || !image || image.length > MAX_MEDIA_THUMBNAIL_BASE64_SIZE) {
+        throw new ValidationError("'image' is required, as base64 of at most 2MB");
+    }
+
+    const validatedUrl = validateFetchableUrl(url).toString();
+    const stored = await storePicture(
+        noteId, asPicture(decodeBase64(image)), "coverImage", linkPreviewImageName(validatedUrl));
+    if (!stored) {
+        throw new ValidationError("'image' is not a picture");
+    }
+    return { image: stored };
 }
 
 /**
@@ -771,4 +814,4 @@ function unresolvedMetadata(url: URL): LinkEmbedMetadata {
     };
 }
 
-export default { getMetadata, getPageDetails };
+export default { getMetadata, getPageDetails, storeMediaThumbnail };

@@ -1,13 +1,15 @@
 import {
     classifyFaviconContrast, type FaviconContrast, faviconContrastClass, measureFaviconVisibility
 } from "./favicon_contrast.js";
+import { isHttpUrl } from "./link_embed.js";
 import { LINK_EMBED_CARD_IMAGE_PLACEHOLDER } from "./link_embed_markup.js";
 
 /**
  * Makes the link previews in `container`, as `renderLinkEmbedHtml()` and `renderLinkMentionHtml()`
- * draw them, behave: a video facade loads the player on click, a low-resolution video thumbnail is
- * marked for blurring, a picture that fails to load is replaced by a placeholder or removed, and a
- * favicon gets the class that lets the page correct an icon drawn for the other background.
+ * draw them, behave: a video or audio facade loads the player on click, a low-resolution YouTube
+ * thumbnail is marked for blurring, a picture that fails to load is replaced by a placeholder or
+ * removed, and a favicon gets the class that lets the page correct an icon drawn for the other
+ * background.
  */
 export function enhanceLinkPreviews(container: ParentNode) {
     const facades = container.querySelectorAll<HTMLButtonElement>(
@@ -16,8 +18,14 @@ export function enhanceLinkPreviews(container: ParentNode) {
         facade.addEventListener("click", () => playVideo(facade), { once: true });
     }
 
+    const mediaFacades = container.querySelectorAll<HTMLButtonElement>(
+        ":is(button.link-embed-video-facade, button.link-embed-audio-facade)[data-media-url]");
+    for (const facade of mediaFacades) {
+        facade.addEventListener("click", () => playMediaFile(facade), { once: true });
+    }
+
     const thumbnails = container.querySelectorAll<HTMLImageElement>(
-        "img.link-embed-video-thumbnail");
+        "button[data-video-id] img.link-embed-video-thumbnail");
     for (const thumbnail of thumbnails) {
         // Checked now for a picture that is already loaded, and again on every load.
         markLowResThumbnail(thumbnail);
@@ -68,6 +76,36 @@ function playVideo(facade: HTMLButtonElement) {
     }, { once: true });
     facade.classList.add("link-embed-video-facade-loading");
     facade.before(iframe);
+}
+
+/**
+ * Replaces the facade of a video or audio file with a `<video>` or `<audio>` that plays it, with the
+ * thumbnail of the facade as its poster. The click was the play command, hence `autoplay`.
+ */
+function playMediaFile(facade: HTMLButtonElement) {
+    const url = facade.dataset.mediaUrl;
+    if (!url || !isHttpUrl(url)) {
+        return;
+    }
+
+    const isAudio = facade.classList.contains("link-embed-audio-facade");
+    const player = document.createElement(isAudio ? "audio" : "video");
+    player.className = isAudio ? "link-embed-audio-player" : "link-embed-video-player";
+    player.controls = true;
+    player.autoplay = true;
+    if (player instanceof HTMLVideoElement) {
+        player.playsInline = true;
+        const poster = facade.querySelector<HTMLImageElement>("img.link-embed-video-thumbnail");
+        if (poster) {
+            player.poster = poster.src;
+        }
+    }
+    player.src = url;
+    const hasFocus = facade.matches(":focus");
+    facade.replaceWith(player);
+    if (hasFocus) {
+        player.focus({ preventScroll: true });
+    }
 }
 
 /** How long a video facade takes to fade out over the player, in milliseconds. */

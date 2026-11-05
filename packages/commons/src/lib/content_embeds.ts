@@ -36,8 +36,19 @@ export const EXTENDED_CODE_BLOCK_CLASS = "extended-code-block";
 /** The language of an extended code block that names none, as a CKEditor code block language. */
 export const EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE = "text-plain";
 
-/** The class of the embed box of a video, in the editor and in read-only views. */
+/** The class of the embed box of media from a URL, in the editor and in read-only views. */
+export const MEDIA_EMBED_CLASS = "media-embed";
+
+/** The class of the box of a media embed that plays a video, which takes the shape of the video. */
 export const VIDEO_EMBED_CLASS = "video-embed";
+
+/** The class of the box of a media embed that plays an audio file. */
+export const AUDIO_EMBED_CLASS = "audio-embed";
+
+/** The classes of the box of a media embed that plays a video, or an audio file if `isAudio`. */
+export function getMediaEmbedClasses(isAudio: boolean) {
+    return [ MEDIA_EMBED_CLASS, isAudio ? AUDIO_EMBED_CLASS : VIDEO_EMBED_CLASS ];
+}
 
 /**
  * The class of the `<figure>` that holds an embed saved as an element other than a `<figure>`,

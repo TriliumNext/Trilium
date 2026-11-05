@@ -711,7 +711,7 @@ describe("ContentEmbed", () => {
 
     it("titles a video with the menu of its embed, or no menu, and no fullscreen", () => {
         const openMenu = vi.fn();
-        const video = { notePath: undefined, boxSize: "medium", contentType: "videoEmbed" };
+        const video = { notePath: undefined, boxSize: "medium", contentType: "mediaEmbed" };
         renderBox({ ...video, openMenu });
         expect(titleRow()).toEqual([
             "include-note-title-label", "include-note-badges", "include-note-menu"
@@ -785,7 +785,7 @@ describe("ContentEmbed", () => {
     });
 
     it("leaves an extended code block and a video uncovered, to take the first click", () => {
-        for (const contentType of [ "extendedCodeBlock", "videoEmbed" ]) {
+        for (const contentType of [ "extendedCodeBlock", "mediaEmbed" ]) {
             act(() => render(null, container));
             renderBox({ title: undefined, notePath: undefined, contentType });
             expect(contentBox().classList.contains(`type-${contentType}`)).toBe(true);

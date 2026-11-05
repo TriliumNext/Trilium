@@ -2,7 +2,7 @@ import {
     type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
     type EditorConfig, getCkLocale,
     type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
-    type LinkMenuHost, SnippetDefinition, type TextTransformationConfig, type YouTubeVideoRequest
+    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
@@ -21,6 +21,7 @@ import imageService from "../../../services/image.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
+import { captureVideoThumbnail } from "../../../services/media_thumbnail.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
@@ -86,8 +87,8 @@ export interface BuildEditorOptions {
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
     /** Shows the Include note dialog, as `contentEmbed.pickNote` does. */
     showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
-    /** Asks for the address of a YouTube video, as `youtubeVideo.showPrompt` does. */
-    showYouTubeVideoPrompt?: (request: YouTubeVideoRequest) => (() => void) | null;
+    /** Asks for the address of media to embed, as `insertMedia.showPrompt` does. */
+    showInsertMediaPrompt?: (request: InsertMediaRequest) => (() => void) | null;
     /** The note that the block and tab references the editor copies point to. */
     referenceSource?: ReferenceSource;
     /**
@@ -98,8 +99,9 @@ export interface BuildEditorOptions {
 }
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
-export type ContentEmbedHandlers =
-    Omit<ContentEmbedHost, "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml">;
+export type ContentEmbedHandlers = Omit<ContentEmbedHost,
+    "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml"
+    | "captureVideoThumbnail">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
@@ -139,6 +141,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
             sanitizeHtml: sanitizeNoteContentHtml,
+            captureVideoThumbnail: async (preview) => {
+                const noteId = opts.getNoteId?.();
+                return noteId ? await captureVideoThumbnail(preview.url, noteId) : null;
+            },
             ...bindContentEmbedHandlers(opts.getContentEmbedHandlers)
         },
         image: {
@@ -291,7 +297,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },
-        youtubeVideo: { showPrompt: (request) => opts.showYouTubeVideoPrompt?.(request) ?? null },
+        insertMedia: { showPrompt: (request) => opts.showInsertMediaPrompt?.(request) ?? null },
         ...(opts.referenceSource && buildReferenceConfig(opts.referenceSource)),
         imageToDrawing: {
             async convert(src) {
@@ -450,7 +456,7 @@ function bindContentEmbedHandlers(
         loadInline: (...args) => getHandlers()?.loadInline(...args),
         flushInline: () => getHandlers()?.flushInline(),
         loadUnknown: (...args) => getHandlers()?.loadUnknown(...args),
-        loadVideo: (...args) => getHandlers()?.loadVideo(...args),
+        loadMedia: (...args) => getHandlers()?.loadMedia(...args),
         focusAttachment: (attachmentId) => getHandlers()?.focusAttachment(attachmentId),
         getAttachmentHref: async (attachmentId) =>
             (await getHandlers()?.getAttachmentHref(attachmentId)) ?? null,

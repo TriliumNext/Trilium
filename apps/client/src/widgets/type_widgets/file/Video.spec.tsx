@@ -10,6 +10,7 @@ const source: MediaSource = {
     id: "vid1",
     title: "Holiday",
     mime: "video/mp4",
+    kind: "video",
     streamUrl: "api/notes/vid1/open-partial?v=blobV",
     fullUrl: "api/notes/vid1/open?v=blobV"
 };

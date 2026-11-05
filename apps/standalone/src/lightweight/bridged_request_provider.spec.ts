@@ -253,6 +253,24 @@ describe("BridgedRequestProvider.fetchResource", () => {
         expect(postSpy.mock.calls.length).toBe(posted);
     });
 
+    it("cuts a body of a type read by its prefix, decoding only the start of it", async () => {
+        const decode = vi.spyOn(globalThis, "atob");
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            maxBytes: 10,
+            prefixLength: (contentType) => contentType === "video/mp4" ? 5 : undefined
+        });
+
+        respond({
+            status: 200, headers: { "content-type": "video/mp4" }, body: btoa("0123456789".repeat(100))
+        });
+
+        await expect(promise).resolves.toMatchObject({
+            contentType: "video/mp4", bytes: new TextEncoder().encode("01234")
+        });
+        expect(decode).toHaveBeenCalledExactlyOnceWith(btoa("012345"));
+    });
+
     /**
      * The ceiling is checked on what arrived rather than on what is arriving — a native transport
      * hands over a whole response, so there is no stream to abandon. It still has to hold.

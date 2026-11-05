@@ -134,7 +134,7 @@ export default class FetchRequestProvider implements RequestProvider {
                 signal: controller.signal
             });
 
-            return await readCappedResponse(response, opts.maxBytes);
+            return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
         } finally {
             clearTimeout(timeoutId);
         }

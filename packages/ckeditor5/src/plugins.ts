@@ -27,7 +27,7 @@ import ContentEmbed from "./plugins/content_embed/content_embed.js";
 import BlockReference from "./plugins/block_reference/block_reference.js";
 import InlineIcon from "./plugins/inline_icon/inline_icon.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
-import YouTubeVideoPlugin from "./plugins/youtube_video.js";
+import InsertMediaPlugin from "./plugins/insert_media.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
 import SyntaxHighlighting from "./plugins/syntax_highlighting/index.js";
@@ -117,7 +117,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     BlockReference,
     InlineIcon,
     LinkEmbed,
-    YouTubeVideoPlugin,
+    InsertMediaPlugin,
     Uploadfileplugin,
     SyntaxHighlighting,
     CodeBlockLanguageDropdown,

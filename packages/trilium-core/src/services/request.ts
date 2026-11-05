@@ -35,6 +35,12 @@ export interface FetchResourceOpts {
      */
     maxBytes: number;
     headers?: Record<string, string>;
+    /**
+     * How many bytes to read of a body of the media type `contentType`, or `undefined` to read it
+     * whole. A body read this way comes back cut to that length instead of refused, which is how a
+     * caller reads the header of a file, such as a video, that is too large to hold.
+     */
+    prefixLength?(contentType: string): number | undefined;
 }
 
 /** A resource that arrived whole, within its ceiling. */
@@ -165,9 +171,15 @@ export function validateFetchableUrl(urlString: string): URL {
  * edge cases: a size advertised and a size not, a body that lies about the first, a stream that has
  * to be abandoned mid-flight rather than read to the end just to discover it was too long.
  */
-export async function readCappedResponse(response: Response, maxBytes: number): Promise<FetchedResource> {
+export async function readCappedResponse(
+    response: Response, maxBytes: number, prefixLength?: FetchResourceOpts["prefixLength"]
+): Promise<FetchedResource> {
     const contentType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     const base = { status: response.status, ok: response.ok, contentType };
+    const prefix = prefixLength?.(contentType);
+    if (prefix !== undefined) {
+        return { ...base, bytes: await readPrefix(response, prefix) };
+    }
 
     // Bail before reading a byte where the server says how many there will be.
     const advertised = response.headers.get("content-length");
@@ -200,12 +212,34 @@ export async function readCappedResponse(response: Response, maxBytes: number): 
         chunks.push(value);
     }
 
+    return { ...base, bytes: concatChunks(chunks, total) };
+}
+
+/** Reads the first `length` bytes of the body of `response`, then stops reading it. */
+async function readPrefix(response: Response, length: number) {
+    const reader = response.body?.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+
+    while (reader && total < length) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = value.subarray(0, length - total);
+        chunks.push(chunk);
+        total += chunk.byteLength;
+    }
+
+    void reader?.cancel();
+    return concatChunks(chunks, total);
+}
+
+function concatChunks(chunks: Uint8Array[], total: number) {
     const bytes = new Uint8Array(total);
     let offset = 0;
     for (const chunk of chunks) {
         bytes.set(chunk, offset);
         offset += chunk.byteLength;
     }
-
-    return { ...base, bytes };
+    return bytes;
 }

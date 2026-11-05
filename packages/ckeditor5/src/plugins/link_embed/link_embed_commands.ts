@@ -1,5 +1,5 @@
 import {
-    getLinkPreviewVideoId, isHttpUrl, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData
+    getLinkPreviewPlayer, isHttpUrl, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData
 } from '@triliumnext/commons';
 import {
     Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
@@ -7,7 +7,7 @@ import {
 } from 'ckeditor5';
 
 import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
-import { createVideoEmbed, isVideoEmbed } from '../content_embed/video_embed.js';
+import { createMediaEmbed, isMediaEmbed } from '../content_embed/media_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
@@ -77,7 +77,7 @@ export function getPreviewAttributes(
     return {
         ...getMetadataAttributes(metadata),
         embedType: mode === 'embedLink'
-            ? getLinkEmbedHost(editor).detectEmbedType(href)
+            ? getEmbedType(editor, href, metadata.embedType)
             : metadata.embedType,
         title: title || metadata.title,
         description: description || metadata.description
@@ -198,7 +198,8 @@ export class ChangeLinkDisplayCommand extends Command {
             this.isEnabled = true;
             this.value = getLinkWidgetMode(selected);
             const url = selected.getAttribute('url') as string;
-            this.embedAvailable = this._detectEmbedType(url) !== 'opengraph';
+            this.embedAvailable = getEmbedType(this.editor, url,
+                selected.getAttribute('embedType') as string | undefined) !== 'opengraph';
             // Only ever hand out an http(s) URL. `url` comes from the stored `data-url`, which the
             // HTML sanitizers pass through unexamined, so a note carrying `data-url="javascript:…"`
             // would otherwise reach the toolbar's "open link" button as a live href. Withholding it
@@ -246,7 +247,7 @@ export class ChangeLinkDisplayCommand extends Command {
 
     /**
      * The link preview that the command acts on: the selected one, else, unless the caret is on a
-     * link, the video whose caption has the selection, which keeps its toolbar there.
+     * link, the media embed whose caption has the selection, which keeps its toolbar there.
      */
     private _getTarget(): ModelElement | null {
         const selection = this.editor.model.document.selection;
@@ -255,8 +256,8 @@ export class ChangeLinkDisplayCommand extends Command {
             return selected;
         }
 
-        const video = getCaptionedEmbed(selection.getFirstPosition());
-        return video && isVideoEmbed(video) ? video : null;
+        const media = getCaptionedEmbed(selection.getFirstPosition());
+        return media && isMediaEmbed(media) ? media : null;
     }
 
     /** Delegates to the host to avoid duplicating URL detection logic. */
@@ -353,7 +354,7 @@ function rebuildLinkWidget(
     if (mode === 'cardLink') {
         attrs.embedType = 'opengraph';
     } else if (mode === 'embedLink') {
-        attrs.embedType = getLinkEmbedHost(editor).detectEmbedType(attrs.url as string);
+        attrs.embedType = getEmbedType(editor, attrs.url as string, attrs.embedType as string);
     }
 
     // Replaced rather than given new attributes: the editing downcast is elementToElement, which
@@ -392,8 +393,8 @@ function keepCaptionText(writer: ModelWriter, element: ModelElement) {
 
 /**
  * Creates the element of the `mode` shape for a link preview with the fields `attributes`: a
- * `linkMention`, a `linkEmbed`, or a video embed (`ContentEmbedVideo`) for the embed of a URL
- * with a video.
+ * `linkMention`, a `linkEmbed`, or a media embed (`ContentEmbedMedia`) for the embed of a URL
+ * that a preview plays.
  */
 export function createLinkPreview(
     writer: ModelWriter,
@@ -404,7 +405,7 @@ export function createLinkPreview(
         case 'linkMention':
             return writer.createElement('linkMention', attributes);
         case 'contentEmbed':
-            return createVideoEmbed(writer, attributes);
+            return createMediaEmbed(writer, attributes);
         default:
             // The renderers draw the `opengraph` type as a card, also for a URL with a video.
             return writer.createElement('linkEmbed', {
@@ -422,9 +423,20 @@ function getLinkPreviewName(
         return 'linkMention';
     }
     const embedType = attributes.embedType as string | undefined;
-    const hasVideo = mode === 'embedLink'
-        && !!getLinkPreviewVideoId({ url: attributes.url as string, embedType });
-    return hasVideo ? 'contentEmbed' : 'linkEmbed';
+    const hasPlayer = mode === 'embedLink'
+        && !!getLinkPreviewPlayer({ url: attributes.url as string, embedType });
+    return hasPlayer ? 'contentEmbed' : 'linkEmbed';
+}
+
+/**
+ * The embed type of the Embed shape of a preview of `url` that stores `embedType`: the stored
+ * type when the preview plays it, as the server reads the type of a file without an extension,
+ * else the type that the host detects from the URL.
+ */
+function getEmbedType(editor: Editor, url: string, embedType: string | undefined) {
+    return embedType && embedType !== 'opengraph' && getLinkPreviewPlayer({ url, embedType })
+        ? embedType
+        : getLinkEmbedHost(editor).detectEmbedType(url);
 }
 
 /** The display mode of the link preview `element`. */
@@ -433,13 +445,13 @@ export function getLinkWidgetMode(element: ModelElement): Exclude<LinkDisplayMod
     return element.getAttribute('embedType') === 'opengraph' ? 'cardLink' : 'embedLink';
 }
 
-/** Returns the selected linkEmbed or linkMention element, or video embed, or null. */
+/** Returns the selected linkEmbed or linkMention element, or media embed, or null. */
 export function getSelectedLinkWidget(editor: Editor): ModelElement | null {
     const selected = editor.model.document.selection.getSelectedElement();
     if (selected && (selected.name === 'linkMention' || selected.name === 'linkEmbed')) {
         return selected;
     }
-    if (selected?.name === 'contentEmbed' && isVideoEmbed(selected)) {
+    if (selected?.name === 'contentEmbed' && isMediaEmbed(selected)) {
         return selected;
     }
     return null;

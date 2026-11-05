@@ -51,7 +51,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
-    loadVideoEmbed,
+    loadMediaEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -250,8 +250,8 @@ export default function EditableText({
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
         },
-        loadVideo(preview, wrapper) {
-            loadVideoEmbed(preview, wrapper, { hasMenu: true });
+        loadMedia(preview, wrapper) {
+            void loadMediaEmbed(preview, wrapper, { hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;

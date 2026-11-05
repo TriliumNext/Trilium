@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import Component from "../../components/component";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import YouTubeVideoDialog, { getYouTubeVideoUrl, YouTubeVideoBalloon } from "./youtube_video";
+import InsertMediaDialog, { getMediaUrl, InsertMediaBalloon } from "./insert_media";
 
 const { showError, readClipboardText } = vi.hoisted(() => ({
     showError: vi.fn(),
@@ -29,24 +29,22 @@ beforeEach(() => {
 
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-describe("getYouTubeVideoUrl", () => {
-    it("accepts the address of a YouTube video, adding https:// when it names no scheme", () => {
-        expect(getYouTubeVideoUrl(` ${VIDEO_URL} `)).toBe(VIDEO_URL);
-        expect(getYouTubeVideoUrl("youtu.be/dQw4w9WgXcQ")).toBe("https://youtu.be/dQw4w9WgXcQ");
-        expect(getYouTubeVideoUrl("https://www.youtube.com/shorts/dQw4w9WgXcQ"))
-            .toBe("https://www.youtube.com/shorts/dQw4w9WgXcQ");
+describe("getMediaUrl", () => {
+    it("accepts a web address, adding https:// when it names no scheme", () => {
+        expect(getMediaUrl(` ${VIDEO_URL} `)).toBe(VIDEO_URL);
+        expect(getMediaUrl("youtu.be/dQw4w9WgXcQ")).toBe("https://youtu.be/dQw4w9WgXcQ");
+        expect(getMediaUrl("http://nas:8096/movie.mkv")).toBe("http://nas:8096/movie.mkv");
     });
 
-    it("rejects an empty field, another site, and an address that is not a web page", () => {
-        expect(getYouTubeVideoUrl("  ")).toBeNull();
-        expect(getYouTubeVideoUrl("https://example.com/watch?v=dQw4w9WgXcQ")).toBeNull();
-        expect(getYouTubeVideoUrl("https://www.youtube.com/")).toBeNull();
-        expect(getYouTubeVideoUrl("javascript:alert(1)//youtube.com/watch?v=dQw4w9WgXcQ"))
-            .toBeNull();
+    it("rejects an empty field, text with spaces, and an address that is not a web page", () => {
+        expect(getMediaUrl("  ")).toBeNull();
+        expect(getMediaUrl("not an address")).toBeNull();
+        expect(getMediaUrl("javascript:alert(1)//youtube.com/watch?v=dQw4w9WgXcQ")).toBeNull();
+        expect(getMediaUrl("ftp://example.com/a.mp4")).toBeNull();
     });
 });
 
-describe("YouTubeVideoBalloon", () => {
+describe("InsertMediaBalloon", () => {
     const onInsert = vi.fn(async (_url: string) => {});
 
     beforeEach(() => {
@@ -58,11 +56,11 @@ describe("YouTubeVideoBalloon", () => {
         const insertion = deferInsertion(onInsert);
         let container = document.body;
         await act(async () => {
-            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+            container = renderInto(<InsertMediaBalloon onInsert={onInsert} />);
         });
         const form = container.querySelector("form");
         if (!form) throw new Error("The balloon has no form.");
-        await type(container.querySelector(".youtube-video-url input"), VIDEO_URL);
+        await type(container.querySelector(".insert-media-url input"), VIDEO_URL);
 
         await submit(form);
         expect(insertButton(container)?.disabled).toBe(true);
@@ -79,22 +77,22 @@ describe("YouTubeVideoBalloon", () => {
         expect(showError).toHaveBeenCalledOnce();
     });
 
-    it("focuses the field, and inserts only the address of a video", async () => {
+    it("focuses the field, and inserts only a web address", async () => {
         let container = document.body;
         await act(async () => {
-            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+            container = renderInto(<InsertMediaBalloon onInsert={onInsert} />);
         });
         const form = container.querySelector("form");
-        const field = container.querySelector<HTMLInputElement>(".youtube-video-url input");
+        const field = container.querySelector<HTMLInputElement>(".insert-media-url input");
         if (!form || !field) throw new Error("The balloon has no form.");
         expect(document.activeElement).toBe(field);
         expect(insertButton(container)?.disabled).toBe(true);
         expect(errorOf(container)).toBeUndefined();
 
-        await type(field, "https://example.com");
+        await type(field, "javascript:alert(1)");
         expect(insertButton(container)?.disabled).toBe(true);
         expect(errorOf(container)).toBe("youtube_video.not_a_video");
-        expect(container.querySelector(".youtube-video-url .tn-card-option-description"))
+        expect(container.querySelector(".insert-media-url .tn-card-option-description"))
             .toBeNull();
         expect(document.activeElement).toBe(field);
         await submit(form);
@@ -111,13 +109,13 @@ describe("YouTubeVideoBalloon", () => {
         readClipboardText.mockResolvedValue(VIDEO_URL);
         let container = document.body;
         await act(async () => {
-            container = renderInto(<YouTubeVideoBalloon onInsert={onInsert} />);
+            container = renderInto(<InsertMediaBalloon onInsert={onInsert} />);
         });
         // The effect calling `canReadClipboardText()` runs as the first `act()` ends.
         await settle();
-        const field = container.querySelector<HTMLInputElement>(".youtube-video-url input");
-        const label = container.querySelector(".youtube-video-url label");
-        const button = container.querySelector<HTMLButtonElement>(".youtube-video-url .bx-paste");
+        const field = container.querySelector<HTMLInputElement>(".insert-media-url input");
+        const label = container.querySelector(".insert-media-url label");
+        const button = container.querySelector<HTMLButtonElement>(".insert-media-url .bx-paste");
         if (!field || !button) throw new Error("The field has no paste button.");
         expect(label?.getAttribute("for")).toBe(field.id);
 
@@ -130,7 +128,7 @@ describe("YouTubeVideoBalloon", () => {
     });
 });
 
-describe("YouTubeVideoDialog", () => {
+describe("InsertMediaDialog", () => {
     const onInsert = vi.fn(async (_url: string) => {});
     let host: Component;
     let container: HTMLElement;
@@ -142,19 +140,19 @@ describe("YouTubeVideoDialog", () => {
         host = new Component();
         container = renderInto(
             <ParentComponent.Provider value={host}>
-                <YouTubeVideoDialog />
+                <InsertMediaDialog />
             </ParentComponent.Provider>
         );
     });
 
     async function open() {
         await act(async () => {
-            void host.handleEventInChildren("showYouTubeVideoDialog", { onInsert });
+            void host.handleEventInChildren("showInsertMediaDialog", { onInsert });
         });
     }
 
     function field() {
-        return container.querySelector<HTMLInputElement>(".youtube-video-url input");
+        return container.querySelector<HTMLInputElement>(".insert-media-url input");
     }
 
     async function hide() {
@@ -223,7 +221,7 @@ function insertButton(container: HTMLElement) {
 
 /** The error shown under the URL field, if any. */
 function errorOf(container: HTMLElement) {
-    return container.querySelector(".youtube-video-url > .input-group + .form-field-error")
+    return container.querySelector(".insert-media-url > .input-group + .form-field-error")
         ?.textContent ?? undefined;
 }
 

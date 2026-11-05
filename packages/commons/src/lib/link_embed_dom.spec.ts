@@ -11,7 +11,7 @@ vi.mock("./favicon_contrast.js", async (importOriginal) => ({
     measureFaviconVisibility: vi.fn()
 }));
 
-const OPTIONS = { playVideoLabel: "Play video" };
+const OPTIONS = { playVideoLabel: "Play video", playAudioLabel: "Play audio" };
 
 /** The icon loaded for measuring, with its `load` or `error` left for the test to fire. */
 class FakeImage {
@@ -105,6 +105,41 @@ describe("enhanceLinkPreviews", () => {
         fade.dispatchEvent(new Event("finish"));
         expect(facade?.isConnected).toBe(false);
         expect(iframe?.isConnected).toBe(true);
+    });
+
+    it("replaces the facade of a video or audio file with a player of its URL once clicked", () => {
+        const container = render(renderLinkEmbedHtml({
+            url: "https://example.com/a.mp4", embedType: "video", image: "data:image/png;base64,AAA"
+        }, OPTIONS) + renderLinkEmbedHtml({
+            url: "https://example.com/a.mp3", embedType: "audio"
+        }, OPTIONS));
+        expect(container.querySelector("video, audio")).toBeNull();
+
+        container.querySelector<HTMLButtonElement>(".link-embed-video-facade")?.click();
+        container.querySelector<HTMLButtonElement>(".link-embed-audio-facade")?.click();
+
+        const video = container.querySelector("video");
+        expect(video?.parentElement?.className).toBe("link-embed-video");
+        expect([ video?.src, video?.poster, video?.controls, video?.autoplay ])
+            .toEqual([ "https://example.com/a.mp4", "data:image/png;base64,AAA", true, true ]);
+        const audio = container.querySelector("audio");
+        expect(audio?.parentElement?.className).toBe("link-embed-audio");
+        expect([ audio?.src, audio?.controls, audio?.autoplay ])
+            .toEqual([ "https://example.com/a.mp3", true, true ]);
+        expect(container.querySelector("button")).toBeNull();
+    });
+
+    it("leaves the facade of a file whose stored URL is no web address", () => {
+        const container = render(renderLinkEmbedHtml({
+            url: "https://example.com/a.mp3", embedType: "audio"
+        }, OPTIONS));
+        const facade = container.querySelector<HTMLButtonElement>(".link-embed-audio-facade");
+        facade?.setAttribute("data-media-url", "javascript:alert(1)");
+
+        facade?.click();
+
+        expect(container.querySelector("audio")).toBeNull();
+        expect(facade?.isConnected).toBe(true);
     });
 
     it("gives the player the focus of the clicked facade, while the facade still has it", () => {

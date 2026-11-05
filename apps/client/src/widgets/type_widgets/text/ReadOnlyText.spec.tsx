@@ -39,7 +39,7 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
 
 const {
     watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed, loadUnknownEmbed,
-    loadVideoEmbed
+    loadMediaEmbed
 } = vi.hoisted(() => {
     const stop = vi.fn();
     return {
@@ -48,7 +48,7 @@ const {
         loadEmbeddedNote: vi.fn(async () => {}),
         loadInlineEmbed: vi.fn(async () => {}),
         loadUnknownEmbed: vi.fn(async () => {}),
-        loadVideoEmbed: vi.fn()
+        loadMediaEmbed: vi.fn(async () => {})
     };
 });
 vi.mock("./utils", async (importOriginal) => ({
@@ -57,7 +57,7 @@ vi.mock("./utils", async (importOriginal) => ({
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
-    loadVideoEmbed
+    loadMediaEmbed
 }));
 
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
@@ -618,10 +618,10 @@ describe("ReadOnlyText videos", () => {
         vi.stubGlobal("glob", { ...glob, device: "desktop" });
     });
 
-    async function mountContent() {
+    async function mountContent(content = html) {
         const container = document.createElement("div");
         document.body.append(container);
-        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+        await act(async () => render(<ReadOnlyTextContent html={content} />, container));
         return {
             container,
             async unmount() {
@@ -632,10 +632,10 @@ describe("ReadOnlyText videos", () => {
     }
 
     it("shows each video in the box of the editor, with no menu, and a card in place", async () => {
-        loadVideoEmbed.mockClear();
+        loadMediaEmbed.mockClear();
         const { container, unmount } = await mountContent();
 
-        const videos = loadVideoEmbed.mock.calls.map((call: unknown[]) => {
+        const videos = loadMediaEmbed.mock.calls.map((call: unknown[]) => {
             const [ preview, figure ] = call as [ { url: string; title: string }, HTMLElement ];
             return {
                 url: preview.url,
@@ -650,7 +650,7 @@ describe("ReadOnlyText videos", () => {
             };
         });
         const box = {
-            url, isMenuless: true, isInPage: true, className: "include-note video-embed"
+            url, isMenuless: true, isInPage: true, className: "include-note media-embed video-embed"
         };
         expect(videos).toEqual([
             {
@@ -667,12 +667,30 @@ describe("ReadOnlyText videos", () => {
         await unmount();
     });
 
+    it("boxes an audio file at Small, and a video file in the shape of its video", async () => {
+        loadMediaEmbed.mockClear();
+        const { unmount } = await mountContent(`<section class="link-embed"`
+            + ` data-url="https://example.com/a.mp3" data-embed-type="audio" data-box-size="small">`
+            + `</section><section class="link-embed" data-url="https://example.com/a.mp4"`
+            + ` data-embed-type="video" data-aspect-ratio="4/3" data-box-size="medium"></section>`);
+
+        expect(loadMediaEmbed.mock.calls.map((call: unknown[]) => {
+            const figure = call[1] as HTMLElement;
+            return [ figure.className, figure.dataset.boxSize,
+                figure.style.getPropertyValue("--video-aspect-ratio") ];
+        })).toEqual([
+            [ "include-note media-embed audio-embed", "small", "" ],
+            [ "include-note media-embed video-embed", "medium", String(4 / 3) ]
+        ]);
+        await unmount();
+    });
+
     it("draws the videos in place when printing", async () => {
-        loadVideoEmbed.mockClear();
+        loadMediaEmbed.mockClear();
         vi.stubGlobal("glob", { ...glob, device: "print" });
         const { container, unmount } = await mountContent();
 
-        expect(loadVideoEmbed).not.toHaveBeenCalled();
+        expect(loadMediaEmbed).not.toHaveBeenCalled();
         expect(container.querySelectorAll("section.link-embed > .link-embed-video"))
             .toHaveLength(2);
         await unmount();

@@ -24,7 +24,6 @@ import {
     IconTodoList,
     IconImage
 } from "@ckeditor/ckeditor5-icons";
-import youtubeIcon from "boxicons/svg/logos/bxl-youtube.svg?raw";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
@@ -34,6 +33,7 @@ import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxGlobe from "boxicons/svg/regular/bx-globe.svg?raw";
 import bxHash from "boxicons/svg/regular/bx-hash.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
+import bxMoviePlay from "boxicons/svg/regular/bx-movie-play.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
 import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
 import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
@@ -71,7 +71,7 @@ import { insertMermaidDiagram, type MermaidSample } from "../mermaid/mermaid_ui.
 import { getDefaultRatios, MAX_COLUMNS, MIN_COLUMNS } from "../multicolumn/constants.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import SnippetsEditing from "../snippets/snippetsediting.js";
-import { COMMAND_NAME as YOUTUBE_VIDEO_COMMAND } from "../youtube_video.js";
+import { COMMAND_NAME as INSERT_MEDIA_COMMAND } from "../insert_media.js";
 import { registerHostedMentionFeed } from "./register_feed.js";
 import type { MentionHostedList } from "./types.js";
 
@@ -407,12 +407,12 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
         ...buildDateTimeSlashCommands(editor),
         ...buildLinkSlashCommands(editor),
         {
-            id: "youtube-video",
-            title: t("Insert YouTube video"),
-            description: t("Insert a YouTube video that can be watched straight within the note"),
-            aliases: [ "youtube", "video", "embed" ],
-            icon: youtubeIcon,
-            commandName: YOUTUBE_VIDEO_COMMAND
+            id: "media-embed",
+            title: t("Audio/video embed"),
+            description: t("Embed a YouTube video, or an audio or video file from its address"),
+            aliases: [ "youtube", "video", "audio", "media", "embed" ],
+            icon: bxMoviePlay,
+            commandName: INSERT_MEDIA_COMMAND
         },
         {
             id: "attach-file",

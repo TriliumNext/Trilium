@@ -212,7 +212,7 @@ export default class NodeRequestProvider implements RequestProvider {
     async fetchResource(resourceUrl: string, opts: FetchResourceOpts): Promise<FetchedResource> {
         const response = await safeFetch(resourceUrl, { headers: opts.headers });
 
-        return await readCappedResponse(response, opts.maxBytes);
+        return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
     }
 
     /**

@@ -32,7 +32,7 @@ import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
-import { COMMAND_NAME as YOUTUBE_VIDEO_COMMAND } from "../youtube_video.js";
+import { COMMAND_NAME as INSERT_MEDIA_COMMAND } from "../insert_media.js";
 import TriliumSlashCommands, {
     buildDefaultSlashCommands,
     buildTriliumSlashCommands,
@@ -594,7 +594,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "web-link-card", "Link to a web page (as a card)", INTERNAL_LINK_COMMAND ],
         [ "note-link", "Link to a note (internal link)", INTERNAL_LINK_COMMAND ],
         [ "anchor-link", "Link to a heading or anchor", INTERNAL_LINK_COMMAND ],
-        [ "youtube-video", "Insert YouTube video", YOUTUBE_VIDEO_COMMAND ],
+        [ "media-embed", "Audio/video embed", INSERT_MEDIA_COMMAND ],
         [ "attach-file", "Attach file as a link", "fileUpload" ],
         [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
         [ "drawing-canvas", "Drawing canvas", "fileUpload" ],
@@ -854,11 +854,11 @@ describe("buildTriliumSlashCommands", () => {
         }
     });
 
-    it("lists the YouTube video entry first for the words people type for a video", () => {
+    it("lists the media entry first for the words people type for a video or an audio file", () => {
         const definitions = buildTriliumSlashCommands(editor);
 
-        for (const query of [ "youtube", "video" ]) {
-            expect(matchSlashCommands(definitions, query)[0]?.id).toBe("youtube-video");
+        for (const query of [ "youtube", "video", "audio", "media" ]) {
+            expect(matchSlashCommands(definitions, query)[0]?.id).toBe("media-embed");
         }
     });
 

@@ -74,7 +74,7 @@
     "display_plain": "Text",
     "display_inline": "Icon & text",
     "display_card": "Card",
-    "display_embed": "YouTube embed",
+    "display_embed": "Embed",
     "page_title": "Title of the web page",
     "title_from_url": "Same as the URL",
     "title_from_note": "If not set, will always reflect the note's title",
@@ -1717,6 +1717,7 @@
     "picture-in-picture": "Picture-in-picture",
     "exit-picture-in-picture": "Exit picture-in-picture",
     "unsupported-format": "Media preview is not available for this file format:\n{{mime}}",
+    "external-unavailable": "This media could not be played. Its address might be unreachable, or its format unsupported.",
     "zoom-to-fit": "Zoom to fill",
     "zoom-reset": "Reset zoom to fill",
     "hints": {
@@ -3111,7 +3112,8 @@
     "failed_to_open": "Failed to open link '{{- href}}': {{- message}}"
   },
   "link_embed": {
-    "play_video": "Play video"
+    "play_video": "Play video",
+    "play_audio": "Play audio"
   },
   "ai_assistant": {
     "title": "AI assistant",
@@ -4516,6 +4518,7 @@
       "box-size": "Box size",
       "box-size-0": "Box size: %0",
       "bulleted-list": "Bulleted list",
+      "caption-for-the-audio": "Caption for the audio",
       "caption-for-the-included-note": "Caption for the included note",
       "caption-for-the-video": "Caption for the video",
       "card": "Card",
@@ -4756,9 +4759,8 @@
       "jump-to-anchor": "Jump to anchor",
       "jump-to-block": "Jump to block",
       "box-position": "Box position",
-      "youtube-video": "YouTube video",
-      "insert-youtube-video": "Insert YouTube video",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Insert a YouTube video that can be watched straight within the note",
+      "audio-video-embed": "Audio/video embed",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Embed a YouTube video, or an audio or video file from its address",
       "open-link": "Open link",
       "display-as": "Display as"
     },
@@ -5046,9 +5048,9 @@
     "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width."
   },
   "youtube_video": {
-    "title": "Insert YouTube video",
-    "button_insert": "Insert video",
-    "not_a_video": "This is not the address of a YouTube video.",
-    "insert_failed": "The video could not be loaded. Check the address and the connection, then try again."
+    "title": "Insert media",
+    "button_insert": "Insert media",
+    "not_a_video": "This is not a web address.",
+    "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again."
   }
 }

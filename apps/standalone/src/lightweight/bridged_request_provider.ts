@@ -199,19 +199,26 @@ export default class BridgedRequestProvider implements RequestProvider {
             });
         });
 
-        const encoded = msg.body ?? "";
+        const contentType =
+            (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+        const prefix = opts.prefixLength?.(contentType);
+        // Four base64 characters encode three bytes, so a prefix decodes from the start alone.
+        const encoded = prefix === undefined
+            ? msg.body ?? ""
+            : (msg.body ?? "").slice(0, Math.ceil(prefix / 3) * 4);
 
-        if (decodedLengthOf(encoded) > opts.maxBytes) {
+        if (prefix === undefined && decodedLengthOf(encoded) > opts.maxBytes) {
             throw new Error(`Response exceeds the ${opts.maxBytes} byte limit`);
         }
 
         const binary = atob(encoded);
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
 
         return {
             status: msg.status,
             ok: msg.status >= 200 && msg.status < 300,
-            contentType: (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase(),
-            bytes: Uint8Array.from(binary, (c) => c.charCodeAt(0))
+            contentType,
+            bytes: prefix === undefined ? bytes : bytes.subarray(0, prefix)
         };
     }
 
