@@ -69,11 +69,33 @@
     "note": "Nota",
     "search_note": "pesquisar nota pelo nome",
     "link_title": "Titulo do link",
-    "button_add_link": "Adicionar link",
+    "button_add_link": "Inserir link",
     "edit_link": "Editar link",
     "anchor": "Âncora (opcional)",
     "anchor_none": "Nenhuma (link para a nota)",
-    "button_edit_link": "Salvar link"
+    "button_edit_link": "Salvar link",
+    "fix_link": "Corrigir link",
+    "button_fix_link": "Corrigir link",
+    "web_link": "Página web",
+    "url": "Endereço (URL)",
+    "invalid_url": "Essa URL não é válida.",
+    "script_link_not_allowed": "Links que começam com {{scheme}} podem rodar código, portanto não são permitidos.",
+    "display_as": "Mostrar como",
+    "display_plain": "Texto",
+    "display_inline": "Ícone & texto",
+    "display_card": "Cartão",
+    "display_embed": "Incorporar YouTube",
+    "page_title": "Título da página web",
+    "title_from_url": "Igual à URL",
+    "title_from_note": "Se deixado em branco, sempre refletirá o título da nota",
+    "description": "Descrição",
+    "page_description": "Descrição da página web",
+    "anchors": "Cabeçalho / âncora",
+    "target_anchor": "Âncoras",
+    "headings": "Cabeçalhos",
+    "no_headings_or_anchors": "Essa nota não contém nenhum cabeçalho ou âncora.",
+    "title_from_heading": "Se deixado em branco, sempre refletirá o texto do cabeçalho",
+    "retrieving_from_page": "Pegando da página web..."
   },
   "branch_prefix": {
     "prefix": "Prefixo",
@@ -92,15 +114,24 @@
     "bulk_actions": "Ações em massa",
     "include_descendants": "Incluir notas filhas das notas selecionadas",
     "chosen_actions": "Ações selecionadas",
-    "execute_bulk_actions_one": "Executar ações em massa",
-    "execute_bulk_actions_many": "",
-    "execute_bulk_actions_other": "",
+    "execute_bulk_actions_one": "Aplicar a {{count}} nota",
+    "execute_bulk_actions_many": "Aplicar a {{count}} notas",
+    "execute_bulk_actions_other": "Aplicar a {{count}} notas",
     "bulk_actions_executed": "As ações em massa foram concluídas com sucesso.",
-    "none_yet": "Nenhuma até agora... adicione uma ação clicando em uma das disponíveis acima.",
+    "none_yet": "Nenhuma ação ainda. Use Adicionar ação abaixo para escolher uma.",
     "labels": "Etiquetas",
     "relations": "Relações",
     "notes": "Notas",
-    "other": "Outros"
+    "other": "Outros",
+    "selected_notes": "Notas selecionadas",
+    "remove_from_selection": "Remover da seleção",
+    "affected_note_count_one": "As ações aplicam a {{count}} nota.",
+    "affected_note_count_many": "As ações aplicam a {{count}} notas.",
+    "affected_note_count_other": "As ações aplicam a {{count}} notas.",
+    "add_action": "Adicionar ação",
+    "remove_action": "Remover essa ação",
+    "no_actions_to_execute": "Adicionar uma ação primeiro.",
+    "no_notes_to_execute_on": "Nenhuma das notas selecionadas existe mais."
   },
   "clone_to": {
     "clone_notes_to": "Clonar notas para...",
@@ -141,8 +172,8 @@
     "erase_notes_label": "Apagar permanentemente",
     "clones_label": "Clones",
     "delete": "Deletar",
-    "delete_clones_description_one": "Também excluir {{count}} outro clone. Pode ser desfeito nas alterações recentes.",
-    "delete_clones_description_many": "",
+    "delete_clones_description_one": "Também excluir o outro clone. Pode ser desfeito nas alterações recentes.",
+    "delete_clones_description_many": "Também excluir {{count}} outros clones. Pode ser desfeito nas alterações recentes.",
     "delete_clones_description_other": "Também excluir {{count}} outros clones. Pode ser desfeito nas alterações recentes.",
     "table_note_with_relation": "Nota com relação",
     "table_points_to": "Aponta para (excluída)"
@@ -3760,5 +3791,14 @@
     "operator_fuzzy_equal": "Igual, tolerando erros de digitação",
     "operator_fuzzy_contains": "Contém, tolerando erros de digitação",
     "property_content": "A estrutura da anotação do texto"
+  },
+  "note_chips": {
+    "more": "+{{count}} a mais"
+  },
+  "doc_notes": {
+    "hidden": "<p>Árvore escondida é usada para registrar vários dados em nivel de aplicativo que podem se manter ocultos da visão do usuário a maioria do tempo.</p><p>Tenha certeza que você sabe o que está fazendo. Mudanças incorretas na sub-árvore podem potencialmente quebrar o aplicativo.</p>",
+    "launchbar_command_launcher": "<p>Atalho de teclado para essa ação de inicializador pode ser configurada em Opções -&gt; Atalhos.</p>",
+    "launchbar_history_navigation": "<p>Botões de Anterior e Próximo permitem que você se mova no histórico de navegação.</p><p>Esses inicializadores estão ativos apenas na versão desktop e serão ignorados na edição de servidor, onde você pode usar os botões nativos do navegador.</p>",
+    "launchbar_intro": "<p>Bem-vindo às configurações da Launchbar.</p><p>Você pode fazer o seguinte aqui:</p><ul><li>Mover inicializadores disponíveis para a lista visível (colocando eles na launchbar) ao arrastá-los</li><li>Mover inicializadores visíveis para a lista de disponíveis (omitindo eles da launchbar) ao arrastá-los.</li><li>Você pode reordenar os itens na lista ao arrastá-los</li><li>Você pode criar novos inicializadores ao clicar com o botão direito na pasta \"Inicializadores visíveis\"</li><li>Se você quiser voltar para as condições padrões, você pode encontrar \"recompor\" no menu contextual.</li></ul>"
   }
 }
