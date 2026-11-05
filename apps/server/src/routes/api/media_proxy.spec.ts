@@ -81,7 +81,48 @@ describe("media proxy", () => {
         expect([ blocked.status, blocked.isEnded ]).toEqual([ 502, true ]);
         expect(safeFetch).toHaveBeenCalledTimes(2);
     });
+
+    it("lets go of the file without a stray rejection once the media element drops it", async () => {
+        let source: ReadableStreamDefaultController<Uint8Array> | undefined;
+        safeFetch.mockImplementation(async (_url: string, { signal }: RequestInit) => {
+            // As undici does, aborting the request errors the body of its answer.
+            signal?.addEventListener("abort", () => source?.error(signal.reason));
+            const body = new ReadableStream<Uint8Array>({ start(controller) { source = controller; } });
+            return new Response(body, { headers: { "content-type": "video/mp4" } });
+        });
+        const res = fakeResponse();
+
+        const rejections = await collectRejections(async () => {
+            const streaming = mediaProxy.streamProxy(get(createToken()), res.res);
+            await nextTask();
+            // The next chunk arrives as the media element goes away.
+            source?.enqueue(new TextEncoder().encode("abc"));
+            res.res.emit("close");
+            await streaming;
+        });
+
+        expect(rejections).toEqual([]);
+        expect([ res.body, res.isEnded ]).toEqual([ "", true ]);
+    });
 });
+
+/** The rejections that nothing handles while `run` runs. */
+async function collectRejections(run: () => Promise<unknown>) {
+    const rejections: unknown[] = [];
+    const collect = (reason: unknown) => rejections.push(reason);
+    process.on("unhandledRejection", collect);
+    try {
+        await run();
+        await nextTask();
+    } finally {
+        process.off("unhandledRejection", collect);
+    }
+    return rejections;
+}
+
+function nextTask() {
+    return new Promise((resolve) => setTimeout(resolve));
+}
 
 function createToken() {
     return mediaProxy.createProxy(post("https://example.com/clip.mp4")).url.split("/").pop() ?? "";

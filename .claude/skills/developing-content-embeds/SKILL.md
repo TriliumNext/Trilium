@@ -86,7 +86,7 @@ widgets inside the selection.
   (`getMediaEmbedBoxSizes()`; the ⋮ menu drops a one-size submenu). `readMediaEmbedBox()` reads a
   YouTube video saved before as Full and untitled, and `createMediaEmbed()` makes a new video
   Medium and untitled at `getVideoMediumWidth()` (20em high), which the box size command sets
-  again, and an audio file Small and titled. Height follows width for a video and the controls
+  again, and an audio file Small and untitled. Height follows width for a video and the controls
   for audio (`isHeightResizable` is per element). A size change only restyles the figure: the
   `attribute:boxSize` converter skips `reloadEmbeddedContent()` for media, since a new player
   stops the playback. The box carries `media-embed` and `video-embed` or `audio-embed`

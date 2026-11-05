@@ -71,7 +71,7 @@ async function streamProxy(req: express.Request<{ token: string }>, res: express
             .split(";")[0].trim().toLowerCase();
         const reader = upstream.body?.getReader();
         if (!upstream.ok || !reader || !isProbedContentType(contentType)) {
-            void reader?.cancel();
+            void reader?.cancel().catch(() => {});
             res.status(upstream.ok ? 415 : 502).end();
             return;
         }
@@ -100,7 +100,8 @@ async function streamProxy(req: express.Request<{ token: string }>, res: express
                 await waitForDrain(res);
             }
         }
-        void reader.cancel();
+        // The abort of the request errors its body, and cancelling an errored body rejects.
+        void reader.cancel().catch(() => {});
         res.end();
     } catch {
         if (!res.headersSent) {

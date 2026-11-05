@@ -92,7 +92,7 @@ describe("InsertMediaPlugin", () => {
         expect(linkEmbed.fetchMetadata).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
     });
 
-    it("inserts a video file Medium and untitled, an audio file Small and titled", async () => {
+    it("inserts a video file Medium and an audio file Small, both untitled", async () => {
         const insert = async (url: string, embedType: string) => {
             setModelData(editor.model, "<paragraph>[]</paragraph>");
             linkEmbed.fetchMetadata.mockResolvedValueOnce({ url, embedType, title: "file" });
@@ -105,7 +105,11 @@ describe("InsertMediaPlugin", () => {
         expect(await insert("https://example.com/watch/1", "video"))
             .toEqual([ "video", "medium", true ]);
         expect(await insert("https://example.com/listen/1", "audio"))
-            .toEqual([ "audio", "small", undefined ]);
+            .toEqual([ "audio", "small", true ]);
+
+        // The title can still be shown.
+        editor.execute("toggleContentEmbedTitle");
+        expect(findElement(editor, "contentEmbed")?.getAttribute("hideTitle")).toBeUndefined();
     });
 
     it("rejects, inserting nothing, for an address that plays nothing", async () => {

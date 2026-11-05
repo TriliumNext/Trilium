@@ -129,8 +129,8 @@ export default class ContentEmbedMedia extends Plugin {
 }
 
 /**
- * Creates an embed that plays the media of the link preview with the fields `attributes`: a video
- * Medium and untitled, an audio file Small. A video file without a thumbnail gets one.
+ * Creates an untitled embed that plays the media of the link preview with the fields
+ * `attributes`: a video Medium, an audio file Small. A video file without a thumbnail gets one.
  */
 export function createMediaEmbed(writer: ModelWriter, attributes: Record<string, unknown>) {
     const isAudio = attributes.embedType === "audio";
@@ -138,11 +138,11 @@ export function createMediaEmbed(writer: ModelWriter, attributes: Record<string,
     const fields = Object.entries(attributes).filter(([ , value ]) => value != null);
     const embed = writer.createElement("contentEmbed", {
         ...Object.fromEntries(fields),
+        hideTitle: true,
         ...(isAudio
             ? { boxSize: "small" }
             : {
                 boxSize: "medium",
-                hideTitle: true,
                 [SIZE_ATTRIBUTES.width]: getVideoMediumWidth(attributes as Partial<LinkPreviewData>)
             })
     });

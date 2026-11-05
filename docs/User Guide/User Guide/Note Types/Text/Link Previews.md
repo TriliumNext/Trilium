@@ -99,7 +99,7 @@ Right-clicking a link preview selects it and opens its _More actions_ menu.
 
 A YouTube video, a video file or an audio file shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. A video keeps its shape, so a YouTube Short stands upright and an older video can be 4:3. A YouTube video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player.
 
-A video file or an audio file plays in the media player of Trilium, the one of <a class="reference-link" href="../File.md">File</a> notes, with its play button, seek bar and volume. A video file shows a picture of one of its frames, taken when it is inserted (see _Where the preview data comes from_ below), and a <span class="tn-icon bx bx-movie"></span> icon when it has none. An audio file shows its title above its controls.
+A video file or an audio file plays in the media player of Trilium, the one of <a class="reference-link" href="../File.md">File</a> notes, with its play button, seek bar and volume. A video file shows a picture of one of its frames, taken when it is inserted (see _Where the preview data comes from_ below), and a <span class="tn-icon bx bx-movie"></span> icon when it has none. An audio file shows a row of controls.
 
 The toolbar of a selected embed offers:
 
@@ -110,7 +110,7 @@ The toolbar of a selected embed offers:
     *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_, and the display modes of the _Display_ menu under <span class="tn-icon cke cke-trilium-link-preview"></span> _Display as_.
     *   _Size_: a _Medium_ video can be resized, a _Full_ video takes the width of the note, or less when it would be taller than most of the window. A new video is _Medium_. A YouTube video inserted in an earlier version is _Full_. An audio file has a single size, a row of controls whose width can be resized, so it has no _Size_ menu.
     *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default.
-    *   _Show title_ shows the title of the video above it, as a link to the video. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
+    *   _Show title_ shows the title of the media above it, as a link to the media. New media is inserted without its title. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
     *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
     *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
 
