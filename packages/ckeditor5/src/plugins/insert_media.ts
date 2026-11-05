@@ -1,10 +1,9 @@
-import { getLinkPreviewPlayer } from "@triliumnext/commons";
 import mediaIcon from "boxicons/svg/regular/bx-movie-play.svg?raw";
 import { ButtonView, Command, ContextualBalloon, type Editor, ModelLiveRange, Plugin } from "ckeditor5";
 
 import HostedBalloon from "../hosted_balloon.js";
 import {
-    createLinkPreview, getLinkEmbedHost, getPreviewAttributes
+    createLinkPreview, getLinkEmbedHost, getMediaAttributes
 } from "./link_embed/link_embed_commands.js";
 import LinkEmbedEditing from "./link_embed/link_embed_editing.js";
 
@@ -100,16 +99,8 @@ async function insertMedia(editor: Editor, url: string) {
         if (isReplaced || editor.state === "destroyed") {
             return false;
         }
-        if (metadata.unresolved) {
-            throw new Error("The metadata of the media could not be read.");
-        }
 
-        const attributes = getPreviewAttributes(editor, "embedLink", url, metadata);
-        const { embedType } = attributes as { embedType?: string };
-        if (!getLinkPreviewPlayer({ url: metadata.url, embedType })) {
-            throw new Error("The address is not that of a YouTube video, an audio or a video file.");
-        }
-
+        const attributes = getMediaAttributes(editor, url, metadata);
         model.change((writer) => {
             const player = createLinkPreview(writer, "embedLink", attributes);
             const isRemoved = place.root === model.document.graveyard;

@@ -3190,7 +3190,8 @@
     "open_externally": "Open externally",
     "copy_url": "Copy address (URL)",
     "display_as": "Display as",
-    "delete": "Delete"
+    "delete": "Delete",
+    "edit": "Edit..."
   },
   "electron_integration": {
     "desktop-application": "Desktop Application",

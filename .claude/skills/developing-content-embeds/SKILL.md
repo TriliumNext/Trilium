@@ -130,6 +130,11 @@ widgets inside the selection.
   is toggled from ⋮ only. Its ⋮ menu
   (`getMediaItems()`, picked by the `url` of `ContentEmbedState`) puts _Open externally_
   (`openUrlExternally()` in `services/open.ts`) above the embed's commands and _Delete_ below.
+  Its _Edit..._ (and Ctrl+K on the selected embed) opens the link dialog in its media form
+  (`EditLinkOpts.isMedia`, from `LinkAtSelection.isMedia`: address and title only), which applies
+  through `insertLinkEmbed`: another address keeps the embed until `getMediaAttributes()` accepts
+  the fetched metadata, then `createChangedMediaEmbed()` replaces it, keeping its attributes and
+  caption; an address that plays nothing rejects, and `getEditLinkOpts()` shows the error toast.
   `ReadOnlyText`'s `applyMediaEmbeds()` swaps the section for the same box.
   The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
   facade takes the focus on click and `playVideo()` hands it to the player once loaded:

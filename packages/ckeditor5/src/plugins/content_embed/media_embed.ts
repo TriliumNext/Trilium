@@ -152,6 +152,37 @@ export function createMediaEmbed(writer: ModelWriter, attributes: Record<string,
     return embed;
 }
 
+/**
+ * Creates an embed that plays the media of the link preview with the fields `attributes`, to
+ * replace the media embed `embed`. It keeps the other attributes and the caption of `embed`. Media
+ * of another kind gets the size of a new embed, and a video at the default width gets the default
+ * width of the new video.
+ */
+export function createChangedMediaEmbed(
+    writer: ModelWriter, embed: ModelElement, attributes: Record<string, unknown>
+) {
+    const replacement = createMediaEmbed(writer, attributes);
+    const kept: Record<string, unknown> = Object.fromEntries([ ...embed.getAttributes() ]
+        .filter(([ key ]) => !PREVIEW_FIELDS.includes(key as keyof LinkPreviewData)));
+    const width = SIZE_ATTRIBUTES.width;
+
+    writer.removeAttribute("hideTitle", replacement);
+    if (isAudioEmbed(embed) !== isAudioEmbed(replacement)) {
+        delete kept.boxSize;
+        delete kept[width];
+    } else if (kept[width] === getVideoMediumWidth(getMediaPreview(embed))) {
+        delete kept[width];
+    } else {
+        writer.removeAttribute(width, replacement);
+    }
+    writer.setAttributes(kept, replacement);
+
+    for (const child of embed.getChildren()) {
+        writer.append(writer.cloneElement(child as ModelElement), replacement);
+    }
+    return replacement;
+}
+
 /** The width of the video of `preview` at Medium: 20em high, in the shape of the video. */
 export function getVideoMediumWidth(preview: Pick<LinkPreviewData, "aspectRatio">) {
     const aspectRatio = getVideoAspectRatio(preview) ?? DEFAULT_ASPECT_RATIO;

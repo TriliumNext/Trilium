@@ -902,6 +902,7 @@ describe("openContextMenu", () => {
             const items = await openMenu();
             expect(items).toMatchObject([
                 { title: "link_context_menu.open_externally", uiIcon: "bx bx-link-external" },
+                { title: "link_context_menu.edit", uiIcon: "cke cke-pencil" },
                 { kind: "separator" },
                 { title: "link_context_menu.copy_url", uiIcon: "cke cke-trilium-copy" },
                 { kind: "separator" },
@@ -928,6 +929,18 @@ describe("openContextMenu", () => {
             expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
             titled(items, "link_context_menu.copy_url").handler();
             expect(copy).toHaveBeenCalledExactlyOnceWith(url);
+
+            // The link dialog opens on the selected video and focuses its own fields.
+            const edit = titled(items, "link_context_menu.edit");
+            execute.mockClear();
+            focus.mockClear();
+            edit.handler();
+            expect(selectEmbedAt).toHaveBeenLastCalledWith(embed());
+            expect(execute.mock.calls).toEqual([ [ "insertInternalLink" ] ]);
+            expect(focus).not.toHaveBeenCalled();
+            selectEmbedAt.mockReturnValueOnce(false);
+            edit.handler();
+            expect(execute).toHaveBeenCalledOnce();
             expect(pick(titled(items, "link_context_menu.display_as").items[1]))
                 .toEqual([ [ "changeLinkDisplay", { value: "cardLink" } ] ]);
             expect(pick(titled(items, "link_context_menu.delete")))

@@ -109,6 +109,11 @@ export interface EditLinkOpts {
      * `embedLink` falls back to a card for an address without a player.
      */
     display?: LinkDisplayMode;
+    /**
+     * Edits a media embed: the dialog shows only the address and the title, and applies them
+     * through `addLinkPreview` as an embed.
+     */
+    isMedia?: boolean;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     /**
      * Puts a preview of the web link in place of the link. A caller that can show previews passes
@@ -225,6 +230,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const [ isShowPending, setIsShowPending ] = useState(false);
     // An edited attachment link keeps its target, so the form edits its title alone.
     const isAttachmentLink = !opts?.targetOnly && isAttachmentPath(opts?.currentLink?.notePath);
+    const isMedia = !!opts?.isMedia;
     const webLinkRef = useRef<HTMLInputElement>(null);
     const titleRef = useRef<HTMLInputElement>(null);
     // The scrolling box around the Headings and Anchors cards.
@@ -423,9 +429,9 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const webLinkUrl = normalizeWebLink(webLink) ?? undefined;
     // The web link page offers the display, except on a selection: a preview would replace the
     // selected text.
-    const showsDisplay = !!opts?.addLinkPreview && !opts.hasSelection;
-    const shownDisplay = getShownDisplay(display, webLinkUrl);
-    const isPreview = showsDisplay && shownDisplay !== "textLink";
+    const showsDisplay = !!opts?.addLinkPreview && !opts.hasSelection && !isMedia;
+    const shownDisplay = isMedia ? "embedLink" : getShownDisplay(display, webLinkUrl);
+    const isPreview = isMedia || (showsDisplay && shownDisplay !== "textLink");
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
     // A video player shows no title.
     const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embedLink");
@@ -438,7 +444,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const retrievesDescription = showsDescription && !linkDescription.trim()
         && options.is("textNoteLinkDetailsRetrievalEnabled");
     const isRetrieving = !!webLinkUrl && webLinkUrl === retrievingUrl;
-    const webLinkError = webLinkUrl ? getWebLinkError(webLinkUrl) : undefined;
+    const webLinkError = webLinkUrl ? getWebLinkError(webLinkUrl, isMedia) : undefined;
 
     /** Shows the errors of the fields from now on, and returns whether the link can be applied. */
     function validate() {
@@ -530,8 +536,10 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (!webLinkUrl) return;
         const text = linkTitle.trim();
         if (isPreview && opts.addLinkPreview) {
-            // A text that only repeats the address leaves the page's own title.
-            const title = shownDisplay !== "embedLink" && text && text !== webLinkUrl ? text : null;
+            // A text that only repeats the address leaves the page's own title. In the embed
+            // display, only an edited media embed takes a title.
+            const isTitled = isMedia || shownDisplay !== "embedLink";
+            const title = isTitled && text && text !== webLinkUrl ? text : null;
             const description = showsDescription ? linkDescription.trim() || null : null;
             void opts.addLinkPreview(webLinkUrl, shownDisplay, title, description);
             return;
@@ -586,7 +594,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     if (opts?.anchors || opts?.headings) {
         targets.push({ value: "anchor", label: t("add_link.anchors"), icon: "bx-bookmark" });
     }
-    const switcher = !opts?.fixLink && !isAttachmentLink && (
+    const switcher = !opts?.fixLink && !isAttachmentLink && !isMedia && (
         <SegmentedChoice<LinkTarget>
             className="edit-link-target"
             options={targets}
@@ -972,11 +980,12 @@ export function normalizeWebLink(text: string): string | null {
 
 /**
  * Why the web link `link` cannot be applied: it is a `javascript:`, `vbscript:` or `data:` link,
- * which can run code, or `new URL()` cannot parse it. `undefined` for a link that can be applied.
+ * which can run code, `new URL()` cannot parse it, or it is no web address for `isMedia`.
+ * `undefined` for a link that can be applied.
  *
  * Exported for testing.
  */
-export function getWebLinkError(link: string): string | undefined {
+export function getWebLinkError(link: string, isMedia = false): string | undefined {
     let url: URL;
     try {
         url = new URL(link);
@@ -984,5 +993,8 @@ export function getWebLinkError(link: string): string | undefined {
         return t("add_link.invalid_url");
     }
     const runsCode = [ "javascript:", "vbscript:", "data:" ].includes(url.protocol);
-    return runsCode ? t("add_link.script_link_not_allowed", { scheme: url.protocol }) : undefined;
+    if (runsCode) {
+        return t("add_link.script_link_not_allowed", { scheme: url.protocol });
+    }
+    return isMedia && !isHttpUrl(link) ? t("youtube_video.not_a_video") : undefined;
 }

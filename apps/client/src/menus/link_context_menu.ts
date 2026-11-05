@@ -217,12 +217,12 @@ async function downloadLinkedAttachment(notePath: string, viewScope: ViewScope) 
 }
 
 /**
- * The menu of an embed that plays the media at `url`: opening the media outside Trilium, copying
- * its address and Display as, in the groups of the menu of a link preview, then the commands of
- * the embed, and deleting it, each in a group of its own.
+ * The menu of an embed that plays the media at `url`: opening the media outside Trilium and
+ * editing its address and title, copying its address, and Display as, in the groups of the menu of
+ * a link preview, then the commands of the embed, and deleting it, each in a group of its own.
  */
 function getMediaItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] {
-    const { editor } = embed;
+    const { editor, element } = embed;
     // Media is a link preview shown as Embed.
     const displayModeItems = editor.plugins.get("LinkEmbed").getDisplayModes()
         .map(({ value, label }): MenuItem<CommandNames> => ({
@@ -236,6 +236,16 @@ function getMediaItems(embed: MenuEmbed, url: string): MenuItem<CommandNames>[] 
             title: t("link_context_menu.open_externally"),
             uiIcon: "bx bx-link-external",
             handler: () => openUrlExternally(url)
+        },
+        {
+            title: t("link_context_menu.edit"),
+            uiIcon: "cke cke-pencil",
+            // The editor stays unfocused: the link dialog focuses its own fields.
+            handler: () => {
+                if (editor.plugins.get("ContentEmbed").selectEmbedAt(element)) {
+                    editor.execute("insertInternalLink");
+                }
+            }
         },
         { kind: "separator" },
         {

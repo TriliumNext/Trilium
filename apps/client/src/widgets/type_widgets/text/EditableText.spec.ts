@@ -608,6 +608,25 @@ describe("getEditLinkOpts", () => {
         });
     });
 
+    it("edits a selected media embed as media, and reports media it cannot load", async () => {
+        const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        const api = createApi({
+            href: video, text: "Clip", description: "", display: "embedLink", isMedia: true
+        });
+        const opts = getEditLinkOpts(api, ready);
+        expect(opts).toMatchObject({
+            currentLink: { externalLink: video }, currentTitle: "Clip", display: "embedLink",
+            isMedia: true
+        });
+
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        showError.mockClear();
+        api.addLinkPreview.mockRejectedValueOnce(new Error("The address plays nothing."));
+        await opts.addLinkPreview?.("https://example.com/page", "embedLink", null, null);
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        consoleError.mockRestore();
+    });
+
     it("adds a link from the selection outside one", async () => {
         const api = createApi(null);
         const opts = getEditLinkOpts(api, ready);

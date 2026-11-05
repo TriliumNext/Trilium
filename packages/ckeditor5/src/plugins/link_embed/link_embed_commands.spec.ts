@@ -384,6 +384,104 @@ describe("LinkEmbed commands", () => {
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
         });
 
+        it("plays another address in the box and caption of a selected video", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            fetchMetadata.mockResolvedValue({ ...META, url: other, embedType: "youtube" });
+            setModelData(editor.model, `<paragraph>Before</paragraph>[<contentEmbed`
+                + ` boxSize="medium" customWidth="40em" embedType="youtube" position="right"`
+                + ` title="T" url="${url}"><caption>Note</caption></contentEmbed>]`);
+
+            await editor.execute(LINK_EMBED_COMMAND, {
+                url: other, mode: "embedLink", title: "Mine"
+            });
+
+            const embed = findElement(editor, "contentEmbed");
+            expect(fetchMetadata).toHaveBeenCalledExactlyOnceWith(other);
+            expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
+                ...META, url: other, embedType: "youtube", title: "Mine",
+                boxSize: "medium", customWidth: "40em", position: "right"
+            });
+            expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("gives other media the size of a new embed, and a Full video stays Full", async () => {
+            const vertical = "https://youtube.com/watch?v=xyz98765432";
+            const audio = "https://example.com/song.mp3";
+            const sizeOf = () => {
+                const embed = findElement(editor, "contentEmbed");
+                return [ "url", "boxSize", "customWidth", "hideTitle", "position" ]
+                    .map((key) => embed?.getAttribute(key));
+            };
+            fetchMetadata.mockImplementation(async (address: string) => address === audio
+                ? { ...META, url: audio, embedType: "audio" }
+                : { ...META, url: address, embedType: "youtube", aspectRatio: "9/16" });
+
+            // A video at the default width of its shape takes the width of the new shape.
+            setModelData(editor.model, `[<contentEmbed boxSize="medium" customWidth="35.6em"`
+                + ` embedType="youtube" hideTitle="true" position="left" title="T"`
+                + ` url="${url}"></contentEmbed>]`);
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+
+            await editor.execute(LINK_EMBED_COMMAND, { url: audio, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ audio, "small", undefined, true, "left" ]);
+
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+
+            setModelData(editor.model, `[<contentEmbed boxSize="full" embedType="youtube"`
+                + ` title="T" url="${url}"></contentEmbed>]`);
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "full", undefined, undefined, undefined ]);
+        });
+
+        it("rejects, changing nothing, for an address that plays nothing", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            setModelData(editor.model, `[${video}]`);
+            const change = (address: string) =>
+                editor.execute(LINK_EMBED_COMMAND, { url: address, mode: "embedLink" });
+
+            await expect(change("https://example.com/page")).rejects.toThrow();
+            fetchMetadata.mockResolvedValue({ url: other, embedType: "youtube", unresolved: true });
+            await expect(change(other)).rejects.toThrow();
+
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(url);
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        });
+
+        it("keeps a moved selection, and leaves a note left, while the media loads", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            const { resolveFetch } = useDeferredFetch(fetchMetadata);
+            const change = () => editor.execute(LINK_EMBED_COMMAND, {
+                url: other, mode: "embedLink"
+            }) as unknown as Promise<void>;
+            setModelData(editor.model, `<paragraph>Before</paragraph>[${video}]`);
+
+            const changed = change();
+            editor.model.change((writer) => {
+                writer.setSelection(editor.model.document.getRoot()?.getChild(0) ?? null, "end");
+            });
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(url);
+            resolveFetch({ ...META, url: other, embedType: "youtube" });
+            await changed;
+            const selection = editor.model.document.selection;
+            const embed = findElement(editor, "contentEmbed");
+            expect([ embed?.getAttribute("url"), embed?.hasAttribute("hideTitle") ])
+                .toEqual([ other, false ]);
+            expect(selection.getSelectedElement()).toBeNull();
+            expect(selection.getFirstPosition()?.offset).toBe(6);
+
+            setModelData(editor.model, `[${video}]`);
+            const replaced = change();
+            editor.setData("<p>Other note</p>");
+            const { version } = editor.model.document;
+            resolveFetch({ ...META, url: other, embedType: "youtube" });
+            await replaced;
+            expect(editor.model.document.version).toBe(version);
+            expect(editor.getData()).toBe("<p>Other note</p>");
+        });
+
         it("keeps the caption of a video given another display as a paragraph after it", () => {
             const captioned = (caption: string) => `<paragraph>Before</paragraph>[<contentEmbed`
                 + ` embedType="youtube" title="T" url="${url}"><caption>${caption}</caption>`

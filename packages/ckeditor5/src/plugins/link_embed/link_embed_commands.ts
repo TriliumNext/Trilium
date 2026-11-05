@@ -7,7 +7,9 @@ import {
 } from 'ckeditor5';
 
 import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
-import { createMediaEmbed, isMediaEmbed } from '../content_embed/media_embed.js';
+import {
+    createChangedMediaEmbed, createMediaEmbed, isMediaEmbed
+} from '../content_embed/media_embed.js';
 
 export const LINK_EMBED_COMMAND = 'insertLinkEmbed';
 export const CHANGE_LINK_DISPLAY_COMMAND = 'changeLinkDisplay';
@@ -85,13 +87,35 @@ export function getPreviewAttributes(
 }
 
 /**
+ * The model attributes of an embed that plays the media at `url`, made from its fetched `metadata`.
+ * `title` replaces the title of the media. Throws when the metadata could not be read or names
+ * nothing that a player plays.
+ */
+export function getMediaAttributes(
+    editor: Editor, url: string, metadata: LinkEmbedMetadata, title?: string
+): Record<string, unknown> {
+    if (metadata.unresolved) {
+        throw new Error('The metadata of the media could not be read.');
+    }
+
+    const attributes = getPreviewAttributes(editor, 'embedLink', url, metadata, title);
+    const { embedType } = attributes as { embedType?: string };
+    if (!getLinkPreviewPlayer({ url: metadata.url, embedType })) {
+        throw new Error('The address is not that of a YouTube video, an audio or a video file.');
+    }
+    return attributes;
+}
+
+/**
  * Puts a link to `url` at the selection, or in place of the link or the link preview the selection
  * is in, and turns it into a preview of the `mode` shape once the page's metadata arrives. `title`
  * replaces the page's own title, and is the text of a `textLink`. `description` replaces the page's
  * own description.
  *
  * A selected preview of `url` changes its shape, title and description from the metadata it
- * stores, without fetching the page again.
+ * stores, without fetching the page again. A selected media embed given another address in the
+ * `embedLink` shape plays the media there once its metadata arrives, keeping its box and caption,
+ * and rejects, changing nothing, when that address plays nothing.
  *
  * All the metadata is written onto the element whichever shape is chosen — an inline mention stores
  * the description and image it does not itself show — so that switching modes later, via the widget
@@ -111,6 +135,10 @@ export class InsertLinkEmbedCommand extends Command {
                     rebuildLinkWidget(editor, writer, selected, mode, title, description), 'on'
                 );
             });
+            return;
+        }
+        if (selected && mode === 'embedLink' && isContentEmbed(selected)) {
+            await changeMediaUrl(editor, selected, url, title);
             return;
         }
 
@@ -334,6 +362,30 @@ async function replaceLinkWithPreview(
         selection.off('change:range', onSelectionChange);
         liveRange.detach();
     }
+}
+
+/**
+ * Makes the media embed `embed` play the media at `url` once its metadata arrives, keeping its box
+ * and caption, and keeps it selected if it is still selected. `title` replaces the title of the
+ * media. Changes nothing once `embed` has left the document. Rejects, changing nothing, when the
+ * address plays nothing.
+ */
+async function changeMediaUrl(editor: Editor, embed: ModelElement, url: string, title?: string) {
+    const model = editor.model;
+    const metadata = await getLinkEmbedHost(editor).fetchMetadata(url);
+    if (editor.state === 'destroyed' || embed.root === model.document.graveyard) {
+        return;
+    }
+
+    const attributes = getMediaAttributes(editor, url, metadata, title);
+    model.change((writer) => {
+        const isSelected = model.document.selection.getSelectedElement() === embed;
+        const replacement = createChangedMediaEmbed(writer, embed, attributes);
+        model.insertContent(replacement, writer.createRangeOn(embed));
+        if (isSelected) {
+            writer.setSelection(replacement, 'on');
+        }
+    });
 }
 
 /**

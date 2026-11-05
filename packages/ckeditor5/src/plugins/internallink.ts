@@ -6,6 +6,7 @@ import type { Editor, LinkCommand, ModelElement, ModelRange, View } from 'ckedit
 import HostedBalloon from '../hosted_balloon.js';
 import internalLinkIcon from '../icons/trilium.svg?raw';
 import { BLOCK_ID } from './block_reference/block_reference_editing.js';
+import { isContentEmbed } from './content_embed/content_embed.js';
 import {
     getLinkWidgetMode, getSelectedLinkWidget, type LinkDisplayMode
 } from './link_embed/link_embed_commands.js';
@@ -206,6 +207,8 @@ export interface LinkAtSelection {
     display: LinkDisplayMode;
     /** Whether the link is a reference link, whose text follows the title of its note. */
     isReference?: boolean;
+    /** Whether the link is a media embed, which plays the media at `href`. */
+    isMedia?: boolean;
 }
 
 /**
@@ -231,7 +234,8 @@ export function getLinkAtSelection(editor: Editor): LinkAtSelection | null {
             href: preview.getAttribute('url') as string,
             text: (preview.getAttribute('title') as string | undefined) ?? '',
             description: (preview.getAttribute('description') as string | undefined) ?? '',
-            display: getLinkWidgetMode(preview)
+            display: getLinkWidgetMode(preview),
+            isMedia: isContentEmbed(preview)
         };
     }
 
