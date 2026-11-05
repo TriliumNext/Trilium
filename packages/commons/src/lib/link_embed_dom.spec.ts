@@ -163,6 +163,26 @@ describe("enhanceLinkPreviews", () => {
         expect(document.activeElement).toBe(input);
     });
 
+    it("gives the player of a file the focus of its facade, while the facade has it", () => {
+        const container = render(renderLinkEmbedHtml({
+            url: "https://example.com/a.mp4", embedType: "video"
+        }, OPTIONS) + renderLinkEmbedHtml({
+            url: "https://example.com/a.mp3", embedType: "audio"
+        }, OPTIONS));
+        const videoFacade = container.querySelector<HTMLButtonElement>(".link-embed-video-facade");
+        videoFacade?.focus();
+        expect(document.activeElement).toBe(videoFacade);
+
+        videoFacade?.click();
+        const video = container.querySelector("video");
+        expect(video).not.toBeNull();
+        expect(document.activeElement).toBe(video);
+
+        container.querySelector<HTMLButtonElement>(".link-embed-audio-facade")?.click();
+        expect(container.querySelector("audio")).not.toBeNull();
+        expect(document.activeElement).toBe(video);
+    });
+
     it("removes the facade without fading it for a user who asks for reduced motion", () => {
         vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
         const animate = vi.spyOn(Element.prototype, "animate");
