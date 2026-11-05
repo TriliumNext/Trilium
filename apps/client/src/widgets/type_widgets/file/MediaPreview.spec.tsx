@@ -1,5 +1,5 @@
 import { Tooltip } from "bootstrap";
-import { render } from "preact";
+import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,10 +13,18 @@ vi.mock("../../../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<object>()),
     t: (key: string) => key
 }));
+// The real i18n is not initialized under test, so the stub renders the values and components.
+vi.mock("react-i18next", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    Trans: ({ i18nKey, values, components }: {
+        i18nKey: string; values: object; components: Record<string, VNode>;
+    }) => <span data-i18n-key={i18nKey}>{JSON.stringify(values)}{Object.values(components)}</span>
+}));
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
+import server from "../../../services/server";
 import { getExternalMediaSource } from "./media_source";
 import MediaPreview from "./MediaPreview";
 
@@ -39,6 +47,7 @@ describe("MediaPreview", () => {
     afterEach(() => {
         render(null, container);
         container.remove();
+        vi.restoreAllMocks();
     });
 
     const mediaElement = () => container.querySelector("video, audio") as HTMLMediaElement | null;
@@ -337,13 +346,41 @@ describe("MediaPreview", () => {
             expect(play).toHaveBeenCalledOnce();
         });
 
-        it("says that the media cannot be played rather than naming a format", async () => {
-            const source = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
-            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
-
+        it("says that the media cannot be played, with the HTTP error of its host", async () => {
+            const post = vi.spyOn(server, "postWithSilentErrors")
+                .mockImplementationOnce(async () => ({ status: 404 }))
+                .mockImplementationOnce(async () => ({ status: 200 }));
+            const status = () => container.querySelector(".media-playback-status");
+            const video = getExternalMediaSource({ url: fileUrl }, "video");
+            await act(async () => render(
+                <MediaPreview source={video} environment="embedded" />, container));
+            await act(async () => proxyPlayButton()?.click());
             await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
 
             expect(container.textContent).toContain("media.external-unavailable");
+            expect(post).toHaveBeenCalledExactlyOnceWith("link-embed/status", { url: fileUrl });
+            await vi.waitFor(() => expect(status()).not.toBeNull());
+            expect(status()?.querySelector("[data-i18n-key='media.http-error']")?.textContent)
+                .toBe(`{"status":404,"name":"media.http-status-names.404"}`);
+            expect(status()?.querySelector("strong")).not.toBeNull();
+
+            render(null, container);
+            const audio = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
+            await act(async () => render(
+                <MediaPreview source={audio} environment="embedded" />, container));
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+            // Lets the answer arrive and render, as the 404 above did.
+            await act(() => new Promise((resolve) => setTimeout(resolve)));
+            expect(container.textContent).toContain("media.external-unavailable");
+            expect(post).toHaveBeenCalledTimes(2);
+            expect(status()).toBeNull();
+
+            render(null, container);
+            await act(async () => render(
+                <MediaPreview entity={videoNote} environment="embedded" />, container));
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+            expect(container.textContent).toContain("media.unsupported-format");
+            expect(post).toHaveBeenCalledTimes(2);
         });
     });
 

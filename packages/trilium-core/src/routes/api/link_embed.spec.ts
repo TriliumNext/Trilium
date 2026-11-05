@@ -1109,6 +1109,34 @@ describe("link-embed getPageDetails", () => {
     });
 });
 
+describe("link-embed getHttpStatus", () => {
+    function req(url?: unknown) { return { body: { url } } as unknown as Request; }
+
+    beforeEach(() => safeFetch.mockReset());
+
+    it("answers the status of an address whatever its body, and none where it fails", async () => {
+        await expect(linkEmbedRoute.getHttpStatus(req())).rejects.toBeInstanceOf(ValidationError);
+
+        const url = "https://example.com/clip.mp4";
+        const huge = String(1024 * 1024 * 1024);
+        safeFetch.mockResolvedValue(new Response("Gone", {
+            status: 404, headers: { "content-type": "text/html", "content-length": huge }
+        }));
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 404 });
+        expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, expect.objectContaining({
+            headers: { "User-Agent": expect.stringContaining("TriliumNotes") }
+        }));
+
+        safeFetch.mockImplementationOnce(async () => {
+            throw new Error("getaddrinfo ENOTFOUND example.com");
+        });
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({});
+        expect(await linkEmbedRoute.getHttpStatus(req("ftp://example.com/clip.mp4")))
+            .toStrictEqual({});
+        expect(safeFetch).toHaveBeenCalledTimes(2);
+    });
+});
+
 describe("storeFavicon", () => {
     it("stores a favicon the caller holds, trimmed and named after the site", async () => {
         const fat = makeMultiSizeIco([

@@ -5,6 +5,7 @@ import {
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import { getUrlForDownload } from "../../../services/open";
+import server from "../../../services/server";
 
 /**
  * The media a player plays, resolved from a file note, an attachment, or the media file at the URL
@@ -66,4 +67,18 @@ export function getExternalMediaSource(
         isExternal: true,
         poster: safeLinkPreviewImageSrc(image)
     };
+}
+
+/**
+ * The HTTP status that the host of `url` answers the server, or `null` where the server cannot
+ * reach it. A player reads it to say why the file at `url` does not play.
+ */
+export async function fetchHttpStatus(url: string): Promise<number | null> {
+    try {
+        const { status } =
+            await server.postWithSilentErrors<{ status?: number }>("link-embed/status", { url });
+        return status ?? null;
+    } catch {
+        return null;
+    }
 }

@@ -99,7 +99,7 @@ Right-clicking a link preview selects it and opens its _More actions_ menu.
 
 A YouTube video, a video file or an audio file shown as an _Embed_ has a size, a position, a title and a caption, like an <a class="reference-link" href="Include%20Note.md">Include Note</a>. A video keeps its shape, so a YouTube Short stands upright and an older video can be 4:3. A YouTube video inserted in an earlier version is 16:9 until it is inserted again. In the editor, a click on the video both plays it and selects it, and so does a later click on the player.
 
-A video file or an audio file plays in the media player of Trilium, the one of <a class="reference-link" href="../File.md">File</a> notes, with its play button, seek bar and volume. A video file shows a picture of one of its frames, taken when it is inserted (see _Where the preview data comes from_ below), and a <span class="tn-icon bx bx-movie"></span> icon when it has none. An audio file shows a row of controls.
+A video file or an audio file plays in the media player of Trilium, the one of <a class="reference-link" href="../File.md">File</a> notes, with its play button, seek bar and volume. A video file shows a picture of one of its frames, taken when it is inserted (see _Where the preview data comes from_ below), and a <span class="tn-icon bx bx-movie"></span> icon when it has none. An audio file shows a row of controls. When a file cannot be played, a message takes the place of the player, at the size of the video. Under it is the error that the site answered, if any, such as _HTTP 404: Not found_ for a file that is no longer there.
 
 The toolbar of a selected embed offers:
 

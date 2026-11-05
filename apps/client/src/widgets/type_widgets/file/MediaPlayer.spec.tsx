@@ -19,13 +19,17 @@ vi.mock("../../../services/ws", () => ({
     subscribeToMessages: () => {},
     unsubscribeToMessage: () => {}
 }));
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string) => key
+}));
 
 import type NoteContext from "../../../components/note_context";
 import Component from "../../../components/component";
 import type FNote from "../../../entities/fnote";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import { ParentComponent } from "../../react/react_utils";
-import { claimsKeystroke, formatTime, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, formatTime, getHttpStatusName, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 import type { MediaPlayMode } from "./media_play_mode";
 import type { MediaSource } from "./media_source";
 
@@ -141,6 +145,17 @@ describe("claimsKeystroke", () => {
         // Only with Ctrl alone: Alt+Left is the application's (history back), not a minute jump.
         expect(claimsKeystroke(keystroke("ArrowLeft", { altKey: true }))).toBe(false);
         expect(claimsKeystroke(keystroke("ArrowRight", { ctrlKey: true, altKey: true }))).toBe(false);
+    });
+});
+
+describe("getHttpStatusName", () => {
+    it("names a common HTTP error, and the class of any other", () => {
+        expect([ 404, 503, 418, 599 ].map(getHttpStatusName)).toEqual([
+            "media.http-status-names.404",
+            "media.http-status-names.503",
+            "media.http-status-names.client-error",
+            "media.http-status-names.server-error"
+        ]);
     });
 });
 

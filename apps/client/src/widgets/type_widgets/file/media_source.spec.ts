@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import { getExternalMediaSource, getMediaSource } from "./media_source";
+import server from "../../../services/server";
+import { fetchHttpStatus, getExternalMediaSource, getMediaSource } from "./media_source";
 
 const note = { noteId: "vid1", title: "Holiday", mime: "video/mp4", blobId: "blob1" } as FNote;
 const attachment = { attachmentId: "att1", title: "Recording", mime: "audio/mpeg", utcDateModified: "2026-07-23 10:00:00.000Z" } as FAttachment;
@@ -45,5 +46,24 @@ describe("getMediaSource", () => {
         // The id is unchanged, so an open player would otherwise keep streaming what it already had.
         const replaced = { ...attachment, utcDateModified: "2026-07-23 11:00:00.000Z" } as FAttachment;
         expect(getMediaSource(replaced).streamUrl).not.toBe(getMediaSource(attachment).streamUrl);
+    });
+});
+
+describe("fetchHttpStatus", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("reads the status of an address, and none where the server has none", async () => {
+        const url = "https://example.com/clip.mp4";
+        const post = vi.spyOn(server, "postWithSilentErrors")
+            .mockImplementationOnce(async () => ({ status: 404 }))
+            .mockImplementationOnce(async () => ({}))
+            .mockImplementationOnce(async () => {
+                throw new Error("offline");
+            });
+
+        expect(await fetchHttpStatus(url)).toBe(404);
+        expect(post).toHaveBeenCalledExactlyOnceWith("link-embed/status", { url });
+        expect(await fetchHttpStatus(url)).toBeNull();
+        expect(await fetchHttpStatus(url)).toBeNull();
     });
 });

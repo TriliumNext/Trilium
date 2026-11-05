@@ -2,6 +2,7 @@ import "./MediaPlayer.css";
 
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Trans } from "react-i18next";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -19,11 +20,12 @@ import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import NoItems from "../../react/NoItems";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
 import { attachmentSiblingProvider, noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
 import type { MediaEnvironment } from "./media_environment";
 import { getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS, MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop } from "./media_play_mode";
-import type { MediaSource } from "./media_source";
+import { fetchHttpStatus, type MediaSource } from "./media_source";
 
 const NO_KEYS: readonly string[] = [];
 
@@ -65,14 +67,73 @@ export function useFocusOnActivation(rootRef: RefObject<HTMLElement | null>, aut
     }, []);
 }
 
+/** The HTTP statuses that have a name of their own under `media.http-status-names`. */
+const NAMED_HTTP_STATUSES = new Set([
+    400, 401, 403, 404, 405, 406, 408, 410, 416, 429, 451, 500, 501, 502, 503, 504
+]);
+
 /**
- * What a player shows when its media cannot be played: the format, or for a file on another site,
- * which also fails while its host is unreachable, that it cannot be played.
+ * What a player shows in place of media that it cannot play. For a file on another site whose
+ * host answers with an HTTP error, the error is on a line under the message.
  */
-export function getPlaybackError(source: MediaSource) {
+export function PlaybackError({ source, icon }: { source: MediaSource; icon: string }) {
+    const status = useHttpErrorStatus(source);
+
+    return (
+        <NoItems icon={icon} text={getPlaybackError(source)}>
+            {status && (
+                <div className="media-playback-status">
+                    <Trans
+                        i18nKey="media.http-error"
+                        values={{ status, name: getHttpStatusName(status) }}
+                        components={{ bold: <strong /> }}
+                    />
+                </div>
+            )}
+        </NoItems>
+    );
+}
+
+/**
+ * The message for media that cannot be played: its format, or for a file on another site, which
+ * also fails while its host is unreachable, that it cannot be played.
+ */
+function getPlaybackError(source: MediaSource) {
     return source.isExternal
         ? t("media.external-unavailable")
         : t("media.unsupported-format", { mime: source.mime.replace("/", "-") });
+}
+
+/** The HTTP error status that the host of a file on another site answers, once it is known. */
+function useHttpErrorStatus({ isExternal, streamUrl }: MediaSource) {
+    const [ status, setStatus ] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!isExternal) {
+            return;
+        }
+        let isCurrent = true;
+        void fetchHttpStatus(streamUrl).then((answer) => {
+            if (isCurrent && answer !== null && answer >= 400) {
+                setStatus(answer);
+            }
+        });
+        return () => {
+            isCurrent = false;
+        };
+    }, [ isExternal, streamUrl ]);
+
+    return status;
+}
+
+/** The name of the HTTP error `status`, or of its class for a status without a name of its own. */
+export function getHttpStatusName(status: number) {
+    if (NAMED_HTTP_STATUSES.has(status)) {
+        return t(`media.http-status-names.${status}`);
+    }
+    return status < 500
+        ? t("media.http-status-names.client-error")
+        : t("media.http-status-names.server-error");
 }
 
 // Navigation is Page Up/Down only — the player reserves Home/End for seeking (edgeKeys: false), and

@@ -25,6 +25,8 @@ import request, { type FetchedResource, validateFetchableUrl } from "../../servi
 import { decodeBase64, decodeUtf8 } from "../../services/utils/binary.js";
 
 const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB
+/** The `User-Agent` of the requests to the address of a link preview. */
+const USER_AGENT = "TriliumNotes/1.0 (Link Preview; +https://triliumnotes.org/)";
 /** The largest thumbnail of a video file that the client may store, base64. */
 const MAX_MEDIA_THUMBNAIL_BASE64_SIZE = 2 * 1024 * 1024; // 2MB
 /** An oEmbed answer is a handful of fields; anything approaching this is not one. */
@@ -596,7 +598,7 @@ async function fetchPage(url: string): Promise<FetchedPage> {
     const response = await request.fetchResource(url, {
         maxBytes: MAX_RESPONSE_SIZE,
         headers: {
-            "User-Agent": "TriliumNotes/1.0 (Link Preview; +https://triliumnotes.org/)",
+            "User-Agent": USER_AGENT,
             "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
         },
         prefixLength: (contentType) =>
@@ -759,6 +761,30 @@ async function getPageDetails(req: Request): Promise<LinkEmbedMetadata> {
 }
 
 /**
+ * The HTTP status that the host of the `url` of the body answers, as `status`, which a player
+ * shows when the file at `url` does not play. The body of the answer is not read. No `status` for
+ * an address that cannot be fetched or reached.
+ */
+async function getHttpStatus(req: Request): Promise<{ status?: number }> {
+    const urlParam = req.body?.url;
+    if (!urlParam || typeof urlParam !== "string") {
+        throw new ValidationError("'url' is required");
+    }
+
+    try {
+        const url = validateFetchableUrl(urlParam).toString();
+        const { status } = await request.fetchResource(url, {
+            maxBytes: 0,
+            headers: { "User-Agent": USER_AGENT },
+            prefixLength: () => 0
+        });
+        return { status };
+    } catch {
+        return {};
+    }
+}
+
+/**
  * Stores the picture `image` of the body, base64, as the thumbnail of the video at `url` in the
  * note `noteId`, and returns its URL as `image`. The client captures the picture from a frame of
  * the video, which only it can decode.
@@ -814,4 +840,4 @@ function unresolvedMetadata(url: URL): LinkEmbedMetadata {
     };
 }
 
-export default { getMetadata, getPageDetails, storeMediaThumbnail };
+export default { getMetadata, getPageDetails, getHttpStatus, storeMediaThumbnail };

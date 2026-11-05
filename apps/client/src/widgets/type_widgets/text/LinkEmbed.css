@@ -175,6 +175,11 @@ body.light-theme .link-embed-favicon-light {
             max-height: none;
         }
     }
+
+    .include-note-content.type-mediaEmbed > .rendered-content > .rendered-media > .no-items {
+        height: auto;
+        aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+    }
 }
 
 .include-note.audio-embed .include-note-content.type-mediaEmbed .rendered-media {

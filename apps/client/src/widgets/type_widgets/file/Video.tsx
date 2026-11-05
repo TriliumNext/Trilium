@@ -7,11 +7,10 @@ import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { useFullscreen } from "../../react/hooks";
-import NoItems from "../../react/NoItems";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
-import { claimsKeystroke, getPlaybackError, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackError, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
@@ -73,7 +72,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
     const compact = usesCompactControls(environment);
 
     if (error) {
-        return <NoItems icon="bx bx-video-off" text={getPlaybackError(source)} />;
+        return <PlaybackError source={source} icon="bx bx-video-off" />;
     }
 
     return (

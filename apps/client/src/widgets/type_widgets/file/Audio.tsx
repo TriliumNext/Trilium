@@ -5,13 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import Icon from "../../react/Icon";
-import NoItems from "../../react/NoItems";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import { loadWaveform } from "./audio_waveform";
 import { AudioVisualizer } from "./AudioVisualizer";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, usesCompactControls } from "./media_environment";
-import { claimsKeystroke, getPlaybackError, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackError, PlaybackSpeed, PlayModeButton, PlayPauseButton, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 import { WaveformSeekBar } from "./WaveformSeekBar";
 
 export default function AudioPreview({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible = true, autoPlay }: MediaPlayerProps) {
@@ -55,7 +54,7 @@ export default function AudioPreview({ source, entity, environment, noteContext,
     const waveformPeaks = useWaveformPeaks(source.isExternal ? null : source.fullUrl);
 
     if (error) {
-        return <NoItems icon="bx bx-volume-mute" text={getPlaybackError(source)} />;
+        return <PlaybackError source={source} icon="bx bx-volume-mute" />;
     }
 
     const compact = usesCompactControls(environment);

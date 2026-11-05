@@ -97,7 +97,11 @@ widgets inside the selection.
   A file plays in Trilium's `MediaPreview` with a `MediaSource` from `getExternalMediaSource()`
   (`isExternal`, `poster`): a video waits behind `MediaProxy` and its thumbnail, audio mounts with
   `preload="none"`, and neither reads the waveform or taps the visualizer's analyser, through
-  which a cross-origin file without CORS headers plays silent. The server tells a file from a
+  which a cross-origin file without CORS headers plays silent. A file that does not play shows
+  `PlaybackError` (`MediaPlayer.tsx`), which puts the HTTP error of the host under the message:
+  `fetchHttpStatus()` (`media_source.ts`) asks `api/link-embed/status` (`getHttpStatus()`), which
+  reads the status without the body, since a media element reports none. In a video embed the
+  error box takes the player's shape (`LinkEmbed.css`). The server tells a file from a
   page in the same fetch: `fetchPage()` reads only the first 64 KB of a media type
   (`prefixLength`) and `probeMedia()` (`services/media_probe.ts`) reads the container header. The
   client falls back on the extension (`getMediaFileTypeOfUrl()`) when the server answers
