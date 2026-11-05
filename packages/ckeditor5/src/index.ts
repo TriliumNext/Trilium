@@ -49,7 +49,7 @@ export type { LinkDisplayMode, LinkEmbedHost } from "./plugins/link_embed/link_e
 export { LINK_TOOLBAR, type LinkMenuHost } from "./plugins/link_menu.js";
 export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
 export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
-export type { YouTubeVideoRequest } from "./plugins/youtube_video.js";
+export type { InsertMediaRequest } from "./plugins/insert_media.js";
 export type { BlockReferenceHost } from "./plugins/block_reference/block_reference.js";
 export type { SortTargetKind } from "./plugins/sort_selection/sort_targets.js";
 export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
@@ -83,7 +83,7 @@ import "./plugins/sort_selection/sort_selection.js";
 import "./plugins/table_column_bar/table_column_bar.js";
 import "./plugins/table_context_menu.js";
 import "./plugins/table_paste_rows.js";
-import "./plugins/youtube_video.js";
+import "./plugins/insert_media.js";
 
 window[Symbol.for("cke distribution")] = "trilium";
 

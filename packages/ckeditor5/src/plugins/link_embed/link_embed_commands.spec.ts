@@ -1,11 +1,13 @@
+import type { LinkEmbedMetadata } from "@triliumnext/commons";
 import { _setModelData as setModelData, type ClassicEditor } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     changeCommand,
     createLinkEmbedHost,
     createTestEditor,
     findElement,
+    hostConfig,
     LINK_EMBED_TEST_PLUGINS,
     META,
     type LinkEmbedHostMocks,
@@ -283,14 +285,15 @@ describe("LinkEmbed commands", () => {
         editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
 
         expect(findElement(editor, "linkMention")).toBeUndefined();
-        expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
+        expect(editor.getData()).toBe('<p><a href="https://e.com/">T</a></p>');
 
         // The linked text arrives as an insertion, not a linkHref attribute change, so
         // AutoLinkToMention must not have kicked in and fetched the preview straight back.
         await Promise.resolve();
         expect(fetchMetadata).not.toHaveBeenCalled();
 
-        // A block preview converts the same way, gaining a wrapping paragraph.
+        // A block preview converts the same way, gaining a wrapping paragraph, and reads as its URL
+        // without a title.
         setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
         editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
         expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
@@ -365,7 +368,7 @@ describe("LinkEmbed commands", () => {
 
             setModelData(editor.model, `[${video}]`);
             editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
-            expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
+            expect(editor.getData()).toBe(`<p><a href="${url}">T</a></p>`);
         });
 
         it("keeps the box, title, position and caption of a retitled video", async () => {
@@ -382,6 +385,169 @@ describe("LinkEmbed commands", () => {
             });
             expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("plays another address in the box and caption of a selected video", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            fetchMetadata.mockResolvedValue({ ...META, url: other, embedType: "youtube" });
+            setModelData(editor.model, `<paragraph>Before</paragraph>[<contentEmbed`
+                + ` boxSize="medium" customWidth="40em" embedType="youtube" position="right"`
+                + ` title="T" url="${url}"><caption>Note</caption></contentEmbed>]`);
+
+            await editor.execute(LINK_EMBED_COMMAND, {
+                url: other, mode: "embedLink", title: "Mine"
+            });
+
+            const embed = findElement(editor, "contentEmbed");
+            expect(fetchMetadata).toHaveBeenCalledExactlyOnceWith(other);
+            expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
+                ...META, url: other, embedType: "youtube", title: "Mine",
+                boxSize: "medium", customWidth: "40em", position: "right"
+            });
+            expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        });
+
+        it("shows the thumbnail and shape of another address, or a new frame", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            const file = "https://example.com/clip.mp4";
+            const cover = "api/attachments/new/image/youtube-xyz98765432.jpg";
+            const frame = "api/attachments/frame/image/clip.jpg";
+            const host = createLinkEmbedHost();
+            host.fetchMetadata.mockImplementation(async (address: string) => (address === file
+                ? { url: file, embedType: "video", title: "clip.mp4" }
+                : { ...META, url: address, embedType: "youtube", image: cover, aspectRatio: "9/16" }
+            ));
+            const captureVideoThumbnail = vi.fn(async () => ({ image: frame, aspectRatio: "4/3" }));
+            const media = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({
+                linkEmbed: host, contentEmbed: { captureVideoThumbnail }
+            }));
+            const shapeOf = () => {
+                const embed = findElement(media, "contentEmbed");
+                const figure = media.editing.view.getDomRoot()?.querySelector("figure");
+                return [
+                    embed?.getAttribute("image"), embed?.getAttribute("aspectRatio"),
+                    figure?.style.getPropertyValue("--video-aspect-ratio")
+                ];
+            };
+            setModelData(media.model, `[<contentEmbed aspectRatio="16/9" boxSize="full"`
+                + ` embedType="youtube" image="api/attachments/old/image/youtube-abc.jpg"`
+                + ` title="T" url="${url}"></contentEmbed>]`);
+
+            await media.execute(LINK_EMBED_COMMAND, { url: other, mode: "embedLink" });
+            expect(shapeOf()).toEqual([ cover, "9/16", String(9 / 16) ]);
+
+            await media.execute(LINK_EMBED_COMMAND, { url: file, mode: "embedLink" });
+            await vi.waitFor(() => expect(shapeOf()).toEqual([ frame, "4/3", String(4 / 3) ]));
+            expect(captureVideoThumbnail)
+                .toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ url: file }));
+        });
+
+        it("gives other media the size of a new embed, and a Full video stays Full", async () => {
+            const vertical = "https://youtube.com/watch?v=xyz98765432";
+            const audio = "https://example.com/song.mp3";
+            const sizeOf = () => {
+                const embed = findElement(editor, "contentEmbed");
+                return [ "url", "boxSize", "customWidth", "hideTitle", "position" ]
+                    .map((key) => embed?.getAttribute(key));
+            };
+            fetchMetadata.mockImplementation(async (address: string) => address === audio
+                ? { ...META, url: audio, embedType: "audio" }
+                : { ...META, url: address, embedType: "youtube", aspectRatio: "9/16" });
+
+            // A video at the default width of its shape takes the width of the new shape.
+            setModelData(editor.model, `[<contentEmbed boxSize="medium" customWidth="35.6em"`
+                + ` embedType="youtube" hideTitle="true" position="left" title="T"`
+                + ` url="${url}"></contentEmbed>]`);
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+
+            await editor.execute(LINK_EMBED_COMMAND, { url: audio, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ audio, "small", undefined, true, "left" ]);
+
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+
+            setModelData(editor.model, `[<contentEmbed boxSize="full" embedType="youtube"`
+                + ` title="T" url="${url}"></contentEmbed>]`);
+            await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
+            expect(sizeOf()).toEqual([ vertical, "full", undefined, undefined, undefined ]);
+        });
+
+        it("rejects, changing nothing, for an address that plays nothing", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            setModelData(editor.model, `[${video}]`);
+            const change = (address: string) =>
+                editor.execute(LINK_EMBED_COMMAND, { url: address, mode: "embedLink" });
+
+            await expect(change("https://example.com/page")).rejects.toThrow();
+            fetchMetadata.mockResolvedValue({ url: other, embedType: "youtube", unresolved: true });
+            await expect(change(other)).rejects.toThrow();
+
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(url);
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+        });
+
+        it("keeps a moved selection, and leaves a note left, while the media loads", async () => {
+            const other = "https://youtube.com/watch?v=xyz98765432";
+            const { resolveFetch } = useDeferredFetch(fetchMetadata);
+            const change = () => editor.execute(LINK_EMBED_COMMAND, {
+                url: other, mode: "embedLink"
+            }) as unknown as Promise<void>;
+            setModelData(editor.model, `<paragraph>Before</paragraph>[${video}]`);
+
+            const changed = change();
+            editor.model.change((writer) => {
+                writer.setSelection(editor.model.document.getRoot()?.getChild(0) ?? null, "end");
+            });
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(url);
+            resolveFetch({ ...META, url: other, embedType: "youtube" });
+            await changed;
+            const selection = editor.model.document.selection;
+            const embed = findElement(editor, "contentEmbed");
+            expect([ embed?.getAttribute("url"), embed?.hasAttribute("hideTitle") ])
+                .toEqual([ other, false ]);
+            expect(selection.getSelectedElement()).toBeNull();
+            expect(selection.getFirstPosition()?.offset).toBe(6);
+
+            setModelData(editor.model, `[${video}]`);
+            const replaced = change();
+            editor.setData("<p>Other note</p>");
+            const { version } = editor.model.document;
+            resolveFetch({ ...META, url: other, embedType: "youtube" });
+            await replaced;
+            expect(editor.model.document.version).toBe(version);
+            expect(editor.getData()).toBe("<p>Other note</p>");
+        });
+
+        it("plays the address saved last when the edits of a video overlap", async () => {
+            const last = { ...META, url: "https://youtube.com/watch?v=def45678901" };
+            const fetches: ((metadata: LinkEmbedMetadata) => void)[] = [];
+            fetchMetadata.mockImplementation(() => new Promise<LinkEmbedMetadata>((resolve) => {
+                fetches.push(resolve);
+            }));
+            // Saves the address of each of `edits` in turn, then answers the fetches in that order.
+            const saveInTurn = async (...edits: LinkEmbedMetadata[]) => {
+                fetches.length = 0;
+                const changes = edits.map(({ url: address }) => editor.execute(
+                    LINK_EMBED_COMMAND, { url: address, mode: "embedLink" }
+                ) as unknown as Promise<void>);
+                for (const [ index, metadata ] of edits.entries()) {
+                    fetches[index]?.(metadata);
+                }
+                return await Promise.allSettled(changes);
+            };
+
+            setModelData(editor.model, `[${video}]`);
+            await saveInTurn({ ...META, url: "https://youtube.com/watch?v=xyz98765432" }, last);
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed?.getAttribute("url")).toBe(last.url);
+            expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+
+            // An earlier edit that plays nothing reports no error once a later one replaces it.
+            setModelData(editor.model, `[${video}]`);
+            const settled = await saveInTurn({ ...META, url: "https://example.com/page" }, last);
+            expect(settled.map(({ status }) => status)).toEqual([ "fulfilled", "fulfilled" ]);
         });
 
         it("keeps the caption of a video given another display as a paragraph after it", () => {
@@ -498,13 +664,36 @@ describe("LinkEmbed commands", () => {
         expect(fetchMetadata).toHaveBeenCalledWith(url);
         const mention = findElement(editor, "linkMention");
         expect(mention?.getAttribute("url")).toBe(url);
-        expect(mention?.getAttribute("title")).toBe(META.title);
-        // The label is replaced by the pill; the text around the link survives (spaces adjacent to
-        // an inline object serialize as &nbsp;), and the new widget is left selected so its toolbar
-        // — this same dropdown included — takes over from the link balloon.
+        expect(mention?.getAttribute("title")).toBe("the article");
+        // The label becomes the title of the pill; the text around the link survives (spaces
+        // adjacent to an inline object serialize as &nbsp;), and the new widget is left selected so
+        // its toolbar — this same dropdown included — takes over from the link balloon.
         expect(editor.getData()).toContain("<p>see&nbsp;<span");
         expect(editor.getData()).toContain("</span>&nbsp;here</p>");
         expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
+    });
+
+    it("keeps a title through Text and back, but not the text of a bare URL", async () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        fetchMetadata.mockImplementation(async () => ({ ...META, url, embedType: "youtube" }));
+        setModelData(editor.model, `[<linkEmbed url="${url}" embedType="opengraph"`
+            + ` title="Mine"></linkEmbed>]`);
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">Mine</a></p>`);
+
+        editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            writer.setSelection(paragraph, 2);
+        });
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embedLink" });
+        expect(findElement(editor, "contentEmbed")?.getAttribute("title")).toBe("Mine");
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">${url}[]</$text>`
+            + `</paragraph>`);
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "cardLink" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("title")).toBe(META.title);
     });
 
     it("converts a native link to the chosen block shape: card forces opengraph, embed keeps the detected type", async () => {

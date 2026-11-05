@@ -1,9 +1,9 @@
 import {
     assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor,
     type ContentEmbedDialogRequest, type DocumentHeading,
-    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
-    type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
-    replaceLinkAtSelection, SnippetDefinition, type YouTubeVideoRequest
+    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest,
+    type InsertMediaRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
+    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
@@ -12,7 +12,7 @@ import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
 import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import { YouTubeVideoBalloon } from "../../dialogs/youtube_video";
+import { InsertMediaBalloon } from "../../dialogs/insert_media";
 import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
@@ -43,11 +43,12 @@ export interface CKEditorApi {
     updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     /**
      * Puts a preview of `url` in place of the link around the caret or the selected link preview,
-     * or at the selection. `title` and `description` replace the page's own.
+     * or at the selection. `title` and `description` replace the page's own. Rejects when a
+     * selected media embed gets an address that plays nothing.
      */
     addLinkPreview(
         url: string, display: LinkDisplayMode, title: string | null, description: string | null
-    ): void;
+    ): Promise<void>;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
     addContentEmbed(noteId: string, boxSize?: BoxSize): void;
@@ -194,20 +195,20 @@ export default function CKEditor({
         return () => setIconPickerRequest(null);
     }
 
-    /** The open YouTube video prompt and its balloon container, or `null` when none is open. */
-    const [ youtubeVideoRequest, setYouTubeVideoRequest ] =
-        useState<YouTubeVideoRequest | null>(null);
+    /** The open Insert media prompt and its balloon container, or `null` when none is open. */
+    const [ insertMediaRequest, setInsertMediaRequest ] =
+        useState<InsertMediaRequest | null>(null);
 
-    // On mobile, `showYouTubeVideoDialog` opens the prompt in a modal instead of the balloon.
-    function showYouTubeVideoPrompt(request: YouTubeVideoRequest) {
+    // On mobile, `showInsertMediaDialog` opens the prompt in a modal instead of the balloon.
+    function showInsertMediaPrompt(request: InsertMediaRequest) {
         if (isMobile()) {
             const { onInsert } = request;
-            parentComponent?.triggerCommand("showYouTubeVideoDialog", { onInsert });
+            parentComponent?.triggerCommand("showInsertMediaDialog", { onInsert });
             return null;
         }
 
-        setYouTubeVideoRequest(request);
-        return () => setYouTubeVideoRequest(null);
+        setInsertMediaRequest(request);
+        return () => setInsertMediaRequest(null);
     }
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
@@ -259,12 +260,12 @@ export default function CKEditor({
             const href = externalLink ? notePath : `#${notePath}`;
             await replaceLinkAtSelection(editor, href, linkTitle);
         },
-        addLinkPreview(url, display, title, description) {
+        async addLinkPreview(url, display, title, description) {
             const editor = editorRef.current;
             if (!editor) return;
 
             editor.editing.view.focus();
-            void editor.execute("insertLinkEmbed", {
+            await editor.execute("insertLinkEmbed", {
                 url, mode: display, title: title ?? undefined, description: description ?? undefined
             });
         },
@@ -384,7 +385,7 @@ export default function CKEditor({
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
                 showIconPicker,
-                showYouTubeVideoPrompt,
+                showInsertMediaPrompt,
                 referenceSource: {
                     getEditor: () => editorRef.current,
                     getNote: () => noteRef.current,
@@ -526,9 +527,9 @@ export default function CKEditor({
                 />,
                 iconPickerRequest.container
             )}
-            {youtubeVideoRequest && createPortal(
-                <YouTubeVideoBalloon onInsert={youtubeVideoRequest.onInsert} />,
-                youtubeVideoRequest.container
+            {insertMediaRequest && createPortal(
+                <InsertMediaBalloon onInsert={insertMediaRequest.onInsert} />,
+                insertMediaRequest.container
             )}
         </>
     );

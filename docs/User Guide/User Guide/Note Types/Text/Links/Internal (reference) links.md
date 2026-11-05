@@ -30,7 +30,7 @@ There are two link types, depending on the _Link title_ field of the dialog:
 2.  When a link title is typed, the link shows that text instead.
     1.  This will create a traditional hyperlink, where the text of the link can be different from the note title.
 
-Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Emptying the _Link title_ there turns the link into one that displays the title of the note, and typing one gives it a title of its own.
+Since v0.107.0, to change a link, click it and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button in its popup. For a link with a title of its own, placing the cursor inside it and pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the <span class="tn-icon cke cke-trilium"></span> button works too. The _Edit link_ dialog opens on the linked note, with its anchor and, for a link with a title of its own, the link's text; _Save link_ changes the whole link. Emptying the _Link title_ there turns the link into one that displays the title of the note, and typing one gives it a title of its own. For a link to an attachment, the dialog shows only the _Link title_, and emptying it makes the link display the title of the attachment.
 
 ## In-place linking
 

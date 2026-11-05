@@ -13,12 +13,13 @@ import ContentEmbed, {
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
 } from "./content_embed.js";
-import { isVideoEmbed } from "./video_embed.js";
+import { createMediaEmbed, isVideoEmbed } from "./media_embed.js";
 
 /** The width of a 16:9 video at Medium, 20em high. */
 const VIDEO_MEDIUM_WIDTH = "35.6em";
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 const THUMBNAIL = "api/attachments/abc123/image/youtube-dQw4w9WgXcQ.jpg";
+const FILE_URL = "https://example.com/media/clip.mp4";
 const PREVIEW_ATTRIBUTES = `data-url="${VIDEO_URL}" data-embed-type="youtube"`
     + ` data-title="A video" data-image="${THUMBNAIL}"`;
 /** A video saved before videos were embeds. */
@@ -30,16 +31,20 @@ const PLAYER_URL = `${location.protocol}//${OTHER_HOST}:${location.port}/package
 /** Lets `FocusTracker` report a blur, which it does a task later. */
 const nextTask = () => new Promise((resolve) => setTimeout(resolve));
 
-describe("ContentEmbedVideo", () => {
+describe("ContentEmbedMedia", () => {
     let editor: ClassicEditor;
-    let loadVideo: ReturnType<typeof vi.fn>;
+    let loadMedia: ReturnType<typeof vi.fn>;
+    let captureVideoThumbnail: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        loadVideo = vi.fn();
+        loadMedia = vi.fn();
+        captureVideoThumbnail = vi.fn(async () => null);
         editor = await createTestEditor([
             Essentials, Paragraph, Undo, Widget, ContentEmbed, LinkEmbed
         ], {
-            contentEmbed: { loadVideo, sanitizeHtml: (html: string) => html }
+            contentEmbed: {
+                loadMedia, captureVideoThumbnail, sanitizeHtml: (html: string) => html
+            }
         });
     });
 
@@ -73,7 +78,7 @@ describe("ContentEmbedVideo", () => {
 
     /** Inserts a paragraph and a video whose player is a frame of `src`, and returns the frame. */
     function insertPlayer(src: string) {
-        loadVideo.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
+        loadMedia.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
             wrapper.innerHTML = `<div class="include-note-content">`
                 + `<iframe src="${src}"></iframe></div>`;
         });
@@ -133,7 +138,7 @@ describe("ContentEmbedVideo", () => {
             definition.name === "contentEmbed" ? false : undefined);
         editor.setData(SAVED_PREVIEW);
         expect(getBlock().name).toBe("linkEmbed");
-        expect(loadVideo).not.toHaveBeenCalled();
+        expect(loadMedia).not.toHaveBeenCalled();
     });
 
     it("keeps the box, the position and the width on the section, and drops what it holds", () => {
@@ -157,12 +162,12 @@ describe("ContentEmbedVideo", () => {
 
         const figure = getFigure();
         expect([ ...figure.classList ]).toEqual(expect.arrayContaining([
-            "include-note", "video-embed", "box-size-full"
+            "include-note", "media-embed", "video-embed", "box-size-full"
         ]));
         expect(figure.dataset).toMatchObject({ boxSize: "full", hideTitle: "true" });
         const view = editor.editing.mapper.toViewElement(getBlock());
         expect(view && getLabel(view)).toMatch(/^link embed widget\./);
-        expect(loadVideo).toHaveBeenCalledExactlyOnceWith({
+        expect(loadMedia).toHaveBeenCalledExactlyOnceWith({
             url: VIDEO_URL,
             embedType: "youtube",
             title: "A video",
@@ -208,7 +213,7 @@ describe("ContentEmbedVideo", () => {
     it("follows the focus from player to player, which fires no event in this page", () => {
         vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout", "setInterval", "clearInterval" ] });
         registerTestCleanup(() => vi.useRealTimers());
-        loadVideo.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
+        loadMedia.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
             wrapper.innerHTML = `<div class="include-note-content"><iframe></iframe></div>`;
         });
         editor.setData(`<p>Text</p>${SAVED_PREVIEW}${SAVED_PREVIEW}`);
@@ -270,14 +275,14 @@ describe("ContentEmbedVideo", () => {
     it("keeps its player, and the video playing, when it changes size", () => {
         editor.setData(`<p>Text</p>${SAVED_PREVIEW}`);
         selectBlock(1);
-        expect(loadVideo).toHaveBeenCalledOnce();
+        expect(loadMedia).toHaveBeenCalledOnce();
 
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
         expect(getFigure().dataset.boxSize).toBe("medium");
         expect(getFigure().classList).toContain("box-size-medium");
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
         expect(getFigure().classList).toContain("box-size-full");
-        expect(loadVideo).toHaveBeenCalledOnce();
+        expect(loadMedia).toHaveBeenCalledOnce();
     });
 
     it("saves a caption in a figure around its section, which goes away with the caption", () => {
@@ -406,5 +411,170 @@ describe("ContentEmbedVideo", () => {
         expect(width).toMatch(/^\d+(\.\d+)?em$/);
         expect(width).not.toBe(VIDEO_MEDIUM_WIDTH);
         expect(getBlock(1).hasAttribute(SIZE_ATTRIBUTES.height)).toBe(false);
+    });
+
+    it("loads a video file and an audio file, the audio file at Small, its only size", () => {
+        const saved = `<section class="link-embed" data-url="${FILE_URL}" data-embed-type="video"`
+            + ` data-box-size="medium" data-hide-title="true">&nbsp;</section>`
+            + `<section class="link-embed" data-url="https://example.com/a.mp3"`
+            + ` data-embed-type="audio" data-box-size="small">&nbsp;</section>`;
+        editor.setData(saved);
+
+        const figures = [ ...editor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLElement>("figure.include-note") ?? [] ];
+        expect(figures.map((figure) => [ ...figure.classList ]
+            .filter((name) => name.endsWith("-embed"))))
+            .toEqual([ [ "media-embed", "video-embed" ], [ "media-embed", "audio-embed" ] ]);
+        expect(editor.plugins.get(ContentEmbed).getBoxSizes(figures[1]))
+            .toEqual([ { value: "small", label: "Small" } ]);
+        expect(loadMedia.mock.calls.map(([ preview ]) => preview.embedType))
+            .toEqual([ "video", "audio" ]);
+        expect(editor.getData()).toBe(saved);
+        expect(captureVideoThumbnail).not.toHaveBeenCalled();
+    });
+
+    it("gives a video file made from a URL a thumbnail and a shape, in one undo step", async () => {
+        let resolveCapture: (thumbnail: unknown) => void = () => {};
+        captureVideoThumbnail.mockImplementation(() =>
+            new Promise((resolve) => (resolveCapture = resolve)));
+        editor.setData("<p>Text</p>");
+        editor.model.change((writer) => {
+            // As `getMetadataAttributes()` makes them, with each field the file has none for.
+            const embed = createMediaEmbed(writer, {
+                url: FILE_URL, embedType: "video", title: undefined, image: undefined,
+                aspectRatio: undefined
+            });
+            writer.insert(embed, writer.createPositionAt(getBlock().root, "end"));
+        });
+        expect(captureVideoThumbnail)
+            .toHaveBeenCalledExactlyOnceWith({ url: FILE_URL, embedType: "video" });
+        expect(getBlock(1).getAttribute(SIZE_ATTRIBUTES.width)).toBe(VIDEO_MEDIUM_WIDTH);
+        loadMedia.mockClear();
+
+        resolveCapture({ image: THUMBNAIL, aspectRatio: "4/3" });
+        await nextTask();
+
+        const embed = getBlock(1);
+        expect([ embed.getAttribute("image"), embed.getAttribute("aspectRatio") ])
+            .toEqual([ THUMBNAIL, "4/3" ]);
+        expect(embed.getAttribute(SIZE_ATTRIBUTES.width)).toBe("26.7em");
+        expect(getFigure().style.getPropertyValue("--video-aspect-ratio")).toBe(String(4 / 3));
+        expect(loadMedia).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ image: THUMBNAIL }), expect.any(HTMLElement));
+
+        editor.execute("undo");
+        expect(editor.getData()).toBe("<p>Text</p>");
+    });
+
+    it("keeps a stored shape, a Full or resized width, and a player that plays", async () => {
+        const resolvers: ((thumbnail: unknown) => void)[] = [];
+        captureVideoThumbnail.mockImplementation(() =>
+            new Promise((resolve) => resolvers.push(resolve)));
+        loadMedia.mockImplementation((_preview: unknown, wrapper: HTMLElement) => {
+            const video = document.createElement("video");
+            Object.defineProperty(video, "paused", { value: false });
+            wrapper.replaceChildren(video);
+        });
+        editor.setData("<p>Text</p>");
+        editor.model.change((writer) => {
+            const root = getBlock().root;
+            writer.insert(createMediaEmbed(writer,
+                { url: FILE_URL, embedType: "video", aspectRatio: "4/3" }),
+            writer.createPositionAt(root, "end"));
+            for (let index = 0; index < 2; index++) {
+                writer.insert(createMediaEmbed(writer, { url: FILE_URL, embedType: "video" }),
+                    writer.createPositionAt(root, "end"));
+            }
+        });
+        selectBlock(2);
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        editor.model.change((writer) =>
+            writer.setAttribute(SIZE_ATTRIBUTES.width, "30em", getBlock(3)));
+        loadMedia.mockClear();
+
+        for (const resolve of resolvers) {
+            resolve({ image: THUMBNAIL, aspectRatio: "16/9" });
+        }
+        await nextTask();
+
+        expect([ 1, 2, 3 ].map((index) => [ "image", "aspectRatio", SIZE_ATTRIBUTES.width ]
+            .map((name) => getBlock(index).getAttribute(name)))).toEqual([
+            [ THUMBNAIL, "4/3", "26.7em" ],
+            [ THUMBNAIL, "16/9", undefined ],
+            [ THUMBNAIL, "16/9", "30em" ]
+        ]);
+        expect(loadMedia).not.toHaveBeenCalled();
+    });
+
+    it("sets nothing for a video whose frame cannot be read, or once the editor is gone", async () => {
+        editor.setData("<p>Text</p>");
+        const insert = () => editor.model.change((writer) => {
+            const embed = createMediaEmbed(writer, { url: FILE_URL, embedType: "video" });
+            writer.insert(embed, writer.createPositionAt(getBlock().root, "end"));
+        });
+
+        insert();
+        await nextTask();
+        expect(getBlock(1).hasAttribute("image")).toBe(false);
+
+        captureVideoThumbnail.mockRejectedValueOnce(new Error("Offline"));
+        insert();
+        await nextTask();
+        expect(getBlock(2).hasAttribute("image")).toBe(false);
+
+        let resolveCapture: (thumbnail: unknown) => void = () => {};
+        captureVideoThumbnail.mockImplementation(() =>
+            new Promise((resolve) => (resolveCapture = resolve)));
+        insert();
+        await editor.destroy();
+        resolveCapture({ image: THUMBNAIL });
+        await nextTask();
+        expect(captureVideoThumbnail).toHaveBeenCalledTimes(3);
+    });
+
+    it("names the caption of an audio file and of a video for screen readers", () => {
+        editor.setData(`<figure class="captioned-content-embed"><section class="link-embed"`
+            + ` data-url="https://example.com/a.mp3" data-embed-type="audio" data-box-size="small">`
+            + `&nbsp;</section><figcaption>Song</figcaption></figure>`
+            + `<figure class="captioned-content-embed">${SAVED_PREVIEW}`
+            + `<figcaption>Video</figcaption></figure>`);
+
+        const captions = editor.editing.view.getDomRoot()?.querySelectorAll("figcaption") ?? [];
+        expect([ ...captions ].map((caption) => caption.getAttribute("aria-label")))
+            .toEqual([ "Caption for the audio", "Caption for the video" ]);
+    });
+
+    it("drops the shape of a video that stores none it can read", () => {
+        editor.setData(`<section class="link-embed" data-url="${FILE_URL}" data-embed-type="video"`
+            + ` data-aspect-ratio="wide" data-box-size="medium">&nbsp;</section>`);
+
+        expect(getBlock().getAttribute("aspectRatio")).toBe("wide");
+        expect(getFigure().style.getPropertyValue("--video-aspect-ratio")).toBe("");
+    });
+
+    it("captures no thumbnail of audio, YouTube, a video with one, or once undone", async () => {
+        editor.setData("<p>Text</p>");
+        const insert = (attributes: Record<string, unknown>) => editor.model.change((writer) => {
+            const embed = createMediaEmbed(writer, attributes);
+            writer.insert(embed, writer.createPositionAt(getBlock().root, "end"));
+        });
+
+        insert({ url: "https://example.com/a.mp3", embedType: "audio" });
+        insert({ url: VIDEO_URL, embedType: "youtube" });
+        insert({ url: FILE_URL, embedType: "video", image: THUMBNAIL });
+        // A video made but never inserted.
+        editor.model.change((writer) => {
+            createMediaEmbed(writer, { url: FILE_URL, embedType: "video" });
+            writer.insertText("!", getBlock(), "end");
+        });
+        expect(captureVideoThumbnail).not.toHaveBeenCalled();
+
+        captureVideoThumbnail.mockResolvedValue({ image: "api/attachments/x/image/x.jpg" });
+        insert({ url: FILE_URL, embedType: "video" });
+        editor.execute("undo");
+        await nextTask();
+        expect(captureVideoThumbnail).toHaveBeenCalledOnce();
+        expect(editor.model.document.getRoot()?.childCount).toBe(4);
+        expect(editor.getData()).not.toContain("api/attachments/x/");
     });
 });

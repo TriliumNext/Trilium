@@ -1,12 +1,16 @@
 import {
-    extractYouTubeVideoId, safeHostname, safeLinkPreviewHref, safeLinkPreviewImageSrc
+    extractYouTubeVideoId, getMediaFileTitle, isHttpUrl, isMediaFileEmbedType,
+    type MediaFileEmbedType, safeHostname, safeLinkPreviewHref, safeLinkPreviewImageSrc
 } from "./link_embed.js";
 import { escapeHtml } from "./utils.js";
 
 /** A link preview as the note stores it, in the `data-*` attributes of its element. */
 export interface LinkPreviewData {
     url: string;
-    /** `opengraph` draws a card; anything else draws a video player when the URL is a video. */
+    /**
+     * `opengraph` draws a card, `video` and `audio` a player of the file at the URL, and anything
+     * else a YouTube player when the URL is a YouTube video.
+     */
     embedType?: string | null;
     title?: string | null;
     description?: string | null;
@@ -22,6 +26,8 @@ export interface LinkPreviewMarkupOptions {
     editable?: boolean;
     /** The accessible name of a video's play button, translated by the caller. */
     playVideoLabel: string;
+    /** The accessible name of an audio file's play button, translated by the caller. */
+    playAudioLabel: string;
 }
 
 /** The `data-*` attribute that stores each field of a link preview. */
@@ -72,27 +78,55 @@ export function getVideoAspectRatio({ aspectRatio }: Pick<LinkPreviewData, "aspe
     return width && height ? width / height : null;
 }
 
-/** The box sizes of a video embed. */
+/** What a link preview plays: a YouTube video, or the video or audio file at its URL. */
+export type LinkPreviewPlayer = { type: "youtube"; videoId: string } | { type: MediaFileEmbedType };
+
+/** The box sizes of a media embed that plays a video. */
 export const VIDEO_EMBED_BOX_SIZES = [ "medium", "full" ] as const;
 
+/** The box size of a media embed that plays an audio file: a row of controls. */
+export const AUDIO_EMBED_BOX_SIZES = [ "small" ] as const;
+
+/** The box sizes of a media embed that `player` plays in. */
+export function getMediaEmbedBoxSizes(player: LinkPreviewPlayer) {
+    return player.type === "audio" ? AUDIO_EMBED_BOX_SIZES : VIDEO_EMBED_BOX_SIZES;
+}
+
 /**
- * The box size of a video saved as a link preview, and whether its title is hidden. A video saved
- * before videos were embeds has no box size: it is Full and untitled.
+ * The box size of media saved as a link preview, and whether its title is hidden. A YouTube video
+ * saved before videos were embeds has no box size: it is Full and untitled.
  */
-export function readVideoEmbedBox(getAttribute: (name: string) => string | null | undefined) {
+export function readMediaEmbedBox(
+    getAttribute: (name: string) => string | null | undefined, player: LinkPreviewPlayer
+) {
     const savedBoxSize = getAttribute("data-box-size");
-    const boxSize = VIDEO_EMBED_BOX_SIZES.find((size) => size === savedBoxSize) ?? "full";
+    const boxSize = getMediaEmbedBoxSizes(player).find((size) => size === savedBoxSize)
+        ?? (player.type === "audio" ? "small" : "full");
     return {
         boxSize,
         isTitleHidden: !savedBoxSize || getAttribute("data-hide-title") === "true"
     };
 }
 
-/** The YouTube ID of the video that a link preview plays, or `null` for a card. */
+/** The YouTube ID of the video that a link preview plays, or `null`. */
 export function getLinkPreviewVideoId(
     { url, embedType }: Pick<LinkPreviewData, "url" | "embedType">
 ) {
-    return embedType !== "opengraph" ? extractYouTubeVideoId(url) : null;
+    return embedType !== "opengraph" && !isMediaFileEmbedType(embedType)
+        ? extractYouTubeVideoId(url)
+        : null;
+}
+
+/** What a link preview plays, or `null` for a card. */
+export function getLinkPreviewPlayer(
+    { url, embedType }: Pick<LinkPreviewData, "url" | "embedType">
+): LinkPreviewPlayer | null {
+    if (isMediaFileEmbedType(embedType)) {
+        return isHttpUrl(url) ? { type: embedType } : null;
+    }
+
+    const videoId = getLinkPreviewVideoId({ url, embedType });
+    return videoId ? { type: "youtube", videoId } : null;
 }
 
 /**
@@ -109,24 +143,40 @@ export function renderLinkMentionHtml(data: LinkPreviewData, options: LinkPrevie
 }
 
 /**
- * The markup of a block link preview: a video player for a video URL, a card otherwise.
+ * The markup of a block link preview: a player for a URL that a preview plays, a card otherwise.
  *
  * The player starts as a facade showing the thumbnail stored in the note, so reading a note or a
- * shared page that holds a video does not contact YouTube; `enhanceLinkPreviews()` swaps in the
- * player on the reader's click.
+ * shared page that holds a video or an audio file does not contact its host;
+ * `enhanceLinkPreviews()` swaps in the player on the reader's click.
  */
 export function renderLinkEmbedHtml(data: LinkPreviewData, options: LinkPreviewMarkupOptions) {
-    const videoId = getLinkPreviewVideoId(data);
-    if (videoId) {
+    const player = getLinkPreviewPlayer(data);
+    if (player?.type === "audio") {
+        const label = escapeHtml(options.playAudioLabel);
+        return `<div class="link-embed-audio">`
+            + `<button type="button" class="link-embed-audio-facade"`
+            + ` data-media-url="${escapeHtml(data.url)}" aria-label="${label}" title="${label}">`
+            + `<span class="link-embed-audio-play" aria-hidden="true"></span>`
+            + `<span class="link-embed-audio-title">`
+            + `${escapeHtml(data.title || getMediaFileTitle(data.url))}</span>`
+            + `</button></div>`;
+    }
+    if (player) {
         const label = escapeHtml(options.playVideoLabel);
         const aspectRatio = getVideoAspectRatio(data);
         const style = aspectRatio ? ` style="${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}"` : "";
+        const isYouTube = player.type === "youtube";
+        const source = isYouTube
+            ? ` data-video-id="${escapeHtml(player.videoId)}"`
+            : ` data-media-url="${escapeHtml(data.url)}"`;
+        const playClass = isYouTube
+            ? "link-embed-video-play"
+            : "link-embed-video-file-play bx bx-play";
         return `<div class="link-embed-video"${style}>`
-            + `<button type="button" class="link-embed-video-facade"`
-            + ` data-video-id="${escapeHtml(videoId)}"`
+            + `<button type="button" class="link-embed-video-facade"${source}`
             + ` aria-label="${label}" title="${label}">`
             + renderPicture(data.image, "link-embed-video-thumbnail")
-            + `<span class="link-embed-video-play" aria-hidden="true"></span>`
+            + `<span class="${playClass}" aria-hidden="true"></span>`
             + `</button></div>`;
     }
 

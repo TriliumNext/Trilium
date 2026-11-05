@@ -8,6 +8,7 @@ import { getContext } from "./context.js";
 import imageService from "./image.js";
 import { getImageProvider } from "./image_provider.js";
 import type { ProcessedImage } from "./image_provider.js";
+import { getLog } from "./log.js";
 import noteService from "./notes.js";
 import protectedSessionService from "./protected_session.js";
 
@@ -186,6 +187,27 @@ describe("image service (real DB)", () => {
             // A different site, and a different kind of picture, are different things.
             expect(otherSite.attachmentId).not.toBe(first.attachmentId);
             expect(cover.attachmentId).not.toBe(first.attachmentId);
+        });
+
+        it("logs the role of a link preview picture, not its title made from the URL", () => {
+            const host = createTargetNote();
+            const info = vi.spyOn(getLog(), "info");
+            const store = (title: string, role: "image" | "coverImage") =>
+                getContext().init(() => imageService.saveImageToAttachment(
+                    host.noteId, fakeBuffer, title, false, false, role));
+
+            store("cdn.example.org-holiday-mp4-1a2b3c4d.jpeg", "coverImage");
+            store("cdn.example.org-holiday-mp4-1a2b3c4d.jpeg", "coverImage");
+            store("photo.png", "image");
+
+            const lines = info.mock.calls.map(([ line ]) => String(line));
+            expect(lines.filter((line) => line.includes("coverImage"))).toEqual([
+                expect.stringMatching(/^Saving image coverImage as attachment/),
+                expect.stringMatching(/^Saving image coverImage as attachment/),
+                expect.stringMatching(/^Reusing attachment '\w+' of note '\w+' for coverImage$/)
+            ]);
+            expect(lines.filter((line) => /example\.org|holiday/.test(line))).toEqual([]);
+            expect(lines.filter((line) => line.includes("'photo.png'"))).toHaveLength(1);
         });
 
         it("stores the user's own images separately however they are named", () => {

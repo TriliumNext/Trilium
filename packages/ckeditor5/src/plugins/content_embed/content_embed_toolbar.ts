@@ -1,4 +1,4 @@
-import { VIDEO_EMBED_CLASS } from "@triliumnext/commons";
+import { MEDIA_EMBED_CLASS } from "@triliumnext/commons";
 import {
     BalloonPanelView, isWidget, Plugin, type PositioningFunction, type ViewDocumentSelection,
     type ViewElement, WidgetToolbarRepository
@@ -41,17 +41,17 @@ export default class ContentEmbedToolbar extends Plugin {
         const widgetToolbarRepository = editor.plugins.get(WidgetToolbarRepository);
         const getAnchor = () => {
             const selection = editor.editing.view.document.selection;
-            const embed = findRelatedEmbed(selection) ?? findRelatedVideo(selection);
+            const embed = findRelatedEmbed(selection) ?? findRelatedMedia(selection);
             const modelEmbed = embed && editor.editing.mapper.toModelElement(embed);
             return modelEmbed ? getEmbedAnchor(modelEmbed) : "center";
         };
 
-        // A video has the copy and display items of a link preview, and the menu of an embed.
-        widgetToolbarRepository.register("videoEmbed", {
+        // Media has the copy and display items of a link preview, and the menu of an embed.
+        widgetToolbarRepository.register("mediaEmbed", {
             items: [ "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",
             positions: getToolbarPositions(getAnchor),
-            getRelatedElement: findRelatedVideo
+            getRelatedElement: findRelatedMedia
         });
 
         widgetToolbarRepository.register("contentEmbed", {
@@ -79,9 +79,9 @@ function findRelatedEmbed(selection: ViewDocumentSelection) {
     return findRelatedWidget(selection, isContentEmbedWidget);
 }
 
-/** The video embed that the selection is on or in the caption of, with a toolbar of its own. */
-function findRelatedVideo(selection: ViewDocumentSelection) {
-    return findRelatedWidget(selection, isVideoEmbedWidget);
+/** The media embed that the selection is on or in the caption of, with a toolbar of its own. */
+function findRelatedMedia(selection: ViewDocumentSelection) {
+    return findRelatedWidget(selection, isMediaEmbedWidget);
 }
 
 /** The widget that `matches()` and that `selection` is on or inside, or `null`. */
@@ -105,11 +105,11 @@ function findRelatedWidget(
 
 function isContentEmbedWidget(element: ViewElement): boolean {
     return isWidget(element) && element.hasClass("include-note")
-        && !element.hasClass(VIDEO_EMBED_CLASS);
+        && !element.hasClass(MEDIA_EMBED_CLASS);
 }
 
-function isVideoEmbedWidget(element: ViewElement): boolean {
-    return isWidget(element) && element.hasClass(VIDEO_EMBED_CLASS);
+function isMediaEmbedWidget(element: ViewElement): boolean {
+    return isWidget(element) && element.hasClass(MEDIA_EMBED_CLASS);
 }
 
 /**

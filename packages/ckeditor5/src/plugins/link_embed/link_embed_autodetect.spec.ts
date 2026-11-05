@@ -137,6 +137,20 @@ describe("AutoLinkToMention", () => {
             expect(embed?.getAttribute("customWidth")).toBe("11.3em");
         });
 
+        it("turns a URL after empty lines into a player and drops the lines", async () => {
+            embeddable(VIDEO_URL);
+
+            const emptyLines = "<softBreak></softBreak><softBreak></softBreak>";
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(`${emptyLines}${VIDEO_URL}`), VIDEO_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+            const root = editor.model.document.getRoot();
+            expect(root?.getChild(0)?.is("element", "contentEmbed")).toBe(true);
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(findElement(editor, "softBreak")).toBeUndefined();
+        });
+
         it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {
             // The user typed a space, not Enter: they may still be writing that sentence, so the URL
             // is alone only by accident. Nothing has been *left* alone yet.
@@ -148,12 +162,22 @@ describe("AutoLinkToMention", () => {
             expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(VIDEO_URL);
         });
 
-        it("keeps the URL inline when text sits beside it on the line", async () => {
-            autoLinkIn(editor, `<paragraph>See ${PLAIN_URL}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL);
-            await flushFetch();
+        it("keeps the URL inline beside text or another element, or below text", async () => {
+            const lines = [
+                `See ${PLAIN_URL}`,
+                `See<softBreak></softBreak>${PLAIN_URL}`,
+                `${PLAIN_URL}<linkMention url="https://example.com/other"></linkMention>`
+            ];
+            for (const line of lines) {
+                autoLinkIn(
+                    editor, `<paragraph>${line}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL
+                );
+                await flushFetch();
 
-            expect(findElement(editor, "linkEmbed")).toBeUndefined();
-            expect(findElement(editor, "linkMention")).toBeDefined();
+                expect(findElement(editor, "linkEmbed"), line).toBeUndefined();
+                const mention = findElement(editor, "linkMention");
+                expect(mention?.getAttribute("url"), line).toBe(PLAIN_URL);
+            }
         });
 
         it("keeps the URL inline inside a list item, a quote and a heading", async () => {

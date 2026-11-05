@@ -190,10 +190,17 @@ export default class AutoLinkToMention extends Plugin {
     /**
      * Maps a model block's children to the runtime-neutral shape consumed by
      * {@link isUrlAloneInBlock}, keeping the decision logic pure and testable.
+     *
+     * A `softBreak` maps to a line break, so a URL pasted with a leading newline still counts as
+     * alone, and its preview replaces the empty lines along with the paragraph.
      */
     private _blockChildren(blockEl: any): BlockChildLike[] {
         const children: BlockChildLike[] = [];
         for (const child of blockEl.getChildren()) {
+            if (child.is('element', 'softBreak')) {
+                children.push({ isText: true, data: '\n' });
+                continue;
+            }
             const isText = child.is('$text');
             children.push({ isText, data: isText ? child.data : undefined });
         }

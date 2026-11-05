@@ -118,4 +118,24 @@ describe("readCappedResponse", () => {
 
         expect(read.bytes.byteLength).toBe(100);
     });
+
+    it("cuts a body of a type read by its prefix, whatever size it advertises", async () => {
+        let pulled = 0;
+        const stream = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.enqueue(new Uint8Array(40).fill(++pulled));
+            }
+        });
+        const response = new Response(stream, {
+            headers: { "content-type": "video/mp4", "content-length": String(2 ** 40) }
+        });
+        const prefixLength = (contentType: string) => contentType === "video/mp4" ? 50 : undefined;
+
+        const read = await readCappedResponse(response, 10, prefixLength);
+
+        expect(read.bytes).toEqual(new Uint8Array([ ...Array(40).fill(1), ...Array(10).fill(2) ]));
+        expect(pulled).toBe(2);
+        await expect(readCappedResponse(new Response("x".repeat(20)), 10, prefixLength))
+            .rejects.toThrow(/exceeds the 10 byte limit/);
+    });
 });

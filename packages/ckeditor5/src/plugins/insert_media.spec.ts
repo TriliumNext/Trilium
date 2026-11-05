@@ -9,22 +9,22 @@ import { createTestEditor } from "../../test/editor-kit.js";
 import {
     createLinkEmbedHost, findElement, flushFetch, type LinkEmbedHostMocks, META, useDeferredFetch
 } from "../../test/link-embed-kit.js";
-import YouTubeVideoPlugin, { COMMAND_NAME, type YouTubeVideoRequest } from "./youtube_video.js";
+import InsertMediaPlugin, { COMMAND_NAME, type InsertMediaRequest } from "./insert_media.js";
 
-const PLUGINS = [ Essentials, Paragraph, CodeBlock, LinkEditing, YouTubeVideoPlugin ];
+const PLUGINS = [ Essentials, Paragraph, CodeBlock, LinkEditing, InsertMediaPlugin ];
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-describe("YouTubeVideoPlugin", () => {
+describe("InsertMediaPlugin", () => {
     let editor: ClassicEditor;
     let linkEmbed: LinkEmbedHostMocks;
-    let showPrompt: Mock<(request: YouTubeVideoRequest) => (() => void) | null>;
+    let showPrompt: Mock<(request: InsertMediaRequest) => (() => void) | null>;
     let release: Mock<() => void>;
 
     beforeEach(async () => {
         linkEmbed = createLinkEmbedHost();
         release = vi.fn();
         showPrompt = vi.fn(() => release);
-        editor = await createTestEditor(PLUGINS, { linkEmbed, youtubeVideo: { showPrompt } });
+        editor = await createTestEditor(PLUGINS, { linkEmbed, insertMedia: { showPrompt } });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
     });
 
@@ -41,11 +41,11 @@ describe("YouTubeVideoPlugin", () => {
     it("opens the prompt from a button bound to the command", () => {
         const button = editor.ui.componentFactory.create(COMMAND_NAME);
         if (!(button instanceof ButtonView)) {
-            throw new Error("The YouTube video component is not a button.");
+            throw new Error("The Audio/video embed component is not a button.");
         }
 
         // No dictionary is configured here, so `t()` renders the message id, the English label.
-        expect(button.label).toBe("YouTube video");
+        expect(button.label).toBe("Audio/video embed");
         expect(button.icon).toContain("<svg");
         expect(button.isEnabled).toBe(true);
 
@@ -90,6 +90,35 @@ describe("YouTubeVideoPlugin", () => {
         expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
         expect(embed?.getAttribute("embedType")).toBe("youtube");
         expect(linkEmbed.fetchMetadata).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
+    });
+
+    it("inserts a video file Medium and an audio file Small, both untitled", async () => {
+        const insert = async (url: string, embedType: string) => {
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+            linkEmbed.fetchMetadata.mockResolvedValueOnce({ url, embedType, title: "file" });
+            await openPrompt().onInsert(url);
+            const embed = findElement(editor, "contentEmbed");
+            return [ "embedType", "boxSize", "hideTitle" ].map((name) => embed?.getAttribute(name));
+        };
+
+        // The server reads the type of a file whose address names none.
+        expect(await insert("https://example.com/watch/1", "video"))
+            .toEqual([ "video", "medium", true ]);
+        expect(await insert("https://example.com/listen/1", "audio"))
+            .toEqual([ "audio", "small", true ]);
+
+        // The title can still be shown.
+        editor.execute("toggleContentEmbedTitle");
+        expect(findElement(editor, "contentEmbed")?.getAttribute("hideTitle")).toBeUndefined();
+    });
+
+    it("rejects, inserting nothing, for an address that plays nothing", async () => {
+        linkEmbed.fetchMetadata.mockResolvedValue({ ...META, url: "https://example.com/" });
+
+        await expect(openPrompt().onInsert("https://example.com/")).rejects.toThrow();
+
+        expect(getData()).toBe("<paragraph>[]</paragraph>");
+        expect(release).not.toHaveBeenCalled();
     });
 
     it("rejects, inserting nothing and keeping the balloon, for a video it cannot load", async () => {
@@ -172,7 +201,7 @@ describe("YouTubeVideoPlugin", () => {
         setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
         expect(plainEditor.commands.get(COMMAND_NAME)?.isEnabled).toBe(false);
 
-        plainEditor.plugins.get(YouTubeVideoPlugin).showPrompt();
+        plainEditor.plugins.get(InsertMediaPlugin).showPrompt();
         expect(plainEditor.plugins.get(ContextualBalloon).visibleView).toBeNull();
     });
 });

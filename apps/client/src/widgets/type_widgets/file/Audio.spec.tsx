@@ -19,6 +19,7 @@ const source: MediaSource = {
     id: "snd1",
     title: "Podcast",
     mime: "audio/mpeg",
+    kind: "audio",
     streamUrl: "api/notes/snd1/open-partial?v=blobA",
     fullUrl: "api/notes/snd1/open?v=blobA"
 };

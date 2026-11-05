@@ -23,6 +23,7 @@ import filesRoute from "./api/files.js";
 // API routes
 import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
+import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
@@ -115,6 +116,11 @@ function register(app: express.Application) {
 
     apiRoute(PST, "/api/attachments/:attachmentId/save-to-tmp-dir", filesRoute.saveAttachmentToTmpDir);
     apiRoute(PST, "/api/attachments/:attachmentId/upload-modified-file", filesRoute.uploadModifiedFileToAttachment);
+
+    // Node only: standalone reads third-party files with the page's `fetch`, under CORS.
+    apiRoute(PST, "/api/link-embed/media-proxy", mediaProxyRoute.createProxy);
+    asyncRoute(GET, "/api/link-embed/media-proxy/:token", [auth.checkApiAuthOrElectron],
+        mediaProxyRoute.streamProxy, null);
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);

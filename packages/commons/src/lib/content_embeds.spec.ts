@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
-    getNoteEmbedHref, resolveContentEmbed
+    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getMediaEmbedClasses,
+    getNestedEmbedOptions, getNoteEmbedHref, resolveContentEmbed
 } from "./content_embeds.js";
 
 const NO_PATH = { seenNoteIds: new Set<string>() };
@@ -56,6 +56,14 @@ describe("getNestedEmbedOptions", () => {
 
         expect(getNestedEmbedOptions({ seenNoteIds, expandNestedEmbeds: true }, undefined))
             .toEqual({ seenNoteIds, block: undefined, expandNestedEmbeds: true });
+    });
+});
+
+describe("getMediaEmbedClasses", () => {
+    it("names the box of a video or of an audio file", () => {
+        expect([ getMediaEmbedClasses(false), getMediaEmbedClasses(true) ]).toEqual([
+            [ "media-embed", "video-embed" ], [ "media-embed", "audio-embed" ]
+        ]);
     });
 });
 

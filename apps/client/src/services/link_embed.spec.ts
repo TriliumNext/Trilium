@@ -47,6 +47,11 @@ describe("detectEmbedType", () => {
         expect(detectEmbedType("https://example.com")).toBe("opengraph");
         expect(detectEmbedType("https://github.com/TriliumNext/Notes")).toBe("opengraph");
     });
+
+    it("detects a video or audio file by the extension of its path", () => {
+        expect(detectEmbedType("http://nas.local/movies/a.mkv?t=1")).toBe("video");
+        expect(detectEmbedType("https://example.com/podcast/episode.mp3")).toBe("audio");
+    });
 });
 
 describe("safeHostname", () => {
@@ -100,6 +105,21 @@ describe("fetchMetadata", () => {
             // Nothing was actually read about the page, so callers can keep a text link instead.
             unresolved: true
         });
+    });
+
+    it("plays a media file the server cannot read, named by its extension, as one", async () => {
+        const url = "http://192.168.1.2/media/Clip%201.mp4";
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "192.168.1.2", unresolved: true
+        })) as typeof server.post;
+        expect(await fetchMetadata(url, "note1"))
+            .toEqual({ url, embedType: "video", title: "Clip 1.mp4" });
+
+        server.post = vi.fn(async () => {
+            throw new Error("network down");
+        }) as typeof server.post;
+        expect(await fetchMetadata("https://example.com/a.flac", "note1"))
+            .toEqual({ url: "https://example.com/a.flac", embedType: "audio", title: "a.flac" });
     });
 
     it("passes the server's unresolved flag through", async () => {

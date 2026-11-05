@@ -14,9 +14,9 @@ import {
 import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import {
-    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewVideoId,
-    getVideoAspectRatio, readLinkPreviewData, readVideoEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY,
-    VIDEO_EMBED_CLASS
+    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewPlayer,
+    getMediaEmbedClasses, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
+    VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
@@ -51,7 +51,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
-    loadVideoEmbed,
+    loadMediaEmbed,
     refreshEmbeddedNote,
     setupImageOpening,
     watchContentEmbeds
@@ -169,7 +169,7 @@ export function ReadOnlyTextContent({
             // First, so that no other pass renders the content of these embeds.
             applyUnknownEmbeds(container),
             ...(hasEmbedBoxes
-                ? [ applySourceEmbeds(container), applyVideoEmbeds(container) ]
+                ? [ applySourceEmbeds(container), applyMediaEmbeds(container) ]
                 : [ rewriteMermaidDiagramsInContainer(container), applyInlineMermaid(container) ]),
             applyContentEmbeds(container),
             applyLinkEmbeds(container),
@@ -265,18 +265,20 @@ function applyContentEmbeds(container: HTMLDivElement) {
 }
 
 /**
- * Shows each video of a link preview in the embed box the editor shows it in, with its title row
- * and caption, and without the menu of the editor.
+ * Shows the media of each link preview that plays some in the embed box the editor shows it in,
+ * with its title row and caption, and without the menu of the editor.
  */
-function applyVideoEmbeds(container: HTMLDivElement) {
+function applyMediaEmbeds(container: HTMLDivElement) {
+    const loads: Promise<void>[] = [];
     for (const section of container.querySelectorAll<HTMLElement>("section.link-embed")) {
         const getAttribute = (name: string) => section.getAttribute(name);
         const preview = readLinkPreviewData(getAttribute);
-        if (!preview || !getLinkPreviewVideoId(preview)) continue;
+        const player = preview && getLinkPreviewPlayer(preview);
+        if (!preview || !player) continue;
 
         const figure = document.createElement("figure");
-        figure.className = `include-note ${VIDEO_EMBED_CLASS}`;
-        const { boxSize, isTitleHidden } = readVideoEmbedBox(getAttribute);
+        figure.classList.add("include-note", ...getMediaEmbedClasses(player.type === "audio"));
+        const { boxSize, isTitleHidden } = readMediaEmbedBox(getAttribute, player);
         figure.dataset.boxSize = boxSize;
         if (isTitleHidden) {
             figure.dataset.hideTitle = "true";
@@ -291,13 +293,14 @@ function applyVideoEmbeds(container: HTMLDivElement) {
         if (style) {
             figure.setAttribute("style", style);
         }
-        const aspectRatio = getVideoAspectRatio(preview);
+        const aspectRatio = player.type !== "audio" && getVideoAspectRatio(preview);
         if (aspectRatio) {
             figure.style.setProperty(VIDEO_ASPECT_RATIO_PROPERTY, String(aspectRatio));
         }
         replaceWithEmbedBox(section, figure);
-        loadVideoEmbed(preview, figure);
+        loads.push(loadMediaEmbed(preview, figure));
     }
+    return Promise.all(loads);
 }
 
 /** Shows each embed of a kind that this version does not know as the editor does: an error box. */

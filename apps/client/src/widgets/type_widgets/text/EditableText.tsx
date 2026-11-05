@@ -51,7 +51,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
-    loadVideoEmbed,
+    loadMediaEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -250,8 +250,8 @@ export default function EditableText({
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
         },
-        loadVideo(preview, wrapper) {
-            loadVideoEmbed(preview, wrapper, { hasMenu: true });
+        loadMedia(preview, wrapper) {
+            void loadMediaEmbed(preview, wrapper, { hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
@@ -647,7 +647,13 @@ export function getEditLinkOpts(
 ): EditLinkOpts {
     async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
         await ready();
-        api.addLinkPreview(...args);
+        try {
+            await api.addLinkPreview(...args);
+        } catch (e) {
+            // Only a media embed given an address that plays nothing rejects.
+            console.error("Failed to change the media:", e);
+            toast.showError(t("youtube_video.insert_failed"));
+        }
     }
 
     const anchors = api.getAnchors();
@@ -663,6 +669,7 @@ export function getEditLinkOpts(
             currentTitle: currentLink.isReference ? undefined : currentLink.text,
             currentDescription: currentLink.description,
             display: currentLink.display,
+            isMedia: currentLink.isMedia,
             anchors,
             headings,
             ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),

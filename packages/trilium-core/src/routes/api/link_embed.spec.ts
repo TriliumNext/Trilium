@@ -44,7 +44,8 @@ beforeEach(() => {
     // the real readCappedResponse, so the ceilings and the content-type handling under test here are
     // the ones that will run in production rather than a second implementation of them.
     initRequest(fakeRequestProvider({
-        fetchResource: async (url, opts) => readCappedResponse(await safeFetch(url, opts), opts.maxBytes)
+        fetchResource: async (url, opts) =>
+            readCappedResponse(await safeFetch(url, opts), opts.maxBytes, opts.prefixLength)
     }));
 });
 
@@ -617,6 +618,26 @@ describe("link-embed getMetadata", () => {
         expect(result).toEqual({ url: "https://example.com/data.json", title: "example.com", embedType: "opengraph", unresolved: true });
     });
 
+    it("reads a video or audio file by its header alone, whatever its size", async () => {
+        const video = new Response(webmHeader(), {
+            headers: { "content-type": "video/webm", "content-length": String(2 ** 31) }
+        });
+        safeFetch.mockResolvedValueOnce(video);
+        expect(await linkEmbedRoute.getMetadata(req("https://example.com/media/My%20Clip.webm")))
+            .toEqual({
+                url: "https://example.com/media/My%20Clip.webm",
+                embedType: "video",
+                title: "My Clip.webm",
+                aspectRatio: "16/9"
+            });
+        expect(video.bodyUsed).toBe(true);
+
+        safeFetch.mockResolvedValueOnce(fakeResponse("ID3", { contentType: "audio/mpeg" }));
+        expect(await linkEmbedRoute.getMetadata(req("https://example.com/stream")))
+            .toMatchObject({ embedType: "audio", title: "stream" });
+        expect(saveImageToAttachment).not.toHaveBeenCalled();
+    });
+
     it("keeps a YouTube link resolved even when oEmbed fails, since the player needs no metadata", async () => {
         safeFetch.mockResolvedValue(fakeResponse("", { ok: false }));
         const result = await linkEmbedRoute.getMetadata(req("https://youtu.be/dQw4w9WgXcQ"));
@@ -1060,6 +1081,13 @@ describe("link-embed getPageDetails", () => {
         expect(String(safeFetch.mock.calls[0]?.[0])).toContain("youtube.com/oembed");
     });
 
+    it("names a video or audio file by its file name", async () => {
+        safeFetch.mockResolvedValue(fakeResponse("fLaC", { contentType: "application/octet-stream" }));
+
+        expect(await linkEmbedRoute.getPageDetails(req("https://example.com/a/b.flac")))
+            .toEqual({ url: "https://example.com/a/b.flac", embedType: "audio", title: "b.flac" });
+    });
+
     it("answers unresolved for a page it cannot read or an address it refuses", async () => {
         await expect(linkEmbedRoute.getPageDetails(req())).rejects.toBeInstanceOf(ValidationError);
 
@@ -1078,6 +1106,43 @@ describe("link-embed getPageDetails", () => {
         expect(await unresolved("https://user:secret@example.com/")).toBe(true);
         expect(await unresolved("ftp://example.com/file")).toBe(true);
         expect(saveImageToAttachment).not.toHaveBeenCalled();
+    });
+});
+
+describe("link-embed getHttpStatus", () => {
+    function req(url?: unknown) { return { body: { url } } as unknown as Request; }
+
+    beforeEach(() => safeFetch.mockReset());
+
+    it("answers the status of a HEAD, or of a GET where the HEAD answers an error", async () => {
+        await expect(linkEmbedRoute.getHttpStatus(req())).rejects.toBeInstanceOf(ValidationError);
+
+        const url = "https://example.com/clip.mp4";
+        const huge = String(1024 * 1024 * 1024);
+        const answer = (status: number) => new Response("Body", {
+            status, headers: { "content-type": "text/html", "content-length": huge }
+        });
+        const methods = () => safeFetch.mock.calls.map(([ , opts ]) => opts.method);
+        safeFetch.mockResolvedValueOnce(answer(200));
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 200 });
+        expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, expect.objectContaining({
+            method: "HEAD", headers: { "User-Agent": expect.stringContaining("TriliumNotes") }
+        }));
+
+        // A host can refuse a HEAD that it answers for a GET, such as an address signed for GET.
+        safeFetch.mockReset();
+        safeFetch.mockResolvedValueOnce(answer(403)).mockResolvedValueOnce(answer(404));
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({ status: 404 });
+        expect(methods()).toEqual([ "HEAD", "GET" ]);
+
+        safeFetch.mockReset();
+        safeFetch.mockImplementationOnce(async () => {
+            throw new Error("getaddrinfo ENOTFOUND example.com");
+        });
+        expect(await linkEmbedRoute.getHttpStatus(req(url))).toStrictEqual({});
+        expect(await linkEmbedRoute.getHttpStatus(req("ftp://example.com/clip.mp4")))
+            .toStrictEqual({});
+        expect(safeFetch).toHaveBeenCalledOnce();
     });
 });
 
@@ -1122,3 +1187,45 @@ describe("storeFavicon", () => {
         expect(saveImageToAttachment).not.toHaveBeenCalled();
     });
 });
+
+describe("link-embed storeMediaThumbnail", () => {
+    function req(body: Record<string, unknown>) { return { body } as unknown as Request; }
+
+    it("stores the captured frame as the cover of the preview of the video", async () => {
+        const jpeg = await makeJpeg(640, 360);
+        const url = "https://example.com/clip.mp4";
+
+        const { image } = await linkEmbedRoute.storeMediaThumbnail(
+            req({ noteId: "note1", url, image: jpeg.toString("base64") }));
+
+        expect(image).toMatch(/^api\/attachments\/att1\/image\//);
+        expect(saveImageToAttachment.mock.calls[0]?.[0]).toBe("note1");
+        expect(stored("coverImage")?.buffer.equals(jpeg)).toBe(true);
+        expect(stored("coverImage")?.fileName).toMatch(/^example\.com-clip-mp4-.+\.jpg$/);
+    });
+
+    it("refuses a body without a note, a web address or a picture", async () => {
+        const image = (await makeJpeg(8, 8)).toString("base64");
+        const url = "https://example.com/clip.mp4";
+        for (const body of [
+            { url, image }, { noteId: "note1", image }, { noteId: "note1", url: "ftp://x/y", image },
+            { noteId: "note1", url }, { noteId: "note1", url, image: btoa("not a picture") },
+            { noteId: "note1", url, image: "A".repeat(3 * 1024 * 1024) }
+        ]) {
+            await expect(linkEmbedRoute.storeMediaThumbnail(req(body)))
+                .rejects.toBeInstanceOf(ValidationError);
+        }
+        expect(saveImageToAttachment).not.toHaveBeenCalled();
+    });
+});
+
+/** The header of a WebM file whose one track is a 1280x720 video. */
+function webmHeader() {
+    return Buffer.from([
+        0x1A, 0x45, 0xDF, 0xA3, 0x80,
+        0x18, 0x53, 0x80, 0x67, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        0x16, 0x54, 0xAE, 0x6B, 0x8F,
+        0xAE, 0x8D, 0x83, 0x81, 0x01,
+        0xE0, 0x88, 0xB0, 0x82, 0x05, 0x00, 0xBA, 0x82, 0x02, 0xD0
+    ]);
+}

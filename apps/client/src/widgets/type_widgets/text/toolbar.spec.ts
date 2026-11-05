@@ -59,7 +59,7 @@ describe("CKEditor config", () => {
 });
 
 describe("the Insert group", () => {
-    it("offers the drawing canvas above the Mermaid diagram, then the YouTube video", () => {
+    it("offers the drawing canvas above the Mermaid diagram, then the media embed", () => {
         const toolbars = [
             buildClassicToolbar(false, true).toolbar.items,
             buildFloatingToolbar(true).blockToolbar
@@ -70,7 +70,7 @@ describe("the Insert group", () => {
             const groupItems = (group as { items: string[] } | undefined)?.items ?? [];
             const index = groupItems.indexOf("drawingCanvas");
             expect(groupItems.slice(index, index + 3))
-                .toEqual([ "drawingCanvas", "mermaid", "youtubeVideo" ]);
+                .toEqual([ "drawingCanvas", "mermaid", "insertMedia" ]);
             expect(items).not.toContain("drawingCanvas");
         }
     });
@@ -240,7 +240,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "horizontalLine", "pageBreak", "footnote",
                 "|",
-                "math", "drawingCanvas", "mermaid", "youtubeVideo",
+                "math", "drawingCanvas", "mermaid", "insertMedia",
                 "|",
                 "bookmark", "childNote", "contentEmbed",
                 "|",

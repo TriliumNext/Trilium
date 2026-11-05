@@ -39,8 +39,8 @@ import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
 	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
-	type LinkPreviewData, normalizeMimeTypeForCKEditor, parseBlockRange, VIDEO_EMBED_BOX_SIZES,
-	VIDEO_EMBED_CLASS
+	getLinkPreviewPlayer, getMediaEmbedBoxSizes, getMediaEmbedClasses, type LinkPreviewData,
+	normalizeMimeTypeForCKEditor, parseBlockRange
 } from '@triliumnext/commons';
 import HostedBalloon from '../../hosted_balloon.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
@@ -53,11 +53,12 @@ import EmbedHistory from './embed_history.js';
 import ContentEmbedInlineSource, {
 	type InlineEmbedSource, isExtendedCodeBlock, isInlineSourceEmbed
 } from './inline_source.js';
+import ContentEmbedMedia, {
+	getMediaPreview, getMediaShapeAttributes, getVideoMediumWidth, isAudioEmbed, isMediaEmbed,
+	isVideoEmbed
+} from './media_embed.js';
 import './nested_editor_events.js';
 import UnknownContentEmbed from './unknown_embed.js';
-import ContentEmbedVideo, {
-	getVideoMediumWidth, getVideoPreview, getVideoShapeAttributes, isVideoEmbed
-} from './video_embed.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
@@ -230,7 +231,7 @@ export default class ContentEmbed extends Plugin {
 	static get requires() {
 		return [
 			ContextualBalloon, ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource,
-			EmbedHistory, UnknownContentEmbed, ContentEmbedVideo
+			EmbedHistory, UnknownContentEmbed, ContentEmbedMedia
 		];
 	}
 
@@ -542,8 +543,8 @@ class ContentEmbedEditing extends Plugin {
 		editor.plugins.get( ResizableWidgets ).register( 'contentEmbed', {
 			propertyPrefix: '--include-note',
 			isWidthResizable: true,
-			// A video takes its height from its width.
-			isHeightResizable: embed => !isVideoEmbed( embed ),
+			// A video takes its height from its width, and an audio file from its controls.
+			isHeightResizable: embed => !isMediaEmbed( embed ),
 			getAnchor: getEmbedAnchor,
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
@@ -684,7 +685,7 @@ class ContentEmbedEditing extends Plugin {
 					...getDisplayModeAttributes( modelElement ),
 					...getPositionAttributes( modelElement ),
 					...getCodeViewAttributes( modelElement ),
-					...getVideoShapeAttributes( modelElement )
+					...getMediaShapeAttributes( modelElement )
 				} );
 
 				const embedWrapper = viewWriter.createUIElement( 'div', {
@@ -706,7 +707,7 @@ class ContentEmbedEditing extends Plugin {
 				// The label is announced by screen readers; lowercase to match the "image widget" /
 				// "table widget" labels CKEditor gives its own widgets.
 				return toWidget( figure, viewWriter, {
-					label: isVideoEmbed( modelElement )
+					label: isMediaEmbed( modelElement )
 						? editor.t( 'link embed widget' )
 						: editor.t( 'include note widget' ),
 					hasSelectionHandle: true
@@ -741,7 +742,7 @@ class ContentEmbedEditing extends Plugin {
 					// re-applies unrelated attributes (e.g. `draggable` while selecting the widget).
 					// A player takes its size from the stylesheet, and a redraw stops the video.
 					const embed = data.item as ModelElement;
-					if ( !isVideoEmbed( embed ) ) {
+					if ( !isMediaEmbed( embed ) ) {
 						reloadEmbeddedContent( editor, viewElement, embed, newBoxSize );
 					}
 				}
@@ -825,9 +826,7 @@ class ContentEmbedEditing extends Plugin {
 				} );
 
 				return toWidgetEditable( figcaption, viewWriter, {
-					label: isVideoEmbed( embed )
-						? t( 'Caption for the video' )
-						: t( 'Caption for the included note' )
+					label: getCaptionLabel( t, embed )
 				} );
 			}
 		} );
@@ -1034,7 +1033,7 @@ class ContentEmbedBoxSizeCommand extends Command {
 					writer.removeAttribute( SIZE_ATTRIBUTES.width, embedElement );
 				} else if ( isVideoEmbed( embedElement ) ) {
 					writer.setAttribute( SIZE_ATTRIBUTES.width,
-						getVideoMediumWidth( getVideoPreview( embedElement ) ), embedElement );
+						getVideoMediumWidth( getMediaPreview( embedElement ) ), embedElement );
 				}
 
 				if ( options.value === 'tiny' ) {
@@ -1478,8 +1477,9 @@ export function getEmbedBoxSizes( embed: ModelElement | null ): readonly BoxSize
 	if ( !embed ) {
 		return BOX_SIZES;
 	}
-	if ( isVideoEmbed( embed ) ) {
-		return VIDEO_EMBED_BOX_SIZES;
+	const player = isMediaEmbed( embed ) ? getLinkPreviewPlayer( getMediaPreview( embed ) ) : null;
+	if ( player ) {
+		return getMediaEmbedBoxSizes( player );
 	}
 	return isInlineSourceEmbed( embed ) ? INLINE_BOX_SIZES : BOX_SIZES;
 }
@@ -1573,6 +1573,16 @@ function getWrapperIndex( viewElement: ViewElement ) {
 		.findIndex( child => child.is( 'uiElement' ) && child.hasClass( 'include-note-wrapper' ) );
 }
 
+/** The accessible name of the caption of `embed`. */
+function getCaptionLabel( t: ( message: string ) => string, embed: ModelElement ) {
+	if ( isAudioEmbed( embed ) ) {
+		return t( 'Caption for the audio' );
+	}
+	return isMediaEmbed( embed )
+		? t( 'Caption for the video' )
+		: t( 'Caption for the included note' );
+}
+
 /** The classes of the view of `embed` in the editor. */
 function getEditingClasses( editor: Editor, embed: ModelElement ) {
 	const boxSize = embed.getAttribute( 'boxSize' ) as string | undefined;
@@ -1583,8 +1593,8 @@ function getEditingClasses( editor: Editor, embed: ModelElement ) {
 	if ( isExtendedCodeBlock( editor, embed ) ) {
 		classes.push( EXTENDED_CODE_BLOCK_CLASS );
 	}
-	if ( isVideoEmbed( embed ) ) {
-		classes.push( VIDEO_EMBED_CLASS );
+	if ( isMediaEmbed( embed ) ) {
+		classes.push( ...getMediaEmbedClasses( isAudioEmbed( embed ) ) );
 	}
 	return classes.join( ' ' );
 }
@@ -1836,8 +1846,8 @@ function loadEmbeddedContent(
 		editor.plugins.get( ContentEmbedInlineSource ).load( element, wrapper, boxSize );
 		return;
 	}
-	if ( isVideoEmbed( element ) ) {
-		editor.plugins.get( ContentEmbedVideo ).load( element, wrapper );
+	if ( isMediaEmbed( element ) ) {
+		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper );
 		return;
 	}
 
@@ -2153,8 +2163,16 @@ export interface ContentEmbedHost {
 	sanitizeHtml( html: string ): string;
 	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
 	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
-	/** Fills `wrapper` with the player of the video of a link preview. */
-	loadVideo( preview: LinkPreviewData, wrapper: HTMLElement ): void;
+	/** Fills `wrapper` with the player of the media of a link preview. */
+	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement ): void;
+	/**
+	 * Captures the picture of a frame of the video file of a link preview and stores it as the
+	 * thumbnail of the preview, resolving to its URL and the shape of the video, or to `null`
+	 * when the video cannot be read.
+	 */
+	captureVideoThumbnail?(
+		preview: LinkPreviewData
+	): Promise<{ image: string; aspectRatio?: string } | null>;
 	/** Opens the context menu of what `embed` shows, below `anchor`. */
 	openMenu( embed: HTMLElement, anchor: HTMLElement ): void;
 	/** The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. */

@@ -210,9 +210,11 @@ export default class NodeRequestProvider implements RequestProvider {
      * a server can see is not one the author of a note is entitled to reach through it.
      */
     async fetchResource(resourceUrl: string, opts: FetchResourceOpts): Promise<FetchedResource> {
-        const response = await safeFetch(resourceUrl, { headers: opts.headers });
+        const response = await safeFetch(resourceUrl, {
+            method: opts.method, headers: opts.headers
+        });
 
-        return await readCappedResponse(response, opts.maxBytes);
+        return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
     }
 
     /**

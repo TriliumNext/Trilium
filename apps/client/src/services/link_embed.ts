@@ -1,8 +1,9 @@
 import "../widgets/type_widgets/text/LinkEmbed.css";
 
 import {
-    enhanceLinkPreviews, type LinkEmbedMetadata, type LinkPreviewData, readLinkPreviewData,
-    renderLinkEmbedHtml, renderLinkMentionHtml, safeHostname, YOUTUBE_REGEX
+    enhanceLinkPreviews, getMediaFileTitle, getMediaFileTypeOfUrl, type LinkEmbedMetadata,
+    type LinkPreviewData, readLinkPreviewData, renderLinkEmbedHtml, renderLinkMentionHtml,
+    safeHostname, YOUTUBE_REGEX
 } from "@triliumnext/commons";
 
 import { t } from "./i18n.js";
@@ -24,8 +25,15 @@ export interface EmbedMetadata {
 }
 
 
-export function detectEmbedType(url: string): "youtube" | "opengraph" {
-    return YOUTUBE_REGEX.test(url) ? "youtube" : "opengraph";
+/**
+ * The kind of preview that `url` supports, as its address tells: a YouTube player, a player of the
+ * video or audio file it names by its extension, or a card.
+ */
+export function detectEmbedType(url: string): EmbedMetadata["embedType"] {
+    if (YOUTUBE_REGEX.test(url)) {
+        return "youtube";
+    }
+    return getMediaFileTypeOfUrl(url) ?? "opengraph";
 }
 
 /**
@@ -45,6 +53,10 @@ export async function fetchMetadata(url: string, ownerNoteId: string): Promise<E
         // POSTed rather than passed in the query string: a URL can carry a one-time token or a
         // signed signature, and a query string ends up in every access log along the way.
         const metadata = await server.post<LinkEmbedMetadata>("link-embed/metadata", { url, noteId: ownerNoteId });
+        const mediaFile = metadata.unresolved ? getMediaFileMetadata(url) : null;
+        if (mediaFile) {
+            return mediaFile;
+        }
 
         return {
             url: metadata.url,
@@ -58,8 +70,19 @@ export async function fetchMetadata(url: string, ownerNoteId: string): Promise<E
             unresolved: metadata.unresolved
         };
     } catch {
-        return unresolvedMetadata(url);
+        return getMediaFileMetadata(url) ?? unresolvedMetadata(url);
     }
+}
+
+/**
+ * The metadata of a player of the audio or video file that `url` names by its extension, or
+ * `null`. Used where the server cannot read the file: the server refuses an address on a private
+ * network, and standalone reads only a host that sends CORS headers. The `<video>` or `<audio>`
+ * of the reader can still play it.
+ */
+function getMediaFileMetadata(url: string): EmbedMetadata | null {
+    const embedType = getMediaFileTypeOfUrl(url);
+    return embedType ? { url, embedType, title: getMediaFileTitle(url) } : null;
 }
 
 /** The title and description of a web page, as {@link fetchPageDetails} reads them. */
@@ -136,7 +159,11 @@ export function applyLinkEmbeds(container: HTMLElement) {
 }
 
 function markupOptions(editable: boolean | undefined) {
-    return { editable, playVideoLabel: t("link_embed.play_video") };
+    return {
+        editable,
+        playVideoLabel: t("link_embed.play_video"),
+        playAudioLabel: t("link_embed.play_audio")
+    };
 }
 
 export default {

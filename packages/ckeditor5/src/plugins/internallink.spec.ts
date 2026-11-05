@@ -302,21 +302,22 @@ describe("the link at the selection", () => {
         expect(getLinkAtSelection(editor)).toStrictEqual(
             {
                 href: "https://a.example", text: "A", description: "About A",
-                display: "iconAndTextLink"
+                display: "iconAndTextLink", isMedia: false
             }
         );
 
         setModelData(editor.model,
             "[<linkEmbed url=\"https://a.example\" embedType=\"opengraph\"></linkEmbed>]");
-        expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: "https://a.example", text: "", description: "", display: "cardLink" }
-        );
+        expect(getLinkAtSelection(editor)).toStrictEqual({
+            href: "https://a.example", text: "", description: "", display: "cardLink",
+            isMedia: false
+        });
 
         const videoUrl = "https://youtube.com/watch?v=abc12345678";
         setModelData(editor.model, `[<contentEmbed url="${videoUrl}" embedType="youtube"`
             + " title=\"V\"></contentEmbed>]");
         expect(getLinkAtSelection(editor)).toStrictEqual(
-            { href: videoUrl, text: "V", description: "", display: "embedLink" }
+            { href: videoUrl, text: "V", description: "", display: "embedLink", isMedia: true }
         );
     });
 

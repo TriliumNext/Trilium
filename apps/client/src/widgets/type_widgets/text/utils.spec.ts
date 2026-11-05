@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 
+const MediaPreviewStub = vi.hoisted(() => () => null);
+
 vi.mock("../../../services/froca", () => ({
     default: { getNote: vi.fn(), getAttachment: vi.fn() }
 }));
@@ -19,7 +21,8 @@ vi.mock("../../../services/content_renderer", () => ({
         isSelfUpdatingType: (type: string) => type === "canvasDrawing",
         disposeInteractiveContent: vi.fn(),
         mountInteractiveWidget: vi.fn()
-    }
+    },
+    CONTENT_RENDERERS: { file: { media: async () => ({ default: MediaPreviewStub }) } }
 }));
 vi.mock("./ContentEmbed", () => ({
     default: () => null,
@@ -63,7 +66,7 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadUnknownEmbed,
-    loadVideoEmbed,
+    loadMediaEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupTodoCheckboxTaps,
@@ -427,14 +430,14 @@ describe("loadUnknownEmbed", () => {
     });
 });
 
-describe("loadVideoEmbed", () => {
+describe("loadMediaEmbed", () => {
     const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
-    it("mounts the cover of the video under its title, even before it is in the page", () => {
+    it("mounts the cover of the video under its title, even before it is in the page", async () => {
         const wrapper = document.createElement("div");
         wrapper.className = "include-note-wrapper";
 
-        loadVideoEmbed({
+        await loadMediaEmbed({
             url,
             embedType: "youtube",
             title: "A <video>",
@@ -447,7 +450,7 @@ describe("loadVideoEmbed", () => {
         expect(props).toEqual({
             title: expect.any(HTMLElement),
             content: expect.any(HTMLElement),
-            contentType: "videoEmbed"
+            contentType: "mediaEmbed"
         });
         expect(props.title?.outerHTML).toBe(`<span><span class="bx bxl-youtube"></span>`
             + `<a href="${url}" target="_blank" rel="noopener noreferrer">A &lt;video&gt;</a>`
@@ -459,14 +462,55 @@ describe("loadVideoEmbed", () => {
             .toBe("api/attachments/abc123/image/youtube-dQw4w9WgXcQ.jpg");
     });
 
-    it("titles a video by its host without a title, and opens its menu in the editor", () => {
-        loadVideoEmbed({ url, embedType: "youtube" }, createWrapper(), { hasMenu: true });
+    it("titles a video by its host without a title, and opens its menu in the editor", async () => {
+        await loadMediaEmbed({ url, embedType: "youtube" }, createWrapper(), { hasMenu: true });
 
         const { props } = lastMount();
         expect(props.title?.textContent).toBe("www.youtube.com");
         const origin = { pageX: 1, pageY: 2, target: null };
         props.openMenu?.(origin);
         expect(linkContextMenu.openEmbedContextMenu).toHaveBeenCalledExactlyOnceWith(origin);
+    });
+
+    it("mounts the media player for a video or an audio file, named by its file name", async () => {
+        const mounts = vi.mocked(content_renderer.mountInteractiveWidget);
+        const fileUrl = "https://example.com/media/clip.mp4";
+        await loadMediaEmbed({
+            url: fileUrl, embedType: "video", image: "api/attachments/abc/image/clip.jpg"
+        }, createWrapper());
+
+        const [ player, media ] = mounts.mock.calls[0] ?? [];
+        const playerProps = (player as VNode<{ source: object; environment: string }>).props;
+        expect((player as VNode).type).toBe(MediaPreviewStub);
+        expect(playerProps).toEqual({
+            source: expect.objectContaining({
+                id: fileUrl, kind: "video", streamUrl: fileUrl, isExternal: true,
+                title: "clip.mp4", poster: "api/attachments/abc/image/clip.jpg"
+            }),
+            environment: "embedded"
+        });
+        const { props } = lastMount();
+        expect(media?.className).toBe("rendered-media");
+        expect(media?.parentElement).toBe(props.content);
+        expect(props.title?.innerHTML).toBe(`<span class="bx bx-movie"></span>`
+            + `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer">clip.mp4</a>`);
+
+        await loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" },
+            createWrapper());
+        expect(lastMount().props.title?.querySelector(".bx-music")).not.toBeNull();
+    });
+
+    it("drops a load that a later one into the same box overtook", async () => {
+        const wrapper = createWrapper();
+        const first = loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" },
+            wrapper);
+        await loadMediaEmbed({ url, embedType: "youtube" }, wrapper);
+        await first;
+
+        const boxes = vi.mocked(content_renderer.mountInteractiveWidget).mock.calls
+            .filter(([ vnode ]) => (vnode as VNode).type === ContentEmbed);
+        expect(boxes).toHaveLength(1);
+        expect(content_renderer.disposeInteractiveContent).toHaveBeenCalledOnce();
     });
 });
 
@@ -668,12 +712,12 @@ describe("openContentEmbedMenu", () => {
         ]);
     });
 
-    it("opens the commands of the embed itself for a source or a video", async () => {
+    it("opens the commands of the embed itself for a source or media", async () => {
         const anchor = document.createElement("button");
         const source = inPage(document.createElement("figure"));
         source.dataset.language = "mermaid";
         const video = inPage(document.createElement("figure"));
-        video.className = "include-note video-embed";
+        video.className = "include-note media-embed audio-embed";
 
         await openContentEmbedMenu(source, anchor);
         await openContentEmbedMenu(video, anchor);

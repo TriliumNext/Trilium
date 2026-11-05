@@ -149,6 +149,10 @@ function mockServer() {
             // reports a 500, which the mock never produces.
             postWithSilentInternalServerError: (url: string, data: object) => post(url, data),
 
+            // A media player that cannot play a file on another site asks for its HTTP status
+            // through this variant.
+            postWithSilentErrors: (url: string, data: object) => post(url, data),
+
             post,
 
             // Widgets that persist as the user edits (attribute writes, view configs) reach for

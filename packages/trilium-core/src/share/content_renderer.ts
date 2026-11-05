@@ -2,10 +2,10 @@ import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.
 import {
     BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
     CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
-    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewVideoId,
+    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer,
     getNestedEmbedOptions, getNoteEmbedHref, getVideoAspectRatio, isHttpUrl, isImageAttachmentRole,
-    MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData,
-    readVideoEmbedBox, renderLinkEmbedHtml,
+    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor,
+    readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedHtml,
     renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
     resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
     sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
@@ -629,7 +629,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
     // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
     // them. The share theme adds the click-to-play behavior of a video.
-    const previewOptions = { playVideoLabel: t("content_renderer.play-video") };
+    const previewOptions = {
+        playVideoLabel: t("content_renderer.play-video"),
+        playAudioLabel: t("content_renderer.play-audio")
+    };
     for (const mentionEl of document.querySelectorAll("span.link-mention")) {
         const data = readLinkPreviewData((name) => mentionEl.getAttribute(name));
         if (data) {
@@ -641,8 +644,9 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
         if (data) {
             embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
-            if (getLinkPreviewVideoId(data)) {
-                setVideoBox(embedEl, getVideoAspectRatio(data));
+            const player = getLinkPreviewPlayer(data);
+            if (player) {
+                setMediaBox(embedEl, player, getVideoAspectRatio(data));
                 moveBoxToCaptionedFigure(embedEl);
             }
         }
@@ -794,11 +798,12 @@ function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options
 }
 
 /**
- * Writes the box size and the shape of a video on its section, which the share theme sizes it by,
- * as `applyVideoEmbeds()` does for the app's read-only view. An older video is Full.
+ * Writes the box size and the shape of a video, or the box size of an audio file, on its section,
+ * which the share theme sizes it by, as `applyMediaEmbeds()` does for the app's read-only view. An
+ * older YouTube video is Full.
  */
-function setVideoBox(section: HTMLElement, aspectRatio: number | null) {
-    const { boxSize } = readVideoEmbedBox((name) => section.getAttribute(name));
+function setMediaBox(section: HTMLElement, player: LinkPreviewPlayer, aspectRatio: number | null) {
+    const { boxSize } = readMediaEmbedBox((name) => section.getAttribute(name), player);
     section.setAttribute("data-box-size", boxSize);
     if (aspectRatio) {
         const style = section.getAttribute("style")?.replace(/;\s*$/, "");

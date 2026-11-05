@@ -81,6 +81,22 @@ describe("WaveformSeekBar", () => {
             expect(canvas.setPointerCapture).toHaveBeenCalledWith(1);
         });
 
+        it("ignores presses of the secondary and middle buttons", () => {
+            const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: 100 }));
+            const presses = [ 1, 2 ].map(button => new PointerEvent("pointerdown", {
+                clientX: CANVAS_WIDTH * 0.5, pointerId: 1, button, bubbles: true, cancelable: true
+            }));
+
+            for (const press of presses) {
+                act(() => { canvas.dispatchEvent(press); });
+            }
+
+            expect(mediaRef.current?.currentTime).toBe(0);
+            expect(canvas.setPointerCapture).not.toHaveBeenCalled();
+            // The default stays, so a right-click still opens the context menu.
+            expect(presses.map(press => press.defaultPrevented)).toEqual([ false, false ]);
+        });
+
         it("keeps seeking while dragging, and ignores movement that isn't a drag", () => {
             const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: 100 }));
 
@@ -143,12 +159,13 @@ describe("WaveformSeekBar", () => {
     });
 
     it("does nothing until the media has a duration to seek within", () => {
-        const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: 0 }));
+        const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: NaN }));
 
         pointer(canvas, "pointerdown", CANVAS_WIDTH * 0.5);
         press(canvas, "End");
 
         expect(mediaRef.current?.currentTime).toBe(0);
-        expect(times()).toEqual([ "0:00", "-0:00" ]);
+        expect(times()).toEqual([ "0:00", "--:--" ]);
+        expect(canvas.getAttribute("aria-valuetext")).toBe("0:00 / --:--");
     });
 });

@@ -1,6 +1,7 @@
 import type { CKTextEditor, InlineEmbedSource } from "@triliumnext/ckeditor5";
 import {
-    attachmentIcon, type LinkPreviewData, safeHostname, safeLinkPreviewHref, VIDEO_EMBED_CLASS
+    attachmentIcon, getLinkPreviewPlayer, getMediaFileTitle, type LinkPreviewData,
+    type LinkPreviewPlayer, MEDIA_EMBED_CLASS, safeHostname, safeLinkPreviewHref
 } from "@triliumnext/commons";
 import { h, type JSX } from "preact";
 
@@ -17,6 +18,7 @@ import link, { ViewScope } from "../../../services/link";
 import { renderEmbedPreview } from "../../../services/link_embed";
 import { getInlineEmbedType } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
+import { getExternalMediaSource } from "../file/media_source";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
@@ -255,25 +257,49 @@ export async function loadUnknownEmbed(el: HTMLElement, boxSize: string | undefi
         h(ContentEmbedError, { boxSize, icon: "bx bx-error", text }), getWrapper(el));
 }
 
+/** The latest load of a media embed into each wrapper, which an earlier one that ends later yields to. */
+const mediaEmbedLoads = new WeakMap<HTMLElement, object>();
+
 /**
- * Fills an embed box with the player of the video of a link preview, which loads on a click, under
- * a title that links to the video. The title row opens the menu of the embed while `hasMenu`, as in
- * the editor.
+ * Fills an embed box with the player of the media of a link preview, which loads on a click, under
+ * a title that links to the media: the YouTube player, or the media player of Trilium for a video
+ * or an audio file. The title row opens the menu of the embed while `hasMenu`, as in the editor.
  */
-export function loadVideoEmbed(
+export async function loadMediaEmbed(
     preview: LinkPreviewData, el: HTMLElement, { hasMenu = false }: { hasMenu?: boolean } = {}
 ) {
+    const wrapper = getWrapper(el);
+    const load = {};
+    mediaEmbedLoads.set(wrapper, load);
+
+    const player = getLinkPreviewPlayer(preview);
     const content = document.createElement("div");
     content.className = "rendered-content";
-    renderEmbedPreview(content, preview, true);
+    if (player && player.type !== "youtube") {
+        const MediaPreview = (await CONTENT_RENDERERS.file.media()).default;
+        const media = document.createElement("div");
+        media.className = "rendered-media";
+        content.append(media);
+        await content_renderer.mountInteractiveWidget(h(MediaPreview, {
+            source: getExternalMediaSource(preview, player.type),
+            environment: "embedded"
+        }), media);
+    } else {
+        renderEmbedPreview(content, preview, true);
+    }
+
+    if (mediaEmbedLoads.get(wrapper) !== load) {
+        content_renderer.disposeInteractiveContent($(content));
+        return;
+    }
     const box = h(ContentEmbed, {
-        title: createVideoTitle(preview),
+        title: createMediaTitle(preview, player),
         content,
-        contentType: "videoEmbed",
+        contentType: "mediaEmbed",
         ...(hasMenu ? { openMenu: linkContextMenu.openEmbedContextMenu } : {})
     });
     // The editor calls this before the box is in the page, which `mountEmbedBox()` skips.
-    void content_renderer.mountInteractiveWidget(box, getWrapper(el));
+    await content_renderer.mountInteractiveWidget(box, wrapper);
 }
 
 /**
@@ -302,19 +328,29 @@ async function mountEmbedBox(
     await content_renderer.mountInteractiveWidget(box, wrapper);
 }
 
-/** The title of a video: its icon and a link to it, named by its title or its host. */
-function createVideoTitle({ url, title }: LinkPreviewData) {
+/**
+ * The title of media: its icon and a link to it, named by its title, or by the file name of a
+ * media file or the host of a YouTube video.
+ */
+function createMediaTitle({ url, title }: LinkPreviewData, player: LinkPreviewPlayer | null) {
     const icon = document.createElement("span");
-    icon.className = "bx bxl-youtube";
+    icon.className = MEDIA_TITLE_ICONS[player?.type ?? "youtube"];
     const link = document.createElement("a");
     link.href = safeLinkPreviewHref(url);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = title || safeHostname(url);
+    link.textContent = title
+        || (player && player.type !== "youtube" ? getMediaFileTitle(url) : safeHostname(url));
     const heading = document.createElement("span");
     heading.append(icon, link);
     return heading;
 }
+
+const MEDIA_TITLE_ICONS: Record<LinkPreviewPlayer["type"], string> = {
+    youtube: "bx bxl-youtube",
+    video: "bx bx-movie",
+    audio: "bx bx-music"
+};
 
 function getEmbedBoxSize(el: HTMLElement) {
     return el.closest<HTMLElement>(".include-note")?.dataset.boxSize;
@@ -344,14 +380,14 @@ function getWrapper(el: HTMLElement) {
 
 /**
  * Opens the context menu of the note or attachment that `embed` shows, or the commands of an embed
- * of a source or a video, below `anchor`. The menu opens from the embed, so that the text editor
+ * of a source or media, below `anchor`. The menu opens from the embed, so that the text editor
  * that contains it stays focused.
  */
 export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLElement) {
     const { noteId, attachmentId, block, language } = embed.dataset;
     const origin = linkContextMenu.getOriginBelow(anchor, embed);
 
-    if (language || embed.classList.contains(VIDEO_EMBED_CLASS)) {
+    if (language || embed.classList.contains(MEDIA_EMBED_CLASS)) {
         await linkContextMenu.openEmbedContextMenu(origin);
         return;
     }

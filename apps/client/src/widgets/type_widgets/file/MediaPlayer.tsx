@@ -2,6 +2,7 @@ import "./MediaPlayer.css";
 
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Trans } from "react-i18next";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -19,18 +20,22 @@ import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import NoItems from "../../react/NoItems";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
 import { attachmentSiblingProvider, noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
 import type { MediaEnvironment } from "./media_environment";
 import { getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS, MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop } from "./media_play_mode";
-import type { MediaSource } from "./media_source";
+import { fetchHttpStatus, type MediaSource } from "./media_source";
 
 const NO_KEYS: readonly string[] = [];
 
 /** What {@link AudioPreview} and {@link VideoPreview} are given, whichever environment they render in. */
 export interface MediaPlayerProps {
-    /** What is being played: a file note, or an attachment. {@link source} is its resolved media. */
-    entity: FNote | FAttachment;
+    /**
+     * What is being played: a file note, or an attachment. {@link source} is its resolved media.
+     * Media on another site has none.
+     */
+    entity?: FNote | FAttachment;
     source: MediaSource;
     environment: MediaEnvironment;
     /**
@@ -47,6 +52,88 @@ export interface MediaPlayerProps {
     isVisible?: boolean;
     /** Start playing as soon as the media is ready — the user just activated a lazy preview. */
     autoPlay?: boolean;
+}
+
+/**
+ * Gives the player root `rootRef` the focus that the placeholder had once a click on it mounted the
+ * player (`autoPlay`): removing the focused placeholder moves the focus to the page, which blurs a
+ * text editor that holds the player.
+ */
+export function useFocusOnActivation(rootRef: RefObject<HTMLElement | null>, autoPlay?: boolean) {
+    useEffect(() => {
+        if (autoPlay && document.activeElement === document.body) {
+            rootRef.current?.focus({ preventScroll: true });
+        }
+    }, []);
+}
+
+/** The HTTP statuses that have a name of their own under `media.http-status-names`. */
+const NAMED_HTTP_STATUSES = new Set([
+    400, 401, 403, 404, 405, 406, 408, 410, 416, 429, 451, 500, 501, 502, 503, 504
+]);
+
+/**
+ * What a player shows in place of media that it cannot play. For a file on another site whose
+ * host answers with an HTTP error, the error is on a line under the message.
+ */
+export function PlaybackError({ source, icon }: { source: MediaSource; icon: string }) {
+    const status = useHttpErrorStatus(source);
+
+    return (
+        <NoItems icon={icon} text={getPlaybackError(source)}>
+            {status && (
+                <div className="media-playback-status">
+                    <Trans
+                        i18nKey="media.http-error"
+                        values={{ status, name: getHttpStatusName(status) }}
+                        components={{ bold: <strong /> }}
+                    />
+                </div>
+            )}
+        </NoItems>
+    );
+}
+
+/**
+ * The message for media that cannot be played: its format, or for a file on another site, which
+ * also fails while its host is unreachable, that it cannot be played.
+ */
+function getPlaybackError(source: MediaSource) {
+    return source.isExternal
+        ? t("media.external-unavailable")
+        : t("media.unsupported-format", { mime: source.mime.replace("/", "-") });
+}
+
+/** The HTTP error status that the host of a file on another site answers, once it is known. */
+function useHttpErrorStatus({ isExternal, streamUrl }: MediaSource) {
+    const [ status, setStatus ] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!isExternal) {
+            return;
+        }
+        let isCurrent = true;
+        void fetchHttpStatus(streamUrl).then((answer) => {
+            if (isCurrent && answer !== null && answer >= 400) {
+                setStatus(answer);
+            }
+        });
+        return () => {
+            isCurrent = false;
+        };
+    }, [ isExternal, streamUrl ]);
+
+    return status;
+}
+
+/** The name of the HTTP error `status`, or of its class for a status without a name of its own. */
+export function getHttpStatusName(status: number) {
+    if (NAMED_HTTP_STATUSES.has(status)) {
+        return t(`media.http-status-names.${status}`);
+    }
+    return status < 500
+        ? t("media.http-status-names.client-error")
+        : t("media.http-status-names.server-error");
 }
 
 // Navigation is Page Up/Down only — the player reserves Home/End for seeking (edgeKeys: false), and
@@ -139,15 +226,32 @@ export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | H
                 value={currentTime}
                 onInput={onSeek}
             />
-            <span class="media-time">-{formatTime(Math.max(0, duration - currentTime))}</span>
+            <span class="media-time">{formatRemainingTime(currentTime, duration)}</span>
         </div>
     );
 }
 
+/** What the player shows for a time that is not known. */
+const UNKNOWN_TIME = "--:--";
+
+/** Formats `seconds` as m:ss, or as `--:--` for a time that is not known. */
 export function formatTime(seconds: number): string {
+    if (!Number.isFinite(seconds)) {
+        return UNKNOWN_TIME;
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+/**
+ * The time left until `duration` after a minus sign, or `--:--` while the duration is not known:
+ * a media element reports NaN until it loads its metadata, and Infinity for a stream.
+ */
+export function formatRemainingTime(currentTime: number, duration: number) {
+    return Number.isFinite(duration)
+        ? `-${formatTime(Math.max(0, duration - currentTime))}`
+        : UNKNOWN_TIME;
 }
 
 export function PlayPauseButton({ playing, togglePlayback }: {    
@@ -266,7 +370,7 @@ export function useMediaSessionController({ source, entity, noteContext, ownerNo
 }) {
     // A note cycles the playable siblings in its folder; an attachment cycles the owner note's playable
     // attachments. Either way it takes a tab to navigate in, so without one there is nothing to move between.
-    const note = "noteId" in entity ? entity : undefined;
+    const note = entity && "noteId" in entity ? entity : undefined;
     const navigation = useSiblingNavigation(note
         ? noteSiblingProvider(note, noteContext, { mimePrefix })
         : attachmentSiblingProvider(ownerNote, noteContext, viewScope ?? {}, { mimePrefix }));

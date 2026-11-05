@@ -130,11 +130,12 @@ export default class FetchRequestProvider implements RequestProvider {
 
         try {
             const response = await fetch(validated, {
+                method: opts.method,
                 headers: opts.headers,
                 signal: controller.signal
             });
 
-            return await readCappedResponse(response, opts.maxBytes);
+            return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
         } finally {
             clearTimeout(timeoutId);
         }

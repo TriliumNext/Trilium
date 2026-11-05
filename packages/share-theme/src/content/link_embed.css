@@ -147,6 +147,96 @@ html.theme-light .link-embed-favicon-light {
     background: #f00;
 }
 
+/* Matches the app's `MediaProxy` button. Two classes outrank the icon pack's `.bx`, which the
+   page loads after this. */
+.link-embed-video-facade .link-embed-video-file-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.6);
+    font-size: calc(56px * 0.65);
+}
+
+.link-embed-video-facade:hover .link-embed-video-file-play,
+.link-embed-video-facade:focus-visible .link-embed-video-file-play {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.link-embed-video-facade:active .link-embed-video-file-play::before {
+    transform: scale(0.85);
+}
+
+.link-embed-video-player {
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+    background: #000;
+}
+
+/* ---------- Audio file facade and player ----------
+   Like the video facade, the audio file loads only once the visitor clicks. */
+
+.link-embed-audio-facade {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    width: 100%;
+    border: 1px solid var(--background-highlight);
+    border-radius: 8px;
+    padding: 0.5em 0.75em;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color 0.12s;
+
+    &:hover {
+        background: var(--background-highlight);
+    }
+}
+
+.link-embed-audio-play {
+    position: relative;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--text-link);
+}
+
+.link-embed-audio-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent #fff;
+    transform: translateX(1px);
+}
+
+.link-embed-audio-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-embed-audio-player {
+    display: block;
+    width: 100%;
+}
+
 /* ---------- Card embed ---------- */
 
 .link-embed-card {

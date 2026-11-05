@@ -91,6 +91,14 @@ describe("getWebLinkError", () => {
         expect(getWebLinkError("https://exa mple.com")).toBe("add_link.invalid_url");
         expect(getWebLinkError("https://example.com:99999")).toBe("add_link.invalid_url");
     });
+
+    it("takes only a web address for media", () => {
+        expect(getWebLinkError("https://example.com/clip.mp4", true)).toBeUndefined();
+        expect(getWebLinkError("mailto:someone@example.com", true))
+            .toBe("youtube_video.not_a_video");
+        expect(getWebLinkError("javascript:alert(1)", true))
+            .toBe("add_link.script_link_not_allowed");
+    });
 });
 
 describe("getShownDisplay", () => {
@@ -366,6 +374,34 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith("https://example.com", "Example", true);
     });
 
+    it("edits only the title of an attachment link, mirroring the attachment's title", async () => {
+        const note = buildNote({ title: "Owner", "#internalBookmark": "part" });
+        await open({ currentLink: { notePath: `root/${note.noteId}` } });
+        await vi.waitFor(() => expect(container.querySelector("select")).not.toBeNull());
+        await submit();
+
+        const path = `root/${note.noteId}?viewMode=attachments&attachmentId=abc123`;
+        await open({ currentLink: { notePath: path }, currentTitle: "The file", anchors: [ "x" ] });
+        await act(async () => {
+            container.querySelector(".modal")?.dispatchEvent(new Event("shown.bs.modal"));
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(choice()).toStrictEqual([]);
+        expect(container.querySelector(".note-autocomplete")).toBeNull();
+        expect(container.querySelector("select")).toBeNull();
+        expect(field("text")?.value).toBe("The file");
+        expect(field("text")?.placeholder).toBe("add_link.title_from_attachment");
+        expect(document.activeElement).toBe(field("text"));
+        await type(field("text"), "Report");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, "Report");
+
+        await open({ currentLink: { notePath: path }, currentTitle: "The file" });
+        await type(field("text"), "");
+        await submit();
+        expect(addLink).toHaveBeenLastCalledWith(path, null);
+    });
+
     it("moves a URL typed or pasted on the note side over to the web link side", async () => {
         await open();
         await act(async () => autocomplete.onChange?.({ externalLink: "https://typed.example" }));
@@ -538,12 +574,16 @@ describe("EditLinkDialog", () => {
         expect(addLinkPreview).toHaveBeenLastCalledWith(video, "cardLink", "Never gonna", null);
         expect(addLink).not.toHaveBeenCalled();
 
-        // A player shows no title.
+        // A player keeps a title, which its title row shows.
         await open({ target: "url", display: "embedLink", addLinkPreview });
         await type(field("url"), video);
-        expect(field("text")).toBeNull();
         await submit();
         expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", null, null);
+        await open({ target: "url", display: "embedLink", addLinkPreview });
+        await type(field("url"), video);
+        await type(field("text"), "Never gonna");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", "Never gonna", null);
 
         // A text link, and any address that is not a web page, stays a link.
         await open({ target: "url", addLinkPreview });
@@ -557,7 +597,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith(
             "mailto:someone@example.com", "mailto:someone@example.com", true
         );
-        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+        expect(addLinkPreview).toHaveBeenCalledTimes(3);
 
         // A link on a selection keeps the selected text, so it is never a preview.
         await open({
@@ -571,7 +611,7 @@ describe("EditLinkDialog", () => {
         await open({ text: video, hasSelection: true, addLinkPreview });
         expect(field("url")?.value).toBe(video);
         expect(displaySelect()).toBeNull();
-        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+        expect(addLinkPreview).toHaveBeenCalledTimes(3);
     });
 
     it("turns an edited link into a preview with the page's own title unless it has a text", async () => {
@@ -619,6 +659,41 @@ describe("EditLinkDialog", () => {
         await open({ currentLink: { externalLink: url }, currentTitle: "Page", addLinkPreview });
         await type(field("url"), "https://example.com/other");
         expect(field("text")?.value).toBe("Page");
+    });
+
+    it("edits only the address and the title of a media embed, applied as an embed", async () => {
+        const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        const media = {
+            currentLink: { externalLink: video }, currentTitle: "Never gonna",
+            currentDescription: "About", display: "embedLink", isMedia: true, addLinkPreview
+        } satisfies Partial<EditLinkOpts>;
+        await open(media);
+        expect(choice()).toHaveLength(0);
+        expect(field("url")?.value).toBe(video);
+        expect(field("text")?.value).toBe("Never gonna");
+        expect([ displaySelect(), description() ]).toStrictEqual([ null, null ]);
+        await type(field("text"), "Mine");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", "Mine", null);
+
+        // Only the server tells that an address without an extension is media.
+        await open(media);
+        await type(field("url"), "example.com/clip");
+        expect(field("text")?.value).toBe("");
+        await submit();
+        expect(addLinkPreview)
+            .toHaveBeenLastCalledWith("https://example.com/clip", "embedLink", null, null);
+
+        await open(media);
+        await type(field("url"), "mailto:someone@example.com");
+        await act(async () => {
+            container.querySelector("form")
+                ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(container.querySelector(".edit-link-url .form-field-error")?.textContent)
+            .toBe("youtube_video.not_a_video");
+        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+        expect(addLink).not.toHaveBeenCalled();
     });
 
     it("edits a card's description, which another address takes from its page", async () => {
