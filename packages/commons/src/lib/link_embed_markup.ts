@@ -165,14 +165,18 @@ export function renderLinkEmbedHtml(data: LinkPreviewData, options: LinkPreviewM
         const label = escapeHtml(options.playVideoLabel);
         const aspectRatio = getVideoAspectRatio(data);
         const style = aspectRatio ? ` style="${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}"` : "";
-        const source = player.type === "youtube"
+        const isYouTube = player.type === "youtube";
+        const source = isYouTube
             ? ` data-video-id="${escapeHtml(player.videoId)}"`
             : ` data-media-url="${escapeHtml(data.url)}"`;
+        const playClass = isYouTube
+            ? "link-embed-video-play"
+            : "link-embed-video-file-play bx bx-play";
         return `<div class="link-embed-video"${style}>`
             + `<button type="button" class="link-embed-video-facade"${source}`
             + ` aria-label="${label}" title="${label}">`
             + renderPicture(data.image, "link-embed-video-thumbnail")
-            + `<span class="link-embed-video-play" aria-hidden="true"></span>`
+            + `<span class="${playClass}" aria-hidden="true"></span>`
             + `</button></div>`;
     }
 

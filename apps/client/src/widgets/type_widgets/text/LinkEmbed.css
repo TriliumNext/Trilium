@@ -21,6 +21,10 @@
     --link-preview-audio-play-color: #fff;
     --link-preview-audio-play-background-color: var(--link-color);
     --link-preview-video-player-background-color: #000;
+
+    --link-preview-video-file-play-color: #fff;
+    --link-preview-video-file-play-background-color: rgba(0, 0, 0, 0.6);
+    --link-preview-video-file-play-hover-background-color: rgba(0, 0, 0, 0.85);
 }
 
 /* ---------- Inline mention (favicon + title) ---------- */
@@ -262,6 +266,31 @@ figure.include-note:where(.video-embed[data-box-size="full"]) {
 .link-embed-video-facade:hover .link-embed-video-play,
 .link-embed-video-facade:focus-visible .link-embed-video-play {
     background: #f00;
+}
+
+/* Matches the `MediaProxy` button. Two classes outrank the icon pack's `.bx`. */
+.link-embed-video-facade .link-embed-video-file-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    color: var(--link-preview-video-file-play-color);
+    background: var(--link-preview-video-file-play-background-color);
+    font-size: calc(56px * 0.65);
+}
+
+.link-embed-video-facade:hover .link-embed-video-file-play,
+.link-embed-video-facade:focus-visible .link-embed-video-file-play {
+    background: var(--link-preview-video-file-play-hover-background-color);
+}
+
+.link-embed-video-facade:active .link-embed-video-file-play::before {
+    transform: scale(0.85);
 }
 
 .link-embed-video-player {

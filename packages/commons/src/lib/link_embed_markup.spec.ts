@@ -168,7 +168,7 @@ describe("renderLinkEmbedHtml", () => {
             + ` aria-label="Play &quot;video&quot;" title="Play &quot;video&quot;">`
             + `<img class="link-embed-video-thumbnail" src="api/attachments/abc/image/a.jpg"`
             + ` alt="" loading="lazy" draggable="false">`
-            + `<span class="link-embed-video-play" aria-hidden="true">`
+            + `<span class="link-embed-video-file-play bx bx-play" aria-hidden="true">`
             + `</span></button></div>`);
     });
 
