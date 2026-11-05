@@ -174,9 +174,13 @@ export function buildSortSelectionMenuItem(
  * The containment check is what makes this answer the click rather than the tab: the active note
  * can be a text note while the selection is in a dialog or a plain input, and the editor would
  * happily report its own stale model selection for it.
+ *
+ * Returns `null` as well for a selection in the content of an embed, such as the CodeMirror of an
+ * extended code block, where the model selection of the editor around it is the whole embed.
  */
 export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
-    return getTextEditorContaining(window.getSelection()?.anchorNode);
+    const anchor = window.getSelection()?.anchorNode;
+    return isInEmbedContent(anchor) ? null : getTextEditorContaining(anchor);
 }
 
 /**
@@ -229,6 +233,16 @@ function getSortMenuTitle(kind: SortTargetKind) {
         case "blocks":
             return t("sort_selection.sort_blocks");
     }
+}
+
+/**
+ * Whether `node` is in the content of an embed of the innermost text editor around it. The wrapper
+ * of an embed has `data-cke-ignore-events`, as in `nested_editor_events.ts`.
+ */
+function isInEmbedContent(node: Node | null | undefined) {
+    const element = node instanceof Element ? node : node?.parentElement;
+    const wrapper = element?.closest("[data-cke-ignore-events]");
+    return !!wrapper && !!element?.closest(EDITOR_ROOT_SELECTOR)?.contains(wrapper);
 }
 
 /** The editable root of a text editor, which CKEditor gives a reference to the editor. */

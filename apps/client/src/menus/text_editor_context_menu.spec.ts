@@ -90,6 +90,25 @@ function makeNoteEditorRoot(element: HTMLElement, editor: object, noteId?: strin
     return element;
 }
 
+/** Wraps `content` in the `data-cke-ignore-events` wrapper of an embed. */
+function embedWrapper(content: HTMLElement) {
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-cke-ignore-events", "true");
+    wrapper.appendChild(content);
+    return wrapper;
+}
+
+/** The content of a code editor with one line of `text`, as CodeMirror renders it. */
+function codeContent(text: string) {
+    const content = document.createElement("div");
+    content.className = "cm-content";
+    content.setAttribute("contenteditable", "true");
+    const line = content.appendChild(document.createElement("div"));
+    line.className = "cm-line";
+    line.textContent = text;
+    return content;
+}
+
 /** Points `window.getSelection()` at `anchorNode`. */
 function setSelection(anchorNode: Node | null) {
     vi.spyOn(window, "getSelection").mockReturnValue({ anchorNode } as unknown as Selection);
@@ -133,7 +152,7 @@ describe("getTextEditorAtSelection", () => {
         const nestedRoot = noteEditorRoot(nestedEditor, "note2");
         const caption = document.createElement("div");
         caption.className = "ck-editor__editable ck-editor__nested-editable";
-        root.append(nestedRoot, caption);
+        root.append(embedWrapper(nestedRoot), caption);
         const nestedText = nestedRoot.appendChild(document.createTextNode("inside"));
         const nestedCaption = nestedRoot.appendChild(caption.cloneNode());
 
@@ -151,6 +170,21 @@ describe("getTextEditorAtSelection", () => {
         setSelection(root.appendChild(document.createTextNode("#label")));
 
         expect(await getTextEditorAtSelection()).toBeNull();
+    });
+
+    it("leaves out the editor around the content of an embed, such as a code editor", async () => {
+        const root = noteEditorRoot({}, "note1");
+        const nestedRoot = noteEditorRoot({}, "note2");
+        root.append(embedWrapper(codeContent("const a = 1;")), embedWrapper(nestedRoot));
+        nestedRoot.appendChild(embedWrapper(codeContent("const b = 2;")));
+
+        for (const text of [ "const a = 1;", "const b = 2;" ]) {
+            const line = [ ...root.querySelectorAll(".cm-line") ]
+                .find((element) => element.textContent === text);
+            expect(line, text).toBeDefined();
+            setSelection(line?.firstChild ?? null);
+            expect(await getTextEditorAtSelection(), text).toBeNull();
+        }
     });
 });
 
