@@ -22,9 +22,17 @@ export default function MediaProxy({ source, onActivate }: { source: MediaSource
             <ActionButton
                 className="media-proxy-play"
                 icon="bx bx-play"
-                text={t("media.activate", { title: source.title })}
+                text={getPlayLabel(source)}
                 onClick={onActivate}
             />
         </div>
     );
+}
+
+/** The label of the play button: the title of a note, or the kind of media on another site. */
+function getPlayLabel(source: MediaSource) {
+    if (source.isExternal) {
+        return source.kind === "video" ? t("link_embed.play_video") : t("link_embed.play_audio");
+    }
+    return t("media.activate", { title: source.title });
 }

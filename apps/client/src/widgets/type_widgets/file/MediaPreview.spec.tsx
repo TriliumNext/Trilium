@@ -1,3 +1,4 @@
+import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -289,6 +290,13 @@ describe("MediaPreview", () => {
             expect(mediaElement()).toBeNull();
             expect(container.querySelector(".media-proxy.has-poster > img.media-proxy-poster")
                 ?.getAttribute("src")).toBe(poster);
+            const button = proxyPlayButton();
+            expect(button).not.toBeNull();
+            act(() => {
+                if (button) Tooltip.getInstance(button)?.show();
+            });
+            // The title of a file on another site is the name in its URL.
+            expect(document.querySelector(".tooltip-inner")?.textContent).toBe("link_embed.play_video");
             await act(async () => proxyPlayButton()?.click());
 
             const media = mediaElement();
