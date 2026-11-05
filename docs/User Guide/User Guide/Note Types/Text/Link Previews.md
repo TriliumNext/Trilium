@@ -116,6 +116,8 @@ The toolbar of a selected embed offers:
     *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
     *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
 
+Right-clicking a video file or an audio file opens the same _More actions_ menu. So does right-clicking a YouTube video, but only until it plays: from then on, the right-click goes to YouTube's player, which shows its own menu.
+
 To resize a _Medium_ video or an audio file, select it and drag the handle in its bottom-right corner, or its bottom-left corner for one aligned to the right. The height of a video follows the width. Choosing _Medium_ again returns a video to its first size.
 
 On a [shared page](../../Advanced%20Usage/Sharing.md), the media keeps its width, position and caption, but not its title. A video or audio file plays in the browser's own player once the visitor clicks it. In the mobile layout, media with a position other than _Align center_ takes the full width.

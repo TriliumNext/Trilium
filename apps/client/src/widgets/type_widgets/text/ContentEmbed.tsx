@@ -49,8 +49,8 @@ export interface ContentEmbedProps {
     notePath?: string;
     viewScope?: ViewScope;
     /**
-     * Opens the menu of the title row of content that shows no note, such as a video. Without it,
-     * that title row has no menu.
+     * Opens the menu of the title row of content that shows no note, such as a video, and of the
+     * content itself for the types in `MENU_CONTENT_TYPES`. Without it, the embed has no menu.
      */
     openMenu?: (origin: LinkMenuOrigin) => void;
     /** Whether the embed shows only some blocks of its note, from a block reference. */
@@ -94,6 +94,7 @@ export default function ContentEmbed({
     const hasFullscreen = !isExcerpt && !OWN_FULLSCREEN_CONTENT_TYPES.has(contentType)
         && (boxSize === "medium" || boxSize === "full");
     const openTitleMenu = notePath ? getNoteMenu(notePath, viewScope) : openMenu;
+    const openContentMenu = MENU_CONTENT_TYPES.has(contentType) ? openMenu : undefined;
     const toggleExpanded = () => {
         setIsExpanded(!isOpen);
         setIsRevealed(false);
@@ -199,6 +200,8 @@ export default function ContentEmbed({
                     className={`include-note-content type-${contentType}`}
                     hidden={isExpandable && !isOpen}
                     tabIndex={-1}
+                    onContextMenu={openContentMenu
+                        && ((e) => openEmbedMenuOnRightClick(e, openContentMenu))}
                 >
                     {hasFullscreen && (
                         <div className="include-note-fullscreen-controls">
@@ -497,6 +500,9 @@ const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock", "mediaEmbed" ]);
 /** The content types with a fullscreen control of their own, such as a video player. */
 const OWN_FULLSCREEN_CONTENT_TYPES = new Set([ "mediaEmbed" ]);
 
+/** The content types whose right click opens the menu of the embed, having no menu of their own. */
+const MENU_CONTENT_TYPES = new Set([ "mediaEmbed" ]);
+
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that
  * point in `content`, which is focusable itself.
@@ -659,6 +665,21 @@ function openMenuOnRightClick(
     e.preventDefault();
     e.stopPropagation();
     openMenu(e);
+}
+
+/**
+ * Opens `openMenu` at the pointer for a right click on the content of the embed. The menu reads
+ * the embed from its origin, so the origin targets the `.include-note` around the content.
+ */
+function openEmbedMenuOnRightClick(e: MouseEvent, openMenu: (origin: LinkMenuOrigin) => void) {
+    const embed = e.currentTarget instanceof Element
+        ? e.currentTarget.closest(".include-note")
+        : null;
+    if (!embed) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    openMenu({ pageX: e.pageX, pageY: e.pageY, target: embed });
 }
 
 function MoreActionsButton({ openMenu }: { openMenu: (origin: LinkMenuOrigin) => void }) {

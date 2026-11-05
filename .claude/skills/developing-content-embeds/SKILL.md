@@ -139,6 +139,10 @@ widgets inside the selection.
   through `insertLinkEmbed`: another address keeps the embed until `getMediaAttributes()` accepts
   the fetched metadata, then `createChangedMediaEmbed()` replaces it, keeping its attributes and
   caption; an address that plays nothing rejects, and `getEditLinkOpts()` shows the error toast.
+  A right click on the content opens the same menu at the pointer (`MENU_CONTENT_TYPES` in
+  `ContentEmbed.tsx`), with the `.include-note` as the origin's target: `getMenuEmbed()` reads the
+  embed only from the title row or the embed element itself. A loaded YouTube frame keeps its
+  right clicks; its facade does not.
   `ReadOnlyText`'s `applyMediaEmbeds()` swaps the section for the same box.
   The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
   facade takes the focus on click and `playVideo()` hands it to the player once loaded:

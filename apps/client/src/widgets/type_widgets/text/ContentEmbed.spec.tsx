@@ -742,6 +742,38 @@ describe("ContentEmbed", () => {
         expect(unhandled.defaultPrevented).toBe(false);
     });
 
+    it("opens the menu of a video's embed on a right click on the player, at the pointer", () => {
+        const embed = placeInEmbed();
+        const openMenu = vi.fn();
+        const video = () => ({
+            notePath: undefined,
+            contentType: "mediaEmbed",
+            content: element(`<div class="rendered-content"><video></video></div>`)
+        });
+        renderBox({ ...video(), openMenu });
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        // happy-dom's mouse events have no page coordinates.
+        Object.defineProperties(event, { pageX: { value: 140 }, pageY: { value: 230 } });
+        const stopPropagation = vi.spyOn(event, "stopPropagation");
+        act(() => {
+            contentBox().querySelector("video")?.dispatchEvent(event);
+        });
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith({ pageX: 140, pageY: 230, target: embed });
+        expect(event.defaultPrevented).toBe(true);
+        expect(stopPropagation).toHaveBeenCalled();
+
+        // Outside a text editor, the player keeps the browser's menu.
+        act(() => render(null, container));
+        renderBox(video());
+        expect(rightClick(contentBox().querySelector("video")))
+            .toEqual({ opened: false, isTaken: false });
+
+        // The content of a note keeps its own menus, such as the one of a selection.
+        act(() => render(null, container));
+        renderBox();
+        expect(rightClick(contentBox().querySelector("p"))).toEqual({ opened: false, isTaken: false });
+    });
+
     it("keeps its content behind a backdrop until a click on it focuses what is under it", async () => {
         const content = element(
             `<div class="rendered-content"><p>body</p><div tabindex="0"><img></div></div>`
