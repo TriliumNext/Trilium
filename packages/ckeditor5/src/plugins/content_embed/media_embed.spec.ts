@@ -466,7 +466,7 @@ describe("ContentEmbedMedia", () => {
         expect(editor.getData()).toBe("<p>Text</p>");
     });
 
-    it("keeps the shape a video stores, the width of a Full one, and a player that plays", async () => {
+    it("keeps a stored shape, a Full or resized width, and a player that plays", async () => {
         const resolvers: ((thumbnail: unknown) => void)[] = [];
         captureVideoThumbnail.mockImplementation(() =>
             new Promise((resolve) => resolvers.push(resolve)));
@@ -481,11 +481,15 @@ describe("ContentEmbedMedia", () => {
             writer.insert(createMediaEmbed(writer,
                 { url: FILE_URL, embedType: "video", aspectRatio: "4/3" }),
             writer.createPositionAt(root, "end"));
-            writer.insert(createMediaEmbed(writer, { url: FILE_URL, embedType: "video" }),
-                writer.createPositionAt(root, "end"));
+            for (let index = 0; index < 2; index++) {
+                writer.insert(createMediaEmbed(writer, { url: FILE_URL, embedType: "video" }),
+                    writer.createPositionAt(root, "end"));
+            }
         });
         selectBlock(2);
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        editor.model.change((writer) =>
+            writer.setAttribute(SIZE_ATTRIBUTES.width, "30em", getBlock(3)));
         loadMedia.mockClear();
 
         for (const resolve of resolvers) {
@@ -493,10 +497,11 @@ describe("ContentEmbedMedia", () => {
         }
         await nextTask();
 
-        expect([ 1, 2 ].map((index) => [ "image", "aspectRatio", SIZE_ATTRIBUTES.width ]
+        expect([ 1, 2, 3 ].map((index) => [ "image", "aspectRatio", SIZE_ATTRIBUTES.width ]
             .map((name) => getBlock(index).getAttribute(name)))).toEqual([
             [ THUMBNAIL, "4/3", "26.7em" ],
-            [ THUMBNAIL, "16/9", undefined ]
+            [ THUMBNAIL, "16/9", undefined ],
+            [ THUMBNAIL, "16/9", "30em" ]
         ]);
         expect(loadMedia).not.toHaveBeenCalled();
     });

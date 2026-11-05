@@ -39,9 +39,13 @@ export function getMediaFileTypeOfUrl(url: string): MediaFileEmbedType | null {
     return (extension && MEDIA_FILE_EXTENSIONS[extension]) || null;
 }
 
+/** The largest term of a ratio that `getVideoAspectRatio()` reads. */
+const MAX_ASPECT_RATIO_TERM = 9999;
+
 /**
  * The simplest ratio `<width>/<height>` that the whole-pixel `width` and `height` can round from,
- * such as `16/9` for 200x113, or `undefined` when they are not whole numbers.
+ * such as `16/9` for 200x113, or `undefined` when they are not whole numbers or when that ratio
+ * needs a term above {@link MAX_ASPECT_RATIO_TERM}.
  */
 export function toAspectRatio(width: unknown, height: unknown) {
     if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
@@ -50,13 +54,16 @@ export function toAspectRatio(width: unknown, height: unknown) {
 
     const min = (width - 0.5) / (height + 0.5);
     const max = (width + 0.5) / (height - 0.5);
-    // Ends by `height` at the latest, where `width` itself is in range.
-    for (let denominator = 1; ; denominator++) {
+    for (let denominator = 1; denominator <= MAX_ASPECT_RATIO_TERM; denominator++) {
         const numerator = Math.ceil(min * denominator);
+        if (numerator > MAX_ASPECT_RATIO_TERM) {
+            return undefined;
+        }
         if (numerator / denominator <= max) {
             return `${numerator}/${denominator}`;
         }
     }
+    return undefined;
 }
 
 function isPositiveInteger(value: unknown): value is number {

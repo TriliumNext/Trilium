@@ -95,7 +95,8 @@ export default class ContentEmbedMedia extends Plugin {
 
     /**
      * Sets the thumbnail that the host captures of the video of `embed`, and its shape when it
-     * stores none, in `batch`, unless the embed has left the document by then.
+     * stores none, in `batch`, unless the embed has left the document by then. A Medium video
+     * still at the default width gets the width of that shape.
      */
     private async captureThumbnail(embed: ModelElement, batch: Batch) {
         const editor = this.editor;
@@ -117,7 +118,8 @@ export default class ContentEmbedMedia extends Plugin {
             const { aspectRatio } = thumbnail;
             if (aspectRatio && !embed.hasAttribute("aspectRatio")) {
                 writer.setAttribute("aspectRatio", aspectRatio, embed);
-                if (embed.getAttribute("boxSize") === "medium") {
+                if (embed.getAttribute("boxSize") === "medium"
+                    && embed.getAttribute(SIZE_ATTRIBUTES.width) === getVideoMediumWidth({})) {
                     writer.setAttribute(
                         SIZE_ATTRIBUTES.width, getVideoMediumWidth({ aspectRatio }), embed);
                 }

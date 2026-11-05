@@ -49,6 +49,13 @@ describe("toAspectRatio", () => {
         expect([ toAspectRatio(0, 1080), toAspectRatio(1.5, 2), toAspectRatio("16", 9) ])
             .toEqual([ undefined, undefined, undefined ]);
     });
+
+    it("is no ratio with a term past four digits, however large the sizes", () => {
+        expect([ toAspectRatio(1, 20000), toAspectRatio(20000, 1) ])
+            .toEqual([ undefined, undefined ]);
+        expect([ toAspectRatio(1, 2 ** 48), toAspectRatio(2 ** 48, 1) ])
+            .toEqual([ undefined, undefined ]);
+    });
 });
 
 describe("extractYouTubeVideoId", () => {
