@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { useTriliumEvent } from "../../react/hooks";
 import { resolveCssColor } from "./css_color";
-import { formatTime } from "./MediaPlayer";
+import { formatRemainingTime, formatTime } from "./MediaPlayer";
 
 /** Below this normalized amplitude a bucket is considered silence and painted with the silence color. */
 const SILENCE_THRESHOLD = 0.06;
@@ -167,7 +167,7 @@ export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLV
                 onPointerMove={onPointerMove}
                 onKeyDown={onKeyDown}
             />
-            <span class="media-time">-{formatTime(Math.max(0, duration - currentTime))}</span>
+            <span class="media-time">{formatRemainingTime(currentTime, duration)}</span>
         </div>
     );
 }

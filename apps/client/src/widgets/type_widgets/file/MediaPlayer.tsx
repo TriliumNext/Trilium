@@ -165,15 +165,32 @@ export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | H
                 value={currentTime}
                 onInput={onSeek}
             />
-            <span class="media-time">-{formatTime(Math.max(0, duration - currentTime))}</span>
+            <span class="media-time">{formatRemainingTime(currentTime, duration)}</span>
         </div>
     );
 }
 
+/** What the player shows for a time that is not known. */
+const UNKNOWN_TIME = "--:--";
+
+/** Formats `seconds` as m:ss, or as `--:--` for a time that is not known. */
 export function formatTime(seconds: number): string {
+    if (!Number.isFinite(seconds)) {
+        return UNKNOWN_TIME;
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+/**
+ * The time left until `duration` after a minus sign, or `--:--` while the duration is not known:
+ * a media element reports NaN until it loads its metadata, and Infinity for a stream.
+ */
+export function formatRemainingTime(currentTime: number, duration: number) {
+    return Number.isFinite(duration)
+        ? `-${formatTime(Math.max(0, duration - currentTime))}`
+        : UNKNOWN_TIME;
 }
 
 export function PlayPauseButton({ playing, togglePlayback }: {    

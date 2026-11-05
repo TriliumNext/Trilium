@@ -150,6 +150,7 @@ describe("formatTime", () => {
         expect(formatTime(9.9)).toBe("0:09");
         expect(formatTime(65)).toBe("1:05");
         expect(formatTime(3600)).toBe("60:00");
+        expect([ formatTime(NaN), formatTime(Infinity) ]).toEqual([ "--:--", "--:--" ]);
     });
 });
 
@@ -168,9 +169,11 @@ describe("SeekBar", () => {
     });
 
     it("follows the element as it plays and as its duration resolves", () => {
-        const mediaRef = fakeMedia({ duration: 0, currentTime: 0 });
+        // An element reports a NaN duration until it has loaded its metadata.
+        const mediaRef = fakeMedia({ duration: NaN, currentTime: 0 });
         act(() => render(<SeekBar mediaRef={mediaRef} />, container));
         expect(trackbar().getAttribute("max")).toBe("0");
+        expect(times()).toEqual([ "0:00", "--:--" ]);
 
         const media = mediaRef.current;
         if (!media) throw new Error("no media");

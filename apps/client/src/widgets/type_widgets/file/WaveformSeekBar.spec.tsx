@@ -143,12 +143,13 @@ describe("WaveformSeekBar", () => {
     });
 
     it("does nothing until the media has a duration to seek within", () => {
-        const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: 0 }));
+        const { mediaRef, canvas } = renderSeekBar(fakeMedia({ duration: NaN }));
 
         pointer(canvas, "pointerdown", CANVAS_WIDTH * 0.5);
         press(canvas, "End");
 
         expect(mediaRef.current?.currentTime).toBe(0);
-        expect(times()).toEqual([ "0:00", "-0:00" ]);
+        expect(times()).toEqual([ "0:00", "--:--" ]);
+        expect(canvas.getAttribute("aria-valuetext")).toBe("0:00 / --:--");
     });
 });
