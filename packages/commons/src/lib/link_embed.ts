@@ -279,8 +279,7 @@ export interface BlockChildLike {
 export function isUrlAloneInBlock(children: Iterable<BlockChildLike>, url: string): boolean {
     let text = "";
     for (const child of children) {
-        // Any non-text node (inline image, soft break, mention, …) means the
-        // URL isn't alone.
+        // Any non-text node (inline image, mention, …) means the URL isn't alone.
         if (!child.isText) {
             return false;
         }
