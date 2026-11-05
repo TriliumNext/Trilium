@@ -66,23 +66,26 @@
     "button_edit_link": "Guardar enlace",
     "fix_link": "Corregir enlace",
     "button_fix_link": "Corregir enlace",
-    "web_link": "Enlace web",
+    "web_link": "Página web",
     "url": "Dirección (URL)",
     "display_as": "Mostrar como",
-    "display_plain": "Enlace simple",
-    "display_inline": "En línea",
+    "display_plain": "Texto",
+    "display_inline": "Icono y texto",
     "display_card": "Tarjeta",
     "display_embed": "Vídeo de YouTube incrustado",
     "page_title": "Título de la página web",
     "title_from_url": "Igual que la URL",
     "description": "Descripción",
     "page_description": "Descripción de la página web",
-    "anchors": "Encabezados y anclas",
+    "anchors": "Encabezado o ancla",
     "target_anchor": "Anclas",
     "title_from_note": "Si no se indica, reflejará siempre el título de la nota",
     "headings": "Encabezados",
     "no_headings_or_anchors": "Esta nota no contiene encabezados ni anclas.",
-    "title_from_heading": "Si no se indica, reflejará siempre el texto del encabezado"
+    "title_from_heading": "Si no se indica, reflejará siempre el texto del encabezado",
+    "invalid_url": "Esta no es una URL válida.",
+    "script_link_not_allowed": "Los enlaces que empiezan por {{scheme}} pueden ejecutar código, así que no están permitidos.",
+    "retrieving_from_page": "Obteniendo datos de la página web..."
   },
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
@@ -2223,7 +2226,8 @@
     "copy_failed": "No se puede copiar al portapapeles debido a problemas de permisos.",
     "copy_success": "Copiado al portapapeles.",
     "copied_without_links": "La(s) nota(s) se han copiado al portapapeles, pero los enlaces a notas no pudieron colocarse en el portapapeles del sistema.",
-    "paste_notes": "Pegar nota(s)"
+    "paste_notes": "Pegar nota(s)",
+    "paste_failed": "No se ha podido leer el portapapeles."
   },
   "entrypoints": {
     "note-revision-created": "Una revisión de nota ha sido creada.",
@@ -2344,7 +2348,11 @@
     "wrap_text": "Ajustar el texto",
     "align_left": "Alinear a la izquierda",
     "align_center": "Alinear al centro",
-    "align_right": "Alinear a la derecha"
+    "align_right": "Alinear a la derecha",
+    "open_externally": "Abrir externamente",
+    "delete": "Eliminar",
+    "copy_url": "Copiar dirección (URL)",
+    "display_as": "Mostrar como"
   },
   "electron_integration": {
     "desktop-application": "Aplicación de escritorio",
@@ -2377,7 +2385,8 @@
       "title": "Resultados de búsqueda de notas",
       "move": "Desplazarse por los resultados",
       "open": "Abrir el resultado resaltado"
-    }
+    },
+    "suggestions": "Sugerencias"
   },
   "note_tooltip": {
     "note-has-been-deleted": "La nota ha sido eliminada.",
@@ -2807,7 +2816,11 @@
     "mathlive_enabled": "Editor visual de MathLive",
     "mathlive_description": "Las ecuaciones matemáticas se pueden editar con un editor visual.",
     "sticky_table_headers_enabled": "Usar filas de encabezado fijas en las tablas",
-    "sticky_table_headers_description": "Mantiene las filas de encabezado de una tabla en la parte superior de la nota al desplazarse por el resto de la tabla."
+    "sticky_table_headers_description": "Mantiene las filas de encabezado de una tabla en la parte superior de la nota al desplazarse por el resto de la tabla.",
+    "link_title_retrieval_enabled": "Obtener automáticamente los títulos de los enlaces de texto",
+    "link_title_retrieval_description": "En el editor de enlaces, el título vacío de un enlace de texto se rellena con el de la página web.",
+    "link_details_retrieval_enabled": "Obtener automáticamente el título y la descripción de los enlaces de icono y texto y de las tarjetas",
+    "link_details_retrieval_description": "En el editor de enlaces, el título o la descripción vacíos de un enlace de icono y texto, o de una tarjeta, se rellenan con los de la página web."
   },
   "command_palette": {
     "tree-action-name": "Árbol:{{name}}",
@@ -4401,7 +4414,24 @@
       "box-position": "Posición del recuadro",
       "youtube-video": "Vídeo de YouTube",
       "insert-youtube-video": "Insertar vídeo de YouTube",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Insertar un vídeo de YouTube que se puede ver directamente en la nota"
+      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Insertar un vídeo de YouTube que se puede ver directamente en la nota",
+      "caption-for-the-video": "Leyenda del vídeo",
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Haga clic y arrastre para cambiar el tamaño del bloque. Haga doble clic para volver al tamaño predeterminado.",
+      "copy-address-url": "Copiar dirección (URL)",
+      "create-a-link-to-a-heading-or-anchor-belonging-to-the-current-note": "Crear un enlace a un encabezado o ancla de la nota actual",
+      "create-a-link-to-a-web-page-or-other-internet-resource": "Crear un enlace a una página web u otro recurso de internet",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-as-a-card": "Crear un enlace a una página web u otro recurso de internet, mostrado como tarjeta",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-with-an-icon": "Crear un enlace a una página web u otro recurso de internet, mostrado con un icono",
+      "create-a-link-to-another-trilium-note": "Crear un enlace a otra nota de Trilium",
+      "download": "Descargar",
+      "icon-text": "Icono y texto",
+      "link-to-a-heading-or-anchor": "Enlace a un encabezado o ancla",
+      "link-to-a-note-internal-link": "Enlace a una nota (enlace interno)",
+      "link-to-a-web-page": "Enlace a una página web",
+      "link-to-a-web-page-as-a-card": "Enlace a una página web (como tarjeta)",
+      "link-to-a-web-page-with-icon": "Enlace a una página web (con icono)",
+      "open-link": "Abrir enlace",
+      "display-as": "Mostrar como"
     },
     "toolbar-groups": {
       "text-formatting": "Formato de texto",
@@ -5106,6 +5136,7 @@
   "youtube_video": {
     "title": "Insertar vídeo de YouTube",
     "button_insert": "Insertar vídeo",
-    "not_a_video": "Esta no es la dirección de un vídeo de YouTube."
+    "not_a_video": "Esta no es la dirección de un vídeo de YouTube.",
+    "insert_failed": "No se ha podido cargar el vídeo. Compruebe la dirección y la conexión, e inténtelo de nuevo."
   }
 }
