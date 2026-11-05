@@ -46,7 +46,7 @@ A link preview is automatically created:
 *   By pasting the URL and pressing <kbd>Space</kbd>. This will create an _Icon & text_ link preview.
 *   When at the start of a new paragraph, pressing <kbd>Enter</kbd> will create a _card_, or an _embed_ for a YouTube video or an audio or video file.
 
-To undo an automatic link preview, press <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately afterwards which keeps it as a text link instead. Alternatively, once a link preview was created, click on the link and select _Text_ from the link preview toolbar.
+To undo an automatic link preview, press <kbd>Ctrl</kbd>+<kbd>Z</kbd> immediately afterwards which keeps it as a text link instead. Alternatively, once a link preview was created, click on the link and select _Text_ from the link preview toolbar, which makes a link that reads as the title of the page.
 
 This automatic conversion can be disabled by going to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ and unchecking _Autogenerate link previews_ from the _Features_ section.
 
@@ -69,7 +69,7 @@ To keep the dialog from reading the page, go to <a class="reference-link" href="
 
 Alternatively, use <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> and choose _Link to a web page (with icon)_ or _Link to a web page (as a card)_ (both are also found by _link preview_). Each opens the same dialog on _Web page_, with _Icon & text_ or _Card_ already picked.
 
-To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_. A link whose text differs from its address keeps that text as the title of the preview.
+To turn an existing link into a preview, open its _Edit link_ dialog and change _Display as_, or pick a display in the _Display_ menu of the link's toolbar. Either way, a link whose text differs from its address keeps that text as the title of the preview.
 
 ### 3\. From the Insert menu, for audio and video
 
@@ -89,7 +89,7 @@ Click on an inserted _Icon & text_ or _Card_ link preview to select it, and a sm
 
 *   _Open link_, which opens the page in a new tab, and <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
 *   The <span class="tn-icon cke cke-pencil"></span> _Edit link_ button, which opens the _Edit link_ dialog on the link preview, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while it is selected. The dialog changes its address, its _Link title_ (especially useful if the title is hidden behind a login screen), the _Description_ of a card and how it is displayed. A new address shows the title and description of the new page, unless you type your own.
-*   The _Display_ menu, which converts the preview to a normal link (_Text_) or switches it to another display mode (_Icon & text_, _Card_ or _Embed_).
+*   The _Display_ menu, which converts the preview to a normal link that reads as its title (_Text_) or switches it to another display mode (_Icon & text_, _Card_ or _Embed_).
     *   The Embed option is only shown for a YouTube video or an audio or video file. A _Card_ of a file whose address does not end in a known extension, such as `.mp4` or `.mp3`, no longer offers it.
 *   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu, with <span class="tn-icon cke cke-web"></span> _Open link_, <span class="tn-icon cke cke-pencil"></span> _Edit link_, <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_, the same display modes under <span class="tn-icon cke cke-trilium-link-preview"></span> _Display as_, and <span class="tn-icon cke cke-unlink"></span> _Unlink_, which replaces the preview with its address as plain text.
 
@@ -104,7 +104,7 @@ A video file or an audio file plays in the media player of Trilium, the one of <
 The toolbar of a selected embed offers:
 
 *   <span class="tn-icon cke cke-trilium-copy"></span> _Copy address (URL)_.
-*   The _Display_ menu, which turns the embed into an _Icon & text_ or _Card_ link preview, or a _Text_ link. The text of its caption stays, as a paragraph after it.
+*   The _Display_ menu, which turns the embed into an _Icon & text_ or _Card_ link preview with its title, or a _Text_ link that reads as its title. The text of its caption stays, as a paragraph after it.
 *   The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu:
     *   <span class="tn-icon bx bx-link-external"></span> _Open externally_ opens the media outside Trilium: in the browser, or in the app that handles the link, such as the YouTube app on Android.
     *   <span class="tn-icon cke cke-pencil"></span> _Edit..._ opens the _Edit link_ dialog with only the _Address (URL)_ and the _Link title_ of the media, as does pressing <kbd>Ctrl</kbd>+<kbd>K</kbd> while the embed is selected. With another address, the embed plays the new media and keeps its size, position, title and caption. A video at its first size takes the first size of the new video, and an audio file in place of a video, or a video in place of an audio file, takes the size of new media. A new address shows the title of the new media, unless you type your own. When the address is not that of a YouTube video, an audio or a video file, the embed stays as it was and Trilium shows an error.

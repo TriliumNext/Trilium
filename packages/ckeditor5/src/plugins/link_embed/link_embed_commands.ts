@@ -3,7 +3,7 @@ import {
 } from '@triliumnext/commons';
 import {
     Command, type Editor, findAttributeRange, type ModelElement, ModelLiveRange, type ModelRange,
-    type ModelWriter
+    type ModelTextProxy, type ModelWriter
 } from 'ckeditor5';
 
 import { getCaption, getCaptionedEmbed, isContentEmbed } from '../content_embed/content_embed.js';
@@ -17,7 +17,7 @@ export const REMOVE_LINK_EMBED_COMMAND = 'removeLinkEmbed';
 
 export const LINK_DISPLAY_MODES = [
     // The way out of the preview system: an ordinary <a> link, no widget. Offered in the same
-    // dropdowns as the real modes so "back to a normal URL" is found where the user looks for it.
+    // dropdowns as the real modes so "back to a normal link" is found where the user looks for it.
     'textLink',
     'iconAndTextLink',
     'cardLink',
@@ -202,12 +202,16 @@ export class ChangeLinkDisplayCommand extends Command {
         const url = selected.getAttribute('url') as string;
 
         // "Text" leaves the preview system: the widget becomes an ordinary link whose text is
-        // the URL. Inserted as new content (not an attribute change), so AutoLinkToMention does not
-        // see it and immediately convert it back. A URL we would never link to (see the isHttpUrl
-        // note in refresh()) degrades to bare text instead, as the unlink button does.
+        // its title, or the URL without one. Inserted as new content (not an attribute change), so
+        // AutoLinkToMention does not see it and immediately convert it back. A URL we would never
+        // link to (see the isHttpUrl note in refresh()) degrades to bare text instead, as the
+        // unlink button does.
         if (targetMode === 'textLink') {
+            const title = selected.getAttribute('title') as string | undefined;
             model.change(writer => {
-                const text = isHttpUrl(url) ? writer.createText(url, { linkHref: url }) : writer.createText(url);
+                const text = isHttpUrl(url)
+                    ? writer.createText(title || url, { linkHref: url })
+                    : writer.createText(url);
                 keepCaptionText(writer, selected);
                 model.insertContent(text, writer.createRangeOn(selected));
             });
@@ -257,8 +261,8 @@ export class ChangeLinkDisplayCommand extends Command {
      * Converts the native link under the caret — the one whose balloon toolbar hosts the dropdown —
      * into the chosen preview shape: the deliberate inverse of "Text". Unlike auto-detection
      * there is no gesture to interpret and no unresolved-page veto: the mode was picked outright,
-     * so the conversion always happens (Ctrl+Z brings the link back), and a labeled link's display
-     * text is replaced by the preview.
+     * so the conversion always happens (Ctrl+Z brings the link back). A link whose text differs
+     * from its URL keeps that text as the title of the preview, as in the link dialog.
      */
     private async _convertNativeLink(targetMode: LinkDisplayMode) {
         const model = this.editor.model;
@@ -270,7 +274,9 @@ export class ChangeLinkDisplayCommand extends Command {
         if (targetMode === 'textLink') return;
 
         const range = findAttributeRange(position, 'linkHref', href, model);
-        await replaceLinkWithPreview(this.editor, range, href, targetMode);
+        const text = getText(range).trim();
+        const title = text && text !== href ? text : undefined;
+        await replaceLinkWithPreview(this.editor, range, href, targetMode, title);
     }
 
     /**
@@ -312,6 +318,14 @@ export class RemoveLinkEmbedCommand extends Command {
     override refresh() {
         this.isEnabled = !!getSelectedLinkWidget(this.editor);
     }
+}
+
+/** The text in `range`, without its inline objects. */
+function getText(range: ModelRange) {
+    return Array.from(range.getItems())
+        .filter((item): item is ModelTextProxy => item.is('$textProxy'))
+        .map((item) => item.data)
+        .join('');
 }
 
 /**

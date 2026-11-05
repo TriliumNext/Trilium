@@ -283,14 +283,15 @@ describe("LinkEmbed commands", () => {
         editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
 
         expect(findElement(editor, "linkMention")).toBeUndefined();
-        expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
+        expect(editor.getData()).toBe('<p><a href="https://e.com/">T</a></p>');
 
         // The linked text arrives as an insertion, not a linkHref attribute change, so
         // AutoLinkToMention must not have kicked in and fetched the preview straight back.
         await Promise.resolve();
         expect(fetchMetadata).not.toHaveBeenCalled();
 
-        // A block preview converts the same way, gaining a wrapping paragraph.
+        // A block preview converts the same way, gaining a wrapping paragraph, and reads as its URL
+        // without a title.
         setModelData(editor.model, '[<linkEmbed url="https://e.com/" embedType="opengraph"></linkEmbed>]');
         editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
         expect(editor.getData()).toBe('<p><a href="https://e.com/">https://e.com/</a></p>');
@@ -365,7 +366,7 @@ describe("LinkEmbed commands", () => {
 
             setModelData(editor.model, `[${video}]`);
             editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
-            expect(editor.getData()).toBe(`<p><a href="${url}">${url}</a></p>`);
+            expect(editor.getData()).toBe(`<p><a href="${url}">T</a></p>`);
         });
 
         it("keeps the box, title, position and caption of a retitled video", async () => {
@@ -596,13 +597,36 @@ describe("LinkEmbed commands", () => {
         expect(fetchMetadata).toHaveBeenCalledWith(url);
         const mention = findElement(editor, "linkMention");
         expect(mention?.getAttribute("url")).toBe(url);
-        expect(mention?.getAttribute("title")).toBe(META.title);
-        // The label is replaced by the pill; the text around the link survives (spaces adjacent to
-        // an inline object serialize as &nbsp;), and the new widget is left selected so its toolbar
-        // — this same dropdown included — takes over from the link balloon.
+        expect(mention?.getAttribute("title")).toBe("the article");
+        // The label becomes the title of the pill; the text around the link survives (spaces
+        // adjacent to an inline object serialize as &nbsp;), and the new widget is left selected so
+        // its toolbar — this same dropdown included — takes over from the link balloon.
         expect(editor.getData()).toContain("<p>see&nbsp;<span");
         expect(editor.getData()).toContain("</span>&nbsp;here</p>");
         expect(editor.model.document.selection.getSelectedElement()).toBe(mention);
+    });
+
+    it("keeps a title through Text and back, but not the text of a bare URL", async () => {
+        const url = "https://youtube.com/watch?v=abc12345678";
+        fetchMetadata.mockImplementation(async () => ({ ...META, url, embedType: "youtube" }));
+        setModelData(editor.model, `[<linkEmbed url="${url}" embedType="opengraph"`
+            + ` title="Mine"></linkEmbed>]`);
+
+        editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "textLink" });
+        expect(editor.getData()).toBe(`<p><a href="${url}">Mine</a></p>`);
+
+        editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph?.is("element")) throw new Error("Expected a paragraph.");
+            writer.setSelection(paragraph, 2);
+        });
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "embedLink" });
+        expect(findElement(editor, "contentEmbed")?.getAttribute("title")).toBe("Mine");
+
+        setModelData(editor.model, `<paragraph><$text linkHref="${url}">${url}[]</$text>`
+            + `</paragraph>`);
+        await editor.execute(CHANGE_LINK_DISPLAY_COMMAND, { value: "cardLink" });
+        expect(findElement(editor, "linkEmbed")?.getAttribute("title")).toBe(META.title);
     });
 
     it("converts a native link to the chosen block shape: card forces opengraph, embed keeps the detected type", async () => {

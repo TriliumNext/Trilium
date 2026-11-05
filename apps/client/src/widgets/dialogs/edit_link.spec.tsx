@@ -574,12 +574,16 @@ describe("EditLinkDialog", () => {
         expect(addLinkPreview).toHaveBeenLastCalledWith(video, "cardLink", "Never gonna", null);
         expect(addLink).not.toHaveBeenCalled();
 
-        // A player shows no title.
+        // A player keeps a title, which its title row shows.
         await open({ target: "url", display: "embedLink", addLinkPreview });
         await type(field("url"), video);
-        expect(field("text")).toBeNull();
         await submit();
         expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", null, null);
+        await open({ target: "url", display: "embedLink", addLinkPreview });
+        await type(field("url"), video);
+        await type(field("text"), "Never gonna");
+        await submit();
+        expect(addLinkPreview).toHaveBeenLastCalledWith(video, "embedLink", "Never gonna", null);
 
         // A text link, and any address that is not a web page, stays a link.
         await open({ target: "url", addLinkPreview });
@@ -593,7 +597,7 @@ describe("EditLinkDialog", () => {
         expect(addLink).toHaveBeenLastCalledWith(
             "mailto:someone@example.com", "mailto:someone@example.com", true
         );
-        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+        expect(addLinkPreview).toHaveBeenCalledTimes(3);
 
         // A link on a selection keeps the selected text, so it is never a preview.
         await open({
@@ -607,7 +611,7 @@ describe("EditLinkDialog", () => {
         await open({ text: video, hasSelection: true, addLinkPreview });
         expect(field("url")?.value).toBe(video);
         expect(displaySelect()).toBeNull();
-        expect(addLinkPreview).toHaveBeenCalledTimes(2);
+        expect(addLinkPreview).toHaveBeenCalledTimes(3);
     });
 
     it("turns an edited link into a preview with the page's own title unless it has a text", async () => {

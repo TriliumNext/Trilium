@@ -433,13 +433,11 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
     const shownDisplay = isMedia ? "embedLink" : getShownDisplay(display, webLinkUrl);
     const isPreview = isMedia || (showsDisplay && shownDisplay !== "textLink");
     const showsTitle = !opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink;
-    // A video player shows no title.
-    const showsWebLinkTitle = showsTitle && !(showsDisplay && shownDisplay === "embedLink");
     // Only a card shows a description.
     const showsDescription = showsTitle && showsDisplay && shownDisplay === "cardLink";
 
     // The fields shown blank that take their value from the web page, as the options allow.
-    const retrievesTitle = showsWebLinkTitle && !linkTitles.url.trim() && options.is(isPreview
+    const retrievesTitle = showsTitle && !linkTitles.url.trim() && options.is(isPreview
         ? "textNoteLinkDetailsRetrievalEnabled" : "textNoteLinkTitleRetrievalEnabled");
     const retrievesDescription = showsDescription && !linkDescription.trim()
         && options.is("textNoteLinkDetailsRetrievalEnabled");
@@ -536,10 +534,8 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
         if (!webLinkUrl) return;
         const text = linkTitle.trim();
         if (isPreview && opts.addLinkPreview) {
-            // A text that only repeats the address leaves the page's own title. In the embed
-            // display, only an edited media embed takes a title.
-            const isTitled = isMedia || shownDisplay !== "embedLink";
-            const title = isTitled && text && text !== webLinkUrl ? text : null;
+            // A text that only repeats the address leaves the page's own title.
+            const title = text && text !== webLinkUrl ? text : null;
             const description = showsDescription ? linkDescription.trim() || null : null;
             void opts.addLinkPreview(webLinkUrl, shownDisplay, title, description);
             return;
@@ -717,7 +713,7 @@ function useEditLinkForm(opts: EditLinkOpts | undefined) {
                             />
                         </OptionCardSection>
 
-                        {showsWebLinkTitle && titleSection}
+                        {showsTitle && titleSection}
 
                         {showsDescription && (
                             <OptionCardSection
