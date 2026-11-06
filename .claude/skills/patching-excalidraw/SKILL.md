@@ -11,13 +11,16 @@ two handwriting performance fixes, zoom-to-fit with the properties panel on the 
 internal function exported. `references/hunks.md` lists every hunk with its reason, the Trilium code
 that depends on it, the spec that guards it and what would let it go.
 
-**The project's stance is that libraries stay unmodified** (section 8 of
-`.claude/skills/reviewing-pull-requests/references/philosophy.md`): their limits go upstream, and a
-patch is the last resort. Precedent: the CKEditor code-block patch broke on every release that
-rebuilt its dist files, and 52d6f8ba24 replaced it with a converter in Trilium's own code. So before
-adding a hunk, look for a seam in Trilium (a prop, an action registered with `registerAction()`, a
-wrapper, CSS), and give every hunk a way out: an upstream issue or PR, or the upstream change that
-would replace it.
+**Library patches are avoided** (section 8 of
+`.claude/skills/reviewing-pull-requests/references/philosophy.md`). A patch is acceptable only when
+it is strictly necessary for a proper integration in Trilium, and it needs an extensive suite of
+tests for the patched behavior and a well-documented patching process: for Excalidraw, the contract
+spec and this document. Precedent: the CKEditor code-block patch broke on every release that rebuilt
+its dist files, and 52d6f8ba24 replaced it with a converter in Trilium's own code. So before adding
+a hunk, look for a seam in Trilium (a prop, an action registered with `registerAction()`, a
+wrapper, CSS). A hunk that is still needed comes with its contract spec assertions, its entry in
+`references/hunks.md`, and a way out: an upstream issue or PR, or the upstream change that would
+replace it.
 
 ## Where things are
 
