@@ -350,7 +350,8 @@
     "broken-block-reference": "Tagairt bhriste",
     "play-video": "Seinn físeán",
     "content-not-available": "Níl an t-ábhar seo ar fáil.",
-    "untitled-block": "Bloc"
+    "untitled-block": "Bloc",
+    "play-audio": "Seinn fuaim"
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",
