@@ -421,13 +421,7 @@ export const noteTools = defineTools({
     }
 });
 
-/**
- * Records the links in what a tool just wrote, as a save from the editor does (`updateNoteData()`).
- * Without it, the note gets no `internalLink` relations: backlinks, the note map and
- * `~internalLink` searches miss every link an LLM wrote. Synchronous, in the tool's transaction,
- * and without `asyncPostProcessContent()`: its link-preview pass writes back the content it read
- * after awaiting downloads, which would undo a write made by a later tool call in the meantime.
- */
+/** Records the `internalLink` relations of what a tool wrote, as `updateNoteData()` does for the editor. */
 function scanWrittenContent(note: BNote) {
     const content = note.getContent();
     const { forceFrontendReload, content: newContent } = saveLinks(note, content);
