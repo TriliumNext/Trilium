@@ -1084,4 +1084,44 @@ describe("useFindShortcut", () => {
             vi.restoreAllMocks();
         }
     });
+
+    it("searches the context of an enclosing binding outside any note split", async () => {
+        vi.spyOn(keyboard_actions, "getAction")
+            .mockResolvedValue({ effectiveShortcuts: [ "Ctrl+F" ] } as never);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockResolvedValue(undefined as never);
+        function Embed() {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref);
+            return <div ref={ref}><span className="inside" /></div>;
+        }
+        function Popup({ ntxId }: { ntxId: string }) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref, ntxId);
+            return <div ref={ref} className="popup"><Embed /></div>;
+        }
+        const root = document.body.appendChild(document.createElement("div"));
+        const press = () => root.querySelector(".inside")?.dispatchEvent(new KeyboardEvent(
+            "keydown", { key: "f", code: "KeyF", ctrlKey: true, bubbles: true, cancelable: true }));
+
+        try {
+            await act(async () => { render(<Popup ntxId="popup" />, root); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "popup" });
+            });
+            expect(triggerCommand).toHaveBeenCalledTimes(1);
+
+            await act(async () => { render(<Popup ntxId="nested-popup" />, root); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand)
+                    .toHaveBeenLastCalledWith("findInText", { ntxId: "nested-popup" });
+            });
+        } finally {
+            render(null, root);
+            root.remove();
+            vi.restoreAllMocks();
+        }
+    });
 });
