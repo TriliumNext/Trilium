@@ -1278,7 +1278,10 @@
     "note_map": "Note map",
     "search_in_note_short": "Find",
     "note_attachments_short": "Attachments",
-    "note_settings": "Note settings"
+    "note_settings": "Note settings",
+    "merge_note_from": "Merge note with...",
+    "undo_merge": "Undo merge",
+    "merge_history": "Merge history"
   },
   "onclick_button": {
     "no_click_handler": "Button widget '{{componentId}}' has no defined click handler"
@@ -2618,7 +2621,9 @@
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit",
     "clone": "Copy",
-    "clone-tooltip": "Copy for pasting as a clone somewhere else in the tree, or as a link into a note"
+    "clone-tooltip": "Copy for pasting as a clone somewhere else in the tree, or as a link into a note",
+    "merge-note-from": "Merge note with...",
+    "merge-notes": "Merge notes..."
   },
   "read-only-info": {
     "edit-note": "Edit note"
@@ -5074,5 +5079,27 @@
     "button_insert": "Insert media",
     "not_a_video": "This is not a web address.",
     "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again."
+  },
+  "merge_notes": {
+    "pick-title": "Merge note with",
+    "pick-message": "Choose the note to merge with this one. It is deleted afterwards.",
+    "pick-ok": "Merge",
+    "title-title": "Merge notes",
+    "title-message": "Title of the merged note",
+    "empty-title": "The title cannot be empty.",
+    "same-note": "A note cannot be merged into itself.",
+    "missing-note": "One of the notes to merge could not be found.",
+    "done-one": "Merged \"{{first}}\" and \"{{second}}\" into \"{{title}}\".",
+    "done-many": "Merged {{count}} notes into \"{{title}}\".",
+    "undo": "Undo",
+    "undone": "Restored the note."
+  },
+  "merge_history": {
+    "title": "Merge history",
+    "empty": "This note has no notes to restore.",
+    "intro": "Each note listed here can be restored on its own, in any order. Restoring it brings that note back and does not change this note's text. Forget drops that one note only. Deleting this note is separate.",
+    "merged": "{{title}}",
+    "forget": "Forget",
+    "forgotten": "Forgot that merge."
   }
 }

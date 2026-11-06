@@ -1,4 +1,6 @@
-import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import {
+    isImageAttachmentRole, isMergeHistoryRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS
+} from "@triliumnext/commons";
 import { getShareLink } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
@@ -283,7 +285,7 @@ function isListedInShareTree(noteId: string, visited = new Set<string>()): boole
 
 function getNoteAttachments(req: ShareRequest): ShareReply {
     const note = checkNoteContentAccess(req.params.noteId ?? "", req);
-    return jsonReply(200, note.getAttachments().map(getAttachmentRow));
+    return jsonReply(200, shareableAttachments(note).map(getAttachmentRow));
 }
 
 function getNoteBlob(req: ShareRequest): ShareReply {
@@ -293,7 +295,7 @@ function getNoteBlob(req: ShareRequest): ShareReply {
 
 function getSiblingAttachments(req: ShareRequest): ShareReply {
     const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
-    return jsonReply(200, attachment.note.getAttachments().map(getAttachmentRow));
+    return jsonReply(200, shareableAttachments(attachment.note).map(getAttachmentRow));
 }
 
 function getAttachmentBlob(req: ShareRequest): ShareReply {
@@ -565,7 +567,9 @@ function checkNoteContentAccess(noteId: string, req: ShareRequest): SNote {
 function checkAttachmentAccess(attachmentId: string, req: ShareRequest): SAttachment {
     const attachment = shaca.getAttachment(attachmentId);
 
-    if (!attachment) {
+    // A missing attachment and a merge-history attachment answer the same 404, so the response
+    // does not reveal that the record exists.
+    if (!attachment || isMergeHistoryRole(attachment.role)) {
         throw new ShareReplyError(jsonReply(404, { message: `Attachment '${attachmentId}' not found.` }));
     }
 
@@ -575,6 +579,10 @@ function checkAttachmentAccess(attachmentId: string, req: ShareRequest): SAttach
     rejectProtected(note, `Attachment '${attachmentId}' not found.`);
 
     return attachment;
+}
+
+function shareableAttachments(note: SNote) {
+    return note.getAttachments().filter((attachment) => !isMergeHistoryRole(attachment.role));
 }
 
 /** Raises a 404 when the note is protected, so the caller never reaches its bytes. */

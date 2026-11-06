@@ -5,13 +5,26 @@ import type NoteContext from "../components/note_context";
 import clipboard from "../services/clipboard";
 import froca from "../services/froca";
 import noteCreateService from "../services/note_create";
+import * as noteMerge from "../services/note_merge";
 import noteTypesService from "../services/note_types";
 import { buildNote } from "../test/easy-froca";
 import type { MenuItem } from "./context_menu";
 import { buildTreeContextMenuItems, getDuplicateItems, handleTreeContextMenuSelect, type TreeCommandNames } from "./tree_context_menu";
 
+const menuContext = vi.hoisted(() => ({ hoistedNoteId: undefined as string | undefined }));
+
 vi.mock("../services/clipboard", () => ({ default: { getContents: vi.fn(() => null) } }));
-vi.mock("../components/app_context", () => ({ default: { tabManager: { getActiveContext: () => undefined } } }));
+vi.mock("../components/app_context", () => ({
+    default: {
+        tabManager: {
+            getActiveContext: () => (
+                menuContext.hoistedNoteId === undefined
+                    ? undefined
+                    : { hoistedNoteId: menuContext.hoistedNoteId }
+            )
+        }
+    }
+}));
 vi.mock("../services/i18n", () => ({
     t: (key: string, options?: { count?: number }) =>
         (options?.count === undefined ? key : `${key} ${options.count}`),
@@ -120,6 +133,54 @@ describe("buildTreeContextMenuItems", () => {
         expect(await protection()).toStrictEqual([ "protectSubtree", both ]);
         child.isProtected = true;
         expect(await protection()).toStrictEqual([ "unprotectSubtree", both ]);
+    });
+
+    it("merges the selected notes, and refuses a hoisted note or one that cannot be merged", async () => {
+        const { child } = setUp();
+        const branch = child.getParentBranches()[0];
+        const sibling = buildNote({ title: "Sibling" });
+        const search = buildNote({ title: "Search", type: "search" });
+        if (!branch) throw new Error("expected the child's branch");
+        const mergeNotes = vi.spyOn(noteMerge, "mergeNotes").mockResolvedValue();
+
+        async function mergeRow(noteIds: string[], notes = [ child, sibling ]) {
+            const items = await buildTreeContextMenuItems({
+                note: child, branch, notePath: `${branch.parentNoteId}/${child.noteId}`,
+                component: {} as Component,
+                selectedOrActiveNoteIds: noteIds,
+                selectedNotes: notes
+            });
+            const row = items.find((item) => "uiIcon" in item && item.uiIcon === "bx bx-merge");
+            if (!row || !("handler" in row) || !("enabled" in row) || !("title" in row)) {
+                throw new Error("expected the merge row");
+            }
+            return row;
+        }
+
+        const both = await mergeRow([ child.noteId, sibling.noteId ]);
+        expect(both.enabled).toBe(true);
+        expect(both.title).toBe("tree-context-menu.merge-notes");
+        both.handler?.(
+            both as Parameters<NonNullable<typeof both.handler>>[0],
+            new MouseEvent("click")
+        );
+        expect(mergeNotes).toHaveBeenCalledWith([ child.noteId, sibling.noteId ]);
+
+        const one = await mergeRow([ child.noteId ], [ child ]);
+        expect(one.title).toBe("tree-context-menu.merge-note-from");
+
+        const absent = await mergeRow([ child.noteId, "missing" ], [ child ]);
+        expect(absent.enabled).toBe(false);
+
+        const unmergeable = await mergeRow([ child.noteId, search.noteId ], [ child, search ]);
+        expect(unmergeable.enabled).toBe(false);
+
+        menuContext.hoistedNoteId = child.noteId;
+        try {
+            expect((await mergeRow([ child.noteId ], [ child ])).enabled).toBe(false);
+        } finally {
+            menuContext.hoistedNoteId = undefined;
+        }
     });
 });
 

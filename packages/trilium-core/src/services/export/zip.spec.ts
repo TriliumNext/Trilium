@@ -8,6 +8,7 @@ import { isLocalPreviewImageSrc } from "@triliumnext/commons";
 
 import becca from "../../becca/becca.js";
 import becca_loader from "../../becca/becca_loader.js";
+import BAttachment from "../../becca/entities/battachment.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type { ExportFormat, NoteMetaFile } from "../../meta.js";
@@ -319,6 +320,56 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(childByTitle("Target")?.noteId).not.toBe(target.noteId);
             expect(relationTargets("internalLink")).toStrictEqual([childByTitle("Target")?.noteId]);
             expect(relationTargets("imageLink")).toStrictEqual([childByTitle("Picture")?.noteId]);
+        });
+
+        it("omits merge history from an export and drops it on import", async () => {
+            const { note, branch } = createNote("root", {
+                title: "Merged export", content: "<p>body</p>"
+            });
+            getContext().init(() => {
+                const attachment = new BAttachment({
+                    ownerId: note.noteId,
+                    role: "mergeUndo",
+                    mime: "application/json",
+                    title: "Merge undo"
+                });
+                attachment.setContent("[]", { forceSave: true });
+            });
+            expect(note.getAttachments().map((item) => item.role)).toContain("mergeUndo");
+
+            const { entries } = await exportSubtree(branch, "html");
+            const meta = parseMeta(entries);
+            const root = meta.files[0];
+            expect((root.attachments ?? []).map((item) => item.role)).not.toContain("mergeUndo");
+
+            root.attachments = [ ...(root.attachments ?? []), {
+                attachmentId: "oldMergeUndo1",
+                title: "Merge undo",
+                role: "mergeUndo",
+                mime: "application/json",
+                position: 20,
+                dataFileName: "old-merge-undo.json"
+            } ];
+            entries["!!!meta.json"] = Buffer.from(JSON.stringify(meta));
+            entries["old-merge-undo.json"] = Buffer.from("[]");
+
+            const archive = getZipProvider().createZipArchive();
+            const res = new FakeResponse();
+            const done = collect(res);
+            archive.pipe(res);
+            for (const [name, content] of Object.entries(entries)) {
+                archive.append(content, { name });
+            }
+            await archive.finalize();
+
+            const taskContext = (await import("../task_context.js")).default;
+            const importZip = (await import("../import/zip.js")).default;
+            const imported = await getContext().init(async () => await importZip.importZip(
+                new taskContext("no-progress-reporting", "importNotes", {}),
+                await done,
+                becca.getNoteOrThrow("root")
+            ));
+            expect(imported.getAttachments().map((item) => item.role)).not.toContain("mergeUndo");
         });
 
         it("excludes notes marked with #excludeFromExport", async () => {

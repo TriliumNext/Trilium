@@ -5,6 +5,7 @@ import { useRef, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
+import { isMergeUndoAttachment } from "../../services/note_merge";
 import note_create from "../../services/note_create";
 import server from "../../services/server";
 import { useLanguageSwitcher } from "../dialogs/content_languages";
@@ -126,7 +127,8 @@ export default function MobileDetailMenu() {
 
 /** The cells that open the attachments and the attributes, counted as in the status bar. */
 function AttachmentsAndAttributes({ note, disabled }: { note: FNote, disabled: boolean }) {
-    const attachmentCount = useAttachments(note).length;
+    const attachmentCount = useAttachments(note)
+        .filter((attachment) => !isMergeUndoAttachment(attachment)).length;
     const attributeCount = useAttributeCount(note);
 
     return (

@@ -13,6 +13,7 @@ import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import noteCreateService from "../services/note_create.js";
+import { canMergeNote, distinctNoteIds, mergeNotes } from "../services/note_merge.js";
 import { notePresetOptions } from "../services/note_presets.js";
 import noteTypesService from "../services/note_types.js";
 import server from "../services/server.js";
@@ -112,7 +113,16 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
     const isMobileTarget = target === "mobile";
 
     const isNotRoot = note.noteId !== "root";
-    const isHoisted = note.noteId === appContext.tabManager.getActiveContext()?.hoistedNoteId;
+    const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+    const isHoisted = note.noteId === hoistedNoteId;
+    const mergeIds = distinctNoteIds(resolved.selectedOrActiveNoteIds);
+    const canMergeSelection = mergeIds.length > 0 && mergeIds.every((noteId) => {
+        if (noteId === hoistedNoteId) {
+            return false;
+        }
+        const selected = selectedNotes.find((item) => item.noteId === noteId);
+        return selected !== undefined && canMergeNote(selected);
+    });
     const parentNote = isNotRoot ? await froca.getNote(branch.parentNoteId) : null;
 
     const isArchived = selectedNotes.every((n) => n.isArchived);
@@ -268,6 +278,17 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             uiIcon: "bx bx-outline",
             enabled: parentNotSearch && isNotRoot && !isHoisted && notOptionsOrHelp,
             items: getDuplicateItems(selectedNotes)
+        },
+
+        {
+            title: mergeIds.length > 1
+                ? t("tree-context-menu.merge-notes")
+                : t("tree-context-menu.merge-note-from"),
+            uiIcon: "bx bx-merge",
+            enabled: canMergeSelection,
+            handler: () => {
+                void mergeNotes(mergeIds);
+            }
         },
 
         {

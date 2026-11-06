@@ -19,7 +19,9 @@ const ROWS: Record<string, unknown[][]> = {
     ],
     attachments: [
         [ "openAttachment", "open", "file", "text/plain", "Notes", "blob4", "2025-01-01" ],
-        [ "lockedAttachment", "locked", "file", "text/plain", "Keys", "blob5", "2025-01-01" ]
+        [ "lockedAttachment", "locked", "file", "text/plain", "Keys", "blob5", "2025-01-01" ],
+        [ "historyAttachment", "open", "mergeUndo", "application/json", "Merge undo", "blob6", "2025-01-01" ],
+        [ "historyBlob", "open", "mergeUndoBlob", "text/html", "Old text", "blob7", "2025-01-01" ]
     ]
 };
 

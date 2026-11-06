@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { initializeCore, options } from "@triliumnext/core";
+import { becca_loader, initializeCore, options } from "@triliumnext/core";
 import schemaSql from "@triliumnext/core/src/assets/schema.sql?raw";
 import serverEnTranslations from "../../server/src/assets/translations/en/server.json";
 import { beforeAll } from "vitest";
@@ -117,7 +117,9 @@ beforeAll(async () => {
             provider: sqlProvider,
             isReadOnly: false,
             onTransactionCommit: () => {},
-            onTransactionRollback: () => {}
+            onTransactionRollback: () => {
+                becca_loader.restoreBeccaAfterRollback();
+            }
         }
     });
 

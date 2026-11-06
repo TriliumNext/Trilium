@@ -30,7 +30,9 @@ import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
-import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
+import SpacedUpdate, {
+    type StateCallback, registerNoteSaveFlusher
+} from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
@@ -246,6 +248,10 @@ export function useSaveBeforeLeaving<T>(
         if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
         await spacedUpdate.updateNowIfNecessary();
     });
+
+    useEffect(() => registerNoteSaveFlusher(
+        (noteIds) => spacedUpdate.flushNotes(noteIds)
+    ), [ spacedUpdate ]);
 
     useEffect(() => {
         const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();

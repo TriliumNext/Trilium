@@ -2,6 +2,7 @@ import {
     EditedNotesResponse,
     EraseExcessRevisionsOptions,
     EraseExcessRevisionsResponse,
+    isMergeHistoryRole,
     RevisionItem,
     RevisionPojo
 } from "@triliumnext/commons";
@@ -183,12 +184,19 @@ function restoreRevision(req: Request<{ revisionId: string }>) {
             note.saveRevision({ source: "restore" });
 
             for (const oldNoteAttachment of note.getAttachments()) {
+                // The current merge history is not part of any revision, so restoring one keeps it.
+                if (isMergeHistoryRole(oldNoteAttachment.role)) {
+                    continue;
+                }
                 oldNoteAttachment.markAsDeleted();
             }
 
             let revisionContent = revision.getContent();
 
             for (const revisionAttachment of revision.getAttachments()) {
+                if (isMergeHistoryRole(revisionAttachment.role)) {
+                    continue;
+                }
                 const noteAttachment = revisionAttachment.copy();
                 noteAttachment.ownerId = note.noteId;
                 noteAttachment.setContent(revisionAttachment.getContent(), { forceSave: true });

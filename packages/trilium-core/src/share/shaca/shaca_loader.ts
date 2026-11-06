@@ -1,3 +1,5 @@
+import { isMergeHistoryRole } from "@triliumnext/commons";
+
 import eventService from "../../services/events.js";
 import { getLog } from "../../services/log.js";
 import shareRoot from "../share_root.js";
@@ -72,8 +74,9 @@ function load() {
         // Defense-in-depth for GHSA-xmv9-3v98-7gq8: protected notes cannot be
         // shared, so their attachments must never enter the share cache. The
         // note was loaded above (attachments are scoped to the same subtree).
-        const [, ownerId] = row;
-        if (shaca.notes[ownerId].isProtected) {
+        // A merge's undo record names notes outside the share, so it stays out too.
+        const [, ownerId, role] = row;
+        if (shaca.notes[ownerId].isProtected || isMergeHistoryRole(role)) {
             continue;
         }
 

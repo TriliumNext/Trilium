@@ -91,6 +91,20 @@ export function isImportOrderPreserved() {
     return !!getContext().get("importOrderPreserved");
 }
 
+/**
+ * `noteId` is the note a merge is building. A template relation saved on that note does not fill
+ * it, because the merge writes the note's text itself. A different note created while the merge
+ * runs, including one a script creates, still receives its template.
+ */
+export function setTemplateApplicationSkippedFor(noteId: string | null) {
+    getContext().set("skipTemplateApplicationNoteId", noteId);
+}
+
+export function templateApplicationSkippedNoteId() {
+    const noteId = getContext().get("skipTemplateApplicationNoteId");
+    return typeof noteId === "string" ? noteId : null;
+}
+
 export function putEntityChange(entityChange: EntityChange) {
     if (getContext().get("ignoreEntityChangeIds")) {
         return;

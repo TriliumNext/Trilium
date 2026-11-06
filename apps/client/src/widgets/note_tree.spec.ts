@@ -7,6 +7,9 @@ import type TabManager from "../components/tab_manager.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import noteCreateService from "../services/note_create.js";
+import {
+    armMergeSelection, peekMergeSelection, setMergeResult, takeMergeSelection
+} from "../services/note_merge.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
@@ -232,6 +235,184 @@ describe("NoteTreeWidget", () => {
             expect(getNodeFromPath).toHaveBeenCalledWith("root/parent/child", true, false);
             expect(node.setActive).toHaveBeenCalled();
             expect(activeVisibleOnActivation).toBe(true);
+        });
+    });
+
+    describe("selecting the note a merge left behind", () => {
+        interface FakeNode {
+            data: { noteId: string; branchId: string };
+            setActive: ReturnType<typeof vi.fn>;
+            setSelected: ReturnType<typeof vi.fn>;
+            hasFocus: () => boolean;
+        }
+
+        function fakeNode(noteId: string, branchId: string): FakeNode {
+            return {
+                data: { noteId, branchId },
+                setActive: vi.fn(async () => {}),
+                setSelected: vi.fn(),
+                hasFocus: () => false
+            };
+        }
+
+        async function prepare() {
+            const widget = await renderWidget();
+            vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+            vi.spyOn(widget, "filterHoistedBranch").mockResolvedValue(undefined);
+            vi.spyOn(treeService, "getNotePath").mockReturnValue("");
+            const active = { current: null as FakeNode | null };
+            vi.spyOn(widget, "getActiveNode").mockImplementation(
+                () => active.current as unknown as Fancytree.FancytreeNode
+            );
+            const byNote = new Map<string, FakeNode[]>();
+            const all: FakeNode[] = [];
+            const add = (noteId: string, branchId: string) => {
+                const node = fakeNode(noteId, branchId);
+                all.push(node);
+                byNote.set(noteId, [ ...(byNote.get(noteId) ?? []), node ]);
+                return node;
+            };
+            const setNote = vi.fn(async () => {});
+            (widget as unknown as { tree: unknown }).tree = {
+                options: { activeVisible: true },
+                getNodesByRef: (noteId: string) => byNote.get(noteId) ?? [],
+                getSelectedNodes: () => [],
+                getRootNode: () => ({
+                    visit: (callback: (node: FakeNode) => boolean | void) => {
+                        for (const node of all) {
+                            if (callback(node) === false) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                })
+            };
+            (widget as unknown as { noteContext?: unknown }).noteContext = {
+                note: { noteId: "open" },
+                setNote
+            };
+            const previousTree = appContext.noteTreeWidget;
+            appContext.noteTreeWidget = widget;
+            restoreTree = previousTree;
+
+            const reload = async (deletedNoteId?: string) => {
+                await widget.entitiesReloadedEvent({
+                    loadResults: {
+                        isOptionReloaded: () => false,
+                        isEmptyForTree: () => false,
+                        getAttributeRows: () => [],
+                        getBranchRows: () => (deletedNoteId ? [ {
+                            branchId: "deleted-branch",
+                            noteId: deletedNoteId,
+                            parentNoteId: "root",
+                            isDeleted: true
+                        } ] : []),
+                        getNoteIds: () => [],
+                        getNoteReorderings: () => []
+                    }
+                } as unknown as EventData<"entitiesReloaded">);
+            };
+
+            return { widget, add, active, setNote, reload };
+        }
+
+        let restoreTree = appContext.noteTreeWidget;
+        afterEach(() => {
+            takeMergeSelection();
+            appContext.noteTreeWidget = restoreTree;
+        });
+
+        it("waits until a consumed note has left and the new note is known", async () => {
+            const { widget, reload } = await prepare();
+            appContext.noteTreeWidget = undefined;
+            armMergeSelection({
+                selected: [], active: null, consumedNoteIds: [ "source" ],
+                resultNoteId: null, deletionsSeen: false
+            });
+            await reload("source");
+            expect(peekMergeSelection()?.deletionsSeen).toBe(false);
+
+            appContext.noteTreeWidget = widget;
+            takeMergeSelection();
+            await reload("source");
+            expect(peekMergeSelection()).toBeNull();
+
+            armMergeSelection({
+                selected: [], active: null, consumedNoteIds: [ "source" ],
+                resultNoteId: null, deletionsSeen: false
+            });
+            await reload();
+            expect(peekMergeSelection()?.deletionsSeen).toBe(false);
+
+            await reload("source");
+            expect(peekMergeSelection()?.deletionsSeen).toBe(true);
+            await widget.applyPendingMergeSelection();
+            expect(peekMergeSelection()?.deletionsSeen).toBe(true);
+        });
+
+        it("selects the merged note and the rows that were not consumed", async () => {
+            const { add, active, reload } = await prepare();
+            const merged = add("merged", "root_merged");
+            const other = add("other", "root_other");
+            add("merged", "clone_merged");
+            active.current = null;
+            armMergeSelection({
+                selected: [
+                    { noteId: "source", branchId: "root_source" },
+                    { noteId: "other", branchId: "root_other" }
+                ],
+                active: { noteId: "source", branchId: "root_source" },
+                consumedNoteIds: [ "target", "source" ],
+                resultNoteId: "merged",
+                deletionsSeen: false
+            });
+
+            await reload("source");
+
+            expect(merged.setActive).toHaveBeenCalledWith(true, { noEvents: false, noFocus: true });
+            expect(other.setSelected).toHaveBeenCalledWith(true);
+            expect(merged.setSelected).toHaveBeenCalledWith(true);
+            expect(peekMergeSelection()).toBeNull();
+        });
+
+        it("opens the merged note when the tree does not contain it", async () => {
+            const { widget, setNote, reload } = await prepare();
+            armMergeSelection({
+                selected: [],
+                active: { noteId: "source", branchId: "root_source" },
+                consumedNoteIds: [ "source" ],
+                resultNoteId: null,
+                deletionsSeen: false
+            });
+            await reload("source");
+            setMergeResult("merged");
+            await widget.applyPendingMergeSelection();
+
+            expect(setNote).toHaveBeenCalledWith("merged");
+            expect(peekMergeSelection()).toBeNull();
+        });
+
+        it("leaves the active row alone when it is already the note that remains", async () => {
+            const { add, active, reload } = await prepare();
+            const kept = add("kept", "root_kept");
+            active.current = kept;
+            (appContext.noteTreeWidget as unknown as { noteContext?: unknown }).noteContext = {
+                note: { noteId: "kept" },
+                setNote: vi.fn()
+            };
+            armMergeSelection({
+                selected: [ { noteId: "kept", branchId: "missing" } ],
+                active: { noteId: "kept", branchId: "gone" },
+                consumedNoteIds: [ "source" ],
+                resultNoteId: "kept",
+                deletionsSeen: false
+            });
+
+            await reload("source");
+
+            expect(kept.setActive).not.toHaveBeenCalled();
+            expect(kept.setSelected).not.toHaveBeenCalled();
         });
     });
 });

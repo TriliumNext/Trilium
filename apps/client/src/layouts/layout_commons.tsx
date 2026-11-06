@@ -33,6 +33,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showPasteMarkdownDialog"]} loader={() => import("../widgets/dialogs/markdown_import.js")} />)
         .child(<LazyDialog triggerEvents={["showProtectedSessionPasswordDialog"]} loader={() => import("../widgets/dialogs/protected_session_password.js")} />)
         .child(<LazyDialog triggerEvents={["showRevisions"]} loader={() => import("../widgets/dialogs/revisions.js")} />)
+        .child(<LazyDialog triggerEvents={["showMergeHistory"]} loader={() => import("../widgets/dialogs/merge_history.js")} />)
         .child(<LazyDialog triggerEvents={["showDeleteNotesDialog"]} loader={() => import("../widgets/dialogs/delete_notes.js")} />)
         .child(<LazyDialog triggerEvents={["showPrintPreview"]} loader={() => import("../widgets/dialogs/print_preview.jsx")} />)
         .child(<LazyDialog triggerEvents={["showLightbox"]} loader={() => import("../widgets/dialogs/lightbox.js")} />)

@@ -444,6 +444,53 @@ describe("Revisions API (core)", () => {
     });
 
     describe("restoring with attachments", () => {
+        it("keeps merge history when a revision is restored", async () => {
+            const { noteId } = await createTextNote(api, { title: "Merged once", content: "<p>body</p>" });
+            expect((await api.post(`/api/notes/${noteId}/attachments`, {
+                body: {
+                    role: "mergeUndo",
+                    mime: "application/json",
+                    title: "Merge undo",
+                    content: "[]"
+                }
+            })).status).toBe(204);
+            const snapshot = await api.post<{ revisionId: string }>(`/api/notes/${noteId}/revision`, {
+                body: {}
+            });
+            expect(snapshot.status).toBe(200);
+            expect((await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: "<p>changed</p>" }
+            })).status).toBe(204);
+
+            expect((await api.post(`/api/revisions/${snapshot.body.revisionId}/restore`)).status).toBe(204);
+            const roles = becca.getNoteOrThrow(noteId).getAttachments().map((item) => item.role);
+            expect(roles).toContain("mergeUndo");
+            const journal = becca.getNoteOrThrow(noteId).getAttachments()
+                .find((item) => item.role === "mergeUndo");
+            expect(journal && unwrapStringOrBuffer(journal.getContent())).toBe("[]");
+        });
+
+        it("does not copy merge history out of a revision", async () => {
+            const { noteId, revisionId } = await createNoteWithRevision({ title: "Old history" });
+            getSql().execute(`
+                INSERT INTO attachments (
+                    attachmentId, ownerId, role, mime, title, isProtected, position,
+                    dateModified, utcDateModified, isDeleted
+                ) VALUES (
+                    'revMergeUndo', ?, 'mergeUndo', 'application/json', 'Merge undo',
+                    0, 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00', 0
+                )`, [ revisionId ]);
+
+            expect((await api.post(`/api/revisions/${revisionId}/restore`)).status).toBe(204);
+            const roles = becca.getNoteOrThrow(noteId).getAttachments().map((item) => item.role);
+            expect(roles).not.toContain("mergeUndo");
+            const stillThere = getSql().getValue<number>(
+                "SELECT COUNT(*) FROM attachments WHERE attachmentId = ? AND isDeleted = 0",
+                [ "revMergeUndo" ]
+            );
+            expect(stillThere).toBe(1);
+        });
+
         it("restores a revision whose snapshot referenced attachments", async () => {
             const { noteId } = await createTextNote(api, { title: "Has attachment" });
 

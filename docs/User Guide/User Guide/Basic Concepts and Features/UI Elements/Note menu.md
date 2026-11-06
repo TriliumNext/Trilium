@@ -112,6 +112,14 @@ text/html=org.gnome.TextEditor.desktop;
 
 The _Open with other application_ entry of most file managers adds the same line.
 
+## Merging a note
+
+<span class="tn-icon bx bx-merge"></span>_Merge note with…_ asks for a note and replaces both with a new note. See <a class="reference-link" href="../Notes/Merging%20Notes.md">Merging Notes</a>.
+
+<span class="tn-icon bx bx-undo"></span>_Undo merge_ brings back the most recently merged note, without changing this note's text. It is greyed out when there is nothing to restore.
+
+<span class="tn-icon bx bx-history"></span>_Merge history_ lists each note that can still be restored, and can forget any one of them. See <a class="reference-link" href="../Notes/Merging%20Notes.md">Merging Notes</a>.
+
 ## Deleting the note
 
 <span class="tn-icon bx bx-trash"></span>_Delete note_ opens the deletion dialog for the current note and its subtree. The dialog lists the notes that will be deleted and the relations that will be broken, and offers to:

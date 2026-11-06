@@ -9,6 +9,7 @@ import froca from "../services/froca";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import server from "../services/server";
+import { registerNoteSaveFlusher } from "../services/spaced_update";
 import { isIMEComposing } from "../services/shortcuts";
 import FormTextBox from "./react/FormTextBox";
 import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvent, useTriliumEvents } from "./react/hooks";
@@ -60,6 +61,12 @@ export default function NoteTitleWidget(props: {className?: string}) {
         return () => appContext.removeBeforeUnloadListener(listener);
     }, []);
     useTriliumEvents([ "beforeNoteSwitch", "beforeNoteContextRemove" ], () => spacedUpdate.updateNowIfNecessary());
+    useEffect(() => registerNoteSaveFlusher(async (noteIds) => {
+        if (!noteId || !noteIds.has(noteId) || !spacedUpdate.hasUnsavedChanges()) {
+            return;
+        }
+        await spacedUpdate.updateNowIfNecessary();
+    }), [ spacedUpdate, noteId ]);
 
     // Manage focus.
     const textBoxRef = useRef<HTMLInputElement>(null);

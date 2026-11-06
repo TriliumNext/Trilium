@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SpacedUpdate from "./spaced_update";
+import SpacedUpdate, { flushPendingNoteSaves, registerNoteSaveFlusher } from "./spaced_update";
 
 // Mock logError which is a global in Trilium
 vi.stubGlobal("logError", vi.fn());
@@ -556,5 +556,75 @@ describe("SpacedUpdate", () => {
             await vi.runAllTimersAsync();
             expect(updater).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it("saves a pending change for a requested note and leaves another note's change queued", async () => {
+        const commits: string[] = [];
+        const spacedUpdate = new SpacedUpdate<string>({
+            key: "note-a",
+            prepare: () => "saved-a",
+            commit: async (data) => {
+                commits.push(data);
+            }
+        }, 1000);
+        spacedUpdate.scheduleUpdate();
+        const other = new SpacedUpdate<string>({
+            key: "note-b",
+            prepare: () => "saved-b",
+            commit: async (data) => {
+                commits.push(data);
+            }
+        }, 1000);
+        other.scheduleUpdate();
+        const unregister = registerNoteSaveFlusher((noteIds) => spacedUpdate.flushNotes(noteIds));
+        const unregisterOther = registerNoteSaveFlusher((noteIds) => other.flushNotes(noteIds));
+
+        await flushPendingNoteSaves([ "note-b" ]);
+        expect(commits).toEqual([ "saved-b" ]);
+        expect(spacedUpdate.hasUnsavedChanges()).toBe(true);
+
+        await flushPendingNoteSaves([ "note-a" ]);
+        expect(commits).toEqual([ "saved-b", "saved-a" ]);
+        unregister();
+        unregisterOther();
+    });
+
+    it("waits for a snapshot already running, then saves the note that snapshot belongs to", async () => {
+        let resolvePrepare: (value: string) => void = () => {};
+        const commits: string[] = [];
+        const spacedUpdate = new SpacedUpdate<string>({
+            key: "note-a",
+            prepare: () => new Promise((resolve) => {
+                resolvePrepare = resolve;
+            }),
+            commit: async (data) => {
+                commits.push(data);
+            }
+        }, 1000);
+        spacedUpdate.scheduleUpdate();
+        spacedUpdate.rebind("note-b", () => "next", async () => {
+            commits.push("next");
+        });
+
+        const flushing = spacedUpdate.flushNotes(new Set([ "note-a" ]));
+        resolvePrepare("saved-a");
+        await flushing;
+
+        expect(commits).toEqual([ "saved-a" ]);
+    });
+
+    it("does nothing for a note that has no pending change", async () => {
+        const updater = vi.fn(async () => {});
+        const spacedUpdate = new SpacedUpdate(updater, 50);
+        await spacedUpdate.flushNotes(new Set([ "note-a" ]));
+        expect(updater).not.toHaveBeenCalled();
+
+        const keyed = new SpacedUpdate<string>({
+            key: "note-a",
+            prepare: () => "saved",
+            commit: async () => {}
+        }, 50);
+        await keyed.flushNotes(new Set([ "note-a" ]));
+        expect(keyed.hasUnsavedChanges()).toBe(false);
     });
 });

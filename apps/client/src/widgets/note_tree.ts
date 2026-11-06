@@ -22,6 +22,11 @@ import linkService from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
 import type { AttributeRow, BranchRow } from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
+import {
+    peekMergeSelection,
+    planSelectionAfterMerge,
+    takeMergeSelection
+} from "../services/note_merge.js";
 import options from "../services/options.js";
 import server from "../services/server.js";
 import { buildShareLink } from "../services/share_link.js";
@@ -1229,6 +1234,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         }
 
         await this.#setActiveNode(activeNotePath, activeNodeFocused, movedActiveNode, parentsOfAddedNodes);
+        await this.#restoreSelectionAfterMerge(loadResults);
 
         if (refreshCtx.noteIdsToReload.size > 0 || refreshCtx.noteIdsToUpdate.size > 0) {
             // workaround for https://github.com/mar10/fancytree/issues/1054
@@ -1417,6 +1423,99 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 await this.updateNode(node);
             }
         }
+    }
+
+    /**
+     * Selects the new note once the notes it replaced have left the tree.
+     * A note that was not part of the merge stays selected.
+     */
+    async #restoreSelectionAfterMerge(loadResults: LoadResults) {
+        if (this !== appContext.noteTreeWidget) {
+            return;
+        }
+        const pending = peekMergeSelection();
+        if (!pending) {
+            return;
+        }
+        const deletedConsumed = loadResults.getBranchRows().some((row) =>
+            !!row.isDeleted && !!row.noteId && pending.consumedNoteIds.includes(row.noteId));
+        if (!deletedConsumed) {
+            return;
+        }
+        pending.deletionsSeen = true;
+        if (!pending.resultNoteId) {
+            return;
+        }
+        await this.#activateMergedNote(pending);
+        takeMergeSelection();
+    }
+
+    /** Selects the merged note when its id is already known and the old notes are gone. */
+    async applyPendingMergeSelection() {
+        const pending = peekMergeSelection();
+        if (!pending?.resultNoteId || !pending.deletionsSeen) {
+            return;
+        }
+        await this.#activateMergedNote(pending);
+        takeMergeSelection();
+    }
+
+    async #activateMergedNote(pending: NonNullable<ReturnType<typeof peekMergeSelection>>) {
+        const resultNoteId = pending.resultNoteId;
+        if (!resultNoteId) {
+            return;
+        }
+        const plan = planSelectionAfterMerge(
+            pending.selected, pending.active, resultNoteId, pending.consumedNoteIds
+        );
+        const activeBranchId = pending.active?.noteId === plan.activeNoteId
+            ? pending.active.branchId
+            : null;
+        const activeNode = this.#nodeFor(plan.activeNoteId, activeBranchId);
+        const openNoteId = this.noteContext?.note?.noteId;
+        if (activeNode && this.getActiveNode() !== activeNode) {
+            await activeNode.setActive(true, {
+                noEvents: openNoteId === plan.activeNoteId,
+                noFocus: true
+            });
+        } else if (!activeNode && this.noteContext && openNoteId !== plan.activeNoteId) {
+            await this.noteContext.setNote(plan.activeNoteId);
+        }
+
+        // `setActive` clears a multi-selection, so the rows are put back afterwards.
+        this.clearSelectedNodes();
+        if (pending.selected.length === 0) {
+            return;
+        }
+        for (const branchId of plan.branchIds) {
+            this.#nodeByBranch(branchId)?.setSelected(true);
+        }
+        if (plan.selectTarget) {
+            this.#nodeFor(resultNoteId, null)?.setSelected(true);
+        }
+    }
+
+    #nodeFor(noteId: string, branchId: string | null) {
+        const nodes = this.getNodesByNoteId(noteId);
+        if (branchId) {
+            const match = nodes.find((node) => node.data.branchId === branchId);
+            if (match) {
+                return match;
+            }
+        }
+        return nodes[0];
+    }
+
+    #nodeByBranch(branchId: string) {
+        let found: Fancytree.FancytreeNode | undefined;
+        this.tree.getRootNode().visit((node) => {
+            if (node.data.branchId !== branchId) {
+                return;
+            }
+            found = node;
+            return false;
+        });
+        return found;
     }
 
     async #setActiveNode(activeNotePath: string | null, activeNodeFocused: boolean, movedActiveNode: Fancytree.FancytreeNode | null, parentsOfAddedNodes: Fancytree.FancytreeNode[]) {

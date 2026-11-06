@@ -1,7 +1,7 @@
 import { beforeAll } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
-import { initializeCore, options } from "@triliumnext/core";
+import { becca_loader, initializeCore, options } from "@triliumnext/core";
 import { serverZipExportProviderFactory } from "../src/services/export/zip/factory.js";
 import ServerBackupService from "../src/backup_provider.js";
 import AsyncLocalStorageExecutionContext from "../src/cls_provider.js";
@@ -37,7 +37,9 @@ beforeAll(async () => {
             provider: dbProvider,
             isReadOnly: false,
             onTransactionCommit() {},
-            onTransactionRollback() {}
+            onTransactionRollback() {
+                becca_loader.restoreBeccaAfterRollback();
+            }
         },
         crypto: new NodejsCryptoProvider(),
         zip: new NodejsZipProvider(),

@@ -30,6 +30,26 @@ interface PendingCommit<T> {
     commit: CommitCallback<T>;
 }
 
+const noteSaveFlushers = new Set<(noteIds: ReadonlySet<string>) => Promise<void>>();
+
+/** Registers a flusher and returns the function that removes it. */
+export function registerNoteSaveFlusher(flusher: (noteIds: ReadonlySet<string>) => Promise<void>) {
+    noteSaveFlushers.add(flusher);
+    return () => {
+        noteSaveFlushers.delete(flusher);
+    };
+}
+
+/** Waits until every registered editor has saved its pending changes for `noteIds`. */
+export async function flushPendingNoteSaves(noteIds: readonly string[]) {
+    const ids = new Set(noteIds);
+    const pending: Promise<void>[] = [];
+    for (const flusher of noteSaveFlushers) {
+        pending.push(flusher(ids));
+    }
+    await Promise.all(pending);
+}
+
 const MAX_RETRY_DELAY = 60_000;
 /** The longest that `resetUpdateTimer()` can postpone a pending change, in intervals. */
 const MAX_POSTPONED_INTERVALS = 10;
@@ -139,6 +159,20 @@ export default class SpacedUpdate<T = void> {
     /** Whether a change made under the current binding is not saved yet. */
     hasUnsavedChanges() {
         return this.changed || this.pendingCommits.has(this.bindingKey);
+    }
+
+    /**
+     * Saves a pending change for one of `noteIds` and waits for a save of those notes that is
+     * already running. A change for any other note is left waiting.
+     */
+    async flushNotes(noteIds: ReadonlySet<string>) {
+        if (this.pendingSnapshots.size > 0) {
+            await Promise.allSettled([ ...this.pendingSnapshots ]);
+        }
+        if (!this.noteSavePending(noteIds)) {
+            return;
+        }
+        await this.updateNowIfNecessary();
     }
 
     isAllSavedAndTriggerUpdate() {
@@ -367,6 +401,19 @@ export default class SpacedUpdate<T = void> {
         if (this.changed) {
             this.armDebounceTimer();
         }
+    }
+
+    private noteSavePending(noteIds: ReadonlySet<string>) {
+        if (this.bindingKey !== null && noteIds.has(this.bindingKey)
+            && (this.changed || this.pendingCommits.has(this.bindingKey))) {
+            return true;
+        }
+        for (const key of this.pendingCommits.keys()) {
+            if (key !== null && noteIds.has(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private scheduleRetry() {

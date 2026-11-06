@@ -127,6 +127,11 @@ function mockServer() {
             };
         }
 
+        // The note menu reads attachments to decide whether Undo merge is available.
+        if (url.endsWith("/attachments")) {
+            return [];
+        }
+
         console.warn(`Unsupported GET to mocked server: ${url}`);
     }
 
