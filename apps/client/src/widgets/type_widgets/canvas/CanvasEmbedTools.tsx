@@ -4,6 +4,7 @@ import { useI18n } from "@excalidraw/excalidraw";
 import type {
     AppState, ExcalidrawImperativeAPI, NormalizedZoomValue, ToolType
 } from "@excalidraw/excalidraw/types";
+import noToolIcon from "boxicons/svg/regular/bx-block.svg?raw";
 import moreToolsIcon from "boxicons/svg/regular/bx-category.svg?raw";
 import ellipseIcon from "boxicons/svg/regular/bx-circle.svg?raw";
 import eraserIcon from "boxicons/svg/regular/bx-eraser.svg?raw";
@@ -44,6 +45,15 @@ export const MAIN_TOOLS = [
 export const EXTRA_TOOLS = [ "frame", "embeddable" ] as const satisfies readonly ToolType[];
 const TOOLS = [ ...MAIN_TOOLS, ...EXTRA_TOOLS ];
 export const LOCK = "lock";
+/** The button of {@link NO_TOOL}. */
+export const NO_TOOL_ID = "noTool";
+/**
+ * No tool: the custom tool of Excalidraw, which takes nothing from the pointer. `CanvasDrawing`
+ * leaves the touch over the drawing to the note with it.
+ */
+export const NO_TOOL = {
+    type: "custom", customType: "none", locked: false, lastActiveTool: null
+} as const satisfies AppState["activeTool"];
 /** The button that opens the "More tools" menu, named by Excalidraw's `toolBar.extraTools`. */
 export const MORE_TOOLS = "moreTools";
 /** The name of Excalidraw's default sidebar, whose tabs are the library and the search. */
@@ -294,7 +304,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
         return this.translate?.(key) ?? key;
     }
 
-    /** The lock, the drawing tools with the menu commands, undo and redo. */
+    /** The lock, no tool, the drawing tools with the menu commands, undo and redo. */
     private getEditingTools(activeTool: AppState["activeTool"]): ContentEmbedTool[] {
         return [
             {
@@ -303,6 +313,13 @@ export class CanvasTools implements ContentEmbedToolProvider {
                 icon: ICONS[LOCK],
                 isOn: activeTool.locked,
                 group: "lock"
+            },
+            {
+                id: NO_TOOL_ID,
+                label: t("canvas.no_tool"),
+                icon: noToolIcon,
+                isOn: isNoTool(activeTool),
+                group: "tools"
             },
             ...MAIN_TOOLS.map((type) => ({
                 id: type,
@@ -375,7 +392,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
         ];
     }
 
-    /** Runs the lock, a drawing tool, a menu command, undo or redo. */
+    /** Runs the lock, no tool, a drawing tool, a menu command, undo or redo. */
     private runEditingTool(api: ExcalidrawImperativeAPI, appState: AppState, id: string) {
         const command = MENU_COMMANDS.find((menuCommand) => menuCommand.id === id);
         if (command) {
@@ -385,6 +402,8 @@ export class CanvasTools implements ContentEmbedToolProvider {
         } else if (id === LOCK) {
             const locked = !appState.activeTool.locked;
             api.updateScene({ appState: { activeTool: { ...appState.activeTool, locked } } });
+        } else if (id === NO_TOOL_ID) {
+            api.setActiveTool(NO_TOOL);
         } else if (isTool(id)) {
             api.setActiveTool({ type: id });
         }
@@ -414,6 +433,11 @@ export class CanvasTools implements ContentEmbedToolProvider {
 
 function isTool(id: string): id is Tool {
     return (TOOLS as readonly string[]).includes(id);
+}
+
+/** Whether `activeTool` is {@link NO_TOOL}. */
+export function isNoTool(activeTool: AppState["activeTool"]) {
+    return activeTool.type === "custom" && activeTool.customType === NO_TOOL.customType;
 }
 
 /**

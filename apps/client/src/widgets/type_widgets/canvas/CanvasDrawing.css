@@ -151,6 +151,11 @@
     }
 }
 
+/* With no tool, the touch over the drawing scrolls the note, as the wheel does. */
+.canvas-drawing-editor[data-no-tool] .excalidraw__canvas {
+    pointer-events: none;
+}
+
 /* Excalidraw hides its overflow, so its rounded container clips what it draws. */
 .include-note-content:not(:fullscreen) .canvas-drawing {
     &, .excalidraw-container, .canvas-drawing-view {

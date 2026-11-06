@@ -271,6 +271,29 @@ describe("Excalidraw contract of the canvas drawing", () => {
             + "\"wheel\"/*WHEEL*/,this.handleWheel,{passive:false})");
         expect(source).not.toMatch(/addEventListener\((window|document),"wheel"/);
     });
+
+    it("creates nothing with `NO_TOOL`, whose touch the canvases alone take", () => {
+        const source = readBundle(developmentDir, [ ".js" ]);
+        const compact = source.replace(/\s+/g, "");
+
+        expect(compact).toContain("activeTool.type===\"custom\"){"
+            + "setCursorForShape(this.interactiveCanvas,this.state);}elseif");
+        // `initialData` restores it.
+        expect(source).toMatch(/var AllowedExcalidrawActiveTools = \{[^}]*\bcustom: true/);
+        // `CanvasDrawing.css` takes the canvases out of the way of the touch with no tool: they
+        // alone forbid the browser the scroll, and the interactive one holds the listener that
+        // prevents it.
+        expect(compact).toContain("this.interactiveCanvas.addEventListener("
+            + "\"touchstart\"/*TOUCH_START*/,this.onTouchStart,{passive:false})");
+        const styles = readBundle(productionDir, [ ".css" ]);
+        const selectors = [ ...styles.matchAll(/([^{}]+)\{[^}]*touch-action:none/g) ]
+            .map((match) => match[1]);
+        expect(selectors).toEqual([
+            ".excalidraw .excalidraw-eye-dropper-container,"
+                + ".excalidraw .excalidraw-eye-dropper-backdrop",
+            ".excalidraw canvas"
+        ]);
+    });
 });
 
 /** The text of the scripts or stylesheets in `dir`, without its locales and fonts. */

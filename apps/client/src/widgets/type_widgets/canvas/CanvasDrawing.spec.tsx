@@ -55,9 +55,15 @@ vi.mock("../text/attachment_saves", () => ({
     useAttachmentEditor: () => detailEditor
 }));
 
+const SELECTION_TOOL = {
+    type: "selection", customType: null, locked: false, lastActiveTool: null
+} as const;
 const canvasEditorProps = vi.fn();
 const persistenceArgs = vi.fn();
-const canvasApi = { scrollToContent: vi.fn() };
+const canvasApi = {
+    scrollToContent: vi.fn(),
+    getAppState: () => ({ activeTool: SELECTION_TOOL })
+};
 
 interface MockCanvasEditorProps {
     apiRef?: RefObject<unknown>;
@@ -70,6 +76,7 @@ interface MockCanvasEditorProps {
 /** The options that `LiveDrawing` gives its persistence. */
 interface PersistenceOptions {
     initialView?: unknown;
+    initialTool?: unknown;
     onSceneShown?: () => void;
 }
 
@@ -97,7 +104,7 @@ const {
     useNoteScrollingWheel, useSidePanels, useTopLayerContextMenu
 } = await import("./CanvasDrawing");
 const { default: CanvasDrawingMenu } = await import("./CanvasDrawingMenu");
-const { default: CanvasEmbedTools } = await import("./CanvasEmbedTools");
+const { default: CanvasEmbedTools, NO_TOOL } = await import("./CanvasEmbedTools");
 const { getBoundedView } = await import("./drawing_view");
 
 /** Horizontal edges by class name; happy-dom computes no layout. */
@@ -775,7 +782,9 @@ describe("CanvasDrawing", () => {
         });
         const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
             .persistence ?? {};
-        onChange?.([], { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }, {});
+        onChange?.([], {
+            activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20
+        }, {});
         await setEmbedEditable(embed, false);
         expect(getEditingState().isReadOnly).toBe(true);
         expect(getPicture()).not.toBeNull();
@@ -951,6 +960,85 @@ describe("CanvasDrawing", () => {
         expect(canvasApi.scrollToContent).toHaveBeenCalledWith();
         apiRef.current = null;
         other.remove();
+    });
+
+    it("leaves the drawing to the note while no tool is active", async () => {
+        await mount();
+        const root = box.querySelector(".canvas-drawing-editor");
+        const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
+            .persistence ?? {};
+
+        onChange?.([], { activeTool: NO_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(true);
+
+        onChange?.([], { activeTool: SELECTION_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(false);
+    });
+
+    it("starts with no tool in the mobile layout, back to it as the focus leaves", async () => {
+        const device = window.glob.device;
+        const body = document.createElement("div");
+        body.className = "include-note-body active";
+        body.append(box);
+        document.body.append(body);
+        onTestFinished(() => {
+            window.glob.device = device;
+            body.remove();
+        });
+        const setActiveTool = vi.fn();
+        const api = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool: NO_TOOL }) };
+        const getApiRef = () => {
+            const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+            if (!apiRef) {
+                throw new Error("Expected the API reference of the editor.");
+            }
+            return apiRef;
+        };
+        const getInitialTool = () =>
+            (persistenceArgs.mock.lastCall?.[4] as PersistenceOptions).initialTool;
+
+        window.glob.device = "mobile";
+        await mount();
+        expect(getInitialTool()).toEqual(NO_TOOL);
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledWith(NO_TOOL);
+        await act(async () => body.classList.add("active"));
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledTimes(2);
+
+        render(null, box);
+        setActiveTool.mockClear();
+        body.classList.add("active");
+        window.glob.device = "desktop";
+        await mount();
+        expect(getInitialTool()).toBeUndefined();
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).not.toHaveBeenCalled();
+    });
+
+    it("switches from no tool to the selection tool in fullscreen", async () => {
+        await mount();
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        if (!apiRef) {
+            throw new Error("Expected the API reference of the editor.");
+        }
+        const setActiveTool = vi.fn();
+        let activeTool: unknown = NO_TOOL;
+        apiRef.current = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool }) };
+
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledWith({ type: "selection" });
+
+        activeTool = SELECTION_TOOL;
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledTimes(1);
+        apiRef.current = null;
     });
 
     it("takes the focus that its embed box holds once Excalidraw renders", async () => {

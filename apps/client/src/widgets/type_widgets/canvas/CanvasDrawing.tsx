@@ -13,7 +13,7 @@ import type FNote from "../../../entities/fnote";
 import { bindAttachmentEditor, type ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
-import { isDesktop } from "../../../services/utils";
+import { isDesktop, isMobile } from "../../../services/utils";
 import {
     useColorScheme, useEffectiveReadOnly, useElementSize, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
@@ -22,7 +22,7 @@ import { useContentEmbedEvent } from "../text/content_embed_tools";
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
-import CanvasEmbedTools, { CanvasTools } from "./CanvasEmbedTools";
+import CanvasEmbedTools, { CanvasTools, isNoTool, NO_TOOL } from "./CanvasEmbedTools";
 import { type DrawingView, getBoundedView, getCenteredView, getFittedView } from "./drawing_view";
 import {
     exportDrawingPicture, loadDrawingFiles, parseContent, useCanvasDrawingPersistence
@@ -125,16 +125,20 @@ function LiveDrawing({
     const frameRef = useRef(0);
     const persistence = useCanvasDrawingPersistence(attachment, editor, apiRef, colorScheme, {
         initialView: viewRef.current,
+        // A touch over the drawing scrolls the note until a tool is picked.
+        initialTool: isMobile() ? NO_TOOL : undefined,
         rootRef,
         onSceneShown: () => {
             isShownRef.current = true;
             frameRef.current = requestAnimationFrame(onDrawn);
         }
     });
+    useNoToolOutsideEditing(rootRef, apiRef, isEditable);
     useLayoutEffect(() => () => {
         cancelAnimationFrame(frameRef.current);
+        rootRef.current?.removeAttribute("data-no-tool");
         apiRef.current = null;
-    }, [ apiRef ]);
+    }, [ apiRef, rootRef ]);
 
     return (
         <CanvasEditor
@@ -145,6 +149,8 @@ function LiveDrawing({
                 ...persistence,
                 onChange: (elements, appState, files) => {
                     persistence.onChange?.(elements, appState, files);
+                    // `CanvasDrawing.css` leaves the touch over the drawing to the note.
+                    rootRef.current?.toggleAttribute("data-no-tool", isNoTool(appState.activeTool));
                     if (isShownRef.current) {
                         const { zoom, scrollX, scrollY } = appState;
                         viewRef.current = { zoom, scrollX, scrollY };
@@ -432,6 +438,40 @@ function useRecenteringOnFullscreen(
     useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
     return isRecentering;
+}
+
+/**
+ * Gives the drawing no tool as it loses the focus in the mobile layout, so that a touch over it
+ * scrolls the note again, and the selection tool in fullscreen, where no tool has no use.
+ */
+function useNoToolOutsideEditing(
+    rootRef: RefObject<HTMLElement | null>,
+    apiRef: RefObject<ExcalidrawImperativeAPI | null>,
+    isEnabled: boolean
+) {
+    useContentEmbedEvent(rootRef, "enterFullscreen", () => {
+        const api = apiRef.current;
+        if (api && isNoTool(api.getAppState().activeTool)) {
+            api.setActiveTool({ type: "selection" });
+        }
+    });
+
+    useEffect(() => {
+        const embedBody = rootRef.current?.closest(".include-note-body");
+        if (!embedBody || !isEnabled || !isMobile()) return;
+
+        // `ContentEmbed` marks the body active while the drawing has the focus.
+        let wasActive = embedBody.classList.contains("active");
+        const observer = new MutationObserver(() => {
+            const isActive = embedBody.classList.contains("active");
+            if (wasActive && !isActive) {
+                apiRef.current?.setActiveTool(NO_TOOL);
+            }
+            wasActive = isActive;
+        });
+        observer.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        return () => observer.disconnect();
+    }, [ rootRef, apiRef, isEnabled ]);
 }
 
 /**

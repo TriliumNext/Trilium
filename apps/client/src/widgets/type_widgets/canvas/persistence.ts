@@ -414,6 +414,8 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
 interface DrawingPersistenceOptions {
     /** The view to open the drawing at, instead of the saved one. */
     initialView?: DrawingView | null;
+    /** The tool to open the drawing with, instead of the selection tool. */
+    initialTool?: AppState["activeTool"];
     /** Called once Excalidraw shows the loaded scene. */
     onSceneShown?: () => void;
     /**
@@ -432,7 +434,7 @@ export function useCanvasDrawingPersistence(
     editor: ContentEditor | undefined,
     apiRef: RefObject<ExcalidrawImperativeAPI | null>,
     theme: AppState["theme"],
-    { initialView, onSceneShown, rootRef }: DrawingPersistenceOptions = {}
+    { initialView, initialTool, onSceneShown, rootRef }: DrawingPersistenceOptions = {}
 ): Partial<ExcalidrawProps> {
     const currentSceneVersion = useRef(0);
     /** The saved part of the app state, read from the editor at the first change. */
@@ -471,7 +473,8 @@ export function useCanvasDrawingPersistence(
             elements,
             // A drawing shows the background of the note unless one is picked for it.
             appState: {
-                viewBackgroundColor: "transparent", ...content.appState, ...initialView, theme
+                viewBackgroundColor: "transparent", ...content.appState, ...initialView, theme,
+                ...(initialTool ? { activeTool: initialTool } : {})
             },
             files: loaded.files
         };

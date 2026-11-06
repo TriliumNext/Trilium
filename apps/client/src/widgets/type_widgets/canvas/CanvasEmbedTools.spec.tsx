@@ -11,7 +11,7 @@ vi.mock("@excalidraw/excalidraw", () => ({
 }));
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
-const { default: CanvasEmbedTools, CanvasTools } = await import("./CanvasEmbedTools");
+const { default: CanvasEmbedTools, CanvasTools, NO_TOOL } = await import("./CanvasEmbedTools");
 const {
     getContentEmbedTools, registerContentEmbedTools, watchContentEmbedTools
 } = await import("../text/content_embed_tools");
@@ -96,7 +96,10 @@ describe("CanvasEmbedTools", () => {
         expect(tools[0]).toEqual({
             id: "lock", label: "t:toolBar.lock", icon: ICON, isOn: false, group: "lock"
         });
-        expect(tools.slice(1, count + 1)).toEqual(MAIN_TOOL_IDS.map((id) => ({
+        expect(tools[1]).toEqual({
+            id: "noTool", label: "canvas.no_tool", icon: ICON, isOn: false, group: "tools"
+        });
+        expect(tools.slice(2, count + 2)).toEqual(MAIN_TOOL_IDS.map((id) => ({
             id,
             label: `t:toolBar.${id}`,
             icon: ICON,
@@ -104,7 +107,7 @@ describe("CanvasEmbedTools", () => {
             group: "tools"
         })));
         expect(tools.find((tool) => tool.id === "diamond")?.icon).toContain("rotate(45)");
-        expect(tools[count + 1]).toEqual({
+        expect(tools[count + 2]).toEqual({
             id: "moreTools",
             label: "t:toolBar.extraTools",
             icon: ICON,
@@ -132,7 +135,7 @@ describe("CanvasEmbedTools", () => {
                 { id: "help", label: "t:helpDialog.title", keystroke: "?", group: "canvas" }
             ]
         });
-        expect(tools.slice(count + 2)).toEqual([
+        expect(tools.slice(count + 3)).toEqual([
             { id: "undo", label: "t:buttons.undo", icon: ICON, isEnabled: true, group: "history" },
             { id: "redo", label: "t:buttons.redo", icon: ICON, isEnabled: false, group: "history" },
             {
@@ -204,8 +207,12 @@ describe("CanvasEmbedTools", () => {
         expect(listener).toHaveBeenCalledTimes(3);
         expect(getOn()).toEqual([ "lock", "moreTools", "frame" ]);
 
-        api.change({ zoom: { value: 30 } });
+        api.change({ activeTool: { type: "custom", customType: "none", locked: false } });
         expect(listener).toHaveBeenCalledTimes(4);
+        expect(getOn()).toEqual([ "noTool" ]);
+
+        api.change({ zoom: { value: 30 } });
+        expect(listener).toHaveBeenCalledTimes(5);
         expect(getEnabled()).toEqual([
             "undo:true", "redo:false", "zoomOut:true", "resetZoom:true", "zoomIn:false"
         ]);
@@ -214,12 +221,12 @@ describe("CanvasEmbedTools", () => {
         await act(async () => {
             container.querySelector("[data-testid=button-redo]")?.removeAttribute("disabled");
         });
-        expect(listener).toHaveBeenCalledTimes(5);
+        expect(listener).toHaveBeenCalledTimes(6);
         expect(getEnabled()).toContain("redo:true");
 
         unsubscribe();
         api.change({ zoom: { value: 0.1 } });
-        expect(listener).toHaveBeenCalledTimes(5);
+        expect(listener).toHaveBeenCalledTimes(6);
         expect(getEnabled()).toContain("zoomOut:false");
     });
 
@@ -281,6 +288,9 @@ describe("CanvasEmbedTools", () => {
         provider.execute("frame");
         expect(api.setActiveTool).toHaveBeenLastCalledWith({ type: "frame" });
 
+        provider.execute("noTool");
+        expect(api.setActiveTool).toHaveBeenLastCalledWith(NO_TOOL);
+
         provider.execute("lock");
         expect(api.updateScene).toHaveBeenLastCalledWith({
             appState: { activeTool: expect.objectContaining({ type: "selection", locked: true }) }
@@ -308,7 +318,7 @@ describe("CanvasEmbedTools", () => {
         provider.execute("magicframe");
         provider.execute("laser");
         provider.execute("moreTools");
-        expect(api.setActiveTool).toHaveBeenCalledTimes(2);
+        expect(api.setActiveTool).toHaveBeenCalledTimes(3);
         expect(api.updateScene).toHaveBeenCalledTimes(3);
     });
 
@@ -355,7 +365,7 @@ describe("CanvasEmbedTools", () => {
         expect(getIds()).toEqual([ "zoomOut", "resetZoom", "zoomIn" ]);
         expect(provider.hasEditableFlag).toBe(true);
 
-        for (const id of [ "rectangle", "frame", "lock", "undo", "help", "library" ]) {
+        for (const id of [ "rectangle", "frame", "noTool", "lock", "undo", "help", "library" ]) {
             provider.execute(id);
         }
         expect(api.setActiveTool).not.toHaveBeenCalled();
@@ -371,7 +381,8 @@ describe("CanvasEmbedTools", () => {
         await mount(true);
         expect(listener).toHaveBeenCalledTimes(1);
         expect(getIds()).toEqual([
-            "lock", ...MAIN_TOOL_IDS, "moreTools", "undo", "redo", "zoomOut", "resetZoom", "zoomIn"
+            "lock", "noTool", ...MAIN_TOOL_IDS, "moreTools", "undo", "redo", "zoomOut", "resetZoom",
+            "zoomIn"
         ]);
     });
 });
@@ -387,7 +398,7 @@ interface FakeElement {
 }
 
 interface FakeAppState {
-    activeTool: { type: string; locked: boolean };
+    activeTool: { type: string; customType?: string; locked: boolean };
     zoom: { value: number };
     scrollX: number;
     scrollY: number;
