@@ -11,7 +11,11 @@ const {
     ZOOM_STEP, ZOOMS
 } = await import("./CanvasEmbedTools");
 const { MAX_ZOOM, MIN_ZOOM } = await import("./drawing_view");
-const { FITTED_MENU_STYLES } = await import("./CanvasDrawing");
+const {
+    FITTED_MENU_STYLES, PICKER_SELECTOR, PROPERTIES_PANEL_CLASS
+} = await import("./CanvasDrawing");
+const { FOOTER_ACTIONS, SELECTED_BUTTON_CLASS, SHOWN_BUTTON_CLASS } =
+    await import("./CanvasDrawingRail");
 const { DRAWING_DARK_FILTER, IMAGE_DARK_FILTER } = await import("./persistence");
 const { HISTORY_ICON_PATHS, isInteracting } = await import("./drawing_history");
 const { MATCH_COLORS } = await import("./drawing_find");
@@ -26,10 +30,11 @@ const TRILIUM_CLASSES = new Set([
     "include-note-content", "active", "tn-icon"
 ]);
 
-/** The classes of Excalidraw that `CanvasDrawing.tsx` and `CanvasEmbedTools.tsx` look up. */
+/** The classes of Excalidraw that the code of the canvas drawing looks up. */
 const CODE_CLASSES = [
     "excalidraw", "excalidraw-container", "App-menu__left", "App-toolbar-container",
-    "context-menu", "popover"
+    "App-toolbar-content", "context-menu", "popover", SHOWN_BUTTON_CLASS, SELECTED_BUTTON_CLASS,
+    PROPERTIES_PANEL_CLASS
 ];
 
 /**
@@ -72,7 +77,8 @@ describe("Excalidraw contract of the canvas drawing", () => {
         const keys = [
             ...[ ...MAIN_TOOLS, ...EXTRA_TOOLS, LOCK, "extraTools" ].map((id) => `toolBar.${id}`),
             ...[ ...HISTORY_ACTIONS, ...Object.keys(ZOOMS) ].map((id) => `buttons.${id}`),
-            ...MENU_COMMANDS.map((command) => command.label)
+            ...MENU_COMMANDS.map((command) => command.label),
+            ...FOOTER_ACTIONS.map((action) => action.label)
         ];
 
         const missing = keys.filter((key) => {
@@ -80,6 +86,40 @@ describe("Excalidraw contract of the canvas drawing", () => {
             return !getEnglishKeys(source, section).has(name);
         });
         expect(missing).toEqual([]);
+    });
+
+    it("renders the footer buttons of the phone layout that `CanvasDrawingRail` finds", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const menu = source.split("varMobileMenu=(")[1]?.split("//components/")[0] ?? "";
+
+        expect(menu).toContain("\"div\",{className:\"App-toolbar-content\",children:[");
+        expect(menu).toContain("actionManager.renderAction(\"toggleEditMenu\")");
+        expect(menu).toContain("actionManager.renderAction("
+            + "appState.multiElement?\"finalize\":\"duplicateSelection\")");
+        expect(menu).toContain("actionManager.renderAction(\"deleteSelectedElements\")");
+        // `getShownActions()` finds each button by its label, and reads its classes.
+        const unnamed = FOOTER_ACTIONS
+            .filter(({ label }) => !source.includes(`"aria-label":t("${label}")`))
+            .map(({ label }) => label);
+        expect(unnamed).toEqual([]);
+        expect(source).toContain(`visible&&!props.hidden?"${SHOWN_BUTTON_CLASS}"`);
+        expect(source).toContain(`"${SELECTED_BUTTON_CLASS}":props.selected`);
+    });
+
+    it("renders the phone layout's properties and pickers as the sheet finds them", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const menu = source.split("varMobileMenu=(")[1]?.split("//components/")[0] ?? "";
+
+        // `usePropertiesSheet()` places the island of the bottom bar while it holds the panel.
+        expect(menu).toContain("\"div\",{className:\"App-bottom-bar\",");
+        expect(menu).toContain("Island,{padding:0,children:[appState.openMenu===\"shape\"");
+        expect(menu).toContain(
+            `Section,{className:"${PROPERTIES_PANEL_CLASS}",heading:"selectedShapeActions"`);
+        // The pickers render in the container of the drawing, in the wrapper of Radix's popper.
+        expect(source).toContain("Popover.Portal,{container,children:");
+        const popover = createRequire(entry).resolve("@radix-ui/react-popover");
+        const popper = createRequire(popover).resolve("@radix-ui/react-popper");
+        expect(readFileSync(popper, "utf8")).toContain(PICKER_SELECTOR.slice(1, -1));
     });
 
     it("zooms with the step, the limits and the math that the toolbar copies", () => {

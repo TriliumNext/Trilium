@@ -29,8 +29,9 @@ import { HighlightedText } from "../../react/RawHtml";
 import {
     type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue
 } from "../../react/hooks";
+import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { useIsSelected, useSelection } from "../../react/selection";
-import CardToolbar, { RAIL_EXIT_MS } from "./card_toolbar";
+import CardToolbar from "./card_toolbar";
 
 function Card({
     api,

@@ -132,6 +132,33 @@
     color: inherit;
 }
 
+/* The properties panel of the phone layout across the bottom of the note, in the top layer, placed
+   by `usePropertiesSheet()`. Resets the user agent style of a popover and Excalidraw's own size. */
+.canvas-drawing-editor .excalidraw .App-bottom-bar > .Island[data-properties-sheet][popover] {
+    position: fixed;
+    inset: auto auto var(--properties-sheet-bottom) var(--properties-sheet-left);
+    margin: 0;
+    border: none;
+    width: var(--properties-sheet-width);
+    min-width: 0;
+    max-width: none;
+    max-height: var(--properties-sheet-max-height);
+    overflow: visible;
+    color: inherit;
+}
+
+/* The pickers of the properties sheet, in the top layer above it. Resets the user agent style of
+   a popover below the position that Radix sets inline. */
+:where(.canvas-drawing-editor [data-radix-popper-content-wrapper][popover]) {
+    inset: auto;
+    margin: 0;
+    border: none;
+    padding: 0;
+    overflow: visible;
+    background: none;
+    color: inherit;
+}
+
 /* Excalidraw narrows its controls for a docked library, which is beside the drawing instead. */
 .canvas-drawing-editor:has(.default-sidebar[data-side-panel]) .layer-ui__wrapper {
     width: 100% !important;
@@ -139,7 +166,7 @@
 
 /* While `CanvasEmbedTools` sets `data-embed-tools`, the tools, the main menu, undo and redo, and
    zoom are buttons of the embed's toolbar, which fullscreen hides. `CanvasTools` clicks the hidden
-   undo and redo buttons. */
+   undo and redo buttons, and `CanvasDrawingRail` the other buttons of the phone layout's footer. */
 .include-note-content:not(:fullscreen) .canvas-drawing-editor[data-embed-tools] .excalidraw {
     .App-toolbar-container > .App-toolbar,
     .main-menu-trigger,
@@ -147,7 +174,7 @@
         [data-testid="toolbar-lock"], [data-testid="toolbar-hand"]
     ),
     .layer-ui__wrapper__footer-left :is(.zoom-actions, .undo-redo-buttons),
-    .App-toolbar-content > div:has(> [data-testid="button-undo"]) {
+    .App-toolbar-content {
         display: none;
     }
 }

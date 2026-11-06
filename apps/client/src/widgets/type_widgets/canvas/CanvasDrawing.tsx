@@ -23,6 +23,7 @@ import { registerEmbedFindTarget, useContentEmbedEvent } from "../text/content_e
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
+import CanvasDrawingRail from "./CanvasDrawingRail";
 import CanvasEmbedTools, { CanvasTools, isNoTool, NO_TOOL } from "./CanvasEmbedTools";
 import {
     attachExcalidraw, DrawingFindTarget, type DrawingMatch, DrawingMatches, getSceneTransform
@@ -66,6 +67,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const isToolbarOverPanel = useIsToolbarOverPanel(rootRef);
     const isRecentering = useRecenteringOnFullscreen(rootRef, apiRef);
     useSidePanels(rootRef, isEditing);
+    usePropertiesSheet(rootRef, isEditing && isMobile());
     useTopLayerContextMenu(rootRef, apiRef);
     useNoteScrollingWheel(rootRef);
     useFindShortcut(rootRef);
@@ -189,6 +191,7 @@ function LiveDrawing({
                 tools={tools}
                 isEditable={isEditable}
             />
+            {isMobile() && <CanvasDrawingRail rootRef={rootRef} apiRef={apiRef} />}
         </CanvasEditor>
     );
 }
@@ -901,6 +904,157 @@ function getSidePanelLeft(
         return { side: "left", left: leftOfDrawing };
     }
     return null;
+}
+
+/** The share of the note's height that the properties sheet can take. */
+const SHEET_MAX_HEIGHT_SHARE = 0.5;
+/** The island at the bottom of Excalidraw's phone layout, which holds the properties panel. */
+const BOTTOM_ISLAND_SELECTOR = ".App-bottom-bar > .Island";
+/** The properties panel of Excalidraw's phone layout, inside the bottom island. */
+export const PROPERTIES_PANEL_CLASS = "App-mobile-menu";
+/** The wrapper in which Radix renders the pickers of the properties (colors, fonts). */
+export const PICKER_SELECTOR = "[data-radix-popper-content-wrapper]";
+/**
+ * The custom property on `body` with the distance from the bottom of the window to the top of the
+ * properties sheet. `CanvasDrawingRail.css` keeps the rail above the sheet with it.
+ */
+const SHEET_INSET_PROPERTY = "--canvas-drawing-sheet-inset";
+
+/**
+ * Shows the properties panel of Excalidraw's phone layout as a sheet across the bottom of the
+ * note, above the formatting toolbar, while the drawing has the focus. The sheet and the pickers
+ * that it opens go into the top layer, so that no clip or stacking of the note covers them. The
+ * sheet has `data-properties-sheet`, and its position in `--properties-sheet-*`.
+ */
+export function usePropertiesSheet(rootRef: RefObject<HTMLElement | null>, isEnabled: boolean) {
+    useEffect(() => {
+        const root = rootRef.current;
+        const viewport = root?.closest<HTMLElement>(".scrolling-container, .popup-editor-scroll");
+        const embedBody = root?.closest<HTMLElement>(".include-note-body");
+        if (!root || !viewport || !embedBody || !isEnabled) return;
+
+        // The formatting toolbar of the mobile layout floats over the bottom of the note.
+        const toolbar = viewport.parentElement
+            ?.querySelector<HTMLElement>(":scope > .classic-toolbar-outer-container") ?? null;
+        let island: HTMLElement | null = null;
+        let hasInset = false;
+
+        const resizeObserver = new ResizeObserver(() => update());
+        const update = () => {
+            const current = root.querySelector<HTMLElement>(BOTTOM_ISLAND_SELECTOR);
+            if (current !== island) {
+                if (island) {
+                    resizeObserver.unobserve(island);
+                    placeSheet(island, null);
+                }
+                if (current) {
+                    resizeObserver.observe(current);
+                }
+                island = current;
+            }
+
+            // `ContentEmbed` marks the body active while the drawing has the focus.
+            const isShown = !!island?.querySelector(`:scope > .${PROPERTIES_PANEL_CLASS}`)
+                && embedBody.classList.contains("active")
+                && !document.fullscreenElement?.contains(root);
+            const position = isShown ? getSheetPosition(root, viewport, toolbar) : null;
+            if (island) {
+                placeSheet(island, position);
+            }
+            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+                setTopLayer(picker, !!position);
+            }
+
+            if (island && position) {
+                const inset = getWindowArea().bottom - island.getBoundingClientRect().top;
+                document.body.style.setProperty(SHEET_INSET_PROPERTY, `${inset}px`);
+                hasInset = true;
+            } else if (hasInset) {
+                document.body.style.removeProperty(SHEET_INSET_PROPERTY);
+                hasInset = false;
+            }
+        };
+
+        resizeObserver.observe(root);
+        resizeObserver.observe(viewport);
+        const attributeObserver = new MutationObserver(update);
+        attributeObserver.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        if (toolbar) {
+            attributeObserver.observe(toolbar, { attributes: true, attributeFilter: [ "class" ] });
+        }
+        // The panel mounts when it opens, and the pickers when one of its buttons opens them.
+        const mutationObserver = new MutationObserver(update);
+        mutationObserver.observe(root, { childList: true, subtree: true });
+        viewport.addEventListener("scroll", update, { passive: true });
+        document.addEventListener("fullscreenchange", update);
+        update();
+
+        return () => {
+            resizeObserver.disconnect();
+            attributeObserver.disconnect();
+            mutationObserver.disconnect();
+            viewport.removeEventListener("scroll", update);
+            document.removeEventListener("fullscreenchange", update);
+            if (island) {
+                placeSheet(island, null);
+            }
+            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+                setTopLayer(picker, false);
+            }
+            if (hasInset) {
+                document.body.style.removeProperty(SHEET_INSET_PROPERTY);
+            }
+        };
+    }, [ rootRef, isEnabled ]);
+}
+
+/**
+ * The position of the properties sheet: across the visible note, inside the gap of the formatting
+ * toolbar, and above the toolbar while it shows. `null` while the drawing is scrolled out of the
+ * note.
+ */
+function getSheetPosition(root: HTMLElement, viewport: HTMLElement, toolbar: HTMLElement | null) {
+    const area = getVisibleArea(viewport);
+    const drawing = root.getBoundingClientRect();
+    if (drawing.bottom <= area.top || drawing.top >= area.bottom) {
+        return null;
+    }
+
+    const gap = getToolbarGap();
+    const toolbarTop = toolbar?.classList.contains("active")
+        ? toolbar.querySelector(".classic-toolbar-island")?.getBoundingClientRect().top
+        : undefined;
+    const bottom = Math.min(area.bottom, toolbarTop ?? area.bottom) - gap;
+    return {
+        left: area.left + gap,
+        width: area.right - area.left - 2 * gap,
+        bottom: getWindowArea().bottom - bottom,
+        maxHeight: (bottom - area.top) * SHEET_MAX_HEIGHT_SHARE
+    };
+}
+
+/** The gap around the formatting toolbar of the mobile layout, from `mobile_editor_toolbar.css`. */
+function getToolbarGap() {
+    const style = getComputedStyle(document.body);
+    const gap = parseFloat(style.getPropertyValue("--mobile-toolbar-gap"));
+    if (!Number.isNaN(gap)) {
+        return gap;
+    }
+    return WINDOW_GAP_REM * parseFloat(getComputedStyle(document.documentElement).fontSize);
+}
+
+type SheetPosition = NonNullable<ReturnType<typeof getSheetPosition>>;
+
+/** Moves `island` to `position` at the bottom of the note, or back into the drawing for `null`. */
+function placeSheet(island: HTMLElement, position: SheetPosition | null) {
+    island.toggleAttribute("data-properties-sheet", !!position);
+    if (position) {
+        island.style.setProperty("--properties-sheet-left", `${position.left}px`);
+        island.style.setProperty("--properties-sheet-width", `${position.width}px`);
+        island.style.setProperty("--properties-sheet-bottom", `${position.bottom}px`);
+        island.style.setProperty("--properties-sheet-max-height", `${position.maxHeight}px`);
+    }
+    setTopLayer(island, !!position);
 }
 
 /** The inline styles with which Excalidraw fits its context menu in the drawing. */

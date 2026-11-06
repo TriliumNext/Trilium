@@ -32,7 +32,7 @@ import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
-import { RAIL_EXIT_MS } from "./card_toolbar";
+import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { DEFAULT_COLUMN_ICON } from "./columns";
 import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
 

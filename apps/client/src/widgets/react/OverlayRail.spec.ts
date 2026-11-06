@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { RailStand } from "./card_toolbar";
+import { RailStand } from "./OverlayRail";
 
 describe("RailStand", () => {
-    /**
-     * One rail at a time, the latest to claim: the one it takes over from is hidden meanwhile and
-     * stands again once the newcomer has gone, so two rails wanted at once never overlap.
-     */
-    it("shows the latest claimant and hands the stand back when it goes", () => {
+    it("shows the latest claimant and shows the previous one again when it goes", () => {
         const stand = new RailStand();
         const first = {};
         const second = {};

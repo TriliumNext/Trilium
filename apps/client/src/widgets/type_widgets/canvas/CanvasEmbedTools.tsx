@@ -117,7 +117,7 @@ export const ZOOMS: Record<string, (zoom: number) => number> = {
 type Tool = typeof TOOLS[number];
 type HistoryAction = typeof HISTORY_ACTIONS[number];
 /** Excalidraw's `t()`, for a key such as `toolBar.rectangle`. */
-type Translate = (key: string) => string;
+export type Translate = (key: string) => string;
 
 /** Boxicons' square turned by 45°, and scaled down to stay inside the box of the icon. */
 const diamondIcon = squareIcon.replace(
