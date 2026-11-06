@@ -107,6 +107,33 @@ export class RemoveTabCommand extends Command {
 }
 
 /**
+ * Deletes the tabs block that holds the selection, the innermost one when blocks are nested. The
+ * block is replaced by an empty paragraph holding the caret, as when a selected block is deleted
+ * with the Delete key.
+ */
+export class DeleteTabsCommand extends Command {
+
+    public override refresh(): void {
+        this.isEnabled = !!getSelectedTabs(this.editor);
+    }
+
+    public override execute(): void {
+        const tabs = getSelectedTabs(this.editor);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
+        if (!tabs) {
+            return;
+        }
+
+        const model = this.editor.model;
+        model.change(writer => {
+            const selection = writer.createSelection(tabs, "on");
+            model.deleteContent(selection);
+            writer.setSelection(selection);
+        });
+    }
+}
+
+/**
  * Moves the blocks of the current tab's panel that the selection touches to the panel of another
  * tab, which then shows. Content moved toward the first tab goes to the end of the target panel,
  * and content moved toward the last tab goes to its start, so it keeps its place in the reading
