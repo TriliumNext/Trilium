@@ -81,7 +81,11 @@ describe("the layout orientation", () => {
         expect(host.querySelector(".orientation-illustration")).toBeNull();
     });
 
-    it("comes with the edited notes setting", () => {
+    it("comes with the edited notes setting, on a phone too", () => {
+        open();
+        expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
+
+        mocks.mobile = true;
         open();
         expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
     });
