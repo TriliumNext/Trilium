@@ -72,7 +72,7 @@
     "display_plain": "文本",
     "display_inline": "图标与文字",
     "display_card": "卡片",
-    "display_embed": "YouTube 嵌入",
+    "display_embed": "嵌入",
     "page_title": "网页标题",
     "title_from_url": "与 URL 相同",
     "title_from_note": "若未设置，将始终跟随笔记标题",
@@ -85,7 +85,8 @@
     "title_from_heading": "若未设置，将始终跟随标题的文本",
     "invalid_url": "这不是有效的 URL。",
     "script_link_not_allowed": "以 {{scheme}} 开头的链接可以执行代码，因此不允许使用。",
-    "retrieving_from_page": "正在从网页获取…"
+    "retrieving_from_page": "正在从网页获取…",
+    "title_from_attachment": "若未设置，将始终跟随附件的标题"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -2314,7 +2315,8 @@
     "open_externally": "在外部打开",
     "copy_url": "复制地址（URL）",
     "display_as": "显示为",
-    "delete": "删除"
+    "delete": "删除",
+    "edit": "编辑…"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -3145,6 +3147,28 @@
       "navigation": "导航",
       "previous": "上一个",
       "next": "下一个"
+    },
+    "external-unavailable": "无法播放此媒体。它的地址可能无法访问，或格式不受支持。",
+    "http-error": "HTTP {{status}}: <bold>{{name}}</bold>",
+    "http-status-names": {
+      "400": "错误请求",
+      "401": "未授权",
+      "403": "禁止访问",
+      "404": "未找到",
+      "405": "方法不允许",
+      "406": "不可接受",
+      "408": "请求超时",
+      "410": "已永久移除",
+      "416": "范围无法满足",
+      "429": "请求过多",
+      "451": "因法律原因不可用",
+      "500": "内部服务器错误",
+      "501": "未实现",
+      "502": "错误网关",
+      "503": "服务不可用",
+      "504": "网关超时",
+      "client-error": "客户端错误",
+      "server-error": "服务器错误"
     }
   },
   "mermaid": {
@@ -4042,7 +4066,10 @@
       "link-to-a-web-page-as-a-card": "链接到网页（卡片）",
       "link-to-a-web-page-with-icon": "链接到网页（带图标）",
       "open-link": "打开链接",
-      "display-as": "显示为"
+      "display-as": "显示为",
+      "caption-for-the-audio": "音频的题注",
+      "audio-video-embed": "音频/视频嵌入",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "嵌入 YouTube 视频，或通过地址嵌入音频或视频文件"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4262,7 +4289,8 @@
     "esc_hint": "关闭"
   },
   "link_embed": {
-    "play_video": "播放视频"
+    "play_video": "播放视频",
+    "play_audio": "播放音频"
   },
   "wizard": {
     "back": "返回",
@@ -4953,9 +4981,9 @@
     "descending": "降序"
   },
   "youtube_video": {
-    "title": "插入 YouTube 视频",
-    "button_insert": "插入视频",
-    "not_a_video": "这不是 YouTube 视频的地址。",
-    "insert_failed": "视频无法加载。请检查地址和网络连接，然后重试。"
+    "title": "插入媒体",
+    "button_insert": "插入媒体",
+    "not_a_video": "这不是网页地址。",
+    "insert_failed": "无法嵌入此媒体。请检查地址是否为 YouTube 视频、音频或视频文件，并检查网络连接，然后重试。"
   }
 }
