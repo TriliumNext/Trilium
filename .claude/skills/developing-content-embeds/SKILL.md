@@ -321,6 +321,10 @@ embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the so
     `useContentEmbedMenus()`.
   - `getMenuItems()` — items of the ⋮ menu after Editable, in a group of their own
     (`useContentEmbedMenus(rootRef, menus, menuItems)` passes them through).
+  - `toolbarTitle` — the name that the mobile formatting toolbar gives the embed's tools, on its
+    `Name ›` button and at the start of their row (`ContextToolbar`, which reads it from
+    `selectedEmbedTools` on every `ui#update`). _Embed_ when left out; `CanvasTools` sets
+    _Canvas_.
 - **A CodeMirror pane in an embed** (code, Markdown, Mermaid) takes its line wrapping and line
   numbers from `useEmbedLines(rootRef, note)` (`code/CodeEmbed.tsx`): pass `wrapLines` /
   `hasLineNumbers` to `EmbedSourcePane` or `CodeEmbedEditor`, and `menuItems` (the _Word wrap_

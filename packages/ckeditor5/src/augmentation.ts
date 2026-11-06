@@ -62,6 +62,11 @@ declare global {
         openMenu?(id: string, anchor: HTMLElement): void;
         /** Calls `callback` when `getTools()` changes, until the returned function is called. */
         subscribe(callback: () => void): () => void;
+        /**
+         * The name of the content, such as _Canvas_, that the formatting toolbar of the mobile
+         * layout shows ahead of the tools of the embed. _Embed_ when left out.
+         */
+        toolbarTitle?: string;
         /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
         hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
         /**

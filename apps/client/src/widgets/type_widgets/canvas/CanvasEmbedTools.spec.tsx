@@ -91,6 +91,7 @@ describe("CanvasEmbedTools", () => {
             "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
         ]);
         expect([ provider.hasEditableFlag, provider.hasPositions ]).toEqual([ true, true ]);
+        expect(provider.toolbarTitle).toBe("note_types.canvas");
         const tools = provider.getTools();
         const count = MAIN_TOOL_IDS.length;
         expect(tools[0]).toEqual({

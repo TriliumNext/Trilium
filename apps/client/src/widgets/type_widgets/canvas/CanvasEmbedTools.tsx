@@ -191,6 +191,7 @@ export function useExcalidrawTranslation() {
  * Excalidraw, as while the drawing shows as a picture, only fullscreen.
  */
 export class CanvasTools implements ContentEmbedToolProvider {
+    readonly toolbarTitle = t("note_types.canvas");
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
         "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
     ];
