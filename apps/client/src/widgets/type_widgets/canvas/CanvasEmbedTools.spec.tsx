@@ -125,12 +125,7 @@ describe("CanvasEmbedTools", () => {
                     keystroke: "Ctrl+Shift+E",
                     group: "export"
                 },
-                {
-                    id: "searchMenu",
-                    label: "t:search.title",
-                    keystroke: "Ctrl+F",
-                    group: "canvas"
-                },
+                { id: "searchMenu", label: "t:search.title", group: "canvas" },
                 { id: "library", label: "t:toolBar.library", group: "canvas" },
                 { id: "help", label: "t:helpDialog.title", keystroke: "?", group: "canvas" }
             ]

@@ -94,12 +94,23 @@ export function removeHighlights(name: HighlightName, ranges: Iterable<Range>) {
  * a code block taller than the view.
  */
 export function scrollRangeIntoView(range: Range) {
-    for (let element = range.startContainer.parentElement; element; element = element.parentElement) {
-        if (!isScrollable(element)) continue;
+    scrollRectIntoView(range.startContainer.parentElement, () => range.getBoundingClientRect());
+}
 
-        const target = range.getBoundingClientRect();
-        const box = element.getBoundingClientRect();
-        element.scrollBy({
+/**
+ * Scrolls `element` and its ancestors that scroll, innermost first, so that the rectangle that
+ * `getRect()` returns in client coordinates sits in the middle of each.
+ */
+export function scrollRectIntoView(
+    element: Element | null,
+    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">
+) {
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+        if (!isScrollable(ancestor)) continue;
+
+        const target = getRect();
+        const box = ancestor.getBoundingClientRect();
+        ancestor.scrollBy({
             left: target.left + target.width / 2 - (box.left + box.width / 2),
             top: target.top + target.height / 2 - (box.top + box.height / 2)
         });

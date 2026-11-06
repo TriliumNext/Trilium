@@ -14,11 +14,13 @@ const { MAX_ZOOM, MIN_ZOOM } = await import("./drawing_view");
 const { FITTED_MENU_STYLES } = await import("./CanvasDrawing");
 const { DRAWING_DARK_FILTER, IMAGE_DARK_FILTER } = await import("./persistence");
 const { HISTORY_ICON_PATHS, isInteracting } = await import("./drawing_history");
+const { MATCH_COLORS } = await import("./drawing_find");
 
 /** The classes of Trilium that `CanvasDrawing.css` selects. Every other class is Excalidraw's. */
 const TRILIUM_CLASSES = new Set([
     "note-detail", "canvas-drawing", "canvas-drawing-editor", "canvas-render",
-    "canvas-drawing-picture", "canvas-drawing-view", "theme-dark", "toolbar-over-panel",
+    "canvas-drawing-picture", "canvas-drawing-view", "canvas-drawing-find", "theme-dark",
+    "toolbar-over-panel",
     "recentering", "include-note",
     "include-note-body",
     "include-note-content", "active", "tn-icon"
@@ -125,7 +127,7 @@ describe("Excalidraw contract of the canvas drawing", () => {
         const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
         // Excalidraw's names of the shortcuts, which its own main menu shows.
         const names: Record<string, string> = {
-            exportImage: "imageExport", searchMenu: "searchMenu", help: "toggleShortcuts"
+            exportImage: "imageExport", help: "toggleShortcuts"
         };
 
         const missing = MENU_COMMANDS
@@ -134,6 +136,82 @@ describe("Excalidraw contract of the canvas drawing", () => {
                 `${names[id]}:[getShortcutKey("${keystroke?.replace("Ctrl", "CtrlOrCmd")}")]`)
             .filter((shortcut) => !source.includes(shortcut));
         expect(missing).toEqual([]);
+    });
+
+    it("measures matches with the `getMatchedLines()` that the Trilium patch exports", () => {
+        for (const dir of [ productionDir, developmentDir ]) {
+            const source = readFileSync(join(dir, "index.js"), "utf8");
+            const exported = [ ...source.matchAll(/export ?\{([^}]*)\}/g) ]
+                .map((match) => match[1]).join(",");
+            const name = exported.match(/([\w$]+) as getMatchedLines\b/)?.[1]
+                ?? (/\bgetMatchedLines\b/.test(exported) ? "getMatchedLines" : null);
+            expect(name, dir).not.toBeNull();
+
+            // `handleSearch()` measures each match with it.
+            const call = new RegExp(String.raw`[=(]\s*${name?.replaceAll("$", "\\$")}\(\s*[\w$]+,`
+                + String.raw`\s*[\w$]+,\s*[\w$]+\.index\)`);
+            expect(call.test(source), dir).toBe(true);
+        }
+    });
+
+    it("draws the matches of its search as `DrawingMatches` draws them over the picture", () => {
+        const compact = (text: string) => text.replace(/\s+/g, "");
+        const { light, dark } = MATCH_COLORS;
+
+        expect(compact(readBundle(developmentDir, [ ".js" ]))).toContain(compact(`
+            appState.searchMatches.forEach(({ id, focus, matchedLines }) => {
+                const element = elementsMap.get(id);
+                if (element && isTextElement(element)) {
+                    const [elementX1, elementY1, , , cx, cy] = getElementAbsoluteCoords(
+                        element, elementsMap, true);
+                    context.save();
+                    if (appState.theme === THEME.LIGHT) {
+                        if (focus) {
+                            context.fillStyle = "${light.current}";
+                        } else {
+                            context.fillStyle = "${light.other}";
+                        }
+                    } else if (focus) {
+                        context.fillStyle = "${dark.current}";
+                    } else {
+                        context.fillStyle = "${dark.other}";
+                    }
+                    context.translate(appState.scrollX, appState.scrollY);
+                    context.translate(cx, cy);
+                    context.rotate(element.angle);
+                    matchedLines.forEach((matchedLine) => {
+                        context.fillRect(
+                            elementX1 + matchedLine.offsetX - cx,
+                            elementY1 + matchedLine.offsetY - cy,
+                            matchedLine.width,
+                            matchedLine.height
+                        );
+                    });`));
+
+        // The dark theme filters the canvas of the matches, as `CanvasDrawing.css` the picture's.
+        const styles = compact(readBundle(productionDir, [ ".css" ]));
+        expect(styles).toContain(".excalidraw.theme--darkcanvas{filter:var(--theme-filter)}");
+        expect(styles).toContain(
+            `.excalidraw.theme--dark{--theme-filter:${compact(DRAWING_DARK_FILTER)};`);
+        const ownStyles = compact(readFileSync(join(__dirname, "CanvasDrawing.css"), "utf8")
+            .replace(/\/\*[\s\S]*?\*\//g, ""));
+        const findStyles = ownStyles.slice(ownStyles.lastIndexOf(".canvas-drawing-find{"))
+            .split("}}")[0];
+        expect(findStyles).toContain(`&.theme-dark{filter:${compact(DRAWING_DARK_FILTER)};`);
+    });
+
+    it("lets Ctrl+F reach the note once the drawing replaces the `searchMenu` action", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const action = source.split("varactionToggleSearchMenu=register({")[1]
+            ?.split("});")[0] ?? "";
+
+        // The only action on Ctrl+F, which `attachExcalidraw()` registers again by its name.
+        expect(action).toContain("name:\"searchMenu\",");
+        expect(action).toContain("keyTest:(event)=>event[KEYS.CTRL_OR_CMD]&&event.key===KEYS.F");
+        expect(source.split("event.key===KEYS.F}").length - 1).toBe(1);
+        // A key runs the registered action whose `keyTest` takes it.
+        expect(source).toContain("constdata=Object.values(this.actions).sort(");
+        expect(source).toContain("action2.keyTest&&action2.keyTest(");
     });
 
     it("fits the context menu in its container with the styles that the top layer replaces", () => {

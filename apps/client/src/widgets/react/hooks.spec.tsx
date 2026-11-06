@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type TabManager from "../../components/tab_manager";
+import keyboard_actions from "../../services/keyboard_actions";
 import { buildNote } from "../../test/easy-froca";
 import { highlightedTexts } from "../../test/highlights";
 import { setupHoldContextMenu } from "../widget_utils";
@@ -17,6 +18,7 @@ import {
     useDelayedVisibility,
     useDetachedNoteContext,
     useDocumentFocus,
+    useFindShortcut,
     useFocusWithin,
     useHoldContextMenu,
     useImperativeSearchHighlighlighting,
@@ -1045,5 +1047,41 @@ describe.each<{ name: string, mount: HoldMount }>([
         expect(handler).toHaveBeenCalledWith(event);
         vi.runAllTimers();
         expect(handler).toHaveBeenCalledOnce();
+    });
+});
+
+describe("useFindShortcut", () => {
+    it("searches the note context around the container on Ctrl+F, else the one given", async () => {
+        vi.spyOn(keyboard_actions, "getAction")
+            .mockResolvedValue({ effectiveShortcuts: [ "Ctrl+F" ] } as never);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockResolvedValue(undefined as never);
+        function Consumer({ ntxId }: { ntxId?: string }) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref, ntxId);
+            return <div ref={ref}><span className="inside" /></div>;
+        }
+        const split = document.body.appendChild(document.createElement("div"));
+        split.setAttribute("data-ntx-id", "split");
+        const press = () => split.querySelector(".inside")?.dispatchEvent(new KeyboardEvent(
+            "keydown", { key: "f", code: "KeyF", ctrlKey: true, bubbles: true, cancelable: true }));
+
+        try {
+            await act(async () => { render(<Consumer />, split); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "split" });
+            });
+
+            await act(async () => { render(<Consumer ntxId="popup" />, split); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "popup" });
+            });
+        } finally {
+            render(null, split);
+            split.remove();
+            vi.restoreAllMocks();
+        }
     });
 });

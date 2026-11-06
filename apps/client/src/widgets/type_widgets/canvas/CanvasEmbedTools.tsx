@@ -83,7 +83,6 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
     {
         id: "searchMenu",
         label: "search.title",
-        keystroke: "Ctrl+F",
         group: "canvas",
         run: (api) => api.toggleSidebar({ name: DEFAULT_SIDEBAR, tab: SEARCH_TAB, force: true })
     },

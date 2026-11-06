@@ -13,7 +13,7 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import { getContentEmbedTools } from "../text/content_embed_tools";
+import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 
 interface Box {
     x: number;
@@ -23,13 +23,20 @@ interface Box {
 }
 
 vi.mock("@excalidraw/excalidraw", () => ({
+    CaptureUpdateAction: { NEVER: "never", EVENTUALLY: "eventually" },
     exportToSvg: vi.fn(),
     getCommonBounds: (elements: Box[]) => [
         Math.min(...elements.map(({ x }) => x)),
         Math.min(...elements.map(({ y }) => y)),
         Math.max(...elements.map(({ x, width }) => x + width)),
         Math.max(...elements.map(({ y, height }) => y + height))
-    ]
+    ],
+    // One line, 10 pixels for each character, from the index of the match.
+    getMatchedLines: (_element: unknown, query: string, index: number) => [
+        { offsetX: index * 10, offsetY: 0, width: query.length * 10, height: 20 }
+    ],
+    getSceneVersion: (elements: readonly { version?: number }[]) =>
+        elements.reduce((sum, { version }) => sum + (version ?? 0), 0)
 }));
 // happy-dom lays nothing out: every picture of a drawing has a box of 400 × 200.
 vi.mock("../../react/hooks", async (importOriginal) => ({
@@ -105,6 +112,7 @@ const {
 } = await import("./CanvasDrawing");
 const { default: CanvasDrawingMenu } = await import("./CanvasDrawingMenu");
 const { default: CanvasEmbedTools, NO_TOOL } = await import("./CanvasEmbedTools");
+const { MATCH_COLORS } = await import("./drawing_find");
 const { getBoundedView } = await import("./drawing_view");
 
 /** Horizontal edges by class name; happy-dom computes no layout. */
@@ -876,6 +884,48 @@ describe("CanvasDrawing", () => {
         // The center of the shapes, (150, 80), in the middle of the 400 × 200 box at zoom 2.
         expect([ getSvg()?.style.left, getSvg()?.style.top ]).toEqual([ "0px", "0px" ]);
         vi.restoreAllMocks();
+    });
+
+    it("finds its text, moving the picture to a match out of view and back", async () => {
+        const embed = document.createElement("figure");
+        embed.className = "include-note";
+        embed.append(box);
+        document.body.append(embed);
+        sceneContent = JSON.stringify({
+            elements: [ {
+                id: "text", type: "text", x: 50, y: 500, width: 200, height: 100, angle: 0,
+                version: 1, originalText: "Find me", text: "Find me"
+            } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }
+        });
+        await mount(null);
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        await vi.waitFor(() => expect(getSvg()?.style.top).toBe("500px"));
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ left: 0, top: 0, width: 400, height: 200 } as DOMRect);
+
+        const target = getEmbedFindTarget(embed);
+        expect(target).not.toBeNull();
+        let count = 0;
+        await act(async () => {
+            count = await target?.find("me", { matchCase: false, wholeWord: false }) ?? 0;
+        });
+        expect(count).toBe(1);
+
+        // The match at y = 500 moves to the middle of the 200 pixels of the box.
+        await act(async () => target?.highlight(0));
+        expect(getSvg()?.style.top).toBe("90px");
+        const layer = box.querySelector(".canvas-drawing-find > g");
+        expect(layer?.getAttribute("transform")).toBe("scale(1) translate(0 -410)");
+        const match = layer?.querySelector("rect");
+        expect([ match?.getAttribute("x"), match?.getAttribute("y") ]).toEqual([ "100", "500" ]);
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.current);
+
+        await act(async () => target?.highlight(null));
+        expect(getSvg()?.style.top).toBe("500px");
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.other);
+        vi.restoreAllMocks();
+        embed.remove();
     });
 
     it("renders the picture again when the drawing saves, and not for other saves", async () => {

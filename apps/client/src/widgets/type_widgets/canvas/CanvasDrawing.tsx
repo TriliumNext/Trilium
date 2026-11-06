@@ -15,14 +15,18 @@ import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
 import { isDesktop, isMobile } from "../../../services/utils";
 import {
-    useColorScheme, useEffectiveReadOnly, useElementSize, useTriliumEvent, useWhenShown
+    useColorScheme, useEffectiveReadOnly, useElementSize, useFindShortcut, useTriliumEvent,
+    useWhenShown
 } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
-import { useContentEmbedEvent } from "../text/content_embed_tools";
+import { registerEmbedFindTarget, useContentEmbedEvent } from "../text/content_embed_tools";
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
 import CanvasEmbedTools, { CanvasTools, isNoTool, NO_TOOL } from "./CanvasEmbedTools";
+import {
+    attachExcalidraw, DrawingFindTarget, type DrawingMatch, DrawingMatches, getSceneTransform
+} from "./drawing_find";
 import { type DrawingView, getBoundedView, getCenteredView, getFittedView } from "./drawing_view";
 import {
     exportDrawingPicture, loadDrawingFiles, parseContent, useCanvasDrawingPersistence
@@ -49,6 +53,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const viewRef = useRef<DrawingView | null>(null);
     const colorScheme = useColorScheme();
     const [ tools ] = useState(() => new CanvasTools(rootRef));
+    const [ find ] = useState(() => new DrawingFindTarget(rootRef));
     const { isEditing } = useEditableEmbed(rootRef, {
         editor,
         note: null,
@@ -63,6 +68,11 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     useSidePanels(rootRef, isEditing);
     useTopLayerContextMenu(rootRef, apiRef);
     useNoteScrollingWheel(rootRef);
+    useFindShortcut(rootRef);
+    useEffect(() => {
+        const root = rootRef.current;
+        return root ? registerEmbedFindTarget(root, find) : undefined;
+    }, [ find ]);
 
     return (
         <div
@@ -80,6 +90,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
                     colorScheme={colorScheme}
                     rootRef={rootRef}
                     viewRef={viewRef}
+                    find={find}
                     onDrawn={() => setDrawnMode("picture")}
                 />
             )}
@@ -92,6 +103,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
                     apiRef={apiRef}
                     viewRef={viewRef}
                     tools={tools}
+                    find={find}
                     isEditable={isEditing}
                     onDrawn={() => setDrawnMode("editor")}
                 />
@@ -109,6 +121,8 @@ interface LiveDrawingProps {
     apiRef: RefObject<ExcalidrawImperativeAPI | null>;
     viewRef: RefObject<DrawingView | null>;
     tools: CanvasTools;
+    /** Searches the drawing for "Search in note". */
+    find: DrawingFindTarget;
     isEditable: boolean;
     /** Called on the frame after Excalidraw shows the drawing. */
     onDrawn: () => void;
@@ -119,10 +133,11 @@ interface LiveDrawingProps {
  * Its persistence saves what is left to save before Excalidraw unmounts.
  */
 function LiveDrawing({
-    attachment, editor, colorScheme, rootRef, apiRef, viewRef, tools, isEditable, onDrawn
+    attachment, editor, colorScheme, rootRef, apiRef, viewRef, tools, find, isEditable, onDrawn
 }: LiveDrawingProps) {
     const isShownRef = useRef(false);
     const frameRef = useRef(0);
+    const stopFindingRef = useRef<(() => void) | null>(null);
     const persistence = useCanvasDrawingPersistence(attachment, editor, apiRef, colorScheme, {
         initialView: viewRef.current,
         // A touch over the drawing scrolls the note until a tool is picked.
@@ -131,11 +146,17 @@ function LiveDrawing({
         onSceneShown: () => {
             isShownRef.current = true;
             frameRef.current = requestAnimationFrame(onDrawn);
+            const api = apiRef.current;
+            if (api) {
+                stopFindingRef.current?.();
+                stopFindingRef.current = attachExcalidraw(find, api, rootRef.current);
+            }
         }
     });
     useNoToolOutsideEditing(rootRef, apiRef, isEditable);
     useLayoutEffect(() => () => {
         cancelAnimationFrame(frameRef.current);
+        stopFindingRef.current?.();
         rootRef.current?.removeAttribute("data-no-tool");
         apiRef.current = null;
     }, [ apiRef, rootRef ]);
@@ -179,6 +200,8 @@ interface DrawingPictureProps {
     colorScheme: AppState["theme"];
     rootRef: RefObject<HTMLElement | null>;
     viewRef: RefObject<DrawingView | null>;
+    /** Searches the drawing for "Search in note". */
+    find: DrawingFindTarget;
     /** Called on the frame after the picture shows. */
     onDrawn: () => void;
 }
@@ -189,12 +212,16 @@ interface DrawingPictureProps {
  * fullscreen changes its size, as Excalidraw does.
  */
 function DrawingPicture({
-    attachment, editor, colorScheme, rootRef, viewRef, onDrawn
+    attachment, editor, colorScheme, rootRef, viewRef, find, onDrawn
 }: DrawingPictureProps) {
     const layerRef = useRef<HTMLDivElement>(null);
+    const matchesRef = useRef<SVGGElement>(null);
     const [ scene, setScene ] = useState<PictureScene | null>(null);
+    const sceneRef = useRef<PictureScene | null>(null);
+    const [ shownMatches, setShownMatches ] = useState<ShownMatches>(NO_MATCHES);
     const [ revision, setRevision ] = useState(0);
-    const [ recenterings, setRecenterings ] = useState(0);
+    // Each move of the view places the picture again.
+    const [ placements, setPlacements ] = useState(0);
     const renderedKeyRef = useRef<string | null>(null);
     const size = useElementSize(layerRef);
     const whenShown = useWhenShown(rootRef);
@@ -233,10 +260,25 @@ function DrawingPicture({
         if (!scene || !box || !view) return;
 
         viewRef.current = getCenteredView(scene.elements, view, box.width, box.height) ?? view;
-        setRecenterings((count) => count + 1);
+        setPlacements((count) => count + 1);
     };
     useContentEmbedEvent(rootRef, "enterFullscreen", recenter);
     useContentEmbedEvent(rootRef, "leaveFullscreen", recenter);
+
+    useLayoutEffect(() => find.attach({
+        getElements: () => sceneRef.current?.elements ?? [],
+        getView: () => viewRef.current,
+        setView: (view) => {
+            viewRef.current = view;
+            setPlacements((count) => count + 1);
+        },
+        showMatches: (matches, current) => setShownMatches({ matches, current })
+    }), [ find, viewRef ]);
+
+    useEffect(() => {
+        sceneRef.current = scene;
+        find.update();
+    }, [ find, scene ]);
 
     useLayoutEffect(() => {
         const layer = layerRef.current;
@@ -247,19 +289,30 @@ function DrawingPicture({
         if (scene.picture && view) {
             placePicture(scene.picture, view);
         }
+        if (view) {
+            matchesRef.current?.setAttribute("transform", getSceneTransform(view));
+        }
         layer.replaceChildren(...(scene.picture ? [ scene.picture.svg ] : []));
         const frame = requestAnimationFrame(onDrawn);
         return () => cancelAnimationFrame(frame);
-    }, [ scene, size, recenterings ]);
+    }, [ scene, size, placements ]);
 
     return (
-        <div
-            ref={layerRef}
-            className={clsx("canvas-drawing-view", colorScheme === "dark" && "theme-dark")}
-            style={scene?.background
-                ? { "--canvas-drawing-view-background": scene.background }
-                : undefined}
-        />
+        <>
+            <div
+                ref={layerRef}
+                className={clsx("canvas-drawing-view", colorScheme === "dark" && "theme-dark")}
+                style={scene?.background
+                    ? { "--canvas-drawing-view-background": scene.background }
+                    : undefined}
+            />
+            <DrawingMatches
+                matches={shownMatches.matches}
+                current={shownMatches.current}
+                theme={colorScheme}
+                layerRef={matchesRef}
+            />
+        </>
     );
 }
 
@@ -271,6 +324,14 @@ interface ScenePicture {
     width: number;
     height: number;
 }
+
+/** The matches of "Search in note" that the picture shows, and the index of the current one. */
+interface ShownMatches {
+    matches: DrawingMatch[];
+    current: number | null;
+}
+
+const NO_MATCHES: ShownMatches = { matches: [], current: null };
 
 interface PictureScene {
     /** The picture of the content, or `null` for an empty drawing. */
