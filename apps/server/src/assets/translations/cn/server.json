@@ -239,7 +239,8 @@
     "broken-block-reference": "引用已损坏",
     "play-video": "播放视频",
     "content-not-available": "此内容不可用。",
-    "untitled-block": "块"
+    "untitled-block": "块",
+    "play-audio": "播放音频"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
