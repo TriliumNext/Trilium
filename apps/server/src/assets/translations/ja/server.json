@@ -338,7 +338,8 @@
     "broken-block-reference": "参照が壊れています",
     "play-video": "動画を再生",
     "content-not-available": "このコンテンツは利用できません。",
-    "untitled-block": "ブロック"
+    "untitled-block": "ブロック",
+    "play-audio": "音声を再生"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
