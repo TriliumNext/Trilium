@@ -11,7 +11,11 @@ const findResultsMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../../services/notes.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../services/notes.js")>();
-    return { ...actual, default: { createNewNote: vi.fn(), asyncPostProcessContent: vi.fn() } };
+    return {
+        ...actual,
+        default: { createNewNote: vi.fn() },
+        saveLinks: vi.fn((_note: unknown, content: string | Uint8Array) => ({ forceFrontendReload: false, content }))
+    };
 });
 
 vi.mock("../../../services/search/services/search.js", async (importOriginal) => {
