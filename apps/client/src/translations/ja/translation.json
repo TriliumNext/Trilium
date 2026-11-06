@@ -72,7 +72,7 @@
     "display_plain": "テキスト",
     "display_inline": "アイコンとテキスト",
     "display_card": "カード",
-    "display_embed": "YouTube 埋め込み",
+    "display_embed": "埋め込み",
     "page_title": "web ページのタイトル",
     "title_from_url": "URL と同じ",
     "description": "説明",
@@ -85,7 +85,8 @@
     "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます",
     "invalid_url": "有効な URL ではありません。",
     "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
-    "retrieving_from_page": "web ページから取得中..."
+    "retrieving_from_page": "web ページから取得中...",
+    "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます"
   },
   "branch_prefix": {
     "save": "保存",
@@ -1729,7 +1730,8 @@
     "open_externally": "外部で開く",
     "delete": "削除",
     "copy_url": "アドレス（URL）をコピー",
-    "display_as": "表示形式"
+    "display_as": "表示形式",
+    "edit": "編集..."
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -3129,6 +3131,28 @@
       "navigation": "ナビゲーション",
       "previous": "前へ",
       "next": "次へ"
+    },
+    "external-unavailable": "このメディアは再生できませんでした。アドレスにアクセスできないか、サポートされていない形式である可能性があります。",
+    "http-error": "HTTP {{status}}: <bold>{{name}}</bold>",
+    "http-status-names": {
+      "400": "不正なリクエスト",
+      "401": "認証されていません",
+      "403": "アクセスが拒否されました",
+      "404": "見つかりません",
+      "405": "許可されていないメソッド",
+      "406": "受け入れられません",
+      "408": "リクエストがタイムアウトしました",
+      "410": "削除されました",
+      "416": "範囲指定が不適切です",
+      "429": "リクエストが多すぎます",
+      "451": "法的理由により利用できません",
+      "500": "内部サーバーエラー",
+      "501": "未実装",
+      "502": "不正なゲートウェイ",
+      "503": "サービス利用不可",
+      "504": "ゲートウェイタイムアウト",
+      "client-error": "クライアントエラー",
+      "server-error": "サーバーエラー"
     }
   },
   "mermaid": {
@@ -4026,7 +4050,10 @@
       "link-to-a-web-page-as-a-card": "web ページへのリンク（カード形式）",
       "link-to-a-web-page-with-icon": "web ページへのリンク（アイコン付き）",
       "open-link": "リンクを開く",
-      "display-as": "表示形式"
+      "display-as": "表示形式",
+      "caption-for-the-audio": "音声のキャプション",
+      "audio-video-embed": "音声 / 動画の埋め込み",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "YouTube 動画、または音声・動画ファイルをそのアドレスから埋め込む"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4246,7 +4273,8 @@
     "esc_hint": "閉じる"
   },
   "link_embed": {
-    "play_video": "動画を再生"
+    "play_video": "動画を再生",
+    "play_audio": "音声を再生"
   },
   "wizard": {
     "back": "戻る",
@@ -4953,9 +4981,9 @@
     "descending": "降順"
   },
   "youtube_video": {
-    "title": "YouTube 動画を挿入",
-    "button_insert": "動画を挿入",
-    "not_a_video": "これは YouTube 動画のアドレスではありません。",
-    "insert_failed": "動画を読み込めませんでした。アドレスと接続状況を確認してから、もう一度お試しください。"
+    "title": "メディアを挿入",
+    "button_insert": "メディアを挿入",
+    "not_a_video": "これは web アドレスではありません。",
+    "insert_failed": "メディアを埋め込めませんでした。指定したアドレスが YouTube 動画、または音声・動画ファイルのものであるか確認し、接続状況を確かめた上で、再度お試しください。"
   }
 }
