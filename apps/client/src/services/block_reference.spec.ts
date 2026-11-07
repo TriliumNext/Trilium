@@ -14,7 +14,7 @@ import type { ViewScope } from "./link.js";
 
 const {
     showError, showMessage, showMenu, copyHtmlWithToast, copyTextWithToast, getTextEditorContaining,
-    getNote, getNoteShareLink, buildSortSelectionMenuItem, attachments
+    getNote, getNoteShareLink, buildSortSelectionMenuItem, attachments, menuState
 } = vi.hoisted(() => ({
     buildSortSelectionMenuItem: vi.fn(),
     getNoteShareLink: vi.fn(),
@@ -25,14 +25,22 @@ const {
     copyTextWithToast: vi.fn(),
     getTextEditorContaining: vi.fn(),
     getNote: vi.fn(),
-    attachments: {} as Record<string, { mime: string }>
+    attachments: {} as Record<string, { mime: string }>,
+    menuState: { dismissedByLastPress: false }
 }));
 vi.mock("./i18n.js", () => ({
     t: (key: string, options?: Record<string, unknown>) =>
         options ? `${key}:${Object.values(options).join(",")}` : key
 }));
 vi.mock("./toast.js", () => ({ default: { showError, showMessage } }));
-vi.mock("../menus/context_menu.js", () => ({ default: { show: showMenu } }));
+vi.mock("../menus/context_menu.js", () => ({
+    default: {
+        show: showMenu,
+        get dismissedByLastPress() {
+            return menuState.dismissedByLastPress;
+        }
+    }
+}));
 vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../menus/text_editor_context_menu.js")>(),
     buildSortSelectionMenuItem, getTextEditorContaining
@@ -50,6 +58,7 @@ const scrollBy = vi.fn();
 
 beforeEach(() => {
     vi.clearAllMocks();
+    menuState.dismissedByLastPress = false;
     vi.useFakeTimers();
     Element.prototype.scrollBy = scrollBy;
 });
@@ -301,6 +310,26 @@ describe("openBlockHandleMenu", () => {
                 { kind: "separator" }, deleteItem
             ]
         }));
+    });
+
+    it("opens below a clicked handle, unless the press closed the menu", () => {
+        const handle = document.createElement("button");
+        const rightClick = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
+        const blocks = [ buildBlock("paragraph") ];
+        const onClose = vi.fn();
+
+        openBlockHandleMenu(handle, blocks, { copyReference: vi.fn() }, null, onClose);
+        menuState.dismissedByLastPress = true;
+        openBlockHandleMenu(handle, blocks, { copyReference: vi.fn() }, null, onClose);
+        openBlockHandleMenu(rightClick, blocks, { copyReference: vi.fn() }, null, onClose);
+
+        const [ below, atPointer ] = showMenu.mock.calls.map(([ options ]) => options);
+        expect(showMenu).toHaveBeenCalledTimes(2);
+        expect(below).toMatchObject({ anchor: handle });
+        expect(below).not.toHaveProperty("x");
+        expect(atPointer).toMatchObject({ x: rightClick.pageX, y: rightClick.pageY });
+        expect(atPointer).not.toHaveProperty("anchor");
+        expect(onClose).toHaveBeenCalledOnce();
     });
 
     it("heads the menu with the type of a single block", () => {

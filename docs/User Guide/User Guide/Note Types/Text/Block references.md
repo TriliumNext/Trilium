@@ -4,7 +4,7 @@ Block references are [links](Links.md) to a block of a text note, such as a para
 ## Copying a reference
 
 1.  Place the cursor in the block to reference. To reference several consecutive blocks, select them.
-2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>), and select _Copy reference_. Alternatively, right-click the text and select _Copy reference to this block_ in the _Copy_ submenu, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
+2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>), and select _Copy reference_. With the fixed formatting toolbar, clicking the block handle opens the same menu. Alternatively, right-click the text and select _Copy reference to this block_ in the _Copy_ submenu, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
 3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy reference to this tab_ in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the tabs block instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.

@@ -436,7 +436,7 @@ describe("BlockReference", () => {
     });
 
     describe("block handle menu", () => {
-        it("asks the host to open the menu for the selected blocks", async () => {
+        it("asks the host to open the menu on a right click or a click", async () => {
             const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
             const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
                 blockReference: { openHandleMenu }
@@ -450,17 +450,21 @@ describe("BlockReference", () => {
             handle.dispatchEvent(leftDown);
             const contextMenu = new MouseEvent("contextmenu", { cancelable: true });
             handle.dispatchEvent(contextMenu);
+            handle.click();
 
             expect(rightDown.defaultPrevented).toBe(true);
             expect(leftDown.defaultPrevented).toBe(false);
             expect(contextMenu.defaultPrevented).toBe(true);
-            expect(openHandleMenu).toHaveBeenCalledWith(
+            expect(openHandleMenu).toHaveBeenNthCalledWith(1,
                 contextMenu, [ expect.anything(), expect.anything() ], expect.any(Function));
+            expect(openHandleMenu).toHaveBeenNthCalledWith(2,
+                handle, [ expect.anything(), expect.anything() ], expect.any(Function));
             expect(getBlockNames(openHandleMenu)).toEqual([ "paragraph", "paragraph" ]);
 
             editor.enableReadOnlyMode("spec");
             handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
-            expect(openHandleMenu).toHaveBeenCalledTimes(1);
+            handle.click();
+            expect(openHandleMenu).toHaveBeenCalledTimes(2);
         });
 
         it("passes the blocks that the handle drags, such as a whole block quote", async () => {
@@ -501,17 +505,19 @@ describe("BlockReference", () => {
             expect(getTinted()).toEqual([]);
         });
 
-        it("uses the button of the block toolbar in the floating toolbar editor", async () => {
+        it("uses the button of the block toolbar on a right click only", async () => {
             const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
             const editor = await createTestEditorOf(BalloonEditor, [ ...PLUGINS, BlockToolbar ], {
                 blockToolbar: [ "heading" ],
                 blockReference: { openHandleMenu }
             });
             setModelData(editor.model, "<paragraph>[]one</paragraph>");
+            const handle = getHandle(editor.plugins.get(BlockToolbar).buttonView.element);
 
-            getHandle(editor.plugins.get(BlockToolbar).buttonView.element)
-                .dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
+            handle.click();
+            handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
 
+            expect(openHandleMenu).toHaveBeenCalledOnce();
             expect(openHandleMenu).toHaveBeenCalledWith(
                 expect.any(MouseEvent), [ expect.anything() ], expect.any(Function));
             expect(getBlockNames(openHandleMenu)).toEqual([ "paragraph" ]);

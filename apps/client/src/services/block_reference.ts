@@ -85,11 +85,11 @@ export function buildReferenceConfig(
 
     return {
         blockReference: {
-            openHandleMenu(event, blocks, onClose) {
+            openHandleMenu(origin, blocks, onClose) {
                 const editor = source.getEditor();
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
-                openBlockHandleMenu(event, blocks, {
+                openBlockHandleMenu(origin, blocks, {
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
@@ -107,17 +107,24 @@ export function buildReferenceConfig(
 }
 
 /**
- * Opens the menu of the block handle at `event`, headed by the type of `blocks`, the blocks that
- * the handle drags, and calls `onClose` once the menu is closed. `editor` stays focused while the
- * menu is up, so that its handle stays shown.
+ * Opens the menu of the block handle at the pointer of the right click `origin`, or below the
+ * clicked handle `origin`, headed by the type of `blocks`, the blocks that the handle drags, and
+ * calls `onClose` once the menu is closed. `editor` stays focused while the menu is up, so that its
+ * handle stays shown.
  */
 export function openBlockHandleMenu(
-    event: MouseEvent,
+    origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
     { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
 ) {
+    // A click on the handle of the open menu only closes the menu.
+    if (origin instanceof HTMLElement && contextMenu.dismissedByLastPress) {
+        onClose?.();
+        return;
+    }
+
     const items: MenuItem<CommandNames>[] = [
         { kind: "header", title: getBlocksTitle(blocks) },
         { title: t("block_reference.copy_reference"), uiIcon: "bx bx-link", handler: copyReference }
@@ -144,8 +151,9 @@ export function openBlockHandleMenu(
         ? keepEditorFocused(editor)
         : {};
     void contextMenu.show({
-        x: event.pageX,
-        y: event.pageY,
+        ...(origin instanceof HTMLElement
+            ? { anchor: origin }
+            : { x: origin.pageX, y: origin.pageY }),
         items,
         selectMenuItemHandler: () => {},
         onShow: editorFocus.onShow,
