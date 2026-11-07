@@ -335,7 +335,7 @@
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
-    "broken-block-reference": "参照が壊れています",
+    "broken-block-reference": "リンク切れ",
     "play-video": "動画を再生",
     "content-not-available": "このコンテンツは利用できません。",
     "untitled-block": "ブロック",
