@@ -192,7 +192,15 @@
     }
 
     .quick-search-item-header {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
         padding: 0 8px;
+    }
+
+    .note-suggestion-focus {
+        position: static;
+        flex: none;
     }
 
     .quick-search-item-icon {
@@ -200,6 +208,8 @@
     }
 
     .search-result-title {
+        flex: 1 1 auto;
+        min-width: 0;
         font-weight: 500;
     }
 

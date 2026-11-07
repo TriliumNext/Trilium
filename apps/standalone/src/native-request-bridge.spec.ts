@@ -96,11 +96,20 @@ describe("installNativeRequestBridge", () => {
         });
         const frames = messages.slice(1, -1) as ArrayBuffer[];
         expect(frames.map((frame) => frame.byteLength)).toEqual([4 + 256 * 1024, 4 + 256 * 1024, 4 + 3]);
+        let offset = 0;
         for (const frame of frames) {
             expect(new DataView(frame).getUint32(0)).toBe(7);
+            const bytes = new Uint8Array(frame, 4);
+            for (let i = 0; i < bytes.length; i++) {
+                if (bytes[i] !== body[offset + i]) {
+                    expect({ index: offset + i, byte: bytes[i] }).toEqual({
+                        index: offset + i, byte: body[offset + i]
+                    });
+                }
+            }
+            offset += bytes.length;
         }
-        const received = new Uint8Array(frames.flatMap((frame) => [...new Uint8Array(frame, 4)]));
-        expect(received).toEqual(body);
+        expect(offset).toBe(body.length);
         expect(messages.at(-1)).toEqual({ type: "end", id: 7 });
     });
 

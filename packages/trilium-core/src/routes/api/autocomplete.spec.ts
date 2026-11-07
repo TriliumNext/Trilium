@@ -1,8 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { ValidationError } from "../../errors";
 import * as cls from "../../services/context";
+import searchService from "../../services/search/services/search";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
+import autocompleteApi from "./autocomplete";
 
 /**
  * Drives the shared core autocomplete routes through {@link CoreApiTester} (no Express),
@@ -19,6 +22,8 @@ interface AutocompleteResult {
     utcDateVisited?: string;
     highlightedNoteTitle?: string;
     highlightedParentPathTitle?: string;
+    noteType?: string;
+    workspace?: true;
 }
 
 describe("Autocomplete API (core)", () => {
@@ -89,6 +94,71 @@ describe("Autocomplete API (core)", () => {
                 query: { query: "Recently visited" }
             });
             expect(searched.body.find((r) => r.notePath.endsWith(noteId))?.utcDateVisited).toBeUndefined();
+        });
+
+        it("searches inside a named note, and through the whole tree when that note is root, whatever the real hoist", async () => {
+            const stamp = `focus${Date.now()}`;
+            const { noteId: shelfId } = await createTextNote(api, { title: `Shelf ${stamp}` });
+            const { noteId: insideId } = await createTextNote(api, {
+                parentNoteId: shelfId, title: `Inside ${stamp}`
+            });
+            const { noteId: outsideId } = await createTextNote(api, { title: `Outside ${stamp}` });
+            await api.put(`/api/notes/${insideId}/set-attribute`, {
+                body: { type: "label", name: "workspace", value: "" }
+            });
+            vi.spyOn(cls, "getHoistedNoteId").mockReturnValue(shelfId);
+            const noteIdOf = (result: AutocompleteResult) => result.notePath.split("/").at(-1);
+
+            // The real hoist leaves a match outside it out.
+            const scoped = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Outside ${stamp}` }
+            });
+            expect(scoped.body.map(noteIdOf)).not.toContain(outsideId);
+
+            const inside = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Inside ${stamp}`, ancestorNoteId: shelfId }
+            });
+            expect(inside.body.map(noteIdOf)).toEqual([ insideId ]);
+            expect(inside.body[0].workspace).toBe(true);
+            expect(inside.body[0].noteType).toBe("text");
+            // A note under the hoist leads with its own title. The hoist's title is not a prefix.
+            expect(inside.body[0].highlightedNoteTitle).toContain("Inside");
+            expect(inside.body[0].highlightedParentPathTitle ?? "").not.toContain("Shelf");
+
+            // The hoisted note itself still has a title. The path stops at it, so nothing follows.
+            const shelf = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Shelf ${stamp}` }
+            });
+            const shelfRow = shelf.body.find((result) => noteIdOf(result) === shelfId);
+            expect(shelfRow?.highlightedNoteTitle).toContain(`Shelf`);
+            expect(shelfRow?.highlightedNoteTitle).toContain(stamp);
+
+            // Naming the root searches the whole tree while the real hoist stays on the shelf.
+            const everywhere = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Outside ${stamp}`, ancestorNoteId: "root" }
+            });
+            expect(everywhere.body.map(noteIdOf)).toContain(outsideId);
+
+            const stillInside = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: `Outside ${stamp}`, ancestorNoteId: shelfId }
+            });
+            expect(stillInside.body.map(noteIdOf)).not.toContain(outsideId);
+
+            await api.post("/api/recent-notes", { body: { noteId: outsideId, notePath: `root/${outsideId}` } });
+            await api.post("/api/recent-notes", {
+                body: { noteId: insideId, notePath: `root/${shelfId}/${insideId}` }
+            });
+            const scopedRecents = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: "", ancestorNoteId: shelfId }
+            });
+            const scopedRecentIds = scopedRecents.body.map(noteIdOf);
+            expect(scopedRecentIds).toContain(insideId);
+            expect(scopedRecentIds).not.toContain(outsideId);
+
+            const wideRecents = await api.get<AutocompleteResult[]>("/api/autocomplete", {
+                query: { query: "", ancestorNoteId: "root" }
+            });
+            expect(wideRecents.body.map(noteIdOf)).toContain(outsideId);
         });
 
         it("filters recent notes by the hoisted note path when not hoisted to root", async () => {
@@ -227,6 +297,53 @@ describe("Autocomplete API (core)", () => {
         it("400s when the query param is missing", async () => {
             const res = await api.get("/api/autocomplete");
             expect(res.status).toBe(400);
+        });
+
+        it("rejects an ancestor that is not one note id", () => {
+            expect(() => autocompleteApi.getAutocomplete({
+                query: { query: "root", ancestorNoteId: [ "root", "other" ] }
+            } as never)).toThrow(ValidationError);
+        });
+
+        it("searches the whole tree from a hidden hoist, and treats a blank ancestor as omitted", async () => {
+            const stamp = `hiddenfocus${Date.now()}`;
+            const { noteId: visibleId } = await createTextNote(api, { title: `Visible ${stamp}` });
+            const { noteId: shelfId } = await createTextNote(api, { title: `Shelf ${stamp}` });
+            vi.spyOn(cls, "getHoistedNoteId").mockReturnValue("_lbBookmarks");
+            const noteIdOf = (result: AutocompleteResult) => result.notePath.split("/").at(-1);
+            const idsFor = async (query: Record<string, string>) => {
+                const res = await api.get<AutocompleteResult[]>("/api/autocomplete", { query });
+                expect(res.status).toBe(200);
+                return res.body.map(noteIdOf);
+            };
+
+            expect(await idsFor({ query: `Visible ${stamp}` })).toContain(visibleId);
+            expect(await idsFor({ query: `Visible ${stamp}`, ancestorNoteId: "_lbBookmarks" })).toContain(visibleId);
+            expect(await idsFor({ query: `Visible ${stamp}`, ancestorNoteId: shelfId })).not.toContain(visibleId);
+            expect(await idsFor({ query: `Visible ${stamp}`, ancestorNoteId: "" })).toContain(visibleId);
+            expect(await idsFor({ query: `Visible ${stamp}`, ancestorNoteId: "   " })).toContain(visibleId);
+
+            await api.post("/api/recent-notes", { body: { noteId: visibleId, notePath: `root/${visibleId}` } });
+            expect(await idsFor({ query: "" })).toContain(visibleId);
+            expect(await idsFor({ query: "", ancestorNoteId: shelfId })).not.toContain(visibleId);
+        });
+
+        it("leaves a result whose note is gone as the search returned it", async () => {
+            vi.spyOn(searchService, "searchNotesForAutocomplete").mockReturnValue([
+                {
+                    noteId: "blank", notePath: "", noteTitle: "Blank", notePathTitle: "",
+                    highlightedNotePathTitle: "", icon: "bx bx-note"
+                },
+                {
+                    noteId: "gone", notePath: "root/gone", noteTitle: "Gone", notePathTitle: "Gone",
+                    highlightedNotePathTitle: "Gone", icon: "bx bx-note"
+                }
+            ] as never);
+
+            const res = await api.get<AutocompleteResult[]>("/api/autocomplete", { query: { query: "gone" } });
+            expect(res.status).toBe(200);
+            expect(res.body.map((result) => result.noteType)).toEqual([ undefined, undefined ]);
+            expect(res.body[1].noteTitle).toBe("Gone");
         });
     });
 });

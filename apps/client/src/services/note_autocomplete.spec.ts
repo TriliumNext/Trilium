@@ -81,6 +81,14 @@ describe("getNoteSuggestions", () => {
         expect(server.get).toHaveBeenLastCalledWith("autocomplete?query=a&activeNoteId=activeNote"
             + "&fastSearch=true&filter=note.type%20%3D%20image");
         expect(getInboxTarget).not.toHaveBeenCalled();
+
+        // The search names its own scope, including an empty field, whose recent notes follow it.
+        await getNoteSuggestions("a", { ancestorNoteId: "shelf" });
+        expect(server.get).toHaveBeenLastCalledWith(
+            "autocomplete?query=a&activeNoteId=activeNote&fastSearch=true&ancestorNoteId=shelf");
+        await getNoteSuggestions("   ", { ancestorNoteId: "root" });
+        expect(server.get).toHaveBeenLastCalledWith(
+            "autocomplete?query=%20%20%20&activeNoteId=activeNote&fastSearch=true&ancestorNoteId=root");
     });
 
     it("places both creation rows last, after the results", async () => {

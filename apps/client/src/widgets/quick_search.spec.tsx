@@ -5,6 +5,7 @@ import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../components/app_context";
+import { buildNote } from "../test/easy-froca";
 import Component from "../components/component";
 import { calculateHash } from "../services/link";
 import server from "../services/server";
@@ -86,6 +87,128 @@ describe("QuickSearch", () => {
         pressEnter(editor);
 
         expect(get).toHaveBeenCalledWith(`quick-search?searchString=${encodeURIComponent("中/英")}`);
+    });
+
+    it("limits a search to the hoist, and widens only that search", async () => {
+        buildNote({ id: "shelf", title: "Work" });
+        buildNote({ id: "note0", title: "Note 0" });
+        const previous = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const get = vi.spyOn(server, "get").mockResolvedValue(response(1, [ "hello" ]));
+        try {
+            const { editor } = await mount();
+            typeQuery(editor, "hello");
+            pressEnter(editor);
+            await waitForResults(1);
+
+            expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello");
+            await vi.waitFor(() => {
+                expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            });
+
+            const hoist = document.querySelector<HTMLButtonElement>(".note-suggestion-hoist");
+            const link = hoist?.closest("a");
+            const reachedLink = vi.fn();
+            link?.addEventListener("pointerdown", reachedLink);
+            await act(async () => {
+                hoist?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true }));
+            });
+            expect(reachedLink).not.toHaveBeenCalled();
+            await act(async () => { hoist?.click(); });
+            await vi.waitFor(() => {
+                expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello&ancestorNoteId=note0");
+            });
+            expect(resultItems()[0].querySelector(".note-suggestion-hoist")).toBeNull();
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".show-in-full-search")?.click();
+            });
+            expect(triggerCommand).toHaveBeenCalledWith("searchNotes", {
+                searchString: "hello", ancestorNoteId: "note0"
+            });
+            expect(menu()).toBeNull();
+
+            pressEnter(editor);
+            await waitForResults(1);
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click();
+            });
+            await vi.waitFor(() => {
+                expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello&ancestorNoteId=root");
+            });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+
+            triggerCommand.mockClear();
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".show-in-full-search")?.click();
+            });
+            expect(triggerCommand).toHaveBeenCalledWith("searchNotes", {
+                searchString: "hello", ancestorNoteId: "root"
+            });
+        } finally {
+            appContext.tabManager = previous;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("refreshes open results when the hoist changes and the search still follows it", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work" },
+                { id: "desk", title: "Desk" }
+            ]
+        });
+        const host = new Component();
+        const previous = appContext.tabManager;
+        let hoistedNoteId = "shelf";
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId, ntxId: "ntx1" })
+        } as never;
+        const get = vi.spyOn(server, "get").mockResolvedValue(response(1, [ "hello" ]));
+        const hoist = (noteId: string) => act(async () => {
+            hoistedNoteId = noteId;
+            await host.handleEvent("hoistedNoteChanged", { noteId, ntxId: "ntx1" });
+        });
+        try {
+            const { editor } = await mount(host);
+            await hoist("desk");
+            expect(get).not.toHaveBeenCalled();
+
+            typeQuery(editor, "hello");
+            pressEnter(editor);
+            await waitForResults(1);
+            expect(get).toHaveBeenCalledTimes(1);
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Desk");
+
+            await hoist("shelf");
+            await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+            expect(get).toHaveBeenLastCalledWith("quick-search?searchString=hello");
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+
+            pressKey(editor.contentDOM, "Escape");
+            await vi.waitFor(() => expect(menu()).toBeNull());
+            await hoist("desk");
+            expect(get).toHaveBeenCalledTimes(2);
+            expect(menu()).toBeNull();
+
+            pressEnter(editor);
+            await waitForResults(1);
+            expect(get).toHaveBeenCalledTimes(3);
+            await act(async () => {
+                document.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click();
+            });
+            await vi.waitFor(() => expect(get).toHaveBeenCalledTimes(4));
+            await hoist("desk");
+            expect(get).toHaveBeenCalledTimes(4);
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+        } finally {
+            appContext.tabManager = previous;
+        }
     });
 
     it("links to the plain note path when the search highlighted nothing", async () => {

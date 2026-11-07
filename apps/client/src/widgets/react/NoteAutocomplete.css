@@ -325,6 +325,79 @@
  * descriptions, and given more height than a list usually is: it is long, and the query only
  * narrows it.
  */
+.note-suggestion-focus {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 6px 16px;
+    list-style: none;
+    background: var(--main-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+
+    .note-suggestion-focus-label {
+        flex: none;
+        font-size: 0.8em;
+        color: var(--muted-text-color);
+    }
+
+    .note-suggestion-focus-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.note-autocomplete-menu .note-suggestion-hoist,
+.note-suggestion-list .note-suggestion-hoist,
+.quick-search-menu .note-suggestion-hoist,
+.note-suggestion-focus .note-suggestion-unhoist {
+    flex: none;
+    align-self: center;
+    width: auto;
+    height: auto;
+    padding: 0 2px;
+    border: none;
+    background: none;
+    font-size: 1.15em;
+    line-height: 1;
+    color: var(--muted-text-color);
+
+    &:hover:not(.disabled) {
+        border: none;
+        color: var(--main-text-color);
+    }
+}
+
+.note-autocomplete-menu .note-suggestion-hoist,
+.note-suggestion-list .note-suggestion-hoist,
+.quick-search-menu .note-suggestion-hoist {
+    margin-inline-start: auto;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.note-suggestion-shortcut + .note-suggestion-hoist {
+    margin-inline-start: 4px;
+}
+
+.note-autocomplete-menu .dropdown-item:hover .note-suggestion-hoist,
+.note-autocomplete-menu .dropdown-item.tn-menu-active .note-suggestion-hoist,
+.note-suggestion-list .dropdown-item:hover .note-suggestion-hoist,
+.note-suggestion-list .dropdown-item.tn-menu-active .note-suggestion-hoist,
+.quick-search-menu .dropdown-item:hover .note-suggestion-hoist,
+.quick-search-menu .dropdown-item:focus .note-suggestion-hoist,
+.note-suggestion-hoist.is-workspace,
+body.mobile :is(.note-autocomplete-menu, .note-suggestion-list, .quick-search-menu) .note-suggestion-hoist {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .note-autocomplete-menu.slash-command-menu {
     width: 350px;
     max-width: calc(100vw - 10px);

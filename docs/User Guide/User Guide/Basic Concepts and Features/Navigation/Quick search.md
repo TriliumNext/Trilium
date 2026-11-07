@@ -28,7 +28,7 @@ Quick search lists up to 200 matching notes in a single scrollable list, so the 
 
 ### Continuing in the full search
 
-To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query. The button stays below the list, however far the results are scrolled.
+To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query and the same scope: a note this search was limited to, or the whole tree when it was widened. The button stays below the list, however far the results are scrolled.
 
 ### Visual Features
 
@@ -49,10 +49,8 @@ Quick search uses progressive search:
 Quick search covers only the subtree you are currently working in:
 
 *   Without hoisting, it covers the whole note tree.
-*   Under a [hoisted note](Note%20Hoisting.md) or inside a [workspace](Workspaces.md), it covers only that subtree.
+*   Under a [hoisted note](Note%20Hoisting.md) or inside a [workspace](Workspaces.md), it covers only that subtree. A bar above the results names that note. Its <span class="tn-icon bx bx-door-open"></span> button searches the whole tree and leaves the hoist as it is. The <span class="tn-icon bx bxs-chevrons-up"></span> button on a result limits this search to that note.
 *   Notes that exist only in the hidden tree, such as the built-in help pages and the launch bar configuration, are not returned. Hoist into the help to search it, or use [Jump to…](Jump%20to%20%26%20command%20palette.md), which searches titles across the hidden tree.
-
-To search the whole database while hoisted, use the full <a class="reference-link" href="Search.md">Search</a> and leave _Ancestor_ field empty.
 
 ### Keyboard Navigation
 

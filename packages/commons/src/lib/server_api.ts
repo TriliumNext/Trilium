@@ -410,6 +410,10 @@ export type AutocompleteResult = Pick<SearchResultDetails, "notePath" | "noteTit
     | "attributeSnippet" | "highlightedAttributeSnippet" | "icon"> & {
     /** When the note was last visited, as `recent_notes.utcDateCreated` holds it. */
     utcDateVisited?: string;
+    /** The note's type, so a row can tell a search note, which a search cannot focus on, from the others. */
+    noteType?: NoteType;
+    /** Set when the note itself carries the `workspace` label. */
+    workspace?: true;
 };
 
 /** Response for `GET /api/quick-search/:searchString`. */

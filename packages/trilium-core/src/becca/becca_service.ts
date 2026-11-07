@@ -102,6 +102,13 @@ function getNoteTitleArrayForPath(notePathArray: string[], segmentTitles?: Segme
         parentNoteId = noteId;
     }
 
+    // A path that ends at the hoisted note has collected no segment yet. Its title is that note's.
+    if (titles.length === 0) {
+        const noteId = notePathArray.at(-1) ?? "";
+        const parentId = notePathArray.length > 1 ? notePathArray.at(-2) : undefined;
+        return [ getNoteTitle(noteId, parentId) ];
+    }
+
     return titles;
 }
 
