@@ -29,10 +29,14 @@ export default class ContentEmbedBoxSizeDropdown extends Plugin {
             const boxSizeLabel = editor.t("Box size");
             buttonView.set({ tooltip: true });
             dropdownView.bind("isEnabled").to(command, "isEnabled");
-            dropdownView.bind("class").to(contentEmbed, "selectedEmbedTools", (tools) => {
-                const isHidden = isToolbarItemHidden(tools, CONTENT_EMBED_BOX_SIZE_DROPDOWN);
-                return isHidden ? "ck-hidden" : undefined;
-            });
+            dropdownView.bind("class").to(
+                contentEmbed, "selectedEmbedTools", contentEmbed, "isSelectedEmbedEditable",
+                (tools, isEditable) => {
+                    const isHidden =
+                        isToolbarItemHidden(tools, CONTENT_EMBED_BOX_SIZE_DROPDOWN, isEditable);
+                    return isHidden ? "ck-hidden" : undefined;
+                }
+            );
             buttonView.bind("icon").to(contentEmbed, "selectedEmbedTools", (tools) => {
                 return tools?.boxSizeIcon;
             });

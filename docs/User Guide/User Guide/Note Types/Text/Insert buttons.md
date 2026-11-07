@@ -97,6 +97,10 @@ Page breaks are marked in the editor with the words _Page break_, but they will 
 *   To insert a page break, press the <span class="tn-icon cke cke-page-break"></span> in the formatting toolbar.
 *   To insert many page breaks at once, insert a page break first, click on it and press <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then use <kbd>Ctrl</kbd>+<kbd>V</kbd>, to paste as many times as needed.
 
+## Footnotes
+
+See the dedicated <a class="reference-link" href="Footnotes.md">Footnotes</a> page.
+
 ## Date and time
 
 The <span class="tn-icon cke cke-trilium-date-time"></span> button inserts the current date and time at the cursor, replacing the selected text if there is any. The inserted text takes the formatting of the text around it, so a date inserted inside bold text is bold too.

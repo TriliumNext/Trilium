@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getBoundedView, getCenteredView } from "./drawing_view";
+import { getBoundedView, getCenteredView, getZoomToFitView } from "./drawing_view";
 
 interface Box {
     x: number;
@@ -62,5 +62,43 @@ describe("getCenteredView", () => {
             .toEqual({ zoom: { value: 2 }, scrollX: 50, scrollY: 25 });
         expect(getCenteredView([ { ...shape, isDeleted: true } ] as never, view, 1000, 500))
             .toBeNull();
+    });
+});
+
+describe("getZoomToFitView", () => {
+    const fit = (elements: object[], width = 1000) =>
+        getZoomToFitView(elements as never, width, 500);
+
+    it("fits the shapes in steps of 10%, from 10% to 100%, as Excalidraw does", () => {
+        expect(fit([ { x: 100, y: 50, width: 3000, height: 1000 } ])).toEqual({
+            zoom: { value: 0.3 },
+            scrollX: expect.closeTo(500 / 0.3 - 1600),
+            scrollY: expect.closeTo(250 / 0.3 - 550)
+        });
+        expect(fit([ { x: 0, y: 0, width: 10, height: 10 } ]))
+            .toEqual({ zoom: { value: 1 }, scrollX: 495, scrollY: 245 });
+        expect(fit([ { x: 0, y: 0, width: 100000, height: 10 } ]))
+            .toEqual({ zoom: { value: 0.1 }, scrollX: -45000, scrollY: 2495 });
+    });
+
+    it("leaves out deleted shapes, and fits nothing without shapes or a size", () => {
+        const shape = { x: 0, y: 0, width: 10, height: 10 };
+        const deleted = { x: 0, y: 0, width: 5000, height: 5000, isDeleted: true };
+        expect(fit([ deleted, shape ])).toEqual(fit([ shape ]));
+        expect(fit([ deleted ])).toBeNull();
+        expect(fit([])).toBeNull();
+        expect(fit([ shape ], 0)).toBeNull();
+    });
+
+    it("fits the shapes between the panels that cover the drawing", () => {
+        const shape = { x: 0, y: 0, width: 1200, height: 100 };
+        const fitBetween = (left: number, right: number) =>
+            getZoomToFitView([ shape ] as never, 1000, 500, { left, right });
+
+        // 600 of the 1000 are free, from 0 to 600 and from 200 to 800.
+        expect(fitBetween(0, 400)).toEqual({ zoom: { value: 0.5 }, scrollX: 0, scrollY: 450 });
+        expect(fitBetween(200, 200)).toEqual({ zoom: { value: 0.5 }, scrollX: 400, scrollY: 450 });
+        // Panels across the whole width leave the whole width.
+        expect(fitBetween(600, 400)).toEqual(fit([ shape ]));
     });
 });

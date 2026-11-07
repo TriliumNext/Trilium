@@ -592,6 +592,13 @@ describe("useCanvasDrawingPersistence", () => {
         const colored = buildAttachment({ elements, appState: { viewBackgroundColor: "#ffc9c9" } });
         expect((await mount(colored.attachment, buildEditor())).appState)
             .toEqual({ viewBackgroundColor: "#ffc9c9", theme: "light" });
+
+        act(() => render(null, container));
+        const tool = {
+            type: "custom", customType: "none", locked: false, lastActiveTool: null
+        } as const;
+        expect((await mount(colored.attachment, buildEditor(), { initialTool: tool })).appState)
+            .toEqual({ viewBackgroundColor: "#ffc9c9", theme: "light", activeTool: tool });
     });
 
     it("loads the content that the note has not saved yet over the saved one", async () => {

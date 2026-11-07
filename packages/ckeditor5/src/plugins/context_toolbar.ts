@@ -72,6 +72,9 @@ export default class ContextToolbar extends Plugin {
     /** The widget toolbar for the selection, or `null` outside any widget that has one. */
     declare source: ContextToolbarSource | null;
 
+    /** The name of the widget that {@link source} is for, or `undefined` for a toolbar without one. */
+    declare toolbarName: string | undefined;
+
     // Built before `afterInit()`, so `ToolbarGroupMenu` can watch it whichever plugin starts first.
     readonly toolbarView: ToolbarView;
 
@@ -94,6 +97,7 @@ export default class ContextToolbar extends Plugin {
         super(editor);
         this.set("isActive", false);
         this.set("source", null);
+        this.set("toolbarName", undefined);
         this.toolbarView = new ToolbarView(editor.locale, { shouldGroupWhenFull: true });
 
         this.backView = new ButtonView(editor.locale);
@@ -102,9 +106,8 @@ export default class ContextToolbar extends Plugin {
 
         // Names the widget the tools act on. Hidden for a toolbar without a name.
         const title = this.titleView = new ContextToolbarTitleView(editor.locale);
-        const name = (source: ContextToolbarSource | null) => getToolbarName(editor, source);
-        title.bind("isVisible").to(this, "source", (source) => name(source) !== undefined);
-        title.bind("label").to(this, "source", (source) => name(source) ?? "");
+        title.bind("isVisible").to(this, "toolbarName", (name) => name !== undefined);
+        title.bind("label").to(this, "toolbarName", (name) => name ?? "");
         title.bind("icon").to(this, "source", (source) => (source ? TOOLBAR_ICONS[source.id] ?? "" : ""));
     }
 
@@ -116,9 +119,9 @@ export default class ContextToolbar extends Plugin {
             const button = new ButtonView(locale);
             button.set({ class: "ck-context-toolbar-button" });
             button.bind("isVisible").to(this, "source", (source) => source !== null);
-            button.bind("label").to(this, "source", (source) =>
-                getToolbarName(editor, source) ?? source?.definition.ariaLabel ?? "");
-            button.bind("withText").to(this, "source", (source) => getToolbarName(editor, source) !== undefined);
+            button.bind("label").to(this, "toolbarName", this, "source", (name, source) =>
+                name ?? source?.definition.ariaLabel ?? "");
+            button.bind("withText").to(this, "toolbarName", (name) => name !== undefined);
             button.bind("tooltip").to(this, "source", (source) => source?.definition.ariaLabel ?? true);
             button.bind("icon").to(this, "source", (source) => (source && TOOLBAR_ICONS[source.id]) ?? IconThreeVerticalDots);
             button.on("execute", () => this.setActive(true));
@@ -137,7 +140,7 @@ export default class ContextToolbar extends Plugin {
             this.keepOutOfBalloon(editor.plugins.get(LinkUI));
             // A tap in a link is about the link, as `LinkUI` takes it to be when it shows its toolbar.
             this.listenTo(editor.editing.view.document, "click", () => {
-                this.updateSource();
+                this.followSelection();
                 if (this.source?.id === "link") {
                     this.setActive(true);
                 }
@@ -177,7 +180,7 @@ export default class ContextToolbar extends Plugin {
         editor.ui.addToolbar(this.toolbarView);
 
         // The event `WidgetToolbarRepository` updates its balloons on.
-        this.listenTo(editor.ui, "update", () => this.updateSource());
+        this.listenTo(editor.ui, "update", () => this.followSelection());
     }
 
     override destroy() {
@@ -229,6 +232,15 @@ export default class ContextToolbar extends Plugin {
         }
         this.toolbarView.fillFromConfig(this.source.definition.itemsConfig, this.editor.ui.componentFactory);
         this.shownSource = this.source;
+    }
+
+    /**
+     * Follows the widget at the selection, and the name of its toolbar, which content in an embed
+     * can change while the embed stays selected.
+     */
+    private followSelection() {
+        this.updateSource();
+        this.toolbarName = getToolbarName(this.editor, this.source);
     }
 
     /** Finds the toolbar of the innermost widget at the selection, as `WidgetToolbarRepository` does. */
@@ -306,7 +318,7 @@ function getToolbarName(editor: Editor, source: ContextToolbarSource | null) {
         case "admonition": return t("Admonition");
         case "tabs": return t("Tabs");
         case "multicolumnLayout": return t("Columns");
-        case "contentEmbed": return t("Embed");
+        case "contentEmbed": return getContentEmbedName(editor) ?? t("Embed");
         // A link preview, which is a link whatever its shape.
         case "link":
         case "linkEmbed": return t("Link");
@@ -315,6 +327,13 @@ function getToolbarName(editor: Editor, source: ContextToolbarSource | null) {
         case "todoList": return t("List");
         default: return undefined;
     }
+}
+
+/** The name that the content of the selected embed gives its toolbar, such as _Canvas_. */
+function getContentEmbedName(editor: Editor) {
+    return editor.plugins.has("ContentEmbed")
+        ? editor.plugins.get("ContentEmbed").selectedEmbedTools?.toolbarTitle
+        : undefined;
 }
 
 /**

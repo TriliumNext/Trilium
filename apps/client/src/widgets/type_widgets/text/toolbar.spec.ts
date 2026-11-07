@@ -221,6 +221,25 @@ describe("the insert menus", () => {
             expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
         }
     });
+
+    it("list the footnote right below the page break", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            const insert = insertItems(items);
+            expect(insert.indexOf("footnote")).toBe(insert.indexOf("pageBreak") + 1);
+            expect(items).not.toContain("footnote");
+        }
+    });
+
+    it("leave the link to the bar, right ahead of the attach menu", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            expect(insertItems(items)).not.toContain("link");
+            expect(items.indexOf("attachMenu")).toBe(items.indexOf("link") + 1);
+        }
+    });
 });
 
 describe("buildMobileToolbar", () => {

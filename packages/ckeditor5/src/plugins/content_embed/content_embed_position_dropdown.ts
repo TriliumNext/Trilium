@@ -58,10 +58,12 @@ export default class ContentEmbedPositionDropdown extends Plugin {
                 ]
             });
             dropdown.bind("class").to(
-                command, "isEnabled", contentEmbed, "selectedEmbedTools",
-                (isEnabled, tools) => {
+                command, "isEnabled",
+                contentEmbed, "selectedEmbedTools",
+                contentEmbed, "isSelectedEmbedEditable",
+                (isEnabled, tools, isEditable) => {
                     const isShown = isEnabled && !!tools?.hasPositions
-                        && !isToolbarItemHidden(tools, CONTENT_EMBED_POSITION_DROPDOWN);
+                        && !isToolbarItemHidden(tools, CONTENT_EMBED_POSITION_DROPDOWN, isEditable);
                     return isShown ? undefined : "ck-hidden";
                 }
             );

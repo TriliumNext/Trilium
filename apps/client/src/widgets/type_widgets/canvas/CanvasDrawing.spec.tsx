@@ -13,7 +13,7 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import { getContentEmbedTools } from "../text/content_embed_tools";
+import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 
 interface Box {
     x: number;
@@ -23,13 +23,20 @@ interface Box {
 }
 
 vi.mock("@excalidraw/excalidraw", () => ({
+    CaptureUpdateAction: { NEVER: "never", EVENTUALLY: "eventually" },
     exportToSvg: vi.fn(),
     getCommonBounds: (elements: Box[]) => [
         Math.min(...elements.map(({ x }) => x)),
         Math.min(...elements.map(({ y }) => y)),
         Math.max(...elements.map(({ x, width }) => x + width)),
         Math.max(...elements.map(({ y, height }) => y + height))
-    ]
+    ],
+    // One line, 10 pixels for each character, from the index of the match.
+    getMatchedLines: (_element: unknown, query: string, index: number) => [
+        { offsetX: index * 10, offsetY: 0, width: query.length * 10, height: 20 }
+    ],
+    getSceneVersion: (elements: readonly { version?: number }[]) =>
+        elements.reduce((sum, { version }) => sum + (version ?? 0), 0)
 }));
 // happy-dom lays nothing out: every picture of a drawing has a box of 400 × 200.
 vi.mock("../../react/hooks", async (importOriginal) => ({
@@ -55,9 +62,15 @@ vi.mock("../text/attachment_saves", () => ({
     useAttachmentEditor: () => detailEditor
 }));
 
+const SELECTION_TOOL = {
+    type: "selection", customType: null, locked: false, lastActiveTool: null
+} as const;
 const canvasEditorProps = vi.fn();
 const persistenceArgs = vi.fn();
-const canvasApi = { scrollToContent: vi.fn() };
+const canvasApi = {
+    scrollToContent: vi.fn(),
+    getAppState: () => ({ activeTool: SELECTION_TOOL })
+};
 
 interface MockCanvasEditorProps {
     apiRef?: RefObject<unknown>;
@@ -70,6 +83,7 @@ interface MockCanvasEditorProps {
 /** The options that `LiveDrawing` gives its persistence. */
 interface PersistenceOptions {
     initialView?: unknown;
+    initialTool?: unknown;
     onSceneShown?: () => void;
 }
 
@@ -94,10 +108,11 @@ globalThis.ResizeObserver = class {
 
 const {
     default: CanvasDrawing, CanvasDrawingDetail, renderCanvasDrawingPicture, useIsToolbarOverPanel,
-    useNoteScrollingWheel, useSidePanels, useTopLayerContextMenu
+    useNoteScrollingWheel, usePropertiesSheet, useSidePanels, useTopLayerContextMenu
 } = await import("./CanvasDrawing");
 const { default: CanvasDrawingMenu } = await import("./CanvasDrawingMenu");
-const { default: CanvasEmbedTools } = await import("./CanvasEmbedTools");
+const { default: CanvasEmbedTools, NO_TOOL } = await import("./CanvasEmbedTools");
+const { MATCH_COLORS } = await import("./drawing_find");
 const { getBoundedView } = await import("./drawing_view");
 
 /** Horizontal edges by class name; happy-dom computes no layout. */
@@ -457,6 +472,163 @@ describe("useSidePanels", () => {
     });
 });
 
+describe("usePropertiesSheet", () => {
+    /** Boxes by class name, in pixels; happy-dom computes no layout. */
+    const rects: Record<string, { left: number; top: number; right: number; bottom: number }> = {};
+    let container: HTMLElement;
+    /** The elements that went into the top layer, in order. */
+    let raised: HTMLElement[];
+
+    interface SheetProbeProps {
+        isOpen: boolean;
+        hasPicker?: boolean;
+    }
+
+    /** A drawing in the phone layout, in a note above the formatting toolbar. */
+    function SheetProbe({ isOpen, hasPicker }: SheetProbeProps) {
+        const rootRef = useRef<HTMLDivElement>(null);
+        usePropertiesSheet(rootRef, true);
+        return (
+            <div className="note-split">
+                <div className="scrolling-container">
+                    <div className="include-note-body active">
+                        <div ref={rootRef} className="drawing">
+                            <div className="App-bottom-bar">
+                                <div className="Island">
+                                    {isOpen && <section className="App-mobile-menu" />}
+                                    <footer className="App-toolbar" />
+                                </div>
+                            </div>
+                            {hasPicker && (
+                                <div className="picker" data-radix-popper-content-wrapper="" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <div className="classic-toolbar-outer-container visible">
+                    <div className="classic-toolbar-island" />
+                </div>
+            </div>
+        );
+    }
+
+    beforeEach(() => {
+        // A phone of 400 × 900, whose note area spans from 100 to 800, above a toolbar from 740.
+        Object.defineProperties(document.documentElement, {
+            clientWidth: { value: 400, configurable: true },
+            clientHeight: { value: 900, configurable: true }
+        });
+        rects["scrolling-container"] = { left: 0, top: 100, right: 400, bottom: 800 };
+        rects["classic-toolbar-island"] = { left: 6, top: 740, right: 394, bottom: 786 };
+        rects.Island = { left: 6, top: 500, right: 394, bottom: 734 };
+        rects.drawing = { left: 0, top: 200, right: 400, bottom: 400 };
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockImplementation(function (this: HTMLElement) {
+                const { left, top, right, bottom } = rects[this.classList[0]] ?? rects.drawing;
+                const size = { width: right - left, height: bottom - top };
+                return { left, top, right, bottom, ...size } as DOMRect;
+            });
+        vi.spyOn(window, "getComputedStyle").mockReturnValue({
+            fontSize: "16px",
+            getPropertyValue: (name: string) => name === "--mobile-toolbar-gap" ? "6px" : ""
+        } as CSSStyleDeclaration);
+        // happy-dom has no Popover API.
+        raised = [];
+        Object.defineProperty(HTMLElement.prototype, "showPopover", {
+            value(this: HTMLElement) {
+                raised.push(this);
+            },
+            configurable: true
+        });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+        vi.restoreAllMocks();
+        Reflect.deleteProperty(HTMLElement.prototype, "showPopover");
+        Reflect.deleteProperty(document.documentElement, "clientWidth");
+        Reflect.deleteProperty(document.documentElement, "clientHeight");
+    });
+
+    async function show(props: SheetProbeProps) {
+        await act(async () => render(<SheetProbe {...props} />, container));
+        const viewport = element(".scrolling-container");
+        if (viewport) {
+            Object.defineProperties(viewport, {
+                clientWidth: { value: 400, configurable: true },
+                clientHeight: { value: 700, configurable: true }
+            });
+        }
+        // Places the sheet again, with the size of the note.
+        await scrollNote();
+    }
+
+    const element = (selector: string) => container.querySelector<HTMLElement>(selector);
+
+    async function scrollNote() {
+        await act(async () => {
+            element(".scrolling-container")?.dispatchEvent(new Event("scroll"));
+        });
+    }
+
+    /** Where the sheet is, or `false` while the island is in the drawing. */
+    function getSheet() {
+        const island = element(".Island");
+        const isPlaced = !!island?.hasAttribute("data-properties-sheet");
+        expect(island?.getAttribute("popover") ?? null).toBe(isPlaced ? "manual" : null);
+        return isPlaced && [ "left", "width", "bottom", "max-height" ]
+            .map((name) => island?.style.getPropertyValue(`--properties-sheet-${name}`));
+    }
+
+    const getRailInset = () =>
+        document.body.style.getPropertyValue("--canvas-drawing-sheet-inset");
+
+    it("shows the open properties above the note's bottom, or above the toolbar", async () => {
+        await show({ isOpen: false });
+        expect(getSheet()).toBe(false);
+        expect(getRailInset()).toBe("");
+
+        // Inside the 6px gap of the toolbar, and at most half of the note above it.
+        await show({ isOpen: true });
+        expect(getSheet()).toEqual([ "6px", "388px", "106px", "347px" ]);
+        // The rail keeps above the top of the sheet, 400px above the bottom of the window.
+        expect(getRailInset()).toBe("400px");
+
+        await act(async () => element(".classic-toolbar-outer-container")?.classList.add("active"));
+        expect(getSheet()).toEqual([ "6px", "388px", "166px", "317px" ]);
+
+        await show({ isOpen: false });
+        expect(getSheet()).toBe(false);
+        expect(getRailInset()).toBe("");
+    });
+
+    it("raises the pickers above the sheet, and puts both back without the focus", async () => {
+        await show({ isOpen: true, hasPicker: true });
+        expect(raised).toEqual([ element(".Island"), element(".picker") ]);
+        expect(element(".picker")?.getAttribute("popover")).toBe("manual");
+
+        await act(async () => element(".include-note-body")?.classList.remove("active"));
+        expect(getSheet()).toBe(false);
+        expect(element(".picker")?.hasAttribute("popover")).toBe(false);
+        expect(getRailInset()).toBe("");
+
+        await act(async () => element(".include-note-body")?.classList.add("active"));
+        expect(getSheet()).not.toBe(false);
+        rects.drawing = { left: 0, top: -300, right: 400, bottom: 90 };
+        await scrollNote();
+        expect(getSheet()).toBe(false);
+
+        rects.drawing = { left: 0, top: 200, right: 400, bottom: 400 };
+        await scrollNote();
+        expect(getSheet()).not.toBe(false);
+        await act(async () => render(null, container));
+        expect(getRailInset()).toBe("");
+    });
+});
+
 describe("useTopLayerContextMenu", () => {
     type ContextMenuState = { top: number; left: number } | null;
 
@@ -775,7 +947,9 @@ describe("CanvasDrawing", () => {
         });
         const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
             .persistence ?? {};
-        onChange?.([], { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }, {});
+        onChange?.([], {
+            activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20
+        }, {});
         await setEmbedEditable(embed, false);
         expect(getEditingState().isReadOnly).toBe(true);
         expect(getPicture()).not.toBeNull();
@@ -869,6 +1043,48 @@ describe("CanvasDrawing", () => {
         vi.restoreAllMocks();
     });
 
+    it("finds its text, moving the picture to a match out of view and back", async () => {
+        const embed = document.createElement("figure");
+        embed.className = "include-note";
+        embed.append(box);
+        document.body.append(embed);
+        sceneContent = JSON.stringify({
+            elements: [ {
+                id: "text", type: "text", x: 50, y: 500, width: 200, height: 100, angle: 0,
+                version: 1, originalText: "Find me", text: "Find me"
+            } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }
+        });
+        await mount(null);
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        await vi.waitFor(() => expect(getSvg()?.style.top).toBe("500px"));
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ left: 0, top: 0, width: 400, height: 200 } as DOMRect);
+
+        const target = getEmbedFindTarget(embed);
+        expect(target).not.toBeNull();
+        let count = 0;
+        await act(async () => {
+            count = await target?.find("me", { matchCase: false, wholeWord: false }) ?? 0;
+        });
+        expect(count).toBe(1);
+
+        // The match at y = 500 moves to the middle of the 200 pixels of the box.
+        await act(async () => target?.highlight(0));
+        expect(getSvg()?.style.top).toBe("90px");
+        const layer = box.querySelector(".canvas-drawing-find > g");
+        expect(layer?.getAttribute("transform")).toBe("scale(1) translate(0 -410)");
+        const match = layer?.querySelector("rect");
+        expect([ match?.getAttribute("x"), match?.getAttribute("y") ]).toEqual([ "100", "500" ]);
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.current);
+
+        await act(async () => target?.highlight(null));
+        expect(getSvg()?.style.top).toBe("500px");
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.other);
+        vi.restoreAllMocks();
+        embed.remove();
+    });
+
     it("renders the picture again when the drawing saves, and not for other saves", async () => {
         const parent = new Component();
         await act(async () => {
@@ -951,6 +1167,85 @@ describe("CanvasDrawing", () => {
         expect(canvasApi.scrollToContent).toHaveBeenCalledWith();
         apiRef.current = null;
         other.remove();
+    });
+
+    it("leaves the drawing to the note while no tool is active", async () => {
+        await mount();
+        const root = box.querySelector(".canvas-drawing-editor");
+        const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
+            .persistence ?? {};
+
+        onChange?.([], { activeTool: NO_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(true);
+
+        onChange?.([], { activeTool: SELECTION_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(false);
+    });
+
+    it("starts with no tool in the mobile layout, back to it as the focus leaves", async () => {
+        const device = window.glob.device;
+        const body = document.createElement("div");
+        body.className = "include-note-body active";
+        body.append(box);
+        document.body.append(body);
+        onTestFinished(() => {
+            window.glob.device = device;
+            body.remove();
+        });
+        const setActiveTool = vi.fn();
+        const api = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool: NO_TOOL }) };
+        const getApiRef = () => {
+            const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+            if (!apiRef) {
+                throw new Error("Expected the API reference of the editor.");
+            }
+            return apiRef;
+        };
+        const getInitialTool = () =>
+            (persistenceArgs.mock.lastCall?.[4] as PersistenceOptions).initialTool;
+
+        window.glob.device = "mobile";
+        await mount();
+        expect(getInitialTool()).toEqual(NO_TOOL);
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledWith(NO_TOOL);
+        await act(async () => body.classList.add("active"));
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledTimes(2);
+
+        render(null, box);
+        setActiveTool.mockClear();
+        body.classList.add("active");
+        window.glob.device = "desktop";
+        await mount();
+        expect(getInitialTool()).toBeUndefined();
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).not.toHaveBeenCalled();
+    });
+
+    it("switches from no tool to the selection tool in fullscreen", async () => {
+        await mount();
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        if (!apiRef) {
+            throw new Error("Expected the API reference of the editor.");
+        }
+        const setActiveTool = vi.fn();
+        let activeTool: unknown = NO_TOOL;
+        apiRef.current = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool }) };
+
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledWith({ type: "selection" });
+
+        activeTool = SELECTION_TOOL;
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledTimes(1);
+        apiRef.current = null;
     });
 
     it("takes the focus that its embed box holds once Excalidraw renders", async () => {

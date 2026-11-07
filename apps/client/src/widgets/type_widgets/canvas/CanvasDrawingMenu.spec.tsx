@@ -52,16 +52,22 @@ describe("CanvasDrawingMenu", () => {
 
     it("offers opening, exporting, finding, the library and help", async () => {
         expect(await mount(true)).toEqual([
-            "LoadScene", "SaveAsImage", "|", "SearchMenu", "t:toolBar.library", "Help"
+            "LoadScene", "SaveAsImage", "|", "t:search.title", "t:toolBar.library", "Help"
         ]);
 
-        container.querySelector("button")?.click();
-        expect(toggleSidebar).toHaveBeenCalledWith({ name: "default" });
+        // Its own search entry shows no Ctrl+F, which "Search in note" takes in a drawing.
+        const [ search, library ] = container.querySelectorAll("button");
+        search?.click();
+        expect(toggleSidebar).toHaveBeenLastCalledWith({
+            name: "default", tab: "search", force: true
+        });
+        library?.click();
+        expect(toggleSidebar).toHaveBeenLastCalledWith({ name: "default" });
     });
 
     it("leaves the library out of a drawing that cannot change", async () => {
         expect(await mount(false))
-            .toEqual([ "LoadScene", "SaveAsImage", "|", "SearchMenu", "Help" ]);
+            .toEqual([ "LoadScene", "SaveAsImage", "|", "t:search.title", "Help" ]);
     });
 });
 

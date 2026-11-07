@@ -95,6 +95,36 @@ describe("tabs commands", () => {
         expect(titles(inner)).toEqual(["B1", "B2"]);
     });
 
+    it("deletes the innermost block holding the selection, leaving a paragraph", () => {
+        editor.setData(
+            `<div class="trilium-tabs">${tab("A")}<section class="trilium-tab">` +
+                `<p class="trilium-tab-title">B</p><div class="trilium-tab-panel">` +
+                    `<div class="trilium-tabs">${tab("B1", "b1")}${tab("B2")}</div>` +
+                `</div></section></div><p>Outside</p>`
+        );
+        const root = editor.model.document.getRoot();
+        const outer = root?.getChild(0) as ModelElement;
+        const outerPanel = (outer.getChild(1) as ModelElement).getChild(1) as ModelElement;
+        const inner = outerPanel.getChild(0) as ModelElement;
+        const command = editor.commands.get("deleteTabs");
+
+        editor.model.change(writer => writer.setSelection(root?.getChild(1) as ModelElement, 0));
+        expect(command?.isEnabled).toBe(false);
+
+        const innerPanel = (inner.getChild(0) as ModelElement).getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(innerPanel, 0));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute("deleteTabs");
+
+        expect(titles(outer)).toEqual(["A", "B"]);
+        expect(modelWithSelection()).toContain(
+            "<tabTitle>B</tabTitle><tabPanel><paragraph>[]</paragraph></tabPanel>");
+
+        editor.execute("deleteTabs");
+        expect(modelWithSelection())
+            .toBe("<paragraph>[]</paragraph><paragraph>Outside</paragraph>");
+    });
+
     it("aligns the block holding the selection and saves no attribute for the top", () => {
         const html = `<div class="trilium-tabs">${tab("A", "a")}${tab("B", "b")}</div>` +
             "<p>Outside</p>";

@@ -46,11 +46,11 @@
 }
 
 /* Backdrop blur pseudo-element */
-.Island:not(.App-menu__left)::before,
+.Island:not(.App-menu__left, [data-properties-sheet])::before,
 .excalidraw .picker::before,
-:root .App-menu__left > .panelColumn > fieldset::before,
-:root .App-menu__left > .panelColumn > label::before,
-:root .App-menu__left > .panelColumn > div:has(> *)::before {
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > fieldset::before,
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > label::before,
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > div:not(:empty)::before {
     display: block;
     position: absolute;
     content: "";
@@ -193,14 +193,58 @@ body[dir=rtl] .excalidraw .Island.App-menu__left {
     left: 0;
 }
 
+.excalidraw .App-bottom-bar > .Island .App-mobile-menu > .panelColumn {
+    flex-direction: row;
+    flex-wrap: wrap;
+    row-gap: 0;
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: var(--dropdown-border-radius);
+    padding: 8px;
+    background: var(--menu-background-color);
+    backdrop-filter: var(--dropdown-backdrop-filter);
+}
+
+/* Lengths are the zoomed sizes divided by 1.25: 4px borders, 5px inner corners, 270px cards. */
+.excalidraw .App-bottom-bar > .Island .App-mobile-menu > .panelColumn > * {
+    zoom: 1.25;
+    flex: 1 1 50%;
+    box-shadow: none;
+    border: 3.2px solid transparent;
+    border-radius: 7.2px;
+    min-width: 222.4px;
+    background: var(--card-background-color);
+    background-clip: padding-box;
+}
+
+.excalidraw .App-bottom-bar > .Island .App-mobile-menu > .panelColumn > div:empty {
+    display: none;
+}
+
+.excalidraw .App-bottom-bar > .Island[data-properties-sheet] {
+    box-shadow: none;
+    background: transparent;
+}
+
+.excalidraw .App-bottom-bar > .Island[data-properties-sheet] .App-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+    min-height: 0;
+    overflow-y: visible;
+}
+
+.excalidraw .App-bottom-bar > .Island[data-properties-sheet] .App-mobile-menu > .panelColumn {
+    overflow-y: auto;
+}
+
 :root .App-menu__left > .panelColumn {
     row-gap: 5px;
 }
 
 /* Options panel card */
-:root .App-menu__left > .panelColumn > fieldset,
-:root .App-menu__left > .panelColumn > label,
-:root .App-menu__left > .panelColumn > div:has(> *) {
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > fieldset,
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > label,
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > div:not(:empty) {
     position: relative;
     margin: 0;
     border-radius: 4px;
@@ -214,9 +258,9 @@ body[dir=rtl] .excalidraw .Island.App-menu__left {
 }
 
 /* Options panel card title */
-:root .App-menu__left fieldset > legend,
-:root .App-menu__left div > h3,
-:root .App-menu__left > .panelColumn > label {
+:root :is(.App-menu__left, .App-mobile-menu) fieldset > legend,
+:root :is(.App-menu__left, .App-mobile-menu) div > h3,
+:root :is(.App-menu__left, .App-mobile-menu) > .panelColumn > label {
     text-transform: uppercase;
     font-size: .65rem;
     letter-spacing: 1pt;

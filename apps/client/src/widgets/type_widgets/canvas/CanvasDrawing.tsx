@@ -13,16 +13,21 @@ import type FNote from "../../../entities/fnote";
 import { bindAttachmentEditor, type ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
-import { isDesktop } from "../../../services/utils";
+import { isDesktop, isMobile } from "../../../services/utils";
 import {
-    useColorScheme, useEffectiveReadOnly, useElementSize, useTriliumEvent, useWhenShown
+    useColorScheme, useEffectiveReadOnly, useElementSize, useFindShortcut, useTriliumEvent,
+    useWhenShown
 } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
-import { useContentEmbedEvent } from "../text/content_embed_tools";
+import { registerEmbedFindTarget, useContentEmbedEvent } from "../text/content_embed_tools";
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
-import CanvasEmbedTools, { CanvasTools } from "./CanvasEmbedTools";
+import CanvasDrawingRail from "./CanvasDrawingRail";
+import CanvasEmbedTools, { CanvasTools, isNoTool, NO_TOOL } from "./CanvasEmbedTools";
+import {
+    attachExcalidraw, DrawingFindTarget, type DrawingMatch, DrawingMatches, getSceneTransform
+} from "./drawing_find";
 import { type DrawingView, getBoundedView, getCenteredView, getFittedView } from "./drawing_view";
 import {
     exportDrawingPicture, loadDrawingFiles, parseContent, useCanvasDrawingPersistence
@@ -49,6 +54,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const viewRef = useRef<DrawingView | null>(null);
     const colorScheme = useColorScheme();
     const [ tools ] = useState(() => new CanvasTools(rootRef));
+    const [ find ] = useState(() => new DrawingFindTarget(rootRef));
     const { isEditing } = useEditableEmbed(rootRef, {
         editor,
         note: null,
@@ -61,8 +67,14 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const isToolbarOverPanel = useIsToolbarOverPanel(rootRef);
     const isRecentering = useRecenteringOnFullscreen(rootRef, apiRef);
     useSidePanels(rootRef, isEditing);
+    usePropertiesSheet(rootRef, isEditing && isMobile());
     useTopLayerContextMenu(rootRef, apiRef);
     useNoteScrollingWheel(rootRef);
+    useFindShortcut(rootRef);
+    useEffect(() => {
+        const root = rootRef.current;
+        return root ? registerEmbedFindTarget(root, find) : undefined;
+    }, [ find ]);
 
     return (
         <div
@@ -80,6 +92,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
                     colorScheme={colorScheme}
                     rootRef={rootRef}
                     viewRef={viewRef}
+                    find={find}
                     onDrawn={() => setDrawnMode("picture")}
                 />
             )}
@@ -92,6 +105,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
                     apiRef={apiRef}
                     viewRef={viewRef}
                     tools={tools}
+                    find={find}
                     isEditable={isEditing}
                     onDrawn={() => setDrawnMode("editor")}
                 />
@@ -109,6 +123,8 @@ interface LiveDrawingProps {
     apiRef: RefObject<ExcalidrawImperativeAPI | null>;
     viewRef: RefObject<DrawingView | null>;
     tools: CanvasTools;
+    /** Searches the drawing for "Search in note". */
+    find: DrawingFindTarget;
     isEditable: boolean;
     /** Called on the frame after Excalidraw shows the drawing. */
     onDrawn: () => void;
@@ -119,22 +135,33 @@ interface LiveDrawingProps {
  * Its persistence saves what is left to save before Excalidraw unmounts.
  */
 function LiveDrawing({
-    attachment, editor, colorScheme, rootRef, apiRef, viewRef, tools, isEditable, onDrawn
+    attachment, editor, colorScheme, rootRef, apiRef, viewRef, tools, find, isEditable, onDrawn
 }: LiveDrawingProps) {
     const isShownRef = useRef(false);
     const frameRef = useRef(0);
+    const stopFindingRef = useRef<(() => void) | null>(null);
     const persistence = useCanvasDrawingPersistence(attachment, editor, apiRef, colorScheme, {
         initialView: viewRef.current,
+        // A touch over the drawing scrolls the note until a tool is picked.
+        initialTool: isMobile() ? NO_TOOL : undefined,
         rootRef,
         onSceneShown: () => {
             isShownRef.current = true;
             frameRef.current = requestAnimationFrame(onDrawn);
+            const api = apiRef.current;
+            if (api) {
+                stopFindingRef.current?.();
+                stopFindingRef.current = attachExcalidraw(find, api, rootRef.current);
+            }
         }
     });
+    useNoToolOutsideEditing(rootRef, apiRef, isEditable);
     useLayoutEffect(() => () => {
         cancelAnimationFrame(frameRef.current);
+        stopFindingRef.current?.();
+        rootRef.current?.removeAttribute("data-no-tool");
         apiRef.current = null;
-    }, [ apiRef ]);
+    }, [ apiRef, rootRef ]);
 
     return (
         <CanvasEditor
@@ -145,6 +172,8 @@ function LiveDrawing({
                 ...persistence,
                 onChange: (elements, appState, files) => {
                     persistence.onChange?.(elements, appState, files);
+                    // `CanvasDrawing.css` leaves the touch over the drawing to the note.
+                    rootRef.current?.toggleAttribute("data-no-tool", isNoTool(appState.activeTool));
                     if (isShownRef.current) {
                         const { zoom, scrollX, scrollY } = appState;
                         viewRef.current = { zoom, scrollX, scrollY };
@@ -162,6 +191,7 @@ function LiveDrawing({
                 tools={tools}
                 isEditable={isEditable}
             />
+            {isMobile() && <CanvasDrawingRail rootRef={rootRef} apiRef={apiRef} />}
         </CanvasEditor>
     );
 }
@@ -173,6 +203,8 @@ interface DrawingPictureProps {
     colorScheme: AppState["theme"];
     rootRef: RefObject<HTMLElement | null>;
     viewRef: RefObject<DrawingView | null>;
+    /** Searches the drawing for "Search in note". */
+    find: DrawingFindTarget;
     /** Called on the frame after the picture shows. */
     onDrawn: () => void;
 }
@@ -183,12 +215,16 @@ interface DrawingPictureProps {
  * fullscreen changes its size, as Excalidraw does.
  */
 function DrawingPicture({
-    attachment, editor, colorScheme, rootRef, viewRef, onDrawn
+    attachment, editor, colorScheme, rootRef, viewRef, find, onDrawn
 }: DrawingPictureProps) {
     const layerRef = useRef<HTMLDivElement>(null);
+    const matchesRef = useRef<SVGGElement>(null);
     const [ scene, setScene ] = useState<PictureScene | null>(null);
+    const sceneRef = useRef<PictureScene | null>(null);
+    const [ shownMatches, setShownMatches ] = useState<ShownMatches>(NO_MATCHES);
     const [ revision, setRevision ] = useState(0);
-    const [ recenterings, setRecenterings ] = useState(0);
+    // Each move of the view places the picture again.
+    const [ placements, setPlacements ] = useState(0);
     const renderedKeyRef = useRef<string | null>(null);
     const size = useElementSize(layerRef);
     const whenShown = useWhenShown(rootRef);
@@ -227,10 +263,25 @@ function DrawingPicture({
         if (!scene || !box || !view) return;
 
         viewRef.current = getCenteredView(scene.elements, view, box.width, box.height) ?? view;
-        setRecenterings((count) => count + 1);
+        setPlacements((count) => count + 1);
     };
     useContentEmbedEvent(rootRef, "enterFullscreen", recenter);
     useContentEmbedEvent(rootRef, "leaveFullscreen", recenter);
+
+    useLayoutEffect(() => find.attach({
+        getElements: () => sceneRef.current?.elements ?? [],
+        getView: () => viewRef.current,
+        setView: (view) => {
+            viewRef.current = view;
+            setPlacements((count) => count + 1);
+        },
+        showMatches: (matches, current) => setShownMatches({ matches, current })
+    }), [ find, viewRef ]);
+
+    useEffect(() => {
+        sceneRef.current = scene;
+        find.update();
+    }, [ find, scene ]);
 
     useLayoutEffect(() => {
         const layer = layerRef.current;
@@ -241,19 +292,30 @@ function DrawingPicture({
         if (scene.picture && view) {
             placePicture(scene.picture, view);
         }
+        if (view) {
+            matchesRef.current?.setAttribute("transform", getSceneTransform(view));
+        }
         layer.replaceChildren(...(scene.picture ? [ scene.picture.svg ] : []));
         const frame = requestAnimationFrame(onDrawn);
         return () => cancelAnimationFrame(frame);
-    }, [ scene, size, recenterings ]);
+    }, [ scene, size, placements ]);
 
     return (
-        <div
-            ref={layerRef}
-            className={clsx("canvas-drawing-view", colorScheme === "dark" && "theme-dark")}
-            style={scene?.background
-                ? { "--canvas-drawing-view-background": scene.background }
-                : undefined}
-        />
+        <>
+            <div
+                ref={layerRef}
+                className={clsx("canvas-drawing-view", colorScheme === "dark" && "theme-dark")}
+                style={scene?.background
+                    ? { "--canvas-drawing-view-background": scene.background }
+                    : undefined}
+            />
+            <DrawingMatches
+                matches={shownMatches.matches}
+                current={shownMatches.current}
+                theme={colorScheme}
+                layerRef={matchesRef}
+            />
+        </>
     );
 }
 
@@ -265,6 +327,14 @@ interface ScenePicture {
     width: number;
     height: number;
 }
+
+/** The matches of "Search in note" that the picture shows, and the index of the current one. */
+interface ShownMatches {
+    matches: DrawingMatch[];
+    current: number | null;
+}
+
+const NO_MATCHES: ShownMatches = { matches: [], current: null };
 
 interface PictureScene {
     /** The picture of the content, or `null` for an empty drawing. */
@@ -432,6 +502,40 @@ function useRecenteringOnFullscreen(
     useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
     return isRecentering;
+}
+
+/**
+ * Gives the drawing no tool as it loses the focus in the mobile layout, so that a touch over it
+ * scrolls the note again, and the selection tool in fullscreen, where no tool has no use.
+ */
+function useNoToolOutsideEditing(
+    rootRef: RefObject<HTMLElement | null>,
+    apiRef: RefObject<ExcalidrawImperativeAPI | null>,
+    isEnabled: boolean
+) {
+    useContentEmbedEvent(rootRef, "enterFullscreen", () => {
+        const api = apiRef.current;
+        if (api && isNoTool(api.getAppState().activeTool)) {
+            api.setActiveTool({ type: "selection" });
+        }
+    });
+
+    useEffect(() => {
+        const embedBody = rootRef.current?.closest(".include-note-body");
+        if (!embedBody || !isEnabled || !isMobile()) return;
+
+        // `ContentEmbed` marks the body active while the drawing has the focus.
+        let wasActive = embedBody.classList.contains("active");
+        const observer = new MutationObserver(() => {
+            const isActive = embedBody.classList.contains("active");
+            if (wasActive && !isActive) {
+                apiRef.current?.setActiveTool(NO_TOOL);
+            }
+            wasActive = isActive;
+        });
+        observer.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        return () => observer.disconnect();
+    }, [ rootRef, apiRef, isEnabled ]);
 }
 
 /**
@@ -800,6 +904,157 @@ function getSidePanelLeft(
         return { side: "left", left: leftOfDrawing };
     }
     return null;
+}
+
+/** The share of the note's height that the properties sheet can take. */
+const SHEET_MAX_HEIGHT_SHARE = 0.5;
+/** The island at the bottom of Excalidraw's phone layout, which holds the properties panel. */
+const BOTTOM_ISLAND_SELECTOR = ".App-bottom-bar > .Island";
+/** The properties panel of Excalidraw's phone layout, inside the bottom island. */
+export const PROPERTIES_PANEL_CLASS = "App-mobile-menu";
+/** The wrapper in which Radix renders the pickers of the properties (colors, fonts). */
+export const PICKER_SELECTOR = "[data-radix-popper-content-wrapper]";
+/**
+ * The custom property on `body` with the distance from the bottom of the window to the top of the
+ * properties sheet. `CanvasDrawingRail.css` keeps the rail above the sheet with it.
+ */
+const SHEET_INSET_PROPERTY = "--canvas-drawing-sheet-inset";
+
+/**
+ * Shows the properties panel of Excalidraw's phone layout as a sheet across the bottom of the
+ * note, above the formatting toolbar, while the drawing has the focus. The sheet and the pickers
+ * that it opens go into the top layer, so that no clip or stacking of the note covers them. The
+ * sheet has `data-properties-sheet`, and its position in `--properties-sheet-*`.
+ */
+export function usePropertiesSheet(rootRef: RefObject<HTMLElement | null>, isEnabled: boolean) {
+    useEffect(() => {
+        const root = rootRef.current;
+        const viewport = root?.closest<HTMLElement>(".scrolling-container, .popup-editor-scroll");
+        const embedBody = root?.closest<HTMLElement>(".include-note-body");
+        if (!root || !viewport || !embedBody || !isEnabled) return;
+
+        // The formatting toolbar of the mobile layout floats over the bottom of the note.
+        const toolbar = viewport.parentElement
+            ?.querySelector<HTMLElement>(":scope > .classic-toolbar-outer-container") ?? null;
+        let island: HTMLElement | null = null;
+        let hasInset = false;
+
+        const resizeObserver = new ResizeObserver(() => update());
+        const update = () => {
+            const current = root.querySelector<HTMLElement>(BOTTOM_ISLAND_SELECTOR);
+            if (current !== island) {
+                if (island) {
+                    resizeObserver.unobserve(island);
+                    placeSheet(island, null);
+                }
+                if (current) {
+                    resizeObserver.observe(current);
+                }
+                island = current;
+            }
+
+            // `ContentEmbed` marks the body active while the drawing has the focus.
+            const isShown = !!island?.querySelector(`:scope > .${PROPERTIES_PANEL_CLASS}`)
+                && embedBody.classList.contains("active")
+                && !document.fullscreenElement?.contains(root);
+            const position = isShown ? getSheetPosition(root, viewport, toolbar) : null;
+            if (island) {
+                placeSheet(island, position);
+            }
+            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+                setTopLayer(picker, !!position);
+            }
+
+            if (island && position) {
+                const inset = getWindowArea().bottom - island.getBoundingClientRect().top;
+                document.body.style.setProperty(SHEET_INSET_PROPERTY, `${inset}px`);
+                hasInset = true;
+            } else if (hasInset) {
+                document.body.style.removeProperty(SHEET_INSET_PROPERTY);
+                hasInset = false;
+            }
+        };
+
+        resizeObserver.observe(root);
+        resizeObserver.observe(viewport);
+        const attributeObserver = new MutationObserver(update);
+        attributeObserver.observe(embedBody, { attributes: true, attributeFilter: [ "class" ] });
+        if (toolbar) {
+            attributeObserver.observe(toolbar, { attributes: true, attributeFilter: [ "class" ] });
+        }
+        // The panel mounts when it opens, and the pickers when one of its buttons opens them.
+        const mutationObserver = new MutationObserver(update);
+        mutationObserver.observe(root, { childList: true, subtree: true });
+        viewport.addEventListener("scroll", update, { passive: true });
+        document.addEventListener("fullscreenchange", update);
+        update();
+
+        return () => {
+            resizeObserver.disconnect();
+            attributeObserver.disconnect();
+            mutationObserver.disconnect();
+            viewport.removeEventListener("scroll", update);
+            document.removeEventListener("fullscreenchange", update);
+            if (island) {
+                placeSheet(island, null);
+            }
+            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+                setTopLayer(picker, false);
+            }
+            if (hasInset) {
+                document.body.style.removeProperty(SHEET_INSET_PROPERTY);
+            }
+        };
+    }, [ rootRef, isEnabled ]);
+}
+
+/**
+ * The position of the properties sheet: across the visible note, inside the gap of the formatting
+ * toolbar, and above the toolbar while it shows. `null` while the drawing is scrolled out of the
+ * note.
+ */
+function getSheetPosition(root: HTMLElement, viewport: HTMLElement, toolbar: HTMLElement | null) {
+    const area = getVisibleArea(viewport);
+    const drawing = root.getBoundingClientRect();
+    if (drawing.bottom <= area.top || drawing.top >= area.bottom) {
+        return null;
+    }
+
+    const gap = getToolbarGap();
+    const toolbarTop = toolbar?.classList.contains("active")
+        ? toolbar.querySelector(".classic-toolbar-island")?.getBoundingClientRect().top
+        : undefined;
+    const bottom = Math.min(area.bottom, toolbarTop ?? area.bottom) - gap;
+    return {
+        left: area.left + gap,
+        width: area.right - area.left - 2 * gap,
+        bottom: getWindowArea().bottom - bottom,
+        maxHeight: (bottom - area.top) * SHEET_MAX_HEIGHT_SHARE
+    };
+}
+
+/** The gap around the formatting toolbar of the mobile layout, from `mobile_editor_toolbar.css`. */
+function getToolbarGap() {
+    const style = getComputedStyle(document.body);
+    const gap = parseFloat(style.getPropertyValue("--mobile-toolbar-gap"));
+    if (!Number.isNaN(gap)) {
+        return gap;
+    }
+    return WINDOW_GAP_REM * parseFloat(getComputedStyle(document.documentElement).fontSize);
+}
+
+type SheetPosition = NonNullable<ReturnType<typeof getSheetPosition>>;
+
+/** Moves `island` to `position` at the bottom of the note, or back into the drawing for `null`. */
+function placeSheet(island: HTMLElement, position: SheetPosition | null) {
+    island.toggleAttribute("data-properties-sheet", !!position);
+    if (position) {
+        island.style.setProperty("--properties-sheet-left", `${position.left}px`);
+        island.style.setProperty("--properties-sheet-width", `${position.width}px`);
+        island.style.setProperty("--properties-sheet-bottom", `${position.bottom}px`);
+        island.style.setProperty("--properties-sheet-max-height", `${position.maxHeight}px`);
+    }
+    setTopLayer(island, !!position);
 }
 
 /** The inline styles with which Excalidraw fits its context menu in the drawing. */

@@ -3,8 +3,8 @@ import { Plugin } from "ckeditor5";
 import "../../theme/scrollable_bar.css";
 import "../../theme/tabs.css";
 import type {
-    AssignTabReferenceCommand, InsertTabCommand, InsertTabsCommand, MoveTabCommand,
-    MoveToTabCommand, RemoveTabCommand, TabAlignmentCommand
+    AssignTabReferenceCommand, DeleteTabsCommand, InsertTabCommand, InsertTabsCommand,
+    MoveTabCommand, MoveToTabCommand, RemoveTabCommand, TabAlignmentCommand
 } from "./tabs_commands.js";
 import TabsEditing from "./tabs_editing.js";
 import TabsKeyboard from "./tabs_keyboard.js";
@@ -42,6 +42,7 @@ declare module "ckeditor5" {
         tabs: InsertTabsCommand;
         insertTab: InsertTabCommand;
         removeTab: RemoveTabCommand;
+        deleteTabs: DeleteTabsCommand;
         moveTabLeft: MoveTabCommand;
         moveTabRight: MoveTabCommand;
         moveTab: MoveTabCommand;

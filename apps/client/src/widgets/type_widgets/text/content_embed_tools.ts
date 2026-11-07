@@ -52,8 +52,18 @@ export interface ContentEmbedToolProvider {
     subscribe(callback: () => void): () => void;
     /** The items that the content adds to the menu of the embed, after Editable. */
     getMenuItems?(): MenuItem<CommandNames>[];
+    /**
+     * The name of the content, such as _Canvas_, that the formatting toolbar of the mobile layout
+     * shows ahead of the tools of the embed. _Embed_ when left out.
+     */
+    toolbarTitle?: string;
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+    /**
+     * The items of the embed toolbar to hide while the Editable toggle of the embed is on. The menu
+     * of the embed still offers them.
+     */
+    hiddenToolbarItemsWhileEditable?: readonly ContentEmbedToolbarItem[];
     /**
      * An SVG icon that the box size dropdown of the embed toolbar shows in place of the name of the
      * box size, which its tooltip then names.

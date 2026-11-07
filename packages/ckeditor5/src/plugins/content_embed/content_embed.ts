@@ -225,6 +225,8 @@ export function getDisplayModeLabel( t: ( message: string ) => string, mode: Dis
 export default class ContentEmbed extends Plugin {
 	/** The buttons that the content of the selected embed adds to its toolbar, or `null`. */
 	declare public selectedEmbedTools: ContentEmbedToolProvider | null;
+	/** Whether the Editable toggle of the selected embed is on. */
+	declare public isSelectedEmbedEditable: boolean;
 	/** Whether the selected embed keeps its source in the note, and so has no title or caption. */
 	declare public isSelectedEmbedInline: boolean;
 
@@ -245,6 +247,7 @@ export default class ContentEmbed extends Plugin {
 		super( editor );
 		// Set before `init()` of the plugins it requires, whose toolbar items bind to it.
 		this.set( 'selectedEmbedTools', null );
+		this.set( 'isSelectedEmbedEditable', false );
 		this.set( 'isSelectedEmbedInline', false );
 	}
 
@@ -253,6 +256,7 @@ export default class ContentEmbed extends Plugin {
 		this.listenTo( this.editor.ui, 'update', () => {
 			this.selectedEmbedTools = getSelectedEmbedTools( this.editor );
 			const embed = getSelectedContentEmbed( this.editor );
+			this.isSelectedEmbedEditable = !!embed?.getAttribute( 'editable' );
 			this.isSelectedEmbedInline = !!embed && isInlineSourceEmbed( embed );
 		}, { priority: 'high' } );
 	}
@@ -451,9 +455,11 @@ class ContentEmbedUI extends Plugin {
 
 		editor.ui.componentFactory.add( CONTENT_EMBED_DISPLAY_MODE_SEPARATOR, locale => {
 			const separator = new ToolbarItemSeparatorView( locale );
+			const contentEmbed = editor.plugins.get( ContentEmbed );
 			separator.bind( 'isVisible' ).to(
-				editor.plugins.get( ContentEmbed ), 'selectedEmbedTools',
-				tools => isEditableToggleShown( tools ) && !!tools?.hasDisplayModes );
+				contentEmbed, 'selectedEmbedTools', contentEmbed, 'isSelectedEmbedEditable',
+				( tools, isEditable ) =>
+					isEditableToggleShown( tools, isEditable ) && !!tools?.hasDisplayModes );
 			return separator;
 		} );
 
@@ -1694,18 +1700,29 @@ export function getPositionOfView( viewElement: ViewElement ): { position?: Posi
 	return SAVED_POSITIONS.includes( position ) ? { position: position as PositionValue } : {};
 }
 
-/** Whether the content of the selected embed, whose buttons are `tools`, hides `name`. */
+/**
+ * Whether the content of the selected embed, whose buttons are `tools`, hides `name`, with the
+ * Editable toggle of the embed on when `isEditable`.
+ */
 export function isToolbarItemHidden(
 	tools: ContentEmbedToolProvider | null,
-	name: ContentEmbedToolbarItem
+	name: ContentEmbedToolbarItem,
+	isEditable: boolean
 ) {
-	return !!tools?.hiddenToolbarItems?.includes( name );
+	return !!tools?.hiddenToolbarItems?.includes( name )
+		|| ( isEditable && !!tools?.hiddenToolbarItemsWhileEditable?.includes( name ) );
 }
 
-/** Whether the toolbar of the selected embed, whose buttons are `tools`, shows Editable. */
-export function isEditableToggleShown( tools: ContentEmbedToolProvider | null ) {
+/**
+ * Whether the toolbar of the selected embed, whose buttons are `tools`, shows Editable, with the
+ * toggle on when `isEditable`.
+ */
+export function isEditableToggleShown(
+	tools: ContentEmbedToolProvider | null,
+	isEditable: boolean
+) {
 	return !!tools?.hasEditableFlag
-		&& !isToolbarItemHidden( tools, TOGGLE_EDITABLE_COMMAND_NAME );
+		&& !isToolbarItemHidden( tools, TOGGLE_EDITABLE_COMMAND_NAME, isEditable );
 }
 
 /**
@@ -1715,10 +1732,13 @@ export function isEditableToggleShown( tools: ContentEmbedToolProvider | null ) 
 function bindToolbarItemVisibility(
 	editor: Editor, button: ButtonView, command: Command, name: ContentEmbedToolbarItem
 ) {
+	const contentEmbed = editor.plugins.get( ContentEmbed );
 	button.bind( 'isVisible' ).to(
 		command, 'isEnabled',
-		editor.plugins.get( ContentEmbed ), 'selectedEmbedTools',
-		( isEnabled, tools ) => isEnabled && !isToolbarItemHidden( tools, name )
+		contentEmbed, 'selectedEmbedTools',
+		contentEmbed, 'isSelectedEmbedEditable',
+		( isEnabled, tools, isEditable ) =>
+			isEnabled && !isToolbarItemHidden( tools, name, isEditable )
 	);
 }
 

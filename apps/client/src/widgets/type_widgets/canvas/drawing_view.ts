@@ -5,8 +5,16 @@ import type { AppState, NormalizedZoomValue } from "@excalidraw/excalidraw/types
 /** Excalidraw's zoom limits, from its own zoom buttons. */
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 30;
+/** Excalidraw's zoom step, from its own zoom buttons. */
+export const ZOOM_STEP = 0.1;
 
 export type DrawingView = Pick<AppState, "zoom" | "scrollX" | "scrollY">;
+
+/** The width that panels cover at the left and the right edge of a drawing. */
+export interface CoveredSides {
+    left: number;
+    right: number;
+}
 
 /**
  * The view of a drawing `width` by `height` that saved none, such as one converted from an image:
@@ -21,6 +29,32 @@ export function getFittedView(
     if (!shown.length || !width || !height) return null;
 
     return fitView(getCommonBounds(shown), width, height);
+}
+
+/**
+ * The view of a drawing `width` by `height` that fits its content between the `covered` sides and
+ * centers it there, as Excalidraw's "Zoom to fit all elements" does: zoomed in up to 100%, in
+ * steps of {@link ZOOM_STEP}. Sides that cover the whole width are ignored. `null` without
+ * content or a size.
+ */
+export function getZoomToFitView(
+    elements: readonly ExcalidrawElement[],
+    width: number,
+    height: number,
+    covered: CoveredSides = { left: 0, right: 0 }
+): DrawingView | null {
+    const shown = elements.filter((element) => !element.isDeleted);
+    if (!shown.length || !width || !height) return null;
+
+    const { left, right } = covered.left + covered.right < width ? covered : { left: 0, right: 0 };
+    const freeWidth = width - left - right;
+    const bounds = getCommonBounds(shown);
+    const [ minX, minY, maxX, maxY ] = bounds;
+    const fit = Math.min(freeWidth / (maxX - minX), height / (maxY - minY), 1);
+    const factor = 1 / ZOOM_STEP;
+    const zoom = Math.max(Math.floor(fit * factor) / factor, MIN_ZOOM);
+    const view = centerView(bounds, zoom, freeWidth, height);
+    return { ...view, scrollX: view.scrollX + left / zoom };
 }
 
 /**
@@ -80,14 +114,23 @@ function getBoundingImage(elements: readonly ExcalidrawElement[]) {
 
 const EPSILON = 1e-6;
 
+type Box = readonly [ number, number, number, number ];
+
 /** The view of a drawing `width` by `height` that shows the box from `minX` to `maxY` whole. */
-function fitView(
-    [ minX, minY, maxX, maxY ]: readonly [ number, number, number, number ],
+function fitView(box: Box, width: number, height: number): DrawingView {
+    const [ minX, minY, maxX, maxY ] = box;
+    const fit = Math.min(width / (maxX - minX), height / (maxY - minY));
+    const zoom = Math.min(Math.max(fit, MIN_ZOOM), MAX_ZOOM);
+    return centerView(box, zoom, width, height);
+}
+
+/** The view of a drawing `width` by `height` at `zoom`, centered on the box. */
+function centerView(
+    [ minX, minY, maxX, maxY ]: Box,
+    zoom: number,
     width: number,
     height: number
 ): DrawingView {
-    const fit = Math.min(width / (maxX - minX), height / (maxY - minY));
-    const zoom = Math.min(Math.max(fit, MIN_ZOOM), MAX_ZOOM);
     return {
         zoom: { value: zoom as NormalizedZoomValue },
         scrollX: width / 2 / zoom - (minX + maxX) / 2,

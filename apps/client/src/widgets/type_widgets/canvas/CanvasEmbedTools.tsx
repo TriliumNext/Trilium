@@ -4,6 +4,7 @@ import { useI18n } from "@excalidraw/excalidraw";
 import type {
     AppState, ExcalidrawImperativeAPI, NormalizedZoomValue, ToolType
 } from "@excalidraw/excalidraw/types";
+import noToolIcon from "boxicons/svg/regular/bx-block.svg?raw";
 import moreToolsIcon from "boxicons/svg/regular/bx-category.svg?raw";
 import ellipseIcon from "boxicons/svg/regular/bx-circle.svg?raw";
 import eraserIcon from "boxicons/svg/regular/bx-eraser.svg?raw";
@@ -33,7 +34,10 @@ import {
     needsFullscreenButton,
     showContentEmbedFullscreen
 } from "../text/content_embed_tools";
-import { getBoundedView, MAX_ZOOM, MIN_ZOOM } from "./drawing_view";
+import {
+    type CoveredSides, type DrawingView, getBoundedView, getZoomToFitView, MAX_ZOOM, MIN_ZOOM,
+    ZOOM_STEP
+} from "./drawing_view";
 
 /** The tools with a button of their own, in the order of their buttons. */
 export const MAIN_TOOLS = [
@@ -44,6 +48,15 @@ export const MAIN_TOOLS = [
 export const EXTRA_TOOLS = [ "frame", "embeddable" ] as const satisfies readonly ToolType[];
 const TOOLS = [ ...MAIN_TOOLS, ...EXTRA_TOOLS ];
 export const LOCK = "lock";
+/** The button of {@link NO_TOOL}. */
+export const NO_TOOL_ID = "noTool";
+/**
+ * No tool: the custom tool of Excalidraw, which takes nothing from the pointer. `CanvasDrawing`
+ * leaves the touch over the drawing to the note with it.
+ */
+export const NO_TOOL = {
+    type: "custom", customType: "none", locked: false, lastActiveTool: null
+} as const satisfies AppState["activeTool"];
 /** The button that opens the "More tools" menu, named by Excalidraw's `toolBar.extraTools`. */
 export const MORE_TOOLS = "moreTools";
 /** The name of Excalidraw's default sidebar, whose tabs are the library and the search. */
@@ -73,7 +86,6 @@ export const MENU_COMMANDS: readonly MenuCommand[] = [
     {
         id: "searchMenu",
         label: "search.title",
-        keystroke: "Ctrl+F",
         group: "canvas",
         run: (api) => api.toggleSidebar({ name: DEFAULT_SIDEBAR, tab: SEARCH_TAB, force: true })
     },
@@ -96,9 +108,10 @@ const FULLSCREEN = "fullscreen";
 /** The commands that click Excalidraw's own `button-undo` and `button-redo`. */
 export const HISTORY_ACTIONS = [ "undo", "redo" ] as const;
 
-/** Excalidraw's zoom step, from its own zoom buttons. */
-export const ZOOM_STEP = 0.1;
-/** The zoom that each zoom button sets, from the current one. */
+/** The zoom level, which opens a menu with {@link ZOOM_TO_FIT} and Reset zoom. */
+const ZOOM_MENU = "zoomMenu";
+const ZOOM_TO_FIT = "zoomToFit";
+/** The zoom that each zoom command sets, from the current one. */
 export const ZOOMS: Record<string, (zoom: number) => number> = {
     zoomOut: (zoom) => zoom - ZOOM_STEP,
     resetZoom: () => 1,
@@ -108,7 +121,7 @@ export const ZOOMS: Record<string, (zoom: number) => number> = {
 type Tool = typeof TOOLS[number];
 type HistoryAction = typeof HISTORY_ACTIONS[number];
 /** Excalidraw's `t()`, for a key such as `toolBar.rectangle`. */
-type Translate = (key: string) => string;
+export type Translate = (key: string) => string;
 
 /** Boxicons' square turned by 45°, and scaled down to stay inside the box of the icon. */
 const diamondIcon = squareIcon.replace(
@@ -182,8 +195,12 @@ export function useExcalidrawTranslation() {
  * Excalidraw, as while the drawing shows as a picture, only fullscreen.
  */
 export class CanvasTools implements ContentEmbedToolProvider {
+    readonly toolbarTitle = t("note_types.canvas");
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
         "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
+    ];
+    readonly hiddenToolbarItemsWhileEditable: readonly ContentEmbedToolbarItem[] = [
+        "toggleContentEmbedEditable"
     ];
     readonly hasEditableFlag = true;
     readonly hasPositions = true;
@@ -233,13 +250,14 @@ export class CanvasTools implements ContentEmbedToolProvider {
     }
 
     getTools(): ContentEmbedTool[] {
-        const appState = this.api?.getAppState();
-        if (!appState) {
+        const api = this.api;
+        const appState = api?.getAppState();
+        if (!api || !appState) {
             return this.getFullscreenTools();
         }
 
         const zoomTools = [
-            ...this.getZoomTools(appState.zoom.value),
+            ...this.getZoomTools(appState.zoom.value, api.getSceneElements().length > 0),
             ...this.getFullscreenTools()
         ];
         return this.isEditable
@@ -265,9 +283,13 @@ export class CanvasTools implements ContentEmbedToolProvider {
         const appState = api.getAppState();
         const getZoom = ZOOMS[id];
         if (getZoom) {
-            const view = getZoomState(appState, getZoom(appState.zoom.value));
-            const boundedView = getBoundedView(api.getSceneElements(), { ...appState, ...view });
-            api.updateScene({ appState: boundedView ?? view });
+            showView(api, appState, getZoomState(appState, getZoom(appState.zoom.value)));
+        } else if (id === ZOOM_TO_FIT) {
+            const view = getZoomToFitView(api.getSceneElements(), appState.width, appState.height,
+                getCoveredSides(this.rootRef.current));
+            if (view) {
+                showView(api, appState, view);
+            }
         } else if (this.isEditable) {
             this.runEditingTool(api, appState, id);
         }
@@ -294,7 +316,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
         return this.translate?.(key) ?? key;
     }
 
-    /** The lock, the drawing tools with the menu commands, undo and redo. */
+    /** The lock, no tool, the drawing tools with the menu commands, undo and redo. */
     private getEditingTools(activeTool: AppState["activeTool"]): ContentEmbedTool[] {
         return [
             {
@@ -303,6 +325,13 @@ export class CanvasTools implements ContentEmbedToolProvider {
                 icon: ICONS[LOCK],
                 isOn: activeTool.locked,
                 group: "lock"
+            },
+            {
+                id: NO_TOOL_ID,
+                label: t("canvas.no_tool"),
+                icon: noToolIcon,
+                isOn: isNoTool(activeTool),
+                group: "tools"
             },
             ...MAIN_TOOLS.map((type) => ({
                 id: type,
@@ -348,8 +377,11 @@ export class CanvasTools implements ContentEmbedToolProvider {
         ];
     }
 
-    /** Zoom out, the zoom level that resets it, and zoom in. */
-    private getZoomTools(zoom: number): ContentEmbedTool[] {
+    /**
+     * Zoom out, the zoom level with its menu, and zoom in. Zoom to fit is enabled while the drawing
+     * `hasContent`.
+     */
+    private getZoomTools(zoom: number, hasContent: boolean): ContentEmbedTool[] {
         return [
             {
                 id: "zoomOut",
@@ -359,11 +391,15 @@ export class CanvasTools implements ContentEmbedToolProvider {
                 group: "zoom"
             },
             {
-                id: "resetZoom",
-                label: this.t("buttons.resetZoom"),
+                id: ZOOM_MENU,
+                label: t("canvas.zoom"),
                 text: `${Math.round(zoom * 100)}%`,
                 class: "canvas-drawing-zoom-level",
-                group: "zoom"
+                group: "zoom",
+                children: [
+                    { id: ZOOM_TO_FIT, label: t("canvas.zoom_to_fit"), isEnabled: hasContent },
+                    { id: "resetZoom", label: this.t("buttons.resetZoom") }
+                ]
             },
             {
                 id: "zoomIn",
@@ -375,7 +411,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
         ];
     }
 
-    /** Runs the lock, a drawing tool, a menu command, undo or redo. */
+    /** Runs the lock, no tool, a drawing tool, a menu command, undo or redo. */
     private runEditingTool(api: ExcalidrawImperativeAPI, appState: AppState, id: string) {
         const command = MENU_COMMANDS.find((menuCommand) => menuCommand.id === id);
         if (command) {
@@ -385,6 +421,8 @@ export class CanvasTools implements ContentEmbedToolProvider {
         } else if (id === LOCK) {
             const locked = !appState.activeTool.locked;
             api.updateScene({ appState: { activeTool: { ...appState.activeTool, locked } } });
+        } else if (id === NO_TOOL_ID) {
+            api.setActiveTool(NO_TOOL);
         } else if (isTool(id)) {
             api.setActiveTool({ type: id });
         }
@@ -416,6 +454,11 @@ function isTool(id: string): id is Tool {
     return (TOOLS as readonly string[]).includes(id);
 }
 
+/** Whether `activeTool` is {@link NO_TOOL}. */
+export function isNoTool(activeTool: AppState["activeTool"]) {
+    return activeTool.type === "custom" && activeTool.customType === NO_TOOL.customType;
+}
+
 /**
  * The scroll and the zoom that zoom the view to `zoom` around its center, as Excalidraw's own
  * zoom buttons compute them.
@@ -429,4 +472,37 @@ function getZoomState(appState: AppState, zoom: number) {
         scrollY: appState.scrollY + centerY / value - centerY / appState.zoom.value,
         zoom: { value: value as NormalizedZoomValue }
     };
+}
+
+/** Shows `view` of the drawing, kept inside the locked image under it, if any. */
+function showView(api: ExcalidrawImperativeAPI, appState: AppState, view: DrawingView) {
+    const boundedView = getBoundedView(api.getSceneElements(), { ...appState, ...view });
+    api.updateScene({ appState: boundedView ?? view });
+}
+
+/** Excalidraw's panels that can cover the drawing: the library and the properties panel. */
+const PANEL_SELECTOR = ".default-sidebar, .App-menu__left";
+
+/**
+ * The width that Excalidraw's panels cover at each side of the drawing in `root`, measured as
+ * Excalidraw's `getEditorUIOffsets()` does. A panel that `useSidePanels()` placed beside the
+ * drawing covers none.
+ */
+function getCoveredSides(root: HTMLElement | null): CoveredSides {
+    const covered = { left: 0, right: 0 };
+    const drawing = root?.querySelector(".excalidraw-container")?.getBoundingClientRect();
+    if (!root || !drawing) return covered;
+
+    const center = (drawing.left + drawing.right) / 2;
+    for (const panel of root.querySelectorAll(PANEL_SELECTOR)) {
+        const rect = panel.getBoundingClientRect();
+        if (!rect.width) continue;
+
+        if ((rect.left + rect.right) / 2 > center) {
+            covered.right = Math.max(covered.right, drawing.right - rect.left);
+        } else {
+            covered.left = Math.max(covered.left, rect.right - drawing.left);
+        }
+    }
+    return covered;
 }
