@@ -12,12 +12,12 @@ body.mobile .note-detail-editable-text {
     padding-inline-start: 4px;
 }
 
-.note-detail-editable-text a:hover {
-    cursor: pointer;
-}
+.note-detail-editable-text-editor:not(.ck-format-painter-active) a:where(:not(.excalidraw *)) {
+    cursor: default;
 
-.note-detail-editable-text a:is([href^="http://"], [href^="https://"]):where(:not(.excalidraw *)) {
-    cursor: text !important;
+    &:read-write {
+        cursor: text;
+    }
 }
 
 .note-detail-editable-text
