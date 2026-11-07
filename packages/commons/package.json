@@ -20,7 +20,7 @@
     "jszip": "3.10.2",
     "marked": "18.1.2",
     "marked-footnote": "1.4.0",
-    "numfmt": "4.1.1"
+    "numfmt": "4.1.2"
   },
   "devDependencies": {
     "happy-dom": "21.0.4",
