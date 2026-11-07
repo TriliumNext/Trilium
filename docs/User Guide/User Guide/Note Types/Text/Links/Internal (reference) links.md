@@ -14,6 +14,8 @@ In a note being edited, right-clicking a link also opens this menu.
 
 To follow the link without the popup, <kbd>Ctrl</kbd>+click or double-click it, which does what the first button of the popup does. On a touch device, touch and hold the link, then choose the first entry of its menu, such as _Open note_ or _Jump to heading_. To open the note in a new tab, click it with the middle mouse button. The preview does not show while the popup is open.
 
+A link in an [included note](../Include%20Note.md) that is not _Editable_ opens on a click, as in a read-only note.
+
 ## Inserting internal links
 
 Internal links can be created at the current position in a text note by:

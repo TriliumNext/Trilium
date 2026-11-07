@@ -617,10 +617,11 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
             openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
-        const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
+        const isInEditedContent = isInEditor
+            || $link?.closest("[contenteditable]").attr("contenteditable") === "true";
 
         if (openInNewTab || openInNewWindow || isFollowClick
-            || (isLeftClick && (isLinkToolbarPreview || outsideOfCKEditor))) {
+            || (isLeftClick && (isLinkToolbarPreview || !isInEditedContent))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
             } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
@@ -652,9 +653,13 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     return true;
 }
 
-/** Whether `$link` is in the content of an editable text note, rather than in an embed in it. */
+/**
+ * Whether `$link` belongs to a text note being edited, in its text or in one of its widgets,
+ * rather than to the read-only content of an embed in it.
+ */
 function isInEditableText($link: JQuery<HTMLElement>) {
-    return $link.closest(".ck-content").hasClass("note-detail-editable-text-editor");
+    return $link.closest(".note-detail-editable-text-editor, .include-note-content")
+        .hasClass("note-detail-editable-text-editor");
 }
 
 /**

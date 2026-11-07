@@ -882,19 +882,43 @@ describe("goToLinkExt", () => {
 
     it("leaves a plain left click on a note link in an editable text note to the link toolbar", () => {
         const $editor = $("<div class='ck-content note-detail-editable-text-editor'>");
-        const $link = $("<a href='#root/aaaaaaaaaaaa'>");
-        const $embed = $("<div class='ck-content'>");
-        const $embeddedLink = $("<a href='#root/aaaaaaaaaaaa'>");
-        $editor.append($link, $embed.append($embeddedLink));
+        const $link = $("<a href='#root/aaaaaaaaaaaa'>").appendTo($editor);
 
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $link);
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa?popup=1", $link);
         expect(openInCurrentNoteContext).not.toHaveBeenCalled();
         expect(triggerCommand).not.toHaveBeenCalled();
+    });
 
-        // A link in an embed still navigates.
-        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $embeddedLink);
-        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+    it("follows a link in the read-only content of an embed on a click, as in a read-only note", () => {
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+        const $editor = $("<div class='ck-content note-detail-editable-text-editor'"
+            + " contenteditable='true'><figure class='include-note' contenteditable='false'>"
+            + "<div class='include-note-content'>"
+            + "<div class='ck-content'><a class='text' href='#root/aaaaaaaaaaaa'></a></div>"
+            // A collection or a diagram has no content element of its own.
+            + "<a class='card' href='#root/bbbbbbbbbbbb'></a>"
+            + "<a class='web' href='https://example.com'></a>"
+            + "<div class='ck-content note-detail-editable-text-editor' contenteditable='true'>"
+            + "<a class='edited' href='#root/cccccccccccc'></a></div>"
+            + "</div></figure></div>").appendTo(document.body);
+        const click = (selector: string) => {
+            const $link = $editor.find(selector);
+            goToLinkExt(leftClick(), $link.attr("href"), $link);
+        };
+
+        for (const selector of [ "a.text", "a.card", "a.web" ]) {
+            click(selector);
+        }
+        expect(openInCurrentNoteContext.mock.calls.map(([ , notePath ]) => notePath))
+            .toStrictEqual([ "root/aaaaaaaaaaaa", "root/bbbbbbbbbbbb" ]);
+        expect(openSpy).toHaveBeenCalledExactlyOnceWith("https://example.com", "_blank");
+
+        // The text of an included note being edited is edited too.
+        click("a.edited");
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+        openSpy.mockRestore();
+        $editor.remove();
     });
 
     it("follows a link in an editable text note on a ctrl+click or a double click", async () => {

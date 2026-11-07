@@ -28,4 +28,4 @@ Once a link is inserted:
 *   The same menu has _Open link_, _Edit link_ and _Copy address (URL)_, and _Display as_, which turns the link into one of the <a class="reference-link" href="../Link%20Previews.md">Link Previews</a>, as does the _Display_ menu of the popup.
 *   Right-clicking a link opens the same menu.
 
-To follow an external link in a note being edited, <kbd>Ctrl</kbd>+click or double-click it, which opens it in a new tab or window, or right-click it and choose _Open link_. On a touch device, touch and hold the link, then choose _Open link_.
+To follow an external link in a note being edited, <kbd>Ctrl</kbd>+click or double-click it, which opens it in a new tab or window, or right-click it and choose _Open link_. On a touch device, touch and hold the link, then choose _Open link_. A link in an [included note](../Include%20Note.md) that is not _Editable_ opens on a click, as in a read-only note.
