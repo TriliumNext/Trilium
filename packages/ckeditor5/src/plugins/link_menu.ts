@@ -254,9 +254,14 @@ async function describeNoteLinkMenu(
     const { target, actions, afterUnlink } = host
         ? await host.describeNoteLink(href, element, run)
         : { target: [], actions: [], afterUnlink: [] };
+    const inNoteTarget = getInNoteTarget(editor, href);
     const open: ToolbarGroupMenuEntry = {
         kind: "entry", label: getOpenLinkLabel(editor, href),
-        iconClass: "bx bx-right-arrow-circle", isEnabled: true,
+        // A jump within the note has the icon of the jump in the preview of the link.
+        iconClass: inNoteTarget?.block || inNoteTarget?.bookmark
+            ? "bx bx-up-arrow"
+            : "bx bx-right-arrow-circle",
+        isEnabled: true,
         run: run(() => {
             if (!jumpInNote(editor, href)) {
                 host?.openNote(href, element);
@@ -266,7 +271,7 @@ async function describeNoteLinkMenu(
 
     const editLink = describeEditLink(editor, run);
     // The first entry jumps to blocks of the note itself, so no other place to open it is listed.
-    const head = getInNoteTarget(editor, href)?.block
+    const head = inNoteTarget?.block
         ? [ [ open, editLink ] ]
         : [ [ open, ...target ], [ editLink ] ];
     const unlink = describeUnlink(editor, reference ? UNLINK_REFERENCE_COMMAND : "unlink", run);

@@ -349,8 +349,8 @@ describe("LinkMenu", () => {
                 if (link) writer.setSelection(link, 1);
             });
 
-            const [ first ] = describeEntries(await open());
-            expect(first).toBe("Jump to anchor");
+            const [ first ] = await open();
+            expect(first).toMatchObject({ label: "Jump to anchor", iconClass: "bx bx-up-arrow" });
             run(await open(), "Jump to anchor");
             expect(openNote).not.toHaveBeenCalled();
         });
@@ -365,9 +365,11 @@ describe("LinkMenu", () => {
                     `<paragraph><$text linkHref="${href}">fo[]o</$text></paragraph>`);
 
                 selectLink(`${NOTE}?block=b1`);
-                expect(describeEntries(await open())).toStrictEqual([
+                const entries = await open();
+                expect(describeEntries(entries)).toStrictEqual([
                     "Jump to block", "Edit link", ...WITH_HOST.slice(3)
                 ]);
+                expect(entries[0]).toMatchObject({ iconClass: "bx bx-up-arrow" });
 
                 selectLink("#root/def?block=b1");
                 expect(describeEntries(await open())).toStrictEqual([ "Open note", ...WITH_HOST ]);
