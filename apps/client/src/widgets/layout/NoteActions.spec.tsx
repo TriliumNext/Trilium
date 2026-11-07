@@ -9,7 +9,7 @@ import NoteContext from "../../components/note_context";
 import Dropdown from "../react/Dropdown";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { buildNote } from "../../test/easy-froca";
-import { CommandItem, NoteContextMenu } from "./NoteActions";
+import NoteActions, { CommandItem, NoteContextMenu } from "./NoteActions";
 
 const ctrl = vi.hoisted(() => ({ mobile: false }));
 vi.mock("../../services/utils", async (importOriginal) => ({
@@ -397,5 +397,37 @@ describe("NoteContextMenu", () => {
 
         await act(async () => { await parent.handleEvent("toggleRibbonTabBasicProperties", { ntxId: "ntx-split-2" }); });
         await vi.waitFor(() => expect(popup()).not.toBeNull());
+    });
+
+    it("rebuilds the rows when the same note leaves the attachments view", async () => {
+        const note = buildNote({ title: "Text", type: "text", content: "<p>Hi</p>" });
+        const noteContext = new NoteContext("ntx-attachment-view");
+        noteContext.noteId = note.noteId;
+        noteContext.notePath = `root/${note.noteId}`;
+        noteContext.viewScope = { viewMode: "attachments" };
+        // The production path: the context comes from the surrounding legacy widget, not a provider.
+        const parent = new Component();
+        (parent as unknown as { noteContext: NoteContext }).noteContext = noteContext;
+        render((
+            <ParentComponent.Provider value={parent}>
+                <NoteActions paneButtons={false} />
+            </ParentComponent.Provider>
+        ), host);
+
+        const popup = () => document.querySelector(".tn-popup");
+        const hasNoteTypeRow = () => [ ...popup()?.querySelectorAll("li.dropdown-item") ?? [] ]
+            .some((row) => row.textContent?.includes("basic_properties.note_type"));
+        const toggleMenu = async () => {
+            host.querySelector<HTMLButtonElement>("button.bx-dots-horizontal-rounded")?.click();
+            await vi.waitFor(() => expect(popup()?.querySelector("li.dropdown-item")).toBeTruthy());
+        };
+
+        await toggleMenu();
+        expect(hasNoteTypeRow()).toBe(false);
+
+        noteContext.viewScope = { viewMode: "default" };
+        await act(async () => { await parent.handleEvent("noteSwitched", { noteContext, notePath: noteContext.notePath }); });
+        await toggleMenu();
+        expect(hasNoteTypeRow()).toBe(true);
     });
 });
