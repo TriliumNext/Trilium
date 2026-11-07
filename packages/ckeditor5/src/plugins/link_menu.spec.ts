@@ -428,9 +428,12 @@ describe("LinkMenu", () => {
             expect((await rightClick(title)).request).toBeDefined();
             expect(selected()).toBe("reference");
 
+            // The drawn content of an icon & text link is widget UI, whose events the view ignores.
             setModelData(editor.model,
                 `<paragraph>[]a <linkMention url="${URL}" title="T"></linkMention></paragraph>`);
-            const preview = await rightClick(find(editor, ".link-mention"));
+            const content = find(editor, ".link-mention-inner");
+            expect(content?.matches("[data-cke-ignore-events]")).toBe(true);
+            const preview = await rightClick(content);
             expect(preview.isTaken).toBe(true);
             expect(selected()).toBe("linkMention");
             expect(describeEntries(preview.request?.items ?? [])[0]).toBe("Open link");

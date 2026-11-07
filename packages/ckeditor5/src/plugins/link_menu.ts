@@ -110,6 +110,7 @@ export default class LinkMenu extends Plugin {
 
         const view = editor.editing.view;
         view.addObserver(ContextMenuObserver);
+        view.addObserver(LinkMentionContextMenuObserver);
         this.listenTo<ViewDocumentContextMenuEvent>(view.document, "contextmenu", (evt, data) => {
             const { domEvent } = data;
             // Shift+right-click opens the browser's menu, and Ctrl+right-click is left to the host.
@@ -351,6 +352,17 @@ function getNoteLinkElement(editor: Editor, reference: ModelElement | null): HTM
     const viewElement = reference && editor.editing.mapper.toViewElement(reference) as ViewElement;
     const element = viewElement ? view.domConverter.mapViewToDom(viewElement) : view.getDomRoot();
     return element as HTMLElement;
+}
+
+/**
+ * Fires `contextmenu` on the view document for a right-click on the drawn content of an icon &
+ * text link, which `ContextMenuObserver` ignores as widget UI.
+ */
+class LinkMentionContextMenuObserver extends ContextMenuObserver {
+    override checkShouldIgnoreEventFromTarget(domTarget: Node | null) {
+        // The target of a right-click is an element.
+        return !(domTarget as Element).closest(".link-mention-inner");
+    }
 }
 
 declare module "ckeditor5" {
