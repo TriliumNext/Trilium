@@ -110,7 +110,7 @@ export default class LinkMenu extends Plugin {
 
         const view = editor.editing.view;
         view.addObserver(ContextMenuObserver);
-        view.addObserver(LinkMentionContextMenuObserver);
+        view.addObserver(LinkPreviewContextMenuObserver);
         this.listenTo<ViewDocumentContextMenuEvent>(view.document, "contextmenu", (evt, data) => {
             const { domEvent } = data;
             // Shift+right-click opens the browser's menu, and Ctrl+right-click is left to the host.
@@ -360,13 +360,13 @@ function getNoteLinkElement(editor: Editor, reference: ModelElement | null): HTM
 }
 
 /**
- * Fires `contextmenu` on the view document for a right-click on the drawn content of an icon &
- * text link, which `ContextMenuObserver` ignores as widget UI.
+ * Fires `contextmenu` on the view document for a right-click on the drawn content of a link
+ * preview, which `ContextMenuObserver` ignores as widget UI.
  */
-class LinkMentionContextMenuObserver extends ContextMenuObserver {
+class LinkPreviewContextMenuObserver extends ContextMenuObserver {
     override checkShouldIgnoreEventFromTarget(domTarget: Node | null) {
         // The target of a right-click is an element.
-        return !(domTarget as Element).closest(".link-mention-inner");
+        return !(domTarget as Element).closest(".link-mention-inner, .link-embed-preview-wrapper");
     }
 }
 

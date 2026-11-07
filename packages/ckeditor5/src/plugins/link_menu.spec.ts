@@ -430,15 +430,21 @@ describe("LinkMenu", () => {
             expect((await rightClick(title)).request).toBeDefined();
             expect(selected()).toBe("reference");
 
-            // The drawn content of an icon & text link is widget UI, whose events the view ignores.
-            setModelData(editor.model,
-                `<paragraph>[]a <linkMention url="${URL}" title="T"></linkMention></paragraph>`);
-            const content = find(editor, ".link-mention-inner");
-            expect(content?.matches("[data-cke-ignore-events]")).toBe(true);
-            const preview = await rightClick(content);
-            expect(preview.isTaken).toBe(true);
-            expect(selected()).toBe("linkMention");
-            expect(describeEntries(preview.request?.items ?? [])[0]).toBe("Open link");
+            // The drawn content of a link preview is widget UI, whose events the view ignores.
+            for (const [ data, selector, name ] of [
+                [ `<paragraph>[]a <linkMention url="${URL}" title="T"></linkMention></paragraph>`,
+                    ".link-mention-inner", "linkMention" ],
+                [ `<paragraph>[]a</paragraph><linkEmbed url="${URL}" embedType="opengraph"`
+                    + " title=\"T\"></linkEmbed>", ".link-embed-preview-wrapper", "linkEmbed" ]
+            ]) {
+                setModelData(editor.model, data);
+                const content = find(editor, selector);
+                expect(content?.matches("[data-cke-ignore-events]"), name).toBe(true);
+                const preview = await rightClick(content);
+                expect(preview.isTaken, name).toBe(true);
+                expect(selected()).toBe(name);
+                expect(describeEntries(preview.request?.items ?? [])[0]).toBe("Open link");
+            }
         });
 
         it("leaves the browser's menu to a right-click it has no menu of a link for", async () => {
