@@ -577,20 +577,24 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     const isLinkToolbarPreview = !!$link?.hasClass("ck-link-toolbar__preview");
     const targetIsBlank = $link?.attr("target") === "_blank" && !isLinkToolbarPreview;
     const isDoubleClick = isLeftClick && evt?.type === "dblclick";
-    const openInNewTab = (isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick;
+    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
+    const isInEditor = !!$link && isInEditableText($link);
+    // In the text being edited, these follow the link as the first button of its toolbar does.
+    const isFollowClick = isInEditor && isLeftClick && !shiftKey && (ctrlKey || isDoubleClick);
+    const openInNewTab = !isFollowClick
+        && ((isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick);
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
-    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
 
     if (notePath) {
-        if (isPlainLeftClick && $link && isInEditableText($link)) {
+        if (isPlainLeftClick && isInEditor) {
             // The text editor shows the link toolbar, whose preview button opens the note.
             return true;
         }
 
         // A link to blocks of the note it is in acts as a link within a page.
-        if (isPlainLeftClick && !openInPopup && !targetIsBlank && $link && viewScope?.block
-            && showBlocksInPlace($link, noteId, viewScope.block)) {
+        if ((isPlainLeftClick || isFollowClick) && !openInPopup && !targetIsBlank && $link
+            && viewScope?.block && showBlocksInPlace($link, noteId, viewScope.block)) {
             return true;
         }
 
@@ -610,7 +614,8 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     } else if (hrefLink) {
         const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
 
-        if (openInNewTab || openInNewWindow || (isLeftClick && (isLinkToolbarPreview || outsideOfCKEditor))) {
+        if (openInNewTab || openInNewWindow || isFollowClick
+            || (isLeftClick && (isLinkToolbarPreview || outsideOfCKEditor))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
             } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
@@ -645,6 +650,14 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
 /** Whether `$link` is in the content of an editable text note, rather than in an embed in it. */
 function isInEditableText($link: JQuery<HTMLElement>) {
     return $link.closest(".ck-content").hasClass("note-detail-editable-text-editor");
+}
+
+/**
+ * Marks the document while Ctrl, or Cmd on macOS, is held: a click with it follows a link in the
+ * text being edited, and `EditableText.css` shows a pointer over the link.
+ */
+function setFollowLinkKeyHeld(isHeld: boolean) {
+    document.documentElement.classList.toggle("follow-link-key-held", isHeld);
 }
 
 /**
@@ -932,6 +945,12 @@ if (glob.device !== "print" && !isShare) {
     // TODO: Check why the event is not supported.
     //@ts-ignore
     $(document).on("dblclick", "a", goToLink);
+
+    // Captured at the window, before any widget can stop the key on its way to the editor.
+    for (const type of [ "keydown", "keyup" ] as const) {
+        window.addEventListener(type, (e) => setFollowLinkKeyHeld(!!utils.isCtrlKey(e)), true);
+    }
+    window.addEventListener("blur", () => setFollowLinkKeyHeld(false));
 
     $(document).on("mousedown", "a", (e) => {
         if (e.which === 2) {

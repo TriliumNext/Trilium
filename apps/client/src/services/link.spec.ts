@@ -848,15 +848,44 @@ describe("goToLinkExt", () => {
         expect(openInCurrentNoteContext).not.toHaveBeenCalled();
         expect(triggerCommand).not.toHaveBeenCalled();
 
-        // The modifiers still open the note, and a link in an embed still navigates.
-        goToLinkExt(leftClick({ ctrlKey: true }), "#root/aaaaaaaaaaaa", $link);
-        expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
-        goToLinkExt(leftClick({ type: "dblclick" }), "#root/aaaaaaaaaaaa", $link);
-        expect(openTabWithNoteWithHoisting).toHaveBeenCalledTimes(2);
-        goToLinkExt(leftClick({ shiftKey: true }), "#root/aaaaaaaaaaaa", $link);
-        expect(triggerCommand).toHaveBeenCalledWith("openInWindow", expect.anything());
+        // A link in an embed still navigates.
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $embeddedLink);
         expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+    });
+
+    it("follows a link in an editable text note on a ctrl+click or a double click", async () => {
+        const split = $("<div data-ntx-id='ntx1'>"
+            + "<div class='ck-content note-detail-editable-text-editor'>"
+            + "<h2 data-trilium-block-id='h'>Intro</h2></div></div>").appendTo(document.body);
+        const follow = (evt: ReturnType<typeof leftClick>, href: string) =>
+            goToLinkExt(evt, href, $("<a>").attr("href", href).appendTo(split.children()));
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+        for (const evt of [ leftClick({ ctrlKey: true }), leftClick({ type: "dblclick" }) ]) {
+            follow(evt, "#root/aaaaaaaaaaaa");
+            follow(evt, "https://example.com");
+        }
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+        expect(openInCurrentNoteContext).toHaveBeenLastCalledWith(
+            expect.anything(), "root/aaaaaaaaaaaa", expect.anything());
+        expect(openSpy).toHaveBeenCalledTimes(2);
+        expect(openTabWithNoteWithHoisting).not.toHaveBeenCalled();
+
+        // A link to blocks of the note it is in jumps to them.
+        follow(leftClick({ ctrlKey: true }), "#root/abcdefghijkl?block=h");
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenCalledOnce());
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+
+        // Shift and the middle button still open the note elsewhere.
+        follow(leftClick({ ctrlKey: true, shiftKey: true }), "#root/aaaaaaaaaaaa");
+        follow({ ...leftClick(), type: "auxclick", which: 2 }, "#root/aaaaaaaaaaaa");
+        follow(leftClick({ shiftKey: true }), "#root/aaaaaaaaaaaa");
+        expect(openTabWithNoteWithHoisting).toHaveBeenNthCalledWith(1,
+            "root/aaaaaaaaaaaa", expect.objectContaining({ activate: true }));
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledTimes(2);
+        expect(triggerCommand).toHaveBeenCalledExactlyOnceWith("openInWindow", expect.anything());
+        openSpy.mockRestore();
+        split.remove();
     });
 
     it("opens a note in place from the preview button of the link toolbar", () => {
@@ -1275,6 +1304,29 @@ describe("module-level click handlers", () => {
         $a.trigger($.Event("contextmenu", { button: 2 }));
         expect(openContextMenu).toHaveBeenCalled();
         $a.remove();
+    });
+
+    it("marks the document while Ctrl is held, for the pointer over a link being edited", () => {
+        const isMarked = () => document.documentElement.classList.contains("follow-link-key-held");
+        // A widget that keeps its keys from the editor stops them on the way down.
+        const widget = $("<input>").appendTo("body")[0];
+        widget.addEventListener("keydown", (e) => e.stopPropagation(), { capture: true });
+        const press = (type: string, init: KeyboardEventInit) =>
+            widget.dispatchEvent(new KeyboardEvent(type, { bubbles: true, ...init }));
+
+        press("keydown", { key: "Control", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        press("keyup", { key: "a", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        press("keyup", { key: "Control" });
+        expect(isMarked()).toBe(false);
+
+        // Leaving the window while the key is held drops its keyup.
+        press("keydown", { key: "Control", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        window.dispatchEvent(new Event("blur"));
+        expect(isMarked()).toBe(false);
+        widget.remove();
     });
 
     it("does not prevent default on a left mouse button down", () => {

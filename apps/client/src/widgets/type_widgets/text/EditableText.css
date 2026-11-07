@@ -18,6 +18,10 @@ body.mobile .note-detail-editable-text {
     &:read-write {
         cursor: text;
     }
+
+    :root.follow-link-key-held & {
+        cursor: pointer;
+    }
 }
 
 .note-detail-editable-text

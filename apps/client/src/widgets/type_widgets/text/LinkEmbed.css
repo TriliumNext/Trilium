@@ -42,7 +42,7 @@
     /* In the editor the mention is a widget, not a live link, so suppress the pointer.
        In read mode (no .ck-widget) the anchor keeps its cursor: pointer below. */
     &.ck-widget a {
-        cursor: default !important;
+        cursor: default;
     }
 }
 
@@ -368,8 +368,7 @@ figure.include-note:where(.video-embed[data-box-size="full"]) {
     background: var(--link-preview-card-background-color);
 }
 
-.link-embed-preview-wrapper .link-embed-card-image-wrapper,
-.link-embed-preview-wrapper .link-embed-card-content {
+.link-embed-preview-wrapper a.link-embed-card {
     cursor: default;
 }
 
