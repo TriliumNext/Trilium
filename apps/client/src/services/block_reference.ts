@@ -1,10 +1,10 @@
-import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
 import {
-    type BlockRange, encodeBlockParameter, formatBlockRange, parseBlockRange, resolveBlockRange,
-    resolveBlockReference
+    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, formatBlockRange,
+    MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange, resolveBlockReference
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -85,11 +85,11 @@ export function buildReferenceConfig(
 
     return {
         blockReference: {
-            openHandleMenu(event, count, onClose) {
+            openHandleMenu(event, blocks, onClose) {
                 const editor = source.getEditor();
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
-                openBlockHandleMenu(event, count, {
+                openBlockHandleMenu(event, blocks, {
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
@@ -107,21 +107,24 @@ export function buildReferenceConfig(
 }
 
 /**
- * Opens the menu of the block handle at `event`, for `count` selected blocks, and calls `onClose`
- * once the menu is closed. `editor` stays focused while the menu is up, so that its handle stays
- * shown.
+ * Opens the menu of the block handle at `event`, headed by the type of `blocks`, the blocks that
+ * the handle drags, and calls `onClose` once the menu is closed. `editor` stays focused while the
+ * menu is up, so that its handle stays shown.
  */
 export function openBlockHandleMenu(
     event: MouseEvent,
-    count: number,
+    blocks: readonly ModelElement[],
     { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
 ) {
-    const items = [ getCopyItem(count, copyReference) ];
+    const items: MenuItem<CommandNames>[] = [
+        { kind: "header", title: getBlocksTitle(blocks) },
+        { title: t("block_reference.copy_reference"), uiIcon: "bx bx-link", handler: copyReference }
+    ];
     if (copyShareLink) {
         items.push({
-            title: t("block_reference.copy_share_link", { count }),
+            title: t("block_reference.copy_share_link"),
             uiIcon: "bx bx-world",
             handler: copyShareLink
         });
@@ -131,7 +134,7 @@ export function openBlockHandleMenu(
     }
     if (deleteBlocks) {
         items.push({ kind: "separator" }, {
-            title: t("block_reference.delete", { count }),
+            title: t("block_reference.delete"),
             uiIcon: "bx bx-trash destructive-action-icon",
             handler: deleteBlocks
         });
@@ -327,13 +330,77 @@ export function revealHighlightedBlocks(container: HTMLElement) {
     container.scrollTop += top - viewportTop - margin;
 }
 
-function getCopyItem(count: number, copyReference: () => void): MenuItem<CommandNames> {
-    return {
-        title: t("block_reference.copy", { count }),
-        uiIcon: "bx bx-link",
-        handler: copyReference
-    };
+/** The type of the only block of `blocks`, such as _Table_, else their number. */
+function getBlocksTitle(blocks: readonly ModelElement[]) {
+    const block = blocks.length === 1 ? blocks[0] : undefined;
+    if (!block) {
+        return t("block_reference.block_count", { count: blocks.length });
+    }
+
+    const level = /^heading(\d)$/.exec(block.name)?.[1];
+    if (level) {
+        return t("block_reference.types.heading", { level });
+    }
+
+    return t(`block_reference.types.${getBlockType(block)}`);
 }
+
+/** The key of the type of `block` under `block_reference.types`. */
+function getBlockType(block: ModelElement) {
+    if (block.name === "paragraph" && block.hasAttribute("listItemId")) {
+        return block.getAttribute("listType") === "todo" ? "todo_item" : "list_item";
+    }
+    if (block.name === "contentEmbed") {
+        return getEmbedType(block);
+    }
+
+    return BLOCK_TYPES[block.name] ?? "block";
+}
+
+/** The key of the type of the content embed `embed` under `block_reference.types`. */
+function getEmbedType(embed: ModelElement) {
+    if (embed.hasAttribute("url")) {
+        return embed.getAttribute("embedType") === "audio" ? "audio" : "video";
+    }
+    if (embed.hasAttribute("language")) {
+        return embed.getAttribute("language") === "mermaid" ? "mermaid" : "code_block";
+    }
+    if (embed.hasAttribute("noteId")) {
+        return embed.hasAttribute("block") ? "excerpt" : "included_note";
+    }
+
+    const attachmentId = embed.getAttribute("attachmentId");
+    const mime = typeof attachmentId === "string" ? froca.attachments[attachmentId]?.mime : null;
+    switch (mime) {
+        case CANVAS_ATTACHMENT_MIME:
+            return "drawing";
+        case MERMAID_ATTACHMENT_MIME:
+            return "mermaid";
+        default:
+            return "attachment";
+    }
+}
+
+/** The key under `block_reference.types` of each element that names a single type of block. */
+const BLOCK_TYPES: Record<string, string> = {
+    paragraph: "paragraph",
+    blockQuote: "block_quote",
+    codeBlock: "code_block",
+    table: "table",
+    imageBlock: "image",
+    horizontalLine: "horizontal_line",
+    pageBreak: "page_break",
+    aside: "admonition",
+    details: "collapsible",
+    tabs: "tabs",
+    multicolumnLayout: "columns",
+    "mathtex-display": "math",
+    footnoteSection: "footnotes",
+    footnoteItem: "footnote",
+    footnoteContent: "footnote",
+    linkEmbed: "link_preview",
+    unknownContentEmbed: "embed"
+};
 
 /** Runs `deleteBlocks` in `editor` and focuses it, or `undefined` while the command is disabled. */
 function getDeleteBlocksAction(editor: CKTextEditor | null | undefined) {
@@ -347,14 +414,18 @@ function getDeleteBlocksAction(editor: CKTextEditor | null | undefined) {
     };
 }
 
-function getCopyMenuItem(editor: CKTextEditor) {
+function getCopyMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
     const command = editor.commands.get("assignBlockReference");
     const copyReference = editor.config.get("blockReference")?.copyReference;
     if (!command?.isEnabled || !copyReference) {
         return null;
     }
 
-    return getCopyItem(command.value, () => copyReference());
+    return {
+        title: t("block_reference.copy", { count: command.value }),
+        uiIcon: "bx bx-link",
+        handler: () => copyReference()
+    };
 }
 
 function getCopyTabMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {

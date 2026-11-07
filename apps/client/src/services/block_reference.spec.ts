@@ -1,4 +1,5 @@
-import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
+import { CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -13,7 +14,7 @@ import type { ViewScope } from "./link.js";
 
 const {
     showError, showMessage, showMenu, copyHtmlWithToast, copyTextWithToast, getTextEditorContaining,
-    getNote, getNoteShareLink, buildSortSelectionMenuItem
+    getNote, getNoteShareLink, buildSortSelectionMenuItem, attachments
 } = vi.hoisted(() => ({
     buildSortSelectionMenuItem: vi.fn(),
     getNoteShareLink: vi.fn(),
@@ -23,10 +24,12 @@ const {
     copyHtmlWithToast: vi.fn(),
     copyTextWithToast: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getNote: vi.fn()
+    getNote: vi.fn(),
+    attachments: {} as Record<string, { mime: string }>
 }));
 vi.mock("./i18n.js", () => ({
-    t: (key: string, options?: { count?: number }) => options ? `${key}:${options.count}` : key
+    t: (key: string, options?: Record<string, unknown>) =>
+        options ? `${key}:${Object.values(options).join(",")}` : key
 }));
 vi.mock("./toast.js", () => ({ default: { showError, showMessage } }));
 vi.mock("../menus/context_menu.js", () => ({ default: { show: showMenu } }));
@@ -35,7 +38,7 @@ vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     buildSortSelectionMenuItem, getTextEditorContaining
 }));
 vi.mock("./clipboard_ext.js", () => ({ copyHtmlWithToast, copyTextWithToast }));
-vi.mock("./froca.js", () => ({ default: { getNote } }));
+vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
 vi.mock("./content_renderer.js", () => ({
     EXCERPT_BOX_SIZE: "full",
     getEmbedBoxSize: () => "medium"
@@ -252,48 +255,96 @@ describe("copyBlockShareLink", () => {
 describe("openBlockHandleMenu", () => {
     it("offers the copy items, then the sort and the delete item after separators", () => {
         const event = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
+        const blocks = [ buildBlock("paragraph"), buildBlock("table"), buildBlock("paragraph") ];
+        const header = { kind: "header", title: "block_reference.block_count:3" };
         const copyReference = vi.fn();
         const copyShareLink = vi.fn();
         const copyItem = expect.objectContaining({
-            title: "block_reference.copy:3",
+            title: "block_reference.copy_reference",
             handler: copyReference
         });
 
         const deleteBlocks = vi.fn();
         const deleteItem = expect.objectContaining({
-            title: "block_reference.delete:3",
+            title: "block_reference.delete",
             handler: deleteBlocks
         });
 
-        openBlockHandleMenu(event, 3, { copyReference });
-        openBlockHandleMenu(event, 3, { copyReference, copyShareLink });
-        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" } });
-        openBlockHandleMenu(event, 3, { copyReference, deleteBlocks });
-        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" }, deleteBlocks });
+        openBlockHandleMenu(event, blocks, { copyReference });
+        openBlockHandleMenu(event, blocks, { copyReference, copyShareLink });
+        openBlockHandleMenu(event, blocks, { copyReference, sortItem: { title: "SORT" } });
+        openBlockHandleMenu(event, blocks, { copyReference, deleteBlocks });
+        openBlockHandleMenu(event, blocks, {
+            copyReference, sortItem: { title: "SORT" }, deleteBlocks
+        });
 
         expect(showMenu).toHaveBeenNthCalledWith(1, expect.objectContaining({
             x: event.pageX,
             y: event.pageY,
-            items: [ copyItem ]
+            items: [ header, copyItem ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(2, expect.objectContaining({
-            items: [ copyItem, expect.objectContaining({
-                title: "block_reference.copy_share_link:3",
+            items: [ header, copyItem, expect.objectContaining({
+                title: "block_reference.copy_share_link",
                 handler: copyShareLink
             }) ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(3, expect.objectContaining({
-            items: [ copyItem, { kind: "separator" }, { title: "SORT" } ]
+            items: [ header, copyItem, { kind: "separator" }, { title: "SORT" } ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(4, expect.objectContaining({
-            items: [ copyItem, { kind: "separator" }, deleteItem ]
+            items: [ header, copyItem, { kind: "separator" }, deleteItem ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(5, expect.objectContaining({
             items: [
-                copyItem, { kind: "separator" }, { title: "SORT" }, { kind: "separator" },
-                deleteItem
+                header, copyItem, { kind: "separator" }, { title: "SORT" },
+                { kind: "separator" }, deleteItem
             ]
         }));
+    });
+
+    it("heads the menu with the type of a single block", () => {
+        attachments.drawing1 = { mime: CANVAS_ATTACHMENT_MIME };
+        attachments.diagram1 = { mime: MERMAID_ATTACHMENT_MIME };
+        attachments.file1 = { mime: "application/pdf" };
+        const blocks = [
+            buildBlock("paragraph"),
+            buildBlock("heading3"),
+            buildBlock("paragraph", { listItemId: "a", listType: "bulleted" }),
+            buildBlock("paragraph", { listItemId: "b", listType: "numbered" }),
+            buildBlock("paragraph", { listItemId: "c", listType: "todo" }),
+            buildBlock("table"),
+            buildBlock("aside"),
+            buildBlock("details"),
+            buildBlock("multicolumnLayout"),
+            buildBlock("footnoteContent"),
+            buildBlock("contentEmbed", { url: "https://example.com/a.mp4", embedType: "video" }),
+            buildBlock("contentEmbed", { url: "https://example.com/a.mp3", embedType: "audio" }),
+            buildBlock("contentEmbed", { language: "mermaid", source: "graph TD" }),
+            buildBlock("contentEmbed", { language: "text-plain", source: "code" }),
+            buildBlock("contentEmbed", { noteId: "n1" }),
+            buildBlock("contentEmbed", { noteId: "n1", block: "a:b" }),
+            buildBlock("contentEmbed", { attachmentId: "drawing1" }),
+            buildBlock("contentEmbed", { attachmentId: "diagram1" }),
+            buildBlock("contentEmbed", { attachmentId: "file1" }),
+            buildBlock("contentEmbed", { attachmentId: "notLoaded" }),
+            buildBlock("contentEmbed", { uploadId: "u1" }),
+            buildBlock("htmlDivParagraph")
+        ];
+
+        const titles = blocks.map((block) => {
+            openBlockHandleMenu(new MouseEvent("contextmenu"), [ block ], {
+                copyReference: vi.fn()
+            });
+            return showMenu.mock.lastCall?.[0].items[0].title;
+        });
+
+        expect(titles).toEqual([
+            "paragraph", "heading:3", "list_item", "list_item", "todo_item", "table",
+            "admonition", "collapsible", "columns", "footnote", "video", "audio", "mermaid",
+            "code_block", "included_note", "excerpt", "drawing", "mermaid", "attachment",
+            "attachment", "attachment", "block"
+        ].map((type) => `block_reference.types.${type}`));
     });
 });
 
@@ -342,11 +393,13 @@ describe("buildReferenceConfig", () => {
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
 
-        config.blockReference?.openHandleMenu?.(event, 1, vi.fn());
+        const blocks = [ buildBlock("paragraph") ];
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         const items = showMenu.mock.calls[0][0].items as MenuItem<CommandNames>[];
-        runItem(items[0]);
-        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        expect(items[0]).toEqual({ kind: "header", title: "block_reference.types.paragraph" });
         runItem(items[1]);
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        runItem(items[2]);
         await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
 
         expect(getNoteShareLink).toHaveBeenCalledWith(note);
@@ -355,18 +408,18 @@ describe("buildReferenceConfig", () => {
             "https://notes.example.com/share/page?block=s1");
 
         getNoteShareLink.mockReturnValue(null);
-        config.blockReference?.openHandleMenu?.(event, 1, vi.fn());
-        expect(showMenu.mock.calls[1][0].items).toHaveLength(1);
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
+        expect(showMenu.mock.calls[1][0].items).toHaveLength(2);
 
         buildSortSelectionMenuItem.mockReturnValueOnce({ title: "SORT" });
-        config.blockReference?.openHandleMenu?.(event, 2, vi.fn());
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         expect(buildSortSelectionMenuItem).toHaveBeenCalledWith(editor);
         expect(showMenu.mock.calls[2][0].items.at(-1)).toEqual({ title: "SORT" });
 
         vi.mocked(editor.commands.get).mockReturnValue({ isEnabled: true } as never);
-        config.blockReference?.openHandleMenu?.(event, 2, vi.fn());
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         const deleteItem = showMenu.mock.calls[3][0].items.at(-1);
-        expect(deleteItem).toMatchObject({ title: "block_reference.delete:2" });
+        expect(deleteItem).toMatchObject({ title: "block_reference.delete" });
         runItem(deleteItem);
         expect(editor.commands.get).toHaveBeenCalledWith("deleteBlocks");
         expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks");
@@ -379,7 +432,8 @@ describe("buildReferenceConfig", () => {
         const container = document.createElement("div");
         const onClose = vi.fn();
 
-        config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), 1, onClose);
+        config.blockReference?.openHandleMenu?.(
+            new MouseEvent("contextmenu"), [ buildBlock("paragraph") ], onClose);
         const { onShow, onHide } = showMenu.mock.calls[0][0];
         onShow?.(container);
         expect(focusTracker.add).toHaveBeenCalledWith(container);
@@ -587,6 +641,15 @@ function buildMenuEditor({
     };
 
     return { editor: editor as typeof editor & CKTextEditor, pasteTarget };
+}
+
+/** A model element named `name` with `attributes`, as the block handle passes it. */
+function buildBlock(name: string, attributes: Record<string, string> = {}) {
+    return {
+        name,
+        getAttribute: (key: string) => attributes[key],
+        hasAttribute: (key: string) => key in attributes
+    } as unknown as ModelElement;
 }
 
 function runItem(item: MenuItem<CommandNames> | null | undefined) {

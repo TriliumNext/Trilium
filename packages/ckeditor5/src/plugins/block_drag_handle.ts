@@ -227,8 +227,10 @@ export default class BlockDragHandle extends Plugin {
 
         const isShown = (this.isHovered || this.isMenuOpen) && !this.isDragging
             && !!this.buttonView?.isVisible;
-        const range = isShown ? getDraggedRange(this.editor.model) : null;
-        const targets = range ? this.toViewElements(range) : [];
+        const mapper = this.editor.editing.mapper;
+        const targets = (isShown ? getDraggedBlocks(this.editor.model) : [])
+            .map((block) => mapper.toViewElement(block))
+            .filter((element) => element !== undefined);
         const previous = this.targets;
         if (targets.length === previous.length
             && targets.every((target, index) => target === previous[index])) {
@@ -245,15 +247,6 @@ export default class BlockDragHandle extends Plugin {
                 writer.addClass(TARGET_CLASS, target);
             }
         });
-    }
-
-    /** The editing view elements of the outermost nodes in `range`. */
-    private toViewElements(range: ModelRange) {
-        const mapper = this.editor.editing.mapper;
-        return Array.from(range.getItems({ shallow: true }))
-            .filter((item) => item.is("element"))
-            .map((element) => mapper.toViewElement(element))
-            .filter((element) => element !== undefined);
     }
 
     private getTarget(): BlockTarget | null {
@@ -448,6 +441,15 @@ export function getDraggedRange(model: Model) {
         model.createPositionAfter(lastBlock)
     );
     return widenToWholeContainers(model, widenToCommonLimit(model, range));
+}
+
+/** The outermost elements of the range that the handle drags, which it tints. */
+export function getDraggedBlocks(model: Model): ModelElement[] {
+    const range = getDraggedRange(model);
+    return range
+        ? Array.from(range.getItems({ shallow: true }))
+            .filter((item): item is ModelElement => item.is("element"))
+        : [];
 }
 
 /** The block that the handle drags for `block`: the whole collapsible for its title. */

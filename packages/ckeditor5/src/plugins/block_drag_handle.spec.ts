@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import Admonition from "./admonition/admonition.js";
-import BlockDragHandle from "./block_drag_handle.js";
+import BlockDragHandle, { getDraggedBlocks } from "./block_drag_handle.js";
 import Collapsible from "./collapsible/collapsible.js";
 
 describe("BlockDragHandle", () => {
@@ -593,6 +593,19 @@ describe("BlockDragHandle", () => {
         } finally {
             Object.defineProperty(env, "isAndroid", { value: isAndroid });
         }
+    });
+});
+
+describe("getDraggedBlocks", () => {
+    it("lists the outermost dragged blocks, and none for a selection in no block", async () => {
+        const { editor } = await createEditor("<paragraph>[one</paragraph>"
+            + "<blockQuote><paragraph>two</paragraph><paragraph>three]</paragraph></blockQuote>");
+        const getNames = () => getDraggedBlocks(editor.model).map((block) => block.name);
+        expect(getNames()).toEqual([ "paragraph", "blockQuote" ]);
+
+        setModelData(editor.model, "<table><tableRow><tableCell><paragraph>cell</paragraph>"
+            + "</tableCell></tableRow><caption>Cap[]tion</caption></table>");
+        expect(getNames()).toEqual([]);
     });
 });
 

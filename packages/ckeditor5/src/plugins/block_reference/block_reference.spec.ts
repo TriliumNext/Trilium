@@ -3,7 +3,7 @@ import {
     BlockToolbar, type ClassicEditor, CodeBlock, Essentials, Heading, List, type ModelNode,
     Paragraph, Table
 } from "ckeditor5";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { describe, expect, it, type Mock, onTestFinished, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
 import BlockDragHandle from "../block_drag_handle.js";
@@ -437,7 +437,7 @@ describe("BlockReference", () => {
 
     describe("block handle menu", () => {
         it("asks the host to open the menu for the selected blocks", async () => {
-            const openHandleMenu = vi.fn();
+            const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
             const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
                 blockReference: { openHandleMenu }
             });
@@ -454,11 +454,27 @@ describe("BlockReference", () => {
             expect(rightDown.defaultPrevented).toBe(true);
             expect(leftDown.defaultPrevented).toBe(false);
             expect(contextMenu.defaultPrevented).toBe(true);
-            expect(openHandleMenu).toHaveBeenCalledWith(contextMenu, 2, expect.any(Function));
+            expect(openHandleMenu).toHaveBeenCalledWith(
+                contextMenu, [ expect.anything(), expect.anything() ], expect.any(Function));
+            expect(getBlockNames(openHandleMenu)).toEqual([ "paragraph", "paragraph" ]);
 
             editor.enableReadOnlyMode("spec");
             handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
             expect(openHandleMenu).toHaveBeenCalledTimes(1);
+        });
+
+        it("passes the blocks that the handle drags, such as a whole block quote", async () => {
+            const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
+            const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
+                blockReference: { openHandleMenu }
+            });
+            setModelData(editor.model,
+                "<blockQuote><paragraph>[one</paragraph><paragraph>two]</paragraph></blockQuote>");
+            const handle = getHandle(editor.plugins.get(BlockDragHandle).buttonView?.element);
+
+            handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
+
+            expect(getBlockNames(openHandleMenu)).toEqual([ "blockQuote" ]);
         });
 
         it("tints the blocks that the menu acts on until the host closes it", async () => {
@@ -497,7 +513,8 @@ describe("BlockReference", () => {
                 .dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
 
             expect(openHandleMenu).toHaveBeenCalledWith(
-                expect.any(MouseEvent), 1, expect.any(Function));
+                expect.any(MouseEvent), [ expect.anything() ], expect.any(Function));
+            expect(getBlockNames(openHandleMenu)).toEqual([ "paragraph" ]);
             // Without `BlockDragHandle`, closing the menu has no tint to clear.
             expect(() => openHandleMenu.mock.calls[0][2]()).not.toThrow();
         });
@@ -561,4 +578,9 @@ function getHandle(element: HTMLElement | undefined) {
     }
 
     return element;
+}
+
+/** The names of the blocks that the first call of `openHandleMenu` got. */
+function getBlockNames(openHandleMenu: Mock<BlockReferenceHost["openHandleMenu"]>) {
+    return openHandleMenu.mock.calls[0][1].map((block) => block.name);
 }

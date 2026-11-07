@@ -1,13 +1,14 @@
-import { DomEmitterMixin, Plugin } from "ckeditor5";
+import { DomEmitterMixin, type ModelElement, Plugin } from "ckeditor5";
 
+import { getDraggedBlocks } from "../block_drag_handle.js";
 import BlockReferenceEditing, {
     type AssignBlockReferenceCommand
 } from "./block_reference_editing.js";
 
 /**
  * References to blocks of a text note. A right click on the block handle calls
- * `blockReference.openHandleMenu()` of the host, whose menu copies a reference to the selected
- * blocks.
+ * `blockReference.openHandleMenu()` of the host with the blocks that the handle drags, and the
+ * host's menu copies a reference to the selected blocks.
  */
 export default class BlockReference extends Plugin {
 
@@ -69,7 +70,7 @@ export default class BlockReference extends Plugin {
         if (dragHandle) {
             dragHandle.isMenuOpen = true;
         }
-        openHandleMenu(event, command.value, () => {
+        openHandleMenu(event, getDraggedBlocks(editor.model), () => {
             if (dragHandle) {
                 dragHandle.isMenuOpen = false;
             }
@@ -80,10 +81,10 @@ export default class BlockReference extends Plugin {
 /** What the host of the editor does with references to blocks. */
 export interface BlockReferenceHost {
     /**
-     * Opens the menu of the block handle at `event`, for `count` selected blocks, and calls
-     * `onClose` once the menu is closed.
+     * Opens the menu of the block handle at `event`, for `blocks`, the outermost blocks that the
+     * handle drags, and calls `onClose` once the menu is closed.
      */
-    openHandleMenu(event: MouseEvent, count: number, onClose: () => void): void;
+    openHandleMenu(event: MouseEvent, blocks: ModelElement[], onClose: () => void): void;
     /** Copies a reference to the selected blocks. */
     copyReference(): void;
 }
