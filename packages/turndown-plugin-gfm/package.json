@@ -28,6 +28,6 @@
     "happy-dom": "21.0.4",
     "turndown": "7.2.4",
     "turnish": "1.13.0",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }

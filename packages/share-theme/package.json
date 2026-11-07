@@ -29,6 +29,6 @@
     "ejs": "7.0.2",
     "happy-dom": "21.0.4",
     "typescript": "6.0.3",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }
