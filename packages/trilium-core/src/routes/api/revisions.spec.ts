@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import * as cls from "../../services/context";
+import optionService from "../../services/options";
 import { getSql } from "../../services/sql/index";
 import { unwrapStringOrBuffer } from "../../services/utils/binary";
 import { createTextNote } from "../../test/api_fixtures";
@@ -259,6 +260,47 @@ describe("Revisions API (core)", () => {
                 expect(res.body.every((note) => note.noteId !== "root")).toBe(true);
             } finally {
                 spy.mockRestore();
+            }
+        });
+
+        it("leaves out AI chats while editedNotesIncludeLlmChats is off", async () => {
+            const textNote = await createTextNote(api, { title: "Edited beside a chat" });
+            const created = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                {
+                    body: {
+                        title: "Chat",
+                        type: "llmChat",
+                        mime: "application/json",
+                        content: JSON.stringify({ version: 1, messages: [] })
+                    }
+                }
+            );
+            expect(created.status).toBe(200);
+            const chatId = created.body.note.noteId;
+
+            const row = getSql().getRowOrNull<{ dateModified: string }>(
+                "SELECT dateModified FROM notes WHERE noteId = ?",
+                [ chatId ]
+            );
+            const date = (row?.dateModified ?? "").substring(0, 10);
+            const editedNoteIds = async () => {
+                const res = await api.get<Array<{ noteId: string }>>(`/api/edited-notes/${date}`);
+                expect(res.status).toBe(200);
+                return res.body.map((note) => note.noteId);
+            };
+
+            try {
+                const withChats = await editedNoteIds();
+                expect(withChats).toContain(textNote.noteId);
+                expect(withChats).toContain(chatId);
+
+                cls.init(() => optionService.setOption("editedNotesIncludeLlmChats", "false"));
+                const withoutChats = await editedNoteIds();
+                expect(withoutChats).toContain(textNote.noteId);
+                expect(withoutChats).not.toContain(chatId);
+            } finally {
+                cls.init(() => optionService.setOption("editedNotesIncludeLlmChats", "true"));
             }
         });
     });

@@ -21,6 +21,8 @@ You can also notice how this day note has [promoted attribute](../Attributes/Pro
 
 When a day note is opened, a collapsible section will appear underneath the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> showing the notes edited on that day.
 
+The list includes [AI chats](../../AI.md), since a chat counts as edited each time a message is added to it. To leave them out, turn off <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ → _User Interface_ → _Include AI chats in "Notes edited on this day"_.
+
 ## Week Note and Quarter Note
 
 Week and quarter notes are disabled by default, since it might be too much for some people. To enable them, you need to set `#enableWeekNote` and `#enableQuarterNote` attributes on the root calendar note, which is identified by `#calendarRoot` label. Week note is affected by the first week of year option. Be careful when you already have some week notes created, it will not automatically change the existing week notes and might lead to some duplicates.
