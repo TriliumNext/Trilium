@@ -19,7 +19,7 @@
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
     "katex": "0.19.1",
-    "mermaid": "12.2.0"
+    "mermaid": "12.3.0"
   },
   "devDependencies": {
     "@triliumnext/ckeditor5": "workspace:*",
