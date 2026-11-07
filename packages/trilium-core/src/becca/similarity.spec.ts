@@ -1,7 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
-import becca from "./becca.js";
+import { getBecca } from "./becca.js";
 import { buildNote } from "../test/becca_easy_mocking";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -72,13 +72,13 @@ describe("buildRewardMap", () => {
 
         // Give the parent's branch (parent -> grandparent) a prefix so the
         // ancestor branch-prefix path is exercised.
-        const parentBranch = becca.getNote(parentId)?.getParentBranches()[0];
+        const parentBranch = getBecca().getNote(parentId)?.getParentBranches()[0];
         expect(parentBranch).toBeDefined();
         if (parentBranch) {
             parentBranch.prefix = "Continent";
         }
 
-        const child = becca.getNoteOrThrow(childId);
+        const child = getBecca().getNoteOrThrow(childId);
         const map = buildRewardMap(child);
 
         // Ancestor title words appear with a (small) reward.
@@ -100,10 +100,10 @@ describe("buildRewardMap", () => {
         });
 
         // Protected (not decrypted) ancestor -> its title is not rewarded.
-        const parent = becca.getNoteOrThrow(parentId);
+        const parent = getBecca().getNoteOrThrow(parentId);
         parent.isDecrypted = false;
 
-        const child = becca.getNoteOrThrow(childId);
+        const child = getBecca().getNoteOrThrow(childId);
         // archived is in IGNORED_ATTR_NAMES: its name is not rewarded.
         new BAttribute({
             attributeId: randomString(12),
@@ -148,7 +148,7 @@ describe("buildRewardMap", () => {
             isInheritable: true
         });
 
-        const child = becca.getNoteOrThrow(childId);
+        const child = getBecca().getNoteOrThrow(childId);
         const inherited = child.getAttributes().find((a) => a.name === "category");
         expect(inherited).toBeDefined();
         expect(inherited?.noteId).toStrictEqual(parentId);

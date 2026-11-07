@@ -946,22 +946,6 @@
                                     "attachments": []
                                 },
                                 {
-                                    "isClone": true,
-                                    "noteId": "Un4wj2Mak2Ky",
-                                    "notePath": [
-                                        "pOsGYCXsbNQG",
-                                        "Otzi9La2YAUX",
-                                        "WOcw2SLH6tbX",
-                                        "Un4wj2Mak2Ky"
-                                    ],
-                                    "title": "Nix flake",
-                                    "prefix": null,
-                                    "dataFileName": "Nix flake.clone.md",
-                                    "type": "text",
-                                    "format": "markdown",
-                                    "isExpanded": false
-                                },
-                                {
                                     "isClone": false,
                                     "noteId": "x1lQNKQBqLcA",
                                     "notePath": [
@@ -1030,6 +1014,168 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "4HGcy3Cyleb8",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "WOcw2SLH6tbX",
+                                        "4HGcy3Cyleb8"
+                                    ],
+                                    "title": "Multiple users",
+                                    "notePosition": 140,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "multi-user",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-group",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Multiple users.md",
+                                    "attachments": [],
+                                    "dirFileName": "Multiple users",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Ndko7EEPAw40",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "WOcw2SLH6tbX",
+                                                "4HGcy3Cyleb8",
+                                                "Ndko7EEPAw40"
+                                            ],
+                                            "title": "Managing users",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "managing-users",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-user-check",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Managing users.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "qrN5tGlqs5k8",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "WOcw2SLH6tbX",
+                                                "4HGcy3Cyleb8",
+                                                "qrN5tGlqs5k8"
+                                            ],
+                                            "title": "Signing in as a user",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "signing-in",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-log-in-circle",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Signing in as a user.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Zz2BXq8xdID4",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "WOcw2SLH6tbX",
+                                                "4HGcy3Cyleb8",
+                                                "Zz2BXq8xdID4"
+                                            ],
+                                            "title": "Giving access to notes",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "access",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-user-plus",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Giving access to notes.md",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": true,
+                                    "noteId": "Un4wj2Mak2Ky",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "WOcw2SLH6tbX",
+                                        "Un4wj2Mak2Ky"
+                                    ],
+                                    "title": "Nix flake",
+                                    "prefix": null,
+                                    "dataFileName": "Nix flake.clone.md",
+                                    "type": "text",
+                                    "format": "markdown",
+                                    "isExpanded": false
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "yeEaYqosGLSh",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -1038,7 +1184,7 @@
                                         "yeEaYqosGLSh"
                                     ],
                                     "title": "Third-party cloud hosting",
-                                    "notePosition": 140,
+                                    "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -1073,7 +1219,7 @@
                                         "iGTnKjubbXkA"
                                     ],
                                     "title": "System Requirements",
-                                    "notePosition": 150,
+                                    "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

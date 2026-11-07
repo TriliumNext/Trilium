@@ -12,6 +12,7 @@ import protected_session from "./protected_session.js";
 import scriptService from "./script.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import sqlInit from "./sql_init.js";
+import userHomes from "./user_homes.js";
 import ws from "./ws.js";
 
 function getRunAtHours(note: BNote): number[] {
@@ -57,7 +58,10 @@ export function startScheduler() {
         // from, so on every path that opens one after start it is still on the fallback "en". A
         // no-op on an ordinary boot, where this has already been done.
         await reconcileLanguageAfterDbInit();
-        cls.getContext().init(() => hiddenSubtreeService.checkHiddenSubtree());
+        cls.getContext().init(() => {
+            hiddenSubtreeService.checkHiddenSubtree();
+            userHomes.ensureUserHomes();
+        });
     });
 
     // Periodic checks.

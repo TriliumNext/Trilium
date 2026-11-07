@@ -151,5 +151,6 @@ export interface NoteRow {
     utcDateCreated?: string;
     utcDateModified?: string;
     content?: string | Uint8Array;
+    ownerId?: string | null;
 }
 

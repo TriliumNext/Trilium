@@ -1,4 +1,4 @@
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { getLog } from "../services/log.js";
 import { getSql } from "../services/sql/index.js";
 import { getContext } from "../services/context.js";
@@ -14,7 +14,7 @@ export default () => {
 
         becca_loader.load();
 
-        for (const note of Object.values(becca.notes)) {
+        for (const note of Object.values(getBecca().notes)) {
             try {
                 const attachment = note.convertToParentAttachment({ autoConversion: true });
 

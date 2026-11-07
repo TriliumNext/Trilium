@@ -34,6 +34,10 @@ export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data
 
 See <a class="reference-link" href="Server%20Installation/Authentication.md">Authentication</a>.
 
+### Multiple users
+
+A server can be used by several people, each with their own notes. See <a class="reference-link" href="Server%20Installation/Multiple%20users.md">Multiple users</a>.
+
 ## Reverse Proxy Setup
 
 To configure a reverse proxy for Trilium, you can use either **nginx** or **Apache**. You can also check out the documentation stored in the Reverse proxy folder.

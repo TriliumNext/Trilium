@@ -27,6 +27,10 @@ describe("NoteTitleWidget", () => {
         vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(isUnlocked);
         const note = buildNote({ title: "R&D" });
         note.isProtected = true;
+        return renderTitle(note);
+    }
+
+    async function renderTitle(note: ReturnType<typeof buildNote>) {
         const noteContext = new NoteContext("ntx-title");
         noteContext.noteId = note.noteId;
         noteContext.viewScope = { viewMode: "default" };
@@ -61,6 +65,11 @@ describe("NoteTitleWidget", () => {
         expect(input.value).toBe("R&D");
         expect(input.classList.contains("protected-title")).toBe(false);
         expect(input.readOnly).toBe(false);
+    });
+
+    it("keeps a user's home, named after its user, from being renamed", async () => {
+        const input = await renderTitle(buildNote({ id: "home_alice", title: "alice" }));
+        expect(input.readOnly).toBe(true);
     });
 
     it("drops a title change to a note deleted before it saves", async () => {

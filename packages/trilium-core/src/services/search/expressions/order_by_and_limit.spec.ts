@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { note } from "../../../test/becca_mocking.js";
 import NoteSet from "../note_set.js";
@@ -37,7 +37,7 @@ function extractorFor(values: Record<string, number | string | null>) {
 
 describe("OrderByAndLimitExp", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
     });
 
     it("derives smaller/larger comparison signs from the direction", () => {

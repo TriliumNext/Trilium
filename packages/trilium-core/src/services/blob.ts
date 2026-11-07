@@ -1,5 +1,5 @@
 import { BlobRow, EMPTY_BLOB_ID, NoteRow } from "@triliumnext/commons";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { NotFoundError } from "../errors";
 import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
@@ -11,7 +11,7 @@ import { getVirtualNoteContent } from "./virtual_notes.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.
-    const entity = becca.getEntity(entityName, entityId);
+    const entity = getBecca().getEntity(entityName, entityId);
     if (!entity) {
         throw new NotFoundError(`Entity ${entityName} '${entityId}' was not found.`);
     }
@@ -20,7 +20,7 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
         return virtualBlobPojo(entityId);
     }
 
-    const blob = becca.getBlob(entity);
+    const blob = getBecca().getBlob(entity);
     if (!blob) {
         throw new NotFoundError(`Blob ${entity.blobId} for ${entityName} '${entityId}' was not found.`);
     }

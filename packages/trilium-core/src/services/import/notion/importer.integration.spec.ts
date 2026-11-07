@@ -2,7 +2,7 @@ import { ZipArchive } from "archiver";
 import { PassThrough } from "stream";
 import { describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import { fakeRequestProvider } from "../../../test/request_provider.js";
@@ -38,7 +38,7 @@ async function importNotion(files: Record<string, string | Buffer>): Promise<BNo
     return new Promise<BNote>((resolve, reject) => {
         void getContext().init(async () => {
             try {
-                const root = becca.getNoteOrThrow("root");
+                const root = getBecca().getNoteOrThrow("root");
                 resolve(await notionImporter.importNotion(taskContext, new Uint8Array(buffer), root));
             } catch (e) {
                 reject(e);
@@ -305,7 +305,7 @@ describe("Notion importer — integration", () => {
         const importRoot = await new Promise<BNote>((resolve, reject) => {
             void getContext().init(async () => {
                 try {
-                    resolve(await notionImporter.importNotion(taskContext, new Uint8Array(buffer), becca.getNoteOrThrow("root")));
+                    resolve(await notionImporter.importNotion(taskContext, new Uint8Array(buffer), getBecca().getNoteOrThrow("root")));
                 } catch (e) {
                     reject(e);
                 }

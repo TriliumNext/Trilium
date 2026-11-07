@@ -20,6 +20,8 @@ export interface HttpAttachableMessagingProvider extends MessagingProvider {
     attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler): void;
     /** Asks every client connected over the TCP listener to reload, then closes its connection. */
     disconnectAllClients(reason: string): void;
+    /** The same, for the connections of one user. */
+    disconnectUserClients(userId: string, reason: string): void;
 }
 
 export function isHttpAttachableMessagingProvider(provider: MessagingProvider): provider is HttpAttachableMessagingProvider {
@@ -38,9 +40,14 @@ export function isHttpAttachableMessagingProvider(provider: MessagingProvider): 
  * renderer keeps talking over IPC. Without that opt-in the desktop binds no WS
  * endpoint. See `apps/desktop/src/composite_messaging_provider.ts`.
  */
+interface ClientEntry {
+    ws: WebSocket;
+    userId?: string;
+}
+
 export default class WebSocketMessagingProvider implements HttpAttachableMessagingProvider {
     private webSocketServer!: WebSocketServer;
-    private clientMap = new Map<string, WebSocket>();
+    private clientMap = new Map<string, ClientEntry>();
     private clientMessageHandler?: ClientMessageHandler;
 
     attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler) {
@@ -62,9 +69,10 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         this.webSocketServer.on("connection", (ws, req) => {
             const id = randomString(10);
             (ws as any).id = id;
-            this.clientMap.set(id, ws);
+            const userId: string | undefined = (req as any).session?.userId;
+            this.clientMap.set(id, { ws, userId });
 
-            console.log(`websocket client connected`);
+            console.log(`websocket client connected (clientId=${id})`);
 
             ws.on("error", (error) => {
                 // A protocol error on a single connection (e.g. WS_ERR_INVALID_CLOSE_CODE from a
@@ -126,6 +134,15 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         }
     }
 
+    sendMessageToUserClients(userId: string, message: WebSocketMessage): void {
+        const jsonStr = JSON.stringify(message);
+        for (const entry of this.clientMap.values()) {
+            if (entry.userId === userId && entry.ws.readyState === WebSocket.OPEN) {
+                entry.ws.send(jsonStr);
+            }
+        }
+    }
+
     /**
      * Asks every client to reload, then closes its connection. `verifyClient` checks the session
      * only when a connection opens, so a revoked session keeps receiving messages until then.
@@ -141,13 +158,26 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         }
     }
 
+    /** Like {@link disconnectAllClients}, for the connections of one user. */
+    disconnectUserClients(userId: string, reason: string): void {
+        const jsonStr = JSON.stringify({ type: "reload-frontend", reason } satisfies WebSocketMessage);
+
+        for (const entry of this.clientMap.values()) {
+            if (entry.userId !== userId) continue;
+            if (entry.ws.readyState === WebSocket.OPEN) {
+                entry.ws.send(jsonStr);
+            }
+            entry.ws.close();
+        }
+    }
+
     sendMessageToClient(clientId: string, message: WebSocketMessage): boolean {
-        const client = this.clientMap.get(clientId);
-        if (!client || client.readyState !== WebSocket.OPEN) {
+        const entry = this.clientMap.get(clientId);
+        if (!entry || entry.ws.readyState !== WebSocket.OPEN) {
             return false;
         }
 
-        client.send(JSON.stringify(message));
+        entry.ws.send(JSON.stringify(message));
         return true;
     }
 

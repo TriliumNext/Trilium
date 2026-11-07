@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import becca from "../becca.js";
+import { getBecca } from "../becca.js";
 import type BNote from "./bnote.js";
 import BRevision from "./brevision.js";
 import { getContext } from "../../services/context.js";
@@ -279,11 +279,11 @@ describe("Revision eraseRevision", () => {
         const revision = getContext().init(() => note.saveRevision());
         const revisionId = revision.revisionId ?? "";
         expect(revisionId).not.toBe("");
-        expect(becca.getRevision(revisionId)).not.toBeNull();
+        expect(getBecca().getRevision(revisionId)).not.toBeNull();
 
         getContext().init(() => revision.eraseRevision());
 
-        expect(becca.getRevision(revisionId)).toBeNull();
+        expect(getBecca().getRevision(revisionId)).toBeNull();
     });
 });
 

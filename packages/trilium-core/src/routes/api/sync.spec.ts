@@ -447,7 +447,7 @@ describe("Sync API (core)", () => {
     });
 
     it("syncFinished marks the database as initialized", async () => {
-        const setInit = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const setInit = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
 
         const res = await api.post("/api/sync/finished");
         expect(res.status).toBe(204);

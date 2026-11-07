@@ -5,7 +5,7 @@ import {
 } from "@triliumnext/commons";
 import type { Request, Response } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import becca_service from "../../becca/becca_service.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import bulkActionService from "../../services/bulk_actions.js";
@@ -23,7 +23,7 @@ const NEW_TEMPLATE_MAX_AGE = 3;
 const INITIAL_SETUP_GRACE_PERIOD = 30;
 
 function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {
@@ -39,7 +39,7 @@ function searchFromNote(req: Request<{ noteId: string }>): SearchNoteResult {
 }
 
 function searchAndExecute(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     /* v8 ignore next 4 -- unreachable: getNoteOrThrow already throws on a missing note */
     if (!note) {
@@ -65,7 +65,7 @@ function searchAndExecute(req: Request<{ noteId: string }>) {
  * but that is intentionally not built here.
  */
 function getSearchResultDetails(req: Request<{ noteId: string }>): SearchResultDetailsResponse {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     if (note.type !== "search") {
         throw new ValidationError(`Note '${req.params.noteId}' is not a search note.`);
@@ -255,8 +255,8 @@ function searchTemplates(): TemplatesResponse {
 
     // The built-in templates live in the hidden subtree, so the search above never returns them.
     // Their "new" flag is reported here regardless, sparing the client a request per template.
-    const builtInTemplates = becca.getNote("_templates")?.getChildNotes() ?? [];
-    const rootCreationDate = becca.getNote("root")?.utcDateCreated;
+    const builtInTemplates = getBecca().getNote("_templates")?.getChildNotes() ?? [];
+    const rootCreationDate = getBecca().getNote("root")?.utcDateCreated;
 
     return {
         templateNoteIds: userTemplates.map((note) => note.noteId),
@@ -295,7 +295,7 @@ export function isNewTemplate(utcDateCreated: string | null, rootCreationDate: s
  */
 function getNoteMimes(): NoteMimeCount[] {
     const counts = new Map<string, number>();
-    for (const note of Object.values(becca.notes)) {
+    for (const note of Object.values(getBecca().notes)) {
         if (!note.mime || note.noteId.startsWith("_")) {
             continue;
         }

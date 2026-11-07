@@ -2,7 +2,7 @@
 
 import type { Request } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import attributeService from "../../services/attributes.js";
 import { getLog } from "../../services/log.js";
 import { getPlatform } from "../../services/platform.js";
@@ -30,7 +30,7 @@ async function exec(req: Request) {
     try {
         const body = req.body as ScriptBody;
 
-        const execute = (body: ScriptBody) => scriptService.executeScript(body.script, body.params, body.startNoteId, body.currentNoteId, body.originEntityName, body.originEntityId, becca);
+        const execute = (body: ScriptBody) => scriptService.executeScript(body.script, body.params, body.startNoteId, body.currentNoteId, body.originEntityName, body.originEntityId, getBecca());
 
         const result = body.transactional ? getSql().transactional(() => execute(body)) : await execute(body);
 
@@ -49,7 +49,7 @@ async function exec(req: Request) {
 }
 
 function run(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     try {
         assertScriptingEnabled();
@@ -104,7 +104,7 @@ function getWidgetBundles() {
 
 function getRelationBundles(req: Request<{ noteId: string, relationName: string }>) {
     const noteId = req.params.noteId;
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
     const relationName = req.params.relationName;
 
     const attributes = note.getAttributes();
@@ -115,7 +115,7 @@ function getRelationBundles(req: Request<{ noteId: string, relationName: string 
     const bundles: Bundle[] = [];
 
     for (const noteId of uniqueNoteIds) {
-        const note = becca.getNoteOrThrow(noteId);
+        const note = getBecca().getNoteOrThrow(noteId);
 
         if (!note.isJavaScript() || note.getScriptEnv() !== "frontend") {
             continue;
@@ -132,7 +132,7 @@ function getRelationBundles(req: Request<{ noteId: string, relationName: string 
 }
 
 function getBundle(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
     const { script, params } = req.body ?? {};
 
     return scriptService.getScriptBundleForFrontend(note, script, params);

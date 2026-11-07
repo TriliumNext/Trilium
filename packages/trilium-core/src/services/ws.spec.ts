@@ -1,7 +1,7 @@
 import type { WebSocketMessage } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import * as cls from "./context.js";
 import { initMessaging } from "./messaging/index.js";
 import type { ClientMessageHandler } from "./messaging/types.js";
@@ -69,7 +69,7 @@ describe("ws service (real DB)", () => {
                 [now, now, now, now]
             );
             // Attachments need a matching blob for the JOIN to return a row. They are
-            // marked deleted so becca.getAttachment() (which filters isDeleted=0) misses
+            // marked deleted so getBecca().getAttachment() (which filters isDeleted=0) misses
             // them, forcing the DB-fallback path in fillInAdditionalProperties (whose
             // query has no isDeleted filter).
             getSql().execute(
@@ -85,7 +85,7 @@ describe("ws service (real DB)", () => {
         });
 
         // becca-hit changes (reuse the existing fixture rows).
-        const branchId = becca.getNote("root")?.getChildBranches()[0]?.branchId ?? "root_root";
+        const branchId = getBecca().getNote("root")?.getChildBranches()[0]?.branchId ?? "root_root";
         const attrEC = getSql().getRow<{ id: number; entityId: string }>(
             `SELECT ec.id, ec.entityId FROM entity_changes ec
              JOIN attributes a ON a.attributeId = ec.entityId

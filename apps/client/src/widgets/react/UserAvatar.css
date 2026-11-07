@@ -1,0 +1,18 @@
+.user-avatar {
+    --user-avatar-size: 36px;
+
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--user-avatar-size);
+    height: var(--user-avatar-size);
+    border-radius: 50%;
+    background-color: hsl(var(--user-avatar-hue) 55% 45%);
+    color: white;
+    font-size: calc(var(--user-avatar-size) * 0.36);
+    font-weight: 600;
+    letter-spacing: .5px;
+    line-height: 1;
+    user-select: none;
+}

@@ -3,7 +3,7 @@
 import type { Response } from "../../http_interface";
 import mimeTypes from "mime-types";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
@@ -139,7 +139,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
  */
 function inlineAttachments(content: string) {
     content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/?[^"]+"/g, (match, noteId) => {
-        const note = becca.getNote(noteId);
+        const note = getBecca().getNote(noteId);
         if (!note || !note.mime.startsWith("image/")) {
             return match;
         }
@@ -154,7 +154,7 @@ function inlineAttachments(content: string) {
     // span.link-mention) keep their two picture references; inlining them keeps the exported file
     // self-contained just like an <img> src.
     content = content.replace(/(src|data-image|data-favicon)="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/?[^"]+"/g, (match, attrName, attachmentId) => {
-        const attachment = becca.getAttachment(attachmentId);
+        const attachment = getBecca().getAttachment(attachmentId);
         if (!attachment || !attachment.mime.startsWith("image/")) {
             return match;
         }
@@ -166,7 +166,7 @@ function inlineAttachments(content: string) {
     });
 
     content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, attachmentId) => {
-        const attachment = becca.getAttachment(attachmentId);
+        const attachment = getBecca().getAttachment(attachmentId);
         if (!attachment) {
             return match;
         }

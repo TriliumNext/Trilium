@@ -281,6 +281,7 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
     isInPopup: boolean;
 }) {
     const itemToFocusRef = useRef<HTMLLIElement>(null);
+    const parentComponent = useContext(ParentComponent);
     const [ isBookmarked, setIsBookmarked ] = useNoteBookmarkState(note);
     const [ isShared, switchShareState ] = useShareState(note);
     const [ isTemplate, setIsTemplate ] = useNoteLabelBoolean(note, "template");
@@ -328,6 +329,13 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
         disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
         itemRef={itemToFocusRef}
     />;
+    const access = note.isAccessManageable() && (
+        <CommandItem icon="bx bx-user-plus" text={t("note_actions.access")}
+            command={() => parentComponent?.triggerCommand("showNoteAccess", {
+                noteId: note.noteId,
+                selectedOrActiveBranchIds: []
+            })} />
+    );
     const protect = <FormListToggleableItem
         icon="bx bx-lock-alt"
         title={t("protect_note.toggle-on")}
@@ -345,6 +353,7 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
             {protect}
             <FormDropdownSubmenu icon="bx bx-slider-alt" title={t("note_actions.note_settings")}>
                 {shared}
+                {access}
                 {bookmark}
                 <FormDropdownDivider />
                 {settings}
@@ -354,6 +363,7 @@ function NoteBasicProperties({ note, focus, isInPopup, settingsItems }: {
 
     return <>
         {shared}
+        {access}
         {protect}
         {bookmark}
         <FormDropdownDivider />

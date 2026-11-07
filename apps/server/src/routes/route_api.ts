@@ -1,4 +1,4 @@
-import { entity_changes as entityChangesService, HttpError, MAX_BLOB_CONTENT_LENGTH, routes, utils as coreUtils } from "@triliumnext/core";
+import { cls, entity_changes as entityChangesService, getLog, HttpError, MAX_BLOB_CONTENT_LENGTH, routes, utils as coreUtils, warmBeccaForUser } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import type { ParamsDictionary } from "express-serve-static-core";
 import { mkdirSync } from "fs";
@@ -10,8 +10,6 @@ import { PassThrough, Transform } from "stream";
 
 import { bindEmitter } from "../cls_provider.js";
 import auth from "../services/auth.js";
-import { cls } from "@triliumnext/core";
-import { getLog } from "@triliumnext/core";
 import dataDirs from "../services/data_dir.js";
 import sql from "../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
@@ -96,8 +94,18 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
                 cls.set("componentId", req.headers["trilium-component-id"]);
                 cls.set("localNowDateTime", req.headers["trilium-local-now-datetime"]);
                 cls.set("hoistedNoteId", req.headers["trilium-hoisted-note-id"] || "root");
+                cls.set("userId", req.session?.userId);
 
+                const userId = req.session?.userId;
                 const cb = () => routeHandler(req, res, next);
+
+                if (userId) {
+                    // warmBeccaForUser populates the per-user Becca cache so getBecca()
+                    // returns the right filtered view when the route handler runs.
+                    return warmBeccaForUser(userId).then(() =>
+                        transactional ? sql.transactional(cb) : cb()
+                    );
+                }
 
                 return transactional ? sql.transactional(cb) : cb();
             });

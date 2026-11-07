@@ -1,6 +1,6 @@
 import { isSvgMime } from "@triliumnext/commons";
 import { Response } from "../http_interface";
-import becca from "../becca/becca";
+import { getBecca } from "../becca/becca";
 import BNote from "../becca/entities/bnote";
 import noteService from "../services/notes";
 import protected_session from "../services/protected_session";
@@ -9,7 +9,7 @@ import { unwrapStringOrBuffer } from "../services/utils/binary";
 import { getContentDisposition, getInlineContentHeaders, sanitizeSvg, SVG_CONTENT_SECURITY_POLICY } from "../services/utils/index";
 
 export function downloadNoteInt(noteId: string, res: Response, contentDisposition = true) {
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (!note) {
         return res.setHeader("Content-Type", "text/plain").status(404).send(`Note '${noteId}' doesn't exist.`);

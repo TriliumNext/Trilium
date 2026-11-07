@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { imageMimeForExtension } from "@triliumnext/commons";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import imageService from "./image.js";
@@ -73,7 +73,7 @@ describe("image service (real DB)", () => {
                 `api/images/${result.noteId}/${encodeURIComponent(result.fileName)}`
             );
 
-            const note = becca.getNote(result.noteId);
+            const note = getBecca().getNote(result.noteId);
             expect(note).not.toBeNull();
             expect(note!.type).toBe("image");
             // The original (unsanitized-for-filename) name is recorded as a label.
@@ -89,7 +89,7 @@ describe("image service (real DB)", () => {
                 imageService.saveImage("root", fakeBuffer, longName, false, true)
             );
             expect(trimmed.fileName).toBe("image");
-            expect(becca.getNote(trimmed.noteId)!.getOwnedLabelValue("originalFileName")).toBe("image");
+            expect(getBecca().getNote(trimmed.noteId)!.getOwnedLabelValue("originalFileName")).toBe("image");
 
             const untrimmed = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, longName, false, false)
@@ -114,7 +114,7 @@ describe("image service (real DB)", () => {
             );
             await flushAsync();
 
-            const note = becca.getNote(result.noteId)!;
+            const note = getBecca().getNote(result.noteId)!;
             expect(note.mime).toBe("image/png");
             expect(bytesOf(note.getContent())).toEqual(Array.from(fakeBuffer));
         });
@@ -129,7 +129,7 @@ describe("image service (real DB)", () => {
             );
             await flushAsync();
 
-            const note = becca.getNote(result.noteId)!;
+            const note = getBecca().getNote(result.noteId)!;
             expect(note.mime).toBe("image/svg+xml");
             // The name had no extension, so the detected one is appended to the label and title.
             expect(note.getOwnedLabelValue("originalFileName")).toBe(`${baseName}.svg`);
@@ -144,7 +144,7 @@ describe("image service (real DB)", () => {
             const { noteId } = getContext().init(() =>
                 imageService.saveImage("root", fakeBuffer, `host-${counter}.png`, false)
             );
-            return becca.getNote(noteId)!;
+            return getBecca().getNote(noteId)!;
         }
 
         it("creates an image attachment on the note and returns its title synchronously", () => {
@@ -157,7 +157,7 @@ describe("image service (real DB)", () => {
             expect(att.attachmentId).toBeTruthy();
             expect(att.title).toBe("att.png");
 
-            const attachment = becca.getAttachment(att.attachmentId!);
+            const attachment = getBecca().getAttachment(att.attachmentId!);
             expect(attachment).not.toBeNull();
             expect(attachment!.role).toBe("image");
             expect(attachment!.ownerId).toBe(host.noteId);
@@ -289,7 +289,7 @@ describe("image service (real DB)", () => {
             }
 
             // The attachment really is gone, so the guard — not a lucky lookup — is what was exercised.
-            expect(becca.getAttachment(att.attachmentId ?? "")).toBeFalsy();
+            expect(getBecca().getAttachment(att.attachmentId ?? "")).toBeFalsy();
             expect(rejections).toEqual([]);
         });
 
@@ -302,7 +302,7 @@ describe("image service (real DB)", () => {
             );
             await flushAsync();
 
-            const attachment = becca.getAttachment(att.attachmentId!)!;
+            const attachment = getBecca().getAttachment(att.attachmentId!)!;
             expect(attachment.mime).toBe("image/jpeg");
             expect(attachment.title).toBe("nodotattach.jpg");
             expect(bytesOf(attachment.getContent())).toEqual(Array.from(fakeBuffer));
@@ -321,7 +321,7 @@ describe("image service (real DB)", () => {
             );
             await flushAsync();
 
-            const attachment = becca.getAttachment(att.attachmentId ?? "");
+            const attachment = getBecca().getAttachment(att.attachmentId ?? "");
             expect(attachment?.mime).toBe("image/jpeg");
             // The title is left alone on purpose (a canvas addresses its images by it), which is
             // precisely why the mime has to be right — it is all the export has left to go on.
@@ -354,7 +354,7 @@ describe("image service (real DB)", () => {
 
             // Sanity-check the pre-update state so the post-update assertions below
             // genuinely discriminate updateImage's effect (and aren't already true).
-            const beforeUpdate = becca.getNote(noteId)!;
+            const beforeUpdate = getBecca().getNote(noteId)!;
             expect(beforeUpdate.mime).toBe("image/png");
             expect(bytesOf(beforeUpdate.getContent())).toEqual(Array.from(createdBuffer));
 
@@ -364,12 +364,12 @@ describe("image service (real DB)", () => {
             const updatedBuffer = new Uint8Array([9, 8, 7, 6]);
             stubProcessImage({ ext: "jpg" }, updatedBuffer);
 
-            const revisionSpy = vi.spyOn(becca.getNote(noteId)!, "saveRevision");
+            const revisionSpy = vi.spyOn(getBecca().getNote(noteId)!, "saveRevision");
 
             getContext().init(() => imageService.updateImage(noteId, fakeBuffer, "renamed.png"));
             await flushAsync();
 
-            const note = becca.getNote(noteId)!;
+            const note = getBecca().getNote(noteId)!;
             expect(revisionSpy).toHaveBeenCalledTimes(1);
             expect(note.getOwnedLabelValue("originalFileName")).toBe("renamed.png");
             // Mime/content now reflect updateImage's distinct provider output, which
@@ -384,7 +384,7 @@ describe("image service (real DB)", () => {
             // The child inherits protection only via
             // `parentNote.isProtected && isProtectedSessionAvailable()`, so the
             // parent MUST be protected for the session flag to matter at all.
-            const root = becca.getNote("root")!;
+            const root = getBecca().getNote("root")!;
             const originalRootProtected = root.isProtected;
             root.isProtected = true;
 
@@ -403,7 +403,7 @@ describe("image service (real DB)", () => {
                 const whenAvailable = getContext().init(() =>
                     imageService.saveImage("root", fakeBuffer, `prot-on-${counter}.png`, false)
                 );
-                expect(becca.getNote(whenAvailable.noteId)!.isProtected).toBe(true);
+                expect(getBecca().getNote(whenAvailable.noteId)!.isProtected).toBe(true);
                 // Let the protected note's fire-and-forget content save settle while
                 // the session is still "available", so its encryption branch doesn't
                 // run after we flip the mock below.
@@ -416,7 +416,7 @@ describe("image service (real DB)", () => {
                 const whenUnavailable = getContext().init(() =>
                     imageService.saveImage("root", fakeBuffer, `prot-off-${counter}.png`, false)
                 );
-                expect(becca.getNote(whenUnavailable.noteId)!.isProtected).toBe(false);
+                expect(getBecca().getNote(whenUnavailable.noteId)!.isProtected).toBe(false);
                 await flushAsync();
             } finally {
                 // Restore the shared fixture's root so sibling tests still attach

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import eraseService from "./erase.js";
@@ -264,7 +264,7 @@ describe("erase service (real DB)", () => {
             });
 
             // Nothing was touched; the note (and everything else) is intact.
-            expect(becca.notes[noteId]).toBeDefined();
+            expect(getBecca().notes[noteId]).toBeDefined();
             expect(rowCount("notes", "noteId", noteId)).toBe(1);
         });
     });

@@ -42,6 +42,7 @@ export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // barrel is imported by virtually every client module. Import them via their subpath instead,
 // e.g. "@triliumnext/commons/src/lib/spreadsheet/render_to_html".
 export * from "./lib/backup_name.js";
+export * from "./lib/user_avatar.js";
 export * from "./lib/filesystem_name.js";
 export * from "./lib/electron_api_interface.js";
 export * from "./lib/security_settings.js";

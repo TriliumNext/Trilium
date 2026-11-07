@@ -3,7 +3,7 @@ import { default as path, dirname } from "path";
 import { fileURLToPath } from "url";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { getContext } from "../context.js";
 import { getLog } from "../log.js";
@@ -28,7 +28,7 @@ interface ImportOverrides {
 
 async function testImport(fileName: string, { originalname = fileName, buffer, parentNote }: ImportOverrides = {}) {
     const taskContext = TaskContext.getInstance("import-enex", "importNotes", {});
-    const rootNote = parentNote ?? becca.getNoteOrThrow("root");
+    const rootNote = parentNote ?? getBecca().getNoteOrThrow("root");
 
     const importedNote = await getContext().init(() =>
         enex.importEnex(taskContext, {

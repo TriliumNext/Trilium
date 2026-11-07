@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, beforeEach } from "vitest";
 import * as cls from "../services/context.js";
 import { getSql } from "../services/sql/index.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import becca_loader from "../becca/becca_loader.js";
 import migration from "./0233__migrate_geo_map_to_collection.js";
 
@@ -112,9 +112,9 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
                 becca_loader.load();
 
                 // Verify initial state
-                const geoMapNote1 = becca.getNote(testNoteId);
-                const geoMapNote2 = becca.getNote(testNoteId2);
-                const regularNote = becca.getNote(regularNoteId);
+                const geoMapNote1 = getBecca().getNote(testNoteId);
+                const geoMapNote2 = getBecca().getNote(testNoteId2);
+                const regularNote = getBecca().getNote(regularNoteId);
 
                 expect(geoMapNote1).toBeTruthy();
                 expect(geoMapNote1?.type).toBe("geoMap");
@@ -130,9 +130,9 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
                 becca_loader.load();
 
                 // Verify migration results
-                const migratedNote1 = becca.getNote(testNoteId);
-                const migratedNote2 = becca.getNote(testNoteId2);
-                const unchangedNote = becca.getNote(regularNoteId);
+                const migratedNote1 = getBecca().getNote(testNoteId);
+                const migratedNote2 = getBecca().getNote(testNoteId2);
+                const unchangedNote = getBecca().getNote(regularNoteId);
 
                 // Check that geoMap notes were converted to book type
                 expect(migratedNote1).toBeTruthy();
@@ -204,7 +204,7 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
                 // Reload becca
                 becca_loader.load();
 
-                const note = becca.getNote(testNoteId);
+                const note = getBecca().getNote(testNoteId);
                 expect(note).toBeTruthy();
 
                 // Create an existing viewConfig attachment with the same title
@@ -227,7 +227,7 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
 
                 // Reload becca after migration
                 becca_loader.load();
-                const migratedNote = becca.getNote(testNoteId);
+                const migratedNote = getBecca().getNote(testNoteId);
 
                 // Verify that existing attachment was updated, not duplicated
                 if (migratedNote) {
@@ -272,7 +272,7 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
                 becca_loader.load();
 
                 // Verify initial state
-                const protectedNote = becca.getNote(testNoteId);
+                const protectedNote = getBecca().getNote(testNoteId);
                 expect(protectedNote).toBeTruthy();
                 expect(protectedNote?.type).toBe("geoMap");
                 expect(protectedNote?.isProtected).toBe(true);
@@ -286,7 +286,7 @@ describe("Migration 0233: Migrate geoMap to collection", () => {
 
                 // Reload becca after migration attempt
                 becca_loader.load();
-                const noteAfterMigration = becca.getNote(testNoteId);
+                const noteAfterMigration = getBecca().getNote(testNoteId);
 
                 // If migration succeeds, verify the transformation
                 expect(noteAfterMigration).toBeTruthy();

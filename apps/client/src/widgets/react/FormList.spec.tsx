@@ -83,6 +83,21 @@ describe("FormListItem", () => {
         expect(span?.textContent).toBe("Copynew");
     });
 
+    it("draws a leading element in the icon's slot, moving the check mark to the end", () => {
+        const host = document.createElement("div");
+        render((
+            <menu role="none">
+                <FormListItem leading={<span className="avatar">EL</span>} checked>elian</FormListItem>
+            </menu>
+        ), host);
+        const span = host.querySelector("li.dropdown-item > span");
+
+        expect([ ...span?.children ?? [] ].map((child) => child.className)).toEqual([
+            "avatar", "tn-menu-gap", "bx bx-check tn-icon menu-trailing-icon"
+        ]);
+        expect(span?.textContent).toBe("ELelian");
+    });
+
     it("ends its row with a shortcut, a trailing text, then a trailing icon, leaving its own icon standing", () => {
         const host = document.createElement("div");
         render((

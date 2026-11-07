@@ -1,6 +1,6 @@
 import type { Request } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
 import dateNoteService from "../../services/date_notes.js";
 import specialNotesService, { type LauncherType } from "../../services/special_notes.js";
@@ -16,7 +16,7 @@ function getInboxTarget() {
 
 function getDayNote(req: Request<{ date: string }>) {
     const calendarRootId = req.query.calendarRootId;
-    const calendarRoot = typeof calendarRootId === "string" ? becca.getNoteOrThrow(calendarRootId) : null;
+    const calendarRoot = typeof calendarRootId === "string" ? getBecca().getNoteOrThrow(calendarRootId) : null;
     return dateNoteService.getDayNote(req.params.date, calendarRoot);
 }
 
@@ -60,7 +60,7 @@ function getDayNotesForMonth(req: Request) {
         const rows = sql.getRows<{ date: string; noteId: string }>(query, [month]);
         const result: Record<string, string> = {};
         for (const { date, noteId } of rows) {
-            const note = becca.getNote(noteId);
+            const note = getBecca().getNote(noteId);
             if (note?.hasAncestor(String(calendarRoot))) {
                 result[date] = noteId;
             }
@@ -92,7 +92,7 @@ function createSearchNote(req: Request) {
 }
 
 function getHoistedNote() {
-    return becca.getNote(cls.getHoistedNoteId());
+    return getBecca().getNote(cls.getHoistedNoteId());
 }
 
 function createLauncher(req: Request<{ parentNoteId: string, launcherType: string }>) {

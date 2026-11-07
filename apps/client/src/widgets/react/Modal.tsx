@@ -113,6 +113,8 @@ export default function Modal({ children, className = "", size, title, customTit
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal | undefined>(undefined);
     const elementToFocus = useRef<Element | null | undefined>(undefined);
+    /** From `show()` to `shown.bs.modal`, the time in which Bootstrap drops a `hide()`. */
+    const isOpeningRef = useRef(false);
 
     /*
      * Bootstrap writes classes of its own onto this element — `show` above all, which is what makes
@@ -174,6 +176,21 @@ export default function Modal({ children, className = "", size, title, customTit
         };
     }, [ onShown, onHidden ]);
 
+    useEffect(() => {
+        const modalElement = modalRef.current;
+        if (!modalElement) return;
+
+        const settle = (event: Event) => {
+            if (event.target === modalElement) isOpeningRef.current = false;
+        };
+        modalElement.addEventListener("shown.bs.modal", settle);
+        modalElement.addEventListener("hidden.bs.modal", settle);
+        return () => {
+            modalElement.removeEventListener("shown.bs.modal", settle);
+            modalElement.removeEventListener("hidden.bs.modal", settle);
+        };
+    }, []);
+
     // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
     // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
     // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
@@ -197,6 +214,7 @@ export default function Modal({ children, className = "", size, title, customTit
     useEffect(() => {
         if (show && modalRef.current) {
             elementToFocus.current = document.activeElement;
+            isOpeningRef.current = true;
             openDialog($(modalRef.current), !stackable, {
                 focus: !noFocus
             }, zIndex).then(($widget) => {
@@ -207,19 +225,14 @@ export default function Modal({ children, className = "", size, title, customTit
             instance?.hide();
 
             /*
-             * Bootstrap drops a `hide()` made while the dialog is still opening — it is guarded on
-             * an internal `_isTransitioning`, which stands for the ~300ms the opening takes — and
-             * says nothing about having dropped it. A dialog told to close within that window (a
-             * picker closing itself on the first thing tapped, say) would be left open for good,
-             * and since our own tree has already emptied it, what stays on the screen is an empty
-             * sheet and its backdrop over a page that can no longer be pressed.
-             *
-             * A `hide()` that was carried out takes the class off at once, so a dialog still
-             * wearing it is one whose closing was dropped. Say it again the moment the opening
-             * lands, which is what `shown.bs.modal` reports.
+             * Bootstrap silently drops a `hide()` made while the dialog is still opening, which
+             * covers the backdrop's fade-in as well as the dialog's own. Our tree has already
+             * emptied the dialog, so a dropped hide leaves an empty dialog and its backdrop over a
+             * page that cannot be pressed. The hide is repeated once `shown.bs.modal` reports the
+             * opening done.
              */
             const modalElement = modalRef.current;
-            if (instance && modalElement?.classList.contains("show")) {
+            if (instance && modalElement && isOpeningRef.current) {
                 const hideOnceShown = () => instance.hide();
                 modalElement.addEventListener("shown.bs.modal", hideOnceShown, { once: true });
                 // Dropped in turn if the dialog is asked to open again before the first one lands.

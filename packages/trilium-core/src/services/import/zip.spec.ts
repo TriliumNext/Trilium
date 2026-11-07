@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { PassThrough } from "stream";
 import zip, { removeTriliumTags } from "./zip.js";
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote.js";
 import noteService from "../notes.js";
 import TaskContext from "../task_context.js";
@@ -28,7 +28,7 @@ async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData:
 
     // `init` returns the callback's promise, so a failing import rejects here rather than hanging.
     return getContext().init(async () => {
-        const rootNote = becca.getNoteOrThrow("root");
+        const rootNote = getBecca().getNoteOrThrow("root");
         const importedNote = await zip.importZip(taskContext, buffer, rootNote, opts);
 
         return { importedNote, rootNote };
@@ -396,7 +396,7 @@ describe("processNoteContent", () => {
 
         await new Promise<void>((resolve, reject) => {
             getContext().init(async () => {
-                const rootNote = becca.getNote("root");
+                const rootNote = getBecca().getNote("root");
                 if (!rootNote) {
                     reject(new Error("missing root note"));
                     return;
@@ -429,7 +429,7 @@ describe("processNoteContent", () => {
 
         await new Promise<void>((resolve, reject) => {
             getContext().init(async () => {
-                const rootNote = becca.getNote("root");
+                const rootNote = getBecca().getNote("root");
                 if (!rootNote) {
                     reject(new Error("missing root note"));
                     return;
@@ -497,7 +497,7 @@ describe("processNoteContent", () => {
 
         // No corruption: the system root keeps its own content and gains no self-referential branch.
         expect(rootNote.getContent().toString()).not.toContain("archived root content");
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("restoreAsRoot maps the archived root onto the destination root instead of wrapping it (demo-content shape)", async () => {
@@ -538,7 +538,7 @@ describe("processNoteContent", () => {
         expect(journal?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         expect(misc?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         // And no self-referential root branch.
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("restoreAsRoot merges an archived root that has its own content into the destination root", async () => {
@@ -575,7 +575,7 @@ describe("processNoteContent", () => {
         const child = rootNote.getChildNotes().find((n) => n.title === "Restored Child");
         expect(child?.getParentNotes().map((n) => n.noteId)).toEqual(["root"]);
         expect(child?.getContent().toString()).toContain("child content");
-        expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
     it("keeps a folder zip's entries in archive order under an inherited #newNotesOnTop (no position metadata)", async () => {
@@ -800,7 +800,7 @@ describe("processNoteContent", () => {
         const { importedNote, rootNote } = await testImportBuffer(zipBuffer, "import-self-parent");
 
         expect(importedNote.getParentNotes().map((n) => n.noteId)).toEqual([rootNote.noteId]);
-        expect(becca.getBranchFromChildAndParent(importedNote.noteId, importedNote.noteId)).toBeFalsy();
+        expect(getBecca().getBranchFromChildAndParent(importedNote.noteId, importedNote.noteId)).toBeFalsy();
     });
 
     it("aborts when a folder's name collides with an already-imported data file", async () => {
@@ -1574,7 +1574,7 @@ describe("removeTriliumTags", () => {
 
 describe("Obsidian vault detection", () => {
     async function importWithFallback(files: Record<string, string>, taskId: string) {
-        const onObsidianVault = vi.fn().mockResolvedValue(becca.getNoteOrThrow("root"));
+        const onObsidianVault = vi.fn().mockResolvedValue(getBecca().getNoteOrThrow("root"));
         const buffer = await createZipBuffer(files);
         const { importedNote } = await testImportBuffer(buffer, taskId, { textImportedAsText: true }, { onObsidianVault });
         return { onObsidianVault, importedNote };
@@ -1584,7 +1584,7 @@ describe("Obsidian vault detection", () => {
         const wrapped = await importWithFallback({ "MyVault/.obsidian/app.json": "{}", "MyVault/Note.md": "# Note" }, "obsidian-wrapped");
         expect(wrapped.onObsidianVault).toHaveBeenCalled();
         // The fallback's note is what the import returns, so the archive was handed over rather than imported.
-        expect(wrapped.importedNote).toBe(becca.getNoteOrThrow("root"));
+        expect(wrapped.importedNote).toBe(getBecca().getNoteOrThrow("root"));
 
         const bare = await importWithFallback({ ".obsidian/app.json": "{}", "Note.md": "# Note" }, "obsidian-bare");
         expect(bare.onObsidianVault).toHaveBeenCalled();

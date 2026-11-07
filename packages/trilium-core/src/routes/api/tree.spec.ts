@@ -1,8 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import { getBecca } from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import permissionService from "../../services/permission_service";
+import userService from "../../services/user_service";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -66,18 +68,34 @@ describe("Tree API (core)", () => {
         getContext().init(() => load());
 
         try {
-            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean }[] }>("/api/tree/load", {
+            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean; isVirtual?: boolean }[] }>("/api/tree/load", {
                 body: { noteIds: [ "root", "_vtreePage" ] }
             });
             const byId = new Map(res.body.notes.map((note) => [ note.noteId, note ]));
-            expect(byId.get("_vtreePage")?.isContentWritable).toBe(false);
+            expect(byId.get("_vtreePage")).toMatchObject({ isContentWritable: false, isVirtual: true });
             const root = byId.get("root");
             expect(root).toBeTruthy();
             expect(Object.hasOwn(root ?? {}, "isContentWritable")).toBe(false);
+            expect(Object.hasOwn(root ?? {}, "isVirtual")).toBe(false);
         } finally {
             unregisterVirtualNoteProvider("_vtree");
             getContext().init(() => load());
         }
+    });
+
+    it("names the users with access to a note, and only on that note", async () => {
+        const note = await createTextNote(api, { title: "tree-access-spec" });
+        const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
+        getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
+
+        const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[]; ownerId?: string | null }[] }>("/api/tree/load", {
+            body: { noteIds: [ "root", note.noteId ] }
+        });
+        const byId = new Map(res.body.notes.map((row) => [ row.noteId, row ]));
+        expect(byId.get(note.noteId)?.accessUsernames).toEqual([ "tree-access-user" ]);
+        // The owner tells the client whether the signed-in user can manage the access.
+        expect(byId.get(note.noteId)?.ownerId).toBe(getContext().init(() => userService.getAdminUserId()));
+        expect(Object.hasOwn(byId.get("root") ?? {}, "accessUsernames")).toBe(false);
     });
 
     describe("edge cases", () => {
@@ -97,11 +115,11 @@ describe("Tree API (core)", () => {
 
         it("skips a collected branch id that is missing from the cache", async () => {
             // Force a dangling branchId into the collection (via the child-branch
-            // lookup in collectEntityIds) so the `becca.branches[branchId]` lookup
+            // lookup in collectEntityIds) so the `getBecca().branches[branchId]` lookup
             // misses and the guard runs. Use `load` so getTree's own collect()
             // recursion (which needs a real childNote) isn't affected.
-            const original = becca.getBranchFromChildAndParent.bind(becca);
-            vi.spyOn(becca, "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
+            const original = getBecca().getBranchFromChildAndParent.bind(getBecca());
+            vi.spyOn(getBecca(), "getBranchFromChildAndParent").mockImplementation((childNoteId, parentNoteId) => {
                 const branch = original(childNoteId, parentNoteId);
                 if (branch) {
                     Object.defineProperty(branch, "branchId", { value: "ghostBranch123", configurable: true });
@@ -116,8 +134,8 @@ describe("Tree API (core)", () => {
 
         it("skips a collected attribute id that is missing from the cache", async () => {
             const { noteId } = await createTextNote(api, { title: "Note with ghost attribute" });
-            const note = becca.notes[noteId];
-            // Replace the note's owned attributes with one whose id is absent from becca.attributes.
+            const note = getBecca().notes[noteId];
+            // Replace the note's owned attributes with one whose id is absent from getBecca().attributes.
             vi.spyOn(note, "ownedAttributes", "get").mockReturnValue([
                 { attributeId: "ghostAttr123", type: "label", name: "x", targetNote: undefined } as never
             ]);

@@ -2,7 +2,7 @@
 
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type SearchContext from "../search_context.js";
 
 class DescendantOfExp extends Expression {
@@ -15,7 +15,7 @@ class DescendantOfExp extends Expression {
     }
 
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
-        const subInputNoteSet = new NoteSet(Object.values(becca.notes));
+        const subInputNoteSet = new NoteSet(Object.values(getBecca().notes));
         const subResNoteSet = this.subExpression.execute(subInputNoteSet, executionContext, searchContext);
 
         const subTreeNoteSet = new NoteSet();

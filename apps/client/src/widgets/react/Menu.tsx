@@ -602,7 +602,7 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
         {matches.map(([ index, { item, title, isName, path } ]) => (
             <FormListItem
                 key={index}
-                icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
+                icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass} leading={item.leading}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
                 className={item.className} closeOnSelect={false}
                 onClick={(e) => onSelect?.(item, e)}
@@ -628,7 +628,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     }
 
     const {
-        title, titleIcon, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges,
+        title, titleIcon, description, tooltip, uiIcon, leading, iconColorClass, checked, enabled, badges,
         className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
         middleClickHandler, contextMenuHandler
     } = row;
@@ -665,7 +665,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
         <FormListItem
             // An item with neither keeps no slot for an icon, as an all-text menu such as spelling fixes needs.
             icon={"uiIcon" in row || "checked" in row ? uiIcon : null}
-            iconClassName={iconColorClass} checked={checked} checkable={"checked" in row} disabled={enabled === false}
+            iconClassName={iconColorClass} leading={leading} checked={checked} checkable={"checked" in row} disabled={enabled === false}
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
             keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
             trailingIcon={trailingIcon} closeOnSelect={false}

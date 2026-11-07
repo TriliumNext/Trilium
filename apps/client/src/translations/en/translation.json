@@ -1278,7 +1278,8 @@
     "note_map": "Note map",
     "search_in_note_short": "Find",
     "note_attachments_short": "Attachments",
-    "note_settings": "Note settings"
+    "note_settings": "Note settings",
+    "access": "Access..."
   },
   "onclick_button": {
     "no_click_handler": "Button widget '{{componentId}}' has no defined click handler"
@@ -2618,7 +2619,8 @@
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit",
     "clone": "Copy",
-    "clone-tooltip": "Copy for pasting as a clone somewhere else in the tree, or as a link into a note"
+    "clone-tooltip": "Copy for pasting as a clone somewhere else in the tree, or as a link into a note",
+    "access": "Access..."
   },
   "read-only-info": {
     "edit-note": "Edit note"
@@ -2903,7 +2905,9 @@
     "back-to-tree": "Note tree",
     "display-density": "Display density",
     "display-density-relaxed": "Relaxed",
-    "display-density-dense": "Dense"
+    "display-density-dense": "Dense",
+    "access-indicator-tooltip": "Access given to {{usernames}}",
+    "my_notes": "My notes"
   },
   "mobile_note_navigator": {
     "back": "Go up one level",
@@ -4030,7 +4034,8 @@
   },
   "settings": {
     "related_settings": "Related settings",
-    "related_actions": "Related actions"
+    "related_actions": "Related actions",
+    "administration": "Administration"
   },
   "settings_appearance": {
     "related_code_blocks": "Color scheme for code blocks in text notes",
@@ -5074,6 +5079,73 @@
     "no_tool": "No tool",
     "zoom": "Zoom",
     "zoom_to_fit": "Zoom to fit"
+  },
+  "users": {
+    "description": "People who can sign in to this server with their own username and password. Each new user gets a one-time link to choose their password.",
+    "add_user": "Add user",
+    "no_users": "There are no users yet.",
+    "badge_you": "You",
+    "badge_admin": "Admin",
+    "badge_primary_admin": "Primary admin",
+    "primary_admin_tooltip": "Created when the server starts. Signs in with the instance password, so it can't be deleted or lose its admin rights.",
+    "no_email": "No email",
+    "created": "Added {{date}}",
+    "edit_user": "Edit user...",
+    "delete_user": "Delete user...",
+    "delete_blocked_self": "You can't delete your own account",
+    "delete_blocked_primary": "The primary admin can't be deleted",
+    "delete_blocked_last_admin": "The last admin can't be deleted",
+    "delete_confirmation": "Delete the user \"{{username}}\"? Their notes are kept.",
+    "deleted": "Deleted user \"{{username}}\".",
+    "updated": "Saved user \"{{username}}\".",
+    "created_toast": "Added user \"{{username}}\".",
+    "create_title": "Add user",
+    "edit_title": "Edit \"{{username}}\"",
+    "username": "Username",
+    "email": "Email",
+    "email_description": "Optional. Shown only to admins.",
+    "email_placeholder": "name@example.com",
+    "role": "Role",
+    "role_admin": "Administrator",
+    "role_admin_description": "Sees every note and can manage users. Without it, the user sees only their own notes and the ones shared with them.",
+    "role_locked_primary": "The primary admin always keeps admin rights.",
+    "role_locked_self": "You can't change your own role.",
+    "error_username_required": "Enter a username.",
+    "error_username_taken": "Another user already has this username.",
+    "badge_setup_pending": "Setup pending",
+    "badge_setup_expired": "Setup link expired",
+    "setup_pending_tooltip": "The setup link works until {{date}}.",
+    "setup_expired_tooltip": "This user hasn't chosen a password and their setup link no longer works. Create a new one.",
+    "badge_reset_pending": "Reset pending",
+    "create_setup_link": "Create new setup link...",
+    "create_setup_link_confirmation": "Create a new setup link for \"{{username}}\"? Any earlier link stops working.",
+    "create_reset_link_confirmation": "Create a password reset link for \"{{username}}\"? Their current password keeps working until they use it, and any earlier link stops working.",
+    "setup_link_title": "Setup link for \"{{username}}\"",
+    "setup_link_description": "Send this link to {{username}} so they can choose their password. It works once, until {{date}}. It won't be shown again.",
+    "setup_link_copy": "Copy link",
+    "setup_link_copied": "Setup link copied to the clipboard.",
+    "setup_link_done": "Done",
+    "setup_link_blocked_primary": "The primary admin signs in with the instance password",
+    "account": "Account",
+    "admins_heading": "Administrators",
+    "users_heading": "Users",
+    "actions": "Actions",
+    "role_user": "User"
+  },
+  "note_access": {
+    "title": "Access",
+    "title_with_note": "Access to “{{title}}”",
+    "people_heading": "People with access",
+    "people_description": "Access also covers every note below this one. Admins can see every note.",
+    "owner": "Owner",
+    "can_view": "Can view",
+    "can_edit": "Can edit",
+    "remove": "Remove access for {{username}}",
+    "add_heading": "Give access",
+    "add": "Add",
+    "no_more_users": "Everyone who can be given access already has it.",
+    "close": "Close",
+    "user": "User"
   },
   "youtube_video": {
     "title": "Insert media",

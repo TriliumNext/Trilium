@@ -53,6 +53,10 @@ export function getComponentId() {
     return getContext().get("componentId");
 }
 
+export function getUserId(): string | undefined {
+    return getContext().get<string>("userId");
+}
+
 export function isEntityEventsDisabled() {
     return !!getContext().get("disableEntityEvents");
 }

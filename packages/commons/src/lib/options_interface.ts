@@ -107,6 +107,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     imageCompressionToolOptions: string;
     documentId: string;
     documentSecret: string;
+    adminUserId: string;
     passwordVerificationHash: string;
     passwordVerificationSalt: string;
     passwordDerivedKeySalt: string;

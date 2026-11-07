@@ -2,7 +2,7 @@ import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type Branc
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttachment from "../becca/entities/battachment.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
@@ -23,6 +23,7 @@ import { evaluateTemplateSafe } from "./safe_template.js";
 import { sanitizeHtml } from "./sanitizer.js";
 import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
+import { getActingUserHomeNoteId } from "./user_homes.js";
 import { decodeBase64, decodeUtf8, encodeBase64 } from "./utils/binary.js";
 import date_utils from "./utils/date.js";
 import { isValidEntityId, newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
@@ -41,6 +42,8 @@ interface Attachment {
 export interface NoteParams {
     /** Forces a specific noteId: 4 to 128 letters, digits or underscores. */
     noteId?: string;
+    /** The user who owns the note; defaults to the user in CLS, else the primary admin. */
+    ownerId?: string;
     branchId?: string;
     parentNoteId: string;
     templateNoteId?: string;
@@ -123,7 +126,7 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote, isTypeDefaulte
                     continue;
                 }
 
-                const templateNote = becca.getNote(attr.value);
+                const templateNote = getBecca().getNote(attr.value);
                 if (!isTypeDefaulted && templateNote && templateNote.type !== childNote.type) {
                     // the explicitly chosen note type wins over the default template, which would otherwise
                     // convert the note and fill it with content of a different type (#3015)
@@ -233,7 +236,7 @@ interface GetValidateParams {
 }
 
 function getAndValidateParent(params: GetValidateParams) {
-    const parentNote = becca.notes[params.parentNoteId];
+    const parentNote = getBecca().notes[params.parentNoteId];
 
     if (!parentNote) {
         throw new ValidationError(`Parent note '${params.parentNoteId}' was not found.`);
@@ -263,6 +266,10 @@ function createNewNote(params: NoteParams): {
     note: BNote;
     branch: BBranch;
 } {
+    if (params.parentNoteId === "root") {
+        params.parentNoteId = getActingUserHomeNoteId() ?? "root";
+    }
+
     const parentNote = getAndValidateParent(params);
 
     const isTitleDefaulted = params.title === null || params.title === undefined;
@@ -292,14 +299,17 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
-    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+    // Becca holds the virtual notes, which have no row, and the database the notes a member's Becca
+    // leaves out.
+    if (typeof forcedNoteId === "string" && forcedNoteId && (getBecca().notes[forcedNoteId]
+            || getSql().getValue("SELECT 1 FROM notes WHERE noteId = ? AND isDeleted = 0", [forcedNoteId]))) {
         throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
     }
 
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
-        const templateNote = becca.getNote(params.templateNoteId);
+        const templateNote = getBecca().getNote(params.templateNoteId);
         if (templateNote) {
             if (!params.mime) {
                 params.mime = templateNote.mime;
@@ -326,7 +336,8 @@ function createNewNote(params: NoteParams): {
                 type: params.type,
                 mime: deriveMime(params.type, params.mime),
                 dateCreated: params.dateCreated,
-                utcDateCreated: params.utcDateCreated
+                utcDateCreated: params.utcDateCreated,
+                ownerId: params.ownerId ?? cls.getUserId() ?? optionService.getOptionOrNull("adminUserId")
             }).save();
 
             // Create attributes atomically.
@@ -355,7 +366,7 @@ function createNewNote(params: NoteParams): {
         }
 
         if (params.templateNoteId) {
-            const templateNote = becca.getNote(params.templateNoteId);
+            const templateNote = getBecca().getNote(params.templateNoteId);
             if (!templateNote) {
                 throw new Error(`Template note '${params.templateNoteId}' does not exist.`);
             }
@@ -408,7 +419,7 @@ function createNewNote(params: NoteParams): {
 
 function createNewNoteWithTarget(target: "into" | "after" | "before", targetBranchId: string | undefined, rawParams: Omit<NoteParams, "type"> & { type?: NoteType }) {
     if (!rawParams.type) {
-        const parentNote = becca.notes[rawParams.parentNoteId];
+        const parentNote = getBecca().notes[rawParams.parentNoteId];
 
         // code note type can be inherited, otherwise "text" is the default
         rawParams.type = parentNote.type === "code" ? "code" : "text";
@@ -419,10 +430,16 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
 
     const params = rawParams as NoteParams;
 
+    // A position next to a top-level note is a position among `root`'s children, which the home
+    // replaces as the parent; the note goes to the end of the home instead.
+    if (params.parentNoteId === "root" && getActingUserHomeNoteId()) {
+        target = "into";
+    }
+
     if (target === "into") {
         return createNewNote(params);
     } else if (target === "after" && targetBranchId) {
-        const afterBranch = becca.branches[targetBranchId];
+        const afterBranch = getBecca().branches[targetBranchId];
 
         // not updating utcDateModified to avoid having to sync whole rows
         getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [params.parentNoteId, afterBranch.notePosition]);
@@ -435,7 +452,7 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
 
         return retObject;
     } else if (target === "before" && targetBranchId) {
-        const beforeBranch = becca.branches[targetBranchId];
+        const beforeBranch = getBecca().branches[targetBranchId];
 
         // not updating utcDateModified to avoid having to sync whole rows
         getSql().execute("UPDATE branches SET notePosition = notePosition - 10 WHERE parentNoteId = ? AND notePosition < ? AND isDeleted = 0", [params.parentNoteId, beforeBranch.notePosition]);
@@ -603,7 +620,7 @@ export function checkImageAttachments(note: BNote, content: string) {
     const attachments = note.getAttachments();
     const existingAttachmentIds = new Set(attachments.map((att) => att.attachmentId));
     // The attachments of other notes that the content refers to, which this note takes copies of.
-    const unknownAttachments = isCanvas ? [] : becca.getAttachments(Array.from(foundAttachmentIds)
+    const unknownAttachments = isCanvas ? [] : getBecca().getAttachments(Array.from(foundAttachmentIds)
         .filter((foundAttId) => !existingAttachmentIds.has(foundAttId)));
     const foundFileIds = isCanvas
         ? collectCanvasImageFileIds(content)
@@ -768,7 +785,7 @@ function collectDrawingImageTitles(attachments: BAttachment[], foundAttachmentId
  * the drawing becomes the picture of `copiedDrawing`, its copy in `note`.
  */
 function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAttachment) {
-    const owner = becca.getNote(drawing.ownerId);
+    const owner = getBecca().getNote(drawing.ownerId);
     if (drawing.mime !== CANVAS_ATTACHMENT_MIME || !owner) {
         return;
     }
@@ -798,7 +815,7 @@ function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAt
 function getPortableContent(entity: BNote | BAttachment) {
     const content = entity.getContent();
     const owner = entity instanceof BAttachment && entity.mime === CANVAS_ATTACHMENT_MIME
-        ? becca.getNote(entity.ownerId)
+        ? getBecca().getNote(entity.ownerId)
         : null;
     if (!owner) {
         return content;
@@ -1197,7 +1214,7 @@ export function saveLinks(note: BNote, content: string | Uint8Array) {
     const existingLinks = note.getRelations().filter((rel) => ["internalLink", "imageLink", "relationMapLink", "includeNoteLink"].includes(rel.name));
 
     for (const foundLink of foundLinks) {
-        const targetNote = becca.notes[foundLink.value];
+        const targetNote = getBecca().notes[foundLink.value];
         if (!targetNote) {
             continue;
         }
@@ -1248,7 +1265,7 @@ function saveRevisionIfNeeded(note: BNote) {
 }
 
 function updateNoteData(noteId: string, content: string, attachments: AttachmentRow[] = []) {
-    const note = becca.getNote(noteId);
+    const note = getBecca().getNote(noteId);
 
     if (!note || !note.isContentAvailable()) {
         throw new Error(`Note '${noteId}' is not available for change!`);
@@ -1269,7 +1286,7 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
 
         for (const { attachmentId, role, mime, title, position, content, encoding } of attachments) {
             // An attachment deleted since the client read it, or one of another note, is not saved.
-            if (attachmentId && becca.getAttachment(attachmentId)?.ownerId !== noteId) {
+            if (attachmentId && getBecca().getAttachment(attachmentId)?.ownerId !== noteId) {
                 getLog().info(
                     `Skipped attachment '${attachmentId}', which note '${noteId}' does not own.`
                 );
@@ -1358,7 +1375,7 @@ function undeleteNote(
         return failed;
     }
 
-    const fallbackParent = becca.getNote(opts.fallbackParentNoteId);
+    const fallbackParent = getBecca().getNote(opts.fallbackParentNoteId);
 
     if (!fallbackParent) {
         getLog().error(`Fallback parent '${opts.fallbackParentNoteId}' for undeleting note '${noteId}' was not found.`);
@@ -1410,7 +1427,7 @@ function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskCon
  */
 function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskContext: TaskContext<"undeleteNotes">) {
     const sql = getSql();
-    const noteEntity = becca.getNote(noteRow.noteId);
+    const noteEntity = getBecca().getNote(noteRow.noteId);
 
     if (!noteEntity) {
         throw new Error("Unable to find the just restored note.");
@@ -1547,7 +1564,7 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string, { withChi
 
     getLog().info(`Duplicating '${origNoteId}' subtree into '${newParentNoteId}'`);
 
-    const origNote = becca.notes[origNoteId];
+    const origNote = getBecca().notes[origNoteId];
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
 
@@ -1573,7 +1590,7 @@ function duplicateSubtreeWithoutRoot(origNoteId: string, newNoteId: string) {
         throw new Error("Duplicating root is not possible");
     }
 
-    const origNote = becca.getNote(origNoteId);
+    const origNote = getBecca().getNote(origNoteId);
     if (origNote == null) {
         throw new Error("Unable to find note to duplicate.");
     }
@@ -1649,7 +1666,7 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
         return newNote;
     }
 
-    const existingNote = becca.notes[newNoteId];
+    const existingNote = getBecca().notes[newNoteId];
 
     if (existingNote && existingNote.title !== undefined) {
         // checking that it's not just note's skeleton created because of Branch above

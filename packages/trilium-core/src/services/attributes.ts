@@ -1,7 +1,7 @@
 import { type AttributeRow, BUILTIN_ATTRIBUTES } from "@triliumnext/commons";
 
 import searchService from "./search/services/search.js";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getSql } from "./sql/index.js";
@@ -20,7 +20,7 @@ function getNotesWithLabel(name: string, value?: string): BNote[] {
 // TODO: should be in search service
 function getNoteWithLabel(name: string, value?: string): BNote | null {
     // optimized version (~20 times faster) without using normal search, useful for e.g., finding date notes
-    const attrs = becca.findAttributes("label", name);
+    const attrs = getBecca().findAttributes("label", name);
 
     if (value === undefined) {
         return attrs[0]?.getNote();

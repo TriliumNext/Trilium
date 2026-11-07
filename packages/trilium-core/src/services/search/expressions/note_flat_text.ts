@@ -1,5 +1,5 @@
 import becca_service from "../../../becca/becca_service.js";
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
@@ -34,9 +34,9 @@ class NoteFlatTextExp extends Expression {
             const key = `${noteId}-${parentNoteId}`;
             let cached = titleCache.get(key);
             if (cached === undefined) {
-                const note = becca.notes[noteId];
+                const note = getBecca().notes[noteId];
                 cached = note
-                    ? normalizedTitleUnder(note, parentNoteId, becca.getBranchFromChildAndParent(noteId, parentNoteId)?.prefix)
+                    ? normalizedTitleUnder(note, parentNoteId, getBecca().getBranchFromChildAndParent(noteId, parentNoteId)?.prefix)
                     : normalizeSearchText(becca_service.getNoteTitle(noteId, parentNoteId));
                 titleCache.set(key, cached);
             }
@@ -60,7 +60,7 @@ class NoteFlatTextExp extends Expression {
                     if (!resultNoteSet.hasNoteId(noteId)) {
                         // Snapshot takenPath since it's mutable
                         executionContext.noteIdToNotePath[noteId] = resultPath;
-                        resultNoteSet.add(becca.notes[noteId]);
+                        resultNoteSet.add(getBecca().notes[noteId]);
                     }
                 }
 
@@ -191,7 +191,7 @@ class NoteFlatTextExp extends Expression {
         } else {
             // this note is the closest to root containing the last matching token(s), thus completing the requirements
             // what's in this note's predecessors does not matter, thus we'll choose the best note path
-            const topMostMatchingTokenNotePath = becca.getNote(takenPath[0])?.getBestNotePath() || [];
+            const topMostMatchingTokenNotePath = getBecca().getNote(takenPath[0])?.getBestNotePath() || [];
 
             return [...topMostMatchingTokenNotePath, ...takenPath.slice(1)];
         }
@@ -206,7 +206,7 @@ class NoteFlatTextExp extends Expression {
         // Use the pre-built flat text index for fast scanning.
         // This provides pre-computed flat texts in a parallel array, avoiding
         // per-note property access overhead at large scale (50K+ notes).
-        const { notes: indexNotes, flatTexts } = becca.getFlatTextIndex();
+        const { notes: indexNotes, flatTexts } = getBecca().getFlatTextIndex();
 
         // Build a set for quick membership check when noteSet isn't the full set
         const isFullSet = noteSet.notes.length === indexNotes.length;

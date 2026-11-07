@@ -2,7 +2,7 @@ import type { HighlightedTokenInfo, SearchResultDetails } from "@triliumnext/com
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import { t } from "i18next";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import becca_service from "../../../becca/becca_service.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import blobService from "../../blob.js";
@@ -95,7 +95,7 @@ function searchFromNoteWithContext(note: BNote): {
 
     if (searchScript) {
         const searchResults = searchFromRelation(note, "searchScript").map((noteId) => {
-            const notePath = becca.notes[noteId]?.getBestNotePath() ?? [noteId];
+            const notePath = getBecca().notes[noteId]?.getBestNotePath() ?? [noteId];
             return new SearchResult(notePath);
         });
 
@@ -188,13 +188,13 @@ function loadNeededInfoFromDatabase() {
         WHERE notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length } of noteContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
-        becca.notes[noteId].contentSize = length;
-        becca.notes[noteId].revisionCount = 0;
+        getBecca().notes[noteId].contentSize = length;
+        getBecca().notes[noteId].revisionCount = 0;
 
         noteBlobs[noteId] = { [blobId]: length };
     }
@@ -206,7 +206,7 @@ function loadNeededInfoFromDatabase() {
     };
     const attachmentContentLengths = getSql().getRows<AttachmentContentLengthsRow>(`
         SELECT
-            ownerId AS noteId,
+            attachments.ownerId AS noteId,
             attachments.blobId,
             LENGTH(content) AS length
         FROM attachments
@@ -216,8 +216,8 @@ function loadNeededInfoFromDatabase() {
             AND notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length } of attachmentContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
@@ -230,7 +230,7 @@ function loadNeededInfoFromDatabase() {
     }
 
     for (const noteId in noteBlobs) {
-        becca.notes[noteId].contentAndAttachmentsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
+        getBecca().notes[noteId].contentAndAttachmentsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
     }
 
     type RevisionRow = {
@@ -262,8 +262,8 @@ function loadNeededInfoFromDatabase() {
             WHERE notes.isDeleted = 0`);
 
     for (const { noteId, blobId, length, isNoteRevision } of revisionContentLengths) {
-        if (!(noteId in becca.notes)) {
-            log.error(`Note '${noteId}' not found in becca.`);
+        if (!(noteId in getBecca().notes)) {
+            log.error(`Note '${noteId}' not found in getBecca().`);
             continue;
         }
 
@@ -275,13 +275,13 @@ function loadNeededInfoFromDatabase() {
         noteBlobs[noteId][blobId] = length;
 
         if (isNoteRevision) {
-            const note = becca.notes[noteId];
+            const note = getBecca().notes[noteId];
             note.revisionCount = (note.revisionCount ?? 0) + 1;
         }
     }
 
     for (const noteId in noteBlobs) {
-        becca.notes[noteId].contentAndAttachmentsAndRevisionsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
+        getBecca().notes[noteId].contentAndAttachmentsAndRevisionsSize = Object.values(noteBlobs[noteId]).reduce((acc, size) => acc + size, 0);
     }
 }
 
@@ -333,7 +333,7 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 const RANK_SHORTLIST = 200;
 
 function performSearch(expression: Expression, searchContext: SearchContext, enableFuzzyMatching: boolean): SearchResult[] {
-    const allNoteSet = becca.getAllNoteSet();
+    const allNoteSet = getBecca().getAllNoteSet();
 
     const noteIdToNotePath: Record<string, string[]> = {};
     const executionContext = {
@@ -523,7 +523,7 @@ function validateSearchQuery(query: string): string | null {
 function searchNotes(query: string, params: SearchParams = {}): BNote[] {
     const searchResults = findResultsWithQuery(query, new SearchContext(params));
 
-    return searchResults.map((sr) => becca.notes[sr.noteId]);
+    return searchResults.map((sr) => getBecca().notes[sr.noteId]);
 }
 
 function findResultsWithQuery(query: string, searchContext: SearchContext): SearchResult[] {
@@ -556,7 +556,7 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
 function findFirstNoteWithQuery(query: string, searchContext: SearchContext): BNote | null {
     const searchResults = findResultsWithQuery(query, searchContext);
 
-    return searchResults.length > 0 ? becca.notes[searchResults[0].noteId] : null;
+    return searchResults.length > 0 ? getBecca().notes[searchResults[0].noteId] : null;
 }
 
 /**
@@ -583,7 +583,7 @@ function getTextRepresentationForNote(note: BNote): string | null {
 const BLOCK_END_TAG_RE = /<\/(?:p|h[1-6]|li|blockquote|pre|tr|figcaption|div)>/gi;
 
 function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInfo[] | string[], maxLength: number = 200, onTruncated?: (truncated: boolean) => void): string {
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
     if (!note) {
         return "";
     }
@@ -763,7 +763,7 @@ function extractContentSnippet(noteId: string, searchTokens: HighlightedTokenInf
 const SNIPPET_HIDDEN_LABELS = new Set([ "docName", "docUrl" ]);
 
 function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenInfo[] | string[], maxLength: number = 200): string {
-    const note = becca.notes[noteId];
+    const note = getBecca().notes[noteId];
     if (!note) {
         return "";
     }
@@ -817,7 +817,7 @@ function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenI
                 line = attr.value ? `#${attr.name}="${attr.value}"` : `#${attr.name}`;
             } else if (attr.type === "relation") {
                 // For relations, show the target note title if possible
-                const targetNote = attr.value ? becca.notes[attr.value] : null;
+                const targetNote = attr.value ? getBecca().notes[attr.value] : null;
                 const targetTitle = targetNote ? targetNote.title : attr.value;
                 line = `~${attr.name}="${targetTitle}"`;
             }

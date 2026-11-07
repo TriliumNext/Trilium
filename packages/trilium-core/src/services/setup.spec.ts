@@ -72,7 +72,7 @@ describe("setup service", () => {
         it("creates the database and triggers sync on success", async () => {
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
             const createSpy = vi.spyOn(sqlInit, "createDatabaseForSync").mockResolvedValue(undefined as never);
-            vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+            vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
             vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
             execImpl = async () => ({ syncVersion: appInfo.syncVersion, options: [{ name: "documentId", value: "d" }] });
 
@@ -86,7 +86,7 @@ describe("setup service", () => {
         it("forwards a blob size limit to createDatabaseForSync", async () => {
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
             const createSpy = vi.spyOn(sqlInit, "createDatabaseForSync").mockResolvedValue(undefined as never);
-            vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+            vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
             vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
             execImpl = async () => ({ syncVersion: appInfo.syncVersion, options: [{ name: "documentId", value: "d" }] });
 
@@ -203,7 +203,7 @@ describe("setup service", () => {
     describe("triggerSync", () => {
         it("marks the DB as initialized once a successful sync completes", async () => {
             vi.spyOn(syncService, "sync").mockResolvedValue({ success: true });
-            const initializedSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+            const initializedSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
 
             setupService.triggerSync();
             await flush();
@@ -213,7 +213,7 @@ describe("setup service", () => {
 
         it("does not mark the DB initialized when sync fails", async () => {
             vi.spyOn(syncService, "sync").mockResolvedValue({ success: false });
-            const initializedSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+            const initializedSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
 
             setupService.triggerSync();
             await flush();

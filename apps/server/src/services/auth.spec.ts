@@ -194,6 +194,13 @@ describe("Auth", () => {
             expect(nextLogin).toHaveBeenCalled();
             expect(resLogin.redirectedTo).toBeUndefined();
 
+            // A user's setup link also opens on the root, and is followed before they can log in.
+            const resSetup = makeRes();
+            const nextSetup = vi.fn();
+            auth.checkAuth(makeReq({ path: "/", query: { setupAccount: "tok" }, session: { loggedIn: false } }), resSetup as never, nextSetup);
+            expect(nextSetup).toHaveBeenCalled();
+            expect(resSetup.redirectedTo).toBeUndefined();
+
             // SPA sub-requests such as /bootstrap must fall through too, or the login
             // screen can never render its `loggedIn: false` payload.
             const resBootstrap = makeRes();

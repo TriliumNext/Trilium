@@ -5,9 +5,11 @@ import sql from "../sql.js";
 import myScrypt from "./my_scrypt.js";
 import openIDEncryption from "./open_id_encryption.js";
 
-function clearUserData() {
+function clearEnrollment() {
     sql.transactional(() => {
-        sql.execute("DELETE FROM user_data");
+        sql.execute("DELETE FROM oauth_enrollment");
+        // Reset the admin user's name/email so saveUser() mutations don't bleed between tests.
+        sql.execute("UPDATE users SET username = 'admin', email = NULL WHERE isAdmin = 1 AND isDeleted = 0");
     });
 }
 
@@ -19,10 +21,10 @@ describe("open_id_encryption", () => {
     });
 
     beforeEach(() => {
-        clearUserData();
+        clearEnrollment();
     });
 
-    it("reports no saved identifier on an empty user_data table", () => {
+    it("reports no saved identifier on an empty oauth_enrollment table", () => {
         expect(openIDEncryption.isSubjectIdentifierSaved()).toBe(false);
     });
 

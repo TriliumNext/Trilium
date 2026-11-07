@@ -30,7 +30,7 @@ export default function NoteTitleWidget(props: {className?: string}) {
         const isReadOnly = note === null
             || note === undefined
             || isLocked
-            || note.isMetadataReadOnly
+            || note.isTitleReadOnly
             || viewScope?.viewMode !== "default";
         setLocked(isLocked);
         setReadOnly(isReadOnly);

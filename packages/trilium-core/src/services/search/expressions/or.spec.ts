@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import becca from "../../../becca/becca.js";
+import { getBecca } from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { note } from "../../../test/becca_mocking.js";
 import Expression from "./expression.js";
@@ -35,7 +35,7 @@ let c: BNote;
 
 describe("OrExp", () => {
     beforeEach(() => {
-        becca.reset();
+        getBecca().reset();
 
         a = note("A").note;
         b = note("B").note;

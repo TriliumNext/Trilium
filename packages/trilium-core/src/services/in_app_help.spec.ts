@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EMPTY_BLOB_ID, type HelpBundle, type HiddenSubtreeItem } from "@triliumnext/commons";
-import becca from "../becca/becca.js";
+import { getBecca } from "../becca/becca.js";
 import { load } from "../becca/becca_loader.js";
 import { ValidationError } from "../errors.js";
 import blobService from "./blob.js";
@@ -61,12 +61,12 @@ describe("in_app_help", () => {
         initInAppHelp(new TestHelpProvider(data));
         reloadBecca();
 
-        const helpRoot = becca.getNoteOrThrow("_help");
+        const helpRoot = getBecca().getNoteOrThrow("_help");
         expect(helpRoot.isVirtual).toBe(true);
         expect(helpRoot.type).toBe("book");
         expect(helpRoot.getParentNotes().map((note) => note.noteId)).toEqual(["_hidden"]);
 
-        const stub = becca.getNoteOrThrow("_helpStub");
+        const stub = getBecca().getNoteOrThrow("_helpStub");
         expect(stub.isVirtual).toBe(true);
         expect(stub.getParentNotes().map((note) => note.noteId)).toEqual(["_help"]);
         expect(stub.getLabelValue("docName")).toBe("stub");
@@ -81,9 +81,9 @@ describe("in_app_help", () => {
         initInAppHelp(new TestHelpProvider(data, { _helpPage: "<p>Rendered</p>" }));
         reloadBecca();
 
-        expect(becca.getNoteOrThrow("_helpPage").getContent()).toBe("<p>Rendered</p>");
+        expect(getBecca().getNoteOrThrow("_helpPage").getContent()).toBe("<p>Rendered</p>");
         // A page the provider has no entry for reads as empty rather than failing.
-        expect(becca.getNoteOrThrow("_helpBlank").getContent()).toBe("");
+        expect(getBecca().getNoteOrThrow("_helpBlank").getContent()).toBe("");
 
         // Virtual notes have no blobs row, so the route derives the POJO from the provider. The
         // blobId is content-derived, as for persisted notes, so the client change-detects it the
@@ -110,7 +110,7 @@ describe("in_app_help", () => {
         reloadBecca();
 
         // One bundle ships to every platform; where its images live is decided on read.
-        expect(becca.getNoteOrThrow("_helpPage").getContent())
+        expect(getBecca().getNoteOrThrow("_helpPage").getContent())
             .toBe(`<img src="assets/v1.2.3/help/User%20Guide/pic.png">`);
     });
 
@@ -132,7 +132,7 @@ describe("in_app_help", () => {
             { id: "_helpPage_a1", url: "assets/v1.2.3/help/User%20Guide/My%20pic.png", title: "My pic.png", mime: "image/png" },
             { id: "_helpPage_a2", url: "assets/v1.2.3/help/User%20Guide/api.dat", title: "api.dat", mime: "application/octet-stream" }
         ]);
-        const content = String(becca.getNoteOrThrow("_helpPage").getContent());
+        const content = String(getBecca().getNoteOrThrow("_helpPage").getContent());
         expect(assets.every((asset) => content.includes(`"${asset.url}"`))).toBe(true);
 
         await assets[0].getContent();
@@ -143,8 +143,8 @@ describe("in_app_help", () => {
         initInAppHelp(new TestHelpProvider([{ id: "_helpPage", title: "Page", type: "text" }]));
         reloadBecca();
 
-        const page = becca.getNoteOrThrow("_helpPage");
-        expect(becca.getNoteOrThrow("_help").isContentWritable()).toBe(false);
+        const page = getBecca().getNoteOrThrow("_helpPage");
+        expect(getBecca().getNoteOrThrow("_help").isContentWritable()).toBe(false);
         expect(page.isContentWritable()).toBe(false);
         expect(page.hasLabel("readOnly")).toBe(false);
         expect(() => getContext().init(() => page.setContent("<p>edited</p>"))).toThrow(ValidationError);
@@ -156,6 +156,6 @@ describe("in_app_help", () => {
         expect(getVirtualNoteProvider("_help")).toBeNull();
 
         reloadBecca();
-        expect(becca.getNote("_help")).toBeNull();
+        expect(getBecca().getNote("_help")).toBeNull();
     });
 });

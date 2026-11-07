@@ -4,7 +4,7 @@ import {
 import { ValidationError } from "../../errors";
 import type { Request } from "../../http_interface";
 
-import becca from "../../becca/becca.js";
+import { getBecca } from "../../becca/becca.js";
 import blobService from "../../services/blob.js";
 import imageService from "../../services/image.js";
 import { wrapStringOrBuffer } from "../../services/utils/binary.js";
@@ -16,7 +16,7 @@ function getAttachmentBlob(req: Request<{ attachmentId: string }>) {
 }
 
 function getAttachments(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
+    const note = getBecca().getNoteOrThrow(req.params.noteId);
 
     return note.getAttachments();
 }
@@ -24,14 +24,14 @@ function getAttachments(req: Request<{ noteId: string }>) {
 function getAttachment(req: Request<{ attachmentId: string }>) {
     const { attachmentId } = req.params;
 
-    return becca.getAttachmentOrThrow(attachmentId);
+    return getBecca().getAttachmentOrThrow(attachmentId);
 }
 
 function getAllAttachments(req: Request<{ attachmentId: string }>) {
     const { attachmentId } = req.params;
     // one particular attachment is requested, but return all note's attachments
 
-    const attachment = becca.getAttachmentOrThrow(attachmentId);
+    const attachment = getBecca().getAttachmentOrThrow(attachmentId);
     return attachment.getNote()?.getAttachments() || [];
 }
 
@@ -42,7 +42,7 @@ function saveAttachment(req: Request<{ noteId: string }>) {
     const isValidMatchBy = (typeof matchByQuery === "string") && (matchByQuery === "attachmentId" || matchByQuery === "title");
     const matchBy = isValidMatchBy ? matchByQuery : undefined;
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
     note.saveAttachment({ attachmentId, role, mime, title, content }, matchBy);
 }
 
@@ -57,7 +57,7 @@ async function uploadAttachment(req: Request<{ noteId: string }>) {
         };
     }
 
-    const note = becca.getNoteOrThrow(noteId);
+    const note = getBecca().getNoteOrThrow(noteId);
     let url;
 
     // Convert buffer to Uint8Array (Buffer extends Uint8Array, string needs encoding)
@@ -112,7 +112,7 @@ function renameAttachment(req: Request<{ attachmentId: string }>) {
     const { title } = req.body;
     const { attachmentId } = req.params;
 
-    const attachment = becca.getAttachmentOrThrow(attachmentId);
+    const attachment = getBecca().getAttachmentOrThrow(attachmentId);
 
     if (!title?.trim()) {
         throw new ValidationError("Title must not be empty");
@@ -125,7 +125,7 @@ function renameAttachment(req: Request<{ attachmentId: string }>) {
 function deleteAttachment(req: Request<{ attachmentId: string }>) {
     const { attachmentId } = req.params;
 
-    const attachment = becca.getAttachment(attachmentId);
+    const attachment = getBecca().getAttachment(attachmentId);
 
     if (attachment) {
         attachment.markAsDeleted();
@@ -135,7 +135,7 @@ function deleteAttachment(req: Request<{ attachmentId: string }>) {
 function convertAttachmentToNote(req: Request<{ attachmentId: string }>) {
     const { attachmentId } = req.params;
 
-    const attachment = becca.getAttachmentOrThrow(attachmentId);
+    const attachment = getBecca().getAttachmentOrThrow(attachmentId);
     return attachment.convertToNote() satisfies ConvertAttachmentToNoteResponse;
 }
 
