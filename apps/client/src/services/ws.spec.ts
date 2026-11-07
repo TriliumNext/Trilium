@@ -446,8 +446,56 @@ describe("WebSocket transport", () => {
         vi.advanceTimersByTime(0);
         lastSocket.readyState = FakeSocket.OPEN;
 
-        // advance > 30s so Date.now() - lastPingTs exceeds the threshold
+        // first tick at 1s sends the first ping and starts unansweredPingSince; > 30s after that triggers the toast
+        vi.advanceTimersByTime(32000);
+        expect(toast.showPersistent).toHaveBeenCalledWith(expect.objectContaining({ id: "lost-websocket-connection" }));
+    });
+
+    it("does not show a lost-connection toast when the first interval tick is delayed by more than 30s", async () => {
+        await loadWsFresh();
+        vi.advanceTimersByTime(0);
+        lastSocket.readyState = FakeSocket.OPEN;
+
+        // Tab is throttled before the first sendPing() ever runs
+        vi.setSystemTime(Date.now() + 60000);
+        vi.advanceTimersToNextTimer();
+
+        expect(toast.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("does not show a lost-connection toast when an answered ping is followed by a 60s throttled timer wakeup", async () => {
+        const ws = await loadWsFresh();
+        vi.advanceTimersByTime(0);
+        lastSocket.readyState = FakeSocket.OPEN;
+
+        // First ping is sent and answered by the backend
+        vi.advanceTimersByTime(1000);
+        await ws.dispatchMessage({ type: "ping" } as any);
+        toast.showPersistent.mockClear();
+
+        // Simulate browser background tab throttling: 60s of wall-clock time pass before the next interval tick fires
+        vi.setSystemTime(Date.now() + 60000);
+        vi.advanceTimersToNextTimer();
+
+        expect(toast.showPersistent).not.toHaveBeenCalled();
+
+        // If the newly sent ping at t=60s goes unanswered for >30s, it still reports the lost connection
         vi.advanceTimersByTime(31000);
+        expect(toast.showPersistent).toHaveBeenCalledWith(expect.objectContaining({ id: "lost-websocket-connection" }));
+    });
+
+    it("starts the unanswered timer when the socket disconnects after an answered ping", async () => {
+        const ws = await loadWsFresh();
+        vi.advanceTimersByTime(0);
+        lastSocket.readyState = FakeSocket.OPEN;
+
+        vi.advanceTimersByTime(1000);
+        await ws.dispatchMessage({ type: "ping" } as any);
+        toast.showPersistent.mockClear();
+
+        // Socket closes and every reconnect attempt remains non-OPEN (e.g. CONNECTING = 0)
+        lastSocket.readyState = 0;
+        vi.advanceTimersByTime(32000);
         expect(toast.showPersistent).toHaveBeenCalledWith(expect.objectContaining({ id: "lost-websocket-connection" }));
     });
 
