@@ -285,15 +285,6 @@ h6 {
     vertical-align: middle;
 }
 
-/* CKEditor's content stylesheet sets `figure.table { width: fit-content }` under
-   @media print to stop tables from being stretched to the page. On screen, Bootstrap's
-   `.table { width: 100% }` keeps tables full-width, but Bootstrap is not loaded in print,
-   so a fit-content table gets centered by CKEditor's `.table { margin: .9em auto }`.
-   Restore the full-width screen behavior while leaving the height guard intact. */
-.ck-content figure.table:not(.layout-table):not([style]) {
-    width: 100% !important;
-}
-
 pre {
     box-shadow: unset !important;
     border: 0.75pt solid gray !important;

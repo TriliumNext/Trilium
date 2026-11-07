@@ -1,0 +1,9 @@
+/* Outranks the `fit-content` width that `ckeditor5-content.css` gives a table in print. */
+:root .ck-content figure.table:not(.layout-table) {
+    width: 100%;
+}
+
+/* Outranks the row border that Bootstrap's `.table` class adds in the app. */
+.ck-content figure.table > table > :is(thead, tbody, tfoot) > tr {
+    border-style: none;
+}
