@@ -68,7 +68,7 @@
     "color": "5.0.3",
     "compression": "1.8.2",
     "cookie-parser": "1.4.7",
-    "csrf-csrf": "4.0.3",
+    "csrf-csrf": "4.1.0",
     "ejs": "7.0.2",
     "express": "5.3.0",
     "express-openid-connect": "3.4.0",
