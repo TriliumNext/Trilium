@@ -357,7 +357,8 @@
     "broken-block-reference": "끊어진 참조",
     "play-video": "영상 재생",
     "content-not-available": "이 콘텐츠는 사용할 수 없습니다.",
-    "untitled-block": "블록"
+    "untitled-block": "블록",
+    "play-audio": "오디오 재생"
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",

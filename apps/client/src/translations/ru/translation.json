@@ -66,23 +66,27 @@
     "button_edit_link": "Сохранить ссылку",
     "fix_link": "Исправить ссылку",
     "button_fix_link": "Исправить ссылку",
-    "web_link": "Веб-ссылка",
+    "web_link": "Веб-страница",
     "url": "Адрес (URL)",
     "display_as": "Отображать как",
-    "display_plain": "Простая ссылка",
-    "display_inline": "Встроенная",
+    "display_plain": "Текст",
+    "display_inline": "Иконка и текст",
     "display_card": "Карточка",
-    "display_embed": "Встроенный YouTube",
+    "display_embed": "Встраивание",
     "page_title": "Заголовок веб-страницы",
     "title_from_url": "То же, что и URL",
     "title_from_note": "Если не задано, всегда будет отражать название заметки",
     "description": "Описание",
     "page_description": "Описание веб-страницы",
-    "anchors": "Заголовки и якоря",
+    "anchors": "Заголовок / якорь",
     "target_anchor": "Якоря",
     "headings": "Заголовки",
     "no_headings_or_anchors": "В этой заметке отсутствуют заголовки или якоря.",
-    "title_from_heading": "Если не задано, всегда будет отражать текст заголовка"
+    "title_from_heading": "Если не задано, всегда будет отражать текст заголовка",
+    "invalid_url": "Это недопустимый URL.",
+    "script_link_not_allowed": "Ссылки, начинающиеся с {{scheme}}, могут выполнять код, поэтому они запрещены.",
+    "retrieving_from_page": "Получение веб-страницы...",
+    "title_from_attachment": "Если не задано, всегда будет отражать название вложения"
   },
   "branch_prefix": {
     "save": "Сохранить",
@@ -1068,7 +1072,11 @@
     "mathlive_enabled": "Визуальный редактор MathLive",
     "mathlive_description": "Математические уравнения можно редактировать с помощью визуального редактора.",
     "sticky_table_headers_enabled": "Закреплять строки заголовков таблиц",
-    "sticky_table_headers_description": "Оставлять строки заголовков вверху заметки при прокрутке остальной части таблицы."
+    "sticky_table_headers_description": "Оставлять строки заголовков вверху заметки при прокрутке остальной части таблицы.",
+    "link_title_retrieval_enabled": "Автоматически извлекать название для текстовых ссылок",
+    "link_title_retrieval_description": "В редакторе ссылок, заполнять пустое поле названия текстовой ссылки названием веб-страницы.",
+    "link_details_retrieval_enabled": "Автоматически извлекать название и описание для карточек и ссылок \"Иконка и текст\"",
+    "link_details_retrieval_description": "В редакторе ссылок, заполнять пустое название или описание карточки или ссылки \"Иконка и текст\" информацией с веб-страницы."
   },
   "cpu_arch_warning": {
     "dont_show_again": "Больше не показывать это предупреждение",
@@ -1249,7 +1257,8 @@
       "past_week": "Последние 7 дней",
       "past_month": "Последние 30 дней",
       "older": "Старее"
-    }
+    },
+    "suggestions": "Предложения"
   },
   "electron_integration": {
     "zoom-factor": "Коэффициент масштабирования",
@@ -1287,7 +1296,10 @@
     "align_center": "Выравнивание по центру",
     "align_right": "Выравнивание по правому краю",
     "delete": "Удалить",
-    "open_externally": "Открыть во внешнем"
+    "open_externally": "Открыть во внешнем",
+    "copy_url": "Копировать адрес (URL)",
+    "display_as": "Отображать как",
+    "edit": "Редактировать..."
   },
   "image_context_menu": {
     "copy_image_to_clipboard": "Копировать изображение в буфер обмена",
@@ -2259,11 +2271,9 @@
     "label_note": "Заметка",
     "button_include": "Вставить заметку",
     "box_size": "Размер блока",
-    "size_small_description": "Блок примерно из 10 строк.",
     "size_medium_description": "Блок примерно из 30 строк.",
     "size_tiny": "Крошечный",
     "size_tiny_description": "Одна строка с названием и действиями.",
-    "size_small": "Маленький",
     "size_medium": "Средний",
     "size_full": "Полный",
     "size_full_description": "Всё содержимое.",
@@ -3203,7 +3213,29 @@
     "forward-10s": "Вперёд на 10 сек",
     "play-mode-title": "Режим воспроизведения: {{mode}}",
     "play-mode-once": "Воспроизвести один раз",
-    "play-mode-loop": "Повтор"
+    "play-mode-loop": "Повтор",
+    "external-unavailable": "Не удалось воспроизвести медиа. Возможно, его адрес недоступен или его формат не поддерживается.",
+    "http-error": "HTTP {{status}}: <bold>{{name}}</bold>",
+    "http-status-names": {
+      "client-error": "Ошибка клиента",
+      "server-error": "Ошибка сервера",
+      "400": "Некорректный запрос",
+      "401": "Не авторизован",
+      "403": "Запрещено",
+      "404": "Не найдено",
+      "405": "Метод не поддерживается",
+      "406": "Неприемлемо",
+      "408": "Истекло время ожидания",
+      "410": "Удалён",
+      "416": "Диапазон не достижим",
+      "429": "Слишком много запросов",
+      "451": "Недоступно по юридическим причинам",
+      "500": "Внутренняя ошибка сервера",
+      "501": "Не реализовано",
+      "502": "Плохой шлюз",
+      "503": "Сервис недоступен",
+      "504": "Шлюз не отвечает"
+    }
   },
   "llm_chat": {
     "placeholder": "Введите сообщение...",
@@ -3893,7 +3925,6 @@
       "copy-formatting": "Скопировать форматирование",
       "copy-image-to-clipboard": "Скопировать изображение в буфер обмена",
       "copy-to-clipboard": "Копировать в буфер обмена",
-      "copy-url": "Копировать URL-адрес",
       "create-a-bulleted-list": "Создать маркированный список",
       "create-a-numbered-list": "Создать нумерованный список",
       "create-a-new-footnote-and-reference-it-here": "Создать новую сноску и указать на неё здесь",
@@ -3919,7 +3950,6 @@
       "display-mode": "Режим отображения",
       "display-the-content-of-another-note-in-this-note": "Отобразить содержимое другой заметки в этой заметке",
       "drag-to-reposition-the-collapsible-block": "Перетащите блок, чтобы изменить его положение",
-      "inline": "Встроенная",
       "indent": "Отступ",
       "include-note": "Вставить заметку",
       "increase-the-indentation-of-the-current-block": "Увеличить отступ текущего блока.",
@@ -3936,7 +3966,6 @@
       "insert-a-0-mermaid-diagram-template": "Вставить шаблон диаграммы Mermaid \"%0\"",
       "insert-a-block-of-preformatted-code": "Вставить блок предварительно отформатированного кода.",
       "insert-a-horizontal-rule": "Вставить горизонтальную линию.",
-      "insert-a-link-to-another-trilium-note": "Вставить ссылку на другую заметку Trilium",
       "insert-a-page-break-for-printing": "Вставить разрыв страницы (для печати)",
       "insert-a-table": "Вставить таблицу.",
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Вставить переключаемый раздел, который скрывает/показывает содержимое по клику.",
@@ -3949,7 +3978,6 @@
       "internal-link": "Внутренняя ссылка",
       "keyboard-shortcut": "Сочетания клавиш",
       "latex": "LaTeX",
-      "link-preview": "Предпросмотр ссылки",
       "math-editor-unavailable": "Математический редактор недоступен",
       "math-equation": "Математическое уравнение",
       "mermaid-diagram": "Диаграмма Mermaid",
@@ -3959,7 +3987,6 @@
       "no-anchors-available": "Нет доступных якорей.",
       "numbered-list": "Нумерованный список",
       "outdent": "Уменьшить отступ",
-      "plain-link": "Простая ссылка",
       "preview": "Предпросмотр",
       "quote-a-passage-from-another-source": "Цитировать отрывок из другого источника.",
       "scroll-to-anchor": "Перейти к якорю",
@@ -4025,14 +4052,12 @@
       "attach-and-embed-file": "Вложить и встроить файл",
       "attach-file": "Вложить файл",
       "attach-file-as-a-link": "Вложить файл как ссылку",
-      "convert-to-link": "Конвертировать в ссылку",
       "upload-files-as-attachments-and-insert-embeds": "Загрузить файлы как вложения и встроить.",
       "upload-files-as-attachments-and-insert-links": "Загрузить файлы как вложения и вставить ссылки.",
       "tiny": "Крошечный",
       "more-actions": "Другие действия",
       "caption-for-the-included-note": "Подпись вставленной заметки",
       "enter-caption": "Введите подпись",
-      "show-title": "Показывать название",
       "drawing-canvas": "Холст для рисования",
       "editable": "Редактируемый",
       "insert-a-canvas-to-draw-on": "Вставить холст для рисования.",
@@ -4044,7 +4069,6 @@
       "remove-tab": "Удалить вкладку",
       "move-tab-left": "Переместить вкладку влево",
       "move-tab-right": "Переместить вкладку вправо",
-      "copy-link-to-tab": "Скопировать ссылку на вкладку",
       "tabs-toolbar": "Панель инструментов вкладок",
       "insert-titled-tabs-that-show-one-panel-at-a-time": "Вставить вкладки с названиями, показывающими по одной панели за раз.",
       "multicolumn-layout": "Многоколоночный макет",
@@ -4099,7 +4123,6 @@
       "image-position": "Положение изображения",
       "list": "Список",
       "list-type": "Тип списка",
-      "insert-a-preview-of-a-web-page-or-a-video": "Вставить превью веб-страницы или видео",
       "use-headers": "Использовать заголовки",
       "header-columns": "Столбцы заголовка",
       "header-rows": "Строки заголовка",
@@ -4118,11 +4141,30 @@
       "jump-to-anchor": "Перейти к якорю",
       "jump-to-block": "Перейти к блоку",
       "box-position": "Положение блока",
-      "youtube-video": "Видео на YouTube",
-      "insert-youtube-video": "Вставить видео с YouTube",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "Вставить видео с YouTube, которое можно посмотреть прямо в заметке",
       "caption-for-the-video": "Подпись к видео",
-      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Для изменения размера блока нажмите и удерживайте его. Дважды нажмите, чтобы вернуть размер по умолчанию."
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "Для изменения размера блока нажмите и удерживайте его. Дважды нажмите, чтобы вернуть размер по умолчанию.",
+      "open-link": "Открыть ссылку",
+      "display-as": "Отображать как",
+      "download": "Скачать",
+      "icon-text": "Иконка и текст",
+      "link-to-a-heading-or-anchor": "Ссылка на заголовок или якорь",
+      "link-to-a-note-internal-link": "Ссылка на заметку (внутренняя ссылка)",
+      "link-to-a-web-page": "Ссылка на веб-страницу",
+      "link-to-a-web-page-as-a-card": "Ссылка на веб-страницу (как карточка)",
+      "link-to-a-web-page-with-icon": "Ссылка на веб-страницу (с иконкой)",
+      "copy-address-url": "Копировать адрес (URL)",
+      "create-a-link-to-a-heading-or-anchor-belonging-to-the-current-note": "Создать ссылку на заголовок или якорь в текущей заметке",
+      "create-a-link-to-a-web-page-or-other-internet-resource": "Создать ссылку на веб-страницу или другой интернет-ресурс",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-as-a-card": "Создать ссылку на веб-страницу или другой интернет-ресурс в виде карточки",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-with-an-icon": "Создать ссылку на веб-страницу или другой интернет-ресурс в виде текста с иконкой",
+      "create-a-link-to-another-trilium-note": "Создать ссылку на другую заметку Trilium",
+      "caption-for-the-audio": "Подпись к аудио",
+      "audio-video-embed": "Встроенное аудио/видео",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Встроить видео с YouTube, аудио или видео по ссылке",
+      "add-new-tab": "Добавить новую вкладку",
+      "copy-reference-to-this-tab": "Скопировать ссылку на эту вкладку",
+      "delete-tab": "Удалить вкладку",
+      "delete-all-tabs": "Удалить все вкладки"
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -4720,7 +4762,8 @@
     "remove": "Удалить из списка"
   },
   "link_embed": {
-    "play_video": "Воспроизвести видео"
+    "play_video": "Воспроизвести видео",
+    "play_audio": "Воспроизвести аудио"
   },
   "collection_filter": {
     "placeholder": "Фильтр...",
@@ -5109,7 +5152,10 @@
   },
   "canvas": {
     "thin_stroke": "Тонкий штрих пера",
-    "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину."
+    "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину.",
+    "no_tool": "Нет инструмента",
+    "zoom": "Масштабирование",
+    "zoom_to_fit": "Масштаб по размеру"
   },
   "sort_selection": {
     "sort_blocks": "Сортировать блоки",
@@ -5119,9 +5165,9 @@
     "descending": "По убыванию"
   },
   "youtube_video": {
-    "title": "Вставить видео с YouTube",
-    "button_insert": "Вставить видео",
-    "not_a_video": "Это не адрес видео на YouTube.",
-    "insert_failed": "Не удалось загрузить видео. Проверьте адрес и соединение, затем попробуйте снова."
+    "title": "Вставить медиа",
+    "button_insert": "Вставить медиа",
+    "not_a_video": "Это не веб-адрес.",
+    "insert_failed": "Не удалось встроить медиа. Проверьте, что это адрес видео на YouTube, аудио или видео, а также проверьте соединение и повторите попытку."
   }
 }
