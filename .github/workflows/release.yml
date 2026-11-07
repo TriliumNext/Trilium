@@ -23,7 +23,7 @@ jobs:
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -80,7 +80,7 @@ jobs:
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           cache: 'pnpm'
       - name: Install dependencies
         # The macOS and Windows runners each package both architectures, which needs the other
@@ -160,7 +160,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       # The release body cannot be the note as it stands: its images are relative to the
       # folder the note lives in, and GitHub resolves those against the releases URL.
