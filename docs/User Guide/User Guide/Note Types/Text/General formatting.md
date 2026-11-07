@@ -65,7 +65,7 @@ Selected text can be colored with one of the predefined colors from a palette or
 
 Once there is at least one color defined in the document, it will appear in the list for easy reuse.
 
-Colors adapt to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md). Trilium shows each color in a lighter or darker shade that suits the current theme, so the text stays readable after switching between light and dark themes. The hue stays the same: red text is red in both themes, only lighter or darker. This applies to the palette, the color picker and the document colors alike, and to shared notes too. The swatches of the font color and background color dropdowns show the same shades. Printed notes and PDF exports always use the shades of light themes, which suit white paper. The note itself keeps the color as it was picked, so an exported note shows it unchanged.
+Colors adapt to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md). Trilium shows each color in a lighter or darker shade that suits the current theme, so the text stays readable after switching between light and dark themes. The hue stays the same: red text is red in both themes, only lighter or darker. This applies to the palette, the color picker and the document colors alike, and to shared notes too. The swatches of the font color and background color dropdowns show the same shades on a sample text, "Ab": as the color of the text, or as the background behind it. Printed notes and PDF exports always use the shades of light themes, which suit white paper. The note itself keeps the color as it was picked, so an exported note shows it unchanged.
 
 Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
 

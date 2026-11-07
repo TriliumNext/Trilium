@@ -13,7 +13,24 @@ body.dark-theme {
     --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
 }
 
-/* The `[style*="--tn-color"]` rule of the shared stylesheet adapts the tile's `color`. */
-.ck-color-grid__tile[style*="--tn-color"] {
-    background-color: currentColor !important;
+/* The shared stylesheet adapts the `color` or `background-color` of each tile from its variable. */
+@media (forced-colors: none) {
+    :root .ck.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"]) {
+        &::before {
+            content: "Ab";
+            font-weight: bold;
+        }
+
+        & .ck.ck-icon {
+            display: none;
+        }
+    }
+
+    :root .ck.ck-color-grid__tile[style*="--tn-color"] {
+        background-color: transparent !important;
+    }
+
+    :root .ck.ck-color-grid__tile[style*="--tn-background"]::before {
+        color: var(--main-text-color);
+    }
 }

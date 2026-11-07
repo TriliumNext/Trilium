@@ -28,7 +28,7 @@ every color in every note at once, and the note keeps the color the user chose.
 | Writing and dropping the variables | `packages/ckeditor5/src/plugins/adaptive_colors.ts` | `AdaptiveColors`: `convertTextColor`, `addVariable`, `dropVariablesOnLoad`, `addVariablesToDropdownTiles`, `VARIABLES`, `DROPDOWN_VARIABLES` |
 | Registration | `packages/ckeditor5/src/plugins.ts` | `TRILIUM_PLUGINS` |
 | The rules and the limits | `packages/ckeditor5/src/theme/adaptive_colors.css` | 16 `--adaptive-*` limits, private `--_adaptive-*` light ranges, four rules |
-| App dark switch, dropdown tile face | `apps/client/src/stylesheets/adaptive-colors.css` (imported by `style.css`) | `body.dark-theme`, `.ck-color-grid__tile[style*="--tn-color"]` |
+| App dark switch, dropdown tile face | `apps/client/src/stylesheets/adaptive-colors.css` (imported by `style.css`) | `body.dark-theme`, `.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"])` |
 | Share dark switch | `packages/share-theme/src/content/adaptive_colors.css` (imported by `index.ts`) | `html.theme-dark`, the share-only `--adaptive-table-border-dark-min-lightness` |
 | Loading in the app and in print | `apps/client/src/index.ts`, `apps/client/src/print.css` | `import`/`@import` of the shared file |
 | Dark class | `apps/client/src/services/theme.ts`, `packages/share-theme/src/page/theme_switch.ts` | `updateColorSchemeClasses()` from `--theme-style`; `theme-dark` |
@@ -136,7 +136,7 @@ color: lch(from var(--tn-color)
 | Markdown import of `==text==` | `HIGHLIGHT_STYLE`, the palette yellow with its variable, so it adapts at once |
 | Other imports, pasted HTML | The color as picked until the note is saved from the editor |
 | Highlights sidebar | Adapted: `HighlightItem` sets both variables next to the colors |
-| Font color and background color dropdowns | Tiles adapted; in the Next theme the selection ring keeps the original color, except black and white, whose ring uses `--main-text-color` |
+| Font color and background color dropdowns | Each tile shows a bold "Ab" (a `::before`, so its accessible name stays the color label): adapted text on a transparent tile for font colors, `--main-text-color` on the adapted background for background colors. The check icon is hidden, and the tiles are 30px (`--ck-color-grid-tile-size` on `.ck-color-ui-dropdown` in `ckeditor-theme.css`). In the Next theme the selection ring keeps the original color, except black and white, whose ring uses `--main-text-color`, and font-color tiles lose the black and white frame |
 | Table and cell property pickers, the mobile color menu (`color_menu.tsx`) | The color as picked |
 | Default table borders | Not adaptive: `--text-note-table-border-color` in `style.css`, the text color mixed 25% with transparent; a border set on the table or cell wins |
 
@@ -151,9 +151,9 @@ style={{ color, "--tn-color": color }}
 ```
 
 For a swatch that shows a background color, `--tn-background` adapts its `background-color`
-directly. For a swatch that shows a text color as a fill, the text rule adapts `color`, and a rule
-like `.ck-color-grid__tile[style*="--tn-color"] { background-color: currentColor !important; }`
-shows it. Anything that must keep the original reads the variable, as the selection ring does.
+directly. For a swatch that shows a text color, the text rule adapts `color`, and the swatch shows
+it as text (the dropdown tiles' "Ab") or as a fill (`background-color: currentColor !important`).
+Anything that must keep the original reads the variable, as the selection ring does.
 
 ### Change a default limit
 

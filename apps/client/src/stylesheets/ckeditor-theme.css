@@ -220,6 +220,10 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     overflow-x: clip;
 }
 
+.ck.ck-color-ui-dropdown {
+    --ck-color-grid-tile-size: 30px;
+}
+
 :root .ck.ck-editor__editable_inline {
     --ck-editor-editable-padding: 0 .6em;
 
