@@ -90,6 +90,7 @@ describe("CanvasEmbedTools", () => {
         expect(provider.hiddenToolbarItems).toEqual([
             "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
         ]);
+        expect(provider.hiddenToolbarItemsWhileEditable).toEqual([ "toggleContentEmbedEditable" ]);
         expect([ provider.hasEditableFlag, provider.hasPositions ]).toEqual([ true, true ]);
         expect(provider.toolbarTitle).toBe("note_types.canvas");
         const tools = provider.getTools();

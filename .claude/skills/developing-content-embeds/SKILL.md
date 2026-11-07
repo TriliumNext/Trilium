@@ -315,6 +315,9 @@ embeds receive `SourceEmbedProps` (`content`, `editor`) whichever storage the so
   - `hiddenToolbarItems` — moves the box size dropdown, the position dropdown or Editable from
     the toolbar to the ⋮ menu (an extended code block hides all three). Title and Convert to link
     are in the ⋮ menu only. Its union, `ContentEmbedToolbarItem`, is declared in both places too.
+  - `hiddenToolbarItemsWhileEditable` — the same, only while the embed's Editable toggle is on
+    (`isSelectedEmbedEditable` of `ContentEmbed`, read on `ui#update`). `CanvasTools` hides
+    Editable this way: a read-only drawing offers it in the toolbar, an editable one in ⋮ only.
   - `boxSizeIcon` — an SVG the box size dropdown shows in place of the size name, which moves to
     its tooltip (`Box size: %0`). Code and Markdown embeds set it even while read-only
     (`hasEditableFlag: false`), so every one of them shows the icon; code embeds through

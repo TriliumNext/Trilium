@@ -195,6 +195,9 @@ export class CanvasTools implements ContentEmbedToolProvider {
     readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] = [
         "contentEmbedBoxSizeDropdown", "contentEmbedPositionDropdown"
     ];
+    readonly hiddenToolbarItemsWhileEditable: readonly ContentEmbedToolbarItem[] = [
+        "toggleContentEmbedEditable"
+    ];
     readonly hasEditableFlag = true;
     readonly hasPositions = true;
     private api: ExcalidrawImperativeAPI | null = null;

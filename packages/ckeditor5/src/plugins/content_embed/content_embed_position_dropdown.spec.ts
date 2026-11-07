@@ -98,12 +98,21 @@ describe("ContentEmbedPositionDropdown", () => {
         const isShown = () => !dropdown.element?.classList.contains("ck-hidden");
         expect(isShown()).toBe(false);
 
-        insertEmbed();
+        const embed = insertEmbed();
         expect([ isShown(), dropdown.isEnabled ]).toEqual([ true, true ]);
 
         tools = createTools({ hiddenToolbarItems: [ CONTENT_EMBED_POSITION_DROPDOWN ] });
         editor.ui.update();
         expect(isShown()).toBe(false);
+
+        tools = createTools({
+            hiddenToolbarItemsWhileEditable: [ CONTENT_EMBED_POSITION_DROPDOWN ]
+        });
+        editor.ui.update();
+        expect(isShown()).toBe(true);
+        editor.model.change((writer) => writer.setAttribute("editable", true, embed));
+        expect(isShown()).toBe(false);
+        editor.model.change((writer) => writer.removeAttribute("editable", embed));
 
         // An included note sets its position from its menu only.
         for (const other of [ createTools({ hasPositions: false }), null ]) {

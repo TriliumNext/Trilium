@@ -60,6 +60,11 @@ export interface ContentEmbedToolProvider {
     /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
     hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
     /**
+     * The items of the embed toolbar to hide while the Editable toggle of the embed is on. The menu
+     * of the embed still offers them.
+     */
+    hiddenToolbarItemsWhileEditable?: readonly ContentEmbedToolbarItem[];
+    /**
      * An SVG icon that the box size dropdown of the embed toolbar shows in place of the name of the
      * box size, which its tooltip then names.
      */

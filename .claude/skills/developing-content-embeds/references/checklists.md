@@ -111,7 +111,9 @@ refreshes on `editor.ui#update` at `high` priority.
 `mediaEmbed`) toolbar in `content_embed_toolbar.ts`. A new plugin also goes in
 `ContentEmbedToolbar.requires` and in `packages/ckeditor5/src/plugins.ts`. When content can hide
 it, extend `ContentEmbedToolbarItem` in both `packages/ckeditor5/src/augmentation.ts` and the
-client's `text/content_embed_tools.ts`, and bind its visibility with `isToolbarItemHidden()`.
+client's `text/content_embed_tools.ts`, and bind its visibility with `isToolbarItemHidden()` to
+both `selectedEmbedTools` and `isSelectedEmbedEditable` of `ContentEmbed`, as
+`hiddenToolbarItemsWhileEditable` depends on the Editable toggle.
 
 **A host method** (`ContentEmbedHost` in `content_embed.ts`). The config is `Partial`, so the
 plugin calls every member with `?.`. Then either:
