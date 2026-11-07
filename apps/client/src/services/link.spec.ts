@@ -801,6 +801,25 @@ describe("goToLinkExt", () => {
         split.remove();
     });
 
+    it("tells a jump to a heading of the note a link is in from a jump to other blocks", async () => {
+        const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
+            + "<h2 data-trilium-block-id='h'>Intro</h2><p data-trilium-block-id='p'>Text</p>"
+            + "</div></div>").appendTo(document.body);
+        const $link = $("<a>").appendTo(split.children());
+        const jump = (noteId: string, block: string) => linkService.getBlockJump($link, noteId, block);
+
+        expect([ "h", "p", "h:p" ].map((block) => jump("abcdefghijkl", block)?.isHeading))
+            .toStrictEqual([ true, false, false ]);
+        expect(jump("bcdefghijklm", "h")).toBeNull();
+        expect(jump("abcdefghijkl", "gone")).toBeNull();
+        expect(linkService.getBlockJump($("<a>"), "abcdefghijkl", "h")).toBeNull();
+
+        jump("abcdefghijkl", "p")?.show();
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenCalledExactlyOnceWith(
+            split.children()[0], "p"));
+        split.remove();
+    });
+
     it("leaves a jump of the link toolbar's preview button to the editor", () => {
         const $preview = $("<a class='ck-link-toolbar__preview' target='_blank'>");
         const handled = leftClick({ isDefaultPrevented: () => true });

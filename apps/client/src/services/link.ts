@@ -685,20 +685,43 @@ function handleAnchor(hrefLink: string, $link: JQuery<HTMLElement>) {
  * content of that note that holds them. Returns whether it does.
  */
 function showBlocksInPlace($link: JQuery<HTMLElement>, noteId: string | null, block: string) {
+    const jump = getBlockJump($link, noteId, block);
+    jump?.show();
+    return !!jump;
+}
+
+/** A jump to blocks of the note a link is in, which stays in that note. */
+export interface BlockJump {
+    /** Whether the blocks are a single heading. */
+    isHeading: boolean;
+    /** Scrolls to the blocks and flashes them. */
+    show(): void;
+}
+
+/**
+ * The jump to the blocks `block` of the note `noteId`, when `$link` is in the content of that note
+ * that holds them, or `null`.
+ */
+function getBlockJump(
+    $link: JQuery<HTMLElement>, noteId: string | null, block: string
+): BlockJump | null {
     const content = $link.closest(".ck-content")[0];
     const ntxId = $link.closest("[data-ntx-id]").attr("data-ntx-id");
     if (!content || !ntxId || appContext.tabManager.getNoteContextById(ntxId).noteId !== noteId) {
-        return false;
+        return null;
     }
 
     // A broken range is left to the note context, which also shows the error.
-    const { start, end } = resolveBlockReference(content, block);
+    const { start, end } = resolveBlockReference<Element>(content, block);
     if (!start || !end) {
-        return false;
+        return null;
     }
 
-    void loadBlockJump().then(({ showBlockReference }) => showBlockReference(content, block));
-    return true;
+    return {
+        isHeading: start === end && /^H[1-6]$/.test(start.tagName),
+        show: () => void loadBlockJump()
+            .then(({ showBlockReference }) => showBlockReference(content, block))
+    };
 }
 
 /** Whether something before `goToLinkExt()` already took the default action of `evt`. */
@@ -973,5 +996,6 @@ export default {
     getReferenceLinkTitleSync,
     calculateHash,
     calculateExtraWindowUrl,
+    getBlockJump,
     parseNavigationStateFromUrl
 };

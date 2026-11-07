@@ -3251,6 +3251,8 @@
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",
     "quick-edit": "Quick edit",
+    "jump-to-block": "Jump to block",
+    "jump-to-heading": "Jump to heading",
     "attachment-info": "Attachment • {{size}}"
   },
   "geo-map": {
