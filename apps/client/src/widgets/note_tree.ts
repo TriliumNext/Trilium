@@ -1086,7 +1086,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         if (this.spotlightedNode && newActiveNode !== this.spotlightedNode) {
             // Can get removed when switching to another note in a spotlighted subtree.
             if (this.spotlightedNode.parent) {
-                this.spotlightedNode.remove();
+                if(!hoistedNoteService.isHoistedNode(this.spotlightedNode)) {
+                    this.spotlightedNode.remove();
+                }
             }
             this.spotlightedNode = null;
             this.spotlightedNotePath = null;
