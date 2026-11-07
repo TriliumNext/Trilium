@@ -1274,6 +1274,32 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     --ck-color-resizer: var(--ck-color-focus-border);
 }
 
+/* Selected cells use the text selection color, painted below the text like a text selection. */
+.ck-editor__editable .table :is(td, th).ck-editor__editable_selected {
+    isolation: isolate;
+
+    &::after {
+        --ck-table-selected-cell-background: var(--selection-background-color);
+        z-index: -1;
+    }
+}
+
+/* The pane gutter of `shell.css`. Outranks the resizer colors of `ckeditor5.css`, which loads
+   later. */
+:root .ck.ck-editor__editable .table .ck-table-column-resizer {
+    box-sizing: border-box;
+    /* Paints a 3px bar in the middle. The pointer keeps the full width of the resizer. */
+    padding-inline: calc((var(--ck-table-column-resizer-width) - 3px) / 2);
+    background-clip: content-box;
+    transition: background-color 150ms ease-out;
+
+    &:is(:hover, .ck-table-column-resizer__active) {
+        background-color: var(--gutter-hover-color);
+        opacity: 1;
+        transition: background-color 300ms ease-in;
+    }
+}
+
 /*
  * Captions
  */

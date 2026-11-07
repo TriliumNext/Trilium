@@ -224,6 +224,8 @@ Colors applied with older versions of Trilium are shown exactly as they were pic
 
 Older browsers that can't adapt colors show them exactly as they were picked.
 
+Header cells are shaded to suit the current theme. To change their background in every table, set the `--text-note-table-header-background` variable in a [custom theme](../../Theme%20development/Creating%20a%20custom%20theme.md) or in [custom app-wide CSS](../../Theme%20development/Custom%20app-wide%20CSS.md), for example `:root { --text-note-table-header-background: #8882; }`. A background picked for a cell still takes precedence.
+
 ## Caption
 
 Press the <span class="tn-icon cke cke-caption"></span> button to insert a caption or a text description of the table, which is going to be displayed above the table.

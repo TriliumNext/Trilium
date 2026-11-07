@@ -346,6 +346,7 @@
     --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
 
     --ck-editor-widget-selection-color: var(--link-color);
+    --text-note-table-header-background: #ffffff12;
 
     --note-list-view-icon-color: var(--left-pane-icon-color);
     --note-list-view-large-icon-background: var(--note-icon-background-color);
@@ -484,7 +485,9 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 }
 
 .note-split.with-hue *::selection,
-.quick-edit-dialog-wrapper.with-hue *::selection {
+.quick-edit-dialog-wrapper.with-hue *::selection,
+.note-split.with-hue .table :is(td, th).ck-editor__editable_selected,
+.quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected {
     --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
 }
 

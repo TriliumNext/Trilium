@@ -1096,12 +1096,14 @@ svg.ck-icon.note-icon {
 }
 
 /*
- * Table borders in text notes. `ckeditor5-content.css` hardcodes a light grey, which glares on a
- * dark background. The default mixes the text color into transparency, which matches that grey
- * on a light theme. A border set through the table or cell properties is inline and still wins.
+ * Table colors in text notes. `ckeditor5-content.css` hardcodes a light grey border, which glares
+ * on a dark background. The default border mixes the text color into transparency, which matches
+ * that grey on a light theme. A color set through the table or cell properties is inline and still
+ * wins.
  */
 :where(:root) {
     --text-note-table-border-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+    --text-note-table-header-background: var(--accented-background-color);
 }
 
 :root .ck-content .table table:not(.layout-table) {
@@ -1113,7 +1115,9 @@ svg.ck-icon.note-icon {
 }
 
 :root .ck-content .table table:not(.layout-table) th {
-    background-color: var(--accented-background-color);
+    /* The active header cell keeps its background. */
+    --ck-color-table-focused-cell-background: var(--text-note-table-header-background);
+    background-color: var(--text-note-table-header-background);
 }
 
 .ck-content .image > figcaption {

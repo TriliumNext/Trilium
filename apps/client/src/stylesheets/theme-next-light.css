@@ -335,6 +335,7 @@
     --ck-editor-toolbar-button-on-shadow: none;
     --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
     --ck-editor-widget-selection-color: var(--link-color);
+    --text-note-table-header-background: #0000000a;
 
     --note-list-view-icon-color: var(--left-pane-icon-color);
     --note-list-view-large-icon-background: var(--note-icon-background-color);
@@ -447,7 +448,9 @@
 }
 
 .note-split.with-hue *::selection,
-.quick-edit-dialog-wrapper.with-hue *::selection {
+.quick-edit-dialog-wrapper.with-hue *::selection,
+.note-split.with-hue .table :is(td, th).ck-editor__editable_selected,
+.quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected {
     --selection-background-color: hsl(var(--custom-color-hue), 60%, 90%);
 }
 
