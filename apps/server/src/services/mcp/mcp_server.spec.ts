@@ -107,6 +107,12 @@ describe("createMcpServer", () => {
         expect(result).toEqual({ content: [{ type: "text", text: JSON.stringify({ ok: "mutate" }) }] });
     });
 
+    it("keeps mutating tools off the server in read-only mode", async () => {
+        await createMcpServer({ readOnly: true });
+
+        expect(registered.map((r) => r.name)).toEqual(["read_tool", "fail_tool"]);
+    });
+
     it("flags the { error } a tool returns as a failed call", async () => {
         await createMcpServer();
         const fail = registered.find((r) => r.name === "fail_tool");

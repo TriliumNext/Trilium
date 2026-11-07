@@ -130,7 +130,7 @@ async function handleMcpRequest(req: express.Request, res: express.Response) {
             import("@modelcontextprotocol/sdk/server/streamableHttp.js"),
             import("../services/mcp/mcp_server.js")
         ]);
-        const server = await createMcpServer();
+        const server = await createMcpServer({ readOnly: optionService.getOptionOrNull("mcpReadOnly") === "true" });
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined, // stateless
             // Off because the guard above has already required a bearer token, which the
