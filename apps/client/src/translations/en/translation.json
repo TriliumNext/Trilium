@@ -5071,7 +5071,9 @@
   "canvas": {
     "thin_stroke": "Thin pen stroke",
     "thin_stroke_description": "Draws pen strokes thinner, suited to handwriting. Strokes already drawn keep their width.",
-    "no_tool": "No tool"
+    "no_tool": "No tool",
+    "zoom": "Zoom",
+    "zoom_to_fit": "Zoom to fit"
   },
   "youtube_video": {
     "title": "Insert media",

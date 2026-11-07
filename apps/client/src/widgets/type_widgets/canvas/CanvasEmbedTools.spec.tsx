@@ -7,7 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vite
 const translate = vi.hoisted(() => (key: string) => `t:${key}`);
 vi.mock("@excalidraw/excalidraw", () => ({
     useI18n: () => ({ t: translate, langCode: "en" }),
-    getCommonBounds: ([ { x, y, width, height } ]: FakeElement[]) => [ x, y, x + width, y + height ]
+    getCommonBounds: (elements: FakeElement[]) => [
+        Math.min(...elements.map(({ x }) => x)),
+        Math.min(...elements.map(({ y }) => y)),
+        Math.max(...elements.map(({ x, width }) => x + width)),
+        Math.max(...elements.map(({ y, height }) => y + height))
+    ]
 }));
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
@@ -143,11 +148,15 @@ describe("CanvasEmbedTools", () => {
                 group: "zoom"
             },
             {
-                id: "resetZoom",
-                label: "t:buttons.resetZoom",
+                id: "zoomMenu",
+                label: "canvas.zoom",
                 text: "100%",
                 class: "canvas-drawing-zoom-level",
-                group: "zoom"
+                group: "zoom",
+                children: [
+                    { id: "zoomToFit", label: "canvas.zoom_to_fit", isEnabled: false },
+                    { id: "resetZoom", label: "t:buttons.resetZoom" }
+                ]
             },
             { id: "zoomIn", label: "t:buttons.zoomIn", icon: ICON, isEnabled: true, group: "zoom" }
         ]);
@@ -211,19 +220,25 @@ describe("CanvasEmbedTools", () => {
         api.change({ zoom: { value: 30 } });
         expect(listener).toHaveBeenCalledTimes(5);
         expect(getEnabled()).toEqual([
-            "undo:true", "redo:false", "zoomOut:true", "resetZoom:true", "zoomIn:false"
+            "undo:true", "redo:false", "zoomOut:true", "zoomMenu:true", "zoomIn:false"
         ]);
-        expect(provider.getTools().find((tool) => tool.id === "resetZoom")?.text).toBe("3000%");
+        const getZoomMenu = () => provider.getTools().find((tool) => tool.id === "zoomMenu");
+        expect(getZoomMenu()?.text).toBe("3000%");
+
+        api.setElements([ { type: "line", locked: false, x: 0, y: 0, width: 10, height: 10 } ]);
+        api.change({});
+        expect(listener).toHaveBeenCalledTimes(6);
+        expect(getZoomMenu()?.children?.[0]?.isEnabled).toBe(true);
 
         await act(async () => {
             container.querySelector("[data-testid=button-redo]")?.removeAttribute("disabled");
         });
-        expect(listener).toHaveBeenCalledTimes(6);
+        expect(listener).toHaveBeenCalledTimes(7);
         expect(getEnabled()).toContain("redo:true");
 
         unsubscribe();
         api.change({ zoom: { value: 0.1 } });
-        expect(listener).toHaveBeenCalledTimes(6);
+        expect(listener).toHaveBeenCalledTimes(7);
         expect(getEnabled()).toContain("zoomOut:false");
     });
 
@@ -312,11 +327,21 @@ describe("CanvasEmbedTools", () => {
             appState: { scrollX: 210, scrollY: 120, zoom: { value: 1 } }
         });
 
+        // Fits the shapes in the 800 × 400 view and centers them, as Excalidraw's zoom to fit does.
+        provider.execute("zoomToFit");
+        expect(api.updateScene).toHaveBeenCalledTimes(3);
+        api.setElements([ { type: "line", locked: false, x: 0, y: 0, width: 1600, height: 400 } ]);
+        provider.execute("zoomToFit");
+        expect(api.updateScene).toHaveBeenLastCalledWith({
+            appState: { zoom: { value: 0.5 }, scrollX: 0, scrollY: 200 }
+        });
+
         provider.execute("magicframe");
         provider.execute("laser");
         provider.execute("moreTools");
+        provider.execute("zoomMenu");
         expect(api.setActiveTool).toHaveBeenCalledTimes(3);
-        expect(api.updateScene).toHaveBeenCalledTimes(3);
+        expect(api.updateScene).toHaveBeenCalledTimes(4);
     });
 
     it("opens the export, the search, the library and the help from the menu", async () => {
@@ -352,6 +377,17 @@ describe("CanvasEmbedTools", () => {
         expect(api.updateScene).toHaveBeenLastCalledWith({
             appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }
         });
+
+        api.setElements([
+            { type: "image", locked: true, x: 0, y: 0, width: 800, height: 400 },
+            { type: "rectangle", locked: false, x: 800, y: 0, width: 800, height: 400 }
+        ]);
+        api.change({ zoom: { value: 2 }, scrollX: -100, scrollY: -100 });
+        provider.execute("zoomToFit");
+        expect(api.updateScene).toHaveBeenCalledTimes(2);
+        expect(api.updateScene).toHaveBeenLastCalledWith({
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }
+        });
     });
 
     it("offers and runs only the zoom while the drawing is read-only", async () => {
@@ -359,7 +395,7 @@ describe("CanvasEmbedTools", () => {
         const listener = vi.fn();
         provider.subscribe(listener);
         const getIds = () => provider.getTools().map((tool) => tool.id);
-        expect(getIds()).toEqual([ "zoomOut", "resetZoom", "zoomIn" ]);
+        expect(getIds()).toEqual([ "zoomOut", "zoomMenu", "zoomIn" ]);
         expect(provider.hasEditableFlag).toBe(true);
 
         for (const id of [ "rectangle", "frame", "noTool", "lock", "undo", "help", "library" ]) {
@@ -378,7 +414,7 @@ describe("CanvasEmbedTools", () => {
         await mount(true);
         expect(listener).toHaveBeenCalledTimes(1);
         expect(getIds()).toEqual([
-            "lock", "noTool", ...MAIN_TOOL_IDS, "moreTools", "undo", "redo", "zoomOut", "resetZoom",
+            "lock", "noTool", ...MAIN_TOOL_IDS, "moreTools", "undo", "redo", "zoomOut", "zoomMenu",
             "zoomIn"
         ]);
     });

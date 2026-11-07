@@ -8,9 +8,9 @@ vi.mock("@excalidraw/excalidraw", () => ({ MainMenu: {}, useI18n: vi.fn() }));
 
 const {
     DEFAULT_SIDEBAR, EXTRA_TOOLS, HISTORY_ACTIONS, LOCK, MAIN_TOOLS, MENU_COMMANDS, SEARCH_TAB,
-    ZOOM_STEP, ZOOMS
+    ZOOMS
 } = await import("./CanvasEmbedTools");
-const { MAX_ZOOM, MIN_ZOOM } = await import("./drawing_view");
+const { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } = await import("./drawing_view");
 const {
     FITTED_MENU_STYLES, PICKER_SELECTOR, PROPERTIES_PANEL_CLASS
 } = await import("./CanvasDrawing");
@@ -132,6 +132,9 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(source).toContain("viewportX:appState.width/2+appState.offsetLeft");
         expect(source).toContain("baseScrollX=appState.scrollX+(appLayerX-appLayerX/currentZoom)");
         expect(source).toContain("zoomOffsetScrollX=-(appLayerX-appLayerX/nextZoom)");
+        // `getZoomToFitView()` zooms in up to 100%, in steps, as `zoomToFitBounds()` does.
+        expect(source).toContain("returnMath.min(adjustedZoomValue,1);");
+        expect(source).toContain("roundToStep(adjustedZoomValue,ZOOM_STEP,\"floor\")");
     });
 
     it("exports in dark colors with the filters that a saved picture applies", () => {

@@ -34,7 +34,9 @@ import {
     needsFullscreenButton,
     showContentEmbedFullscreen
 } from "../text/content_embed_tools";
-import { getBoundedView, MAX_ZOOM, MIN_ZOOM } from "./drawing_view";
+import {
+    type DrawingView, getBoundedView, getZoomToFitView, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP
+} from "./drawing_view";
 
 /** The tools with a button of their own, in the order of their buttons. */
 export const MAIN_TOOLS = [
@@ -105,9 +107,10 @@ const FULLSCREEN = "fullscreen";
 /** The commands that click Excalidraw's own `button-undo` and `button-redo`. */
 export const HISTORY_ACTIONS = [ "undo", "redo" ] as const;
 
-/** Excalidraw's zoom step, from its own zoom buttons. */
-export const ZOOM_STEP = 0.1;
-/** The zoom that each zoom button sets, from the current one. */
+/** The zoom level, which opens a menu with {@link ZOOM_TO_FIT} and Reset zoom. */
+const ZOOM_MENU = "zoomMenu";
+const ZOOM_TO_FIT = "zoomToFit";
+/** The zoom that each zoom command sets, from the current one. */
 export const ZOOMS: Record<string, (zoom: number) => number> = {
     zoomOut: (zoom) => zoom - ZOOM_STEP,
     resetZoom: () => 1,
@@ -246,13 +249,14 @@ export class CanvasTools implements ContentEmbedToolProvider {
     }
 
     getTools(): ContentEmbedTool[] {
-        const appState = this.api?.getAppState();
-        if (!appState) {
+        const api = this.api;
+        const appState = api?.getAppState();
+        if (!api || !appState) {
             return this.getFullscreenTools();
         }
 
         const zoomTools = [
-            ...this.getZoomTools(appState.zoom.value),
+            ...this.getZoomTools(appState.zoom.value, api.getSceneElements().length > 0),
             ...this.getFullscreenTools()
         ];
         return this.isEditable
@@ -278,9 +282,12 @@ export class CanvasTools implements ContentEmbedToolProvider {
         const appState = api.getAppState();
         const getZoom = ZOOMS[id];
         if (getZoom) {
-            const view = getZoomState(appState, getZoom(appState.zoom.value));
-            const boundedView = getBoundedView(api.getSceneElements(), { ...appState, ...view });
-            api.updateScene({ appState: boundedView ?? view });
+            showView(api, appState, getZoomState(appState, getZoom(appState.zoom.value)));
+        } else if (id === ZOOM_TO_FIT) {
+            const view = getZoomToFitView(api.getSceneElements(), appState.width, appState.height);
+            if (view) {
+                showView(api, appState, view);
+            }
         } else if (this.isEditable) {
             this.runEditingTool(api, appState, id);
         }
@@ -368,8 +375,11 @@ export class CanvasTools implements ContentEmbedToolProvider {
         ];
     }
 
-    /** Zoom out, the zoom level that resets it, and zoom in. */
-    private getZoomTools(zoom: number): ContentEmbedTool[] {
+    /**
+     * Zoom out, the zoom level with its menu, and zoom in. Zoom to fit is enabled while the drawing
+     * `hasContent`.
+     */
+    private getZoomTools(zoom: number, hasContent: boolean): ContentEmbedTool[] {
         return [
             {
                 id: "zoomOut",
@@ -379,11 +389,15 @@ export class CanvasTools implements ContentEmbedToolProvider {
                 group: "zoom"
             },
             {
-                id: "resetZoom",
-                label: this.t("buttons.resetZoom"),
+                id: ZOOM_MENU,
+                label: t("canvas.zoom"),
                 text: `${Math.round(zoom * 100)}%`,
                 class: "canvas-drawing-zoom-level",
-                group: "zoom"
+                group: "zoom",
+                children: [
+                    { id: ZOOM_TO_FIT, label: t("canvas.zoom_to_fit"), isEnabled: hasContent },
+                    { id: "resetZoom", label: this.t("buttons.resetZoom") }
+                ]
             },
             {
                 id: "zoomIn",
@@ -456,4 +470,10 @@ function getZoomState(appState: AppState, zoom: number) {
         scrollY: appState.scrollY + centerY / value - centerY / appState.zoom.value,
         zoom: { value: value as NormalizedZoomValue }
     };
+}
+
+/** Shows `view` of the drawing, kept inside the locked image under it, if any. */
+function showView(api: ExcalidrawImperativeAPI, appState: AppState, view: DrawingView) {
+    const boundedView = getBoundedView(api.getSceneElements(), { ...appState, ...view });
+    api.updateScene({ appState: boundedView ?? view });
 }
