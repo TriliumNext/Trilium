@@ -770,6 +770,31 @@ describe("goToLinkExt", () => {
         document.body.removeChild(content);
     });
 
+    it("jumps to an anchor of an editable text note on a ctrl+click or a double click only", async () => {
+        const $content = $("<div class='ck-content note-detail-editable-text-editor'>"
+            + "<p><a id='top'></a>text</p><p id='fn1'>note</p></div>").appendTo(document.body);
+        const $anchorLink = $("<a href='#top'>").appendTo($content);
+        const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+        // The text editor shows the link toolbar, whose first button jumps.
+        goToLinkExt(leftClick(), "#top", $anchorLink);
+        await flush();
+        expect(showAnchor).not.toHaveBeenCalled();
+
+        goToLinkExt(leftClick({ ctrlKey: true }), "#top", $anchorLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenCalledExactlyOnceWith(
+            $content[0], "top"));
+        goToLinkExt(leftClick({ type: "dblclick" }), "#top", $anchorLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenCalledTimes(2));
+
+        // A footnote has no toolbar, so a click on its link still jumps.
+        const $footnoteLink = $("<a href='#fn1'>")
+            .appendTo($("<span class='footnote-reference'>").appendTo($content));
+        goToLinkExt(leftClick(), "#fn1", $footnoteLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenLastCalledWith($content[0], "fn1"));
+        $content.remove();
+    });
+
     it("follows a link to blocks of the note it is in within the page", async () => {
         const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
             + "<h2 data-trilium-block-id='h'>Intro</h2></div></div>").appendTo(document.body);

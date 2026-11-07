@@ -560,14 +560,6 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     evt?.preventDefault();
     evt?.stopPropagation();
 
-    if (hrefLink && hrefLink.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
-        if (handleAnchor(hrefLink, $link)) {
-            return true;
-        }
-    }
-
-    const { notePath, noteId, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
-
     const ctrlKey = evt && utils.isCtrlKey(evt);
     const shiftKey = evt?.shiftKey;
     const isLeftClick = !evt || ("which" in evt && evt.which === 1);
@@ -585,6 +577,19 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         && ((isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick);
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
+
+    if (hrefLink?.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
+        // The link toolbar jumps to the anchor, and a footnote shows no toolbar.
+        if (isPlainLeftClick && isInEditor
+            && !$link.closest(".footnote-reference, .footnote-back-link").length) {
+            return true;
+        }
+        if (handleAnchor(hrefLink, $link)) {
+            return true;
+        }
+    }
+
+    const { notePath, noteId, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
 
     if (notePath) {
         if (isPlainLeftClick && isInEditor) {
