@@ -23,6 +23,7 @@ interface OverlayRailProps {
     isLeaving: boolean;
     /** The class of this rail, for the caller's own styles, such as its `z-index`. */
     className?: string;
+    onFocusIn?: (event: FocusEvent) => void;
     onFocusOut?: (event: FocusEvent) => void;
     /** The `OverlayControlButton`s of the rail. */
     children: ComponentChildren;
@@ -37,7 +38,7 @@ interface OverlayRailProps {
  * elements below the rail.
  */
 export default function OverlayRail({
-    host, isLeaving, className, onFocusOut, children
+    host, isLeaving, className, onFocusIn, onFocusOut, children
 }: OverlayRailProps) {
     const stand = useContext(RailStandContext);
     const token = useRef({}).current;
@@ -77,6 +78,7 @@ export default function OverlayRail({
                 e.stopPropagation();
             }}
             onClick={(e) => e.stopPropagation()}
+            onFocusIn={onFocusIn}
             onFocusOut={onFocusOut}
         >
             <OverlayControlGroup placement="middle-end" vertical overCanvas>

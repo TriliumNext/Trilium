@@ -145,6 +145,45 @@ describe("CanvasDrawingRail", () => {
         expect(rail()).toBeNull();
     });
 
+    it("stays while the focus is on its buttons, as from the keyboard", async () => {
+        await show(SELECTION);
+        await focusDrawing();
+        const focus = async (element: HTMLElement | null | undefined) => {
+            expect(element).toBeDefined();
+            await act(async () => {
+                element?.focus();
+                vi.advanceTimersByTime(0);
+            });
+        };
+
+        await focus(railButtons()[1]);
+        await act(async () => { vi.advanceTimersByTime(RAIL_EXIT_MS); });
+        expect(document.activeElement).toBe(railButtons()[1]);
+        expect(rail()?.classList.contains("leaving")).toBe(false);
+
+        await focus(railButtons()[2]);
+        await focus(container.querySelector<HTMLElement>(".excalidraw-container"));
+        expect(rail()?.classList.contains("leaving")).toBe(false);
+
+        await focus(railButtons()[0]);
+        await act(async () => {
+            railButtons()[0]?.blur();
+            vi.advanceTimersByTime(0);
+        });
+        expect(rail()?.classList.contains("leaving")).toBe(true);
+        await act(async () => { vi.advanceTimersByTime(RAIL_EXIT_MS); });
+        expect(rail()).toBeNull();
+
+        // A rail removed with the focus on it does not come back without the focus.
+        await focusDrawing();
+        await focus(railButtons()[0]);
+        await show(SELECTION.map((button) => ({ ...button, isShown: false })));
+        await act(async () => { vi.advanceTimersByTime(RAIL_EXIT_MS); });
+        expect(rail()).toBeNull();
+        await show(SELECTION);
+        expect(rail()).toBeNull();
+    });
+
     it("leaves once Excalidraw hides the buttons, or the drawing scrolls away", async () => {
         await show(SELECTION);
         await focusDrawing();

@@ -89,4 +89,16 @@ describe("getZoomToFitView", () => {
         expect(fit([])).toBeNull();
         expect(fit([ shape ], 0)).toBeNull();
     });
+
+    it("fits the shapes between the panels that cover the drawing", () => {
+        const shape = { x: 0, y: 0, width: 1200, height: 100 };
+        const fitBetween = (left: number, right: number) =>
+            getZoomToFitView([ shape ] as never, 1000, 500, { left, right });
+
+        // 600 of the 1000 are free, from 0 to 600 and from 200 to 800.
+        expect(fitBetween(0, 400)).toEqual({ zoom: { value: 0.5 }, scrollX: 0, scrollY: 450 });
+        expect(fitBetween(200, 200)).toEqual({ zoom: { value: 0.5 }, scrollX: 400, scrollY: 450 });
+        // Panels across the whole width leave the whole width.
+        expect(fitBetween(600, 400)).toEqual(fit([ shape ]));
+    });
 });

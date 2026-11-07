@@ -10,6 +10,12 @@ export const ZOOM_STEP = 0.1;
 
 export type DrawingView = Pick<AppState, "zoom" | "scrollX" | "scrollY">;
 
+/** The width that panels cover at the left and the right edge of a drawing. */
+export interface CoveredSides {
+    left: number;
+    right: number;
+}
+
 /**
  * The view of a drawing `width` by `height` that saved none, such as one converted from an image:
  * its content fit in the drawing and centered. `null` without content or a size.
@@ -26,24 +32,29 @@ export function getFittedView(
 }
 
 /**
- * The view of a drawing `width` by `height` that fits its content and centers it, as Excalidraw's
- * "Zoom to fit all elements" does: zoomed in up to 100%, in steps of {@link ZOOM_STEP}. `null`
- * without content or a size.
+ * The view of a drawing `width` by `height` that fits its content between the `covered` sides and
+ * centers it there, as Excalidraw's "Zoom to fit all elements" does: zoomed in up to 100%, in
+ * steps of {@link ZOOM_STEP}. Sides that cover the whole width are ignored. `null` without
+ * content or a size.
  */
 export function getZoomToFitView(
     elements: readonly ExcalidrawElement[],
     width: number,
-    height: number
+    height: number,
+    covered: CoveredSides = { left: 0, right: 0 }
 ): DrawingView | null {
     const shown = elements.filter((element) => !element.isDeleted);
     if (!shown.length || !width || !height) return null;
 
+    const { left, right } = covered.left + covered.right < width ? covered : { left: 0, right: 0 };
+    const freeWidth = width - left - right;
     const bounds = getCommonBounds(shown);
     const [ minX, minY, maxX, maxY ] = bounds;
-    const fit = Math.min(width / (maxX - minX), height / (maxY - minY), 1);
+    const fit = Math.min(freeWidth / (maxX - minX), height / (maxY - minY), 1);
     const factor = 1 / ZOOM_STEP;
     const zoom = Math.max(Math.floor(fit * factor) / factor, MIN_ZOOM);
-    return centerView(bounds, zoom, width, height);
+    const view = centerView(bounds, zoom, freeWidth, height);
+    return { ...view, scrollX: view.scrollX + left / zoom };
 }
 
 /**

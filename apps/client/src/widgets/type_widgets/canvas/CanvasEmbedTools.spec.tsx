@@ -344,6 +344,32 @@ describe("CanvasEmbedTools", () => {
         expect(api.updateScene).toHaveBeenCalledTimes(4);
     });
 
+    it("fits the shapes beside the panels that cover the drawing", async () => {
+        const { embed, provider } = await mount();
+        const drawing = embed.querySelector<HTMLElement>(".excalidraw-container");
+        const root = drawing?.parentElement;
+        expect(drawing).not.toBeNull();
+        expect(root).not.toBeNull();
+        const properties = document.createElement("div");
+        properties.className = "App-menu__left";
+        const library = document.createElement("div");
+        library.className = "default-sidebar";
+        root?.append(properties, library);
+        // An 800 × 400 drawing at 100, the properties over its left 200, the library beside it.
+        const placeAt = (element: HTMLElement | null | undefined, left: number, width: number) =>
+            element && vi.spyOn(element, "getBoundingClientRect")
+                .mockReturnValue(new DOMRect(left, 0, width, 400));
+        placeAt(drawing, 100, 800);
+        placeAt(properties, 100, 200);
+        placeAt(library, 910, 300);
+
+        api.setElements([ { type: "line", locked: false, x: 0, y: 0, width: 1200, height: 400 } ]);
+        provider.execute("zoomToFit");
+        expect(api.updateScene).toHaveBeenLastCalledWith({
+            appState: { zoom: { value: 0.5 }, scrollX: 400, scrollY: 200 }
+        });
+    });
+
     it("opens the export, the search, the library and the help from the menu", async () => {
         const { provider } = await mount();
 

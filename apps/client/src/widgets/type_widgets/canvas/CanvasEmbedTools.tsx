@@ -35,7 +35,8 @@ import {
     showContentEmbedFullscreen
 } from "../text/content_embed_tools";
 import {
-    type DrawingView, getBoundedView, getZoomToFitView, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP
+    type CoveredSides, type DrawingView, getBoundedView, getZoomToFitView, MAX_ZOOM, MIN_ZOOM,
+    ZOOM_STEP
 } from "./drawing_view";
 
 /** The tools with a button of their own, in the order of their buttons. */
@@ -284,7 +285,8 @@ export class CanvasTools implements ContentEmbedToolProvider {
         if (getZoom) {
             showView(api, appState, getZoomState(appState, getZoom(appState.zoom.value)));
         } else if (id === ZOOM_TO_FIT) {
-            const view = getZoomToFitView(api.getSceneElements(), appState.width, appState.height);
+            const view = getZoomToFitView(api.getSceneElements(), appState.width, appState.height,
+                getCoveredSides(this.rootRef.current));
             if (view) {
                 showView(api, appState, view);
             }
@@ -476,4 +478,31 @@ function getZoomState(appState: AppState, zoom: number) {
 function showView(api: ExcalidrawImperativeAPI, appState: AppState, view: DrawingView) {
     const boundedView = getBoundedView(api.getSceneElements(), { ...appState, ...view });
     api.updateScene({ appState: boundedView ?? view });
+}
+
+/** Excalidraw's panels that can cover the drawing: the library and the properties panel. */
+const PANEL_SELECTOR = ".default-sidebar, .App-menu__left";
+
+/**
+ * The width that Excalidraw's panels cover at each side of the drawing in `root`, measured as
+ * Excalidraw's `getEditorUIOffsets()` does. A panel that `useSidePanels()` placed beside the
+ * drawing covers none.
+ */
+function getCoveredSides(root: HTMLElement | null): CoveredSides {
+    const covered = { left: 0, right: 0 };
+    const drawing = root?.querySelector(".excalidraw-container")?.getBoundingClientRect();
+    if (!root || !drawing) return covered;
+
+    const center = (drawing.left + drawing.right) / 2;
+    for (const panel of root.querySelectorAll(PANEL_SELECTOR)) {
+        const rect = panel.getBoundingClientRect();
+        if (!rect.width) continue;
+
+        if ((rect.left + rect.right) / 2 > center) {
+            covered.right = Math.max(covered.right, drawing.right - rect.left);
+        } else {
+            covered.left = Math.max(covered.left, rect.right - drawing.left);
+        }
+    }
+    return covered;
 }

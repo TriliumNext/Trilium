@@ -53,10 +53,17 @@ interface CanvasDrawingRailProps {
 export default function CanvasDrawingRail({ rootRef, apiRef }: CanvasDrawingRailProps) {
     const { t, langCode } = useExcalidrawTranslation();
     const actions = useShownActions(rootRef, apiRef, t, langCode);
-    const isFocused = useFocusWithin(rootRef);
+    const [ isRailFocused, setIsRailFocused ] = useState(false);
+    const isFocused = useFocusWithin(rootRef) || isRailFocused;
     const isOnScreen = useIsOnScreen(rootRef, isFocused);
     const isShown = isFocused && isOnScreen && actions.length > 0;
     const isDrawn = useLingeringTrue(isShown, RAIL_EXIT_MS);
+    // Firefox fires no `focusout` at a rail removed with the focus on it.
+    useEffect(() => {
+        if (!isDrawn) {
+            setIsRailFocused(false);
+        }
+    }, [ isDrawn ]);
     // Keeps the buttons while the rail slides out.
     const drawnActions = useRef(actions);
     if (actions.length) {
@@ -68,7 +75,13 @@ export default function CanvasDrawingRail({ rootRef, apiRef }: CanvasDrawingRail
     }
 
     return (
-        <OverlayRail className="canvas-drawing-rail" host={document.body} isLeaving={!isShown}>
+        <OverlayRail
+            className="canvas-drawing-rail"
+            host={document.body}
+            isLeaving={!isShown}
+            onFocusIn={() => setIsRailFocused(true)}
+            onFocusOut={() => setIsRailFocused(false)}
+        >
             {drawnActions.current.map(({ action, isActive }) => (
                 <OverlayControlButton
                     key={action.label}

@@ -193,7 +193,6 @@ body[dir=rtl] .excalidraw .Island.App-menu__left {
     left: 0;
 }
 
-/* Properties panel of the phone layout, framed as a menu, its groups in up to two columns */
 .excalidraw .App-bottom-bar > .Island .App-mobile-menu > .panelColumn {
     flex-direction: row;
     flex-wrap: wrap;
@@ -205,17 +204,13 @@ body[dir=rtl] .excalidraw .Island.App-menu__left {
     backdrop-filter: var(--dropdown-backdrop-filter);
 }
 
-/* Its groups at 1.25 times their size, as cards of at least 270px, spaced by transparent borders
-   of 4px, which keep them 12px from the frame with its padding. Excalidraw sizes their controls in
-   rem, which only `zoom` scales, so each length here is its size once zoomed divided by 1.25. */
+/* Lengths are the zoomed sizes divided by 1.25: 4px borders, 5px inner corners, 270px cards. */
 .excalidraw .App-bottom-bar > .Island .App-mobile-menu > .panelColumn > * {
     zoom: 1.25;
     flex: 1 1 50%;
     box-shadow: none;
     border: 3.2px solid transparent;
-    /* Corners of 5px inside the border */
     border-radius: 7.2px;
-    /* 270px and the borders */
     min-width: 222.4px;
     background: var(--card-background-color);
     background-clip: padding-box;
@@ -225,13 +220,11 @@ body[dir=rtl] .excalidraw .Island.App-menu__left {
     display: none;
 }
 
-/* Properties sheet of the phone layout */
 .excalidraw .App-bottom-bar > .Island[data-properties-sheet] {
     box-shadow: none;
     background: transparent;
 }
 
-/* Scrolls the panel inside its frame */
 .excalidraw .App-bottom-bar > .Island[data-properties-sheet] .App-mobile-menu {
     display: flex;
     flex-direction: column;
