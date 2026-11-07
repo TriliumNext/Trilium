@@ -32,6 +32,14 @@ interface Window {
     TRILIUM_VIEW_HISTORY_STORE?: HistoryData;
 
     /**
+     * The view history of every open viewer, keyed by `noteId` and `ntxId` joined with `|`, kept on the
+     * parent window. pdf.js asks for its history as soon as it knows the document, which can be before
+     * the parent's `onLoad` handler has set {@link TRILIUM_VIEW_HISTORY_STORE}, so the viewer also reads
+     * its entry from here at that moment.
+     */
+    TRILIUM_PDF_VIEW_HISTORY?: Record<string, HistoryData | undefined>;
+
+    /**
      * The reusable signature library used by the pdf.js signature tool. pdf.js keeps this in
      * per-browser `localStorage`; Trilium instead injects it here (from a synced option) so signatures
      * follow the user across devices. Reads/writes of `localStorage["pdfjs.signature"]` are intercepted

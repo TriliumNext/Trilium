@@ -28,7 +28,7 @@ export default function interceptViewHistory(customOptions?: object) {
         }
 
         if (key === "pdfjs.history") {
-            return JSON.stringify(window.TRILIUM_VIEW_HISTORY_STORE || {});
+            return JSON.stringify(window.TRILIUM_VIEW_HISTORY_STORE || readHistoryFromParent() || {});
         }
 
         if (key === SIGNATURE_STORAGE_KEY) {
@@ -36,6 +36,19 @@ export default function interceptViewHistory(customOptions?: object) {
         }
 
         return originalGetItem.call(this, key);
+    }
+}
+
+/**
+ * pdf.js reads its history as soon as it knows the document, which can be before the parent's `onLoad`
+ * handler has injected `TRILIUM_VIEW_HISTORY_STORE`. The parent therefore also keeps the history under
+ * the viewer's address on its own window, and the viewer looks it up there at the moment pdf.js asks.
+ */
+function readHistoryFromParent() {
+    try {
+        return window.parent?.TRILIUM_PDF_VIEW_HISTORY?.[`${window.TRILIUM_NOTE_ID}|${window.TRILIUM_NTX_ID ?? ""}`];
+    } catch {
+        return undefined;
     }
 }
 

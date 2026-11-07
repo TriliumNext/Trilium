@@ -122,6 +122,30 @@ describe("signature-library interception", () => {
     });
 });
 
+describe("view history read before the parent's onLoad handler", () => {
+    afterEach(() => {
+        delete window.TRILIUM_PDF_VIEW_HISTORY;
+    });
+
+    it("falls back to the history the parent keeps under the viewer's address", () => {
+        const history = { files: [ { fingerprint: "f", page: 7, zoom: "150", scrollLeft: 0, scrollTop: 10, rotation: 0, sidebarView: 0 } ] };
+        window.TRILIUM_PDF_VIEW_HISTORY = { "note-1|ntx-1": history, "note-2|ntx-1": { files: [] } };
+        interceptPersistence();
+
+        // TRILIUM_VIEW_HISTORY_STORE is not set yet, as when pdf.js asks before `onLoad` has run.
+        expect(JSON.parse(localStorage.getItem("pdfjs.history") ?? "null")).toEqual(history);
+    });
+
+    it("prefers the injected store and defaults to an empty history", () => {
+        interceptPersistence();
+        expect(JSON.parse(localStorage.getItem("pdfjs.history") ?? "null")).toEqual({});
+
+        window.TRILIUM_PDF_VIEW_HISTORY = { "note-1|ntx-1": { files: [] } };
+        window.TRILIUM_VIEW_HISTORY_STORE = { files: [ { fingerprint: "g", page: 2, zoom: "100", scrollLeft: 0, scrollTop: 0, rotation: 0, sidebarView: 0 } ] };
+        expect(JSON.parse(localStorage.getItem("pdfjs.history") ?? "null").files[0].page).toBe(2);
+    });
+});
+
 describe("real pdf.js SignatureStorage against the interception", () => {
     const { SignatureStorage } = loadRealSignatureStorage();
     const NEW_ENTRY = { description: "New one", signatureData: "sig-new" };
