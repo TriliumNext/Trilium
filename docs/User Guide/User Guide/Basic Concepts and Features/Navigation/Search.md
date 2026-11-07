@@ -60,7 +60,7 @@ The autocomplete offers:
     *   A small gear on the name's icon indicates a system attribute.
     *   After typing the label name, the value is also autocompleted with values that are present in the database.
 *   [Relation](../../Advanced%20Usage/Attributes/Relations.md) names by typing `~`.
-*   [Note ID](../../Advanced%20Usage/Note%20ID.md)s can be inserted easily by typing `@` and looking for a note.
+*   [Note ID](../../Advanced%20Usage/Note%20ID.md)s can be inserted easily by typing `@` and looking for a note. The list starts inside the current hoist and names that note above the results; widening it searches the whole tree without leaving the hoist.
     *   If the note ID is under a valid syntax, it will be shown as a chip of the note instead of the raw ID.
     *   This is especially useful for queries that make use of the note ID such as searching by template: `~template.noteId = @`
 

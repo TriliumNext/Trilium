@@ -199,7 +199,7 @@ describe("useEditorCompletions", () => {
         await vi.waitFor(() => expect(rows()).toHaveLength(2));
         // At most ten notes, and creation under the note being edited.
         expect(getNoteSuggestions)
-            .toHaveBeenLastCalledWith("Al", { allowCreatingNotes: true, limit: 10 });
+            .toHaveBeenLastCalledWith("Al", { allowCreatingNotes: true, limit: 10, ancestorNoteId: "root" });
 
         // Opened on the best match, so Enter links it.
         press(editor, "Enter");

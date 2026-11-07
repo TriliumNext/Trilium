@@ -21,6 +21,7 @@ import { useTriliumEvent } from "./react/hooks";
 import Icon from "./react/Icon";
 import { pointerMoved } from "./react/menu_context";
 import OverlayControlGroup from "./react/OverlayControlGroup";
+import { SearchFocusBar, useSearchFocus } from "./react/NoteAutocomplete";
 import Popup from "./react/Popup";
 import RawHtml, { RawHtmlBlock } from "./react/RawHtml";
 import SearchStringEditor from "./search/SearchStringEditor";
@@ -64,8 +65,24 @@ export default function QuickSearch() {
     const popupRef = useRef<HTMLDivElement | null>(null);
     // Each search takes a number, so a slower earlier response cannot overwrite a later one.
     const requestIdRef = useRef(0);
+    // The same scope as every other search for a note. It follows the tree until the user limits
+    // this search, or widens it, which leaves the tree where it is.
+    const { searchFocusId, setSearchFocus, chosenScopeId } = useSearchFocus(true);
+    const scopeRef = useRef(chosenScopeId);
+    scopeRef.current = chosenScopeId;
 
     useTriliumEvent("quickSearch", () => editorRef.current?.focus());
+    // Open results follow the scope the bar names. While the search still follows the tree, that
+    // scope is the hoist, which `chosenScopeId` does not record. A closed search keeps its query,
+    // and refreshing it would open the popup again.
+    const openRef = useRef(false);
+    openRef.current = open;
+    const followedFocus = useRef(searchFocusId);
+    useEffect(() => {
+        if (followedFocus.current === searchFocusId) return;
+        followedFocus.current = searchFocusId;
+        if (openRef.current && searchStringRef.current.trim()) void search();
+    }, [ searchFocusId ]);
     useResultNavigation(popupRef, open, {
         focusField: () => editorRef.current?.focus(),
         onMoved: () => setKeyboardDriven(true),
@@ -83,8 +100,10 @@ export default function QuickSearch() {
         setOpen(true);
         const requestId = ++requestIdRef.current;
         setSearchState({ status: "searching" });
+        const scope = scopeRef.current;
+        const ancestor = scope ? `&ancestorNoteId=${encodeURIComponent(scope)}` : "";
         const { searchResults, highlightedTokens, error } = await server.get<QuickSearchResponse>(
-            `quick-search?searchString=${encodeURIComponent(query)}`
+            `quick-search?searchString=${encodeURIComponent(query)}${ancestor}`
         );
         if (requestId !== requestIdRef.current) return;
 
@@ -100,7 +119,10 @@ export default function QuickSearch() {
     function showInFullSearch() {
         close();
         const searchString = searchStringRef.current.trim();
-        void appContext.triggerCommand("searchNotes", { searchString });
+        const ancestorNoteId = scopeRef.current;
+        void appContext.triggerCommand("searchNotes", ancestorNoteId
+            ? { searchString, ancestorNoteId }
+            : { searchString });
     }
 
     function close() {
@@ -183,8 +205,16 @@ export default function QuickSearch() {
                     }}
                     onDismiss={close}
                 >
+                    {searchFocusId !== "root" && (
+                        <SearchFocusBar noteId={searchFocusId} onSearchEverywhere={() => setSearchFocus("root")} />
+                    )}
                     <div className="quick-search-results">
-                        <QuickSearchResults searchState={searchState} onOpenResult={close} />
+                        <QuickSearchResults
+                            searchState={searchState}
+                            searchFocusId={searchFocusId}
+                            onOpenResult={close}
+                            onSearchFocus={setSearchFocus}
+                        />
                     </div>
                     <div className="quick-search-footer">
                         {!isMobile() && (
@@ -278,9 +308,11 @@ function firstResult(popup: HTMLElement) {
     return popup.querySelector(".dropdown-item:not(.disabled)");
 }
 
-function QuickSearchResults({ searchState, onOpenResult }: {
+function QuickSearchResults({ searchState, searchFocusId, onOpenResult, onSearchFocus }: {
     searchState: SearchState | undefined;
+    searchFocusId: string;
     onOpenResult(): void;
+    onSearchFocus(noteId: string): void;
 }) {
     if (!searchState) return null;
 
@@ -320,15 +352,20 @@ function QuickSearchResults({ searchState, onOpenResult }: {
                 result={result}
                 viewScope={searchState.viewScope}
                 onOpen={onOpenResult}
+                focusNoteId={result.noteId !== "root" && result.noteId !== searchFocusId ? result.noteId : undefined}
+                onSearchFocus={onSearchFocus}
             />
         ))}
     </>;
 }
 
-function QuickSearchResult({ result, viewScope, onOpen }: {
+function QuickSearchResult({ result, viewScope, onOpen, focusNoteId, onSearchFocus }: {
     result: SearchResultDetails;
     viewScope: ViewScope | undefined;
     onOpen(): void;
+    /** The note this result can limit the search to, when it is not the scope already. */
+    focusNoteId?: string;
+    onSearchFocus(noteId: string): void;
 }) {
     return (
         <a
@@ -345,6 +382,22 @@ function QuickSearchResult({ result, viewScope, onOpen }: {
                         className="search-result-title"
                         html={result.highlightedNotePathTitle ?? result.notePathTitle}
                     />
+                    {focusNoteId && (
+                        <ActionButton
+                            className="note-suggestion-hoist"
+                            icon="bx bxs-chevrons-up"
+                            text={t("note_autocomplete.search_inside_note")}
+                            titlePosition="top"
+                            tooltipClass="tooltip-top"
+                            noTooltipOnTouch
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onSearchFocus(focusNoteId);
+                            }}
+                        />
+                    )}
                 </div>
 
                 <AttributeSnippetBadges

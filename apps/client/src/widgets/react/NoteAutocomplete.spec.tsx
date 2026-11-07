@@ -22,6 +22,7 @@ vi.mock("../../services/i18n", async (importOriginal) => ({
 
 import appContext from "../../components/app_context";
 import Component from "../../components/component";
+import hoistedNoteService from "../../services/hoisted_note";
 import type { NoteSuggestionOptions, Suggestion } from "../../services/note_autocomplete";
 import { collectShortcutHints } from "../../services/shortcut_hints";
 import { buildNote } from "../../test/easy-froca";
@@ -207,6 +208,252 @@ describe("NoteAutocomplete's suggestion list", () => {
     function fullTextRow() {
         return allRows().find((row) => row.querySelector(".bx-search"));
     }
+
+    it("focuses a search on a result, and widens it, without hoisting the tree", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const onChange = vi.fn();
+        getNoteSuggestions.mockResolvedValue([
+            { notePath: "root/shelf/inside", noteTitle: "Inside", highlightedNotePathTitle: "Inside", workspace: true },
+            { notePath: "root/shelf", noteTitle: "Work", highlightedNotePathTitle: "Work" },
+            { notePath: "root/saved", noteTitle: "Saved", highlightedNotePathTitle: "Saved", noteType: "search" },
+            { notePath: "root/out", noteTitle: "Outside", highlightedNotePathTitle: "Outside" }
+        ]);
+
+        try {
+            const input = await mount({ opts: { hoistFocus: true }, onChange });
+            await type(input, "a");
+
+            // The search starts inside the note the tree is hoisted into.
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            const menu = () => document.querySelector(".note-autocomplete-menu");
+            expect(menu()?.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            const hoistButtons = menu()?.querySelectorAll<HTMLButtonElement>(".note-suggestion-hoist");
+            expect(hoistButtons).toHaveLength(2);
+            expect(hoistButtons?.[0].classList.contains("is-workspace")).toBe(true);
+            expect(hoistButtons?.[1].classList.contains("is-workspace")).toBe(false);
+
+            await act(async () => { hoistButtons?.[0].click(); });
+            await settle();
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "inside" });
+            expect(menu()?.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Inside");
+            expect(onChange).not.toHaveBeenCalled();
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            await act(async () => { menu()?.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click(); });
+            await settle();
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "root" });
+            expect(menu()?.querySelector(".note-suggestion-focus")).toBeNull();
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            await press(input, "Enter", { altKey: true });
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "inside" });
+            expect(triggerCommand).not.toHaveBeenCalled();
+        } finally {
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("leaves the scope out of a field that opts out, including the full search", async () => {
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const host = document.createElement("div");
+        document.body.append(host);
+        try {
+            const input = await mount({
+                container: { current: host },
+                searchFooter: true,
+                opts: { hoistFocus: false, allowJumpToSearchNotes: true }
+            });
+            await type(input, "al");
+            expect(getNoteSuggestions.mock.lastCall?.[1]?.ancestorNoteId).toBeUndefined();
+            expect(host.querySelector(".note-suggestion-focus")).toBeNull();
+            await act(async () => { host.querySelector<HTMLButtonElement>(".show-in-full-search")?.click(); });
+            expect(triggerCommand).toHaveBeenCalledWith("searchNotes", { searchString: "al" });
+        } finally {
+            host.remove();
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("opens the full search on a scope the user chose, including the whole tree", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        const host = document.createElement("div");
+        document.body.append(host);
+        getNoteSuggestions.mockResolvedValue([
+            { notePath: "root/shelf/inside", noteTitle: "Inside", highlightedNotePathTitle: "Inside" }
+        ]);
+
+        try {
+            const input = await mount({
+                container: { current: host },
+                searchFooter: true,
+                opts: { allowJumpToSearchNotes: true }
+            });
+            await type(input, "al");
+            const openFullSearch = () => host.querySelector<HTMLButtonElement>(".show-in-full-search")?.click();
+
+            // Still following the tree, so the saved search follows the hoist.
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", { searchString: "al" });
+
+            await act(async () => { host.querySelector<HTMLButtonElement>(".note-suggestion-hoist")?.click(); });
+            await settle();
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", {
+                searchString: "al", ancestorNoteId: "inside"
+            });
+
+            await act(async () => { host.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click(); });
+            await settle();
+            await act(async () => { openFullSearch(); });
+            expect(triggerCommand).toHaveBeenLastCalledWith("searchNotes", {
+                searchString: "al", ancestorNoteId: "root"
+            });
+        } finally {
+            host.remove();
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
+    });
+
+    it("searches the whole tree when the hoist is inside the hidden subtree", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "_hidden", title: "Hidden", children: [ { id: "help", title: "Help" } ] },
+                { id: "shelf", title: "Work" }
+            ]
+        });
+        const checks: ((hidden: boolean) => void)[] = [];
+        const hiddenCheck = vi.spyOn(hoistedNoteService, "isHoistedInHiddenSubtree")
+            .mockImplementation(() => new Promise((resolve) => { checks.push(resolve); }));
+        const host = new Component();
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "root", ntxId: "ntx1" })
+        } as never;
+        const hoist = (noteId: string) => act(async () => {
+            host.handleEventInChildren("hoistedNoteChanged", { noteId, ntxId: "ntx1" });
+        });
+        try {
+            let input: HTMLInputElement | null = null;
+            await act(async () => {
+                input = renderInto(
+                    <ParentComponent.Provider value={host}>
+                        <NoteAutocomplete opts={{ hoistFocus: true }} />
+                    </ParentComponent.Provider>
+                ).querySelector("input");
+            });
+            if (!input) throw new Error("no input rendered");
+            const field = input as HTMLInputElement;
+            await act(async () => { field.focus(); });
+            await settle();
+            expect(hiddenCheck).not.toHaveBeenCalled();
+
+            await hoist("help");
+            await hoist("shelf");
+            checks[0]?.(true);
+            checks[1]?.(false);
+            await settle();
+            // The check for Help was cancelled by the move to Work, so the search stays there.
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+
+            await hoist("help");
+            checks[2]?.(true);
+            await settle();
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "root" });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+        } finally {
+            hiddenCheck.mockRestore();
+            appContext.tabManager = previousTabManager;
+        }
+    });
+
+    it("lists the recent notes of the hoist again when the hoist is removed", async () => {
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
+        const host = new Component();
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        try {
+            let input: HTMLInputElement | null = null;
+            await act(async () => {
+                input = renderInto(
+                    <ParentComponent.Provider value={host}>
+                        <NoteAutocomplete opts={{ hoistFocus: true }} />
+                    </ParentComponent.Provider>
+                ).querySelector("input");
+            });
+            if (!input) throw new Error("no input rendered");
+            // Assigned inside `act`, so the check above does not narrow it for the closure.
+            const field = input as HTMLInputElement;
+            await act(async () => { field.focus(); });
+            await settle();
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            const callsBefore = getNoteSuggestions.mock.calls.length;
+
+            await act(async () => {
+                host.handleEventInChildren("hoistedNoteChanged", { noteId: "root", ntxId: "ntx1" });
+            });
+            await settle();
+
+            expect(getNoteSuggestions.mock.calls.length).toBeGreaterThan(callsBefore);
+            expect(queries().at(-1)).toBe("");
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "root" });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+        } finally {
+            appContext.tabManager = previousTabManager;
+        }
+    });
+
+    it("keeps the note a search is limited to above the list when nothing is listed", async () => {
+        buildNote({ id: "root", title: "Root", children: [ { id: "shelf", title: "Work" } ] });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        getNoteSuggestions.mockResolvedValue([]);
+        try {
+            const input = await mount({ opts: { hoistFocus: true } });
+            await act(async () => { input.focus(); });
+            await settle();
+
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            expect(rows()).toHaveLength(0);
+        } finally {
+            appContext.tabManager = previousTabManager;
+        }
+    });
 
     it("groups the recent notes under headings by when they were visited, which the keys step over", async () => {
         const today = new Date();
@@ -825,7 +1072,10 @@ describe("NoteAutocomplete's suggestion list", () => {
             await type(input, "al");
 
             expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", {
-                allowCreatingNotes: true, allowJumpToSearchNotes: true, allowExternalLinks: true
+                allowCreatingNotes: true,
+                allowJumpToSearchNotes: true,
+                allowExternalLinks: true,
+                ancestorNoteId: "root"
             });
         });
 
@@ -976,9 +1226,9 @@ describe("NoteAutocomplete's suggestion list", () => {
 
             const host = document.createElement("div");
             expect(await keysFor({ container: { current: host }, opts: { allowJumpToSearchNotes: true }, searchFooter: true }))
-                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Ctrl+Enter" ]);
+                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Ctrl+Enter", "Alt+Enter" ]);
             expect(await keysFor({ container: { current: host }, searchFooter: true }))
-                .toEqual([ "Up Down", "Enter", "Shift+Enter" ]);
+                .toEqual([ "Up Down", "Enter", "Shift+Enter", "Alt+Enter" ]);
             expect(await keysFor({ container: { current: host } })).toEqual([]);
             expect(await keysFor({})).toEqual([]);
         });
@@ -1216,8 +1466,8 @@ describe("NoteMentionList", () => {
             await act(async () => { await vi.advanceTimersByTimeAsync(300); });
         };
         await draw(query);
-        const press = async (key: string) => {
-            const event = new KeyboardEvent("keydown", { key, cancelable: true });
+        const press = async (key: string, modifiers: KeyboardEventInit = {}) => {
+            const event = new KeyboardEvent("keydown", { key, cancelable: true, ...modifiers });
             let taken = false;
             await act(async () => { taken = handleRef.current?.handleKeyDown(event) ?? false; });
             await act(async () => { await vi.advanceTimersByTimeAsync(300); });
@@ -1232,14 +1482,14 @@ describe("NoteMentionList", () => {
         const { draw, unmount } = await show("al", { allowCreatingNotes: true });
 
         // At most ten notes, which the server stops at.
-        expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", { allowCreatingNotes: true, limit: 10 });
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith("al", { allowCreatingNotes: true, limit: 10, ancestorNoteId: "root" });
         expect(rows().map((row) => row.querySelector(".search-result-title")?.innerHTML)).toEqual([ "<b>Al</b>pha", "Beta" ]);
         expect(rows()[0].querySelector(".tn-icon")?.className).toContain("bx-file");
         // Capped in width by its own class, as it has no field to take a width from.
         expect(rows()[0].closest(".tn-popup")?.classList.contains("note-mention-menu")).toBe(true);
 
         await draw("alp");
-        expect(getNoteSuggestions).toHaveBeenLastCalledWith("alp", { allowCreatingNotes: true, limit: 10 });
+        expect(getNoteSuggestions).toHaveBeenLastCalledWith("alp", { allowCreatingNotes: true, limit: 10, ancestorNoteId: "root" });
         expect(rows()).toHaveLength(2);
         await unmount();
     });
@@ -1316,6 +1566,54 @@ describe("NoteMentionList", () => {
         expect(rows().length).toBeGreaterThan(0);
         expect(onPick).not.toHaveBeenCalled();
         await act(async () => preactRender(null, host));
+    });
+
+    it("limits an @ search to the hoist, and widens only that search", async () => {
+        buildNote({
+            id: "root", title: "Root", children: [
+                { id: "shelf", title: "Work", children: [ { id: "inside", title: "Inside" } ] }
+            ]
+        });
+        const previousTabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ hoistedNoteId: "shelf", ntxId: "ntx1" })
+        } as never;
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockImplementation(() => Promise.resolve() as never);
+        getNoteSuggestions.mockResolvedValue([]);
+
+        try {
+            const { onPick, draw, press, unmount } = await show("");
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Work");
+            expect(rows()).toHaveLength(0);
+
+            getNoteSuggestions.mockResolvedValue([
+                { notePath: "root/shelf/inside", noteTitle: "Inside", highlightedNotePathTitle: "Inside", workspace: true }
+            ]);
+            await draw("in");
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "shelf" });
+            const hoist = document.querySelector<HTMLButtonElement>(".note-suggestion-hoist");
+            await act(async () => { hoist?.click(); });
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "inside" });
+            expect(document.querySelector(".note-suggestion-focus-title")?.textContent).toBe("Inside");
+            expect(onPick).not.toHaveBeenCalled();
+
+            await act(async () => { document.querySelector<HTMLButtonElement>(".note-suggestion-unhoist")?.click(); });
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "root" });
+            expect(document.querySelector(".note-suggestion-focus")).toBeNull();
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            expect(await press("Enter", { altKey: true })).toBe(true);
+            expect(getNoteSuggestions.mock.lastCall?.[1]).toMatchObject({ ancestorNoteId: "inside" });
+            expect(onPick).not.toHaveBeenCalled();
+            await unmount();
+        } finally {
+            appContext.tabManager = previousTabManager;
+            triggerCommand.mockRestore();
+        }
     });
 
     it("takes the keys while it shows notes, and reports the path of the one Enter or a click picks", async () => {

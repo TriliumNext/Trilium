@@ -11,16 +11,18 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import appContext from "../../components/app_context";
 import froca from "../../services/froca";
+import hoistedNoteService from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import { createSearchScheduler, createNoteFromSuggestion, getCommandSuggestions, getNoteSuggestions, type Options, recentNoteGroup, type RecentNoteGroup, type Suggestion } from "../../services/note_autocomplete";
 import { escapeHtml, isMobile } from "../../services/utils";
 import { ShortcutHintOverlayButton } from "../shortcut_hints/shortcut_hint_button";
+import ActionButton from "./ActionButton";
 import { AttributeSnippetBadges } from "./Badge";
 import Button from "./Button";
 import { type AutocompleteListHandle, useAutocomplete, useForwardedKeys } from "./FormAutocomplete";
 import { FormDropdownDivider, FormListHeader } from "./FormList";
 import FormToggle from "./FormToggle";
-import { useContextualShortcutHints, useSyncedRef } from "./hooks";
+import { useContextualShortcutHints, useNote, useSyncedRef, useTriliumEvent } from "./hooks";
 import Icon from "./Icon";
 import OverlayControlGroup from "./OverlayControlGroup";
 import Popup, { type PopupProps } from "./Popup";
@@ -117,6 +119,10 @@ export default function NoteAutocomplete({
     const [ includeContents, setIncludeContents ] = useState(false);
 
     const { isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks } = opts ?? {};
+    // Every search for a note carries the scope. A host sets `hoistFocus` to false to leave it out.
+    const hoistFocus = opts?.hoistFocus !== false;
+    const { searchFocusId, setSearchFocus, chosenScopeId } = useSearchFocus(hoistFocus, true);
+
     const source = useCallback(async (query: string) => {
         if (isCommandPalette && query.startsWith(">")) {
             return getCommandSuggestions(query);
@@ -126,7 +132,8 @@ export default function NoteAutocomplete({
             allowCreatingNotes,
             allowJumpToSearchNotes: allowJumpToSearchNotes && !hasSearchFooter,
             allowExternalLinks,
-            filter
+            filter,
+            ancestorNoteId: hoistFocus ? searchFocusId : undefined
         };
         if (hasSearchFooter) {
             return getNoteSuggestions(query, includeContents ? { ...options, fastSearch: false } : options);
@@ -143,7 +150,7 @@ export default function NoteAutocomplete({
         }
     }, [
         isCommandPalette, allowCreatingNotes, allowJumpToSearchNotes, allowExternalLinks, fullTextSearchCount,
-        hasSearchFooter, includeContents, filter
+        hasSearchFooter, includeContents, filter, hoistFocus, searchFocusId
     ]);
     const schedule = useMemo(() => createSearchScheduler(), []);
 
@@ -230,7 +237,9 @@ export default function NoteAutocomplete({
      * a host can close, as Jump to Note does.
      */
     function showInFullSearch(searchString: string) {
-        void appContext.triggerCommand("searchNotes", { searchString });
+        void appContext.triggerCommand("searchNotes", chosenScopeId
+            ? { searchString, ancestorNoteId: chosenScopeId }
+            : { searchString });
         onChange?.({ action: "search-notes", noteTitle: searchString });
     }
 
@@ -317,6 +326,10 @@ export default function NoteAutocomplete({
     const anchor = anchorRef?.current ?? groupRef.current;
     const showsList = autocomplete.isShown || (autocomplete.isOpen && isSearchingFullText);
     const hasNote = !!notePath.trim();
+    // The note this search is limited to stays above the results when the field is empty and when
+    // nothing matches, so the scope is visible before any row is.
+    const showsContext = !!hoistFocus && searchFocusId !== "root" && autocomplete.isOpen;
+    const showMenu = showsList || showsContext;
     const showButtons = !opts?.hideAllButtons;
     const showGoToButton = showButtons && !opts?.hideGoToSelectedNoteButton && hasNote;
     // A search box listing into the host's container clears its query, a note field its note.
@@ -357,6 +370,13 @@ export default function NoteAutocomplete({
                 onKeyDown={(e) => {
                     // An Enter while composing commits the input method's candidate instead.
                     const isEnter = e.key === "Enter" && !e.isComposing;
+                    if (isEnter && e.altKey && hoistFocus) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const noteId = noteToHoist(highlighted, searchFocusId);
+                        if (noteId) setSearchFocus(noteId);
+                        return;
+                    }
                     if (isEnter && e.ctrlKey && allowJumpToSearchNotes) {
                         // Kept from the host's other listeners, such as a Ctrl+Enter shortcut of its
                         // own.
@@ -404,7 +424,9 @@ export default function NoteAutocomplete({
                 />
             )}
 
-            {hasSearchFooter && <SearchFooterShortcutHints allowFullSearch={!!allowJumpToSearchNotes} />}
+            {hasSearchFooter && (
+                <SearchFooterShortcutHints allowFullSearch={!!allowJumpToSearchNotes} hoistFocus={hoistFocus} />
+            )}
 
             {showClearButton && (
                 <a
@@ -430,9 +452,12 @@ export default function NoteAutocomplete({
 
             {container
                 ? autocomplete.isOpen && container.current && createPortal(<>
-                    {showsList && <NoteSuggestionMenu
+                    {showMenu && <NoteSuggestionMenu
                         autocomplete={autocomplete}
                         searchingFor={isSearchingFullText ? value : undefined}
+                        hoistFocus={hoistFocus}
+                        searchFocusId={searchFocusId}
+                        onSearchFocus={setSearchFocus}
                         // The popup's rows, in the host's panel. Faded at an edge only where the host
                         // sets `--scroll-fade-top` or `--scroll-fade-bottom`.
                         className="note-autocomplete-menu note-suggestion-list tn-menu-keyboard scroll-edge-fade"
@@ -466,7 +491,7 @@ export default function NoteAutocomplete({
                         </div>
                     )}
                 </>, container.current)
-                : showsList && anchor && (
+                : showMenu && anchor && (
                     <NoteSuggestionPopup
                         anchor={anchor}
                         // Rendered in the field's modal so the list stacks above it: the note picker
@@ -479,6 +504,9 @@ export default function NoteAutocomplete({
                         <NoteSuggestionMenu
                             autocomplete={autocomplete}
                             searchingFor={isSearchingFullText ? value : undefined}
+                            hoistFocus={hoistFocus}
+                            searchFocusId={searchFocusId}
+                            onSearchFocus={setSearchFocus}
                             className="tn-menu-scroll"
                         />
                     </NoteSuggestionPopup>
@@ -518,8 +546,15 @@ export function NoteMentionList({
 }) {
     // The focus stays where the query is typed, so there is no field to return it to.
     const inputRef = useRef<HTMLInputElement>(null);
+    // The same scope as Jump to Note: `@` starts inside the current hoist, and widening it searches
+    // the whole tree without hoisting the note the editor is in.
+    const { searchFocusId, setSearchFocus } = useSearchFocus(true, true);
     const source = useCallback((term: string) =>
-        getNoteSuggestions(term, { allowCreatingNotes, limit: MENTION_NOTE_LIMIT }), [ allowCreatingNotes ]);
+        getNoteSuggestions(term, {
+            allowCreatingNotes,
+            limit: MENTION_NOTE_LIMIT,
+            ancestorNoteId: searchFocusId
+        }), [ allowCreatingNotes, searchFocusId ]);
     const schedule = useMemo(() => createSearchScheduler(), []);
 
     const autocomplete = useAutocomplete({
@@ -544,10 +579,38 @@ export function NoteMentionList({
     // The host shows the list by mounting it and closes it by unmounting it.
     useEffect(() => autocomplete.open(), []);
     useForwardedKeys(autocomplete, handleRef, onActiveDescendant);
+    // After `useForwardedKeys`, which replaces the handle on each commit.
+    useLayoutEffect(() => {
+        const handle = handleRef.current;
+        if (!handle) return;
+        const forward = handle.handleKeyDown;
+        handleRef.current = {
+            handleKeyDown(e) {
+                // Alt+Enter limits the search to the highlighted note, as it does in Jump to Note,
+                // and does not insert the mention.
+                if (e.key === "Enter" && e.altKey && !e.isComposing && autocomplete.isShown) {
+                    e.preventDefault();
+                    const noteId = noteToHoist(autocomplete.items[autocomplete.activeIndex], searchFocusId);
+                    if (noteId) setSearchFocus(noteId);
+                    return true;
+                }
+                return forward(e);
+            }
+        };
+    });
 
-    return autocomplete.isShown && (
+    // Kept open while a hoist limits it, so the scope stays in view with an empty query and with
+    // nothing listed.
+    const showsContext = searchFocusId !== "root";
+    return (autocomplete.isShown || showsContext) && (
         <NoteSuggestionPopup anchor={anchor} elementRef={elementRef} className="note-mention-menu">
-            <NoteSuggestionMenu autocomplete={autocomplete} className="tn-menu-scroll" />
+            <NoteSuggestionMenu
+                autocomplete={autocomplete}
+                className="tn-menu-scroll"
+                hoistFocus
+                searchFocusId={searchFocusId}
+                onSearchFocus={setSearchFocus}
+            />
         </NoteSuggestionPopup>
     );
 }
@@ -753,7 +816,7 @@ function getListWidth(anchor: Element, isAsWideAsField: boolean) {
  * Lists the keys of a list with a search footer in the shortcut hints pane, which the footer's button
  * opens. Only such a list adds hints, as they replace whatever the host registered.
  */
-function SearchFooterShortcutHints({ allowFullSearch }: { allowFullSearch: boolean }) {
+function SearchFooterShortcutHints({ allowFullSearch, hoistFocus }: { allowFullSearch: boolean; hoistFocus?: boolean }) {
     useContextualShortcutHints(() => [ {
         titleKey: "note_autocomplete.hints.title",
         hints: [
@@ -762,6 +825,9 @@ function SearchFooterShortcutHints({ allowFullSearch }: { allowFullSearch: boole
             { keys: [ "Shift+Enter" ], labelKey: "note_autocomplete.include-contents" },
             ...(allowFullSearch
                 ? [ { keys: [ "Ctrl+Enter" ], labelKey: "quick-search.show-in-full-search" } ]
+                : []),
+            ...(hoistFocus
+                ? [ { keys: [ "Alt+Enter" ], labelKey: "note_autocomplete.hints.hoist" } ]
                 : [])
         ]
     } ]);
@@ -773,10 +839,16 @@ function SearchFooterShortcutHints({ allowFullSearch }: { allowFullSearch: boole
  * in the popup or in a host's container. With `searchingFor`, the query of a search in progress, it
  * shows a row saying so in place of the suggestions.
  */
-function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
+function NoteSuggestionMenu({ autocomplete, searchingFor, className, hoistFocus, searchFocusId, onSearchFocus }: {
     autocomplete: ReturnType<typeof useAutocomplete<Suggestion>>;
     searchingFor?: string;
     className: string;
+    /** Focus the search on a note, and widen it again, without hoisting the tree. */
+    hoistFocus?: boolean;
+    /** The note this search is limited to. `root` searches the whole tree. */
+    searchFocusId?: string;
+    /** Limits this search to `noteId`, or to the whole tree when `noteId` is `root`. */
+    onSearchFocus?(noteId: string): void;
 }) {
     // Only the recent notes listed on an empty query carry a visit time, and take a heading per group.
     const now = new Date();
@@ -791,6 +863,9 @@ function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
             // on a suggestion.
             onMouseDown={(e) => e.preventDefault()}
         >
+            {hoistFocus && searchFocusId && searchFocusId !== "root" && (
+                <SearchFocusBar noteId={searchFocusId} onSearchEverywhere={() => onSearchFocus?.("root")} />
+            )}
             {searchingFor !== undefined && (
                 <li className="dropdown-item disabled">
                     <NoteSuggestionMenuItem suggestion={{ noteTitle: searchingFor, highlightedNotePathTitle: t("quick-search.searching") }} />
@@ -808,7 +883,11 @@ function NoteSuggestionMenu({ autocomplete, searchingFor, className }: {
                     <FormListHeader key={`heading-${index}`} text={recentGroupTitle(recentGroups[index])} />
                 ),
                 <SuggestionOption key={suggestionKey(suggestion, index)} autocomplete={autocomplete} index={index}>
-                    <NoteSuggestionMenuItem suggestion={suggestion} />
+                    <NoteSuggestionMenuItem
+                        suggestion={suggestion}
+                        hoistNoteId={hoistFocus ? noteToHoist(suggestion, searchFocusId ?? "root") : undefined}
+                        onSearchFocus={onSearchFocus}
+                    />
                 </SuggestionOption>
             ])}
         </menu>
@@ -836,15 +915,27 @@ function SuggestionOption<T>({ autocomplete, index, children }: {
 }
 
 /** One row of the menu, laid out as the rows of `FormListItem` are. */
-function NoteSuggestionMenuItem({ suggestion }: { suggestion: Suggestion }) {
+function NoteSuggestionMenuItem({ suggestion, hoistNoteId, onSearchFocus }: {
+    suggestion: Suggestion;
+    hoistNoteId?: string;
+    onSearchFocus?(noteId: string): void;
+}) {
     return (
         <span>
-            <NoteSuggestionMenuItemContent suggestion={suggestion} />
+            <NoteSuggestionMenuItemContent
+                suggestion={suggestion}
+                hoistNoteId={hoistNoteId}
+                onSearchFocus={onSearchFocus}
+            />
         </span>
     );
 }
 
-function NoteSuggestionMenuItemContent({ suggestion }: { suggestion: Suggestion }) {
+function NoteSuggestionMenuItemContent({ suggestion, hoistNoteId, onSearchFocus }: {
+    suggestion: Suggestion;
+    hoistNoteId?: string;
+    onSearchFocus?(noteId: string): void;
+}) {
     const isCommand = suggestion.action === "command";
     const icon = isCommand ? (suggestion.icon || "bx bx-terminal") : suggestionIcon(suggestion);
     // A note leads with its own title, the path to it after, as the search results do; the rows the
@@ -869,7 +960,26 @@ function NoteSuggestionMenuItemContent({ suggestion }: { suggestion: Suggestion 
                     snippet={suggestion.highlightedAttributeSnippet}
                     className="note-suggestion-attributes"
                 />}
-            trailing={<SuggestionShortcut suggestion={suggestion} />}
+            trailing={<>
+                <SuggestionShortcut suggestion={suggestion} />
+                {hoistNoteId && (
+                    <ActionButton
+                        className={clsx("note-suggestion-hoist", suggestion.workspace && "is-workspace")}
+                        icon="bx bxs-chevrons-up"
+                        text={suggestion.workspace
+                            ? t("note_autocomplete.search_inside_workspace")
+                            : t("note_autocomplete.search_inside_note")}
+                        titlePosition="top"
+                        tooltipClass="tooltip-top"
+                        noTooltipOnTouch
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onSearchFocus?.(hoistNoteId);
+                        }}
+                    />
+                )}
+            </>}
         />
     );
 }
@@ -1008,4 +1118,105 @@ function suggestionText(suggestion: Suggestion) {
 
 function lastSegment(notePath: string) {
     return notePath.split("/").at(-1) ?? "";
+}
+
+/**
+ * The note a row can focus this search on: a real note, other than a search note, the root, or the
+ * note the search is already limited to.
+ */
+function noteToHoist(suggestion: Suggestion | undefined, searchFocusId: string) {
+    if (!suggestion?.notePath || suggestion.action || suggestion.noteType === "search") {
+        return undefined;
+    }
+
+    const noteId = lastSegment(suggestion.notePath);
+    if (!noteId || noteId === "root" || noteId === searchFocusId) {
+        return undefined;
+    }
+
+    return noteId;
+}
+
+/**
+ * The note a search is limited to. It starts as the tree's hoist. Focusing it on a result, or
+ * widening it to the whole tree, changes only the search: the tree stays where it is, and a later
+ * hoist of the tree no longer moves a search that has chosen its own scope.
+ */
+export function useSearchFocus(enabled: boolean, widenHidden = false) {
+    const realHoistId = useHoistedNoteId();
+    const detached = useRef(false);
+    const [ searchFocusId, setSearchFocusId ] = useState(realHoistId);
+    useEffect(() => {
+        if (!enabled || detached.current) return;
+        setSearchFocusId(realHoistId);
+        if (!widenHidden || realHoistId === "root") return;
+        // A hoist into the hidden subtree is not a place to look for notes, so the search starts
+        // over the whole tree. Choosing a scope afterwards still limits it.
+        let cancelled = false;
+        void hoistedNoteService.isHoistedInHiddenSubtree(realHoistId).then((hidden) => {
+            if (!cancelled && !detached.current && hidden) setSearchFocusId("root");
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [ enabled, realHoistId, widenHidden ]);
+
+    const setSearchFocus = useCallback((noteId: string) => {
+        detached.current = true;
+        setSearchFocusId(noteId);
+    }, []);
+
+    return {
+        searchFocusId,
+        setSearchFocus,
+        /** Set once the user has chosen a scope. Absent while the search still follows the tree. */
+        chosenScopeId: enabled && detached.current ? searchFocusId : undefined
+    };
+}
+
+/** The active context's hoisted note, read again when the hoist or the active context changes. */
+function useHoistedNoteId() {
+    const read = () => appContext.tabManager?.getActiveContext()?.hoistedNoteId ?? "root";
+    const [ hoistedNoteId, setHoistedNoteId ] = useState(read);
+    const onHoisted = useCallback((data: { noteId: string; ntxId: string | null }) => {
+        const active = appContext.tabManager?.getActiveContext();
+        if (active && active.ntxId !== data.ntxId) return;
+        setHoistedNoteId(data.noteId);
+    }, []);
+    const onActiveContext = useCallback(() => setHoistedNoteId(read()), []);
+
+    useTriliumEvent("hoistedNoteChanged", onHoisted);
+    useTriliumEvent("activeContextChanged", onActiveContext);
+
+    return hoistedNoteId;
+}
+
+/**
+ * The note this search is limited to, kept in view above the results, with the control that
+ * widens the search to the whole tree. The tree's own hoist stays as it is. Widening lists
+ * different recent notes when the field is empty.
+ */
+export function SearchFocusBar({ noteId, onSearchEverywhere }: { noteId: string; onSearchEverywhere(): void }) {
+    const note = useNote(noteId, true);
+
+    return (
+        <li className="note-suggestion-focus" role="none">
+            <span className="note-suggestion-focus-label">{t("note_autocomplete.searching_in")}</span>
+            {note && <Icon icon={note.getIcon()} />}
+            <span className="note-suggestion-focus-title">{note?.title ?? ""}</span>
+            <ActionButton
+                className="note-suggestion-unhoist"
+                icon="bx bx-door-open"
+                text={t("note_autocomplete.search_everywhere")}
+                titlePosition="top"
+                tooltipClass="tooltip-top"
+                noTooltipOnTouch
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onSearchEverywhere();
+                }}
+            />
+        </li>
+    );
 }

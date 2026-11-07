@@ -36,7 +36,7 @@ Since v0.107.0, to change a link, click it and press the <span class="tn-icon ck
 
 You can also insert internal links “inline” by using the `@` symbol:
 
-1.  Type `@` in a text note, which will open the note search menu.
+1.  Type `@` in a text note, which will open the note search menu. It starts inside the current <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.md">hoist</a>, and a bar above the results names that note, even when nothing is typed after `@`. The <span class="tn-icon bx bx-door-open"></span> button on the bar searches the whole tree and leaves the hoist as it is. A result can limit this search to that note instead: the <span class="tn-icon bx bxs-chevrons-up"></span> button on its row, or <kbd>Alt</kbd>+<kbd>Enter</kbd>.
 2.  Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to create the link. It's also possible to create new notes with this method by typing a non-existing note title and selecting _Create note_, as described above, or _Create child note_. _Create child note_ creates the note under the note being edited without asking for its type, inserts the link and opens the new note in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, which offers the note types to turn it into while it is still empty.
 
 To create an empty child note and link to it before naming it, use _New child note_, described in <a class="reference-link" href="../Insert%20buttons.md">Insert buttons</a>.
