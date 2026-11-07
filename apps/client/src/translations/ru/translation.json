@@ -4160,7 +4160,11 @@
       "create-a-link-to-another-trilium-note": "Создать ссылку на другую заметку Trilium",
       "caption-for-the-audio": "Подпись к аудио",
       "audio-video-embed": "Встроенное аудио/видео",
-      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Встроить видео с YouTube, аудио или видео по ссылке"
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Встроить видео с YouTube, аудио или видео по ссылке",
+      "add-new-tab": "Добавить новую вкладку",
+      "copy-reference-to-this-tab": "Скопировать ссылку на эту вкладку",
+      "delete-tab": "Удалить вкладку",
+      "delete-all-tabs": "Удалить все вкладки"
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -5148,7 +5152,10 @@
   },
   "canvas": {
     "thin_stroke": "Тонкий штрих пера",
-    "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину."
+    "thin_stroke_description": "Делает штрихи более тонкими, подходит для рукописного текста. Уже нанесенные штрихи сохраняют свою толщину.",
+    "no_tool": "Нет инструмента",
+    "zoom": "Масштабирование",
+    "zoom_to_fit": "Масштаб по размеру"
   },
   "sort_selection": {
     "sort_blocks": "Сортировать блоки",
