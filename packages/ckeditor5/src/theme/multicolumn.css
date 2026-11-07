@@ -1,7 +1,6 @@
 :where(:root) {
-    --multicolumn-layout-focus-border-color: var(--link-color, var(--ck-color-focus-border));
-    --multicolumn-layout-focus-button-icon-color: var(--main-background-color,
-                                                      var(--ck-color-base-background));
+    --multicolumn-layout-focus-border-color: var(--input-focus-outline-color,
+                                                 var(--ck-color-focus-border));
     --multicolumn-layout-stacked-background: var(--accented-background-color,
                                                  var(--ck-color-base-foreground));
     --multicolumn-layout-border-radius: 8px;
@@ -59,15 +58,6 @@
         &.trilium-multicolumn-layout--focused {
             outline: var(--ck-widget-outline-thickness, 3px) solid
                      var(--multicolumn-layout-focus-border-color);
-
-            & > .ck-widget__type-around {
-                --ck-color-widget-type-around-button-hover:
-                    var(--multicolumn-layout-focus-border-color);
-                --ck-color-widget-type-around-button-active:
-                    var(--multicolumn-layout-focus-border-color);
-                --ck-color-widget-type-around-button-icon:
-                    var(--multicolumn-layout-focus-button-icon-color);
-            }
         }
 
         & > .ck-editor__nested-editable {

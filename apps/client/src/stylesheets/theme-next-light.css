@@ -334,6 +334,7 @@
     --ck-editor-toolbar-button-on-color: black;
     --ck-editor-toolbar-button-on-shadow: none;
     --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
+    --ck-editor-widget-selection-color: var(--link-color);
 
     --note-list-view-icon-color: var(--left-pane-icon-color);
     --note-list-view-large-icon-background: var(--note-icon-background-color);

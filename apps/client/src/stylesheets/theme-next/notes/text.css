@@ -1264,6 +1264,17 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
 }
 
 /*
+ * Widgets
+ */
+
+/* Block widgets only: the inline ones are `span` and `a` elements. */
+.ck-editor__editable :is(div, figure, section).ck-widget_selected {
+    --ck-color-focus-border: var(--ck-editor-widget-selection-color);
+    /* `:root` resolves `--ck-color-resizer` against its own `--ck-color-focus-border`. */
+    --ck-color-resizer: var(--ck-color-focus-border);
+}
+
+/*
  * Captions
  */
 

@@ -1900,17 +1900,18 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     outline: none;
 }
 
-/* Outlined as a selected widget in the editor. */
-.include-note:has(> .include-note-wrapper > .include-note-body.active) {
-    /* With the focus in its content, the widget is either selected in a blurred editor or not
-       selected at all. */
-    --ck-color-widget-blurred-border: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-hover: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-active: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-blurred-editable: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-icon: var(--main-background-color);
+.include-note.ck-widget_selected {
+    --_include-note-active-outline-color: var(--ck-color-focus-border);
+}
 
-    outline: var(--ck-widget-outline-thickness, 3px) solid var(--ck-color-focus-border);
+/* The focus is in the content of the embed. */
+.include-note:has(> .include-note-wrapper > .include-note-body.active) {
+    /* The editor can be blurred, where CKEditor colors its selected widgets with these. */
+    --ck-color-widget-blurred-border: var(--ck-color-focus-border);
+    --ck-color-widget-type-around-button-blurred-editable: var(--ck-color-focus-border);
+
+    outline: var(--ck-widget-outline-thickness, 3px) solid
+             var(--_include-note-active-outline-color, var(--input-focus-outline-color));
 }
 
 /* Hides what a larger box size drew, until the Tiny row replaces it. */
