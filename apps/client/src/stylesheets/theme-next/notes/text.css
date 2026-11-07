@@ -415,7 +415,7 @@ div.ck.ck-collapsible {
         display: none;
     }
 
-    /* The selection ring takes the tile's own color, which only its inline background holds. */
+    /* The ring uses the original color, from the inline background or the `--tn-*` variable. */
     &.ck-on::after {
         content: "";
         position: absolute;
@@ -426,6 +426,14 @@ div.ck.ck-collapsible {
         mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
         mask-clip: padding-box, border-box;
         mask-composite: exclude;
+    }
+
+    &[style*="--tn-color"].ck-on::after {
+        background: var(--tn-color);
+    }
+
+    &[style*="--tn-background"].ck-on::after {
+        background: var(--tn-background);
     }
 
     &.ck-color-selector__color-tile_bordered.ck-on::after {

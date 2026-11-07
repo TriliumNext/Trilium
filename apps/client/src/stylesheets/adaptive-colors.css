@@ -12,3 +12,8 @@ body.dark-theme {
     --_adaptive-table-background-max: var(--adaptive-table-background-dark-max-lightness);
     --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
 }
+
+/* The `[style*="--tn-color"]` rule of the shared stylesheet adapts the tile's `color`. */
+.ck-color-grid__tile[style*="--tn-color"] {
+    background-color: currentColor !important;
+}
