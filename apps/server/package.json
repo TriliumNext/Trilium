@@ -77,7 +77,7 @@
     "helmet": "8.3.0",
     "http-proxy-agent": "9.1.0",
     "https-proxy-agent": "9.1.0",
-    "i18next-fs-backend": "2.6.9",
+    "i18next-fs-backend": "2.6.10",
     "image-type": "6.1.0",
     "ini": "7.0.0",
     "is-animated": "3.0.15",
