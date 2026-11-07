@@ -76,6 +76,25 @@ describe("etapi/search", () => {
                 .expect(200);
         });
 
+        it("orders notes by title according to orderDirection", async () => {
+            const marker = randomUUID();
+            const earlier = `AAA ${marker}`;
+            const later = `ZZZ ${marker}`;
+            await createTitledNote(app, token, earlier, marker);
+            await createTitledNote(app, token, later, marker);
+
+            const titles = async (direction: string) => {
+                const response = await supertest(app)
+                    .get(`/etapi/notes?search=${marker}&orderBy=title&orderDirection=${direction}`)
+                    .auth(USER, token, { "type": "basic"})
+                    .expect(200);
+                return response.body.results.map((note: { title: string }) => note.title);
+            };
+
+            expect(await titles("asc")).toEqual([earlier, later]);
+            expect(await titles("desc")).toEqual([later, earlier]);
+        });
+
         it("rejects a non-boolean flag", async () => {
             const response = await supertest(app)
                 .get("/etapi/notes?search=root&fastSearch=maybe")
@@ -112,6 +131,21 @@ describe("etapi/search", () => {
         });
     });
 });
+
+async function createTitledNote(app: Application, token: string, title: string, content: string) {
+    const response = await supertest(app)
+        .post("/etapi/create-note")
+        .auth(USER, token, { "type": "basic" })
+        .send({
+            parentNoteId: "root",
+            title,
+            type: "text",
+            content
+        })
+        .expect(201);
+
+    return response.body.note.noteId as string;
+}
 
 async function createNoteWithLabel(app: Application, token: string, name: string, value: string) {
     const noteId = await createNote(app, token, randomUUID());
