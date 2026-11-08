@@ -121,6 +121,7 @@ To let header rows scroll away with the rest of the table, turn off <a class="re
 *   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
 *   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
+*   The menu of the block handle beside a cell, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, also has _Insert row above_ and _Insert row below_.
 
 ## Moving rows and columns
 

@@ -459,22 +459,31 @@ describe("buildReferenceConfig", () => {
         expect(editor.editing.view.focus).toHaveBeenCalledOnce();
     });
 
-    it("runs the palette's entries in a new paragraph above or below the blocks", () => {
+    /** Opens the block handle menu of `blocks` while only the commands in `enabled` are enabled. */
+    function openInsertMenu(blocks: ModelElement[], enabled: string[], palette: object = {
+        listAll: () => [], canInsertBeside: () => true, runBeside: vi.fn()
+    }) {
         const { config, editor } = buildSource();
-        const event = new MouseEvent("contextmenu");
+        vi.mocked(editor.plugins.has).mockReturnValue(true);
+        vi.mocked(editor.plugins.get).mockReturnValue(palette as never);
+        vi.mocked(editor.commands.get).mockImplementation(((name: string) =>
+            ({ isEnabled: enabled.includes(name) })) as never);
+        config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), blocks, vi.fn());
+        const items = showMenu.mock.lastCall?.[0].items as MenuCommandItem<CommandNames>[];
+        return { editor, items };
+    }
+
+    it("runs the palette's entries in a new paragraph above or below the blocks", () => {
         const definitions = [
             { id: "insertTable", title: "Table", icon: "<svg></svg>", willInsert: true },
             { id: "align-left", title: "Align left", icon: "<svg></svg>", willTransform: true }
         ];
         const palette = {
             listAll: () => definitions,
-            canInsertBeside: vi.fn((block: ModelElement) => !block.hasAttribute("listItemId")),
+            canInsertBeside: vi.fn((_block: ModelElement, side: string) => side === "before"),
             runBeside: vi.fn()
         };
-        vi.mocked(editor.plugins.has).mockReturnValue(true);
-        vi.mocked(editor.plugins.get).mockReturnValue(palette as never);
-        vi.mocked(editor.commands.get).mockReturnValue({ isEnabled: true } as never);
-        const blocks = [ buildBlock("paragraph"), buildBlock("paragraph", { listItemId: "a" }) ];
+        const blocks = [ buildBlock("paragraph"), buildBlock("paragraph") ];
         const submenu = (title: string, uiIcon: string, enabled: boolean) => ({
             title,
             uiIcon,
@@ -484,11 +493,10 @@ describe("buildReferenceConfig", () => {
             items: [ expect.objectContaining({ title: "Table", handler: expect.any(Function) }) ]
         });
 
-        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
-        const items = showMenu.mock.calls[0][0].items as MenuCommandItem<CommandNames>[];
+        const { items } = openInsertMenu(blocks, [ "insertParagraph" ], palette);
         expect(items.slice(1, 4)).toEqual([
-            submenu("block_reference.insert_above", "bx bx-horizontal-left bx-rotate-90", true),
-            submenu("block_reference.insert_below", "bx bx-horizontal-left bx-rotate-270", false),
+            submenu("block_reference.insert_above", "bx bx-arrow-to-top", true),
+            submenu("block_reference.insert_below", "bx bx-arrow-to-bottom", false),
             { kind: "separator" }
         ]);
         runItem(items[1].items?.[0]);
@@ -498,12 +506,47 @@ describe("buildReferenceConfig", () => {
             [ definitions[0], blocks[1], "after" ]
         ]);
 
-        config.blockReference?.openHandleMenu?.(event, [], vi.fn());
-        vi.mocked(editor.commands.get).mockReturnValue({ isEnabled: false } as never);
-        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
-        expect(showMenu.mock.calls.slice(1).map(([ options ]) => options.items[1].title)).toEqual([
-            "block_reference.copy_reference", "block_reference.copy_reference"
+        expect(openInsertMenu([], [ "insertParagraph" ], palette).items[1].title)
+            .toBe("block_reference.copy_reference");
+        expect(openInsertMenu(blocks, [], palette).items[1].title)
+            .toBe("block_reference.copy_reference");
+    });
+
+    it("inserts list items beside a list item, and rows in a table cell", () => {
+        const listItem = buildBlock("paragraph", { listItemId: "a" });
+        const commands = [
+            "triliumInsertListItemAbove", "triliumInsertListItemBelow",
+            "triliumInsertChildListItem",
+            "triliumInsertTableRowsAbove", "triliumInsertTableRowsBelow"
+        ];
+        const row = (title: string, uiIcon: string) =>
+            ({ title, uiIcon, handler: expect.any(Function) });
+
+        const { editor, items } = openInsertMenu([ listItem ], [ "insertParagraph", ...commands ]);
+        expect(items.slice(1, 7)).toEqual([
+            row("block_reference.insert_item_above", "bx bx-arrow-to-top"),
+            row("block_reference.insert_item_below", "bx bx-arrow-to-bottom"),
+            row("block_reference.insert_child_item", "bx bx-subdirectory-right"),
+            row("table_context_menu.insert_rows_above", "bx bx-horizontal-left bx-rotate-90"),
+            row("table_context_menu.insert_rows_below", "bx bx-horizontal-left bx-rotate-270"),
+            { kind: "separator" }
         ]);
+        for (const item of items.slice(1, 6)) {
+            runItem(item);
+        }
+        expect(vi.mocked(editor.execute).mock.calls.map(([ name ]) => name)).toEqual(commands);
+        expect(editor.editing.view.focus).toHaveBeenCalledTimes(5);
+        expect(editor.editing.view.scrollToTheSelection).toHaveBeenCalledTimes(5);
+
+        const titles = (blocks: ModelElement[], enabled: string[]) =>
+            openInsertMenu(blocks, enabled).items.slice(1, 4).map((item) => item.title);
+        expect(titles([ buildBlock("paragraph"), listItem ], [ "insertParagraph", ...commands ]))
+            .toEqual([
+                "block_reference.insert_above", "block_reference.insert_item_below",
+                "block_reference.insert_child_item"
+            ]);
+        expect(titles([ listItem ], [ "insertParagraph" ]))
+            .toEqual([ "block_reference.copy_reference" ]);
     });
 
     it("keeps the editor focused while the block handle menu is up, then reports it closed", () => {
@@ -765,7 +808,9 @@ function buildEditor(root: HTMLElement, target: unknown) {
         execute: vi.fn(() => target),
         commands: { get: vi.fn() },
         plugins: { has: vi.fn(() => false), get: vi.fn() },
-        editing: { view: { getDomRoot: () => root, focus: vi.fn() } },
+        editing: {
+            view: { getDomRoot: () => root, focus: vi.fn(), scrollToTheSelection: vi.fn() }
+        },
         ui: { focusTracker: { add: vi.fn(), remove: vi.fn() } }
     } as unknown as CKTextEditor;
 }

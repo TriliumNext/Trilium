@@ -48,7 +48,7 @@ export interface BlockReferenceMenuItems {
 
 /** The actions of the block handle menu. */
 export interface BlockHandleMenuActions {
-    /** The _Insert above_ and _Insert below_ submenus, shown first, before a separator. */
+    /** The items that insert blocks, list items or table rows, shown first, before a separator. */
     insertItems?: MenuItem<CommandNames>[];
     /** Copies a reference to the selected blocks. */
     copyReference: () => void;
@@ -94,7 +94,7 @@ export function buildReferenceConfig(
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(origin, blocks, {
-                    insertItems: buildInsertBesideMenuItems(editor, blocks),
+                    insertItems: buildInsertItems(editor, blocks),
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
@@ -420,25 +420,67 @@ const BLOCK_TYPES: Record<string, string> = {
     unknownContentEmbed: "embed"
 };
 
+/** The commands of the insert items for a list item or a table cell. */
+type InsertCommandName = "triliumInsertListItemAbove" | "triliumInsertListItemBelow"
+    | "triliumInsertChildListItem" | "triliumInsertTableRowsAbove" | "triliumInsertTableRowsBelow";
+
 /**
- * The _Insert above_ and _Insert below_ submenus for `blocks`, which list the `/` palette's entries
- * that insert or wrap content and run the one picked in a new paragraph above or below `blocks`.
- * There are none without the palette or while `editor` cannot insert a paragraph.
+ * The insert items of the block handle menu for `blocks`. Beside a list item, they insert list
+ * items, and elsewhere _Insert above_ and _Insert below_ open the `/` palette's entries that insert
+ * or wrap content. In a table cell, the items that insert rows follow.
  */
-function buildInsertBesideMenuItems(
+function buildInsertItems(
     editor: CKTextEditor | null | undefined,
     blocks: readonly ModelElement[]
 ): MenuItem<CommandNames>[] {
     const first = blocks.at(0);
     const last = blocks.at(-1);
-    if (!editor?.plugins.has("TriliumSlashCommands")
-        || !editor.commands.get("insertParagraph")?.isEnabled || !first || !last) {
+    if (!editor || !first || !last) {
         return [];
+    }
+
+    const insertBeside = getInsertBesideBuilder(editor);
+    const command = (title: string, uiIcon: string, name: InsertCommandName) =>
+        getInsertCommandItem(editor, title, uiIcon, name);
+    const above = first.hasAttribute("listItemId")
+        ? [ command(t("block_reference.insert_item_above"), "bx bx-arrow-to-top",
+            "triliumInsertListItemAbove") ]
+        : [ insertBeside?.(t("block_reference.insert_above"), "bx bx-arrow-to-top",
+            first, "before") ];
+    const below = last.hasAttribute("listItemId")
+        ? [
+            command(t("block_reference.insert_item_below"), "bx bx-arrow-to-bottom",
+                "triliumInsertListItemBelow"),
+            command(t("block_reference.insert_child_item"), "bx bx-subdirectory-right",
+                "triliumInsertChildListItem")
+        ]
+        : [ insertBeside?.(t("block_reference.insert_below"), "bx bx-arrow-to-bottom",
+            last, "after") ];
+    const rows = [
+        command(t("table_context_menu.insert_rows_above"), "bx bx-horizontal-left bx-rotate-90",
+            "triliumInsertTableRowsAbove"),
+        command(t("table_context_menu.insert_rows_below"), "bx bx-horizontal-left bx-rotate-270",
+            "triliumInsertTableRowsBelow")
+    ];
+
+    return [ ...above, ...below, ...rows ]
+        .filter((item): item is MenuItem<CommandNames> => !!item);
+}
+
+/**
+ * Builds the _Insert above_ and _Insert below_ submenus, which list the `/` palette's entries that
+ * insert or wrap content and run the one picked in a new paragraph beside a block. It is `null`
+ * without the palette or while `editor` cannot insert a paragraph.
+ */
+function getInsertBesideBuilder(editor: CKTextEditor) {
+    if (!editor.plugins.has("TriliumSlashCommands")
+        || !editor.commands.get("insertParagraph")?.isEnabled) {
+        return null;
     }
 
     const palette = editor.plugins.get("TriliumSlashCommands") as TriliumSlashCommands;
     const definitions = palette.listAll();
-    const buildSubmenu = (
+    return (
         title: string, uiIcon: string, block: ModelElement, side: "before" | "after"
     ): MenuItem<CommandNames> => ({
         title,
@@ -449,13 +491,25 @@ function buildInsertBesideMenuItems(
         items: buildInsertMenuItems<CommandNames>(definitions,
             (definition) => palette.runBeside(definition, block, side))
     });
+}
 
-    return [
-        buildSubmenu(t("block_reference.insert_above"), "bx bx-horizontal-left bx-rotate-90",
-            first, "before"),
-        buildSubmenu(t("block_reference.insert_below"), "bx bx-horizontal-left bx-rotate-270",
-            last, "after")
-    ];
+/** A row that runs `name` in `editor`, or `null` while the command is disabled. */
+function getInsertCommandItem(
+    editor: CKTextEditor, title: string, uiIcon: string, name: InsertCommandName
+): MenuItem<CommandNames> | null {
+    if (!editor.commands.get(name)?.isEnabled) {
+        return null;
+    }
+
+    return {
+        title,
+        uiIcon,
+        handler: () => {
+            editor.execute(name);
+            editor.editing.view.focus();
+            editor.editing.view.scrollToTheSelection();
+        }
+    };
 }
 
 /** Runs `deleteBlocks` in `editor` and focuses it, or `undefined` while the command is disabled. */
