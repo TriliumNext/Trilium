@@ -545,8 +545,11 @@ export function renderReleaseNote(template: string, version: string, items: Note
         while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
             index++;
         }
-        const bulleted = BULLETED_SECTIONS.has(sectionItems[0].section);
-        output.push("", ...renderSection(sectionItems, bulleted), "");
+        const { section } = sectionItems[0];
+        output.push("", ...renderSection(sectionItems, {
+            bulleted: BULLETED_SECTIONS.has(section),
+            collapsible: section !== "Key highlights"
+        }), "");
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
@@ -562,10 +565,12 @@ function renderAdmonition(item: NoteItem) {
 }
 
 /**
- * Lists a section's items, nesting the items of an area that has several under one item named
- * after it, and prefixing a lone item with its area.
+ * Lists a section's items, prefixing a lone item with its area. The items of an area that has
+ * several go under one item named after it or, when `collapsible`, into a `<details>` block per
+ * area after the list, written in HTML as Trilium exports its collapsible blocks.
  */
-export function renderSection(items: NoteItem[], bulleted = false): string[] {
+export function renderSection(items: NoteItem[],
+    { bulleted = false, collapsible = false } = {}): string[] {
     const sorted = [ ...items ].sort((a, b) => a.date - b.date);
     const groups: { area?: string; items: NoteItem[] }[] = [];
     for (const item of sorted) {
@@ -577,9 +582,12 @@ export function renderSection(items: NoteItem[], bulleted = false): string[] {
         }
     }
 
+    const collapsed = collapsible ? groups.filter((group) => group.items.length > 1) : [];
+    const listed = groups.filter((group) => !collapsed.includes(group));
+
     const lines: string[] = [];
     const markerOf = (index: number) => (bulleted ? "*   " : `${index + 1}.  `);
-    for (const [ index, group ] of groups.entries()) {
+    for (const [ index, group ] of listed.entries()) {
         const marker = markerOf(index);
         if (group.items.length === 1) {
             const [ item ] = group.items;
@@ -593,6 +601,22 @@ export function renderSection(items: NoteItem[], bulleted = false): string[] {
             lines.push(...renderItem(`    ${markerOf(position)}`, item.text, item, " ".repeat(8)));
         }
     }
+
+    const tag = bulleted ? "ul" : "ol";
+    for (const group of collapsed) {
+        lines.push(
+            ...lines.length > 0 ? [ "" ] : [],
+            "<details>",
+            `    <summary>${escapeHtml(group.area ?? "")}</summary>`,
+            `    <${tag}>`,
+            ...group.items.map((item) => {
+                const [ text, ...details ] = renderItem("", item.text, item, "");
+                return `        <li>${markdownToHtml(text, details)}</li>`;
+            }),
+            `    </${tag}>`,
+            "</details>"
+        );
+    }
     return lines;
 }
 
@@ -603,6 +627,66 @@ function renderItem(marker: string, text: string, item: NoteItem, indent: string
         `${marker}${text}${credit}`,
         ...item.details.map((line) => (line ? `${indent}${line}` : ""))
     ];
+}
+
+/**
+ * Converts an entry's Markdown to the HTML of one list item: the text and its detail lines, whose
+ * `*` or `1.` items become a nested list and whose other lines continue the text. Only the inline
+ * syntax entries use is supported: links, `code`, `**strong**`, `*emphasis*`, backslash escapes
+ * and two-space hard breaks.
+ */
+export function markdownToHtml(text: string, details: string[] = []): string {
+    let html = inlineToHtml(text);
+    let list: { tag: string; items: string[] } | undefined;
+    const closeList = () => {
+        if (list) {
+            const items = list.items.map((item) => `<li>${item}</li>`).join("");
+            html += `<${list.tag}>${items}</${list.tag}>`;
+            list = undefined;
+        }
+    };
+
+    let hardBreak = / {2}$/.test(text);
+    for (const line of details) {
+        const item = /^\s*(\*|\d+\.)\s+(.*)$/.exec(line);
+        if (item) {
+            const tag = item[1] === "*" ? "ul" : "ol";
+            if (list?.tag !== tag) {
+                closeList();
+                list = { tag, items: [] };
+            }
+            list.items.push(inlineToHtml(item[2]));
+        } else if (line.trim()) {
+            closeList();
+            html += `${hardBreak ? "<br>" : " "}${inlineToHtml(line.trim())}`;
+        }
+        hardBreak = / {2}$/.test(line);
+    }
+    closeList();
+    return html;
+}
+
+function inlineToHtml(text: string) {
+    const kept: string[] = [];
+    const keep = (html: string) => `\u0000${kept.push(html) - 1}\u0000`;
+
+    let html = text.trimEnd()
+        .replace(/`([^`]+)`/g, (_match, code: string) => keep(`<code>${escapeHtml(code)}</code>`))
+        .replace(/\\([\\`*_[\]()#+\-.!<>])/g, (_match, character: string) =>
+            keep(escapeHtml(character)))
+        .replace(/&(?:[a-z]+|#\d+);/gi, (entity) => keep(entity));
+    html = escapeHtml(html)
+        .replace(/\[([^\]]*)\]\(([^)\s]+)\)/g, (_match, label: string, url: string) =>
+            `<a href="${url}">${label}</a>`)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>")
+        .replace(/(^|[^\w])_([^_\s][^_]*?)_(?!\w)/g, "$1<em>$2</em>");
+    return html.replace(/\u0000(\d+)\u0000/g, (_match, index: string) => kept[Number(index)]);
+}
+
+function escapeHtml(text: string) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
 }
 
 /**

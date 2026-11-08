@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
     categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
     escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
-    needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
-    parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors,
-    renderReleaseNote, renderSection
+    markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
+    parseCommits, parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest,
+    rankContributors, renderReleaseNote, renderSection
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -290,8 +290,44 @@ describe("renderSection", () => {
             "    1.  Third",
             "    2.  Fourth"
         ]);
-        expect(renderSection([ item("Third", 3, "Search"), item("Fourth", 4, "Search") ], true))
-            .toEqual([ "*   Search", "    *   Third", "    *   Fourth" ]);
+        expect(renderSection([ item("Third", 3, "Search"), item("Fourth", 4, "Search") ],
+            { bulleted: true })).toEqual([ "*   Search", "    *   Third", "    *   Fourth" ]);
+    });
+
+    it("folds the areas that have several items into a collapsible block after the list", () => {
+        expect(renderSection([
+            item("Third", 3, "Search"),
+            item("First", 1),
+            item("Second", 2, "LLM"),
+            item("Fourth `#x`", 4, "Search", [ "* A detail." ])
+        ], { collapsible: true })).toEqual([
+            "1.  First by @a & @b",
+            "2.  LLM: Second",
+            "",
+            "<details>",
+            "    <summary>Search</summary>",
+            "    <ol>",
+            "        <li>Third</li>",
+            "        <li>Fourth <code>#x</code><ul><li>A detail.</li></ul></li>",
+            "    </ol>",
+            "</details>"
+        ]);
+    });
+});
+
+describe("markdownToHtml", () => {
+    it("converts the inline syntax entries use", () => {
+        expect(markdownToHtml("[Crash on \\*save\\*](https://x/1) & `a<b>` by @a"))
+            .toBe("<a href=\"https://x/1\">Crash on *save*</a> &amp; "
+                + "<code>a&lt;b&gt;</code> by @a");
+        expect(markdownToHtml("**Bold** and *em* and _em_, not safe_fetch or 2*3*4"))
+            .toBe("<strong>Bold</strong> and <em>em</em> and <em>em</em>, not safe_fetch or 2*3*4");
+        expect(markdownToHtml("&lt;style> stays")).toBe("&lt;style&gt; stays");
+    });
+
+    it("continues the text with its details and nests their list items", () => {
+        expect(markdownToHtml("**Title**  ", [ "Body text.", "1.  One", "2.  Two", "After" ]))
+            .toBe("<strong>Title</strong><br>Body text.<ol><li>One</li><li>Two</li></ol> After");
     });
 });
 
