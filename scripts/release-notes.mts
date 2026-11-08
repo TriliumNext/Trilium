@@ -13,6 +13,10 @@
  * Internationalization, credited to the translators whose commits added lines to its catalogues,
  * or to the reporter of the issue its commit closes when no translator has a GitHub account.
  *
+ * A change of the sync protocol version (`SYNC_VERSION` in `app_info.ts`) or of the database
+ * version (the newest entry of `MIGRATIONS` in `migrations.ts`) since the previous release gets an
+ * entry under Compatibility, read from both files at the two revisions.
+ *
  * Every other change reaches the note through a changelog entry: a Markdown file in `.changelog/`
  * whose frontmatter names its section and area, the issues it closes and the people to credit
  * (see `.changelog/README.md`). An entry that closes an issue replaces that issue's generated
@@ -119,6 +123,11 @@ const GRAPHQL_BATCH_SIZE = 50;
 const CHANGELOG_DIR = join(ROOT, ".changelog");
 const PRE_RELEASE_DIR = join(CHANGELOG_DIR, "pre-release");
 const ENTRY_FILE_NAME = /^(\d{14})_[\w.-]+\.md$/;
+/** The files that hold the versions the Compatibility section compares between two releases. */
+const VERSION_SOURCES = {
+    sync: "packages/trilium-core/src/services/app_info.ts",
+    db: "packages/trilium-core/src/migrations/migrations.ts"
+};
 /** Changes in these areas never reach a user, so `--unlisted` does not ask for an entry. */
 const INTERNAL_AREAS =
     /^(?:deps|ci|build|release|skills|edit-docs|e2e|test|dev|nix|website|(?:web-)?clipper)\b/;
@@ -130,6 +139,7 @@ export const ENTRY_TYPES = {
     important: "Important",
     warning: "Warning",
     highlight: "Key highlights",
+    compatibility: "Compatibility",
     breaking: "Breaking changes",
     mobile: "Mobile improvements",
     fix: "Bugfixes",
@@ -146,7 +156,7 @@ export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
 /** Sections listed with bullets; the others are numbered. */
 const BULLETED_SECTIONS =
-    new Set<Section>([ "Key highlights", "Breaking changes", "Documentation" ]);
+    new Set<Section>([ "Key highlights", "Compatibility", "Breaking changes", "Documentation" ]);
 
 export interface Commit {
     hash: string;
@@ -217,6 +227,8 @@ export interface NoteItem {
     text: string;
     details: string[];
     credits: string[];
+    /** The issues and pull requests the item's changelog entry closes, when it has one. */
+    closes?: number[];
 }
 
 interface Options {
@@ -259,7 +271,14 @@ export function main(
     const languages = collectNewLanguages(base, commits, issues, github);
     const { entries, invalid } = readChangelogEntries();
 
-    const items = collectItems({ closings, issues, languages, entries, pullRequests, repository });
+    const collected =
+        collectItems({ closings, issues, languages, entries, pullRequests, repository });
+    const explanations = splitExplanations(collected, findVersionBumps(base, github));
+    const versions = { before: readProtocolVersions(base), after: readProtocolVersions("HEAD") };
+    const items = [
+        ...explanations.kept,
+        ...compatibilityItems(versions.before, versions.after, explanations)
+    ];
     const loose = items.filter((item) => !item.area && item.section !== "Key highlights"
         && items.some((other) => other.section === item.section && other.area));
     if (unreleased) {
@@ -598,7 +617,8 @@ export function collectItems(sources: ItemSources): NoteItem[] {
             .filter((login) => !entry.text.includes(`@${login}`));
         items.push({ section: entry.section, area: entry.area, date: entry.date, text,
             details: entry.details,
-            credits: entry.credits.length > 0 ? entry.credits : inferredCredits });
+            credits: entry.credits.length > 0 ? entry.credits : inferredCredits,
+            closes: closedBy(entry) });
     }
 
     const covered = new Set([
@@ -682,6 +702,113 @@ export function renderReleaseNote(template: string, version: string, items: Note
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
+}
+
+export interface ProtocolVersions {
+    sync?: number;
+    db?: number;
+}
+
+/**
+ * Reads the sync protocol version from the source of `app_info.ts` and the database version from
+ * the source of `migrations.ts`, whose newest migration comes first.
+ */
+export function parseProtocolVersions(sources: { sync?: string; db?: string }): ProtocolVersions {
+    const sync = /^const SYNC_VERSION = (\d+);/m.exec(sources.sync ?? "")?.[1];
+    const db = /^\s*version:\s*(\d+)/m.exec(sources.db ?? "")?.[1];
+    return { sync: sync ? Number(sync) : undefined, db: db ? Number(db) : undefined };
+}
+
+/** The issue and pull request numbers of the changes that moved each version. */
+export interface VersionBumps {
+    sync: number[];
+    db: number[];
+}
+
+/** The Compatibility entries that explain each version's bump, and every other item. */
+export interface Explanations {
+    kept: NoteItem[];
+    sync: NoteItem[];
+    db: NoteItem[];
+}
+
+/**
+ * One Compatibility item per version that differs between the two releases, with the entries that
+ * explain its bump nested under it.
+ */
+export function compatibilityItems(before: ProtocolVersions, after: ProtocolVersions,
+    explanations: Partial<Pick<Explanations, "sync" | "db">> = {}): NoteItem[] {
+    const items: NoteItem[] = [];
+    const changed = (key: keyof ProtocolVersions) =>
+        before[key] !== undefined && after[key] !== undefined && before[key] !== after[key];
+    if (changed("sync")) {
+        items.push(compatibilityItem(`The sync protocol version went from ${before.sync} to `
+            + `${after.sync}: instances on different versions cannot sync with each other, so `
+            + "update the server and every desktop and mobile client together.",
+        explanations.sync ?? []));
+    }
+    if (changed("db")) {
+        items.push(compatibilityItem(`The database version went from ${before.db} to ${after.db}: `
+            + "the database is migrated the first time this version opens it, after an automatic "
+            + "backup, and an earlier version refuses to open it afterwards.",
+        explanations.db ?? []));
+    }
+    return items;
+}
+
+function compatibilityItem(text: string, explanations: NoteItem[]): NoteItem {
+    const details = explanations.flatMap((item) => renderItem("*   ", item.text, item, "    "));
+    return { section: "Compatibility", date: 0, text, details, credits: [] };
+}
+
+/**
+ * Takes the Compatibility items whose entry closes a change behind a version bump out of `items`,
+ * so that `compatibilityItems` nests them under that version's item.
+ */
+export function splitExplanations(items: NoteItem[], bumps: VersionBumps): Explanations {
+    const result: Explanations = { kept: [], sync: [], db: [] };
+    for (const item of items) {
+        const explains = ([ "sync", "db" ] as const).find((key) => item.section === "Compatibility"
+            && item.closes?.some((number) => bumps[key].includes(number)));
+        result[explains ?? "kept"].push(item);
+    }
+    return result;
+}
+
+/**
+ * Finds the commits since `base` whose diff moves `SYNC_VERSION` or adds a migration, and names
+ * the pull requests GitHub lists them in and the issues their messages close.
+ */
+function findVersionBumps(base: string, github: GitHub): VersionBumps {
+    const moves = { sync: /^[-+]const SYNC_VERSION = /m, db: /^\+\s*version:\s*\d+/m };
+    const bumps: VersionBumps = { sync: [], db: [] };
+    for (const key of [ "sync", "db" ] as const) {
+        const commits = parseCommits(git("log", "--no-merges", "--reverse",
+            "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", `${base}..HEAD`, "--", VERSION_SOURCES[key]))
+            .filter((commit) =>
+                moves[key].test(git("show", "--format=", commit.hash, "--", VERSION_SOURCES[key])));
+        const associated = github.fetchAssociatedPullRequests(commits.map((commit) => commit.hash));
+        bumps[key] = [ ...new Set(commits.flatMap((commit) => [
+            ...associated.get(commit.hash) ?? [],
+            ...parseClosingReferences(`${commit.subject}\n${commit.body}`)
+        ])) ];
+    }
+    return bumps;
+}
+
+/** The versions at a revision; a file that does not exist there yields no version. */
+function readProtocolVersions(ref: string): ProtocolVersions {
+    const show = (path: string) => {
+        try {
+            return git("show", `${ref}:${path}`);
+        } catch {
+            return undefined;
+        }
+    };
+    return parseProtocolVersions({
+        sync: show(VERSION_SOURCES.sync),
+        db: show(VERSION_SOURCES.db)
+    });
 }
 
 /** The notice above the unreleased changes, naming the build they come from. */
@@ -1291,6 +1418,26 @@ class GitHub {
                     .filter((issue: any) => issue.repository.nameWithOwner === repository)
                     .map((issue: any) => issue.number)
             });
+        }
+        return result;
+    }
+
+    /** Maps each commit to the numbers of this repository's pull requests that contain it. */
+    fetchAssociatedPullRequests(hashes: string[]) {
+        const result = new Map<string, number[]>();
+        const nodes = this.query(hashes, (hash) => `object(expression: "${hash}") {
+            ... on Commit {
+                oid
+                associatedPullRequests(first: 10) {
+                    nodes { number repository { nameWithOwner } }
+                }
+            }
+        }`);
+        const repository = `${this.owner}/${this.name}`;
+        for (const node of nodes) {
+            result.set(node.oid, node.associatedPullRequests.nodes
+                .filter((pullRequest: any) => pullRequest.repository.nameWithOwner === repository)
+                .map((pullRequest: any) => pullRequest.number));
         }
         return result;
     }

@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
     AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings,
-    collectItems, type Commit, escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly,
-    isShippedSeparately, languageName, lintChangelogEntry, markdownToHtml, needsEntry,
-    type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits, parseDisplayLocales,
-    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote,
-    renderSection, stripAreaPrefix, unreleasedNotice
+    collectItems, type Commit, compatibilityItems, escapeMarkdown, findNewLanguages, type Issue,
+    isNightlyOnly, isShippedSeparately, languageName, lintChangelogEntry, markdownToHtml,
+    needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
+    parseDisplayLocales, parseNumstat, parseProtocolVersions, parsePullRequestNumber,
+    type PullRequest, rankContributors, renderReleaseNote, renderSection, splitExplanations,
+    stripAreaPrefix, unreleasedNotice
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -228,8 +229,9 @@ describe("parseChangelogEntry", () => {
         const source = "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
             "unknown key `scope`; expected type, area, closes or credits",
-            "`type` must be one of note, tip, important, warning, highlight, breaking, mobile, "
-                + "fix, improvement, documentation, i18n, technical, security, not `bugfix`",
+            "`type` must be one of note, tip, important, warning, highlight, compatibility, "
+                + "breaking, mobile, fix, improvement, documentation, i18n, technical, security, "
+                + "not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
             "the entry has no text after the frontmatter"
@@ -481,6 +483,64 @@ describe("renderReleaseNote", () => {
             "1.  Fixed",
             ""
         ].join("\n"));
+    });
+});
+
+describe("parseProtocolVersions", () => {
+    it("reads the sync protocol version and the newest migration's version", () => {
+        expect(parseProtocolVersions({
+            sync: "import x from \"./x.js\";\n\nconst SYNC_VERSION = 41;\n\nexport default {",
+            db: [
+                "export function getMaxMigrationVersion() {",
+                "    return MIGRATIONS[0].version;",
+                "}",
+                "const MIGRATIONS = [",
+                "    {",
+                "        version: 242,",
+                "        sql: \"\"",
+                "    },",
+                "    {",
+                "        version: 241,"
+            ].join("\n")
+        })).toEqual({ sync: 41, db: 242 });
+        expect(parseProtocolVersions({ sync: "const OTHER = 1;" }))
+            .toEqual({ sync: undefined, db: undefined });
+    });
+});
+
+describe("compatibilityItems", () => {
+    it("lists each version that changed, and nothing when one side is unknown", () => {
+        const sync = compatibilityItems({ sync: 39, db: 240 }, { sync: 41, db: 240 });
+        expect(sync.map((item) => item.section)).toEqual([ "Compatibility" ]);
+        expect(sync[0].text).toContain("sync protocol version went from 39 to 41");
+
+        const both = compatibilityItems({ sync: 39, db: 240 }, { sync: 41, db: 242 });
+        expect(both).toHaveLength(2);
+        expect(both[1].text).toContain("database version went from 240 to 242");
+
+        expect(compatibilityItems({ sync: 41, db: 242 }, { sync: 41, db: 242 })).toEqual([]);
+        expect(compatibilityItems({}, { sync: 41, db: 242 })).toEqual([]);
+    });
+
+    it("nests the entries that explain a bump under its item, as sub-items", () => {
+        const why: NoteItem = { section: "Compatibility", date: 5, text: "[Include notes](u)",
+            details: [ "*   Captions too." ], credits: [ "adoriandoran" ], closes: [ 11798 ] };
+        const [ item ] = compatibilityItems({ sync: 39, db: 240 }, { sync: 41, db: 240 },
+            { sync: [ why ] });
+        expect(item.details).toEqual([ "*   [Include notes](u) by @adoriandoran",
+            "    *   Captions too." ]);
+    });
+});
+
+describe("splitExplanations", () => {
+    it("takes out the Compatibility items that close a change behind a bump", () => {
+        const base = { date: 1, details: [], credits: [] };
+        const sync: NoteItem = { ...base, section: "Compatibility", text: "s", closes: [ 11798 ] };
+        const db: NoteItem = { ...base, section: "Compatibility", text: "d", closes: [ 5, 12000 ] };
+        const other: NoteItem = { ...base, section: "Compatibility", text: "o", closes: [ 7 ] };
+        const fix: NoteItem = { ...base, section: "Bugfixes", text: "f", closes: [ 11798 ] };
+        expect(splitExplanations([ sync, db, other, fix ], { sync: [ 11798 ], db: [ 12000 ] }))
+            .toEqual({ kept: [ other, fix ], sync: [ sync ], db: [ db ] });
     });
 });
 

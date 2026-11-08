@@ -1,6 +1,6 @@
 ---
-type: important
+type: compatibility
 closes: [11798]
 ---
 
-Sync version has been changed to extend the include note feature without risking data loss between clients. This means both the server and the client must be at the same version, and your mobile clients might be impacted as well.
+The sync protocol was extended so that the reworked include notes sync without risking data loss between clients, which is why this release raises its version.

@@ -54,7 +54,7 @@ Tree Quick Search failed when `/` was in the middle of the query on some reverse
 
 | Key | Required | Value |
 |---|---|---|
-| `type` | yes | The release note section: `highlight`, `breaking`, `mobile`, `fix`, `improvement`, `documentation`, `i18n`, `technical` or `security`. `note`, `tip`, `important` and `warning` become a GitHub admonition above the first section instead, for a notice that concerns the whole release. |
+| `type` | yes | The release note section: `highlight`, `compatibility`, `breaking`, `mobile`, `fix`, `improvement`, `documentation`, `i18n`, `technical` or `security`. Compatibility also lists, by itself, a sync protocol or database version that differs from the previous release; a `compatibility` entry whose `closes` names the pull request or issue behind that bump is nested under it as the reason. `note`, `tip`, `important` and `warning` become a GitHub admonition above the first section instead, for a notice that concerns the whole release. |
 | `area` | for `fix` and `improvement` | Puts the entry in a collapsible block named after it, such as `LLM`, `Search` or `Table collection`, even when it is the only entry of that area. One of `AREAS` in `scripts/release-notes.mts`, which the template lists; a change that fits none adds its area there. |
 | `closes` | no | Issue numbers or URLs. The note links the entry to them and leaves out the entries it would generate from their titles. It does not close the issue: that is still the `(closes #N)` in the commit subject. |
 | `credits` | no | GitHub usernames to thank. Defaults to whoever fixed the issues in `closes`. Leave out maintainers. |
