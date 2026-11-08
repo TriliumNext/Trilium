@@ -23,11 +23,12 @@
     flex-direction: column;
     padding: var(--ck-spacing-standard, var(--ck-spacing-base));
     box-sizing: border-box;
-	min-width: 400px;
+	min-width: 450px;
     max-width: 60vw;
-    /* Fits both fields at their 120px max-height */
-    max-height: 480px;
-    overflow: visible;
+    min-height: 350px;
+    max-height: 80vh;
+    overflow: hidden;
+    resize: both;
     user-select: text;
 }
 
@@ -74,10 +75,10 @@
 }
 .ck.ck-math-input .ck-mathlive-container,
 .ck.ck-math-input .ck-latex-textarea {
+    flex: 1 0 60px;
     max-width: 100%;
-    min-height: 60px;
-    max-height: 120px;
-    resize: both;
+    min-height: min-content;
+    resize: none;
     overflow: auto;
 }
 .ck.ck-math-input .ck-mathlive-container:focus-within {

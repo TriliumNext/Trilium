@@ -103,6 +103,53 @@ describe( 'MainFormView', () => {
 
 			expect( view.mathView?.value ).toBe( '' );
 		} );
+
+		it( 'shares the height of a resized form evenly between its two fields', async () => {
+			await vi.waitFor(
+				() => expect( view.mathInputView.mathfield ).not.toBeNull(),
+				{ timeout: 10000 }
+			);
+			const form = view.element as HTMLElement;
+			const container = form.querySelector( '.ck-mathlive-container' ) as HTMLElement;
+			const textarea = view.mathInputView.latexTextAreaView.element;
+			const height = ( element: Element ) => element.getBoundingClientRect().height;
+			const mathHeight = height( container );
+			const latexHeight = height( textarea );
+
+			expect( getComputedStyle( form ).resize ).toBe( 'both' );
+			expect( [ getComputedStyle( container ).resize, getComputedStyle( textarea ).resize ] )
+				.toEqual( [ 'none', 'none' ] );
+
+			form.style.height = `${ height( form ) + 200 }px`;
+
+			expect( height( container ) - mathHeight ).toBeCloseTo( 100, 0 );
+			expect( height( textarea ) - latexHeight ).toBeCloseTo( 100, 0 );
+		} );
+
+		it( 'keeps a resized form at least 450 by 350 pixels', () => {
+			const form = view.element as HTMLElement;
+
+			form.style.width = '100px';
+			form.style.height = '100px';
+
+			expect( [ form.offsetWidth, form.offsetHeight ] ).toEqual( [ 450, 350 ] );
+		} );
+
+		it( 'grows the math field to fit a tall formula', async () => {
+			await vi.waitFor(
+				() => expect( view.mathInputView.mathfield ).not.toBeNull(),
+				{ timeout: 10000 }
+			);
+			const container = view.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement;
+			const startHeight = container.getBoundingClientRect().height;
+
+			view.mathInputView.value = '\\begin{pmatrix}a\\\\b\\\\c\\\\d\\\\e\\end{pmatrix}';
+
+			await vi.waitFor( () => {
+				expect( container.getBoundingClientRect().height ).toBeGreaterThan( startHeight + 20 );
+			} );
+			expect( container.scrollHeight ).toBe( container.clientHeight );
+		} );
 	} );
 
 	describe( 'with the preview disabled', () => {
