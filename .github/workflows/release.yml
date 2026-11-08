@@ -72,6 +72,8 @@ jobs:
         # win-signing runner exits 0 without running anything, so the steps below have to
         # reach it through the same shell the build uses.
         shell: ${{ matrix.os.shell }}
+    env:
+      PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false"
     steps:
       - uses: actions/checkout@v7
         with:
