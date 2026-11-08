@@ -15,10 +15,11 @@ import type { ViewScope } from "./link.js";
 
 const {
     showError, showMessage, showMenu, copyHtml, copyHtmlWithToast, copyTextWithToast,
-    getTextEditorContaining, getNote, getNoteShareLink, buildSortSelectionMenuItem, attachments,
-    menuState
+    getTextEditorContaining, getNote, getNoteShareLink, buildSortSelectionMenuItem,
+    buildAiAssistantMenuItem, attachments, menuState
 } = vi.hoisted(() => ({
     buildSortSelectionMenuItem: vi.fn(),
+    buildAiAssistantMenuItem: vi.fn(),
     getNoteShareLink: vi.fn(),
     showError: vi.fn(),
     showMessage: vi.fn(),
@@ -46,7 +47,7 @@ vi.mock("../menus/context_menu.js", () => ({
 }));
 vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../menus/text_editor_context_menu.js")>(),
-    buildSortSelectionMenuItem, getTextEditorContaining
+    buildSortSelectionMenuItem, buildAiAssistantMenuItem, getTextEditorContaining
 }));
 vi.mock("./clipboard_ext.js", () => ({ copyHtml, copyHtmlWithToast, copyTextWithToast }));
 vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
@@ -265,7 +266,7 @@ describe("copyBlockShareLink", () => {
 });
 
 describe("openBlockHandleMenu", () => {
-    it("offers the copy items, then the sort and the delete item after separators", () => {
+    it("offers the copy items, then the AI assistant, sort and delete items apart", () => {
         const event = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
         const blocks = [ buildBlock("paragraph"), buildBlock("table"), buildBlock("paragraph") ];
         const header = { kind: "header", title: "block_handle_menu.block_count:3" };
@@ -294,6 +295,10 @@ describe("openBlockHandleMenu", () => {
         const copyBlocks = vi.fn();
         openBlockHandleMenu(event, blocks, { cutBlocks, copyBlocks, copyReference });
         openBlockHandleMenu(event, blocks, { copyBlocks, copyReference });
+        openBlockHandleMenu(event, blocks, {
+            copyBlocks, copyReference, copyShareLink, aiItem: { title: "AI" },
+            sortItem: { title: "SORT" }, deleteBlocks
+        });
 
         expect(showMenu).toHaveBeenNthCalledWith(1, expect.objectContaining({
             x: event.pageX,
@@ -332,6 +337,15 @@ describe("openBlockHandleMenu", () => {
         }));
         expect(showMenu).toHaveBeenNthCalledWith(8, expect.objectContaining({
             items: [ header, copyBlocksItem, copyItem ]
+        }));
+        expect(showMenu).toHaveBeenNthCalledWith(9, expect.objectContaining({
+            items: [
+                header, copyBlocksItem, copyItem,
+                expect.objectContaining({ title: "block_reference.copy_share_link" }),
+                { kind: "separator" }, { title: "AI" },
+                { kind: "separator" }, { title: "SORT" },
+                { kind: "separator" }, deleteItem
+            ]
         }));
     });
 
@@ -469,7 +483,7 @@ describe("buildReferenceConfig", () => {
             .toBeLessThan(save.mock.invocationCallOrder[0]);
     });
 
-    it("opens the block handle menu, which copies references or deletes the blocks", async () => {
+    it("opens the block handle menu, which copies, asks AI about or deletes the blocks", async () => {
         const { config, editor, save, openHelpPage } = buildSource();
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
@@ -510,6 +524,12 @@ describe("buildReferenceConfig", () => {
         const header = showMenu.mock.lastCall?.[0].items[0] as MenuHeader;
         header.actions?.[0]?.callback(new MouseEvent("click"));
         expect(openHelpPage).toHaveBeenCalledWith("NdowYOC1GFKS");
+
+        buildAiAssistantMenuItem.mockReturnValueOnce({ title: "AI" });
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
+        expect(buildAiAssistantMenuItem)
+            .toHaveBeenLastCalledWith(editor, "cke cke-trilium-ai", blocks);
+        expect(showMenu.mock.lastCall?.[0].items).toContainEqual({ title: "AI" });
     });
 
     it("puts the blocks on the clipboard, deleting them for a cut once copied", async () => {

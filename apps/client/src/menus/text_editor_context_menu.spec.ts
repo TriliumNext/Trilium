@@ -1,5 +1,6 @@
 import type {
-    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SortTargetKind
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, ModelElement,
+    SortTargetKind
 } from "@triliumnext/ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,7 +13,8 @@ vi.mock("../services/experimental_features.js", () => ({
 import { setEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuCommandItem, MenuItem } from "./context_menu.js";
 import {
-    buildAiActionsMenuItem, buildSortSelectionMenuItem, getTextEditorAtSelection
+    buildAiActionsMenuItem, buildAiAssistantMenuItem, buildSortSelectionMenuItem,
+    getTextEditorAtSelection
 } from "./text_editor_context_menu.js";
 
 const GROUPS: AiQuickActionGroup[] = [
@@ -208,7 +210,7 @@ describe("buildAiActionsMenuItem", () => {
         build();
         const item = await buildAiActionsMenuItem() as MenuCommandItem<string>;
 
-        expect(item.title).toBe("ai_assistant.title");
+        expect([ item.title, item.uiIcon ]).toEqual([ "ai_assistant.title", "bx bx-bot" ]);
         expect(titles(item.items ?? [])).toEqual([
             "ai_assistant.action_ask",
             "--- separator ---",
@@ -258,14 +260,18 @@ describe("buildAiActionsMenuItem", () => {
 
     // The rows the menu itself ends with — what a run answers to, the model it speaks to — reached
     // through a submenu when one holds others.
-    it("closes the whole menu with its footer rows", async () => {
+    it("closes the whole menu with its footer rows, headed as the toolbar heads them", async () => {
         const run = vi.fn();
         build({
             hasContext: false,
             menuFooter: [{
                 label: "Model: Sonnet 5",
                 iconClass: "bx bx-chip",
-                children: [{ label: "Sonnet 5", iconClass: "bx bx-check", run }]
+                children: [
+                    { label: "Sonnet 5", iconClass: "bx bx-check", heading: "Anthropic", run },
+                    { label: "Opus 5", iconClass: "bx bx-empty", run: vi.fn() },
+                    { label: "GPT-5", iconClass: "bx bx-empty", heading: "OpenAI", run: vi.fn() }
+                ]
             }]
         });
         const item = await buildAiActionsMenuItem() as MenuCommandItem<string>;
@@ -274,6 +280,12 @@ describe("buildAiActionsMenuItem", () => {
 
         const picker = commandItems(item.items ?? []).find((i) => i.title === "Model: Sonnet 5");
         expect([picker?.enabled, picker?.uiIcon]).toEqual([true, "bx bx-chip"]);
+        expect(titles(picker?.items ?? [])).toEqual([
+            "--- header ---", "Sonnet 5", "Opus 5", "--- header ---", "GPT-5"
+        ]);
+        expect(picker?.items?.filter((row) => "kind" in row)).toEqual([
+            { kind: "header", title: "Anthropic" }, { kind: "header", title: "OpenAI" }
+        ]);
 
         const [model] = commandItems(picker?.items ?? []);
         expect([model.title, model.uiIcon]).toEqual(["Sonnet 5", "bx bx-check"]);
@@ -314,6 +326,68 @@ describe("buildAiActionsMenuItem", () => {
 
         build({ hasPlugin: false });
         expect(await buildAiActionsMenuItem()).toBeNull();
+    });
+});
+
+describe("buildAiAssistantMenuItem", () => {
+    const blocks = [ "first", "last" ] as unknown as ModelElement[];
+    const blocksRange = { start: { before: "first" }, end: { after: "last" } };
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * An editor whose `blocks` have content or not, and whose assistant reports the opposite for
+     * the selection. `log` records the selected ranges and what the rows run.
+     */
+    function blocksEditor(hasContent: boolean) {
+        const log: unknown[] = [];
+        const { editor, ui } = fakeEditor({
+            domRoot: document.createElement("div"),
+            hasContext: !hasContent
+        });
+        const model = {
+            document: { version: 0 },
+            createPositionBefore: (block: string) => ({ before: block }),
+            createPositionAfter: (block: string) => ({ after: block }),
+            createRange: (start: object, end: object) => ({ start, end }),
+            hasContent: vi.fn(() => hasContent),
+            change: (callback: (writer: object) => void) => callback({
+                setSelection: (range: object) => log.push(range)
+            })
+        };
+        editor.execute.mockImplementation((name: string) => log.push(name));
+        ui.runQuickAction.mockImplementation((action: AiQuickAction) => log.push(action.id));
+        const blocksEditor = Object.assign(editor, { model }) as unknown as CKTextEditor;
+        const item = buildAiAssistantMenuItem(blocksEditor, "cke cke-trilium-ai", blocks);
+        return { item: item as MenuCommandItem<string>, model, log };
+    }
+
+    it("selects the blocks before a row runs, unless they changed since the menu opened", () => {
+        const { item, model, log } = blocksEditor(true);
+        const [ ask, fixTypos ] = commandItems(item.items ?? []);
+
+        expect([ item.uiIcon, ask.title, fixTypos.title ])
+            .toEqual([ "cke cke-trilium-ai", "ai_assistant.action_ask", "Fix typos" ]);
+        ask.handler?.(ask, null as never);
+        fixTypos.handler?.(fixTypos, null as never);
+        expect(log).toEqual([ blocksRange, "aiAssistant", blocksRange, "fixTypos" ]);
+
+        log.length = 0;
+        model.document.version += 1;
+        ask.handler?.(ask, null as never);
+        expect(log).toEqual([ "aiAssistant" ]);
+    });
+
+    it("enables the quick actions that need content by the content of the blocks", () => {
+        const isFixTyposEnabled = (hasContent: boolean) => {
+            const { item, model } = blocksEditor(hasContent);
+            expect(model.hasContent).toHaveBeenCalledWith(blocksRange);
+            return commandItems(item.items ?? []).find((row) => row.title === "Fix typos")?.enabled;
+        };
+
+        expect([ isFixTyposEnabled(true), isFixTyposEnabled(false) ]).toEqual([ true, false ]);
     });
 });
 

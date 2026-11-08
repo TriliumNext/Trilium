@@ -16,7 +16,8 @@ import contextMenu, {
 } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import {
-    buildInsertMenuItems, buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
+    buildAiAssistantMenuItem, buildInsertMenuItems, buildSortSelectionMenuItem,
+    getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
@@ -61,6 +62,8 @@ export interface BlockHandleMenuActions {
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
     copyShareLink?: () => void;
+    /** The _AI assistant_ submenu, after the copy items and a separator. */
+    aiItem?: MenuItem<CommandNames> | null;
     /** The _Sort_ submenu, after a separator. */
     sortItem?: MenuItem<CommandNames> | null;
     /** Deletes the selected blocks, shown last, after a separator. */
@@ -114,6 +117,7 @@ export function buildReferenceConfig(
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
                         : undefined,
+                    aiItem: buildAiAssistantMenuItem(editor, "cke cke-trilium-ai", blocks),
                     sortItem: buildSortSelectionMenuItem(editor),
                     deleteBlocks: getDeleteBlocksAction(editor),
                     openHelpPage: source.openHelpPage
@@ -137,8 +141,8 @@ export function openBlockHandleMenu(
     origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
     {
-        insertItems, cutBlocks, copyBlocks, copyReference, copyShareLink, sortItem, deleteBlocks,
-        openHelpPage
+        insertItems, cutBlocks, copyBlocks, copyReference, copyShareLink, aiItem, sortItem,
+        deleteBlocks, openHelpPage
     }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
@@ -174,6 +178,9 @@ export function openBlockHandleMenu(
             uiIcon: "bx bx-world",
             handler: copyShareLink
         });
+    }
+    if (aiItem) {
+        items.push({ kind: "separator" }, aiItem);
     }
     if (sortItem) {
         items.push({ kind: "separator" }, sortItem);
