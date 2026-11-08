@@ -46,7 +46,7 @@ Tree Quick Search failed when `/` was in the middle of the query on some reverse
 | Key | Required | Value |
 |---|---|---|
 | `type` | yes | The release note section: `highlight`, `breaking`, `mobile`, `fix`, `improvement`, `documentation`, `i18n`, `technical` or `security`. `tip`, `important` and `warning` become a GitHub admonition above the first section instead, for a notice that concerns the whole release. |
-| `area` | no | Groups entries under a collapsible block named after it, such as `LLM`, `Search` or `Table collection`. A lone entry is prefixed with it instead (`Search: …`). Spell it the same way as the other entries of that area. Left out, it defaults to the area of the commit or pull request that closes what `closes` names (`fix(search): …` gives `Search`, through `AREA_NAMES` in the script), except in Key highlights. |
+| `area` | no | Puts the entry in a collapsible block named after it, such as `LLM`, `Search` or `Table collection`, even when it is the only entry of that area. Give every fix and improvement one: the script lists the ones it cannot place. Spell it the same way as the other entries of that area. Left out, it defaults to the area of the commit or pull request that closes what `closes` names (`fix(search): …` gives `Search`, through `AREA_NAMES` in the script), except in Key highlights. |
 | `closes` | no | Issue numbers or URLs. The note links the entry to them and leaves out the entries it would generate from their titles. It does not close the issue: that is still the `(closes #N)` in the commit subject. |
 | `credits` | no | GitHub usernames to thank. Defaults to whoever fixed the issues in `closes`. Leave out maintainers. |
 

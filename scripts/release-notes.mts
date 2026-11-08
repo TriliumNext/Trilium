@@ -49,7 +49,7 @@ const CATALOGUE_DIRS = [ "apps/client/src/translations", "apps/server/src/assets
 const LOCALE_TAGS: Record<string, string> = { cn: "zh-CN", tw: "zh-TW" };
 const LANGUAGE_NAMES: Record<string, string> = { fa: "Persian (Farsi)" };
 const SEPARATELY_SHIPPED_LABELS = new Set([ "web-clipper" ]);
-const SEPARATELY_SHIPPED_AREAS = /^(?:web-)?clipper\b/;
+const SEPARATELY_SHIPPED_AREAS = /^(?:(?:web-)?clipper|website)\b/;
 /**
  * The release note area for a commit area, so a closed issue joins the entries of its subject.
  * Areas too broad to name one (`client`, `collections`, `server`) are left out.
@@ -77,6 +77,7 @@ const AREA_NAMES: Record<string, string> = {
     "markdown": "Markdown",
     "mermaid": "Mermaid",
     "mind_map": "Mind map",
+    "note-menu": "Interface",
     "oauth": "Authentication",
     "auth": "Authentication",
     "print": "Printing",
@@ -85,6 +86,7 @@ const AREA_NAMES: Record<string, string> = {
     "search": "Search",
     "quick_search": "Search",
     "share": "Share",
+    "sort": "Tree",
     "spreadsheet": "Spreadsheet",
     "sync": "Sync",
     "collections/table": "Table collection",
@@ -235,6 +237,8 @@ export function main({ version, from, stdout, force, unlisted, repository }: Opt
     const { entries, invalid } = readChangelogEntries();
 
     const items = collectItems({ closings, issues, languages, entries, pullRequests, repository });
+    const loose = items.filter((item) => !item.area && item.section !== "Key highlights"
+        && items.some((other) => other.section === item.section && other.area));
     const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, items);
     if (stdout) {
         process.stdout.write(note);
@@ -250,6 +254,12 @@ export function main({ version, from, stdout, force, unlisted, repository }: Opt
             console.error(`  skipped #${closing.issue}: not found on GitHub`);
         } else if (issue.state === "OPEN") {
             console.error(`  #${closing.issue} is still open: ${issue.title}`);
+        }
+    }
+    if (loose.length > 0) {
+        console.error(`  ${loose.length} items have no area, so they stay outside the groups:`);
+        for (const item of loose) {
+            console.error(`    ${item.section}: ${item.text.slice(0, 80)}`);
         }
     }
     for (const { file, errors } of invalid) {
@@ -499,8 +509,8 @@ export function stripAreaPrefix(title: string, area: string) {
 }
 
 /**
- * Tells whether an issue belongs to a product released on its own (the web clipper): it carries
- * that product's label, or every change closing it is in that product's area.
+ * Tells whether an issue belongs to a product released on its own (the web clipper, the website):
+ * it carries that product's label, or every change closing it is in that product's area.
  */
 export function isShippedSeparately(subjects: string[], labels: string[]) {
     return labels.some((label) => SEPARATELY_SHIPPED_LABELS.has(label))
@@ -640,8 +650,9 @@ function renderAdmonition(item: NoteItem) {
 
 /**
  * Lists a section's items, prefixing a lone item with its area. The items of an area that has
- * several go under one item named after it or, when `collapsible`, into a `<details>` block per
- * area after the list, written in HTML as Trilium exports its collapsible blocks.
+ * several go under one item named after it. When `collapsible`, every area goes into a
+ * `<details>` block after the list instead, written in HTML as Trilium exports its collapsible
+ * blocks, and only the items without an area stay in the list.
  */
 export function renderSection(items: NoteItem[],
     { bulleted = false, collapsible = false } = {}): string[] {
@@ -656,7 +667,7 @@ export function renderSection(items: NoteItem[],
         }
     }
 
-    const collapsed = collapsible ? groups.filter((group) => group.items.length > 1) : [];
+    const collapsed = collapsible ? groups.filter((group) => group.area) : [];
     const listed = groups.filter((group) => !collapsed.includes(group));
 
     const lines: string[] = [];

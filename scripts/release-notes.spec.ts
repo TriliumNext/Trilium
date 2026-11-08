@@ -125,11 +125,12 @@ describe("areaOf", () => {
 });
 
 describe("isShippedSeparately", () => {
-    it("recognizes web clipper issues by label or by the area of every closing change", () => {
+    it("recognizes web clipper and website issues by label or by closing change areas", () => {
         expect(isShippedSeparately([ "Keep indentation (closes #1442)" ], [ "web-clipper" ]))
             .toBe(true);
         expect(isShippedSeparately([ "feat(clipper): a", "fix(web-clipper): b" ], [])).toBe(true);
         expect(isShippedSeparately([ "feat(clipper): a", "fix(server): b" ], [])).toBe(false);
+        expect(isShippedSeparately([ "fix(website): deploy releases" ], [])).toBe(true);
         expect(isShippedSeparately([ "feat(text): a" ], [ "ckeditor" ])).toBe(false);
     });
 });
@@ -321,7 +322,7 @@ describe("renderSection", () => {
             { bulleted: true })).toEqual([ "*   Search", "    *   Third", "    *   Fourth" ]);
     });
 
-    it("folds the areas that have several items into a collapsible block after the list", () => {
+    it("folds every area into a collapsible block after the list", () => {
         expect(renderSection([
             item("Third", 3, "Search"),
             item("First", 1),
@@ -329,7 +330,13 @@ describe("renderSection", () => {
             item("Fourth `#x`", 4, "Search", [ "* A detail." ])
         ], { collapsible: true })).toEqual([
             "1.  First by @a & @b",
-            "2.  LLM: Second",
+            "",
+            "<details>",
+            "    <summary>LLM</summary>",
+            "    <ol>",
+            "        <li>Second</li>",
+            "    </ol>",
+            "</details>",
             "",
             "<details>",
             "    <summary>Search</summary>",
