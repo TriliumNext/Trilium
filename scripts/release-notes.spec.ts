@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
     categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
     escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
-    type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits, parseDisplayLocales,
-    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote,
-    renderSection
+    needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
+    parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors,
+    renderReleaseNote, renderSection
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -68,6 +68,26 @@ describe("collectClosings", () => {
             { issue: 40, date: 4, subjects: [ "feat(tree): menu (closes #40)" ],
                 contributors: [ "other" ] }
         ]);
+    });
+});
+
+describe("needsEntry", () => {
+    it("asks for an entry from pull requests a person opened for a user-visible change", () => {
+        const pr = (title: string, author = "adoriandoran", closes: number[] = []): PullRequest =>
+            ({ number: 1, title, author, closes });
+        expect(needsEntry(pr("Text editor: improvements"))).toBe(true);
+        expect(needsEntry(pr("feat(search): saved queries", "eliandoran"))).toBe(true);
+        expect(needsEntry(pr("fix(share): broken links"))).toBe(true);
+        expect(needsEntry(pr("fix(share): broken links", "x", [ 12 ]))).toBe(false);
+        expect(needsEntry(pr("fix(share): broken links (closes #12)"))).toBe(false);
+        expect(needsEntry(pr("Update dependency vite to v8", "renovate"))).toBe(false);
+        expect(needsEntry(pr("Translations update from Hosted Weblate", "weblate"))).toBe(false);
+        expect(needsEntry(pr("chore(deps): bump", "dependabot[bot]"))).toBe(false);
+        expect(needsEntry(pr("fix(deps): update ai sdk"))).toBe(false);
+        expect(needsEntry(pr("chore(release): prepare"))).toBe(false);
+        expect(needsEntry(pr("docs(user): typo"))).toBe(false);
+        expect(needsEntry(pr("web-clipper: prevent cloning", "contributor"))).toBe(false);
+        expect(needsEntry(pr("fix(clipper): keep images"))).toBe(false);
     });
 });
 

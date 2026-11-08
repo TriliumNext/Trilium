@@ -212,10 +212,18 @@ export function main({ version, from, stdout, force, unlisted, repository }: Opt
     }
 
     if (unlisted) {
-        const changes = findUnlistedChanges(base, commits);
-        console.error(`\n${changes.length} fixes and features close no issue `
-            + "and come with no changelog entry:");
-        for (const commit of changes) {
+        const listed = {
+            numbers: new Set(entries.flatMap((entry) => entry.closes)),
+            hashes: new Set(languages.map((language) => language.hash))
+        };
+        const changes = findUnlistedChanges(base, commits, pullRequests, listed);
+        console.error(`\n${changes.pullRequests.length} merged pull requests and `
+            + `${changes.commits.length} commits on main close no issue and come with no `
+            + "changelog entry:");
+        for (const { number, title, author } of changes.pullRequests) {
+            console.error(`  #${number} ${title} (@${author ?? "?"})`);
+        }
+        for (const commit of changes.commits) {
             console.error(`  ${commit.hash.slice(0, 10)} ${commit.subject}`);
         }
     }
@@ -796,15 +804,20 @@ function createChangelogEntry(slug: string) {
 }
 
 /**
- * Returns the fixes, features and performance changes since `base` that a user might notice but
- * the note does not list: they close no issue, their area is not an internal one, no changelog
- * entry arrives with them (in the same commit on `main` or the same merged branch), and, for a
- * fix, they change code that `base` already had.
+ * Returns the changes since `base` that a user might notice but the note does not list, because
+ * they close no issue and no changelog entry arrives with them. A pull request also counts as
+ * listed when an entry names it in `closes` or it introduces one of the new languages.
+ *
+ * A merged pull request is judged as a whole, whatever its commits are called, by
+ * `needsEntry()`. A commit on `main` outside any pull request counts when it is a fix, feature or
+ * performance change outside the internal areas and, for a fix, changes code `base` already had.
  */
-function findUnlistedChanges(base: string, commits: Commit[]) {
+function findUnlistedChanges(base: string, commits: Commit[],
+    pullRequests: Map<number, PullRequest>,
+    listed: { numbers: Set<number>; hashes: Set<string> }) {
     const inRange = new Set(commits.map((commit) => commit.hash));
     const byHash = new Map(commits.map((commit) => [ commit.hash, commit ]));
-    const unlisted: Commit[] = [];
+    const unlisted = { pullRequests: [] as PullRequest[], commits: [] as Commit[] };
 
     const firstParentLog =
         git("log", "--first-parent", "--reverse", "--format=%H %P", `${base}..HEAD`);
@@ -820,10 +833,22 @@ function findUnlistedChanges(base: string, commits: Commit[]) {
             continue;
         }
 
+        const merge = byHash.get(hash);
+        const pullRequestNumber = merge ? parsePullRequestNumber(merge.subject) : undefined;
+        const pullRequest = pullRequestNumber ? pullRequests.get(pullRequestNumber) : undefined;
         const unit = otherParents.length > 0
             ? git("rev-list", "--no-merges", "--reverse", `${firstParent}..${hash}`).split("\n")
                 .filter(Boolean)
             : [ hash ];
+        if (pullRequest) {
+            const covered = listed.numbers.has(pullRequest.number)
+                || unit.some((commitHash) => listed.hashes.has(commitHash))
+                || unlisted.pullRequests.includes(pullRequest);
+            if (!covered && needsEntry(pullRequest)) {
+                unlisted.pullRequests.push(pullRequest);
+            }
+            continue;
+        }
         for (const commitHash of unit) {
             const commit = byHash.get(commitHash);
             const parsed = commit ? parseConventionalSubject(commit.subject) : undefined;
@@ -835,10 +860,29 @@ function findUnlistedChanges(base: string, commits: Commit[]) {
             if (parsed.type === "fix" && !changesShippedCode(commit.hash, inRange)) {
                 continue;
             }
-            unlisted.push(commit);
+            unlisted.commits.push(commit);
         }
     }
     return unlisted;
+}
+
+/**
+ * Tells whether a merged pull request that adds no changelog entry should have one: it closes no
+ * issue, a person opened it (not Renovate or Weblate), it is not for the separately shipped web
+ * clipper, and its title is either free-form or a fix, feature or performance change outside the
+ * internal areas.
+ */
+export function needsEntry(pullRequest: PullRequest) {
+    const author = pullRequest.author ?? "";
+    if (pullRequest.closes.length > 0 || parseClosingReferences(pullRequest.title).length > 0
+        || author.endsWith("[bot]") || [ "renovate", "weblate", "dependabot" ].includes(author)
+        || SEPARATELY_SHIPPED_AREAS.test(pullRequest.title.toLowerCase())) {
+        return false;
+    }
+
+    const parsed = parseConventionalSubject(pullRequest.title);
+    return !parsed
+        || ([ "fix", "feat", "perf" ].includes(parsed.type) && !INTERNAL_AREAS.test(parsed.area));
 }
 
 /**
