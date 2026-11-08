@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/standalone",
-  "version": "0.106.1",
+  "version": "0.107.0",
   "description": "Standalone client for TriliumNext with SQLite WASM backend",
   "private": true,
   "license": "AGPL-3.0-or-later",
