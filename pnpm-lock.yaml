@@ -202,7 +202,7 @@ importers:
         version: 1.8.0
       '@fullcalendar/rrule':
         specifier: 7.1.4
-        version: 7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.6)
+        version: 7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -283,10 +283,10 @@ importers:
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
         specifier: 7.1.4
-        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       gridstack:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.1.0
+        version: 14.1.0
       i18next:
         specifier: 26.7.1
         version: 26.7.1(typescript@6.0.3)
@@ -339,8 +339,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
       terra-draw:
         specifier: 1.39.0
         version: 1.39.0
@@ -788,8 +788,8 @@ importers:
         specifier: 8.5.0
         version: 8.5.0(encoding@0.1.13)(supports-color@7.2.0)
       openid-client:
-        specifier: 6.8.8
-        version: 6.8.8
+        specifier: 6.8.9
+        version: 6.8.9
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -885,7 +885,7 @@ importers:
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
         specifier: 7.1.4
-        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       i18next:
         specifier: 26.7.1
         version: 26.7.1(typescript@6.0.3)
@@ -932,8 +932,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.4
@@ -7626,8 +7626,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  gridstack@14.0.0:
-    resolution: {integrity: sha512-jkoGugExoCUHNbC3IMQEHUtf3+quii8BI+tTsP8h0bpHjf3Jr3KdCUbHpmqGz3VVHEb5tqciL6foBLum8/32FQ==}
+  gridstack@14.1.0:
+    resolution: {integrity: sha512-nF6asbGVnIJH7N9pa+DCaSBGAoEvTNS7jYHUJfcNN+5bTD3a4pLEKvGia7W/6NbjiJWms9e3Zih1YuU4coT3QA==}
 
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
@@ -8243,6 +8243,9 @@ packages:
 
   jose@6.2.12:
     resolution: {integrity: sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw==}
+
+  jose@6.2.15:
+    resolution: {integrity: sha512-qdF6ewcZARtef63fJ9AKKZPgxw+t7USH6HLXYcD4CrdmSvDp79rpJSPFEKc90QBeGS63u1KQtN2MZQHC0yDIzA==}
 
   jotai-scope@0.7.2:
     resolution: {integrity: sha512-Gwed97f3dDObrO43++2lRcgOqw4O2sdr4JCjP/7eHK1oPACDJ7xKHGScpJX9XaflU+KBHXF+VhwECnzcaQiShg==}
@@ -9311,8 +9314,8 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
-  openid-client@6.8.8:
-    resolution: {integrity: sha512-ZsucJA5Ad04Uv7YN4ql+s4GXNmb9uAYQwyJTsJx7CH/MX3JZioLE2pVKi1SC+YrbSLA4Px3Gi30dMjgOZtb6pA==}
+  openid-client@6.8.9:
+    resolution: {integrity: sha512-6mXMRNJxDOf6BflEWLXul1UwzLFz++9Ofz1PYwPwwsJsyXBsbfkO+Jo255SW1qnFNLYz4EJWHz42X4OJJrya/g==}
 
   opentype.js@2.0.0:
     resolution: {integrity: sha512-kCyjv6xdDY1W/jLWZ/L3QhhTlKUqDZMQ5+Jdlw12b3dXkKNpYBqqlMMj0YDQPShWFTMwgZI1hG14kN3XUDSg/A==}
@@ -10614,14 +10617,14 @@ packages:
     resolution: {integrity: sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==}
     engines: {node: '>=6.0.0'}
 
-  temporal-polyfill@1.0.6:
-    resolution: {integrity: sha512-tYyEry1HLGUDbm2356W3iYD0OZdo7rlP7h98Zr/EnjqLZQwTAfcBDUvJnJbfA15v/vQad57hJZScG5O0W2oKEA==}
+  temporal-polyfill@1.0.8:
+    resolution: {integrity: sha512-RCCGa0GddT099XG49ijdD0tDf86L8vfuZun1+JyJiO4Y2NP9PACQsG0OnvNPXwVLisdvhr/zqL2nhKQmXXx08A==}
 
   temporal-spec@1.0.1:
     resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
 
-  temporal-utils@1.0.3:
-    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+  temporal-utils@1.0.4:
+    resolution: {integrity: sha512-4mAcgbWlaxe+gn23gk8g0iHxCVGVOhKzSCfF5HM3lfvH8BdT+/pBmH/R/E4CrIse+koUgs8ThkPzCLnui6Fi8w==}
 
   terminal-size@4.0.1:
     resolution: {integrity: sha512-avMLDQpUI9I5XFrklECw1ZEUPJhqzcwSWsyyI8blhRLT+8N1jLJWLWWYQpB2q2xthq8xDvjZPISVh53T/+CLYQ==}
@@ -13736,21 +13739,21 @@ snapshots:
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6)':
+  '@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8)':
     dependencies:
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/core@7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)':
+  '@fullcalendar/core@7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      temporal-polyfill: 1.0.6
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/rrule@7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.6)':
+  '@fullcalendar/rrule@7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       rrule: 2.8.1
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
   '@gerrit0/mini-shiki@3.23.0':
     dependencies:
@@ -19007,7 +19010,7 @@ snapshots:
       joi: 17.13.9
       jose: 6.2.12
       on-headers: 1.1.0
-      openid-client: 6.8.8
+      openid-client: 6.8.9
       url-join: 4.0.1
       util-promisify: 3.0.0
     transitivePeerDependencies:
@@ -19354,12 +19357,12 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.7.1
 
-  fullcalendar@7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6):
+  fullcalendar@7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8):
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       preact: 11.1.1(preact-render-to-string@6.8.2)
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -19509,7 +19512,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  gridstack@14.0.0: {}
+  gridstack@14.1.0: {}
 
   hachure-fill@0.5.2: {}
 
@@ -20205,6 +20208,8 @@ snapshots:
   jose@5.9.6: {}
 
   jose@6.2.12: {}
+
+  jose@6.2.15: {}
 
   jotai-scope@0.7.2(jotai@2.11.0(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -21445,9 +21450,9 @@ snapshots:
 
   opener@1.5.2: {}
 
-  openid-client@6.8.8:
+  openid-client@6.8.9:
     dependencies:
-      jose: 6.2.12
+      jose: 6.2.15
       oauth4webapi: 3.8.8
 
   opentype.js@2.0.0: {}
@@ -22968,14 +22973,14 @@ snapshots:
       rimraf: 2.6.3
     optional: true
 
-  temporal-polyfill@1.0.6:
+  temporal-polyfill@1.0.8:
     dependencies:
       temporal-spec: 1.0.1
-      temporal-utils: 1.0.3
+      temporal-utils: 1.0.4
 
   temporal-spec@1.0.1: {}
 
-  temporal-utils@1.0.3: {}
+  temporal-utils@1.0.4: {}
 
   terminal-size@4.0.1: {}
 
