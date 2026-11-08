@@ -54,10 +54,24 @@ const LANGUAGE_NAMES: Record<string, string> = { fa: "Persian (Farsi)" };
 const SEPARATELY_SHIPPED_LABELS = new Set([ "web-clipper" ]);
 const SEPARATELY_SHIPPED_AREAS = /^(?:(?:web-)?clipper|website)\b/;
 /**
+ * The areas a changelog entry can name, each a collapsible group of the note. A fix or an
+ * improvement must name one, so that Bugfixes and Improvements list no loose items.
+ */
+export const AREAS = [
+    "Attributes", "Authentication", "Board", "Calendar", "Code", "Collections", "Desktop",
+    "Drawing canvases", "ETAPI", "Flatpak", "General", "Geo map", "Import and export", "Interface",
+    "Launch bar", "LLM", "Markdown", "Mermaid", "Mind map", "Performance", "Printing", "Quick edit",
+    "Relation map", "Render notes", "Scripting", "Search", "Server", "Settings", "Share",
+    "Spreadsheet", "Sync", "Table collection", "Tables in text notes", "Tabs", "Templates",
+    "Text editor", "Tree", "Web clipper"
+];
+/** Sections whose entries must name an area. */
+const AREA_SECTIONS = new Set<string>([ "Bugfixes", "Improvements" ]);
+/**
  * The release note area for a commit area, so a closed issue joins the entries of its subject.
  * Areas too broad to name one (`client`, `collections`, `server`) are left out.
  */
-const AREA_NAMES: Record<string, string> = {
+export const AREA_NAMES: Record<string, string> = {
     "attributes": "Attributes",
     "promoted_attributes": "Attributes",
     "promoted-attributes": "Attributes",
@@ -65,7 +79,7 @@ const AREA_NAMES: Record<string, string> = {
     "collections/board": "Board",
     "calendar": "Calendar",
     "collections/calendar": "Calendar",
-    "canvas": "Canvas",
+    "canvas": "Drawing canvases",
     "code": "Code",
     "codemirror": "Code",
     "desktop": "Desktop",
@@ -581,11 +595,7 @@ export function collectItems(sources: ItemSources): NoteItem[] {
         const inferredCredits = [ ...new Set(closedBy(entry).flatMap((number) =>
             closingsByIssue.get(number)?.contributors ?? [])) ]
             .filter((login) => !entry.text.includes(`@${login}`));
-        const area = entry.area ?? (entry.section === "Key highlights" ? undefined : areaOf([
-            ...closedBy(entry).flatMap((number) => closingsByIssue.get(number)?.subjects ?? []),
-            ...entry.closes.flatMap((number) => pullRequests?.get(number)?.title ?? [])
-        ]));
-        items.push({ section: entry.section, area, date: entry.date, text,
+        items.push({ section: entry.section, area: entry.area, date: entry.date, text,
             details: entry.details,
             credits: entry.credits.length > 0 ? entry.credits : inferredCredits });
     }
@@ -951,6 +961,77 @@ export function parseChangelogEntry(file: string, source: string):
     };
 }
 
+/**
+ * Returns the problems of a well-formed entry: a fix or an improvement without an area, or an area
+ * missing from `AREAS`, with the closest known spelling when there is one.
+ */
+export function lintChangelogEntry(entry: ChangelogEntry): string[] {
+    const known = AREAS.join(", ");
+    if (!entry.area) {
+        return AREA_SECTIONS.has(entry.section)
+            ? [ `\`area\` is required for a fix or an improvement; one of ${known}` ] : [];
+    }
+    if (AREAS.includes(entry.area)) {
+        return [];
+    }
+
+    const wanted = entry.area.toLowerCase();
+    const closest = AREAS.find((area) => area.toLowerCase() === wanted)
+        ?? AREAS.find((area) => editDistance(area.toLowerCase(), wanted) <= 2);
+    return [ closest
+        ? `unknown area \`${entry.area}\`; did you mean \`${closest}\`?`
+        : `unknown area \`${entry.area}\`; one of ${known}, or add it to \`AREAS\` in `
+            + "scripts/release-notes.mts" ];
+}
+
+function editDistance(a: string, b: string) {
+    let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+    for (const [ i, charA ] of [ ...a ].entries()) {
+        const current = [ i + 1 ];
+        for (const [ j, charB ] of [ ...b ].entries()) {
+            current.push(Math.min(previous[j + 1] + 1, current[j] + 1,
+                previous[j] + (charA === charB ? 0 : 1)));
+        }
+        previous = current;
+    }
+    return previous[b.length];
+}
+
+/**
+ * Checks every file in `.changelog/` and `pre-release/` and prints its problems, as GitHub
+ * annotations when run in GitHub Actions. With `jsonPath`, also writes them there as
+ * `{ file, message }` records. Fails when there is one.
+ */
+function lintChangelogEntries(jsonPath?: string) {
+    const problems: { file: string; message: string }[] = [];
+    for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {
+        if (!existsSync(dir)) {
+            continue;
+        }
+        for (const name of readdirSync(dir).filter((it) => it.endsWith(".md") && it !== "README.md")
+            .sort()) {
+            const file = join(dir, name);
+            const { entry, errors } = parseChangelogEntry(file, readFileSync(file, "utf-8"));
+            const relative = file.slice(ROOT.length + 1);
+            for (const message of [ ...errors, ...entry ? lintChangelogEntry(entry) : [] ]) {
+                problems.push({ file: relative, message });
+            }
+        }
+    }
+
+    for (const { file, message } of problems) {
+        console.error(process.env.GITHUB_ACTIONS
+            ? `::error file=${file}::${message}` : `${file}: ${message}`);
+    }
+    if (jsonPath) {
+        writeFileSync(jsonPath, JSON.stringify(problems, null, 2));
+    }
+    if (problems.length > 0) {
+        throw new Error(`${problems.length} problems in .changelog/; see .changelog/README.md.`);
+    }
+    console.log("Every changelog entry is well defined.");
+}
+
 /** Trims the end of a line but keeps a Markdown hard break (two trailing spaces). */
 function trimKeepingBreak(line: string) {
     if (line.trim() === "") {
@@ -995,6 +1076,19 @@ function consumeChangelogEntries(version: string) {
 }
 
 /** Writes a changelog entry to fill in, named after the current time and the slug. */
+function wrap(text: string, width: number) {
+    const lines: string[] = [];
+    for (const word of text.split(" ")) {
+        const last = lines.at(-1);
+        if (last !== undefined && last.length + word.length < width) {
+            lines[lines.length - 1] = `${last} ${word}`;
+        } else {
+            lines.push(word);
+        }
+    }
+    return lines;
+}
+
 function createChangelogEntry(slug: string) {
     if (!/^[\w.-]+$/.test(slug)) {
         throw new Error("Usage: pnpm changelog:new <slug>, "
@@ -1008,7 +1102,8 @@ function createChangelogEntry(slug: string) {
         "---",
         `# ${Object.keys(ENTRY_TYPES).join(" | ")}`,
         "type: fix",
-        "# Optional: groups entries under one item, such as LLM, Search or Table collection.",
+        "# Required for fix and improvement: the group the entry goes to, one of",
+        ...wrap(AREAS.join(", "), 98).map((line) => `# ${line}`),
         "area:",
         "# Optional: issue numbers. Their generated entries give way to this one.",
         "closes: []",
@@ -1289,6 +1384,9 @@ if (process.argv[1] === SCRIPT_PATH) {
     try {
         if (args[0] === "new") {
             createChangelogEntry(args[1] ?? "");
+        } else if (args[0] === "lint") {
+            const jsonIndex = args.indexOf("--json");
+            lintChangelogEntries(jsonIndex >= 0 ? args[jsonIndex + 1] : undefined);
         } else if (args[0] === "consume" && args[1] && /^v\d/.test(args[1])) {
             consumeChangelogEntries(args[1]);
         } else if (args[0] === "unreleased") {
@@ -1307,6 +1405,7 @@ if (process.argv[1] === SCRIPT_PATH) {
                 "           [--stdout] [--force] [--unlisted]",
                 "       release-notes.mts unreleased [--from <tag>]",
                 "       release-notes.mts consume <version>",
+                "       release-notes.mts lint [--json <file>]",
                 "       release-notes.mts new <slug>"
             ].join("\n"));
         } else {

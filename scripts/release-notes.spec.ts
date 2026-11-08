@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    areaOf, categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
+    AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
     escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
-    markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
+    lintChangelogEntry, markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
     parseCommits, parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest,
     rankContributors, renderReleaseNote, renderSection, stripAreaPrefix, unreleasedNotice
 } from "./release-notes.mjs";
@@ -239,6 +239,29 @@ describe("parseChangelogEntry", () => {
     });
 });
 
+describe("lintChangelogEntry", () => {
+    const entry: ChangelogEntry = { file: "a.md", date: 0, section: "Bugfixes", area: "Search",
+        closes: [], credits: [], text: "x", details: [] };
+
+    it("requires a known area on fixes and improvements", () => {
+        expect(lintChangelogEntry(entry)).toEqual([]);
+        expect(lintChangelogEntry({ ...entry, section: "Mobile improvements", area: undefined }))
+            .toEqual([]);
+        expect(lintChangelogEntry({ ...entry, section: "Improvements", area: undefined })[0])
+            .toMatch(/^`area` is required for a fix or an improvement; one of Attributes, /);
+        expect(lintChangelogEntry({ ...entry, area: "search" }))
+            .toEqual([ "unknown area `search`; did you mean `Search`?" ]);
+        expect(lintChangelogEntry({ ...entry, area: "Serch" }))
+            .toEqual([ "unknown area `Serch`; did you mean `Search`?" ]);
+        expect(lintChangelogEntry({ ...entry, section: "Breaking changes", area: "Plugins" })[0])
+            .toMatch(/^unknown area `Plugins`; one of Attributes, .*, or add it to `AREAS`/);
+    });
+
+    it("knows every area that commit areas map to", () => {
+        expect(Object.values(AREA_NAMES).filter((area) => !AREAS.includes(area))).toEqual([]);
+    });
+});
+
 describe("collectItems", () => {
     const issue = (number: number, title: string, labels: string[] = []): [ number, Issue ] =>
         [ number, { number, title, url: `https://x/${number}`, state: "CLOSED", labels } ];
@@ -270,9 +293,7 @@ describe("collectItems", () => {
                     text: "[Linked](https://y)" },
                 { ...entry, file: "d.md", date: 45, closes: [ 9, 20 ],
                     text: `[Partly](${url(9)}) linked (by @fixer)` },
-                { ...entry, file: "e.md", date: 55, closes: [ 21 ], text: "Inherits" },
-                { ...entry, file: "f.md", date: 65, closes: [ 21 ], text: "Showcase",
-                    section: "Key highlights" }
+                { ...entry, file: "e.md", date: 55, closes: [ 21 ], text: "Own area only" }
             ],
             pullRequests: new Map([
                 [ 20, { number: 20, title: "x", closes: [ 7 ] } ],
@@ -290,8 +311,7 @@ describe("collectItems", () => {
             [ "Bugfixes", undefined,
                 `[Partly](${url(9)}) linked (by @fixer) ([#20](https://github.com/o/r/pull/20))`,
                 "" ],
-            [ "Bugfixes", "Share", "[Inherits](https://github.com/o/r/pull/21)", "" ],
-            [ "Key highlights", undefined, "[Showcase](https://github.com/o/r/pull/21)", "" ],
+            [ "Bugfixes", undefined, "[Own area only](https://github.com/o/r/pull/21)", "" ],
             [ "Bugfixes", "Sync", "[Crash on \\*save\\*](https://x/1)", "" ]
         ]);
     });

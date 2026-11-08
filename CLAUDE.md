@@ -274,7 +274,8 @@ not the mechanism. Format and the skip list: `.changelog/README.md`. Skip it for
 fix to something introduced since the last release, and for a fix whose closed issue's title already
 reads as the entry (closed issues are listed without one). `closes:` only links: the issue is still
 closed by `(closes #N)` in the commit subject. `pnpm chore:release-notes <version> --unlisted` lists the
-fixes and features that slipped through without one.
+fixes and features that slipped through without one. Entries are public before the release: the nightly
+release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
 
 ## Recipes
 
