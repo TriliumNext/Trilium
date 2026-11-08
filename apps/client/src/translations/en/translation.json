@@ -1946,7 +1946,7 @@
     "apply_changes": "Reload to apply changes",
     "generic-fonts": "Generic fonts",
     "user-fonts": "Custom fonts",
-    "proportional-system-fonts": "Proportional fonts",
+    "installed-system-fonts": "System fonts",
     "sans-serif-system-fonts": "Sans-serif fonts",
     "serif-system-fonts": "Serif fonts",
     "monospace-system-fonts": "Monospace fonts",

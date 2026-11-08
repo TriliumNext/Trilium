@@ -8,7 +8,7 @@ import { Trans } from "react-i18next";
 
 import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
-import { filterAvailableFamilies, listSystemFonts, quoteFamily, type SystemFont } from "../../../services/font";
+import { filterAvailableFamilies, listSystemFonts, quoteFamily } from "../../../services/font";
 import { t } from "../../../services/i18n";
 import { isElectron, isMobile } from "../../../services/utils";
 import Button from "../../react/Button";
@@ -281,24 +281,15 @@ function availableStockGroups(): FontGroup[] {
 }
 
 /**
- * The generic families, then the installed ones split by advance width. Serif and sans-serif cannot
- * be told apart from a browser — nothing reports a face's style — so this is as far as the grouping
- * goes, and an empty half is left out rather than headed.
+ * The generic families, then the installed ones in a single group. The installed families are not
+ * grouped by style, because telling them apart means loading every font file (see
+ * {@link listSystemFonts}).
  */
-function installedFontGroups(systemFonts: SystemFont[]): FontGroup[] {
-    const groups = [ GENERIC_FONTS ];
-    const named: [ string, SystemFont[] ][] = [
-        [ t("fonts.proportional-system-fonts"), systemFonts.filter(({ monospace }) => !monospace) ],
-        [ t("fonts.monospace-system-fonts"), systemFonts.filter(({ monospace }) => monospace) ]
+function installedFontGroups(systemFonts: string[]): FontGroup[] {
+    return [
+        GENERIC_FONTS,
+        { title: t("fonts.installed-system-fonts"), items: systemFonts.map((family) => ({ value: family })) }
     ];
-
-    for (const [ title, fonts ] of named) {
-        if (fonts.length) {
-            groups.push({ title, items: fonts.map(({ family }) => ({ value: family })) });
-        }
-    }
-
-    return groups;
 }
 
 /**
@@ -307,8 +298,8 @@ function installedFontGroups(systemFonts: SystemFont[]): FontGroup[] {
  * the user a permission prompt for a list the desktop app can have for free — so the ask is kept to
  * the one runtime that grants it itself (see the `local-fonts` entry in `web_contents_security.ts`).
  */
-function useSystemFonts(): SystemFont[] {
-    const [ fonts, setFonts ] = useState<SystemFont[]>([]);
+function useSystemFonts(): string[] {
+    const [ fonts, setFonts ] = useState<string[]>([]);
 
     useEffect(() => {
         if (!isElectron()) return;

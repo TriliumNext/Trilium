@@ -98,7 +98,7 @@ describe("listSystemFonts", () => {
      * Stands in for the canvas the probe draws on, since happy-dom has none. `paints` decides, per
      * family, whether any pixel ends up covered.
      */
-    function stubProbeCanvas(paints: (family: string) => boolean, monospace: (family: string) => boolean = () => false) {
+    function stubProbeCanvas(paints: (family: string) => boolean) {
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => {
             const drawn = { font: "" };
             const familyOf = () => drawn.font.match(/"(.+)"/)?.[1] ?? "";
@@ -107,8 +107,6 @@ describe("listSystemFonts", () => {
                 canvas: { width: 40, height: 40 },
                 clearRect: () => {},
                 fillText: () => {},
-                // A proportional family advances the widest letter further than the narrowest.
-                measureText: (text: string) => ({ width: monospace(familyOf()) || text === "W" ? 10 : 6 }),
                 getImageData: () => {
                     return { data: new Uint8ClampedArray([ 0, 0, 0, paints(familyOf()) ? 255 : 0 ]) };
                 },
@@ -132,19 +130,16 @@ describe("listSystemFonts", () => {
         expect(await listSystemFonts()).toEqual([]);
     });
 
-    it("reduces the faces to sorted, deduplicated families, told apart by advance width", async () => {
+    it("reduces the faces to sorted, deduplicated families", async () => {
         vi.stubGlobal("queryLocalFonts", async () => [
             face("Inter", "Regular"),
             face("Inter", "Bold"),
             face("Adwaita Mono", "Regular"),
             face("Inter", "Italic")
         ]);
-        stubProbeCanvas(() => true, (family) => family.endsWith("Mono"));
+        stubProbeCanvas(() => true);
 
-        expect(await listSystemFonts()).toEqual([
-            { family: "Adwaita Mono", monospace: true },
-            { family: "Inter", monospace: false }
-        ]);
+        expect(await listSystemFonts()).toEqual([ "Adwaita Mono", "Inter" ]);
     });
 
     it("returns nothing when the query is refused, so the picker keeps the stock list", async () => {
@@ -160,18 +155,14 @@ describe("listSystemFonts", () => {
         stubProbeCanvas((family) => family !== "Unifont");
 
         // Offering it would let the interface be set in a font that renders nothing at all.
-        expect(await listSystemFonts()).toEqual([ { family: "Inter", monospace: false } ]);
+        expect(await listSystemFonts()).toEqual([ "Inter" ]);
     });
 
     it("keeps every family where there is no canvas to judge them on", async () => {
         vi.stubGlobal("queryLocalFonts", async () => [ face("Inter", "Regular"), face("Unifont", "Regular") ]);
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 
-        // Nothing is judged and nothing is told apart, so every family stays and none is monospace.
-        expect(await listSystemFonts()).toEqual([
-            { family: "Inter", monospace: false },
-            { family: "Unifont", monospace: false }
-        ]);
+        expect(await listSystemFonts()).toEqual([ "Inter", "Unifont" ]);
     });
 });
 

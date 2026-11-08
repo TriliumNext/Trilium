@@ -40,14 +40,8 @@ export function applyFontsFromOptions() {
     newLink.addEventListener("error", () => newLink.remove(), { once: true });
 }
 
-/** An installed font family, and whether it advances every character by the same width. */
-export interface SystemFont {
-    family: string;
-    monospace: boolean;
-}
-
 /**
- * The fonts installed on this device, sorted by family, for the font picker to offer. Deduplicated
+ * The font families installed on this device, sorted, for the font picker to offer. Deduplicated
  * by family: `queryLocalFonts()` reports one entry per face, so a family with four weights arrives
  * four times.
  *
@@ -55,7 +49,7 @@ export interface SystemFont {
  * rejects while the `local-fonts` permission is denied. Callers fall back to the stock list, which is
  * what every runtime other than the desktop app gets.
  */
-export async function listSystemFonts(): Promise<SystemFont[]> {
+export async function listSystemFonts(): Promise<string[]> {
     if (typeof window.queryLocalFonts !== "function") {
         return [];
     }
@@ -65,14 +59,12 @@ export async function listSystemFonts(): Promise<SystemFont[]> {
         const families = [ ...new Set(faces.map(({ family }) => family)) ].sort((a, b) => a.localeCompare(b));
         const context = createProbeContext();
 
-        // Nothing to draw on, so nothing is judged and nothing is told apart.
+        // Every family is kept when there is no canvas to draw on.
         if (!context) {
-            return families.map((family) => ({ family, monospace: false }));
+            return families;
         }
 
-        return families
-            .filter((family) => rendersText(context, family))
-            .map((family) => ({ family, monospace: isMonospace(context, family) }));
+        return families.filter((family) => rendersText(context, family));
     } catch {
         return [];
     }
@@ -174,17 +166,6 @@ function rendersText(context: CanvasRenderingContext2D, family: string): boolean
     context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
 
     return isAnythingPainted(context.getImageData(0, 0, width, height));
-}
-
-/**
- * Whether the family advances every character by the same width, compared at the narrowest and the
- * widest Latin letter. It is the one distinction a browser can draw between installed families:
- * nothing reports whether a face is serif or sans, so the picker groups by this alone.
- */
-function isMonospace(context: CanvasRenderingContext2D, family: string): boolean {
-    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
-
-    return context.measureText("i").width === context.measureText("W").width;
 }
 
 /** Whether any pixel was covered, read from the alpha channel — the colour drawn in does not matter. */

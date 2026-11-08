@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
     mobile: false,
     stored: {} as Record<string, string | boolean>,
     userFonts: [] as { noteId: string; title: string; blobId: string }[],
-    systemFonts: [] as { family: string; monospace: boolean }[],
+    systemFonts: [] as string[],
     /** The stock families this device can render, or `null` to let every one of them through. */
     availableFamilies: null as string[] | null
 }));
@@ -190,49 +190,27 @@ describe("the font settings", () => {
 
     it("offers the fonts installed on the device in place of the guessed families", async () => {
         mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [
-            { family: "Adwaita Mono", monospace: true },
-            { family: "Inter", monospace: false }
-        ];
+        mocks.systemFonts = [ "Adwaita Mono", "Inter" ];
         open();
         await act(async () => {});
         await act(async () => (fontRows()[0] as HTMLElement).click());
 
-        const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        // Split by the one thing a browser can tell about an installed family.
-        expect(headers).toContain("fonts.proportional-system-fonts");
-        expect(headers).toContain("fonts.monospace-system-fonts");
-        // The named families are a guess at what a device has, and go once there is an answer.
-        expect(headers).not.toContain("fonts.sans-serif-system-fonts");
-        // The generics resolve wherever Trilium runs, so they stay.
-        expect(headers).toContain("fonts.generic-fonts");
-
-        const listed = [ ...document.querySelectorAll(".font-picker-list .dropdown-item") ].map((item) => item.textContent?.trim());
-        expect(listed).toEqual(expect.arrayContaining([ "Adwaita Mono", "Inter" ]));
-    });
-
-    it("heads only the half of the split that has fonts in it", async () => {
-        mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [ { family: "Inter", monospace: false } ];
-        open();
-        await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
-
-        const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        expect(headers).toContain("fonts.proportional-system-fonts");
-        expect(headers).not.toContain("fonts.monospace-system-fonts");
+        // The named families are a guess at what a device has, and go once there is an answer. The
+        // generics resolve wherever Trilium runs, so they stay.
+        expect(listedHeaders()).toEqual([ "fonts.generic-fonts", "fonts.installed-system-fonts" ]);
+        expect(listedFonts()).toEqual([ ...GENERIC_LABELS, "Adwaita Mono", "Inter" ]);
     });
 
     it("keeps the named families on a server build, which cannot ask what the device has", async () => {
         mocks.electron = false;
         mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [ { family: "Inter", monospace: false } ];
+        mocks.systemFonts = [ "Inter" ];
         open();
         await act(async () => {});
         await act(async () => (fontRows()[0] as HTMLElement).click());
 
         const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        expect(headers).not.toContain("fonts.proportional-system-fonts");
+        expect(headers).not.toContain("fonts.installed-system-fonts");
         expect(headers).toContain("fonts.sans-serif-system-fonts");
     });
 
