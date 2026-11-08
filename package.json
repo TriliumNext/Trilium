@@ -35,6 +35,7 @@
     "electron:start": "pnpm desktop:start",
     "electron:start-prod": "pnpm desktop:start-prod",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
+    "chore:release-notes": "node --experimental-strip-types ./scripts/release-notes.mts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
     "chore:update-electron-locales": "tsx ./scripts/update-electron-locales.ts",
