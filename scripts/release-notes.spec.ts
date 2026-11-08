@@ -298,6 +298,17 @@ describe("collectItems", () => {
         credits: [], notable: false, text: "New wording", details: [] };
     const url = (number: number) => `https://github.com/o/r/issues/${number}`;
 
+    it("keeps Key highlights as prose, without links or references appended", () => {
+        const items = collectItems({ closings, issues, languages: [], repository: "o/r", entries: [
+            { ...entry, section: "Key highlights", closes: [ 3 ], text: "One issue" },
+            { ...entry, section: "Key highlights", closes: [ 6, 8 ], text: "Two issues" }
+        ] });
+        const highlights = items.filter((item) => item.section === "Key highlights");
+        expect(highlights.map(({ text, credits, closes }) => [ text, credits.join(), closes ]))
+            .toEqual([ [ "One issue", "fixer", [ 3 ] ], [ "Two issues", "", [ 6, 8 ] ] ]);
+        expect(items.some((item) => item.text.includes("Old wording"))).toBe(false);
+    });
+
     it("lets languages and entries replace the issues they close", () => {
         const items = collectItems({
             closings,

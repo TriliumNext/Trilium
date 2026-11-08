@@ -65,10 +65,10 @@ const SEPARATELY_SHIPPED_AREAS = /^(?:(?:web-)?clipper|website)\b/;
 export const AREAS = [
     "Attributes", "Authentication", "Board", "Calendar", "Code", "Collections", "Desktop",
     "Drawing canvases", "ETAPI", "Flatpak", "General", "Geo map", "Import and export", "Interface",
-    "Launch bar", "LLM", "Markdown", "Mermaid", "Mind map", "Performance", "Printing", "Quick edit",
-    "Relation map", "Render notes", "Scripting", "Search", "Server", "Settings", "Share",
-    "Spreadsheet", "Sync", "Table collection", "Tables in text notes", "Tabs", "Templates",
-    "Text editor", "Tree", "Web clipper"
+    "Launch bar", "LLM", "Markdown", "Mermaid", "Mind map", "PDF", "Performance", "Printing",
+    "Quick edit", "Relation map", "Render notes", "Scripting", "Search", "Server", "Settings",
+    "Share", "Spreadsheet", "Sync", "Table collection", "Tables in text notes", "Tabs",
+    "Templates", "Text editor", "Tree", "Web clipper"
 ];
 /** Sections whose entries must name an area. */
 const AREA_SECTIONS = new Set<string>([ "Bugfixes", "Improvements" ]);
@@ -612,9 +612,10 @@ export function collectItems(sources: ItemSources): NoteItem[] {
         const unlinked = links.filter(({ number }) =>
             !new RegExp(`/(?:issues|pull)/${number}(?!\\d)`).test(entry.text));
         let text = entry.text;
-        if (links.length === 1 && !/\]\(/.test(text)) {
+        const linked = entry.section !== "Key highlights";
+        if (linked && links.length === 1 && !/\]\(/.test(text)) {
             text = `[${text}](${links[0].url})`;
-        } else if (unlinked.length > 0) {
+        } else if (linked && unlinked.length > 0) {
             const references = unlinked.map(({ number, url }) => `[#${number}](${url})`);
             text = `${text} (${references.join(", ")})`;
         }
@@ -804,7 +805,7 @@ function findVersionBumps(base: string, github: GitHub): VersionBumps {
 }
 
 /** The versions at a revision; a file that does not exist there yields no version. */
-export function readProtocolVersions(ref: string): ProtocolVersions {
+function readProtocolVersions(ref: string): ProtocolVersions {
     const show = (path: string) => {
         try {
             return git("show", `${ref}:${path}`);
@@ -976,7 +977,7 @@ function escapeHtml(text: string) {
  * Reads the changelog entries of `.changelog/` and `.changelog/pre-release/`, oldest first. Files
  * whose name does not start with a timestamp (`README.md`) are not entries.
  */
-export function readChangelogEntries() {
+function readChangelogEntries() {
     const entries: ChangelogEntry[] = [];
     const invalid: { file: string; errors: string[] }[] = [];
     for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {
