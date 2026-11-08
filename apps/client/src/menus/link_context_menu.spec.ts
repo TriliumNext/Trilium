@@ -29,7 +29,7 @@ const mocks = vi.hoisted(() => ({
     getAttachmentActionGroups: vi.fn(),
     getLinkedAttachmentActions: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getEmbedBoxSize: vi.fn(),
+    getEmbedBoxDefaults: vi.fn(),
     openUrlExternally: vi.fn(),
     downloadAttachment: vi.fn()
 }));
@@ -45,7 +45,7 @@ vi.mock("../services/experimental_features", () => ({
 
 vi.mock("../services/content_renderer", () => ({
     EXCERPT_BOX_SIZE: "full",
-    getEmbedBoxSize: mocks.getEmbedBoxSize
+    getEmbedBoxDefaults: mocks.getEmbedBoxDefaults
 }));
 
 vi.mock("./context_menu", () => ({ default: { show: mocks.show } }));
@@ -328,7 +328,7 @@ describe("getLinkToolbarEntries", () => {
 
     it("lists the actions on an attachment, deleting and converting it after Unlink", async () => {
         const execute = vi.fn();
-        mocks.getEmbedBoxSize.mockReturnValue("small");
+        mocks.getEmbedBoxDefaults.mockReturnValue({ boxSize: "compact", isTitleHidden: true });
         mocks.getTextEditorContaining.mockResolvedValue({
             commands: { get: () => ({ isEnabled: true }) },
             plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
@@ -363,7 +363,7 @@ describe("getLinkToolbarEntries", () => {
         const [ remove, convertLink, convert ] = afterUnlink;
         if (convertLink.kind === "entry") convertLink.run?.();
         expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link, boxSize: "small"
+            domElement: link, boxSize: "compact", hideTitle: true
         });
         if (remove.kind === "entry") remove.run?.();
         if (convert.kind === "entry") convert.run?.();
@@ -385,7 +385,7 @@ describe("getLinkToolbarEntries", () => {
 
     it("converts a reference link to an included note, or to an excerpt for blocks", async () => {
         const execute = vi.fn();
-        mocks.getEmbedBoxSize.mockReturnValue("medium");
+        mocks.getEmbedBoxDefaults.mockReturnValue({ boxSize: "resizable", isTitleHidden: false });
         mocks.getTextEditorContaining.mockResolvedValue({
             commands: { get: () => ({ isEnabled: true }) },
             plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
@@ -406,12 +406,12 @@ describe("getLinkToolbarEntries", () => {
         };
 
         expect(await convert({})).toBe("link_context_menu.convert_link_to_included_note");
-        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(note);
+        expect(mocks.getEmbedBoxDefaults).toHaveBeenCalledWith(note);
         expect(await convert({ block: "b1" }))
             .toBe("link_context_menu.convert_link_to_note_excerpt");
         expect(execute.mock.calls).toStrictEqual([
-            [ "convertLinkToEmbed", { domElement: link, boxSize: "medium" } ],
-            [ "convertLinkToEmbed", { domElement: link, boxSize: "full" } ]
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "resizable", hideTitle: false } ],
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "full", hideTitle: false } ]
         ]);
 
         // A note deleted since has nothing to embed.
@@ -534,9 +534,10 @@ describe("openContextMenu", () => {
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
         const getBoxSizes = vi.fn(() => [
-            { value: "tiny", label: "Tiny" },
-            { value: "medium", label: "Medium" }
+            { value: "compact", label: "Compact" },
+            { value: "resizable", label: "Resizable" }
         ]);
+        const ALL_POSITIONS = [ "left", "center", "right", "wrap-left", "wrap-right" ];
         const getDisplayModes = () => [
             { value: "textLink", label: "Text" },
             { value: "cardLink", label: "Card" },
@@ -548,7 +549,8 @@ describe("openContextMenu", () => {
             selectEmbedAt.mockReset().mockReturnValue(true);
             hasPlugin = true;
             state = {
-                boxSize: "medium", isTitleSupported: true, isTitleShown: false,
+                boxSize: "resizable", isDefaultBoxSize: false, positions: ALL_POSITIONS,
+                isTitleSupported: true, isTitleShown: false,
                 isTitleToggleable: true, isCaptionSupported: true, hasCaption: true,
                 isCaptionToggleable: true, isConvertibleToLink: true
             };
@@ -639,8 +641,10 @@ describe("openContextMenu", () => {
                         title: "link_context_menu.include_size",
                         uiIcon: "bx bx-expand-vertical",
                         items: [
-                            { title: "Tiny", trailingIcon: undefined },
-                            { title: "Medium", trailingIcon: CHECK }
+                            { title: "link_context_menu.include_size_default", enabled: true },
+                            { kind: "separator" },
+                            { title: "Compact", trailingIcon: undefined },
+                            { title: "Resizable", trailingIcon: CHECK }
                         ]
                     },
                     {
@@ -677,7 +681,9 @@ describe("openContextMenu", () => {
             const items = await openOn(editable.querySelector("a"));
             const item = (title: string) => titled(items, title);
             expect(pick(item("link_context_menu.include_size").items[0]))
-                .toEqual([ [ "contentEmbedBoxSize", { value: "tiny" } ] ]);
+                .toEqual([ [ "contentEmbedDefaultBoxSize", undefined ] ]);
+            expect(pick(item("link_context_menu.include_size").items[2]))
+                .toEqual([ [ "contentEmbedBoxSize", { value: "compact" } ] ]);
             expect(getBoxSizes).toHaveBeenLastCalledWith(embed());
             expect(pick(item("link_context_menu.show_title")))
                 .toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
@@ -798,6 +804,20 @@ describe("openContextMenu", () => {
                 titled(items, "link_context_menu.include_position").items;
             expect(pick(breakTiles.items[1]))
                 .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
+
+            // An Expandable embed takes the full width, so it only breaks the text.
+            state = { ...state, boxSize: "expandable", positions: [ "left", "center", "right" ] };
+            const expandable = titled(await openOn(editable.querySelector("a")),
+                "link_context_menu.include_position");
+            expect(expandable.items).toMatchObject([
+                { kind: "header", title: "link_context_menu.break_text" },
+                tiles(
+                    option("align_left", "left", leftIcon),
+                    option("align_center", "center", centerIcon),
+                    option("align_right", "right", rightIcon)
+                )
+            ]);
+            state = { ...state, boxSize: "resizable", positions: ALL_POSITIONS };
             expect(pick(wrapTiles.items[1]))
                 .toEqual([ [ "contentEmbedPosition", { value: "wrap-right" } ] ]);
         });
@@ -993,13 +1013,22 @@ describe("openContextMenu", () => {
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {
             embed().removeAttribute("data-attachment-id");
             state = {
-                boxSize: "tiny", isTitleSupported: true, isTitleShown: true,
+                boxSize: "compact", isDefaultBoxSize: true, positions: [],
+                isTitleSupported: true, isTitleShown: true,
                 isTitleToggleable: false, isCaptionSupported: true, hasCaption: false,
                 isCaptionToggleable: false, isConvertibleToLink: false
             };
             expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
                 { kind: "separator" },
-                { title: "link_context_menu.include_size" },
+                {
+                    title: "link_context_menu.include_size",
+                    items: [
+                        { title: "link_context_menu.include_size_default", enabled: false },
+                        { kind: "separator" },
+                        { title: "Compact" },
+                        { title: "Resizable" }
+                    ]
+                },
                 { title: "link_context_menu.show_title", enabled: false, checked: true },
                 { title: "link_context_menu.show_caption", enabled: false, checked: false },
                 { kind: "separator" },

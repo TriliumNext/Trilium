@@ -1,6 +1,6 @@
 import {
-    type ClassicEditor, DropdownView, Essentials, Image, ImageStyle, type ModelElement, Paragraph,
-    Widget
+    type ClassicEditor, DropdownView, Essentials, Image, ImageStyle, ListItemGroupView,
+    type ModelElement, Paragraph, Widget
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -40,7 +40,7 @@ describe("ContentEmbedPositionDropdown", () => {
             if (!root) {
                 throw new Error("The editor has no root.");
             }
-            embed = writer.createElement("contentEmbed", { noteId: "n1", boxSize: "medium" });
+            embed = writer.createElement("contentEmbed", { noteId: "n1", boxSize: "resizable" });
             writer.insert(embed, root, 0);
             writer.setSelection(embed, "on");
         });
@@ -91,6 +91,30 @@ describe("ContentEmbedPositionDropdown", () => {
         expect(dropdown.buttonView.icon)
             .toBe(getListRow(dropdown, "Wrap text", "Align right").icon);
         expect(editor.commands.get(POSITION_COMMAND_NAME)?.value).toBe("wrap-right");
+    });
+
+    it("offers an Expandable embed the positions that break the text, and Compact none", () => {
+        const dropdown = createDropdown();
+        const embed = insertEmbed();
+        const isShown = () => !dropdown.element?.classList.contains("ck-hidden");
+        const groups = () => [ ...dropdown.listView?.items ?? [] ]
+            .filter((item) => item instanceof ListItemGroupView)
+            .map((group) => [ group.label, group.isVisible ]);
+
+        editor.model.change((writer) => writer.setAttribute("boxSize", "expandable", embed));
+        editor.ui.update();
+        expect([ isShown(), dropdown.isEnabled ]).toEqual([ true, true ]);
+        expect(getListRow(dropdown, "Break text", "Align right").isVisible).toBe(true);
+        expect(getListRow(dropdown, "Wrap text", "Align right").isVisible).toBe(false);
+        expect(groups()).toEqual([ [ "Break text", true ], [ "Wrap text", false ] ]);
+
+        editor.model.change((writer) => writer.setAttribute("boxSize", "compact", embed));
+        editor.ui.update();
+        expect([ isShown(), dropdown.isEnabled ]).toEqual([ false, false ]);
+
+        editor.model.change((writer) => writer.setAttribute("boxSize", "resizable", embed));
+        editor.ui.update();
+        expect(groups()).toEqual([ [ "Break text", true ], [ "Wrap text", true ] ]);
     });
 
     it("shows for content whose tools opt in to positions, unless they hide it", () => {

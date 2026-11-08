@@ -273,11 +273,11 @@ export function showContentEmbedFullscreen(element: Element | null) {
 
 /**
  * Whether `embed` can go fullscreen while it has no title row, which holds a button for it: a
- * Medium or Full box with its title hidden. Its content then offers the button.
+ * Resizable or Full box with its title hidden. Its content then offers the button.
  */
 export function needsFullscreenButton(embed: HTMLElement | null | undefined) {
     const { hideTitle, boxSize } = embed?.dataset ?? {};
-    return hideTitle === "true" && (boxSize === "medium" || boxSize === "full");
+    return hideTitle === "true" && (boxSize === "resizable" || boxSize === "full");
 }
 
 /**

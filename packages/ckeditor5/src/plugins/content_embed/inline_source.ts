@@ -1,5 +1,6 @@
 import {
-	EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
+	type BoxSize, EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, INLINE_BOX_SIZES,
+	readBoxSize
 } from '@triliumnext/commons';
 import {
 	Command,
@@ -16,14 +17,12 @@ import {
 
 import { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import {
-	type BoxSizeValue,
 	getCodeViewAttributes,
 	getCodeViewOfView,
 	getDisplayModeAttributes,
 	getDisplayModeOfView,
 	getPositionAttributes,
 	getPositionOfView,
-	INLINE_BOX_SIZES,
 	toDisplayMode
 } from './content_embed.js';
 
@@ -47,8 +46,8 @@ export interface InlineEmbedSource {
 export interface InsertInlineEmbedOptions {
 	language: string;
 	source: string;
-	/** Medium by default. */
-	boxSize?: BoxSizeValue;
+	/** Resizable by default. */
+	boxSize?: BoxSize;
 }
 
 
@@ -191,7 +190,7 @@ export default class ContentEmbedInlineSource extends Plugin {
 		const embed = api.writer.createElement( 'contentEmbed', {
 			language: codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE,
 			source,
-			boxSize: getBoxSizeOfView( pre, isCodeBlock ? 'full' : 'medium' ),
+			...getBoxOfView( pre, isCodeBlock ? 'full' : 'resizable' ),
 			hideTitle: true,
 			...( isCodeBlock ? getCodeBlockModeOfView( pre ) : getModeOfSavedView( pre, code ) ),
 			...getFlagsOfView( pre ),
@@ -217,7 +216,7 @@ class InsertInlineEmbedCommand extends Command {
 		this.isEnabled = !!position && model.schema.findAllowedParent( position, 'contentEmbed' ) !== null;
 	}
 
-	override execute( { language, source, boxSize = 'medium' }: InsertInlineEmbedOptions ) {
+	override execute( { language, source, boxSize = 'resizable' }: InsertInlineEmbedOptions ) {
 		const editor = this.editor;
 		const model = editor.model;
 
@@ -343,10 +342,16 @@ function getCodeBlockModeOfView( pre: ViewElement ) {
 	return pre.hasAttribute( 'data-box-size' ) ? getDisplayModeOfView( pre ) : { editable: true };
 }
 
-/** The box size of a saved embed, `fallback` when it has none or one that needs a title. */
-function getBoxSizeOfView( pre: ViewElement, fallback: BoxSizeValue ): BoxSizeValue {
-	const boxSize = INLINE_BOX_SIZES.find( size => size === pre.getAttribute( 'data-box-size' ) );
-	return boxSize ?? fallback;
+/**
+ * The box size of a saved embed, `fallback` when it has none or one that needs a title, with the
+ * height that a size saved by an older version implied, which a saved height then replaces.
+ */
+function getBoxOfView( pre: ViewElement, fallback: BoxSize ): Record<string, string> {
+	const box = readBoxSize( pre.getAttribute( 'data-box-size' ), INLINE_BOX_SIZES, fallback );
+	return {
+		boxSize: box.boxSize,
+		...( box.height ? { [ SIZE_ATTRIBUTES.height ]: box.height } : {} )
+	};
 }
 
 function getFlagsOfView( pre: ViewElement ) {

@@ -160,7 +160,7 @@ describe("FileUploadUI", () => {
             return button;
         }
 
-        it("embeds an editable empty drawing, medium, untitled and focused, quietly", async () => {
+        it("embeds an editable empty drawing, Resizable, untitled and focused, quietly", async () => {
             const button = createCanvasButton();
             const execute = vi.spyOn(editor, "execute").mockImplementation(() => undefined);
             const focus = vi.spyOn(editor.editing.view, "focus");
@@ -173,7 +173,7 @@ describe("FileUploadUI", () => {
             expect(execute).toHaveBeenCalledExactlyOnceWith("fileUpload", {
                 file: [ expect.any(File) ],
                 asEmbed: true,
-                boxSize: "medium",
+                boxSize: "resizable",
                 hideTitle: true,
                 editable: true,
                 quiet: true,

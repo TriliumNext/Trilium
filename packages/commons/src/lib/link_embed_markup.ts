@@ -1,3 +1,4 @@
+import { readBoxSize } from "./content_embeds.js";
 import {
     extractYouTubeVideoId, getMediaFileTitle, isHttpUrl, isMediaFileEmbedType,
     type MediaFileEmbedType, safeHostname, safeLinkPreviewHref, safeLinkPreviewImageSrc
@@ -81,27 +82,35 @@ export function getVideoAspectRatio({ aspectRatio }: Pick<LinkPreviewData, "aspe
 /** What a link preview plays: a YouTube video, or the video or audio file at its URL. */
 export type LinkPreviewPlayer = { type: "youtube"; videoId: string } | { type: MediaFileEmbedType };
 
-/** The box sizes of a media embed that plays a video. */
-export const VIDEO_EMBED_BOX_SIZES = [ "medium", "full" ] as const;
+/** The box sizes of a media embed that plays a video: Compact is its title row alone. */
+export const VIDEO_EMBED_BOX_SIZES = [ "compact", "resizable", "full" ] as const;
 
-/** The box size of a media embed that plays an audio file: a row of controls. */
-export const AUDIO_EMBED_BOX_SIZES = [ "small" ] as const;
+/** The box sizes of a media embed that plays an audio file: Compact is a row of controls. */
+export const AUDIO_EMBED_BOX_SIZES = [ "compact", "resizable" ] as const;
+
+/** A box size that a media embed takes. */
+export type MediaBoxSize =
+    typeof VIDEO_EMBED_BOX_SIZES[number] | typeof AUDIO_EMBED_BOX_SIZES[number];
 
 /** The box sizes of a media embed that `player` plays in. */
-export function getMediaEmbedBoxSizes(player: LinkPreviewPlayer) {
+export function getMediaEmbedBoxSizes(player: LinkPreviewPlayer): readonly MediaBoxSize[] {
     return player.type === "audio" ? AUDIO_EMBED_BOX_SIZES : VIDEO_EMBED_BOX_SIZES;
 }
 
 /**
  * The box size of media saved as a link preview, and whether its title is hidden. A YouTube video
- * saved before videos were embeds has no box size: it is Full and untitled.
+ * saved before videos were embeds has no box size: it is Full and untitled. An audio file saved
+ * before 0.107 was Small, the row of controls that Compact is now.
  */
 export function readMediaEmbedBox(
     getAttribute: (name: string) => string | null | undefined, player: LinkPreviewPlayer
-) {
+): { boxSize: MediaBoxSize; isTitleHidden: boolean } {
     const savedBoxSize = getAttribute("data-box-size");
-    const boxSize = getMediaEmbedBoxSizes(player).find((size) => size === savedBoxSize)
-        ?? (player.type === "audio" ? "small" : "full");
+    const isAudio = player.type === "audio";
+    const sizes = getMediaEmbedBoxSizes(player);
+    const boxSize = isAudio && savedBoxSize === "small"
+        ? "compact"
+        : readBoxSize(savedBoxSize, sizes, isAudio ? "compact" : "full").boxSize as MediaBoxSize;
     return {
         boxSize,
         isTitleHidden: !savedBoxSize || getAttribute("data-hide-title") === "true"
@@ -127,6 +136,21 @@ export function getLinkPreviewPlayer(
 
     const videoId = getLinkPreviewVideoId({ url, embedType });
     return videoId ? { type: "youtube", videoId } : null;
+}
+
+/**
+ * The markup inside the box of a link preview that an embed box renders outside the editor: a
+ * video at Compact shows its title row alone, as a mention, and anything else its preview.
+ */
+export function renderLinkEmbedBoxHtml(
+    data: LinkPreviewData,
+    getAttribute: (name: string) => string | null | undefined,
+    options: LinkPreviewMarkupOptions
+) {
+    const player = getLinkPreviewPlayer(data);
+    const isTitleRow = !!player && player.type !== "audio"
+        && readMediaEmbedBox(getAttribute, player).boxSize === "compact";
+    return isTitleRow ? renderLinkMentionHtml(data, options) : renderLinkEmbedHtml(data, options);
 }
 
 /**

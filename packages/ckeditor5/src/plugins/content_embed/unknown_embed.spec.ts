@@ -33,7 +33,7 @@ describe("UnknownContentEmbed", () => {
         expect(editor.getData()).toBe(SAVED);
     });
 
-    it("has the host fill an embed box instead of the content, at the section's box size", () => {
+    it("has the host fill an embed box instead of the content, at the box size it reads as", () => {
         editor.setData(SAVED + SAVED.replace(` data-note-id="abc"`, ` data-box-size="small"`));
 
         const sections = getPlaceholders(editor);
@@ -48,10 +48,10 @@ describe("UnknownContentEmbed", () => {
             expect(section.querySelector("p")).toBeNull();
         }
         expect(sections[0].hasAttribute("data-box-size")).toBe(false);
-        expect(sections[1].getAttribute("data-box-size")).toBe("small");
+        expect(sections[1].getAttribute("data-box-size")).toBe("resizable");
         expect(wrappers[0]).toBeInstanceOf(HTMLElement);
         expect(loadUnknown.mock.calls).toEqual([
-            [ wrappers[0], undefined ], [ wrappers[1], "small" ]
+            [ wrappers[0], undefined ], [ wrappers[1], "resizable" ]
         ]);
     });
 

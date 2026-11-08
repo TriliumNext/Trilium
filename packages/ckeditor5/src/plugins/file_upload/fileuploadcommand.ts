@@ -1,4 +1,4 @@
-import { getAttachedFileMime } from "@triliumnext/commons";
+import { type BoxSize, getAttachedFileMime } from "@triliumnext/commons";
 import {
     Command,
     FileRepository,
@@ -9,15 +9,14 @@ import {
     type ModelWriter
 } from "ckeditor5";
 
-import type { BoxSizeValue } from "../content_embed/content_embed.js";
-import { uploadAsLink } from "../uploadimage.js";
+import { type EmbedBox, uploadAsLink } from "../uploadimage.js";
 
 export interface FileUploadOptions {
     file: File[];
     /** Embeds each file in a block of its own instead of linking it. */
     asEmbed?: boolean;
     /** The box size of the embeds, instead of the one the host picks for the file type. */
-    boxSize?: BoxSizeValue;
+    boxSize?: BoxSize;
     /** Hides the title row of the embeds. */
     hideTitle?: boolean;
     /** Turns on the Editable toggle of the embeds, for content that has an editable mode. */
@@ -79,9 +78,12 @@ export default class FileUploadCommand extends Command {
                 }
 
                 if (asEmbed) {
+                    const box = boxSize
+                        ? { boxSize, isTitleHidden: !!hideTitle }
+                        : getEmbedBox(this.editor, file);
                     insertEmbedPlaceholder(writer, model, loader.id, file.name, {
-                        boxSize: boxSize ?? getEmbedBoxSize(this.editor, file),
-                        hideTitle,
+                        boxSize: box.boxSize,
+                        hideTitle: hideTitle ?? box.isTitleHidden,
                         editable,
                         isBesideSelection: focusEmbed
                     });
@@ -139,8 +141,12 @@ interface EmbedPlaceholderOptions {
     isBesideSelection?: boolean;
 }
 
-/** The box size the host gives an embed of `file`, `medium` when the host does not say. */
-function getEmbedBoxSize(editor: Editor, file: File) {
+/**
+ * The box the host gives a new embed of `file`: Resizable, with its title, when the host does not
+ * say.
+ */
+function getEmbedBox(editor: Editor, file: File): EmbedBox {
     const mime = getAttachedFileMime(file.name, file.type);
-    return editor.config.get("attachmentUpload")?.getEmbedBoxSize?.(mime, file.size) ?? "medium";
+    return editor.config.get("attachmentUpload")?.getEmbedBox?.(mime, file.size)
+        ?? { boxSize: "resizable", isTitleHidden: false };
 }

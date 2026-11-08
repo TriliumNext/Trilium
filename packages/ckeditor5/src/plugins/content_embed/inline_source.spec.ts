@@ -6,12 +6,13 @@ import {
     CodeBlock,
     DropdownView,
     Essentials,
-    type ListItemView,
+    ListItemView,
     type ModelElement,
     Paragraph,
     Undo,
     Widget
 } from "ckeditor5";
+import { BOX_SIZES } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -22,7 +23,6 @@ import ContentEmbedBoxSizeDropdown, {
 } from "./content_embed_box_size_dropdown.js";
 import ContentEmbed, {
     BOX_SIZE_COMMAND_NAME,
-    BOX_SIZES,
     CODE_VIEW_COMMAND_NAME,
     CONTENT_EMBED_MENU,
     CONVERT_EMBED_TO_LINK_COMMAND,
@@ -66,12 +66,12 @@ describe("ContentEmbedInlineSource", () => {
         const embed = getEmbed();
         expect(embed.getAttribute("language")).toBe("mermaid");
         expect(embed.getAttribute("source")).toBe("graph TD;\n    A-->B");
-        expect(embed.getAttribute("boxSize")).toBe("medium");
+        expect(embed.getAttribute("boxSize")).toBe("resizable");
         expect(embed.getAttribute("hideTitle")).toBe(true);
         expect(embed.getAttribute("editable")).toBe(true);
         expect(embed.getAttribute("displayMode")).toBe("source");
         expect(editor.getData()).toBe(
-            `<pre data-box-size="medium" data-display-mode="source" data-hide-title="true"`
+            `<pre data-box-size="resizable" data-display-mode="source" data-hide-title="true"`
             + ` data-editable="true">`
             + `<code class="language-mermaid">`
             + `graph TD;\n    A--&gt;B</code></pre>`
@@ -88,33 +88,53 @@ describe("ContentEmbedInlineSource", () => {
         }
 
         // A saved embed keeps the mode it has, or none.
-        editor.setData(`<pre data-box-size="small"><code class="language-mermaid">a</code></pre>`);
+        editor.setData(`<pre data-box-size="resizable"><code class="language-mermaid">a</code></pre>`);
         expect(getEmbed().getAttribute("displayMode")).toBeUndefined();
         expect(getEmbed().getAttribute("editable")).toBeUndefined();
-        editor.setData(`<pre data-box-size="small" data-display-mode="source">`
+        editor.setData(`<pre data-box-size="resizable" data-display-mode="source">`
             + `<code class="language-mermaid" data-trilium-display-mode="preview">a</code></pre>`);
         expect(getEmbed().getAttribute("displayMode")).toBe("source");
     });
 
     it("keeps the box size, the flags, the position and the size of the embed on the <pre>", () => {
-        const html = `<pre style="--include-note-height:12em;" data-box-size="small"`
+        const html = `<pre style="--include-note-height:12em;" data-box-size="resizable"`
             + ` data-editable="true" data-hide-title="true" data-position="wrap-left">`
             + `<code class="language-mermaid">x</code></pre>`;
         editor.setData(html);
 
         const embed = getEmbed();
-        expect(embed.getAttribute("boxSize")).toBe("small");
+        expect(embed.getAttribute("boxSize")).toBe("resizable");
         expect(embed.getAttribute("editable")).toBe(true);
         expect(embed.getAttribute("position")).toBe("wrap-left");
         expect(embed.getAttribute(SIZE_ATTRIBUTES.height)).toBe("12em");
-        expect(editor.getData()).toContain(`data-box-size="small"`);
+        expect(editor.getData()).toContain(`data-box-size="resizable"`);
         expect(editor.getData()).toContain(`data-editable="true"`);
         expect(editor.getData()).toContain(`data-position="wrap-left"`);
         expect(editor.getData()).toContain("--include-note-height:12em");
     });
 
+    it("reads a box size saved by an older version as the size it became, at its height", () => {
+        editor.setData(`<pre data-box-size="small"><code class="language-mermaid">a</code></pre>`
+            + `<pre style="--include-note-height:7em;" data-box-size="medium">`
+            + `<code class="language-mermaid">b</code></pre>`
+            + `<pre data-box-size="tiny"><code class="language-mermaid">c</code></pre>`);
+
+        const embeds = [ ...editor.model.document.getRoot()?.getChildren() ?? [] ];
+        expect(embeds.map((embed) => embed.is("element")
+            && [ embed.getAttribute("boxSize"), embed.getAttribute(SIZE_ATTRIBUTES.height) ]))
+            .toEqual([ [ "resizable", "10em" ], [ "resizable", "7em" ], [ "resizable", undefined ] ]);
+        expect(editor.getData()).toBe(
+            `<pre style="--include-note-height:10em;" data-box-size="resizable" data-hide-title="true">`
+            + `<code class="language-mermaid">a</code></pre>`
+            + `<pre style="--include-note-height:7em;" data-box-size="resizable" data-hide-title="true">`
+            + `<code class="language-mermaid">b</code></pre>`
+            + `<pre data-box-size="resizable" data-hide-title="true">`
+            + `<code class="language-mermaid">c</code></pre>`
+        );
+    });
+
     it("keeps how the embed shows its code on the <pre>, set by the code view command", () => {
-        const html = `<pre data-box-size="medium" data-hide-title="true"`
+        const html = `<pre data-box-size="resizable" data-hide-title="true"`
             + ` data-code-wrap-lines="true" data-code-line-numbers="false">`
             + `<code class="language-mermaid">x</code></pre>`;
         editor.setData(html);
@@ -126,7 +146,7 @@ describe("ContentEmbedInlineSource", () => {
         editor.model.change((writer) => writer.setSelection(getEmbed(), "on"));
         expect(editor.commands.get(CODE_VIEW_COMMAND_NAME)?.isEnabled).toBe(true);
         editor.execute(CODE_VIEW_COMMAND_NAME, { wrapLines: null, lineNumbers: true });
-        expect(editor.getData()).toBe(`<pre data-box-size="medium" data-hide-title="true"`
+        expect(editor.getData()).toBe(`<pre data-box-size="resizable" data-hide-title="true"`
             + ` data-code-line-numbers="true"><code class="language-mermaid">x</code></pre>`);
     });
 
@@ -152,7 +172,7 @@ describe("ContentEmbedInlineSource", () => {
         expect(source.getSource()).toBe("graph TD;");
         expect(source.isReadOnly()).toBe(false);
         expect((wrapper as HTMLElement).classList.contains("include-note-wrapper")).toBe(true);
-        expect(boxSize).toBe("medium");
+        expect(boxSize).toBe("resizable");
         expect(options).toEqual({ isFocused: false });
 
         const listener = vi.fn();
@@ -200,7 +220,7 @@ describe("ContentEmbedInlineSource", () => {
     });
 
     it("saves an embed that has lost its source or its Editable flag", () => {
-        editor.setData(`<pre data-box-size="medium" data-editable="true">`
+        editor.setData(`<pre data-box-size="resizable" data-editable="true">`
             + `<code class="language-mermaid">a</code></pre>`);
         editor.model.change((writer) => {
             writer.removeAttribute("source", getEmbed());
@@ -208,7 +228,7 @@ describe("ContentEmbedInlineSource", () => {
         });
 
         expect(getLoadedSource().getSource()).toBe("");
-        expect(editor.getData()).toBe(`<pre data-box-size="medium" data-hide-title="true">`
+        expect(editor.getData()).toBe(`<pre data-box-size="resizable" data-hide-title="true">`
             + `<code class="language-mermaid"></code></pre>`);
     });
 
@@ -238,17 +258,17 @@ describe("ContentEmbedInlineSource", () => {
         const embed = editor.model.document.selection.getSelectedElement();
         expect(embed?.getAttribute("language")).toBe("mermaid");
         expect(embed?.getAttribute("source")).toBe("graph TD;");
-        expect(embed?.getAttribute("boxSize")).toBe("medium");
+        expect(embed?.getAttribute("boxSize")).toBe("resizable");
         expect(embed?.getAttribute("hideTitle")).toBe(true);
         expect(embed?.getAttribute("editable")).toBe(true);
         expect(loadInlineEmbed.mock.calls[0][3]).toEqual({ isFocused: true });
     });
 
-    it("offers only the box sizes that need no title, and loads the others as Medium", () => {
-        for (const boxSize of [ "tiny", "expandable" ]) {
+    it("offers only the box sizes that need no title, and loads the others as Resizable", () => {
+        for (const boxSize of [ "compact", "expandable" ]) {
             editor.setData(
                 `<pre data-box-size="${boxSize}"><code class="language-mermaid">a</code></pre>`);
-            expect(getEmbed().getAttribute("boxSize")).toBe("medium");
+            expect(getEmbed().getAttribute("boxSize")).toBe("resizable");
         }
 
         editor.model.change((writer) => writer.setSelection(getEmbed(), "on"));
@@ -256,11 +276,11 @@ describe("ContentEmbedInlineSource", () => {
         const wrapper = editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper");
         if (!wrapper) throw new Error("Expected a rendered embed.");
         expect(plugin.getBoxSizes(wrapper).map(({ value }) => value))
-            .toEqual([ "small", "medium", "full" ]);
+            .toEqual([ "resizable", "full" ]);
         expect(plugin.getBoxSizes().map(({ value }) => value)).toEqual(BOX_SIZES);
 
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "tiny" });
-        expect(getEmbed().getAttribute("boxSize")).toBe("medium");
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
+        expect(getEmbed().getAttribute("boxSize")).toBe("resizable");
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
         expect(getEmbed().getAttribute("boxSize")).toBe("full");
 
@@ -269,10 +289,10 @@ describe("ContentEmbedInlineSource", () => {
         dropdown.render();
         dropdown.isOpen = true;
         const shown = Array.from(dropdown.listView?.items ?? [])
-            .map((item) => (item as ListItemView).children.first)
+            .map((item) => (item instanceof ListItemView ? item.children.first : null))
             .filter((button) => button instanceof ButtonView && button.isVisible)
             .map((button) => (button as ButtonView).label);
-        expect(shown).toEqual([ "Small", "Medium", "Full" ]);
+        expect(shown).toEqual([ "Resizable", "Full", "Default" ]);
     });
 
     it("offers the menu button in the toolbar, and no caption button", () => {
@@ -286,7 +306,7 @@ describe("ContentEmbedInlineSource", () => {
         editor.model.change((writer) => writer.setSelection(getEmbed(), "on"));
         expect([ menu.isVisible, caption.isVisible ]).toEqual([ true, false ]);
 
-        editor.setData(`<figure class="include-note" data-note-id="n1" data-box-size="medium">`
+        editor.setData(`<figure class="include-note" data-note-id="n1" data-box-size="resizable">`
             + `</figure>`);
         editor.model.change((writer) => writer.setSelection(getEmbed(), "on"));
         expect([ menu.isVisible, caption.isVisible ]).toEqual([ false, true ]);
@@ -329,14 +349,14 @@ describe("ContentEmbedInlineSource", () => {
         });
 
         it("keeps the box size, the flags and the code view that it saved", () => {
-            const html = `<pre class="extended-code-block" data-box-size="medium"`
+            const html = `<pre class="extended-code-block" data-box-size="resizable"`
                 + ` data-hide-title="true" data-code-tab-width="2">`
                 + `<code class="language-text-x-python">x</code></pre>`;
             editor.setData(html);
 
             expect([ "boxSize", "editable", "codeTabWidth" ]
                 .map((name) => getEmbed().getAttribute(name)))
-                .toEqual([ "medium", undefined, "2" ]);
+                .toEqual([ "resizable", undefined, "2" ]);
             expect(editor.getData()).toBe(html);
         });
 

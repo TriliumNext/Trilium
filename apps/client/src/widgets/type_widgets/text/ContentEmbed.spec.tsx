@@ -47,8 +47,8 @@ import ContentEmbed, {
     ContentEmbedError,
     getNoteActions,
     type ContentEmbedProps,
-    TinyContentEmbed,
-    type TinyContentEmbedProps
+    CompactContentEmbed,
+    type CompactContentEmbedProps
 } from "./ContentEmbed";
 
 const ATTACHMENT_SCOPE = { viewMode: "attachments", attachmentId: "att1" } as const;
@@ -102,15 +102,15 @@ function renderBox(props: Partial<ContentEmbedProps> = {}) {
     return boxProps;
 }
 
-function renderTinyBox(props: Partial<TinyContentEmbedProps> = {}) {
-    const boxProps: TinyContentEmbedProps = {
+function renderCompactBox(props: Partial<CompactContentEmbedProps> = {}) {
+    const boxProps: CompactContentEmbedProps = {
         icon: "bx bx-note",
         title: element(`<span><a href="#root/noteA">Note A</a></span>`),
         notePath: "noteA",
         actions: [],
         ...props
     };
-    act(() => render(<TinyContentEmbed {...boxProps} />, container));
+    act(() => render(<CompactContentEmbed {...boxProps} />, container));
     return boxProps;
 }
 
@@ -244,8 +244,8 @@ describe("ContentEmbed", () => {
         const withFullscreen = [ "title-label", "badges", "open", "fullscreen", "menu" ];
         const layouts: [ string | undefined, string[] ][] = [
             [ undefined, plain ],
-            [ "small", plain ],
-            [ "medium", withFullscreen ],
+            [ "compact", plain ],
+            [ "resizable", withFullscreen ],
             [ "full", withFullscreen ],
             [ "expandable", [ "toggle", "title-label", "badges", "open", "menu" ] ]
         ];
@@ -254,14 +254,17 @@ describe("ContentEmbed", () => {
             act(() => render(null, container));
             renderBox({ boxSize });
             expect(titleRow(), boxSize).toEqual(expected.map((name) => `include-note-${name}`));
+            // The stylesheet hides what a larger box size drew in a Compact box, not this body.
+            expect(container.querySelector(".include-note-body")?.classList.contains("compact-content"),
+                boxSize).toBe(boxSize === "compact");
         }
     });
 
     it("lays out an excerpt with an edit button in place of fullscreen", () => {
         const excerpt = [ "title-label", "badges", "open", "edit", "menu" ];
         const layouts: [ string, string[] ][] = [
-            [ "small", excerpt ],
-            [ "medium", excerpt ],
+            [ "compact", excerpt ],
+            [ "resizable", excerpt ],
             [ "full", excerpt ],
             [ "expandable", [ "toggle", ...excerpt ] ]
         ];
@@ -451,7 +454,7 @@ describe("ContentEmbed", () => {
 
     it("turns the editing of an excerpt on and off through the editor around it", async () => {
         const { editor, embed } = placeInHostEditor();
-        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        const { content } = renderBox({ boxSize: "resizable", isExcerpt: true });
         const edit = button("include-note-edit");
         expect(edit.className).toContain("bx-pencil");
         expect(tooltipOf(edit)).toBe("block_reference.edit_excerpt");
@@ -484,7 +487,7 @@ describe("ContentEmbed", () => {
 
     it("switches the display mode of content that has them, from the title row", async () => {
         const embed = placeInEmbed();
-        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        const { content } = renderBox({ boxSize: "resizable", contentType: "markdown" });
         expect(container.querySelector(".include-note-display-modes")).toBeNull();
 
         let unregister = () => {};
@@ -531,7 +534,7 @@ describe("ContentEmbed", () => {
 
     it("picks the display mode through the text editor that holds the embed", () => {
         const { editor, embed } = placeInHostEditor();
-        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        const { content } = renderBox({ boxSize: "resizable", contentType: "markdown" });
         act(() => {
             onTestFinished(registerContentEmbedTools(content, DISPLAY_MODE_TOOLS));
         });
@@ -561,7 +564,7 @@ describe("ContentEmbed", () => {
     });
 
     it("keeps the edit button of an excerpt disabled without an editor around it", () => {
-        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        const { content } = renderBox({ boxSize: "resizable", isExcerpt: true });
         act(() => {
             onTestFinished(registerContentEmbedTools(content, EDITABLE_TOOLS));
         });
@@ -594,7 +597,7 @@ describe("ContentEmbed", () => {
             value: exitFullscreen,
             configurable: true
         });
-        renderBox({ boxSize: "medium" });
+        renderBox({ boxSize: "resizable" });
         const box = contentBox();
         box.requestFullscreen = vi.fn(async () => {});
 
@@ -659,7 +662,7 @@ describe("ContentEmbed", () => {
             });
             document.dispatchEvent(new Event("fullscreenchange"));
         };
-        renderBox({ boxSize: "medium" });
+        renderBox({ boxSize: "resizable" });
         const box = contentBox();
         const events: string[] = [];
         const listener = (event: Event) => events.push(`${event.type}:${event.target === box}`);
@@ -705,13 +708,13 @@ describe("ContentEmbed", () => {
     });
 
     it("leaves the fullscreen controls out of a box that offers no fullscreen", () => {
-        renderBox({ boxSize: "small" });
+        renderBox({ boxSize: "compact" });
         expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
     });
 
     it("titles a video with the menu of its embed, or no menu, and no fullscreen", () => {
         const openMenu = vi.fn();
-        const video = { notePath: undefined, boxSize: "medium", contentType: "mediaEmbed" };
+        const video = { notePath: undefined, boxSize: "resizable", contentType: "mediaEmbed" };
         renderBox({ ...video, openMenu });
         expect(titleRow()).toEqual([
             "include-note-title-label", "include-note-badges", "include-note-menu"
@@ -912,10 +915,10 @@ describe("ContentEmbed focused on mount", () => {
     });
 });
 
-describe("TinyContentEmbed", () => {
+describe("CompactContentEmbed", () => {
     it("lays out a single row: icon, title and description, actions, menu", () => {
         const run = vi.fn();
-        const { title } = renderTinyBox({
+        const { title } = renderCompactBox({
             icon: "bx bx-file",
             description: "2 KiB",
             notePath: "owner",
@@ -954,7 +957,7 @@ describe("TinyContentEmbed", () => {
     });
 
     it("opens its menu on a right click on the row, leaving the title link its own", () => {
-        renderTinyBox({ notePath: "owner", viewScope: ATTACHMENT_SCOPE });
+        renderCompactBox({ notePath: "owner", viewScope: ATTACHMENT_SCOPE });
         const row = container.querySelector(".include-note-title-row");
 
         expect(rightClick(row?.querySelector(".include-note-icon") ?? null))
@@ -965,7 +968,7 @@ describe("TinyContentEmbed", () => {
     });
 
     it("leaves out the description line when there is none", () => {
-        renderTinyBox();
+        renderCompactBox();
         expect(container.querySelector(".include-note-description")).toBeNull();
     });
 });
@@ -973,11 +976,10 @@ describe("TinyContentEmbed", () => {
 describe("ContentEmbedError", () => {
     it("keeps the height of its box size around the placeholder", () => {
         const cases = [
-            [ "medium", true, false ],
+            [ "resizable", true, false ],
             [ "full", true, false ],
             [ undefined, true, false ],
-            [ "small", true, true ],
-            [ "tiny", false, true ],
+            [ "compact", false, true ],
             [ "expandable", false, true ]
         ] as const;
 

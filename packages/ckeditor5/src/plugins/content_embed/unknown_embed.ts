@@ -1,4 +1,4 @@
-import { CONTENT_EMBED_KIND_ATTRIBUTE } from "@triliumnext/commons";
+import { BOX_SIZES, CONTENT_EMBED_KIND_ATTRIBUTE, readBoxSize } from "@triliumnext/commons";
 import {
     CKEditorError,
     type Editor,
@@ -61,7 +61,8 @@ export default class UnknownContentEmbed extends Plugin {
             model: MODEL_NAME,
             view: (modelElement, { writer }) => {
                 const attributes = getEmbedAttributes(modelElement);
-                const boxSize = attributes["data-box-size"];
+                const saved = attributes["data-box-size"];
+                const boxSize = saved && readBoxSize(saved, BOX_SIZES, "resizable").boxSize;
                 const wrapper = writer.createUIElement("div", {
                     "class": "include-note-wrapper",
                     "data-cke-ignore-events": true

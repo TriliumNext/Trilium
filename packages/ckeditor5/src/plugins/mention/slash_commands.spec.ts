@@ -793,7 +793,7 @@ describe("buildTriliumSlashCommands", () => {
                 name: "Canvas.excalidraw", type: "application/vnd.excalidraw+json"
             }) ],
             asEmbed: true,
-            boxSize: "medium",
+            boxSize: "resizable",
             hideTitle: true,
             editable: true,
             quiet: true,

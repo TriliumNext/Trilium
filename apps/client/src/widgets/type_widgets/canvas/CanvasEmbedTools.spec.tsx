@@ -58,7 +58,7 @@ describe("CanvasEmbedTools", () => {
             return root ? registerContentEmbedTools(root, tools) : undefined;
         }, [ tools ]);
         return (
-            <figure className="include-note" data-box-size="medium">
+            <figure className="include-note" data-box-size="resizable">
                 <div className="include-note-content">
                     <div ref={rootRef}>
                         <div className="excalidraw-container" tabIndex={0} />
@@ -257,11 +257,11 @@ describe("CanvasEmbedTools", () => {
             id: "fullscreen", label: "common.fullscreen", icon: ICON, group: "zoom"
         });
         // The sizes whose title row has a fullscreen button.
-        const offeredBySize = [ "small", "full", "medium" ].map((size) => {
+        const offeredBySize = [ "compact", "full", "resizable" ].map((size) => {
             embed.dataset.boxSize = size;
             return `${size}:${getLastTool()?.id === "fullscreen"}`;
         });
-        expect(offeredBySize).toEqual([ "small:false", "full:true", "medium:true" ]);
+        expect(offeredBySize).toEqual([ "compact:false", "full:true", "resizable:true" ]);
 
         provider.execute("fullscreen");
         expect(box.requestFullscreen).toHaveBeenCalledOnce();
@@ -272,7 +272,7 @@ describe("CanvasEmbedTools", () => {
     it("offers and runs fullscreen alone without Excalidraw, as for a picture", () => {
         const embed = document.createElement("figure");
         embed.className = "include-note";
-        Object.assign(embed.dataset, { hideTitle: "true", boxSize: "medium" });
+        Object.assign(embed.dataset, { hideTitle: "true", boxSize: "resizable" });
         const box = document.createElement("div");
         box.className = "include-note-content";
         box.requestFullscreen = vi.fn(async () => {});

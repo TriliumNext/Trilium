@@ -335,7 +335,7 @@ describe("LinkEmbed commands", () => {
             const embed = findElement(editor, "contentEmbed");
             expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
                 url, embedType: "youtube", title: "T",
-                boxSize: "medium", hideTitle: true, customWidth: "35.6em"
+                boxSize: "resizable", hideTitle: true, customWidth: "35.6em"
             });
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
             expect(findElement(editor, "linkMention")).toBeUndefined();
@@ -391,7 +391,7 @@ describe("LinkEmbed commands", () => {
             const other = "https://youtube.com/watch?v=xyz98765432";
             fetchMetadata.mockResolvedValue({ ...META, url: other, embedType: "youtube" });
             setModelData(editor.model, `<paragraph>Before</paragraph>[<contentEmbed`
-                + ` boxSize="medium" customWidth="40em" embedType="youtube" position="right"`
+                + ` boxSize="resizable" customWidth="40em" embedType="youtube" position="right"`
                 + ` title="T" url="${url}"><caption>Note</caption></contentEmbed>]`);
 
             await editor.execute(LINK_EMBED_COMMAND, {
@@ -402,7 +402,7 @@ describe("LinkEmbed commands", () => {
             expect(fetchMetadata).toHaveBeenCalledExactlyOnceWith(other);
             expect(embed && Object.fromEntries(embed.getAttributes())).toEqual({
                 ...META, url: other, embedType: "youtube", title: "Mine",
-                boxSize: "medium", customWidth: "40em", position: "right"
+                boxSize: "resizable", customWidth: "40em", position: "right"
             });
             expect(editor.getData()).toContain("</section><figcaption>Note</figcaption></figure>");
             expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
@@ -456,17 +456,17 @@ describe("LinkEmbed commands", () => {
                 : { ...META, url: address, embedType: "youtube", aspectRatio: "9/16" });
 
             // A video at the default width of its shape takes the width of the new shape.
-            setModelData(editor.model, `[<contentEmbed boxSize="medium" customWidth="35.6em"`
+            setModelData(editor.model, `[<contentEmbed boxSize="resizable" customWidth="35.6em"`
                 + ` embedType="youtube" hideTitle="true" position="left" title="T"`
                 + ` url="${url}"></contentEmbed>]`);
             await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
-            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+            expect(sizeOf()).toEqual([ vertical, "resizable", "11.3em", true, "left" ]);
 
             await editor.execute(LINK_EMBED_COMMAND, { url: audio, mode: "embedLink" });
-            expect(sizeOf()).toEqual([ audio, "small", undefined, true, "left" ]);
+            expect(sizeOf()).toEqual([ audio, "compact", undefined, true, "left" ]);
 
             await editor.execute(LINK_EMBED_COMMAND, { url: vertical, mode: "embedLink" });
-            expect(sizeOf()).toEqual([ vertical, "medium", "11.3em", true, "left" ]);
+            expect(sizeOf()).toEqual([ vertical, "resizable", "11.3em", true, "left" ]);
 
             setModelData(editor.model, `[<contentEmbed boxSize="full" embedType="youtube"`
                 + ` title="T" url="${url}"></contentEmbed>]`);
@@ -587,7 +587,7 @@ describe("LinkEmbed commands", () => {
         });
 
         it("leaves other embeds alone", () => {
-            setModelData(editor.model, "[<contentEmbed boxSize=\"medium\" noteId=\"n1\">"
+            setModelData(editor.model, "[<contentEmbed boxSize=\"resizable\" noteId=\"n1\">"
                 + "</contentEmbed>]");
             expect(changeCommand(editor).isEnabled).toBe(false);
         });

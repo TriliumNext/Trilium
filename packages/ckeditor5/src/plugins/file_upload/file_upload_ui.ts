@@ -161,7 +161,7 @@ export function insertDrawingCanvas(editor: Editor) {
     editor.execute("fileUpload", {
         file: [ file ],
         asEmbed: true,
-        boxSize: "medium",
+        boxSize: "resizable",
         hideTitle: true,
         editable: true,
         quiet: true,

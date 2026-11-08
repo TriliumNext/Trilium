@@ -15,8 +15,8 @@ import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import {
     EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewPlayer,
-    getMediaEmbedClasses, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
-    VIDEO_ASPECT_RATIO_PROPERTY
+    getMediaEmbedClasses, getVideoAspectRatio, INLINE_BOX_SIZES, normalizeEmbedBox,
+    readLinkPreviewData, readMediaEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
@@ -254,6 +254,7 @@ function applyContentEmbeds(container: HTMLDivElement) {
     const loaded: Promise<unknown>[] = [];
     const embeddedNotes = container.querySelectorAll<HTMLElement>(".include-note");
     for (const embeddedNote of embeddedNotes) {
+        normalizeEmbedBox(embeddedNote);
         const { attachmentId, noteId, block } = embeddedNote.dataset;
         if (attachmentId) {
             loaded.push(loadEmbeddedAttachment(attachmentId, $(embeddedNote)));
@@ -330,10 +331,9 @@ function applySourceEmbeds(container: HTMLDivElement) {
             boxSize, displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth,
             codeIndentWithTabs
         } = pre.dataset;
-        const defaultBoxSize = isCodeBlock ? "full" : "medium";
-        figure.dataset.boxSize = boxSize === "small" || boxSize === "medium" || boxSize === "full"
-            ? boxSize
-            : defaultBoxSize;
+        if (boxSize) {
+            figure.dataset.boxSize = boxSize;
+        }
         figure.dataset.language = language;
         const views = {
             displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
@@ -353,6 +353,10 @@ function applySourceEmbeds(container: HTMLDivElement) {
         if (style) {
             figure.setAttribute("style", style);
         }
+        // A size saved by an older version reads as the size it became, at its height.
+        const savedBoxSize = normalizeEmbedBox(figure);
+        figure.dataset.boxSize = INLINE_BOX_SIZES.find((size) => size === savedBoxSize)
+            ?? (isCodeBlock ? "full" : "resizable");
         pre.replaceWith(figure);
 
         const source = code.textContent;

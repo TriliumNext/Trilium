@@ -165,9 +165,10 @@ import {
     addContentDisposer,
     CONTENT_RENDERERS,
     disposeInteractiveContent,
+    getEmbedBoxDefaults,
     getEmbedBoxSize,
     getRenderedContent as rawGetRenderedContent,
-    getUploadBoxSize,
+    getUploadBoxDefaults,
     hasRenderedPreview,
     snapshotAndDispose
 } from "./content_renderer.js";
@@ -230,12 +231,15 @@ describe("getEmbedBoxSize", () => {
             buildNote({ title: "Archive", type: "file", mime: "application/zip" }),
             buildAttachment({ role: "file", mime: "application/zip" }),
             buildAttachment({ role: "canvasLibraryItem", mime: "application/json" })
-        ].map(getEmbedBoxSize)).toEqual(Array(6).fill("tiny"));
+        ].map(getEmbedBoxSize)).toEqual(Array(6).fill("compact"));
 
-        expect([
-            buildNote({ title: "Song", type: "file", mime: "audio/mpeg" }),
-            buildAttachment({ role: "file", mime: "audio/ogg" })
-        ].map(getEmbedBoxSize)).toEqual([ "small", "small" ]);
+        const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
+        expect([ song, buildAttachment({ role: "file", mime: "audio/ogg" }) ].map(getEmbedBoxSize))
+            .toEqual([ "compact", "compact" ]);
+        // Compact audio is a row of controls, which starts without its title row.
+        expect(getEmbedBoxDefaults(song)).toEqual({ boxSize: "compact", isTitleHidden: true });
+        expect(getEmbedBoxDefaults(buildNote({ title: "Map", type: "relationMap" })))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
 
         expect([
             buildNote({ title: "Script", type: "code", mime: "text/javascript" }),
@@ -258,13 +262,16 @@ describe("getEmbedBoxSize", () => {
             buildAttachment({ role: "file", mime: "application/vnd.excalidraw+json" }),
             buildAttachment({ role: "file", mime: "text/markdown" }),
             buildAttachment({ role: "file", mime: "text/plain", title: "readme.md" })
-        ].map(getEmbedBoxSize)).toEqual(Array(11).fill("medium"));
+        ].map(getEmbedBoxSize)).toEqual(Array(11).fill("resizable"));
     });
+
+    const getUploadBoxSize = (mime: string, size?: number) =>
+        getUploadBoxDefaults(mime, size).boxSize;
 
     it("shows an upload too large to highlight as a file", () => {
         expect(getUploadBoxSize("text/plain", 256 * 1024)).toBe("full");
-        expect(getUploadBoxSize("text/plain", 256 * 1024 + 1)).toBe("tiny");
-        expect(getUploadBoxSize("application/json", 10_000_000)).toBe("tiny");
+        expect(getUploadBoxSize("text/plain", 256 * 1024 + 1)).toBe("compact");
+        expect(getUploadBoxSize("application/json", 10_000_000)).toBe("compact");
     });
 
     it("sizes an upload by its media type, as the attachment it becomes", () => {
@@ -273,9 +280,11 @@ describe("getEmbedBoxSize", () => {
             "image/png", "video/mp4", "application/vnd.excalidraw+json", "text/plain",
             "application/x-sql", "text/rtf", "text/markdown"
         ].map(getUploadBoxSize)).toEqual([
-            "tiny", "tiny", "small", "full", "medium", "medium", "medium", "medium", "full",
-            "full", "medium", "medium"
+            "compact", "compact", "compact", "full", "resizable", "resizable", "resizable",
+            "resizable", "full", "full", "resizable", "resizable"
         ]);
+        expect([ "audio/mpeg", "application/zip", "image/png" ]
+            .map((mime) => getUploadBoxDefaults(mime).isTitleHidden)).toEqual([ true, false, false ]);
     });
 });
 

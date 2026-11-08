@@ -9,7 +9,7 @@ import appContext from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
 import linkContextMenu from "../../../menus/link_context_menu";
 import content_renderer, {
-    type AttachmentEditor, CONTENT_RENDERERS, type NoteEditor
+    type AttachmentEditor, CONTENT_RENDERERS, getEmbedContentInfo, type NoteEditor
 } from "../../../services/content_renderer";
 import { getEmbedCaption, getEmbedCodeView } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
@@ -22,7 +22,7 @@ import { getExternalMediaSource } from "../file/media_source";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
-    ContentEmbedError, getNoteActions, TinyContentEmbed
+    CompactContentEmbed, ContentEmbedError, getNoteActions
 } from "./ContentEmbed";
 import type EmbedHistories from "./embed_history";
 
@@ -66,20 +66,20 @@ export async function loadEmbeddedNote(
 
     const viewScope: ViewScope | undefined = block ? { block } : undefined;
     const isExcerpt = !!block;
-    if (size === "tiny") {
+    if (size === "compact" && !getEmbedContentInfo(note).hasCompactContent) {
         const $link = await link.createLink(note.noteId, {
             showTooltip: false,
             showNotePath: true,
             viewScope
         });
-        const box = h(TinyContentEmbed, {
+        const box = h(CompactContentEmbed, {
             icon: note.getIcon(),
             title: $link[0],
             notePath: note.noteId,
             viewScope,
             actions: getNoteActions(note.noteId)
         });
-        await mountEmbedBox(el, box, undefined, isExcerpt);
+        await mountEmbedBox(el, box, { isExcerpt, hasCaption: false });
         return;
     }
 
@@ -112,7 +112,7 @@ export async function loadEmbeddedNote(
         viewScope,
         isExcerpt
     });
-    await mountEmbedBox(el, box, $renderedContent, isExcerpt);
+    await mountEmbedBox(el, box, { content: $renderedContent, isExcerpt });
 }
 
 interface EmbeddedAttachmentOptions {
@@ -148,13 +148,13 @@ export async function loadEmbeddedAttachment(
     }
 
     const viewScope: ViewScope = { viewMode: "attachments", attachmentId };
-    if (size === "tiny") {
+    if (size === "compact" && !getEmbedContentInfo(attachment).hasCompactContent) {
         // `attachment_actions` is imported on demand: it imports the image compression dialog.
         const [ $link, { getDownloadAction, getOpenExternallyAction } ] = await Promise.all([
             link.createLink(attachment.ownerId, { showTooltip: false, viewScope }),
             import("../../../services/attachment_actions")
         ]);
-        const box = h(TinyContentEmbed, {
+        const box = h(CompactContentEmbed, {
             icon: attachmentIcon(attachment.role, attachment.mime),
             title: $link[0],
             description: utils.formatSize(attachment.contentLength),
@@ -162,7 +162,7 @@ export async function loadEmbeddedAttachment(
             viewScope,
             actions: [ getOpenExternallyAction(attachment), getDownloadAction(attachment) ]
         });
-        await mountEmbedBox(el, box);
+        await mountEmbedBox(el, box, { hasCaption: false });
         return;
     }
 
@@ -192,7 +192,7 @@ export async function loadEmbeddedAttachment(
         viewScope,
         ...(isFocused ? { isFocusedOnMount: true } : {})
     });
-    await mountEmbedBox(el, box, $renderedContent);
+    await mountEmbedBox(el, box, { content: $renderedContent });
 }
 
 /**
@@ -246,7 +246,7 @@ export async function loadInlineEmbed(
         contentType: type.contentType,
         ...(isFocused ? { isFocusedOnMount: true } : {})
     });
-    await mountEmbedBox(el, box, $renderedContent);
+    await mountEmbedBox(el, box, { content: $renderedContent });
 }
 
 /** Fills an embed box with the error of an embed of an unknown kind. */
@@ -268,14 +268,19 @@ const mediaEmbedLoads = new WeakMap<HTMLElement, object>();
 export async function loadMediaEmbed(
     preview: LinkPreviewData, el: HTMLElement, { hasMenu = false }: { hasMenu?: boolean } = {}
 ) {
-    const wrapper = getWrapper(el);
+    const player = getLinkPreviewPlayer(preview);
+    const boxSize = getEmbedBoxSize(el);
+    const isAudio = player?.type === "audio";
+    const isTitleRow = boxSize === "compact" && !isAudio;
+    const wrapper = getWrapper(el, !isTitleRow);
     const load = {};
     mediaEmbedLoads.set(wrapper, load);
 
-    const player = getLinkPreviewPlayer(preview);
     const content = document.createElement("div");
     content.className = "rendered-content";
-    if (player && player.type !== "youtube") {
+    if (isTitleRow) {
+        // A Compact video shows its title row alone.
+    } else if (player && player.type !== "youtube") {
         const MediaPreview = (await CONTENT_RENDERERS.file.media()).default;
         const media = document.createElement("div");
         media.className = "rendered-media";
@@ -293,6 +298,8 @@ export async function loadMediaEmbed(
         return;
     }
     const box = h(ContentEmbed, {
+        // Only Compact audio renders content in a Compact box.
+        ...(boxSize === "compact" && isAudio ? { boxSize } : {}),
         title: createMediaTitle(preview, player),
         content,
         contentType: "mediaEmbed",
@@ -310,11 +317,18 @@ export async function loadMediaEmbed(
  * Mounts `box` in the wrapper of the embed `el`, which carries the `excerpt` class while
  * `isExcerpt`. The class is not saved with the note.
  */
+interface MountEmbedBoxOptions {
+    /** The content rendered for the box, which is disposed when the box cannot be mounted. */
+    content?: JQuery<HTMLElement>;
+    isExcerpt?: boolean;
+    /** Whether the box keeps the caption of its embed; a box of a title row alone does not. */
+    hasCaption?: boolean;
+}
+
 async function mountEmbedBox(
     el: HTMLElement,
     box: JSX.Element,
-    content?: JQuery<HTMLElement>,
-    isExcerpt = false
+    { content, isExcerpt = false, hasCaption = true }: MountEmbedBoxOptions = {}
 ) {
     if (!el.isConnected) {
         if (content) {
@@ -323,7 +337,7 @@ async function mountEmbedBox(
         return;
     }
 
-    const wrapper = getWrapper(el);
+    const wrapper = getWrapper(el, hasCaption);
     wrapper.classList.toggle("excerpt", isExcerpt);
     await content_renderer.mountInteractiveWidget(box, wrapper);
 }
@@ -359,9 +373,9 @@ function getEmbedBoxSize(el: HTMLElement) {
 /**
  * The element an embed box is mounted in: `el` when it is the `.include-note-wrapper` the
  * editor renders, otherwise the wrapper of the `.include-note`, reused or created ahead of the
- * caption.
+ * caption, which is kept while `hasCaption`.
  */
-function getWrapper(el: HTMLElement) {
+function getWrapper(el: HTMLElement, hasCaption = true) {
     if (el.classList.contains("include-note-wrapper")) {
         return el;
     }
@@ -373,7 +387,7 @@ function getWrapper(el: HTMLElement) {
 
     const wrapper = document.createElement("div");
     wrapper.className = "include-note-wrapper";
-    const caption = getEmbedCaption(el);
+    const caption = hasCaption ? getEmbedCaption(el) : null;
     el.replaceChildren(wrapper, ...(caption ? [ caption ] : []));
     return wrapper;
 }

@@ -1,15 +1,9 @@
 import "./content_renderer.css";
 
 import {
-    attachmentIcon,
-    getEditableBlockRun,
-    getFileContentType,
-    getMimeTypeFromFileName,
-    getNoteContentType,
-    isAcceptedImageMime,
-    isImageAttachmentRole,
-    isMarkdownMime,
-    type TextRepresentationResponse
+    attachmentIcon, type BoxSize, getEditableBlockRun, getFileContentType, getMimeTypeFromFileName,
+    getNoteContentType, hasCompactContent, isAcceptedImageMime, isImageAttachmentRole,
+    isMarkdownMime, type TextRepresentationResponse
 } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
@@ -22,7 +16,6 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
-import type { BoxSize } from "../widgets/type_widgets/text/CKEditor.js";
 import type {
     ContentHistory, default as EmbedHistories
 } from "../widgets/type_widgets/text/embed_history.js";
@@ -1150,11 +1143,34 @@ async function showRenderError($content: JQuery<HTMLElement>, error: unknown, no
 }
 
 /**
- * The box size a new embed of `entity` starts with: `tiny` when the embed shows no preview of
- * it, `small` for audio, `full` for code and `medium` for the rest.
+ * The box size a new embed of `entity` starts with: Compact when the embed shows no preview of
+ * it and for audio, Full for code and Resizable for the rest.
  */
 export function getEmbedBoxSize(entity: FNote | FAttachment): BoxSize {
     return getBoxSize(getContentType(entity), hasRenderedPreview(entity));
+}
+
+/** How a new embed starts: its box size, and whether its title row is hidden. */
+export interface EmbedBoxDefaults {
+    boxSize: BoxSize;
+    isTitleHidden: boolean;
+}
+
+/**
+ * How a new embed of `entity` starts. A Compact audio embed is a row of controls, which starts
+ * without its title row.
+ */
+export function getEmbedBoxDefaults(entity: FNote | FAttachment): EmbedBoxDefaults {
+    return getBoxDefaults(getContentType(entity), hasRenderedPreview(entity));
+}
+
+/** What the content type of `entity` decides about the box of its embed, for the text editor. */
+export function getEmbedContentInfo(entity: FNote | FAttachment) {
+    const type = getContentType(entity);
+    return {
+        defaultBoxSize: getBoxSize(type, hasRenderedPreview(entity)),
+        hasCompactContent: hasCompactContent(type)
+    };
 }
 
 /**
@@ -1168,17 +1184,21 @@ export function hasRenderedPreview(entity: FNote | FAttachment) {
         : PREVIEWED_TYPES.has(type);
 }
 
-/** The box size of a new embed of a file being uploaded, from the attachment it becomes. */
-export function getUploadBoxSize(mime: string, size?: number): BoxSize {
+/** How a new embed of a file being uploaded starts, from the attachment it becomes. */
+export function getUploadBoxDefaults(mime: string, size?: number): EmbedBoxDefaults {
     const type = isAcceptedImageMime(mime) ? "image" : getAttachedFileContentType(mime, size);
-    return getBoxSize(type, PREVIEWED_TYPES.has(type));
+    return getBoxDefaults(type, PREVIEWED_TYPES.has(type));
+}
+
+function getBoxDefaults(type: string, hasPreview: boolean): EmbedBoxDefaults {
+    const boxSize = getBoxSize(type, hasPreview);
+    return { boxSize, isTitleHidden: boxSize === "compact" && hasCompactContent(type) };
 }
 
 function getBoxSize(type: string, hasPreview: boolean): BoxSize {
-    if (!hasPreview) return "tiny";
-    if (type === "audio") return "small";
+    if (!hasPreview || hasCompactContent(type)) return "compact";
     if (type === "code") return "full";
-    return "medium";
+    return "resizable";
 }
 
 /**
@@ -1204,7 +1224,7 @@ function getRenderingType(entity: FNote | FAttachment) {
 }
 
 /** The kind of content `entity` holds, from its note type or attachment role and its media type. */
-function getContentType(entity: FNote | FAttachment) {
+export function getContentType(entity: FNote | FAttachment) {
     if (entity instanceof FNote) {
         // Disabled icon packs (#disabled:iconPack, e.g. from a safe import) still preview.
         return getNoteContentType(entity.type, entity.mime, entity.hasLabelOrDisabled("iconPack"));

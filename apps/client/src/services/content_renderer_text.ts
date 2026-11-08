@@ -8,7 +8,8 @@ import {
 import {
     BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
     type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
-    getNoteEmbedHref, KATEX_MACROS, resolveContentEmbed, sliceToBlockReference
+    getNoteEmbedHref, isEmbedShownAsLink, KATEX_MACROS, normalizeEmbedBox, resolveContentEmbed,
+    sliceToBlockReference
 } from "@triliumnext/commons";
 
 import FAttachment from "../entities/fattachment.js";
@@ -16,7 +17,7 @@ import FNote from "../entities/fnote.js";
 import { getContentEmbedFlag } from "../widgets/type_widgets/text/content_embed_tools.js";
 import { highlightBlockReference } from "./block_reference.js";
 import {
-    addContentDisposer, default as content_renderer, type RenderOptions
+    addContentDisposer, default as content_renderer, getContentType, type RenderOptions
 } from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -132,10 +133,13 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
  * `postProcessRichContent()` then fills in each link's title, icon and color.
  */
 async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbedContext) {
-    const embeds = [ ...contentEl.querySelectorAll(".include-note") ].map((embedEl) => ({
-        embedEl,
-        embed: resolveContentEmbed((name) => embedEl.getAttribute(name), context)
-    }));
+    const embeds = [ ...contentEl.querySelectorAll(".include-note") ].map((embedEl) => {
+        normalizeEmbedBox(embedEl);
+        return {
+            embedEl,
+            embed: resolveContentEmbed((name) => embedEl.getAttribute(name), context)
+        };
+    });
     const noteIds = embeds.flatMap(({ embed }) => embed?.kind === "note" ? [ embed.noteId ] : []);
     await froca.getNotes(noteIds);
 
@@ -146,7 +150,7 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
             const attachment = await froca.getAttachment(embed.attachmentId, true);
             if (!attachment) continue;
 
-            if (embed.asLink) {
+            if (isEmbedShownAsLink(embed, getContentType(attachment))) {
                 const { ownerId, attachmentId } = attachment;
                 replaceWithReferenceLink(embedEl, getAttachmentEmbedHref(ownerId, attachmentId));
             } else {
@@ -166,6 +170,10 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
         const note = froca.getNoteFromCache(embed.noteId);
         if (!note) {
             console.warn(`Unable to embed ${embed.noteId} because it could not be found.`);
+            continue;
+        }
+        if (isEmbedShownAsLink(embed, getContentType(note))) {
+            replaceWithReferenceLink(embedEl, getNoteEmbedHref(embed.noteId, embed.block));
             continue;
         }
 
@@ -201,6 +209,7 @@ export function emptyUnknownEmbeds(container: Element) {
             }
         }
         section.className = "include-note unknown-content-embed";
+        normalizeEmbedBox(section);
         section.replaceChildren();
         boxes.push(section);
     }
@@ -224,12 +233,8 @@ function replaceEmbedContent(embedEl: Element, content: Node[]) {
     embedEl.replaceChildren(...content, ...(caption ? [ caption ] : []));
 }
 
-/** The caption of an embed, or `null` for a Tiny embed, which shows none. */
+/** The caption of an embed, or `null` without one. */
 export function getEmbedCaption(embedEl: Element) {
-    if (embedEl.getAttribute("data-box-size") === "tiny") {
-        return null;
-    }
-
     return embedEl.querySelector<HTMLElement>(":scope > figcaption");
 }
 

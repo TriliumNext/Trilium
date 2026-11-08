@@ -1,4 +1,4 @@
-import type { StandaloneApi } from "@triliumnext/commons";
+import type { BoxSize, StandaloneApi } from "@triliumnext/commons";
 import {
 	FileRepository,
 	Plugin,
@@ -259,8 +259,14 @@ export interface AttachmentUploadHost {
 	 * because a raw request with a body cannot reach that server from every platform.
 	 */
 	getLocalUpload(): LocalUpload | undefined;
-	/** The box size a new embed of an uploaded file starts at, from its media type and size. */
-	getEmbedBoxSize(mime: string, size: number): string;
+	/** The box a new embed of an uploaded file starts with, from its media type and size. */
+	getEmbedBox(mime: string, size: number): EmbedBox;
+}
+
+/** How a new embed starts: its box size, and whether its title row is hidden. */
+export interface EmbedBox {
+	boxSize: BoxSize;
+	isTitleHidden: boolean;
 }
 
 declare module "ckeditor5" {

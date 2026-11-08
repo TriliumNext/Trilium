@@ -92,7 +92,7 @@ describe("InsertMediaPlugin", () => {
         expect(linkEmbed.fetchMetadata).toHaveBeenCalledExactlyOnceWith(VIDEO_URL);
     });
 
-    it("inserts a video file Medium and an audio file Small, both untitled", async () => {
+    it("inserts a video file Resizable and an audio file Compact, both untitled", async () => {
         const insert = async (url: string, embedType: string) => {
             setModelData(editor.model, "<paragraph>[]</paragraph>");
             linkEmbed.fetchMetadata.mockResolvedValueOnce({ url, embedType, title: "file" });
@@ -103,9 +103,9 @@ describe("InsertMediaPlugin", () => {
 
         // The server reads the type of a file whose address names none.
         expect(await insert("https://example.com/watch/1", "video"))
-            .toEqual([ "video", "medium", true ]);
+            .toEqual([ "video", "resizable", true ]);
         expect(await insert("https://example.com/listen/1", "audio"))
-            .toEqual([ "audio", "small", true ]);
+            .toEqual([ "audio", "compact", true ]);
 
         // The title can still be shown.
         editor.execute("toggleContentEmbedTitle");

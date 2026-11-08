@@ -1,14 +1,14 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
     BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
-    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
-    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer,
-    getNestedEmbedOptions, getNoteEmbedHref, getVideoAspectRatio, isHttpUrl, isImageAttachmentRole,
-    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor,
-    readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedHtml,
-    renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
-    resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
-    sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
+    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
+    getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
+    getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
+    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
+    normalizeMimeTypeForCKEditor, readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedBoxHtml,
+    renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
+    SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
+    shouldSyntaxHighlight, sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -643,7 +643,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     for (const embedEl of document.querySelectorAll("section.link-embed")) {
         const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
         if (data) {
-            embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
+            embedEl.innerHTML = renderLinkEmbedBoxHtml(
+                data, (name) => embedEl.getAttribute(name), previewOptions);
             const player = getLinkPreviewPlayer(data);
             if (player) {
                 setMediaBox(embedEl, player, getVideoAspectRatio(data));
@@ -671,6 +672,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     // The links of an embedded note, which `getContent()` processed with that note as their host.
     const embeddedLinks = new Set<HTMLElement>();
     for (const embedEl of document.querySelectorAll(".include-note")) {
+        normalizeEmbedBox(embedEl);
         const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
         if (!embed) continue;
 
@@ -678,7 +680,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             const attachment = getAttachment(embed.attachmentId);
             if (!attachment) {
                 replaceWithUnavailable(embedEl, parseOpts);
-            } else if (embed.asLink) {
+            } else if (isEmbedShownAsLink(embed, getEmbedContentType(attachment))) {
                 const link = renderAttachmentLink(embed.attachmentId, attachment);
                 embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             } else {
@@ -703,7 +705,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         }
 
         // The link-processing passes below resolve the reference link to the shared note.
-        if (embed.asLink) {
+        if (isEmbedShownAsLink(embed, getEmbedContentType(embeddedNote))) {
             const href = utils.escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
             const title = utils.escapeHtml(embeddedNote.title);
             const link = `<a class="reference-link" href="${href}">${title}</a>`;
@@ -854,6 +856,18 @@ function renderAttachmentEmbed(
 
     const src = `api/attachments/${image.attachmentId}/image/${encodeURIComponent(image.title)}`;
     return `<img src="${src}" alt="${utils.escapeHtml(attachment.title)}">`;
+}
+
+/**
+ * The kind of content that decides the box of an embed of `entity`: `audio` for an audio file,
+ * otherwise the type of a note or `file` for an attachment.
+ */
+function getEmbedContentType(entity: SNote | BNote | BAttachment | SAttachment): string {
+    const isFile = "type" in entity ? entity.type === "file" : entity.role === "file";
+    if (isFile && entity.mime?.startsWith("audio/")) {
+        return "audio";
+    }
+    return ("type" in entity ? entity.type : undefined) ?? "file";
 }
 
 /** The reference link to an attachment, which `handleAttachmentLink` then resolves. */

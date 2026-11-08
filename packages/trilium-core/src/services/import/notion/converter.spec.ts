@@ -469,7 +469,7 @@ describe("convertNotionHtml — code blocks", () => {
 
 describe("convertNotionHtml — inline databases", () => {
     const dbId = "38ac5eca1b8b808babeaf10c0980fa5b";
-    const placeholder = `<section class="include-note" data-notion-id="${dbId}" data-box-size="medium">&nbsp;</section>`;
+    const placeholder = `<section class="include-note" data-notion-id="${dbId}" data-box-size="resizable">&nbsp;</section>`;
 
     it("replaces a rendered inline-database table (partial export) with an include-note placeholder", () => {
         const input =

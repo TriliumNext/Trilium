@@ -19,25 +19,27 @@ A link to blocks of a text note is converted the same way, with _Convert link to
 
 ## Box sizes
 
-The box size sets how much of the included note is shown.
+The box size sets how much of the included note is shown, and whether the box can be resized.
 
-*   _Tiny_ shows a single row instead of the content: the note's icon, its title with the path to the note above it, and buttons to act on the note. The included note is never rendered, so wherever the note is shown outside the editor, such as in print, in a tooltip or on a shared page, a _Tiny_ include appears as a link to the included note.
-*   _Small_ and _Medium_ show the content in a box of limited height. Text scrolls inside the box, while a picture, a diagram or a video is scaled down to fit it.
-*   _Full_ shows the whole content.
-*   _Expandable_ shows only the title until its <span class="tn-icon bx bx-chevron-right"></span> arrow is pressed. In a read-only note, a click anywhere on the title row other than its buttons and link expands or collapses it as well.
+*   _Compact_ shows a single row instead of the content: the note's icon, its title with the path to the note above it, and buttons to act on the note. The included note is never rendered, so wherever the note is shown outside the editor, such as in print, in a tooltip or on a shared page, a _Compact_ include appears as a link to the included note. An included audio file is the exception: its _Compact_ box is a row of player controls, without a title until _Show title_ is turned on.
+*   _Resizable_ shows the content in a box that can be resized to any width and height (see _Resizing_ below). Text scrolls inside the box, while a picture, a diagram or a video is scaled down to fit it. Until it is resized, the box takes the full width of the note and about 20 lines of height.
+*   _Full_ shows the whole content, at the full width of the note.
+*   _Expandable_ shows only the title until its <span class="tn-icon bx bx-chevron-right"></span> arrow is pressed. In a read-only note, a click anywhere on the title row other than its buttons and link expands or collapses it as well. It takes the full width of the note, and its height can be resized once it is expanded.
+
+> [!NOTE]
+> Since v0.107.0, the box sizes were reworked: _Small_ and _Medium_ are replaced by _Resizable_. An include saved as _Small_ or _Medium_ by an earlier version opens as _Resizable_, at the height it had.
 
 A new include gets the size that suits what it shows:
 
-*   _Tiny_ for a note or an attachment that has no preview, such as a relation map or an archive.
-*   _Small_ for audio.
+*   _Compact_ for a note or an attachment that has no preview, such as a relation map or an archive, and for audio.
 *   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
-*   _Medium_ for anything else.
+*   _Resizable_ for anything else.
 
-The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. The dialog has no _Small_ button, so audio starts at _Medium_ there; choose _Small_ from the include's _Box size_ menu afterwards. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
+The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. Both end with _Default_, which puts the include back at the size it started with, without a resized width or height; it is unavailable while the include is already there. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
 
 ## Resizing
 
-A _Small_, _Medium_ or _Expandable_ include can be resized to any width and height. A _Tiny_ or _Full_ include always fits its content.
+A _Resizable_ include can be resized to any width and height, and an _Expandable_ include in height. A _Compact_ or _Full_ include always fits its content.
 
 *   To resize an include, select it and drag the handle in its bottom-right corner. To change only the width or only the height, drag the middle of its right or bottom edge instead, where a touch screen shows a handle too. In right-to-left text, the handle is in the bottom-left corner and the width changes from the left edge.
 *   Resizing works with a mouse, a pen or a finger.
@@ -45,8 +47,8 @@ A _Small_, _Medium_ or _Expandable_ include can be resized to any width and heig
 *   An include narrower than the note is centered, so changing its width moves both of its sides. An include aligned to the left or the right keeps that side in place and has its handles on the other side (see _Positioning_ below). Making an include as wide as the note returns it to the full width.
 *   To cancel a resize, press <kbd>Esc</kbd> before releasing the handle.
 *   To reset the size, double-click the corner handle, or double-tap it on a touch screen. Double-clicking the right or bottom edge resets only the width or the height.
-*   Choosing a box size resets the height. Choosing _Tiny_ or _Full_ resets the width too.
-*   While an _Expandable_ include is collapsed, only its width can be changed.
+*   Choosing _Compact_ or _Full_ removes the resized width and height, and choosing _Expandable_ removes the width, as it takes the full width of the note. _Resizable_ keeps both, and _Default_ removes both.
+*   While an _Expandable_ include is collapsed, it cannot be resized.
 
 ## Positioning
 
@@ -55,7 +57,7 @@ An include can sit on lines of its own or have the text wrap around it, as an [i
 *   To change the position, open the _More actions_ menu of the include in a note being edited (see _Opening an included note_ below) and choose an entry of its _Position_ submenu:
     *   Under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the include on lines of its own, at that side of the note. _Align center_ is the default.
     *   Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place the include at that side and let the text run beside it.
-*   An include takes the full width of the note until it is resized, so a new position shows once a _Small_, _Medium_ or _Expandable_ include is resized narrower (see _Resizing_ above). The position is kept whatever the box size, and shows again when such an include is resized.
+*   Only a _Resizable_ include can be placed in the text. It takes the full width of the note until it is resized, so a new position shows once it is resized narrower (see _Resizing_ above). An _Expandable_ include takes the full width and offers the _Break text_ positions alone, which align the content inside its box. A _Compact_ or _Full_ include has no _Position_ submenu. A position is kept through a change of box size, and shows again once the include is _Resizable_.
 *   In the mobile layout, an include with a position other than _Align center_ takes the full width, and only its height can be resized.
 
 ## Caption
@@ -64,7 +66,7 @@ An include can have a caption, shown centered at the bottom of its box. The capt
 
 *   To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span> _Toggle caption on_ button in its toolbar and type the caption. While the cursor is in the caption, the include stays selected and keeps its toolbar.
 *   To remove the caption, press the same button again. Pressing it once more brings back the text it had, as long as the note stays open.
-*   A _Tiny_ include has no caption. Switching an include to _Tiny_ removes its caption, and switching it back to a larger size restores the caption, as long as the note stays open.
+*   A _Compact_ include has no caption, unless it is an audio file. Switching an include to _Compact_ removes its caption, and switching it back to a larger size restores the caption, as long as the note stays open.
 *   An _Expandable_ include shows its caption under the title while the content is collapsed, and under the content once it is expanded.
 
 ## Title
@@ -72,7 +74,7 @@ An include can have a caption, shown centered at the bottom of its box. The capt
 The title row of an include links to the included note and holds its buttons. To show only the content, turn off _Show title_ in the menu of the include, which right-clicking the title row or pressing its <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ button opens (see _Opening an included note_ below).
 
 *   While the title is hidden, select the include and press the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ button in its toolbar to open the same menu, where turning on _Show title_ shows the title again.
-*   A _Tiny_ or _Expandable_ include always shows its title, so _Show title_ is unavailable in its menu.
+*   A _Compact_ or _Expandable_ include always shows its title, so _Show title_ is unavailable in its menu. An audio file at _Compact_ is the exception: it starts without its title, which _Show title_ shows above its controls.
 
 ## Opening an included note
 
@@ -82,9 +84,9 @@ The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ but
 
 In a note being edited, the menu also has the _Size_ submenu, _Show title_ and _Show caption_, each a switch that is on while it is in effect, and the _Position_ submenu after _Size_ (see _Positioning_ above). The menu ends with <span class="tn-icon bx bx-trash"></span> _Delete_, which removes the include from the note, followed by _Convert to link_. For an embedded attachment, _Delete attachment..._ follows _Delete_, and _Convert attachment into note..._ follows _Convert to link_. A drawing canvas, a Mermaid diagram, an included text, code or Markdown note and an embedded code or Markdown file also have _Editable_, above _Size_. An included code or Markdown note, an embedded code or Markdown file and a Mermaid diagram also have the _Word wrap_ and _Line numbers_ submenus after _Editable_ (see _Editing an include in place_ below). A Mermaid diagram, an included Markdown note and an embedded Markdown file also have _Source view_, _Split view_ and _Preview_ after these submenus. For an embedded attachment they follow its first group of actions; for an included note, the places to open it in.
 
-To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
+To show an include of size _Resizable_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
-A _Tiny_ include has these buttons instead, followed by the same _More actions_ button:
+A _Compact_ include has these buttons instead, followed by the same _More actions_ button:
 
 *   For a note, <span class="tn-icon bx bx-edit"></span> _Quick edit_ opens the note in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a>, and <span class="tn-icon bx bx-link-external"></span> _Open in new tab_ opens it in a new tab.
 *   For an embedded attachment, <span class="tn-icon bx bx-file-find"></span> _Open externally_ opens the file in another application, and <span class="tn-icon bx bx-download"></span> _Download_ downloads it. The size of the file is shown under its title.
@@ -101,7 +103,7 @@ Content added by a newer version of Trilium, which this version cannot show, app
 
 ## Included notes in the share functionality
 
-If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Tiny_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
+If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Compact_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
 
 For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
 
@@ -124,7 +126,7 @@ An included image, whether an image note or an image attachment, is shown in the
 *   To pan an image that is zoomed in, drag it. At its fitted size, dragging the image on a touch screen scrolls the note.
 *   To return to the fitted size, double-click the image.
 
-In a _Small_ or _Medium_ box, the image is scaled down to fit the height of the box. In fullscreen, it fits the screen.
+In a _Resizable_ box, the image is scaled down to fit the height of the box. In fullscreen, it fits the screen.
 
 ## Editing an include in place
 
@@ -169,9 +171,9 @@ An included <a class="reference-link" href="../Markdown.md">Markdown</a> note 
 
 A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-link" href="../Canvas.md">Canvas</a> note, drawn directly in the text note. It is not a note of its own: the drawing is kept in a `Canvas.excalidraw` [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) of the text note and is saved together with the text.
 
-*   To insert a drawing canvas, open the <span class="tn-icon cke cke-plus"></span> _Insert_ menu of the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> and choose <span class="tn-icon bx bx-pen"></span> _Drawing canvas_, above _Mermaid diagram_. It is also available as _Drawing canvas_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. The canvas is added empty and editable, in a _Medium_ box with its title hidden, and takes the focus, ready for drawing.
-*   To draw or write over an image, select the image and press the <span class="tn-icon bx bxs-pen"></span> _Convert image to a drawing canvas_ button of its toolbar. The image is replaced by an editable drawing canvas in a _Medium_ box, with its title hidden and the focus in it. The image sits at its original size in the middle of the canvas, zoomed so that all of it shows, and is locked so that it cannot be selected or moved by accident. While it is locked, the canvas can be zoomed in on the image but not zoomed out past it or scrolled beyond its edges. To move or resize the image anyway, right-click it and choose _Unlock_. The caption of the image is kept, but not its alignment or link. Only an image on its own line can be converted, not one inside a paragraph. Undo brings the image back.
-*   An Excalidraw file (`.excalidraw`) attached with _Attach and embed file_, under the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button, becomes a drawing canvas too, in a _Medium_ box titled with the file name. It starts with _Editable_ off, so the drawing shows but cannot be changed until _Editable_ is turned on (see below).
+*   To insert a drawing canvas, open the <span class="tn-icon cke cke-plus"></span> _Insert_ menu of the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> and choose <span class="tn-icon bx bx-pen"></span> _Drawing canvas_, above _Mermaid diagram_. It is also available as _Drawing canvas_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>. The canvas is added empty and editable, in a _Resizable_ box with its title hidden, and takes the focus, ready for drawing.
+*   To draw or write over an image, select the image and press the <span class="tn-icon bx bxs-pen"></span> _Convert image to a drawing canvas_ button of its toolbar. The image is replaced by an editable drawing canvas in a _Resizable_ box, with its title hidden and the focus in it. The image sits at its original size in the middle of the canvas, zoomed so that all of it shows, and is locked so that it cannot be selected or moved by accident. While it is locked, the canvas can be zoomed in on the image but not zoomed out past it or scrolled beyond its edges. To move or resize the image anyway, right-click it and choose _Unlock_. The caption of the image is kept, but not its alignment or link. Only an image on its own line can be converted, not one inside a paragraph. Undo brings the image back.
+*   An Excalidraw file (`.excalidraw`) attached with _Attach and embed file_, under the <span class="tn-icon cke cke-paper-clip"></span>_Attach file_ button, becomes a drawing canvas too, in a _Resizable_ box titled with the file name. It starts with _Editable_ off, so the drawing shows but cannot be changed until _Editable_ is turned on (see below).
 *   To draw on a canvas that does not have the focus, click it first. The canvas then has the tools, menus and keyboard shortcuts of a Canvas note. The toolbars, the menus and the properties of the selected shapes show only while the canvas has the focus, so elsewhere the drawing reads like a picture in the text.
 *   The mouse wheel and the touchpad scroll the note over a canvas too, as over the text. To zoom, use the zoom buttons of the canvas toolbar. The percentage between them opens a menu with _Zoom to fit_, which shows the whole drawing, and _Reset zoom_. To move around the drawing, use the <span class="tn-icon bx bxs-hand"></span> _Hand_ tool. In fullscreen, the mouse wheel moves and zooms the drawing instead.
 *   The <span class="tn-icon bx bx-block"></span> _No tool_ button, first among the tools of the canvas toolbar, leaves the drawing alone: the mouse does nothing on it, and a touch gesture over it scrolls the note instead of drawing on, selecting or moving the drawing. In the mobile layout, a canvas starts with no tool and returns to it whenever it loses the focus, so that the note scrolls over its drawings until a tool is picked. Fullscreen has no use for it: a canvas with no tool switches to the _Selection_ tool as it goes fullscreen.
@@ -180,7 +182,7 @@ A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-
 *   The changes to the drawing are part of the undo history of the text note (see _Editing an include in place_ above). <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd> and the <span class="tn-icon bx bx-undo"></span> _Undo_ and <span class="tn-icon bx bx-redo"></span> _Redo_ buttons of the canvas toolbar undo and redo the last change of the note, in the drawing or in the text.
 *   A new drawing has the background color of the note. A background chosen from the Excalidraw menu replaces it.
 *   To protect a finished drawing from accidental changes, select it and turn off _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The drawing then shows as a still picture, at the zoom and position it had, and can no longer be changed, zoomed or moved. To draw again, turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, which shows only while _Editable_ is off, or turn _Editable_ back on in the menu.
-*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size and the position to its _More actions_ menu (see _Positioning_ above).
+*   The box sizes, resizing, the caption and the title work as for an included note, but the toolbar of a drawing leaves the box size and the position to its _More actions_ menu (see _Positioning_ above). A _Compact_ drawing canvas shows its title row alone, without the drawing.
 *   In the desktop layout, Excalidraw keeps its desktop interface however small the box is. In the mobile layout, a narrow or short box switches it to a compact interface. For more room, choose _Full_, or show the title and press <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_.
 *   In the compact interface, the buttons for the selection are on a rail at the side of the screen while the canvas has the focus, so they stay in reach wherever the canvas is scrolled: <span class="tn-icon bx bx-palette"></span> _Edit_ opens the properties of the selected shapes or of the chosen tool in a panel at the bottom of the screen, above the formatting toolbar, <span class="tn-icon bx bx-duplicate"></span> _Duplicate_ and <span class="tn-icon bx bx-trash"></span> _Delete_ act on the selected shapes, and <span class="tn-icon bx bx-check"></span> _Done_ finishes a line or an arrow drawn point by point. The rail shows only the buttons that apply, and leaves when none does. The properties close when the selection is cleared, and open again only with _Edit_. In fullscreen, these buttons are at the bottom of the canvas instead.
 *   Pictures added to the drawing are stored in the same attachment. A converted image is kept as an image attachment of the note instead, named with a generated code.

@@ -623,7 +623,7 @@ describe("FileUploadEditing with embeds", () => {
             Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema,
             ContentEmbed, FileUploadEditing
         ], {
-            attachmentUpload: { getEmbedBoxSize: () => "small" },
+            attachmentUpload: { getEmbedBox: () => ({ boxSize: "full", isTitleHidden: false }) },
             contentEmbed: {
                 loadAttachment: loadEmbeddedAttachment,
                 focusAttachment: focusContentEmbed
@@ -639,11 +639,11 @@ describe("FileUploadEditing with embeds", () => {
         await waitFor(() => !getModelData(editor.model).includes("uploadId"));
 
         expect(getModelData(editor.model)).toBe(
-            "<contentEmbed attachmentId=\"att1\" boxSize=\"small\"></contentEmbed>" +
+            "<contentEmbed attachmentId=\"att1\" boxSize=\"full\"></contentEmbed>" +
             "<paragraph>[]</paragraph>"
         );
         editor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper");
-        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "small");
+        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "full");
         expect(focusContentEmbed).not.toHaveBeenCalled();
     });
 

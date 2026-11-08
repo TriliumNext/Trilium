@@ -1,26 +1,33 @@
-import { Plugin, type ListDropdownButtonDefinition, Collection, ViewModel, createDropdown, addListToDropdown, DropdownButtonView, type Command } from "ckeditor5";
+import { BOX_SIZES, type BoxSize } from "@triliumnext/commons";
+import {
+    addListToDropdown, Collection, type Command, createDropdown, DropdownButtonView,
+    type ListDropdownItemDefinition, Plugin, UIModel
+} from "ckeditor5";
+
 import ContentEmbed, {
-    BOX_SIZE_COMMAND_NAME, BOX_SIZES, type BoxSizeValue, getBoxSizeLabel, INLINE_BOX_SIZES,
-    isToolbarItemHidden
+    BOX_SIZE_COMMAND_NAME, DEFAULT_BOX_SIZE_COMMAND_NAME, getBoxSizeLabel, isToolbarItemHidden
 } from "./content_embed.js";
 
 export const CONTENT_EMBED_BOX_SIZE_DROPDOWN = "contentEmbedBoxSizeDropdown";
 
 /**
- * Toolbar item which displays the list of box sizes for embeds in a dropdown.
+ * The toolbar dropdown that lists the box sizes the selected embed can take, the current one on,
+ * and _Default_ last, apart from them, which puts the embed back at the box it started with.
  */
 export default class ContentEmbedBoxSizeDropdown extends Plugin {
 
     static get requires() {
-        return [ContentEmbed] as const;
+        return [ ContentEmbed ] as const;
     }
 
     public init() {
         const editor = this.editor;
         const componentFactory = editor.ui.componentFactory;
 
-        const itemDefinitions = this._getBoxSizeListItemDefinitions();
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as Command & { value: BoxSizeValue | null };
+        const itemDefinitions = this.getItemDefinitions();
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as Command & {
+            value: BoxSize | null;
+        };
         const contentEmbed = editor.plugins.get(ContentEmbed);
 
         componentFactory.add(CONTENT_EMBED_BOX_SIZE_DROPDOWN, _locale => {
@@ -52,10 +59,12 @@ export default class ContentEmbedBoxSizeDropdown extends Plugin {
                 }
             );
             dropdownView.on("execute", evt => {
-                const source = evt.source as any;
-                editor.execute(BOX_SIZE_COMMAND_NAME, {
-                    value: source._boxSizeValue
-                });
+                const { boxSizeValue } = evt.source as { boxSizeValue?: BoxSize };
+                if (boxSizeValue) {
+                    editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSizeValue });
+                } else {
+                    editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+                }
                 editor.editing.view.focus();
             });
             addListToDropdown(dropdownView, itemDefinitions);
@@ -63,31 +72,37 @@ export default class ContentEmbedBoxSizeDropdown extends Plugin {
         });
     }
 
-    private _getBoxSizeListItemDefinitions(): Collection<ListDropdownButtonDefinition> {
+    /** A radio item per box size, shown while the selected embed can take it, then Default. */
+    private getItemDefinitions(): Collection<ListDropdownItemDefinition> {
         const editor = this.editor;
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as Command & { value: BoxSizeValue | null };
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as Command & {
+            value: BoxSize | null;
+        };
+        const defaultCommand = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME) as Command;
         const contentEmbed = editor.plugins.get(ContentEmbed);
-        const itemDefinitions = new Collection<ListDropdownButtonDefinition>();
+        const itemDefinitions = new Collection<ListDropdownItemDefinition>();
 
         for (const size of BOX_SIZES) {
-            const definition: ListDropdownButtonDefinition = {
-                type: "button",
-                model: new ViewModel({
-                    _boxSizeValue: size,
-                    label: getBoxSizeLabel(editor.t, size),
-                    role: "menuitemradio",
-                    withText: true
-                })
-            };
-
-            definition.model.bind("isOn").to(command, "value", value => {
-                return value === size;
+            const model = new UIModel({
+                boxSizeValue: size,
+                label: getBoxSizeLabel(editor.t, size),
+                role: "menuitemradio",
+                withText: true
             });
-            definition.model.bind("isVisible").to(contentEmbed, "isSelectedEmbedInline",
-                isInline => !isInline || INLINE_BOX_SIZES.includes(size));
-
-            itemDefinitions.add(definition);
+            model.bind("isOn").to(command, "value", value => value === size);
+            model.bind("isVisible").to(contentEmbed, "selectedEmbedBoxSizes",
+                sizes => sizes.includes(size));
+            itemDefinitions.add({ type: "button", model });
         }
+
+        itemDefinitions.add({ type: "separator" });
+        const defaultModel = new UIModel({
+            label: editor.t("Default"),
+            role: "menuitem",
+            withText: true
+        });
+        defaultModel.bind("isEnabled").to(defaultCommand, "isEnabled");
+        itemDefinitions.add({ type: "button", model: defaultModel });
 
         return itemDefinitions;
     }

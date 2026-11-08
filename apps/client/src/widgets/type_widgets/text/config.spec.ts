@@ -1,4 +1,6 @@
 import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
+import { getEmbedContentInfo } from "../../../services/content_renderer.js";
+import froca from "../../../services/froca.js";
 import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
@@ -102,7 +104,13 @@ vi.mock("../../../services/dialog.js", () => ({
 }));
 vi.mock("@triliumnext/highlightjs", () => ({ default: { name: "hljs-stub" } }));
 vi.mock("../../../services/math.js", () => ({ default: { name: "katex-stub" } }));
-vi.mock("../../../services/content_renderer.js", () => ({ getUploadBoxSize: vi.fn(() => "medium") }));
+vi.mock("../../../services/content_renderer.js", () => ({
+    getUploadBoxDefaults: vi.fn((mime: string) => ({
+        boxSize: mime.startsWith("audio/") ? "compact" : "resizable",
+        isTitleHidden: mime.startsWith("audio/")
+    })),
+    getEmbedContentInfo: vi.fn()
+}));
 const { convertImageToDrawing } = vi.hoisted(() => ({
     convertImageToDrawing: vi.fn(async () => "d1")
 }));
@@ -416,7 +424,32 @@ describe("CK config - tables", () => {
         // Headers without a value are left out rather than sent as the text "null".
         expect(await config.attachmentUpload?.getHeaders?.())
             .toStrictEqual({ "x-csrf-token": "csrf", "trilium-component-id": "editor1" });
-        expect(config.attachmentUpload?.getEmbedBoxSize?.("image/png", 1)).toBe("medium");
+        expect(config.attachmentUpload?.getEmbedBox?.("image/png", 1))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
+        expect(config.attachmentUpload?.getEmbedBox?.("audio/mpeg", 1))
+            .toEqual({ boxSize: "compact", isTitleHidden: true });
+    });
+
+    it("tells the editor what the cache knows of an embedded note or attachment", async () => {
+        const config = await buildConfig(baseOpts());
+        const info = { defaultBoxSize: "compact" as const, hasCompactContent: true };
+        vi.mocked(getEmbedContentInfo).mockReturnValue(info);
+        const describe = config.contentEmbed?.getEmbedContentInfo;
+        if (!describe) throw new Error("Expected the host to describe embeds.");
+
+        expect(describe({ noteId: "unknown" })).toBeNull();
+        expect(describe({ attachmentId: "unknown" })).toBeNull();
+        froca.notes.cached = { noteId: "cached" } as never;
+        froca.attachments.att = { attachmentId: "att" } as never;
+        try {
+            expect(describe({ noteId: "cached" })).toBe(info);
+            expect(describe({ attachmentId: "att" })).toBe(info);
+            expect(vi.mocked(getEmbedContentInfo).mock.calls)
+                .toEqual([ [ froca.notes.cached ], [ froca.attachments.att ] ]);
+        } finally {
+            delete froca.notes.cached;
+            delete froca.attachments.att;
+        }
     });
 
     it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {

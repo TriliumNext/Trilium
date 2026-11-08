@@ -59,7 +59,7 @@ export interface ContentEmbedProps {
     isFocusedOnMount?: boolean;
 }
 
-export interface TinyContentEmbedProps {
+export interface CompactContentEmbedProps {
     icon: string;
     /** The link to the embedded note or attachment, shown as the title. */
     title: HTMLElement;
@@ -92,7 +92,7 @@ export default function ContentEmbed({
     const hasBackdrop = !isContentActive && !isDraggedOver
         && !DIRECT_CONTENT_TYPES.has(contentType);
     const hasFullscreen = !isExcerpt && !OWN_FULLSCREEN_CONTENT_TYPES.has(contentType)
-        && (boxSize === "medium" || boxSize === "full");
+        && (boxSize === "resizable" || boxSize === "full");
     const openTitleMenu = notePath ? getNoteMenu(notePath, viewScope) : openMenu;
     const openContentMenu = MENU_CONTENT_TYPES.has(contentType) ? openMenu : undefined;
     const toggleExpanded = () => {
@@ -193,7 +193,11 @@ export default function ContentEmbed({
             </div>}
             <div
                 ref={bodyRef}
-                className={clsx("include-note-body", isContentActive && "active")}
+                className={clsx(
+                    "include-note-body",
+                    boxSize === "compact" && "compact-content",
+                    isContentActive && "active"
+                )}
             >
                 <div
                     ref={contentRef}
@@ -239,10 +243,13 @@ export default function ContentEmbed({
     );
 }
 
-/** A tiny embed: a single row with an icon, the title and the actions, and no content. */
-export function TinyContentEmbed({
+/**
+ * A Compact embed of content that Compact does not render: a single row with an icon, the title
+ * and the actions.
+ */
+export function CompactContentEmbed({
     icon, title, description, notePath, viewScope, actions
-}: TinyContentEmbedProps) {
+}: CompactContentEmbedProps) {
     const openMenu = getNoteMenu(notePath, viewScope);
     return (
         <div
@@ -274,21 +281,20 @@ interface ContentEmbedErrorProps {
 
 /**
  * The box of an embed that cannot show its content, such as a missing note or an embed of an
- * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Tiny and
- * Expandable boxes, which show only a row.
+ * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Compact
+ * and Expandable boxes, which show only a row.
  */
 export function ContentEmbedError({ boxSize, icon, text }: ContentEmbedErrorProps) {
-    const hasBoxHeight = boxSize !== "tiny" && boxSize !== "expandable";
-    const isRoomy = hasBoxHeight && boxSize !== "small";
+    const hasBoxHeight = boxSize !== "compact" && boxSize !== "expandable";
 
     return (
         <div className={clsx("include-note-error", hasBoxHeight && "include-note-box-height")}>
-            <NoItems icon={icon} text={text} size={isRoomy ? "normal" : "small"} />
+            <NoItems icon={icon} text={text} size={hasBoxHeight ? "normal" : "small"} />
         </div>
     );
 }
 
-/** The buttons of a tiny embed of a note: "Quick edit" and "Open in new tab". */
+/** The buttons of a Compact embed of a note: "Quick edit" and "Open in new tab". */
 export function getNoteActions(notePath: string): ContentEmbedAction[] {
     return [
         {

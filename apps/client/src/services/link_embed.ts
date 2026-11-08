@@ -2,8 +2,8 @@ import "../widgets/type_widgets/text/LinkEmbed.css";
 
 import {
     enhanceLinkPreviews, getMediaFileTitle, getMediaFileTypeOfUrl, type LinkEmbedMetadata,
-    type LinkPreviewData, readLinkPreviewData, renderLinkEmbedHtml, renderLinkMentionHtml,
-    safeHostname, YOUTUBE_REGEX
+    type LinkPreviewData, readLinkPreviewData, renderLinkEmbedBoxHtml, renderLinkEmbedHtml,
+    renderLinkMentionHtml, safeHostname, YOUTUBE_REGEX
 } from "@triliumnext/commons";
 
 import { t } from "./i18n.js";
@@ -144,7 +144,8 @@ export function applyLinkEmbeds(container: HTMLElement) {
     for (const embed of container.querySelectorAll<HTMLElement>("section.link-embed")) {
         const data = readLinkPreviewData((name) => embed.getAttribute(name));
         if (data) {
-            embed.innerHTML = renderLinkEmbedHtml(data, markupOptions(false));
+            embed.innerHTML = renderLinkEmbedBoxHtml(
+                data, (name) => embed.getAttribute(name), markupOptions(false));
         }
     }
 

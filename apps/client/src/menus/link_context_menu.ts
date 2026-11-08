@@ -515,12 +515,20 @@ function getMenuEmbed(e: LinkMenuOrigin, editor: CKTextEditor): MenuEmbed | null
  */
 function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const { editor, state } = embed;
-    const sizeItems = editor.plugins.get("ContentEmbed").getBoxSizes(embed.element)
-        .map(({ value, label }): MenuItem<CommandNames> => ({
-            title: escapeHtml(label),
-            trailingIcon: value === state.boxSize ? CHECK_ICON : undefined,
-            handler: () => runEmbedCommand(embed, "contentEmbedBoxSize", { value })
-        }));
+    const sizeItems: MenuItem<CommandNames>[] = [
+        {
+            title: t("link_context_menu.include_size_default"),
+            enabled: !state.isDefaultBoxSize,
+            handler: () => runEmbedCommand(embed, "contentEmbedDefaultBoxSize")
+        },
+        { kind: "separator" },
+        ...editor.plugins.get("ContentEmbed").getBoxSizes(embed.element)
+            .map(({ value, label }): MenuItem<CommandNames> => ({
+                title: escapeHtml(label),
+                trailingIcon: value === state.boxSize ? CHECK_ICON : undefined,
+                handler: () => runEmbedCommand(embed, "contentEmbedBoxSize", { value })
+            }))
+    ];
     const editableItems: MenuItem<CommandNames>[] = state.isEditableToggleable ? [ {
         title: t("link_context_menu.editable"),
         uiIcon: "bx bx-edit-alt",
@@ -544,11 +552,10 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         ...(contentItems.length ? [ { kind: "separator" } as const ] : []),
         ...displayModeItems,
         ...(displayModeItems.length ? [ { kind: "separator" } as const ] : []),
-        // An audio file has a single box size.
-        ...(sizeItems.length > 1 ? [ submenuItem({
+        submenuItem({
             title: t("link_context_menu.include_size"),
             uiIcon: "bx bx-expand-vertical"
-        }, sizeItems) ] : []),
+        }, sizeItems),
         ...getPositionItems(embed),
         ...(state.isTitleSupported ? [ {
             title: t("link_context_menu.show_title"),
@@ -573,8 +580,8 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
 
 /**
  * The submenu that sets where the embed is placed in the text, with the icon of its position, for
- * content that has positions. Each group is a grid of tiles under its heading, as in the image
- * toolbar's _Image position_ menu.
+ * content that has positions, and with the positions its box size can take. Each group is a grid
+ * of tiles under its heading, as in the image toolbar's _Image position_ menu.
  */
 function getPositionItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const position = embed.state.position;
@@ -582,7 +589,13 @@ function getPositionItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
         return [];
     }
 
-    const items = POSITION_GROUPS.flatMap((group): MenuItem<CommandNames>[] => [
+    const groups = POSITION_GROUPS
+        .map((group) => ({
+            ...group,
+            positions: group.positions.filter(({ value }) => embed.state.positions.includes(value))
+        }))
+        .filter((group) => group.positions.length > 0);
+    const items = groups.flatMap((group): MenuItem<CommandNames>[] => [
         { kind: "header", title: t(group.titleKey) },
         {
             kind: "actions",
@@ -633,7 +646,7 @@ async function getConvertToEmbedItem(
     }
 
     // Imported on demand: `content_renderer` imports `link`, which imports this module.
-    const [ entity, { EXCERPT_BOX_SIZE, getEmbedBoxSize } ] = await Promise.all([
+    const [ entity, { EXCERPT_BOX_SIZE, getEmbedBoxDefaults } ] = await Promise.all([
         getLinkedEntity(),
         import("../services/content_renderer.js")
     ]);
@@ -641,12 +654,14 @@ async function getConvertToEmbedItem(
         return null;
     }
 
+    const box = getEmbedBoxDefaults(entity);
     return {
         title,
         uiIcon: "bx bx-window-alt",
         handler: () => editor.execute("convertLinkToEmbed", {
             domElement: link,
-            boxSize: isExcerpt ? EXCERPT_BOX_SIZE : getEmbedBoxSize(entity)
+            boxSize: isExcerpt ? EXCERPT_BOX_SIZE : box.boxSize,
+            hideTitle: !isExcerpt && box.isTitleHidden
         })
     };
 }

@@ -347,10 +347,7 @@ body:not(.math-loaded) .math-tex {
     clear: both;
     margin: 1em 0;
 
-    &:is(
-        [data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"],
-        .link-embed, .captioned-content-embed
-    ) {
+    &:is([data-box-size="resizable"], .link-embed, .captioned-content-embed) {
         margin-inline: auto;
         max-width: 100%;
         width: var(--include-note-width, auto);
@@ -360,17 +357,17 @@ body:not(.math-loaded) .math-tex {
         max-width: min(100%, 70vh * var(--video-aspect-ratio, 16 / 9));
     }
 
-    &[data-position="left"] {
+    &[data-box-size="resizable"][data-position="left"] {
         margin-right: auto;
         margin-left: 0;
     }
 
-    &[data-position="right"] {
+    &[data-box-size="resizable"][data-position="right"] {
         margin-right: 0;
         margin-left: auto;
     }
 
-    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+    &[data-box-size="resizable"]:is([data-position="wrap-left"], [data-position="wrap-right"]) {
         --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
             var(--ck-content-image-style-spacing, 1.5em));
 
@@ -380,15 +377,24 @@ body:not(.math-loaded) .math-tex {
         width: var(--include-note-width, 100%);
     }
 
-    &[data-position="wrap-left"] {
+    &[data-box-size="resizable"][data-position="wrap-left"] {
         float: left;
         margin-right: var(--_include-note-wrap-gap);
     }
 
-    &[data-position="wrap-right"] {
+    &[data-box-size="resizable"][data-position="wrap-right"] {
         float: right;
         margin-left: var(--_include-note-wrap-gap);
     }
+}
+
+/* An Expandable embed takes the full width: its position aligns the content inside the box. */
+.ck-content figure.include-note[data-box-size="expandable"][data-position="left"] {
+    text-align: left;
+}
+
+.ck-content figure.include-note[data-box-size="expandable"][data-position="right"] {
+    text-align: right;
 }
 
 .ck-content figure.captioned-content-embed > section.link-embed {

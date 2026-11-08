@@ -97,7 +97,7 @@ describe("ContentEmbedDialog", () => {
         expect(labels).toStrictEqual([ "include_note.label_note", "include_note.box_size" ]);
         expect(container.querySelector(".include-note-note input")).not.toBeNull();
         expect(sizeButtons().map((button) => button.textContent?.trim())).toStrictEqual([
-            "include_note.size_tiny", "include_note.size_medium", "include_note.size_full",
+            "include_note.size_compact", "include_note.size_resizable", "include_note.size_full",
             "include_note.size_expandable"
         ]);
         expect(sizeButtons().every((button) => button.querySelector("svg"))).toBe(true);
@@ -113,30 +113,39 @@ describe("ContentEmbedDialog", () => {
             const shown = descriptions.filter((d) => d.getAttribute("aria-hidden") !== "true");
             return shown.length === 1 ? shown[0]?.textContent : `${shown.length} shown`;
         };
-        expect(checkedSize()).toBe("medium");
-        expect(description()).toBe("include_note.size_medium_description");
-        await choose("tiny");
-        expect(checkedSize()).toBe("tiny");
-        expect(description()).toBe("include_note.size_tiny_description");
+        expect(checkedSize()).toBe("resizable");
+        expect(description()).toBe("include_note.size_resizable_description");
+        await choose("compact");
+        expect(checkedSize()).toBe("compact");
+        expect(description()).toBe("include_note.size_compact_description");
     });
 
     it("preselects the size that suits the picked note, until another size is chosen", async () => {
         const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
         const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
-        expect(checkedSize()).toBe("medium");
+        expect(checkedSize()).toBe("resizable");
 
         await pick(script);
         expect(checkedSize()).toBe("full");
-        await choose("tiny");
-        expect(checkedSize()).toBe("tiny");
+        await choose("compact");
+        expect(checkedSize()).toBe("compact");
 
-        // Another note drops the size chosen by hand. Audio suits `small`, which the dialog leaves
-        // out, so it starts at `medium`.
+        // Another note drops the size chosen by hand. Audio suits Compact, a row of controls
+        // without a title.
         await pick(song);
-        expect(checkedSize()).toBe("medium");
+        expect(checkedSize()).toBe("compact");
         await choose("expandable");
         await submit();
-        expect(editorApi.addContentEmbed).toHaveBeenCalledWith(song.noteId, "expandable");
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledWith(song.noteId, "expandable", { hideTitle: false });
+    });
+
+    it("includes an audio file at Compact without its title, a row of controls", async () => {
+        const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
+        await pick(song);
+        await submit();
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledWith(song.noteId, "compact", { hideTitle: true });
     });
 
     it("explains instead of offering sizes for a note inserted as an image", async () => {
@@ -190,12 +199,13 @@ describe("ContentEmbedDialog", () => {
         const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
         await pick(script);
         await submit();
-        expect(editorApi.addContentEmbed).toHaveBeenCalledExactlyOnceWith(script.noteId, "full");
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full", { hideTitle: false });
 
         autocomplete.clear.mockClear();
         await open();
         expect(autocomplete.clear).toHaveBeenCalledOnce();
-        expect(checkedSize()).toBe("medium");
+        expect(checkedSize()).toBe("resizable");
         await submit();
         expect(editorApi.addContentEmbed).toHaveBeenCalledOnce();
     });
@@ -247,6 +257,6 @@ describe("ContentEmbedBalloon", () => {
         await submit();
         expect(onClose).toHaveBeenCalledOnce();
         await vi.waitFor(() => expect(editorApi.addContentEmbed)
-            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full"));
+            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full", { hideTitle: false }));
     });
 });

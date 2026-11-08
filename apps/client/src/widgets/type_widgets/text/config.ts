@@ -13,9 +13,10 @@ import { openInCurrentNoteContext } from "../../../components/note_context.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
-import { getUploadBoxSize } from "../../../services/content_renderer.js";
+import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
 import { prompt } from "../../../services/dialog.js";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
+import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
@@ -103,7 +104,7 @@ export interface BuildEditorOptions {
 /** The members of `contentEmbed` that the component hosting the editor implements. */
 export type ContentEmbedHandlers = Omit<ContentEmbedHost,
     "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml"
-    | "captureVideoThumbnail">;
+    | "captureVideoThumbnail" | "getEmbedContentInfo">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
@@ -143,6 +144,13 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
             sanitizeHtml: sanitizeNoteContentHtml,
+            // The embed has rendered by the time the editor asks, so the cache holds its content.
+            getEmbedContentInfo: ({ noteId, attachmentId }) => {
+                const entity = attachmentId
+                    ? froca.attachments[attachmentId]
+                    : noteId && froca.getNoteFromCache(noteId);
+                return entity ? getEmbedContentInfo(entity) : null;
+            },
             captureVideoThumbnail: async (preview) => {
                 const noteId = opts.getNoteId?.();
                 return noteId ? await captureVideoThumbnail(preview.url, noteId) : null;
@@ -498,7 +506,7 @@ function buildAttachmentUploadHost(getComponentId?: () => string | undefined): A
             return sent;
         },
         getLocalUpload: server.getLocalUpload,
-        getEmbedBoxSize: getUploadBoxSize
+        getEmbedBox: getUploadBoxDefaults
     };
 }
 

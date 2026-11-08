@@ -14,10 +14,110 @@ export interface ContentEmbedContext {
     expandNestedEmbeds?: boolean;
 }
 
-/** What an `.include-note` element stands for, and whether it shows the content or links to it. */
+/**
+ * What an `.include-note` element stands for, whether it links to the content because of where it
+ * sits (see {@link isEmbedShownAsLink} for its box size), and its box size as the editor reads it.
+ */
 export type ContentEmbed =
-    | { kind: "attachment"; attachmentId: string; asLink: boolean }
-    | { kind: "note"; noteId: string; block: string | undefined; asLink: boolean };
+    | { kind: "attachment"; attachmentId: string; asLink: boolean; boxSize: BoxSize | null }
+    | {
+        kind: "note";
+        noteId: string;
+        block: string | undefined;
+        asLink: boolean;
+        boxSize: BoxSize | null;
+    };
+
+/**
+ * The box sizes of an embed: Compact shows a row, Resizable a box of any size, Full the whole
+ * content and Expandable the title until it is expanded.
+ */
+export const BOX_SIZES = [ "compact", "resizable", "full", "expandable" ] as const;
+
+export type BoxSize = typeof BOX_SIZES[number];
+
+/**
+ * The box sizes of an embed that keeps its source in the note, such as a Mermaid diagram, which
+ * has no title for Compact and Expandable to show.
+ */
+export const INLINE_BOX_SIZES: readonly BoxSize[] = [ "resizable", "full" ];
+
+/** The CSS custom property that saves the height an embed was resized to, in `em`. */
+export const EMBED_HEIGHT_PROPERTY = "--include-note-height";
+
+/**
+ * The box sizes that versions before 0.107 saved: the size each one reads as now and, for a box
+ * of a set height, that height, which the embed takes unless it saved a height of its own.
+ */
+const LEGACY_BOX_SIZES: Record<string, { boxSize: BoxSize; height: string | null }> = {
+    tiny: { boxSize: "compact", height: null },
+    small: { boxSize: "resizable", height: "10em" },
+    medium: { boxSize: "resizable", height: "20em" }
+};
+
+/** An element with the attributes of an embed, in the browser or in a parsed document. */
+export interface EmbedBoxElement {
+    getAttribute(name: string): string | null | undefined;
+    setAttribute(name: string, value: string): void;
+}
+
+/**
+ * The box size that a saved `data-box-size` reads as, among the sizes `allowed` for the embed,
+ * and the height an older size implied, `null` for a current size. A missing size, an unknown
+ * one and one the embed cannot take read as `fallback`.
+ */
+export function readBoxSize(
+    saved: string | null | undefined,
+    allowed: readonly BoxSize[],
+    fallback: BoxSize
+): { boxSize: BoxSize; height: string | null } {
+    const current = allowed.find((size) => size === saved);
+    if (current) {
+        return { boxSize: current, height: null };
+    }
+    const legacy = saved ? LEGACY_BOX_SIZES[saved] : undefined;
+    return legacy && allowed.includes(legacy.boxSize)
+        ? legacy
+        : { boxSize: fallback, height: null };
+}
+
+/**
+ * Rewrites the box size of an `.include-note` saved by an older version as the size it reads as,
+ * with the height that size had unless the embed saved one, so that a stylesheet knows only the
+ * current sizes. Returns the `data-box-size` the element has afterwards.
+ */
+export function normalizeEmbedBox(element: EmbedBoxElement): string | null {
+    const saved = element.getAttribute("data-box-size") ?? null;
+    const legacy = saved ? LEGACY_BOX_SIZES[saved] : undefined;
+    if (!legacy) {
+        return saved;
+    }
+
+    element.setAttribute("data-box-size", legacy.boxSize);
+    const style = element.getAttribute("style")?.trim().replace(/;$/, "") ?? "";
+    if (legacy.height && !style.includes(EMBED_HEIGHT_PROPERTY)) {
+        const declaration = `${EMBED_HEIGHT_PROPERTY}:${legacy.height}`;
+        element.setAttribute("style", style ? `${style};${declaration}` : declaration);
+    }
+    return legacy.boxSize;
+}
+
+/**
+ * Whether a Compact embed of content of `contentType` renders the content: audio plays in a row
+ * of controls. Any other content shows its title row only, and links to the content wherever the
+ * row cannot be shown.
+ */
+export function hasCompactContent(contentType: string) {
+    return contentType === "audio";
+}
+
+/**
+ * Whether `embed` becomes a reference link to content of `contentType` rather than showing it:
+ * where it sits asks for a link, or it is Compact and its content shows nothing in Compact.
+ */
+export function isEmbedShownAsLink(embed: ContentEmbed, contentType: string) {
+    return embed.asLink || (embed.boxSize === "compact" && !hasCompactContent(contentType));
+}
 
 /** The options the content an embed shows is rendered with. */
 export interface NestedEmbedOptions {
@@ -78,20 +178,24 @@ export function getEmbedKey(noteId: string, block: string | null | undefined) {
  * Reads an `.include-note` element and decides what it becomes, or `null` when it names nothing
  * valid. The IDs come from note HTML, so only an ID of the shape Trilium generates gets through.
  *
- * It becomes a link to what it shows rather than the content itself when it is a Tiny embed, which
- * shows only a title; when the content around it is itself an embed below the first level; and,
- * for a note, when the note is already being rendered on the path to it, which would otherwise
- * never end.
+ * It becomes a link to what it shows rather than the content itself when the content around it is
+ * itself an embed below the first level and, for a note, when the note is already being rendered
+ * on the path to it, which would otherwise never end. Whether its box size links as well depends
+ * on the content, which {@link isEmbedShownAsLink} decides once the content is known.
  */
 export function resolveContentEmbed(
     getAttribute: (name: string) => string | null | undefined,
     context: ContentEmbedContext
 ): ContentEmbed | null {
-    const asLink = !!context.embedsAsReferenceLinks || getAttribute("data-box-size") === "tiny";
+    const asLink = !!context.embedsAsReferenceLinks;
+    const saved = getAttribute("data-box-size");
+    const boxSize = saved ? readBoxSize(saved, BOX_SIZES, "resizable").boxSize : null;
 
     const attachmentId = getAttribute("data-attachment-id");
     if (attachmentId) {
-        return ENTITY_ID.test(attachmentId) ? { kind: "attachment", attachmentId, asLink } : null;
+        return ENTITY_ID.test(attachmentId)
+            ? { kind: "attachment", attachmentId, asLink, boxSize }
+            : null;
     }
 
     const noteId = getAttribute("data-note-id");
@@ -101,7 +205,7 @@ export function resolveContentEmbed(
 
     const block = getAttribute("data-block") || undefined;
     const isCycle = context.seenNoteIds.has(getEmbedKey(noteId, block));
-    return { kind: "note", noteId, block, asLink: asLink || isCycle };
+    return { kind: "note", noteId, block, asLink: asLink || isCycle, boxSize };
 }
 
 /**

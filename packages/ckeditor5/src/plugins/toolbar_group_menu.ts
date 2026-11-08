@@ -608,15 +608,21 @@ function listEntriesOf(dropdown: DropdownView) {
     return listItemEntries(listView.items);
 }
 
-/** The buttons and separators of a list's items, a group's label before its own. */
+/**
+ * The buttons and separators of a list's items, a group's label before its own. A row or a group
+ * that the list hides is left out.
+ */
 function listItemEntries(items: Iterable<View>) {
     const entries: Array<ButtonView | ListSeparatorView | ListItemGroupView> = [];
     for (const item of items) {
         if (item instanceof ListSeparatorView) {
             entries.push(item);
         } else if (item instanceof ListItemGroupView) {
-            entries.push(item, ...listItemEntries(item.items));
-        } else if (item instanceof ListItemView && item.children.first instanceof ButtonView) {
+            if (item.isVisible) {
+                entries.push(item, ...listItemEntries(item.items));
+            }
+        } else if (item instanceof ListItemView && item.children.first instanceof ButtonView
+            && item.children.first.isVisible) {
             entries.push(item.children.first);
         }
     }

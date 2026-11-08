@@ -75,11 +75,12 @@ describe("content_renderer", () => {
                     <p>After</p>
                 `
             });
+            // A box size saved by an older version reads as the size it became, at its height.
             const result = getContent(note);
             expect(result.content).toStrictEqual(trimIndentation`\
                 <p>Before</p>
-                <section class="include-note" data-note-id="subnote1" data-box-size="small"><p>Foo</p><div>Bar</div></section>
-                <section class="include-note" data-note-id="subnote2" data-box-size="small"><strong>Baz</strong></section>
+                <section class="include-note" data-note-id="subnote1" data-box-size="resizable" style="--include-note-height:10em"><p>Foo</p><div>Bar</div></section>
+                <section class="include-note" data-note-id="subnote2" data-box-size="resizable" style="--include-note-height:10em"><strong>Baz</strong></section>
                 <p>After</p>
             `);
         });
@@ -89,12 +90,12 @@ describe("content_renderer", () => {
             const note = buildShareNote({
                 id: "note1",
                 content: `<figure class="include-note" data-note-id="subnote1"`
-                    + ` data-box-size="medium"><figcaption>A <strong>caption</strong></figcaption>`
+                    + ` data-box-size="resizable"><figcaption>A <strong>caption</strong></figcaption>`
                     + `</figure>`
             });
 
             expect(getContent(note).content).toStrictEqual(
-                `<figure class="include-note" data-note-id="subnote1" data-box-size="medium">`
+                `<figure class="include-note" data-note-id="subnote1" data-box-size="resizable">`
                 + `<p>Foo</p><figcaption>A <strong>caption</strong></figcaption></figure>`
             );
         });
@@ -1092,7 +1093,23 @@ describe("content_renderer", () => {
                 + ` data-media-url="https://example.com/song.mp3"`);
             const sections = parse(content).querySelectorAll("section");
             expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
-                .toEqual([ [ "medium", `--video-aspect-ratio:${4 / 3}` ], [ "small", undefined ] ]);
+                .toEqual([ [ "resizable", `--video-aspect-ratio:${4 / 3}` ], [ "compact", undefined ] ]);
+        });
+
+        it("renders a video at Compact as a mention: its title row alone, no player", () => {
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/clip.mp4"`
+                    + ` data-embed-type="video" data-box-size="compact"></section>`
+                    + `<section class="link-embed" data-url="https://example.com/song.mp3"`
+                    + ` data-embed-type="audio" data-box-size="compact"></section>`
+            });
+
+            const sections = parse(String(getContent(note).content)).querySelectorAll("section");
+            expect(sections.map((section) => [
+                section.getAttribute("data-box-size"),
+                section.querySelector("a.link-embed-mention") !== null,
+                section.querySelector(".link-embed-audio-facade") !== null
+            ])).toEqual([ [ "compact", true, false ], [ "compact", false, true ] ]);
         });
 
         it("gives a video the box size and the shape that the app draws it with", () => {
@@ -1100,7 +1117,7 @@ describe("content_renderer", () => {
                 + ` data-embed-type="youtube"`;
             const note = buildShareNote({
                 content: `<p>Videos</p>`
-                    + `${video} data-aspect-ratio="9/16" data-box-size="medium" style="--include-note-width:11.3em;"></section>`
+                    + `${video} data-aspect-ratio="9/16" data-box-size="resizable" style="--include-note-width:11.3em;"></section>`
                     + `${video}></section>`
                     + `${video} data-aspect-ratio="9/16"></section>`
             });
@@ -1108,7 +1125,7 @@ describe("content_renderer", () => {
             const sections = parse(String(getContent(note).content)).querySelectorAll("section");
             expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
                 .toEqual([
-                    [ "medium", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
+                    [ "resizable", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
                     [ "full", undefined ],
                     [ "full", "--video-aspect-ratio:0.5625" ]
                 ]);
@@ -1122,7 +1139,7 @@ describe("content_renderer", () => {
                 + `${section}&nbsp;</section><figcaption>A caption</figcaption></figure>`;
             const note = buildShareNote({
                 content: captioned(`${video} style="--include-note-width:30em;"`
-                    + ` data-box-size="medium" data-position="wrap-right">`)
+                    + ` data-box-size="resizable" data-position="wrap-right">`)
                     + captioned(`${video}>`)
             });
 
@@ -1134,7 +1151,7 @@ describe("content_renderer", () => {
                 box(figure), box(figure.querySelector("section.link-embed"))
             ])).toEqual([
                 [
-                    [ "--include-note-width:30em;", "medium", "wrap-right" ],
+                    [ "--include-note-width:30em;", "resizable", "wrap-right" ],
                     [ undefined, undefined, undefined ]
                 ],
                 [ [ undefined, "full", undefined ], [ undefined, undefined, undefined ] ]

@@ -22,11 +22,15 @@ vi.mock("../../../services/content_renderer", () => ({
         disposeInteractiveContent: vi.fn(),
         mountInteractiveWidget: vi.fn()
     },
-    CONTENT_RENDERERS: { file: { media: async () => ({ default: MediaPreviewStub }) } }
+    CONTENT_RENDERERS: { file: { media: async () => ({ default: MediaPreviewStub }) } },
+    getEmbedContentInfo: (entity: { mime?: string }) => ({
+        defaultBoxSize: "resizable",
+        hasCompactContent: !!entity.mime?.startsWith("audio/")
+    })
 }));
 vi.mock("./ContentEmbed", () => ({
     default: () => null,
-    TinyContentEmbed: () => null,
+    CompactContentEmbed: () => null,
     ContentEmbedError: () => null,
     getNoteActions: vi.fn()
 }));
@@ -57,8 +61,8 @@ import ContentEmbed, {
     getNoteActions,
     type ContentEmbedAction,
     type ContentEmbedProps,
-    TinyContentEmbed,
-    type TinyContentEmbedProps
+    CompactContentEmbed,
+    type CompactContentEmbedProps
 } from "./ContentEmbed";
 import EmbedHistories from "./embed_history";
 import {
@@ -108,7 +112,7 @@ function lastMount() {
     if (!call) {
         throw new Error("Expected a mounted embed box.");
     }
-    const vnode = call[0] as VNode<ContentEmbedProps & TinyContentEmbedProps>;
+    const vnode = call[0] as VNode<ContentEmbedProps & CompactContentEmbedProps>;
     return { type: vnode.type, props: vnode.props, container: call[1] };
 }
 
@@ -176,12 +180,12 @@ describe("loadEmbeddedNote", () => {
         });
     });
 
-    it("mounts a tiny box with the note's path, without the note or a caption", async () => {
+    it("mounts a Compact box with the note's path, without the note or a caption", async () => {
         const actions = [ action("edit"), action("open") ];
         vi.mocked(getNoteActions).mockReturnValue(actions);
         const figure = inPage(document.createElement("figure"));
         figure.className = "include-note";
-        figure.dataset.boxSize = "tiny";
+        figure.dataset.boxSize = "compact";
         figure.innerHTML = "<figcaption>Caption</figcaption>";
 
         await loadEmbeddedNote("noteY", $(figure));
@@ -193,7 +197,7 @@ describe("loadEmbeddedNote", () => {
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
         expect(getNoteActions).toHaveBeenCalledWith("noteY");
         const mount = lastMount();
-        expect(mount.type).toBe(TinyContentEmbed);
+        expect(mount.type).toBe(CompactContentEmbed);
         expect([ ...figure.childNodes ]).toEqual([ mount.container ]);
         expect(mount.props).toEqual({
             icon: "bx bx-note",
@@ -209,7 +213,7 @@ describe("loadEmbeddedNote of blocks", () => {
         const wrapper = createWrapper();
         const figure = inPage(document.createElement("figure"));
         figure.className = "include-note";
-        figure.dataset.boxSize = "tiny";
+        figure.dataset.boxSize = "compact";
 
         const onBlockChange = vi.fn();
         await loadEmbeddedNote("noteY", $(wrapper), "medium", { block: "b1:b2", onBlockChange });
@@ -223,7 +227,7 @@ describe("loadEmbeddedNote of blocks", () => {
 
         await loadEmbeddedNote("noteY", $(figure), undefined, { block: "b1" });
 
-        expect(lastMount().type).toBe(TinyContentEmbed);
+        expect(lastMount().type).toBe(CompactContentEmbed);
         expect(lastMount().props.viewScope).toEqual({ block: "b1" });
         expect(lastMount().container.classList.contains("excerpt")).toBe(true);
     });
@@ -357,7 +361,7 @@ describe("loadEmbeddedAttachment", () => {
         vi.mocked(froca.getAttachment).mockResolvedValue(null);
         const wrapper = createWrapper();
 
-        await loadEmbeddedAttachment("att1", $(wrapper), "tiny");
+        await loadEmbeddedAttachment("att1", $(wrapper), "compact");
 
         expect(link.createLink).not.toHaveBeenCalled();
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
@@ -365,19 +369,19 @@ describe("loadEmbeddedAttachment", () => {
         expect(mount.type).toBe(ContentEmbedError);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
-            boxSize: "tiny",
+            boxSize: "compact",
             icon: "bx bx-error-alt",
             text: 'include_note.missing_attachment {"attachmentId":"att1"}'
         });
     });
 
-    it("mounts a tiny box with the size of the attachment, and its file actions", async () => {
+    it("mounts a Compact box with the size of the attachment, and its file actions", async () => {
         const [ openExternally, download ] = [ action("open-externally"), action("download") ];
         vi.mocked(getOpenExternallyAction).mockReturnValue(openExternally);
         vi.mocked(getDownloadAction).mockReturnValue(download);
         const wrapper = createWrapper();
 
-        await loadEmbeddedAttachment("att1", $(wrapper), "tiny");
+        await loadEmbeddedAttachment("att1", $(wrapper), "compact");
 
         expect(link.createLink).toHaveBeenCalledWith("owner", {
             showTooltip: false,
@@ -387,7 +391,7 @@ describe("loadEmbeddedAttachment", () => {
         expect(getOpenExternallyAction).toHaveBeenCalledWith(attachment);
         expect(getDownloadAction).toHaveBeenCalledWith(attachment);
         const mount = lastMount();
-        expect(mount.type).toBe(TinyContentEmbed);
+        expect(mount.type).toBe(CompactContentEmbed);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
             icon: attachmentIcon("file", "application/pdf"),
@@ -568,9 +572,9 @@ describe("an embed that leaves the page while it loads", () => {
     it("gets no box, and the content rendered for it is disposed", async () => {
         const loads: [ (wrapper: HTMLElement) => Promise<void>, boolean ][] = [
             [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "medium"), true ],
-            [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "tiny"), false ],
+            [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "compact"), false ],
             [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "full"), true ],
-            [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "tiny"), false ]
+            [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "compact"), false ]
         ];
 
         for (const [ load, rendersContent ] of loads) {

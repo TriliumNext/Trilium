@@ -59,7 +59,7 @@ This feature is quite similar to the <a class="reference-link" href="../Mermaid
 
 <figure class="image"><img style="aspect-ratio:1174/358;" src="2_Insert buttons_image.png" width="1174" height="358"></figure>
 
-A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Small_, _Medium_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Resizable_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
 
 *   The <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of the diagram's toolbar decides whether its source can be changed. While it is off, the source still shows, but read-only.
 *   The buttons next to it choose what the diagram shows, as for a Mermaid note: <span class="tn-icon bx bx-code"></span> _Source view_ for the Mermaid source alone, <span class="tn-icon bx bxs-dock-left"></span> _Split view_ for the source with the diagram next to it, and <span class="tn-icon bx bx-show"></span> _Preview_ for the diagram alone. Its _More actions_ menu offers the same choice.
