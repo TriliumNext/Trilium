@@ -5123,6 +5123,7 @@
     "title": "Insert media",
     "button_insert": "Insert media",
     "not_a_video": "This is not a web address.",
-    "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again."
+    "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again.",
+    "description": "Enter the address of the video or audio to embed: a YouTube video, or any audio or video file that can be reached over HTTP or HTTPS."
   }
 }
