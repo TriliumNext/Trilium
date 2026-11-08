@@ -122,6 +122,7 @@ To let header rows scroll away with the rest of the table, turn off <a class="re
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
 *   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
 *   The menu of the block handle beside a cell, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, also has _Insert row above_ and _Insert row below_.
+*   After an insertion, the caret moves into the new row and stays in its column, or into the new column and stays in its row.
 
 ## Moving rows and columns
 

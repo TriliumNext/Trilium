@@ -97,6 +97,59 @@ describe("TableContextMenu", () => {
         });
     });
 
+    describe("caret after an insertion", () => {
+        const GRID = modelTable([
+            [ "11", "12", "13" ], [ "21", "2[]2", "23" ], [ "31", "32", "33" ]
+        ]);
+
+        /** The row and column of the cell holding the caret, and whether its paragraph is empty. */
+        function caret() {
+            const selection = editor.model.document.selection;
+            const position = selection.getFirstPosition();
+            const cell = position?.findAncestor("tableCell");
+            return {
+                ...cell && editor.plugins.get(TableUtils).getCellLocation(cell),
+                isCollapsed: selection.isCollapsed,
+                isEmpty: position?.parent.isEmpty
+            };
+        }
+
+        it("moves into the new row or column, in its own column or row", () => {
+            const cases = [
+                [ "triliumInsertTableRowsAbove", 1, 1 ], [ "insertTableRowAbove", 1, 1 ],
+                [ "triliumInsertTableRowsBelow", 2, 1 ], [ "insertTableRowBelow", 2, 1 ],
+                [ "triliumInsertTableColumnsLeft", 1, 1 ], [ "insertTableColumnLeft", 1, 1 ],
+                [ "triliumInsertTableColumnsRight", 1, 2 ], [ "insertTableColumnRight", 1, 2 ]
+            ] as const;
+
+            for (const [ command, row, column ] of cases) {
+                setModelData(editor.model, GRID);
+                editor.execute(command);
+                expect({ command, ...caret() })
+                    .toEqual({ command, row, column, isCollapsed: true, isEmpty: true });
+            }
+        });
+
+        it("goes next to a selection of several cells, by the first of them", () => {
+            setModelData(editor.model, GRID);
+            selectCells(editor, [ 0, 1 ], [ 1, 2 ]);
+            editor.execute("triliumInsertTableRowsAbove");
+            expect(caret()).toEqual({ row: 1, column: 1, isCollapsed: true, isEmpty: true });
+
+            setModelData(editor.model, GRID);
+            selectCells(editor, [ 0, 1 ], [ 1, 2 ]);
+            editor.execute("triliumInsertTableColumnsRight");
+            expect(caret()).toEqual({ row: 0, column: 3, isCollapsed: true, isEmpty: true });
+        });
+
+        it("stays where it is when its own cell spans the new row", () => {
+            setModelData(editor.model,
+                spannedTable([ [ { contents: "a[]", rowspan: 2 }, "b" ], [ "c" ] ]));
+            editor.execute("insertTableRowBelow");
+            expect(getModelData(editor.model)).toContain("<paragraph>a[]</paragraph>");
+        });
+    });
+
     describe("delete table", () => {
         it("is enabled only inside a table", () => {
             setModelData(editor.model, "<paragraph>fo[]o</paragraph>");
