@@ -1,0 +1,21 @@
+.relation-map-wrapper {
+    --relation-map-inset: var(--overlay-button-inset, 10px);
+    /* Must agree with `PANE_WIDTH` in utils.ts. */
+    --relation-map-pane-width: 380px;
+}
+
+.relation-map-wrapper .relation-map-note-pane {
+    position: absolute;
+    top: var(--relation-map-inset);
+    /* Must agree with `MAP_FOOT` in utils.ts. */
+    bottom: calc(2 * var(--relation-map-inset) + var(--overlay-button-height, 28px));
+    inset-inline-end: var(--relation-map-inset);
+    width: var(--relation-map-pane-width);
+    max-width: calc(100% - 2 * var(--relation-map-inset));
+    /* Over the note boxes, under the toolbars (see MapToolbar.css). */
+    z-index: 9;
+
+    &.maximized {
+        width: calc(100% - 2 * var(--relation-map-inset));
+    }
+}

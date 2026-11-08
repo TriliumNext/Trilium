@@ -3,6 +3,8 @@
 
 Promoted attributes are [attributes](../Attributes.md) which are displayed prominently in the UI which allow them to be easily viewed and edited.
 
+The promoted attributes are shown underneath the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> of the note, in a collapsible section. For full-height notes such as <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>, the promoted attributes are collapsed by default to make room.
+
 One way of seeing promoted attributes is as a kind of form with several fields. Each field is just regular attribute, the only difference is that they appear on the note itself.
 
 Attributes can be pretty useful since they allow for querying and script automation etc. but they are also inconveniently hidden. This allows you to select few of the important ones and push them to the front of the user.
@@ -31,7 +33,7 @@ The following types are supported:
 *   _Multi-line text_, similar to a normal text field, but rendered in a bigger text box that also supports writing on multiple lines.
 *   _Number_, will display as a number input field with up/down arrows.
     *   Optionally a _precision_ which sets how many decimals the value steps by and is displayed with.
-*   _Boolean_, which renders as a checkbox for a true/false value.
+*   _Checkbox_, which renders as a checkbox for a true/false value. In the label definition, this type is written as `boolean`.
 *   _Select,_ which provides a list of user-defined options when editing.
     *   The list is not fixed, meaning that new options can be easily added from the promoted attribute.
     *   Renaming an option does not change the existing values since the value is stored as text. Consider a [bulk rename](../Bulk%20Actions.md).
@@ -48,19 +50,28 @@ The following types are supported:
 > [!NOTE]
 > For label-based attributes, these types are not enforced by the attribute system, meaning that changing the type afterwards does not guarantee that the values in it correspond to the type (e.g. turning a text into a number).
 
+## Multiple values
+
+When the definition allows multiple values, each value is shown as a chip and a new one is added in the box after them. Press the <span class="tn-icon bx bx-x"></span> on a chip to remove that value.
+
+*   For free-form types such as _Text_, _Number_ or _Date_, press <kbd>Enter</kbd> (or leave the field) to add what was typed. The same value can be added more than once, for example two payments of the same amount.
+*   For _Select_, _Checkbox_ and _Relation_ attributes, a value is picked from the list rather than typed, and each one can be picked only once.
+
 ## Creating a new promoted attribute definition
 
 To create a new promoted attribute:
 
 1.  Go to a note.
-2.  Go to _Owned Attributes_ in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-3.  Press the + button.
-4.  Select either _Add new label definition_ or _Add new relation definition_.
+2.  Go to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Attributes%20tab.md">Attributes tab</a> in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
+3.  Press the <span class="tn-icon bx bx-plus"></span> button for the top-most section (_Owned attributes_).
+4.  Select either _Add new label definition…_ or _Add new relation definition…_.
 5.  Select the name which will be name of the label or relation that will be created when the promoted attribute is edited.
 6.  Ensure _Promoted_ is checked in order to display it at the top of notes.
 7.  Optionally, choose an _Alias_ which will be displayed next to the promoted attribute instead of the attribute name. Generally it's best to choose a “user-friendly” name since it can contain spaces and other characters which are not supported as attribute names.
 8.  Check _Inheritable_ to apply it to this note and all its descendants. To keep it only for the current note, un-check it.
-9.  Press “Save & Close” to apply the changes.
+9.  Press _Save & Close_ to apply the changes.
+
+Alternatively, promoted attributes can be created from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> by going to <span class="tn-icon bx bx-list-check"></span> (_Attributes_), pressing the <span class="tn-icon bx bx-plus"></span> button and selecting _Add new label definition…_. The resulting attribute can also be copy-pasted or written manually (albeit discouraged).
 
 ## How attribute definitions actually work
 
@@ -72,10 +83,18 @@ When a new promoted attribute definition is created, it creates a corresponding 
 
 The only purpose of the attribute definition is to set up a template. If the attribute was marked as promoted, then it's also displayed to the user for easy editing.
 
-|  |  |
-| --- | --- |
-| <figure class="image"><img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png" width="495" height="157"></figure> | Notice how the promoted attribute definition only creates a “Due date” box above the text content. |
-| <figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure> | Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute. |
+<table>
+    <tbody>
+        <tr>
+            <td><figure class="image"><img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png" width="495" height="157"></figure></td>
+            <td>Notice how the promoted attribute definition only creates a “Due date” box above the text content.</td>
+        </tr>
+        <tr>
+            <td><figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure></td>
+            <td>Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute.</td>
+        </tr>
+    </tbody>
+</table>
 
 So there's one attribute for value and one for definition. But notice how an definition attribute can be made [Inheritable](Attribute%20Inheritance.md), meaning that it's also applied to all descendant notes. In this case, the definition used for the whole sub-tree while "value" attributes are for each not individually.
 

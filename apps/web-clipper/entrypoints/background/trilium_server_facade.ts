@@ -1,6 +1,8 @@
 const PROTOCOL_VERSION_MAJOR = 1;
+const DESKTOP_TIMEOUT_MS = 2000;
+const SERVER_TIMEOUT_MS = 10000;
 
-type TriliumSearchStatus = {
+export type TriliumSearchStatus = {
     status: "searching";
 } | {
     status: "not-found"
@@ -8,17 +10,24 @@ type TriliumSearchStatus = {
     status: "found-desktop",
     port: number;
     url: string;
+    protocolMinor: number;
 } | {
     status: "found-server",
     url: string;
     token: string;
+    protocolMinor: number;
 } | {
     status: "version-mismatch";
     extensionMajor: number;
     triliumMajor: number;
 };
 
-type TriliumSearchNoteStatus = {
+/** The outcome of a finished search. */
+type SearchResult = Exclude<TriliumSearchStatus, { status: "searching" }>;
+type FoundStatus = Exclude<SearchResult, { status: "not-found" }>;
+type CompatibleStatus = Exclude<FoundStatus, { status: "version-mismatch" }>;
+
+export type TriliumSearchNoteStatus = {
     status: "not-found",
     noteId: null
 } | {
@@ -26,18 +35,37 @@ type TriliumSearchNoteStatus = {
     noteId: string
 };
 
+/** A request to Trilium that failed, with a message that can be shown to the user. */
+export class TriliumError extends Error {
+
+    constructor(
+        readonly reason: "not-found" | "version-mismatch" | "request-failed",
+        message: string
+    ) {
+        super(message);
+    }
+
+}
+
 export default class TriliumServerFacade {
-    private triliumSearch?: TriliumSearchStatus;
+    private triliumSearch: TriliumSearchStatus = { status: "searching" };
     private triliumSearchNote?: TriliumSearchNoteStatus;
+    /** The latest search, which `callService()` waits for. */
+    private search: Promise<SearchResult>;
+    private searchCount = 0;
+    /** Reads the status found before the service worker was last stopped. */
+    private readonly restored: Promise<void>;
 
     constructor() {
-        this.triggerSearchForTrilium();
+        this.restored = this.restoreLastSearch();
+        this.search = this.triggerSearchForTrilium(false);
 
         // continually scan for changes (if e.g. desktop app is started after browser)
-        setInterval(() => this.triggerSearchForTrilium(), 60 * 1000);
+        setInterval(() => this.triggerSearchForTrilium(false), 60 * 1000);
     }
 
     async sendTriliumSearchStatusToPopup() {
+        await this.restored;
         try {
             await browser.runtime.sendMessage({
                 name: "trilium-search-status",
@@ -68,94 +96,65 @@ export default class TriliumServerFacade {
         this.sendTriliumSearchStatusToPopup();
     }
 
-    setTriliumSearchWithVersionCheck(json: { protocolVersion: string }, resp: TriliumSearchStatus) {
-        const [ major = NaN ] = json.protocolVersion
-            .split(".")
-            .map(chunk => parseInt(chunk, 10));
-
-        // minor version is intended to be used to dynamically limit features provided by extension
-        // if some specific Trilium API is not supported. So far not needed.
-
-        if (major !== PROTOCOL_VERSION_MAJOR) {
-            this.setTriliumSearch({
-                status: 'version-mismatch',
-                extensionMajor: PROTOCOL_VERSION_MAJOR,
-                triliumMajor: major
+    /**
+     * Looks for Trilium and reports the outcome to the popup. With `showProgress` false, the popup
+     * keeps the last status until the search ends, so a background check does not flash "searching".
+     */
+    triggerSearchForTrilium(showProgress = true) {
+        const id = ++this.searchCount;
+        const search = this.restored
+            .then(() => {
+                if (showProgress) this.setTriliumSearch({ status: "searching" });
+                return this.findTrilium();
+            })
+            .then(async (status) => {
+                if (id === this.searchCount) {
+                    this.setTriliumSearch(status);
+                    await browser.storage.session?.set({ triliumSearch: status });
+                }
+                return status;
             });
-        }
-        else {
-            this.setTriliumSearch(resp);
-        }
+        this.search = search;
+        return search;
     }
 
-    async triggerSearchForTrilium() {
-        this.setTriliumSearch({ status: 'searching' });
+    /** Session storage needs Chrome 102 or Firefox 115; without it, each start searches anew. */
+    private async restoreLastSearch() {
+        const stored = await browser.storage.session
+            ?.get<{ triliumSearch?: SearchResult }>("triliumSearch");
+        if (stored?.triliumSearch) this.triliumSearch = stored.triliumSearch;
+    }
 
-        try {
-            const port = await this.getPort();
+    /** Asks the desktop app and the server at once, and prefers the desktop app when both answer. */
+    private async findTrilium(): Promise<SearchResult> {
+        const port = await this.getPort();
+        const desktopUrl = `http://127.0.0.1:${port}`;
+        const { triliumServerUrl, authToken } = await browser.storage.sync
+            .get<{ triliumServerUrl?: string, authToken?: string }>([ "triliumServerUrl", "authToken" ]);
 
-            console.debug(`Trying port ${port}`);
+        const server = triliumServerUrl && authToken
+            ? handshake(triliumServerUrl, SERVER_TIMEOUT_MS, { Authorization: authToken })
+                .then((json) => json && checkVersion(json, (protocolMinor) => ({
+                    status: "found-server",
+                    url: triliumServerUrl,
+                    token: authToken,
+                    protocolMinor
+                })))
+            : Promise.resolve(null);
 
-            const resp = await fetch(`http://127.0.0.1:${port}/api/clipper/handshake`);
-
-            const text = await resp.text();
-
-            console.log("Received response:", text);
-
-            const json = JSON.parse(text);
-
-            if (json.appName === 'trilium') {
-                this.setTriliumSearchWithVersionCheck(json, {
-                    status: 'found-desktop',
-                    port,
-                    url: `http://127.0.0.1:${port}`
-                });
-
-                return;
-            }
-        }
-        catch (error) {
-            // continue
-        }
-
-        const {triliumServerUrl} = await browser.storage.sync.get<{ triliumServerUrl: string }>("triliumServerUrl");
-        const {authToken} = await browser.storage.sync.get<{ authToken: string }>("authToken");
-
-        if (triliumServerUrl && authToken) {
-            try {
-                const resp = await fetch(`${triliumServerUrl  }/api/clipper/handshake`, {
-                    headers: {
-                        Authorization: authToken
-                    }
-                });
-
-                const text = await resp.text();
-
-                console.log("Received response:", text);
-
-                const json = JSON.parse(text);
-
-                if (json.appName === 'trilium') {
-                    this.setTriliumSearchWithVersionCheck(json, {
-                        status: 'found-server',
-                        url: triliumServerUrl,
-                        token: authToken
-                    });
-
-                    return;
-                }
-            }
-            catch (e) {
-                console.log("Request to the configured server instance failed with:", e);
-            }
+        const desktop = await handshake(desktopUrl, DESKTOP_TIMEOUT_MS);
+        if (desktop) {
+            return checkVersion(desktop, (protocolMinor) => ({
+                status: "found-desktop", port, url: desktopUrl, protocolMinor
+            }));
         }
 
-        // if all above fails it's not found
-        this.setTriliumSearch({ status: 'not-found' });
+        return await server ?? { status: "not-found" };
     }
 
     async triggerSearchNoteByUrl(noteUrl: string) {
-        const resp = await this.callService('GET', `notes-by-url/${encodeURIComponent(noteUrl)}`);
+        const resp = await this.callService('GET', `notes-by-url/${encodeURIComponent(noteUrl)}`)
+            .catch(() => null);
         let newStatus: TriliumSearchNoteStatus;
         if (resp && resp.noteId) {
             newStatus = {
@@ -170,20 +169,20 @@ export default class TriliumServerFacade {
         }
         this.setTriliumSearchNote(newStatus);
     }
-    async waitForTriliumSearch() {
-        return new Promise<void>((res, rej) => {
-            const checkStatus = () => {
-                if (this.triliumSearch?.status === "searching") {
-                    setTimeout(checkStatus, 500);
-                } else if (this.triliumSearch?.status === 'not-found') {
-                    rej(new Error("Trilium instance has not been found."));
-                } else {
-                    res();
-                }
-            };
 
-            checkStatus();
-        });
+    /** Resolves with the outcome of the latest search, and rejects if Trilium was not found. */
+    async waitForTriliumSearch(): Promise<FoundStatus> {
+        let search: Promise<SearchResult>;
+        let status: SearchResult;
+        do {
+            search = this.search;
+            status = await search;
+        } while (search !== this.search);
+
+        if (status.status === "not-found") {
+            throw notFound();
+        }
+        return status;
     }
 
     async getPort() {
@@ -193,18 +192,41 @@ export default class TriliumServerFacade {
             return parseInt(triliumDesktopPort, 10);
         }
 
-        return import.meta.env.DEV ? 37742 : 37840;
+        return import.meta.env.DEV ? 37743 : 37840;
+    }
+
+    /**
+     * Rejects unless Trilium supports minor version `minor` of the protocol, which `feature` needs:
+     * a minor version adds an API that older versions of Trilium do not have.
+     */
+    async requireMinorVersion(minor: number, feature: string) {
+        const search = await this.waitForCompatibleTrilium();
+        if (search.protocolMinor < minor) {
+            throw new TriliumError("version-mismatch",
+                `${feature} needs a newer version of Trilium. Update Trilium to the latest version.`);
+        }
+    }
+
+    private async waitForCompatibleTrilium(): Promise<CompatibleStatus> {
+        const search = await this.waitForTriliumSearch();
+        if (search.status === "version-mismatch") {
+            const { extensionMajor, triliumMajor } = search;
+            const outdated = extensionMajor > triliumMajor ? "Trilium" : "the web clipper";
+            throw new TriliumError("version-mismatch", "This version of the web clipper does not "
+                + `work with this version of Trilium. Update ${outdated} to the latest version.`);
+        }
+        return search;
     }
 
     async callService(method: string, path: string, body?: string | object) {
-        await this.waitForTriliumSearch();
-        if (!this.triliumSearch || (this.triliumSearch.status !== 'found-desktop' && this.triliumSearch.status !== 'found-server')) return;
+        const search = await this.waitForCompatibleTrilium();
 
+        let response: Response;
         try {
             const fetchOptions: RequestInit = {
                 method,
                 headers: {
-                    Authorization: "token" in this.triliumSearch ? this.triliumSearch.token ?? "" : "",
+                    Authorization: search.status === "found-server" ? search.token : "",
                     'Content-Type': 'application/json',
                     'trilium-local-now-datetime': this.localNowDateTime()
                 },
@@ -214,32 +236,94 @@ export default class TriliumServerFacade {
                 fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
             }
 
-            const url = `${this.triliumSearch.url}/api/clipper/${path}`;
+            const url = `${search.url}/api/clipper/${path}`;
 
             console.log(`Sending ${method} request to ${url}`);
 
-            const response = await fetch(url, fetchOptions);
-
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-
-            return await response.json();
+            response = await fetch(url, fetchOptions);
         }
         catch (e) {
-            console.log("Sending request to trilium failed", e);
-
-            return null;
+            throw requestFailed(e instanceof Error ? e.message : String(e));
         }
+
+        if (!response.ok) {
+            throw requestFailed(await readErrorMessage(response));
+        }
+
+        return await response.json();
     }
 
     localNowDateTime() {
         const date = new Date();
         const off = date.getTimezoneOffset();
         const absoff = Math.abs(off);
-        return (`${new Date(date.getTime() - off * 60 * 1000).toISOString().substr(0,23).replace("T",  " ") +
-			(off > 0 ? '-' : '+') +
-			(absoff / 60).toFixed(0).padStart(2,'0')  }:${
-            (absoff % 60).toString().padStart(2,'0')}`);
+        const localTime = new Date(date.getTime() - off * 60 * 1000).toISOString()
+            .substring(0, 23)
+            .replace("T", " ");
+        const sign = off > 0 ? "-" : "+";
+        const hours = String(Math.floor(absoff / 60)).padStart(2, "0");
+        const minutes = String(absoff % 60).padStart(2, "0");
+        return `${localTime}${sign}${hours}:${minutes}`;
     }
+}
+
+
+type HandshakeResponse = { appName?: string, protocolVersion: string };
+
+/** Resolves with the handshake of the Trilium at `url`, or `null` if none answers in time. */
+async function handshake(url: string, timeoutMs: number, headers?: Record<string, string>) {
+    try {
+        const response = await fetch(`${url}/api/clipper/handshake`, {
+            headers,
+            signal: AbortSignal.timeout(timeoutMs)
+        });
+        const json = JSON.parse(await response.text()) as HandshakeResponse;
+        return json.appName === "trilium" ? json : null;
+    } catch (e) {
+        console.log(`Handshake with ${url} failed with:`, e);
+        return null;
+    }
+}
+
+/**
+ * Reports a Trilium of another major version as a mismatch, or else `found` with the minor version,
+ * which tells the features Trilium supports.
+ */
+function checkVersion(
+    json: HandshakeResponse,
+    found: (protocolMinor: number) => CompatibleStatus
+): SearchResult {
+    const [ major = NaN, minor = 0 ] = json.protocolVersion
+        .split(".")
+        .map(chunk => parseInt(chunk, 10));
+
+    if (major !== PROTOCOL_VERSION_MAJOR) {
+        return {
+            status: "version-mismatch",
+            extensionMajor: PROTOCOL_VERSION_MAJOR,
+            triliumMajor: major
+        };
+    }
+    return found(minor);
+}
+
+function notFound() {
+    return new TriliumError("not-found", "Trilium was not found. Start the desktop app, or check "
+        + "the server address and token in the clipper's options.");
+}
+
+function requestFailed(details: string) {
+    return new TriliumError("request-failed", `The request to Trilium failed: ${details}`);
+}
+
+/** Trilium answers a failed API request with `{ message }`; a proxy in front of it might not. */
+async function readErrorMessage(response: Response) {
+    const text = (await response.text()).trim();
+    try {
+        const { message } = JSON.parse(text) as { message?: unknown };
+        if (typeof message === "string" && message) return message;
+    } catch {
+        // Not JSON, so the text is the message.
+    }
+    return text || `HTTP ${response.status}`;
 }

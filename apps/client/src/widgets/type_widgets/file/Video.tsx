@@ -1,17 +1,16 @@
 import "./Video.css";
 
 import { RefObject } from "preact";
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { useFullscreen } from "../../react/hooks";
-import NoItems from "../../react/NoItems";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import MediaFileActions from "./MediaFileActions";
 import { playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
-import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
+import { claimsKeystroke, MediaPlayerProps, MediaSiblingButton, PlaybackError, PlaybackSpeed, PlayModeButton, PlayPauseButton, SeekBar, SkipButton, useFocusOnActivation, useMediaPlayerShortcutHints, useMediaPlayMode, useMediaSessionController, VolumeControl } from "./MediaPlayer";
 
 const AUTO_HIDE_DELAY = 3000;
 
@@ -69,10 +68,11 @@ export default function VideoPreview({ source, entity, environment, noteContext,
     const { mode: playMode, setMode: setPlayMode } = useMediaPlayMode(noteContext, videoRef, ownerNote?.noteId);
     const siblingNavigation = useMediaSessionController({ source, entity, environment, noteContext, ownerNote, viewScope, isVisible, autoPlay, mimePrefix: "video/", mediaRef: videoRef, playMode });
     useMediaPlayerShortcutHints({ fullscreen: true });
+    useFocusOnActivation(wrapperRef, autoPlay);
     const compact = usesCompactControls(environment);
 
     if (error) {
-        return <NoItems icon="bx bx-video-off" text={t("media.unsupported-format", { mime: source.mime.replace("/", "-") })} />;
+        return <PlaybackError source={source} icon="bx bx-video-off" />;
     }
 
     return (
@@ -82,6 +82,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
                 class="video-preview"
                 src={source.streamUrl}
                 preload={preloadFor(environment)}
+                poster={source.poster}
                 datatype={source.mime}
                 onPlay={syncPlaying}
                 onPause={syncPlaying}
@@ -102,7 +103,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
                                 <FullscreenButton targetRef={wrapperRef} />
                             </>
                         )}
-                        {showsFileActions(environment) && <MediaFileActions entity={entity} />}
+                        {entity && showsFileActions(environment) && <MediaFileActions entity={entity} />}
                     </div>
                 ) : (
                     <>
@@ -138,7 +139,7 @@ export default function VideoPreview({ source, entity, environment, noteContext,
     );
 }
 
-function useKeyboardShortcuts(videoRef: MutableRef<HTMLVideoElement | null>, wrapperRef: MutableRef<HTMLDivElement | null>, togglePlayback: () => void, flashControls: () => void) {
+function useKeyboardShortcuts(videoRef: RefObject<HTMLVideoElement | null>, wrapperRef: RefObject<HTMLDivElement | null>, togglePlayback: () => void, flashControls: () => void) {
     return useCallback((e: KeyboardEvent) => {
         const video = videoRef.current;
         if (!video || !claimsKeystroke(e)) return;
@@ -198,9 +199,9 @@ function useKeyboardShortcuts(videoRef: MutableRef<HTMLVideoElement | null>, wra
     }, [ wrapperRef, videoRef, togglePlayback, flashControls ]);
 }
 
-function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boolean) {
+function useAutoHideControls(videoRef: RefObject<HTMLVideoElement | null>, playing: boolean) {
     const [visible, setVisible] = useState(true);
-    const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const hideTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const scheduleHide = useCallback(() => {
         clearTimeout(hideTimerRef.current);
@@ -239,7 +240,7 @@ function useAutoHideControls(videoRef: RefObject<HTMLVideoElement>, playing: boo
     return { visible, flash: reveal, toggle };
 }
 
-function RotateButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {
+function RotateButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement | null> }) {
     const [rotation, setRotation] = useState(0);
 
     const rotate = () => {
@@ -272,7 +273,7 @@ function RotateButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {
     );
 }
 
-function ZoomToFitButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {
+function ZoomToFitButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement | null> }) {
     const [fitted, setFitted] = useState(false);
 
     const toggle = () => {
@@ -293,7 +294,7 @@ function ZoomToFitButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }
     );
 }
 
-function PictureInPictureButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement> }) {
+function PictureInPictureButton({ videoRef }: { videoRef: RefObject<HTMLVideoElement | null> }) {
     const [active, setActive] = useState(false);
     // The standard PiP API is only supported in Chromium-based browsers.
     // Firefox uses its own proprietary PiP implementation.
@@ -336,7 +337,7 @@ function PictureInPictureButton({ videoRef }: { videoRef: RefObject<HTMLVideoEle
     );
 }
 
-function FullscreenButton({ targetRef }: { targetRef: RefObject<HTMLElement> }) {
+function FullscreenButton({ targetRef }: { targetRef: RefObject<HTMLElement | null> }) {
     // `useFullscreen` follows an element rather than a ref, a ref being filled after the render that
     // asked for it and causing none of its own — so the wrapper is put into state once it is there.
     const [ target, setTarget ] = useState<HTMLElement | null>(null);

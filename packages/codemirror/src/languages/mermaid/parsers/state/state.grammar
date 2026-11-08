@@ -1,0 +1,83 @@
+// State diagram grammar for Mermaid: https://mermaid.js.org/syntax/stateDiagram.html
+@top StateDiagram {
+  DiagramName statement*
+}
+
+@skip { spaces | newlines | LineComment }
+
+statement {
+  Transition |
+  StateDecl |
+  Note |
+  Direction
+}
+
+StateRef {
+  StartEnd |
+  StateName
+}
+
+StateName { identifier }
+
+Transition {
+  StateRef Arrow StateRef Label?
+}
+
+Label { ":" LabelText }
+
+LabelText { stateText }
+
+StateDecl {
+  State (
+    String As StateName StateBody? |
+    StateName Annotation? StateBody?
+  )
+}
+
+StateBody { "{" statement* "}" }
+
+Note {
+  NoteKw Position Of StateName Label?
+}
+
+Position {
+  Left |
+  Right
+}
+
+Direction { DirectionKw DirectionValue }
+
+DirectionValue { identifier }
+
+State { @specialize<identifier, "state"> }
+
+NoteKw { @specialize<identifier, "note"> }
+
+As { @specialize<identifier, "as"> }
+
+Of { @specialize<identifier, "of"> }
+
+Left { @specialize<identifier, "left"> }
+
+Right { @specialize<identifier, "right"> }
+
+DirectionKw { @specialize<identifier, "direction"> }
+
+DiagramName { @specialize<identifier, "stateDiagram"> versionSuffix? }
+
+@external tokens stateTextToken from "./tokens.js" { stateText }
+
+@tokens {
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[a-zA-Z0-9_]+ }
+  versionSuffix { "-v" $[0-9]+ }
+  String { '"' !["\n]* '"' }
+  Annotation { "<<" ![\n>]* ">>" }
+  StartEnd { "[*]" }
+  Arrow { "-->" }
+  "{" "}" ":"
+}
+
+@external propSource stateHighlighting from "./highlight.js"

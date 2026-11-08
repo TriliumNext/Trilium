@@ -13,7 +13,7 @@ import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 import { useLegacyImperativeHandlers } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 
-export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote): Partial<EventCallBackMethods> {
+export default function useRowTableEditing(api: RefObject<Tabulator | null>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote): Partial<EventCallBackMethods> {
     // Whose writes these are, so that useData can tell a cell this table edited itself from one
     // changed elsewhere. Rebuilding the rows for its own edit replaces them wholesale in Tabulator,
     // which cancels the editor Tab has just opened in the next cell.

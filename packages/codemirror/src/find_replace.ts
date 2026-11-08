@@ -5,7 +5,7 @@ import { Range, RangeSet, StateEffect } from "@codemirror/state";
 const searchMatchDecoration = Decoration.mark({ class: "cm-searchMatch" });
 const activeMatchDecoration = Decoration.mark({ class: "cm-activeMatch" });
 
-interface Match {
+export interface Match {
     from: number;
     to: number;
 }
@@ -28,7 +28,16 @@ export class SearchHighlighter {
         this.matches = RangeSet.empty;
     }
 
-    searchFor(searchTerm: string, matchCase: boolean, wholeWord: boolean) {
+    /** The matches of the search, in document order. */
+    get matchRanges(): readonly Match[] {
+        return this.parsedMatches;
+    }
+
+    /**
+     * Highlights the matches of `searchTerm`. While `isActivating`, the match nearest the cursor
+     * becomes the active one and scrolls into view.
+     */
+    searchFor(searchTerm: string, matchCase: boolean, wholeWord: boolean, isActivating = true) {
         if (!searchTerm) {
             this.matches = RangeSet.empty;
             return;
@@ -46,7 +55,19 @@ export class SearchHighlighter {
         });
         this.searchRegexp = regex;
         this.#updateSearchData(this.view);
-        this.#scrollToMatchNearestSelection();
+        if (isActivating) {
+            this.#scrollToMatchNearestSelection();
+        } else {
+            this.clearActiveMatch();
+        }
+    }
+
+    /** Leaves no match active, keeping every match highlighted. */
+    clearActiveMatch() {
+        this.activeMatch = undefined;
+        this.currentFound = 0;
+        // An empty transaction redraws the decorations.
+        this.view.dispatch({});
     }
 
     replaceActiveMatch(replacementText: string) {
@@ -138,17 +159,11 @@ export class SearchHighlighter {
         this.totalFound = this.parsedMatches.length;
     }
 
+    /** Activates the first match at or after the cursor, wrapping around to the first match. */
     #scrollToMatchNearestSelection() {
         const cursorPos = this.view.state.selection.main.head;
-        let index = 0;
-        for (const match of this.parsedMatches) {
-            if (match.from >= cursorPos) {
-                this.scrollToMatch(index);
-                return;
-            }
-
-            index++;
-        }
+        const index = this.parsedMatches.findIndex((match) => match.from >= cursorPos);
+        this.scrollToMatch(Math.max(index, 0));
     }
 
     static deco = (v: SearchHighlighter) => v.matches;

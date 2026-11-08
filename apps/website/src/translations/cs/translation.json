@@ -150,7 +150,6 @@
         "quick_start": "Vyberte vhodný formát balíčku podle vaší distribuce:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "Přenosné (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR"

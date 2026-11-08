@@ -238,12 +238,47 @@ export function keyMatches(e: KeyboardEvent, key: string): boolean {
             const expectedCode = `Key${key.toUpperCase()}`;
             return e.code === expectedCode || e.key.toLowerCase() === key.toLowerCase();
         }
-        return e.key.toLowerCase() === key.toLowerCase();
+        return e.key.toLowerCase() === key.toLowerCase() || matchesUsPhysicalKey(e, key);
     }
 
     // For regular keys, check both key and code as fallback
     return e.key.toLowerCase() === key.toLowerCase() ||
-           e.code.toLowerCase() === key.toLowerCase();
+           e.code.toLowerCase() === key.toLowerCase() ||
+           matchesUsPhysicalKey(e, key);
+}
+
+// `KeyboardEvent.code` of the US QWERTY key that produces each punctuation character.
+const usPunctuationCodes: Record<string, string> = {
+    "-": "Minus",
+    "=": "Equal",
+    "[": "BracketLeft",
+    "]": "BracketRight",
+    "\\": "Backslash",
+    ";": "Semicolon",
+    "'": "Quote",
+    ",": "Comma",
+    ".": "Period",
+    "/": "Slash",
+    "`": "Backquote"
+};
+
+// A letter outside the Latin script, such as Cyrillic, Greek or Hebrew.
+const NON_LATIN_LETTER = /^(?=\p{L}$)(?![\p{Script=Latin}\p{Script=Common}])/u;
+
+/**
+ * Matches a key that types a non-Latin letter by its position on US QWERTY, since such a layout
+ * cannot type the shortcut's character at all. Every other key is left to `e.key`, so AZERTY's
+ * Ctrl+Z stays on the key labeled Z and French `ù` or German `ö` don't stand in for punctuation.
+ */
+function matchesUsPhysicalKey(e: KeyboardEvent, key: string): boolean {
+    if (!NON_LATIN_LETTER.test(e.key)) {
+        return false;
+    }
+
+    const expectedCode = key.length === 1 && key >= "a" && key <= "z"
+        ? `Key${key.toUpperCase()}`
+        : usPunctuationCodes[key];
+    return expectedCode !== undefined && e.code === expectedCode;
 }
 
 /**

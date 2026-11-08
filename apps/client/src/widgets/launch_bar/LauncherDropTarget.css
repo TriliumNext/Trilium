@@ -1,0 +1,22 @@
+:where(:root) {
+    --launcher-drop-indicator-color: var(--muted-text-color);
+    --launcher-drop-indicator-inset: 6px;
+}
+
+.launcher-drop-indicator {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: -1px var(--launcher-drop-indicator-inset);
+        border-radius: 1px;
+        background: var(--launcher-drop-indicator-color);
+    }
+
+    &[data-axis="x"]::before {
+        inset: var(--launcher-drop-indicator-inset) -1px;
+    }
+}

@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes este o aplicație gratuită și open-source pentru notițe structurate
@@ -363,6 +364,10 @@ Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editorul de cod cu
   suport pentru foarte multe limbaje de programare.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - tehnologia de
   desenare folosită în notițele de tip schiță.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - pentru
@@ -373,11 +378,6 @@ Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
   interactive folosite în colecții.
 * [FancyTree](https://github.com/mar10/fancytree) - bibliotecă pentru
   vizualizare de tip arbore.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - bibliotecă de conectivitate
-  vizuală. Folosită în [hărți de tip
-  relație](https://docs.triliumnotes.org/user-guide/note-types/relation-map) și
-  [hărți de
-  legături](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Sprijiniți proiectul
 

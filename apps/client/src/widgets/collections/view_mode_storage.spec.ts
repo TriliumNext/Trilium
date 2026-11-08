@@ -28,7 +28,12 @@ interface Config extends Record<string, unknown> {
 
 /** A note carrying one `viewConfig` attachment, as a collection view's owner does. */
 function noteWithStoredConfig(content: string | undefined) {
-    const attachment = { attachmentId: "att-1", title: "geoMap.json" };
+    // The blob is read through `server.get`'s mock, which each test points at the stored content.
+    const attachment = {
+        attachmentId: "att-1",
+        title: "geoMap.json",
+        getBlob: () => server.get("attachments/att-1/blob")
+    };
     vi.mocked(server.get).mockResolvedValue(content === undefined ? null : { content });
     return {
         noteId: "note-1",

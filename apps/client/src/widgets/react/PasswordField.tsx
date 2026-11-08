@@ -15,7 +15,9 @@ import OptionsRow from "../type_widgets/options/components/OptionsRow";
  * overwrites what the browser autofilled, so the first press would submit an empty password — the
  * "incorrect password, press again" bug. Neither screen needs live validation.
  */
-export default function PasswordField({ inputRef }: { inputRef: RefObject<HTMLInputElement> }) {
+export default function PasswordField({ inputRef }: {
+    inputRef: RefObject<HTMLInputElement | null>;
+}) {
     return (
         <OptionsRow name="password" label={t("login.password")} stacked>
             <FormTextBox

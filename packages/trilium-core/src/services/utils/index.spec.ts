@@ -151,8 +151,12 @@ describe("#sanitizeSqlIdentifier", () => {
 });
 
 describe("#escapeHtml", () => {
-    it("should re-export 'escape-html' npm module as escapeHtml", () => {
-        expect(utils.escapeHtml).toBeTypeOf("function");
+    it("escapes the five markup characters and leaves everything else alone", () => {
+        expect(utils.escapeHtml(`<a href="x?a=1&b=2" title='t'>`))
+            .toBe("&lt;a href=&quot;x?a=1&amp;b=2&quot; title=&#39;t&#39;&gt;");
+        expect(utils.escapeHtml("&amp; is escaped again")).toBe("&amp;amp; is escaped again");
+        expect(utils.escapeHtml("plain text, ünïcödé")).toBe("plain text, ünïcödé");
+        expect(utils.escapeHtml("")).toBe("");
     });
 });
 
@@ -303,6 +307,11 @@ describe("#isStringNote", () => {
             "w/ 'undefined' note type and the InkML mime type, it should return true",
             [ undefined, "application/inkml+xml" ],
             true
+        ],
+        [
+            "w/ 'undefined' note type and the mime type of a canvas drawing, it should return true",
+            [ undefined, "application/vnd.excalidraw+json" ],
+            true
         ]
     ];
 
@@ -383,14 +392,19 @@ describe("#getNoteTitle", () => {
             "some other title"
         ],
         [
-            "when a noteMeta object is passed, but the title prop is empty, it should try to handle the filename as if no noteMeta was passed",
-            [ "test_file.md", true, { title: "" } ],
-            "test file"
+            "when a noteMeta object is passed with an empty title, it should keep the note untitled",
+            [ "note.html", true, { title: "" } ],
+            ""
         ],
         [
-            "when a noteMeta object is passed, but the title prop is empty, it should try to handle the filename as if no noteMeta was passed",
-            [ "test_file.json", false, { title: " " } ],
-            "test_file.json"
+            "when a noteMeta object is passed with a blank title, it should keep the note untitled",
+            [ "1_note.html", false, { title: " " } ],
+            ""
+        ],
+        [
+            "when a noteMeta object is passed without a title, it should handle the filename as if no noteMeta was passed",
+            [ "test_file.md", true, { mime: "text/markdown" } ],
+            "test file"
         ]
     ];
 
@@ -762,6 +776,21 @@ describe("#normalizeUrl", () => {
     });
 });
 
+describe("#trimTrailingSlashes", () => {
+    it("removes every trailing slash and nothing else", () => {
+        expect(utils.trimTrailingSlashes("http://localhost:8888///")).toBe("http://localhost:8888");
+        expect(utils.trimTrailingSlashes("https://example.com/a//b")).toBe("https://example.com/a//b");
+        expect(utils.trimTrailingSlashes("///")).toBe("");
+        expect(utils.trimTrailingSlashes("")).toBe("");
+    });
+
+    it("stays linear on a long run of slashes", () => {
+        const start = performance.now();
+        utils.trimTrailingSlashes(`${"/".repeat(100_000)}x`);
+        expect(performance.now() - start).toBeLessThan(100);
+    });
+});
+
 describe("#normalizeCustomHandlerPattern", () => {
     const testCases: TestCase<typeof utils.normalizeCustomHandlerPattern>[] = [
         [ "should handle pattern without ending - add both versions", [ "foo" ], [ "foo", "foo/" ] ],
@@ -830,6 +859,10 @@ describe("#slugifyHeadings", () => {
     it("avoids colliding a suffix with an existing slug", () => {
         // "Notes 1" naturally slugifies to "notes-1", so the second "Notes" must skip to "notes-2"
         expect(utils.slugifyHeadings(["Notes", "Notes 1", "Notes"])).toStrictEqual(["notes", "notes-1", "notes-2"]);
+    });
+
+    it("skips the reserved slugs", () => {
+        expect(utils.slugifyHeadings(["Notes", "Notes"], ["notes", "notes-1"])).toStrictEqual(["notes-2", "notes-3"]);
     });
 
     it("strips HTML tags before slugifying", () => {

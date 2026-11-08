@@ -1,4 +1,5 @@
 import NodeRequestProvider, { type Client, type ClientOpts } from "@triliumnext/server/src/services/request.js";
+import resources from "@triliumnext/server/src/services/resources.js";
 import electron from "electron";
 
 /**
@@ -26,4 +27,17 @@ export default class ElectronRequestProvider extends NodeRequestProvider {
         }
         return super.getClient(opts);
     }
+}
+
+/**
+ * Sends the resource manager's downloads through `electron.net.fetch()`, which follows the system
+ * proxy as the sync client does, where Node's `fetch()` would ignore it.
+ */
+export function setupResourceDownloads() {
+    resources.setFetch(async (url, init) => {
+        if (!electron.app.isReady()) {
+            await electron.app.whenReady();
+        }
+        return electron.net.fetch(url, init);
+    });
 }

@@ -18,7 +18,7 @@ import { useLayoutEffect, useState } from "preact/hooks";
  * each time rather than held — an element may be built and handed to its host before being put in
  * the document at all, which is how Tabulator hands out its editors.
  */
-export function useGrowsUpwards(ref: RefObject<HTMLElement>) {
+export function useGrowsUpwards(ref: RefObject<HTMLElement | null>) {
     const [ growsUpwards, setGrowsUpwards ] = useState(false);
 
     useLayoutEffect(() => {

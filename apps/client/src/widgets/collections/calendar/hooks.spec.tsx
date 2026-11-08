@@ -85,7 +85,7 @@ describe("calendar hooks", () => {
 
         it("writes the stock label where the note renames none", () => {
             const note = buildNote({ title: "Fair", "#startDate": "2026-06-05" });
-            act(() => mount(note, "startDate")()[1]("2026-06-09"));
+            act(() => { void mount(note, "startDate")()[1]("2026-06-09"); });
 
             expect(setLabel).toHaveBeenCalledWith(note.noteId, "startDate", "2026-06-09");
         });
@@ -94,7 +94,7 @@ describe("calendar hooks", () => {
             const note = buildNote({
                 title: "Fair", "#calendar:startDate": "myStartDate", "#startDate": "2026-06-05"
             });
-            act(() => mount(note, "startDate")()[1]("2026-06-09"));
+            act(() => { void mount(note, "startDate")()[1]("2026-06-09"); });
 
             expect(setLabel).toHaveBeenCalledWith(note.noteId, "myStartDate", "2026-06-09");
             expect(setLabel).toHaveBeenCalledTimes(1);
@@ -106,7 +106,7 @@ describe("calendar hooks", () => {
                 "#calendar:startDate": "myStartDate", "#myStartDate": "2026-06-09",
                 "#startDate": "2026-06-05"
             });
-            act(() => mount(note, "startDate")()[1](null));
+            act(() => { void mount(note, "startDate")()[1](null); });
 
             // Both names, the stale stock value being exactly what the builder's fallback would
             // pick up the moment the renamed label went.

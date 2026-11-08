@@ -1,14 +1,14 @@
 /* The page replaces the note's scrolling with a viewport-filling layout: the flex chain runs from
    the scroll container down to the section, so the charts get the pane's full height. */
-.scrolling-container:has(.space-usage-page) {
+.scrolling-container.detail-fills-pane {
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.note-detail:has(.space-usage-page),
-.note-detail:has(.space-usage-page) .note-detail-content-widget,
-.note-detail:has(.space-usage-page) .note-detail-content-widget-content {
+.note-detail.fills-pane,
+.note-detail.fills-pane .note-detail-content-widget,
+.note-detail.fills-pane .note-detail-content-widget-content {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;

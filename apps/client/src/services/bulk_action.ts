@@ -23,18 +23,22 @@ import { BulkAction } from "@triliumnext/commons";
 export const ACTION_GROUPS = [
     {
         title: t("bulk_actions.labels"),
+        icon: "bx bx-hash",
         actions: [AddLabelBulkAction, UpdateLabelValueBulkAction, RenameLabelBulkAction, DeleteLabelBulkAction]
     },
     {
         title: t("bulk_actions.relations"),
+        icon: "bx bx-transfer",
         actions: [AddRelationBulkAction, UpdateRelationTargetBulkAction, RenameRelationBulkAction, DeleteRelationBulkAction]
     },
     {
         title: t("bulk_actions.notes"),
+        icon: "bx bx-note",
         actions: [RenameNoteBulkAction, MoveNoteBulkAction, ConvertNoteBulkAction, DeleteNoteBulkAction, SaveRevisionBulkAction, DeleteRevisionsBulkAction]
     },
     {
         title: t("bulk_actions.other"),
+        icon: "bx bx-dots-horizontal-rounded",
         actions: [ExecuteScriptBulkAction]
     }
 ];

@@ -1,0 +1,46 @@
+// Kanban diagram grammar for Mermaid: https://mermaid.js.org/syntax/kanban.html
+@top KanbanDiagram {
+  DiagramName item*
+}
+
+@skip { spaces | newlines | LineComment }
+
+item {
+  Card |
+  Column
+}
+
+Card {
+  NodeId? Node Metadata?
+}
+
+Node {
+  "[" CardText? "]"
+}
+
+Column {
+  ColumnTitle
+}
+
+ColumnTitle { columnTitleTerm }
+NodeId { nodeIdTerm }
+CardText { cardTextTerm }
+Metadata { metadataTerm }
+
+DiagramName { @specialize<identifier, "kanban"> }
+
+@external tokens metadataTokens from "./tokens.js" { metadataTerm }
+@external tokens columnTitleTokens from "./tokens.js" { columnTitleTerm }
+@external tokens nodeIdTokens from "./tokens.js" { nodeIdTerm }
+@external tokens cardTextTokens from "./tokens.js" { cardTextTerm }
+
+@tokens {
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
+  "["
+  "]"
+}
+
+@external propSource kanbanHighlighting from "./highlight.js"

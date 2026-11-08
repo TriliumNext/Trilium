@@ -145,13 +145,17 @@ function rowOrFail(title: string): HTMLElement {
     return found;
 }
 
-/** Presses one of a row's choice buttons by its label. */
+/** Opens a row's choice menu and runs the entry with the given label. */
 async function choose(title: string, label: string) {
-    const button = [ ...(row(title)?.querySelectorAll<HTMLElement>("button") ?? []) ]
-        .find((candidate) => candidate.textContent?.trim() === label);
+    await act(async () => {
+        rowOrFail(title).querySelector<HTMLButtonElement>(".dropdown > button")?.click();
+    });
+    const entry = [ ...document.body.querySelectorAll<HTMLElement>(".image-compression-choice-menu li.dropdown-item") ]
+        .find((candidate) => candidate.textContent?.trim().startsWith(label));
+    expect(entry).toBeDefined();
 
     await act(async () => {
-        button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        entry?.click();
     });
 }
 
@@ -223,9 +227,8 @@ describe("the images card", () => {
         expect(describes("space_usage.compress_resize")).toBe("images.max_image_dimensions_description");
         // Both qualities take the same advice, being the same scale read twice.
         expect(describes("space_usage.compress_quality")).toBe("images.jpeg_quality_description");
-        // A row with nothing extra to say keeps its help mark alone rather than inventing prose.
+        // A choice describes each entry in its menu rather than the row.
         expect(describes("space_usage.compress_png_handling")).toBeUndefined();
-        expect(row("space_usage.compress_png_handling")?.querySelector(".contextual-help-icon")).not.toBeNull();
     });
 
     it("writes each choice back to the option it stands for", async () => {

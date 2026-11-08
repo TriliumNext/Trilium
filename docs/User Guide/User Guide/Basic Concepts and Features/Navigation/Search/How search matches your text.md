@@ -129,3 +129,5 @@ The last point is the least obvious: if a note's only content is a reference lin
 | --- | --- | --- |
 | `note.content %= 'colou?r'` | `my favorite color of all` | Yes |
 | `note.content %= 'colou?r'` | `my favourite colour of all` | Yes |
+
+The search on [shared pages](../../../Advanced%20Usage/Sharing.md) does not accept `%=`: a query that uses it returns no results and reports an error.

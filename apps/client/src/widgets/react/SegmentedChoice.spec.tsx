@@ -66,6 +66,8 @@ describe("SegmentedChoice", () => {
         const buttons = [ ...container.querySelectorAll("button") ];
         expect(buttons.map((button) => button.textContent?.trim())).toStrictEqual([ "Yours", "System" ]);
         expect(buttons.map((button) => button.classList.contains("active"))).toStrictEqual([ false, true ]);
+        expect(buttons.map((button) => button.getAttribute("aria-pressed")))
+            .toStrictEqual([ "false", "true" ]);
     });
 
     it("shows a count as a badge beside the name rather than inside it", () => {
@@ -104,6 +106,26 @@ describe("SegmentedChoice", () => {
         expect(buttons.map((button) => button.disabled)).toStrictEqual([ true, true ]);
         buttons[1].click();
         expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("draws an icon from its SVG source, with or without a label", () => {
+        const svg = "<svg viewBox=\"0 0 1 1\"></svg>";
+        render(
+            <SegmentedChoice
+                options={[
+                    { value: "named" as const, label: "Named", iconSvg: svg },
+                    { value: "bare" as const, title: "Bare", iconSvg: svg }
+                ]}
+                currentValue="named" onChange={() => {}}
+            />, container
+        );
+
+        const buttons = [ ...container.querySelectorAll("button") ];
+        expect(buttons.map((button) => !!button.querySelector(".tn-svg-icon svg")))
+            .toStrictEqual([ true, true ]);
+        expect(container.querySelector(".bx")).toBeNull();
+        expect(buttons.map((button) => button.classList.contains("tn-icon-only")))
+            .toStrictEqual([ false, true ]);
     });
 
     describe("collapsed onto a narrow screen", () => {
@@ -160,6 +182,10 @@ describe("SegmentedChoice", () => {
 
         it("comes up from the bottom of the screen, out of the dialog and over a backdrop", () => {
             isMobileMock.mockReturnValue(true);
+            // A phone's width; happy-dom's window is 1024px wide, a tablet's.
+            const phone = { matches: true, addEventListener() {}, removeEventListener() {} };
+            const narrow = vi.spyOn(window, "matchMedia")
+                .mockReturnValue(phone as unknown as MediaQueryList);
             renderOpened(<SegmentedChoice options={iconOptions} currentValue="dark" onChange={() => {}} collapseOnMobile />);
 
             // Placed by the app's own bottom-sheet rule rather than by Popper, which mobile's forced
@@ -171,6 +197,7 @@ describe("SegmentedChoice", () => {
             // context the backdrop would then cover the menu through.
             expect(container.contains(menu)).toBe(false);
             expect(document.getElementById("context-menu-cover")?.classList.contains("show")).toBe(true);
+            narrow.mockRestore();
         });
 
         it("shows a count beside the name rather than as a badge, the menu line having room for it", () => {
@@ -188,7 +215,7 @@ describe("SegmentedChoice", () => {
         act(() => render(vnode, container));
         const dropdown = container.querySelector(".dropdown");
         act(() => {
-            if (dropdown) $(dropdown).trigger("show.bs.dropdown");
+            if (dropdown) $(dropdown).children("button:not([aria-expanded=true])").trigger("click");
         });
     }
 

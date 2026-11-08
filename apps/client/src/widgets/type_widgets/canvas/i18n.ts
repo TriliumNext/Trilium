@@ -5,11 +5,13 @@ export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] 
     ar: "ar-SA",
     cn: "zh-CN",
     cs: "cs-CZ",
+    da: "da-DK",
     de: "de-DE",
     en: "en",
     "en-GB": "en",
     en_rtl: "en",
     es: "es-ES",
+    fa: "fa-IR",
     fr: "fr-FR",
     ga: null,
     id: "id-ID",
@@ -24,5 +26,6 @@ export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] 
     ru: "ru-RU",
     tr: "tr-TR",
     tw: "zh-TW",
-    uk: "uk-UA"
+    uk: "uk-UA",
+    vi: "vi-VN"
 };

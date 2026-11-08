@@ -10,6 +10,7 @@
 
 .color-picker {
     display: flex;
+    align-items: center;
     gap: 8px;
     justify-content: space-between;
 }
@@ -33,6 +34,12 @@
 
 .color-picker .color-cell.selected {
     outline: 2px solid var(--outline-color, var(--color));
+    outline-offset: 2px;
+}
+
+/* The cell the keys stand on, which Enter or Space picks. */
+.color-picker .color-cell:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color);
     outline-offset: 2px;
 }
 

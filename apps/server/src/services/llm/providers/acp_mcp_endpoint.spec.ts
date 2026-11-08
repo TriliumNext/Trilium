@@ -185,6 +185,8 @@ describe("ACP MCP endpoint", () => {
 
         expect(res.status).toBe(200);
         expect(res.body).toContain("trilium-notes-spec");
+        // Codex runs a tool marked read-only without asking, which would skip the chat's approvals.
+        expect(createMcpServerMock).toHaveBeenCalledWith({ toolHints: false });
 
         const mcpServer = mcpServers.at(-1);
         await vi.waitFor(() => {
@@ -269,9 +271,9 @@ describe("ACP hook endpoint", () => {
         const createServerSpy = vi.spyOn(http, "createServer");
         const handler = vi.fn((_payload: unknown) => ({ decision: "deny", reason: "no" }));
 
-        const hookUrl = await getAcpHookEndpointUrl(handler);
+        const hookUrl = await getAcpHookEndpointUrl("agent", handler);
         const mcpUrl = await getAcpMcpEndpointUrl();
-        expect(hookUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/hook-[0-9a-f]{32}$/);
+        expect(hookUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/hook-[0-9a-f]{32}\/agent$/);
         expect(new URL(hookUrl).port).toBe(new URL(mcpUrl).port);
         expect(createServerSpy).toHaveBeenCalledTimes(1);
 
@@ -283,7 +285,7 @@ describe("ACP hook endpoint", () => {
 
     it("refuses anything but a POST from the bound host, so a failing hook denies the call", async () => {
         const handler = vi.fn(() => ({ decision: "allow" }));
-        const hookUrl = await getAcpHookEndpointUrl(handler);
+        const hookUrl = await getAcpHookEndpointUrl("agent", handler);
         const { port } = new URL(hookUrl);
 
         await expect(request(hookUrl)).resolves.toMatchObject({ status: 405 });
@@ -292,5 +294,22 @@ describe("ACP hook endpoint", () => {
         await expect(request(hookUrl, { method: "POST", body: "not json" })).resolves.toMatchObject({ status: 500 });
         expect(errorLogMock).toHaveBeenCalledWith(expect.stringContaining("hook"));
         expect(handler).not.toHaveBeenCalled();
+    });
+});
+
+describe("ACP hook endpoint, several providers", () => {
+    afterEach(async () => {
+        await resetAcpMcpEndpointForTests();
+    });
+
+    it("answers each provider's hook with its own handler, awaiting an async one, and no unregistered name", async () => {
+        const first = await getAcpHookEndpointUrl("first", () => ({ from: "first" }));
+        const second = await getAcpHookEndpointUrl("second", async () => ({ from: "second" }));
+        const { origin, pathname } = new URL(first);
+
+        await expect(request(first, { method: "POST", body: "{}" })).resolves.toEqual({ status: 200, body: JSON.stringify({ from: "first" }) });
+        await expect(request(second, { method: "POST", body: "{}" })).resolves.toEqual({ status: 200, body: JSON.stringify({ from: "second" }) });
+        const unknown = `${origin}${pathname.replace(/\/first$/, "/third")}`;
+        await expect(request(unknown, { method: "POST", body: "{}" })).resolves.toMatchObject({ status: 404 });
     });
 });

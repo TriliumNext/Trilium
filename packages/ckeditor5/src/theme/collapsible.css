@@ -1,7 +1,6 @@
 
-/* The shared styles for the collapsible blocks are located at
- * apps/client/src/stylesheets/style.css, so the styles are available even when
- * this plugin is not loaded yet.
+/* The shared styles for the collapsible blocks are in `collapsible_blocks.css`, which the client
+ * entry imports, so the styles are available even when this plugin is not loaded yet.
  *
  * Use only editor-specific styles in the current CSS file. */
 
@@ -13,7 +12,7 @@
 .trilium-collapsible-drop-indicator {
     position: fixed;
     height: 2px;
-    background: var(--ck-document-outline-item-active-color);
+    background: var(--ck-clipboard-drop-target-color);
     border-radius: 1px;
     pointer-events: none;
     z-index: 10000;

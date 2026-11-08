@@ -68,42 +68,42 @@ body.mobile .modal.mobile-master-detail {
 
     &.mobile-transition-to-page {
         .tn-detail-pane {
-            animation: tn-master-detail-in-end 0.35s ease-in-out forwards;
+            animation: tn-slide-in-from-right 0.35s ease-in-out forwards;
         }
 
         .tn-master-pane {
-            animation: tn-master-detail-out-start 0.35s ease-in-out forwards;
+            animation: tn-slide-out-to-left 0.35s ease-in-out forwards;
         }
     }
 
     &.mobile-transition-to-list {
         .tn-detail-pane {
-            animation: tn-master-detail-out-end 0.35s ease-in-out forwards;
+            animation: tn-slide-out-to-right 0.35s ease-in-out forwards;
         }
 
         .tn-master-pane {
-            animation: tn-master-detail-in-start 0.35s ease-in-out forwards;
+            animation: tn-slide-in-from-left 0.35s ease-in-out forwards;
         }
     }
 }
 
 body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-page {
     .tn-detail-pane {
-        animation-name: tn-master-detail-in-start;
+        animation-name: tn-slide-in-from-left;
     }
 
     .tn-master-pane {
-        animation-name: tn-master-detail-out-end;
+        animation-name: tn-slide-out-to-right;
     }
 }
 
 body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-list {
     .tn-detail-pane {
-        animation-name: tn-master-detail-out-start;
+        animation-name: tn-slide-out-to-left;
     }
 
     .tn-master-pane {
-        animation-name: tn-master-detail-in-end;
+        animation-name: tn-slide-in-from-right;
     }
 }
 
@@ -146,24 +146,4 @@ body[dir="rtl"].mobile .modal.mobile-master-detail.mobile-transition-to-list {
     &:has(.tn-master-detail-page-actions) .tn-master-detail-title {
         flex-grow: 0;
     }
-}
-
-@keyframes tn-master-detail-in-end {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes tn-master-detail-in-start {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes tn-master-detail-out-end {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-}
-
-@keyframes tn-master-detail-out-start {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(-100%); opacity: 0; }
 }

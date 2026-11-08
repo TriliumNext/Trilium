@@ -1,6 +1,7 @@
 import { Plugin } from "ckeditor5";
 
 import "../../theme/footnotes.css";
+import "../../theme/footnotes_editing.css";
 
 import FootnoteEditing from "./footnote_editing.js";
 import FootnoteUI from "./footnote_ui.js";

@@ -1,35 +1,30 @@
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
 import { t } from "../../../services/i18n.js";
-import BulkAction, { BulkActionText } from "../BulkAction.jsx";
+import BulkAction, { BulkActionArrow, BulkActionAttributeName, useSaveAction } from "../BulkAction.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
-import FormTextBox from "../../react/FormTextBox.jsx";
-import { useEffect, useState } from "preact/hooks";
-import { useSpacedUpdate } from "../../react/hooks.jsx";
+import { useState } from "preact/hooks";
 
 function AddRelationBulkActionComponent({ bulkAction, actionDef }: { bulkAction: AbstractBulkAction, actionDef: ActionDefinition }) {
     const [ relationName, setRelationName ] = useState<string>(actionDef.relationName);
     const [ targetNoteId, setTargetNoteId ] = useState<string>(actionDef.targetNoteId);
-    const spacedUpdate = useSpacedUpdate(() => bulkAction.saveAction({ relationName, targetNoteId }));
-    useEffect(() => spacedUpdate.scheduleUpdate(), [ relationName, targetNoteId ]);
+    useSaveAction(bulkAction, { relationName, targetNoteId });
 
     return (
         <BulkAction
             bulkAction={bulkAction}
-            label={t("add_relation.add_relation")}
-            helpText={t("add_relation.create_relation_on_all_matched_notes")}
         >
-            <FormTextBox 
+            <BulkActionAttributeName
+                type="relation"
                 placeholder={t("add_relation.relation_name")}
-                pattern="[\\p{L}\\p{N}_:]+"
-                style={{ flexShrink: 3 }}
                 title={t("add_relation.allowed_characters")}
                 currentValue={relationName} onChange={setRelationName}
             />
 
-            <BulkActionText text={t("add_relation.to")} />
+            <BulkActionArrow />
 
             <NoteAutocomplete
                 placeholder={t("add_relation.target_note")}
+                required
                 noteId={targetNoteId} noteIdChanged={setTargetNoteId}
             />
         </BulkAction>
@@ -43,6 +38,12 @@ export default class AddRelationBulkAction extends AbstractBulkAction {
     }
     static get actionTitle() {
         return t("add_relation.add_relation");
+    }
+    static get actionIcon() {
+        return "bx bx-transfer bulk-action-marker-add";
+    }
+    static get actionDescription() {
+        return t("add_relation.description");
     }
 
     doRender() {

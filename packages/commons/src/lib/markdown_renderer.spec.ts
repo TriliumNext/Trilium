@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CustomMarkdownRenderer, demoteHeadings, extractCodeBlocks, renderToHtml } from "./markdown_renderer.js";
+import { HIGHLIGHT_STYLE } from "./marked_extensions.js";
 import { DEFAULT_TASK_STATES, DONE_TASK_STATE, NONE_TASK_STATE, type TaskStateDef } from "./task_states.js";
 
 /** Identity sanitizer so we can assert the raw rendered HTML. */
@@ -586,6 +587,16 @@ describe("renderToHtml", () => {
             expect(render("$$e=mc^2$")).not.toContain("math-tex");
         });
 
+        it("leaves dollar amounts as literal text (#5682)", () => {
+            expect(render("An Avg cost of $15. Components cost $6 and $4 each."))
+                .toBe("<p>An Avg cost of $15. Components cost $6 and $4 each.</p>");
+            expect(render("Split $5,$10 between them")).toBe("<p>Split $5,$10 between them</p>");
+
+            const html = render("The $4,000 grows to $7,414.40 by the formula $FV = PV (1 + i)$.");
+            expect(html).toContain("The $4,000 grows to $7,414.40 by the formula ");
+            expect(html).toContain('<span class="math-tex">\\(FV = PV (1 + i)\\)</span>');
+        });
+
         it("does not treat dollars in a blockquoted code block as formulas (#10268)", () => {
             // The fence lines carry a `> ` prefix, so the code block must still be shielded
             // from formula extraction — otherwise `${VAR} ${VAR2}` is mangled into a math span.
@@ -620,7 +631,7 @@ describe("renderToHtml", () => {
     });
 
     describe("highlights (==text==)", () => {
-        const HL = '<span style="background-color:hsl(60, 75%, 60%);">';
+        const HL = `<span style="${HIGHLIGHT_STYLE}">`;
 
         it("renders ==text== as a background-coloured span without any flag", () => {
             expect(render("==hi==")).toBe(`<p>${HL}hi</span></p>`);
@@ -643,6 +654,50 @@ describe("renderToHtml", () => {
 
         it("leaves a setext heading underline alone", () => {
             expect(render("Title\n===", "", { demoteH1: false })).toBe("<h1>Title</h1>");
+        });
+    });
+
+    describe("tabs blocks (MkDocs content tabs)", () => {
+        const tab = (title: string, panel: string) =>
+            `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
+            `<div class="trilium-tab-panel">${panel}</div></section>`;
+        const tabs = (...items: string[]) => `<div class="trilium-tabs">${items.join("")}</div>`;
+
+        it("groups consecutive tabs into one block and starts a new block at ===!", () => {
+            const input = [
+                "Before.",
+                "=== \"Windows\"",
+                "",
+                "    Run the **installer**.",
+                "",
+                "=== \"**Linux** <span class=\"tn-icon bx bxl-tux\"></span>\"",
+                "\t- One",
+                "\t- Two",
+                "===! \"Other\"",
+                "    x",
+                "",
+                "After."
+            ].join("\n");
+            expect(render(input)).toBe(
+                "<p>Before.</p>" +
+                tabs(
+                    tab("Windows", "<p>Run the <strong>installer</strong>.</p>"),
+                    tab(
+                        "<strong>Linux</strong> <span class=\"tn-icon bx bxl-tux\"></span>",
+                        "<ul><li>One</li><li>Two</li></ul>"
+                    )
+                ) +
+                tabs(tab("Other", "<p>x</p>")) +
+                "<p>After.</p>"
+            );
+        });
+
+        it("fills an empty title and an empty panel at the end of the input", () => {
+            expect(render("=== \"\"")).toBe(tabs(tab("&nbsp;", "<p>&nbsp;</p>")));
+        });
+
+        it("leaves === without a quoted title to the other tokenizers", () => {
+            expect(render("=== Title")).toBe("<p>=== Title</p>");
         });
     });
 

@@ -1,6 +1,7 @@
-import { Plugin, Enter, Delete, enableViewPlaceholder, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
+import { Plugin, Enter, Delete, enableViewPlaceholder, type ModelPosition, type ViewDocumentEnterEvent, type ViewDocumentDeleteEvent, type ViewDocumentArrowKeyEvent } from "ckeditor5";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
 import { renderShortcut } from "../../shortcut.js";
+import FindReveal from "../find_reveal.js";
 import BlockDragHandle from "./block_drag_handle.js";
 import CollapsibleCommand from "./collapsible_command.js";
 import { OPEN_ATTRIBUTE, TRANSIENT_OPEN_ATTRIBUTE } from "./constants.js";
@@ -76,7 +77,7 @@ export default class CollapsibleEditing extends Plugin {
     }
 
     public static get requires() {
-        return [Enter, Delete] as const;
+        return [ Enter, Delete, FindReveal ] as const;
     }
 
     private keydownListeners: Array<{ root: HTMLElement, handler: (e: KeyboardEvent) => void }> = [];
@@ -396,10 +397,10 @@ export default class CollapsibleEditing extends Plugin {
         writer.insert(writer.createPositionAt(summary, 0), handle);
         // "Title" placeholder shown while the summary is empty. UIElements like the
         // arrow above don't count as content for placeholder purposes.
+        summary.placeholder = t("Summary");
         enableViewPlaceholder({
             view: this.editor.editing.view,
             element: summary,
-            text: t("Summary"),
             keepOnFocus: true
         });
         return summary;
@@ -523,7 +524,7 @@ export default class CollapsibleEditing extends Plugin {
         const view = this.editor.editing.view;
         for (const viewRoot of view.document.getRoots()) {
             const dom = view.getDomRoot(viewRoot.rootName);
-            /* v8 ignore next -- an editing view root is always an HTMLElement */
+            // The view still renders after the editor UI detaches the DOM root on destroy.
             if (dom instanceof HTMLElement) fn(dom);
         }
     }
@@ -554,10 +555,10 @@ export default class CollapsibleEditing extends Plugin {
                 const view = conversionApi.mapper.toViewElement(paragraph);
                 /* v8 ignore next -- the mapper always resolves a rendered model element */
                 if (!view || this.bodyPlaceholdersApplied.has(view)) return;
+                view.placeholder = t("Type the content here...");
                 enableViewPlaceholder({
                     view: editor.editing.view,
                     element: view,
-                    text: t("Type the content here..."),
                     keepOnFocus: true
                 });
                 this.bodyPlaceholdersApplied.add(view);
@@ -601,7 +602,7 @@ export default class CollapsibleEditing extends Plugin {
         const selection = model.document.selection;
 
         const summary = selection.getFirstPosition()?.findAncestor("summary");
-        /* v8 ignore next -- the listener is registered with context: summary, so a summary is always found */
+        // The summary context also matches a selection that starts above the title.
         if (!summary) return;
 
         // Titles are single-line: always swallow Enter so it never inserts a newline
@@ -1075,13 +1076,6 @@ export default class CollapsibleEditing extends Plugin {
                 // Modifier-click on an interactive element (link/button): let the
                 // browser handle it — we encountered the interactive element before
                 // the summary so the user clearly intended its default action.
-                //
-                // Not reachable from a test: `data.target` is resolved through
-                // `domConverter.mapDomToView`, which maps container elements but not the
-                // attribute elements links render as, so a click on an <a> arrives with the
-                // enclosing <summary> as the target and this branch is skipped. (In the running
-                // editor LinkEditing handles modifier-clicks on links before this listener.)
-                /* v8 ignore next 3 -- see above */
                 if (hasModifier && (node.is?.("element", "a") || node.is?.("element", "button"))) {
                     return;
                 }
@@ -1170,7 +1164,7 @@ export default class CollapsibleEditing extends Plugin {
         // Adopt a state the model doesn't know about yet. Toggles that originated
         // from the model land here too and are absorbed by setDetailsOpen's guard.
         const detailsModel = this.detailsFromDom(detailsDom);
-        /* v8 ignore next -- the toggle only fires for a rendered, mapped <details> */
+        // A collapsible inside embedded content, such as an included note, has no model element.
         if (!detailsModel) return;
         // A find-reveal drives this block's `open` transiently in the editing view
         // only — adopting it into the (persisted) model would let a search rewrite
@@ -1187,28 +1181,24 @@ export default class CollapsibleEditing extends Plugin {
      * Follow the find-and-replace highlight: when it lands inside a collapsed
      * block, open that block (and any collapsed ancestors) just enough to show
      * the match; re-collapse the moment the highlight leaves. Purely editing-view
-     * state — see {@link findRevealed}. No-op when the editor has no find plugin.
+     * state — see {@link findRevealed}.
      */
     private registerFindReveal() {
-        if (!this.editor.plugins.has("FindAndReplaceEditing")) return;
-        const findEditing: any = this.editor.plugins.get("FindAndReplaceEditing");
-        const state = findEditing?.state;
-        /* v8 ignore next -- FindAndReplaceEditing always exposes a state with an observable on flag */
-        if (!state?.on) return;
-        this.listenTo(state, "change:highlightedResult", (_evt: any, _name: any, highlighted: any) => {
-            this.syncFindReveal(highlighted);
+        const findReveal = this.editor.plugins.get(FindReveal);
+        this.listenTo(findReveal, "change:position", (_evt, _name, position) => {
+            this.syncFindReveal(position);
         });
     }
 
     /**
-     * Reconcile {@link findRevealed} with the block(s) the current highlight sits
-     * in. Ancestors newly holding the highlight get revealed; blocks that no
-     * longer hold it are re-collapsed. A `null` highlight (search cleared/closed)
+     * Reconcile {@link findRevealed} with the block(s) that hold `position`, the
+     * match the find shows. Ancestors newly holding it get revealed; blocks that no
+     * longer hold it are re-collapsed. A `null` position (search cleared/closed)
      * collapses everything.
      */
-    private syncFindReveal(highlighted: any) {
+    private syncFindReveal(position: ModelPosition | null) {
         const wanted = new Set<any>();
-        for (let node = highlighted?.marker?.getStart?.()?.parent; node; node = node.parent) {
+        for (let node: any = position?.parent; node; node = node.parent) {
             // A persisted-open block is already visible — nothing transient to do.
             if (node.is?.("element", "details") && !this.isDetailsOpen(node)) {
                 wanted.add(node);
@@ -1236,7 +1226,7 @@ export default class CollapsibleEditing extends Plugin {
     /** Add or strip the transient `open` (and its CSS marker) on the editing view. */
     private applyFindReveal(details: any, reveal: boolean) {
         const viewElement = this.editor.editing.mapper.toViewElement(details);
-        /* v8 ignore next -- only called for a <details> that is currently rendered */
+        // A revealed block deleted from the document has no view element.
         if (!viewElement) return;
         this.editor.editing.view.change((writer: any) => {
             if (reveal) {
@@ -1318,7 +1308,7 @@ export default class CollapsibleEditing extends Plugin {
                 const view = domConverter.mapDomToView(dom);
                 /* v8 ignore next -- the mapper always resolves a rendered view element */
                 const model = view ? mapper.toModelElement(view as any) : null;
-                /* v8 ignore next -- the mapper always resolves a rendered view element */
+                // A title inside embedded content, such as an included note, has no model element.
                 if (model) current.set(model, dom);
             }
         });
@@ -1634,7 +1624,7 @@ export default class CollapsibleEditing extends Plugin {
                 // into a <details> that already has one gives us two summaries.
                 const parent = (entry as any).position?.parent;
                 if (parent?.is("element", "details") && ensureValid(parent)) return true;
-            } else if (entry.type === "remove" || entry.type === "attribute") {
+            } else {
                 const parent = (entry as any).position?.parent;
                 if (parent?.is("element", "details") && ensureValid(parent)) return true;
             }

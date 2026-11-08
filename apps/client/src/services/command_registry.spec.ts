@@ -164,7 +164,7 @@ describe("CommandRegistry default commands", () => {
 });
 
 describe("CommandRegistry keyboard actions", () => {
-    it("registers eligible keyboard actions, formatting shortcuts and tree-scoped names", async () => {
+    it("registers eligible keyboard actions, with their primary shortcut and tree-scoped names", async () => {
         getActions.mockImplementation(async () => [
             action({
                 actionName: "newAction",
@@ -184,8 +184,8 @@ describe("CommandRegistry keyboard actions", () => {
         const newCmd = registry.getCommand("newAction")!;
         expect(newCmd.source).toBe("keyboard-action");
         expect(newCmd.commandName).toBe("newAction");
-        // formatShortcut: CommandOrControl -> Ctrl, + -> " + "
-        expect(newCmd.shortcut).toBe("Ctrl + N");
+        // Stored as written; the command palette formats it for display.
+        expect(newCmd.shortcut).toBe("CommandOrControl+N");
 
         const treeCmd = registry.getCommand("treeAction")!;
         // note-tree scope wraps the name with the tree-action-name translation key

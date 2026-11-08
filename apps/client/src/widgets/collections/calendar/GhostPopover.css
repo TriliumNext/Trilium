@@ -14,10 +14,13 @@
 
     .calendar-ghost-when {
         display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--muted-text-color);
-        font-size: 0.9em;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .calendar-ghost-when .template-dropdown {
+        flex: 0 1 auto;
+        min-width: 0;
     }
 
     .calendar-ghost-actions {
@@ -31,7 +34,7 @@
  * room around what it holds — all of which a dialog brings for the sheet.
  */
 .calendar-ghost-popover {
-    width: 300px;
+    width: min(460px, calc(100vw - 4rem));
 
     .calendar-ghost-header {
         display: flex;

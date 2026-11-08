@@ -50,8 +50,6 @@
     "search_note": "hledat poznámku podle názvu",
     "link_title": "Název odkazu",
     "button_add_link": "Přidat odkaz",
-    "link_title_mirrors": "titulek odkazu odráží momentální titulek poznámky",
-    "link_title_arbitrary": "titulek odkazu může být změněn libovolně",
     "edit_link": "Upravit odkaz",
     "anchor": "Kotva (volitelné)",
     "button_edit_link": "Uložit odkaz"
@@ -70,12 +68,12 @@
   },
   "bulk_actions": {
     "bulk_actions": "Hromadné akce",
-    "affected_notes": "Ovlivněné poznámky",
     "notes": "Poznámky",
     "include_descendants": "Zahrnout potomky vybraných poznámek",
-    "available_actions": "Dostupné akce",
     "chosen_actions": "Vybrané akce",
-    "execute_bulk_actions": "Vykonat hromadné akce",
+    "execute_bulk_actions_one": "Vykonat hromadné akce",
+    "execute_bulk_actions_few": "",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Hromadné akce byly úspěšně provedeny.",
     "labels": "Štítky",
     "relations": "Relace",
@@ -138,12 +136,6 @@
     "clone_to_selected_note": "Klonovat vybranou poznámku",
     "no_path_to_clone_to": "Žádná cest pro klonování.",
     "note_cloned": "Poznámka „{{clonedTitle}}“ bylo naklonována do „{{targetTitle}}“"
-  },
-  "zpetne_odkazy": {
-    "backlink_one": "{{count}} Zpětný odkaz",
-    "backlink_few": "{{count}} Zpětné odkazy",
-    "backlink_other": "{{count}} Zpětných odkazů",
-    "relation": "vazba"
   },
   "help": {
     "title": "Rychlý přehled",
@@ -234,11 +226,6 @@
   "include_note": {
     "dialog_title": "Zahrnout poznámku",
     "label_note": "Poznámka",
-    "placeholder_search": "Hledat poznámku podle jejího názvu",
-    "box_size_prompt": "Velikost pole zahrnuté poznámky:",
-    "box_size_small": "Malý (~ 10 řádků)",
-    "box_size_medium": "Střední (~ 30 řádků)",
-    "box_size_full": "Úplný (pole zobrazuje kompletní text)",
     "button_include": "Zahrnout poznámku"
   },
   "info": {
@@ -248,8 +235,7 @@
     "copy_to_clipboard": "Kopírovat do schránky"
   },
   "jump_to_note": {
-    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy...",
-    "search_button": "Hledat v celém textu"
+    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy..."
   },
   "markdown_import": {
     "dialog_title": "Markdown import",
@@ -267,12 +253,8 @@
     "move_success_message": "Vybrané poznámky byly přesunuty do "
   },
   "note_type_chooser": {
-    "change_path_prompt": "Změnit, kam se má nová poznámka vytvořit:",
-    "search_placeholder": "Hledat cestu podle názvu (výchozí, pokud je prázdná)",
     "modal_title": "Vybrat typ poznámky",
-    "modal_body": "Vybrat typ poznámky / šablonu nové poznámky:",
-    "templates": "Šablony",
-    "builtin_templates": "Vestavěné šablony"
+    "templates": "Šablony"
   },
   "password_not_set": {
     "title": "Heslo není nastaveno",
@@ -407,7 +389,6 @@
     "hide_relations": "Seznam jmen vazeb oddělených čárkami, které se mají skrýt. Všechny ostatní budou zobrazeny.",
     "title_template": "výchozí název poznámek vytvořených jako podřízené této poznámce. Hodnota je vyhodnocena jako řetězec v JavaScriptu \n                        a lze ji tedy obohatit o dynamický obsah pomocí vložených proměnných <code>now</code> a <code>parentNote</code>. Příklady:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue(‚authorName‘)}ova literární díla</code></li>\n                            <li><code>Záznam pro ${now.format(‚YYYY-MM-DD HH:mm:ss‘)}</code></li>\n                        </ul>\n                        \n                        Viz <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html \">wiki s podrobnostmi</a>, dokumentaci API pro <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> a <a href=\"https://day.js.org/docs/en/display/format\">now</a> pro podrobnosti.",
     "template": "Tato poznámka se zobrazí ve výběru dostupných šablon při vytváření nové poznámky",
-    "toc": "<code>#toc</code> nebo <code>#toc=show</code> vynutí zobrazení Obsahu, <code>#toc=hide</code> vynutí jeho skrytí. Pokud štítek neexistuje, je respektováno globální nastavení",
     "color": "Definuje barvu poznámky ve stromu poznámek, odkazech atd. Použijte jakoukoli platnou hodnotu CSS barvy, například 'red' nebo #a13d5f",
     "keyboard_shortcut": "Definuje klávesovou zkratku, která okamžitě skočí na tuto poznámku. Příklad: 'ctrl+alt+e'. Pro projev změny je vyžadováno obnovení frontendu.",
     "keep_current_hoisting": "Otevření tohoto odkazu nezmění zúžení zobrazení, i když poznámka není zobrazitelná v aktuálním zúženém podstromu.",
@@ -415,7 +396,6 @@
     "execute_description": "Delší popis aktuální poznámky s kódem zobrazený spolu s tlačítkem pro spuštění",
     "exclude_from_note_map": "Poznámky s tímto štítkem budou skryté v Mapě poznámek",
     "new_notes_on_top": "Nové poznámky budou vytvářeny nahoře nadřazené poznámky, nikoli dole.",
-    "hide_highlight_widget": "Skrýt Widget Seznam zvýraznění",
     "run_on_note_creation": "spustí se při vytvoření poznámky na serveru. Tuto relaci použijte, pokud chcete skript spustit pro všechny poznámky vytvořené v rámci konkrétního podstromu. V takovém případě ji vytvořte na kořenové poznámce podstromu a nastavte ji jako dědičnou. Skript se spustí při vytvoření nové poznámky v rámci podstromu (v jakékoli úrovni).",
     "run_on_child_note_creation": "provede se, když je pod poznámkou, ve které je tento vztah definován, vytvořena nová poznámka",
     "run_on_note_title_change": "spustí se při změně názvu poznámky (včetně vytvoření poznámky)",
@@ -457,21 +437,13 @@
     "remove_this_search_action": "Odebrat tuto akci hledání"
   },
   "execute_script": {
-    "execute_script": "Spustit skript",
-    "help_text": "Můžete spustit jednoduché skripty na vybraných poznámkách.",
-    "example_1": "Například pro připojení řetězce k názvu poznámky použijte tento malý skript:",
-    "example_2": "Složitější příklad by bylo smazání všech atributů vybraných poznámek:"
+    "execute_script": "Spustit skript"
   },
   "add_label": {
     "add_label": "Přidat štítek",
     "label_name_placeholder": "Název štítku",
     "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to_value": "k hodnotě",
-    "new_value_placeholder": "nová hodnota",
-    "help_text": "Na všech odpovídajících poznámkách:",
-    "help_text_item1": "vytvořit daný štítek, pokud jej poznámka ještě nemá",
-    "help_text_item2": "nebo změnit hodnotu existujícího štítku",
-    "help_text_note": "Můžete také zavolat tuto metodu bez hodnoty, v takovém případě bude štítek přiřazen k poznámce bez hodnoty."
+    "new_value_placeholder": "nová hodnota"
   },
   "delete_label": {
     "delete_label": "Smazat štítek",
@@ -480,9 +452,7 @@
   },
   "rename_label": {
     "rename_label": "Přejmenovat štítek",
-    "rename_label_from": "Přejmenovat štítek z",
     "old_name_placeholder": "starý název",
-    "to": "Na",
     "new_name_placeholder": "nový název",
     "name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
   },
@@ -490,49 +460,26 @@
     "update_label_value": "Aktualizovat hodnotu štítku",
     "label_name_placeholder": "název štítku",
     "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to_value": "na hodnotu",
-    "new_value_placeholder": "nová hodnota",
-    "help_text": "U všech nalezených poznámek změňte hodnotu existujícího štítku.",
-    "help_text_note": "Tuto metodu můžete také zavolat bez hodnoty, v takovém případě bude štítek přiřazen k poznámce bez hodnoty."
+    "new_value_placeholder": "nová hodnota"
   },
   "delete_note": {
-    "delete_note": "Smazat poznámku",
-    "delete_matched_notes": "Smazat nalezené poznámky",
-    "delete_matched_notes_description": "Tímto se smažou nalezené poznámky.",
-    "undelete_notes_instruction": "Po smazání je lze obnovit z dialogu Recent Changes.",
-    "erase_notes_instruction": "Pro trvalé vymazání poznámek můžete po smazání přejít do Option -> Other a kliknout na tlačítko \"Vymazat smazané poznámky nyní\"."
+    "delete_note": "Smazat poznámku"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Smazat revize poznámek",
-    "all_past_note_revisions": "Všechny minulé revize nalezených poznámek budou smazány. Poznámka samotná zůstane plně zachována. Jinými slovy, historie poznámky bude odstraněna."
+    "delete_note_revisions": "Smazat revize poznámek"
   },
   "move_note": {
     "move_note": "Přesunout poznámku",
-    "to": "do",
-    "target_parent_note": "cílové nadřazené poznámky",
-    "on_all_matched_notes": "Na všech odpovídajících poznámkách",
-    "move_note_new_parent": "přesunout poznámku do nové nadřazené složky, pokud má poznámka pouze jednu nadřazenou složku (tj. stará větev je odstraněna a je vytvořena nová větev vedoucí do nové nadřazené složky)",
-    "clone_note_new_parent": "klonovat poznámku do novéhé nadřazené složky, pokud má poznámka více klonů/větví (není jasné, kterou větev by mělo odstranit)",
-    "nothing_will_happen": "nic se nestane, pokud nelze poznámku přesunout do cílové poznámky (tj. to by vytvořilo cyklus ve stromu)"
+    "target_parent_note": "cílové nadřazené poznámky"
   },
   "rename_note": {
-    "rename_note": "Přejmenovat poznámku",
-    "rename_note_title_to": "Přejmenovat název poznámky na",
-    "new_note_title": "nový název poznámky",
-    "click_help_icon": "Klikněte na ikonu nápovědy vpravo a zobrazte všechny možnosti",
-    "evaluated_as_js_string": "Zadaná hodnota je vyhodnocena jako JavaScript řetězec a může být tak obohacena o dynamický obsah pomocí vložené proměnné <code>note</code> (poznámka bude přejmenována). Příklady:",
-    "example_note": "<code>Poznámka</code> - všechny odpovídající poznámky jsou přejmenovány na 'Poznámka'",
-    "example_new_title": "<code>NOVÝ: ${note.title}</code> - názvy odpovídajících poznámek mají předponu 'NOVÝ: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - před názvem nalezených poznámek je uvedeno datum a měsíc jejich vytvoření",
-    "api_docs": "Podrobnosti najdete v dokumentaci k API v <a href='https://zadam.github.io/trilium/backend_api/Note.html'>poznámce</a> a u jejích vlastností <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a>."
+    "rename_note": "Přejmenovat poznámku"
   },
   "add_relation": {
     "add_relation": "Přidat vazbu",
     "relation_name": "název vazby",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to": "do",
-    "target_note": "cílová poznámka",
-    "create_relation_on_all_matched_notes": "U všech shodných not vytvoř dannou vazbu."
+    "target_note": "cílová poznámka"
   },
   "delete_relation": {
     "delete_relation": "Smazat vazbu",
@@ -541,20 +488,14 @@
   },
   "rename_relation": {
     "rename_relation": "Přejmenovat vazbu",
-    "rename_relation_from": "Přejmenovat vazbu z",
     "old_name": "starý název",
-    "to": "Na",
     "new_name": "nový název",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
   },
   "update_relation_target": {
-    "update_relation": "Aktualizovat vazbu",
     "relation_name": "název vazby",
     "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
-    "to": "do",
     "target_note": "cílová poznámka",
-    "on_all_matched_notes": "Na všech odpovídajících poznámkách",
-    "change_target_note": "změnit cílovou poznámku existující vazby",
     "update_relation_target": "Aktualizovat cílovou vazbu"
   },
   "attachments_actions": {
@@ -618,15 +559,6 @@
   "create_pane_button": {
     "create_new_split": "Vytvořit nové rozdělení"
   },
-  "edit_button": {
-    "edit_this_note": "Upravit tuto poznámku"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Zobrazit Obsah"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Zobrazit Seznam zvýraznění"
-  },
   "global_menu": {
     "menu": "Menu",
     "options": "Nastavení",
@@ -670,7 +602,6 @@
     "in_progress": "Probíhá synchronizace se serverem."
   },
   "left_pane_toggle": {
-    "show_panel": "Zobrazit panel",
     "hide_panel": "Skrýt panel"
   },
   "move_pane_button": {
@@ -691,7 +622,6 @@
     "import_files": "Importovat soubory",
     "export_note": "Exportovat poznámku",
     "delete_note": "Smazat poznámku",
-    "print_note": "Vytisknout poznámku",
     "view_revisions": "Revize poznámky...",
     "save_revision": "Uložit revizi",
     "advanced": "Pokročilé",
@@ -711,9 +641,6 @@
     "active": "Chráněná relace je aktivní. Klikněte pro ukončení chráněné relace.",
     "inactive": "Klikněte pro vstup do chráněné relace"
   },
-  "revisions_button": {
-    "note_revisions": "Revize poznámek"
-  },
   "update_available": {
     "update_available": "Dostupná aktualizace"
   },
@@ -727,23 +654,10 @@
     "opening_api_docs_message": "Otevírám API dokumentaci...",
     "sql_console_saved_message": "Poznámka SQL konzole byla uložena do {{note_path}}"
   },
-  "copy_image_reference_button": {
-    "button_title": "Kopírovat odkaz na obrázek do schránky, lze vložit do textové poznámky."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Skrýt tlačítka"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Zobrazit tlačítka"
-  },
-  "svg_export_button": {
-    "button_title": "Exportovat diagram jako SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu"
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Vložit dceřinou poznámku",
     "delete_this_note": "Smazat tuto poznámku",
     "note_revisions": "Revize poznámky",
     "error_cannot_get_branch_id": "Nelze získat branchId pro cestu k poznámce '{{notePath}}'",
@@ -768,8 +682,6 @@
   "basic_properties": {
     "note_type": "Typ poznámky",
     "editable": "Upravitelné",
-    "basic_properties": "Základní vlastnosti",
-    "language": "Jazyk",
     "configure_code_notes": "Konfigurovat poznámky s kódem..."
   },
   "book_properties": {
@@ -794,37 +706,23 @@
     "hide_child_notes": "Skrýt dceřiné Poznámky ve Stromu"
   },
   "edited_notes": {
-    "no_edited_notes_found": "Zatím nebyly upraveny žádné Poznámky v tento den...",
-    "title": "Upravené Poznámky",
-    "deleted": "(smazáno)"
+    "no_edited_notes_found": "Zatím nebyly upraveny žádné Poznámky v tento den..."
   },
   "file_properties": {
-    "note_id": "ID Poznámky",
     "original_file_name": "Původní název souboru",
-    "file_type": "Typ souboru",
-    "file_size": "Velikost souboru",
     "download": "Stáhnout",
     "open": "Otevřít externě",
-    "upload_new_revision": "Nahrát novou revizi",
     "upload_success": "Nová revize souboru byla nahrána.",
-    "upload_failed": "Nahrání nové revize souboru selhalo.",
-    "title": "Soubor"
+    "upload_failed": "Nahrání nové revize souboru selhalo."
   },
   "image_properties": {
-    "original_file_name": "Původní název souboru",
-    "file_type": "Typ souboru",
-    "file_size": "Velikost souboru",
-    "download": "Stáhnout",
-    "open": "Otevřít",
     "copy_reference_to_clipboard": "Kopírovat referenci do schránky",
     "upload_new_revision": "Nahrát novou revizi",
     "upload_success": "Nová revize obrázku byla nahrána.",
-    "upload_failed": "Nahrání nové revize obrázku selhalo: {{message}}",
-    "title": "Obrázek"
+    "upload_failed": "Nahrání nové revize obrázku selhalo: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Zděděné atributy",
-    "no_inherited_attributes": "Žádné zděděné atributy.",
     "none": "žádný"
   },
   "note_info_widget": {
@@ -843,8 +741,6 @@
     "show_similar_notes": "Zobrazit podobné Poznámky"
   },
   "note_map": {
-    "open_full": "Rozbalit na plnou velikost",
-    "collapse": "Sbalit na normální velikost",
     "title": "Mapa poznámek",
     "fix-nodes": "Opravit uzly",
     "link-distance": "Vzdálenost propojení"
@@ -852,18 +748,10 @@
   "note_paths": {
     "title": "Cesty k poznámkám",
     "clone_button": "Klonovat poznámku na nové místo...",
-    "intro_placed": "Tato poznámka je umístěna v následujících cestách:",
     "intro_not_placed": "Tato poznámka ještě nebyla umístěna do stromu poznámek.",
     "outside_hoisted": "Tato cesta je mimo nadřazenou poznámku a bude nutné ji odnadřazit.",
     "archived": "Archivováno",
     "search": "Hledání"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Tato poznámka byla původně pořízena z:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Vlastní atributy"
   },
   "promoted_attributes": {
     "promoted_attributes": "Propagované atributy",
@@ -876,26 +764,10 @@
     "remove_this_attribute": "Odebrat tento atribut",
     "remove_color": "Odebrat barevný štítek"
   },
-  "script_executor": {
-    "query": "Dotaz",
-    "script": "Skript",
-    "execute_query": "Spustit dotaz",
-    "execute_script": "Spustit skript"
-  },
   "search_definition": {
     "add_search_option": "Přidat možnost hledání:",
-    "search_string": "vyhledávací řetězec",
-    "search_script": "skript pro hledání",
-    "ancestor": "předek",
-    "fast_search": "rychlé hledání",
-    "fast_search_description": "Možnost rychlého hledání vypne úplné textové prohledávání obsahu poznámek, což může urychlit hledání ve velkých databázích.",
-    "include_archived": "zahrnout archivované",
     "include_archived_notes_description": "Archivované poznámky jsou ve výchozím nastavení vyloučeny z výsledků hledání, s touto možností budou zahrnuty.",
-    "order_by": "seřadit podle",
-    "limit": "limit",
     "limit_description": "Omezit počet výsledků",
-    "debug": "ladění",
-    "debug_description": "Ladění vypíše do konzole další ladicí informace, které pomohou při ladění složitých dotazů",
     "action": "akce",
     "option": "možnost",
     "search_button": "Hledání",
@@ -938,8 +810,7 @@
     "include_archived_notes": "Zahrnout archivované poznámky"
   },
   "limit": {
-    "limit": "Limit",
-    "take_first_x_results": "Zobrazí pouze prvních X zadaných výsledků."
+    "limit": "Limit"
   },
   "order_by": {
     "order_by": "Seřadit podle",
@@ -982,7 +853,6 @@
     "label_rock_or_pop": "stačí, aby byl přítomen jeden ze štítků",
     "label_year_comparison": "numerické porovnání (také >, >=, <).",
     "label_date_created": "poznámky vytvořené za poslední měsíc",
-    "error": "Chyba vyhledávání: {{error}}",
     "search_prefix": "Hledání:"
   },
   "attachment_detail": {
@@ -1008,13 +878,10 @@
   },
   "editable_text": {
     "placeholder": "Zadejte obsah své poznámky zde...",
-    "editor_crashed_title": "Editor textu havaroval",
-    "editor_crashed_content": "Váš obsah byl úspěšně obnoven, ale několik vašich posledních změn nemuselo být uloženo.",
     "editor_crashed_details_button": "Zobrazit více detailů...",
     "editor_crashed_details_intro": "Pokud se tato chyba vyskytne několikrát, zvažte její nahlášení na GitHub vložením informací níže.",
     "editor_crashed_details_title": "Technické informace",
-    "auto-detect-language": "Automaticky detekováno",
-    "keeps-crashing": "Komponenta pro úpravy opakovaně havaruje. Zkuste restartovat Trilium. Pokud problém přetrvává, zvažte vytvoření hlášení o chybě."
+    "auto-detect-language": "Automaticky detekováno"
   },
   "empty": {
     "open_note_instruction": "Otevřete poznámku zadáním názvu poznámky do pole níže nebo vyberte poznámku ve stromu.",
@@ -1060,11 +927,8 @@
     "connection_exists": "Připojení '{{name}}' mezi těmito poznámkami již existuje.",
     "start_dragging_relations": "Začněte táhnout vazby odsud a přetáhněte je na jinou poznámku.",
     "note_not_found": "Poznámka {{noteId}} nebyla nalezena!",
-    "cannot_match_transform": "Nelze porovnat transformaci: {{transform}}",
     "note_already_in_diagram": "Poznámka \"{{title}}\" je již v diagramu.",
-    "enter_title_of_new_note": "Zadejte název nové poznámky",
-    "default_new_note_title": "nová poznámka",
-    "click_on_canvas_to_place_new_note": "Klikněte na plátno pro umístění nové poznámky"
+    "default_new_note_title": "nová poznámka"
   },
   "render": {
     "setup_title": "Zobrazit vlastní HTML nebo Preact JSX uvnitř této poznámky",
@@ -1135,11 +999,7 @@
   },
   "experimental_features": {
     "title": "Experimentální Nastavení",
-    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností.",
-    "new_layout_name": "Nové Rozložení",
-    "new_layout_description": "Vyzkoušejte nové rozložení pro modernější vzhled a lepší použitelnost. Podléhá velkým změnám v nadcházejících verzích.",
-    "llm_name": "AI / LLM Chat",
-    "llm_description": "Povolte postranní panel AI chatu a poznámky LLM chatu poháněné velkými jazykovými modely."
+    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností."
   },
   "fonts": {
     "theme_defined": "Definované téma",
@@ -1171,9 +1031,6 @@
     "title": "Nativní panel titulku (vyžaduje restart aplikace)",
     "enabled": "zapnuto",
     "disabled": "vypnuto"
-  },
-  "ribbon": {
-    "edited_notes_message": "Záložka Upravené poznámky na pásu karet se automaticky otevře u denních poznámek"
   },
   "theme": {
     "title": "Vzhled aplikace",
@@ -1284,7 +1141,6 @@
   "search_engine": {
     "title": "Vyhledávač",
     "custom_search_engine_info": "Vlastní vyhledávač vyžaduje nastavení jak názvu, tak URL. Pokud některý z nich není nastaven, bude použit DuckDuckGo jako výchozí vyhledávač.",
-    "predefined_templates_label": "Předdefinované šablony vyhledávačů",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1312,17 +1168,7 @@
     "italic": "Kurzíva",
     "underline": "Podtržený text",
     "color": "Barevný text",
-    "bg_color": "Text s barvou pozadí",
-    "visibility_title": "Viditelnost seznamu zvýraznění",
-    "visibility_description": "Widget zvýraznění můžete pro jednotlivé poznámky skrýt přidáním štítku #hideHighlightWidget.",
-    "shortcut_info": "Můžete nakonfigurovat klávesovou zkratku pro rychlé přepínání pravého panelu (včetně zvýraznění) v Nastavení -> Zkratky (název 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Obsah",
-    "description": "Obsah se zobrazí v textových Poznámkách, pokud Poznámka obsahuje více než definovaný počet nadpisů. Můžete si přizpůsobit tento počet:",
-    "unit": "nadpisů",
-    "disable_info": "Můžete také použít tuto možnost pro efektivní vypnutí TOC nastavením velmi vysokého čísla.",
-    "shortcut_info": "Můžete nakonfigurovat klávesovou zkratku pro rychlé přepínání pravého panelu (včetně TOC) v Nastavení -> Zkratky (název 'toggleRightPane')."
+    "bg_color": "Text s barvou pozadí"
   },
   "text_auto_read_only_size": {
     "title": "Automatická velikost pro Pouze pro čtení",
@@ -1461,9 +1307,7 @@
     "unrecognized_role": "Nerozpoznaná role přílohy '{{role}}'."
   },
   "bookmark_switch": {
-    "bookmark": "Záložka (oblíbená)",
-    "bookmark_this_note": "Přidejte tuto poznámku do záložek na levém panelu",
-    "remove_bookmark": "Odebrat záložku"
+    "bookmark": "Záložka (oblíbená)"
   },
   "editability_select": {
     "auto": "Automaticky",
@@ -1501,7 +1345,6 @@
     "copy-note-path-to-clipboard": "Kopírovat cestu poznámky do schránky",
     "protect-subtree": "Chránit podstrom",
     "unprotect-subtree": "Zrušit ochranu podstromu",
-    "copy-clone": "Kopírovat / klonovat",
     "clone-to": "Klonovat do...",
     "cut": "Vyjmout",
     "move-to": "Přesunout do...",
@@ -1517,14 +1360,7 @@
     "convert-to-attachment-confirm": "Jste si jisti, že chcete převést vybrané Poznámky na Přílohy jejich nadřazených Poznámek? Tato operace se vztahuje pouze na Poznámky typu Obrázek, ostatní Poznámky budou přeskočeny.",
     "open-in-popup": "Rychlá úprava"
   },
-  "shared_info": {
-    "shared_publicly": "Tato Poznámka je veřejně Sdílena na {{- link}}.",
-    "shared_locally": "Tato Poznámka je lokálně Sdílena na {{- link}}.",
-    "help_link": "Pro pomoc navštivte <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
-  },
   "read-only-info": {
-    "read-only-note": "Zobrazujete Poznámku pouze pro čtení.",
-    "auto-read-only-note": "Tato Poznámka je zobrazena v režimu Pouze pro čtení pro rychlejší načítání.",
     "edit-note": "Upravit Poznámku"
   },
   "note_types": {
@@ -1551,14 +1387,10 @@
     "llm-chat": "AI Chat",
     "task-list": "Seznam úkolů",
     "new-feature": "Nový",
-    "collections": "Kolekce",
     "spreadsheet": "Tabulka"
   },
   "protect_note": {
-    "toggle-on": "Zabezpečit poznámku",
-    "toggle-off": "Zrušit zabezpečení poznámky",
-    "toggle-on-hint": "Poznámka není zabezpečená, klikněte pro její zabezpečení",
-    "toggle-off-hint": "Poznámka je zabezpečená, klikněte pro zrušení zabezpečení"
+    "toggle-on": "Zabezpečit poznámku"
   },
   "llm_chat": {
     "placeholder": "Napište zprávu...",
@@ -1602,15 +1434,11 @@
   },
   "shared_switch": {
     "shared": "Sdíleno",
-    "toggle-on-title": "Sdílet poznámku",
-    "toggle-off-title": "Zrušit sdílení poznámky",
     "shared-branch": "Tato poznámka existuje pouze jako sdílená poznámka, zrušení sdílení by ji smazalo. Chcete pokračovat a tímto poznámku smazat?",
     "inherited": "Poznámku nelze zde zrušit sdílení, protože je sdílena dědičně z nadřazené poznámky."
   },
   "template_switch": {
-    "template": "Šablona",
-    "toggle-on-hint": "Udělat z poznámky šablonu",
-    "toggle-off-hint": "Odstranit poznámku jako šablonu"
+    "template": "Šablona"
   },
   "open-help-page": "Otevřít stránku nápovědy",
   "find": {
@@ -1622,8 +1450,6 @@
     "replace_all": "Nahradit vše"
   },
   "highlights_list_2": {
-    "title": "Seznam zvýraznění",
-    "options": "Nastavení",
     "menu_configure": "Konfigurovat seznam zvýraznění...",
     "no_highlights": "Nebyla nalezena žádná zvýraznění.",
     "title_with_count_one": "{{count}} zvýraznění",
@@ -1634,7 +1460,6 @@
     "placeholder": "Rychlé hledání",
     "searching": "Hledání...",
     "no-results": "Nebyla nalezena žádná výsledná",
-    "more-results": "... a dalších {{number}} výsledků.",
     "show-in-full-search": "Zobrazit v úplném vyhledávání"
   },
   "note_tree": {
@@ -1644,7 +1469,6 @@
     "hide-archived-notes": "Skrýt archivované poznámky",
     "automatically-collapse-notes": "Automaticky sbalovat poznámky",
     "automatically-collapse-notes-title": "Poznámky budou po období nečinnosti sbaleny, aby se strom nepřehltil.",
-    "save-changes": "Uložit a použít změny",
     "auto-collapsing-notes-after-inactivity": "Automatické sbalování poznámek po nečinnosti...",
     "saved-search-note-refreshed": "Uložené vyhledávání poznámky bylo obnoveno.",
     "hoist-this-note-workspace": "Vyvýšit tuto poznámku (pracovní plocha)",
@@ -1685,7 +1509,6 @@
     "created_on": "Vytvořeno dne <Value />",
     "last_modified": "Upraveno dne <Value />",
     "note_type_switcher_label": "Přepnout z {{type}} na:",
-    "note_type_switcher_others": "Jiný typ poznámky",
     "note_type_switcher_templates": "Šablona",
     "note_type_switcher_collection": "Kolekce",
     "edited_notes": "Poznámky upravené v tento den",
@@ -1720,13 +1543,10 @@
   },
   "toc": {
     "table_of_contents": "Obsah",
-    "options": "Nastavení",
     "no_headings": "Žádné nadpisy."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Soubor <code class=\"file-path\"></code> byl naposledy upraven <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Nahrát upravený soubor",
-    "ignore_this_change": "Ignorovat tuto změnu"
+    "upload_modified_file": "Nahrát upravený soubor"
   },
   "app_context": {
     "please_wait_for_save": "Počkejte prosím několik sekund, dokud se dokončí ukládání, poté můžete zkusit znovu."
@@ -1793,9 +1613,6 @@
     "theme_group_dark": "Tmavé motivy",
     "copy_title": "Kopírovat do schránky"
   },
-  "classic_editor_toolbar": {
-    "title": "Formátování"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -1803,12 +1620,10 @@
     "editor_type": {
       "label": "Lišta pro formátování",
       "floating": {
-        "title": "Plovoucí",
-        "description": "nástroje pro úpravy se zobrazí u kurzoru;"
+        "title": "Plovoucí"
       },
       "fixed": {
-        "title": "Fixní",
-        "description": "nástroje pro úpravu se zobrazují na záložce „Formátování“ v pásu karet."
+        "title": "Fixní"
       },
       "multiline-toolbar": "Zobrazit panel nástrojů v několika řádcích, pokud se nevejde."
     }
@@ -1845,12 +1660,9 @@
     "zoom-factor": "Míra přiblížení"
   },
   "note_autocomplete": {
-    "search-for": "Hledat \"{{term}}\"",
     "create-note": "Vytvořit a propojit dceřinnou poznámku \"{{term}}\"",
     "insert-external-link": "Vložit externí odkaz na \"{{term}}\"",
-    "clear-text-field": "Vymazat textové pole",
-    "show-recent-notes": "Zobrazit nedávné poznámky",
-    "full-text-search": "Vyhledávání v celém textu"
+    "clear-text-field": "Vymazat textové pole"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Poznámka byla smazána.",
@@ -1912,13 +1724,6 @@
   "switch_layout_button": {
     "title_vertical": "Přesunout panel úprav na dolní část",
     "title_horizontal": "Přesunout panel úpráv nalevo"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "Odemknout úpravy",
-    "lock-editing": "Uzamknout úpravy"
-  },
-  "png_export_button": {
-    "button_title": "Exportovat diagram jako PNG"
   },
   "svg": {
     "export_to_png": "Diagram nebylo možné exportovat do PNG.",
@@ -2050,9 +1855,6 @@
     "background_effects_title": "Efekty pozadí jsou nyní stabilní",
     "background_effects_message": "Na zařízeních Windows a macOS jsou efekty pozadí nyní stabilní. Efekty pozadí přidávají uživatelskému rozhraní nádech barvy rozostřením pozadí za ním.",
     "background_effects_button": "Povolit efekty pozadí",
-    "new_layout_title": "Nové rozvržení",
-    "new_layout_message": "Pro Trilium jsme zavedli modernizované rozvržení. Pás karet byl odstraněn a plynule integrovan do hlavního rozhraní, přičemž nové stavové řádky a rozšiřitelné sekce (jako jsou propagované atributy) převzaly klíčové funkce. \n\nNové rozvržení je padrãoně zapnuté a lze jej dočasně vypnout přes Nastavení → Vzhled.",
-    "new_layout_button": "Více informací",
     "dismiss": "Zavřít"
   },
   "settings": {
@@ -2061,9 +1863,7 @@
   "settings_appearance": {
     "related_code_blocks": "Barevné schéma pro bloky kódu v textových poznámkách",
     "related_code_notes": "Barevné schéma pro poznámky kódu",
-    "ui": "Uživatelské rozhraní",
-    "ui_old_layout": "Staré rozvržení",
-    "ui_new_layout": "Nové rozvržení"
+    "ui": "Uživatelské rozhraní"
   },
   "units": {
     "percentage": "%"
@@ -2259,9 +2059,6 @@
   "llm": {
     "feature_not_enabled": "Povolte experimentální funkci LLM v Nastavení → Pokročilé → Experimentální funkce pro použití integrací AI.",
     "add_provider": "Přidat poskytovatele",
-    "add_provider_title": "Přidat poskytovatele AI",
-    "configured_providers": "Konfigurovaní poskytovatelé",
-    "no_providers_configured": "Ještě nejsou nakonfigurováni žádní poskytovatelé.",
     "provider_name": "Název",
     "actions": "Akce",
     "delete_provider": "Odstranit",

@@ -37,7 +37,9 @@ interface MultiValueInputProps {
  *
  * Which box that is depends on the kind of value. A closed set — the options of a `select`, or the
  * two a flag can be — is picked from a list, so nothing typed is ever kept. Everything else is
- * entered directly, through the same box a single value of that type is typed or picked in.
+ * entered directly, through the same box a single value of that type is typed or picked in, and can
+ * be entered more than once: the labels form a list, so two payments of the same amount are two
+ * values.
  *
  * Shared by the promoted-attribute grid and the table's own cells, so that the same definition is
  * edited the same way wherever the note is opened.
@@ -69,6 +71,7 @@ export default function MultiValueInput({ labelType, values, onCommit, source, o
             inputId={inputId}
             tabIndex={tabIndex}
             disabled={disabled}
+            allowDuplicates
             onCommit={onCommit}
         />
     );

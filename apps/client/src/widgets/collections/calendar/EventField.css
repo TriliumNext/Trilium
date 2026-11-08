@@ -9,24 +9,6 @@
         gap: 4px;
     }
 
-    /* Fields sharing one line, splitting what is left of it evenly. Parted by more than the
-       controls within a field are, so the line reads as two fields rather than as one field's
-       worth of controls. */
-    .calendar-event-field-row {
-        display: flex;
-        gap: 16px;
-
-        > * {
-            flex: 1 1 0;
-            min-width: 0;
-        }
-
-        /* Except those that asked for no more room than they need (see EventField's `compact`). */
-        > .calendar-event-field-compact {
-            flex: 0 0 auto;
-        }
-    }
-
     /* Faded as the promoted grid fades its labels (see theme-next/shell.css), so the event's own
        fields and the note's promoted ones read as one form when they stand in the same dock. */
     .calendar-event-field-name {
@@ -46,5 +28,66 @@
         > .tn-number-unit-pair {
             flex: 0 1 auto;
         }
+    }
+}
+
+.calendar-event-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    /* Shared by the inputs and the button to add hours, so the time row keeps its height when
+       one replaces the other. */
+    --calendar-event-control-height: 2rem;
+    min-height: var(--calendar-event-control-height);
+
+    /* A native date or time input with `width: auto` is as wide as its fields and picker icon.
+       It can still shrink when the row is narrower than that, as on a phone. */
+    > input {
+        flex: 0 1 auto;
+        width: auto;
+        min-width: 0;
+        height: var(--calendar-event-control-height);
+        padding: 0.25rem 0.5rem;
+    }
+
+    .calendar-event-add-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35em;
+        height: var(--calendar-event-control-height);
+        padding: 0 0.5rem;
+
+        .tn-icon {
+            font-size: 1.2em;
+        }
+    }
+
+    .select-button {
+        --bs-btn-padding-y: 0.25rem;
+        --bs-btn-padding-x: 0.5rem;
+    }
+
+    /* As wide as an `ActionButton`, so the icons line up with the popover's toolbar above them. */
+    .calendar-event-row-icon {
+        flex: 0 0 var(--icon-button-size);
+        font-size: 1.1em;
+        text-align: center;
+        color: var(--muted-text-color);
+    }
+
+    .calendar-event-row-separator {
+        opacity: 0.75;
+    }
+
+    .calendar-event-remove-time {
+        flex: none;
+        margin-inline-start: auto;
+    }
+
+    .calendar-event-duration {
+        flex: none;
+        white-space: nowrap;
+        font-size: 0.9em;
+        color: var(--muted-text-color);
     }
 }

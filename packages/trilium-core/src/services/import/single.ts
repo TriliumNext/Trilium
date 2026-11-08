@@ -1,4 +1,4 @@
-import type { NoteType } from "@triliumnext/commons";
+import { getAttachedFileMime, type NoteType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
 import imageService from "../../services/image.js";
@@ -292,7 +292,9 @@ function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentN
 }
 
 function importAttachment(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
-    const mime = mimeService.getMime(file.originalname) || file.mimetype;
+    const mime = getAttachedFileMime(
+        file.originalname, mimeService.getMime(file.originalname) || file.mimetype
+    );
 
     if (mime.startsWith("image/") && typeof file.buffer !== "string") {
         imageService.saveImageToAttachment(parentNote.noteId, file.buffer, file.originalname, taskContext.data?.shrinkImages);

@@ -1,0 +1,49 @@
+// Follows Mermaid's Venn diagram (a Jison grammar). An indented `text` names a text node of the
+// last set, an unindented one lists its sets first; one rule reads both.
+@top VennDiagram { DiagramName statement* }
+
+statement { Title | Set | Union | Text | Style }
+
+Title { kw<"title"> TitleText? }
+
+Set { kw<"set"> name Label? Size? }
+
+Union { kw<"union"> names Label? Size? }
+
+Text { kw<"text"> names name? Label? }
+
+Style { kw<"style"> names StyleField ("," StyleField)* }
+
+StyleField { Property ":" (Name | String | Number | Color)+ }
+
+Size { ":" Number }
+
+names { name ("," name)* }
+
+name { Name | String }
+
+Name { identifier }
+
+Property { identifier }
+
+DiagramName { @specialize<identifier, "venn-beta"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { $[A-Za-z_] $[A-Za-z0-9\-_]* }
+  Number { $[+\-]? (@digit+ ("." @digit+)? | "." @digit+) }
+  Color { "#" $[0-9a-fA-F]+ | "rgb" "a"? "(" ![)\n]* ")" }
+  String { '"' !["\n]* '"' }
+  Label { '["' !["]* '"]' | "[" ![\]"]+ "]" }
+  LineComment { "%%" ![\n]* }
+  ":" ","
+  @precedence { Color, identifier }
+}
+
+@external propSource vennHighlighting from "./highlight.js"

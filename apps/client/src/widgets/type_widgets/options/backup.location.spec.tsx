@@ -81,16 +81,16 @@ afterEach(cleanup);
 describe("BackupLocation", () => {
     it("shows the effective location, offering a reset only once a custom one is in use", () => {
         renderLocation();
-        expect(container?.querySelector(".backup-location-path")?.textContent).toBe(DEFAULT_DIR);
+        expect(container?.querySelector(".directory-location-path")?.textContent).toBe(DEFAULT_DIR);
         // On the desktop the location opens in the OS file manager, as in the About dialog.
-        expect(container?.querySelector(".backup-location-path a.tn-link")).not.toBeNull();
+        expect(container?.querySelector(".directory-location-path a.tn-link")).not.toBeNull();
         expect(button("select-backup-location-button")?.disabled).toBe(false);
         expect(button("reset-backup-location-button")).toBeNull();
 
         cleanup();
         mocks.customDir = CUSTOM_DIR;
         renderLocation(CUSTOM_DIR);
-        expect(container?.querySelector(".backup-location-path")?.textContent).toBe(CUSTOM_DIR);
+        expect(container?.querySelector(".directory-location-path")?.textContent).toBe(CUSTOM_DIR);
         expect(button("reset-backup-location-button")).not.toBeNull();
     });
 
@@ -103,8 +103,8 @@ describe("BackupLocation", () => {
         // The explanation hangs off a wrapper, since a disabled button emits no pointer events.
         expect(container?.querySelector(".tn-disabled-reason button")).not.toBeNull();
         // Nothing can open a file manager here, so the location stays plain text.
-        expect(container?.querySelector(".backup-location-path a")).toBeNull();
-        expect(container?.querySelector(".backup-location-path")?.textContent).toBe(DEFAULT_DIR);
+        expect(container?.querySelector(".directory-location-path a")).toBeNull();
+        expect(container?.querySelector(".directory-location-path")?.textContent).toBe(DEFAULT_DIR);
     });
 
     it("stores the chosen directory and refreshes, opening the picker at the current location", async () => {

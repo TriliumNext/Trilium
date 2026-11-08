@@ -95,6 +95,15 @@ describe("what the encryption controls offer", () => {
         expect(host.querySelector("input.switch-toggle[id^='backup-compression']")).not.toBeNull();
     });
 
+    it("mounts the password dialog on the body, beside Bootstrap's backdrop", async () => {
+        await open();
+
+        const modal = document.querySelector(".backup-password-modal");
+        expect(modal).not.toBeNull();
+        expect(host.contains(modal)).toBe(false);
+        expect(modal?.parentElement).toBe(document.body);
+    });
+
     it("offers to replace the passphrase, and a switch, once one is held", async () => {
         mocks.passphrase = { available: true, set: true };
         await open();

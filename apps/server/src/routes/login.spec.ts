@@ -2,11 +2,12 @@ import { dayjs } from "@triliumnext/commons";
 import express, { type Application } from "express";
 import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { cls, options } from "@triliumnext/core";
+import { cls, events, initMessaging, options } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
+import totp from "../services/totp.js";
 import { createLoginRateLimiter } from "./login.js";
 import { type SQLiteSessionStore } from "./session_parser.js";
 
@@ -69,6 +70,32 @@ describe("Login Route test", () => {
             .send({ password: "fakePassword" })
             .expect(401);
 
+    });
+
+    it("returns a 401 status, when the password field is missing or not a string", async () => {
+        for (const body of [{}, { password: ["a"] }]) {
+            await supertest(app)
+                .post("/login")
+                .send(body)
+                .expect(401);
+        }
+    });
+
+    it("rejects a TOTP token that is not a string without verifying it", async () => {
+        vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+        const verifyTOTP = vi.spyOn(totp, "verifyTOTP");
+
+        try {
+            const res = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234", totpToken: ["123456"] })
+                .expect(401);
+
+            expect(res.body).toEqual({ success: false, factor: "totp" });
+            expect(verifyTOTP).not.toHaveBeenCalled();
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 
     describe("login stays reachable with redirectBareDomain enabled (#10552)", () => {
@@ -263,6 +290,67 @@ describe("Login Route test", () => {
             vi.advanceTimersByTime(CLEAN_UP_INTERVAL);
             ({ session } = await getSessionFromCookie(setCookieHeader));
             expect(session).toBeFalsy();
+        });
+    });
+
+    describe("Password change revokes sessions", () => {
+        let originalHash: string;
+        const disconnectAllClients = vi.fn();
+
+        beforeAll(() => {
+            originalHash = cls.init(() => options.getOption("passwordVerificationHash"));
+            initMessaging({
+                attachToHttpServer() {},
+                disconnectAllClients,
+                sendMessageToAllClients() {},
+                sendMessageToClient: () => false,
+                setClientMessageHandler() {}
+            } as Parameters<typeof initMessaging>[0]);
+        });
+
+        afterEach(() => {
+            cls.init(() => options.setOption("passwordVerificationHash", originalHash));
+            disconnectAllClients.mockClear();
+        });
+
+        async function logIn() {
+            const res = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234" })
+                .expect(302);
+            const cookie = res.headers["set-cookie"][0];
+            expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
+            return cookie;
+        }
+
+        it("keeps sessions when an unrelated option changes", async () => {
+            const cookie = await logIn();
+            cls.init(() => options.setOption("redirectBareDomain", "false"));
+            expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
+            expect(disconnectAllClients).not.toHaveBeenCalled();
+        });
+
+        it("removes every session when the password changes on this instance", async () => {
+            const first = await logIn();
+            const second = await logIn();
+
+            cls.init(() => options.setOption("passwordVerificationHash", "changed-locally"));
+
+            expect((await getSessionFromCookie(first)).session).toBeFalsy();
+            expect((await getSessionFromCookie(second)).session).toBeFalsy();
+            expect(disconnectAllClients).toHaveBeenCalled();
+        });
+
+        it("removes every session when a password change arrives by sync", async () => {
+            const cookie = await logIn();
+
+            cls.init(() => events.emit(events.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "passwordVerificationHash", value: "changed-remotely", isSynced: 1 }
+            }));
+
+            expect((await getSessionFromCookie(cookie)).session).toBeFalsy();
+            expect(disconnectAllClients).toHaveBeenCalled();
         });
     });
 }, 100_000);

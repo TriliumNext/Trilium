@@ -118,6 +118,16 @@ describe("FootnoteUI", () => {
             expect(openDropdown(dropdown).items.length).toBe(2);
         });
 
+        it("keeps the rows of its last open once closed, for a menu that reads them", () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+            const dropdown = createDropdown(editor);
+            openDropdown(dropdown);
+
+            dropdown.isOpen = false;
+
+            expect(dropdown.listView?.items.length).toBe(1);
+        });
+
         it("detaches the list element when the dropdown closes", () => {
             setModelData(editor.model, "<paragraph>foo[]</paragraph>");
             const dropdown = createDropdown(editor);

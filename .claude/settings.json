@@ -1,0 +1,20 @@
+{
+    "$schema": "https://json.schemastore.org/claude-code-settings.json",
+    "attribution": {
+        "commit": "Assisted-by: Claude Code",
+        "pr": ""
+    },
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash|PowerShell",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-commit-attribution.mjs\""
+                    }
+                ]
+            }
+        ]
+    }
+}

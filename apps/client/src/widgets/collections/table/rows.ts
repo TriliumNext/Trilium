@@ -2,6 +2,7 @@ import { extractAttributeDefinitionTypeAndName, LabelType } from "@triliumnext/c
 
 import FNote from "../../../entities/fnote.js";
 import froca from "../../../services/froca.js";
+import { loadNoteDates } from "../../../services/note_dates.js";
 import type { AttributeDefinitionInformation } from "./columns.js";
 
 export type TableData = {
@@ -17,6 +18,10 @@ export type TableData = {
      * carries their titles joined, which is also the order the sort should read the set in.
      */
     relationTitles: Record<string, string>;
+    /** When the note was created, as an ISO string so that the string sorter orders it by time. */
+    dateCreated: string | undefined;
+    /** When the note was last modified, as an ISO string. */
+    dateModified: string | undefined;
     branchId: string;
     colorClass: string | undefined;
     isArchived: boolean;
@@ -33,9 +38,13 @@ export async function buildRowDefinitions(parentNote: FNote, infos: AttributeDef
         maxDepth = 0;
     }
 
+    if (currentDepth === 0) {
+        await loadRowNotes(parentNote, includeArchived, maxDepth);
+    }
+
     for (const branch of childBranches) {
         const note = await branch.getNote();
-        if (!note || (!includeArchived && note.isArchived)) {
+        if (!note || !isRowNote(note, includeArchived)) {
             continue;
         }
 
@@ -63,6 +72,8 @@ export async function buildRowDefinitions(parentNote: FNote, infos: AttributeDef
             labels,
             relations,
             relationTitles: {},
+            dateCreated: undefined,
+            dateModified: undefined,
             isArchived: note.isArchived,
             branchId: branch.branchId,
             colorClass: note.getColorClass()
@@ -78,10 +89,10 @@ export async function buildRowDefinitions(parentNote: FNote, infos: AttributeDef
         definitions.push(def);
     }
 
-    // Filled over the whole tree at once, from the outermost call, so the targets are fetched as
-    // one batch rather than a request per row.
+    // Filled over the whole tree at once, from the outermost call, so the targets and dates are
+    // fetched as one batch rather than a request per row.
     if (currentDepth === 0) {
-        await fillRelationTitles(definitions);
+        await Promise.all([ fillRelationTitles(definitions), fillNoteDates(definitions) ]);
     }
 
     return {
@@ -89,6 +100,25 @@ export async function buildRowDefinitions(parentNote: FNote, infos: AttributeDef
         hasSubtree,
         rowNumber
     };
+}
+
+/**
+ * Loads every note `buildRowDefinitions()` visits, one request per level of the tree. The initial
+ * tree holds only the expanded branches, so a note met one `branch.getNote()` at a time otherwise
+ * costs a `tree/load` request of its own.
+ */
+async function loadRowNotes(parentNote: FNote, includeArchived: boolean, maxDepth: number) {
+    let parents = [ parentNote ];
+    for (let depth = 0; parents.length > 0; depth++) {
+        const notes = await froca.getNotes(parents.flatMap((note) => note.children), true);
+        parents = notes.filter((note) => isRowNote(note, includeArchived)
+            && note.hasChildren() && (maxDepth < 0 || depth < maxDepth));
+    }
+}
+
+/** Whether the note gets a row. `_hidden` sits under root, where the note tree leaves it out too. */
+function isRowNote(note: FNote, includeArchived: boolean) {
+    return note.noteId !== "_hidden" && (includeArchived || !note.isArchived);
 }
 
 /**
@@ -117,6 +147,26 @@ async function fillRelationTitles(definitions: TableData[]) {
                 .join(", ");
         }
     });
+}
+
+/** Fills each row's `dateCreated` and `dateModified`, loading the dates of the whole tree at once. */
+async function fillNoteDates(definitions: TableData[]) {
+    const noteIds: string[] = [];
+    visitRows(definitions, ({ noteId }) => noteIds.push(noteId));
+    if (noteIds.length === 0) {
+        return;
+    }
+
+    const dates = await loadNoteDates(noteIds);
+    visitRows(definitions, (def) => {
+        const { created, modified } = dates.get(def.noteId) ?? {};
+        def.dateCreated = toIsoString(created);
+        def.dateModified = toIsoString(modified);
+    });
+}
+
+function toIsoString(time: number | undefined) {
+    return time === undefined ? undefined : new Date(time).toISOString();
 }
 
 /** A relation cell's targets: the one it holds, the several a set holds, or none at all. */

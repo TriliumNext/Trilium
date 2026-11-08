@@ -397,6 +397,39 @@ describe("pending request rejection", () => {
     });
 });
 
+describe("localUpload", () => {
+    it("posts the fields and the File itself, transferring nothing, and resolves with the reply", async () => {
+        const bridge = await freshBridge();
+        const file = new File([ "zip" ], "notes.zip");
+        const promise = bridge.localUpload("api/notes/root/notes-import", {
+            method: "POST",
+            headers: { "x-csrf-token": "t" },
+            fields: { taskId: "t1" },
+            file
+        });
+
+        const worker = lastWorker();
+        await vi.waitFor(() => expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "LOCAL_REQUEST",
+                request: {
+                    url: new URL("api/notes/root/notes-import", location.href).href,
+                    method: "POST",
+                    headers: { "x-csrf-token": "t" },
+                    body: { type: "upload", fields: { taskId: "t1" }, file }
+                }
+            }),
+            []
+        ));
+        // The File goes by reference: the posted body holds the very same object.
+        const posted = worker.postMessage.mock.calls.at(-1)?.[0] as { id: string; request: { body: { file: File } } };
+        expect(posted.request.body.file).toBe(file);
+
+        worker.onmessage?.({ data: { type: "LOCAL_RESPONSE", id: posted.id, response: { status: 200, headers: {} } } });
+        expect((await promise).status).toBe(200);
+    });
+});
+
 describe("localFetch", () => {
     it("posts a GET LOCAL_REQUEST with no body transfer and builds a Response from the reply", async () => {
         const bridge = await freshBridge();

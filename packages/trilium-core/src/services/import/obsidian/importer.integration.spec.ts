@@ -1,3 +1,4 @@
+import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
 import { ZipArchive } from "archiver";
 import LZString from "lz-string";
 import { PassThrough } from "stream";
@@ -235,7 +236,7 @@ describe("Obsidian importer — integration", () => {
         const note = importRoot.getChildNotes().find((n) => n.title === "Note");
         // The highlight survives sanitization as a CKEditor background-colour span; the comment is
         // rendered as an HTML comment, which the sanitizer then strips.
-        expect(decodeUtf8(note?.getContent() ?? "")).toBe('<p>A <span style="background-color:hsl(60, 75%, 60%);">highlight</span> and a  comment.</p>');
+        expect(decodeUtf8(note?.getContent() ?? "")).toBe(`<p>A <span style="${HIGHLIGHT_STYLE}">highlight</span> and a  comment.</p>`);
     });
 
     it("drops the .base/.canvas files and the .obsidian config folder, but keeps an orphan attachment", async () => {
@@ -419,7 +420,7 @@ describe("Obsidian importer — integration", () => {
 
         // The plain wikilink is a reference link; the embed becomes an include-note pointing at the same note.
         expect(content).toContain(`<a class="reference-link" href="#root/${target.noteId}">`);
-        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="medium">`);
+        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="resizable">`);
 
         // The embed records an includeNoteLink relation (the wikilink an internalLink).
         expect(note.getRelations().filter((r) => r.name === "includeNoteLink").map((r) => r.value)).toEqual([target.noteId]);

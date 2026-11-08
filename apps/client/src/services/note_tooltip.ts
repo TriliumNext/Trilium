@@ -1,10 +1,14 @@
+import { encodeBlockParameter } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
+import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import attributeRenderer from "./attribute_renderer.js";
+import { revealHighlightedBlocks } from "./block_reference.js";
 import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
-import linkService from "./link.js";
+import linkService, { type BlockJump } from "./link.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
@@ -17,15 +21,16 @@ function setupGlobalTooltip() {
     $(document).on("pointerenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);
     $(document).on("pointerenter", "[data-href]:not(.no-tooltip-preview)", mouseEnterHandler);
 
-    // close any note tooltip after click, this fixes the problem that sometimes tooltips remained on the screen
-    $(document).on("click", (e) => {
-        if ($(e.target).closest(".note-tooltip").length) {
+    // close any note tooltip after click, this fixes the problem that sometimes tooltips remained on the screen.
+    // Captured, as `goToLink()` stops the propagation of a click on a link.
+    document.addEventListener("click", (e) => {
+        if ($(e.target as Element).closest(".note-tooltip").length) {
             // click within the tooltip shouldn't close it
             return;
         }
 
         dismissAllTooltips();
-    });
+    }, true);
 }
 
 function dismissAllTooltips() {
@@ -50,15 +55,22 @@ function isContextMenuShown() {
     return document.body.classList.contains("context-menu-shown");
 }
 
+/**
+ * Whether the text editor shows the toolbar of a link: the link toolbar of CKEditor, or the widget
+ * toolbar of a reference link. A preview opens below a link, which is where that toolbar sits.
+ */
+function isLinkToolbarShown() {
+    return document.querySelector(
+        ".ck-balloon-panel_visible .ck-link-toolbar, .ck-balloon-panel_visible.reference-link-toolbar"
+    ) !== null;
+}
+
 export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.TriggeredEvent<T, undefined, T, T>) {
-    if (e.pointerType !== "mouse" || isContextMenuShown()) return;
+    if (e.pointerType !== "mouse" || isContextMenuShown() || isLinkToolbarShown()) return;
 
     const $link = $(this);
 
     if ($link.hasClass("no-tooltip-preview") || $link.hasClass("disabled")) {
-        return;
-    } else if ($link.closest(".ck-link-actions").length) {
-        // this is to avoid showing tooltip from inside the CKEditor link editor dialog
         return;
     } else if ($link.closest(".note-tooltip").length) {
         // don't show tooltip for links within tooltip
@@ -73,7 +85,8 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         return;
     }
 
-    if (!notePath || !noteId || viewScope?.viewMode !== "default") {
+    const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
+    if (!notePath || !noteId || (viewScope?.viewMode !== "default" && !attachmentId)) {
         return;
     }
 
@@ -91,11 +104,17 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
     let renderPromise;
     let note: FNote | null = null;
+    const blockJump = viewScope?.block
+        ? linkService.getBlockJump($link, noteId, viewScope.block)
+        : null;
     // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
     // note link carrying view params (e.g. the calendar's `#<noteId>?popup`), which must render a
     // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
     if (url && url.startsWith("#") && !url.startsWith("#root/") && !url.includes("?")) {
         renderPromise = renderFootnoteOrAnchor($link, url);
+    } else if (attachmentId) {
+        const attachment = await froca.getAttachmentOfNote(noteId, attachmentId);
+        renderPromise = renderTooltip(attachment, detail);
     } else if ($link.attr("data-note-deleted") != null) {
         // The element explicitly targets a soft-deleted note (e.g. an entry in the deleted-notes
         // dialog): read it via the deleted-content route. `DeletedFNote.load` returns null once the
@@ -109,7 +128,7 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // Default route: a live note. A missing note (deleted/erased) renders the "note has been
         // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
         note = await froca.getNote(noteId);
-        renderPromise = renderTooltip(note, detail);
+        renderPromise = renderTooltip(note, detail, viewScope?.block, blockJump);
     }
 
     const [content] = await Promise.all([
@@ -129,14 +148,16 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
     // we need to check if we're still hovering over the element
     // since the operation to get tooltip content was async, it is possible that
     // we now create tooltip which won't close because it won't receive mouseleave event
-    // — or that a context menu was invoked in the meantime, which the preview must not cover.
+    // — or that a context menu or a link toolbar opened in the meantime, which the preview must
+    // not cover.
     //
     // The opt-out is re-read for the same reason: an element may take it on while its preview is
     // being fetched, which is how a surface that opens over the pointer says the preview is no
     // longer wanted — a calendar chip clicked gains it as the popover opens (see the class in
     // CalendarView's eventClassNames), and the pointer is still on the chip, so the hover test
     // alone would let the preview land on top of what the click just opened.
-    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !$link.hasClass("no-tooltip-preview")) {
+    if ($link.filter(":hover").length > 0 && !isContextMenuShown() && !isLinkToolbarShown()
+        && !$link.hasClass("no-tooltip-preview")) {
         $link.tooltip({
             container: "body",
             // https://github.com/zadam/trilium/issues/2794 https://github.com/zadam/trilium/issues/2988
@@ -159,6 +180,18 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
         openTooltipElements.push($link);
 
+        const tooltipContent = $(`.${linkId} .note-tooltip-content`).get(0);
+        if (viewScope?.block && tooltipContent) {
+            revealHighlightedBlocks(tooltipContent);
+        }
+
+        $(`.${linkId} .jump-to-blocks-button`).on("click", (e) => {
+            // Stopped, as `goToLink()` would also open the note at the blocks.
+            e.preventDefault();
+            e.stopPropagation();
+            blockJump?.show();
+        });
+
         // Dismiss the tooltip immediately if a link was clicked inside the tooltip.
         $(`.${tooltipClass} a`).on("click", (e) => {
             dismissAllTooltips();
@@ -170,8 +203,10 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // - once the user moves the cursor away from both link and the tooltip, hide the tooltip
         const checkTooltip = () => {
 
-            if (!$link.filter(":hover").length && !$(`.${linkId}:hover`).length) {
-                // cursor is neither over the link nor over the tooltip, user likely is not interested
+            if (isLinkToolbarShown()
+                || (!$link.filter(":hover").length && !$(`.${linkId}:hover`).length)) {
+                // a link toolbar opened under the tooltip, or the cursor is neither over the link nor
+                // over the tooltip, user likely is not interested
                 dismissAllTooltips();
             } else {
                 dismissTimer = setTimeout(checkTooltip, 1000);
@@ -183,12 +218,23 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 }
 
 /**
+ * @param entity the note, or an attachment, which shows under the path of the note that owns it.
  * @param detail plain text the trigger element contributed about this note (see the `data-tooltip-detail`
  *               attribute), shown under the title. Absent on the vast majority of links, which say
  *               nothing beyond the note itself.
+ * @param block the blocks of the note to highlight, a `block` link parameter.
+ * @param jump the jump to `block` when the link is in the note it points to, which the button of
+ *             the tooltip makes in place of opening the note in a popup.
  */
-export async function renderTooltip(note: FNote | null, detail?: string) {
-    if (!note) {
+export async function renderTooltip(
+    entity: FNote | FAttachment | null,
+    detail?: string,
+    block?: string,
+    jump?: BlockJump | null
+) {
+    const attachment = entity && "attachmentId" in entity ? entity : null;
+    const note = attachment ? attachment.getNote() : entity as FNote | null;
+    if (!entity || !note) {
         return `<div>${t("note_tooltip.note-has-been-deleted")}</div>`;
     }
 
@@ -204,11 +250,19 @@ export async function renderTooltip(note: FNote | null, detail?: string) {
         return;
     }
 
-    const { $renderedAttributes } = await attributeRenderer.renderNormalAttributes(note);
+    const href = attachment
+        ? `#${note.noteId}?viewMode=attachments&attachmentId=${attachment.attachmentId}`
+        : `#${note.noteId}`;
 
-    const { $renderedContent } = await contentRenderer.getRenderedContent(note, {
+    // An attachment has no attributes, and those of its note describe the note.
+    const $renderedAttributes = attachment
+        ? null
+        : (await attributeRenderer.renderNormalAttributes(note)).$renderedAttributes;
+
+    const { $renderedContent } = await contentRenderer.getRenderedContent(entity, {
         tooltip: true,
-        trim: true
+        trim: true,
+        highlightBlock: block
     });
     const isContentEmpty = $renderedContent[0].innerHTML.length === 0;
 
@@ -222,27 +276,48 @@ export async function renderTooltip(note: FNote | null, detail?: string) {
         // Plain, unlinked title — there is no live note to navigate to.
         content = `<h5 class="${titleClasses.join(" ")}">${utils.escapeHtml(note.title)}</h5>`;
     } else if (bestNotePath) {
-        const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(bestNotePath);
+        const noteTitleWithPathAsSuffix = await treeService.getNoteTitleWithPathAsSuffix(
+            bestNotePath,
+            attachment?.title
+        );
         if (noteTitleWithPathAsSuffix) {
+            const titleHtml = noteTitleWithPathAsSuffix.prop("outerHTML");
             content = `\
                 <h5 class="${titleClasses.join(" ")}">
-                    <a href="#${note.noteId}" data-no-context-menu="true">${noteTitleWithPathAsSuffix.prop("outerHTML")}</a>
+                    <a href="${href}" data-no-context-menu="true">${titleHtml}</a>
                 </h5>`;
         }
     }
 
-    if (detail) {
-        content = `${content}<div class="note-tooltip-detail">${utils.escapeHtml(detail)}</div>`;
+    const info = detail ?? (attachment
+        ? t("note_tooltip.attachment-info", { size: utils.formatSize(attachment.contentLength) })
+        : undefined);
+    if (info) {
+        content = `${content}<div class="note-tooltip-detail">${utils.escapeHtml(info)}</div>`;
     }
 
-    content = `${content}<div class="note-tooltip-attributes">${$renderedAttributes[0].outerHTML}</div>`;
+    if ($renderedAttributes) {
+        const attributesHtml = $renderedAttributes[0].outerHTML;
+        content = `${content}<div class="note-tooltip-attributes">${attributesHtml}</div>`;
+    }
     if (!isContentEmpty) {
         content += $renderedContent[0].outerHTML;
     }
 
-    // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted note.
-    if (!isDeleted) {
-        content += `<a class="open-popup-button" title="${t("note_tooltip.quick-edit")}" href="#${note.noteId}?popup"><span class="bx bx-edit" /></a>`;
+    if (jump && block) {
+        const title = t(jump.isHeading
+            ? "note_tooltip.jump-to-heading"
+            : "note_tooltip.jump-to-block");
+        content += `<a class="open-popup-button jump-to-blocks-button" title="${title}"`
+            + ` href="${href}?block=${encodeBlockParameter(block)}">`
+            + `<span class="bx bx-up-arrow" /></a>`;
+    } else if (!isDeleted) {
+        // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted
+        // note.
+        const popupHref = attachment ? `${href}&popup` : `${href}?popup`;
+        const quickEdit = t("note_tooltip.quick-edit");
+        content += `<a class="open-popup-button" title="${quickEdit}" href="${popupHref}">`
+            + `<span class="bx bx-edit" /></a>`;
     }
     return content;
 }

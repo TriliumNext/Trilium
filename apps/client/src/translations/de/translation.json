@@ -58,8 +58,6 @@
     "help_on_links": "Hilfe zu Links",
     "note": "Notiz",
     "search_note": "Suche nach einer Notiz anhand ihres Namens",
-    "link_title_mirrors": "Der Linktitel spiegelt den aktuellen Titel der Notiz wider",
-    "link_title_arbitrary": "Der Linktitel kann beliebig geändert werden",
     "link_title": "Linktitel",
     "button_add_link": "Link hinzufügen",
     "anchor": "Anker (optional)",
@@ -82,11 +80,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Massenaktionen",
-    "affected_notes": "Betroffene Notizen",
     "include_descendants": "Unternotizen der ausgewählten Notizen einbeziehen",
-    "available_actions": "Verfügbare Aktionen",
     "chosen_actions": "Ausgewählte Aktionen",
-    "execute_bulk_actions": "Massenaktionen ausführen",
+    "execute_bulk_actions_one": "Massenaktionen ausführen",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Massenaktionen wurden erfolgreich ausgeführt.",
     "none_yet": "Noch keine ... Fügen Sie eine Aktion hinzu, indem Sie oben auf eine der verfügbaren Aktionen klicken.",
     "labels": "Labels",
@@ -111,7 +108,7 @@
     "cancel": "Abbrechen",
     "ok": "OK",
     "are_you_sure_remove_note": "Möchten Sie die Notiz „{{title}}“ wirklich von der Relationskarte entfernen? ",
-    "if_you_dont_check": "Wenn Sie dies nicht aktivieren, wird die Notiz nur aus der Relationskarte entfernt.",
+    "if_you_dont_check": "Die Notiz selber wird behalten; sie wird nur aus der Relationskarte entfernt.",
     "also_delete_note": "Auch die Notiz löschen",
     "delete_note_keeps_note_one": "Die Notiz hat {{count}} weiteren Klon, deswegen wird die Notiz selbst behalten.",
     "delete_note_keeps_note_other": "Die Notiz hat {{count}} weiter Klone, deswegen wird die Notiz selbst behalten.",
@@ -231,8 +228,8 @@
     "safeImport": "Sicherer Import",
     "explodeArchivesTooltip": "Erstellt Notizen aus den Dateien in <code>.zip</code>-, <code>.enex</code>- und <code>.opml</code>-Archiven. Wenn deaktiviert, werden die Archive unverändert angehängt.",
     "explodeArchives": "Inhalt der Archive <code>.zip</code>, <code>.enex</code> und <code>.opml</code> lesen.",
-    "shrinkImagesTooltip": "Skaliert und optimiert Bilder, um Speicherplatz zu sparen, wodurch sich die Qualität leicht verringern kann. Gilt nicht für <code>.zip</code>-Importe mit Metadaten, da diese als bereits optimiert gelten.",
-    "shrinkImages": "Bilder verkleinern",
+    "shrinkImagesTooltip": "Reduziert die Größe importierter Bilder, wodurch sich die Qualität leicht verringern kann. Gilt nicht für <code>.zip</code>-Importe mit Trilium-Metadaten, welche bereits optimiert angenommen werden.",
+    "shrinkImages": "Bilder komprimieren",
     "textImportedAsText": "HTML, Markdown und TXT als Textnotizen importieren, wenn die Metadaten unklar sind",
     "codeImportedAsCode": "Erkannte Codedateien (z. B. <code>.json</code>) als Codenotizen importieren, wenn die Metadaten unklar sind",
     "replaceUnderscoresWithSpaces": "Unterstriche in importierten Notiznamen durch Leerzeichen ersetzen",
@@ -254,7 +251,7 @@
     "import_from": "Importieren aus",
     "cardName": "Dateien und andere Formate",
     "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, Bilder und mehr",
-    "shrinkImagesProviderTooltip": "Skaliert und optimiert importierte Bilder, um Speicherplatz zu sparen, wodurch sich die Qualität leicht verringern kann.",
+    "shrinkImagesProviderTooltip": "Reduziert die Größe importierter Bilder, wodurch sich die Qualität leicht verringern kann.",
     "extracting": "{{progress}} von {{total}} Elementen extrahiert",
     "processing": "{{progress}} von {{total}} Notizen verarbeitet",
     "throttled": "Der Dienst begrenzt die Anfragerate; der Import wartet, bis der Zugriff fortgesetzt werden kann …",
@@ -263,13 +260,7 @@
   "include_note": {
     "dialog_title": "Notiz einbinden",
     "label_note": "Notiz",
-    "placeholder_search": "Suche nach einer Notiz anhand ihres Namens",
-    "box_size_prompt": "Boxgröße der eingebundenen Notiz:",
-    "box_size_small": "klein (~ 10 Zeilen)",
-    "box_size_medium": "mittel (~ 30 Zeilen)",
-    "box_size_full": "vollständig (Box zeigt vollständigen Text)",
-    "button_include": "Notiz einbinden",
-    "box_size_expandable": "ausklappbar (standardmäßig eingeklappt)"
+    "button_include": "Notiz einbinden"
   },
   "info": {
     "modalTitle": "Infonachricht",
@@ -278,7 +269,6 @@
     "copy_to_clipboard": "In Zwischenablage kopieren"
   },
   "jump_to_note": {
-    "search_button": "Suche im Volltext",
     "search_placeholder": "Notiz anhand ihres Titels suchen oder > für Befehle eingeben..."
   },
   "markdown_import": {
@@ -298,11 +288,7 @@
   },
   "note_type_chooser": {
     "modal_title": "Notiztyp auswählen",
-    "modal_body": "Notiztyp / Vorlage der neuen Notiz auswählen:",
-    "templates": "Vorlagen",
-    "change_path_prompt": "Ändern, wo die neue Notiz erzeugt wird:",
-    "search_placeholder": "Pfad nach Namen durchsuchen (Standard falls leer)",
-    "builtin_templates": "Eingebaute Vorlagen"
+    "templates": "Vorlagen"
   },
   "password_not_set": {
     "title": "Das Passwort ist nicht festgelegt",
@@ -345,21 +331,22 @@
     "title": "Titel",
     "date_created": "Erstellungsdatum",
     "date_modified": "Änderungsdatum",
-    "ascending": "aufsteigend",
-    "descending": "absteigend",
-    "sort_folders_at_top": "Ordner oben sortieren",
+    "ascending": "Aufsteigend",
+    "descending": "Absteigend",
+    "sort_folders_at_top": "Ordner nach oben sortieren",
     "natural_sort": "Natürliche Sortierung",
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
     "natural_sort_language": "Natürliche Sortiersprache",
     "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"zh-CN\" für Chinesisch.",
-    "sort": "Sortieren"
+    "sort": "Sortieren",
+    "sorting_criteria_description": "Notizen sind nach der ersten Ebene sortiert; die nächste Ebene dient nur zur Entscheidung zw. Notizen, die auf der vorherigen Ebene gleichwertig waren."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Anhänge zur Notiz hochladen",
     "choose_files": "Dateien auswählen",
     "files_will_be_uploaded": "Dateien werden als Anhänge in {{noteTitle}} hochgeladen",
     "options": "Optionen",
-    "shrink_images": "Bilder verkleinern",
+    "shrink_images": "Bilder komprimieren",
     "upload": "Hochladen",
     "tooltip": "Wenn Sie diese Option aktivieren, versucht Trilium, die hochgeladenen Bilder durch Skalierung und Optimierung zu verkleinern, was sich auf die wahrgenommene Bildqualität auswirken kann. Wenn diese Option deaktiviert ist, werden die Bilder ohne Änderungen hochgeladen."
   },
@@ -369,9 +356,9 @@
     "value": "Wert",
     "target_note_title": "Eine Relation ist eine benannte Verbindung zwischen Quellnotiz und Zielnotiz.",
     "target_note": "Zielnotiz",
-    "promoted_title": "Das heraufgestufte Attribut wird deutlich in der Notiz angezeigt.",
+    "promoted_title": "Als bearbeitbares Feld für jede Notiz mit diesem Attribut angezeigt.",
     "promoted": "Hervorgehoben",
-    "promoted_alias": "Alias",
+    "promoted_alias": "Anzeigename",
     "multiplicity_title": "Multiplizität definiert, wie viele Attribute mit demselben Namen erstellt werden können – maximal 1 oder mehr als 1.",
     "multiplicity": "Multiplizität",
     "single_value": "Einzelwert",
@@ -384,10 +371,10 @@
     "date_time": "Datum und Uhrzeit",
     "time": "Uhrzeit",
     "url": "URL",
-    "precision_title": "Wie viele Nachkommastellen im Wert-Einstellungs-Interface verfügbar sein sollen.",
+    "precision_title": "Maximale Anzahl an Nachkommastellen.",
     "precision": "Präzision",
     "digits": "Ziffern",
-    "inverse_relation_title": "Optionale Einstellung, um zu definieren, zu welcher Relation diese entgegengesetzt ist. Beispiel: Vater – Sohn stehen in umgekehrter Relation zueinander.",
+    "inverse_relation_title": "Die umgekehrte Relation, z.B. Sohn zum Vater. Optional.",
     "inverse_relation": "Inverse Relation",
     "inheritable_title": "Das vererbbare Attribut wird an alle Nachkommen unter diesem Baum vererbt.",
     "inheritable": "Vererbbar",
@@ -445,7 +432,6 @@
     "hide_relations": "Durch Kommas getrennte Namen von Relationen, die ausgeblendet werden sollen. Alle anderen werden angezeigt.",
     "title_template": "Standardtitel von Notizen, die als untergeordnete Notizen dieser Notiz erstellt werden. Der Wert wird als JavaScript-String ausgewertet \n                        und kann daher mit dynamischen Inhalten über die injizierten <code>now</code> und <code>parentNote</code>-Variablen angereichert werden. Beispiele:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literarische Werke</code></li>\n                            <li><code>Logbuch für ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">Wiki mit Details</a>, API-Dokumentation für <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> und <a href=\"https://day.js.org/docs/en/display/format\">now</a> für Details.",
     "template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlagen angezeigt.",
-    "toc": "<code>#toc</code> oder <code>#toc=show</code> erzwingen die Anzeige des Inhaltsverzeichnisses, <code>#toc=hide</code> erzwingt das Ausblenden. Wenn das Label nicht vorhanden ist, wird die globale Einstellung beachtet",
     "color": "Definiert die Farbe der Notiz im Notizbaum, in Links usw. Verwenden Sie einen beliebigen gültigen CSS-Farbwert wie 'red' oder #a13d5f",
     "keyboard_shortcut": "Definiert eine Tastenkombination, die sofort zu dieser Notiz springt. Beispiel: 'ctrl+alt+e'. Erfordert ein Neuladen des Frontends, damit die Änderung wirksam wird.",
     "keep_current_hoisting": "Das Öffnen dieses Links ändert den Fokus nicht, selbst wenn die Notiz im aktuell fokussierten Zweig nicht angezeigt werden kann.",
@@ -453,7 +439,6 @@
     "execute_description": "Längere Beschreibung der aktuellen Codenotiz, die zusammen mit der Schaltfläche „Ausführen“ angezeigt wird",
     "exclude_from_note_map": "Notizen mit diesem Label werden in der Notizkarte ausgeblendet",
     "new_notes_on_top": "Neue Notizen werden oben in der übergeordneten Notiz erstellt, nicht unten.",
-    "hide_highlight_widget": "Widget „Markierungsliste“ ausblenden",
     "run_on_note_creation": "Wird ausgeführt, wenn eine Notiz im Backend erstellt wird. Verwenden Sie diese Relation, wenn Sie das Skript für alle Notizen ausführen möchten, die unter einem bestimmten Zweig erstellt wurden. Erstellen Sie es in diesem Fall auf der Stammnotiz und machen Sie es vererbbar. Eine neue Notiz, die innerhalb des Zweigs (beliebige Tiefe) erstellt wird, löst das Skript aus.",
     "run_on_child_note_creation": "Wird ausgeführt, wenn eine neue Notiz unter der Notiz erstellt wird, in der diese Relation definiert ist",
     "run_on_note_title_change": "Wird ausgeführt, wenn der Notiztitel geändert wird (einschließlich der Notizerstellung)",
@@ -499,7 +484,6 @@
     "show_all_in_search": "Zeige alle in der Suche an",
     "relation_type": "Beziehung",
     "versioning_limit": "Begrenzt die Anzahl der Versionen, die für diese Notiz gespeichert werden, und überschreibt dabei die globale Einstellung.",
-    "similar_notes_widget_disabled": "Deaktiviert für diese Notiz den Reiter „Ähnliche Notizen“ im Menüband. Nur im alten Layout verfügbar.",
     "llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt.",
     "workspace_llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt, während ein übergeordneter Knoten dieses Arbeitsbereichs als Wurzel festgelegt ist.",
     "date_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Tagesnotizen, z. B. <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -647,21 +631,13 @@
     "remove_this_search_action": "Diese Suchaktion entfernen"
   },
   "execute_script": {
-    "execute_script": "Skript ausführen",
-    "help_text": "Sie können einfache Skripte für die übereinstimmenden Notizen ausführen.",
-    "example_1": "Um beispielsweise eine Zeichenfolge an den Titel einer Notiz anzuhängen, verwenden Sie dieses kleine Skript:",
-    "example_2": "Ein komplexeres Beispiel wäre das Löschen aller übereinstimmenden Notizattribute:"
+    "execute_script": "Skript ausführen"
   },
   "add_label": {
     "add_label": "Label hinzufügen",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to_value": "auf Wert",
-    "new_value_placeholder": "neuer Wert",
-    "help_text": "Auf allen übereinstimmenden Notizen:",
-    "help_text_item1": "Erstellt das angegebene Label, sofern die Notiz noch keines hat",
-    "help_text_item2": "oder den Wert des vorhandenen Labels ändern",
-    "help_text_note": "Sie können diese Methode auch ohne Wert aufrufen. In diesem Fall wird der Notiz ein Label ohne Wert zugewiesen."
+    "new_value_placeholder": "neuer Wert"
   },
   "delete_label": {
     "delete_label": "Label löschen",
@@ -670,9 +646,7 @@
   },
   "rename_label": {
     "rename_label": "Label umbenennen",
-    "rename_label_from": "Label umbenennen von",
     "old_name_placeholder": "alter Name",
-    "to": "zu",
     "new_name_placeholder": "neuer Name",
     "name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
@@ -680,49 +654,26 @@
     "update_label_value": "Labelwert aktualisieren",
     "label_name_placeholder": "Labelname",
     "label_name_title": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to_value": "auf Wert",
-    "new_value_placeholder": "neuer Wert",
-    "help_text": "Bei allen übereinstimmenden Notizen den Wert des vorhandenen Labels ändern.",
-    "help_text_note": "Sie können diese Methode auch ohne Wert aufrufen. In diesem Fall wird der Notiz ein Label ohne Wert zugewiesen."
+    "new_value_placeholder": "neuer Wert"
   },
   "delete_note": {
-    "delete_note": "Notiz löschen",
-    "delete_matched_notes": "Übereinstimmende Notizen löschen",
-    "delete_matched_notes_description": "Dadurch werden übereinstimmende Notizen gelöscht.",
-    "undelete_notes_instruction": "Nach dem Löschen ist es möglich, sie im Dialogfeld „Letzte Änderungen“ wiederherzustellen.",
-    "erase_notes_instruction": "Um Notizen dauerhaft zu löschen, gehen Sie nach der Löschung zu Optionen → Andere und klicken Sie auf die Schaltfläche „Gelöschte Notizen jetzt löschen“."
+    "delete_note": "Notiz löschen"
   },
   "delete_revisions": {
-    "delete_note_revisions": "Notizrevisionen löschen",
-    "all_past_note_revisions": "Alle früheren Notizrevisionen übereinstimmender Notizen werden gelöscht. Die Notiz selbst bleibt vollständig erhalten. Mit anderen Worten: Der Verlauf der Notiz wird entfernt."
+    "delete_note_revisions": "Notizrevisionen löschen"
   },
   "move_note": {
     "move_note": "Notiz verschieben",
-    "to": "nach",
-    "target_parent_note": "Übergeordnete Zielnotiz",
-    "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "move_note_new_parent": "Die Notiz in die neue übergeordnete Notiz verschieben, wenn die Notiz nur eine übergeordnete Notiz hat (d. h. der alte Zweig wird entfernt und ein neuer Zweig in die neue übergeordnete Notiz erstellt)",
-    "clone_note_new_parent": "Notiz zur neuen übergeordneten Notiz klonen, wenn die Notiz mehrere Klone/Zweige hat (es ist unklar, welcher Zweig entfernt werden soll)",
-    "nothing_will_happen": "Es passiert nichts, wenn die Notiz nicht zur Zielnotiz verschoben werden kann (z.B. wenn dies einen Kreislauf in der Baumstruktur erzeugen würde)"
+    "target_parent_note": "Übergeordnete Zielnotiz"
   },
   "rename_note": {
-    "rename_note": "Notiz umbenennen",
-    "rename_note_title_to": "Notiztitel umbenennen in",
-    "new_note_title": "neuer Notiztitel",
-    "click_help_icon": "Klicken Sie rechts auf das Hilfesymbol, um alle Optionen anzuzeigen",
-    "evaluated_as_js_string": "Der angegebene Wert wird als JavaScript-String ausgewertet und kann somit über die injizierte <code>note</code>-Variable mit dynamischem Inhalt angereichert werden (Notiz wird umbenannt). Beispiele:",
-    "example_note": "<code>Notiz</code> – alle übereinstimmenden Notizen werden in „Notiz“ umbenannt",
-    "example_new_title": "<code>NEU: ${note.title}</code> – Übereinstimmende Notiztitel erhalten das Präfix „NEU:“",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> – übereinstimmende Notizen werden mit dem Erstellungsmonat und -datum der Notiz vorangestellt",
-    "api_docs": "Siehe API-Dokumentation für <a href='https://zadam.github.io/trilium/backend_api/Note.html'>Notiz</a> und <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj-Eigenschaften</a> für Details."
+    "rename_note": "Notiz umbenennen"
   },
   "add_relation": {
     "add_relation": "Relation hinzufügen",
     "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to": "zu",
-    "target_note": "Zielnotiz",
-    "create_relation_on_all_matched_notes": "Für alle übereinstimmenden Notizen die angegebene Relation erstellen."
+    "target_note": "Zielnotiz"
   },
   "delete_relation": {
     "delete_relation": "Relation löschen",
@@ -731,20 +682,14 @@
   },
   "rename_relation": {
     "rename_relation": "Relation umbenennen",
-    "rename_relation_from": "Relation umbenennen von",
     "old_name": "alter Name",
-    "to": "zu",
     "new_name": "neuer Name",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt."
   },
   "update_relation_target": {
-    "update_relation": "Relation aktualisieren",
     "relation_name": "Relationsname",
     "allowed_characters": "Erlaubte Zeichen sind alphanumerische Zeichen, Unterstrich und Doppelpunkt.",
-    "to": "zu",
     "target_note": "Zielnotiz",
-    "on_all_matched_notes": "Auf allen übereinstimmenden Notizen",
-    "change_target_note": "oder die Zielnotiz der bestehenden Relation ändern",
     "update_relation_target": "Relationsziel aktualisieren"
   },
   "attachments_actions": {
@@ -849,15 +794,6 @@
   "create_pane_button": {
     "create_new_split": "Neuen Split erstellen"
   },
-  "edit_button": {
-    "edit_this_note": "Diese Notiz bearbeiten"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Inhaltsverzeichnis anzeigen"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Markierungsliste anzeigen"
-  },
   "global_menu": {
     "menu": "Menü",
     "options": "Optionen",
@@ -900,7 +836,6 @@
     "in_progress": "Der Synchronisierungsvorgang mit dem Server ist im Gange."
   },
   "left_pane_toggle": {
-    "show_panel": "Panel anzeigen",
     "hide_panel": "Panel ausblenden"
   },
   "move_pane_button": {
@@ -919,7 +854,6 @@
     "import_files": "Dateien importieren",
     "export_note": "Notiz exportieren",
     "delete_note": "Notiz löschen",
-    "print_note": "Notiz drucken...",
     "save_revision": "Revision speichern",
     "convert_into_attachment_failed": "Konvertierung der Notiz „{{title}}“ fehlgeschlagen.",
     "convert_into_attachment_successful": "Notiz „{{title}}“ wurde als Anhang konvertiert.",
@@ -955,9 +889,6 @@
     "active": "Die geschützte Sitzung ist aktiv. Klicken Sie hier, um die geschützte Sitzung zu verlassen.",
     "inactive": "Klicken Sie hier, um die geschützte Sitzung aufzurufen"
   },
-  "revisions_button": {
-    "note_revisions": "Revisionsverlauf"
-  },
   "update_available": {
     "update_available": "Update verfügbar"
   },
@@ -972,30 +903,14 @@
     "sql_console_saved_message": "SQL-Konsolennotiz wurde in {{note_path}} gespeichert",
     "electron_api_docs_button_title": "Electron-API-Dokumentation öffnen"
   },
-  "copy_image_reference_button": {
-    "button_title": "Bildreferenz in die Zwischenablage kopieren, kann in eine Textnotiz eingefügt werden."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Schaltflächen ausblenden"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Schaltflächen einblenden"
-  },
-  "svg_export_button": {
-    "button_title": "Diagramm als SVG exportieren"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
-    "relation": "Relation",
-    "backlink_one": "{{count}} Rücklink",
-    "backlink_other": "{{count}} Rücklinks",
     "no_backlinks": "Keine Notizen verlinken auf diese Notiz."
   },
   "mobile_detail_menu": {
-    "insert_child_note": "Untergeordnete Notiz einfügen",
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
     "error_unrecognized_command": "Unbekannter Befehl {{command}}",
@@ -1019,8 +934,6 @@
   "basic_properties": {
     "note_type": "Notiztyp",
     "editable": "Bearbeitbar",
-    "basic_properties": "Grundlegende Eigenschaften",
-    "language": "Sprache",
     "configure_code_notes": "Code-Notizen konfigurieren..."
   },
   "book_properties": {
@@ -1051,37 +964,23 @@
     "open_all_limit_exceeded": "Zu viele Notizen, um sie gleichzeitig zu öffnen ({{count}}). Das Maximum beträgt {{max}} – bitte grenzen Sie die Ergebnisse zuerst weiter ein."
   },
   "edited_notes": {
-    "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
-    "title": "Bearbeitete Notizen",
-    "deleted": "(gelöscht)"
+    "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet..."
   },
   "file_properties": {
-    "note_id": "Notiz-ID",
     "original_file_name": "Ursprünglicher Dateiname",
-    "file_type": "Dateityp",
-    "file_size": "Dateigröße",
     "download": "Herunterladen",
     "open": "Extern öffnen",
-    "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Dateirevision wurde hochgeladen.",
-    "upload_failed": "Das Hochladen einer neuen Dateirevision ist fehlgeschlagen.",
-    "title": "Datei"
+    "upload_failed": "Das Hochladen einer neuen Dateirevision ist fehlgeschlagen."
   },
   "image_properties": {
-    "original_file_name": "Ursprünglicher Dateiname",
-    "file_type": "Dateityp",
-    "file_size": "Dateigröße",
-    "download": "Herunterladen",
-    "open": "Öffnen",
     "copy_reference_to_clipboard": "Verweis in die Zwischenablage kopieren",
     "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Bildrevision wurde hochgeladen.",
-    "upload_failed": "Das Hochladen einer neuen Bildrevision ist fehlgeschlagen: {{message}}",
-    "title": "Bild"
+    "upload_failed": "Das Hochladen einer neuen Bildrevision ist fehlgeschlagen: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Geerbte Attribute",
-    "no_inherited_attributes": "Keine geerbten Attribute.",
     "none": "Keine"
   },
   "note_info_widget": {
@@ -1099,8 +998,6 @@
     "show_similar_notes": "Ähnliche Notizen anzeigen"
   },
   "note_map": {
-    "open_full": "Vollständig erweitern",
-    "collapse": "Auf normale Größe reduzieren",
     "title": "Notizkarte",
     "fix-nodes": "Knoten fixieren",
     "link-distance": "Verbindungslänge",
@@ -1112,18 +1009,10 @@
   "note_paths": {
     "title": "Notizpfade",
     "clone_button": "Notiz an neuen Speicherort klonen...",
-    "intro_placed": "Diese Notiz wird in den folgenden Pfaden abgelegt:",
     "intro_not_placed": "Diese Notiz ist noch nicht im Notizbaum platziert.",
     "outside_hoisted": "Dieser Pfad liegt außerhalb der fokussierten Notiz. Sie müssten den Fokus aufheben.",
     "archived": "Archiviert",
     "search": "Suchen"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Diese Notiz stammt ursprünglich aus:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Eigene Attribute"
   },
   "promoted_attributes": {
     "promoted_attributes": "Hervorgehobene Attribute",
@@ -1143,26 +1032,10 @@
     "values_placeholder": "Wert eingeben und Eingabetaste drücken",
     "add_value": "Diesen Wert hinzufügen"
   },
-  "script_executor": {
-    "query": "Abfrage",
-    "script": "Skript",
-    "execute_query": "Abfrage ausführen",
-    "execute_script": "Skript ausführen"
-  },
   "search_definition": {
     "add_search_option": "Suchoption hinzufügen:",
-    "search_string": "Suchzeichenfolge",
-    "search_script": "Suchskript",
-    "ancestor": "Vorfahre",
-    "fast_search": "schnelle Suche",
-    "fast_search_description": "Die Option „Schnellsuche“ deaktiviert die Volltextsuche von Notizinhalten, was die Suche in großen Datenbanken beschleunigen könnte.",
-    "include_archived": "archiviert einschließen",
     "include_archived_notes_description": "Archivierte Notizen sind standardmäßig von den Suchergebnissen ausgeschlossen, mit dieser Option werden sie einbezogen.",
-    "order_by": "Sortieren nach",
-    "limit": "Limit",
     "limit_description": "Begrenze die Anzahl der Ergebnisse",
-    "debug": "debuggen",
-    "debug_description": "Debug gibt zusätzliche Protokolleinträge in der Konsole aus, um die Fehlerdiagnose komplexer Abfragen zu erleichtern",
     "action": "Aktion",
     "search_button": "Suchen",
     "search_execute": "Aktionen suchen und ausführen",
@@ -1205,8 +1078,7 @@
     "include_archived_notes": "Archivierte Notizen einbeziehen"
   },
   "limit": {
-    "limit": "Limit",
-    "take_first_x_results": "Nehmen Sie nur die ersten X angegebenen Ergebnisse."
+    "limit": "Limit"
   },
   "order_by": {
     "order_by": "Sortieren nach",
@@ -1249,7 +1121,6 @@
     "label_rock_or_pop": "Es darf nur eines der Labels vorhanden sein",
     "label_year_comparison": "numerischer Vergleich (auch >, >=, <).",
     "label_date_created": "Notizen, die im letzten Monat erstellt wurden",
-    "error": "Suchfehler: {{error}}",
     "search_prefix": "Suche:"
   },
   "attachment_detail": {
@@ -1278,9 +1149,6 @@
   "editable_text": {
     "placeholder": "Geben Sie hier den Inhalt Ihrer Notiz ein...",
     "auto-detect-language": "Automatisch erkannt",
-    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht.",
-    "editor_crashed_title": "Der Texteditor ist abgestürzt",
-    "editor_crashed_content": "Ihr Inhalt wurde erfolgreich wiederhergestellt, aber kürzlich gemachte Änderungen wurden unter Umständen nicht gespeichert.",
     "editor_crashed_details_button": "Mehr Details anzeigen...",
     "editor_crashed_details_intro": "Falls dieser Fehler häufiger auftritt, ziehen Sie in Betracht uns diesen über GitHub zu melden, indem Sie die folgenden Informationen bereitstellen.",
     "editor_crashed_details_title": "Technische Informationen"
@@ -1315,11 +1183,8 @@
     "connection_exists": "Die Verbindung „{{name}}“ zwischen diesen Notizen besteht bereits.",
     "start_dragging_relations": "Beginnen Sie hier mit dem Ziehen von Relationen und legen Sie sie auf einer anderen Notiz ab.",
     "note_not_found": "Notiz {{noteId}} nicht gefunden!",
-    "cannot_match_transform": "Transformation kann nicht übereinstimmen: {{transform}}",
     "note_already_in_diagram": "Die Notiz „{{title}}“ ist schon im Diagramm.",
-    "enter_title_of_new_note": "Geben Sie den Titel der neuen Notiz ein",
     "default_new_note_title": "neue Notiz",
-    "click_on_canvas_to_place_new_note": "Klicken Sie auf den Canvas, um eine neue Notiz zu platzieren",
     "rename_relation": "Relation umbenennen"
   },
   "backend_log": {
@@ -1420,9 +1285,6 @@
     "title": "Native Titelleiste (App-Neustart erforderlich)",
     "enabled": "aktiviert",
     "disabled": "deaktiviert"
-  },
-  "ribbon": {
-    "edited_notes_message": "Die Multifunktionsleisten-Registerkarte „Bearbeitete Notizen“ wird bei Tagesnotizen automatisch geöffnet"
   },
   "theme": {
     "title": "Benutzeroberfläche",
@@ -1549,7 +1411,6 @@
   "search_engine": {
     "title": "Suchmaschine",
     "custom_search_engine_info": "Wird verwendet bei der Suche im Web für den ausgewählten Text. Wenn nicht konfiguriert, wird DuckDuckGo verwendet.",
-    "predefined_templates_label": "Vorlagen",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1582,17 +1443,7 @@
     "italic": "Kursiver Text",
     "underline": "Unterstrichener Text",
     "color": "Farbiger Text",
-    "bg_color": "Text mit Hintergrundfarbe",
-    "visibility_title": "Sichtbarkeit der Markierungsliste",
-    "visibility_description": "Sie können das Markierungs-Widget pro Notiz ausblenden, indem Sie das Label #hideHighlightWidget hinzufügen.",
-    "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Markierungen) in den Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“)."
-  },
-  "table_of_contents": {
-    "title": "Inhaltsverzeichnis",
-    "description": "Das Inhaltsverzeichnis wird in Textnotizen angezeigt, wenn die Notiz mehr als eine definierte Anzahl von Überschriften enthält. Sie können diese Zahl anpassen:",
-    "disable_info": "Sie können diese Option auch verwenden, um TOC effektiv zu deaktivieren, indem Sie eine sehr hohe Zahl festlegen.",
-    "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Inhaltsverzeichnis) unter Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“).",
-    "unit": "Überschriften"
+    "bg_color": "Text mit Hintergrundfarbe"
   },
   "text_auto_read_only_size": {
     "title": "Automatische schreibgeschützte Größe",
@@ -1754,9 +1605,7 @@
     "unrecognized_role": "Unbekannte Anhangsrolle „{{role}}“."
   },
   "bookmark_switch": {
-    "bookmark": "Lesezeichen",
-    "bookmark_this_note": "Diese Notiz im linken Seitenbereich als Lesezeichen speichern",
-    "remove_bookmark": "Lesezeichen entfernen"
+    "bookmark": "Lesezeichen"
   },
   "editability_select": {
     "auto": "Automatisch",
@@ -1789,7 +1638,6 @@
     "copy-note-path-to-clipboard": "Notiz-Pfad in die Zwischenablage kopieren",
     "protect-subtree": "Zweig schützen",
     "unprotect-subtree": "Zweig-Schutz aufheben",
-    "copy-clone": "Kopieren / Klonen",
     "clone-to": "Klonen nach...",
     "cut": "Ausschneiden",
     "move-to": "Verschieben nach...",
@@ -1808,11 +1656,6 @@
     "open-in-a-new-window": "In neuem Fenster öffnen",
     "hide-subtree": "Zweig ausblenden",
     "show-subtree": "Zweig anzeigen"
-  },
-  "shared_info": {
-    "shared_publicly": "Diese Notiz ist öffentlich freigegeben über {{- link}}.",
-    "shared_locally": "Diese Notiz ist lokal freigegeben über {{- link}}.",
-    "help_link": "Für Hilfe <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">Wiki</a> besuchen."
   },
   "note_types": {
     "text": "Text",
@@ -1837,28 +1680,20 @@
     "ai-chat": "KI-Chat",
     "task-list": "Aufgabenliste",
     "new-feature": "Neu",
-    "collections": "Sammlungen",
     "spreadsheet": "Tabelle",
     "llm-chat": "KI-Chat",
     "markdown": "Markdown"
   },
   "protect_note": {
-    "toggle-on": "Notiz schützen",
-    "toggle-off": "Notizschutz aufheben",
-    "toggle-on-hint": "Notiz ist ungeschützt, klicken, um sie zu schützen",
-    "toggle-off-hint": "Notiz ist geschützt, klicken, um den Schutz aufzuheben"
+    "toggle-on": "Notiz schützen"
   },
   "shared_switch": {
     "shared": "Freigegeben",
-    "toggle-on-title": "Notiz freigeben",
-    "toggle-off-title": "Notiz-Freigabe aufheben",
     "shared-branch": "Diese Notiz existiert nur als freigegebene Notiz, das Aufheben der Freigabe würde sie löschen. Möchten Sie fortfahren und die Notiz damit löschen?",
     "inherited": "Die Notiz kann hier nicht von der Freigabe entfernt werden, da sie über Vererbung von einer übergeordneten Notiz geteilt wird."
   },
   "template_switch": {
-    "template": "Vorlage",
-    "toggle-on-hint": "Notiz zu einer Vorlage machen",
-    "toggle-off-hint": "Die Notiz als Vorlage entfernen"
+    "template": "Vorlage"
   },
   "open-help-page": "Hilfeseite öffnen",
   "find": {
@@ -1870,8 +1705,6 @@
     "replace_all": "Alle ersetzen"
   },
   "highlights_list_2": {
-    "title": "Markierungsliste",
-    "options": "Optionen",
     "title_with_count_one": "{{count}} Markierung",
     "title_with_count_other": "{{count}} Markierungen",
     "menu_configure": "Markierungsliste konfigurieren...",
@@ -1881,7 +1714,6 @@
     "placeholder": "Schnellsuche",
     "searching": "Suche läuft...",
     "no-results": "Keine Ergebnisse gefunden",
-    "more-results": "... und {{number}} weitere Ergebnisse.",
     "show-in-full-search": "In der vollständigen Suche anzeigen"
   },
   "note_tree": {
@@ -1891,7 +1723,6 @@
     "hide-archived-notes": "Archivierte Notizen ausblenden",
     "automatically-collapse-notes": "Notizen automatisch zusammenklappen",
     "automatically-collapse-notes-title": "Notizen werden nach einer Inaktivitätsperiode automatisch zusammengeklappt, um den Baum zu entlasten.",
-    "save-changes": "Änderungen speichern und anwenden",
     "auto-collapsing-notes-after-inactivity": "Automatisches Zusammenklappen von Notizen nach Inaktivität...",
     "saved-search-note-refreshed": "Gespeicherte Such-Notiz wurde aktualisiert.",
     "hoist-this-note-workspace": "Diese Notiz fokussieren (Arbeitsbereich)",
@@ -1935,7 +1766,6 @@
     "created_on": "Erstellt am <Value />",
     "last_modified": "Bearbeitet am <Value />",
     "note_type_switcher_label": "Von {{type}} wechseln zu:",
-    "note_type_switcher_others": "Andere Notizart",
     "note_type_switcher_templates": "Vorlage",
     "note_type_switcher_collection": "Sammlung",
     "edited_notes": "Notizen, bearbeitet an diesem Tag",
@@ -1973,13 +1803,10 @@
   },
   "toc": {
     "table_of_contents": "Inhaltsverzeichnis",
-    "options": "Optionen",
     "no_headings": "Keine Überschriften."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Datei <code class=\"file-path\"></code> wurde zuletzt geändert am <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Modifizierte Datei hochladen",
-    "ignore_this_change": "Diese Änderung ignorieren"
+    "upload_modified_file": "Modifizierte Datei hochladen"
   },
   "app_context": {
     "please_wait_for_save": "Bitte warte ein paar Sekunden, bis das Speichern abgeschlossen ist, und versuche es dann erneut."
@@ -2059,9 +1886,6 @@
     "tab_width_unit": "Leerzeichen",
     "tab_width": "Tab-Breite"
   },
-  "classic_editor_toolbar": {
-    "title": "Format"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -2069,12 +1893,10 @@
     "editor_type": {
       "label": "Format Toolbar",
       "floating": {
-        "title": "Schwebend",
-        "description": "Werkzeuge erscheinen in Cursornähe;"
+        "title": "Schwebend"
       },
       "fixed": {
-        "title": "Fixiert",
-        "description": "Werkzeuge erscheinen im „Format“-Tab."
+        "title": "Fixiert"
       },
       "multiline-toolbar": "Toolbar wenn nötig in mehreren Zeilen darstellen",
       "toolbar_style": "Symbolleistenstil"
@@ -2112,12 +1934,9 @@
     "zoom-factor": "Zoomfaktor"
   },
   "note_autocomplete": {
-    "search-for": "Suche nach „{{term}}“",
     "create-note": "Untergeordnete Notiz „{{term}}“ erstellen und verlinken",
     "insert-external-link": "Externen Link zu „{{term}}“ einfügen",
-    "clear-text-field": "Textfeldinhalt löschen",
-    "show-recent-notes": "Aktuelle Notizen anzeigen",
-    "full-text-search": "Volltextsuche"
+    "clear-text-field": "Textfeldinhalt löschen"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Notiz wurde gelöscht.",
@@ -2296,13 +2115,6 @@
     "title_vertical": "Bearbeitungsbereich nach unten verschieben",
     "title_horizontal": "Bearbeitungsbereich nach links verschieben"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "Bearbeitung freischalten",
-    "lock-editing": "Bearbeitung sperren"
-  },
-  "png_export_button": {
-    "button_title": "Diagramm als PNG exportieren"
-  },
   "svg": {
     "export_to_png": "Das Diagramm konnte als PNG nicht exportiert werden.",
     "export_to_svg": "Das Diagramm konnte nicht als SVG exportiert werden."
@@ -2420,9 +2232,6 @@
     "background_effects_message": "Auf Windows- und macOS-Geräten sind die Hintergrundeffekte nun stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird.",
     "background_effects_button": "Hintergrundeffekte aktivieren",
     "dismiss": "Ablehnen",
-    "new_layout_title": "Neues Layout",
-    "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und nahtlos in die Hauptoberfläche integriert – eine neue Statusleiste und ausklappbare Bereiche (wie hervorgehobene Attribute) übernehmen nun die wichtigsten Funktionen.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär über Optionen → Anzeige deaktiviert werden.",
-    "new_layout_button": "Weitere Informationen",
     "scripting_disabled_title": "Backend-Skripting wurde deaktiviert",
     "scripting_disabled_button": "Sicherheitseinstellungen öffnen",
     "scripting_disabled_message": "Backend-Skripting ist aus Sicherheitsgründen jetzt standardmäßig deaktiviert. Ihre Notizen enthalten Backend-Skripte (Notizen mit dem Label #run), die nicht mehr automatisch ausgeführt werden.\n\nWenn Sie auf diese Skripte angewiesen sind, können Sie Backend-Skripting in den Sicherheitseinstellungen wieder aktivieren."
@@ -2434,10 +2243,7 @@
     "related_code_blocks": "Farbschema für Code-Blöcke in Textnotizen",
     "related_code_notes": "Farbschema für Code-Notizen",
     "ui": "Benutzeroberfläche",
-    "ui_old_layout": "Altes Layout",
-    "ui_new_layout": "Neues Layout",
-    "ui_layout_orientation": "Ausrichtung der Startleiste",
-    "ui_layout_style": "Layout-Stil"
+    "ui_layout_orientation": "Ausrichtung der Startleiste"
   },
   "units": {
     "percentage": "%"
@@ -2457,8 +2263,6 @@
     "slide-overview": "Übersicht der Folien ein-/ausblenden"
   },
   "read-only-info": {
-    "read-only-note": "Aktuelle Notiz wird im Lese-Modus angezeigt.",
-    "auto-read-only-note": "Diese Notiz wird im Nur-Lesen-Modus angezeigt, um ein schnelleres Laden zu ermöglichen.",
     "edit-note": "Notiz bearbeiten"
   },
   "calendar_view": {
@@ -2481,11 +2285,7 @@
   },
   "experimental_features": {
     "title": "Experimentelle Optionen",
-    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden.",
-    "new_layout_name": "Neues Layout",
-    "new_layout_description": "Das neue Layout für eine modernere Darstellung und verbesserte Benutzbarkeit ausprobieren. Kann sich in Zukunft stark ändern.",
-    "llm_name": "KI- / LLM-Chat",
-    "llm_description": "Aktiviert die KI-Chat Seitenleiste sowie LLM-Chat Notizen die von einem Sprachmodell betrieben werden."
+    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden."
   },
   "server": {
     "unknown_http_error_title": "Kommunikationsfehler mit dem Server",
@@ -2765,7 +2565,6 @@
     "edit_index": "Bearbeitung {{index}} von {{total}}",
     "retry": "Erneut versuchen",
     "web_search_unavailable_gemini": "Bei Gemini-Modellen nicht verfügbar solange der Notizzugriff aktiv ist — Googles API erlaubt keine Kombination beider Funktionen. Notizzugriff deaktivieren oder einen anderen Anbieter wählen um die Websuche zu nutzen.",
-    "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
     "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",
@@ -2847,10 +2646,7 @@
     "actions": "Aktionen",
     "provider_name": "Name",
     "add_provider": "Anbieter hinzufügen",
-    "add_provider_title": "KI-Anbieter hinzufügen",
     "feature_not_enabled": "Aktivieren Sie die experimentelle LLM-Funktion unter Einstellungen → Erweitert → Experimentelle Funktionen, um KI-Integrationen zu verwenden.",
-    "configured_providers": "Konfigurierte Anbieter",
-    "no_providers_configured": "Noch keine Anbieter konfiguriert.",
     "delete_provider_confirmation": "Möchten Sie den Anbieter „{{name}}“ wirklich löschen?",
     "api_key_placeholder": "Geben Sie Ihren API-Schlüssel ein",
     "mcp_title": "MCP (Model Context Protocol)",
@@ -2873,8 +2669,6 @@
     "models_select_all": "Alle auswählen",
     "models_select_none": "Keine auswählen",
     "models_reset_defaults": "Auf Standardwerte zurücksetzen",
-    "provider_model_count_one": "{{count}} Modell",
-    "provider_model_count_other": "{{count}} Modelle",
     "beta": "Beta",
     "claude_agent_description": "Verwendet Ihr Claude-Pro-/Max-Abonnement über Claude Code, daher ist kein API-Schlüssel erforderlich. Claude Code muss auf dem Computer installiert sein, auf dem Trilium ausgeführt wird (beim Self-Hosting der Server, bei der Desktop-App dieser Computer). Melden Sie sich dort einmalig mit „claude /login“ an.",
     "add_provider_title_named": "{{- name}} hinzufügen",
@@ -2930,8 +2724,7 @@
     "processing_started": "OCR-Verarbeitung wurde gestartet. Bitte warten Sie einen Moment und aktualisieren Sie die Ansicht.",
     "processing_complete": "OCR-Verarbeitung abgeschlossen.",
     "processing_failed": "OCR-Verarbeitung konnte nicht gestartet werden",
-    "text_filtered_low_confidence": "OCR hat Text mit einer Konfidenz von {{confidence}} % erkannt, aber er wurde verworfen, weil Ihr Mindestschwellenwert bei {{threshold}} % liegt.",
-    "image_based_pdf_not_supported": "Dieses PDF scheint bildbasiert (gescannt) zu sein. Die Textextraktion aus bildbasierten PDFs wird derzeit noch nicht unterstützt."
+    "text_filtered_low_confidence": "OCR hat Text mit einer Konfidenz von {{confidence}} % erkannt, aber er wurde verworfen, weil Ihr Mindestschwellenwert bei {{threshold}} % liegt."
   },
   "revisions": {
     "note_revisions": "Revisionsverlauf",
@@ -3011,10 +2804,30 @@
       "math": "Gleichung",
       "collapsible_summary": "Zusammenfassung",
       "collapsible_details": "Details",
-      "table_column": "Spalte {{number}}"
+      "table_column": "Spalte {{number}}",
+      "tab_title": "Tab {{number}}",
+      "tab_content": "Inhalt"
     },
     "page_break": "Seitenumbruch einfügen (zum Drucken)",
-    "table": "Tabelle einfügen"
+    "table": "Tabelle einfügen",
+    "titles": {
+      "date": "Datum/Zeit einfügen",
+      "include": "Notiz einfügen",
+      "image": "Bild hochladen",
+      "link": "Interne Verknüpfung",
+      "footnote": "Fußnote",
+      "mermaid": "Mermaid Diagram",
+      "mermaid_template": "Mermaid Diagram: {{name}}",
+      "tabs": "Tabs",
+      "page_break": "Seitenumbruch",
+      "table": "Tabelle",
+      "note": "Notiz",
+      "important": "Wichtig",
+      "caution": "Vorsicht",
+      "warning": "Warnung",
+      "todo": "Aufgabe: {{title}}"
+    },
+    "tabs": "Füge Tabs mit Titeln ein, welche maximal ein Panel gleichzeitig anzeigen"
   },
   "revisions_snapshot": {
     "title": "Revisionsverlauf"
@@ -3070,7 +2883,6 @@
     "page_size": "Seitengröße",
     "scale": "Skalierung",
     "margins": "Seitenränder",
-    "render_error": "PDF kann mit den aktuellen Einstellungen nicht gerendert werden. Bitte prüfen Sie Seitenränder und Skalierung.",
     "margins_default": "Standard",
     "margins_none": "Keine",
     "margins_minimum": "Minimum",
@@ -3107,7 +2919,6 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Klicken Sie auf den Pfeil oder drücken Sie %0, um ein- oder auszuklappen.",
       "collapsible-block": "Einklappbarer Block",
       "copy-image-to-clipboard": "Bild in die Zwischenablage kopieren",
-      "copy-url": "URL kopieren",
       "create-a-bulleted-list": "Aufzählungsliste erstellen",
       "create-a-new-footnote-and-reference-it-here": "Eine neue Fußnote erstellen und hier referenzieren",
       "create-a-numbered-list": "Nummerierte Liste erstellen",
@@ -3117,11 +2928,8 @@
       "download-image": "Bild herunterladen",
       "drag-to-reposition-the-collapsible-block": "Ziehen, um den einklappbaren Block zu verschieben",
       "edit-task-states": "Aufgabenzustände bearbeiten",
-      "edit-title": "Titel bearbeiten",
       "embed": "Einbetten",
-      "inline": "Inline",
       "insert-a-0-mermaid-diagram-template": "Mermaid-Diagrammvorlage „%0“ einfügen",
-      "insert-a-link-to-another-trilium-note": "Link zu einer anderen Trilium-Notiz einfügen",
       "insert-a-math-equation": "Mathematische Gleichung einfügen",
       "insert-a-new-admonition": "Einen neuen Hinweisblock einfügen",
       "insert-a-page-break-for-printing": "Seitenumbruch einfügen (zum Drucken)",
@@ -3129,18 +2937,14 @@
       "insert-an-anchor-for-internal-linking": "Anker für interne Verlinkung einfügen",
       "insert-an-empty-mermaid-diagram": "Leeres Mermaid-Diagramm einfügen",
       "justify-text-alignment": "Blocksatz",
-      "link-preview": "Linkvorschau",
       "missing-definition": "(fehlende Definition)",
-      "plain-link": "Einfacher Link",
       "right-click-or-press-0-to-change-state": "Klicken Sie mit der rechten Maustaste oder drücken Sie %0, um den Status zu ändern.",
       "select-collapsible-block": "Einklappbaren Block auswählen",
       "summary": "Zusammenfassung",
       "task-state": "Aufgabenstatus:",
-      "title": "Titel",
       "toggle-collapsible-block": "Einklappbaren Block umschalten",
       "type-the-content-here": "Inhalt hier eingeben...",
-      "undefined-custom-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand",
-      "url": "URL"
+      "undefined-custom-task-state": "Unbekannter benutzerdefinierter Aufgabenzustand"
     }
   },
   "image_navigation": {
@@ -3287,16 +3091,13 @@
   },
   "save_revision": {
     "save_revision": "Revision speichern",
-    "revision_name_placeholder": "Revisionsname (optional)",
-    "help": "Für jede passende Notiz wird eine benannte Revision mit ihrem aktuellen Inhalt und Titel gespeichert."
+    "revision_name_placeholder": "Revisionsname (optional)"
   },
   "convert_note": {
     "convert_note": "Konvertieren",
-    "convert_note_to": "Notiz konvertieren",
     "choose_conversion": "(Konvertierung auswählen)",
     "conversion_htmlToMarkdown": "Textnotizen → Markdown-Notizen (verlustbehaftet)",
     "conversion_markdownToHtml": "Markdown-Notizen → Textnotizen",
-    "help_text": "Die Konvertierung wird nur auf Notizen des Quelltyps angewendet; andere Notizen bleiben unverändert. Vorher wird eine Revision jeder konvertierten Notiz gespeichert.",
     "warning": "Bei der Konvertierung von Notizen können einige Formatierungen verloren gehen und anschließend Anpassungen nötig sein. Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie sie wiederherstellen können. Möchten Sie fortfahren?",
     "warning_risky": "Sie konvertieren zwischen zwei Formaten mit unterschiedlichen Möglichkeiten. Dabei können Formatierungen verloren gehen und nicht unterstützte Elemente entfernt werden.<br><br>Möchten Sie dieses Risiko vollständig übernehmen und mit der Konvertierung fortfahren?<br><br>Vorher wird eine Revision jeder konvertierten Notiz gespeichert, damit Sie zum ursprünglichen Format zurückkehren können."
   },
@@ -3353,14 +3154,6 @@
   },
   "attribute_list_panel": {
     "no_attributes": "Keine Attribute",
-    "owned_one": "{{count}} eigenes Attribut",
-    "owned_other": "{{count}} eigene Attribute",
-    "inherited_one": "{{count}} geerbtes Attribut",
-    "inherited_other": "{{count}} geerbte Attribute",
-    "definitions_one": "{{count}} Definition",
-    "definitions_other": "{{count}} Definitionen",
-    "internal_one": "{{count}} internes Systemattribut",
-    "internal_other": "{{count}} interne Systemattribute",
     "back": "Zurück zu den Attributen",
     "inheritable": "Vererbbar: Wird auf diese Notiz und alle Unternotizen angewendet",
     "delete": "Dieses Attribut löschen",

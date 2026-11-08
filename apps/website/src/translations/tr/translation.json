@@ -12,7 +12,10 @@
         "get_started": "Başlayın",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes masaüstü uygulamasının ekran görüntüsü"
+        "screenshot_alt": "Trilium Notes masaüstü uygulamasının ekran görüntüsü",
+        "tagline_no_account": "Hesap gerektirmez",
+        "tagline_license": "AGPL-3.0 lisanslı",
+        "tagline_cross_platform": "Çevrimdışı çalışır"
     },
     "organization_benefits": {
         "title": "Organizasyon",
@@ -21,7 +24,8 @@
         "attributes_description": "Notlar arasında ilişkiler kurun veya kolay kategorizasyon için etiketler ekleyin. Tablolarda ve panolarda kullanılabilen yapılandırılmış bilgileri eklemek için öne çıkan öznitelikleri kullanın.",
         "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır.",
         "attributes_title": "Not etiketleri ve ilişkileri",
-        "hoisting_title": "İş alanları ve yükseltme"
+        "hoisting_title": "İş alanları ve yükseltme",
+        "screenshot_alt": "Trilium'da hiyerarşik not ağacı"
     },
     "productivity_benefits": {
         "title": "Üretkenlik ve güvenlik",
@@ -34,7 +38,8 @@
         "search_title": "Gelişmiş arama",
         "search_content": "Ya da notların içindeki metinleri arayabilir ve üst not veya derinlik filtrelerini kullanarak aramayı daraltabilirsiniz.",
         "web_clipper_title": "Web clipper",
-        "web_clipper_content": "Web sayfalarını (veya ekran görüntülerini) alın ve Web Clipper tarayıcı uzantısını kullanarak bunları doğrudan Trilium'a ekleyin."
+        "web_clipper_content": "Web sayfalarını (veya ekran görüntülerini) alın ve Web Clipper tarayıcı uzantısını kullanarak bunları doğrudan Trilium'a ekleyin.",
+        "auth_title": "Güvenli oturum açma"
     },
     "faq": {
         "database_answer": "Tüm notlarınız, uygulama klasöründeki bir SQLite veritabanında saklanacaktır. Trilium'un düz metin dosyaları yerine bir veritabanı kullanmasının nedeni, hem performans hem de klonlar (ağaç yapısında aynı notun birden fazla yerde bulunması) gibi bazı özelliklerin uygulanmasının çok daha zor olmasıdır. Uygulama klasörünü bulmak için “Hakkında” penceresine gidin.",
@@ -67,5 +72,15 @@
     "resources": {
         "download": "İndir",
         "website": "Website"
+    },
+    "section_nav": {
+        "note_types": "Not türleri",
+        "aria_label": "Bölüme atla",
+        "productivity": "Özellikler",
+        "import": "İçe / Dışa Aktar",
+        "collections": "Koleksiyonlar",
+        "scripting": "Betikleme",
+        "ai_integration": "Yapay zeka",
+        "faq": "SSS"
     }
 }

@@ -39,7 +39,7 @@ describe("IconPickerButton", () => {
         const desktop = renderButton(false);
 
         // The button stands where it was put; what it opens is a menu, which is neither built nor
-        // handed to the page until it is opened (see `portalToBody`).
+        // handed to the page until it is opened.
         expect(desktop.querySelector(".note-icon-widget button.note-icon")).toBeTruthy();
         expect(document.body.querySelector(".modal.icon-switcher")).toBeNull();
         expect(document.body.querySelector(".dropdown-menu")).toBeNull();
@@ -93,13 +93,13 @@ describe("IconPicker", () => {
         expect(regularList).toBeTruthy();
         expect(compactList).toBeTruthy();
 
-        // Nine columns of the compact cell, and the ten the stylesheet asks for besides.
-        expect(compactList?.style.width).toBe("370px");
+        // Nine columns of the compact cell, plus 10px and the inset the stylesheet sets.
+        expect(compactList?.style.width).toBe("calc(370px + var(--icon-list-inset))");
         // Eight rows and a quarter, the quarter being what tells the reader there is more below.
         expect(compactList?.style.height).toBe("330px");
 
         // The regular grid keeps the height the stylesheet gives it, which follows the screen.
-        expect(regularList?.style.width).toBe("442px");
+        expect(regularList?.style.width).toBe("calc(442px + var(--icon-list-inset))");
         expect(regularList?.style.height).toBe("");
     });
 });

@@ -37,6 +37,7 @@ function makeCallbacks(): Record<keyof StreamCallbacks, ReturnType<typeof vi.fn>
         onToolInputStart: vi.fn(),
         onToolInputDelta: vi.fn(),
         onToolUse: vi.fn(),
+        onToolApprovalRequest: vi.fn(),
         onToolResult: vi.fn(),
         onCitation: vi.fn(),
         onUsage: vi.fn(),
@@ -116,8 +117,26 @@ describe("streamChatCompletion", () => {
         expect(init.method).toBe("POST");
         expect((init.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
         expect((init.headers as Record<string, string>)["x-csrf-token"]).toBe("tok");
-        expect(init.body).toBe(JSON.stringify({ messages, config }));
+        expect(JSON.parse(init.body as string)).toEqual({ streamId: expect.any(String), messages, config });
         expect(cb.onChunk).toHaveBeenCalledWith("hello");
+    });
+
+    it("hands a waiting tool call to the chat with a way to answer it under the stream's id", async () => {
+        const request = { toolCallId: "c1", toolName: "delete_note", toolInput: { noteId: "a" } };
+        const fetchMock = vi.fn(async () => makeStreamResponse([`data: ${JSON.stringify({ type: "tool_approval_request", ...request })}\n`]));
+        vi.stubGlobal("fetch", fetchMock);
+        server.post = vi.fn(async () => ({ answered: true })) as typeof server.post;
+
+        const cb = makeCallbacks();
+        await streamChatCompletion(messages, config, cb);
+        expect(cb.onToolApprovalRequest).toHaveBeenCalledExactlyOnceWith(request, expect.any(Function));
+
+        const answer = cb.onToolApprovalRequest.mock.calls[0][1] as (approved: boolean, scope?: "chat") => Promise<void>;
+        await answer(false);
+        const { streamId } = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+        expect(server.post).toHaveBeenCalledExactlyOnceWith("llm-chat/tool-approval", { streamId, toolCallId: "c1", approved: false });
+        await answer(true, "chat");
+        expect(server.post).toHaveBeenLastCalledWith("llm-chat/tool-approval", { streamId, toolCallId: "c1", approved: true, scope: "chat" });
     });
 
     it("rethrows an AbortError from fetch (user stopped)", async () => {
@@ -214,9 +233,7 @@ describe("streamChatCompletion", () => {
         expect(cb.onChunk).toHaveBeenCalledWith("hi");
     });
 
-    it("does not invoke onDone when the stream ends without an explicit done event", async () => {
-        // onDone() fires only for a `{type:"done"}` SSE event (source 126-128), NOT when the
-        // reader simply returns {done:true}. Lock in that a clean stream end leaves onDone uncalled.
+    it("reports an interruption when the body ends without a done or error event", async () => {
         const chunks = [`data: ${JSON.stringify({ type: "text", content: "only" })}\n`];
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
 
@@ -225,6 +242,10 @@ describe("streamChatCompletion", () => {
 
         expect(cb.onChunk).toHaveBeenCalledWith("only");
         expect(cb.onDone).not.toHaveBeenCalled();
+        expect(cb.onError.mock.calls).toEqual([[
+            "LLM stream ended without completing — the connection closed before the response "
+            + "finished (network or proxy interruption)."
+        ]]);
     });
 
     it("ignores citation/usage events that carry no payload", async () => {
@@ -264,7 +285,8 @@ describe("streamChatCompletion", () => {
             { type: "tool_use", toolCallId: "c1", toolName: "search", toolInput: { q: "x" } },
             { type: "tool_result", toolCallId: "c1", toolName: "search", result: "res" },
             { type: "citation", citation: { id: "cit1" } },
-            { type: "usage", usage: { totalTokens: 1 } }
+            { type: "usage", usage: { totalTokens: 1 } },
+            { type: "done" }
         ];
         const chunks = events.map((e) => `data: ${JSON.stringify(e)}\n`);
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
@@ -305,7 +327,7 @@ describe("streamChatCompletion", () => {
 
         const cb = makeCallbacks();
         await streamChatCompletion(messages, config, cb);
-        expect(cb.onError).toHaveBeenCalledWith("LLM stream interrupted: read failed");
+        expect(cb.onError.mock.calls).toEqual([["LLM stream interrupted: read failed"]]);
         expect(reader.releaseLock).toHaveBeenCalledTimes(1);
     });
 
@@ -316,7 +338,7 @@ describe("streamChatCompletion", () => {
 
         const cb = makeCallbacks();
         await streamChatCompletion(messages, config, cb);
-        expect(cb.onError).toHaveBeenCalledWith("LLM stream interrupted: kaput");
+        expect(cb.onError.mock.calls).toEqual([["LLM stream interrupted: kaput"]]);
     });
 
     it("passes the abort signal through to fetch", async () => {

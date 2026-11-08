@@ -6,7 +6,7 @@
 import $ from "jquery";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -19,7 +19,7 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import BoardApi from "./api";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 
 vi.mock("../../../services/branches", () => ({
     default: {
@@ -44,6 +44,9 @@ vi.mock("../../../services/i18n", () => ({
     t: (key: string) => key,
     translationsInitializedPromise: $.Deferred().resolve()
 }));
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Board keyboard", () => {
     let container: HTMLElement | undefined;
@@ -276,7 +279,7 @@ describe("Board keyboard", () => {
         it("strips the grouping label with Delete, leaving the note where it is", async () => {
             const board = await renderBoard();
             const removed = noteOf(board, "First");
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             focusCard(board, 0, 0);
 
             press(board, "Delete");
@@ -292,7 +295,7 @@ describe("Board keyboard", () => {
          */
         it("leaves Delete unanswered while the inbox column is drawn", async () => {
             const board = await renderBoard(undefined, undefined, [], true);
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             // The inbox is seeded at the front, so the first card stands in the column after it.
             focusCard(board, 1, 0);
 
@@ -314,7 +317,7 @@ describe("Board keyboard", () => {
 
         it("deletes the note itself with Shift and Delete", async () => {
             const board = await renderBoard();
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             focusCard(board, 0, 0);
 
             press(board, "Delete", { shiftKey: true });
@@ -331,7 +334,7 @@ describe("Board keyboard", () => {
          */
         it("hands focus to the card below the one that goes, before it goes", async () => {
             const board = await renderBoard();
-            vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             const removed = noteOf(board, "First");
             focusCard(board, 0, 0);
 
@@ -345,7 +348,7 @@ describe("Board keyboard", () => {
 
         it("takes every picked-out card off the board, not only the focused one", async () => {
             const board = await renderBoard();
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             const first = noteOf(board, "First");
             const third = noteOf(board, "Third");
             pick(board, 0, 0);
@@ -381,7 +384,7 @@ describe("Board keyboard", () => {
          */
         it("hands focus past the cards going with it", async () => {
             const board = await renderBoard();
-            vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             pick(board, 0, 0);
             pick(board, 0, 1);
             focusCard(board, 0, 0);
@@ -395,7 +398,7 @@ describe("Board keyboard", () => {
         /** A card the reader is standing on but has not picked out goes on its own. */
         it("leaves a selection the focused card is no part of alone", async () => {
             const board = await renderBoard();
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             const second = noteOf(board, "Second");
             pick(board, 0, 1);
             focusCard(board, 0, 0);
@@ -410,7 +413,7 @@ describe("Board keyboard", () => {
 
         it("takes the whole column off the board from its header, asking first", async () => {
             const board = await renderBoard();
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             const remove = vi.spyOn(BoardApi.prototype, "confirmAndRemoveColumn")
                 .mockResolvedValue(true);
             focusHeader(board, 0);
@@ -634,7 +637,7 @@ describe("Board keyboard", () => {
         /** The inbox is named by the empty string, which is a column like any other to move to. */
         it("sends a card into the inbox column beside it", async () => {
             const board = await renderBoard(undefined, undefined, [], true);
-            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
             // The inbox is seeded at the front, so the first card is in the column after it.
             focusCard(board, 1, 0);
 

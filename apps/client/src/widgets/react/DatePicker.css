@@ -1,0 +1,48 @@
+.calendar-dropdown-widget.date-picker {
+    width: 260px;
+    padding: 8px;
+
+    .date-picker-presets {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        gap: 4px;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid var(--main-border-color);
+
+        .btn {
+            padding: 2px 8px;
+            font-size: 0.85em;
+            color: var(--muted-text-color);
+        }
+
+        .btn:hover,
+        .btn.active {
+            color: var(--calendar-color);
+        }
+
+        .btn.active {
+            background: var(--calendar-day-highlight-background);
+        }
+    }
+
+    .calendar-header {
+        padding: 0 0 4px;
+        justify-content: space-between;
+    }
+
+    .date-picker-title {
+        font-weight: 500;
+    }
+
+    .calendar-body {
+        min-height: 0;
+    }
+
+    .calendar-date,
+    .calendar-week-number-disabled {
+        padding: 0.25rem 0;
+        font-size: 100%;
+    }
+}

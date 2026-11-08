@@ -1,25 +1,33 @@
 import "./index.css";
 
-import { createPortal } from "preact/compat";
+import { createPortal } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { DataTreeModule, EditModule, FormatModule, FrozenColumnsModule, InteractionModule, MoveColumnsModule, MoveRowsModule, Options, PersistenceModule, ResizeColumnsModule, RowComponent,SortModule, Tabulator as VanillaTabulator} from 'tabulator-tables';
 
 import { t } from "../../../services/i18n";
 import SpacedUpdate from "../../../services/spaced_update";
-import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import CollectionProperties from "../../note_bars/CollectionProperties";
+import CollectionProperties, {
+    CollectionPropertiesDialog, IncludedNotesCard
+} from "../../note_bars/CollectionProperties";
 import Button, { ButtonOrActionButton } from "../../react/Button";
-import { useLegacyWidget } from "../../react/hooks";
+import { FormListItem } from "../../react/FormList";
+import { useEffectiveReadOnly, useNoteContext, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
-import useColTableEditing from "./col_editing";
 import { useContextMenu } from "./context_menu";
 import useData, { TableConfig } from "./data";
-import useRowTableEditing from "./row_editing";
+import type { TableEditingEvents } from "./editing";
 import { TableData } from "./rows";
 import Tabulator from "./tabulator";
 
-export default function TableView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<TableConfig>) {
+const TableEditing = lazy(() => import("./editing"));
+
+/** What every table shows with; an editable one adds {@link EDITING_MODULES}. */
+const VIEW_MODULES = [ SortModule, FormatModule, InteractionModule, ResizeColumnsModule, FrozenColumnsModule, PersistenceModule, MoveColumnsModule, DataTreeModule ];
+const EDITING_MODULES = [ ...VIEW_MODULES, EditModule, MoveRowsModule ];
+
+export default function TableView({ note, noteIds, viewConfig, saveConfig, isReadOnly: forcedReadOnly }: ViewModeProps<TableConfig>) {
     const tabulatorRef = useRef<VanillaTabulator>(null);
     const parentComponent = useContext(ParentComponent);
     // The scrolled area under the rows, where the "new row" strip is portaled — reached for anew
@@ -31,12 +39,24 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
     // rebuilt over — and the child effect applying the new columns runs before this one measures.
     const [ handleColWidth, setHandleColWidth ] = useState(0);
 
-    const [ attributeDetailWidgetEl, attributeDetailWidget ] = useLegacyWidget(() => new AttributeDetailWidget().contentSized());
-    const contextMenuEvents = useContextMenu(note, parentComponent, tabulatorRef);
+    const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(note, noteContext) || !!forcedReadOnly;
+    const canAddRows = !isReadOnly && note.type !== "search";
+    const [ isEditingProperties, setIsEditingProperties ] = useState(false);
+
+    // The note actions menu offers the properties dialog, which lives here rather than in the menu.
+    useTriliumEvent("showCollectionProperties", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId && !isReadOnly) {
+            setIsEditingProperties(true);
+        }
+    });
+    const contextMenuEvents = useContextMenu(note, parentComponent, tabulatorRef, isReadOnly);
     const persistenceProps = usePersistence(viewConfig, saveConfig);
-    const rowEditingEvents = useRowTableEditing(tabulatorRef, attributeDetailWidget, note);
-    const { newAttributePosition, resetNewAttributePosition } = useColTableEditing(tabulatorRef, attributeDetailWidget, note);
-    const { columnDefs, rowData, movableRows, hasChildren } = useData(note, noteIds, viewConfig, newAttributePosition, resetNewAttributePosition);
+    const [ editingEvents, setEditingEvents ] = useState<TableEditingEvents>();
+    const newAttributePosition = useRef<number | undefined>(undefined);
+    const resetNewAttributePosition = useRef<() => void>(() => { newAttributePosition.current = undefined; });
+    const { columnDefs, rowData, movableRows, hasChildren } = useData(
+        note, noteIds, viewConfig, newAttributePosition, () => resetNewAttributePosition.current(), isReadOnly);
     const dataTreeProps = useMemo<Options>(() => {
         if (!hasChildren) return {};
         return {
@@ -64,7 +84,12 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
         <div className="table-view">
             <CollectionProperties
                 note={note}
-                rightChildren={note.type !== "search" &&
+                optionsChildren={!isReadOnly && (
+                    <FormListItem icon="bx bx-cog" onClick={() => setIsEditingProperties(true)}>
+                        {t("table_view.properties")}
+                    </FormListItem>
+                )}
+                rightChildren={canAddRows &&
                     <>
                         <ButtonOrActionButton triggerCommand="addNewRow" icon="bx bx-plus" text={t("table_view.new-row")} />
                         <ButtonOrActionButton triggerCommand="addNewTableColumn" icon="bx bx-carousel" text={t("table_view.new-column")} />
@@ -75,14 +100,16 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
             {rowData !== undefined && persistenceProps &&  (
                 <>
                     <Tabulator
+                        // Built anew when the note turns editable, as a table takes its modules when built.
+                        key={isReadOnly ? "read-only" : "editable"}
                         tabulatorRef={tabulatorRef}
                         className="table-view-container"
                         columns={columnDefs ?? []}
                         data={rowData}
-                        modules={[ SortModule, FormatModule, InteractionModule, EditModule, ResizeColumnsModule, FrozenColumnsModule, PersistenceModule, MoveColumnsModule, MoveRowsModule, DataTreeModule ]}
+                        modules={isReadOnly ? VIEW_MODULES : EDITING_MODULES}
                         events={{
                             ...contextMenuEvents,
-                            ...rowEditingEvents
+                            ...(isReadOnly ? {} : editingEvents)
                         }}
                         persistence {...persistenceProps}
                         layout="fitDataFill"
@@ -95,7 +122,7 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
                         )}
                         {...dataTreeProps}
                     />
-                    {note.type !== "search" && rowsHolderEl && createPortal(
+                    {canAddRows && rowsHolderEl && createPortal(
                         <div
                             className="table-new-row-strip"
                             style={{ "--row-handle-column-width": `${handleColWidth}px` }}
@@ -112,7 +139,28 @@ export default function TableView({ note, noteIds, viewConfig, saveConfig }: Vie
                     )}
                 </>
             )}
-            {attributeDetailWidgetEl}
+            {!isReadOnly && (
+                <Suspense fallback={null}>
+                    <TableEditing
+                        tabulatorRef={tabulatorRef}
+                        note={note}
+                        newAttributePosition={newAttributePosition}
+                        setResetNewAttributePosition={(reset) => { resetNewAttributePosition.current = reset; }}
+                        setEvents={setEditingEvents}
+                    />
+                </Suspense>
+            )}
+            {isEditingProperties && createPortal(
+                <CollectionPropertiesDialog
+                    className="table-properties-dialog"
+                    title={t("table_view.properties-title")}
+                    show
+                    onHidden={() => setIsEditingProperties(false)}
+                >
+                    <IncludedNotesCard note={note} />
+                </CollectionPropertiesDialog>,
+                document.body
+            )}
         </div>
     );
 }
@@ -131,6 +179,7 @@ function usePersistence(viewConfig: TableConfig | null | undefined, saveConfig: 
                 return viewConfigLocal.tableData?.[type];
             },
             persistenceWriterFunc(_, type, data) {
+                viewConfigLocal.tableData ??= {};
                 (viewConfigLocal.tableData as Record<string, {}>)[type] = data;
                 spacedUpdate.scheduleUpdate();
             },

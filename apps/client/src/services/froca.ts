@@ -1,20 +1,19 @@
-import type { HighlightedTokenInfo } from "@triliumnext/commons";
+import type {
+    HighlightedTokenInfo, NoteMapPostResponse, RelationMapPostResponse, SearchLintResponse,
+    SearchWithTokensResponse
+} from "@triliumnext/commons";
 
-import appContext from "../components/app_context.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBlob, { type FBlobRow } from "../entities/fblob.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import FNote, { type FNoteRow } from "../entities/fnote.js";
-import type { Froca } from "./froca-interface.js";
+import type { Bundle } from "./bundle.js";
+import type { Froca, FrocaSource, NoteMapFilters, SavedAttachment, SubtreeResponse } from "./froca-interface.js";
+import noteAttributeCache from "./note_attribute_cache.js";
 import server from "./server.js";
-import { isPreAuthScreen } from "./utils.js";
+import { isPreAuthScreen, reuseAcrossHotReloads } from "./utils.js";
 
-interface SubtreeResponse {
-    notes: FNoteRow[];
-    branches: FBranchRow[];
-    attributes: FAttributeRow[];
-}
 
 interface SearchNoteResponse {
     searchResultNoteIds: string[];
@@ -43,10 +42,16 @@ class FrocaImpl implements Froca {
     attributes!: Record<string, FAttribute>;
     attachments!: Record<string, FAttachment>;
     blobPromises!: Record<string, Promise<FBlob | null> | null>;
+    private source: FrocaSource = SERVER_SOURCE;
 
     constructor() {
         this.initializedPromise = this.loadInitialTree();
         this.#clear();
+    }
+
+    /** Reads what froca does not hold from `source` instead of the app's API. */
+    setSource(source: FrocaSource) {
+        this.source = source;
     }
 
     async loadInitialTree() {
@@ -58,6 +63,19 @@ class FrocaImpl implements Froca {
         // clear the cache only directly before adding new content which is important for e.g., switching to protected session
         this.#clear();
         this.addResp(resp);
+    }
+
+    /**
+     * Replaces everything froca holds with the backend's current state: the initial tree, then
+     * the notes froca held outside it, which open tabs and widgets can still refer to. Run it
+     * through `reloadFroca()` in ws.ts, which keeps entity changes from applying meanwhile.
+     */
+    async reloadAll() {
+        const allNoteIds = Object.keys(this.notes);
+
+        await this.loadInitialTree();
+        await this.reloadNotes(allNoteIds);
+        noteAttributeCache.invalidate();
     }
 
     #clear() {
@@ -190,10 +208,11 @@ class FrocaImpl implements Froca {
 
         noteIds = Array.from(new Set(noteIds)); // make noteIds unique
 
-        const resp = await server.post<SubtreeResponse>("tree/load", { noteIds });
+        const resp = await this.source.loadNotes(noteIds);
 
         this.addResp(resp);
 
+        const { default: appContext } = await import("../components/app_context.js");
         appContext.triggerEvent("notesReloaded", { noteIds });
     }
 
@@ -241,6 +260,10 @@ class FrocaImpl implements Froca {
         froca.notes[note.noteId].highlightedTokens = highlightedTokens;
         froca.notes[note.noteId].highlightedTokenInfos = highlightedTokenInfos
             ?? highlightedTokens.map((token) => ({ token, type: "plain" as const }));
+
+        // The tree and embedded collections also load search notes, so `SearchResult` needs telling.
+        const { default: appContext } = await import("../components/app_context.js");
+        appContext.triggerEvent("notesReloaded", { noteIds: [ note.noteId ] });
 
         return { error };
     }
@@ -295,7 +318,7 @@ class FrocaImpl implements Froca {
             return null;
         }
 
-        return (await this.getNotes([noteId], silentNotFoundError))[0];
+        return (await this.getNotes([noteId], silentNotFoundError))[0] ?? null;
     }
 
     getNoteFromCache(noteId: string): FNote | undefined {
@@ -345,7 +368,7 @@ class FrocaImpl implements Froca {
         // load all attachments for the given note even if one is requested, don't load one by one
         let attachmentRows;
         try {
-            attachmentRows = await server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`);
+            attachmentRows = await this.source.getSiblingAttachments(attachmentId);
         } catch (e: any) {
             if (silentNotFoundError) {
                 logInfo(`Attachment '${attachmentId}' not found, but silentNotFoundError is enabled: ${e.message}`);
@@ -355,16 +378,26 @@ class FrocaImpl implements Froca {
         }
 
         const attachments = this.processAttachmentRows(attachmentRows);
-
-        if (attachments.length) {
-            attachments[0].getNote().attachments = attachments;
+        const owner = attachments.length ? attachments[0].getNote() : undefined;
+        if (owner) {
+            owner.attachments = attachments;
         }
 
         return this.attachments[attachmentId];
     }
 
+    /** The attachment if `noteId` owns it, otherwise `null`. Loads the note first. */
+    async getAttachmentOfNote(noteId: string, attachmentId: string) {
+        if (!await this.getNote(noteId, true)) {
+            return null;
+        }
+
+        const attachment = await this.getAttachment(attachmentId, true);
+        return attachment?.ownerId === noteId ? attachment : null;
+    }
+
     async getAttachmentsForNote(noteId: string) {
-        const attachmentRows = await server.get<FAttachmentRow[]>(`notes/${noteId}/attachments`);
+        const attachmentRows = await this.source.getAttachments(noteId);
         return this.processAttachmentRows(attachmentRows);
     }
 
@@ -384,6 +417,42 @@ class FrocaImpl implements Froca {
         });
     }
 
+    searchNoteIds(query: string, ancestorNoteId: string) {
+        return this.source.searchNoteIds(query, ancestorNoteId);
+    }
+
+    searchInSubtree(query: string, ancestorNoteId: string, includeArchived: boolean) {
+        return this.source.searchInSubtree(query, ancestorNoteId, includeArchived);
+    }
+
+    lintSearch(searchString: string) {
+        return this.source.lintSearch(searchString);
+    }
+
+    getAttributeNames(type: "label" | "relation", query: string) {
+        return this.source.getAttributeNames(type, query);
+    }
+
+    getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters) {
+        return this.source.getNoteMap(mapRootNoteId, mapType, filters);
+    }
+
+    getRelationMap(relationMapNoteId: string, noteIds: string[]) {
+        return this.source.getRelationMap(relationMapNoteId, noteIds);
+    }
+
+    getScriptBundle(noteId: string) {
+        return this.source.getScriptBundle(noteId);
+    }
+
+    saveAttachment(noteId: string, attachment: SavedAttachment) {
+        return this.source.saveAttachment(noteId, attachment);
+    }
+
+    removeAttachment(attachmentId: string) {
+        return this.source.removeAttachment(attachmentId);
+    }
+
     async getBlob(entityType: string, entityId: string): Promise<FBlob | null> {
         // I'm not sure why we're not using blobIds directly, it would save us this composite key ...
         // perhaps one benefit is that we're always requesting the latest blob, not relying on perhaps faulty/slow
@@ -391,8 +460,8 @@ class FrocaImpl implements Froca {
         const key = `${entityType}-${entityId}`;
 
         if (!this.blobPromises[key]) {
-            this.blobPromises[key] = server
-                .getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`)
+            this.blobPromises[key] = this.source
+                .getBlob(entityType, entityId)
                 .then((row) => new FBlob(row))
                 .catch((e) => {
                     console.error(`Cannot get blob for ${entityType} '${entityId}'`, e);
@@ -409,6 +478,39 @@ class FrocaImpl implements Froca {
     }
 }
 
-const froca = new FrocaImpl();
+/** Reads from the app's API. */
+const SERVER_SOURCE: FrocaSource = {
+    loadNotes: (noteIds) => server.post<SubtreeResponse>("tree/load", { noteIds }),
+    getSiblingAttachments: (attachmentId) =>
+        server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`),
+    getAttachments: (noteId) => server.get<FAttachmentRow[]>(`notes/${noteId}/attachments`),
+    getBlob: (entityType, entityId) =>
+        server.getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`),
+    searchNoteIds: async (query) => {
+        const { default: search } = await import("./search.js");
+        return await search.searchForNoteIds(query);
+    },
+    searchInSubtree: (query, ancestorNoteId, includeArchived) =>
+        server.get<SearchWithTokensResponse>(
+            `search?searchString=${encodeURIComponent(query)}`
+            + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`
+            + `&includeArchivedNotes=${includeArchived}`),
+    lintSearch: (searchString) => server.post<SearchLintResponse>("search/lint", { searchString }),
+    getAttributeNames: (type, query) =>
+        server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(query)}`),
+    getNoteMap: (mapRootNoteId, mapType, filters) =>
+        server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters),
+    getRelationMap: (relationMapNoteId, noteIds) =>
+        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId }),
+    getScriptBundle: (noteId) => server.postWithSilentInternalServerError<Bundle>(`script/bundle/${noteId}`),
+    saveAttachment: async (noteId, attachment) => {
+        await server.post(`notes/${noteId}/attachments?matchBy=title`, attachment);
+    },
+    removeAttachment: async (attachmentId) => {
+        await server.remove(`attachments/${attachmentId}`);
+    }
+};
+
+const froca = reuseAcrossHotReloads(import.meta.hot, () => new FrocaImpl());
 
 export default froca;

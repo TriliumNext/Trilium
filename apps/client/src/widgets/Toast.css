@@ -90,13 +90,18 @@
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 1em;
+        justify-content: flex-end;
+        gap: 0.5em;
 
         .btn {
-            /* Share the row equally; a lone button still spans the full width. */
-            flex: 1;
+            flex: 0 1 auto;
+            white-space: nowrap;
             color: var(--bs-toast-color);
             background: var(--modal-control-button-background);
+
+            &:only-child {
+                flex: 1;
+            }
 
             &:hover {
                 background: var(--modal-control-button-hover-background);

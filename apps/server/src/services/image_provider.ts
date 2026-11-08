@@ -7,7 +7,7 @@
  */
 
 import { getLog, imageCompressionService, options as optionService } from "@triliumnext/core";
-import type { ImageCompressionOutcome, ImageCompressionPlan, ImageCompressionRequest, ImageFormat, ImageProvider, PreviewResizeOutcome, PreviewResizeRequest, ProcessedImage } from "@triliumnext/core/src/services/image_provider.js";
+import type { ImageCompressionOutcome, ImageCompressionPlan, ImageCompressionRequest, ImageFormat, ImageProvider, ImageShrink, PreviewResizeOutcome, PreviewResizeRequest, ProcessedImage } from "@triliumnext/core/src/services/image_provider.js";
 
 import { createConcurrencyGate } from "./concurrency_gate.js";
 import {
@@ -73,7 +73,7 @@ export const serverImageProvider: ImageProvider = {
      * stored untouched — a skip here is not a failure, it is the answer that this image had nothing
      * to gain, and the original is what should be kept in that case anyway.
      */
-    async processImage(buffer: Uint8Array, originalName: string, shrink: boolean): Promise<ProcessedImage> {
+    async processImage(buffer: Uint8Array, originalName: string, shrink: ImageShrink): Promise<ProcessedImage> {
         const original = async (): Promise<ProcessedImage> => ({
             buffer,
             format: (await getImageTypeFromBuffer(buffer)) ?? { ext: "dat", mime: "application/octet-stream" }
@@ -84,8 +84,11 @@ export const serverImageProvider: ImageProvider = {
         }
 
         try {
-            const outcome = await automaticCompression.run(() =>
-                this.compressImage(buffer, imageCompressionService.automaticCompressionRequest()));
+            const request = {
+                ...imageCompressionService.automaticCompressionRequest(),
+                ...(shrink === "width" && { widthOnly: true })
+            };
+            const outcome = await automaticCompression.run(() => this.compressImage(buffer, request));
 
             return outcome.compressed ? { buffer: outcome.buffer, format: outcome.format } : original();
         } catch (e: unknown) {

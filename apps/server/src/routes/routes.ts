@@ -23,18 +23,21 @@ import filesRoute from "./api/files.js";
 // API routes
 import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
+import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
 import recoveryCodes from './api/recovery_codes.js';
+import resourcesRoute from "./api/resources.js";
 import senderRoute from "./api/sender.js";
 import setupRestoreRoute from "./api/setup_restore.js";
+import shareTargetRoute from "./api/share_target.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -114,6 +117,11 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/attachments/:attachmentId/save-to-tmp-dir", filesRoute.saveAttachmentToTmpDir);
     apiRoute(PST, "/api/attachments/:attachmentId/upload-modified-file", filesRoute.uploadModifiedFileToAttachment);
 
+    // Node only: standalone reads third-party files with the page's `fetch`, under CORS.
+    apiRoute(PST, "/api/link-embed/media-proxy", mediaProxyRoute.createProxy);
+    asyncRoute(GET, "/api/link-embed/media-proxy/:token", [auth.checkApiAuthOrElectron],
+        mediaProxyRoute.streamProxy, null);
+
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
     apiRoute(GET, "/api/network-addresses", systemInfoRoute.getNetworkAddresses);
@@ -135,6 +143,7 @@ function register(app: express.Application) {
     route(GET, "/api/clipper/handshake", clipperMiddleware, clipperRoute.handshake, apiResultHandler);
     asyncRoute(PST, "/api/clipper/clippings", clipperMiddleware, clipperRoute.addClipping, apiResultHandler);
     asyncRoute(PST, "/api/clipper/notes", clipperMiddleware, clipperRoute.createNote, apiResultHandler);
+    asyncRoute(PST, "/api/clipper/files", clipperMiddleware, clipperRoute.createFile, apiResultHandler);
     route(PST, "/api/clipper/open/:noteId", clipperMiddleware, clipperRoute.openNote, apiResultHandler);
     asyncRoute(GET, "/api/clipper/notes-by-url/:noteUrl", clipperMiddleware, clipperRoute.findNotesByUrl, apiResultHandler);
 
@@ -163,6 +172,10 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
+
+    // The OS share sheet posts this form, so it carries no CSRF token; `rejectOtherPages` refuses
+    // the same form when another page posts it.
+    asyncRoute(PST, "/share-target", [auth.checkApiAuth, shareTargetRoute.rejectOtherPages, shareTargetMiddlewareWithErrorHandling], shareTargetRoute.handleShare, null);
 
     // POST rather than GET: the URL would otherwise sit in the query string of every access-log
     // line (Trilium's own, and any reverse proxy in front of it), and a pasted URL can carry a
@@ -195,6 +208,12 @@ function register(app: express.Application) {
     asyncApiRoute(PST, "/api/ocr/process-attachment/:attachmentId", ocrRoute.processAttachmentOCR);
     asyncApiRoute(PST, "/api/ocr/batch-process", ocrRoute.batchProcessOCR);
     asyncApiRoute(GET, "/api/ocr/batch-progress", ocrRoute.getBatchProgress);
+
+    asyncApiRoute(GET, "/api/resources", resourcesRoute.getStatus);
+    apiRoute(PST, "/api/resources/download", resourcesRoute.startDownload);
+    apiRoute(PST, "/api/resources/download/:downloadId/cancel", resourcesRoute.cancelDownload);
+    asyncApiRoute(DEL, "/api/resources/foreign/:name", resourcesRoute.deleteForeign);
+    asyncApiRoute(DEL, "/api/resources/:id", resourcesRoute.deleteResource);
 
     app.use("", router);
 }

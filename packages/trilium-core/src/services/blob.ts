@@ -5,13 +5,19 @@ import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
 import { decodeUtf8 } from "./utils/binary.js";
-import { hash, isStringNote } from "./utils/index.js";
+import dateUtils from "./utils/date.js";
+import { hash, hashedBlobId, isStringNote } from "./utils/index.js";
+import { getVirtualNoteContent } from "./virtual_notes.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.
     const entity = becca.getEntity(entityName, entityId);
     if (!entity) {
         throw new NotFoundError(`Entity ${entityName} '${entityId}' was not found.`);
+    }
+
+    if (entity.isVirtual) {
+        return virtualBlobPojo(entityId);
     }
 
     const blob = becca.getBlob(entity);
@@ -21,11 +27,9 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
 
     const pojo = blob.getPojo();
 
-    // A sync stub: the blob carries empty content but its (content-derived) blobId is not the hash of
-    // empty content — i.e. its real content was withheld by the sync server because it exceeded this
-    // device's `syncMaxBlobContentSize`. Detected before content is decoded/nulled below, off the raw
-    // stored length. The client shows an "open on server" placeholder instead of empty content.
-    const isStubbed = pojo.contentLength === 0 && pojo.blobId !== EMPTY_BLOB_ID;
+    // Detected before content is decoded/nulled below, off the raw stored length. The client shows an
+    // "open on server" placeholder instead of empty content.
+    const isStubbed = isSyncStub(pojo.blobId, pojo.contentLength);
 
     if (!entity.hasStringContent()) {
         pojo.content = null;
@@ -38,6 +42,30 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
     pojo.textRepresentation = decryptTextRepresentation(pojo.textRepresentation, !!entity.isProtected) || null;
 
     return { ...pojo, isStubbed };
+}
+
+/**
+ * Produces a blob POJO for a virtual note. Virtual notes have no `blobs` row — their content comes
+ * from the provider that injected them (see `services/virtual_notes.ts`) — so the POJO is derived
+ * on the fly. The blobId is hashed from the content exactly as the persisted path does, so the
+ * client caches and change-detects it the same way, and an empty page still yields
+ * {@link EMPTY_BLOB_ID} rather than looking like a withheld sync stub.
+ */
+function virtualBlobPojo(noteId: string) {
+    const content = getVirtualNoteContent(noteId);
+    const isString = typeof content === "string";
+
+    return {
+        blobId: hashedBlobId(content),
+        // Binary content follows the persisted path, which hands the caller null and lets it fetch
+        // the bytes through the dedicated route instead.
+        content: isString ? content : null,
+        contentLength: content.length,
+        textRepresentation: null,
+        dateModified: dateUtils.localNowDateTime(),
+        utcDateModified: dateUtils.utcNowDateTime(),
+        isStubbed: false
+    };
 }
 
 /**
@@ -76,7 +104,7 @@ function getDeletedNoteBlobPojo(noteId: string) {
         utcDateModified: blobRow.utcDateModified
     };
 
-    const isStubbed = pojo.contentLength === 0 && pojo.blobId !== EMPTY_BLOB_ID;
+    const isStubbed = isSyncStub(pojo.blobId, pojo.contentLength);
 
     if (!isStringNote(noteRow.type, noteRow.mime)) {
         pojo.content = null;
@@ -147,10 +175,9 @@ function encryptTextRepresentation(textRepresentation: string, isProtected: bool
  * it than a caller that has no key, and one unreadable blob should not fail the request around it.
  *
  * One inherited edge: a stored value whose length rules out ciphertext altogether takes
- * dataEncryptionService's recovery path for zadam/trilium#510, which hands back what it was given —
- * and only under Node, since that path is selected by a Node crypto error message. Nothing writes a
- * value of that shape here ({@link encryptTextRepresentation} is the only writer and always emits real
- * ciphertext), so this is noted rather than defended against.
+ * dataEncryptionService's recovery path for zadam/trilium#510, which hands back what it was given.
+ * Nothing writes a value of that shape here ({@link encryptTextRepresentation} is the only writer
+ * and always emits real ciphertext), so this is noted rather than defended against.
  */
 function decryptTextRepresentation(textRepresentation: string | null | undefined, isProtected: boolean): string {
     if (!textRepresentation) {
@@ -178,8 +205,18 @@ function calculateContentHash({ blobId, content, textRepresentation }: Pick<Blob
     return hash(`${blobId}|${content.toString()}${textRepresentationSegment}`);
 }
 
+/**
+ * Whether a stored blob is a sync stub: empty content under a `blobId` that is not the hash of empty
+ * content, because the sync server withheld content larger than this device's
+ * `syncMaxBlobContentSize`.
+ */
+function isSyncStub(blobId: string | undefined, contentLength: number) {
+    return contentLength === 0 && blobId !== EMPTY_BLOB_ID;
+}
+
 export default {
     getBlobPojo,
+    isSyncStub,
     getDeletedNoteBlobPojo,
     processContent,
     encryptTextRepresentation,

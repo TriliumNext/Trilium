@@ -9,7 +9,7 @@ import { EventCallBackMethods, Module, Options, Tabulator as VanillaTabulator } 
 import { ParentComponent, renderReactWidget } from "../../react/react_utils";
 
 export interface TableProps<T extends {}> extends Omit<Options, "data" | "footerElement" | "index"> {
-    tabulatorRef?: RefObject<VanillaTabulator>;
+    tabulatorRef?: RefObject<VanillaTabulator | null>;
     className?: string;
     data?: T[];
     modules?: (new (table: VanillaTabulator) => Module)[];
@@ -69,13 +69,15 @@ export default function Tabulator<T extends {}>({ className, columns, data, modu
         };
     }, Object.values(events ?? {}));
 
-    // Change in data. replaceData rather than setData: it renders in position instead of
-    // resetting the scroll (see resetScroll in Tabulator's RowManager).
-    useEffect(() => { tabulatorRef.current?.replaceData(data); }, [ data ]);
+    // Columns before data: `setColumns()` resets the scroll at once, while `replaceData()` renders
+    // in position a microtask later, so set the other way round it renders at the old offset.
     useEffect(() => {
         if (!columns) return;
         tabulatorRef.current?.setColumns(columns);
     }, [ columns ]);
+    // Change in data. replaceData rather than setData: it renders in position instead of
+    // resetting the scroll (see resetScroll in Tabulator's RowManager).
+    useEffect(() => { tabulatorRef.current?.replaceData(data); }, [ data ]);
 
     return (
         <div ref={containerRef} className={className} />

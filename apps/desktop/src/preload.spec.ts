@@ -279,6 +279,11 @@ describe("preload script", () => {
             await clip().readText();
             expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-text", args: [] });
         });
+
+        it("readHTML invokes correct IPC channel", async () => {
+            await clip().readHTML();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-html", args: [] });
+        });
     });
 
     describe("shell", () => {
@@ -324,9 +329,9 @@ describe("preload script", () => {
             });
         });
 
-        it("openCustom sends correct IPC message", () => {
-            shell().openCustom("/tmp/test.txt");
-            expect(ipcRendererSent).toContainEqual({
+        it("openCustom invokes correct IPC channel", async () => {
+            await shell().openCustom("/tmp/test.txt");
+            expect(ipcRendererInvoked).toContainEqual({
                 channel: "open-custom",
                 args: ["/tmp/test.txt"]
             });
@@ -430,7 +435,9 @@ describe("preload script", () => {
             const listeners = ipcRendererListeners.get("print-done")!;
             expect(listeners).toHaveLength(1);
             listeners[0]({}, { success: true });
-            expect(callback).toHaveBeenCalledWith({ success: true });
+            expect(callback).toHaveBeenCalledWith({ success: true }, undefined);
+            listeners[0]({}, { type: "single-note" }, 3);
+            expect(callback).toHaveBeenLastCalledWith({ type: "single-note" }, 3);
         });
 
         it("removePrintListeners clears both print listeners", () => {
@@ -711,6 +718,56 @@ describe("preload script", () => {
         it("pickBackup invokes the open-dialog IPC channel, passing nothing it could steer", async () => {
             await restore().pickBackup();
             expect(ipcRendererInvoked).toContainEqual({ channel: "restore-pick-backup", args: [] });
+        });
+    });
+
+    describe("transcription", () => {
+        const transcription = () => getGroup("transcription");
+
+        it("isSupported, start, stop, getState, renameSpeaker and getRecordingsDirectory invoke their IPC channels", async () => {
+            await transcription().isSupported();
+            await transcription().start("meeting");
+            await transcription().stop();
+            await transcription().getState();
+            await transcription().renameSpeaker("transcript1", "system:1", "Alexandra");
+            await transcription().getRecordingsDirectory();
+            expect(ipcRendererInvoked).toEqual([
+                { channel: "transcription-is-supported", args: [] },
+                { channel: "transcription-start", args: [ "meeting" ] },
+                { channel: "transcription-stop", args: [] },
+                { channel: "transcription-get-state", args: [] },
+                {
+                    channel: "transcription-rename-speaker",
+                    args: [ "transcript1", "system:1", "Alexandra" ]
+                },
+                { channel: "transcription-get-recordings-directory", args: [] }
+            ]);
+        });
+
+        it("onStateChanged relays each state until unsubscribed", () => {
+            const callback = vi.fn();
+            const unsubscribe = transcription().onStateChanged(callback);
+
+            const listeners = ipcRendererListeners.get("transcription-state") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, { status: "recording", noteId: "meeting" });
+            expect(callback).toHaveBeenCalledExactlyOnceWith({ status: "recording", noteId: "meeting" });
+
+            unsubscribe();
+            expect(ipcRendererListeners.has("transcription-state")).toBe(false);
+        });
+
+        it("onLevel relays each source's level until unsubscribed", () => {
+            const callback = vi.fn();
+            const unsubscribe = transcription().onLevel(callback);
+
+            const listeners = ipcRendererListeners.get("transcription-level") ?? [];
+            expect(listeners).toHaveLength(1);
+            listeners[0]({}, "microphone", 0.25);
+            expect(callback).toHaveBeenCalledExactlyOnceWith("microphone", 0.25);
+
+            unsubscribe();
+            expect(ipcRendererListeners.has("transcription-level")).toBe(false);
         });
     });
 });

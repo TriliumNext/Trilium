@@ -38,7 +38,7 @@ function decrypt(cipherText: string | Uint8Array): Uint8Array | null {
     return dataEncryptionService.decrypt(dataKey, cipherText) || null;
 }
 
-function decryptString(cipherText: string): string | null {
+function decryptString(cipherText: string | Uint8Array): string | null {
     const dataKey = getDataKey();
     if (dataKey === null) {
         return null;

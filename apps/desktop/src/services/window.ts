@@ -6,8 +6,9 @@ import { t } from "i18next";
 import path from "path";
 
 import { markStartupMetric } from "./startup_metrics.js";
-import { TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
+import { isTriliumAppShellUrl, TRILIUM_APP_BASE_URL } from "./trilium_app_origin.js";
 import { setupWebContentsSecurity } from "./web_contents_security.js";
+import { createWindowStateKeeper } from "./window_state.js";
 
 // Preload bundle path. Two layouts:
 //   - Dev: this file lives at apps/desktop/src/services/window.ts, and the
@@ -122,9 +123,7 @@ async function createMainWindow(startHidden = false) {
         ]);
     }
 
-    const windowStateKeeper = (await import("electron-window-state")).default; // should not be statically imported
-
-    const mainWindowState = windowStateKeeper({
+    const mainWindowState = createWindowStateKeeper({
         // default window width & height, so it's usable on a 1600 * 900 display (including some extra panels etc.)
         defaultWidth: 1200,
         defaultHeight: 800
@@ -406,7 +405,11 @@ async function createSetupWindow() {
         icon: getIcon(),
         // Background effects (Mica on Windows 11 22H2+, vibrancy on macOS)
         ...(coreUtils.isWindows() && supportsBackgroundMaterial && { backgroundMaterial: "mica" as const }),
-        ...(coreUtils.isMac() && { transparent: true, visualEffectState: "active" as const, vibrancy: "under-window" as const, titleBarStyle: "hiddenInset" as const }),
+        ...(coreUtils.isMac() && { transparent: true, visualEffectState: "active" as const, vibrancy: "under-window" as const }),
+        // The window controls draw over the page, as in the main window with its default
+        // `nativeTitleBarVisible`; the page reserves `env(titlebar-area-height)` for them.
+        titleBarStyle: coreUtils.isMac() ? "hiddenInset" : "hidden",
+        titleBarOverlay: true,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -472,7 +475,7 @@ async function registerGlobalShortcuts() {
 }
 
 function showWindow(window: BrowserWindow) {
-    // electron-window-state can reveal a hidden maximized window while it restores state.
+    // Restoring the maximized state of a hidden window reveals it.
     // Restore immediately before an intentional reveal so the window starts hidden.
     deferredWindowStateManagers.get(window)?.();
     window.show();
@@ -528,9 +531,12 @@ export function setupWindowing() {
         console.error(`Could not set the application menu: ${e}`);
     });
 
+    // Only app windows: reloading the hidden transcription capture page would end its capture.
     electron.ipcMain.on("reload-all-windows", () => {
         for (const win of electron.BrowserWindow.getAllWindows()) {
-            win.reload();
+            if (isTriliumAppShellUrl(win.webContents.getURL())) {
+                win.reload();
+            }
         }
     });
 
@@ -556,6 +562,15 @@ export function setupWindowing() {
     });
 
     electron.ipcMain.handle("read-clipboard-text", () => electron.clipboard.readText());
+    electron.ipcMain.handle("read-clipboard-html", async () => {
+        for (const item of await electron.clipboard.read()) {
+            if (item.types.includes("text/html")) {
+                const html = await item.getType("text/html");
+                return html instanceof Blob ? html.text() : "";
+            }
+        }
+        return "";
+    });
 
     electron.ipcMain.on("show-window", (event) => {
         const window = electron.BrowserWindow.fromWebContents(event.sender);

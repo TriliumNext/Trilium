@@ -1,0 +1,46 @@
+.tn-card-section.directory-location {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 16px;
+
+    .directory-location-icon {
+        grid-row: 1 / span 2;
+        font-size: 2.2em;
+        opacity: .6;
+    }
+
+    .directory-location-label {
+        grid-column: 2;
+        font-size: .85em;
+        opacity: .7;
+    }
+
+    .directory-location-path {
+        grid-column: 2;
+        overflow-wrap: anywhere;
+    }
+
+    .directory-location-actions {
+        display: flex;
+        grid-column: 3;
+        grid-row: 1 / span 2;
+        gap: 8px;
+
+        .btn {
+            white-space: nowrap;
+        }
+    }
+}
+
+body.mobile .tn-card-section.directory-location {
+    grid-template-columns: auto 1fr;
+
+    .directory-location-actions {
+        grid-column: 2;
+        grid-row: auto;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+}

@@ -1,0 +1,60 @@
+@top GanttDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName newlines? |
+  DiagramName newlines (subDocument newlines?)+
+}
+
+subDocument {
+  Title ImportantText |
+  Section ImportantText |
+  DateFormat Text |
+  AxisFormat Text |
+  Excludes Text |
+  TickInterval Text |
+  TodayMarker Text |
+  Weekday Text |
+  Text |
+  InclusiveEndDates |
+  LineComment
+}
+
+ImportantText {
+  text
+}
+
+Text {
+  text
+}
+
+DiagramName { kw<"gantt"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens textToken from "./tokens.js" {
+  AxisFormat[group=Keyword],
+  DateFormat[group=Keyword],
+  Excludes[group=Keyword],
+  InclusiveEndDates[group=Keyword],
+  TickInterval[group=Keyword],
+  Title[group=Keyword],
+  TodayMarker[group=Keyword],
+  Weekday[group=Keyword],
+  Section,
+  text
+}
+
+@tokens {
+  identifier { @asciiLetter+ }
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+
+  @precedence { newlines, spaces }
+}
+
+@external propSource ganttHighlighting from "./highlight.js"

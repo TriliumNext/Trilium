@@ -1,6 +1,5 @@
 import type { ElectronWindowApi } from "@triliumnext/commons";
 
-import options from "./options.js";
 import { getThemeStyle } from "./theme.js";
 
 /**
@@ -35,8 +34,9 @@ export function syncNativeWindowWithTheme() {
     applyDarkOrLightMode(win);
     applyTransparencyEffects(win, style);
 
-    // The title bar overlay only exists when the native title bar is hidden; setting it otherwise throws.
-    if (options.get("nativeTitleBarVisible") !== "true") {
+    // The title bar overlay only exists on a window created without the native title bar; setting it
+    // otherwise throws. `hasNativeTitleBar` is fixed at creation, unlike the option it comes from.
+    if (!window.glob.hasNativeTitleBar) {
         applyTitleBarButtons(win, style);
     }
 }

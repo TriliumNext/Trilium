@@ -69,6 +69,18 @@ Get-NetTCPConnection -LocalPort 37999 -State Listen | % { Stop-Process -Id $_.Ow
   `filter` and `container-type` rather than reading the stylesheets; any of them creates a
   containing block and a stacking context (see "Dropdown menus and the backdrop blur" in `SKILL.md`).
 
+- **A flicker, a ghost or a jump** — a state that lasts one frame cannot be screenshotted reliably.
+  Record it instead: start a `requestAnimationFrame` loop in the page that pushes, per frame, the
+  rects and row counts of the elements in question onto a `window` array, drive the interaction
+  with Playwright, then read the array back and print only the frames that differ. That shows which
+  change landed in which frame (a popup placed at the new caret one frame before its rows change).
+  Work driven from CodeMirror's `requestMeasure()` runs inside a rAF callback, so an effect it
+  schedules lands a full frame later.
+- **"It did not do this before"** — measure the old build next to the new one instead of reasoning
+  about the diff: `git worktree add --detach <scratch>/wt-main main`, `pnpm install --frozen-lockfile`
+  there, and boot it on another port (`TRILIUM_PORT=38000`) with the same fixture. Run the same
+  recording against both. Remove the worktree and `fuser -k` both ports afterwards.
+
 **Transient state can vanish between reading it and screenshotting it.** An async re-render between
 the `evaluate()` that dumps computed styles and the later `screenshot()` can wipe the state you are
 studying (`fancytree-active`, a hover class, an open menu), which reads as "the CSS never painted"

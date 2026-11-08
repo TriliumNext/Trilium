@@ -10,6 +10,7 @@ import ParentOfExp from "../expressions/parent_of.js";
 import RelationWhereExp from "../expressions/relation_where.js";
 import PropertyComparisonExp from "../expressions/property_comparison.js";
 import LabelComparisonExp from "../expressions/label_comparison.js";
+import LinkedNotesExp from "../expressions/linked_notes.js";
 import NoteFlatTextExp from "../expressions/note_flat_text.js";
 import NoteContentFulltextExp from "../expressions/note_content_fulltext.js";
 import OrderByAndLimitExp from "../expressions/order_by_and_limit.js";
@@ -201,6 +202,17 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
                 return;
             }
             return new DescendantOfExp(expression);
+        }
+
+        if (tokens[i].token === "links" || tokens[i].token === "backlinks") {
+            const direction = tokens[i].token === "links" ? "links" : "backlinks";
+            i += 1;
+
+            const expression = parseNoteProperty();
+            if (!expression) {
+                return;
+            }
+            return new LinkedNotesExp(direction, expression);
         }
 
         if (tokens[i].token === "labels") {

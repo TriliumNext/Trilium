@@ -9,8 +9,10 @@ vi.mock("./bundle.js", () => ({
 
 // Spy on the actual JSX rendering so we don't depend on Preact mounting.
 const renderAtElementMock = vi.fn();
+const disposeMock = vi.fn();
 vi.mock("../widgets/react/react_utils.jsx", () => ({
-    renderReactWidgetAtElement: (...args: unknown[]) => renderAtElementMock(...args)
+    renderReactWidgetAtElement: (...args: unknown[]) => renderAtElementMock(...args),
+    disposeReactWidget: (...args: unknown[]) => disposeMock(...args)
 }));
 
 import FAttribute from "../entities/fattribute.js";
@@ -19,6 +21,7 @@ import noteAttributeCache from "../services/note_attribute_cache.js";
 import utils from "../services/utils.js";
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca.js";
+import { waitForPendingRenders } from "./pending_renders.js";
 import renderDefault, { render, renderIfJsx } from "./render.js";
 import { RENDER_SCOPE_CLASS } from "./render_css_scope.js";
 import server from "./server.js";
@@ -72,6 +75,7 @@ describe("render", () => {
 
         expect(result).toBe(false);
         expect($el.children().length).toBe(0);
+        expect(disposeMock).toHaveBeenCalledWith($el[0]);
         expect($el.css("display")).toBe("none");
         expect(server.postWithSilentInternalServerError).not.toHaveBeenCalled();
     });
@@ -261,6 +265,101 @@ describe("render", () => {
         expect(renderAtElementMock.mock.calls[0][0]).toBe(closest);
         expect(renderAtElementMock.mock.calls[0][2]).toBe($el[0]);
     });
+
+    it("mounts a JSX render note inside the container its stylesheet is scoped to", async () => {
+        const actual = await vi.importActual<typeof import("../widgets/react/react_utils.jsx")>(
+            "../widgets/react/react_utils.jsx");
+        (glob as any).getComponentByEl = vi.fn(() => ({ fake: "component" }));
+
+        // A `div` root is the element Preact used to take over the container with, dropping its
+        // class; any other root left the container, and the observer scoping its styles, detached.
+        for (const Root of [ "div", "section" ] as const) {
+            const target = buildNote({ title: `Styled target ${Root}`, type: "code" });
+            const jsxNote = buildNote({ id: `jsxStyled${Root}`, title: "JSX root" });
+            jsxNote.mime = "text/jsx";
+            const note = buildNote({ title: `Styled host ${Root}`, "~renderNote": target.noteId });
+            server.postWithSilentInternalServerError = vi.fn(async () => ({
+                script: "",
+                html: "",
+                noteId: jsxNote.noteId,
+                allNoteIds: []
+            })) as typeof server.postWithSilentInternalServerError;
+            executeMock.mockResolvedValueOnce(() => (
+                <Root className="own-root">
+                    <style>{".probe { color: red; }"}</style>
+                    <p className="probe">styled</p>
+                </Root>
+            ));
+            renderAtElementMock.mockImplementationOnce(actual.renderReactWidgetAtElement);
+
+            const $el = $("<div class='component'>");
+            await render(note, $el, vi.fn());
+            await waitForPendingRenders($el[0]);
+            await flush();
+
+            const probe = $el[0].querySelector(".probe");
+            expect(probe).not.toBeNull();
+            expect(probe?.closest(`.${RENDER_SCOPE_CLASS}`)).not.toBeNull();
+            expect($el[0].querySelector(".own-root")?.tagName).toBe(Root.toUpperCase());
+            expect($el[0].querySelector("style")?.textContent)
+                .toContain(`@scope (.${RENDER_SCOPE_CLASS})`);
+
+            actual.disposeReactWidget($el[0]);
+        }
+    });
+
+    it("mounts nothing once its signal is aborted", async () => {
+        const target = buildNote({ title: "Target9", type: "code" });
+        const jsxNote = buildNote({ id: "jsxRoot9", title: "JSX root" });
+        jsxNote.mime = "text/jsx";
+        const note = buildNote({ title: "Host9", "~renderNote": target.noteId });
+        server.postWithSilentInternalServerError = vi.fn(async () => ({
+            script: "",
+            html: "",
+            noteId: "jsxRoot9",
+            allNoteIds: []
+        })) as typeof server.postWithSilentInternalServerError;
+        let finishScript: (result: unknown) => void = () => {};
+        executeMock.mockReturnValue(new Promise((resolve) => { finishScript = resolve; }));
+        (glob as any).getComponentByEl = vi.fn(() => ({ fake: "component" }));
+        const controller = new AbortController();
+
+        const $el = $("<div class='component'>");
+        await render(note, $el, vi.fn(), { signal: controller.signal });
+        expect(executeMock).toHaveBeenCalledOnce();
+        controller.abort();
+        finishScript(() => null);
+        await waitForPendingRenders($el[0]);
+
+        expect(renderAtElementMock).not.toHaveBeenCalled();
+    });
+
+    it("holds waitForPendingRenders until the script and its JSX mount have settled", async () => {
+        const target = buildNote({ title: "Target8", type: "code" });
+        const jsxNote = buildNote({ id: "jsxRoot8", title: "JSX root" });
+        jsxNote.mime = "text/jsx";
+        const note = buildNote({ title: "Host8", "~renderNote": target.noteId });
+        server.postWithSilentInternalServerError = vi.fn(async () => ({
+            script: "",
+            html: "",
+            noteId: "jsxRoot8",
+            allNoteIds: []
+        })) as typeof server.postWithSilentInternalServerError;
+        let finishScript: (result: unknown) => void = () => {};
+        executeMock.mockReturnValue(new Promise((resolve) => { finishScript = resolve; }));
+        (glob as any).getComponentByEl = vi.fn(() => ({ fake: "component" }));
+
+        const $el = $("<div class='component'>");
+        await render(note, $el, vi.fn());
+        let settled = false;
+        const wait = waitForPendingRenders($el[0]).then(() => { settled = true; });
+        await flush();
+        expect(settled).toBe(false);
+
+        finishScript(() => null);
+        await wait;
+        expect(renderAtElementMock).toHaveBeenCalledOnce();
+    });
 });
 
 describe("renderIfJsx", () => {
@@ -309,7 +408,7 @@ describe("renderIfJsx", () => {
         expect(renderAtElementMock).not.toHaveBeenCalled();
     });
 
-    it("renders the user component wrapped in an error boundary", async () => {
+    it("renders the user component in an error boundary, inside a scope container", async () => {
         const note = buildNote({ title: "Jsx ok" });
         note.mime = "text/jsx";
         const closest = { id: "c" };
@@ -322,9 +421,9 @@ describe("renderIfJsx", () => {
         const [parentComp, vnode, container] = renderAtElementMock.mock.calls[0];
         expect(parentComp).toBe(closest);
         expect(container).toBe($el[0]);
-        // The vnode is the UserErrorBoundary wrapping the user component.
-        expect(typeof vnode.type).toBe("function");
-        expect(vnode.type.name).toBe("UserErrorBoundary");
+        expect(vnode.type).toBe("div");
+        expect(vnode.props.className).toBe(RENDER_SCOPE_CLASS);
+        expect(vnode.props.children.type.name).toBe("UserErrorBoundary");
     });
 
     it("error boundary renders children normally and swallows errors via componentDidCatch", async () => {
@@ -336,7 +435,7 @@ describe("renderIfJsx", () => {
 
         await renderIfJsx(bundleFor(note.noteId), () => null, $("<div class='component'>"), onError);
 
-        const vnode = renderAtElementMock.mock.calls[0][1];
+        const vnode = renderAtElementMock.mock.calls[0][1].props.children;
         const Boundary = vnode.type as new (props: object) => {
             state: { error: unknown };
             props: { children?: unknown };

@@ -29,14 +29,23 @@ export function publishHealthcheckTarget(
 
     if (typeof address === "string") {
         // A unix socket carries no host, so curl needs the path passed separately.
-        fs.writeFileSync(urlFile, `${scheme}://localhost${PROBE_PATH}`);
-        fs.writeFileSync(socketFile, address);
+        replaceFile(urlFile, `${scheme}://localhost${PROBE_PATH}`);
+        replaceFile(socketFile, address);
 
         return;
     }
 
-    fs.writeFileSync(urlFile, `${scheme}://${probeHost(address)}:${address.port}${PROBE_PATH}`);
+    replaceFile(urlFile, `${scheme}://${probeHost(address)}:${address.port}${PROBE_PATH}`);
     fs.rmSync(socketFile, { force: true });
+}
+
+/**
+ * Removes `file` before writing it, which needs write access to the directory only. A file left
+ * by an earlier run as another user (root, or a different `--user`) cannot be written in place.
+ */
+function replaceFile(file: string, content: string) {
+    fs.rmSync(file, { force: true });
+    fs.writeFileSync(file, content);
 }
 
 /** The address a probe on the same host should dial, given what the server bound. */

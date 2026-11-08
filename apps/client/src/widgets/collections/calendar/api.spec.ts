@@ -141,6 +141,53 @@ describe("newEvent", () => {
         // The note is not switched to: the pane opens on it where the calendar stands.
         expect(opts.activate).toBe(false);
     });
+
+    it("makes the note from the template it is given, and a text note without one", async () => {
+        const calendar = buildNote({ title: "Calendar" });
+
+        await newEvent(calendar, {
+            startDate: "2026-06-05",
+            template: {
+                id: "template:meeting", title: "Meeting", icon: "bx bx-group", group: "user",
+                options: { type: "canvas", mime: "application/json", templateNoteId: "meeting" }
+            }
+        });
+        expect(creationRequest().opts).toMatchObject({
+            type: "canvas", mime: "application/json", templateNoteId: "meeting"
+        });
+
+        vi.mocked(note_create.createNote).mockClear();
+        await newEvent(calendar, { startDate: "2026-06-05" });
+        expect(creationRequest().opts.type).toBe("text");
+        expect(creationRequest().opts.templateNoteId).toBeUndefined();
+    });
+
+    it("overrides the dates and times a template carries with the draft's", async () => {
+        vi.mocked(setAttribute).mockClear();
+        const calendar = buildNote({ title: "Calendar" });
+        // The labels stand in for what the note inherits from its template.
+        vi.mocked(note_create.createNote).mockResolvedValue({
+            note: buildNote({
+                title: "Fair", "#startDate": "2026-06-05",
+                "#calendar:startDate": "due", "#due": "2026-01-01",
+                "#startTime": "09:00", "#endTime": "10:00"
+            })
+        } as never);
+
+        await newEvent(calendar, {
+            startDate: "2026-06-05", endTime: "11:00",
+            template: {
+                id: "template:meeting", title: "Meeting", icon: "bx bx-group", group: "user",
+                options: { type: "text", templateNoteId: "meeting" }
+            }
+        });
+
+        expect(writtenLabels()).toEqual([
+            [ "due", "2026-06-05" ],
+            [ "startTime", "" ],
+            [ "endTime", "11:00" ]
+        ]);
+    });
 });
 
 describe("removeFromCalendar", () => {

@@ -119,10 +119,9 @@ export async function getCustomFonts() {
  * `document.fonts.delete()` once it is done with it.
  *
  * The bytes are fetched and handed to `FontFace` rather than referenced by their API URL: a `url()`
- * source is loaded by the engine itself, outside the host document's service worker and Capacitor
- * request interceptors, which is where standalone and iOS answer an API request from (see
- * `loadIconPackFont`). `version` — a blobId — keeps a replaced file from being served from the
- * cache of the one it replaced.
+ * source is loaded by the engine itself, outside the host document's service worker, which is where
+ * standalone answers an API request from (see `loadIconPackFont`). `version` — a blobId — keeps a
+ * replaced file from being served from the cache of the one it replaced.
  */
 export async function registerFontNote(noteId: string, family: string, version: string) {
     // Resolved against the host document's base URL, which also covers Electron's `trilium-app://`.

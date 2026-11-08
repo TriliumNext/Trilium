@@ -59,7 +59,7 @@ export interface BoardReferenceOptions {
     /** Draws a collapsed column open, without storing it as open. */
     selectColumn: (column: string) => void;
     /** The board's own element, which what is revealed is looked for in. */
-    containerRef: RefObject<HTMLElement>;
+    containerRef: RefObject<HTMLElement | null>;
 }
 
 /**

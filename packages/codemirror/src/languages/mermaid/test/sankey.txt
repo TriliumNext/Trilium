@@ -1,0 +1,74 @@
+# Sankey
+
+sankey-beta
+
+==>
+
+SankeyDiagram(DiagramName)
+
+# Single Row
+
+sankey-beta
+Agricultural,Bio-conversion,124.729
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value))
+
+# Blank Line Before Rows
+
+sankey-beta
+
+Agricultural,Bio-conversion,124.729
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value))
+
+# Multiple Rows
+
+sankey-beta
+Bio-conversion,Liquid,0.597
+Bio-conversion,Losses,26.862
+Bio-conversion,Solid,280.322
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value),Row(Field,Field,Value),Row(Field,Field,Value))
+
+# Quoted Field With Comma
+
+sankey-beta
+"Pumped heat","District heating",79.329
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value))
+
+# Bare Sankey Keyword
+
+sankey
+A,B,10
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value))
+
+# Spaces around fields
+
+sankey-beta
+a, b ,1
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,Field,Value))
+
+# Unclosed quoted field
+
+sankey-beta
+"a,b,1
+c,d,2
+
+==>
+
+SankeyDiagram(DiagramName,Row(Field,⚠),Row(Field,Field,Value))

@@ -1,0 +1,138 @@
+# Architecture
+
+architecture-beta
+
+==>
+
+ArchitectureDiagram(DiagramName)
+
+# Group
+
+architecture-beta
+    group api(cloud)[API]
+
+==>
+
+ArchitectureDiagram(DiagramName,Group(GroupKeyword,NodeId,Icon,Label))
+
+# Service in group
+
+architecture-beta
+    service db(database)[Database] in api
+
+==>
+
+ArchitectureDiagram(DiagramName,Service(ServiceKeyword,NodeId,Icon,Label,InClause(InKeyword,NodeId)))
+
+# Junction
+
+architecture-beta
+    junction junctionCenter
+
+==>
+
+ArchitectureDiagram(DiagramName,Junction(JunctionKeyword,NodeId))
+
+# Junction in group
+
+architecture-beta
+    junction jc in api
+
+==>
+
+ArchitectureDiagram(DiagramName,Junction(JunctionKeyword,NodeId,InClause(InKeyword,NodeId)))
+
+# Edge
+
+architecture-beta
+    db:L -- R:server
+
+==>
+
+ArchitectureDiagram(DiagramName,Edge(NodeId,Port,Arrow,Port,NodeId))
+
+# Edge with arrowhead
+
+architecture-beta
+    disk1:T --> B:server
+
+==>
+
+ArchitectureDiagram(DiagramName,Edge(NodeId,Port,Arrow,Port,NodeId))
+
+# Edge to group
+
+architecture-beta
+    db{group}:L --> R:server
+
+==>
+
+ArchitectureDiagram(DiagramName,Edge(NodeId,GroupRef(GroupKeyword),Port,Arrow,Port,NodeId))
+
+# LineComment
+
+architecture-beta %% note
+    service s(disk)[S]
+
+==>
+
+ArchitectureDiagram(DiagramName,LineComment,Service(ServiceKeyword,NodeId,Icon,Label))
+
+# Full
+
+architecture-beta
+    group api(cloud)[API]
+    service db(database)[Database] in api
+    service server(server)[Server] in api
+    db:L -- R:server
+
+==>
+
+ArchitectureDiagram(DiagramName,Group(GroupKeyword,NodeId,Icon,Label),Service(ServiceKeyword,NodeId,Icon,Label,InClause(InKeyword,NodeId)),Service(ServiceKeyword,NodeId,Icon,Label,InClause(InKeyword,NodeId)),Edge(NodeId,Port,Arrow,Port,NodeId))
+
+# Service with a label and no icon
+
+architecture-beta
+    service db[Database]
+
+==>
+
+ArchitectureDiagram(DiagramName,Service(ServiceKeyword,NodeId,Label))
+
+# Service with an icon and no label
+
+architecture-beta
+    service db(database)
+
+
+==>
+
+ArchitectureDiagram(DiagramName,Service(ServiceKeyword,NodeId,Icon))
+
+# Unclosed icon
+
+architecture-beta
+    service db(database
+
+
+==>
+
+ArchitectureDiagram(DiagramName,Service(ServiceKeyword,NodeId,⚠),Edge(NodeId,⚠))
+
+# Unclosed label
+
+architecture-beta
+    service db(database)[Database
+
+
+==>
+
+ArchitectureDiagram(DiagramName,Service(ServiceKeyword,NodeId,Icon,⚠),Edge(NodeId,⚠))
+
+# Unknown diagram name
+
+Architecture2
+
+==>
+
+ArchitectureDiagram(⚠)

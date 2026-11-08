@@ -1,0 +1,69 @@
+:where(:root) {
+    --code-preview-background: transparent;
+    --code-preview-foreground: currentColor;
+    --code-preview-gutter-background: transparent;
+    --code-preview-gutter-foreground: currentColor;
+    --code-preview-gutter-border-width: 0px;
+    --code-preview-gutter-border-color: transparent;
+    --code-preview-line-height: 1.4;
+}
+
+:root pre.code-preview {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+
+    /* Outranks `:root .ck-content pre code` of the app and share themes. */
+    > .code-preview-content {
+        --code-preview-gutter-width: calc((var(--code-preview-digits, 1) + 1) * 1ch + 18px);
+
+        display: block;
+        flex-grow: 1;
+        margin: 0;
+        border-radius: inherit;
+        padding-block: 4px;
+        padding-inline: calc(var(--code-preview-gutter-width) + 6px) 2px;
+        direction: ltr;
+        color: var(--code-preview-foreground);
+        background:
+            linear-gradient(
+                to right,
+                var(--code-preview-gutter-background) 0
+                calc(var(--code-preview-gutter-width) - var(--code-preview-gutter-border-width)),
+                var(--code-preview-gutter-border-color) 0 var(--code-preview-gutter-width),
+                transparent 0
+            ) local,
+            var(--code-preview-background);
+        line-height: var(--code-preview-line-height);
+        white-space: pre;
+        overflow: auto;
+        counter-reset: code-preview-line;
+    }
+
+    &.code-preview-wrap > .code-preview-content {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    &.code-preview-no-line-numbers > .code-preview-content {
+        padding-inline-start: 6px;
+        background: var(--code-preview-background);
+
+        > .code-preview-line::before {
+            content: none;
+        }
+    }
+}
+
+.code-preview-line::before {
+    display: inline-block;
+    box-sizing: border-box;
+    margin-inline: calc(-6px - var(--code-preview-gutter-width)) 6px;
+    padding-inline: 5px calc(1ch + 13px);
+    width: var(--code-preview-gutter-width);
+    color: var(--code-preview-gutter-foreground);
+    text-align: end;
+    content: counter(code-preview-line);
+    content: counter(code-preview-line) / "";
+    counter-increment: code-preview-line;
+}

@@ -39,11 +39,11 @@ export interface DragPanState {
  * @param ref the scrolling container.
  * @param options which presses start a pan, and whether to offer it at all.
  */
-export function useDragPan(ref: RefObject<HTMLElement>, options: DragPanOptions = {}): DragPanState {
+export function useDragPan(ref: RefObject<HTMLElement | null>, options: DragPanOptions = {}): DragPanState {
     const { canStart, disabled } = options;
     const [ isPannable, setPannable ] = useState(false);
     const [ isPanning, setPanning ] = useState(false);
-    const glideRef = useRef<number>();
+    const glideRef = useRef<number | undefined>(undefined);
 
     // A ref holds no render of its own, so an effect keyed on one never hears the element arrive.
     // Containers drawn only once their content has loaded are the ordinary case, so the element is

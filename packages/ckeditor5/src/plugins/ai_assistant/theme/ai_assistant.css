@@ -1,8 +1,9 @@
 .ck.ck-ai-assistant-form {
     display: flex;
     flex-direction: column;
-    gap: var(--ck-spacing-large);
-    padding: 0 var(--ck-spacing-large) var(--ck-spacing-large) var(--ck-spacing-large);
+    gap: var(--ck-spacing-large, var(--ck-spacing-lg));
+    padding: var(--ck-spacing-large, var(--ck-spacing-lg));
+    padding-top: 0;
     width: min(560px, 90vw);
     outline: none;
 }
@@ -10,19 +11,19 @@
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview-toolbar {
     display: flex;
     align-items: center;
-    gap: var(--ck-spacing-medium);
+    gap: var(--ck-spacing-medium, var(--ck-spacing-base));
 }
 
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
     display: flex;
     align-items: center;
-    gap: var(--ck-spacing-tiny);
+    gap: var(--ck-spacing-tiny, var(--ck-spacing-xs));
 }
 
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview-toolbar-end {
     display: flex;
     align-items: center;
-    gap: var(--ck-spacing-medium);
+    gap: var(--ck-spacing-medium, var(--ck-spacing-base));
     margin-inline-start: auto;
 }
 
@@ -31,8 +32,8 @@
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__prompt-row {
     display: flex;
     flex-direction: column;
-    gap: var(--ck-spacing-small);
-    padding: var(--ck-spacing-small);
+    gap: var(--ck-spacing-small, var(--ck-spacing-sm));
+    padding: var(--ck-spacing-small, var(--ck-spacing-sm));
     border: 1px solid var(--ck-color-input-border);
     border-radius: var(--ck-border-radius);
     background: var(--ck-color-input-background);
@@ -50,7 +51,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--ck-spacing-small);
+    gap: var(--ck-spacing-small, var(--ck-spacing-sm));
 }
 
 /* The list scrolls, so it also clips: the panel's inline padding moves onto it, leaving a rule
@@ -87,7 +88,7 @@
 /* Smaller than the prompt above it, as the chat's picker is: state to glance at rather than the
    thing the island is for. */
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__picker .ck-button {
-    font-size: var(--ck-font-size-small);
+    font-size: var(--ck-font-size-small, var(--ck-font-size-sm));
 }
 
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__picker .ck-button__label {
@@ -102,7 +103,7 @@
     overflow-y: auto;
     border: 1px solid var(--ck-color-base-border);
     border-radius: var(--ck-border-radius);
-    padding: var(--ck-spacing-medium);
+    padding: var(--ck-spacing-medium, var(--ck-spacing-base));
     background: var(--ck-color-base-background);
     white-space: pre-wrap;
     -webkit-user-select: text;
@@ -117,7 +118,7 @@
     display: flex;
     justify-content: center;
     overflow-x: auto;
-    margin-bottom: var(--ck-spacing-medium);
+    margin-bottom: var(--ck-spacing-medium, var(--ck-spacing-base));
 
     svg {
         flex-shrink: 0;
@@ -165,11 +166,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--ck-spacing-medium);
+    gap: var(--ck-spacing-medium, var(--ck-spacing-base));
     min-height: 6em;
     border: 1px solid var(--ck-color-base-border);
     border-radius: var(--ck-border-radius);
-    padding: var(--ck-spacing-large);
+    padding: var(--ck-spacing-large, var(--ck-spacing-lg));
     background: var(--ck-color-base-background);
     text-align: center;
     opacity: 0.75;
@@ -183,19 +184,20 @@
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__actions {
     display: flex;
     justify-content: flex-end;
-    gap: var(--ck-spacing-medium);
+    gap: var(--ck-spacing-medium, var(--ck-spacing-base));
 }
 
 /* The run's model/token/cost line, alongside the retry icon at the end of the preview's strip. */
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__usage {
-    font-size: var(--ck-font-size-small);
+    font-size: var(--ck-font-size-small, var(--ck-font-size-sm));
     opacity: 0.7;
     white-space: nowrap;
 }
 
-/* The inline diff shown by the "Changes" view (htmldiff-js `ins`/`del` markup, the same
-   convention the revisions dialog styles). Colors are self-contained rather than borrowing the
-   client's Bootstrap variables, so the plugin package stays host-agnostic. */
+/* The inline diff shown by the "Changes" view (`ins`/`del` markup from the client's
+   `diffHtml()`, the same convention the revisions dialog styles). Colors are self-contained
+   rather than borrowing the client's Bootstrap variables, so the plugin package stays
+   host-agnostic. */
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins {
     text-decoration: none;
 }
@@ -217,8 +219,8 @@
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview .diffblock {
     display: block;
     border-inline-start: 3px solid;
-    padding-inline-start: var(--ck-spacing-medium);
-    margin-block: var(--ck-spacing-small);
+    padding-inline-start: var(--ck-spacing-medium, var(--ck-spacing-base));
+    margin-block: var(--ck-spacing-small, var(--ck-spacing-sm));
 }
 
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview del.diffblock {
@@ -265,7 +267,7 @@
     flex-shrink: 0;
     width: 1em;
     text-align: center;
-    margin-inline-end: var(--ck-spacing-medium);
+    margin-inline-end: var(--ck-spacing-medium, var(--ck-spacing-base));
     font-size: 1.1em;
     line-height: 1;
 }

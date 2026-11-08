@@ -1,0 +1,2403 @@
+import {
+	ButtonView,
+	Command,
+	ContextualBalloon,
+	type DomEmitter,
+	DomEmitterMixin,
+	type DowncastCleanSelectionEvent,
+	type DowncastConversionApi,
+	type DowncastInsertEvent,
+	type DowncastSelectionEvent,
+	type Editor,
+	enableViewPlaceholder,
+	IconCaption,
+	IconThreeVerticalDots,
+	type Locale,
+	type MapperModelToViewPositionEvent,
+	ModelElement,
+	type ModelNode,
+	type ModelDocumentFragment,
+	type ModelPosition,
+	type ModelWriter,
+	type PlaceholderableViewElement,
+	Plugin,
+	toWidget,
+	toWidgetEditable,
+	type UpcastElementEvent,
+	View,
+	type ViewEditableElement,
+	type ViewElement,
+	ViewPosition,
+	Widget,
+	WIDGET_SELECTED_CLASS_NAME,
+	type Observable
+} from 'ckeditor5';
+import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
+import editIcon from 'boxicons/svg/regular/bx-edit-alt.svg?raw';
+import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
+import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
+import noteIcon from '../../icons/note.svg?raw';
+import {
+	BOX_SIZES, type BoxSize, CAPTIONED_CONTENT_EMBED_CLASS, EMBED_HEIGHT_PROPERTY,
+	encodeBlockParameter, EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS, getLinkPreviewPlayer,
+	getMediaEmbedBoxSizes, getMediaEmbedClasses, INLINE_BOX_SIZES, type LinkPreviewData,
+	normalizeMimeTypeForCKEditor, parseBlockRange, readBoxSize
+} from '@triliumnext/commons';
+import HostedBalloon from '../../hosted_balloon.js';
+import { getAttachmentId, getNoteId } from '../referencelink.js';
+import ResizableWidgets, {
+	type ResizeAnchor, SIZE_ATTRIBUTES
+} from '../resizable_widgets/resizable_widgets.js';
+import { restoreRendererFocusOnInput } from '../widget_utils.js';
+import type { EmbedEdge } from './content_embed_caret.js';
+import EmbedHistory from './embed_history.js';
+import ContentEmbedInlineSource, {
+	type InlineEmbedSource, isExtendedCodeBlock, isInlineSourceEmbed
+} from './inline_source.js';
+import ContentEmbedMedia, {
+	getMediaPreview, getMediaShapeAttributes, getVideoDefaultWidth, isAudioEmbed, isMediaEmbed
+} from './media_embed.js';
+import './nested_editor_events.js';
+import UnknownContentEmbed from './unknown_embed.js';
+
+export const COMMAND_NAME = 'insertContentEmbed';
+export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
+export const DEFAULT_BOX_SIZE_COMMAND_NAME = 'contentEmbedDefaultBoxSize';
+export const CONVERT_LINK_TO_EMBED_COMMAND = 'convertLinkToEmbed';
+export const CONVERT_EMBED_TO_LINK_COMMAND = 'convertEmbedToLink';
+export const TOGGLE_CAPTION_COMMAND_NAME = 'toggleContentEmbedCaption';
+export const TOGGLE_TITLE_COMMAND_NAME = 'toggleContentEmbedTitle';
+export const TOGGLE_EDITABLE_COMMAND_NAME = 'toggleContentEmbedEditable';
+export const CODE_VIEW_COMMAND_NAME = 'setContentEmbedCodeView';
+export const CONTENT_EMBED_DISPLAY_MODE_COMMAND = 'contentEmbedDisplayMode';
+export const POSITION_COMMAND_NAME = 'contentEmbedPosition';
+export const DELETE_COMMAND_NAME = 'deleteContentEmbed';
+/** The toolbar separator between the Editable toggle and the display modes. */
+export const CONTENT_EMBED_DISPLAY_MODE_SEPARATOR = 'contentEmbedDisplayModeSeparator';
+/** The toolbar button that opens the context menu of an embed whose title is hidden. */
+export const CONTENT_EMBED_MENU = 'contentEmbedMenu';
+
+/** What content with display modes shows: its source, its rendering, or both side by side. */
+export const DISPLAY_MODES = [ 'source', 'split', 'preview' ] as const;
+
+export type DisplayModeValue = typeof DISPLAY_MODES[number];
+
+/** The toolbar button of each display mode. */
+export const DISPLAY_MODE_BUTTONS: Record<DisplayModeValue, string> = {
+	source: 'contentEmbedDisplayMode:source',
+	split: 'contentEmbedDisplayMode:split',
+	preview: 'contentEmbedDisplayMode:preview'
+};
+
+const DISPLAY_MODE_ICONS: Record<DisplayModeValue, string> = {
+	source: codeIcon,
+	split: dockLeftIcon,
+	preview: showIcon
+};
+
+/**
+ * Where an embed is placed in the text: on lines of its own, at the left, the center or the right
+ * ("Break text"), or with the text wrapped around it, at the left or the right ("Wrap text").
+ */
+export const POSITIONS = [ 'left', 'center', 'right', 'wrap-left', 'wrap-right' ] as const;
+
+export type PositionValue = typeof POSITIONS[number];
+
+/** The positions that an embed saves as `data-position`. Centered, the default, saves nothing. */
+const SAVED_POSITIONS: unknown[] = [ 'left', 'right', 'wrap-left', 'wrap-right' ];
+
+/** The box sizes that a position places in the text. Compact and Full fit their content. */
+const POSITIONED_BOX_SIZES: unknown[] = [ 'resizable', 'expandable' ];
+
+/** The positions of an Expandable embed, which takes the full width: the text breaks around it. */
+const BREAK_TEXT_POSITIONS: readonly PositionValue[] = [ 'left', 'center', 'right' ];
+
+const NO_POSITIONS: readonly PositionValue[] = [];
+
+/** The least size that an embed can be resized to, in `em`. */
+export const MIN_EMBED_SIZE = { width: 10, height: 3 };
+
+/** The class of an Expandable embed that shows only its title row. */
+const COLLAPSED_EMBED_CLASS = 'include-note_collapsed';
+
+/** The flags of an embed, each saved as `"true"` in a `data-*` attribute while it is on. */
+const FLAG_ATTRIBUTES = [
+	[ 'hideTitle', 'data-hide-title' ],
+	[ 'editable', 'data-editable' ]
+] as const;
+
+type EmbedFlag = typeof FLAG_ATTRIBUTES[number][0];
+
+/** The display mode of an embed, saved in a `data-*` attribute while one is picked. */
+const DISPLAY_MODE_ATTRIBUTE = [ 'displayMode', 'data-display-mode' ] as const;
+
+/**
+ * How an embed shows its code: the language, as a MIME type, the tab width, whether it indents with
+ * tabs, whether it wraps the lines, and whether it shows line numbers. Each is saved in a `data-*`
+ * attribute while it is set.
+ */
+const CODE_VIEW_ATTRIBUTES = [
+	[ 'codeLanguage', 'data-code-language' ],
+	[ 'codeTabWidth', 'data-code-tab-width' ],
+	[ 'codeIndentWithTabs', 'data-code-indent-with-tabs' ],
+	[ 'codeWrapLines', 'data-code-wrap-lines' ],
+	[ 'codeLineNumbers', 'data-code-line-numbers' ]
+] as const;
+
+/** The settings of `SetContentEmbedCodeViewCommand`. `null` removes a setting. */
+export interface ContentEmbedCodeView {
+	/** The language, as a MIME type. An extended code block saves it as its `language-…` class. */
+	language?: string | null;
+	tabWidth?: number | null;
+	indentWithTabs?: boolean | null;
+	wrapLines?: boolean | null;
+	lineNumbers?: boolean | null;
+}
+
+/** What the toolbar of an embed shows of it, for a menu offering the same commands. */
+export interface ContentEmbedState {
+	/** Whether the content can be edited in place. */
+	isEditable: boolean;
+	/** Whether the content has an editable mode, which its content type opts in to. */
+	isEditableToggleable: boolean;
+	/** What the content shows, for content that has display modes, otherwise `null`. */
+	displayMode: DisplayModeValue | null;
+	boxSize: BoxSize | null;
+	/** Whether the embed is at the box a new embed of its content starts with, or that is unknown. */
+	isDefaultBoxSize: boolean;
+	/** Where the embed is placed in the text, for content that has positions, otherwise `null`. */
+	position: PositionValue | null;
+	/** The positions the embed can take, none for a box size that is not placed in the text. */
+	positions: readonly PositionValue[];
+	/** Whether the embed has a title row, which an embed of a source has not. */
+	isTitleSupported: boolean;
+	/** Whether the title shows, which a Compact or an Expandable embed always does. */
+	isTitleShown: boolean;
+	isTitleToggleable: boolean;
+	/** Whether the embed can have a caption, which an embed of a source cannot. */
+	isCaptionSupported: boolean;
+	hasCaption: boolean;
+	isCaptionToggleable: boolean;
+	isConvertibleToLink: boolean;
+	/** The address of the video that the embed plays, otherwise `null`. */
+	url: string | null;
+}
+
+/**
+ * The user-facing name of a box size, as shown by the widget toolbar's dropdown.
+ *
+ * A switch rather than a table of labels, so that each one is written as a literal argument of a
+ * `t()` call: that is how the messages this package owns are discovered (see `messages.ts`) and a
+ * label tucked away in a table would be invisible to translators.
+ *
+ * @param t the editor's translation function.
+ * @param size the box size; an unrecognized one has no label and is returned as-is.
+ */
+export function getBoxSizeLabel(t: (message: string) => string, size: BoxSize): string {
+	switch (size) {
+		case 'compact':
+			return t('Compact');
+		case 'resizable':
+			return t('Resizable');
+		case 'full':
+			return t('Full');
+		case 'expandable':
+			return t('Expandable');
+		default:
+			return size;
+	}
+}
+
+/** The user-facing name of a display mode, as literal `t()` calls for the same reason. */
+export function getDisplayModeLabel( t: ( message: string ) => string, mode: DisplayModeValue ) {
+	switch ( mode ) {
+		case 'source':
+			return t( 'Source view' );
+		case 'split':
+			return t( 'Split view' );
+		case 'preview':
+			return t( 'Preview' );
+	}
+}
+
+export default class ContentEmbed extends Plugin {
+	/** The buttons that the content of the selected embed adds to its toolbar, or `null`. */
+	declare public selectedEmbedTools: ContentEmbedToolProvider | null;
+	/** Whether the Editable toggle of the selected embed is on. */
+	declare public isSelectedEmbedEditable: boolean;
+	/** Whether the selected embed keeps its source in the note, and so has no title or caption. */
+	declare public isSelectedEmbedInline: boolean;
+	/** The box sizes that the selected embed can take, or all of them. */
+	declare public selectedEmbedBoxSizes: readonly BoxSize[];
+
+	static get requires() {
+		return [
+			ContextualBalloon, ContentEmbedEditing, ContentEmbedUI, ContentEmbedInlineSource,
+			EmbedHistory, UnknownContentEmbed, ContentEmbedMedia
+		];
+	}
+
+	static get pluginName() {
+		return 'ContentEmbed' as const;
+	}
+
+	private dialog = new HostedBalloon( this.editor, 'include-note-balloon' );
+
+	constructor( editor: Editor ) {
+		super( editor );
+		// Set before `init()` of the plugins it requires, whose toolbar items bind to it.
+		this.set( 'selectedEmbedTools', null );
+		this.set( 'isSelectedEmbedEditable', false );
+		this.set( 'isSelectedEmbedInline', false );
+		this.set( 'selectedEmbedBoxSizes', BOX_SIZES );
+	}
+
+	init() {
+		// Runs before `WidgetToolbarRepository` positions the toolbar from its width.
+		this.listenTo( this.editor.ui, 'update', () => {
+			this.selectedEmbedTools = getSelectedEmbedTools( this.editor );
+			const embed = getSelectedContentEmbed( this.editor );
+			this.isSelectedEmbedEditable = !!embed?.getAttribute( 'editable' );
+			this.isSelectedEmbedInline = !!embed && isInlineSourceEmbed( embed );
+			this.selectedEmbedBoxSizes = getEmbedBoxSizes( embed );
+		}, { priority: 'high' } );
+	}
+
+	override destroy() {
+		this.dialog.hide();
+		super.destroy();
+	}
+
+	/**
+	 * Opens the host's Include note dialog in a balloon at the caret. A host that shows the
+	 * dialog its own way leaves the balloon empty, which closes it again.
+	 */
+	showDialog() {
+		const editor = this.editor;
+
+		this.dialog.show( container => editor.config.get( 'contentEmbed' )?.pickNote?.( {
+			container,
+			close: () => {
+				this.dialog.hide();
+				editor.editing.view.focus();
+			}
+		} ) ?? null );
+	}
+
+	/**
+	 * Selects the embed that `domElement` is part of, so that commands act on the embed a
+	 * context menu is opened on. Returns `false` when `domElement` is not part of an embed of
+	 * this editor.
+	 */
+	selectEmbedAt( domElement: Element ): boolean {
+		const embed = getContentEmbedAt( this.editor, domElement );
+		if ( !embed ) {
+			return false;
+		}
+
+		this.editor.model.enqueueChange( { isUndoable: false }, writer => {
+			writer.setSelection( embed, 'on' );
+		} );
+		return true;
+	}
+
+	/**
+	 * The state of the embed that `domElement` is part of, as its toolbar shows it with the
+	 * embed selected, or `null`. The selection is left as it is.
+	 */
+	getEmbedStateAt( domElement: Element ): ContentEmbedState | null {
+		const editor = this.editor;
+		const embed = getContentEmbedAt( editor, domElement );
+		if ( !embed ) {
+			return null;
+		}
+
+		const isTitleToggleable = isEmbedTitleToggleable( editor, embed );
+		return {
+			isEditable: !!embed.getAttribute( 'editable' ),
+			isEditableToggleable: isEmbedEditableToggleable( editor, embed ),
+			displayMode: hasEmbedDisplayModes( editor, embed )
+				? getEmbedDisplayMode( editor, embed )
+				: null,
+			boxSize: embed.getAttribute( 'boxSize' ) as BoxSize | undefined ?? null,
+			isDefaultBoxSize: isDefaultEmbedBox( editor, embed ),
+			position: hasEmbedPositions( editor, embed ) ? getEmbedPosition( embed ) : null,
+			positions: getEmbedPositions( editor, embed ),
+			isTitleSupported: hasTitleRow( embed ),
+			isTitleShown: !isTitleToggleable || !embed.getAttribute( 'hideTitle' ),
+			isTitleToggleable,
+			isCaptionSupported: hasCaptionSupport( embed ),
+			hasCaption: !!getCaption( embed ),
+			isCaptionToggleable: isEmbedCaptionToggleable( editor, embed ),
+			isConvertibleToLink: isEmbedConvertibleToLink( editor, embed ),
+			url: embed.getAttribute( 'url' ) as string | undefined ?? null
+		};
+	}
+
+	/**
+	 * Marks the embed that `domElement` is part of as collapsed while `isCollapsed` is `true`, as
+	 * an Expandable embed that shows only its title row.
+	 */
+	setEmbedCollapsedAt( domElement: Element, isCollapsed: boolean ) {
+		const editor = this.editor;
+		const embed = editor.state === 'ready' ? getContentEmbedAt( editor, domElement ) : null;
+		const view = embed && editor.editing.mapper.toViewElement( embed );
+		if ( !view ) {
+			return;
+		}
+
+		editor.editing.view.change( writer => {
+			if ( isCollapsed ) {
+				writer.addClass( COLLAPSED_EMBED_CLASS, view );
+			} else {
+				writer.removeClass( COLLAPSED_EMBED_CLASS, view );
+			}
+		} );
+	}
+
+	/** Whether `domElement` is a reference link that `convertLinkToEmbed` turns into an embed. */
+	canConvertLinkToEmbed( domElement: HTMLElement ): boolean {
+		return !!getLinkToEmbed( this.editor, domElement );
+	}
+
+	/**
+	 * The box sizes, with the labels the toolbar gives them: those of the embed that `domElement`
+	 * is part of, or all of them.
+	 */
+	getBoxSizes( domElement?: Element ): { value: BoxSize; label: string }[] {
+		const embed = domElement ? getContentEmbedAt( this.editor, domElement ) : null;
+		return getEmbedBoxSizes( embed )
+			.map( value => ( { value, label: getBoxSizeLabel( this.editor.t, value ) } ) );
+	}
+}
+
+class ContentEmbedUI extends Plugin {
+	init() {
+		const editor = this.editor;
+		const t = editor.t;
+
+		// The "contentEmbed" button must be registered among the UI components of the editor
+		// to be displayed in the toolbar.
+		editor.ui.componentFactory.add( 'contentEmbed', locale => {
+			// The state of the button will be bound to the widget command.
+			const command = editor.commands.get( COMMAND_NAME );
+
+			// The button will be an instance of ButtonView.
+			const buttonView = new ButtonView( locale );
+
+			buttonView.set( {
+				// The t() function helps localize the editor. All strings enclosed in t() can be
+				// translated and change when the language of the editor changes.
+				label: t( 'Include note' ),
+				icon: noteIcon,
+				tooltip: true
+			} );
+
+			// Bind the state of the button to the command.
+            if (command) {
+                buttonView.bind( 'isOn', 'isEnabled' ).to( command as Observable & { value: boolean; } & { isEnabled: boolean; }, 'value', 'isEnabled' );
+            }
+
+			// Execute the command when the button is clicked (executed).
+			this.listenTo( buttonView, 'execute', () => editor.execute( COMMAND_NAME ) );
+
+			return buttonView;
+		} );
+
+		editor.ui.componentFactory.add( TOGGLE_CAPTION_COMMAND_NAME, locale => {
+			const command = editor.commands.get( TOGGLE_CAPTION_COMMAND_NAME );
+			const buttonView = new ButtonView( locale );
+
+			buttonView.set( {
+				label: t( 'Toggle caption on' ),
+				icon: IconCaption,
+				tooltip: true,
+				isToggleable: true
+			} );
+
+			if ( command ) {
+				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
+				buttonView.bind( 'label' ).to( command, 'value', value =>
+					value ? t( 'Toggle caption off' ) : t( 'Toggle caption on' ) );
+			}
+			buttonView.bind( 'isVisible' ).to( editor.plugins.get( ContentEmbed ),
+				'isSelectedEmbedInline', isInline => !isInline );
+
+			this.listenTo( buttonView, 'execute', () => {
+				editor.execute( TOGGLE_CAPTION_COMMAND_NAME, { focusCaptionOnShow: true } );
+				editor.editing.view.focus();
+			} );
+
+			return buttonView;
+		} );
+
+		editor.ui.componentFactory.add( TOGGLE_EDITABLE_COMMAND_NAME, locale => {
+			const command = editor.commands.get( TOGGLE_EDITABLE_COMMAND_NAME );
+			const buttonView = new ButtonView( locale );
+
+			buttonView.set( {
+				label: t( 'Editable' ),
+				icon: editIcon,
+				tooltip: true,
+				isToggleable: true
+			} );
+
+			// Shown only for content that has an editable mode.
+			if ( command ) {
+				buttonView.bind( 'isOn', 'isEnabled' ).to( command, 'value', 'isEnabled' );
+				bindToolbarItemVisibility( editor, buttonView, command,
+					TOGGLE_EDITABLE_COMMAND_NAME );
+			}
+
+			this.listenTo( buttonView, 'execute', () => {
+				editor.execute( TOGGLE_EDITABLE_COMMAND_NAME );
+				editor.editing.view.focus();
+			} );
+
+			return buttonView;
+		} );
+
+		editor.ui.componentFactory.add( CONTENT_EMBED_DISPLAY_MODE_SEPARATOR, locale => {
+			const separator = new ToolbarItemSeparatorView( locale );
+			const contentEmbed = editor.plugins.get( ContentEmbed );
+			separator.bind( 'isVisible' ).to(
+				contentEmbed, 'selectedEmbedTools', contentEmbed, 'isSelectedEmbedEditable',
+				( tools, isEditable ) =>
+					isEditableToggleShown( tools, isEditable ) && !!tools?.hasDisplayModes );
+			return separator;
+		} );
+
+		for ( const mode of DISPLAY_MODES ) {
+			editor.ui.componentFactory.add( DISPLAY_MODE_BUTTONS[ mode ], locale => {
+				const command = editor.commands.get( CONTENT_EMBED_DISPLAY_MODE_COMMAND );
+				const buttonView = new ButtonView( locale );
+
+				buttonView.set( {
+					label: getDisplayModeLabel( t, mode ),
+					icon: DISPLAY_MODE_ICONS[ mode ],
+					tooltip: true,
+					isToggleable: true
+				} );
+
+				// Shown only for content that has display modes.
+				/* v8 ignore else -- `ContentEmbedEditing` adds the command before any button */
+				if ( command ) {
+					buttonView.bind( 'isOn' ).to( command, 'value', value => value === mode );
+					buttonView.bind( 'isEnabled' ).to( command );
+					buttonView.bind( 'isVisible' ).to( command, 'isEnabled' );
+				}
+
+				this.listenTo( buttonView, 'execute', () => {
+					editor.execute( CONTENT_EMBED_DISPLAY_MODE_COMMAND, { value: mode } );
+					editor.editing.view.focus();
+				} );
+
+				return buttonView;
+			} );
+		}
+
+		editor.ui.componentFactory.add( CONTENT_EMBED_MENU, locale => {
+			const command = editor.commands.get( TOGGLE_TITLE_COMMAND_NAME );
+			const buttonView = new ButtonView( locale );
+
+			buttonView.set( {
+				label: t( 'More actions' ),
+				icon: IconThreeVerticalDots,
+				tooltip: true
+			} );
+
+			// Replaces the menu button of the title row while the title is hidden, and stands in
+			// for it on an embed without one.
+			if ( command ) {
+				const plugin = editor.plugins.get( ContentEmbed );
+				buttonView.bind( 'isEnabled' ).to(
+					command, 'isEnabled', plugin, 'isSelectedEmbedInline',
+					( isEnabled, isInline ) => isEnabled || isInline );
+				buttonView.bind( 'isVisible' ).to( command, 'isEnabled', command, 'value',
+					plugin, 'isSelectedEmbedInline',
+					( isEnabled, isTitleShown, isInline ) =>
+						isInline || ( isEnabled && !isTitleShown ) );
+			}
+
+			this.listenTo( buttonView, 'execute', () => {
+				openContentEmbedMenu( editor, buttonView.element );
+			} );
+
+			return buttonView;
+		} );
+	}
+}
+
+class ContentEmbedEditing extends Plugin {
+	static get requires() {
+		return [ Widget, ResizableWidgets ];
+	}
+
+	static get pluginName() {
+		return 'ContentEmbedEditing' as const;
+	}
+
+	/** The captions that were hidden or that a Compact box size removed, by embed. */
+	private readonly savedCaptions = new WeakMap<ModelElement, unknown>();
+
+	/** The embeds whose saved caption a Compact box size removed. */
+	private readonly compactEmbeds = new WeakSet<ModelElement>();
+
+	/** Listens to the window for frames in embeds that take or give back the focus. */
+	private readonly windowEmitter = new ( DomEmitterMixin() )();
+
+	init() {
+		this._defineSchema();
+		this._defineConverters();
+
+		const editor = this.editor;
+		editor.plugins.get( ResizableWidgets ).register( 'contentEmbed', {
+			propertyPrefix: '--include-note',
+			// An Expandable embed takes the full width.
+			isWidthResizable: embed => embed.getAttribute( 'boxSize' ) === 'resizable',
+			// A video takes its height from its width, and an audio file from its controls.
+			isHeightResizable: embed => !isMediaEmbed( embed ),
+			getAnchor: getEmbedAnchor,
+			heightTarget: '.include-note-content',
+			minWidth: MIN_EMBED_SIZE.width,
+			minHeight: MIN_EMBED_SIZE.height,
+			isResizable: embed => POSITIONED_BOX_SIZES.includes( embed.getAttribute( 'boxSize' ) )
+		} );
+
+		const commands = editor.commands;
+		commands.add( COMMAND_NAME, new InsertContentEmbedCommand( editor ) );
+		commands.add( BOX_SIZE_COMMAND_NAME, new ContentEmbedBoxSizeCommand( editor ) );
+		commands.add(
+			DEFAULT_BOX_SIZE_COMMAND_NAME, new ContentEmbedDefaultBoxSizeCommand( editor ) );
+		commands.add( CONVERT_LINK_TO_EMBED_COMMAND, new ConvertLinkToEmbedCommand( editor ) );
+		commands.add( CONVERT_EMBED_TO_LINK_COMMAND, new ConvertEmbedToLinkCommand( editor ) );
+		commands.add( TOGGLE_CAPTION_COMMAND_NAME, new ToggleContentEmbedCaptionCommand( editor ) );
+		commands.add( TOGGLE_TITLE_COMMAND_NAME, new ToggleContentEmbedTitleCommand( editor ) );
+		commands.add(
+			TOGGLE_EDITABLE_COMMAND_NAME, new ToggleContentEmbedEditableCommand( editor ) );
+		commands.add( CODE_VIEW_COMMAND_NAME, new SetContentEmbedCodeViewCommand( editor ) );
+		commands.add(
+			CONTENT_EMBED_DISPLAY_MODE_COMMAND, new ContentEmbedDisplayModeCommand( editor ) );
+		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
+		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
+
+		editor.model.document.registerPostFixer( writer => this.fixTitleOnlyEmbeds( writer ) );
+		this.markEmbedOfSelectedCaption();
+
+		restoreRendererFocusOnInput( this );
+		fireFrameFocusEvents( editor, this.windowEmitter );
+	}
+
+	override destroy() {
+		this.windowEmitter.stopListening();
+		super.destroy();
+	}
+
+	/** Keeps a copy of `caption`, for `embed` to show again. */
+	saveCaption( embed: ModelElement, caption: ModelElement ) {
+		this.savedCaptions.set( embed, caption.toJSON() );
+		this.compactEmbeds.delete( embed );
+	}
+
+	/** A copy of the caption last saved for `embed`, or `null`. */
+	getSavedCaption( embed: ModelElement ): ModelElement | null {
+		const json = this.savedCaptions.get( embed );
+		return json ? ModelElement.fromJSON( json ) : null;
+	}
+
+	/** A copy of the caption that the Compact box size removed from `embed`, or `null`. */
+	takeCompactCaption( embed: ModelElement ): ModelElement | null {
+		return this.compactEmbeds.delete( embed ) ? this.getSavedCaption( embed ) : null;
+	}
+
+	_defineSchema() {
+		const schema = this.editor.model.schema;
+
+		schema.register( 'contentEmbed', {
+			// Behaves like a self-contained object (e.g. an image).
+			isObject: true,
+			isBlock: true,
+
+			// An embed shows either a note or an attachment. An embed that
+			// `FileUploadEditing` is uploading carries the upload attributes instead of its id.
+			allowAttributes: [
+				'noteId', 'block', 'attachmentId', 'boxSize', 'hideTitle', 'editable',
+				'displayMode', 'position', 'uploadId', 'uploadStatus', 'uploadFileName',
+				...CODE_VIEW_ATTRIBUTES.map( ( [ setting ] ) => setting )
+			],
+
+			// Allow in places where other blocks are allowed (e.g. directly in the root).
+			allowWhere: '$block'
+		} );
+
+		// `ImageCaptionEditing` and `TableCaptionEditing` share the same `caption` element.
+		if ( schema.isRegistered( 'caption' ) ) {
+			schema.extend( 'caption', { allowIn: 'contentEmbed' } );
+		} else {
+			schema.register( 'caption', {
+				allowIn: 'contentEmbed',
+				allowContentOf: '$block',
+				isLimit: true
+			} );
+		}
+	}
+
+	_defineConverters() {
+		const editor = this.editor;
+		const conversion = editor.conversion;
+		const t = editor.t;
+
+		// <contentEmbed> converters
+		conversion.for( 'upcast' ).elementToElement( {
+			model: ( viewElement, { writer: modelWriter } ) => {
+				const attachmentId = viewElement.getAttribute( 'data-attachment-id' );
+				const block = viewElement.getAttribute( 'data-block' );
+				const embedded = attachmentId
+					? { attachmentId }
+					: { noteId: viewElement.getAttribute( 'data-note-id' ), ...( block ? { block } : {} ) };
+
+				const box = readBoxSize(
+					viewElement.getAttribute( 'data-box-size' ), BOX_SIZES, 'resizable' );
+				const legacyHeight = box.height && !viewElement.getStyle( EMBED_HEIGHT_PROPERTY )
+					? { [ SIZE_ATTRIBUTES.height ]: box.height }
+					: {};
+
+				return modelWriter.createElement( 'contentEmbed', {
+					...embedded,
+					boxSize: box.boxSize,
+					...legacyHeight,
+					...getFlagsOfView( viewElement ),
+					...getDisplayModeOfView( viewElement ),
+					...getPositionOfView( viewElement ),
+					...getCodeViewOfView( viewElement )
+				} );
+			},
+			// Embeds saved before captions existed are `<section>` elements.
+			view: {
+				name: /^(?:figure|section)$/,
+				classes: 'include-note'
+			}
+		} );
+		conversion.for( 'dataDowncast' ).elementToElement( {
+			model: 'contentEmbed',
+			view: ( modelElement, { writer: viewWriter } ) => {
+				return viewWriter.createContainerElement( 'figure', {
+					class: 'include-note',
+					...getEmbeddedEntityAttributes( modelElement ),
+					'data-box-size': modelElement.getAttribute( 'boxSize' ),
+					...getFlagAttributes( modelElement ),
+					...getDisplayModeAttributes( modelElement ),
+					...getPositionAttributes( modelElement ),
+					...getCodeViewAttributes( modelElement )
+				} );
+			}
+		} );
+		conversion.for( 'editingDowncast' ).elementToElement( {
+			model: 'contentEmbed',
+			view: ( modelElement, { writer: viewWriter } ) => {
+
+				const boxSize = modelElement.getAttribute( 'boxSize' ) as string | undefined;
+
+				const figure = viewWriter.createContainerElement( 'figure', {
+					class: getEditingClasses( editor, modelElement ),
+					...getEmbeddedEntityAttributes( modelElement ),
+					...( boxSize ? { 'data-box-size': boxSize } : {} ),
+					...getFlagAttributes( modelElement ),
+					...getDisplayModeAttributes( modelElement ),
+					...getPositionAttributes( modelElement ),
+					...getCodeViewAttributes( modelElement ),
+					...getMediaShapeAttributes( modelElement )
+				} );
+
+				const embedWrapper = viewWriter.createUIElement( 'div', {
+					class: 'include-note-wrapper',
+					"data-cke-ignore-events": true
+				}, function( domDocument ) {
+					const domElement = this.toDomElement( domDocument );
+
+					showEmbeddedContent( editor, modelElement, domElement );
+					preventCKEditorHandling( domElement, editor );
+
+					return domElement;
+				} );
+
+				viewWriter.insert( viewWriter.createPositionAt( figure, 0 ), embedWrapper );
+
+				// hasSelectionHandle gives the block widget CKEditor's own drag grip so it moves
+				// atomically, instead of the browser's native drag tearing the embedded note apart.
+				// The label is announced by screen readers; lowercase to match the "image widget" /
+				// "table widget" labels CKEditor gives its own widgets.
+				return toWidget( figure, viewWriter, {
+					label: isMediaEmbed( modelElement )
+						? editor.t( 'link embed widget' )
+						: editor.t( 'include note widget' ),
+					hasSelectionHandle: true
+				} );
+			}
+		} );
+
+		// Handle boxSize attribute changes on existing elements
+		conversion.for( 'editingDowncast' ).add( dispatcher => {
+			dispatcher.on( 'attribute:boxSize:contentEmbed', ( evt, data, conversionApi ) => {
+				const viewElement = conversionApi.mapper.toViewElement( data.item );
+				/* v8 ignore next 3 -- defensive guard: when the attribute:boxSize event fires the model item is always mapped to a rendered view element; forcing an unmapped state (mapper.unbindModelElement) crashes the conversion pipeline elsewhere before this guard can be observed, so it is unreachable from a unit test */
+				if ( !viewElement ) {
+					return;
+				}
+
+				const viewWriter = conversionApi.writer;
+				const oldBoxSize = data.attributeOldValue as string;
+				const newBoxSize = data.attributeNewValue as string;
+
+				// Remove old class and add new class
+				if ( oldBoxSize ) {
+					viewWriter.removeClass( 'box-size-' + oldBoxSize, viewElement );
+				}
+				if ( newBoxSize ) {
+					viewWriter.addClass( 'box-size-' + newBoxSize, viewElement );
+					viewWriter.setAttribute( 'data-box-size', newBoxSize, viewElement );
+
+					// Re-render the embedded note content with the new box size. We drive this
+					// directly from the converter (rather than observing the DOM attribute) so the
+					// content is only rebuilt on a genuine box-size change — not whenever CKEditor
+					// re-applies unrelated attributes (e.g. `draggable` while selecting the widget).
+					// A player takes its size from the stylesheet, and a redraw stops the video,
+					// unless Compact puts it away or brings it back.
+					const embed = data.item as ModelElement;
+					const isCompactChange = oldBoxSize === 'compact' || newBoxSize === 'compact';
+					if ( !isMediaEmbed( embed ) || isCompactChange ) {
+						reloadEmbeddedContent( editor, viewElement, embed, newBoxSize );
+					}
+				}
+			} );
+
+			// Marks the view of the embed without drawing the content again. Content with an
+			// editable mode reads `data-editable` from the embed, content with display modes
+			// `data-display-mode`, a code file the `data-code-*` attributes, and an extended code
+			// block `data-language`. The stylesheet places the embed by `data-position`.
+			const markedAttributes = [
+				...FLAG_ATTRIBUTES, DISPLAY_MODE_ATTRIBUTE, ...CODE_VIEW_ATTRIBUTES,
+				[ 'language', 'data-language' ] as const, [ 'position', 'data-position' ] as const
+			];
+			for ( const [ attribute, dataAttribute ] of markedAttributes ) {
+				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
+					const viewElement = api.mapper.toViewElement( data.item as ModelElement );
+					/* v8 ignore next 3 -- converted after the embed itself, so always mapped */
+					if ( !viewElement ) {
+						return;
+					}
+
+					const value = data.attributeNewValue;
+					if ( value ) {
+						api.writer.setAttribute( dataAttribute, String( value ), viewElement );
+					} else {
+						api.writer.removeAttribute( dataAttribute, viewElement );
+					}
+				} );
+			}
+			dispatcher.on( 'attribute:displayMode:contentEmbed', ( _evt, data, api ) => {
+				const viewElement = api.mapper.toViewElement( data.item as ModelElement );
+				/* v8 ignore next 3 -- converted after the embed itself, so always mapped */
+				if ( !viewElement ) {
+					return;
+				}
+
+				const mode = data.attributeNewValue as string | null;
+				if ( mode ) {
+					api.writer.setAttribute( 'data-display-mode', mode, viewElement );
+				} else {
+					api.writer.removeAttribute( 'data-display-mode', viewElement );
+				}
+			} );
+
+			// Redraws the content in place when an upload ends. A converter that lists
+			// `attributes` also reconverts the embed on every change of its children, such as
+			// a caption toggle.
+			for ( const attribute of [ 'attachmentId', 'block', 'uploadFileName' ] ) {
+				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
+					redrawEmbeddedEntity( editor, data.item as ModelElement, api );
+				} );
+			}
+		} );
+
+		// <caption> converters, for the caption of an embed only
+		conversion.for( 'upcast' ).elementToElement( {
+			view: element => isContentEmbedCaptionView( element ) ? { name: true } : null,
+			model: 'caption'
+		} );
+		conversion.for( 'dataDowncast' ).elementToElement( {
+			model: 'caption',
+			view: ( modelElement, { writer: viewWriter } ) => isContentEmbed( modelElement.parent )
+				? viewWriter.createContainerElement( 'figcaption' )
+				: null
+		} );
+		conversion.for( 'editingDowncast' ).elementToElement( {
+			model: 'caption',
+			view: ( modelElement, { writer: viewWriter } ) => {
+				const embed = modelElement.parent;
+				if ( !isContentEmbed( embed ) ) {
+					return null;
+				}
+
+				const figcaption: ViewEditableElement & PlaceholderableViewElement =
+					viewWriter.createEditableElement( 'figcaption' );
+				figcaption.placeholder = t( 'Enter caption' );
+				enableViewPlaceholder( {
+					view: editor.editing.view,
+					element: figcaption,
+					keepOnFocus: true
+				} );
+
+				return toWidgetEditable( figcaption, viewWriter, {
+					label: getCaptionLabel( t, embed )
+				} );
+			}
+		} );
+		this._defineCaptionedEmbedConverters();
+
+		// The default mapping places model offset 0 before the content wrapper, which has no model
+		// length. The caption goes after it.
+		editor.editing.mapper.on<MapperModelToViewPositionEvent>(
+			'modelToViewPosition',
+			( _evt, data ) => {
+				const parent = data.modelPosition.parent;
+				const viewElement = parent.is( 'element', 'contentEmbed' )
+					? data.mapper.toViewElement( parent )
+					: undefined;
+				if ( !viewElement ) {
+					return;
+				}
+
+				const offset = getWrapperIndex( viewElement ) + 1 + data.modelPosition.offset;
+				data.viewPosition = editor.editing.view.createPositionAt(
+					viewElement, Math.min( offset, viewElement.childCount ) );
+			}
+		);
+	}
+
+	/**
+	 * Saves an embed whose own element is not a `<figure>`, such as the `<section>` of a video,
+	 * in a `<figure class="captioned-content-embed">` while it has a caption, with the
+	 * `<figcaption>` after the element, and loads it back.
+	 */
+	_defineCaptionedEmbedConverters() {
+		const editor = this.editor;
+		const { downcastDispatcher, mapper, upcastDispatcher } = editor.data;
+
+		// Runs after the converter of the embed's kind draws its element, and before the default
+		// converter of the `lowest` priority converts the caption.
+		downcastDispatcher.on<DowncastInsertEvent<ModelElement>>( 'insert:contentEmbed',
+			( _evt, { item }, api ) => {
+				const element = api.mapper.toViewElement( item );
+				if ( !element || element.is( 'element', 'figure' ) || !getCaption( item ) ) {
+					return;
+				}
+
+				const writer = api.writer;
+				const figure = writer.createContainerElement( 'figure', {
+					class: CAPTIONED_CONTENT_EMBED_CLASS
+				} );
+				writer.insert( writer.createPositionBefore( element ), figure );
+				writer.move( writer.createRangeOn( element ),
+					writer.createPositionAt( figure, 0 ) );
+				// The figure maps to the embed, so the mapper counts it as one model node. The
+				// embed still maps to its element, which the attribute converters write to.
+				api.mapper.bindElements( item, figure );
+				api.mapper.bindElements( item, element );
+			}, { priority: 'low' } );
+
+		// The children of such an embed, its caption, go after its element in the figure.
+		mapper.on<MapperModelToViewPositionEvent>( 'modelToViewPosition', ( _evt, data ) => {
+			const embed = data.modelPosition.parent;
+			const element = isContentEmbed( embed )
+				? data.mapper.toViewElement( embed )
+				: undefined;
+			const figure = element?.parent;
+			if ( !element || !figure?.is( 'element' ) || !isCaptionedEmbedView( figure ) ) {
+				return;
+			}
+
+			const offset = figure.getChildIndex( element ) + 1 + data.modelPosition.offset;
+			data.viewPosition = new ViewPosition( figure, offset );
+		} );
+
+		upcastDispatcher.on<UpcastElementEvent>( 'element:figure', ( _evt, data, api ) => {
+			const figure = data.viewItem;
+			if ( !isCaptionedEmbedView( figure )
+				|| !api.consumable.test( figure, { name: true } ) ) {
+				return;
+			}
+
+			const children = [ ...figure.getChildren() ]
+				.filter( ( child ): child is ViewElement => child.is( 'element' ) );
+			const figcaption = children.find( child => child.name === 'figcaption' );
+			const element = children.find( child => child !== figcaption );
+			if ( !element ) {
+				return;
+			}
+
+			api.consumable.consume( figure, {
+				name: true, classes: CAPTIONED_CONTENT_EMBED_CLASS
+			} );
+			const converted = api.convertItem( element, data.modelCursor );
+			const modelRange = converted.modelRange;
+			// `PictureEditing` converts a `<picture>` in an image into that image, with no range.
+			if ( !modelRange ) {
+				return;
+			}
+
+			const embed = modelRange.start.nodeAfter;
+			let modelCursor = converted.modelCursor;
+			if ( figcaption && isContentEmbed( embed )
+				&& isEmbedCaptionToggleable( editor, embed ) ) {
+				const caption = api.writer.createElement( 'caption' );
+				api.writer.append( caption, embed );
+				api.consumable.consume( figcaption, { name: true } );
+				api.convertChildren( figcaption, caption );
+			} else if ( figcaption ) {
+				// Content that takes no caption keeps the text of the caption after it.
+				modelCursor = api.convertItem( figcaption, modelCursor ).modelCursor;
+			}
+
+			data.modelRange = api.writer.createRange( modelRange.start, modelCursor );
+			data.modelCursor = modelCursor;
+		}, { priority: 'high' } );
+	}
+
+	/**
+	 * Marks the embed whose caption has the selection as selected, as `Widget` marks the embed
+	 * that the selection is on, such as one whose player has the focus.
+	 */
+	private markEmbedOfSelectedCaption() {
+		const dispatcher = this.editor.editing.downcastDispatcher;
+		let marked: ViewElement | null = null;
+
+		dispatcher.on<DowncastCleanSelectionEvent>( 'cleanSelection', ( _evt, _data, api ) => {
+			if ( marked ) {
+				api.writer.removeClass( WIDGET_SELECTED_CLASS_NAME, marked );
+				marked = null;
+			}
+		} );
+		// After `Widget` marks the widgets in the selection.
+		dispatcher.on<DowncastSelectionEvent>( 'selection', ( _evt, { selection }, api ) => {
+			const embed = getCaptionedEmbed( selection.getFirstPosition() );
+			const view = embed && api.mapper.toViewElement( embed );
+			if ( view ) {
+				api.writer.addClass( WIDGET_SELECTED_CLASS_NAME, view );
+				marked = view;
+			}
+		}, { priority: 'lowest' } );
+	}
+
+	/**
+	 * Shows the title of, and removes the caption of, every Compact embed that shows a title only
+	 * and that a change touched, keeping a copy of the caption for when the embed gets a larger
+	 * box size. An embed whose content the host has not loaded yet keeps both.
+	 */
+	private fixTitleOnlyEmbeds( writer: ModelWriter ) {
+		const embeds = new Set<ModelElement>();
+		for ( const change of this.editor.model.document.differ.getChanges() ) {
+			if ( change.type === 'attribute' && change.attributeKey === 'boxSize' ) {
+				addContentEmbeds( embeds, change.range.start.nodeAfter );
+			} else if ( change.type === 'insert' && change.name === 'caption' ) {
+				addContentEmbeds( embeds, change.position.parent );
+			} else if ( change.type === 'insert' && change.name !== '$text' ) {
+				addContentEmbeds( embeds, change.position.nodeAfter );
+			}
+		}
+
+		let isChanged = false;
+		for ( const embed of embeds ) {
+			if ( isTitleOnlyEmbed( this.editor, embed ) !== true ) {
+				continue;
+			}
+			if ( embed.hasAttribute( 'hideTitle' ) ) {
+				writer.removeAttribute( 'hideTitle', embed );
+				isChanged = true;
+			}
+			const caption = getCaption( embed );
+			if ( caption ) {
+				this.saveCaption( embed, caption );
+				this.compactEmbeds.add( embed );
+				writer.remove( caption );
+				isChanged = true;
+			}
+		}
+
+		return isChanged;
+	}
+}
+
+class InsertContentEmbedCommand extends Command {
+	override execute() {
+		this.editor.plugins.get( ContentEmbed ).showDialog();
+	}
+
+	override refresh() {
+		const model = this.editor.model;
+		const selection = model.document.selection;
+        const firstPosition = selection.getFirstPosition();
+		const allowedIn = firstPosition && model.schema.findAllowedParent( firstPosition, 'contentEmbed' );
+
+		this.isEnabled = allowedIn !== null;
+	}
+}
+
+class ContentEmbedBoxSizeCommand extends Command {
+	declare value: BoxSize | null;
+
+	/**
+	 * Sets the box size of the selected embed. Compact and Full fit their content, so they take
+	 * a resized width and height away, and Expandable takes the full width, so it takes the width
+	 * away; Resizable keeps both. Compact takes the caption of an embed that shows a title only
+	 * away, and a larger size shows it again.
+	 */
+	override execute( options: { value: BoxSize } ) {
+		const editor = this.editor;
+		const embedElement = getSelectedContentEmbed( editor );
+
+		if ( embedElement && getEmbedBoxSizes( embedElement ).includes( options.value ) ) {
+			editor.model.change( writer => {
+				setEmbedBoxSize( editor, writer, embedElement, options.value );
+			} );
+		}
+	}
+
+	override refresh() {
+		const embedElement = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embedElement;
+		this.value = embedElement?.getAttribute( 'boxSize' ) as BoxSize | null ?? null;
+	}
+}
+
+/**
+ * Puts the selected embed back at the box a new embed of its content starts with: its box size,
+ * no resized height, and the width of a new video or none.
+ */
+class ContentEmbedDefaultBoxSizeCommand extends Command {
+	constructor( editor: Editor ) {
+		super( editor );
+		// The host loads the content after the embed renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+		this.isEnabled = !!embed && !isDefaultEmbedBox( this.editor, embed );
+	}
+
+	override execute() {
+		const editor = this.editor;
+		const embed = getSelectedContentEmbed( editor );
+		const box = embed && getDefaultEmbedBox( editor, embed );
+		if ( !embed || !box ) {
+			return;
+		}
+
+		editor.model.change( writer => {
+			setEmbedBoxSize( editor, writer, embed, box.boxSize );
+			writer.removeAttribute( SIZE_ATTRIBUTES.height, embed );
+			if ( box.width ) {
+				writer.setAttribute( SIZE_ATTRIBUTES.width, box.width, embed );
+			} else {
+				writer.removeAttribute( SIZE_ATTRIBUTES.width, embed );
+			}
+		} );
+	}
+}
+
+/** Sets the box size of `embed` to `value`, with the sizes and the caption that `value` keeps. */
+function setEmbedBoxSize(
+	editor: Editor, writer: ModelWriter, embed: ModelElement, value: BoxSize
+) {
+	const wasCompact = embed.getAttribute( 'boxSize' ) === 'compact';
+	writer.setAttribute( 'boxSize', value, embed );
+	if ( value !== 'resizable' ) {
+		writer.removeAttribute( SIZE_ATTRIBUTES.width, embed );
+	}
+	if ( value === 'compact' || value === 'full' ) {
+		writer.removeAttribute( SIZE_ATTRIBUTES.height, embed );
+	}
+
+	if ( value === 'compact' ) {
+		writer.setSelection( embed, 'on' );
+	} else if ( wasCompact && !getCaption( embed ) ) {
+		const caption = editor.plugins.get( ContentEmbedEditing ).takeCompactCaption( embed );
+		if ( caption ) {
+			writer.append( caption, embed );
+		}
+	}
+}
+
+/** Shows or hides the caption of the selected embed. A Compact embed has none. */
+export class ToggleContentEmbedCaptionCommand extends Command {
+	declare value: boolean;
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && isEmbedCaptionToggleable( this.editor, embed );
+		this.value = !!embed && !!getCaption( embed );
+	}
+
+	/**
+	 * @param options.focusCaptionOnShow whether a caption that the command shows takes the
+	 * selection.
+	 */
+	override execute( { focusCaptionOnShow = false }: { focusCaptionOnShow?: boolean } = {} ) {
+		const editor = this.editor;
+		const embed = getSelectedContentEmbed( editor );
+		if ( !embed ) {
+			return;
+		}
+
+		const editing = editor.plugins.get( ContentEmbedEditing );
+		editor.model.change( writer => {
+			const caption = getCaption( embed );
+			if ( caption ) {
+				editing.saveCaption( embed, caption );
+				writer.setSelection( embed, 'on' );
+				writer.remove( caption );
+				return;
+			}
+
+			const shown = editing.getSavedCaption( embed ) ?? writer.createElement( 'caption' );
+			writer.append( shown, embed );
+			if ( focusCaptionOnShow ) {
+				writer.setSelection( shown, 'in' );
+			}
+		} );
+	}
+}
+
+/**
+ * Shows or hides the title row of the selected embed. A Compact or an Expandable embed always
+ * shows it.
+ */
+export class ToggleContentEmbedTitleCommand extends Command {
+	/** Whether the title shows. */
+	declare value: boolean;
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && isEmbedTitleToggleable( this.editor, embed );
+		this.value = !embed?.getAttribute( 'hideTitle' );
+	}
+
+	override execute() {
+		toggleSelectedEmbedFlag( this.editor, 'hideTitle' );
+	}
+}
+
+/**
+ * Turns the editing of the selected embed's content on and off, for content whose type has an
+ * editable mode.
+ */
+export class ToggleContentEmbedEditableCommand extends Command {
+	/** Whether the content can be edited. */
+	declare value: boolean;
+
+	constructor( editor: Editor ) {
+		super( editor );
+		// Content declares its editable mode once it renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && isEmbedEditableToggleable( this.editor, embed );
+		this.value = !!embed?.getAttribute( 'editable' );
+	}
+
+	override execute() {
+		toggleSelectedEmbedFlag( this.editor, 'editable' );
+	}
+}
+
+/**
+ * Sets how the selected embed shows its code. An embed of a note sets only the line numbers, and
+ * follows the other settings of the note.
+ */
+export class SetContentEmbedCodeViewCommand extends Command {
+	override refresh() {
+		this.isEnabled = !!getSelectedContentEmbed( this.editor );
+	}
+
+	/** Sets each setting given, and removes each given as `null`, as one undo step. */
+	override execute( {
+		language, tabWidth, indentWithTabs, wrapLines, lineNumbers
+	}: ContentEmbedCodeView ) {
+		const embed = getSelectedContentEmbed( this.editor );
+		if ( !embed ) {
+			return;
+		}
+
+		const values = embed.getAttribute( 'noteId' ) ? {
+			codeLineNumbers: lineNumbers
+		} : {
+			...getLanguageAttribute( this.editor, embed, language ),
+			codeTabWidth: tabWidth,
+			codeIndentWithTabs: indentWithTabs,
+			codeWrapLines: wrapLines,
+			codeLineNumbers: lineNumbers
+		};
+		this.editor.model.change( writer => {
+			for ( const [ attribute, value ] of Object.entries( values ) ) {
+				if ( value === null ) {
+					writer.removeAttribute( attribute, embed );
+				} else if ( value !== undefined ) {
+					writer.setAttribute( attribute, String( value ), embed );
+				}
+			}
+		} );
+	}
+}
+
+/**
+ * Sets what the content of the selected embed shows, for content that has display modes. The
+ * Editable flag stays as it is: it tells whether the source shown can be changed.
+ */
+export class ContentEmbedDisplayModeCommand extends Command {
+	/** The mode of the selected embed, or `null`. */
+	declare value: DisplayModeValue | null;
+
+	constructor( editor: Editor ) {
+		super( editor );
+		// Content declares its display modes once it renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && hasEmbedDisplayModes( this.editor, embed );
+		this.value = embed && this.isEnabled ? getEmbedDisplayMode( this.editor, embed ) : null;
+	}
+
+	override execute( { value }: { value: DisplayModeValue } ) {
+		const embed = getSelectedContentEmbed( this.editor );
+		if ( !embed ) {
+			return;
+		}
+
+		this.editor.model.change( writer => writer.setAttribute( 'displayMode', value, embed ) );
+	}
+}
+
+/**
+ * Sets where the selected embed is placed in the text, for content that has positions. Centered
+ * removes the position.
+ */
+export class ContentEmbedPositionCommand extends Command {
+	/** The position of the selected embed, or `null`. */
+	declare value: PositionValue | null;
+	/** The positions that the selected embed can take, as its box size allows, or none. */
+	declare positions: readonly PositionValue[];
+
+	constructor( editor: Editor ) {
+		super( editor );
+		this.set( 'positions', NO_POSITIONS );
+		// Content declares its positions once it renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && hasEmbedPositions( this.editor, embed );
+		this.value = embed && this.isEnabled ? getEmbedPosition( embed ) : null;
+		this.positions = embed ? getEmbedPositions( this.editor, embed ) : NO_POSITIONS;
+	}
+
+	override execute( { value }: { value: PositionValue } ) {
+		const embed = getSelectedContentEmbed( this.editor );
+		if ( !embed ) {
+			return;
+		}
+
+		if ( !getEmbedPositions( this.editor, embed ).includes( value ) ) {
+			return;
+		}
+
+		this.editor.model.change( writer => {
+			if ( SAVED_POSITIONS.includes( value ) ) {
+				writer.setAttribute( 'position', value, embed );
+			} else {
+				writer.removeAttribute( 'position', embed );
+			}
+		} );
+	}
+}
+
+/**
+ * The model attribute to set for `language`, a MIME type: `language` for an extended code block,
+ * which always has one, otherwise `codeLanguage`, the language that a code file shows in.
+ */
+function getLanguageAttribute(
+	editor: Editor, embed: ModelElement, language: string | null | undefined
+): Record<string, string | null | undefined> {
+	if ( !isExtendedCodeBlock( editor, embed ) ) {
+		return { codeLanguage: language };
+	}
+
+	return language ? { language: normalizeMimeTypeForCKEditor( language ) } : {};
+}
+
+/** Sets the flag of the selected embed when it is off, and removes it when it is on. */
+function toggleSelectedEmbedFlag( editor: Editor, flag: EmbedFlag ) {
+	const embed = getSelectedContentEmbed( editor );
+	if ( !embed ) {
+		return;
+	}
+
+	editor.model.change( writer => {
+		if ( embed.getAttribute( flag ) ) {
+			writer.removeAttribute( flag, embed );
+		} else {
+			writer.setAttribute( flag, true, embed );
+		}
+	} );
+}
+
+/** Replaces a reference link with an embed of the note or attachment it points to, in its place. */
+class ConvertLinkToEmbedCommand extends Command {
+	/**
+	 * @param options.domElement the link, as the editing view renders it.
+	 * @param options.boxSize the size of the embed, Resizable when not given.
+	 * @param options.hideTitle whether the embed starts with its title hidden.
+	 */
+	override execute( { domElement, boxSize, hideTitle }: {
+		domElement: HTMLElement;
+		boxSize?: BoxSize;
+		hideTitle?: boolean;
+	} ) {
+		const editor = this.editor;
+		const link = getLinkToEmbed( editor, domElement );
+		if ( !link ) {
+			return;
+		}
+
+		const { reference, embedded } = link;
+		editor.model.change( writer => {
+			const embed = writer.createElement( 'contentEmbed', {
+				...embedded,
+				boxSize: boxSize ?? 'resizable',
+				...( hideTitle ? { hideTitle: true } : {} )
+			} );
+			const range = writer.createRangeOn( reference );
+			editor.model.insertObject( embed, range, null, { setSelection: 'on' } );
+		} );
+	}
+}
+
+/** Replaces the selected embed with a link to the note or attachment it shows. */
+class ConvertEmbedToLinkCommand extends Command {
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+
+		this.isEnabled = !!embed && isEmbedConvertibleToLink( this.editor, embed );
+	}
+
+	override async execute() {
+		const editor = this.editor;
+		const embed = getSelectedContentEmbed( editor );
+		const attachmentId = embed?.getAttribute( 'attachmentId' ) as string | undefined;
+		const noteId = embed?.getAttribute( 'noteId' ) as string | undefined;
+		const block = embed?.getAttribute( 'block' ) as string | undefined;
+		if ( !embed || ( !attachmentId && !noteId ) ) {
+			return;
+		}
+
+		const blockQuery = block ? `?block=${ encodeBlockParameter( block ) }` : '';
+		const href = attachmentId
+			? await editor.config.get( 'contentEmbed' )?.getAttachmentHref?.( attachmentId )
+			: `#root/${ noteId }${ blockQuery }`;
+
+		// The embed can be removed while the host looks the link up.
+		const root = embed.root;
+		if ( !href || !root.is( 'rootElement' ) || root.rootName === '$graveyard' ) {
+			return;
+		}
+
+		editor.model.change( writer => {
+			const reference = writer.createElement( 'reference', { href } );
+			const paragraph = writer.createElement( 'paragraph' );
+			writer.append( reference, paragraph );
+			writer.insert( paragraph, writer.createPositionBefore( embed ) );
+			writer.remove( embed );
+			writer.setSelection( reference, 'after' );
+		} );
+	}
+}
+
+/**
+ * Deletes the selected embed, and puts the caret at the start of the block after it, else at the
+ * end of the block before it. A parent left empty, such as a table cell, gets an empty paragraph.
+ */
+export class DeleteContentEmbedCommand extends Command {
+	override refresh() {
+		this.isEnabled = !!getSelectedContentEmbed( this.editor );
+	}
+
+	override execute() {
+		const embed = getSelectedContentEmbed( this.editor );
+		if ( !embed ) {
+			return;
+		}
+
+		const model = this.editor.model;
+		model.change( writer => {
+			const position = writer.createPositionBefore( embed );
+			writer.remove( embed );
+
+			const parent = position.parent as ModelElement;
+			if ( parent.isEmpty && model.schema.checkChild( parent, 'paragraph' ) ) {
+				writer.insertElement( 'paragraph', position );
+			}
+
+			writer.setSelection( model.schema.getNearestSelectionRange( position, 'forward' )
+				?? model.schema.getNearestSelectionRange( position, 'backward' ) );
+		} );
+	}
+}
+
+/**
+ * The reference link that `domElement` renders, and the attributes of an embed showing what it
+ * points to, or `null`. Of the links to a part of a note, an embed shows only blocks.
+ */
+function getLinkToEmbed( editor: Editor, domElement: HTMLElement ) {
+	const viewElement = editor.editing.view.domConverter.mapDomToView( domElement );
+	const reference = viewElement?.is( 'element' )
+		? editor.editing.mapper.toModelElement( viewElement )
+		: undefined;
+	if ( !reference?.is( 'element', 'reference' ) ) {
+		return null;
+	}
+
+	const href = reference.getAttribute( 'href' );
+	const attachmentId = getAttachmentId( href );
+	if ( attachmentId ) {
+		return { reference, embedded: { attachmentId } };
+	}
+
+	const embedded = getEmbeddedNote( href );
+	return embedded ? { reference, embedded } : null;
+}
+
+/** The note that `href` points to, and its blocks, or `null` for a link to another part of it. */
+function getEmbeddedNote( href: unknown ) {
+	const noteId = getNoteId( href );
+	if ( !noteId ) {
+		return null;
+	}
+
+	const query = String( href ).split( '?' )[ 1 ];
+	if ( !query ) {
+		return { noteId };
+	}
+
+	const params = new URLSearchParams( query );
+	const block = params.get( 'block' );
+	const isBlockOnly = [ ...params.keys() ].every( key => key === 'block' );
+	return isBlockOnly && block && parseBlockRange( block ) ? { noteId, block } : null;
+}
+
+/** The embed the selection is on or inside, or `null`. */
+function getSelectedContentEmbed( editor: Editor ) {
+	const selection = editor.model.document.selection;
+	const selectedElement = selection.getSelectedElement();
+
+	if ( selectedElement?.name === 'contentEmbed' ) {
+		return selectedElement;
+	}
+
+	return selection.getFirstPosition()?.findAncestor( 'contentEmbed' ) ?? null;
+}
+
+/** The embed whose rendering contains `domElement`, or `null`. */
+export function getContentEmbedAt( editor: Editor, domElement: Element ) {
+	const embedElement = domElement.closest<HTMLElement>( '.include-note' );
+	const viewElement = embedElement
+		&& editor.editing.view.domConverter.mapDomToView( embedElement );
+	if ( !viewElement?.is( 'element' ) ) {
+		return null;
+	}
+
+	const embed = editor.editing.mapper.toModelElement( viewElement ) ?? null;
+	return isContentEmbed( embed ) ? embed : null;
+}
+
+export function isContentEmbed(
+	node: ModelNode | ModelDocumentFragment | null
+): node is ModelElement {
+	return !!node?.is( 'element', 'contentEmbed' );
+}
+
+/**
+ * Whether the title of `embed` can be hidden: an Expandable embed, and a Compact one that shows
+ * a title only, always show it.
+ */
+function isEmbedTitleToggleable( editor: Editor, embed: ModelElement ) {
+	return embed.getAttribute( 'boxSize' ) !== 'expandable' && hasTitleRow( embed )
+		&& isTitleOnlyEmbed( editor, embed ) === false;
+}
+
+/**
+ * Whether `embed` shows its title row only, as a Compact embed of content other than audio does:
+ * `true` or `false` once known, `null` for a note or an attachment the host has not loaded yet.
+ */
+function isTitleOnlyEmbed( editor: Editor, embed: ModelElement ): boolean | null {
+	if ( embed.getAttribute( 'boxSize' ) !== 'compact' ) {
+		return false;
+	}
+	if ( isMediaEmbed( embed ) ) {
+		return !isAudioEmbed( embed );
+	}
+
+	const host = editor.config.get( 'contentEmbed' );
+	if ( !host?.getEmbedContentInfo ) {
+		return true;
+	}
+	const info = getEmbedContentInfo( editor, embed );
+	return info ? !info.hasCompactContent : null;
+}
+
+/** What the host knows of the note or attachment `embed` shows, or `null` until it loads it. */
+function getEmbedContentInfo( editor: Editor, embed: ModelElement ): EmbedContentInfo | null {
+	const noteId = embed.getAttribute( 'noteId' ) as string | undefined;
+	const attachmentId = embed.getAttribute( 'attachmentId' ) as string | undefined;
+	if ( !noteId && !attachmentId ) {
+		return null;
+	}
+	return editor.config.get( 'contentEmbed' )
+		?.getEmbedContentInfo?.( { noteId, attachmentId } ) ?? null;
+}
+
+/**
+ * The box that a new embed of the content of `embed` starts with: its box size and, for a video,
+ * its width. `null` while the host has not loaded a note or an attachment.
+ */
+function getDefaultEmbedBox(
+	editor: Editor, embed: ModelElement
+): { boxSize: BoxSize; width: string | null } | null {
+	if ( isMediaEmbed( embed ) ) {
+		return isAudioEmbed( embed )
+			? { boxSize: 'compact', width: null }
+			: { boxSize: 'resizable', width: getVideoDefaultWidth( getMediaPreview( embed ) ) };
+	}
+	if ( isInlineSourceEmbed( embed ) ) {
+		return { boxSize: isExtendedCodeBlock( editor, embed ) ? 'full' : 'resizable', width: null };
+	}
+	if ( embed.hasAttribute( 'block' ) ) {
+		return { boxSize: EXCERPT_BOX_SIZE, width: null };
+	}
+
+	const info = getEmbedContentInfo( editor, embed );
+	return info ? { boxSize: info.defaultBoxSize, width: null } : null;
+}
+
+/** Whether `embed` is at the box a new embed of its content starts with, or that box is unknown. */
+function isDefaultEmbedBox( editor: Editor, embed: ModelElement ) {
+	const box = getDefaultEmbedBox( editor, embed );
+	return !box || ( embed.getAttribute( 'boxSize' ) === box.boxSize
+		&& !embed.hasAttribute( SIZE_ATTRIBUTES.height )
+		&& ( embed.getAttribute( SIZE_ATTRIBUTES.width ) ?? null ) === box.width );
+}
+
+/** Whether `embed` has a title row: an embed of a source has none. */
+function hasTitleRow( embed: ModelElement ) {
+	return !isInlineSourceEmbed( embed );
+}
+
+/** Whether `embed` can have a caption: an embed of a source has none. */
+function hasCaptionSupport( embed: ModelElement ) {
+	return !isInlineSourceEmbed( embed );
+}
+
+/** Whether the content of `embed` has an editable mode, which its content type opts in to. */
+function isEmbedEditableToggleable( editor: Editor, embed: ModelElement ) {
+	return !!getEmbedTools( editor, embed )?.hasEditableFlag;
+}
+
+/** The box sizes that `embed` can take, or all of them without an embed. */
+export function getEmbedBoxSizes( embed: ModelElement | null ): readonly BoxSize[] {
+	if ( !embed ) {
+		return BOX_SIZES;
+	}
+	const player = isMediaEmbed( embed ) ? getLinkPreviewPlayer( getMediaPreview( embed ) ) : null;
+	if ( player ) {
+		return getMediaEmbedBoxSizes( player );
+	}
+	return isInlineSourceEmbed( embed ) ? INLINE_BOX_SIZES : BOX_SIZES;
+}
+
+/** Whether the content of `embed` has display modes, which its content type opts in to. */
+function hasEmbedDisplayModes( editor: Editor, embed: ModelElement ) {
+	return !!getEmbedTools( editor, embed )?.hasDisplayModes;
+}
+
+/**
+ * What the content of `embed` shows: its mode, or split while it is edited and preview otherwise.
+ * Content that cannot be edited has no Editable toggle, and shows the preview.
+ */
+function getEmbedDisplayMode( editor: Editor, embed: ModelElement ): DisplayModeValue {
+	const isEditing = !!embed.getAttribute( 'editable' )
+		&& isEmbedEditableToggleable( editor, embed );
+	return toDisplayMode( embed.getAttribute( 'displayMode' ) )
+		?? ( isEditing ? 'split' : 'preview' );
+}
+
+/** `value` when it names a display mode, otherwise `null`. */
+export function toDisplayMode( value: unknown ): DisplayModeValue | null {
+	return DISPLAY_MODES.find( mode => mode === value ) ?? null;
+}
+
+/**
+ * Whether `embed` can be positioned: an embed of a note, an attachment or a video can, an embed of
+ * a source when its content opts in to it.
+ */
+function hasEmbedPositions( editor: Editor, embed: ModelElement ) {
+	return POSITIONED_BOX_SIZES.includes( embed.getAttribute( 'boxSize' ) )
+		&& ( !isInlineSourceEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions );
+}
+
+/**
+ * The positions that `embed` can take: every one for a Resizable embed, those that break the
+ * text for an Expandable one, which takes the full width, and none for the other box sizes.
+ */
+function getEmbedPositions( editor: Editor, embed: ModelElement ): readonly PositionValue[] {
+	if ( !hasEmbedPositions( editor, embed ) ) {
+		return NO_POSITIONS;
+	}
+	return embed.getAttribute( 'boxSize' ) === 'expandable' ? BREAK_TEXT_POSITIONS : POSITIONS;
+}
+
+/**
+ * Where `embed` is placed in the text: its saved position, when its box size can take it, or
+ * centered. The saved position stays on the embed for the box sizes that can take it.
+ */
+function getEmbedPosition( embed: ModelElement ): PositionValue {
+	const position = embed.getAttribute( 'position' ) as PositionValue | undefined;
+	const positions = embed.getAttribute( 'boxSize' ) === 'expandable'
+		? BREAK_TEXT_POSITIONS
+		: POSITIONS;
+	return position && positions.includes( position ) ? position : 'center';
+}
+
+/**
+ * The edge that the stylesheet places `embed` against, which stays in place while it is resized
+ * and which its toolbar is level with.
+ */
+export function getEmbedAnchor( embed: ModelElement ): ResizeAnchor {
+	const position = getEmbedPosition( embed );
+	if ( position === 'left' || position === 'wrap-left' ) {
+		return 'left';
+	}
+	return position === 'right' || position === 'wrap-right' ? 'right' : 'center';
+}
+
+/** Whether `embed` can have a caption now. A Compact embed that shows a title only has none. */
+function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
+	return isTitleOnlyEmbed( editor, embed ) !== true && hasCaptionSupport( embed )
+		&& editor.model.schema.checkChild( embed, 'caption' );
+}
+
+/** Whether `embed` names a note or an attachment, which a link can then point to. */
+function isEmbedConvertibleToLink( editor: Editor, embed: ModelElement ) {
+	return ( !!embed.getAttribute( 'attachmentId' ) || !!embed.getAttribute( 'noteId' ) )
+		&& editor.model.schema.isRegistered( 'reference' );
+}
+
+/** The embed whose caption holds `position`, or `null`. */
+export function getCaptionedEmbed( position: ModelPosition | null ): ModelElement | null {
+	const embed = position?.findAncestor( 'caption' )?.parent ?? null;
+	return isContentEmbed( embed ) ? embed : null;
+}
+
+/** The caption of `embed`, or `null`. */
+export function getCaption( embed: ModelElement ) {
+	return Array.from( embed.getChildren() )
+		.find( ( child ): child is ModelElement => child.is( 'element', 'caption' ) ) ?? null;
+}
+
+/** Whether `element` is the `<figcaption>` of an embed. */
+function isContentEmbedCaptionView( element: ViewElement ) {
+	const parent = element.parent;
+	return element.name === 'figcaption' && !!parent?.is( 'element' )
+		&& parent.hasClass( 'include-note' );
+}
+
+/** Whether `element` is the `<figure>` that holds an embed saved with its caption. */
+function isCaptionedEmbedView( element: ViewElement ) {
+	return element.name === 'figure' && element.hasClass( CAPTIONED_CONTENT_EMBED_CLASS );
+}
+
+/** The index of the content wrapper among the children of an embed's view, or `-1`. */
+function getWrapperIndex( viewElement: ViewElement ) {
+	return Array.from( viewElement.getChildren() )
+		.findIndex( child => child.is( 'uiElement' ) && child.hasClass( 'include-note-wrapper' ) );
+}
+
+/** The accessible name of the caption of `embed`. */
+function getCaptionLabel( t: ( message: string ) => string, embed: ModelElement ) {
+	if ( isAudioEmbed( embed ) ) {
+		return t( 'Caption for the audio' );
+	}
+	return isMediaEmbed( embed )
+		? t( 'Caption for the video' )
+		: t( 'Caption for the included note' );
+}
+
+/** The classes of the view of `embed` in the editor. */
+function getEditingClasses( editor: Editor, embed: ModelElement ) {
+	const boxSize = embed.getAttribute( 'boxSize' ) as string | undefined;
+	const classes = [ 'include-note' ];
+	if ( boxSize ) {
+		classes.push( `box-size-${ boxSize }` );
+	}
+	if ( isExtendedCodeBlock( editor, embed ) ) {
+		classes.push( EXTENDED_CODE_BLOCK_CLASS );
+	}
+	if ( isMediaEmbed( embed ) ) {
+		classes.push( ...getMediaEmbedClasses( isAudioEmbed( embed ) ) );
+	}
+	return classes.join( ' ' );
+}
+
+/** Adds `node`, when it is an embed, and every embed inside it to `embeds`. */
+function addContentEmbeds(
+	embeds: Set<ModelElement>,
+	node: ModelNode | ModelDocumentFragment | null
+) {
+	if ( isContentEmbed( node ) ) {
+		embeds.add( node );
+	} else if ( node?.is( 'element' ) ) {
+		for ( const descendant of node.getChildren() ) {
+			addContentEmbeds( embeds, descendant );
+		}
+	}
+}
+
+/**
+ * The `data-*` attributes naming what an embed shows: an attachment, or a note and the blocks of
+ * it. An embed whose upload has not ended names nothing.
+ */
+function getEmbeddedEntityAttributes( element: ModelElement ): Record<string, string> {
+	const language = element.getAttribute( 'language' ) as string | undefined;
+	if ( language ) {
+		return { 'data-language': language };
+	}
+	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
+	const noteId = element.getAttribute( 'noteId' ) as string | undefined;
+	const block = element.getAttribute( 'block' ) as string | undefined;
+
+	if ( attachmentId ) {
+		return { 'data-attachment-id': attachmentId };
+	}
+	if ( !noteId ) {
+		return {};
+	}
+
+	return block ? { 'data-note-id': noteId, 'data-block': block } : { 'data-note-id': noteId };
+}
+
+/** The `data-*` attributes of the flags that are on in `element`. */
+function getFlagAttributes( element: ModelElement ): Record<string, string> {
+	return Object.fromEntries( FLAG_ATTRIBUTES
+		.filter( ( [ flag ] ) => element.getAttribute( flag ) )
+		.map( ( [ , dataAttribute ] ) => [ dataAttribute, 'true' ] ) );
+}
+
+/** The `data-*` attributes of the code view settings of `element`. */
+export function getCodeViewAttributes( element: ModelElement ): Record<string, string> {
+	return Object.fromEntries( CODE_VIEW_ATTRIBUTES
+		.filter( ( [ setting ] ) => element.hasAttribute( setting ) )
+		.map( ( [ setting, dataAttribute ] ) => [
+			dataAttribute, String( element.getAttribute( setting ) )
+		] ) );
+}
+
+/** The code view settings that the `data-*` attributes of a saved embed set. */
+export function getCodeViewOfView( viewElement: ViewElement ): Record<string, string> {
+	return Object.fromEntries( CODE_VIEW_ATTRIBUTES
+		.filter( ( [ , dataAttribute ] ) => viewElement.hasAttribute( dataAttribute ) )
+		.map( ( [ setting, dataAttribute ] ) => [
+			setting, String( viewElement.getAttribute( dataAttribute ) )
+		] ) );
+}
+
+/** The flags that the `data-*` attributes of a saved embed turn on. */
+function getFlagsOfView( viewElement: ViewElement ): Partial<Record<EmbedFlag, true>> {
+	return Object.fromEntries( FLAG_ATTRIBUTES
+		.filter( ( [ , dataAttribute ] ) => viewElement.getAttribute( dataAttribute ) === 'true' )
+		.map( ( [ flag ] ) => [ flag, true ] ) );
+}
+
+/** The `data-display-mode` attribute of `element`, when it has a display mode. */
+export function getDisplayModeAttributes( element: ModelElement ): Record<string, string> {
+	const mode = toDisplayMode( element.getAttribute( 'displayMode' ) );
+	return mode ? { 'data-display-mode': mode } : {};
+}
+
+/** The display mode that the `data-display-mode` attribute of a saved embed names. */
+export function getDisplayModeOfView(
+	viewElement: ViewElement
+): { displayMode?: DisplayModeValue } {
+	const mode = toDisplayMode( viewElement.getAttribute( 'data-display-mode' ) );
+	return mode ? { displayMode: mode } : {};
+}
+
+/** The `data-position` attribute of `element`, when it is not centered. */
+export function getPositionAttributes( element: ModelElement ): Record<string, string> {
+	const position = element.getAttribute( 'position' );
+	return SAVED_POSITIONS.includes( position ) ? { 'data-position': position as string } : {};
+}
+
+/** The position in the `data-position` attribute of a saved embed, when not centered. */
+export function getPositionOfView( viewElement: ViewElement ): { position?: PositionValue } {
+	const position = viewElement.getAttribute( 'data-position' );
+	return SAVED_POSITIONS.includes( position ) ? { position: position as PositionValue } : {};
+}
+
+/**
+ * Whether the content of the selected embed, whose buttons are `tools`, hides `name`, with the
+ * Editable toggle of the embed on when `isEditable`.
+ */
+export function isToolbarItemHidden(
+	tools: ContentEmbedToolProvider | null,
+	name: ContentEmbedToolbarItem,
+	isEditable: boolean
+) {
+	return !!tools?.hiddenToolbarItems?.includes( name )
+		|| ( isEditable && !!tools?.hiddenToolbarItemsWhileEditable?.includes( name ) );
+}
+
+/**
+ * Whether the toolbar of the selected embed, whose buttons are `tools`, shows Editable, with the
+ * toggle on when `isEditable`.
+ */
+export function isEditableToggleShown(
+	tools: ContentEmbedToolProvider | null,
+	isEditable: boolean
+) {
+	return !!tools?.hasEditableFlag
+		&& !isToolbarItemHidden( tools, TOGGLE_EDITABLE_COMMAND_NAME, isEditable );
+}
+
+/**
+ * Shows `button` while `command` is enabled, unless the content of the selected embed hides the
+ * toolbar item `name`.
+ */
+function bindToolbarItemVisibility(
+	editor: Editor, button: ButtonView, command: Command, name: ContentEmbedToolbarItem
+) {
+	const contentEmbed = editor.plugins.get( ContentEmbed );
+	button.bind( 'isVisible' ).to(
+		command, 'isEnabled',
+		contentEmbed, 'selectedEmbedTools',
+		contentEmbed, 'isSelectedEmbedEditable',
+		( isEnabled, tools, isEditable ) =>
+			isEnabled && !isToolbarItemHidden( tools, name, isEditable )
+	);
+}
+
+/** The buttons that the content of the selected embed adds to its toolbar, or `null`. */
+function getSelectedEmbedTools( editor: Editor ): ContentEmbedToolProvider | null {
+	return getEmbedTools( editor, getSelectedContentEmbed( editor ) );
+}
+
+/** The buttons that the content of `embed` adds to its toolbar, or `null`. */
+function getEmbedTools(
+	editor: Editor,
+	embed: ModelElement | null
+): ContentEmbedToolProvider | null {
+	const domElement = getContentEmbedDom( editor, embed );
+	if ( !domElement ) {
+		return null;
+	}
+
+	return editor.config.get( 'contentEmbed' )?.getTools?.( domElement ) ?? null;
+}
+
+/** Has the host open the context menu of the selected embed, below `anchor`. */
+function openContentEmbedMenu( editor: Editor, anchor: HTMLElement | null ) {
+	const domElement = getContentEmbedDom( editor, getSelectedContentEmbed( editor ) );
+	if ( !anchor || !domElement ) {
+		return;
+	}
+
+	editor.config.get( 'contentEmbed' )?.openMenu?.( domElement, anchor );
+}
+
+/** The rendered `<figure>` of `embed`, or `null`. */
+export function getContentEmbedDom(
+	editor: Editor,
+	embed: ModelElement | null
+): HTMLElement | null {
+	const viewElement = embed && editor.editing.mapper.toViewElement( embed );
+	const domElement = viewElement && editor.editing.view.domConverter.mapViewToDom( viewElement );
+	return domElement instanceof HTMLElement ? domElement : null;
+}
+
+/** The title of an embed whose upload is under way: a spinner and the name of the file. */
+function createUploadTitle( domDocument: Document, fileName: string ) {
+	const title = domDocument.createElement( 'h4' );
+	const label = domDocument.createElement( 'span' );
+	const spinner = domDocument.createElement( 'span' );
+	title.className = 'include-note-title';
+	spinner.className = 'bx bx-loader-alt bx-spin';
+	label.append( spinner, fileName );
+	title.append( label );
+
+	return title;
+}
+
+/** What each content wrapper shows, so that it is drawn again only when that changes. */
+const shownContents = new WeakMap<HTMLElement, string>();
+
+/**
+ * Draws what an embed shows into its content wrapper: the file name while an upload is under
+ * way, then the attachment or note.
+ */
+function showEmbeddedContent( editor: Editor, element: ModelElement, wrapper: HTMLElement ) {
+	const uploadFileName = element.getAttribute( 'uploadFileName' ) as string | undefined;
+	const shown = uploadFileName
+		? `upload:${ uploadFileName }`
+		: JSON.stringify( getEmbeddedEntityAttributes( element ) );
+	const previous = shownContents.get( wrapper );
+	if ( previous === shown ) {
+		return;
+	}
+	shownContents.set( wrapper, shown );
+
+	if ( uploadFileName ) {
+		wrapper.replaceChildren( createUploadTitle( wrapper.ownerDocument, uploadFileName ) );
+		return;
+	}
+
+	if ( previous?.startsWith( 'upload:' ) ) {
+		wrapper.replaceChildren();
+	}
+	const boxSize = element.getAttribute( 'boxSize' ) as string | undefined;
+	loadEmbeddedContent( editor, element, wrapper, boxSize );
+}
+
+/** Updates the `data-*` attribute of an embed's view to what it shows, and redraws it. */
+function redrawEmbeddedEntity(
+	editor: Editor,
+	embed: ModelElement,
+	conversionApi: DowncastConversionApi
+) {
+	const viewElement = conversionApi.mapper.toViewElement( embed );
+	/* v8 ignore next 3 -- converted after the embed itself, so always mapped */
+	if ( !viewElement ) {
+		return;
+	}
+
+	const viewWriter = conversionApi.writer;
+	viewWriter.removeAttribute( 'data-attachment-id', viewElement );
+	viewWriter.removeAttribute( 'data-note-id', viewElement );
+	viewWriter.removeAttribute( 'data-block', viewElement );
+	for ( const [ key, value ] of Object.entries( getEmbeddedEntityAttributes( embed ) ) ) {
+		viewWriter.setAttribute( key, value, viewElement );
+	}
+
+	const wrapper = getWrapperDom( editor, viewElement );
+	if ( wrapper ) {
+		showEmbeddedContent( editor, embed, wrapper );
+	}
+}
+
+/** The content wrapper of a rendered embed, or `null` before the embed is rendered. */
+function getWrapperDom( editor: Editor, viewElement: ViewElement ) {
+	return editor.editing.view.domConverter.mapViewToDom( viewElement )
+		?.querySelector<HTMLElement>( ':scope > .include-note-wrapper' ) ?? null;
+}
+
+/** Has the host render what an embed shows into its wrapper. */
+function loadEmbeddedContent(
+	editor: Editor,
+	element: ModelElement,
+	wrapper: HTMLElement,
+	boxSize: string | undefined
+) {
+	if ( isInlineSourceEmbed( element ) ) {
+		editor.plugins.get( ContentEmbedInlineSource ).load( element, wrapper, boxSize );
+		return;
+	}
+	if ( isMediaEmbed( element ) ) {
+		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper, boxSize );
+		return;
+	}
+
+	const host = editor.config.get( 'contentEmbed' );
+	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
+	const noteId = element.getAttribute( 'noteId' ) as string | undefined;
+
+	if ( attachmentId ) {
+		host?.loadAttachment?.( attachmentId, wrapper, boxSize );
+	} else if ( noteId ) {
+		const block = element.getAttribute( 'block' ) as string | undefined;
+		host?.loadNote?.( noteId, wrapper, boxSize, block, newBlock => {
+			setEmbedBlock( editor, element, wrapper, newBlock );
+		} );
+	}
+}
+
+/**
+ * Points the embed at other blocks of its note, unless it has left the document. Its `wrapper`
+ * keeps what it shows, the editor that holds those blocks.
+ */
+function setEmbedBlock( editor: Editor, embed: ModelElement, wrapper: HTMLElement, block: string ) {
+	if ( editor.state === 'destroyed' || embed.root !== editor.model.document.getRoot() ) {
+		return;
+	}
+
+	editor.model.enqueueChange( { isUndoable: false }, writer => {
+		writer.setAttribute( 'block', block, embed );
+		shownContents.set( wrapper, JSON.stringify( getEmbeddedEntityAttributes( embed ) ) );
+	} );
+}
+
+/**
+ * Re-renders the embedded note content of an already-rendered widget after its box size changed.
+ *
+ * The wrapper is a `UIElement` whose DOM is opaque to CKEditor, so we reach into it directly to
+ * trigger the client-side render. The box size is passed explicitly because, at conversion time,
+ * the updated `data-box-size` attribute may not yet be flushed to the DOM.
+ *
+ * On the initial insert the attribute converter runs before the widget has been rendered to the
+ * DOM, so `mapViewToDom()` returns nothing and this is a no-op — the `UIElement` render callback
+ * performs that first paint instead. It only does work on a subsequent, genuine box-size change.
+ */
+function reloadEmbeddedContent( editor: Editor, viewElement: ViewElement, modelElement: ModelElement, boxSize: string ) {
+	const wrapperDom = getWrapperDom( editor, viewElement );
+
+	if ( wrapperDom ) {
+		loadEmbeddedContent( editor, modelElement, wrapperDom, boxSize );
+	}
+}
+
+/**
+ * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
+ * Source issue: https://github.com/zadam/trilium/issues/1117
+ */
+function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
+	// Prevent the editor from listening on below events in order to stop rendering selection.
+
+	// commenting out click events to allow link click handler to still work
+	//domElement.addEventListener( 'click', stopEventPropagationAndHackRendererFocus, { capture: true } );
+
+	domElement.addEventListener( 'mousedown', ( evt: MouseEvent ) => {
+		// A button of the title row selects the embed. Preventing the default keeps the focus
+		// in the editor instead of the button, and the click still fires.
+		if ( isTitleRowButton( evt.target ) ) {
+			evt.preventDefault();
+			selectContentEmbedWidget( domElement, editor );
+			return;
+		}
+
+		// Interactive embedded content — links, form controls, and live widgets such as collections
+		// (geo map, calendar, board, table) — needs the browser's native event handling to remain
+		// usable, e.g. dragging a geo-map marker relies on the mousedown reaching Leaflet. Leave those
+		// events completely alone: don't stop propagation, suppress the default, or steal selection.
+		if ( isInteractiveTarget( evt.target, domElement ) ) {
+			return;
+		}
+
+		evt.stopPropagation();
+
+		// Suppress the browser's native caret on non-interactive areas. The widget's <figure> is
+		// contenteditable=false inside an editable root, so the default mousedown action drops a caret
+		// next to it that visibly moves as the user clicks around.
+		evt.preventDefault();
+
+		// This prevents rendering changed view selection thus preventing to changing DOM selection while inside a widget.
+		//@ts-expect-error: We are accessing a private field.
+		editor.editing.view._renderer.isFocused = false;
+
+		// Select the widget so the toolbar can appear
+		selectContentEmbedWidget( domElement, editor );
+	}, { capture: true } );
+
+	domElement.addEventListener( 'focus', ( evt: FocusEvent ) => {
+		// The content of the embed, such as the editor of an included note, hears its own focus.
+		if ( isInEmbedContent( evt.target ) ) {
+			hackRendererFocus();
+		} else {
+			stopEventPropagationAndHackRendererFocus( evt );
+		}
+
+		// Content that takes the focus without a press, as a canvas drawing just added, selects
+		// its widget as a press does, which shows its toolbar. The focus stays in the content.
+		const modelElement = getContentEmbedAt( editor, domElement );
+		const selection = editor.model.document.selection;
+		if ( modelElement && selection.getSelectedElement() !== modelElement ) {
+			editor.model.enqueueChange( { isUndoable: false }, writer => {
+				writer.setSelection( modelElement, 'on' );
+			} );
+		}
+	}, { capture: true } );
+
+	// Prevents TAB handling or other editor keys listeners which might be executed on editors selection.
+	// Listens in the bubble phase, so the embedded content handles its own keys first.
+	domElement.addEventListener( 'keydown', stopEventPropagationAndHackRendererFocus );
+
+	function stopEventPropagationAndHackRendererFocus( evt: Event ) {
+		evt.stopPropagation();
+		hackRendererFocus();
+	}
+
+	function hackRendererFocus() {
+		// This prevents rendering changed view selection thus preventing to changing DOM selection while inside a widget.
+        //@ts-expect-error: We are accessing a private field.
+		editor.editing.view._renderer.isFocused = false;
+	}
+}
+
+/** How often `frameFocusChecks` run while a frame has the focus, in milliseconds. */
+const FRAME_FOCUS_CHECK_INTERVAL = 200;
+
+/** The check of each editor for the frame in its embeds that has the focus. */
+const frameFocusChecks = new Set<() => void>();
+let frameFocusTimer: ReturnType<typeof setInterval> | undefined;
+
+/**
+ * Fires `focus` at a frame in an embed of `editor`, such as a video player, that a click focuses,
+ * and `blur` once the focus leaves it. Chromium fires them only for a frame that a script
+ * focuses. The listeners of the embed then select it, and the editor stays focused.
+ */
+function fireFrameFocusEvents( editor: Editor, windowEmitter: DomEmitter ) {
+	let focusedFrame: Element | null = null;
+	const setFocusedFrame = ( frame: Element | null ) => {
+		if ( frame !== focusedFrame ) {
+			focusedFrame?.dispatchEvent( new FocusEvent( 'blur' ) );
+			focusedFrame = frame;
+			frame?.dispatchEvent( new FocusEvent( 'focus' ) );
+		}
+	};
+	const checkFocusedFrame = () => setFocusedFrame( getFocusedEmbedFrame( editor ) );
+
+	frameFocusChecks.add( checkFocusedFrame );
+	editor.on( 'destroy', () => frameFocusChecks.delete( checkFocusedFrame ) );
+	windowEmitter.listenTo( window, 'blur', () => {
+		checkFocusedFrame();
+		// Firefox makes the frame the active element only after the window blurs.
+		setTimeout( checkFocusedFrame );
+		watchFrameFocus();
+	} );
+	windowEmitter.listenTo( window, 'focus', () => {
+		clearInterval( frameFocusTimer );
+		setFocusedFrame( null );
+	} );
+}
+
+/**
+ * Runs `frameFocusChecks` while a frame has the focus. A click moves the focus from one frame to
+ * another with no event in this page.
+ */
+function watchFrameFocus() {
+	clearInterval( frameFocusTimer );
+	frameFocusTimer = setInterval( () => {
+		for ( const check of frameFocusChecks ) {
+			check();
+		}
+		if ( !document.activeElement?.matches( 'iframe, webview' ) ) {
+			clearInterval( frameFocusTimer );
+		}
+	}, FRAME_FOCUS_CHECK_INTERVAL );
+}
+
+/** The `<iframe>` or `<webview>` in the content of an embed of `editor` that has the focus. */
+function getFocusedEmbedFrame( editor: Editor ) {
+	const active = document.activeElement;
+	const isEmbedFrame = !!active?.matches( 'iframe, webview' ) && isInEmbedContent( active )
+		&& [ ...editor.editing.view.domRoots.values() ].some( root => root.contains( active ) );
+	return isEmbedFrame ? active : null;
+}
+
+/** Whether `target` is in the content box of an embed, rather than in its title row. */
+function isInEmbedContent( target: EventTarget | null ): boolean {
+	return target instanceof Element && !!target.closest( '.include-note-content' );
+}
+
+/**
+ * Whether a mousedown target needs the browser's native handling to keep working — so the widget's
+ * event interception should step aside. Covers form controls, links and media (which need focus,
+ * caret or their own controls) and, crucially, live embedded widgets: web views and collection views
+ * (geo map, calendar, board, table) whose own drag/click handlers rely on the native event.
+ *
+ * Covers all of `.include-note-content` as well: the host covers it with `.include-note-backdrop`
+ * until the content has the focus, and a press inside it keeps that focus out of the editor.
+ *
+ * The match is bounded to within `boundary` (the widget wrapper) so the editable editor root — an
+ * ancestor with `contenteditable="true"` — is never mistaken for an interactive target.
+ */
+function isInteractiveTarget( target: EventTarget | null, boundary: HTMLElement ): boolean {
+	if ( !( target instanceof Element ) ) {
+		return false;
+	}
+
+	const match = target.closest(
+		'.include-note-content, .rendered-collection, .note-detail-web-view, ' +
+		'a, button, input, textarea, select, label, audio, video, ' +
+		'[role="button"], [role="textbox"], [contenteditable]:not([contenteditable="false"])'
+	);
+
+	return !!match && boundary.contains( match );
+}
+
+/** Whether `target` is in a button of the title row that the host renders above the content. */
+function isTitleRowButton( target: EventTarget | null ): boolean {
+	return target instanceof Element && !!target.closest( '.include-note-title-row button' );
+}
+
+function selectContentEmbedWidget( domElement: HTMLElement, editor: Editor ) {
+	const modelElement = getContentEmbedAt( editor, domElement );
+	if ( !modelElement ) {
+		return;
+	}
+
+	// Focus the editor view first to ensure selection sync works
+	editor.editing.view.focus();
+
+	// Select the model element using a non-undoable batch so it doesn't affect undo
+	editor.model.enqueueChange( { isUndoable: false }, writer => {
+		writer.setSelection( modelElement, 'on' );
+	} );
+}
+
+declare module 'ckeditor5' {
+	interface PluginsMap {
+		[ ContentEmbed.pluginName ]: ContentEmbed;
+	}
+
+	interface CommandsMap {
+		toggleContentEmbedCaption: ToggleContentEmbedCaptionCommand;
+		toggleContentEmbedTitle: ToggleContentEmbedTitleCommand;
+		toggleContentEmbedEditable: ToggleContentEmbedEditableCommand;
+		setContentEmbedCodeView: SetContentEmbedCodeViewCommand;
+		contentEmbedDisplayMode: ContentEmbedDisplayModeCommand;
+		deleteContentEmbed: DeleteContentEmbedCommand;
+	}
+
+	interface EditorConfig {
+		contentEmbed?: Partial<ContentEmbedHost>;
+	}
+}
+
+/** The request that the editor passes to the host's Include note dialog. */
+export interface ContentEmbedDialogRequest {
+	/** The element to render the dialog into, which the editor owns and places at the caret. */
+	container: HTMLElement;
+	/** Closes the balloon and focuses the editor. The host calls it before it inserts the note. */
+	close(): void;
+}
+
+/** What the host of the editor renders into embeds, and does with them. */
+export interface ContentEmbedHost {
+	/**
+	 * Renders the dialog that picks a note to include at the selection into `request.container`,
+	 * and returns the function that removes it. A host that shows the dialog somewhere else (a
+	 * phone, which has no room for a balloon) leaves the container alone and returns `null`.
+	 */
+	pickNote( request: ContentEmbedDialogRequest ): ( () => void ) | null;
+	/**
+	 * The languages whose `<pre><code class="language-…">` code blocks show as embeds of their
+	 * source, rendered by `loadInline()`.
+	 */
+	inlineLanguages: string[];
+	/**
+	 * Renders the `source` of an inline language into `container`, outside an embed, as the AI
+	 * assistant previews a response.
+	 */
+	renderInlinePreview( language: string, source: string, container: HTMLElement ): void;
+	/**
+	 * Fills `wrapper` with the note, or with the `block` of it, a `block` link parameter. An
+	 * editor of those blocks calls `onBlockChange()` once the blocks at its edges change.
+	 */
+	loadNote(
+		noteId: string,
+		wrapper: HTMLElement,
+		boxSize: string | undefined,
+		block: string | undefined,
+		onBlockChange: ( block: string ) => void
+	): void;
+	/** Fills `wrapper` with the attachment. */
+	loadAttachment( attachmentId: string, wrapper: HTMLElement, boxSize: string | undefined ): void;
+	/** Writes into the note the changes to the sources of inline embeds that are not yet in it. */
+	flushInline(): void;
+	/** Fills `wrapper` with the source of an inline embed, focused if `isFocused`. */
+	loadInline(
+		source: InlineEmbedSource,
+		wrapper: HTMLElement,
+		boxSize: string | undefined,
+		options: { isFocused: boolean }
+	): void;
+	/** Gives the focus to what the embed of the attachment shows, once it renders. */
+	focusAttachment( attachmentId: string ): void;
+	/** The href of a reference link to the attachment, or `null` once it is deleted. */
+	getAttachmentHref( attachmentId: string ): Promise<string | null>;
+	/** Sanitizes the content of an embed of an unknown kind, which the note saves unchanged. */
+	sanitizeHtml( html: string ): string;
+	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
+	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
+	/** Fills `wrapper` with the player of the media of a link preview, in a box of `boxSize`. */
+	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement, boxSize: string | undefined ): void;
+	/**
+	 * Captures the picture of a frame of the video file of a link preview and stores it as the
+	 * thumbnail of the preview, resolving to its URL and the shape of the video, or to `null`
+	 * when the video cannot be read.
+	 */
+	captureVideoThumbnail?(
+		preview: LinkPreviewData
+	): Promise<{ image: string; aspectRatio?: string } | null>;
+	/** Opens the context menu of what `embed` shows, below `anchor`. */
+	openMenu( embed: HTMLElement, anchor: HTMLElement ): void;
+	/** The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. */
+	getTools( embed: HTMLElement ): ContentEmbedToolProvider | null;
+	/**
+	 * Focuses the editor that `embed` shows, with the caret at `edge` of its content, and
+	 * returns whether it did.
+	 */
+	enter( embed: HTMLElement, edge: EmbedEdge ): boolean;
+	/**
+	 * What the host knows of the note or attachment that an embed shows, from its content type,
+	 * or `null` until the host has loaded it.
+	 */
+	getEmbedContentInfo(
+		embedded: { noteId?: string; attachmentId?: string }
+	): EmbedContentInfo | null;
+}
+
+/** What the content type of a note or an attachment decides about the box of its embed. */
+export interface EmbedContentInfo {
+	/** The box size that a new embed of the content starts at. */
+	defaultBoxSize: BoxSize;
+	/** Whether a Compact embed renders the content, as it plays audio, rather than its title. */
+	hasCompactContent: boolean;
+}
+
+/** A toolbar separator that shows only while `isVisible`, as the items on both sides do. */
+class ToolbarItemSeparatorView extends View {
+	declare public isVisible: boolean;
+
+	constructor( locale?: Locale ) {
+		super( locale );
+		this.set( 'isVisible', false );
+
+		this.setTemplate( {
+			tag: 'span',
+			attributes: {
+				class: [
+					'ck',
+					'ck-toolbar__separator',
+					this.bindTemplate.if( 'isVisible', 'ck-hidden', isVisible => !isVisible )
+				]
+			}
+		} );
+	}
+}

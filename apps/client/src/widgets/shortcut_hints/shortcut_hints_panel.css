@@ -2,7 +2,8 @@
     position: fixed;
     right: 1rem;
     bottom: 1rem;
-    z-index: 1080;
+    /* Over a `Popup` (1200, Popup.css), from which its button can open it. */
+    z-index: 1210;
     /* Grow to fit the widest shortcut row (so keys never wrap), capped to the viewport. */
     width: max-content;
     max-width: min(90vw, 640px);
@@ -13,6 +14,15 @@
     border: 1px solid var(--main-border-color);
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+
+    /* Beside a button, where `placeFloating()` sets `left` and `top` and shows it once placed. */
+    &.anchored {
+        top: 0;
+        left: 0;
+        right: auto;
+        bottom: auto;
+        visibility: hidden;
+    }
 
     .shortcut-hints-section {
         &:not(:last-child) {

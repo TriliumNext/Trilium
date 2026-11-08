@@ -1,12 +1,14 @@
 /**
  * Transcript helpers shared by the session-based agent providers (Claude
- * Agent, Copilot Agent). These providers own their conversation history in
+ * Agent and the ACP agents). These providers own their conversation history in
  * host-side sessions, so they need a stable way to detect whether the
- * transcript the client sent still matches a mapped session (hash) and to
- * reseed a fresh session when it doesn't (replay).
+ * transcript the client sent still matches a mapped session (hash), to
+ * reseed a fresh session when it doesn't (replay), and to name chats in a
+ * session that several titles share.
  */
 
-import type { LlmFilePart, LlmImagePart, LlmMessage, LlmMessagePart, LlmTextAttachmentPart } from "@triliumnext/commons";
+import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
+import { attachmentPlaceholder } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { createHash } from "crypto";
 
 /**
@@ -45,9 +47,21 @@ export function flattenContent(content: string | LlmMessagePart[]): string {
         .join("\n");
 }
 
-/** Short "[attached …]" stand-in used wherever an attachment's bytes aren't sent. */
-export function attachmentPlaceholder(part: LlmImagePart | LlmFilePart | LlmTextAttachmentPart): string {
-    const kind = part.type === "image" ? "image" : "file";
-    const name = "filename" in part ? `: ${part.filename}` : "";
-    return `[attached ${kind}${name}]`;
+/**
+ * Titles one session answers before it is replaced. Titles share a session to
+ * skip the session start (~2.5 s on Antigravity, which also keeps every session
+ * on disk); the cap bounds the history each title prompt carries.
+ */
+export const MAX_TITLES_PER_SESSION = 20;
+
+/** The prompt that names a chat after its first message, in a session shared by earlier titles. */
+export function buildTitlePrompt(firstMessage: string): string {
+    return `Generate a short title (at most 5 words) summarizing the chat message below. It is a new request: earlier messages in this conversation do not apply. Reply with only the title, no quotes or punctuation around it:
+
+${firstMessage.substring(0, 500)}`;
+}
+
+/** The agent's title reply without surrounding whitespace or quotes, capped at 100 characters. */
+export function cleanTitle(reply: string): string {
+    return reply.trim().replace(/^["']|["']$/g, "").substring(0, 100);
 }

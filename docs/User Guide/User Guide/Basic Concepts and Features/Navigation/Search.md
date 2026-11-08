@@ -8,15 +8,12 @@ Note search enables you to find notes by searching for text in the title, conten
 There are multiple types of searches, all using the same search mechanism and query language:
 
 *   <a class="reference-link" href="Quick%20search.md">Quick search</a> which can be found in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> for small one-off searches.
-    
     *   The results are shown in a popup and it has an infinite scroll.
 *   _Full search_ is the more advanced search mechanism.
-    
     *   The results are displayed in a separate page and it has multiple advanced features (search script, fast search, include archived notes, order by, limit).
     *   <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a> such as adding a label/relation can be applied to the results.
     *   The results are paginated and they can be displayed in any <a class="reference-link" href="../../Collections.md">Collections</a> view (e.g. grid, list, calendar, table).
 *   Some <a class="reference-link" href="../../Collections.md">Collections</a> such as board view have a dedicated search bar which applies to that collection.
-    
     *   In this case, the results are displayed directly in the collection instead of a popup and they are limited to the collection but the query language remains the same.
 
 > [!NOTE]
@@ -24,13 +21,13 @@ There are multiple types of searches, all using the same search mechanism and qu
 
 ## Accessing the search
 
-*   From the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, look for the dedicated search button.
-*   To limit the search to a note and its children, select _Search from subtree_ from the <a class="reference-link" href="../UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a> or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>.
-*   Go to <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a>, look for something then press _Search in full text_ (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
+*   From the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, look for the dedicated <span class="tn-icon bx bx-search"></span> search button.
+*   To limit the search to a note and its children, select _Search in subtree_ (<span class="tn-icon bx bx-search"></span>) from the <a class="reference-link" href="../UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a> or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>.
+*   Go to <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a>, look for something then press _Show in full search_ below the results (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
 
 ## Interaction
 
-To search for notes, click on the magnifying glass icon on the toolbar or press the keyboard [shortcut](../Keyboard%20Shortcuts.md).
+To search for notes, click on the <span class="tn-icon bx bx-search"></span> icon in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> or press the keyboard [shortcut](../Keyboard%20Shortcuts.md).
 
 1.  Set the text to search for in the _Search string_ field.
     1.  Apart from searching for words literally, there is also the possibility to search for attributes or properties of notes.
@@ -39,10 +36,10 @@ To search for notes, click on the magnifying glass icon on the toolbar or press 
     1.  This value is also pre-filled if the search is triggered from a [hoisted note](Note%20Hoisting.md) or a [workspace](Workspaces.md).
     2.  To search the entire database, keep the value empty.
 3.  To limit the search to only a few levels of hierarchy (e.g. look in sub-children but not in sub-sub-children of a note), set the _depth_ field to one of the provided values.
-4.  In addition to that, the search can be configured via the _Add search options_ buttons, as described in the follow-up section.
-5.  Press _Search_ to trigger the search. The results are displayed below the search configuration pane.
-6.  The _Search & Execute actions_ button is only relevant if at least one action has been added (as described in the section below).
-7.  The _Save to note_ will create a new note with the search configuration. For more information, see <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a>.
+4.  In addition to that, the search can be configured via the _Add search option_ menu, as described in the follow-up section.
+5.  Press _Search_ (<span class="tn-icon bx bx-search"></span>) to trigger the search. The results are displayed below the search configuration pane.
+6.  The _Search & Execute actions_ (<span class="tn-icon bx bxs-zap"></span>) entry in the menu beside _Search_ is only relevant if at least one action has been added (as described in the section below).
+7.  The _Save to note_ (<span class="tn-icon bx bx-save"></span>) entry in the same menu will create a new note with the search configuration. For more information, see <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a>.
 
 ## Features
 
@@ -50,18 +47,20 @@ To search for notes, click on the magnifying glass icon on the toolbar or press 
 
 To help with the syntax, Trilium offers an autocomplete functionality which can be triggered by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>.
 
+Some suggestions also open on their own as you type: label and relation names after `#` and `~`, fields after `.`, operators, values, and notes after `@`. Keywords such as `and`, `or`, `not`, `orderBy` and `limit` appear only on <kbd>Ctrl</kbd>+<kbd>Space</kbd>, since a plain word is usually a search term.
+
+No suggestion is selected when a list opens on its own, so <kbd>Enter</kbd> runs the search as typed. To insert a suggestion, select it with <kbd>Down</kbd> and press <kbd>Enter</kbd>. The list opened with <kbd>Ctrl</kbd>+<kbd>Space</kbd> and the notes after `@` open on the best match instead, so <kbd>Enter</kbd> inserts it.
+
 The autocomplete offers:
 
 *   Basic operators such as `*=` and keywords (`limit`, `not`).
 *   Fields for object-like fields such as `note` or `~relation`, triggered by typing `.`.
 *   Contextual enumerations such as `note.type = "` or `note.mime = "`.
-*   [Label](../../Advanced%20Usage/Attributes/Labels.md) names by typing `#`, with user-defined ones shown first.
-    
-    *   A gear icon indicates system attributes.
+*   [Label](../../Advanced%20Usage/Attributes/Labels.md) names by typing `#`.
+    *   A small gear on the name's icon indicates a system attribute.
     *   After typing the label name, the value is also autocompleted with values that are present in the database.
 *   [Relation](../../Advanced%20Usage/Attributes/Relations.md) names by typing `~`.
 *   [Note ID](../../Advanced%20Usage/Note%20ID.md)s can be inserted easily by typing `@` and looking for a note.
-    
     *   If the note ID is under a valid syntax, it will be shown as a chip of the note instead of the raw ID.
     *   This is especially useful for queries that make use of the note ID such as searching by template: `~template.noteId = @`
 
@@ -69,12 +68,16 @@ The autocomplete offers:
 
 The search input features syntax highlighting, making recognized fields such as `note.` and operators like `NOT` stand out.
 
+The same highlighting is available in <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, for example to keep a collection of queries: set the language of the note to _Trilium Search Query_. The language is not enabled by default; add it from <a class="reference-link" href="../UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_.
+
 ### Error highlighting & linting
 
 The search is also checked for errors in two phases, which will be displayed as a red squiggle:
 
 *   Linter errors which identify common error patterns and also provide a way to fix them.
 *   Search errors which are checked by the server, without indicating the exact place the error occurred.
+
+An error the search only runs into while running, such as an operator that note content cannot be searched with, is shown in a _Search error_ card instead: below the search string, or at the top of the <a class="reference-link" href="Quick%20search.md">Quick search</a> results.
 
 ### Multiline
 
@@ -87,57 +90,61 @@ To add a new line, press <kbd>Shift</kbd>+<kbd>Enter</kbd>.
 
 ## Search options
 
-Click on which search option to apply from the Add search option section.
+Click _Add search option_ to choose an option to apply.
 
 *   For each search option selected, the search configuration will update to reveal the entry. Each search option will have its own configuration.
-*   To remove a search option, simply press the X button to the right of it.
+*   To remove a search option, simply press the <span class="tn-icon bx bx-x"></span> button to the right of it.
 
 The options available are:
 
-1.  Search script
+1.  <span class="tn-icon bx bx-code"></span> Search script
     1.  This feature allows writing a <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note that will handle the search on its own.
-2.  Fast search
+2.  <span class="tn-icon bx bx-run"></span> Fast search
     1.  The search will not look into the content of the notes, but it will still look into note titles and attributes, relations (based on the search query).
     2.  This method can speed up the search considerably for large [databases](../../Advanced%20Usage/Database.md).
-3.  Include archived
+3.  <span class="tn-icon bx bx-archive"></span> Include archived
     1.  <a class="reference-link" href="../Notes/Archived%20Notes.md">Archived Notes</a> will also be included in the results, whereas otherwise they would be ignored.
-4.  Order by
+4.  <span class="tn-icon bx bx-arrow-from-top"></span> Order by
     1.  Allows changing the criteria for ordering the results, for example to order by creation date or alphabetically instead of by relevancy (default).
     2.  It's also possible to change the order (ascending or descending) of the results.
-5.  Limit
+5.  <span class="tn-icon bx bx-stop"></span> Limit
     1.  Limits the results to a given maximum.
     2.  This can help if the number of results would otherwise be high, at the cost of not being able to view all the results.
-6.  Debug
+6.  <span class="tn-icon bx bx-bug"></span> Debug
     1.  This will print additional information in the server log (see <a class="reference-link" href="../../Troubleshooting/Error%20logs.md">Error logs</a>), regarding how the search expression was parsed.
     2.  This function is especially useful after understanding the search functionality in detail, in order to determine why a complex search query is not working as expected.
-7.  Action
-    1.  Apart from just searching, it is also possible to apply actions such as to add a label or a relation to the notes that have been matched by the search.
-    2.  Unlike other search configurations, here it's possible to apply the same action multiple times (i.e. in order to be able to apply multiple labels to notes).
-    3.  The actions given are the same as the ones in <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a>, which is an alternative for operating directly with notes within the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>.
-    4.  After defining the actions, first press _Search_ to check the matched notes and then press _Search & Execute actions_ to trigger the actions.
+
+The same menu ends with a _Bulk actions_ section for applying changes such as adding a label or a relation to the matched notes. Its groups—_Labels_, _Relations_, _Notes_ and _Other_—each open a list of the actions in the corresponding group of the <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a> dialog, which is an alternative for operating directly with notes within the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>. Choosing one adds it to the search; unlike the other options, the same action can be added more than once (e.g. to apply multiple labels). After defining the actions, first press _Search_ to check the matched notes and then choose _Search & Execute actions_ from the menu beside it to trigger the actions.
 
 ## Viewing search results
 
-Results appear below the search pane as a list of **snippet cards**. Each card shows the note title and a short excerpt of the text that matched.
+Results appear below the search pane, by default in the _Search preview_ view. Each result is drawn as a **snippet card** with the note title, the path to it, a short excerpt of the matching text, and the attributes that matched. The excerpt of a code note keeps its indentation and is shown in the code font.
+
+To show the results as a plain note list instead, choose _List_ from the <a class="reference-link" href="../../Collections/Collection%20Properties.md">Collection Properties</a> bar. The _List_ view shows one row per note, with the note's title and content preview.
 
 The search will also highlight the words from the title or content that matched:
 
 *   With a solid underlined green for a direct match;
 *   With a dotted underline orange for a partial match (matched by the fuzzy search).
 
-In addition: 
+In addition, the _Search preview_ view offers:
 
 *   The **total number of results** is always shown, so you can immediately tell how broad a query is.
 *   A **page-size selector** lets you choose how many results to display per page. Your choice is remembered and synced across your devices (stored in the `searchResultsPageSize` option), so you do not have to reset it on every device.
-*   **Clicking a result** opens the note and jumps straight to the first match. The in-note find bar opens pre-filled with your search terms, so you can step through the remaining matches with the find controls.
+*   **Clicking a result's title** opens the note and jumps straight to the first match. The in-note find bar opens pre-filled with the first word of your search, so you can step through its matches with the find controls. To have the find bar look for a whole phrase instead, put the phrase in quotes in the search, e.g. `"The Lord of the Rings"`. In read-only notes, the other words of the search are highlighted as well. The excerpt and attributes can be selected without opening the note.
+*   _Open all results in new tabs_ (<span class="tn-icon bx bx-window-open"></span>, the button above the results) opens every result in a tab of its own, up to 50. Each tab opens on its first match with the find bar pre-filled, as when clicking a result.
 *   If a match is inside a **collapsed section** (for example a folded heading), that section is expanded automatically so the match is visible.
+*   When the excerpt is cut short, a _Show more_ button expands the card to the note's full content, with the search terms highlighted. _Show less_ returns to the excerpt.
+
+A saved search can also be <a class="reference-link" href="../Notes/Printing%20%26%20Exporting%20as%20PDF.md">printed or exported as PDF</a> from the _Print/export to PDF…_ item of the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, in either _Search preview_ or _List_ view. The results are laid out as a list, as they stand when printing starts.
 
 ## Simple Note Search Examples
 
 *   `rings tolkien`: Full-text search to find notes containing both "rings" and "tolkien".
 *   `"The Lord of the Rings" Tolkien`: Full-text search where "The Lord of the Rings" must match exactly.
 *   `note.content *=* rings OR note.content *=* tolkien`: Find notes containing "rings" or "tolkien" in their content.
-*   `towers #book`: Combine full-text and attribute search to find notes containing "towers" and having the "book" label.
+*   `towers #book`: Combine full-text and attribute search to find notes containing "towers" and having the "book" label. Writing `towers AND #book` does the same; to search for the word "and" itself, put it in quotes.
+*   `c#` or `towers#book`: A `#` or `~` inside a word is part of the text, so these find notes containing "c#" or "towers#book". To start a label or relation, put a space before it.
 *   `towers #book or #author`: Search for notes containing "towers" and having either the "book" or "author" label.
 *   `towers #!book`: Search for notes containing "towers" and not having the "book" label.
 *   `#book #publicationYear = 1954`: Find notes with the "book" label and "publicationYear" set to 1954.
@@ -159,11 +166,15 @@ In addition: 
         *   J. R. R. Tolkien
             *   relation: “son” points to "Christopher Tolkien" note
             *   Christopher Tolkien
-*   `~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)`: Use boolean expressions and parentheses to group expressions. Note that expressions starting with a parenthesis need an "expression separator sign" (# or ~) prepended.
+*   `~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)`: Use boolean expressions and parentheses to group expressions.
+*   `towers (#genre = fantasy OR #genre = scifi)`: A group can open the expression part directly, without a `#` or `~` before the parenthesis. Here it finds notes containing "towers" whose genre is fantasy or scifi.
 *   `note.parents.title = 'Books'`: Find notes with a parent named "Books".
 *   `note.parents.parents.title = 'Books'`: Find notes with a grandparent named "Books".
 *   `note.ancestors.title = 'Books'`: Find notes with an ancestor named "Books".
 *   `note.children.title = 'sub-note'`: Find notes with a child named "sub-note".
+*   `note.links.title = 'Tolkien'`: Find notes linking to a note named "Tolkien".
+*   `note.backlinks.title = 'Reading list'`: Find the notes that "Reading list" links to.
+*   A link is a relation you created, such as `~author`, or one that content creates: an internal link (`~internalLink`), an image (`~imageLink`), an included note (`~includeNoteLink`) or a relation map connection (`~relationMapLink`). Relations that configure a note, such as `~template` or a saved search's `~ancestor`, are not links.
 
 See also <a class="reference-link" href="Search/Under%20the%20hood.md">Under the hood</a> for more syntax references.
 

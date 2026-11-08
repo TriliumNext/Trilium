@@ -9,7 +9,7 @@
     display:none;
 }
 
-.toc li + ol:before {
+.toc ol > ol:before {
     content: "";
     position: absolute;
     height: 100%;

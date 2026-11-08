@@ -83,12 +83,25 @@ describe("PromotedAttributesCard", () => {
     let stored: PromotedAttribute[][];
     let settings: PromotedAttributeSetting[] | undefined;
     let drawnByCollection: string[] | undefined;
+    let itemNotes: FNote[] | undefined;
+    let unarrangedHidden: boolean | undefined;
+    let omitDrawn: boolean | undefined;
+    /** Wraps the card's deletion where a test hands one, recording what it was called with. */
+    let runDeletion: ((deletion: () => Promise<void>, type: "label" | "relation", name: string)
+        => Promise<void>) | undefined;
+    /** What `runDeletion` was called with, and whether the definition was gone before and after. */
+    let wrapped: { type: string, name: string, removedBefore: boolean, removedAfter: boolean }[];
 
     beforeEach(() => {
         vi.clearAllMocks();
         stored = [];
+        runDeletion = undefined;
+        wrapped = [];
         settings = undefined;
         drawnByCollection = undefined;
+        itemNotes = undefined;
+        unarrangedHidden = undefined;
+        omitDrawn = undefined;
         defined = [ definition("label:dueDate", { alias: "Due" }), definition("label:owner") ];
         mocks.detail.opts = null;
         mocks.confirm.mockResolvedValue(true);
@@ -121,7 +134,8 @@ describe("PromotedAttributesCard", () => {
         expect(icons()).toEqual([
             "bx bx-calendar", "bx bx-toggle-left", "bx bx-text", "bx bx-transfer"
         ]);
-        // And says which kind it is, in the words the editor lists them under.
+        // Named in the words the editor lists them under, as the icon's tooltip rather than a badge.
+        expect(container.querySelector(".promoted-attribute-type")).toBeNull();
         expect(types()).toEqual([
             "attribute_detail.date", "attribute_detail.boolean", "attribute_detail.text",
             "attribute_detail.relation_type"
@@ -146,6 +160,17 @@ describe("PromotedAttributesCard", () => {
         toggle(0);
         expect(shown()).toEqual([ false, true ]);
         expect(stored).toEqual([]);
+    });
+
+    /** A calendar always draws its dates itself, so a row for them could never be switched on. */
+    it("leaves out what the collection draws itself, for a collection that asks", () => {
+        settings = [ { name: "owner" }, { name: "dueDate" } ];
+        drawnByCollection = [ "owner" ];
+        omitDrawn = true;
+        draw();
+
+        expect(names()).toEqual([ "Due" ]);
+        expect(shown()).toEqual([ true ]);
     });
 
     /**
@@ -173,6 +198,66 @@ describe("PromotedAttributesCard", () => {
 
         expect(names()).toEqual([ unnamed("owner"), "Due" ]);
         expect(shown()).toEqual([ false, true ]);
+    });
+
+    /**
+     * A definition from an item's template is listed but has no edit or delete button, because
+     * `save()` and `erase()` write to the collection note rather than to the template.
+     */
+    it("lists what only the items define, without offering to edit or delete it", () => {
+        itemNotes = [ {
+            noteId: "task1",
+            getAttributeDefinitions: () => [
+                { ...definition("label:project", { alias: "Project" }), noteId: "template1" }
+            ]
+        } as unknown as FNote ];
+        draw();
+
+        expect(names()).toEqual([ "Due", unnamed("owner"), "Project" ]);
+        expect(shown()).toEqual([ true, true, true ]);
+        expect(segments().map((segment) => !!segment.querySelector(".promoted-attribute-edit")))
+            .toEqual([ true, true, false ]);
+        expect(segments().map((segment) => !!segment.querySelector(".promoted-attribute-delete")))
+            .toEqual([ true, true, false ]);
+
+        toggle(2);
+        expect(stored.at(-1)?.[2]).toMatchObject({ name: "project", hidden: true });
+    });
+
+    it("flags what the items define in different ways", () => {
+        const item = (noteId: string, labelType: string) => ({
+            noteId,
+            getAttributeDefinitions: () => [
+                { ...definition("label:priority", { labelType }), noteId: `tpl_${noteId}` }
+            ]
+        }) as unknown as FNote;
+        itemNotes = [ item("task1", "select"), item("task2", "number") ];
+        draw();
+
+        expect(segments().map((segment) =>
+            segment.querySelector(".promoted-attribute-conflict")?.textContent))
+            .toEqual([ undefined, undefined, "promoted_attributes.conflicting" ]);
+    });
+
+    /**
+     * A card that joins the board through a branch change, such as a sync, brings no attribute row,
+     * so the new `itemNotes` alone must add its definitions.
+     */
+    it("lists what a newly shown item defines, keeping the order and what is hidden", () => {
+        settings = [ { name: "owner" }, { name: "dueDate", hidden: true } ];
+        itemNotes = [];
+        draw();
+
+        itemNotes = [ {
+            noteId: "task1",
+            getAttributeDefinitions: () => [
+                { ...definition("label:project", { alias: "Project" }), noteId: "template1" }
+            ]
+        } as unknown as FNote ];
+        draw();
+
+        expect(names()).toEqual([ unnamed("owner"), "Due", "Project" ]);
+        expect(shown()).toEqual([ true, false, true ]);
     });
 
     it("reports the whole list in its new order", () => {
@@ -328,6 +413,35 @@ describe("PromotedAttributesCard", () => {
             expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:dueDate");
         });
 
+        /** A board drops the columns it stores for a grouping in the same write. */
+        it("hands the deletion to a collection that wraps one, from either button", async () => {
+            runDeletion = async (deletion, type, name) => {
+                const removedBefore = mocks.removeOwned.mock.calls.length > 0;
+                await deletion();
+                wrapped.push({
+                    type, name, removedBefore, removedAfter: mocks.removeOwned.mock.calls.length > 0
+                });
+            };
+            draw();
+
+            await act(async () => {
+                segments()[0].querySelector<HTMLElement>(".promoted-attribute-delete")?.click();
+                await flush();
+            });
+            edit(1);
+            await act(async () => {
+                mocks.detail.callbacks.onDelete();
+                await flush();
+            });
+
+            expect(wrapped).toEqual([
+                { type: "label", name: "dueDate", removedBefore: false, removedAfter: true },
+                { type: "label", name: "owner", removedBefore: true, removedAfter: true }
+            ]);
+            expect(mocks.bulk).toHaveBeenCalledTimes(2);
+            expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:owner");
+        });
+
         it("leaves everything alone where the reader said no", async () => {
             mocks.confirm.mockResolvedValue(false);
             draw();
@@ -339,6 +453,22 @@ describe("PromotedAttributesCard", () => {
 
             expect(mocks.bulk).not.toHaveBeenCalled();
             expect(mocks.removeOwned).not.toHaveBeenCalled();
+        });
+
+        it("targets the full colon-carrying name when the definition name contains multiple colons", async () => {
+            defined = [ definition("label:sometool:parameter") ];
+            draw();
+
+            await act(async () => {
+                segments()[0].querySelector<HTMLElement>(".promoted-attribute-delete")?.click();
+                await flush();
+            });
+
+            expect(mocks.bulk).toHaveBeenCalledWith(
+                [ "board1" ],
+                [ { name: "deleteLabel", labelName: "sometool:parameter" } ],
+                { includeDescendants: true, silent: true });
+            expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:sometool:parameter");
         });
     });
 
@@ -395,6 +525,48 @@ describe("PromotedAttributesCard", () => {
         });
     });
 
+    describe("for a collection that hides what nobody has arranged", () => {
+        beforeEach(() => { unarrangedHidden = true; });
+
+        it("lists every definition, switched off until the reader shows it", () => {
+            settings = [ { name: "owner" } ];
+            draw();
+
+            expect(names()).toEqual([ unnamed("owner"), "Due" ]);
+            expect(shown()).toEqual([ true, false ]);
+        });
+
+        it("shows what was created here, and reports it", async () => {
+            draw();
+            act(() => { adder()?.click(); });
+
+            await save({
+                type: "label", name: "label:priority", value: "promoted,single,text",
+                isInheritable: true
+            });
+            defined = [ ...defined, definition("label:priority") ];
+            await reported();
+
+            expect(names()).toEqual([ "Due", unnamed("owner"), unnamed("priority") ]);
+            expect(shown()).toEqual([ false, false, true ]);
+            expect(stored.at(-1)?.map(({ name, hidden }) => ({ name, hidden }))).toEqual([
+                { name: "dueDate", hidden: true },
+                { name: "owner", hidden: true },
+                { name: "priority", hidden: false }
+            ]);
+        });
+
+        it("keeps a definition made elsewhere switched off, writing nothing", async () => {
+            draw();
+
+            defined = [ ...defined, definition("label:priority") ];
+            await reported();
+
+            expect(shown()).toEqual([ false, false, false ]);
+            expect(stored).toEqual([]);
+        });
+    });
+
     // #region The card, and what the test does to it
 
     function draw() {
@@ -407,7 +579,11 @@ describe("PromotedAttributesCard", () => {
                         note={NOTE}
                         settings={settings}
                         drawnByCollection={drawnByCollection}
+                        itemNotes={itemNotes}
+                        unarrangedHidden={unarrangedHidden}
+                        omitDrawn={omitDrawn}
                         onChange={(attributes) => stored.push(attributes)}
+                        runDeletion={runDeletion}
                     />
                 </ParentComponent.Provider>,
                 container);
@@ -420,7 +596,7 @@ describe("PromotedAttributesCard", () => {
 
     function types() {
         return segments().map((segment) =>
-            segment.querySelector(".promoted-attribute-type .text")?.textContent);
+            segment.querySelector(".tn-icon")?.getAttribute("aria-label"));
     }
 
     function icons() {
@@ -456,7 +632,7 @@ describe("PromotedAttributesCard", () => {
     }
 
     function adder() {
-        return container.querySelector<HTMLElement>(".tn-sortable-adder");
+        return container.querySelector<HTMLElement>(".tn-card-adder");
     }
 
     /** The editor reporting a definition and being told to save it. */
@@ -483,10 +659,10 @@ describe("PromotedAttributesCard", () => {
         });
     }
 
+    /** Lets the card's writes run, the bulk action among them, which loads its service first. */
     async function flush() {
-        for (let step = 0; step < 4; step++) {
-            await Promise.resolve();
-        }
+        await import("../../services/bulk_action");
+        await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     function press(target: Element, key: string, options: KeyboardEventInit = {}) {

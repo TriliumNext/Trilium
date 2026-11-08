@@ -4,17 +4,35 @@ noteMappings:
   - rootNoteId: "pOsGYCXsbNQG"
     path: "docs/User Guide"
     format: "markdown"
-  
-  - rootNoteId: "pOsGYCXsbNQG"
-    path: "apps/server/src/assets/doc_notes/en/User Guide"
-    format: "html"
-    ignoredFiles:
-      - "index.html"
-      - "navigation.html"
-      - "style.css"
-      - "User Guide.html"
-    exportOnly: true
-  
+    # The markdown export is the single source of the in-app help: this derives the note tree
+    # the application injects, and the build renders the page content from the same files.
+    helpMeta: "apps/server/src/assets/help/help_meta.json"
+    helpContent: "apps/server/src/assets/help/help_content.json"
+    # Generated from the spec on every import, so edits to these pages are overwritten.
+    openApiPages:
+      - noteId: "9qPsTWBorUhQ" # ETAPI (REST API) › API Reference
+        spec: "apps/server/src/assets/etapi.openapi.yaml"
+      - noteId: "z8O2VG4ZZJD7" # Internal API › API Reference
+        spec: "apps/server/internal.openapi.yaml"
+    typeDocPages:
+      - noteId: "GFXVHyblVN3d" # Scripting › Script API › Electron API
+        entryPoint: "packages/commons/src/lib/electron_api_interface.ts"
+        tsconfig: "packages/commons/tsconfig.lib.json"
+        root: "ElectronApi"
+        stripPrefixes: [ "Electron" ]
+      - noteId: "MEtfsqa5VwNi" # Scripting › Script API › Backend API
+        entryPoint: "packages/commons/src/lib/script_api.ts"
+        tsconfig: "packages/commons/tsconfig.lib.json"
+        root: "BackendApi"
+        stripPrefixes: [ "Script" ]
+        skillReference: "packages/trilium-core/src/assets/llm/skills/backend_scripting_api.md"
+      - noteId: "Q2z6av6JZVWm" # Scripting › Script API › Frontend API
+        entryPoint: "packages/commons/src/lib/script_api.ts"
+        tsconfig: "packages/commons/tsconfig.lib.json"
+        root: "FrontendApi"
+        stripPrefixes: [ "Script" ]
+        skillReference: "packages/trilium-core/src/assets/llm/skills/frontend_scripting_api.md"
+
   - rootNoteId: "jdjRLhLV3TtI"
     path: "docs/Developer Guide"
     format: "markdown"

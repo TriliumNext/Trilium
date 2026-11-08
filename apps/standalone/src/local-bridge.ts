@@ -1,7 +1,8 @@
 import type {
     StandaloneDownloadResult,
     StandaloneRestoreProgress,
-    StandaloneRestoreResult
+    StandaloneRestoreResult,
+    StandaloneUploadInit
 } from "@triliumnext/commons";
 
 import { reportSplashPhase } from "../../client/src/services/splash.js";
@@ -388,7 +389,6 @@ function isShareRequest(pathname: string): boolean {
 export async function localFetch(request: Request): Promise<Response> {
     startLocalServerWorker();
 
-    const id = Math.random().toString(36).slice(2);
     const headersObj: Record<string, string> = {};
     for (const [k, v] of request.headers.entries()) headersObj[k] = v;
 
@@ -396,13 +396,33 @@ export async function localFetch(request: Request): Promise<Response> {
         ? null
         : await request.arrayBuffer();
 
+    return requestFromWorker({ url: request.url, method: request.method, headers: headersObj, body }, body ? [body] : []);
+}
+
+/**
+ * Sends a multipart upload to the worker as its fields and the picked `File` itself, which
+ * structured cloning passes by reference. Unlike `localFetch()`, nothing reads the file on the page,
+ * and an importer can read a zip from it one entry at a time.
+ */
+export function localUpload(url: string, init: StandaloneUploadInit): Promise<Response> {
+    return requestFromWorker({
+        url: new URL(url, location.href).href,
+        method: init.method,
+        headers: init.headers ?? {},
+        body: { type: "upload", fields: init.fields, file: init.file }
+    }, []);
+}
+
+async function requestFromWorker(
+    request: { url: string; method: string; headers: Record<string, string>; body: unknown },
+    transfer: Transferable[]
+): Promise<Response> {
+    const worker = startLocalServerWorker();
+
+    const id = Math.random().toString(36).slice(2);
     const response = await new Promise<{ status: number; headers: Record<string, string>; body?: ArrayBuffer }>((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        localWorker!.postMessage({
-            type: "LOCAL_REQUEST",
-            id,
-            request: { url: request.url, method: request.method, headers: headersObj, body }
-        }, body ? [body] : []);
+        worker.postMessage({ type: "LOCAL_REQUEST", id, request }, transfer);
     });
 
     const respHeaders = new Headers();

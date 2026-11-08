@@ -43,7 +43,11 @@ const config: ForgeConfig = {
         name: PRODUCT_NAME,
         appVersion: packageJson.version,
         overwrite: true,
-        asar: true,
+        asar: {
+            // The shared libraries beside sherpa-onnx's addon (onnxruntime) are loaded by the OS,
+            // which cannot read them from inside the archive. auto-unpack-natives adds `*.node`.
+            unpack: "**/node_modules/sherpa-onnx-*-*/**"
+        },
         icon: path.join(APP_ICON_PATH, isNightly ? "icon-dev" : "icon"),
         ...macosSignConfiguration,
         windowsSign: windowsSignConfiguration,
@@ -53,27 +57,20 @@ const config: ForgeConfig = {
         ],
         prune: false,
         afterComplete: [
-            (buildPath, _electronVersion, platform, _arch, callback) => {
+            ({ buildPath, platform }) => {
                 // Only move resources on non-macOS platforms
-                if (platform !== "darwin") {
-                    try {
-                        for (const resource of extraResourcesForPlatform) {
-                            const baseName = path.basename(resource);
-                            const sourcePath = path.join(buildPath, "resources", baseName);
+                if (platform === "darwin") return;
 
-                            // prettier-ignore
-                            const destPath = (baseName !== "256x256.png")
-                                ? path.join(buildPath, baseName)
-                                : path.join(buildPath, "icon.png");
+                for (const resource of extraResourcesForPlatform) {
+                    const baseName = path.basename(resource);
+                    const sourcePath = path.join(buildPath, "resources", baseName);
 
-                            renameSync(sourcePath, destPath);
-                        }
-                        callback();
-                    } catch (err) {
-                        callback(err as Error);
-                    }
-                } else {
-                    callback();
+                    // prettier-ignore
+                    const destPath = (baseName !== "256x256.png")
+                        ? path.join(buildPath, baseName)
+                        : path.join(buildPath, "icon.png");
+
+                    renameSync(sourcePath, destPath);
                 }
             }
         ]

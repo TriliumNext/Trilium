@@ -8,7 +8,7 @@
     width: var(--ck-template-dropdown-width);
 
     & > .ck-labeled-field-view {
-        padding: var(--ck-spacing-large);
+        padding: var(--ck-spacing-large, var(--ck-spacing-lg));
     }
 
     & > .ck-search__results {
@@ -17,13 +17,13 @@
 
     & > .ck-search__results > .ck.ck-list.ck-template-list {
         max-height: var(--ck-template-dropdown-height);
-        padding: var(--ck-spacing-large);
+        padding: var(--ck-spacing-large, var(--ck-spacing-lg));
         overflow: hidden auto;
         overscroll-behavior: contain;
         border-radius: 0;
 
         & > .ck.ck-list__item:not(.ck-hidden) ~ .ck.ck-list__item {
-            margin-top: var(--ck-spacing-large);
+            margin-top: var(--ck-spacing-large, var(--ck-spacing-lg));
         }
 
         & > .ck.ck-list__item > .ck.ck-button {
@@ -31,7 +31,7 @@
             grid-template-columns: var(--ck-template-icon-size) 1fr;
             grid-template-rows: var(--ck-template-icon-size);
             grid-template-areas: "ck-template-icon ck-template-content";
-            gap: var(--ck-spacing-large);
+            gap: var(--ck-spacing-large, var(--ck-spacing-lg));
             align-items: center;
             width: 100%;
             margin: 0;
@@ -79,7 +79,7 @@
                 & .ck-template-form__description {
                     display: -webkit-box;
                     overflow: hidden;
-                    margin-top: var(--ck-spacing-tiny);
+                    margin-top: var(--ck-spacing-tiny, var(--ck-spacing-xs));
                     font-size: 0.85em;
                     line-height: 1.1;
                     color: var(--ck-color-text);

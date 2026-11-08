@@ -1,0 +1,32 @@
+.tooltip {
+    /* A tooltip is appended to `<body>`, so it competes with dialogs in the root stacking context:
+       Bootstrap's modal is at 1055, the app's dialogs up to 3000 and the context menu at 2500. */
+    z-index: 9999 !important;
+    font-size: var(--main-font-size) !important;
+
+    &.show {
+        opacity: 1;
+    }
+
+    &.tooltip-top {
+        z-index: 32767 !important;
+    }
+
+    .tooltip-arrow {
+        display: var(--tooltip-arrow-display, block);
+    }
+}
+
+.tooltip-inner {
+    max-width: 500px;
+    padding: var(--tooltip-padding, 15px) !important;
+    border: var(--tooltip-border, 1px solid var(--main-border-color)) !important;
+    border-radius: var(--tooltip-border-radius, 5px);
+    box-shadow: var(--tooltip-box-shadow, 10px 10px 93px -25px #aaaaaa) !important;
+    backdrop-filter: var(--tooltip-backdrop-filter, none);
+    background-color: var(--tooltip-background-color) !important;
+    color: var(--tooltip-foreground-color, var(--main-text-color)) !important;
+    font-size: var(--tooltip-font-size, inherit);
+    text-align: start;
+    white-space: pre-line;
+}

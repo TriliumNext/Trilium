@@ -1,4 +1,8 @@
-import { getLocaleById, t } from "../services/i18n";
+import {
+    isRightToLeftLanguage, normalizeLocale, resolveContentLanguage as resolveLanguage
+} from "@triliumnext/commons";
+
+import { t } from "../services/i18n";
 import options from "../services/options";
 import type { MeasurementSystem } from "./units";
 
@@ -126,7 +130,7 @@ function getDateTimeFormatter(locale: string, variant: string, formatOptions: In
     let formatter = dateTimeFormatterCache.get(cacheKey);
     if (!formatter) {
         try {
-            formatter = new Intl.DateTimeFormat(locale, formatOptions);
+            formatter = new Intl.DateTimeFormat(withTriliumCalendar(locale), formatOptions);
         } catch {
             // An unusable locale (e.g. the dev-only "en_rtl", which normalizes to the invalid
             // "en-rtl") makes the constructor throw; fall back to the environment default. Whether
@@ -138,6 +142,18 @@ function getDateTimeFormatter(locale: string, variant: string, formatOptions: In
     }
 
     return formatter;
+}
+
+/**
+ * Pins the Gregorian calendar for Persian, which CLDR otherwise renders on the Solar Hijri one. Day
+ * notes, the calendar collection and the date pickers are all Gregorian, so a formatted date has to
+ * name the same day they do. The locale's own digits are kept.
+ */
+function withTriliumCalendar(locale: string) {
+    const parsed = new Intl.Locale(locale);
+    return parsed.language === "fa"
+        ? new Intl.Locale(locale, { calendar: "gregory" }).toString()
+        : locale;
 }
 
 function is12HourLocale(locale: string) {
@@ -184,19 +200,10 @@ function parseDate(date: string | Date | number): Date {
     throw new TypeError(`Invalid type for the "date" argument.`);
 }
 
-export function normalizeLocale(locale: string) {
-    locale = locale.replaceAll("_", "-");
-    switch (locale) {
-        case "cn": return "zh-CN";
-        case "tw": return "zh-TW";
-        default: return locale;
-    }
-}
-
 /**
  * The language a note is written in.
  *
- * A note carries its own language as a `#language` label, set from the Basic Properties ribbon, but
+ * A note carries its own language as a `#language` label, set from the status bar's language switcher, but
  * the label is opt-in and the picker that sets it stays empty until content languages are enabled —
  * so in practice almost no note has one. The `defaultContentLanguage` option answers for all of
  * them, and an empty value there means "follow the application's language" rather than "none".
@@ -205,12 +212,12 @@ export function normalizeLocale(locale: string) {
  * setting promises to affect — text direction, typographic quotes — actually follows it everywhere.
  */
 export function resolveContentLanguage(noteLanguage: string | null | undefined): string | null {
-    return noteLanguage || options.get("defaultContentLanguage") || options.get("locale") || null;
+    return resolveLanguage(noteLanguage, options.get("defaultContentLanguage"), options.get("locale"));
 }
 
 /** Whether a note's resolved language is written right-to-left. */
 export function isContentRightToLeft(noteLanguage: string | null | undefined): boolean {
-    return getLocaleById(resolveContentLanguage(noteLanguage))?.rtl ?? false;
+    return isRightToLeftLanguage(resolveContentLanguage(noteLanguage));
 }
 
 /**

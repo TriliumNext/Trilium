@@ -1,4 +1,4 @@
-import { MimeType } from "@triliumnext/commons";
+import { MimeType, shouldSyntaxHighlight } from "@triliumnext/commons";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -13,11 +13,12 @@ import { isShare } from "./utils.js";
 let highlightingLoaded = false;
 
 function getEffectiveCodeBlockTheme(): string {
-    if (options.get("codeBlockThemeMatchesApp") === "true") {
-        const style = getEffectiveThemeStyle();
-        return String(options.get(style === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight"));
-    }
-    return String(options.get("codeBlockTheme"));
+    const theme = options.get("codeBlockThemeMatchesApp") === "true"
+        ? options.get(getEffectiveThemeStyle() === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight")
+        : options.get("codeBlockTheme");
+    // `options.get()` answers undefined until the options have loaded. String() would turn that
+    // into the truthy "undefined", which `isSyntaxHighlightEnabled()` reads as a theme.
+    return String(theme ?? "");
 }
 
 // Re-apply the highlight.js theme when the effective color scheme changes, so that
@@ -129,6 +130,9 @@ export function applyInlineCodeCopy($inlineCode: JQuery<HTMLElement>) {
 export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLElement>, normalizedMimeType: string) {
     $codeBlock.parent().toggleClass("hljs");
     const text = $codeBlock.text();
+    if (!shouldSyntaxHighlight(text)) {
+        return;
+    }
 
     const cached = getCachedHighlight(normalizedMimeType, text);
     if (cached !== undefined) {

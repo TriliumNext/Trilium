@@ -97,6 +97,11 @@ export interface LlmChatConfig {
     systemPrompt?: string;
     /** Enable web search tool */
     enableWebSearch?: boolean;
+    /**
+     * The config id of the search provider that answers {@link enableWebSearch}, in place of the
+     * model's built-in search. Absent, or naming no configured search provider, means built-in.
+     */
+    webSearchProviderId?: string;
     /** Enable note tools (search and read notes) */
     enableNoteTools?: boolean;
     /** Enable extended thinking for deeper reasoning */
@@ -113,7 +118,19 @@ export interface LlmChatConfig {
     contextNoteId?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
+    /** The tools the user allowed for the whole chat, whose calls run without asking. */
+    allowedTools?: string[];
+    /** Which tool calls wait for the user. Absent means `"always_ask"`. */
+    permissionMode?: LlmPermissionMode;
 }
+
+/**
+ * Which tool calls of a chat wait for the user: all of them, only those that change notes, or none.
+ * A tool the chat allowed (`allowedTools`) runs without asking in every mode.
+ */
+export const LLM_PERMISSION_MODES = [ "always_ask", "ask_before_changes", "dont_ask" ] as const;
+
+export type LlmPermissionMode = (typeof LLM_PERMISSION_MODES)[number];
 
 /**
  * Pricing per million tokens for a model.
@@ -123,6 +140,17 @@ export interface LlmModelPricing {
     input: number;
     /** Cost per million output tokens in USD */
     output: number;
+}
+
+/**
+ * What a configuration in the `llmProviders` option provides: chat models (`"llm"`) or web
+ * search (`"search"`). A configuration without a `kind` is `"llm"`.
+ */
+export type LlmProviderKind = "llm" | "search";
+
+/** Whether a stored provider configuration is of `kind`, treating a missing `kind` as `"llm"`. */
+export function isProviderOfKind(config: { kind?: LlmProviderKind }, kind: LlmProviderKind): boolean {
+    return (config.kind ?? "llm") === kind;
 }
 
 /**
@@ -158,7 +186,17 @@ export interface LlmModelInfo {
     reasoningEfforts?: LlmReasoningEffort[];
     /** The effort used when a chat has not chosen one. One of {@link reasoningEfforts}. */
     defaultReasoningEffort?: LlmReasoningEffort;
+    /**
+     * The attachment kinds the model reads natively. Absent means every kind; text attachments
+     * are inlined as text for every model and never listed.
+     */
+    attachmentKinds?: LlmAttachmentKind[];
 }
+
+/** An attachment a model reads natively: an image, or a file such as a PDF. */
+export const LLM_ATTACHMENT_KINDS = [ "image", "file" ] as const;
+
+export type LlmAttachmentKind = (typeof LLM_ATTACHMENT_KINDS)[number];
 
 /**
  * Token usage information from the LLM response.
@@ -208,6 +246,42 @@ export interface LlmErrorDetails {
 export type LlmStreamStatus = "starting_agent";
 
 /**
+ * Whether a tool result is the `{ error }` object the note tools return on failure. Takes the object
+ * itself or its JSON, as a `tool_result` chunk carries it.
+ */
+export function isToolErrorResult(result: unknown): boolean {
+    let value = result;
+    if (typeof value === "string") {
+        try {
+            value = JSON.parse(value);
+        } catch {
+            return false;
+        }
+    }
+    return typeof value === "object" && value !== null && !Array.isArray(value) && "error" in value;
+}
+
+/** A tool call that waits for the user to allow or deny it. */
+export interface LlmToolApprovalRequest {
+    toolCallId: string;
+    toolName: string;
+    toolInput: Record<string, unknown>;
+}
+
+/** The user's answer to a {@link LlmToolApprovalRequest}, posted to `/api/llm-chat/tool-approval`. */
+export interface LlmToolApprovalAnswer {
+    /** The id the client gave the turn when it started it. */
+    streamId: string;
+    toolCallId: string;
+    approved: boolean;
+    /**
+     * `"chat"` allows the call's tool for the rest of the chat: its other calls in the turn run
+     * without asking. Ignored for a denial.
+     */
+    scope?: "chat";
+}
+
+/**
  * Stream chunk types for real-time SSE updates.
  * Defines the protocol between server and client.
  */
@@ -218,6 +292,7 @@ export type LlmStreamChunk =
     | { type: "tool_input_start"; toolCallId: string; toolName: string }
     | { type: "tool_input_delta"; toolCallId: string; delta: string }
     | { type: "tool_use"; toolCallId: string; toolName: string; toolInput: Record<string, unknown> }
+    | ({ type: "tool_approval_request" } & LlmToolApprovalRequest)
     | { type: "tool_result"; toolCallId: string; toolName: string; result: string; isError?: boolean }
     | { type: "citation"; citation: LlmCitation }
     | { type: "usage"; usage: LlmUsage }

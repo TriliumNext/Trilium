@@ -1,3 +1,7 @@
+:where(:root) {
+    --media-playback-status-text-color: var(--muted-text-color);
+}
+
 /* Contextual shortcut-hints button, floated in the top-right of the full audio/video player. */
 
 .media-preview-controls {
@@ -83,19 +87,6 @@
     }
 }
 
-.play-mode-dropdown {
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.6em;
-    }
-
-    /* Pushes the checkmark of the current mode to the trailing edge of the item. */
-    .play-mode-check {
-        margin-left: auto;
-    }
-}
-
 .audio-preview-wrapper {
     width: 100%;
     height: 100%;
@@ -162,4 +153,10 @@
         width: calc(100% - 24px);
         height: calc(100% - 12px);
     }
+}
+
+.media-playback-status {
+    margin-top: 0.5em;
+    color: var(--media-playback-status-text-color);
+    font-size: 0.75em;
 }

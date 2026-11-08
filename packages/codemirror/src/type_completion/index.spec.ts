@@ -1,22 +1,44 @@
+import { Compartment, EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import { describe, expect, it } from "vitest";
 
 import {
     buildTypeCompletion,
+    createEnv,
     getScriptCompletions,
     getScriptDiagnosticCodes,
+    getScriptLints,
     renderHoverTooltip,
     SCRIPT_MIME_BACKEND,
     SCRIPT_MIME_FRONTEND,
-    SCRIPT_MIME_JSX
+    SCRIPT_MIME_JSX,
+    type ScriptApiContext,
+    scriptPath,
+    tsSync
 } from "./index.js";
 
 /** Returns completions at the `|` marker in `source` (the marker is stripped). */
-function completionsAtMarker(mime: string, source: string, context?: { customRequestHandler?: boolean }) {
+function completionsAtMarker(mime: string, source: string, context?: ScriptApiContext) {
     const offset = source.indexOf("|");
     // Strip exactly the marker at `offset` (not the first `|` in the string, which
     // may differ if the snippet legitimately contains a `|` operator earlier).
     const stripped = source.slice(0, offset) + source.slice(offset + 1);
     return getScriptCompletions(mime, stripped, offset, context);
+}
+
+/**
+ * The labels `buildTypeCompletion()`'s `complete()` offers at the `|` marker in `source`, as the
+ * editor's completion list asks for them.
+ */
+async function completeAtMarker(mime: string, source: string) {
+    const offset = source.indexOf("|");
+    const code = source.slice(0, offset) + source.slice(offset + 1);
+    const { extensions, complete } = await buildTypeCompletion(mime);
+    // The editor's `tsSync()` puts the document in the language service, as in the app.
+    const view = new EditorView({ state: EditorState.create({ doc: code, extensions }) });
+    const labels = (await complete?.(offset))?.map((entry) => entry.label) ?? [];
+    view.destroy();
+    return labels;
 }
 
 /** "Property 'x' does not exist on type 'y'." */
@@ -31,6 +53,8 @@ const TS_TOP_LEVEL_AWAIT = 1375;
 const TS_JQUERY_NOT_FOUND = 2592;
 /** "Cannot find name 'x'." */
 const TS_NAME_NOT_FOUND = 2304;
+/** "Cannot find name 'document'. Do you need to change your target library?…" (a DOM name) */
+const TS_DOM_NAME_NOT_FOUND = 2584;
 /** "Unreachable code detected." — the one diagnostic rendered as a warning marker. */
 const TS_UNREACHABLE_CODE = 7027;
 
@@ -101,12 +125,55 @@ describe("script note diagnostics", () => {
         expect(codes).toEqual([]);
     }, TIMEOUT);
 
+    it("types the api's jQuery objects as jQuery in frontend scripts", async () => {
+        const codes = await getScriptDiagnosticCodes(
+            SCRIPT_MIME_FRONTEND,
+            "api.$container?.addClass('active');\n"
+            + "const $link = await api.createLink('root'); $link.addClass('active');"
+        );
+        expect(codes).toEqual([]);
+    }, TIMEOUT);
+
+    it("types api.sql in backend scripts", async () => {
+        const codes = await getScriptDiagnosticCodes(
+            SCRIPT_MIME_BACKEND,
+            "const ids = api.sql.getColumn('SELECT noteId FROM notes');\n"
+            + "api.sql.execute('UPDATE notes SET title = ? WHERE noteId = ?', [ 'x', ids[0] ]).changes.toFixed();"
+        );
+        expect(codes).toEqual([]);
+    }, TIMEOUT);
+
     it("does not provide jQuery to backend scripts ($ is unavailable server-side)", async () => {
         const codes = await getScriptDiagnosticCodes(
             SCRIPT_MIME_BACKEND,
             "const el = $('<div>');"
         );
         expect(codes).toContain(TS_JQUERY_NOT_FOUND);
+    }, TIMEOUT);
+
+    it("does not provide the DOM to backend scripts (Node and Web Workers have none)", async () => {
+        const codes = await getScriptDiagnosticCodes(SCRIPT_MIME_BACKEND, "const title = document.title;");
+        expect(codes).toContain(TS_DOM_NAME_NOT_FOUND);
+    }, TIMEOUT);
+
+    it("provides backend scripts the globals Node and Web Workers share", async () => {
+        const codes = await getScriptDiagnosticCodes(
+            SCRIPT_MIME_BACKEND,
+            "console.log('start'); console.error(new Error('x'));\n"
+            + "console.assert(true, 'x'); console.count(); console.countReset(); console.dir({});\n"
+            + "console.group('g'); console.groupCollapsed(); console.groupEnd(); console.timeLog('t');\n"
+            + "const timer = setTimeout(() => {}, 10); clearTimeout(timer);\n"
+            + "const ticker = setInterval(() => {}, 10); clearInterval(ticker);\n"
+            + "queueMicrotask(() => {});\n"
+            + "const url = new URL('https://example.com/?q=1'); url.searchParams.get('q');\n"
+            + "new URLSearchParams('a=1').toString();\n"
+            + "const bytes = new TextEncoder().encode('x'); new TextDecoder().decode(bytes);\n"
+            + "const controller = new AbortController();\n"
+            + "fetch('https://example.com', { method: 'POST', headers: { a: 'b' }, body: '{}', signal: controller.signal })\n"
+            + "    .then((response) => response.ok ? response.json() : response.text());\n"
+            + "structuredClone({ a: 1 }); atob(btoa('x')); crypto.randomUUID();"
+        );
+        expect(codes).toEqual([]);
     }, TIMEOUT);
 
     it("provides the glob global to frontend scripts (member + note typing)", async () => {
@@ -162,7 +229,10 @@ describe("script note diagnostics", () => {
             SCRIPT_MIME_FRONTEND,
             "class MyWidget extends api.NoteContextAwareWidget {\n"
             + "    doRender() { this.$widget = $('<div>'); }\n"
-            + "    async refreshWithNote(note) { this.$widget.text(note?.title ?? ''); }\n"
+            + "    async refreshWithNote(note) {\n"
+            + "        this.toggleInt(this.isNote('root'));\n"
+            + "        this.$widget.text(`${this.noteId} ${this.notePath} ${this.ntxId} ${note?.title ?? ''}`);\n"
+            + "    }\n"
             + "}"
         );
         expect(codes).toEqual([]);
@@ -312,6 +382,28 @@ describe("backend note (ScriptBNote) surface", () => {
     }, TIMEOUT);
 });
 
+describe("bulk action script (note global)", () => {
+    const BULK_ACTION = { bulkActionNote: true };
+
+    it("declares the note being processed as a backend note, next to the api", async () => {
+        const names = await completionsAtMarker(SCRIPT_MIME_BACKEND, "note.|", BULK_ACTION);
+        expect(names).toContain("setLabel");
+        expect(names).toContain("title");
+
+        const codes = await getScriptDiagnosticCodes(
+            SCRIPT_MIME_BACKEND,
+            "if (note.hasLabel('done')) return;\nnote.title = api.getNote('root')?.title + note.title;",
+            BULK_ACTION
+        );
+        expect(codes).toEqual([]);
+    }, TIMEOUT);
+
+    it("declares no note global in other backend scripts", async () => {
+        const codes = await getScriptDiagnosticCodes(SCRIPT_MIME_BACKEND, "note.title;");
+        expect(codes).toContain(TS_NAME_NOT_FOUND);
+    }, TIMEOUT);
+});
+
 describe("backend custom request handler api (req/res/pathParams)", () => {
     const HANDLER = { customRequestHandler: true };
 
@@ -435,31 +527,92 @@ describe("JSX component typing", () => {
         );
         expect(codes).toContain(TS_TYPE_NOT_ASSIGNABLE);
     }, TIMEOUT);
+
+    it("names the missing props in the message, not only the unassignable type", async () => {
+        const [ lint ] = await getScriptLints(
+            SCRIPT_MIME_JSX,
+            "import { Modal } from \"trilium:preact\";\nexport default () => <Modal show={true}>hi</Modal>;"
+        );
+        expect(lint?.severity).toBe("error");
+        expect(lint?.message).toMatch(/^Type .* is not assignable to type /);
+        expect(lint?.message).toMatch(/\n\s+Type .* is missing the following properties from type 'ModalProps': .*\bsize\b/);
+    }, TIMEOUT);
 });
 
 describe("buildTypeCompletion", () => {
     it("returns nothing for a MIME type that is not a script note", async () => {
         // Ordinary code notes are highlighted only; the TypeScript service is not built for them.
         for (const mime of [ "text/plain", "text/css", "application/json", "text/javascript" ]) {
-            expect(await buildTypeCompletion(mime)).toEqual({ extensions: [], source: null });
+            expect(await buildTypeCompletion(mime)).toEqual({ extensions: [], complete: null });
         }
     });
 
-    it("builds the language-service extensions and a completion source for a script note", async () => {
-        const { extensions, source } = await buildTypeCompletion(SCRIPT_MIME_BACKEND);
+    it("builds the language-service extensions and a completion lookup for a script", async () => {
+        const { extensions, complete } = await buildTypeCompletion(SCRIPT_MIME_BACKEND);
 
         expect(Array.isArray(extensions)).toBe(true);
         expect(extensions.length).toBeGreaterThan(0);
-        // The source is handed to the editor's single autocompletion rather than adding its own.
-        expect(typeof source).toBe("function");
+        expect(typeof complete).toBe("function");
     }, TIMEOUT);
 
     it("builds for a frontend script note and honours the api context", async () => {
         const frontend = await buildTypeCompletion(SCRIPT_MIME_FRONTEND);
-        expect(frontend.source).toBeTruthy();
+        expect(frontend.complete).toBeTruthy();
 
         const handler = await buildTypeCompletion(SCRIPT_MIME_BACKEND, { customRequestHandler: true });
-        expect(handler.source).toBeTruthy();
+        expect(handler.complete).toBeTruthy();
+    }, TIMEOUT);
+
+    it("completes globals and keywords at the start of a word", async () => {
+        const labels = await completeAtMarker(SCRIPT_MIME_FRONTEND, "x|");
+        expect(labels).toEqual(expect.arrayContaining([ "api", "console", "glob", "const", "return" ]));
+    }, TIMEOUT);
+
+    it("completes globals and keywords where nothing is typed yet", async () => {
+        // The new list caches the answer for the position it opens at, and filters it as the
+        // word is typed, so the answer with nothing typed has to hold them already.
+        const labels = await completeAtMarker(SCRIPT_MIME_FRONTEND, "function run() {\n    |\n}");
+        expect(labels).toEqual(expect.arrayContaining([ "api", "console", "const", "return" ]));
+    }, TIMEOUT);
+
+    it("offers nothing inside a comment", async () => {
+        const { extensions, complete } = await buildTypeCompletion(SCRIPT_MIME_BACKEND);
+        const view = new EditorView({ state: EditorState.create({ doc: "// api", extensions }) });
+        expect(await complete?.(6)).toBe(null);
+        view.destroy();
+    }, TIMEOUT);
+
+    it("leaves deprecated names out", async () => {
+        const labels = await completeAtMarker(SCRIPT_MIME_FRONTEND, "e|");
+        expect(labels).toContain("encodeURI");
+        expect(labels).not.toContain("escape");
+        expect(labels).not.toContain("captureEvents");
+    }, TIMEOUT);
+});
+
+describe("tsSync", () => {
+    it("syncs the document from the moment the editor has the plugin, then every change", async () => {
+        const env = await createEnv(SCRIPT_MIME_BACKEND);
+        const path = scriptPath(SCRIPT_MIME_BACKEND);
+        const synced = () => env.getSourceFile(path)?.text;
+
+        const created = new EditorView({ state: EditorState.create({ doc: "const a = 1;", extensions: tsSync(env, path) }) });
+        expect(synced()).toBe("const a = 1;");
+        created.dispatch({ changes: { from: 0, insert: "// note\n" } });
+        expect(synced()).toBe("// note\nconst a = 1;");
+        created.destroy();
+
+        // As the editor adds it: to a document it already holds, through a compartment.
+        const compartment = new Compartment();
+        const added = new EditorView({ state: EditorState.create({ doc: "let b;", extensions: compartment.of([]) }) });
+        added.dispatch({ effects: compartment.reconfigure(tsSync(env, path)) });
+        expect(synced()).toBe("let b;");
+        added.destroy();
+
+        // An empty document leaves a space, which the language service still reads as a script.
+        const empty = new EditorView({ state: EditorState.create({ extensions: tsSync(env, path) }) });
+        expect(synced()).toBe(" ");
+        empty.destroy();
     }, TIMEOUT);
 });
 
@@ -522,5 +675,6 @@ describe("empty script notes", () => {
         // space so TypeScript still gets a valid file to parse.
         expect(await getScriptDiagnosticCodes(SCRIPT_MIME_BACKEND, "")).toEqual([]);
         expect(await getScriptCompletions(SCRIPT_MIME_BACKEND, "", 0)).toEqual(expect.any(Array));
+        expect(await getScriptLints(SCRIPT_MIME_BACKEND, "")).toEqual([]);
     }, TIMEOUT);
 });

@@ -2,20 +2,17 @@ import "./text_notes.css";
 
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
-import type { CSSProperties } from "preact/compat";
+import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
 import { formatDateTime, toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
-import FormGroup from "../../react/FormGroup";
 import { FormListItem } from "../../react/FormList";
 import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
-import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
@@ -29,8 +26,6 @@ import ThemeModeSelector from "./components/ThemeModeSelector";
 import { HighlightsListOptions } from "./highlights_list_options";
 import HelpButton from "../../react/HelpButton";
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
-
 export default function TextNoteSettings() {
     return (
         <>
@@ -41,7 +36,6 @@ export default function TextNoteSettings() {
             <AutomaticReplacements />
             <Editor />
             <CodeBlockStyle />
-            <TableOfContent />
             <HighlightsList />
             <RelatedSettings items={[
                 {
@@ -150,15 +144,30 @@ function ToolbarIcon({ wide }: { wide?: boolean }) {
 }
 
 function EditorFeatures() {
+    const [mathFieldEnabled, setMathFieldEnabled] = useTriliumOptionBool("mathFieldEnabled");
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
     const [contentHintsEnabled, setContentHintsEnabled] = useTriliumOptionBool("textNoteContentHintsEnabled");
     const [autoLinkPreviewsEnabled, setAutoLinkPreviewsEnabled] = useTriliumOptionBool("textNoteAutoLinkPreviewsEnabled");
+    const [linkTitleRetrievalEnabled, setLinkTitleRetrievalEnabled] =
+        useTriliumOptionBool("textNoteLinkTitleRetrievalEnabled");
+    const [linkDetailsRetrievalEnabled, setLinkDetailsRetrievalEnabled] =
+        useTriliumOptionBool("textNoteLinkDetailsRetrievalEnabled");
+    const [stickyTableHeadersEnabled, setStickyTableHeadersEnabled] =
+        useTriliumOptionBool("textNoteStickyTableHeadersEnabled");
     const [htmlSupportEnabled, setHtmlSupportEnabled] = useTriliumOptionBool("textNoteHtmlSupportEnabled");
 
     return (
         <Card heading={t("editorfeatures.title")}>
+            <OptionCardSection
+                name="mathlive-enabled"
+                label={t("editorfeatures.mathlive_enabled")}
+                description={t("editorfeatures.mathlive_description")}
+            >
+                <FormToggle currentValue={mathFieldEnabled} onChange={setMathFieldEnabled} />
+            </OptionCardSection>
+
             <OptionCardSection
                 name="emoji-completion-enabled"
                 label={t("editorfeatures.emoji_completion_enabled")}
@@ -173,6 +182,39 @@ function EditorFeatures() {
                 description={t("editorfeatures.auto_link_previews_description")}
             >
                 <FormToggle currentValue={autoLinkPreviewsEnabled} onChange={setAutoLinkPreviewsEnabled} />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="link-title-retrieval-enabled"
+                label={t("editorfeatures.link_title_retrieval_enabled")}
+                description={t("editorfeatures.link_title_retrieval_description")}
+            >
+                <FormToggle
+                    currentValue={linkTitleRetrievalEnabled}
+                    onChange={setLinkTitleRetrievalEnabled}
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="link-details-retrieval-enabled"
+                label={t("editorfeatures.link_details_retrieval_enabled")}
+                description={t("editorfeatures.link_details_retrieval_description")}
+            >
+                <FormToggle
+                    currentValue={linkDetailsRetrievalEnabled}
+                    onChange={setLinkDetailsRetrievalEnabled}
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="sticky-table-headers-enabled"
+                label={t("editorfeatures.sticky_table_headers_enabled")}
+                description={t("editorfeatures.sticky_table_headers_description")}
+            >
+                <FormToggle
+                    currentValue={stickyTableHeadersEnabled}
+                    onChange={setStickyTableHeadersEnabled}
+                />
             </OptionCardSection>
 
             <OptionCardSection
@@ -467,9 +509,6 @@ function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string
     return (
         <Dropdown
             text={t(currentStyle.labelKey)} mobileBottomSheet
-            // The options card is a container, and so a backdrop root: left inside it the menu
-            // loses its blur and reads as a flat tint.
-            portalToBody
         >
             {HEADING_STYLES.map(({ value, labelKey }) => (
                 <FormListItem
@@ -668,50 +707,12 @@ interface ThemeData {
     title: string;
 }
 
-function TableOfContent() {
-    const [ minTocHeadings, setMinTocHeadings ] = useTriliumOption("minTocHeadings");
-
-    return (!isNewLayout &&
-        <Card className="text-notes-toc"
-            heading={t("table_of_contents.title")}
-            description={t("table_of_contents.description")}
-        >
-            <CardSection>
-                <FormGroup name="min-toc-headings">
-                    <FormTextBoxWithUnit
-                        type="number"
-                        min={0} max={999999999999999} step={1}
-                        unit={t("table_of_contents.unit")}
-                        currentValue={minTocHeadings} onChange={setMinTocHeadings}
-                    />
-                </FormGroup>
-
-                <FormText>{t("table_of_contents.disable_info")}</FormText>
-                <FormText>{t("table_of_contents.shortcut_info")}</FormText>
-            </CardSection>
-        </Card>
-    );
-}
-
 function HighlightsList() {
     return (
-        <>
-            <Card heading={t("highlights_list.title")}>
-                <CardSection>
-                    <HighlightsListOptions />
-                </CardSection>
-            </Card>
-
-            {/* Its own card rather than a heading inside the one above: what the list is made of and
-                where it is shown are two subjects, and a card heading is what tells them apart. */}
-            {!isNewLayout && (
-                <Card heading={t("highlights_list.visibility_title")}>
-                    <CardSection>
-                        <FormText>{t("highlights_list.visibility_description")}</FormText>
-                        <FormText>{t("highlights_list.shortcut_info")}</FormText>
-                    </CardSection>
-                </Card>
-            )}
-        </>
+        <Card heading={t("highlights_list.title")}>
+            <CardSection>
+                <HighlightsListOptions />
+            </CardSection>
+        </Card>
     );
 }

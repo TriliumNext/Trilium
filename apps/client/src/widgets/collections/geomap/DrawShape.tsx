@@ -109,9 +109,11 @@ export function shapeFromFeature(tool: DrawTool, feature: GeoJSONStoreFeatures):
 
     if (tool === "circle") {
         const radiusKilometers = Number(feature.properties.radiusKilometers);
-        const center = ringCenter(polygonFromRing(ring).coordinates);
+        const corners = polygonFromRing(ring).coordinates;
+        const center = ringCenter(corners);
         if (!center || !Number.isFinite(radiusKilometers) || radiusKilometers <= 0) return null;
-        return { type: "circle", center, radiusMeters: radiusKilometers * 1000 };
+        // The ring is kept as well, which an image map measures the radius in pixels from.
+        return { type: "circle", center, radiusMeters: radiusKilometers * 1000, ring: corners };
     }
 
     return polygonFromRing(ring);

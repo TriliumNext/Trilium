@@ -59,6 +59,8 @@ export class PDFProcessor extends FileProcessor {
         let renderBytes: Uint8Array | null = null;
         let ocrPagesProcessed = 0;
         let ocrPagesSkipped = 0;
+        let ocrPagesFailed = 0;
+        let firstOcrError: unknown;
 
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
             const embedded = (pageTexts[pageNum - 1] ?? "").trim();
@@ -82,7 +84,14 @@ export class PDFProcessor extends FileProcessor {
             ocrPagesProcessed++;
             renderBytes ??= new Uint8Array(buffer);
             const ocr = await this.ocrPage(renderBytes, pageNum, language);
-            if (ocr.text.length > 0) {
+            if ("error" in ocr) {
+                ocrPagesFailed++;
+                firstOcrError ??= ocr.error;
+                if (embedded.length > 0) {
+                    pageResults.push(embedded);
+                    pageConfidences.push(EMBEDDED_TEXT_CONFIDENCE);
+                }
+            } else if (ocr.text.length > 0) {
                 pageResults.push(ocr.text);
                 pageConfidences.push(ocr.confidence);
             } else if (embedded.length > 0) {
@@ -97,6 +106,9 @@ export class PDFProcessor extends FileProcessor {
         }
 
         const text = pageResults.join("\n\n").trim();
+        if (ocrPagesFailed > 0 && ocrPagesFailed === ocrPagesProcessed && text.length === 0) {
+            throw new Error(`OCR failed on all ${ocrPagesFailed} scanned pages: ${firstOcrError}`);
+        }
         const confidence = text.length === 0 || pageConfidences.length === 0
             ? 0
             : pageConfidences.reduce((sum, c) => sum + c, 0) / pageConfidences.length;
@@ -106,7 +118,8 @@ export class PDFProcessor extends FileProcessor {
             confidence,
             extractedAt: new Date().toISOString(),
             language,
-            pageCount: totalPages
+            pageCount: totalPages,
+            ...(ocrPagesFailed > 0 && { failedPageCount: ocrPagesFailed })
         };
     }
 
@@ -115,16 +128,17 @@ export class PDFProcessor extends FileProcessor {
     }
 
     /**
-     * OCR a single page by rasterizing it and recognizing the result. Failures on an individual page
-     * are logged and treated as "no text" so one bad page never aborts the whole document.
+     * OCR a single page by rasterizing it and recognizing the result. A failure is logged and
+     * returned rather than thrown, so one bad page never aborts the whole document.
      */
-    private async ocrPage(pdf: Uint8Array, pageNum: number, language: string): Promise<{ text: string; confidence: number }> {
+    private async ocrPage(pdf: Uint8Array, pageNum: number, language: string):
+        Promise<{ text: string; confidence: number } | { error: unknown }> {
         try {
             const page = await renderer.renderPage(pdf, pageNum);
             return await recognizer.recognize(await toPngBuffer(page), language);
         } catch (error) {
             getLog().error(`PDF OCR failed for page ${pageNum}: ${error}`);
-            return { text: "", confidence: 0 };
+            return { error };
         }
     }
 }

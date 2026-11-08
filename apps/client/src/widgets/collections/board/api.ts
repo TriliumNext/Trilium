@@ -5,16 +5,18 @@ import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
-import { executeBulkActions } from "../../../services/bulk_action";
 import cssClassManager from "../../../services/css_class_manager";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
-import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/note_types";
+import {
+    currentNoteTypeOption, type NoteTypeOption, resolveNoteTypeOptions
+} from "../../../services/note_types";
 import server from "../../../services/server";
 import ws from "../../../services/ws";
 import toast from "../../../services/toast";
+import { offeredTemplateIds } from "../../react/TemplateDropdown";
 import {
     type PromotedAttribute, resolvePromotedAttributes, storedPromotedAttributes,
     visiblePromotedAttributeNames
@@ -23,14 +25,13 @@ import {
     DEFAULT_SORT, MANUAL_SORT, parseSortKey, parseStoredSortKey, type SortKey, type StoredSortKey
 } from "../sorting";
 import { BoardColumnData, BoardViewData } from ".";
-import { currentCardTemplate, DEFAULT_CARD_TEMPLATES } from "./card_templates";
 import {
     type BoardStatusDefinition, canStoreColumnsInDefinition, COLUMN_WIDTH_LABEL, type ColumnWidth,
-    DEFAULT_COLUMN_ICON, DEFAULT_COLUMN_WIDTH, DEFAULT_GROUP_BY, INBOX_COLUMN, INBOX_COLUMN_ICON,
-    parseColumnWidth
+    DEFAULT_CARD_TEMPLATES, DEFAULT_COLUMN_ICON, DEFAULT_COLUMN_WIDTH, DEFAULT_GROUP_BY, INBOX_COLUMN,
+    INBOX_COLUMN_ICON, parseColumnWidth
 } from "./columns";
 import { readColumns, writeColumns } from "./column_storage";
-import { ColumnItem, ColumnMap } from "./data";
+import { cardNotes, ColumnItem, ColumnMap } from "./data";
 import {
     cardReference, ColumnReferenceLabel, columnReference, newColumnId, readColumnId
 } from "./reference";
@@ -145,6 +146,10 @@ export default class BoardApi {
      * one split of several, and the focused one is often the pane the reader came from.
      */
     noteContext: NoteContext | null | undefined;
+    /** Opens a note where the board's host shows notes, in place of the quick edit popup. */
+    onOpenNote: ((noteId: string) => void) | undefined;
+    /** Whether the board only shows its cards, set by the board on every render. */
+    isReadOnly = false;
 
     /**
      * Stands in for the stored collapse flags while a filter is on, set by the board on every
@@ -155,6 +160,8 @@ export default class BoardApi {
     /** The config as the board last handed it over, against which a fresh one is recognised. */
     private viewConfigSource: BoardViewData | undefined;
     private viewConfig: BoardViewData;
+    /** `viewConfig` as last taken from the board, before the api stored a config of its own. */
+    private drawnConfig: BoardViewData;
 
     constructor(
         private byColumn: ColumnMap | undefined,
@@ -177,6 +184,7 @@ export default class BoardApi {
     ) {
         this.viewConfigSource = viewConfig;
         this.viewConfig = viewConfig ?? {};
+        this.drawnConfig = this.viewConfig;
         this.groupBy = statusAttribute;
         this.isRelationMode = statusAttribute.startsWith("~");
 
@@ -221,6 +229,7 @@ export default class BoardApi {
         if (viewConfig !== this.viewConfigSource) {
             this.viewConfigSource = viewConfig;
             this.viewConfig = viewConfig ?? {};
+            this.drawnConfig = this.viewConfig;
         }
         this.saveConfig = saveConfig;
         this.setBranchIdToEdit = setBranchIdToEdit;
@@ -544,8 +553,10 @@ export default class BoardApi {
             : this.isRelationMode
                 ? { name: "deleteRelation", relationName: this.statusAttribute }
                 : { name: "deleteLabel", labelName: this.statusAttribute };
-        await this.retiredWhile(column, undefined,
-            () => executeBulkActions(noteIds, [ action ], { silent: true }));
+        await this.retiredWhile(column, undefined, async () => {
+            const { executeBulkActions } = await loadBulkActions();
+            return executeBulkActions(noteIds, [ action ], { silent: true });
+        });
 
         this.storeColumns(this.storedColumns.filter(col => col.value !== column));
     }
@@ -576,6 +587,7 @@ export default class BoardApi {
         if (renamed?.config) {
             this.viewConfig = renamed.config;
             this.viewConfigSource = renamed.config;
+            this.drawnConfig = renamed.config;
         }
     }
 
@@ -720,6 +732,11 @@ export default class BoardApi {
     /** Hides the inbox column, which is what its own menu offers. */
     async disableInbox() {
         await this.setInboxEnabled(false);
+    }
+
+    /** Whether the board draws the button after its last column that adds a column. */
+    async setAddColumnShown(shown: boolean) {
+        await attributes.setBooleanWithInheritance(this.parentNote, "board:hideAddColumn", !shown);
     }
 
     /** Whether the board draws the notes filed as archived, cards and columns alike. */
@@ -954,15 +971,14 @@ export default class BoardApi {
 
     /** What a card is made from now: the one last used, or the first the board offers. */
     getCurrentCardTemplate() {
-        return currentCardTemplate(
+        return currentNoteTypeOption(
             resolveNoteTypeOptions(this.getCardTemplateIds(), this.availableTemplates),
             this.getLastCardTemplateId());
     }
 
     /** The templates the board offers, or the stock set until the reader has picked for it. */
     getCardTemplateIds() {
-        const stored = this.viewConfig?.templates;
-        return stored?.length ? stored : DEFAULT_CARD_TEMPLATES;
+        return offeredTemplateIds(this.viewConfig, DEFAULT_CARD_TEMPLATES);
     }
 
     /** Which of them a new card is made from, until another is picked. */
@@ -976,13 +992,19 @@ export default class BoardApi {
     }
 
     /**
-     * Every promoted attribute the board defines, in the order the reader put them, the one it
-     * groups by included: the properties dialog lists that one so it keeps its place among the
-     * others for whenever the board is grouped by something else.
+     * Returns the promoted attributes defined by the board note or its cards, in the stored order.
+     * Includes the grouping attribute, so that Board Properties keeps its position for when the
+     * board is grouped by another attribute.
      */
     getAllPromotedAttributes() {
         return resolvePromotedAttributes(
-            this.parentNote, this.viewConfig?.promotedAttributes, [ this.statusAttribute ]);
+            this.parentNote, this.viewConfig?.promotedAttributes, [ this.statusAttribute ],
+            this.getCardNotes());
+    }
+
+    /** Returns the note of every card, including the cards the filter hides. */
+    getCardNotes() {
+        return cardNotes(this.allByColumn ?? this.byColumn);
     }
 
     /** Those a card can show or a column sort by, which the columns themselves stand for. */
@@ -1004,6 +1026,42 @@ export default class BoardApi {
      */
     async setPromotedAttributes(attributes: PromotedAttribute[]) {
         this.storeConfig({ promotedAttributes: storedPromotedAttributes(attributes) });
+    }
+
+    /**
+     * Whether the api stored a config after the board drew `config`.
+     *
+     * A refresh resolves its columns from the config of the render that started it. Once this
+     * returns `true`, those columns can be ones the api has since removed, so the refresh must not
+     * write them.
+     */
+    hasStoredSince(config: BoardViewData | undefined) {
+        return config !== this.viewConfigSource || this.viewConfig !== this.drawnConfig;
+    }
+
+    /**
+     * Runs `deletion`, which deletes the attribute a grouping is made from, then empties the columns
+     * stored for that grouping so that `syncColumnsToDefinition()` cannot write them back into a
+     * new definition. The empty list keeps the grouping's key, without which
+     * `adoptLegacyColumns()` reads the default grouping's `columns` as this grouping's.
+     *
+     * Counted in `pending.inFlight` while `deletion` runs. A refresh that resolves later still
+     * holds the old config, and `hasStoredSince()` keeps it from writing.
+     */
+    async deleteGrouping(groupBy: string, deletion: () => Promise<void>) {
+        this.pending.inFlight++;
+
+        try {
+            await deletion();
+            // A board that still reads the deleted definition fills an empty list from its options.
+            await ws.waitForMaxKnownEntityChangeId();
+            if (readColumns(this.viewConfig, groupBy)) {
+                this.viewConfig = writeColumns(this.viewConfig, groupBy, []);
+                this.saveConfig(this.viewConfig);
+            }
+        } finally {
+            this.pending.inFlight--;
+        }
     }
 
     /** Sets what the board offers. An empty set would leave nothing to make a card from. */
@@ -1446,8 +1504,12 @@ export default class BoardApi {
         return { note, branch };
     }
 
-    openNote(noteId: string) {
-        appContext.triggerCommand("openInPopup", { noteIdOrPath: noteId });
+    openNote(noteIdOrPath: string) {
+        if (this.onOpenNote) {
+            this.onOpenNote(noteIdOrPath.split("/").at(-1) ?? noteIdOrPath);
+            return;
+        }
+        appContext.triggerCommand("openInPopup", { noteIdOrPath });
     }
 
     /**
@@ -1460,6 +1522,10 @@ export default class BoardApi {
     openCard(note: FNote) {
         const target = note.getRelationValue(CARD_REDIRECT_RELATION)
             ?? note.getRelationValue(CARD_REDIRECT_RELATION_LEGACY);
+        if (target && this.onOpenNote) {
+            this.onOpenNote(target);
+            return;
+        }
         if (target) {
             const context = this.noteContext ?? appContext.tabManager?.getActiveContext();
             void context?.setNote(target);
@@ -1470,7 +1536,9 @@ export default class BoardApi {
     }
 
     startEditing(branchId: string) {
-        this.setBranchIdToEdit(branchId);
+        if (!this.isReadOnly) {
+            this.setBranchIdToEdit(branchId);
+        }
     }
 
     dismissEditingTitle() {
@@ -1746,3 +1814,10 @@ export default class BoardApi {
 
 }
 
+let bulkActions: Promise<typeof import("../../../services/bulk_action")> | undefined;
+
+/** Loads the bulk action service once, whose dialogs a board has no use for until it edits. */
+function loadBulkActions() {
+    bulkActions ??= import("../../../services/bulk_action");
+    return bulkActions;
+}

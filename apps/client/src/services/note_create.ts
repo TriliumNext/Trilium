@@ -9,6 +9,7 @@ import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_choose
 import branchService from "./branches.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { notePresetOptions } from "./note_presets.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import server from "./server.js";
 import toastService from "./toast.js";
@@ -59,7 +60,8 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
     options = Object.assign(
         {
             activate: true,
-            focus: "title",
+            // An AI chat takes its title from the first reply, so the input is what to type into.
+            focus: options.type === "llmChat" ? "content" : "title",
             target: "into"
         },
         options
@@ -150,15 +152,19 @@ async function chooseNoteType() {
 }
 
 async function createNoteWithTypePrompt(parentNotePath: string, options: CreateNoteOpts = {}) {
-    const { success, noteType, templateNoteId, notePath, cloneToNoteIds } = await chooseNoteType();
+    const {
+        success, noteType, mime, templateNoteId, notePreset, notePath, cloneToNoteIds
+    } = await chooseNoteType();
 
     if (!success) {
         return;
     }
 
     options.type = noteType;
+    options.mime = mime;
     options.templateNoteId = templateNoteId;
     options.cloneToNoteIds = cloneToNoteIds;
+    Object.assign(options, notePresetOptions(notePreset));
 
     return await createNote(notePath || parentNotePath, options);
 }
@@ -224,9 +230,13 @@ function parseSelectedHtml(selectedHtml: string) {
     return [null, selectedHtml];
 }
 
-async function duplicateSubtree(noteId: string, parentNotePath: string) {
+/**
+ * Duplicates a note next to the original and opens the copy. With `withChildren: false`, the copy
+ * leaves out the note's children.
+ */
+async function duplicateSubtree(noteId: string, parentNotePath: string, { withChildren = true }: { withChildren?: boolean } = {}) {
     const parentNoteId = treeService.getNoteIdFromUrl(parentNotePath);
-    const { note } = await server.post<DuplicateResponse>(`notes/${noteId}/duplicate/${parentNoteId}`);
+    const { note } = await server.post<DuplicateResponse>(`notes/${noteId}/duplicate/${parentNoteId}`, { withChildren });
 
     await ws.waitForMaxKnownEntityChangeId();
 

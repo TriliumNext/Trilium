@@ -53,8 +53,19 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                 if (!active) return;
                 setModels(fetched);
                 setLoading(false);
-                if (autoSelectDefaults && selected.length === 0 && fetched.length > 0) {
+                const seedFresh = autoSelectDefaults && selected.length === 0;
+                // A stored selection the listing no longer carries any part of is one the provider
+                // has moved on from, so it is seeded again as for a new provider: the old ids are
+                // ones the provider now refuses, so keeping them would offer nothing usable.
+                const seedSuperseded = selected.length > 0
+                    && !selected.some(model => fetched.some(f => f.id === model.id));
+                if ((seedFresh || seedSuperseded) && fetched.length > 0) {
                     onChange(defaultSelectedModels(fetched));
+                    return;
+                }
+                const refreshed = refreshSelectedModels(selected, fetched);
+                if (refreshed) {
+                    onChange(refreshed);
                 }
             })
             .catch(err => {
@@ -81,7 +92,11 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
     if (error) {
         return (
             // JSX escapes the text itself, so i18next must not escape the message as well.
-            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}>
+            <NoItems
+                icon="bx bx-error-circle"
+                className="model-selection-error"
+                text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}
+            >
                 {troubleshooting}
             </NoItems>
         );
@@ -105,7 +120,7 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
                     </button>
                 </div>
             </div>
-            <div className="model-selection-list">
+            <div className="model-selection-list scroll-edge-fade">
                 {models.map(model => (
                     <FormCheckbox
                         key={model.id}
@@ -127,6 +142,17 @@ export default function ModelSelection({ query, timeoutMs, selected, onChange, a
  */
 function defaultSelectedModels(models: LlmModelInfo[]): LlmModelInfo[] {
     return models.filter(model => model.recommended);
+}
+
+/**
+ * The selection with each stored model replaced by its listed entry, so saving the provider picks
+ * up new metadata such as `reasoningEfforts` or a changed price. A model the listing no longer
+ * carries stays as stored. Returns undefined when nothing changed.
+ */
+function refreshSelectedModels(selected: LlmModelInfo[], fetched: LlmModelInfo[]): LlmModelInfo[] | undefined {
+    const listed = new Map(fetched.map(model => [model.id, model]));
+    const refreshed = selected.map(model => listed.get(model.id) ?? model);
+    return JSON.stringify(refreshed) === JSON.stringify(selected) ? undefined : refreshed;
 }
 
 /** Row label: model name plus a cost hint (per-Mtok price / subscription) when known. */

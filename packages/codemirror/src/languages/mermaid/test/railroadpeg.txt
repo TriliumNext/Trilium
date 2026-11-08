@@ -1,0 +1,26 @@
+# PEG railroad
+
+railroad-peg-beta
+
+==>
+
+RailroadPegDiagram(DiagramName)
+
+# Predicates, postfixes and any
+
+railroad-peg-beta
+  title Numbers
+  number <- "-"? digit+ &x !y . (a / 'b')* ;
+
+==>
+
+RailroadPegDiagram(DiagramName,Title(Keyword,TitleText),Rule(RuleName,"<-",String,Postfix("?"),NonTerminal,Postfix("+"),Predicate("&"),NonTerminal,Predicate("!"),NonTerminal,Any("."),Group("(",NonTerminal,"/",String,")"),Postfix("*"),";"))
+
+# Character class (invalid)
+
+railroad-peg-beta
+  digit <- [0-9] ;
+
+==>
+
+RailroadPegDiagram(DiagramName,Rule(RuleName,"<-",⚠,⚠,";"))

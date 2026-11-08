@@ -1,7 +1,6 @@
 
 
 import type { Response } from "../../http_interface";
-import html from "html";
 import mimeTypes from "mime-types";
 
 import becca from "../../becca/becca.js";
@@ -10,12 +9,14 @@ import type BNote from "../../becca/entities/bnote.js";
 import { ValidationError } from "../../errors.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
+import { formatHtml } from "./format_html.js";
 import mdService from "./markdown.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 import { ExportFormat } from "../../meta.js";
 import { encodeBase64 } from "../utils/binary.js";
+import { getVirtualNoteAssets, type VirtualNoteAsset } from "../virtual_notes.js";
 
-function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Response) {
+async function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Response) {
     const note = branch.getNote();
 
     // These are thrown rather than returned: the export route writes straight to `res` and has no
@@ -30,7 +31,12 @@ function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, f
         throw new ValidationError(`Unrecognized format '${format}'`);
     }
 
-    const { payload, extension, mime } = mapByNoteType(note, note.getContent(), format);
+    let content = note.getContent();
+    if (note.isVirtual && typeof content === "string") {
+        content = await inlineVirtualAssets(content, getVirtualNoteAssets(note.noteId));
+    }
+
+    const { payload, extension, mime } = mapByNoteType(note, content, format);
     const fileName = `${note.title}.${extension}`;
 
     res.setHeader("Content-Disposition", getContentDisposition(fileName));
@@ -75,7 +81,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
                 content = `<html><head><meta charset="utf-8"></head><body>${content}</body></html>`;
             }
 
-            payload = content.length < 100_000 ? html.prettyPrint(content, { indent_size: 2 }) : content;
+            payload = formatHtml(content);
 
             extension = "html";
             mime = "text/html";
@@ -106,7 +112,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
         payload = content;
         extension = "triliumsheet";
         mime = "application/json";
-    } else if (note.type === "relationMap" || note.type === "search") {
+    } else if (note.type === "relationMap" || note.type === "search" || note.type === "mindMap") {
         payload = content;
         extension = "json";
         mime = "application/json";
@@ -170,6 +176,26 @@ function inlineAttachments(content: string) {
 
         return `href="${hrefValue}" download="${escapeHtml(attachment.title)}"`;
     });
+
+    return content;
+}
+
+/**
+ * Replaces the URLs a virtual note's content points at with `data:` URIs, since those files exist
+ * only behind the note's provider. An asset that cannot be read keeps its URL.
+ */
+async function inlineVirtualAssets(content: string, assets: VirtualNoteAsset[]) {
+    for (const asset of assets) {
+        const bytes = await asset.getContent();
+        if (!bytes) {
+            continue;
+        }
+
+        const dataUri = `data:${asset.mime};base64,${encodeBase64(bytes)}`;
+        content = content
+            .replaceAll(`src="${asset.url}"`, `src="${dataUri}"`)
+            .replaceAll(`href="${asset.url}"`, `href="${dataUri}" download="${escapeHtml(asset.title)}"`);
+    }
 
     return content;
 }

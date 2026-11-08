@@ -38,6 +38,25 @@ describe("Search", () => {
         expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
     });
 
+    it("runs a query whose expression part opens with a parenthesis", () => {
+        rootNote
+            .child(note("Alpha").label("a"))
+            .child(note("Beta").label("b"))
+            .child(note("Gamma"));
+
+        const titles = (query: string) => {
+            const searchContext = new SearchContext();
+            const results = searchService.findResultsWithQuery(query, searchContext);
+            expect(searchContext.error).toBeNull();
+            return results.map((r) => becca.notes[r.noteId].title).sort();
+        };
+
+        expect(titles("(#a OR #b)")).toEqual([ "Alpha", "Beta" ]);
+        expect(titles("(note.title = 'Alpha')")).toEqual([ "Alpha" ]);
+        expect(titles("(#a) OR (#b)")).toEqual([ "Alpha", "Beta" ]);
+        expect(titles("alpha (#a OR #b)")).toEqual([ "Alpha" ]);
+    });
+
     it("normal search looks also at attributes", () => {
         const austria = note("Austria");
         const vienna = note("Vienna");
@@ -413,6 +432,19 @@ describe("Search", () => {
         expect(searchResults.length).toEqual(5);
     });
 
+    it("a # inside a full-text word is searched literally", () => {
+        rootNote
+            .child(note("Learning C# basics"))
+            .child(note("C basics").label("book"));
+
+        const searchContext = new SearchContext();
+        const literal = searchService.findResultsWithQuery("c# basics", searchContext);
+        expect(searchContext.error).toBeNull();
+        expect(literal.map((r) => becca.notes[r.noteId].title)).toEqual(["Learning C# basics"]);
+
+        expect(searchService.findResultsWithQuery("basics#book", new SearchContext())).toEqual([]);
+    });
+
     it("exact word search matches a content word wrapped in punctuation (#10616)", () => {
         // The note body contains "(sync)" (parenthesised). Exact-word search for
         // "sync" must still find it, because content tokenization strips boundary
@@ -430,6 +462,36 @@ describe("Search", () => {
 
         expect(searchResults.length).toEqual(1);
         expect(searchResults[0].noteId).toEqual(guide.noteId);
+    });
+
+    it("refuses the regex operator when the search context disallows it", () => {
+        const target = getContext().init(() => {
+            const { note: created } = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Regex target",
+                content: "aaaa body",
+                type: "text"
+            });
+            created.setLabel("code", "abc");
+            return created;
+        });
+
+        const queries = [
+            "note.content %= 'a+ body'",
+            "#code %= 'a.c'",
+            "note.title %= '^Regex'",
+            "#code = x OR (note.content %= 'body')",
+            "#code '%=' 'a.c'"
+        ];
+        for (const query of queries) {
+            const allowed = new SearchContext();
+            expect(searchService.findResultsWithQuery(query, allowed).map((r) => r.noteId), query)
+                .toContain(target.noteId);
+
+            const refused = new SearchContext({ allowRegex: false });
+            expect(searchService.findResultsWithQuery(query, refused), query).toEqual([]);
+            expect(refused.getError(), query).toContain("%=");
+        }
     });
 
     it("fuzzy operator queries (~=) match note properties, labels and relations end-to-end (#9426)", () => {
@@ -527,6 +589,26 @@ describe("Search", () => {
         searchResults = searchService.findResultsWithQuery("#city AND note.ancestors.title = Asia", searchContext);
         expect(searchResults.length).toEqual(1);
         expect(findNoteByTitle(searchResults, "Taipei")).toBeTruthy();
+    });
+
+    it("follows links and backlinks, counting user relations and link types but not built-in ones", () => {
+        const tolkien = note("Tolkien");
+        const essay = note("Essay").relation("internalLink", tolkien.note);
+        const book = note("The Hobbit").relation("author", tolkien.note);
+        const fromTemplate = note("Created from Tolkien").relation("template", tolkien.note);
+        const savedSearch = note("Search under Tolkien", { type: "search" }).relation("ancestor", tolkien.note);
+        const imported = note("Imported widget").relation("disabled:widget", tolkien.note);
+        rootNote.child(tolkien).child(essay).child(book).child(fromTemplate).child(savedSearch).child(imported);
+
+        const titles = (query: string) => searchService.findResultsWithQuery(query, new SearchContext())
+            .map((result) => becca.notes[result.noteId].title)
+            .sort();
+
+        expect(titles("note.links.title = Tolkien")).toEqual([ "Essay", "The Hobbit" ]);
+        expect(titles(`note.links.noteId = ${tolkien.note.noteId}`)).toEqual([ "Essay", "The Hobbit" ]);
+        expect(titles("note.backlinks.title = Essay")).toEqual([ "Tolkien" ]);
+        expect(titles("note.backlinks.title = 'Created from Tolkien'")).toEqual([]);
+        expect(titles("note.title = Tolkien AND note.backlinks.title *=* o")).toEqual([ "Tolkien" ]);
     });
 
     it("filter by note's child", () => {
@@ -935,6 +1017,25 @@ describe("Search", () => {
             expect(titledRank).toBeLessThan(bodyRank);
         });
 
+        it("ranks the title spelled with the query's diacritics first (#11787)", () => {
+            // Without the accent sorting first, the alphabetical tie-break settles this in favour
+            // of "ktory" both ways, as "y" sorts before "ý".
+            const accented = contentNote("ktorý", "");
+            const plain = contentNote("ktory", "");
+            const accentedPhrase = contentNote("ktorý je", "");
+            const plainPhrase = contentNote("ktory je", "");
+
+            const accentedSearch = searchService.findResultsWithQuery("ktorý", new SearchContext());
+            expect(rank(accentedSearch, accented.noteId)).toBeGreaterThanOrEqual(0);
+            expect(rank(accentedSearch, accented.noteId)).toBeLessThan(rank(accentedSearch, plain.noteId));
+            expect(rank(accentedSearch, accentedPhrase.noteId)).toBeLessThan(rank(accentedSearch, plainPhrase.noteId));
+
+            const plainSearch = searchService.findResultsWithQuery("ktory", new SearchContext());
+            expect(rank(plainSearch, plain.noteId)).toBeGreaterThanOrEqual(0);
+            expect(rank(plainSearch, plain.noteId)).toBeLessThan(rank(plainSearch, accented.noteId));
+            expect(rank(plainSearch, plainPhrase.noteId)).toBeLessThan(rank(plainSearch, accentedPhrase.noteId));
+        });
+
         it("finds a body typo via phase-2 fuzzy fallback, ranked below exact matches (combinef -> combined)", () => {
             const exact = contentNote("ExactNote", "the combinef marker is set");
             const fuzzy = contentNote("FuzzyNote", "the values were combined together");
@@ -1015,6 +1116,39 @@ describe("Search", () => {
         });
     });
 
+    describe("the two-pass shortlist cut", () => {
+        function create(title: string, parentNoteId: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId,
+                title,
+                content: "<p>widget details</p>",
+                type: "text"
+            }).note);
+        }
+
+        it("cuts down to the shallowest matches, the way a tie is ranked", () => {
+            // 505 notes share one title and one body, so the first pass scores them alike and the
+            // shortlist keeps the shallowest of them. The shallow notes are created last, so scan
+            // order alone would drop them.
+            const outer = create("Boxes", "root");
+            const inner = create("Sub", outer.noteId);
+
+            for (let index = 0; index < 500; index++) {
+                create("Widget", inner.noteId);
+            }
+
+            const shallow = [ ...Array(5) ].map(() => create("Widget", "root"));
+
+            const searchContext = new SearchContext({ rankInTwoPasses: true });
+            const results = searchService.findResultsWithQuery("widget", searchContext);
+            const shallowIds = new Set(shallow.map((note) => note.noteId));
+            const kept = results.filter((result) => shallowIds.has(result.noteId));
+
+            expect(results.length).toEqual(200);
+            expect(kept.length).toEqual(5);
+        });
+    });
+
     describe("fuzzy content match highlighting", () => {
         function contentNote(title: string, content: string) {
             return getContext().init(() => noteService.createNewNote({
@@ -1041,6 +1175,27 @@ describe("Search", () => {
 
             expect(detail?.contentSnippet).toContain("[star]");
             expect(detail?.highlightedContentSnippet).toContain("<b>star</b>");
+        });
+
+        it("reports the words the snippet matched, spelled as the note has them (#11787)", () => {
+            const slovak = contentNote("Slovak", "<p>Ktorý deň je dnes?</p>");
+            for (const query of [ "ktorý", "ktory" ]) {
+                expect(detailsFor(query).find((d) => d.noteId === slovak.noteId)?.matchedTerms).toEqual([ "Ktorý" ]);
+            }
+
+            // A fuzzy match reports the word that is in the note rather than the one typed.
+            const asimov = contentNote("Asimov", "<p>by American writer Isaac Asimov</p>");
+            expect(detailsFor("orbiter").find((d) => d.noteId === asimov.noteId)?.matchedTerms).toEqual([ "writer" ]);
+        });
+
+        it("reports whether the body continues past the snippet", () => {
+            const short = contentNote("Short", "<p>the needle is here</p>");
+            const long = contentNote("Long", `<p>${"padding ".repeat(60)}the needle is here</p>`);
+
+            const details = detailsFor("needle");
+
+            expect(details.find((d) => d.noteId === short.noteId)?.contentSnippetTruncated).toBe(false);
+            expect(details.find((d) => d.noteId === long.noteId)?.contentSnippetTruncated).toBe(true);
         });
 
         it("highlights the word a fuzzy body match actually matched", () => {
@@ -1087,7 +1242,7 @@ describe("Search", () => {
 
 
     it("breaks a collapsible summary onto its own line in the quick-search snippet", () => {
-        // striptags concatenates block text with no separator, which would merge a
+        // `stripTags()` concatenates block text with no separator, which would merge a
         // collapsible's summary straight into its body ("Summary TitleBody text").
         const noteBuilder = note("Collapsible note");
         noteBuilder.note.getContent = () => "<details class=\"trilium-collapsible\"><summary>Summary Title</summary><p>Body text here</p></details><p>After the block</p>";
@@ -1100,22 +1255,55 @@ describe("Search", () => {
 
         // ...which the quick-search route (extractContentSnippet -> highlightSearchResults)
         // turns into <br> tags in the HTML the dropdown renders.
-        const result: any = { notePathTitle: "Collapsible note", contentSnippet: snippet, attributeSnippet: "" };
+        const result: any = {
+            notePathTitle: "Collapsible note", noteTitleSegment: "Collapsible note", parentPathTitle: "",
+            contentSnippet: snippet, attributeSnippet: ""
+        };
         searchService.highlightSearchResults([ result ], [ "body" ]);
         expect(result.highlightedContentSnippet).toBe("Summary Title<br><b>Body</b> text here<br>After the block");
+    });
+
+    it("keeps soft line breaks and paragraphs apart in the snippet (#11787)", () => {
+        // Shift+Enter in the text editor inserts a <br> rather than starting a new paragraph.
+        const noteBuilder = note("Soft breaks note");
+        noteBuilder.note.getContent = () => "<p>First line<br>second line<br/>third line</p><p>Next paragraph</p>";
+        rootNote.child(noteBuilder);
+
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "second" ]);
+        expect(snippet.split("\n")).toEqual([ "First line", "second line", "third line", "Next paragraph" ]);
+    });
+
+    it("keeps a code note's indentation in the snippet", () => {
+        // Collapsing the whitespace of a line, as prose snippets do, would run the source together
+        // and lose the nesting the code is read by.
+        const noteBuilder = note("script.ts", { type: "code", mime: "text/typescript" });
+        noteBuilder.note.getContent = () => "function main() {\n\tif (ready) {\n\t\trun();\n\t}\n}";
+        rootNote.child(noteBuilder);
+
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "run" ]);
+        // Tabs are widened to the four spaces the code editor draws them as.
+        expect(snippet.split("\n")).toEqual([ "    if (ready) {", "        run();", "    }", "}..." ]);
     });
 
     it("escapes angle brackets in the note title instead of dropping them", () => {
         // The title is interpolated into the autocomplete dropdown as raw HTML, so a title
         // containing markup-like text must come back escaped. Stripping only "<" would render
         // "Issues caused by <div>" as "Issues caused by div>".
-        const result: any = { notePathTitle: "Issues caused by <div>", contentSnippet: "", attributeSnippet: "" };
+        const result: any = {
+            notePathTitle: "Bugs › Issues caused by <div>", noteTitleSegment: "Issues caused by <div>",
+            parentPathTitle: "Bugs", contentSnippet: "", attributeSnippet: ""
+        };
         searchService.highlightSearchResults([ result ], [ "caused" ]);
-        expect(result.highlightedNotePathTitle).toBe("Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedNotePathTitle).toBe("Bugs › Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedNoteTitle).toBe("Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedParentPathTitle).toBe("Bugs");
 
         // Escaping happens after highlighting, so a token that looks like part of an entity
         // ("lt" in "&lt;") cannot cut the entity in half and produce "&<b>lt</b>;".
-        const entityResult: any = { notePathTitle: "a < b", contentSnippet: "x < y", attributeSnippet: "#lt=1 < 2" };
+        const entityResult: any = {
+            notePathTitle: "a < b", noteTitleSegment: "a < b", parentPathTitle: "",
+            contentSnippet: "x < y", attributeSnippet: "#lt=1 < 2"
+        };
         searchService.highlightSearchResults([ entityResult ], [ "lt" ]);
         expect(entityResult.highlightedNotePathTitle).toBe("a &lt; b");
         expect(entityResult.highlightedContentSnippet).toBe("x &lt; y");
@@ -1123,7 +1311,7 @@ describe("Search", () => {
     });
 
     it("surfaces link-preview url/title/description as separate lines in the quick-search snippet", () => {
-        // The url/title/description live in data attributes that striptags would otherwise drop,
+        // The url/title/description live in data attributes that `stripTags()` would drop,
         // leaving a blank snippet even though the note matched on the embedded title. The entity-
         // encoded ampersand in the title must be decoded rather than shown as "&amp;".
         const noteBuilder = note("Link preview note");
@@ -1135,8 +1323,8 @@ describe("Search", () => {
     });
 
     it("decodes HTML entities in the quick-search snippet instead of showing escape codes", () => {
-        // striptags leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, which would surface as
-        // literal escape codes in the dropdown.
+        // `stripTags()` leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, so they would
+        // surface as literal escape codes in the dropdown.
         const noteBuilder = note("Entity note");
         noteBuilder.note.getContent = () => "<p>if a &lt; b &amp;&amp; b &gt; c, then&nbsp;done</p>";
         rootNote.child(noteBuilder);

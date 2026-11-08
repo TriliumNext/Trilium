@@ -14,29 +14,29 @@ Note that <a class="reference-link" href="Synchronization.md">Synchronization</
 
 ## Creating a backup
 
-### On the desktop application and web client:
+=== "<span class="tn-icon bx bx-desktop"></span> On the desktop app & web client"
 
-1.  Go to **Settings → Backup** and press the **Backup Now** button.
-2.  The backup creation process may take a few moments, especially for larger databases. A notification will inform you when the backup is complete.
-3.  The backup will be saved as **backup-now** in the **Existing Backups** list, where you can download it.
+    1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and press the _Backup now_ button.
+    2.  The backup creation process may take a few moments, especially for larger databases. A notification will inform you when the backup is complete.
+    3.  The backup will be saved as `backup-now` in the _Existing backups_ list, where you can download it.
 
-### On the standalone client
+=== "<span class="tn-icon bx bx-globe"></span> On the standalone client"
 
-1.  **Go to Settings → Backup** and press the "**Download backup**" button.
-2.  You will be prompted to **restart the app**. Confirm, and the app will restart automatically.
-3.  Set a **backup name** or **password** (both optional), then press "**Continue**".
-4.  Press the "**Generate and download"** button and wait for the download to complete.
-5.  Once you confirm the download is saved on your device, press **"Finish"** to complete
+    1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and press the _Download backup_ button.
+    2.  You will be prompted to restart the app. Confirm, and the app will restart automatically.
+    3.  Set a _backup name_ or _password_ (both optional), then press _Continue_.
+    4.  Press the _Generate and download_ button and wait for the download to complete.
+    5.  Once you confirm the download is saved on your device, press _Finish_ to complete
 
 ## Downloading a backup
 
-*   **Desktop and web client**: to download an existing backup, navigate to **Settings → Backup → Existing backups** and select **Download**.
-*   **Standalone client**: automatic backups are not supported in this version. You can manually create and download a backup by going to **Settings → Backup → Download backup.**
+*   **Desktop and web client**: to download an existing backup, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Existing backups_ and select _Download_ (<span class="tn-icon bx bx-download"></span>).
+*   **Standalone client**: automatic backups are not supported in this version. You can manually create and download a backup by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Download backup_.
 
 ## Restoring a backup
 
-*   **For a new Trilium instance**: When setting up a new Trilium instance, use the "Restore from backup" option in the setup menu to guide you through restoring your existing backup.
-*   **For an existing Trilium instance**: To restore a backup and replace your current database, go to **Settings → Backup** and click **Restore a backup**. You will be prompted to restart the app for the restoration process to begin. After restarting, you can choose to back up the existing database before overwriting it. Note: For the web client, use the Start Over feature (**Settings → Database → Start over**) to switch to the setup screen and restore a backup.
+*   **For a new Trilium instance**: When setting up a new Trilium instance, use the _Restore from backup_ option in the setup menu to guide you through restoring your existing backup.
+*   **For an existing Trilium instance**: To restore a backup and replace your current database, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ and click _Restore a backup_. You will be prompted to restart the app for the restoration process to begin. After restarting, you can choose to back up the existing database before overwriting it. Note: For the web client, use the Start Over feature ( <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Database_ → _Start over_ (<span class="tn-icon bx bx-reset"></span>)) to switch to the setup screen and restore a backup.
 
 Next, select the backup file (.db or .tnbackup) from your device. The web client is optimized for handling large backups and is resilient to unstable network conditions, similar to the desktop application.
 
@@ -48,7 +48,7 @@ Restoring a backup may take some time, depending on its size. Once it completes,
 
 Let's assume you want to restore the weekly backup (only in .db format, .tnbackup files are not supported by this method), here's how to do it:
 
-*   find [data directory](Data%20directory.md) Trilium uses - easy way is to open "About Trilium Notes" from "Menu" in upper left corner and looking at "data directory"
+*   find [data directory](Data%20directory.md) Trilium uses - easy way is to open "About Trilium Notes" (<span class="tn-icon bx bx-info-circle"></span>) from "Menu" in upper left corner and looking at "data directory"
     *   I'll refer to `~/trilium-data` as data directory from now on
 *   find `~/trilium-data/backup/backup-weekly.db` - this is the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> backup.
 *   at this point stop/kill Trilium
@@ -64,8 +64,8 @@ Let's assume you want to restore the weekly backup (only in .db format, .tnbacku
 
 Starting with version 0.105, the Trilium desktop client allows users to change the directory where backups are stored. Follow these steps to specify a custom backup directory:
 
-1.  Navigate to **Settings** → **Backup Location**.
-2.  Click the **Select Location** button.
+1.  Navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup location_.
+2.  Click the _Select location_ button.
 3.  Choose any writable directory on your file system. This could include network shares, depending on your operating system.
 
 Once you set a custom directory, all manual and automatic backups will be saved there. If the selected directory becomes unavailable, backups may fail or revert to the default location.
@@ -83,14 +83,14 @@ Encrypted database backups use the Trilium Backup Container (.tnbackup) format, 
 
 To enable encryption for automatic backups in the Desktop application:
 
-1.  Go to **Settings → Backup → Backup Options**.
-2.  Click on **Turn on Encryption** and set a password.
+1.  Go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup options_.
+2.  Click on _Turn on encryption_ and set a password.
 
 Once encryption is enabled, all newly created backups (both automatic and manual) will be encrypted with the specified password. Backups created prior to enabling encryption will remain unsecured.
 
-You can change the password anytime using the **Change Password** button. The new password will apply to backups created after the change.
+You can change the password anytime using the _Change password_ button. The new password will apply to backups created after the change.
 
-To disable encryption, uncheck **Settings → Backup → Enable Encryption**.
+To disable encryption, uncheck <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Enable encryption_.
 
 > [!NOTE]
 > On some systems, a keyring may not be available for Trilium to securely store the encryption password. In such cases, the encryption option is disabled.
@@ -106,7 +106,7 @@ Compressed backups are stored using the Trilium Backup Container (.tnbackup), em
 
 ### Enabling Backup Compression (Desktop Only)
 
-To enable compression for new automatic and manual backups, navigate to **Settings → Backup → Backup Options** and toggle **Enable Compression** to on.
+To enable compression for new automatic and manual backups, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Backup_ → _Backup options_ and toggle _Enable compression_ to on.
 
 ## Disabling backup
 

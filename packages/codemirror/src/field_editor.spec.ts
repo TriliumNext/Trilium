@@ -1,4 +1,3 @@
-import { completionStatus, startCompletion } from "@codemirror/autocomplete";
 import { EditorSelection } from "@codemirror/state";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -50,7 +49,7 @@ describe("createFieldEditor", () => {
         expect(onChange).toHaveBeenLastCalledWith("#book\n    and #author\n    ");
     });
 
-    it("answers ArrowDown and Escape once the completion popup has passed them on", () => {
+    it("answers ArrowDown and Escape, which then reach the caret no further", () => {
         const onArrowDown = vi.fn().mockReturnValue(true);
         const onEscape = vi.fn().mockReturnValue(true);
         editor = build({ doc: "#book\n#year", onArrowDown, onEscape });
@@ -74,36 +73,6 @@ describe("createFieldEditor", () => {
 
         expect(onArrowDown).toHaveBeenCalledOnce();
         expect(editor.state.selection.main.head).toBeGreaterThan(0);
-    });
-
-    it("leaves ArrowDown and Escape to the completion popup while it is open", async () => {
-        const onArrowDown = vi.fn().mockReturnValue(true);
-        const onEscape = vi.fn().mockReturnValue(true);
-        const view = build({
-            doc: "#b",
-            completionSource: () => ({ from: 0, options: [ { label: "#book" }, { label: "#borrowed" } ] }),
-            onArrowDown,
-            onEscape
-        });
-        editor = view;
-        view.dispatch({ selection: EditorSelection.cursor(2) });
-
-        // The popup drops both keys for `interactionDelay` after it opens; neither reaches the
-        // field in that window, since the field's own commands move focus out of the editor.
-        await openCompletion(view);
-        pressKey(view, "ArrowDown");
-        expect(onArrowDown).not.toHaveBeenCalled();
-
-        await openCompletion(view);
-        pressKey(view, "Escape");
-        expect(onEscape).not.toHaveBeenCalled();
-
-        // Closed, so the field gets both keys back.
-        expect(completionStatus(view.state)).toBe(null);
-        pressKey(view, "ArrowDown");
-        pressKey(view, "Escape");
-        expect(onArrowDown).toHaveBeenCalledOnce();
-        expect(onEscape).toHaveBeenCalledOnce();
     });
 
     it("holds a single-line field to one line, flattening the breaks in what is inserted", () => {
@@ -149,26 +118,6 @@ describe("createFieldEditor", () => {
         expect(editor.contentDOM.getAttribute("aria-label")).toBe("Search string");
     });
 
-    it("draws a completion with the icon the consumer answers for it", async () => {
-        const view = build({
-            doc: "#b",
-            completionSource: () => ({ from: 0, options: [ { label: "#book" }, { label: "#borrowed" } ] }),
-            completionIcon: (completion) => completion.label === "#book" ? "bx bx-hash" : undefined
-        });
-        editor = view;
-        view.dispatch({ selection: EditorSelection.cursor(2) });
-
-        await openCompletion(view);
-
-        // The option answering nothing is drawn without a glyph, rather than with an empty one.
-        const glyphs = Array.from(document.querySelectorAll(".cm-tooltip-autocomplete li"))
-            .map((option) => option.querySelector(".cm-completion-glyph"));
-        expect(glyphs.map((glyph) => glyph?.className)).toEqual([ "cm-completion-glyph bx bx-hash", undefined ]);
-        expect(glyphs[0]?.getAttribute("aria-hidden")).toBe("true");
-        // Supplying the icons replaces CodeMirror's own.
-        expect(document.querySelector(".cm-completionIcon")).toBe(null);
-    });
-
     it("keeps the line breaks in inserted text", () => {
         const onChange = vi.fn();
         editor = build({ onChange });
@@ -184,12 +133,6 @@ function build(config: Partial<FieldEditorConfig> = {}): FieldEditor {
     const parent = document.createElement("div");
     document.body.appendChild(parent);
     return createFieldEditor({ parent, ...config });
-}
-
-/** Opens the completion popup and waits until it is showing. */
-async function openCompletion(view: FieldEditor) {
-    startCompletion(view);
-    await vi.waitFor(() => expect(completionStatus(view.state)).toBe("active"));
 }
 
 /** Presses a key on the editor and answers whether a binding handled it. */

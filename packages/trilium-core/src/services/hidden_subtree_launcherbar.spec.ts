@@ -56,6 +56,7 @@ describe("buildLaunchBarConfig", () => {
 
         expect(desktopVisibleLaunchers.map((l) => l.id)).toEqual([
             "_lbNewNote",
+            "_lbRecordMeeting",
             "_lbSearch",
             "_lbJumpTo",
             "_lbNoteMap",

@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes
@@ -306,6 +307,10 @@ Trilium は、その基盤となる技術なしには実現できませんでし
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - テキストノートのビジュアルエディタ。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) -
   膨大な数の言語をサポートするコードエディター。
+* [Mermaid](https://github.com/mermaid-js/mermaid)
+  -マーメイド記法の図を描画します。そのパーサーは、構文ハイライトのモデルとして機能します。
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - マーメイド構文ハイライトの基盤となるものです。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas
   ノートで使用される無限のホワイトボード。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) -
@@ -314,11 +319,6 @@ Trilium は、その基盤となる技術なしには実現できませんでし
 * Tabulator](https://github.com/olifolkerd/tabulator) -
   コレクションで使用されるインタラクティブなテーブル。
 * [FancyTree](https://github.com/mar10/fancytree) - 他に類を見ない機能豊富なツリーライブラリ。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) -
-  視覚的な接続ライブラリ。[リレーションマップ](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  と
-  [リンクマップ](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  で使用されます
 
 ## 🤝 サポート
 

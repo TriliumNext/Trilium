@@ -20,6 +20,11 @@ interface SkillDefinition {
     summary: string;
     /** Markdown file under `src/assets/llm/skills`, which is what a reader is asked for. */
     file: string;
+    /**
+     * Markdown file under `src/assets/llm/skills` that `readSkill()` appends to the sheet: the API
+     * reference `pnpm edit-docs:sync-docs` generates from `script_api.ts`.
+     */
+    reference?: string;
 }
 
 export const SKILLS: SkillDefinition[] = [
@@ -33,13 +38,15 @@ export const SKILLS: SkillDefinition[] = [
         name: "backend_scripting",
         description: "Backend (Node.js) scripting API — creating notes, handling events, accessing entities, database operations, and automation.",
         summary: "the backend Node.js scripting API",
-        file: "backend_scripting.md"
+        file: "backend_scripting.md",
+        reference: "backend_scripting_api.md"
     },
     {
         name: "frontend_scripting",
         description: "Frontend (browser) scripting API — UI widgets, navigation, dialogs, editor access, Preact/JSX components, and keyboard shortcuts.",
         summary: "the frontend browser scripting API",
-        file: "frontend_scripting.md"
+        file: "frontend_scripting.md",
+        reference: "frontend_scripting_api.md"
     },
     {
         name: "dashboards",
@@ -65,15 +72,18 @@ export function registerSkillReader(reader: (file: string) => string | null) {
 }
 
 /**
- * The sheet's markdown, or null when the skill is unknown to the catalog or the
- * host cannot produce it.
+ * The sheet's markdown, followed by its API reference when it has one, or null
+ * when the skill is unknown to the catalog or the host cannot produce the sheet.
  */
 export function readSkill(name: string): string | null {
     const skill = SKILLS.find((s) => s.name === name);
     if (!skill || !skillReader) {
         return null;
     }
-    return skillReader(skill.file);
+
+    const sheet = skillReader(skill.file);
+    const reference = skill.reference ? skillReader(skill.reference) : null;
+    return sheet && reference ? `${sheet.trimEnd()}\n\n${reference}` : sheet;
 }
 
 /**

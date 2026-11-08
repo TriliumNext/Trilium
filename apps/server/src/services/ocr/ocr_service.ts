@@ -14,6 +14,8 @@ export interface OCRResult {
     extractedAt: string;
     language?: string;
     pageCount?: number;
+    /** Pages whose OCR threw, for a document whose other pages still produced a result. */
+    failedPageCount?: number;
     processingType?: string;
 }
 

@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import becca from "../../../becca/becca.js";
 import blobService from "../../../services/blob.js";
+import { getLlmAttachment } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 export const attachmentTools = defineTools({
@@ -16,7 +17,7 @@ export const attachmentTools = defineTools({
             attachmentId: z.string().describe("The ID of the attachment to retrieve")
         }),
         execute: ({ attachmentId }) => {
-            const attachment = becca.getAttachment(attachmentId);
+            const attachment = getLlmAttachment(attachmentId);
             if (!attachment) {
                 return { error: "Attachment not found" };
             }
@@ -39,7 +40,7 @@ export const attachmentTools = defineTools({
             attachmentId: z.string().describe("The ID of the attachment to read")
         }),
         execute: ({ attachmentId }) => {
-            const attachment = becca.getAttachment(attachmentId);
+            const attachment = getLlmAttachment(attachmentId);
             if (!attachment) {
                 return { error: "Attachment not found" };
             }

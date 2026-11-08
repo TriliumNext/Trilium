@@ -31,7 +31,7 @@ export default function PromptDialog() {
     const formRef = useRef<HTMLFormElement>(null);
     const labelRef = useRef<HTMLLabelElement>(null);
     const answerRef = useRef<HTMLInputElement>(null);
-    const opts = useRef<PromptDialogOptions>();
+    const opts = useRef<PromptDialogOptions | undefined>(undefined);
     const [ value, setValue ] = useState("");
     const [ shown, setShown ] = useState(false);
     const submitValue = useRef<string>(null);

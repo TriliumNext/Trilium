@@ -330,20 +330,6 @@ function getMostRecentLlmChat() {
 }
 
 /**
- * Gets the most recent LLM chat or creates a new one if none exists.
- * Used by sidebar chat for persistent conversations.
- */
-function getOrCreateLlmChat() {
-    const existingChat = getMostRecentLlmChat();
-
-    if (existingChat) {
-        return existingChat;
-    }
-
-    return createLlmChat();
-}
-
-/**
  * Gets a list of recent LLM chat notes.
  * Used by sidebar chat history popup.
  */
@@ -432,7 +418,6 @@ export default {
     createOrUpdateScriptLauncherFromApi,
     createLlmChat,
     getMostRecentLlmChat,
-    getOrCreateLlmChat,
     getRecentLlmChats,
     saveLlmChat
 };

@@ -123,18 +123,6 @@ async function getMostRecentLlmChat() {
     return await froca.getNote(note.noteId);
 }
 
-/**
- * Gets the most recent LLM chat, or creates a new one if none exists.
- * Used by sidebar chat for persistent conversations across page refreshes.
- */
-async function getOrCreateLlmChat() {
-    const note = await server.get<FNoteRow>("special-notes/get-or-create-llm-chat");
-
-    await ws.waitForMaxKnownEntityChangeId();
-
-    return await froca.getNote(note.noteId);
-}
-
 export interface RecentLlmChat {
     noteId: string;
     title: string;
@@ -163,6 +151,5 @@ export default {
     createSearchNote,
     createLlmChat,
     getMostRecentLlmChat,
-    getOrCreateLlmChat,
     getRecentLlmChats
 };

@@ -4,25 +4,41 @@ import "./ReadOnlyText.css";
 // (see https://github.com/zadam/trilium/issues/1590 for example of such conflict)
 import "@triliumnext/ckeditor5";
 
+import {
+    applyListItemAlignment
+} from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
+import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
+import {
+    applyStickyTableHeaders
+} from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
+import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import clsx from "clsx";
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
+import { t } from "../../../services/i18n";
+import { applyNoteImageVersions } from "../../../services/image_urls";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import { useNoteBlob, useNoteLabel, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import {
+    useNoteBlob, useNoteLabel, useSameNoteSwitch, useSearchTermsConsumer, useSyncedRef,
+    useTriliumEvent, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
+import { mountScrollableLabel } from "../../react/ScrollableLabel";
 import { TypeWidgetProps } from "../type_widget";
+import { hasSourceEmbedBoxes, prepareEmbedBoxes } from "./embed_boxes";
 import { applyReferenceLinks } from "./read_only_helper";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import { refreshEmbeddedNote, setupImageOpening, watchContentEmbeds } from "./utils";
 
 export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent, isVisible }: TypeWidgetProps) {
     // The componentId matters: the WS echo of a save made by the editable-text editor in the same
@@ -30,20 +46,34 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     // hidden while the user temporarily edits an auto-read-only note — would refetch the whole blob
     // after every save and flash the loading overlay over the editor (#10575). Skipped own-component
     // changes are caught up on via refreshOnShow when this view is displayed again.
+    const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
     const blob = useNoteBlob(note, parentComponent?.componentId, {
         reportLoadStateTo: noteContext,
         isVisible,
-        refreshOnShow: true
+        refreshOnShow: true,
+        shownRef: readOnlyContentRef
     });
     const { isRtl } = useNoteLanguage(note);
-    const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
+    const renderedNoteIdRef = usePreactRef<string | undefined>(undefined);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=... The blob gate skips the mount run,
+    // Scroll to the bookmark or the blocks a link points at. The blob gate skips the mount run,
     // which fires against an empty container while the content is still loading.
     useEffect(() => {
         if (!blob) return;
-        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
+        renderedNoteIdRef.current = note.noteId;
+        revealLinkTarget();
     }, [blob]);
+    // A hidden widget leaves the link target to the one on display.
+    useSameNoteSwitch(note, ntxId, () => {
+        if (isVisible !== false && renderedNoteIdRef.current === note.noteId) {
+            revealLinkTarget();
+        }
+    });
+
+    function revealLinkTarget() {
+        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
+        consumeBlockReference(readOnlyContentRef.current, noteContext?.viewScope);
+    }
 
     // Jump to the first search match when navigated from search results.
     useEffect(() => {
@@ -55,6 +85,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         <>
             <ReadOnlyTextContent
                 html={blob?.content ?? ""}
+                noteId={note.noteId}
                 ntxId={ntxId}
                 dir={isRtl ? "rtl" : "ltr"}
                 contentRef={readOnlyContentRef}
@@ -66,6 +97,8 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
 interface ReadOnlyTextContentProps {
     /** CKEditor-compatible HTML to render. */
     html: string;
+    /** The note `html` belongs to. Reference links to its own blocks show only their text. */
+    noteId?: string;
     /** Note context id — enables `contentElRefreshed` / `executeWithContentElement` integrations when provided. */
     ntxId?: string | null;
     dir?: "ltr" | "rtl";
@@ -73,15 +106,23 @@ interface ReadOnlyTextContentProps {
     className?: string;
     /** Optional external ref to the rendered content div (e.g. to drive scroll sync). */
     contentRef?: Ref<HTMLDivElement>;
+    /**
+     * Whether `html` changes as it is typed or streamed. Mermaid diagrams then draw in place,
+     * keeping the last drawing while the next renders, instead of in an embed box each.
+     */
+    isChanging?: boolean;
 }
 
 /**
  * Renders arbitrary CKEditor-style HTML with the same pipeline as {@link ReadOnlyText}:
- * mermaid rewriting, inline mermaid, included-note expansion, KaTeX math, reference-link
- * titles, code-block syntax highlighting, and image click handling. Transforms re-run
+ * mermaid rewriting, inline mermaid, embed expansion, KaTeX math, reference-link
+ * titles, tabs, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
-export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: externalContentRef }: ReadOnlyTextContentProps) {
+export function ReadOnlyTextContent({
+    html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false
+}: ReadOnlyTextContentProps) {
+    const hasEmbedBoxes = hasSourceEmbedBoxes(isChanging);
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -102,27 +143,64 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
             appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
         }
 
-        // The passes that lazily load their library (mermaid, highlight.js) — plus included notes,
+        // The passes that lazily load their library (mermaid, highlight.js) — plus embedded notes,
         // which render a whole note of their own — finish after this effect returns. On screen they
         // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
         // them, so the work is registered rather than dropped on the floor.
+        const loadEmbedBoxes = prepareEmbedBoxes(container, {
+            seenNoteIds: new Set(), hostNoteId: noteId, isChanging
+        });
         trackPendingRender(container, Promise.all([
-            rewriteMermaidDiagramsInContainer(container),
-            applyInlineMermaid(container),
-            applyIncludedNotes(container),
             applyLinkEmbeds(container),
-            applyReferenceLinks(container),
-            formatCodeBlocks($(container))
+            applyReferenceLinks(container, noteId),
+            formatCodeBlocks($(container)),
+            // Last, so that no pass above reaches into the content of the boxes.
+            loadEmbedBoxes()
         ]));
 
+        applyNoteImageVersions(container);
+        applyListItemAlignment(container);
+        const disposeTableScroll = applyTableScroll(container);
+        const disposeStickyTableHeaders = applyStickyTableHeaders(container);
         applyMath(container);
+        const disposeTabs = applyTabs(container, {
+            placeholder: t("text-editor.ck.tab-title"),
+            scrollLabels: {
+                start: t("text-editor.ck.scroll-to-the-previous-tabs"),
+                end: t("text-editor.ck.scroll-to-the-next-tabs")
+            }
+        });
+        const tabTitles = container.querySelectorAll<HTMLElement>(`.${TAB_CLASSES.tabTitle}`);
+        const disposeTabTitles = [ ...tabTitles ]
+            .filter((title) => title.hasChildNodes())
+            .map((title) => mountScrollableLabel(title));
         setupImageOpening(container, true);
-    }, [ html, ntxId, contentRef ]);
 
-    // React to included note changes.
-    useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
+        return () => {
+            disposeTableScroll();
+            disposeStickyTableHeaders();
+            disposeTabs();
+            for (const dispose of disposeTabTitles) {
+                dispose();
+            }
+        };
+    }, [ html, noteId, ntxId, contentRef, isChanging ]);
+
+    useEffect(() => {
         if (!contentRef.current) return;
-        refreshIncludedNote(contentRef.current, noteId);
+        return watchContentEmbeds(contentRef.current);
+    }, [ contentRef, hasEmbedBoxes ]);
+
+    useTriliumEvent("entitiesReloaded", () => {
+        if (contentRef.current) applyNoteImageVersions(contentRef.current);
+    });
+
+    // React to embedded note changes.
+    useTriliumEvent("refreshEmbeddedNote", ({ noteId: embeddedNoteId }) => {
+        if (!contentRef.current) return;
+        refreshEmbeddedNote(contentRef.current, embeddedNoteId, {
+            seenNoteIds: new Set(noteId ? [ noteId ] : [])
+        });
     });
 
     // Search integration.
@@ -133,6 +211,8 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
 
     return (
         <RawHtmlBlock
+            // The drawings in place replace the code blocks, which the embed boxes need again.
+            key={hasEmbedBoxes ? "embeds" : "drawings"}
             containerRef={contentRef}
             className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap", className)}
             tabindex={100}
@@ -153,19 +233,8 @@ function useNoteLanguage(note: FNote) {
     return { isRtl };
 }
 
-function applyIncludedNotes(container: HTMLDivElement) {
-    const loaded: Promise<unknown>[] = [];
-    const includedNotes = container.querySelectorAll<HTMLElement>("section.include-note");
-    for (const includedNote of includedNotes) {
-        const noteId = includedNote.dataset.noteId;
-        if (!noteId) continue;
-        loaded.push(loadIncludedNote(noteId, $(includedNote)));
-    }
-    return Promise.all(loaded);
-}
-
 function applyMath(container: HTMLDivElement) {
-    const equations = container.querySelectorAll("span.math-tex");
+    const equations = container.querySelectorAll<HTMLElement>("span.math-tex");
     for (const equation of equations) {
         // throwOnError: false renders invalid formulas as an inline red error (with the
         // parse message as a tooltip) instead of throwing and logging to the console.

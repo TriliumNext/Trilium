@@ -53,6 +53,7 @@ describe("messaging provider (core)", () => {
         expect(shouldLogMessage({ type: "ping" } as WebSocketMessage)).toBe(false);
         expect(shouldLogMessage({ type: "sync-failed" } as WebSocketMessage)).toBe(false);
         expect(shouldLogMessage({ type: "api-log-messages" } as WebSocketMessage)).toBe(false);
+        expect(shouldLogMessage({ type: "resource-download" } as WebSocketMessage)).toBe(false);
 
         expect(shouldLogMessage({ type: "sync-finished" } as WebSocketMessage)).toBe(true);
         expect(shouldLogMessage({ type: "reload-frontend" } as WebSocketMessage)).toBe(true);

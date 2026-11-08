@@ -1,5 +1,6 @@
 import "./UserAttributesList.css";
 
+import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
 import type { DefinitionObject } from "@triliumnext/commons";
 import { ComponentChildren, CSSProperties } from "preact";
 import { useEffect, useState } from "preact/hooks";
@@ -142,7 +143,7 @@ function getAttributesWithDefinitions(
     const result: AttributeWithDefinitions[] = [];
     for (const attr of attributeDefintions) {
         const def = attr.getDefinition();
-        const [ type, name ] = attr.name.split(":", 2);
+        const [ type, name ] = extractAttributeDefinitionTypeAndName(attr.name);
         const friendlyName = def?.promotedAlias || name;
         const props: Omit<AttributeWithDefinitions, "value"> = { def, name, type, friendlyName };
 

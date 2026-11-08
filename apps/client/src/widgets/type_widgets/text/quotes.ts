@@ -1,6 +1,5 @@
 import type { TextTypingTransformationDescription } from "@triliumnext/ckeditor5";
-
-import { normalizeLocale } from "../../../utils/formatters.js";
+import { normalizeLocale } from "@triliumnext/commons";
 
 /** The opening and closing mark of one quotation level — what a single quote key produces. */
 export type QuoteMarks = readonly [open: string, close: string];
@@ -42,6 +41,7 @@ const QUOTE_STYLES: Record<string, QuoteStyle> = {
     zh: { primary: ["“", "”"], secondary: ["‘", "’"] },
     "pt-br": { primary: ["“", "”"], secondary: ["‘", "’"] },
     es: { primary: ["“", "”"], secondary: ["‘", "’"] },
+    vi: { primary: ["“", "”"], secondary: ["‘", "’"] },
     // Listed although it now matches `en`, so that the agreement reads as a decision rather than an
     // omission: British usage traditionally inverts the two levels — which is what CKEditor's own
     // `quotesPrimaryEnGb` still does — but CLDR has en-GB on double quotes, following the publishers

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 import FNote from "../../entities/fnote";
 import { getBuiltinLabelSelectOptions } from "../../services/attributes";
 import { t } from "../../services/i18n";
+import { endLivePrint, startLivePrint } from "../../services/live_print";
 import toast from "../../services/toast";
 import Button, { ButtonGroup } from "../react/Button";
 import Dropdown from "../react/Dropdown";
@@ -13,6 +14,7 @@ import FormSelect from "../react/FormSelect";
 import FormTextBox, { FormTextBoxWithUnit } from "../react/FormTextBox";
 import { useNoteLabelBoolean, useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
+import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import PdfViewer from "../type_widgets/file/PdfViewer";
 import OptionsRow from "../type_widgets/options/components/OptionsRow";
@@ -81,6 +83,8 @@ function isValidPageRanges(value: string): boolean {
 export interface PrintPreviewData {
     note: FNote;
     notePath: string;
+    /** An element of the app window to print as it is on screen, instead of rendering the note again. */
+    liveTarget?: HTMLElement;
 }
 
 interface PreviewOpts {
@@ -96,10 +100,15 @@ export default function PrintPreviewDialog() {
     const [pdfUrl, setPdfUrl] = useState<string>();
     const [note, setNote] = useState<FNote>();
     const [loading, setLoading] = useState(false);
-    const bufferRef = useRef<Uint8Array>();
+    const [error, setError] = useState<string>();
+    const bufferRef = useRef<Uint8Array | undefined>(undefined);
     const notePathRef = useRef("");
-    const pdfUrlRef = useRef<string>();
-
+    const pdfUrlRef = useRef<string | undefined>(undefined);
+    const requestIdRef = useRef(0);
+    /** The live print the dialog started for a live target, which every request names. */
+    const liveJobIdRef = useRef<number | undefined>(undefined);
+    /** A live print sent to the printer keeps the window prepared until `print-done` ends it. */
+    const isLivePrintSentRef = useRef(false);
 
     const [landscape, setLandscape] = useNoteLabelBoolean(note, "printLandscape");
     const [pageSize, setPageSize] = useNoteLabelWithDefault(note, "printPageSize", "Letter");
@@ -142,8 +151,11 @@ export default function PrintPreviewDialog() {
         setLoading(false);
     }, []);
 
-    useTriliumEvent("showPrintPreview", (data: PrintPreviewData) => {
+    useTriliumEvent("showPrintPreview", async (data: PrintPreviewData) => {
         if (shown) return;
+
+        isLivePrintSentRef.current = false;
+        liveJobIdRef.current = data.liveTarget ? await startLivePrint(data.note, data.liveTarget) : undefined;
 
         setNote(data.note);
         notePathRef.current = data.notePath;
@@ -152,29 +164,27 @@ export default function PrintPreviewDialog() {
     });
 
     // Handle regeneration results via a persistent listener scoped to the
-    // dialog's lifecycle. A generation counter discards stale results when
+    // dialog's lifecycle. `requestIdRef` discards stale results when
     // multiple requests overlap.
     useEffect(() => {
         const api = window.electronApi?.printing;
         if (!shown || !api) return;
 
-        api.onExportAsPdfPreviewResult(({ buffer, error }) => {
+        api.onExportAsPdfPreviewResult(({ buffer, error, requestId }) => {
+            if (requestId !== requestIdRef.current) return;
             toast.closePersistent("printing");
             if (error) {
                 setLoading(false);
+                setError(error);
+                bufferRef.current = undefined;
                 if (pdfUrlRef.current) {
                     URL.revokeObjectURL(pdfUrlRef.current);
                     pdfUrlRef.current = undefined;
                     setPdfUrl(undefined);
                 }
-                toast.showPersistent({
-                    id: "print-preview-error",
-                    icon: "bx bx-error-circle",
-                    message: `${t("print_preview.render_error")}\n\n${error}`
-                });
                 return;
             }
-            toast.closePersistent("print-preview-error");
+            setError(undefined);
             if (buffer) {
                 updatePreview(buffer);
             }
@@ -190,7 +200,9 @@ export default function PrintPreviewDialog() {
 
         setLoading(true);
         api.exportAsPdfPreview({
+            requestId: ++requestIdRef.current,
             notePath: notePathRef.current,
+            liveJobId: liveJobIdRef.current,
             pageSize: opts.pageSize,
             landscape: opts.landscape,
             scale: opts.scale,
@@ -214,9 +226,14 @@ export default function PrintPreviewDialog() {
     }, [shown, landscape, pageSize, scale, marginsStr, pageRanges, pageRangesValid, regeneratePreview]);
 
     function handleClose() {
+        if (liveJobIdRef.current !== undefined && !isLivePrintSentRef.current) {
+            endLivePrint(liveJobIdRef.current);
+        }
+        liveJobIdRef.current = undefined;
+        requestIdRef.current++;
         setShown(false);
         isFirstGenerationRef.current = true;
-        toast.closePersistent("print-preview-error");
+        setError(undefined);
         if (pdfUrlRef.current) {
             URL.revokeObjectURL(pdfUrlRef.current);
             pdfUrlRef.current = undefined;
@@ -237,8 +254,10 @@ export default function PrintPreviewDialog() {
     }
 
     function handlePrint(silent: boolean, deviceName?: string) {
+        isLivePrintSentRef.current = liveJobIdRef.current !== undefined;
         window.electronApi?.printing.printFromPreview({
             notePath: notePathRef.current,
+            liveJobId: liveJobIdRef.current,
             pageSize,
             landscape,
             scale,
@@ -407,7 +426,7 @@ export default function PrintPreviewDialog() {
                         icon={destination === DESTINATION_PDF ? "bx-file" : "bx-printer"}
                         className="btn-primary"
                         onClick={handlePrimaryAction}
-                        disabled={loading}
+                        disabled={loading || (destination === DESTINATION_PDF && !!error)}
                     />
                 </>
             }
@@ -417,6 +436,12 @@ export default function PrintPreviewDialog() {
                     <div class="print-preview-loading-overlay">
                         <span class="bx bx-loader-circle bx-spin" />
                     </div>
+                )}
+                {error && (
+                    <NoItems icon="bx bx-error-circle" text={t("print_preview.render_error_title")}>
+                        <p>{t("print_preview.render_error_description")}</p>
+                        <p>{error}</p>
+                    </NoItems>
                 )}
                 {pdfUrl && <PdfViewer pdfUrl={pdfUrl} toolbar={false} disableSelection minPixelRatio={2} />}
             </div>

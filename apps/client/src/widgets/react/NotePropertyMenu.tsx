@@ -1,18 +1,23 @@
 import { FilterLabelsByType } from "@triliumnext/commons";
 import { Fragment, VNode } from "preact";
-import { useContext } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 
 import Component from "../../components/component";
 import FNote from "../../entities/fnote";
 import NoteContextAwareWidget from "../note_context_aware_widget";
+import { OptionCardSection } from "./Card";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "./FormList";
+import FormSelect, { FormSelectWithGroups } from "./FormSelect";
+import FormToggle from "./FormToggle";
 import HelpTooltipButton from "./HelpTooltipButton";
 import FormTextBox from "./FormTextBox";
 import { useNoteLabel, useNoteLabelBoolean } from "./hooks";
-import { ParentComponent } from "./react_utils";
+import { NoteContextContext, ParentComponent } from "./react_utils";
 
 export interface ClickContext {
     note: FNote;
+    /** The note context the menu stands in, when it stands in one other than a split's. */
+    ntxId?: string | null;
     triggerCommand: NoteContextAwareWidget["triggerCommand"];
 }
 
@@ -83,7 +88,8 @@ export interface ComboBoxProperty {
      */
     defaultValue?: string;
     options: (ComboBoxItem | Separator | ComboBoxGroup)[];
-    dropStart?: boolean;
+    /** When provided, the property is only rendered if this returns true for the current note. */
+    isVisible?: (note: FNote) => boolean;
 }
 
 export interface SubmenuProperty {
@@ -149,6 +155,37 @@ export function ViewProperty({ note, property }: { note: FNote, property: BookPr
     }
 }
 
+/**
+ * A property as a row of a settings card, for a dialog that offers what the collection's settings
+ * dropdown does. Covers switches, numbers, option groups, comboboxes and the submenus holding them;
+ * buttons and the other kinds that only make sense in a menu render nothing.
+ */
+export function ViewPropertySection({ note, property }: { note: FNote, property: BookProperty }) {
+    switch (property.type) {
+        case "checkbox":
+            return <CheckBoxPropertySection note={note} property={property} />;
+        case "number":
+            return <NumberPropertySection note={note} property={property} />;
+        case "option-group":
+            return <OptionGroupPropertySection note={note} property={property} />;
+        case "combobox":
+            return <ComboBoxPropertySection note={note} property={property} />;
+        case "submenu":
+            return (
+                <OptionCardSection
+                    label={property.label}
+                    description={property.helpTooltip}
+                    subSectionsVisible
+                    subSections={property.children.map((child, index) => (
+                        <ViewPropertySection key={index} note={note} property={child} />
+                    ))}
+                />
+            );
+        default:
+            return null;
+    }
+}
+
 function SubmenuPropertyView({ note, property }: { note: FNote, property: SubmenuProperty }) {
     return (
         <FormDropdownSubmenu
@@ -188,6 +225,7 @@ function OptionGroupPropertyView({ note, property }: { note: FNote, property: Op
 
 function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonProperty }) {
     const parentComponent = useContext(ParentComponent);
+    const noteContext = useContext(NoteContextContext);
 
     return (
         <FormListItem
@@ -197,6 +235,7 @@ function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonP
                 if (!parentComponent) return;
                 property.onClick({
                     note,
+                    ntxId: noteContext?.ntxId,
                     triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
                 });
             }}
@@ -207,8 +246,10 @@ function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonP
 function SplitButtonPropertyView({ note, property }: { note: FNote, property: SplitButtonProperty }) {
     const parentComponent = useContext(ParentComponent);
     const ItemsComponent = property.items;
+    const noteContext = useContext(NoteContextContext);
     const clickContext = parentComponent && {
         note,
+        ntxId: noteContext?.ntxId,
         triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
     };
 
@@ -224,8 +265,7 @@ function SplitButtonPropertyView({ note, property }: { note: FNote, property: Sp
 }
 
 function NumberPropertyView({ note, property }: { note: FNote, property: NumberProperty }) {
-    //@ts-expect-error Interop with text box which takes in string values even for numbers.
-    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
+    const [ draft, setDraft, commit ] = useNumberLabelDraft(note, property.bindToLabel);
     const disabled = property.disabled?.(note);
 
     return (
@@ -237,8 +277,9 @@ function NumberPropertyView({ note, property }: { note: FNote, property: NumberP
             <PropertyLabel property={property} />
             <FormTextBox
                 type="number"
-                currentValue={value ?? ""} onChange={setValue}
-                style={{ width: (property.width ?? 100) }}
+                allowEmpty
+                currentValue={draft} onChange={setDraft} onBlur={commit}
+                style={{ width: `${property.width ?? 100}px` }}
                 min={property.min ?? 0}
                 disabled={disabled}
             />
@@ -266,7 +307,6 @@ function ComboBoxPropertyView({ note, property }: { note: FNote, property: Combo
         <FormDropdownSubmenu
             title={<PropertyLabel property={property} />}
             icon={property.icon ?? "bx bx-empty"}
-            dropStart={property.dropStart}
         >
             {(property.options).map((option, index) => {
                 if ("items" in option) {
@@ -300,4 +340,107 @@ function CheckBoxPropertyView({ note, property }: { note: FNote, property: Check
             onChange={newValue => setValue(property.reverseValue ? !newValue : newValue)}
         />
     );
+}
+
+function CheckBoxPropertySection({ note, property }: { note: FNote, property: CheckBoxProperty }) {
+    const [ value, setValue ] = useNoteLabelBoolean(note, property.bindToLabel);
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormToggle
+                currentValue={property.reverseValue ? !value : value}
+                onChange={(newValue) => setValue(property.reverseValue ? !newValue : newValue)}
+            />
+        </OptionCardSection>
+    );
+}
+
+function OptionGroupPropertySection({ note, property }: {
+    note: FNote, property: OptionGroupProperty & PropertyHelp
+}) {
+    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormSelect
+                values={property.options}
+                keyProperty="value"
+                titleProperty="label"
+                currentValue={value ?? property.defaultValue ?? undefined}
+                onChange={setValue}
+            />
+        </OptionCardSection>
+    );
+}
+
+function NumberPropertySection({ note, property }: { note: FNote, property: NumberProperty & PropertyHelp }) {
+    const [ draft, setDraft, commit ] = useNumberLabelDraft(note, property.bindToLabel);
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormTextBox
+                type="number"
+                allowEmpty
+                currentValue={draft}
+                onChange={setDraft}
+                onBlur={commit}
+                min={property.min ?? 0}
+                disabled={property.disabled?.(note)}
+            />
+        </OptionCardSection>
+    );
+}
+
+/** A combobox as a select, its groups as option groups; a separator has nothing to show there. */
+function ComboBoxPropertySection({ note, property }: {
+    note: FNote, property: ComboBoxProperty & PropertyHelp
+}) {
+    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
+    const values = property.options.filter(
+        (option): option is ComboBoxItem | ComboBoxGroup => !("type" in option));
+    return (
+        <OptionCardSection
+            name={property.bindToLabel}
+            label={property.label}
+            description={property.helpTooltip}
+        >
+            <FormSelectWithGroups<ComboBoxItem>
+                values={values}
+                keyProperty="value"
+                titleProperty="label"
+                currentValue={value ?? property.defaultValue ?? undefined}
+                onChange={setValue}
+            />
+        </OptionCardSection>
+    );
+}
+
+/**
+ * A number label edited in a box: the typed value is held as a draft, written once the box commits
+ * (on leaving it, or on a spinner step), and an emptied box removes the label.
+ */
+function useNumberLabelDraft(note: FNote, labelName: NumberProperty["bindToLabel"]) {
+    //@ts-expect-error Interop with text box which takes in string values even for numbers.
+    const [ value, setValue ] = useNoteLabel(note, labelName);
+    const [ draft, setDraft ] = useState(value ?? "");
+
+    useEffect(() => setDraft(value ?? ""), [ value ]);
+
+    function commit(newValue: string) {
+        const next = newValue.trim() || null;
+        if (next !== (value ?? null)) {
+            setValue(next);
+        }
+    }
+
+    return [ draft, setDraft, commit ] as const;
 }

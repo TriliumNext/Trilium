@@ -1,0 +1,44 @@
+@top PieDiagram { document+ }
+
+@skip { spaces | LineComment }
+
+document {
+  DiagramName ShowData? (
+    () |
+    Title |
+    Title TitleText |
+    Title TitleText kvPair+ |
+    Title kvPair+ |
+    kvPair+
+  )
+}
+
+@skip {} {
+  String {
+    '"' (stringContentDouble)* '"'
+  }
+}
+
+kvPair {
+  String ":" Number
+}
+
+DiagramName { kw<"pie"> }
+
+ShowData { kw<"showData"> }
+
+Title { kw<"title"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  identifier { @asciiLetter+ }
+  stringContentDouble { !["]+ }
+  spaces { @whitespace+ }
+  Number { @digit+ ("." @digit+)? }
+  LineComment { "%%" ![\n]* }
+}
+
+@external propSource pieHighlighting from "./highlight.js"

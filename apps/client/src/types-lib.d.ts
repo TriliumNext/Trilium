@@ -1,11 +1,4 @@
-export {};
-
-declare module "htmldiff-js" {
-    const HtmlDiff: {
-        execute(oldHtml: string, newHtml: string): string;
-    };
-    export default HtmlDiff;
-}
+import type { HTMLAttributes } from "preact";
 
 // TODO: Use real @types/ but that one generates a lot of errors.
 declare module "draggabilly" {
@@ -22,19 +15,15 @@ declare module "draggabilly" {
             containment: HTMLElement
         });
         element: HTMLElement;
-        on(event: "staticClick" | "dragStart" | "dragEnd" | "dragMove", callback: Callback);
+        on(
+            event: "pointerDown" | "staticClick" | "dragStart" | "dragEnd" | "dragMove",
+            callback: Callback
+        );
         dragEnd();
         isDragging: boolean;
         positionDrag: () => void;
         destroy();
     }
-}
-
-declare module "katex/contrib/auto-render" {
-    var renderMathInElement: (element: HTMLElement, options: {
-        trust: boolean;
-    }) => void;
-    export default renderMathInElement;
 }
 
 declare global {
@@ -59,7 +48,7 @@ declare global {
 
 declare module "preact" {
     namespace JSX {
-        interface ElectronWebViewElement extends JSX.HTMLAttributes<HTMLElement> {
+        interface ElectronWebViewElement extends HTMLAttributes<HTMLElement> {
             src: string;
             class: string;
             key?: string | number;

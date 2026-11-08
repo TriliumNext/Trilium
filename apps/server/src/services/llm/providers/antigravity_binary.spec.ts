@@ -10,7 +10,7 @@ const existsSyncMock = vi.hoisted(() => vi.fn((_path: string) => true));
 vi.mock("fs", () => ({ existsSync: existsSyncMock }));
 
 const findOnPathMock = vi.hoisted(() => vi.fn<(binary: string) => Promise<string | undefined>>());
-vi.mock("./binary_lookup.js", () => ({ findOnPath: findOnPathMock }));
+vi.mock("./binary_lookup.js", async (importOriginal) => ({ ...await importOriginal<typeof import("./binary_lookup.js")>(), findOnPath: findOnPathMock }));
 
 const logInfoMock = vi.hoisted(() => vi.fn());
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: logInfoMock, error: vi.fn() }) }));

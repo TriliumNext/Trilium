@@ -1,3 +1,4 @@
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
@@ -14,7 +15,7 @@ import { fakeRequestProvider } from "../test/request_provider.js";
 import { initRequest } from "./request.js";
 import { getSql } from "./sql/index.js";
 import TaskContext from "./task_context.js";
-import { encodeUtf8 } from "./utils/binary.js";
+import { decodeUtf8, encodeUtf8 } from "./utils/binary.js";
 
 /**
  * The pure link-extraction helpers (findBookmarks, findLlmChatLinks) and the
@@ -208,6 +209,20 @@ describe("notes service (real DB)", () => {
             }
         });
 
+        it("refuses a forced noteId that belongs to an existing note", () => {
+            const { note } = createNote("root", { title: "spec-existing", content: "<p>keep</p>" });
+
+            expect(() => createNote("root", { noteId: note.noteId, title: "spec-overwrite", content: "x" }))
+                .toThrow(ValidationError);
+            expect(becca.getNoteOrThrow(note.noteId).title).toBe("spec-existing");
+            expect(getContext().init(() => note.getContent())).toBe("<p>keep</p>");
+            expect(note.getParentNotes().map((parent) => parent.noteId)).toStrictEqual([ "root" ]);
+
+            expect(() => createNote("root", { noteId: "root", title: "spec-root" })).toThrow(/already exists/);
+            expect(becca.getNoteOrThrow("root").title).not.toBe("spec-root");
+            expect(becca.getBranch("root_root")).toBeNull();
+        });
+
         it("inherits the template's mime and adds a template relation when creating from a template", () => {
             const template = createNote("root", { title: "spec-template", content: "<p>tmpl</p>" });
             // Give the template a non-default mime so we can verify inheritance.
@@ -350,6 +365,39 @@ describe("notes service (real DB)", () => {
             expect(note.mime).toBe("text/x-python");
             expect(note.getContent()).toBe("print('hi')");
         });
+
+        it("titles a note from its template's #template:titleTemplate before the parent's #titleTemplate", () => {
+            const templates = createNote("root", {
+                attributes: [
+                    { type: "label", name: "template:titleTemplate", value: "Folder ${parentNote.title}", isInheritable: true }
+                ]
+            });
+            const meeting = createNote(templates.note.noteId, {
+                attributes: [{ type: "label", name: "template:titleTemplate", value: "Meeting ${parentNote.title}" }]
+            });
+            const book = createNote(templates.note.noteId);
+            const plain = createNote("root");
+            const parent = createNote("root", {
+                title: "Q4",
+                attributes: [
+                    { type: "label", name: "titleTemplate", value: "Child of ${parentNote.title}" },
+                    { type: "relation", name: "child:template", value: meeting.note.noteId }
+                ]
+            });
+            const untitled = (templateNoteId?: string, title?: string) => createNote(parent.note.noteId, {
+                title, templateNoteId
+            }).note;
+
+            expect(untitled(undefined).title).toBe("Meeting Q4");
+            expect(untitled(book.note.noteId).title).toBe("Folder Q4");
+            expect(untitled(plain.note.noteId).title).toBe("Child of Q4");
+            expect(untitled(meeting.note.noteId, "Typed").title).toBe("Typed");
+
+            // A note created from Meeting and marked #template does not take Meeting's title along.
+            const instance = untitled(meeting.note.noteId);
+            getContext().init(() => instance.setLabel("template"));
+            expect(untitled(instance.noteId).title).toBe("Child of Q4");
+        });
     });
 
     describe("createNewNote logging", () => {
@@ -450,6 +498,18 @@ describe("notes service (real DB)", () => {
             const relation = source.note.getRelations().find((r) => r.name === "internalLink");
             expect(relation).toBeDefined();
             expect(relation!.value).toBe(target.note.noteId);
+        });
+
+        it("creates internal-link relations for links to a part of a note", () => {
+            const target = createNote("root", { title: "spec-part-target" });
+            const source = createNote("root", { title: "spec-part-source" });
+
+            const content = `<a href="#root/${target.note.noteId}?block=a1:b2">x</a>`
+                + `<a href="#root/${target.note.noteId}?bookmark=heading">y</a>`;
+            getContext().init(() => saveLinks(source.note, content));
+
+            const relations = source.note.getRelations().filter((r) => r.name === "internalLink");
+            expect(relations.map((r) => r.value)).toEqual([ target.note.noteId ]);
         });
 
         it("removes link relations that are no longer present in the content", () => {
@@ -622,6 +682,95 @@ describe("notes service (real DB)", () => {
                 /not available for change/
             );
         });
+
+        it("updates an attachment of the note by its ID and skips any other attachment ID", () => {
+            const note = createNote("root", { title: "spec-update-att", content: "<p>x</p>" }).note;
+            const other = createNote("root", { title: "spec-update-att-other" }).note;
+            const attachment = { role: "file", mime: "application/json", title: "canvas.json" };
+            const save = (owner: BNote, content: string) =>
+                getContext().init(() => owner.saveAttachment({ ...attachment, content }));
+            const own = save(note, "old");
+            const foreign = save(other, "theirs");
+            const row = (attachmentId: string | undefined, content: string) =>
+                ({ ...attachment, attachmentId, ownerId: note.noteId, content });
+            // `becca.getAttachment()` reads the row again, with its current blob.
+            const contentOf = (attachmentId: string | undefined) =>
+                attachmentId ? becca.getAttachment(attachmentId)?.getContent() : undefined;
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, "<p>x</p>", [
+                row(own.attachmentId, "new"),
+                row(foreign.attachmentId, "mine"),
+                row("deletedAttachment99", "gone")
+            ]));
+
+            expect(contentOf(own.attachmentId)).toBe("new");
+            expect(contentOf(foreign.attachmentId)).toBe("theirs");
+            expect(note.getAttachments().map((a) => a.attachmentId))
+                .toStrictEqual([ own.attachmentId ]);
+        });
+
+        it("keeps the images that a drawing saved along with the content shows again", () => {
+            const note = createNote("root", { title: "spec-update-drawing" }).note;
+            const drawing = saveDrawing(note, sceneOf([]));
+            const image = getContext().init(() => note.saveAttachment(PNG));
+            const content = "<figure class=\"include-note\" "
+                + `data-attachment-id="${drawing.attachmentId}"></figure>`;
+            const isScheduled = () =>
+                !!becca.getAttachment(image.attachmentId ?? "")?.utcDateScheduledForErasureSince;
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, content));
+            expect(isScheduled()).toBe(true);
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, content, [ {
+                ...DRAWING, attachmentId: drawing.attachmentId, ownerId: note.noteId,
+                content: sceneOf([ PNG.title ])
+            } ]));
+            expect(isScheduled()).toBe(false);
+        });
+    });
+
+    describe("getPortableContent", () => {
+        it("puts in a canvas drawing the images that it refers to", () => {
+            const note = createNote("root", { title: "spec-portable" }).note;
+            const inline = {
+                id: "inline", mimeType: "image/png", dataURL: "data:image/png;base64,AA=="
+            };
+            const drawing = saveDrawing(note, sceneOf([ PNG.title, "inline" ], { inline }));
+            getContext().init(() => {
+                note.saveAttachment(PNG);
+                note.saveAttachment({ ...PNG, title: "unused.png" });
+                note.saveAttachment({ ...PNG, title: "inline" });
+            });
+
+            const portable = JSON.parse(decodeUtf8(noteService.getPortableContent(drawing)));
+            expect(portable.files).toEqual({
+                inline,
+                [PNG.title]: {
+                    id: PNG.title,
+                    mimeType: "image/png",
+                    dataURL: "data:image/png;base64,AQID",
+                    created: expect.any(Number)
+                }
+            });
+            const { elements } = JSON.parse(sceneOf([ PNG.title, "inline" ]));
+            expect(portable.elements).toEqual(elements);
+            const now = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+            try {
+                expect(JSON.parse(decodeUtf8(noteService.getPortableContent(drawing)))).toEqual(portable);
+            } finally {
+                now.mockRestore();
+            }
+
+            const json = getContext().init(() => note.saveAttachment({
+                role: "file",
+                mime: "application/json",
+                title: "a.json",
+                content: sceneOf([ PNG.title ])
+            }));
+            expect(decodeUtf8(noteService.getPortableContent(json))).toBe(sceneOf([ PNG.title ]));
+            const malformed = saveDrawing(note, "{");
+            expect(decodeUtf8(noteService.getPortableContent(malformed))).toBe("{");
+        });
     });
 
     describe("duplicateSubtree", () => {
@@ -644,6 +793,28 @@ describe("notes service (real DB)", () => {
             expect(dupChildren).toHaveLength(1);
             expect(dupNote.getRelationValue("myRel")).toBe(dupChildren[0].noteId);
             expect(dupChildren[0].noteId).not.toBe(child.note.noteId);
+        });
+
+        it("duplicates only the note when withChildren is false, keeping references to the original children", () => {
+            const parent = createNote("root", { title: "spec-dup-only" });
+            const child = createNote(parent.note.noteId, { title: "spec-dup-only-child" });
+            getContext().init(() => {
+                parent.note.setLabel("iconClass", "bx bx-star");
+                parent.note.setRelation("selfRel", parent.note.noteId);
+                parent.note.setRelation("childRel", child.note.noteId);
+                parent.note.setContent(`<p><a href="#root/${child.note.noteId}">child</a></p>`);
+            });
+
+            const { note: dupNote } = getContext().init(() =>
+                noteService.duplicateSubtree(parent.note.noteId, "root", { withChildren: false }));
+
+            expect(dupNote.noteId).not.toBe(parent.note.noteId);
+            expect(dupNote.getChildNotes()).toHaveLength(0);
+            expect(parent.note.getChildNotes().map((n) => n.noteId)).toStrictEqual([ child.note.noteId ]);
+            expect(dupNote.getLabelValue("iconClass")).toBe("bx bx-star");
+            expect(dupNote.getRelationValue("selfRel")).toBe(dupNote.noteId);
+            expect(dupNote.getRelationValue("childRel")).toBe(child.note.noteId);
+            expect(dupNote.getContent()).toContain(child.note.noteId);
         });
 
         it("refuses to duplicate the root note", () => {
@@ -705,6 +876,21 @@ describe("notes service (real DB)", () => {
         });
     });
 });
+
+const DRAWING = { role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw" };
+const PNG = {
+    role: "image", mime: "image/png", title: "f1.png", content: new Uint8Array([ 1, 2, 3 ])
+};
+
+/** A canvas scene with an image element for each of `fileIds`, and `files` inline. */
+function sceneOf(fileIds: string[], files: object = {}) {
+    const elements = fileIds.map((fileId) => ({ type: "image", fileId }));
+    return JSON.stringify({ type: "excalidraw", version: 2, elements, files });
+}
+
+function saveDrawing(note: BNote, content: string) {
+    return getContext().init(() => note.saveAttachment({ ...DRAWING, content }));
+}
 
 /**
  * Characterization of the attachment-title derivation used by saveAttachments

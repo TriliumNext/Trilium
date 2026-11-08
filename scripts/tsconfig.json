@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "target": "es2023",
+    "rewriteRelativeImportExtensions": true,
     "outDir": "dist",
     "rootDir": "..",
     "types": [

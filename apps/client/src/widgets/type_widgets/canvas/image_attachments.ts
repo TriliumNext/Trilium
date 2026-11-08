@@ -1,6 +1,7 @@
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 
+import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import { parseImageDataUrl } from "../../../services/image_upload";
 import type { SavedData } from "../../react/hooks";
@@ -26,9 +27,12 @@ export const CANVAS_EXPORT_TITLE = NOTE_TYPE_IMAGE_ATTACHMENTS.canvas;
  * attachment title. The bytes are fetched from the attachment image endpoint and re-encoded as a
  * data URL, since Excalidraw renders only from inline data URLs (it has no external-URL provider).
  */
-export async function loadImageAttachments(note: FNote): Promise<{ files: BinaryFileData[]; metadata: ImageAttachmentMetadata[] }> {
-    const attachments = await getCanvasImageAttachments(note);
+export async function loadImageAttachments(note: FNote) {
+    return loadImageFiles(await getCanvasImageAttachments(note));
+}
 
+/** Loads the image `attachments` into Excalidraw {@link BinaryFileData}, keyed by their titles. */
+export async function loadImageFiles(attachments: FAttachment[]) {
     const files: BinaryFileData[] = [];
     const metadata: ImageAttachmentMetadata[] = [];
 
@@ -93,7 +97,7 @@ async function getCanvasImageAttachments(note: FNote) {
 }
 
 /** Reads a blob as a base64 `data:` URL. */
-function blobToDataURL(blob: Blob): Promise<string> {
+export function blobToDataURL(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);

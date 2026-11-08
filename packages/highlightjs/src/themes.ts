@@ -1,3 +1,5 @@
+import { buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT } from "./vs_code_theme.js";
+
 export type ThemeVariant = "light" | "dark";
 
 export interface Theme {
@@ -333,6 +335,14 @@ const themeDefinitions: Record<string, Theme> = {
     "vs": {
         name: "Visual Studio (Light)",
         load: () => import("highlight.js/styles/vs.css?raw")
+    },
+    "vs-code-dark": {
+        name: "VS Code (Dark)",
+        load: async () => ({ default: buildVsCodeThemeCss(VS_CODE_DARK) })
+    },
+    "vs-code-light": {
+        name: "VS Code (Light)",
+        load: async () => ({ default: buildVsCodeThemeCss(VS_CODE_LIGHT) })
     },
     "vs2015": {
         name: "Visual Studio 2015 (Dark)",

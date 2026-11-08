@@ -95,7 +95,6 @@ describe("usesReaderPreference", () => {
         expect(usesReaderPreference("sidebar")).toBe(true);
         expect(usesReaderPreference("expanded")).toBe(true);
 
-        expect(usesReaderPreference("ribbon")).toBe(false);
         expect(usesReaderPreference("type")).toBe(false);
         expect(usesReaderPreference("hoisted")).toBe(false);
     });
@@ -116,8 +115,6 @@ describe("getFitPadding", () => {
 
         // The maps with room of their own keep their fixed margins whatever is in them — the same map
         // expanded to the window included, which has the room the card was short of.
-        expect(getFitPadding("ribbon", 1)).toBe(50);
-        expect(getFitPadding("ribbon", 500)).toBe(50);
         expect(getFitPadding("expanded", 500)).toBe(50);
         expect(getFitPadding("type", 500)).toBe(30);
         expect(getFitPadding("hoisted", 500)).toBe(30);

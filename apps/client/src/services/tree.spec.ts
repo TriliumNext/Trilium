@@ -234,6 +234,18 @@ describe("getNotePathTitleComponents / getNotePathTitle / getNoteTitleWithPathAs
         expect($result.find(".note-path").text()).toContain("Alpha2");
     });
 
+    it("shows a given title with the whole path as its suffix, for what a note owns", async () => {
+        const a = buildNote({ title: "Alpha3" });
+        const b = buildNote({ title: "Beta3" });
+
+        const notePath = `${a.noteId}/${b.noteId}`;
+        const $result = await treeService
+            .getNoteTitleWithPathAsSuffix(notePath, "report.pdf") as JQuery<HTMLElement>;
+
+        expect($result.find(".note-title").text()).toBe("report.pdf");
+        expect($result.find(".note-path").text()).toBe(" (Alpha3 / Beta3)");
+    });
+
     // The empty-components guard inside getNoteTitleWithPathAsSuffix is unreachable through the
     // public API: getNotePathTitleComponents always pushes at least one component (the loop runs
     // for "" via split("/") -> [""]), and the internal call is to the local function (not the

@@ -23,17 +23,20 @@ import { createUniver, FUniver, mergeLocales } from '@univerjs/presets';
 import { CalculationMode } from '@univerjs/sheets-formula';
 import { IEditorBridgeService, SheetCellEditorResizeService } from '@univerjs/sheets-ui';
 import { IDialogService, IShortcutService, ISidebarService } from '@univerjs/ui';
-import { MutableRef, useEffect, useRef, useState } from "preact/hooks";
+import { RefObject } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
+import useStripPastedFontFamily from "./clipboard";
 import useSpreadsheetExport from "./export";
 import { loadUniverLocale, UniverLocale } from "./locales";
 import useClampEdgeNavigation from "./navigation";
 import usePersistence from "./persistence";
+import useFixRadixPortals from "./radix_portals";
 
 function buildReadOnlyLocaleOverrides() {
     const msg = t("spreadsheet.read-only");
@@ -90,12 +93,13 @@ function useUniverLocale() {
 
 function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetProps & { readOnly: boolean; locale: UniverLocale }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<FUniver>();
+    const apiRef = useRef<FUniver | undefined>(undefined);
 
     useInitializeSpreadsheet(containerRef, apiRef, readOnly, locale);
     useReleaseFillShortcuts(apiRef);
     useClampEdgeNavigation(apiRef);
     useAnchorCellEditorOnScroll(apiRef);
+    useStripPastedFontFamily(apiRef);
     useDarkMode(apiRef);
     const spacedUpdate = usePersistence(note, noteContext, apiRef, containerRef);
     useSpreadsheetExport(apiRef, note, noteContext, spacedUpdate);
@@ -112,38 +116,6 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     });
 
     return <div ref={containerRef} className="spreadsheet" />;
-}
-
-/**
- * Univer's design system uses Radix UI primitives whose DismissableLayer detects
- * "outside" clicks/focus via document-level pointerdown/focusin listeners combined
- * with a React capture-phase flag. In React, portal events bubble through the
- * component tree so onPointerDownCapture fires on the DismissableLayer, setting an
- * internal flag that suppresses the "outside" detection. With preact/compat, portal
- * events don't bubble through the React tree, so the flag never gets set and Radix
- * immediately dismisses popups.
- *
- * Radix dispatches cancelable custom events ("dismissableLayer.pointerDownOutside"
- * and "dismissableLayer.focusOutside") on the original event target before calling
- * onDismiss. The dismiss is skipped if defaultPrevented is true. This hook intercepts
- * those custom events in the capture phase and prevents default when the target is
- * inside a Radix portal, restoring the expected behavior.
- */
-function useFixRadixPortals() {
-    useEffect(() => {
-        function preventDismiss(e: Event) {
-            if (e.target instanceof HTMLElement && e.target.closest("[id^='radix-']")) {
-                e.preventDefault();
-            }
-        }
-
-        document.addEventListener("dismissableLayer.pointerDownOutside", preventDismiss, true);
-        document.addEventListener("dismissableLayer.focusOutside", preventDismiss, true);
-        return () => {
-            document.removeEventListener("dismissableLayer.pointerDownOutside", preventDismiss, true);
-            document.removeEventListener("dismissableLayer.focusOutside", preventDismiss, true);
-        };
-    }, []);
 }
 
 // Univer binds Ctrl+R to fill-right and Ctrl+D to fill-down, which shadow the
@@ -165,7 +137,7 @@ interface ShortcutServiceLike {
  * cell into its neighbour when a user presses Ctrl+R expecting a reload. The commands
  * remain available via the toolbar/context menu and the fill handle.
  */
-function useReleaseFillShortcuts(apiRef: MutableRef<FUniver | undefined>) {
+function useReleaseFillShortcuts(apiRef: RefObject<FUniver | undefined>) {
     useEffect(() => {
         const univerAPI = apiRef.current;
         if (!univerAPI) return;
@@ -223,7 +195,7 @@ function useReleaseFillShortcuts(apiRef: MutableRef<FUniver | undefined>) {
  * stale origin and only resizes), and `fitTextSize()` pushes that layout to the overlay's DOM
  * state, which is the same pair Univer runs when the editor first opens.
  */
-function useAnchorCellEditorOnScroll(apiRef: MutableRef<FUniver | undefined>) {
+function useAnchorCellEditorOnScroll(apiRef: RefObject<FUniver | undefined>) {
     useEffect(() => {
         const univerAPI = apiRef.current;
         if (!univerAPI) return;
@@ -240,7 +212,7 @@ function useAnchorCellEditorOnScroll(apiRef: MutableRef<FUniver | undefined>) {
     }, [ apiRef ]);
 }
 
-function useInitializeSpreadsheet(containerRef: MutableRef<HTMLDivElement | null>, apiRef: MutableRef<FUniver | undefined>, readOnly: boolean, locale: UniverLocale) {
+function useInitializeSpreadsheet(containerRef: RefObject<HTMLDivElement | null>, apiRef: RefObject<FUniver | undefined>, readOnly: boolean, locale: UniverLocale) {
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -349,7 +321,7 @@ function toMobilePresets(presets: UniverPreset[]): UniverPreset[] {
     }));
 }
 
-function useDarkMode(apiRef: MutableRef<FUniver | undefined>) {
+function useDarkMode(apiRef: RefObject<FUniver | undefined>) {
     const colorScheme = useColorScheme();
 
     // React to dark mode.
@@ -360,9 +332,9 @@ function useDarkMode(apiRef: MutableRef<FUniver | undefined>) {
     }, [ colorScheme, apiRef ]);
 }
 
-function useSearchIntegration(apiRef: MutableRef<FUniver | undefined>, noteContext: NoteContext | undefined) {
-    useTriliumEvent("findInText", () => {
-        if (!noteContext?.isActive()) return;
+function useSearchIntegration(apiRef: RefObject<FUniver | undefined>, noteContext: NoteContext | undefined) {
+    useTriliumEvent("findInText", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId)) return;
 
         const univerAPI = apiRef.current;
         if (!univerAPI) return;
@@ -372,7 +344,7 @@ function useSearchIntegration(apiRef: MutableRef<FUniver | undefined>, noteConte
     });
 }
 
-function useDismissDialogsOnNoteSwitch(apiRef: MutableRef<FUniver | undefined>) {
+function useDismissDialogsOnNoteSwitch(apiRef: RefObject<FUniver | undefined>) {
     useTriliumEvents(["beforeNoteSwitch", "noteTypeMimeChanged"], () => {
         const univerAPI = apiRef.current;
         if (!univerAPI) return;

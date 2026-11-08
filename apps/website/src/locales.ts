@@ -20,6 +20,7 @@ export const LOCALES: Locale[] = [
     { id: "en", name: "English (United States)" },
     { id: "en-GB", name: "English (United Kingdom)" },
     { id: "es", name: "Español" },
+    { id: "fa", name: "فارسی", rtl: true },
     { id: "fr", name: "Français" },
     { id: "ga", name: "Gaeilge" },
     { id: "hi", name: "हिन्दी" },
@@ -34,6 +35,7 @@ export const LOCALES: Locale[] = [
     { id: "ru", name: "Русский" },
     { id: "ug", name: "ئۇيغۇرچە", rtl: true },
     { id: "uk", name: "Українська" },
+    { id: "vi", name: "Tiếng Việt" },
     { id: "zh-Hans", name: "简体中文" },
     { id: "zh-Hant", name: "繁體中文" }
 ].toSorted((a, b) => a.name.localeCompare(b.name));

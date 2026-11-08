@@ -13,6 +13,9 @@ type KeyboardShortcutsOptions<T extends KeyboardActionNames> = {
     [key in T as `keyboardShortcuts${Capitalize<key>}`]: string;
 };
 
+/** How tall the rows of the note tree are. */
+export type TreeDensity = "relaxed" | "dense";
+
 export type FontFamily = "theme" | "serif" | "sans-serif" | "monospace" | string;
 
 /**
@@ -49,6 +52,12 @@ export const SYSTEM_MONOSPACE_FONT_STACK = [
     "Liberation Mono",
     "monospace"
 ].join(",");
+
+/**
+ * The generic `monospace` family named twice. Browsers draw a lone `monospace` at their smaller
+ * monospace default size (13px instead of 16px); a second family in the list turns that off.
+ */
+export const MONOSPACE_FONT_FAMILY = "monospace, monospace";
 
 export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActionNames> {
     openNoteContexts: string;
@@ -156,7 +165,6 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     autoReadonlySizeCode: number;
     maxContentWidth: number;
     centerContent: boolean;
-    minTocHeadings: number;
     eraseUnusedAttachmentsAfterSeconds: number;
     eraseUnusedAttachmentsAfterTimeScale: number;
     logRetentionDays: number;
@@ -203,13 +211,35 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     autoFixConsistencyIssues: boolean;
     vimKeymapEnabled: boolean;
     codeLineWrapEnabled: boolean;
+    /** Whether code editors show line numbers where a note or an embed does not set them. */
+    codeLineNumbersEnabled: boolean;
+    /** Whether meetings can be transcribed: shows the launcher and the transcription settings. */
+    transcriptionEnabled: boolean;
+    /** Whether a meeting transcript is shown without filler words and stutters. */
+    transcriptCleanupEnabled: boolean;
+    /**
+     * The speech recognition model a recording runs on, a key of `TRANSCRIPTION_MODELS`. Not synced:
+     * each device downloads and runs its own.
+     */
+    transcriptionModel: string;
+    /** Whether a recording tells the other participants apart, labeling each utterance with its speaker. */
+    transcriptionSpeakersEnabled: boolean;
+    /**
+     * Whether a recording keeps its audio and the transcript as produced in the data directory, for
+     * troubleshooting. Not synced: the files stay on the device that recorded.
+     */
+    transcriptionKeepRecordings: boolean;
     leftPaneVisible: boolean;
     rightPaneVisible: boolean;
+    /** Whether a presentation shows its slide sidebar. Not synced, as the room for it differs by device. */
+    presentationSidebarVisible: boolean;
     nativeTitleBarVisible: boolean;
     hideArchivedNotes_main: boolean;
     debugModeEnabled: boolean;
     autoCollapseNoteTree: boolean;
     treeScrollFollowNavigation: boolean;
+    /** Not synced, so each device keeps its own. */
+    treeDensity: TreeDensity;
     dailyBackupEnabled: boolean;
     weeklyBackupEnabled: boolean;
     monthlyBackupEnabled: boolean;
@@ -248,6 +278,11 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeBlockTabWidth: number;
     codeNoteTabWidth: number;
     codeNoteIndentWithTabs: boolean;
+    /**
+     * Whether the code language lists are sorted by name. Off, they follow the order of
+     * {@link codeNotesMimeTypes}, which sorting leaves unchanged.
+     */
+    codeNotesMimeTypesSortAlphabetically: boolean;
     textNoteEditorMultilineToolbar: boolean;
     /**
      * Which marks a typed `"…"` becomes: `auto` to follow the note's content language, `off` to
@@ -271,10 +306,24 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
+    /** Whether the MathLive visual editor is shown when editing math. If false, only the LaTeX textarea is used. */
+    mathFieldEnabled: boolean;
     /** Whether the editor surfaces content-area hints (bottom-corner popups that document how to interact with the element under the caret or pointer, e.g. task-state cycle, collapsible-summary shortcut, drag-handle label). */
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /** Whether the link editor fills the empty title of a text link with the page's title. */
+    textNoteLinkTitleRetrievalEnabled: boolean;
+    /**
+     * Whether the link editor fills the empty title and description of an icon & text link or a card
+     * with the page's own.
+     */
+    textNoteLinkDetailsRetrievalEnabled: boolean;
+    /**
+     * Whether the header rows of a table stay at the top of the note while the rest of the table
+     * scrolls past.
+     */
+    textNoteStickyTableHeadersEnabled: boolean;
     /**
      * Whether the editor preserves the HTML tags it has no editing feature of its own for — the
      * ones named by `allowedHtmlTags`, carried through CKEditor's General HTML Support.
@@ -289,7 +338,6 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
     clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;
-    newLayout: boolean;
 
     // PDF settings
     /**
@@ -307,6 +355,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** Number of search results shown per page on the full-search results view. */
     searchResultsPageSize: number;
 
+    // Canvas settings
+    /** Whether a new pen stroke on a canvas takes half the stroke width that is picked. */
+    canvasThinStroke: boolean;
+
     // Share settings
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;
@@ -314,14 +366,15 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
-    // Include note settings
-    includeNoteDefaultBoxSize: "small" | "medium" | "full" | "expandable";
-
     // AI / LLM
     /** Whether the AI/LLM features (chat sidebar, LLM chat notes) are enabled. */
     aiEnabled: boolean;
     /** JSON array of configured LLM providers with their API keys */
     llmProviders: string;
+    /** Config id of the search provider the chat's web search uses; empty for the model's built-in search. */
+    llmWebSearchProvider: string;
+    /** The permission mode picked last in any chat, which a new chat starts in. */
+    llmPermissionMode: string;
     /** The model the text editor's AI assistant runs on, as JSON `{ providerId, provider, model }`; empty to follow the first configured provider's default. */
     aiAssistantModel: string;
     /** Whether the MCP (Model Context Protocol) server endpoint is enabled. */

@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "fs";
-import { delimiter, join } from "path";
+import { basename, delimiter, extname, join } from "path";
 
 export default class BuildHelper {
 
@@ -18,7 +18,11 @@ export default class BuildHelper {
         mkdirSync(this.outDir, { recursive: true });
     }
 
-    copy(projectDirPath: string, outDirPath: string) {
+    /**
+     * @param opts.filter receives each source path and returns whether to copy it; directories are
+     *   consulted too, so returning false for one skips its whole subtree.
+     */
+    copy(projectDirPath: string, outDirPath: string, opts?: { filter?: (sourcePath: string) => boolean }) {
         let sourcePath: string;
         if (projectDirPath.startsWith("/") || projectDirPath.startsWith("\\")) {
             sourcePath = join(this.rootDir, projectDirPath.substring(1));
@@ -29,7 +33,7 @@ export default class BuildHelper {
         if (outDirPath.endsWith("/")) {
             mkdirSync(join(this.outDir, outDirPath), { recursive: true });
         }
-        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true });
+        cpSync(sourcePath, join(this.outDir, outDirPath), { recursive: true, dereference: true, filter: opts?.filter });
     }
 
     deleteFromOutput(path: string) {
@@ -69,7 +73,10 @@ export default class BuildHelper {
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
                 "vite",
-                "tesseract.js",
+                // tesseract.js requires it only when `global.fetch` is missing, which no
+                // supported Node or Electron version is. Bundling it would pull in
+                // `encoding` and a second iconv-lite.
+                "node-fetch",
                 // Test fixtures referenced via require.resolve from
                 // integration-test-only code paths in apps/server. These
                 // paths are gated at runtime by TRILIUM_INTEGRATION_TEST and
@@ -85,7 +92,13 @@ export default class BuildHelper {
                 // the require.resolve branch is unreachable, but esbuild
                 // still sees the static string and warns. External marker
                 // suppresses the warning without changing runtime behavior.
-                "@triliumnext/core/src/assets/*"
+                "@triliumnext/core/src/assets/*",
+                // The Codex ACP adapter is copied to RESOURCE_DIR/codex-acp.mjs by the
+                // build; codex_binary.ts only require.resolve()s the package when running
+                // from source.
+                "@agentclientprotocol/codex-acp",
+                // Loads its native addon from its own platform package at runtime.
+                "sherpa-onnx-node"
             ],
             metafile: true,
             loader: {
@@ -135,15 +148,55 @@ export default class BuildHelper {
             }),
             minify: true
         });
-        writeFileSync(join(this.outDir, "meta.json"), JSON.stringify(result.metafile));
+        // One metafile per entry, named after it, so a later build call cannot overwrite an
+        // earlier one's.
+        const metaDir = join(this.outDir, "meta");
+        mkdirSync(metaDir, { recursive: true });
+        const entryName = basename(entryPoints[0], extname(entryPoints[0]));
+        writeFileSync(join(metaDir, `${entryName}.json`), JSON.stringify(result.metafile));
+    }
 
-        // Tesseract.js is marked as external above because its worker runs in
-        // a separate worker_thread. Copy the worker source, WASM core and all
-        // transitive runtime deps so they are available in dist/node_modules.
-        this.copyNodeModules([
-            "tesseract.js", "tesseract.js-core", "wasm-feature-detect",
-            "regenerator-runtime", "is-url", "bmp-js"
-        ]);
+    /**
+     * Bundles the Tesseract.js OCR worker into the bundle root and copies the engine builds beside
+     * it, where their loaders read them from, one per CPU feature level.
+     *
+     * Only the full engine builds are copied, not the `-lstm` ones. The Node worker's `getCore()`
+     * compares its `lstmOnly` boolean against OEM numbers, so it never selects an `-lstm` build.
+     *
+     * @param entryPoint the path of `tesseract_worker.ts`, relative to the project.
+     */
+    async buildTesseractWorker(entryPoint: string) {
+        await this.buildBackend([ entryPoint ]);
+        for (const variant of [ "", "-simd", "-relaxedsimd" ]) {
+            const file = `tesseract-core${variant}.wasm`;
+            this.copy(`/node_modules/tesseract.js-core/${file}`, file);
+        }
+    }
+
+    /**
+     * Copies the assets the server code reads from `RESOURCE_DIR` at runtime. Both the server and
+     * the desktop app run that code, so both builds call this.
+     */
+    copyServerAssets() {
+        this.copy("/apps/server/src/assets", "assets/");
+        // Core owns these, but the bundle cannot resolve `@triliumnext/core` paths where no
+        // workspace exists (Docker, a packaged app), so they are read from RESOURCE_DIR instead.
+        // See core_assets.ts.
+        this.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
+        this.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
+        // PDFium's own loader resolves the wasm against `import.meta.url`, which in the split
+        // bundle names a file under chunks/. See pdf_renderer.ts.
+        this.copy("/node_modules/@hyzyla/pdfium/dist/pdfium.wasm", "assets/pdfium.wasm");
+        // The Codex ACP adapter runs as a script of its own in a worker thread. See
+        // codex_binary.ts.
+        this.copy(
+            "/node_modules/@agentclientprotocol/codex-acp/dist/index.js", "assets/codex-acp.mjs");
+        this.copy("/packages/share-theme/src/templates", "share-theme/templates/");
+        // The in-app help's images and attachments live with the User Guide; its pages travel as
+        // the content bundle in assets/help, so the Markdown and its meta stay out of the package.
+        this.copy("/docs/User Guide", "assets/help/", {
+            filter: (sourcePath) => !sourcePath.endsWith(".md") && !sourcePath.endsWith("!!!meta.json")
+        });
     }
 
     buildFrontend() {
@@ -153,16 +206,10 @@ export default class BuildHelper {
         this.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");
     }
 
-    /**
-     * Builds another workspace package and copies its `dist` into this one.
-     *
-     * `script` names the package script to run, for a package whose release build is not its
-     * plain `build` — `share-theme` keeps `build` unminified for development and minifies in
-     * `dist`.
-     */
-    triggerBuildAndCopyTo(projectToBuild: string, destPath: string, script = "build") {
+    /** Builds another workspace package and copies its `dist` into this one. */
+    triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
-        execSync(`pnpm ${script}`, { cwd: projectDir, stdio: "inherit" });
+        execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });
         cpSync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath), { recursive: true });
     }
 
@@ -260,7 +307,8 @@ export default class BuildHelper {
  * The architecture currently being built for. The release workflows set these when
  * a job's target differs from the runner it happens to be executing on.
  */
-function targetArch() {
+/** The architecture being built for, which CI can set apart from the host's. */
+export function targetArch() {
     return process.env.TARGET_ARCH || process.env.MATRIX_ARCH || process.arch;
 }
 

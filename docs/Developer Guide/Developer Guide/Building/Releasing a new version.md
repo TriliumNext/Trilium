@@ -6,6 +6,21 @@ Releasing is mostly handled by the CI:
 
 Releases are usually made directly from the `main` branch. For hot-fixes the process is the same but with a different branch, consult the <a class="reference-link" href="../Branching%20strategy.md">Branching strategy</a> for more information.
 
+## Using the release CLI
+
+`pnpm chore:release` walks through the whole process interactively:
+
+1.  Checks that the branch is not behind `origin` and that every changelog entry is valid.
+2.  Proposes the version from the changelog entries: a major release (`0.106.1` → `0.107.0`) when they contain a breaking change, a highlight, a compatibility change or a new feature, when the sync or database version changed, or when there are many of them; otherwise a minor one (`0.106.1` → `0.106.2`). A release note already drafted for a newer version takes precedence.
+3.  Drafts the release note if there is none, registers it in the Release Notes folder and warns about the changelog entries that changed after it. Once the note is final, it consumes the entries and commits the note.
+4.  Sets the version in every `package.json`, commits it and runs the release pre-flight check.
+5.  Tags the commit and pushes the branch and the tag, which starts the release workflow.
+6.  Merges the tag into the `stable` branch and pushes it (not for pre-releases).
+
+It asks before every commit and push, and each step skips what is already done, so a run that stopped halfway can be started again. `pnpm chore:release --dry-run` asks the same questions but prints the commands instead of running them.
+
+## Manual process
+
 The process is as follows:
 
 1.  Edit the <a class="reference-link" href="../Documentation.md">Documentation</a> to add a corresponding entry in the _Release notes_ section.

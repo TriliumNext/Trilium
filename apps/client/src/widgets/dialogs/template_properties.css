@@ -1,0 +1,4 @@
+.modal.template-properties-dialog .tn-card-option > :is(.template-field, .input-group) {
+    flex: 0 1 55%;
+    min-width: 0;
+}

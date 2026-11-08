@@ -16,9 +16,10 @@
  * endpoint lives under an unguessable 128-bit secret path known only to the
  * agent subprocess we spawn.
  *
- * The same listener answers the Antigravity file-access hook under a second
- * secret path (see `antigravity_hook.ts`): the hook's `curl` posts each tool
- * call there and prints the decision it gets back.
+ * The same listener answers the agents' `PreToolUse` hooks under a second
+ * secret path, one provider below it each (see `antigravity_hook.ts` and
+ * `codex_agent.ts`): the hook's `curl` posts each tool call there and prints
+ * the decision it gets back.
  */
 
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -29,10 +30,11 @@ import http from "http";
 import { createMcpServer } from "../../mcp/mcp_server.js";
 
 /** Decides one hook request from its JSON body; the result is sent back as JSON. */
-export type AcpHookHandler = (payload: unknown) => unknown;
+export type AcpHookHandler = (payload: unknown) => unknown | Promise<unknown>;
 
 let endpoint: Promise<{ mcpUrl: string; hookUrl: string }> | undefined;
-let hookHandler: AcpHookHandler | undefined;
+/** Each provider's hook handler, by the name its URL ends in. */
+const hookHandlers = new Map<string, AcpHookHandler>();
 
 /**
  * Start (once) and return the endpoint URL to hand to the agent's
@@ -44,17 +46,18 @@ export async function getAcpMcpEndpointUrl(): Promise<string> {
 }
 
 /**
- * Start (once) and return the URL the hook posts tool calls to, which
- * `handler` answers from then on.
+ * Start (once) and return the URL `name`'s hook posts tool calls to, which
+ * `handler` answers from then on. Each provider registers under a name of its
+ * own, so one provider's handler never answers another's hook.
  */
-export async function getAcpHookEndpointUrl(handler: AcpHookHandler): Promise<string> {
-    hookHandler = handler;
-    return (await startOnce()).hookUrl;
+export async function getAcpHookEndpointUrl(name: string, handler: AcpHookHandler): Promise<string> {
+    hookHandlers.set(name, handler);
+    return `${(await startOnce()).hookUrl}/${name}`;
 }
 
 /** For tests: close the listener and forget it so the next call starts fresh. */
 export async function resetAcpMcpEndpointForTests(): Promise<void> {
-    hookHandler = undefined;
+    hookHandlers.clear();
     if (endpoint) {
         const started = await endpoint.catch(() => undefined);
         endpoint = undefined;
@@ -87,7 +90,9 @@ async function startEndpoint(): Promise<{ mcpUrl: string; hookUrl: string }> {
     let boundHost = "";
 
     const server = http.createServer((req, res) => {
-        if (req.url === hookPath && hookHandler) {
+        const hookName = req.url?.startsWith(`${hookPath}/`) ? req.url.slice(hookPath.length + 1) : undefined;
+        const hookHandler = hookName === undefined ? undefined : hookHandlers.get(hookName);
+        if (hookHandler) {
             void handleHookRequest(req, res, hookHandler, boundHost);
         } else {
             void handleRequest(req, res, mcpPath, boundHost);
@@ -138,7 +143,7 @@ async function handleHookRequest(
             res.writeHead(403).end();
             return;
         }
-        const decision = handler(await readJsonBody(req));
+        const decision = await handler(await readJsonBody(req));
         res.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify(decision));
     } catch (err) {
         getLog().error(`ACP hook endpoint error: ${err}`);
@@ -159,7 +164,7 @@ async function handleRequest(
         }
 
         // Stateless per-request server+transport, mirroring the public /mcp route.
-        const mcpServer = await createMcpServer();
+        const mcpServer = await createMcpServer({ toolHints: false });
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined,
             enableDnsRebindingProtection: true,

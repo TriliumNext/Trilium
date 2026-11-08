@@ -1,0 +1,187 @@
+/*
+ * `body` outranks the position a class it is given sets, such as Bootstrap's `.dropdown-menu`.
+ * `placeFloating()` shows it once it has a position.
+ */
+body .tn-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* As a portaled dropdown menu: over a modal (1055) and a stacked quick-edit popup (1100), under
+       a search field's completions and the shortcut-hints pane (1210, search_field_editor.css,
+       shortcut_hints_panel.css) and the prompts (2000) it can summon. */
+    z-index: 1200;
+    visibility: hidden;
+}
+
+/* `translate` and `scale` rather than `transform`, which the mobile sheet rules in style.css reset
+   with `!important`. */
+:root .tn-popup[data-reveal] {
+    --tn-reveal-x: 0px;
+    --tn-reveal-y: 0px;
+    --tn-reveal-origin-x: center;
+    --tn-reveal-origin-y: center;
+    transform-origin: var(--tn-reveal-origin-x) var(--tn-reveal-origin-y);
+    animation: tn-popup-reveal 120ms cubic-bezier(0.2, 0, 0, 1);
+
+    &[data-reveal^="bottom"] {
+        --tn-reveal-y: -4px;
+        --tn-reveal-origin-y: top;
+    }
+
+    &[data-reveal^="top"] {
+        --tn-reveal-y: 4px;
+        --tn-reveal-origin-y: bottom;
+    }
+
+    &[data-reveal^="right"] {
+        --tn-reveal-x: -4px;
+        --tn-reveal-origin-x: left;
+    }
+
+    &[data-reveal^="left"] {
+        --tn-reveal-x: 4px;
+        --tn-reveal-origin-x: right;
+    }
+
+    &:is([data-reveal="bottom-start"], [data-reveal="top-start"]) {
+        --tn-reveal-origin-x: left;
+    }
+
+    &:is([data-reveal="bottom-end"], [data-reveal="top-end"]) {
+        --tn-reveal-origin-x: right;
+    }
+
+    &:is([data-reveal="right-start"], [data-reveal="left-start"]) {
+        --tn-reveal-origin-y: top;
+    }
+
+    &:is([data-reveal="right-end"], [data-reveal="left-end"]) {
+        --tn-reveal-origin-y: bottom;
+    }
+
+    &[data-reveal="stylesheet"] {
+        animation: tn-popup-rise 160ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    &.mobile-bottom-menu[data-reveal="stylesheet"] {
+        animation: tn-popup-sheet 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* The copy `playClosing()` leaves in Popup.tsx. */
+    &[data-closing] {
+        pointer-events: none;
+        animation: tn-popup-conceal 90ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    &[data-reveal="stylesheet"][data-closing] {
+        animation: tn-popup-sink 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    &.mobile-bottom-menu[data-reveal="stylesheet"][data-closing] {
+        animation: tn-popup-sheet-out 160ms cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+}
+
+/* Floating UI lines a start or end alignment up with the other edge in a right-to-left page. */
+body[dir=rtl] .tn-popup[data-reveal]:is([data-reveal="bottom-start"], [data-reveal="top-start"]) {
+    --tn-reveal-origin-x: right;
+}
+
+body[dir=rtl] .tn-popup[data-reveal]:is([data-reveal="bottom-end"], [data-reveal="top-end"]) {
+    --tn-reveal-origin-x: left;
+}
+
+@keyframes tn-popup-reveal {
+    from {
+        opacity: 0;
+        translate: var(--tn-reveal-x) var(--tn-reveal-y);
+        scale: 0.96;
+    }
+}
+
+@keyframes tn-popup-rise {
+    from {
+        opacity: 0;
+        translate: 0 16px;
+    }
+}
+
+@keyframes tn-popup-sheet {
+    from {
+        translate: 0 100%;
+    }
+}
+
+@keyframes tn-popup-conceal {
+    to {
+        opacity: 0;
+        translate: var(--tn-reveal-x) var(--tn-reveal-y);
+        scale: 0.96;
+    }
+}
+
+@keyframes tn-popup-sink {
+    to {
+        opacity: 0;
+        translate: 0 16px;
+    }
+}
+
+@keyframes tn-popup-sheet-out {
+    to {
+        translate: 0 100%;
+    }
+}
+
+/*
+ * A menu's or a scrollable panel's frame does not scroll, so the blur the theme puts on its
+ * `::before` covers it whatever its content scrolls to. The content scrolls inside, in the height
+ * `placeFloating()` caps the frame to.
+ */
+.dropdown-menu:has(> :is(.tn-menu-scroll, .tn-menu-filterable, .tn-panel-scroll)) {
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+ * The padding of a popup's frame, which the scrollers and menu pages inside it reach past. The
+ * theme's `.dropdown-menu:not(.static)` rule sets the same value. Set through Bootstrap's variables,
+ * so a component's own `padding` on its frame still wins.
+ */
+.dropdown-menu:is(
+    .tn-popup,
+    :has(> :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page, .tn-panel-scroll))
+) {
+    --tn-popup-padding: var(--padding, var(--menu-padding-size, .5rem));
+    --bs-dropdown-padding-x: var(--tn-popup-padding);
+    --bs-dropdown-padding-y: var(--tn-popup-padding);
+}
+
+.tn-menu-scroll,
+.tn-panel-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    /*
+     * Spans the frame's padding, so the content scrolls up to its edge instead of being cut off
+     * inside it, and the separator and header lines, which the theme draws that far past a row,
+     * stay inside the scroller instead of scrolling it sideways. Outside a `.dropdown-menu`, as in
+     * a host's suggestion list, `--tn-popup-padding` is unset and both fall back to 0.
+     */
+    margin: calc(0px - var(--tn-popup-padding));
+    padding: var(--tn-popup-padding);
+    scroll-padding-block: var(--tn-popup-padding);
+    border-radius: inherit;
+    overflow-y: auto;
+}
+
+/* Read by `viewportPadding()` in Popup.tsx, as script cannot read `env()`. */
+.tn-safe-area-probe {
+    position: fixed;
+    visibility: hidden;
+    pointer-events: none;
+    padding:
+        var(--safe-area-inset-top, env(safe-area-inset-top))
+        var(--safe-area-inset-right, env(safe-area-inset-right))
+        var(--safe-area-inset-bottom, env(safe-area-inset-bottom))
+        var(--safe-area-inset-left, env(safe-area-inset-left));
+}

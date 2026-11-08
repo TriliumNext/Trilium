@@ -75,7 +75,7 @@ export default function buildAiAssistantStream(getNoteLocation?: AiNoteLocationP
                 onError: (error) => reject(new Error(error)),
                 onDone: () => resolve(reported)
             }, signal).then(
-                // A stream that ends without a "done" event (connection dropped) still settles.
+                // Settles even when the stream returns without calling `onDone` or `onError`.
                 () => resolve(reported),
                 reject
             );
@@ -184,8 +184,8 @@ export function buildAiAssistantQuickActions(): AiQuickActionGroup[] {
             submenu: true,
             actions: buildTranslateActions(),
             // The one group whose contents are the user's to choose, so the way to choose them
-            // closes it — as it closes the note's own language picker in the status bar and the
-            // ribbon, and for the same reason: nobody looking at the list would think to go
+            // closes it — as it closes the note's own language picker in the status bar, and for
+            // the same reason: nobody looking at the list would think to go
             // hunting through the settings for what fills it.
             footer: {
                 label: t("note_language.configure-languages"),

@@ -382,11 +382,43 @@ export interface SearchResultDetails {
     noteTitle: string;
     notePathTitle: string;
     highlightedNotePathTitle?: string;
+    /** The note's own title as the path shows it, highlighted. */
+    highlightedNoteTitle?: string;
+    /** The path to the note, without its own title, highlighted; empty for a top-level note. */
+    highlightedParentPathTitle?: string;
     contentSnippet?: string;
     highlightedContentSnippet?: string;
+    /** Whether the note body continues beyond the returned snippet. */
+    contentSnippetTruncated?: boolean;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
+    /**
+     * The text each query token matched in {@link contentSnippet}, spelled as the note has it
+     * (with its diacritics, or the word a fuzzy match found), for the find bar to look for.
+     */
+    matchedTerms?: string[];
     icon: string;
+}
+
+/**
+ * One row of `GET /api/autocomplete`: a recently visited note when the query is empty, a search
+ * result otherwise. Only search results carry the attribute snippet, and only recent notes the
+ * time of the visit.
+ */
+export type AutocompleteResult = Pick<SearchResultDetails, "notePath" | "noteTitle" | "notePathTitle"
+    | "highlightedNotePathTitle" | "highlightedNoteTitle" | "highlightedParentPathTitle"
+    | "attributeSnippet" | "highlightedAttributeSnippet" | "icon"> & {
+    /** When the note was last visited, as `recent_notes.utcDateCreated` holds it. */
+    utcDateVisited?: string;
+};
+
+/** Response for `GET /api/quick-search/:searchString`. */
+export interface QuickSearchResponse {
+    searchResultNoteIds: string[];
+    searchResults: SearchResultDetails[];
+    /** Plain search tokens the server highlighted, for jumping to the first match. */
+    highlightedTokens: string[];
+    error: string | null;
 }
 
 /** Response for `POST /api/search-note/:noteId/result-details`. */
@@ -825,6 +857,18 @@ export interface UserFont {
     blobId: string;
 }
 
+/** A CSS note carrying `#appTheme`, as `/api/options/user-themes` lists it. */
+export interface UserTheme {
+    /** The value of the `theme` option that selects this theme. */
+    val: string;
+    title: string;
+    noteId: string;
+    /** The icon class of the note. */
+    icon: string;
+    /** The built-in theme loaded under the custom one, from `#appThemeBase`. */
+    appThemeBase?: "next" | "next-light" | "next-dark";
+}
+
 export interface TemplatesResponse {
     /** The IDs of the user-defined templates, i.e. the notes labelled with `#template`. */
     templateNoteIds: string[];
@@ -834,6 +878,13 @@ export interface TemplatesResponse {
      * hidden subtree and are thus not part of the search results.
      */
     newTemplateNoteIds: string[];
+}
+
+/** A media type the notes carry, as the search autocomplete offers it after `note.mime`. */
+export interface NoteMimeCount {
+    mime: string;
+    /** How many notes carry it, system notes left out. */
+    count: number;
 }
 
 export interface CloneResponse {
@@ -947,6 +998,8 @@ export interface OCRProcessResponse {
         extractedAt: string;
         language?: string;
         pageCount?: number;
+        /** Pages whose OCR threw, for a document whose other pages still produced a result. */
+        failedPageCount?: number;
         processingType?: string;
     };
     /** The minimum confidence threshold that was applied (0-1 scale). */
@@ -1054,6 +1107,8 @@ export type BootstrapDefinition = {
     arch?: string;
     isElectron: boolean;
     isStandalone: boolean;
+    /** Set by a shared page's boot script, which defines a `glob` of its own. */
+    isShare?: boolean;
     /**
      * Absolute URL prefix for the WebSocket (e.g. `ws://127.0.0.1:8080/`),
      * sent by the desktop app because the renderer page lives on the
@@ -1163,3 +1218,11 @@ export interface NetworkAddressesResponse {
 }
 
 export type ScriptParams = any[];
+
+/** A script failure, as the parts a caller wants rather than as one sentence to unpick. */
+export interface ScriptFailure {
+    /** What went wrong, unwrapped from the per-note wrappers the bundle puts round it. */
+    message: string;
+    /** The note that failed, which is a child module note where one of those did. */
+    noteId?: string;
+}

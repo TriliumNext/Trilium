@@ -45,11 +45,15 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
 const readExecute = vi.fn(() => ({ ok: "read" }));
 const mutateExecute = vi.fn(() => ({ ok: "mutate" }));
 
+const failExecute = vi.fn(() => ({ error: "Note not found" }));
+
 const readRegistry: any = [
-    ["read_tool", { description: "r", inputSchema: {}, execute: readExecute }]
+    ["read_tool", { description: "r", inputSchema: {}, execute: readExecute }],
+    ["fail_tool", { description: "f", inputSchema: {}, execute: failExecute }]
 ];
 const mutateRegistry: any = [
-    ["mutate_tool", { description: "m", inputSchema: {}, mutates: true, execute: mutateExecute }]
+    ["mutate_tool", { description: "m", inputSchema: {}, mutates: true, execute: mutateExecute }],
+    ["add_tool", { description: "a", inputSchema: {}, mutates: true, additive: true, execute: mutateExecute }]
 ];
 
 const resolveToolRegistriesMock = vi.fn(async () => {});
@@ -76,7 +80,7 @@ describe("createMcpServer", () => {
 
         expect(server).toBeInstanceOf(FakeMcpServer);
         expect((server as any).info).toMatchObject({ name: "trilium-notes", version: "9.9.9-test" });
-        expect(registered.map((r) => r.name)).toEqual(["read_tool", "mutate_tool"]);
+        expect(registered.map((r) => r.name)).toEqual(["read_tool", "fail_tool", "mutate_tool", "add_tool"]);
         expect(resolveToolRegistriesMock).toHaveBeenCalled();
     });
 
@@ -101,5 +105,34 @@ describe("createMcpServer", () => {
         expect(mutateExecute).toHaveBeenCalledWith({ bar: 2 });
         expect(mockSql.transactional).toHaveBeenCalledTimes(1);
         expect(result).toEqual({ content: [{ type: "text", text: JSON.stringify({ ok: "mutate" }) }] });
+    });
+
+    it("flags the { error } a tool returns as a failed call", async () => {
+        await createMcpServer();
+        const fail = registered.find((r) => r.name === "fail_tool");
+        expect(fail).toBeDefined();
+
+        expect(fail?.callback({})).toEqual({
+            content: [{ type: "text", text: JSON.stringify({ error: "Note not found" }) }],
+            isError: true
+        });
+    });
+});
+
+describe("tool annotations", () => {
+    it("tells the client which tools only read, which only add and which overwrite or remove", async () => {
+        await createMcpServer();
+        const annotationsOf = (name: string) => registered.find((r) => r.name === name)?.config.annotations;
+
+        expect(annotationsOf("read_tool")).toEqual({ readOnlyHint: true, openWorldHint: false });
+        expect(annotationsOf("add_tool")).toEqual({ readOnlyHint: false, destructiveHint: false, openWorldHint: false });
+        expect(annotationsOf("mutate_tool")).toEqual({ readOnlyHint: false, destructiveHint: true, openWorldHint: false });
+    });
+
+    it("leaves the hints out when asked to", async () => {
+        await createMcpServer({ toolHints: false });
+
+        expect(registered.map((r) => r.name)).toContain("read_tool");
+        expect(registered.map((r) => r.config.annotations)).toEqual(registered.map(() => undefined));
     });
 });

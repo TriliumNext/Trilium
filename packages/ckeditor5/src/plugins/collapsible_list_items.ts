@@ -3,16 +3,15 @@ import "../theme/collapsible_list_items.css";
 import {
     Command,
     DomEventObserver,
-    FindAndReplaceEditing,
     ListEditing,
     MouseObserver,
     Plugin,
     type Editor,
     type EnterCommand,
-    type FindResultType,
     type ListSplitCommand,
     type ModelElement,
     type ModelNode,
+    type ModelPosition,
     type ModelWriter,
     type ViewDocumentDomEventData,
     type ViewDocumentEnterEvent,
@@ -20,6 +19,8 @@ import {
     type ViewDocumentMouseOutEvent,
     type ViewElement
 } from "ckeditor5";
+
+import FindReveal from "./find_reveal.js";
 
 export const LIST_COLLAPSED_ATTRIBUTE = "listCollapsed";
 
@@ -56,7 +57,7 @@ export default class CollapsibleListItems extends Plugin {
     private _findClosing = false;
 
     static get requires() {
-        return [ListEditing] as const;
+        return [ ListEditing, FindReveal ] as const;
     }
 
     init() {
@@ -99,39 +100,23 @@ export default class CollapsibleListItems extends Plugin {
      * inside them, re-collapsing once the highlight moves away — the same treatment collapsible
      * `<details>` blocks get. Unlike {@link _enableAutoExpand} (which permanently drops the
      * collapsed state when the caret enters a hidden block), this is view-only and never touches
-     * the persisted attribute: search must not rewrite the user's collapsed layout. No-op when
-     * the editor has no find plugin.
+     * the persisted attribute: search must not rewrite the user's collapsed layout.
      */
     private _enableFindReveal() {
-        const editor = this.editor;
-        if (!editor.plugins.has(FindAndReplaceEditing)) {
-            return;
-        }
-        // Wire up on "ready", not here: FindAndReplaceEditing may load after this plugin and only
-        // creates its state in its own init(), so the state isn't available yet at this point.
-        this.listenTo(editor, "ready", () => {
-            const state = editor.plugins.get(FindAndReplaceEditing).state;
-            /* v8 ignore next 3 -- by "ready" FindAndReplaceEditing has initialized and always has a state; the guard only satisfies the optional type. */
-            if (!state) {
-                return;
-            }
-            this.listenTo(state, "change:highlightedResult", (_evt, _name, highlighted) => {
-                this._syncFindReveal(highlighted as FindResultType | null);
-            });
+        const findReveal = this.editor.plugins.get(FindReveal);
+        this.listenTo(findReveal, "change:position", (_evt, _name, position) => {
+            this._syncFindReveal(position);
         });
     }
 
     /**
-     * Reconcile {@link _findRevealed} with the collapsed items hiding the current highlight:
-     * reveal ancestors newly hiding it, re-collapse ones that no longer do. A `null` highlight
-     * (search cleared) collapses everything.
+     * Reconcile {@link _findRevealed} with the collapsed items hiding `position`, the match the
+     * find shows: reveal ancestors newly hiding it, re-collapse ones that no longer do. A `null`
+     * position (search cleared) collapses everything.
      */
-    private _syncFindReveal(highlighted: FindResultType | null) {
+    private _syncFindReveal(position: ModelPosition | null) {
         const wanted = new Set<ModelElement>();
-        // Split from `highlighted` so a cleared highlight (null) leaves `marker` undefined, keeping
-        // the marker-absent path reachable rather than short-circuited away on the first `?.`.
-        const marker = highlighted?.marker;
-        const block = marker?.getStart().parent;
+        const block = position?.parent;
         // getCollapsedAncestors tolerates any block (a non-list block has no collapsed ancestors),
         // so no list-specific guard is needed beyond narrowing the position parent to an element.
         if (block?.is("element")) {
@@ -140,11 +125,11 @@ export default class CollapsibleListItems extends Plugin {
             }
         }
 
-        // A cleared highlight means find is closing (or moving off): flag the current microtask so
+        // A cleared position means find is closing (or moving off): flag the current microtask so
         // the caret it is about to drop on the match doesn't permanently expand the item that
         // {@link _enableAutoExpand} would otherwise open. Reset after the tick, so it only affects
         // that synchronous caret landing and never a later real navigation.
-        if (!highlighted) {
+        if (!position) {
             this._findClosing = true;
             void Promise.resolve().then(() => {
                 this._findClosing = false;
@@ -168,7 +153,6 @@ export default class CollapsibleListItems extends Plugin {
     /** Add or remove the view-only "temporarily expanded" class on the collapsed item's `<li>`. */
     private _applyFindReveal(block: ModelElement, reveal: boolean) {
         const viewItem = this.editor.editing.mapper.toViewElement(block)?.findAncestor("li");
-        /* v8 ignore next 3 -- defensive: a rendered collapsed ancestor always maps to its <li>. */
         if (!viewItem) {
             return;
         }
@@ -389,7 +373,6 @@ export default class CollapsibleListItems extends Plugin {
                     }
                 } else if (entry.type === "attribute" && (entry.attributeKey === "listIndent" || entry.attributeKey === "listItemId")) {
                     const node = entry.range.start.nodeAfter;
-                    /* v8 ignore next -- defensive: the differ always reports a list block-attribute change with the affected block as range.start.nodeAfter, so `node` is never null here (the falsy branch is unreachable from any model operation). */
                     if (node && node.is("element") && node.hasAttribute("listItemId")) {
                         changedBlocks.add(node);
                     }
@@ -537,15 +520,9 @@ function getListBlockFromViewListItem(editor: Editor, viewItem: ViewElement): Mo
     if (isListBlock(modelPosition.nodeAfter)) {
         return modelPosition.nodeAfter;
     }
-    // To-do case: the position landed inside the block; walk up to the enclosing list item. A
-    // view <li> at offset 0 always maps either to a node-after that is a list block (handled
-    // above) or to a model position whose parent is the list-item block itself (to-do lists), so
-    // the very first iteration always finds `listItemId` and returns (the to-do tests exercise
-    // this). The loop's continuation, its no-listItemId branch, and the trailing `return null` are
-    // defensive only — kept in case CKEditor's view->model mapping ever changes shape — and are
-    // unreachable from any current model/view state, so the whole walk is excluded from coverage.
+    // To-do case: the position landed inside the block; walk up to the enclosing list item. The
+    // `<li>` of a footnote is in no list item.
     let ancestor: typeof modelPosition.parent | null = modelPosition.parent;
-    /* v8 ignore start -- defensive walk-up; the first iteration always resolves the list item (see above). */
     while (ancestor && ancestor.is("element")) {
         if (ancestor.hasAttribute("listItemId")) {
             return ancestor;
@@ -553,7 +530,6 @@ function getListBlockFromViewListItem(editor: Editor, viewItem: ViewElement): Mo
         ancestor = ancestor.parent;
     }
     return null;
-    /* v8 ignore stop */
 }
 
 /** Whether the list item has nested (deeper-indented) items, i.e. there is anything to collapse. */

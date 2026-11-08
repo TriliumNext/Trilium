@@ -1,0 +1,80 @@
+# Event modeling
+
+eventmodeling
+
+==>
+
+EventModelingDiagram(DiagramName)
+
+# Trilium's sample
+
+eventmodeling
+
+tf 01 ui ShopUI
+tf 02 cmd AddItemToCart
+tf 04 rmo CartView ->> 03
+
+==>
+
+EventModelingDiagram(DiagramName,
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name)),
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name)),
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name),SourceFrame("->>",FrameId)))
+
+# Frames with data
+
+eventmodeling
+entity Shop.Cart
+tf 02 cmd Shop.AddItem ->> 01 [[CartData]] `json` { "a": { "b": 1 } }
+rf 03 evt ItemAdded "inline" %% a comment
+timeframe 1 readmodel A ->> 1 ->> 1
+resetframe 2 processor B 'x'
+
+==>
+
+EventModelingDiagram(DiagramName,
+  Entity(Keyword,QualifiedName(Name,".",Name)),
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name,".",Name),SourceFrame("->>",FrameId),
+    DataReference("[[",Name,"]]"),DataType("`",Type,"`"),InlineData),
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name),InlineData),LineComment,
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name),SourceFrame("->>",FrameId),SourceFrame("->>",FrameId)),
+  Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name),InlineData))
+
+# Data, notes and given-when-then
+
+eventmodeling
+data CartData `json` {
+  "items": []
+  }
+}
+note 02 {
+  Adds an item
+}
+gwt 02 given evt Cart when cmd Cart then evt Cart rmo View
+
+==>
+
+EventModelingDiagram(DiagramName,
+  Data(Keyword,Name,DataType("`",Type,"`"),DataBlock),
+  Note(Keyword,FrameId,DataBlock),
+  Gwt(Keyword,FrameId,Keyword,GwtStatement(EntityType(Type),Name),Keyword,GwtStatement(EntityType(Type),Name),
+    Keyword,GwtStatement(EntityType(Type),Name),GwtStatement(EntityType(Type),Name)))
+
+# Frame number of four digits (invalid)
+
+eventmodeling
+tf 1000 ui A
+
+==>
+
+EventModelingDiagram(DiagramName,Frame(Keyword,FrameId,⚠(FrameId),EntityType(Type),QualifiedName(Name)))
+
+# Title (rejected by Mermaid 12.2.0)
+
+eventmodeling
+title Cart
+tf 01 ui A
+
+==>
+
+EventModelingDiagram(DiagramName,⚠,⚠,Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name)))

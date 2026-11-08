@@ -3,7 +3,7 @@
  *
  * Only the parts pdf.js builds inside its viewer application — which no public entry point
  * lets us construct standalone — are stubbed here: the page-view geometry and the current
- * page number. Everything with a real upstream implementation is the real thing:
+ * page number. A page view's `viewport` is pdf.js' own, at a scale of 1. Everything with a real upstream implementation is the real thing:
  *
  * - `pdfDocument` is a genuine `PDFDocumentProxy` from `getDocument()`, so `getOutline()`,
  *   `getAttachments()`, `getOptionalContentConfig()` and `getAnnotations()` return whatever
@@ -55,11 +55,14 @@ export interface InstalledViewer {
 /**
  * Loads `data` with real pdf.js and exposes it through a minimal viewer application.
  *
- * `pageGeometry` maps a zero-based page index to its on-screen box; only the active-heading
- * tracking in `toc.ts` reads it, and pages without an entry behave as "not yet rendered".
+ * `pageGeometry` maps a zero-based page index to its on-screen box, which the active-heading
+ * tracking in `toc.ts` and the scroll to an annotation read. Pages without an entry have no page
+ * view.
  */
 export async function installViewerApp(data: Uint8Array, pageGeometry: Record<number, PageGeometry> = {}): Promise<InstalledViewer> {
     const pdfDocument = await getDocument({ data }).promise;
+    const viewports = await Promise.all(Array.from({ length: pdfDocument.numPages }, async (_, index) =>
+        (await pdfDocument.getPage(index + 1)).getViewport({ scale: 1 })));
     const eventBus = new EventBus();
 
     // Resolved once and shared, mirroring the real viewer: pdf.js returns a new config object
@@ -76,6 +79,7 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
     document.body.append(container);
     // happy-dom leaves layout at zero; the tracker only needs a readable clientHeight.
     Object.defineProperty(container, "clientHeight", { value: 800, configurable: true });
+    Object.defineProperty(container, "clientWidth", { value: 600, configurable: true });
     // happy-dom performs no scrolling, so record the requests instead. Positions asserted
     // against this will be zero-based, since getBoundingClientRect() is also flat.
     const scrollRequests = vi.fn();
@@ -106,6 +110,7 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
         pdfViewer: {
             container,
             currentPageNumber: 1,
+            update: vi.fn(),
             optionalContentConfigPromise,
             getPageView: (pageIndex: number) => {
                 const geometry = pageGeometry[pageIndex];
@@ -115,7 +120,7 @@ export async function installViewerApp(data: Uint8Array, pageGeometry: Record<nu
                 const div = document.createElement("div");
                 Object.defineProperty(div, "offsetTop", { value: geometry.offsetTop });
                 Object.defineProperty(div, "clientHeight", { value: geometry.clientHeight });
-                return { div };
+                return { div, viewport: viewports[pageIndex] };
             }
         },
         pdfLinkService,

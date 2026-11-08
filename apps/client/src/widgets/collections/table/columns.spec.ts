@@ -15,6 +15,13 @@ vi.mock("../../react/NoteAutocomplete", async () => {
     };
 });
 
+const goToLinkExt = vi.hoisted(() => vi.fn());
+vi.mock("../../../services/link", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../../services/link")>(),
+    goToLinkExt
+}));
+
+import appContext from "../../../components/app_context";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { formatLabelDate } from "../../attribute_widgets/label_value_display";
@@ -184,6 +191,53 @@ describe("buildColumnDefinitions — typed columns", () => {
         expect(editorOf("time")).toBe("time");
     });
 
+    it("sets numbers and dates in equal-width digits, so that a column of them lines up", () => {
+        const columns = buildColumnDefinitions({
+            info: [
+                { name: "date", type: "date" },
+                { name: "datetime", type: "datetime" },
+                { name: "time", type: "time" },
+                { name: "number", type: "number" },
+                { name: "text", type: "text" }
+            ],
+            movableRows: false,
+            existingColumnData: undefined,
+            rowNumberHint: 1
+        });
+        const classOf = (name: string) => columns.find((column) => column.field === `labels.${name}`)?.cssClass;
+
+        for (const name of [ "date", "datetime", "time", "number" ]) {
+            expect(classOf(name)?.split(" ")).toContain("table-numeric-cell");
+        }
+        expect(classOf("text")).toBeUndefined();
+    });
+
+    it("right-aligns a number column, header included, so that its digits line up by place", () => {
+        const columns = buildColumnDefinitions({
+            info: [ { name: "number", type: "number" }, { name: "date", type: "date" } ],
+            movableRows: false,
+            existingColumnData: undefined,
+            rowNumberHint: 1
+        });
+        const columnOf = (name: string) => columns.find((column) => column.field === `labels.${name}`);
+
+        expect(columnOf("number")).toMatchObject({ hozAlign: "right", headerHozAlign: "right" });
+        expect(columnOf("number")?.cssClass?.split(" ")).toContain("table-right-aligned-column");
+        expect(columnOf("date")?.hozAlign).toBeUndefined();
+        expect(columnOf("date")?.cssClass?.split(" ")).not.toContain("table-right-aligned-column");
+    });
+
+    it("centers the row number column's header over its numbers", () => {
+        const [ rowNumberColumn ] = buildColumnDefinitions({
+            info: [],
+            movableRows: false,
+            existingColumnData: undefined,
+            rowNumberHint: 1
+        });
+
+        expect(rowNumberColumn).toMatchObject({ title: "#", hozAlign: "center", headerHozAlign: "center" });
+    });
+
     it("hands a url column's href through the scheme guard rather than linking the value as stored", () => {
         const column = buildColumnDefinitions({
             info: [ { name: "site", type: "url" } ],
@@ -199,7 +253,7 @@ describe("buildColumnDefinitions — typed columns", () => {
         expect(url({ getValue: () => "https://example.com" } as CellComponent)).toBe("https://example.com");
     });
 
-    it("shows a single flag as the chip a set of flags wears, and an unset cell as nothing", () => {
+    it("shows a single flag as a checkbox, ticked only when the flag is true", () => {
         const [ column ] = buildColumnDefinitions({
             info: [ { name: "done", type: "boolean" } ],
             movableRows: false,
@@ -209,20 +263,79 @@ describe("buildColumnDefinitions — typed columns", () => {
 
         const formatter = column?.formatter;
         if (typeof formatter !== "function") throw new Error("expected a formatter of its own");
-        const format = (value: unknown) =>
-            formatter({ getValue: () => value } as CellComponent, {}, () => {}) as HTMLElement;
 
-        // A stored label holds the text "true", a value fresh from the tickCross editor a real
-        // boolean; either reads as the one chip, washed with its answer.
+        // The box toggles the cell itself, so the column opens no editor.
+        expect(column?.editor).toBeUndefined();
+
+        const checkboxOf = (value: unknown, { editable = true } = {}) => {
+            const setValue = vi.fn();
+            const definition = { ...column, title: "Done", ...(!editable && { editable: false }) };
+            const cell = {
+                getValue: () => value,
+                setValue,
+                getColumn: () => ({ getDefinition: () => definition }),
+                // Tabulator registers modules on its shared class, so a read-only table built after
+                // an editable one has the edit module as well.
+                getTable: () => ({ modExists: () => true })
+            } as unknown as CellComponent;
+            const element = formatter(cell, {}, () => {}) as HTMLElement;
+            // A checkbox fires `change` only while connected, as it is inside a rendered cell.
+            document.body.append(element);
+            const checkbox = element.querySelector<HTMLInputElement>("label.tn-checkbox > input[type=checkbox]");
+            if (!checkbox) throw new Error("expected a checkbox in a tn-checkbox label");
+            expect(element.querySelector(".tn-chip")).toBeNull();
+            return { checkbox, setValue };
+        };
+
+        // A stored label holds the text "true", a value set from the box a real boolean.
         for (const set of [ "true", true ]) {
-            expect(format(set).querySelector(".tn-chip")?.className).toContain("label-flag-chip-set");
-            expect(format(set).querySelector(".tn-icon")?.getAttribute("title")).toBe("true");
+            expect(checkboxOf(set).checkbox.checked).toBe(true);
         }
-        expect(format(false).querySelector(".tn-chip")?.className).toContain("label-flag-chip-unset");
+        // A note without the label reads as false, as the promoted checkbox shows it unticked.
+        for (const unset of [ "false", false, "", undefined, null ]) {
+            expect(checkboxOf(unset).checkbox.checked).toBe(false);
+        }
 
-        // An unset cell holds no flag at all, so it wears no chip either.
-        for (const empty of [ "", undefined, null ]) {
-            expect(format(empty).querySelector(".tn-chip")).toBeNull();
+        // A click writes the new value straight to the cell, which saves it as an edit.
+        const unticked = checkboxOf(null);
+        expect(unticked.checkbox.tabIndex).toBe(0);
+        expect(unticked.checkbox.getAttribute("aria-label")).toBe("Done");
+        act(() => unticked.checkbox.click());
+        expect(unticked.setValue).toHaveBeenCalledExactlyOnceWith(true);
+
+        const ticked = checkboxOf("true");
+        act(() => ticked.checkbox.click());
+        expect(ticked.setValue).toHaveBeenCalledExactlyOnceWith(false);
+
+        // A read-only table marks its columns `editable: false`, which keeps the box as it is.
+        const readOnly = checkboxOf("true", { editable: false });
+        expect(readOnly.checkbox.tabIndex).toBe(-1);
+        act(() => readOnly.checkbox.click());
+        expect(readOnly.checkbox.checked).toBe(true);
+        expect(readOnly.setValue).not.toHaveBeenCalled();
+    });
+});
+
+describe("buildColumnDefinitions — note dates", () => {
+    it("offers the creation and modification dates as hidden, read-only date & time columns", () => {
+        const columns = buildColumnDefinitions({
+            info: [],
+            movableRows: false,
+            existingColumnData: undefined,
+            rowNumberHint: 1
+        });
+
+        for (const field of [ "dateCreated", "dateModified" ]) {
+            const column = columns.find((candidate) => candidate.field === field);
+            if (!column) throw new Error(`expected a ${field} column`);
+            expect(column).toMatchObject({ visible: false, sorter: "string", cssClass: "table-numeric-cell" });
+            expect(column.editor).toBeUndefined();
+
+            const formatter = column.formatter;
+            if (typeof formatter !== "function") throw new Error("expected a formatter of its own");
+            const value = "2026-01-05T09:30:00.000Z";
+            expect(formatter({ getValue: () => value } as CellComponent, {}, () => {}))
+                .toBe(formatLabelDate(value, true));
         }
     });
 });
@@ -644,5 +757,94 @@ describe("formatLabelDate", () => {
         expect(formatLabelDate(undefined, false)).toBe("");
         expect(formatLabelDate(null, true)).toBe("");
         expect(formatLabelDate("", false)).toBe("");
+    });
+});
+
+describe("title column", () => {
+    function renderTitleCell({ editable }: { editable: boolean }) {
+        const column = buildColumnDefinitions({
+            info: [],
+            movableRows: false,
+            existingColumnData: undefined,
+            rowNumberHint: 1
+        }).find((candidate) => candidate.field === "title");
+        const formatter = column?.formatter;
+        if (typeof formatter !== "function") throw new Error("expected a formatter of its own");
+
+        const cellElement = document.createElement("div");
+        cellElement.className = editable ? "tabulator-cell tabulator-editable" : "tabulator-cell";
+        const cellClick = vi.fn();
+        cellElement.addEventListener("click", cellClick);
+        const row = { getData: () => ({ noteId: "abc123", iconClass: "bx bx-file", colorClass: "" }) };
+        act(() => {
+            cellElement.append(formatter({ getValue: () => "My note", getRow: () => row } as unknown as CellComponent, {}, () => {}) as HTMLElement);
+        });
+        document.body.append(cellElement);
+
+        const title = cellElement.querySelector<HTMLElement>(".reference-link");
+        const openButton = cellElement.querySelector<HTMLButtonElement>(".table-open-note button");
+        if (!title || !openButton) throw new Error("expected a title and an open button");
+        return { cellElement, cellClick, title, openButton };
+    }
+
+    it("opens the note in quick edit from the open button, without starting to edit the cell", () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+        const { cellClick, openButton } = renderTitleCell({ editable: true });
+
+        act(() => openButton.click());
+
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "abc123" });
+        expect(cellClick).not.toHaveBeenCalled();
+        triggerCommand.mockRestore();
+    });
+
+    it("leaves a plain click on an editable title to the cell's editor, and opens a read-only one", () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+
+        const editable = renderTitleCell({ editable: true });
+        act(() => editable.title.click());
+        expect(editable.cellClick).toHaveBeenCalledTimes(1);
+        expect(triggerCommand).not.toHaveBeenCalled();
+
+        const readOnly = renderTitleCell({ editable: false });
+        act(() => readOnly.title.click());
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", { noteIdOrPath: "abc123" });
+        triggerCommand.mockRestore();
+    });
+
+    it("follows the note link on a Ctrl, Shift or middle click instead of editing the cell", () => {
+        goToLinkExt.mockClear();
+        const { cellClick, title } = renderTitleCell({ editable: true });
+
+        act(() => {
+            title.dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+            title.dispatchEvent(new MouseEvent("click", { bubbles: true, shiftKey: true }));
+            title.dispatchEvent(new MouseEvent("auxclick", { bubbles: true, button: 1 }));
+        });
+
+        expect(goToLinkExt).toHaveBeenCalledTimes(3);
+        expect(goToLinkExt).toHaveBeenCalledWith(expect.any(MouseEvent), "#root/abc123");
+        expect(cellClick).not.toHaveBeenCalled();
+    });
+
+    // Tabulator opens the editor when the cell takes focus, which a press gives it before the click
+    // arrives, so a press meant for the link must not focus the cell.
+    it("keeps a Ctrl, Shift or middle press on the title from focusing the cell, but not a plain one", () => {
+        const { cellElement, title } = renderTitleCell({ editable: true });
+        const cellMouseDown = vi.fn();
+        cellElement.addEventListener("mousedown", cellMouseDown);
+        const press = (init: MouseEventInit) => {
+            const event = new MouseEvent("mousedown", { bubbles: true, cancelable: true, ...init });
+            title.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+
+        expect(press({ ctrlKey: true })).toBe(true);
+        expect(press({ shiftKey: true })).toBe(true);
+        expect(press({ button: 1 })).toBe(true);
+        expect(cellMouseDown).not.toHaveBeenCalled();
+
+        expect(press({})).toBe(false);
+        expect(cellMouseDown).toHaveBeenCalledTimes(1);
     });
 });

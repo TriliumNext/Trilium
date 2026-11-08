@@ -1,13 +1,67 @@
 body.mobile {
+    /* Read by `PopupEditor.css` to clear the toolbar. */
+    --mobile-toolbar-button-size: 44px;
+    --mobile-toolbar-icon-size: 22px;
+    --mobile-toolbar-border: 1px;
+    --mobile-toolbar-height: calc(var(--mobile-toolbar-button-size) + 2 * var(--mobile-toolbar-border));
+    --mobile-toolbar-gap: 6px;
+    --mobile-toolbar-radius: 6px;
+    --mobile-toolbar-pill-radius: 6px;
+    --mobile-toolbar-pill-press-scale: 1;
+    --mobile-toolbar-item-gap: 0px;
+    --mobile-toolbar-items-inset: 0px;
+    /* How far a menu in the keyboard's place rises over the gap to meet the toolbar. */
+    --keyboard-panel-rise: var(--mobile-toolbar-gap);
+    --keyboard-panel-margin: 0px;
+    --mobile-toolbar-clearance: calc(var(--mobile-toolbar-height) + 2 * var(--mobile-toolbar-gap));
+
     .classic-toolbar-outer-container {
         contain: none !important;
     }
 
     .classic-toolbar-outer-container.visible {
-        height: 38px;
+        height: 0;
         position: relative;
         overflow: visible;
         flex-shrink: 0;
+        z-index: var(--ck-z-panel);
+    }
+
+    /* The `scroll-padding-bottom` is read by `EditableText` to keep the caret above the toolbar. */
+    :is(.scrolling-container, .popup-editor-scroll):has(~ .classic-toolbar-outer-container.visible) {
+        padding-bottom: var(--mobile-toolbar-clearance);
+        scroll-padding-bottom: var(--mobile-toolbar-clearance);
+    }
+
+    .classic-toolbar-island {
+        position: absolute;
+        bottom: var(--tn-layout-overhang, 0px);
+        inset-inline-start: 0;
+        inset-inline-end: 0;
+        height: var(--mobile-toolbar-height);
+        margin: 0 var(--mobile-toolbar-gap) var(--mobile-toolbar-gap);
+        border: var(--mobile-toolbar-border) solid var(--card-border-color, var(--main-border-color));
+        border-radius: var(--mobile-toolbar-radius);
+        /* `--card-background-color` is translucent in theme-next, so it tints an opaque backdrop. */
+        background:
+            linear-gradient(
+                var(--card-background-color, var(--accented-background-color)),
+                var(--card-background-color, var(--accented-background-color))
+            ),
+            var(--mobile-toolbar-backdrop, var(--main-background-color));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, calc(var(--dropdown-shadow-opacity, 0.2) / 2));
+        /* On iOS, `--tn-keyboard-gap` is updated continuously by the
+           ViewController (Swift) as the keyboard frame changes, so the
+           toolbar follows a finger-dragged keyboard during interactive
+           dismiss. Zero elsewhere — no effect on Android or non-Capacitor. */
+        transform: translateY(var(--tn-keyboard-gap, 0px));
+        transition: opacity 100ms linear, visibility 100ms;
+        --hide-keyboard-button-size: var(--mobile-toolbar-button-size);
+    }
+
+    .classic-toolbar-outer-container:not(.active) .classic-toolbar-island {
+        opacity: 0;
+        visibility: hidden;
     }
 
     .classic-toolbar-widget {
@@ -15,18 +69,14 @@ body.mobile {
         bottom: 0;
         inset-inline-start: 0;
         inset-inline-end: 0;
-        height: 38px;
+        height: 100%;
+        border-radius: calc(var(--mobile-toolbar-radius) - var(--mobile-toolbar-border));
         overflow: scroll;
         display: flex;
         align-items: flex-end;
         user-select: none;
         touch-action: pan-x;
         scrollbar-width: 0 !important;
-        /* On iOS, `--tn-keyboard-gap` is updated continuously by the
-           ViewController (Swift) as the keyboard frame changes, so the
-           toolbar follows a finger-dragged keyboard during interactive
-           dismiss. Zero elsewhere — no effect on Android or non-Capacitor. */
-        transform: translateY(var(--tn-keyboard-gap, 0px));
     }
 
     .classic-toolbar-widget::-webkit-scrollbar:horizontal {
@@ -35,17 +85,280 @@ body.mobile {
 
     .classic-toolbar-widget.dropdown-active {
         height: 50vh;
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+
+    /* A menu of the toolbar in the place of the keyboard (see `useKeyboardPanel`). */
+    &.keyboard-panel-open {
+        /* `useKeyboardPanel()` measures a menu of its own height as if it rose by the whole gap. */
+        --keyboard-panel-place-offset: calc(
+            var(--mobile-toolbar-gap) - var(--keyboard-panel-rise) + var(--keyboard-panel-margin)
+        );
+        --keyboard-panel-lift: max(
+            0px,
+            calc(
+                var(
+                    --tn-keyboard-place-height,
+                    calc(var(--tn-keyboard-height, 0px) - var(--keyboard-panel-place-offset))
+                )
+                + var(--keyboard-panel-place-offset)
+                - var(--tn-layout-shrink, 0px)
+            )
+        );
+        --mobile-toolbar-clearance: calc(
+            var(--mobile-toolbar-height) + var(--mobile-toolbar-gap) + var(--keyboard-panel-lift)
+        );
+
+        #mobile-bottom-bar {
+            display: none !important;
+        }
+
+        .classic-toolbar-island {
+            bottom: var(--keyboard-panel-lift);
+        }
+    }
+
+    /* Docked to the keyboard, or to the menu in its place. iOS 26 draws its keyboard as an inset,
+       rounded panel, so the island stays there. */
+    &:not(.ios) {
+        #root-widget.virtual-keyboard-opened {
+            --mobile-toolbar-clearance: var(--mobile-toolbar-height);
+        }
+
+        &.keyboard-panel-open .dropdown-menu.mobile-bottom-menu.keyboard-panel {
+            border-radius: 0;
+        }
+
+        #root-widget.virtual-keyboard-opened,
+        &.keyboard-panel-open {
+            --mobile-toolbar-gap: 0px;
+
+            .classic-toolbar-island {
+                border-width: 1px 0 0;
+                border-radius: 0;
+                box-shadow: none;
+
+                .classic-toolbar-widget,
+                .hide-keyboard-action .icon-action {
+                    border-radius: 0;
+                }
+            }
+        }
+    }
+
+    .dropdown-menu.mobile-bottom-menu.keyboard-panel.show {
+        --dropdown-bottom: calc(-1 * var(--tn-layout-shrink, 0px));
+        height: calc(var(--tn-keyboard-height) + var(--keyboard-panel-rise) - var(--keyboard-panel-margin));
+        max-height: calc(var(--tn-keyboard-height) + var(--keyboard-panel-rise) - var(--keyboard-panel-margin));
+        margin: 0 var(--keyboard-panel-margin) var(--keyboard-panel-margin);
+    }
+
+    .dropdown-menu.mobile-bottom-menu.keyboard-panel.keyboard-panel-own-height.show {
+        height: auto;
+        max-height: min(
+            50vh,
+            calc(var(--tn-keyboard-height, 50vh) + var(--keyboard-panel-rise) - var(--keyboard-panel-margin))
+        );
+    }
+
+    .dropdown-menu.mobile-bottom-menu.keyboard-panel.replaces-panel[data-reveal]:not([data-closing]) {
+        animation: none;
+    }
+
+    /* `playClosing()` in Popup.tsx removes the copy once this animation ends or is replaced, as
+       it is when `keyboard-panel-open` goes; 1.5s covers `PRESS_TIMEOUT` plus
+       `KEYBOARD_RETURN_TIMEOUT` in mobile_editor_toolbar.tsx. */
+    &.keyboard-panel-open .dropdown-menu.mobile-bottom-menu.keyboard-panel {
+        &[data-closing] {
+            animation: tn-keyboard-panel-hold 1.5s;
+        }
+
+        /* With no animation, `playClosing()` drops the copy at once. */
+        &.keyboard-panel-own-height[data-closing] {
+            animation: none;
+        }
+    }
+
+    &.keyboard-panel-open .classic-toolbar-island,
+    .virtual-keyboard-opened .classic-toolbar-island {
+        /* One button wide, so part of an icon always falls under it. */
+        --mobile-toolbar-fade: var(--mobile-toolbar-button-size);
+
+        .classic-toolbar-widget {
+            inset-inline-end: var(--hide-keyboard-button-size);
+            mask-image: linear-gradient(to left, transparent, #000 var(--mobile-toolbar-fade));
+        }
+
+        .classic-toolbar-widget:dir(rtl) {
+            mask-image: linear-gradient(to right, transparent, #000 var(--mobile-toolbar-fade));
+        }
+
+        .classic-toolbar-widget.dropdown-active {
+            mask-image: none;
+        }
+
+        .ck-toolbar__items {
+            padding-inline-end: var(--mobile-toolbar-fade);
+        }
+    }
+
+    .classic-toolbar-island .hide-keyboard-action {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-end: 0;
+        align-items: center;
+
+        .icon-action {
+            /* Must equal `--mobile-toolbar-icon-size` / `--mobile-toolbar-button-size`. */
+            --icon-button-icon-ratio: 0.5;
+            border-inline-start: 1px solid var(--main-border-color);
+            border-radius: 0;
+            border-start-end-radius: calc(var(--mobile-toolbar-radius) - var(--mobile-toolbar-border));
+            border-end-end-radius: calc(var(--mobile-toolbar-radius) - var(--mobile-toolbar-border));
+        }
     }
 
     .classic-toolbar-widget .ck.ck-toolbar {
-        --ck-color-toolbar-background: var(--main-background-color);
+        --ck-color-toolbar-background: transparent;
         --ck-color-button-default-background: transparent;
         --ck-color-button-default-disabled-background: transparent;
+        --ck-toolbar-item-gap-inline: 0;
+        --ck-toolbar-padding: 0;
         position: absolute;
         border: none;
-    }
 
-    .classic-toolbar-widget .ck.ck-button.ck-disabled {
-        opacity: 0.3;
+        > .ck-toolbar__items {
+            gap: var(--mobile-toolbar-item-gap);
+            padding-inline-start: var(--mobile-toolbar-items-inset);
+        }
+
+        > .ck-toolbar__items > * {
+            margin-block: 0;
+        }
+
+        .ck-toolbar__items > .ck-dropdown > .ck-splitbutton {
+            display: flex;
+        }
+
+        /* Set on the buttons, not the dropdowns, whose panels would inherit it. */
+        .ck-toolbar__items > :is(.ck-button, .ck-dropdown > .ck-dropdown__button) {
+            --ck-size-control-min-height: var(--mobile-toolbar-button-size);
+            --ck-icon-size: var(--mobile-toolbar-icon-size);
+        }
+
+        /* A button keeps the full height of the bar to be pressed, and draws its state on a pill
+           inside it. */
+        .ck-toolbar__items > :is(
+            .ck-button,
+            .ck-dropdown > .ck-button,
+            .ck-dropdown > .ck-splitbutton > .ck-button
+        ) {
+            --mobile-toolbar-pill: transparent;
+            --mobile-toolbar-pill-tint: transparent;
+            --mobile-toolbar-pill-shadow: none;
+            position: relative;
+            isolation: isolate;
+
+            &, &:hover, &:active {
+                background: transparent;
+                box-shadow: none;
+            }
+
+            &::before {
+                content: "";
+                position: absolute;
+                inset: 6px 2px;
+                z-index: -1;
+                border-radius: var(--mobile-toolbar-pill-radius);
+                background:
+                    linear-gradient(var(--mobile-toolbar-pill-tint), var(--mobile-toolbar-pill-tint)),
+                    var(--mobile-toolbar-pill);
+                box-shadow: var(--mobile-toolbar-pill-shadow);
+                transition: scale 250ms cubic-bezier(0.3, 1.6, 0.5, 1);
+            }
+
+            &:not(.ck-disabled):active::before {
+                scale: var(--mobile-toolbar-pill-press-scale);
+            }
+
+            &.ck-on {
+                --mobile-toolbar-pill: var(--ck-editor-toolbar-button-on-background, var(--accented-background-color));
+                --mobile-toolbar-pill-shadow: var(--ck-editor-toolbar-button-on-shadow, none);
+            }
+
+            &.ck-dropdown__button.ck-on {
+                --mobile-toolbar-pill: var(--ck-editor-toolbar-dropdown-button-open-background, var(--accented-background-color));
+                --mobile-toolbar-pill-shadow: none;
+            }
+
+            &:not(.ck-disabled):active {
+                --mobile-toolbar-pill-tint: var(--hover-item-background-color);
+            }
+
+            /* A touch screen keeps `:hover` on the last button pressed. */
+            @media (hover: hover) {
+                &:not(.ck-disabled):hover {
+                    --mobile-toolbar-pill-tint: var(--hover-item-background-color);
+                }
+            }
+        }
+
+        .ck-toolbar__items > .ck.ck-button.ck-opens-row::after {
+            content: "›";
+            margin-inline-start: 1px;
+            opacity: 0.6;
+        }
+
+        .ck-toolbar__items > .ck.ck-button.ck-opens-row:dir(rtl)::after {
+            content: "‹";
+        }
+
+        .ck-toolbar__items > .ck-context-toolbar-title {
+            --ck-icon-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-inline: 6px 10px;
+            color: var(--muted-text-color);
+            white-space: nowrap;
+        }
+
+        .ck-toolbar__items > .ck.ck-button.ck-context-toolbar-button {
+            --mobile-toolbar-pill: var(--accented-background-color);
+            --mobile-toolbar-pill-shadow: inset 0 0 0 1px var(--main-border-color);
+            --ck-icon-size: 18px;
+            align-items: center;
+            padding-inline: 10px 8px;
+            animation: tn-context-toolbar-enter 150ms ease-out;
+
+            .ck-button__label::after {
+                content: "›";
+                margin-inline-start: 4px;
+                opacity: 0.6;
+            }
+
+            &:dir(rtl) .ck-button__label::after {
+                content: "‹";
+            }
+
+        }
+    }
+}
+
+@keyframes tn-context-toolbar-enter {
+    from {
+        opacity: 0;
+        scale: 0.85;
+    }
+}
+
+.classic-toolbar-widget .ck.ck-button.ck-disabled {
+    opacity: 0.3;
+}
+
+@keyframes tn-keyboard-panel-hold {
+    to {
+        translate: 0 0;
     }
 }

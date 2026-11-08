@@ -65,6 +65,10 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "INVALID_MIME_FOR_IMAGE", `MIME type '${params.mime}' is not allowed for image notes. MIME must start with 'image/'.`);
         }
 
+        if (params.noteId && becca.getNote(params.noteId)) {
+            throw new eu.EtapiError(409, "NOTE_ALREADY_EXISTS", `Note '${params.noteId}' already exists.`);
+        }
+
         try {
             const resp = noteService.createNewNote(params);
             // `save()` stamps the current time, so `setDateCreatedAndModified()` applies the
@@ -84,7 +88,7 @@ function register(router: Router) {
 
     const ALLOWED_PROPERTIES_FOR_PATCH = {
         title: [v.notNull, v.isString],
-        type: [v.notNull, v.isString],
+        type: [v.notNull, v.isNoteType],
         mime: [v.notNull, v.isString],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
         utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
@@ -170,19 +174,30 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default), 'markdown' or 'share'.`);
         }
 
+        // Protected content never leaves through ETAPI, even while the protected session is open.
+        // The share format cannot leave it out, so it refuses a subtree that holds any.
+        const protectedNote = format === "share" ? note.getSubtree({ includeHidden: true }).notes.find((n) => n.isProtected) : undefined;
+        if (protectedNote) {
+            throw new eu.EtapiError(400, "NOTE_IS_PROTECTED", `Note '${protectedNote.noteId}' is protected and cannot be exported through ETAPI in the 'share' format.`);
+        }
+
         const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
         // technically a branch is being exported (includes prefix), but it's such a minor difference yet usability pain
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
         const branch = note.getParentBranches()[0];
 
-        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
+        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res, true, { excludeProtected: true });
     });
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new eu.EtapiError(400, "ZIP_FILE_REQUIRED", "The request body must be a ZIP file sent as 'application/zip' or 'application/octet-stream'.");
+        }
+
+        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
         zipImportService.importZip(taskContext, req.body, note).then((importedNote) => {
             res.status(201).json({
                 note: mappers.mapNoteToPojo(importedNote),
@@ -208,8 +223,7 @@ function parseSearchParams(req: Request) {
         ancestorNoteId: parseString(req.query["ancestorNoteId"]),
         ancestorDepth: parseString(req.query["ancestorDepth"]), // e.g. "eq5"
         orderBy: parseString(req.query["orderBy"]),
-        // TODO: Check why the order direction was provided as a number, but it's a string everywhere else.
-        orderDirection: parseOrderDirection(req.query, "orderDirection") as unknown as string,
+        orderDirection: parseOrderDirection(req.query, "orderDirection"),
         limit: parseInteger(req.query, "limit"),
         debug: parseBoolean(req.query, "debug")
     };
@@ -252,13 +266,11 @@ function parseOrderDirection(obj: any, name: string) {
         return undefined;
     }
 
-    const integer = parseInt(obj[name]);
-
     if (!["asc", "desc"].includes(obj[name])) {
         throw new eu.EtapiError(400, SEARCH_PARAM_ERROR, `Cannot parse order direction value '${obj[name]}, allowed values are 'asc' and 'desc'.`);
     }
 
-    return integer;
+    return obj[name];
 }
 
 function parseInteger(obj: any, name: string) {

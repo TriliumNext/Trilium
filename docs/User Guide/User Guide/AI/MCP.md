@@ -9,7 +9,11 @@ Once the MCP is active, simply add the MCP server to your AI assistant. The URL 
 
 Only the HTTP transport is supported, the `stdio` method is not supported. If that is a blocker, consider using a third-party alternative listed below.
 
-The tools exposed to the MCP are the same tools that are supported by the internal chat (see the _Note access_ section).
+The tools exposed to the MCP are the same tools that are supported by the internal chat (see the _Note access_ section). Notes with the `#excludeFromLlm` label are hidden from both, see <a class="reference-link" href="Privacy.md">Privacy</a>.
+
+### Approving tool calls
+
+Trilium does not ask for approval of the calls an external assistant makes; that is left to the assistant's own permission settings. To help it decide, each tool tells the assistant whether it only reads your notes, only adds to them (creating a note, cloning it or appending to it), or can overwrite or remove something (editing, renaming, moving or deleting). An assistant that supports these hints can then run reads on their own and ask before changes, the way _Ask before changes_ does in Trilium's chat.
 
 ### Authentication
 

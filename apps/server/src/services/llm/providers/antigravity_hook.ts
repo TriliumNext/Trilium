@@ -17,7 +17,7 @@
 import { existsSync, mkdirSync, realpathSync, writeFileSync } from "fs";
 import path from "path";
 
-import { findOnPath } from "./binary_lookup.js";
+import { stringsIn } from "./acp_hook.js";
 
 export interface AntigravityHookDecision {
     decision: "allow" | "ask" | "deny";
@@ -37,7 +37,6 @@ const DENY_REASON = "Trilium does not allow access to this location. Use Trilium
 
 /** How long the server waits for the hook, in seconds; `curl` gives up first. */
 const HOOK_TIMEOUT_S = 10;
-const CURL_MAX_TIME_S = 8;
 
 /**
  * The answer to one `PreToolUse` call. `deny` when any path in the call's
@@ -80,61 +79,6 @@ export function writeAntigravityHooks(home: string, command: string): void {
         }
     };
     writeFileSync(path.join(configDir, "hooks.json"), JSON.stringify(hooks, null, 2));
-}
-
-/**
- * The hook command: `curl` posts the call (the hook's stdin) to Trilium and
- * prints the decision. `--fail` turns an error response into a failed hook,
- * which the server treats as a denial. `--noproxy` keeps an `HTTP_PROXY`
- * from routing the loopback request away from Trilium. The server runs it
- * with `sh -c`, or `cmd /c` on Windows; the URL holds no character either
- * shell reads.
- */
-export function buildHookCommand(curl: string, hookUrl: string): string {
-    if (curl.includes("\"")) {
-        throw new Error(`Cannot quote the path of curl for the Antigravity hook: ${curl}`);
-    }
-    return `"${curl}" --silent --show-error --fail --noproxy 127.0.0.1 --max-time ${CURL_MAX_TIME_S} --data-binary @- ${hookUrl}`;
-}
-
-/** The in-flight or successful lookup; a failed one is forgotten so a later install is found. */
-let cachedCurl: Promise<string> | undefined;
-
-/** The absolute path of `curl`, which the hook runs. The path makes it independent of the server's PATH. */
-export function resolveCurlPath(): Promise<string> {
-    if (!cachedCurl) {
-        cachedCurl = findCurl().catch((err: unknown) => {
-            cachedCurl = undefined;
-            throw err;
-        });
-    }
-    return cachedCurl;
-}
-
-/** For tests: forget the found `curl`. */
-export function resetCurlCache(): void {
-    cachedCurl = undefined;
-}
-
-async function findCurl(): Promise<string> {
-    const curl = await findOnPath("curl");
-    if (!curl) {
-        throw new Error("Google Antigravity needs curl, which Trilium uses to control the agent's file access, and curl was not found. Install curl (it ships with Windows 10 and later and with macOS) and make sure it is on PATH.");
-    }
-    return curl;
-}
-
-function stringsIn(value: unknown): string[] {
-    if (typeof value === "string") {
-        return [ value ];
-    }
-    if (Array.isArray(value)) {
-        return value.flatMap(stringsIn);
-    }
-    if (value && typeof value === "object") {
-        return Object.values(value).flatMap(stringsIn);
-    }
-    return [];
 }
 
 function looksLikePath(value: string): boolean {

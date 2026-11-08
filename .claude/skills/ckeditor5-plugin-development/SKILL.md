@@ -1,19 +1,6 @@
 ---
 name: ckeditor5-plugin-development
-description: >-
-  Write, extend, and review CKEditor 5 plugins in the Trilium (TriliumNext
-  Notes) monorepo — the rich-text-note editor under packages/ckeditor5, whose
-  plugins live in src/plugins/.
-  Use when building or
-  reviewing a Trilium CKEditor 5 feature/plugin, or when working with the
-  editing engine (model, view, schema, conversion/upcast-downcast), commands,
-  the UI library (buttons, dropdowns, dialogs, balloons, toolbars), widgets
-  (block/inline, toWidget, nested editables), keystrokes, localization (t()),
-  registering a plugin into plugins.ts / the editor classes / toolbar.ts, persisting a
-  `data-trilium-*` attribute through the model→view→data→markdown→share pipeline, or
-  adding a new plugin folder under src/plugins/. Covers the architecture,
-  idiomatic patterns, Trilium packaging/registration, code-style conventions,
-  and a review checklist.
+description: Use when writing, extending or reviewing a CKEditor 5 plugin in the Trilium monorepo (`packages/ckeditor5`, plugins in `src/plugins/`), or when working with the editing engine (model, view, schema, conversion/upcast-downcast), commands, the UI library (buttons, dropdowns, dialogs, balloons, toolbars), widgets (block/inline, toWidget, nested editables), keystrokes, localization (t()), registering a plugin into plugins.ts / the editor classes / toolbar.ts, persisting a `data-trilium-*` attribute through the model→view→data→markdown→share pipeline, adding a plugin folder, or upgrading `ckeditor5` to a new major version (Renovate's major-ckeditor-monorepo branch, broken styling after a bump, `--ck-*` variables). Covers architecture, idiomatic patterns, packaging/registration, code style, a review checklist and ck_css.mjs, which compares stylesheets between two versions under Trilium's own CSS.
 ---
 
 # CKEditor 5 plugin development (Trilium monorepo)
@@ -157,8 +144,12 @@ Key rules (inherited from the upstream conventions via `eslint-config-ckeditor5`
   (`import fooIcon from '../../icons/foo.svg?raw';`); there is no `icons` export any more.
 - Every editor icon, CKEditor's and ours, is also a glyph in the built-in `cke` icon font that the
   User Guide uses to name toolbar buttons (`cke-table-merge-cell`, `cke-trilium-kbd`). Adding,
-  renaming or removing an SVG, or bumping `ckeditor5`, means regenerating that font and checking
-  the docs for the old class. See "The `cke` icon pack" in `references/ui-and-localization.md`.
+  renaming or removing an SVG, or bumping `ckeditor5`, means regenerating that font **in the same
+  change**: `pnpm --filter @triliumnext/icon-pack-builder start cke`, then commit
+  `apps/client/src/fonts/text-editor-icons.woff2` and
+  `packages/trilium-core/src/services/icon_pack_text_editor.json`. A renamed or removed icon also
+  means grepping `docs/User Guide` for the old class. Naming rules and what survives the
+  conversion: "The `cke` icon pack" in `references/ui-and-localization.md`.
 
 ## Minimal end-to-end example (inline text attribute)
 
@@ -252,6 +243,17 @@ converters instead of `attributeToElement`; see `references/widgets.md`.
   only when the editor is *built*, so do a **full page reload** (or close/reopen the note) to get a
   fresh editor instance that picks up your change — otherwise you're testing the old code.
 
+## Upgrading CKEditor
+
+A major bump breaks more than APIs: CKEditor 49 replaced its flat `--ck-*` variables with design
+tokens resolved at `:root`, which silently detached many of our scoped overrides (dropdown font
+sizes, focus rings, radii, the color picker layout). Before calling an upgrade done, run
+`node .claude/skills/ckeditor5-plugin-development/ck_css.mjs audit`, then stage the previous version
+and diff it (`stage <version>`, `run all`, `clean`) — the harnesses render the editor UI and every
+content element in Chromium under both stylesheets with Trilium's CSS loaded, and print what changed.
+The procedure, the token model, the traps and the v49 mapping are in
+`references/upgrading-ckeditor.md`.
+
 ## Reference map
 
 Load the focused reference for the task at hand:
@@ -261,10 +263,11 @@ Load the focused reference for the task at hand:
 | `references/architecture.md` | Model, view, schema, positions/ranges/selections, markers, the event/observable system, binding. The conceptual foundation. |
 | `references/conversion.md` | Upcast/downcast pipelines, conversion helpers, custom (callback) converters, attribute/element/marker conversion, position mapping. |
 | `references/commands.md` | `Command` patterns: `refresh()`/`execute()`, state (`value`/`isEnabled`), `forceDisabled()`, `affectsData`, command events. |
-| `references/ui-and-localization.md` | Views & templates, component catalog (buttons, inputs, dropdowns, dialogs/modals, balloons, toolbars), icons, `componentFactory`, focus/keystroke management, and `t()` localization. |
+| `references/ui-and-localization.md` | Views & templates, component catalog (buttons, inputs, dropdowns, dialogs/modals, balloons, toolbars), what goes on a link's toolbar and what in its ⋮ menu, icons, `componentFactory`, focus/keystroke management, and `t()` localization. |
 | `references/widgets.md` | Block & inline widgets: `toWidget`/`toWidgetEditable`, nested editables, `insertObject`, widget toolbars, view↔model position mapping, custom properties, and external/async-rendered widgets (UI-element render callbacks, re-render on change, stale-render guard, lazy-load). |
 | `references/conventions.md` | Trilium conventions: imports from `ckeditor5`/`@triliumnext` + required file extensions, per-package license/headers (not uniform), `@triliumnext` scope + `workspace:*`, per-package tsconfig, `?raw` icons, localization via `editor.t()` message ids, `declare module 'ckeditor5'` augmentation, plus the upstream naming/CSS/BEM/JSDoc/TypeScript rules inherited via `eslint-config-ckeditor5`. For writing idiomatic code and reviewing. |
-| `references/tooling-and-packaging.md` | Trilium packaging & wiring: the `@triliumnext/ckeditor5-<feature>` package layout, `workspace:*` deps, `main: src/index.ts` (no per-package dist), tsconfig/eslint/stylelint setup, the full registration flow (`plugins.ts` arrays → editor classes `builtinPlugins` → `toolbar.ts`), the three editor classes, the Vite build, how `apps/client` creates the editor (config, watchdog, lazy premium), the Inspector, and how to read CKEditor's own source (via bundle sourcemaps) and trace its runtime decisions. |
+| `references/upgrading-ckeditor.md` | Major-version upgrades: the procedure (changelog, CI cascades, local suite, CSS audit, version diff), CKEditor 49's token layers and why scoped legacy overrides stopped reaching components, the legacy→v49 variable mapping, where we now set component tokens, traps (`--x: inherit`, nested selectors), where CKEditor's CSS reaches (editor, print, share, exports), and `ck_css.mjs` with its `content`/`ui` harnesses. |
+| `references/tooling-and-packaging.md` | Trilium packaging & wiring: the `@triliumnext/ckeditor5-<feature>` package layout, `workspace:*` deps, `main: src/index.ts` (no per-package dist), tsconfig/eslint/stylelint setup, the full registration flow (`plugins.ts` arrays → editor classes `builtinPlugins` → `toolbar.ts`), the three editor classes, the Vite build, how `apps/client` creates the editor (config, rebuilds, error reporting), the Inspector, and how to read CKEditor's own source (via bundle sourcemaps) and trace its runtime decisions. |
 | `references/persisted-attributes.md` | Persisting a `data-trilium-*` attribute end to end: schema → both conversion directions → the **deliberate** markdown export/import decision (collapsed is DROPPED, task-state is KEPT) → editing-view-only CSS so read-only and share rendering stay correct. Read it before storing plugin state in the saved note content. |
 | `references/review-checklist.md` | A structured checklist for reviewing an existing plugin (architecture, schema, conversion, commands, UI, a11y, conventions). |
 | `references/recipes.md` | Task-oriented how-tos: insert content, find/iterate nodes, custom observers, place caret, extend other plugins' UI, etc. |

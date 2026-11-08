@@ -4,7 +4,7 @@
 
 | Tree | Root noteId | Source | Generated from it |
 | --- | --- | --- | --- |
-| User Guide | `pOsGYCXsbNQG` | `docs/User Guide/` (Markdown + `!!!meta.json`) | `apps/server/src/assets/doc_notes/en/User Guide/**/*.html` + its minified `!!!meta.json`; `apps/standalone/src/assets/help_meta.json`; `site/user-guide` on the docs site |
+| User Guide | `pOsGYCXsbNQG` | `docs/User Guide/` (Markdown + `!!!meta.json`) | `apps/server/src/assets/help/help_meta.json` (the tree) + `help_content.json` (each page's HTML, keyed by `_help_<noteId>`); `site/user-guide` on the docs site |
 | Developer Guide | `jdjRLhLV3TtI` | `docs/Developer Guide/` | `site/developer-guide` |
 | Release Notes | `hD3V4hiu2VW4` | `docs/Release Notes/` | the GitHub release body (`scripts/release-notes-body.mts`, `release.yml`) |
 
@@ -16,14 +16,15 @@ headless sync read it.
 `pnpm edit-docs:edit-docs` (`apps/edit-docs/src/edit-docs.ts`) zips every non-`exportOnly` mapping,
 imports it into an in-memory database with `preserveIds: true`, opens an Electron window, and — 10 s
 after any entity change — `rm -rf`s **every** mapping's directory and re-exports it from the
-database: Markdown for the three trees, HTML for the User Guide. Nothing exports on close, and an
+database as Markdown, then derives the two help artifacts from the User Guide's export (the
+`helpMeta` / `helpContent` keys of its mapping). Nothing exports on close, and an
 untouched session writes nothing.
 
 `pnpm edit-docs:sync-docs` (`apps/edit-docs/src/sync-docs.ts`, `docs.mjs sync`) is the same import
 and the same export with no window: `apps/edit-docs/src/docs_pipeline.ts` holds the shared code.
 Running it on a clean tree is byte-stable; running it after a hand edit normalizes the Markdown the
 way the editor would (the import renders Markdown to HTML, the export turns it back) and regenerates
-the HTML and both help metas. ~7 s.
+both help artifacts. ~7 s.
 
 Consequences:
 
@@ -37,7 +38,7 @@ Consequences:
   first H1 and demotes a differing one.
 - `internalLink` / `imageLink` relations are never in the meta — they are rebuilt from content.
 - `pnpm docs:build` (`apps/build-docs`) is the **site** build: it imports `docs/` again and share-exports
-  it to `site/`, ignoring `edit-docs-config.yaml`. It is not a way to regenerate `doc_notes`.
+  it to `site/`, ignoring `edit-docs-config.yaml`. It is not a way to regenerate the help artifacts.
 
 ## `!!!meta.json` (formatVersion 2)
 
@@ -67,29 +68,33 @@ attachments, dirFileName, children`. Types: `packages/trilium-core/src/meta.ts`;
 
 ## What the app reads
 
-- **In-app help** (`F1`, help buttons): `apps/server/src/in_app_help_provider.ts` loads
-  `doc_notes/en/User Guide/!!!meta.json` — a minified `HiddenSubtreeItem[]` (not a NoteMetaFile)
-  built by `apps/edit-docs/src/help_meta_generator.ts`: each page becomes `_help_<noteId>` of type
-  `doc` with `#docName` (`User Guide/User Guide/<folders>/<title>`), `#docUrl` (the alias chain) and
-  `#iconClass`. `checkHiddenSubtree()` materializes it under `_help`; `doc_renderer.ts` fetches
-  `doc_notes/en/<docName>.html` and refuses a docName outside `[a-zA-Z0-9_/\- ()&.,\`]`.
-- **Standalone/mobile**: `apps/standalone/src/assets/help_meta.json` — the same tree as `webView`
-  items pointing at `docUrl`; a page without an alias is dropped.
+- **In-app help** (`F1`, help buttons): `help_meta.json` is a `HiddenSubtreeItem[]` (not a
+  NoteMetaFile) built by `apps/edit-docs/src/help_meta_generator.ts`: each page becomes
+  `_help_<noteId>` with its own type, `#docUrl` (the alias chain, absent without a `shareAlias`)
+  and `#iconClass`. `help_content.json` (`help_bundle_generator.ts`) maps each ID to its HTML, with
+  links rewritten to `#root/_help_<noteId>` and assets to `{{helpAssets}}/<path>`. The pages are
+  **virtual notes**: `in_app_help.ts` in core registers a provider that builds the `_help` subtree
+  in becca on every load — never stored in the database, never synced, read-only. Server/desktop
+  read both files through `apps/server/src/in_app_help_provider.ts`, standalone/mobile through
+  `apps/standalone/src/lightweight/in_app_help_provider.ts`. Images stay in `docs/User Guide/`;
+  the `in-app-help` skill covers how each platform serves them.
 - **Help buttons link by noteId** (`<HelpButton helpPage="…">` → `openInAppHelpFromUrl` →
   `_help_<id>`; `Modal helpPageId`; `services/in_app_help.ts` maps note types, collection views and
   sidebar sections). ~60 IDs are hard-coded in `apps/client/src`; `docs.mjs show` lists them per page
   and `check` fails when one points nowhere. `apps/client/src/services/in_app_help.spec.ts` is the CI
-  guard for the `in_app_help.ts` maps, the docName files and the `_help_` links inside the HTML.
+  guard for the `in_app_help.ts` maps against `help_meta.json`.
 - **Public URL** = `https://docs.triliumnotes.org` + `/` + each ancestor's `shareAlias` (ancestors
   without one contribute nothing). Unique as a full path, not globally (`troubleshooting` is used
   three times). Hard-coded in `README.md` (mirrored to 40 translated READMEs by CI), `apps/website`,
   `apps/web-clipper`, the about dialog; `check` resolves every literal against the alias chains.
 - **Search docs examples**: `packages/trilium-core/src/services/search/docs_examples.spec.ts`
   requires every query shown in `Navigation/Search.md` and `Quick search.md` to have a test.
-- **LLM tools** read the same `doc_notes` files (`apps/server/src/services/llm/tools/doc_notes.ts`).
+- **LLM tools** read the `_help` virtual notes through becca and search them with the application's
+  own search (`packages/trilium-core/src/services/llm/tools/help_tools.ts`).
 
-`doc_notes/cn/` holds nine legacy hand-written system snippets (launch-bar and hidden-note docs), no
-User Guide, and is frozen; the client always requests the User Guide in `en`.
+The few hand-written system snippets (launch-bar and hidden-note docs) are not part of the User
+Guide: `apps/client/src/services/doc_renderer.ts` renders them from the client catalogue's
+`doc_notes` keys, selected by a `#docName` label.
 
 ## What the site build reads
 

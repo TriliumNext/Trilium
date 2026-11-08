@@ -4,12 +4,6 @@
   --board-column-background-saturation: 26%;
   --board-column-background-lightness: 86%;
 
-  --board-item-background-saturation: 100%;
-  --board-item-background-lightness: 96%;
-
-  --board-item-hover-background-saturation: 100%;
-  --board-item-hover-background-lightness: 98.5%;
-
   /* The background of a card being edited. Set to the hover lightness so the colour does not
      change when the pointer leaves the card. */
   --board-item-editing-background-lightness: var(--board-item-hover-background-lightness);
@@ -42,11 +36,6 @@
   --board-collapse-duration-quick: 0.3s;
   --board-expand-duration: 0.2s;
 
-  /* What a card at rest casts on the column it stands in. */
-  --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-  /* The lift a card takes under the pointer, named so that a picked-out card can carry its ring
-     and this shadow together. */
-  --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
   /* What a carried card casts, which the stack of a carried selection is drawn behind. */
   --board-drag-shadow: 4px 8px 16px rgba(0, 0, 0, 0.5);
   /* What a carried copy is drawn at, and what it fades to once it stands against the board's
@@ -61,42 +50,59 @@
      carry less weight than the values alone suggest. */
   --board-drop-placeholder-background: rgba(0, 0, 0, 0.15);
   --board-column-drop-placeholder-background: rgba(0, 0, 0, 0.1);
-  /* The ring a picked-out card carries. */
-  --board-selected-ring-color: var(--link-color);
   /* The wedge in a card's foot corner while cards are being selected, until the card is. */
   --board-selection-wedge-size: 14px;
   --board-selection-wedge-color: var(--main-border-color);
   /* The overlay on a carried card while it would drop at one end of a column, painted in the hue
      the card itself is. */
-  --board-drop-hint-background-saturation: 35%;
-  --board-drop-hint-background-lightness: 25%;
-  --board-drop-hint-color: #ffffff;
+  --board-drop-hint-background-saturation: 50%;
+  --board-drop-hint-background-lightness: 75%;
+  --board-drop-hint-color: #000000bf;
   /* Dims the board while a card is being named. Kept light: it draws the eye to the field rather
      than hiding what is behind it. */
   --board-edit-backdrop: rgba(0, 0, 0, 0.15);
 
-  /* What the board writes its text and icons in, and what it marks the quieter ones with. A
-     column's heading has a pair of its own, standing as it does on the column rather than on a
-     card. These are what a plain board paints; on a coloured one the pairs below replace them. */
-  --board-text-color: var(--main-text-color);
-  --board-muted-text-color: var(--muted-text-color);
+  /* Text colors of a column heading; the card text colors are in note_card.css. On a column with a
+     hue, colors composed from the values below replace these. */
   --board-column-header-text-color: var(--main-text-color);
   --board-column-header-muted-text-color: var(--muted-text-color);
-  /* How each is composed where something around carries a hue. The colour lends its hue alone:
-     the lightness is the theme's, so a coloured board reads as light as a plain one. */
-  --board-text-saturation: 30%;
-  --board-text-lightness: 8%;
-  --board-muted-text-saturation: 20%;
-  --board-muted-text-lightness: 40%;
-  --board-column-header-text-saturation: 30%;
-  --board-column-header-text-lightness: 8%;
+  /* Saturation and lightness of the heading colors on a column with a hue. Only the hue comes from
+     the note's color, and the theme sets the lightness, so a colored board is as light as a plain one. */
+  --board-column-header-text-saturation: 40%;
+  --board-column-header-text-lightness: 28%;
   --board-column-header-muted-text-saturation: 20%;
   --board-column-header-muted-text-lightness: 40%;
 
-  --board-focus-outline-saturation: 55%;
-  --board-focus-outline-lightness: 45%;
+  --board-focus-outline-saturation: 50%;
+  --board-focus-outline-lightness: 34%;
   /* Follows the theme of its own accord, so neither theme has to name it again. */
   --board-focus-outline-plain-color: var(--link-color);
+}
+
+/* The same defaults for a dark theme. On `:root` so that a theme's own `:root` rule overrides them. */
+:where(:root:has(> body.dark-theme)) {
+  --board-limit-exceeded-background: #e57373;
+  --board-limit-exceeded-outline: #e5737380;
+  --board-column-background: #3b3b3b;
+  --board-column-background-saturation: 14%;
+  --board-column-background-lightness: 23%;
+
+  --board-drop-hint-background-saturation: 20%;
+  --board-drop-hint-background-lightness: 45%;
+  --board-drop-hint-color: #ffffffc9;
+
+  --board-edit-backdrop: rgba(0, 0, 0, 0.3);
+
+  --board-drop-placeholder-background: rgba(255, 255, 255, 0.1);
+  --board-column-drop-placeholder-background: rgba(255, 255, 255, 0.06);
+
+  --board-column-header-text-saturation: 67%;
+  --board-column-header-text-lightness: 81%;
+  --board-column-header-muted-text-saturation: 18%;
+  --board-column-header-muted-text-lightness: 73%;
+
+  --board-focus-outline-saturation: 60%;
+  --board-focus-outline-lightness: 70%;
 }
 
 .board-view {
@@ -308,6 +314,18 @@ body.mobile .board-view-container .board-add-column {
   margin-inline-end: 0.4em;
 }
 
+.board-view-container .board-column h3 > .column-icon.static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(1em + var(--note-icon-container-padding-size) * 2);
+  height: calc(1em + var(--note-icon-container-padding-size) * 2);
+  border-radius: 50%;
+  background: var(--note-icon-custom-background-color, var(--note-icon-background-color));
+  color: var(--note-icon-custom-color, var(--note-icon-color));
+  font-size: var(--note-icon-size);
+}
+
 .board-view-container .board-column h3 > .column-icon button.note-icon {
   /* Cap height rather than the glyph box, so the icon sits on the title's own line. */
   line-height: 1;
@@ -469,25 +487,13 @@ body.mobile .board-view-container .board-add-column {
   --board-item-hover-saturation: var(--board-item-hover-background-saturation);
 }
 
+/* note_card.css computes these colors from the hue set above. */
 .board-view-container .board-note {
-  /* Overridden above by anything carrying a hue; without one the item is drained of colour. */
-  --board-item-hue: 0;
-  --board-item-saturation: 0%;
-  --board-item-hover-saturation: 0%;
-
-  background-color: hsl(
-    var(--board-item-hue),
-    var(--board-item-saturation),
-    var(--board-item-background-lightness)
-  );
+  background-color: var(--note-card-background);
 }
 
 .board-view-container .board-note:hover {
-  background-color: hsl(
-    var(--board-item-hue),
-    var(--board-item-hover-saturation),
-    var(--board-item-hover-background-lightness)
-  );
+  background-color: var(--note-card-hover-background);
 }
 
 /* Stated after the rule above, which it shares a specificity with, so a card being edited keeps
@@ -534,16 +540,8 @@ body.mobile .board-view-container .board-add-column {
 
 .board-view-container .board-column.with-hue .board-note,
 .board-view-container .board-note.with-hue {
-  --board-text-color: hsl(
-    var(--board-item-hue),
-    var(--board-text-saturation),
-    var(--board-text-lightness)
-  );
-  --board-muted-text-color: hsl(
-    var(--board-item-hue),
-    var(--board-muted-text-saturation),
-    var(--board-muted-text-lightness)
-  );
+  --board-text-color: var(--note-card-text-color);
+  --board-muted-text-color: var(--note-card-muted-text-color);
   --board-focus-outline-color: hsl(
     var(--board-item-hue),
     var(--board-focus-outline-saturation),
@@ -562,7 +560,7 @@ body.mobile .board-view-container .board-add-column {
   /* Below only: a top margin would be the first card's to drop, and a drop placeholder standing
      above it takes that place and moves the card down by it. */
   margin-block: 0 0.65em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
 
   .board-note-outside-filter {
     color: var(--board-muted-text-color);
@@ -594,13 +592,6 @@ body.mobile .board-view-container .board-add-column {
 .board-view-container .board-note > .title {
   display: block;
   padding-inline-start: calc(var(--card-title-inset) - var(--card-padding));
-
-  /* The spans mark.js wraps a filter's matched tokens in. Matches the search result cards. */
-  .ck-find-result {
-    background: var(--note-list-view-search-result-highlight-background);
-    color: var(--note-list-view-search-result-highlight-color);
-    text-decoration: underline;
-  }
 }
 
 /* A card carrying `boardCardRedirectTo` opens the note it points at, so its title reads as a link.
@@ -611,7 +602,7 @@ body.mobile .board-view-container .board-add-column {
 }
 
 /* Centred on the first line, in a box the size of the glyph. The size is rounded to whole pixels,
-   as `note_icon.css` rounds the picker's glyph. */
+   as `IconPickerButton.css` rounds the picker's glyph. */
 .board-view-container .board-note > .title > .icon {
   position: absolute;
   inset-inline-start: var(--card-icon-inset);
@@ -1079,7 +1070,7 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
  * worked out where it is used, and both sit in the card's own font.
  */
 .board-view-container .title-editor-field .title-editor-icon {
-  /* Rounded here, not in `note_icon.css`: that file rounds the glyph but not the box, and the
+  /* Rounded here, not in `IconPickerButton.css`: that file rounds the glyph but not the box, and the
      insets below are computed from the box. */
   --note-icon-size: round(var(--card-icon-size), 1px);
   --note-icon-container-padding-size: 4px;
@@ -1132,44 +1123,13 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
   max-width: calc(100% - 2 * var(--card-icon-inset));
 }
 
-/* A quiet chip rather than a button: it names what the card will be, and is pressed only to change
-   it. The name is cut rather than wrapped, the field being one line tall to begin with. */
-.board-view-container .card-template-pill .card-template-pill-button {
-  display: flex;
-  align-items: center;
-  gap: 0.3em;
-  max-width: 100%;
+.board-view-container .template-pill .template-pill-button {
   height: var(--card-template-pill-height);
-  border: 1px solid var(--main-border-color);
-  border-radius: 999px;
-  padding-inline: 0.5em;
-  background-color: transparent;
   color: var(--board-muted-text-color);
-  font-size: 0.85em;
-  line-height: 1;
 }
 
-.board-view-container .card-template-pill .card-template-pill-button:hover {
-  border-color: var(--main-text-color);
+.board-view-container .template-pill .template-pill-button:hover {
   color: var(--board-text-color);
-}
-
-/* The menu is drawn at the end of the page, so it is named rather than nested in the board. The
-   tick stands at the trailing edge, where a shortcut would. */
-.tn-dropdown-portal.card-template-pill .dropdown-item {
-  display: flex;
-  align-items: center;
-}
-
-.tn-dropdown-portal.card-template-pill .card-template-current {
-  margin-inline-start: auto;
-  padding-inline-start: 1.5em;
-}
-
-.board-view-container .card-template-pill .card-template-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* A card or column lands where the reader may not be looking, so it announces itself. */
@@ -1524,6 +1484,27 @@ body.mobile .column-drop-placeholder {
    does not take from it. */
 .board-view-container .board-column.collapsed h3 > .column-sort {
   transform: rotate(-90deg);
+}
+
+/* Top-down, the only direction in which CJK characters stay upright. Applied to the whole board so
+   its collapsed columns all read the same way. */
+.board-view-container.cjk-titles .board-column.collapsed h3 > .title,
+.board-view-container.cjk-titles .board-column.collapsed h3 > .counter-badge {
+  transform: none;
+}
+
+.board-view-container.cjk-titles .board-column.collapsed h3 > .column-sort {
+  transform: rotate(90deg);
+}
+
+/* Read top-down, the header leads with the icon as it does when expanded. Sorted last and then
+   reversed, the menu stays on top, where it is on every other board. */
+.board-view-container.cjk-titles .board-column.collapsed h3 {
+  flex-direction: column-reverse;
+}
+
+.board-view-container.cjk-titles .board-column.collapsed h3 > .column-menu {
+  order: 1;
 }
 
 /* Swapped: `padding` is physical, so it does not turn with the count. */

@@ -90,8 +90,7 @@
             gap: 0.5em;
         }
 
-        progress {
-            width: 100%;
+        .tn-progress-bar {
             margin-top: 0.75em;
         }
 
@@ -140,7 +139,7 @@
            never wider than the page it is centred on. */
         width: min(100%, 27.5em);
 
-        progress {
+        .tn-progress-bar {
             flex: 1;
         }
 

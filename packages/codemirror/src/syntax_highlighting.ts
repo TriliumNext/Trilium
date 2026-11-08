@@ -1,4 +1,6 @@
-import { LanguageSupport, type StreamParser } from "@codemirror/language";
+import {
+    type Language, LanguageDescription, LanguageSupport, StreamLanguage, type StreamParser
+} from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { SupportedMimeTypes } from "@triliumnext/commons";
 
@@ -12,8 +14,27 @@ async function buildJavaScript() {
 }
 
 async function buildMermaid() {
-    const { mermaid, foldByIndent } = (await import('codemirror-lang-mermaid'));
+    const { mermaid, foldByIndent } = (await import("./languages/mermaid/index.js"));
     return [ mermaid(), foldByIndent() ];
+}
+
+/**
+ * Markdown with highlighted fenced code blocks. `@codemirror/language-data` has no Mermaid entry,
+ * so `mermaid` blocks get the grammar Mermaid notes use, loaded on the first such block.
+ */
+async function buildMarkdown() {
+    const { markdown, markdownLanguage } = await import("@codemirror/lang-markdown");
+    const { languages } = await import("@codemirror/language-data");
+    const mermaidDescription = LanguageDescription.of({
+        name: "Mermaid",
+        alias: [ "mmd" ],
+        extensions: [ "mmd", "mermaid" ],
+        load: async () => (await import("./languages/mermaid/index.js")).mermaid()
+    });
+    return markdown({
+        base: markdownLanguage,
+        codeLanguages: [ mermaidDescription, ...languages ]
+    });
 }
 
 async function buildJson() {
@@ -23,6 +44,15 @@ async function buildJson() {
     const { json, jsonParseLinter } = await import('@codemirror/lang-json');
     const { linter, lintGutter } = await import('@codemirror/lint');
     return [ json(), linter(jsonParseLinter()), lintGutter() ];
+}
+
+/** The backend log, with the statements of slow queries highlighted as SQLite (Trilium) notes. */
+async function buildTriliumLog() {
+    const [ { triliumLogHighlighter }, sqlLanguage ] = await Promise.all([
+        import("./extensions/trilium_log_highlighter.js"),
+        loadLanguage("text/x-sqlite;schema=trilium")
+    ]);
+    return [ triliumLogHighlighter(sqlLanguage) ];
 }
 
 const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown> | LanguageSupport | Extension[]>) | null> = {
@@ -102,14 +132,7 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-fsharp": async () => (await import('@codemirror/legacy-modes/mode/mllike')).fSharp,
     "text/x-gas": async () => (await import('@codemirror/legacy-modes/mode/gas')).gas,
     "text/x-gdscript": async () => (await import('./languages/gdscript.js')).gdscript,
-    "text/x-gfm": async () => {
-        const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
-        const { languages } = (await import('@codemirror/language-data'));
-        return markdown({
-            base: markdownLanguage,
-            codeLanguages: languages
-        });
-    },
+    "text/x-gfm": buildMarkdown,
     "text/x-go": async () => (await import('@codemirror/legacy-modes/mode/go')).go,
     "text/x-groovy": async () => (await import('@codemirror/legacy-modes/mode/groovy')).groovy,
     "text/x-gss": async () => (await import('@codemirror/legacy-modes/mode/css')).gss,
@@ -121,19 +144,15 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-idl": async () => (await import('@codemirror/legacy-modes/mode/idl')).idl,
     "text/x-java": async () => (await import('@codemirror/legacy-modes/mode/clike')).java,
     "text/x-julia": async () => (await import('@codemirror/legacy-modes/mode/julia')).julia,
-    "text/x-pegjs": null,
+    "text/x-pegjs": async () => (await import('@codemirror/legacy-modes/mode/pegjs')).pegjs,
     "text/x-kotlin": async () => (await import('@codemirror/legacy-modes/mode/clike')).kotlin,
     "text/x-latex": async () => (await import('@codemirror/legacy-modes/mode/stex')).stex,
     "text/x-less": async () => (await import('@codemirror/legacy-modes/mode/css')).less,
-    "text/x-literate-haskell": null,
+    "text/x-literate-haskell": async () => (await import('@codemirror/legacy-modes/mode/haskell')).haskell,
     "text/x-livescript": async () => (await import('@codemirror/legacy-modes/mode/livescript')).liveScript,
     "text/x-lua": async () => (await import('@codemirror/legacy-modes/mode/lua')).lua,
-    "text/x-mariadb": async () => (await import('@codemirror/legacy-modes/mode/sql')).sqlite,
-    "text/x-markdown": async () => {
-        const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
-        const { languages } = (await import('@codemirror/language-data'));
-        return markdown({ base: markdownLanguage, codeLanguages: languages });
-    },
+    "text/x-mariadb": async () => (await import('@codemirror/legacy-modes/mode/sql')).mariaDB,
+    "text/x-markdown": buildMarkdown,
     "text/x-mathematica": async () => (await import('@codemirror/legacy-modes/mode/mathematica')).mathematica,
     "text/x-modelica": async () => (await import('@codemirror/legacy-modes/mode/modelica')).modelica,
     "text/x-mscgen": async () => (await import('@codemirror/legacy-modes/mode/mscgen')).mscgen,
@@ -193,8 +212,9 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-tiddlywiki": async () => (await import('@codemirror/legacy-modes/mode/tiddlywiki')).tiddlyWiki,
     "text/x-toml": async () => (await import('@codemirror/legacy-modes/mode/toml')).toml,
     "text/x-tornado": null,
-    "text/x-trilium-log": async () => [ (await import('./extensions/trilium_log_highlighter.js')).triliumLogHighlighter ],
-    "text/x-ttcn-asn": async () => (await import('@codemirror/legacy-modes/mode/ttcn')).ttcn,
+    "text/x-trilium-log": buildTriliumLog,
+    "text/x-trilium-search": async () => [ (await import('./extensions/trilium_search_highlighter.js')).triliumSearchHighlighter ],
+    "text/x-ttcn-asn": async () => (await import('@codemirror/legacy-modes/mode/asn1')).asn1({ multiLineStrings: true }),
     "text/x-ttcn-cfg": async () => (await import('@codemirror/legacy-modes/mode/ttcn-cfg')).ttcnCfg,
     "text/x-ttcn": async () => (await import('@codemirror/legacy-modes/mode/ttcn')).ttcn,
     "text/x-twig": async () => ((await import('@ssddanbrown/codemirror-lang-twig')).twig()),
@@ -218,5 +238,19 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
 export const MIME_ALIASES: Record<string, SupportedMimeTypes> = {
     "image/svg+xml": "text/xml"
 };
+
+/** Loads the language that highlights `mime` in a code note, or `null` if it has none. */
+export async function loadLanguage(mime: string): Promise<Language | null> {
+    const load = byMimeType[(MIME_ALIASES[mime] ?? mime) as SupportedMimeTypes];
+    if (!load) return null;
+
+    const syntax = await load();
+    if ("token" in syntax) return StreamLanguage.define(syntax);
+
+    const extensions = Array.isArray(syntax) ? syntax : [ syntax ];
+    return extensions
+        .find((extension): extension is LanguageSupport => extension instanceof LanguageSupport)
+        ?.language ?? null;
+}
 
 export default byMimeType;

@@ -122,7 +122,7 @@ function Ring<T>({ ring, selectedSegmentId, onSegmentHover }: {
         <g>
             {/* First, so every segment paints over it. */}
             {ring.track && (
-                <circle className="donut-track" r={ring.radius} fill="none" style={{ strokeWidth: ring.thickness }} />
+                <circle className="donut-track" r={ring.radius} fill="none" style={{ strokeWidth: `${ring.thickness}px` }} />
             )}
             {ring.segments.map((segment, index) => {
                 const arc = layout[index];
@@ -150,9 +150,9 @@ function Ring<T>({ ring, selectedSegmentId, onSegmentHover }: {
                         // Arc geometry is data-driven; as inline *style* (not attributes) it stays
                         // animatable by the stylesheet's transition and sweep keyframes.
                         style={{
-                            strokeWidth: ring.thickness,
+                            strokeWidth: `${ring.thickness}px`,
                             strokeDasharray: `${arc.length} ${Math.max(circumference - arc.length, 0)}`,
-                            strokeDashoffset: -arc.offset,
+                            strokeDashoffset: `${-arc.offset}px`,
                             "--donut-circumference": `${circumference}px`,
                             ...(segment.hue !== undefined && { "--donut-hue": String(segment.hue) })
                         }}

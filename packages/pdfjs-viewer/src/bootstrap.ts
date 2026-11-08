@@ -3,12 +3,20 @@ import { extractAndSendToc, setupScrollToHeading, setupActiveHeadingTracking } f
 import { setupPdfPages } from "./pages";
 import { setupPdfAttachments } from "./attachments";
 import { setupPdfLayers } from "./layers";
-import { setupPdfAnnotations, setupAnnotationLiveUpdates } from "./annotations";
+import { setupPdfAnnotations, setupAnnotationLiveUpdates, trackInitialView } from "./annotations";
 import { commitPendingAnnotationEdits, isAnnotationEditingActive, setAnnotationEditorUIManager, suppressViewerUnloadPrompt } from "./editing";
 
 export async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
+
+    // The client drops every message not addressed to its own note and context, and a small
+    // document can post before the frame's `load` event, so the address comes with the URL.
+    const noteId = urlParams.get("noteId");
+    if (noteId !== null) {
+        window.TRILIUM_NOTE_ID = noteId;
+        window.TRILIUM_NTX_ID = urlParams.get("ntxId");
+    }
 
     applyMinPixelRatio(urlParams);
 
@@ -37,6 +45,7 @@ export async function main() {
     const app = window.PDFViewerApplication;
 
     manageParentCommands();
+    trackInitialView(app);
 
     // Needed to commit in-progress annotation edits before saving; pdf.js recreates the
     // manager for each loaded document.

@@ -1,0 +1,45 @@
+:where(:root) {
+    --show-all-notes-color: var(--muted-text-color);
+    --show-all-notes-hover-color: var(--icon-button-hover-color, var(--hover-item-text-color));
+    --show-all-notes-hover-background:
+        var(--icon-button-hover-background, var(--hover-item-background-color));
+    --show-all-notes-delimiter-color: var(--main-border-color);
+}
+
+#left-pane .show-all-notes {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--show-all-notes-delimiter-color);
+    /* The inline padding matches `div.tree` in theme-next/shell.css. */
+    padding-inline: 6px;
+    box-sizing: content-box;
+    height: var(--classic-toolbar-height);
+
+    /* `.component` from `BasicWidget` sets `contain: size`. */
+    &.component {
+        contain: unset;
+    }
+
+    /* Spans from the search box to the line. The search box ends above the 8px bottom padding
+       of `.quick-search`, 42px from its top. */
+    .quick-search + & {
+        margin-top: -8px;
+        height: calc(var(--tab-bar-height) + var(--classic-toolbar-height) - 42px);
+    }
+
+    > button.btn {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 0.4em;
+        padding: 3px 8px;
+        color: var(--show-all-notes-color);
+        font-size: 0.9em;
+
+        &:hover {
+            background: var(--show-all-notes-hover-background);
+            color: var(--show-all-notes-hover-color);
+        }
+    }
+}

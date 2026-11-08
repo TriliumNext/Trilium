@@ -58,6 +58,18 @@ describe("FormatPainterUI", () => {
         return getModelData(editor.model, { withoutSelection: true });
     }
 
+    function selectInFirstParagraph(start: number, end: number) {
+        editor.model.change((writer) => {
+            const paragraph = editor.model.document.getRoot()?.getChild(0);
+            if (!paragraph) {
+                throw new Error("expected a paragraph");
+            }
+            writer.setSelection(writer.createRange(
+                writer.createPositionAt(paragraph, start), writer.createPositionAt(paragraph, end)
+            ));
+        });
+    }
+
     beforeEach(async () => {
         await createEditor();
     });
@@ -106,6 +118,58 @@ describe("FormatPainterUI", () => {
             expect(model()).toContain("<$text bold=\"true\">bar</$text>");
             expect(ui().isActive).toBe(false);
             expect(root().classList.contains(CURSOR_ACTIVE_CSS_CLASS)).toBe(false);
+        });
+
+        it("paints the whole word under a tapped caret, leaving the caret where it was", () => {
+            setModelData(editor.model, "<paragraph>[<$text bold=\"true\">foo</$text>] bar baz</paragraph>");
+            button().fire("execute");
+
+            setModelData(editor.model, "<paragraph>foo ba[]r baz</paragraph>");
+            paintClick();
+            expect(getModelData(editor.model)).toBe("<paragraph>foo <$text bold=\"true\">ba[]r</$text> baz</paragraph>");
+            expect(ui().isActive).toBe(false);
+
+            // One step to undo.
+            editor.execute("undo");
+            expect(model()).toBe("<paragraph>foo bar baz</paragraph>");
+        });
+
+        it("formats what is typed next at a caret outside any word", () => {
+            setModelData(editor.model, "<paragraph>[<$text bold=\"true\">foo</$text>]</paragraph>");
+            button().fire("execute");
+
+            setModelData(editor.model, "<paragraph>foo, []</paragraph>");
+            paintClick();
+            expect(model()).toBe("<paragraph>foo, </paragraph>");
+            expect(editor.model.document.selection.getAttribute("bold")).toBe(true);
+        });
+
+        it("applies to the text selected since it armed when the button is pressed again", () => {
+            setModelData(editor.model, "<paragraph>[<$text bold=\"true\">foo</$text>] bar baz</paragraph>");
+            const view = button();
+            view.fire("execute");
+            expect(view.label).toBe("Copy formatting");
+
+            // A selection made without a mouse, such as with the handles of a touch screen.
+            selectInFirstParagraph(4, 7);
+            expect(view.label).toBe("Apply formatting");
+            view.fire("execute");
+
+            expect(model()).toBe("<paragraph><$text bold=\"true\">foo</$text> <$text bold=\"true\">bar</$text> baz</paragraph>");
+            expect(ui().isActive).toBe(false);
+            expect(view.label).toBe("Copy formatting");
+        });
+
+        it("cancels from the button when the selection moved to a caret", () => {
+            setModelData(editor.model, "<paragraph>[<$text bold=\"true\">foo</$text>] bar</paragraph>");
+            const view = button();
+            view.fire("execute");
+
+            selectInFirstParagraph(5, 5);
+            expect(view.label).toBe("Copy formatting");
+            view.fire("execute");
+            expect(ui().isActive).toBe(false);
+            expect(model()).toBe("<paragraph><$text bold=\"true\">foo</$text> bar</paragraph>");
         });
 
         it("disarms without pasting when the button is clicked again", () => {

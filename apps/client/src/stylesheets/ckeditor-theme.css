@@ -1,4 +1,5 @@
-body {
+/* Outranks the later-loaded `:root, :host` of ckeditor5.css, which composes tokens from these. */
+html:root {
     /* -- Overrides generic colors. ------------------------------------------------------------- */
 
     --ck-color-base-text: var(--main-text-color);
@@ -9,8 +10,8 @@ body {
     --ck-color-text: var(--main-text-color);
     --ck-color-shadow-drop: var(--main-background-color);
     --ck-color-shadow-inner: var(--main-background-color);
-    --ck-color-table-caption-text: var(--main-text-color);
-    --ck-color-table-caption-background: var(--accented-background-color);
+    --ck-content-color-table-caption-text: var(--main-text-color);
+    --ck-content-color-table-caption-background: var(--accented-background-color);
     --ck-color-table-caption-highlighted-background: var(--accented-background-color);
 
     /* -- Overrides the default .ck-button class colors. ---------------------------------------- */
@@ -56,6 +57,8 @@ body {
     --ck-color-input-disabled-border: var(--main-border-color);
     --ck-color-input-disabled-text: var(--muted-text-color);
 
+    --ck-color-border-control: var(--main-border-color);
+
     /* -- Overrides the default .ck-list class colors. ------------------------------------------ */
 
     --ck-color-list-background: var(--accented-background-color);
@@ -94,11 +97,9 @@ body {
 
     --ck-color-link-default: var(--link-color);
 
-    --ck-color-table-focused-cell-background: var(--more-accented-background-color);
+    --ck-color-table-focused-cell-background: transparent;
 
     --ck-color-labeled-field-label-background: var(--accented-background-color);
-
-    --ck-color-editable-blur-selection: var(--accented-background-color);
 
     /* todo lists */
 
@@ -108,9 +109,42 @@ body {
 
     --ck-color-widget-type-around-button: var(--main-border-color);
     --ck-color-widget-type-around-button-hover: var(--main-border-color);
+    --ck-color-widget-type-around-button-icon: var(--main-text-color);
 
     --ck-font-face: var(--main-font-family);
     --ck-input-label-height: 1.5em;
+    --ck-mention-list-max-height: 500px;
+}
+
+/* Redeclared per widget so the buttons follow a `--ck-color-focus-border` the widget sets. */
+.ck-editor__editable.ck-focused .ck-widget.ck-widget_selected > .ck-widget__type-around {
+    --ck-color-widget-type-around-button-active: var(--ck-color-focus-border);
+    --ck-color-widget-type-around-button-icon: var(--main-background-color);
+}
+
+.ck .ck-widget > .ck-widget__type-around > .ck-widget__type-around__button:hover {
+    box-shadow: 0 0 0 6px
+        color-mix(in srgb, var(--ck-color-widget-type-around-button-active) 25%, transparent);
+    animation: none;
+}
+
+/* Outranks the focus outline and shadow of the active table cell in `ckeditor5.css`, which loads
+   later. */
+:root .ck.ck-editor__editable .ck-widget.table :is(td, th).ck-editor__nested-editable {
+    outline: none;
+
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        box-shadow: none;
+    }
+}
+
+/* Outranks the focus ring and shadow of nested editables in `ckeditor5.css`. */
+:root .ck-content :is(.image, .table, .include-note) > figcaption.ck-editor__nested-editable {
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
 }
 
 div.ck.ck-dialog {
@@ -120,6 +154,7 @@ div.ck.ck-dialog {
     --ck-border-radius: var(--bs-border-radius);
 
     --ck-focus-ring: 1px solid var(--input-focus-outline-color, var(--main-border-color));
+    --ck-button-focus-border-color: var(--input-focus-outline-color, var(--main-border-color));
     --ck-color-focus-border: var(--input-focus-outline-color, var(--main-border-color));
     --ck-focus-outer-shadow: none;
     --ck-focus-disabled-outer-shadow: none;
@@ -172,6 +207,10 @@ div.ck.ck-dialog .ck.ck-form__header > .ck.ck-button:focus-visible {
 div.ck.ck-dropdown__panel,
 div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     --ck-font-size-base: 0.9rem;
+    --ck-button-font-size: var(--ck-font-size-base);
+    --ck-input-font-size: var(--ck-font-size-base);
+    --ck-labeled-field-label-font-size: var(--ck-font-size-base);
+    --ck-toolbar-text-font-size: var(--ck-font-size-base);
     --ck-line-height-base: 1.3;
     --ck-dropdown-item-height: 27px;
 }
@@ -188,4 +227,26 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
 
 div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     overflow-x: clip;
+}
+
+.ck.ck-color-ui-dropdown {
+    --ck-color-grid-tile-size: 30px;
+}
+
+:root .ck.ck-editor__editable_inline {
+    --ck-editor-editable-padding: 0 .6em;
+
+    & > :first-child {
+        margin-top: .9em;
+    }
+
+    & > :last-child {
+        margin-bottom: .9em;
+    }
+}
+
+/* A toolbar placed outside the editor leaves the `.ck-reset_all` that colors its buttons, and iOS
+   Safari draws an uncolored button in the system blue. */
+:where(.classic-toolbar-widget) .ck.ck-button {
+    color: var(--ck-color-text);
 }

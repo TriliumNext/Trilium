@@ -1,3 +1,4 @@
+import { deferred } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const triggerCommand = vi.fn();
@@ -82,6 +83,24 @@ describe("consumeSearchTerms", () => {
         flushRaf();
 
         expect(triggerCommand).not.toHaveBeenCalled();
+    });
+
+    it("waits for the editor to be ready before the seeded find (#11787)", async () => {
+        // On the first text note after a reload, CKEditor is still loading when the content
+        // arrives, and `getTextEditor()` gives up after 200 ms.
+        const ctx = makeContext([ "foo" ]);
+        const ready = deferred<void>();
+
+        consumeSearchTerms(ctx, "ntx1", ready);
+        expect(ctx.viewScope.searchTerms).toBeUndefined();
+        await Promise.resolve();
+        flushRaf();
+        expect(triggerCommand).not.toHaveBeenCalled();
+
+        ready.resolve();
+        await ready;
+        flushRaf();
+        expect(triggerCommand).toHaveBeenCalledWith("findInText", { ntxId: "ntx1", searchTerms: [ "foo" ] });
     });
 
     it("is idempotent: a second call after consumption does nothing", () => {

@@ -1,0 +1,95 @@
+# ER
+
+erDiagram
+
+==>
+
+ERDiagram(DiagramName)
+
+# Relationship with label
+
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+
+==>
+
+ERDiagram(DiagramName,Relationship(EntityName,RelationshipToken,EntityName,LabelText))
+
+# Relationship without label
+
+erDiagram
+    CUSTOMER ||--|| ADDRESS
+
+==>
+
+ERDiagram(DiagramName,Relationship(EntityName,RelationshipToken,EntityName))
+
+# Hyphenated entity name
+
+erDiagram
+    ORDER ||--|{ LINE-ITEM : contains
+
+==>
+
+ERDiagram(DiagramName,Relationship(EntityName,RelationshipToken,EntityName,LabelText))
+
+# Non-identifying relationship
+
+erDiagram
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+
+==>
+
+ERDiagram(DiagramName,Relationship(EntityName,RelationshipToken,EntityName,LabelText))
+
+# Entity with attributes
+
+erDiagram
+    CUSTOMER {
+        string name
+        string custNumber
+        int age PK
+    }
+
+==>
+
+ERDiagram(DiagramName,Entity(EntityName,Block(Attribute(AttrType,AttrName),Attribute(AttrType,AttrName),Attribute(AttrType,AttrName,KeyType))))
+
+# Attribute with comment
+
+erDiagram
+    CAR {
+        string registrationNumber PK "the number"
+    }
+
+==>
+
+ERDiagram(DiagramName,Entity(EntityName,Block(Attribute(AttrType,AttrName,KeyType,String))))
+
+# Bare entity
+
+erDiagram
+    CUSTOMER
+
+==>
+
+ERDiagram(DiagramName,Entity(EntityName))
+
+# Comment
+
+erDiagram
+    %% a comment
+    CUSTOMER ||--o{ ORDER : places
+
+==>
+
+ERDiagram(DiagramName,LineComment,Relationship(EntityName,RelationshipToken,EntityName,LabelText))
+
+# Comment after a relationship colon
+
+erDiagram
+  A ||--o{ B : %% comment
+
+==>
+
+ERDiagram(DiagramName,Relationship(EntityName,RelationshipToken,EntityName,":",LineComment,⚠))

@@ -1,16 +1,14 @@
-import "./properties.css";
-
 import { useCallback } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
+import { CollectionPropertiesDialog, IncludedNotesCard } from "../../note_bars/CollectionProperties";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import FormSelect from "../../react/FormSelect";
 import FormToggle from "../../react/FormToggle";
 import { useNoteLabelBoolean, useNoteLabelWithDefault } from "../../react/hooks";
-import Modal from "../../react/Modal";
 import PromotedAttributesCard from "../../react/PromotedAttributesCard";
 import TemplateSelectionCard from "../../react/TemplateSelectionCard";
 import type { PromotedAttribute } from "../promoted_attributes";
@@ -32,17 +30,21 @@ export default function BoardProperties({ api, note, shown, onClose }: {
         (templates: string[]) => api.setCardTemplateIds(templates), [ api ]);
     const storeAttributes = useCallback(
         (attributes: PromotedAttribute[]) => api.setPromotedAttributes(attributes), [ api ]);
+    const deleteGrouping = useCallback(
+        (deletion: () => Promise<void>, type: "label" | "relation", name: string) =>
+            api.deleteGrouping(type === "relation" ? `~${name}` : name, deletion),
+        [ api ]);
 
     return (
-        <Modal
+        <CollectionPropertiesDialog
             className="board-properties-dialog"
             title={t("board_view.properties-title")}
-            size="lg"
-            scrollable
             show={shown}
             onHidden={onClose}
         >
             <General api={api} note={note} />
+
+            <IncludedNotesCard note={note} archivedLabel={t("board_view.show-archived")} />
 
             <PromotedAttributesCard
                 heading={t("board_view.promoted-attributes")}
@@ -50,7 +52,9 @@ export default function BoardProperties({ api, note, shown, onClose }: {
                 note={note}
                 settings={api.getStoredPromotedAttributes()}
                 drawnByCollection={[ api.statusAttribute ]}
+                itemNotes={api.getCardNotes()}
                 onChange={storeAttributes}
+                runDeletion={deleteGrouping}
             />
 
             <TemplateSelectionCard
@@ -61,14 +65,14 @@ export default function BoardProperties({ api, note, shown, onClose }: {
                 templates={api.getCardTemplateIds()}
                 onChange={store}
             />
-        </Modal>
+        </CollectionPropertiesDialog>
     );
 }
 
-/** What the board draws besides its own cards: the inbox column and what is filed as archived. */
+/** What the board draws besides its own cards, such as the inbox column, and how. */
 function General({ api, note }: { api: BoardApi, note: FNote }) {
     const [ inboxShown ] = useNoteLabelBoolean(note, "board:showInbox");
-    const [ archivedShown ] = useNoteLabelBoolean(note, "includeArchived");
+    const [ addColumnHidden ] = useNoteLabelBoolean(note, "board:hideAddColumn");
     const [ columnWidth ] =
         useNoteLabelWithDefault(note, COLUMN_WIDTH_LABEL, DEFAULT_COLUMN_WIDTH);
     const defaultSort = useBoardSort(note);
@@ -94,12 +98,13 @@ function General({ api, note }: { api: BoardApi, note: FNote }) {
             </OptionCardSection>
 
             <OptionCardSection
-                name="board-show-archived"
-                label={t("board_view.show-archived")}
+                name="board-show-add-column"
+                label={t("board_view.show-add-column-button")}
+                description={t("board_view.show-add-column-button-description")}
             >
                 <FormToggle
-                    currentValue={archivedShown}
-                    onChange={(shown) => api.setArchivedShown(shown)}
+                    currentValue={!addColumnHidden}
+                    onChange={(shown) => api.setAddColumnShown(shown)}
                 />
             </OptionCardSection>
 

@@ -82,6 +82,13 @@ describe("registerRoutes (real wiring)", () => {
         expect(parseJson(res.body)).toBeTypeOf("object");
     });
 
+    // `search()` writes `res.locals` for the server's request log, as any handler can on Express.
+    it("passes a response to an apiRoute handler", async () => {
+        const res = await router.dispatch("GET", "http://localhost/api/search?searchString=root");
+        expect(res.status).toBe(200);
+        expect(parseJson(res.body)).toBeInstanceOf(Array);
+    });
+
     it("returns the full bootstrap payload when the database is initialized", async () => {
         const data = parseJson((await router.dispatch("GET", "http://localhost/bootstrap")).body) as Record<string, unknown>;
         expect(data.isStandalone).toBe(true);
@@ -157,6 +164,7 @@ describe("registerRoutes (real wiring)", () => {
 describe("route wrapper branches (via controlled handlers)", () => {
     type RouteCtx = Parameters<typeof routes.buildSharedApiRoutes>[0];
     let ctx: RouteCtx;
+    const receivedFiles: { import?: unknown; upload?: unknown } = {};
 
     function buildRouter(): BrowserRouter {
         vi.spyOn(routes, "buildSharedApiRoutes").mockImplementation((received: RouteCtx) => {
@@ -184,6 +192,13 @@ describe("route wrapper branches (via controlled handlers)", () => {
             asyncRoute("get", "/t/async-res", [], async (_req: unknown, res: MockRes) => { res.send("async-body"); });
             asyncRoute("get", "/t/async-noresult", [], async () => ({ done: true }));
             asyncRouteWithoutTransaction("get", "/t/async-no-tx", [], async () => ({ bare: true }), apiResultHandler);
+
+            asyncRoute("post", "/t/import", [ received.importMiddlewareWithErrorHandling ], async (req: { file?: unknown }) => {
+                receivedFiles.import = req.file;
+            }, apiResultHandler);
+            route("post", "/t/upload", [ received.uploadMiddlewareWithErrorHandling ], (req: { file?: unknown }) => {
+                receivedFiles.upload = req.file;
+            }, apiResultHandler);
         });
         return createConfiguredRouter();
     }
@@ -201,8 +216,8 @@ describe("route wrapper branches (via controlled handlers)", () => {
 
     it("runs transactional and non-transactional api routes (and reads originalUrl)", async () => {
         const router = buildRouter();
-        const apiRes = await router.dispatch("GET", "http://localhost/t/api");
-        expect((parseJson(apiRes.body) as { url: string }).url).toBe("http://localhost/t/api");
+        const apiRes = await router.dispatch("GET", "http://localhost/t/api?x=1");
+        expect((parseJson(apiRes.body) as { url: string }).url).toBe("/t/api?x=1");
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/asyncapi")).body)).toEqual({ ok: true });
     });
 
@@ -269,6 +284,18 @@ describe("route wrapper branches (via controlled handlers)", () => {
         expect(parseJson((await router.dispatch("GET", "http://localhost/api/system-checks")).body)).toEqual({ isCpuArchMismatch: false });
     });
 
+    it("leaves a posted File unread for the import routes and reads it for the others", async () => {
+        const router = buildRouter();
+        const file = new File([ "abc" ], "vault.zip", { type: "application/zip" });
+        const body = { type: "upload", fields: {}, file };
+
+        await router.dispatch("POST", "http://localhost/t/import", body);
+        await router.dispatch("POST", "http://localhost/t/upload", body);
+
+        expect(receivedFiles.import).toEqual({ originalname: "vault.zip", mimetype: "application/zip", blob: file });
+        expect(receivedFiles.upload).toMatchObject({ buffer: new TextEncoder().encode("abc") });
+    });
+
     it("provides no-op middleware and an init guard", async () => {
         buildRouter();
         // No-op middleware stubs do nothing and never throw.
@@ -297,7 +324,7 @@ describe("custom request handlers and resource providers", () => {
         cls.init(() => {
             createHandler("Greeter", "greet/([a-z]+)", `api.res.status(200).send("handled:" + api.pathParams[0]);`);
             createHandler("Thrower", "explode", `throw new Error("boom in handler");`);
-            createHandler("Echo", "echo", `api.res.json({ method: api.req.method, body: api.req.body });`);
+            createHandler("Echo", "echo", `api.res.json({ method: api.req.method, url: api.req.url, body: api.req.body });`);
             // A handler that answers after an await: what the server gets for free by holding the
             // connection open, this runtime has to wait for.
             createHandler("Deferred", "deferred", `
@@ -343,15 +370,17 @@ return (async () => {
         expect(text(res.body)).toBe("handled:world");
     });
 
-    it("reaches a handler over a method other than GET, carrying the parsed body", async () => {
+    it("reaches a handler over a method other than GET, carrying the URL and the parsed body", async () => {
         const body = new TextEncoder().encode(JSON.stringify({ hello: "there" })).buffer as ArrayBuffer;
-        const res = await router.dispatch("POST", "http://localhost/custom/echo", body, {
+        const res = await router.dispatch("POST", "http://localhost/custom/echo?x=1", body, {
             "content-type": "application/json"
         });
 
         expect(res.status).toBe(200);
         expect(res.headers["Content-Type"]).toContain("application/json");
-        expect(parseJson(res.body)).toEqual({ method: "POST", body: { hello: "there" } });
+        expect(parseJson(res.body)).toEqual({
+            method: "POST", url: "/custom/echo?x=1", body: { hello: "there" }
+        });
     });
 
     // `send()` leaving a number in the body would reach BrowserRouter as something it cannot

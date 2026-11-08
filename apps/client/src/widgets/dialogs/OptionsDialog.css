@@ -135,8 +135,7 @@ body.mobile .modal.options-dialog.mobile-master-detail {
         }
     }
 
-    /* Held to the same margin whatever the page: its own is a desktop measure, and in the old
-       layout it has none of its own at all. */
+    /* Held to the same margin whatever the page: its own is a desktop measure. */
     .note-detail-content-widget-content.options {
         padding-left: var(--options-pane-inset-left);
         padding-right: var(--options-pane-inset-right);

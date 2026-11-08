@@ -33,6 +33,20 @@ describe("Share API test", () => {
         cannotSetHeadersCount = 0;
     });
 
+    it("registers the highlighter's languages only for the routes that render a page", async () => {
+        const getOption = vi.spyOn(options, "getOptionOrNull");
+        const readsMimeTypes = () => getOption.mock.calls.some(([ name ]) => name === "codeNotesMimeTypes");
+        try {
+            await supertest(app).get("/share/api/images/missingNote/image.png");
+            expect(readsMimeTypes()).toBe(false);
+
+            await supertest(app).get("/share/").expect(200);
+            expect(readsMimeTypes()).toBe(true);
+        } finally {
+            getOption.mockRestore();
+        }
+    });
+
     it("requests password for password-protected share", async () => {
         await supertest(app)
             .get("/share/YjlPRj2E9fOV")
@@ -68,6 +82,7 @@ describe("Share API test", () => {
     it("does not serve a protected note's content over the public share routes (GHSA-xmv9-3v98-7gq8)", async () => {
         // Every route that streams raw note content must refuse a protected note.
         for (const path of [
+            `/share/${PROTECTED_SHARED_NOTE_ID}?raw`,
             `/share/api/notes/${PROTECTED_SHARED_NOTE_ID}/download`,
             `/share/api/notes/${PROTECTED_SHARED_NOTE_ID}/view`,
             `/share/api/images/${PROTECTED_SHARED_NOTE_ID}/image.png`

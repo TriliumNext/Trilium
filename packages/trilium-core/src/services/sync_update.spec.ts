@@ -124,6 +124,65 @@ describe("sync_update service (real DB)", () => {
         expect(emitSpy).not.toHaveBeenCalledWith(events.ENTITY_CHANGE_SYNCED, expect.anything());
     });
 
+    it("requeues the local blob with a newer note whose blob the remote does not reference", () => {
+        const noteId = createNote();
+        const localBlobId = String(noteRow(noteId).blobId);
+        const maxIdBefore = maxEntityChangeId();
+
+        apply([{ entityChange: buildEC({ entityId: noteId, hash: "different", utcDateChanged: PAST }), entity: rowWith(noteId, { blobId: "su_remote_blob" }) }]);
+
+        expect(noteRow(noteId).blobId).toBe(localBlobId);
+        expect(requeuedSince(maxIdBefore, "notes", noteId)).toBe(true);
+        expect(requeuedSince(maxIdBefore, "blobs", localBlobId)).toBe(true);
+    });
+
+    it("does not requeue the blob when a newer local note shares it with the remote row", () => {
+        const noteId = createNote();
+        const localBlobId = String(noteRow(noteId).blobId);
+        const maxIdBefore = maxEntityChangeId();
+
+        apply([{ entityChange: buildEC({ entityId: noteId, hash: "different", utcDateChanged: PAST }), entity: rowWith(noteId, { title: "remote-title" }) }]);
+
+        expect(requeuedSince(maxIdBefore, "notes", noteId)).toBe(true);
+        expect(requeuedSince(maxIdBefore, "blobs", localBlobId)).toBe(false);
+    });
+
+    it("does not requeue a sync stub with a newer note, so the remote keeps the full content", () => {
+        const noteId = createNote();
+        const stubBlobId = "suStubbedBlob";
+        cls.init(() => {
+            const sql = getSql();
+            const now = dateUtils.utcNowDateTime();
+            sql.execute("INSERT INTO blobs (blobId, content, dateModified, utcDateModified) VALUES (?, '', ?, ?)", [stubBlobId, now, now]);
+            sql.execute("UPDATE notes SET blobId = ? WHERE noteId = ?", [stubBlobId, noteId]);
+        });
+        const maxIdBefore = maxEntityChangeId();
+
+        apply([{ entityChange: buildEC({ entityId: noteId, hash: "different", utcDateChanged: PAST }), entity: rowWith(noteId, { blobId: "su_remote_blob" }) }]);
+
+        expect(requeuedSince(maxIdBefore, "notes", noteId)).toBe(true);
+        expect(requeuedSince(maxIdBefore, "blobs", stubBlobId)).toBe(false);
+    });
+
+    it("lets a remote change win against a local change dated in the future", () => {
+        const noteId = createNote();
+        const clockAhead = dateUtils.utcDateTimeStr(new Date(Date.now() + 3600 * 1000));
+        cls.init(() => getSql().execute("UPDATE entity_changes SET utcDateChanged = ? WHERE entityName = 'notes' AND entityId = ?", [clockAhead, noteId]));
+
+        apply([{ entityChange: buildEC({ entityId: noteId, hash: "different", utcDateChanged: dateUtils.utcNowDateTime() }), entity: rowWith(noteId, { title: "remote-edit" }) }]);
+
+        expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("remote-edit");
+    });
+
+    it("stores a remote change dated in the future at the current time", () => {
+        const noteId = createNote();
+
+        apply([{ entityChange: buildEC({ entityId: noteId, hash: "different", utcDateChanged: FUTURE }), entity: rowWith(noteId, { title: "remote-edit" }) }]);
+
+        expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("remote-edit");
+        expect(localDateChanged("notes", noteId) <= dateUtils.utcNowDateTime()).toBe(true);
+    });
+
     it("is a no-op when local and remote are identical but remote is older", () => {
         const noteId = createNote();
         const sameHash = localHash("notes", noteId);
@@ -198,6 +257,19 @@ describe("sync_update service (real DB)", () => {
 
 function localChangeId(entityName: string, entityId: string): string {
     return getSql().getValue<string>("SELECT changeId FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? "";
+}
+
+function localDateChanged(entityName: string, entityId: string): string {
+    return getSql().getValue<string>("SELECT utcDateChanged FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? "";
+}
+
+function maxEntityChangeId(): number {
+    return getSql().getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes") ?? 0;
+}
+
+/** Whether the entity's change was written after `id`, which is what puts it in the next push. */
+function requeuedSince(id: number, entityName: string, entityId: string): boolean {
+    return !!getSql().getValue("SELECT 1 FROM entity_changes WHERE entityName = ? AND entityId = ? AND id > ?", [entityName, entityId, id]);
 }
 
 function blobRow(blobId: string, content: string): EntityRow {

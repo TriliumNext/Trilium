@@ -62,13 +62,39 @@
             "children": [
                 {
                     "isClone": false,
+                    "noteId": "JTiY7Kk9XEC9",
+                    "notePath": [
+                        "hD3V4hiu2VW4",
+                        "JTiY7Kk9XEC9"
+                    ],
+                    "title": "v0.107.0",
+                    "notePosition": 10,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [
+                        {
+                            "type": "relation",
+                            "name": "template",
+                            "value": "wyurrlcDl416",
+                            "isInheritable": false,
+                            "position": 60
+                        }
+                    ],
+                    "format": "markdown",
+                    "dataFileName": "v0.107.0.md",
+                    "attachments": []
+                },
+                {
+                    "isClone": false,
                     "noteId": "GCxxkCl5Mk64",
                     "notePath": [
                         "hD3V4hiu2VW4",
                         "GCxxkCl5Mk64"
                     ],
                     "title": "v0.106.1",
-                    "notePosition": 10,
+                    "notePosition": 20,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -94,7 +120,7 @@
                         "goi1w58tH3Lf"
                     ],
                     "title": "v0.106.0",
-                    "notePosition": 20,
+                    "notePosition": 30,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -137,7 +163,7 @@
                         "bX5c7tzGZOo3"
                     ],
                     "title": "v0.105.0",
-                    "notePosition": 30,
+                    "notePosition": 40,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -188,7 +214,7 @@
                         "cw9UuzRc4xAA"
                     ],
                     "title": "v0.104.1",
-                    "notePosition": 40,
+                    "notePosition": 50,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -214,7 +240,7 @@
                         "5bc1QXL7gv2z"
                     ],
                     "title": "v0.104.0",
-                    "notePosition": 50,
+                    "notePosition": 60,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -240,7 +266,7 @@
                         "b2ElmF56Ee5b"
                     ],
                     "title": "v0.103.0",
-                    "notePosition": 60,
+                    "notePosition": 70,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -266,7 +292,7 @@
                         "ZdWJsMQvY1fo"
                     ],
                     "title": "v0.102.2",
-                    "notePosition": 70,
+                    "notePosition": 80,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -292,7 +318,7 @@
                         "4FTGCuCiG7s7"
                     ],
                     "title": "v0.102.1",
-                    "notePosition": 80,
+                    "notePosition": 90,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -318,7 +344,7 @@
                         "d582eD4RY4OM"
                     ],
                     "title": "v0.102.0",
-                    "notePosition": 90,
+                    "notePosition": 100,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -344,7 +370,7 @@
                         "IlBzLeN3MJhw"
                     ],
                     "title": "v0.101.3",
-                    "notePosition": 100,
+                    "notePosition": 110,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -370,7 +396,7 @@
                         "vcBthaXcwAm6"
                     ],
                     "title": "v0.101.2",
-                    "notePosition": 110,
+                    "notePosition": 120,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -396,7 +422,7 @@
                         "AgUcrU9nFXuW"
                     ],
                     "title": "v0.101.1",
-                    "notePosition": 120,
+                    "notePosition": 130,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -422,7 +448,7 @@
                         "uYwlZ594eyJu"
                     ],
                     "title": "v0.101.0",
-                    "notePosition": 130,
+                    "notePosition": 140,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -448,7 +474,7 @@
                         "iPGKEk7pwJXK"
                     ],
                     "title": "v0.100.0",
-                    "notePosition": 140,
+                    "notePosition": 150,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -474,7 +500,7 @@
                         "7HKMTjmopLcM"
                     ],
                     "title": "v0.99.5",
-                    "notePosition": 150,
+                    "notePosition": 160,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -500,7 +526,7 @@
                         "RMBaNYPsRpIr"
                     ],
                     "title": "v0.99.4",
-                    "notePosition": 160,
+                    "notePosition": 170,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -526,7 +552,7 @@
                         "yuroLztFfpu5"
                     ],
                     "title": "v0.99.3",
-                    "notePosition": 170,
+                    "notePosition": 180,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -552,7 +578,7 @@
                         "z207sehwMJ6C"
                     ],
                     "title": "v0.99.2",
-                    "notePosition": 180,
+                    "notePosition": 190,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -578,7 +604,7 @@
                         "WGQsXq2jNyTi"
                     ],
                     "title": "v0.99.1",
-                    "notePosition": 190,
+                    "notePosition": 200,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -604,7 +630,7 @@
                         "cyw2Yue9vXf3"
                     ],
                     "title": "v0.99.0",
-                    "notePosition": 200,
+                    "notePosition": 210,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -630,7 +656,7 @@
                         "QOJwjruOUr4k"
                     ],
                     "title": "v0.98.1",
-                    "notePosition": 210,
+                    "notePosition": 220,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -656,7 +682,7 @@
                         "PLUoryywi0BC"
                     ],
                     "title": "v0.98.0",
-                    "notePosition": 220,
+                    "notePosition": 230,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -682,7 +708,7 @@
                         "lvOuiWsLDv8F"
                     ],
                     "title": "v0.97.2",
-                    "notePosition": 230,
+                    "notePosition": 240,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -708,7 +734,7 @@
                         "OtFZ6Nd9vM3n"
                     ],
                     "title": "v0.97.1",
-                    "notePosition": 240,
+                    "notePosition": 250,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -734,7 +760,7 @@
                         "SJZ5PwfzHSQ1"
                     ],
                     "title": "v0.97.0",
-                    "notePosition": 250,
+                    "notePosition": 260,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -760,7 +786,7 @@
                         "mYXFde3LuNR7"
                     ],
                     "title": "v0.96.0",
-                    "notePosition": 260,
+                    "notePosition": 270,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -786,7 +812,7 @@
                         "jthwbL0FdaeU"
                     ],
                     "title": "v0.95.0",
-                    "notePosition": 270,
+                    "notePosition": 280,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -812,7 +838,7 @@
                         "7HGYsJbLuhnv"
                     ],
                     "title": "v0.94.1",
-                    "notePosition": 280,
+                    "notePosition": 290,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -838,7 +864,7 @@
                         "Neq53ujRGBqv"
                     ],
                     "title": "v0.94.0",
-                    "notePosition": 290,
+                    "notePosition": 300,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -864,7 +890,7 @@
                         "VN3xnce1vLkX"
                     ],
                     "title": "v0.93.0",
-                    "notePosition": 300,
+                    "notePosition": 310,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -882,7 +908,7 @@
                         "WRaBfQqPr6qo"
                     ],
                     "title": "v0.92.7",
-                    "notePosition": 310,
+                    "notePosition": 320,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -908,7 +934,7 @@
                         "a2rwfKNmUFU1"
                     ],
                     "title": "v0.92.6",
-                    "notePosition": 320,
+                    "notePosition": 330,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -926,7 +952,7 @@
                         "fEJ8qErr0BKL"
                     ],
                     "title": "v0.92.5-beta",
-                    "notePosition": 330,
+                    "notePosition": 340,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -944,7 +970,7 @@
                         "kkkZQQGSXjwy"
                     ],
                     "title": "v0.92.4",
-                    "notePosition": 340,
+                    "notePosition": 350,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -962,7 +988,7 @@
                         "vAroNixiezaH"
                     ],
                     "title": "v0.92.3-beta",
-                    "notePosition": 350,
+                    "notePosition": 360,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -980,7 +1006,7 @@
                         "mHEq1wxAKNZd"
                     ],
                     "title": "v0.92.2-beta",
-                    "notePosition": 360,
+                    "notePosition": 370,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -998,7 +1024,7 @@
                         "IykjoAmBpc61"
                     ],
                     "title": "v0.92.1-beta",
-                    "notePosition": 370,
+                    "notePosition": 380,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1016,7 +1042,7 @@
                         "dq2AJ9vSBX4Y"
                     ],
                     "title": "v0.92.0-beta",
-                    "notePosition": 380,
+                    "notePosition": 390,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1034,7 +1060,7 @@
                         "3a8aMe4jz4yM"
                     ],
                     "title": "v0.91.6",
-                    "notePosition": 390,
+                    "notePosition": 400,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1052,7 +1078,7 @@
                         "8djQjkiDGESe"
                     ],
                     "title": "v0.91.5",
-                    "notePosition": 400,
+                    "notePosition": 410,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1070,7 +1096,7 @@
                         "OylxVoVJqNmr"
                     ],
                     "title": "v0.91.4-beta",
-                    "notePosition": 410,
+                    "notePosition": 420,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1088,7 +1114,7 @@
                         "tANGQDvnyhrj"
                     ],
                     "title": "v0.91.3-beta",
-                    "notePosition": 420,
+                    "notePosition": 430,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1106,7 +1132,7 @@
                         "hMoBfwSoj1SC"
                     ],
                     "title": "v0.91.2-beta",
-                    "notePosition": 430,
+                    "notePosition": 440,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1124,7 +1150,7 @@
                         "a2XMSKROCl9z"
                     ],
                     "title": "v0.91.1-beta",
-                    "notePosition": 440,
+                    "notePosition": 450,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1142,7 +1168,7 @@
                         "yqXFvWbLkuMD"
                     ],
                     "title": "v0.90.12",
-                    "notePosition": 450,
+                    "notePosition": 460,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1160,7 +1186,7 @@
                         "veS7pg311yJP"
                     ],
                     "title": "v0.90.11-beta",
-                    "notePosition": 460,
+                    "notePosition": 470,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1178,7 +1204,7 @@
                         "sq5W9TQxRqMq"
                     ],
                     "title": "v0.90.10-beta",
-                    "notePosition": 470,
+                    "notePosition": 480,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1196,7 +1222,7 @@
                         "yFEGVCUM9tPx"
                     ],
                     "title": "v0.90.9-beta",
-                    "notePosition": 480,
+                    "notePosition": 490,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1214,7 +1240,7 @@
                         "o4wAGqOQuJtV"
                     ],
                     "title": "v0.90.8",
-                    "notePosition": 490,
+                    "notePosition": 500,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1247,7 +1273,7 @@
                         "i4A5g9iOg9I0"
                     ],
                     "title": "v0.90.7-beta",
-                    "notePosition": 500,
+                    "notePosition": 510,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1265,7 +1291,7 @@
                         "ThNf2GaKgXUs"
                     ],
                     "title": "v0.90.6-beta",
-                    "notePosition": 510,
+                    "notePosition": 520,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1283,7 +1309,7 @@
                         "G4PAi554kQUr"
                     ],
                     "title": "v0.90.5-beta",
-                    "notePosition": 520,
+                    "notePosition": 530,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1298,7 +1324,7 @@
                             "role": "image",
                             "mime": "image/jpg",
                             "position": 10,
-                            "dataFileName": "v0.90.5-beta_image.png"
+                            "dataFileName": "v0.90.5-beta_image.jpg"
                         }
                     ]
                 },
@@ -1310,7 +1336,7 @@
                         "zATRobGRCmBn"
                     ],
                     "title": "v0.90.4",
-                    "notePosition": 530,
+                    "notePosition": 540,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1328,7 +1354,7 @@
                         "sCDLf8IKn3Iz"
                     ],
                     "title": "v0.90.3",
-                    "notePosition": 540,
+                    "notePosition": 550,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1346,7 +1372,7 @@
                         "VqqyBu4AuTjC"
                     ],
                     "title": "v0.90.2-beta",
-                    "notePosition": 550,
+                    "notePosition": 560,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1364,7 +1390,7 @@
                         "RX3Nl7wInLsA"
                     ],
                     "title": "v0.90.1-beta",
-                    "notePosition": 560,
+                    "notePosition": 570,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1382,7 +1408,7 @@
                         "GyueACukPWjk"
                     ],
                     "title": "v0.90.0-beta",
-                    "notePosition": 570,
+                    "notePosition": 580,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1400,7 +1426,7 @@
                         "kzjHexDTTeVB"
                     ],
                     "title": "v0.48",
-                    "notePosition": 580,
+                    "notePosition": 590,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1423,7 +1449,7 @@
                             "role": "image",
                             "mime": "image/jpg",
                             "position": 10,
-                            "dataFileName": "v0.48_note-map.png"
+                            "dataFileName": "v0.48_note-map.jpg"
                         },
                         {
                             "attachmentId": "c74WFpjTo0p4",
@@ -1431,7 +1457,7 @@
                             "role": "image",
                             "mime": "image/jpg",
                             "position": 10,
-                            "dataFileName": "v0.48_screenshot.png"
+                            "dataFileName": "v0.48_screenshot.jpg"
                         },
                         {
                             "attachmentId": "szlnTmTJL4HL",
@@ -1439,7 +1465,7 @@
                             "role": "image",
                             "mime": "image/jpg",
                             "position": 10,
-                            "dataFileName": "v0.48_split.png"
+                            "dataFileName": "v0.48_split.jpg"
                         },
                         {
                             "attachmentId": "VQxrtpQTYmI6",
@@ -1447,7 +1473,7 @@
                             "role": "image",
                             "mime": "image/jpg",
                             "position": 10,
-                            "dataFileName": "v0.48_bookmarks.png"
+                            "dataFileName": "v0.48_bookmarks.jpg"
                         },
                         {
                             "attachmentId": "ZRyEqxAv1MTd",
@@ -1467,7 +1493,7 @@
                         "wyurrlcDl416"
                     ],
                     "title": "Release Template",
-                    "notePosition": 590,
+                    "notePosition": 600,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",

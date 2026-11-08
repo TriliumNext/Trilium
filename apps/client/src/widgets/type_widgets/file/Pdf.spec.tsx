@@ -32,10 +32,14 @@ vi.mock("../../collections/NoteList", () => ({
     useViewModeConfig: () => ({ config: { files: [] }, storeFn: historyStore })
 }));
 // The viewer iframe itself is a separate component with its own spec; here it only has to hand
-// back a frame the messages can be addressed to, and report it loaded.
+// back a frame the messages can be addressed to, and report it loaded. happy-dom does not load
+// iframe pages, so the frame gets a stand-in window from `attachFrameWindow()`.
 vi.mock("./PdfViewer", () => ({
-    default: ({ iframeRef, onLoad }: { iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void }) =>
-        <iframe ref={iframeRef} class="pdf-preview" onLoad={onLoad} />,
+    default: ({ iframeRef, onLoad, noteId, ntxId }: {
+        iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void; noteId?: string; ntxId?: string | null;
+    }) => <iframe
+        ref={(iframe) => { iframeRef.current = iframe && attachFrameWindow(iframe); }}
+        class="pdf-preview" onLoad={onLoad} data-note-id={noteId} data-ntx-id={ntxId} />,
     getPdfUrl: (path: string) => `/api/${path}`
 }));
 const activateNoteContext = vi.hoisted(() => vi.fn());
@@ -46,6 +50,8 @@ const download = vi.hoisted(() => vi.fn());
 vi.mock("../../../services/open", () => ({
     default: { download, getUrlForDownload: (path: string) => `/${path}` }
 }));
+const copyReferenceWithToast = vi.hoisted(() => vi.fn());
+vi.mock("../../../services/clipboard_ext", () => ({ copyReferenceWithToast }));
 
 const { default: PdfPreview } = await import("./Pdf");
 
@@ -60,15 +66,19 @@ beforeEach(() => {
     contextData = {};
     noteContext = {
         ntxId: "ntx-1",
+        note: NOTE,
+        notePath: "root/parent/note-1",
+        viewScope: {},
         setContextData: vi.fn((key: string, value: unknown) => { contextData[key] = value; }),
         getContextData: vi.fn((key: string) => contextData[key]),
-        isActive: () => true
+        isActive: () => true,
+        isCommandTarget: (ntxId?: string | null) => (ntxId ? ntxId === noteContext.ntxId : noteContext.isActive())
     } as unknown as NoteContext;
 
     container = document.createElement("div");
     document.body.append(container);
     // Effects, which install the message listener, only run once Preact flushes them.
-    act(() => render(<PdfPreview note={NOTE} noteContext={noteContext} blob={null} componentId="cmp" />, container));
+    act(() => render(<PdfPreview note={NOTE} noteContext={noteContext} blob={null} componentId="cmp" isVisible />, container));
 });
 
 afterEach(() => {
@@ -77,13 +87,25 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-/**
- * Records what the component posts into its iframe. Recorded rather than delivered: the blank
- * frame has no origin the real call would accept.
- */
+/** Records what the component posts into its iframe. */
 function recordPostsToViewer() {
     const iframe = container.querySelector("iframe") as HTMLIFrameElement;
     return vi.spyOn(iframe.contentWindow as Window, "postMessage").mockImplementation(() => {});
+}
+
+/**
+ * Gives `iframe` a window with the members the component uses: `postMessage`, `location.reload()`
+ * and click listeners. The window is created once per element, so spies on it survive re-renders.
+ */
+function attachFrameWindow(iframe: HTMLIFrameElement) {
+    if (!Object.hasOwn(iframe, "contentWindow")) {
+        const frameWindow = Object.assign(new EventTarget(), {
+            postMessage: () => {},
+            location: { reload: () => {} }
+        });
+        Object.defineProperty(iframe, "contentWindow", { value: frameWindow });
+    }
+    return iframe;
 }
 
 /** Delivers a message the way the viewer iframe posts it to the parent window. */
@@ -152,6 +174,116 @@ describe("PdfPreview", () => {
         expect(posted).toHaveBeenLastCalledWith({ type: "trilium-scroll-to-annotation", annotationId: "5R", pageNumber: 2 }, window.location.origin);
     });
 
+    it("scrolls to the place a link names once the viewer lists its annotations, and only once", () => {
+        const posted = recordPostsToViewer();
+        noteContext.viewScope = { page: "5", annotation: "12R" };
+
+        // A switch that arrives while the viewer is still loading has nothing to talk to yet.
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(posted).not.toHaveBeenCalled();
+
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+        expect(posted).toHaveBeenCalledExactlyOnceWith(
+            { type: "trilium-scroll-to-annotation", annotationId: "12R", pageNumber: 5 }, window.location.origin);
+        expect(noteContext.viewScope).toEqual({ page: undefined, annotation: undefined });
+
+        // The list is sent again on every edit; the link is not followed again.
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+        expect(posted).toHaveBeenCalledOnce();
+    });
+
+    it("follows a link to the PDF it already shows, but not one meant for another pane", () => {
+        const posted = recordPostsToViewer();
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+
+        noteContext.viewScope = { page: "3" };
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-2", note: NOTE } });
+        expect(posted).not.toHaveBeenCalled();
+
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(posted).toHaveBeenCalledExactlyOnceWith(
+            { type: "trilium-scroll-to-annotation", annotationId: undefined, pageNumber: 3 }, window.location.origin);
+    });
+
+    it("publishes its data again when the pane returns to it, and follows a link from there", () => {
+        // `NoteDetail` keeps the viewer mounted, hidden, while the pane shows another note, and
+        // `NoteContext.setNote()` clears the context data. The viewer has loaded already, so it
+        // does not send the outline or the annotations again.
+        const posted = recordPostsToViewer();
+        const annotations = [ { id: "5R", type: "highlight", pageNumber: 1 } ];
+        fromThisViewer({ type: "pdfjs-viewer-toc", data: null });
+        fromThisViewer({ type: "pdfjs-viewer-page-info", totalPages: 12, currentPage: 3 });
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations });
+
+        function show(isVisible: boolean) {
+            act(() => render(
+                <PdfPreview note={NOTE} noteContext={noteContext} blob={null} componentId="cmp" isVisible={isVisible} />,
+                container));
+        }
+
+        show(false);
+        contextData = {};
+        vi.mocked(noteContext.setContextData).mockClear();
+        // A hidden viewer records the page change for the return and holds the link's jump until
+        // it is shown.
+        fromThisViewer({ type: "pdfjs-viewer-current-page", currentPage: 7 });
+        noteContext.viewScope = { page: "4" };
+        eventHandlers.get("noteSwitched")?.({ noteContext: { ntxId: "ntx-1", note: NOTE } });
+        expect(noteContext.setContextData).not.toHaveBeenCalled();
+        expect(posted).not.toHaveBeenCalled();
+
+        show(true);
+        expect(contextData).toMatchObject({
+            toc: { headings: [] },
+            pdfPages: { totalPages: 12, currentPage: 7 },
+            pdfAnnotations: { annotations }
+        });
+        expect(posted).toHaveBeenCalledExactlyOnceWith(
+            { type: "trilium-scroll-to-annotation", annotationId: undefined, pageNumber: 4 }, window.location.origin);
+    });
+
+    it("keeps one PDF's data out of the pane once it shows another PDF", () => {
+        // `NoteDetailWrapper` hands the kept viewer `isVisible` at once and the next note's props
+        // one render later, so the viewer is shown while it still holds the previous PDF.
+        const posted = recordPostsToViewer();
+        fromThisViewer({ type: "pdfjs-viewer-page-info", totalPages: 12, currentPage: 3 });
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+
+        function show(note: FNote, isVisible: boolean) {
+            act(() => render(
+                <PdfPreview note={note} noteContext={noteContext} blob={null} componentId="cmp" isVisible={isVisible} />,
+                container));
+        }
+
+        show(NOTE, false);
+        const otherNote = { ...NOTE, noteId: "note-2" } as unknown as FNote;
+        (noteContext as { note: FNote }).note = otherNote;
+        noteContext.viewScope = { page: "4" };
+        contextData = {};
+        vi.mocked(noteContext.setContextData).mockClear();
+
+        show(NOTE, true);
+        fromThisViewer({ type: "pdfjs-viewer-current-page", currentPage: 5 });
+        show(otherNote, true);
+        expect(noteContext.setContextData).not.toHaveBeenCalled();
+        expect(posted).not.toHaveBeenCalled();
+    });
+
+    it("copies a reference to a page, or to an annotation the document already holds", () => {
+        fromThisViewer({ type: "pdfjs-viewer-page-info", totalPages: 12, currentPage: 1 });
+        (contextData.pdfPages as any).copyReference(7);
+        expect(copyReferenceWithToast).toHaveBeenLastCalledWith("#root/parent/note-1?page=7");
+
+        fromThisViewer({ type: "pdfjs-viewer-annotations", annotations: [] });
+        (contextData.pdfAnnotations as any).copyReference("12R", 5);
+        expect(copyReferenceWithToast).toHaveBeenLastCalledWith("#root/parent/note-1?page=5&annotation=12R");
+
+        // An annotation drawn in this session has only its editor's id, which the next load of
+        // the document does not reuse, so its reference names the page alone.
+        (contextData.pdfAnnotations as any).copyReference("pdfjs_internal_editor_0", 5);
+        expect(copyReferenceWithToast).toHaveBeenLastCalledWith("#root/parent/note-1?page=5");
+    });
+
     it("leaves a page-tracking update alone until the page info has arrived", () => {
         // A current-page message before page-info has nothing to update, and the active heading
         // likewise waits for the table of contents.
@@ -172,7 +304,7 @@ describe("PdfPreview", () => {
 
         vi.clearAllMocks();
         readOnly.current = true;
-        act(() => render(<PdfPreview note={NOTE} noteContext={noteContext} blob={null} componentId="cmp" />, container));
+        act(() => render(<PdfPreview note={NOTE} noteContext={noteContext} blob={null} componentId="cmp" isVisible />, container));
         fromThisViewer({ type: "pdfjs-viewer-document-modified" });
         expect(spacedUpdate.scheduleUpdate).not.toHaveBeenCalled();
     });
@@ -256,14 +388,14 @@ describe("PdfPreview", () => {
         expect(posted).toHaveBeenCalledTimes(2);
     });
 
-    it("hands the viewer its identity and stores on load, and claims focus on a click inside", () => {
+    it("hands the viewer its identity in the URL and its stores on load, and claims focus on a click inside", () => {
         vi.spyOn(options, "getJson").mockReturnValue({ sig: 1 });
         const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+        // The viewer can post before `load`, so the address it stamps on messages goes in the URL.
+        expect(iframe.dataset).toMatchObject({ noteId: "note-1", ntxId: "ntx-1" });
         iframe.dispatchEvent(new Event("load"));
 
         const win = iframe.contentWindow as Window;
-        expect(win.TRILIUM_NOTE_ID).toBe("note-1");
-        expect(win.TRILIUM_NTX_ID).toBe("ntx-1");
         expect(win.TRILIUM_VIEW_HISTORY_STORE).toEqual({ files: [] });
         expect(win.TRILIUM_SIGNATURES).toEqual({ sig: 1 });
 

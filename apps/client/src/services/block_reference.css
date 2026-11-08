@@ -1,0 +1,8 @@
+:where(:root) {
+    --block-reference-broken-color: var(--muted-text-color);
+}
+
+.block-reference-broken {
+    color: var(--block-reference-broken-color);
+    font-style: italic;
+}

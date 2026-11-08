@@ -3,6 +3,7 @@ import { APICallError } from "ai";
 import { describe, expect, it } from "vitest";
 
 import { describeStreamError, formatStreamError, type StreamOptions, streamToChunks } from "./stream.js";
+import { TOOL_CALL_DECLINED_REASON } from "./tool_approval.js";
 import type { ModelPricing, StreamResult } from "./types.js";
 
 type ErrorChunk = Extract<LlmStreamChunk, { type: "error" }>;
@@ -188,6 +189,21 @@ describe("streamToChunks", () => {
         expect(results[1]).toMatchObject({ result: JSON.stringify({ error: "boom" }), isError: true });
     });
 
+    it("reports a call the user declined as a failed result, so its card settles", async () => {
+        const chunks = await collect(fakeResult(
+            [{ type: "tool-output-denied", toolCallId: "c1", toolName: "delete_note" }],
+            Promise.resolve({ inputTokens: 1, outputTokens: 1 })
+        ));
+
+        expect(chunks).toContainEqual({
+            type: "tool_result",
+            toolCallId: "c1",
+            toolName: "delete_note",
+            result: JSON.stringify({ error: TOOL_CALL_DECLINED_REASON }),
+            isError: true
+        });
+    });
+
     it("emits citations only for url sources and ignores other source types", async () => {
         const chunks = await collect(fakeResult(
             [
@@ -256,6 +272,30 @@ describe("streamToChunks", () => {
         // Both display fields reach the client: the name, and the provider that lets it be abbreviated.
         expect(usage.usage.model).toBe("m");
         expect(usage.usage.provider).toBe("anthropic");
+    });
+
+    it("lets the provider's report of the turn override the requested model and the listed cost", async () => {
+        const steps = [ { response: { modelId: "anthropic/claude-sonnet-5.5" } } ];
+        const turn = () => ({
+            ...fakeResult([], Promise.resolve({ inputTokens: 1_000_000, outputTokens: 0 })),
+            steps: Promise.resolve(steps)
+        }) as unknown as StreamResult;
+        const options = { model: "Auto Router", provider: "openrouter", pricing: { input: 2, output: 2 } };
+
+        const seen: unknown[] = [];
+        const reported = usageOf(await collect(turn(), {
+            ...options,
+            describeTurn: async (turnSteps) => { seen.push(turnSteps); return { model: "Anthropic: Claude Sonnet 5.5", cost: 0.25 }; }
+        }));
+        expect(seen).toEqual([ steps ]);
+        expect(reported.usage).toMatchObject({ model: "Anthropic: Claude Sonnet 5.5", cost: 0.25, provider: "openrouter" });
+
+        // What the report leaves out, or a report that fails, falls back to the request's own.
+        expect(usageOf(await collect(turn(), { ...options, describeTurn: async () => ({}) })).usage)
+            .toMatchObject({ model: "Auto Router", cost: 2 });
+        const failed = await collect(turn(), { ...options, describeTurn: async () => { throw new Error("offline"); } });
+        expect(usageOf(failed).usage).toMatchObject({ model: "Auto Router", cost: 2 });
+        expect(failed.at(-1)).toEqual({ type: "done" });
     });
 
     it("treats all input as no-cache when token details are absent", async () => {

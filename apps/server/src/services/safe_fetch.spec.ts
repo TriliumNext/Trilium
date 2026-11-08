@@ -167,11 +167,28 @@ describe("validateHostResolution, for a destination the operator configured", ()
         await expect(validateHostResolution("fd12::1", true)).resolves.toEqual([{ address: "fd12::1", family: 6 }]);
     });
 
+    it("allows a Tailscale node, whose address is carrier-grade NAT", async () => {
+        vi.spyOn(dns.promises, "lookup")
+            .mockResolvedValueOnce([{ address: "100.83.121.222", family: 4 }] as unknown as dns.LookupAddress);
+
+        await expect(validateHostResolution("100.64.0.1", true)).resolves.toEqual([{ address: "100.64.0.1", family: 4 }]);
+        await expect(validateHostResolution("::ffff:100.83.121.222", true)).resolves.toEqual([
+            { address: "::ffff:100.83.121.222", family: 6 }
+        ]);
+        await expect(validateHostResolution("ollama.tail1234.ts.net", true)).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        await expect(validateHostResolution("100.64.0.1")).rejects.toThrow("private/internal");
+    });
+
     it("still refuses the ranges no service is served on and a metadata endpoint answers", async () => {
         // The reason the widening is a widening rather than a switch to no checking at all.
         await expect(validateHostResolution("169.254.169.254", true)).rejects.toThrow("link-local");
         await expect(validateHostResolution("169.254.1.1", true)).rejects.toThrow("link-local");
-        await expect(validateHostResolution("100.100.100.200", true)).rejects.toThrow("link-local");
+        await expect(validateHostResolution("100.100.100.200", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("::ffff:100.100.100.200", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("fd00:ec2::254", true)).rejects.toThrow("metadata endpoint");
+        await expect(validateHostResolution("FD00:0EC2:0:0:0:0:0:0254", true)).rejects.toThrow("metadata endpoint");
         await expect(validateHostResolution("fe80::1", true)).rejects.toThrow("link-local");
         await expect(validateHostResolution("0.0.0.0", true)).rejects.toThrow("link-local");
         await expect(validateHostResolution("224.0.0.1", true)).rejects.toThrow("link-local");
@@ -271,6 +288,34 @@ describe("safeFetch", () => {
 
         const response = await safeFetch("http://8.8.8.8/cancel");
         await response.body!.cancel();
+        expect(agentInstances[0].closed).toBe(true);
+    });
+
+    it("cancels the wrapped body of an aborted request without a stray rejection", async () => {
+        let source: ReadableStreamDefaultController<Uint8Array> | undefined;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                source = controller;
+                controller.enqueue(new TextEncoder().encode("data"));
+            }
+        });
+        fetchMock.mockResolvedValueOnce(makeResponse(body, { status: 200 }));
+        const response = await safeFetch("http://8.8.8.8/aborted");
+
+        const rejections: unknown[] = [];
+        const collect = (reason: unknown) => rejections.push(reason);
+        process.on("unhandledRejection", collect);
+        try {
+            // The wrapper reads ahead; undici then errors the body of the aborted request.
+            await nextTask();
+            source?.error(new DOMException("This operation was aborted", "AbortError"));
+            await response.body?.cancel();
+            await nextTask();
+        } finally {
+            process.off("unhandledRejection", collect);
+        }
+
+        expect(rejections).toEqual([]);
         expect(agentInstances[0].closed).toBe(true);
     });
 
@@ -429,3 +474,7 @@ describe("safeFetch", () => {
         });
     });
 });
+
+function nextTask() {
+    return new Promise((resolve) => setTimeout(resolve));
+}

@@ -84,6 +84,12 @@ node $S add client dialog.my_thing "Save changes"
 
 `add` refuses to overwrite an existing key (`--force` to override) and refuses to nest under one that is already a string.
 
+A menu label ends in "..." when its item opens a dialog, prompt, chooser or confirm (see "Dropdowns: menus and panels" in the `building-client-ui` skill). For that reason, don't reuse a menu label's key as the title of the dialog it opens. Add a second key without the "..." instead, for example `board_view.properties` and `board_view.properties-title`.
+
+A menu label is a noun when its item opens a place or toggles a mode (_Backend log_, _Fullscreen_), and a verb only when it acts (_Reload frontend_, _Log out_). The full rule is in the same section of `building-client-ui`.
+
+**To reword an existing string, change its English value and keep its key**, even when the key names the old text (`global_menu.show_backend_log` → "Backend log"). Renaming the key drops the string from every locale's catalogue, so each one falls back to English until Weblate catches up. Keeping the key leaves the old translations showing until translators update them. Then update the User Guide pages that quote the old text (`docs.mjs impact --diff`, or grep `docs/User Guide` for the old phrase, since a common noun gives `impact` many false hits).
+
 Then use it: `t("dialog.my_thing")`. Only `en/` changes — Weblate carries the string to the other locales, and you should **not** hand-edit the other ~38 locale files.
 
 ### Write US English, and mirror the difference into `en-GB`
@@ -123,7 +129,11 @@ There is no base key — `find --key space_usage.my_notes` shows only the suffix
 
 ### Interpolation
 
-`{{var}}` normally, `{{- var}}` to skip HTML-escaping when the value contains quotes. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
+`{{var}}` everywhere. The client turns i18next's HTML-escaping off in `initLocale()`, so `{{var}}` and
+`{{- var}}` behave the same there; the server catalogue still escapes, which is why `server.json` keeps
+`{{- var}}` on values carrying quotes or markup. A value interpolated into a string that is rendered as markup is
+escaped by the caller: `Menu` titles and `highlightedNotePathTitle` take HTML, so their values go through
+`escapeHtml()`; the confirm/info dialogs sanitize a string message with DOMPurify. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
 
 ### Multi-paragraph text
 
@@ -184,3 +194,4 @@ That is the repo's only translation test: valid JSON, no duplicate keys, plus th
 ## Related
 
 - **translating-locales** — filling in a lagging non-English locale: measuring coverage, exporting work lists, placeholder validation, plural categories per locale, and how Weblate sync works. Use that skill, not this one, when the task is "bring `<locale>` to 100%".
+- **adding-a-display-language** — making a new language selectable: registering it in `LOCALES`, the per-library mappings, and the Electron locale check.

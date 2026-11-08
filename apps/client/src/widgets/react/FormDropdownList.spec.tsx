@@ -32,6 +32,7 @@ interface Entry {
     icon?: string;
     hint?: string;
     startsGroup?: boolean;
+    unavailable?: string;
 }
 
 const ENTRIES: Entry[] = [
@@ -74,7 +75,7 @@ describe("FormDropdownList", () => {
         expect(button?.querySelector("small")?.textContent).toBe("abc");
         expect(button?.querySelector(".bx-text")).not.toBeNull();
 
-        const items = [ ...container.querySelectorAll(".dropdown-item") ];
+        const items = [ ...document.querySelectorAll(".dropdown-item") ];
         expect(items.map((item) => item.textContent?.replace(/\s+/g, " ").trim()))
             .toEqual([ "Text abcAny text", "Number", "Relation" ]);
         // A check mark would take the icon's slot, so the current item is highlighted instead.
@@ -83,7 +84,7 @@ describe("FormDropdownList", () => {
         expect(items[0].querySelector(".bx-text")).not.toBeNull();
 
         // Only the item that starts a group is preceded by a rule.
-        expect(container.querySelectorAll(".dropdown-divider")).toHaveLength(1);
+        expect(document.querySelectorAll(".dropdown-divider")).toHaveLength(1);
         expect(items[2].previousElementSibling?.className).toContain("dropdown-divider");
 
         act(() => (items[1] as HTMLElement).click());
@@ -102,7 +103,7 @@ describe("FormDropdownList", () => {
             />);
 
         expect(container.querySelector("button")?.textContent).toBe("");
-        expect([ ...container.querySelectorAll(".dropdown-item") ].some((item) => item.className.includes("active")))
+        expect([ ...document.querySelectorAll(".dropdown-item") ].some((item) => item.className.includes("active")))
             .toBe(false);
 
         renderOpened(
@@ -114,11 +115,29 @@ describe("FormDropdownList", () => {
                 onChange={vi.fn()}
             />);
 
-        const items = [ ...container.querySelectorAll(".dropdown-item") ];
+        const items = [ ...document.querySelectorAll(".dropdown-item") ];
         expect(items[1].querySelector(".bx-check")).not.toBeNull();
         expect(items[1].className).not.toContain("active");
         // Without a property to read it from, no item starts a group of its own.
-        expect(container.querySelectorAll(".dropdown-divider")).toHaveLength(0);
+        expect(document.querySelectorAll(".dropdown-divider")).toHaveLength(0);
+    });
+
+    it("shows an item with a reason against it as disabled, and reports no press on it", () => {
+        const onChange = vi.fn();
+        renderOpened(
+            <FormDropdownList
+                values={[ ENTRIES[0], { ...ENTRIES[1], unavailable: "Not here" } ]}
+                keyProperty="value"
+                titleProperty="title"
+                disabledProperty="unavailable"
+                currentValue="text"
+                onChange={onChange}
+            />);
+
+        const items = [ ...document.querySelectorAll<HTMLElement>(".dropdown-item") ];
+        expect(items.map((item) => item.classList.contains("disabled"))).toEqual([ false, true ]);
+        act(() => items[1].click());
+        expect(onChange).not.toHaveBeenCalled();
     });
 
     /** The menu only renders its items once Bootstrap reports it open, which nothing does here. */
@@ -126,7 +145,7 @@ describe("FormDropdownList", () => {
         act(() => render(vnode, container));
         const dropdown = container.querySelector(".dropdown");
         act(() => {
-            if (dropdown) $(dropdown).trigger("show.bs.dropdown");
+            if (dropdown) $(dropdown).children("button:not([aria-expanded=true])").trigger("click");
         });
     }
 });

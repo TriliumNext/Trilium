@@ -1,9 +1,35 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 
+import { render } from "preact";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getFontFaceCss, getPdfUrl } from "./PdfViewer";
+import PdfViewer, { getFontFaceCss, getPdfUrl } from "./PdfViewer";
+
+describe("PdfViewer", () => {
+    function viewerUrl(props: { noteId?: string; ntxId?: string | null }) {
+        const container = document.createElement("div");
+        render(<PdfViewer pdfUrl="/api/notes/abc123/open" {...props} />, container);
+        const src = container.querySelector("iframe")?.getAttribute("src");
+        render(null, container);
+        return new URL(src ?? "", "http://localhost").searchParams;
+    }
+
+    it("addresses the viewer in its URL, so it can post before the frame loads", () => {
+        const params = viewerUrl({ noteId: "abc123", ntxId: "ntx 1" });
+        expect(params.get("noteId")).toBe("abc123");
+        expect(params.get("ntxId")).toBe("ntx 1");
+        expect(params.get("file")).toBe("/api/notes/abc123/open");
+
+        // A viewer outside a note (print preview, lightbox, revisions) reports to no one.
+        expect(viewerUrl({}).has("noteId")).toBe(false);
+        expect(viewerUrl({ noteId: "abc123", ntxId: null }).has("ntxId")).toBe(false);
+    });
+
+    it("hides pdf.js' own sidebar, since the right panel lists the document's contents", () => {
+        expect(viewerUrl({}).get("sidebar")).toBe("0");
+    });
+});
 
 describe("getPdfUrl", () => {
     afterEach(() => history.replaceState({}, "", "/"));

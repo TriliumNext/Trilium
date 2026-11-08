@@ -59,7 +59,7 @@ export default function AttributeCreationEditor({ note, attribute, onCommit, onR
 
     const suggestNames = useCallback((query: string) => fetchAttributeNames(kind, query), [ kind ]);
     const renderNameSuggestion = useCallback(
-        (suggestion: string) => <AttributeNameSuggestion type={kind} name={suggestion} />, [ kind ]);
+        (suggestion: string, query: string) => <AttributeNameSuggestion type={kind} name={suggestion} query={query} />, [ kind ]);
 
     // What the name as it stands would be typed as, so a name with a definition behind it gets its
     // field the moment the name settles — type `due`, and the value side becomes its date picker.

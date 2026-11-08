@@ -82,7 +82,7 @@ export default function buildLaunchBarConfig() {
             title: t("hidden-subtree.backend-log-title"),
             type: "launcher",
             targetNoteId: "_backendLog",
-            icon: "bx bx-detail"
+            icon: "bx bx-receipt"
         },
         {
             id: "_zenMode",
@@ -112,6 +112,13 @@ export default function buildLaunchBarConfig() {
         {
             id: "_lbNewNote",
             ...sharedLaunchers.newNote
+        },
+        {
+            id: "_lbRecordMeeting",
+            title: t("hidden-subtree.record-meeting-title"),
+            type: "launcher",
+            builtinWidget: "recordMeeting",
+            icon: "bx bx-microphone"
         },
         {
             id: "_lbSearch",

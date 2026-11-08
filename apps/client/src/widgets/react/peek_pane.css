@@ -1,0 +1,83 @@
+:where(:root) {
+    --peek-pane-backdrop-color: #0000000d;
+    --peek-pane-shadow-depth: 42px;
+    --peek-pane-shadow-color: #0000002b;
+}
+
+/* Docked: `.peek-pane` fills the host, which Split sizes against the content.
+   Peek: the host covers the content with the pane, a gutter and the `.peek-pane-spacer` backdrop. */
+.peek-pane-host {
+    display: flex;
+    flex-direction: row;
+
+    &.hidden {
+        display: none;
+    }
+
+    &:not(.peek) {
+        > .peek-pane {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        /* Split removes the peek gutter one effect after the host leaves peek mode. */
+        > .gutter {
+            display: none;
+        }
+    }
+
+    &.peek {
+        position: absolute;
+        inset-block: 0;
+        z-index: 15;
+        background: var(--peek-pane-backdrop-color);
+        animation: peek-pane-in 200ms ease-out;
+
+        /* Split sizes both with inline widths. */
+        > .peek-pane,
+        > .peek-pane-spacer {
+            flex: 0 0 auto;
+        }
+
+        > .peek-pane-spacer {
+            display: block;
+            min-width: 0;
+        }
+
+        > .peek-pane {
+            --peek-pane-shadow-offset: var(--peek-pane-shadow-depth);
+
+            box-shadow: var(--peek-pane-shadow-offset) 0 var(--peek-pane-shadow-depth)
+                calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color);
+        }
+
+        &.side-end > .peek-pane,
+        body[dir=rtl] &.side-start > .peek-pane {
+            --peek-pane-shadow-offset: calc(-1 * var(--peek-pane-shadow-depth));
+        }
+
+        body[dir=rtl] &.side-end > .peek-pane {
+            --peek-pane-shadow-offset: var(--peek-pane-shadow-depth);
+        }
+    }
+}
+
+.peek-pane-spacer {
+    display: none;
+}
+
+/* Keeps the z-index of the note content, such as the active split's outline (500), under a peek. */
+#center-pane {
+    isolation: isolate;
+}
+
+/* The text editor draws the grip of the focused block in `.ck-body`, outside `#center-pane`.
+   A class, not `body:has()`: Chromium restyles all of `body` when a `:has()` on it can change. */
+body.peek-pane-open .ck-block-toolbar-button {
+    visibility: hidden;
+}
+
+@keyframes peek-pane-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

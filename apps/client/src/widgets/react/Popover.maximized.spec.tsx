@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Popover from "./Popover";
 
@@ -26,11 +26,7 @@ describe("Popover, maximized", () => {
 
     const anchorRect = () => new DOMRect(100, 100, 50, 20);
 
-    /**
-     * Drawn, and then given the turn of the loop Popper places a card in: `createPopper` schedules
-     * its first placement rather than doing it there and then, so the attribute that says where the
-     * card ended up is not on it until the microtasks have run out.
-     */
+    /** Renders the popover and runs its effects. `placeFloating()` resolves later. */
     async function mount(maximized: boolean) {
         await act(async () => {
             render(
@@ -62,20 +58,22 @@ describe("Popover, maximized", () => {
 
     it("lets go of the anchor as it grows, and takes hold again as it comes down", async () => {
         await mount(false);
-        // Popper places the card and says where it ended up; the styling of a grown card waits on
-        // that attribute being gone (see the `.maximized` rules in Popover.css).
-        expect(popover()?.getAttribute("data-popper-placement")).toBeTruthy();
+        // A placed card has `data-placement`; the `.maximized` rules in Popover.css apply only
+        // without it.
+        await vi.waitFor(() => expect(popover()?.getAttribute("data-placement")).toBeTruthy());
+        expect(popover()?.style.left).not.toBe("");
 
         await mount(true);
         expect(popover()?.classList.contains("maximized")).toBe(true);
-        // Given back as the popper is destroyed, along with the inline placement it wrote — which
-        // is what leaves the stylesheet free to put the card where it likes.
-        expect(popover()?.hasAttribute("data-popper-placement")).toBe(false);
-        expect(popover()?.style.transform).toBe("");
+        // Removed together with the inline position, so only the stylesheet positions the card.
+        expect(popover()?.hasAttribute("data-placement")).toBe(false);
+        expect(popover()?.style.left).toBe("");
+        expect(popover()?.style.top).toBe("");
+        expect(popover()?.style.visibility).toBe("");
 
         await mount(false);
         expect(popover()?.classList.contains("maximized")).toBe(false);
-        expect(popover()?.getAttribute("data-popper-placement")).toBeTruthy();
+        await vi.waitFor(() => expect(popover()?.getAttribute("data-placement")).toBeTruthy());
     });
 
     it("dims the page only while it is grown", async () => {

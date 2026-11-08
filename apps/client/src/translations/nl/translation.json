@@ -15,9 +15,9 @@
     },
     "contributor_full_list": "Zie de hele gemeenschap",
     "github_tooltip": "Meld fouten, stel functionaliteiten voor, of draag bij op GitHub",
-    "license_tooltip": "Bekijk de gebruiksovereenkomst",
-    "donate": "Donneer",
-    "donate_tooltip": "Donneer om dit project te steunen",
+    "license_tooltip": "Bekijk de licentie",
+    "donate": "Doneer",
+    "donate_tooltip": "Doneer om dit project te steunen",
     "channel": {
       "nightly": "Nachtelijke",
       "standalone": "Zelfstandig"
@@ -58,10 +58,8 @@
     "help_on_links": "Hulp bij links",
     "note": "Notitie",
     "search_note": "zoek notitie op naam",
-    "link_title_mirrors": "De titel van de link komt overeen met de huidige titel van de notitie",
     "link_title": "Link titel",
     "button_add_link": "Link toevoegen",
-    "link_title_arbitrary": "de titel van de link kan naar believen worden gewijzigd",
     "anchor": "Anker (optioneel)",
     "anchor_none": "Geen (koppeling naar notitie)",
     "edit_link": "Wijzig link",
@@ -75,17 +73,16 @@
     "prefix": "Voorvoegsel",
     "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
     "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen.",
-    "affected_branches": "Aangetaste takken ({{count}}):",
+    "affected_branches": "Betrokken takken ({{count}}):",
     "preview_in_tree": "Voorbeeld in de boom",
     "description": "Voorvoegsel voor enkel de notitie titel in deze tak. Andere takken behouden de originele titel.",
     "cancel": "Annuleren"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk acties",
-    "affected_notes": "Beïnvloede notities",
-    "available_actions": "Beschikbare acties",
     "chosen_actions": "Gekozen acties",
-    "execute_bulk_actions": "Bulk acties uitvoeren",
+    "execute_bulk_actions_one": "Bulk acties uitvoeren",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Bulk acties zijn succesvol uitgevoerd.",
     "none_yet": "Nog niks... voeg een actie toe door op een van de beschikbare bovenstaande opties te klikken.",
     "labels": "Labels",
@@ -110,12 +107,6 @@
   },
   "create_pane_button": {
     "create_new_split": "Maak nieuwe split"
-  },
-  "edit_button": {
-    "edit_this_note": "Notitie bewerken"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Laat Inhoudsopgave zien"
   },
   "status_bar": {
     "note_paths_one": "{{count}} pad",
@@ -152,7 +143,7 @@
     "prefix_optional": "Voorvoegsel (optioneel)",
     "clone_to_selected_note": "Kloon naar geselecteerde notitie",
     "no_path_to_clone_to": "Geen pad om naar te klonen.",
-    "note_cloned": "De notitie \"{{clonedTitle}}\" werd gekloond naar \"{{targetTitle}}\""
+    "note_cloned": "De notitie \"{{clonedTitle}}\" is gekloond naar \"{{targetTitle}}\""
   },
   "confirm": {
     "confirmation": "Bevestiging",
@@ -261,7 +252,15 @@
     "showSQLConsole": "SQL console weergeven",
     "other": "Overige",
     "quickSearch": "focus op snelle zoekinvoer",
-    "inPageSearch": "zoeken op de pagina"
+    "inPageSearch": "zoeken op de pagina",
+    "showJumpToNoteDialog": "toon <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Ga naar\" dialaog</a>",
+    "tabShortcuts": "Tab snelkoppelingen",
+    "newTabNoteLink": "open notitielinks in een nieuw tabblad",
+    "newTabWithActivationNoteLink": "open notitielinks in een nieuw tabblad en focus deze",
+    "editBranchPrefix": "pas het <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">voorvoegsel</a> aan van een actieve notitiekloon",
+    "multiSelectNote": "selecteer meerdere notities boven/onder",
+    "editingNotes": "Notities bewerken",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code>  etc. gevolgd door spatie voor kop"
   },
   "import": {
     "importIntoNote": "In notitie importeren",
@@ -332,7 +331,9 @@
     "import_count_one": "{{count}} sectie importeren",
     "import_count_other": "{{count}} secties importeren",
     "attach_source": "Voeg de originele HTML toe (debug)",
-    "attach_source_hint": "Slaat de ongewijzigde OneNote HTML van elke pagina op als bijlage bij de geïmporteerde notitie, zodat deze kan worden vergeleken met het geconverteerde resultaat."
+    "attach_source_hint": "Slaat de ongewijzigde OneNote HTML van elke pagina op als bijlage bij de geïmporteerde notitie, zodat deze kan worden vergeleken met het geconverteerde resultaat.",
+    "section_heading": "Microsoft OneNote",
+    "import": "Importeer geselecteerde"
   },
   "notion_import": {
     "name": "Notion",
@@ -345,19 +346,22 @@
     "name": "Google Keep",
     "description": "Uit een Takeout export",
     "description_long": "Exporteer in Google Takeout je Keep gegevens als een .zip-bestand en selecteer vervolgens hier het resulterende bestand.",
-    "import": "Importeren"
+    "import": "Importeren",
+    "choose_file": "Google Keep export (.zip)"
   },
   "anytype_import": {
     "name": "Elk type",
     "description": "Uit een JSON export",
     "description_long": "Exporteer je space in Anytype door het “Any-Block” formaat te gebruiken met “JSON” geselecteerd, selecteer vervolgens hier het resulterende .zip bestand. Voorlopig worden alleen pagina's en de bijbehorende tekst geïmporteerd.",
-    "import": "Importeren"
+    "import": "Importeren",
+    "choose_file": "Anytype export (.zip)"
   },
   "obsidian_import": {
     "name": "Obsidian",
     "description": "Uit een kluis",
     "description_long": "Zet je Obsidian Vault map in een zip-bestand en selecteer hier vervolgens het resulterende .zip bestand.",
-    "import": "Importeren"
+    "import": "Importeren",
+    "choose_file": "Obsidian kluis (.zip)"
   },
   "evernote_import": {
     "name": "Evernote",
@@ -367,11 +371,9 @@
     "import": "Importeren"
   },
   "include_note": {
-    "placeholder_search": "zoek een notitie op naam",
-    "box_size_small": "kort (~ 10 regels)",
-    "box_size_medium": "gemiddeld (~ 30 regels)",
-    "box_size_full": "volledig (in het vak wordt de volledige tekst weergegeven)",
-    "box_size_expandable": "uitklapbaar (standaard ingeklapt)"
+    "dialog_title": "Notitie bijvoegen",
+    "label_note": "Notitie",
+    "button_include": "Bijgevoegde notitie"
   },
   "info": {
     "modalTitle": "Informatiebericht",
@@ -380,8 +382,7 @@
     "copy_to_clipboard": "Naar klembord kopiëren"
   },
   "jump_to_note": {
-    "search_placeholder": "Zoek een notitie op naam of type > voor opdrachten...",
-    "search_button": "Zoeken in de volledige tekst"
+    "search_placeholder": "Zoek een notitie op naam of type > voor opdrachten..."
   },
   "markdown_editor": {
     "image_upload_failed": "De afbeelding “{{name}}” kan niet worden geüpload."
@@ -409,7 +410,10 @@
       "collapsible_summary": "Samenvatting",
       "collapsible_details": "Details",
       "table_column": "Kolom {{number}}"
-    }
+    },
+    "admonition": "Voeg {{type}} waarschuwing toe",
+    "todo": "Voeg een \"{{title}}\" taak item toe",
+    "todo_nonstandard": "Voeg een \"{{title}}\" taak item toe (niet standaard)"
   },
   "move_to": {
     "dialog_title": "Notities verplaatsen naar ...",
@@ -417,14 +421,11 @@
     "search_placeholder": "zoek een notitie op naam",
     "move_button": "Verplaats naar de geselecteerde notitie",
     "error_no_path": "Geen pad om naar te verplaatsen.",
-    "move_success_message": "Geselecteerde notities zijn verplaatst naar "
+    "move_success_message": "Geselecteerde notities zijn verplaatst naar ",
+    "target_parent_note": "Doel oudernotitie"
   },
   "note_type_chooser": {
-    "change_path_prompt": "Pas aan waar de nieuwe notitie moet worden aangemaakt:",
-    "search_placeholder": "zoek pad op naam (standaard als dit veld leeg is)",
     "modal_title": "Kies notitietype",
-    "modal_body": "Kies het notitietype / de sjabloon voor de nieuwe notitie:",
-    "builtin_templates": "Ingebouwde sjablonen",
     "templates": "Sjablonen"
   },
   "password_not_set": {
@@ -434,7 +435,9 @@
     "go_to_password_options": "Ga naar Wachtwoordopties"
   },
   "prompt": {
-    "ok": "OK"
+    "ok": "OK",
+    "title": "Commando",
+    "defaultTitle": "Commando"
   },
   "protected_session_password": {
     "modal_title": "Beveiligde sessie",
@@ -456,6 +459,31 @@
     "undelete_link": "terugzetten",
     "confirm_undelete": "Wilt u deze notitie en de bijbehorende sub-notities weer terugzetten?",
     "confirm_undelete_to_default_location": "De bovenliggende notitie van deze notitie bestaat niet meer, dus deze kan niet op de oorspronkelijke locatie worden hersteld. Wil je de notitie in plaats daarvan op de standaardlocatie voor nieuwe notities herstellen?",
-    "undeleted_to_default_location": "De oorspronkelijke locatie bestaat niet meer, dus is de notitie teruggezet naar “{{- title}}”."
+    "undeleted_to_default_location": "De oorspronkelijke locatie bestaat niet meer, dus is de notitie teruggezet naar “{{- title}}”.",
+    "title_with_ancestor": "{{- title}} - {{- ancestorTitle}}",
+    "undelete_failed": "De notitie kon niet worden hersteld - deze kan permament verwijderd zijn."
+  },
+  "revisions": {
+    "note_revisions": "Notitie versies",
+    "back": "Terug",
+    "delete_all_revisions": "Verwijder alle versies van deze notitie",
+    "delete_all_button": "Verwijder alle versies",
+    "help_title": "Uitleg over notitie versies",
+    "confirm_delete_all": "Wilt u alle versies van deze notitie verwijderen?",
+    "no_revisions": "Nog geen versies van deze notitie...",
+    "restore_button": "Herstel",
+    "highlight_changes": "Markeer veranderingen",
+    "diff_on": "Toon verschillen",
+    "diff_off": "Toon inhoud",
+    "diff_on_hint": "Druk hier om notitie bron vergelijking te zien",
+    "diff_off_hint": "Druk om notitie inhoud te tonen",
+    "diff_not_available": "Vergelijking is niet beschikbaar.",
+    "diff_identical": "Deze versie is identiek aan de huidige notitie inhoud.",
+    "confirm_restore": "Wilt u deze versie herstellen? Dit overschrijft de huidige titel en inhoud van de notitie met deze versie.",
+    "delete_button": "Verwijderen",
+    "confirm_delete": "Wilt u deze versie verwijderen?",
+    "revisions_deleted": "Notitieversies zijn verwijderd.",
+    "revision_restored": "Notitie versie is hersteld.",
+    "revision_deleted": "Notitie versie is verwijderd."
   }
 }

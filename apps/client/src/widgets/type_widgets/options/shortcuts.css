@@ -35,7 +35,11 @@
 
     /* Highlight the filter button while a filter is applied. */
     .icon-action.active {
+        --icon-button-color: var(--link-color);
+        --icon-button-hover-color: inherit;
+        --icon-button-hover-background: inherit;
         color: var(--link-color);
+        background: none;
     }
 }
 

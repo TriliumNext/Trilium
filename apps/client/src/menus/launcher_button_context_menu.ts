@@ -2,6 +2,7 @@ import type { ToggleInParentResponse } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
+import { setBooleanWithInheritance, setLabelValueWithInheritance } from "../services/attributes.js";
 import branchService from "../services/branches.js";
 import { t } from "../services/i18n.js";
 import options from "../services/options.js";
@@ -12,6 +13,24 @@ import contextMenu, { type ContextMenuEvent, type MenuItem } from "./context_men
 
 const VISIBLE_LAUNCHER_PARENTS = ["_lbVisibleLaunchers", "_lbMobileVisibleLaunchers"];
 
+/**
+ * The `#bookmarkOpenMode` values in menu order, each with the icon of the link menu item that opens
+ * a note the same way.
+ */
+export const BOOKMARK_OPEN_MODES = [
+    { value: "currentTab", uiIcon: "bx bx-tab",
+        titleKey: "launcher_button_context_menu.open_mode_current_tab" },
+    { value: "newTab", uiIcon: "bx bx-link-external",
+        titleKey: "launcher_button_context_menu.open_mode_new_tab" },
+    { value: "newSplit", uiIcon: "bx bx-dock-right",
+        titleKey: "launcher_button_context_menu.open_mode_new_split" },
+    { value: "newWindow", uiIcon: "bx bx-window-open",
+        titleKey: "launcher_button_context_menu.open_mode_new_window" },
+    { value: "quickEdit", uiIcon: "bx bx-edit",
+        titleKey: "launcher_button_context_menu.open_mode_quick_edit" }
+] as const;
+const DEFAULT_OPEN_MODE = "currentTab";
+
 function getVisibleLauncherBranch(launcherNote: FNote) {
     return launcherNote.getParentBranches().find((b) => VISIBLE_LAUNCHER_PARENTS.includes(b.parentNoteId));
 }
@@ -20,9 +39,23 @@ function getBookmarkBranch(launcherNote: FNote) {
     return launcherNote.getParentBranches().find((b) => b.parentNoteId === "_lbBookmarks");
 }
 
-async function removeFromLaunchBar(launcherNote: FNote) {
-    const bookmarkBranch = getBookmarkBranch(launcherNote);
-    if (bookmarkBranch) {
+/**
+ * Returns the branch that shows the note in the launch bar section `parentNoteId`. Without a
+ * section, a bookmark comes before a launcher.
+ */
+function getLaunchBarBranch(launcherNote: FNote, parentNoteId: string | undefined) {
+    if (parentNoteId) {
+        return launcherNote.getParentBranches().find((b) => b.parentNoteId === parentNoteId);
+    }
+
+    return getBookmarkBranch(launcherNote) ?? getVisibleLauncherBranch(launcherNote);
+}
+
+async function removeFromLaunchBar(launcherNote: FNote, parentNoteId: string | undefined) {
+    const launcherBranch = getLaunchBarBranch(launcherNote, parentNoteId);
+    if (!launcherBranch) return;
+
+    if (launcherBranch.parentNoteId === "_lbBookmarks") {
         // Individual bookmarks are represented via a branch under `_lbBookmarks`; removing them
         // from the launch bar is the same as unbookmarking the note.
         const resp = await server.put<ToggleInParentResponse>(
@@ -34,8 +67,14 @@ async function removeFromLaunchBar(launcherNote: FNote) {
         return;
     }
 
-    const launcherBranch = getVisibleLauncherBranch(launcherNote);
-    if (!launcherBranch) return;
+    // A note dropped onto the launch bar is a clone, so removing it deletes the clone. When the
+    // clone is the note's last placement, the server refuses and the clone moves like a launcher.
+    if (launcherNote.type !== "launcher") {
+        const resp = await server.put<ToggleInParentResponse>(
+            `notes/${launcherNote.noteId}/toggle-in-parent/${launcherBranch.parentNoteId}/false`
+        );
+        if (resp.success) return;
+    }
 
     const isMobileLauncher = launcherBranch.parentNoteId === "_lbMobileVisibleLaunchers";
     // Branch IDs in the hidden subtree follow the `${parentNoteId}_${noteId}` convention,
@@ -46,9 +85,12 @@ async function removeFromLaunchBar(launcherNote: FNote) {
     await branchService.moveToParentNote([launcherBranch.branchId], targetBranchId);
 }
 
-export function canRemoveFromLaunchBar(launcherNote: FNote | null | undefined) {
+export function canRemoveFromLaunchBar(
+    launcherNote: FNote | null | undefined,
+    parentNoteId?: string
+) {
     if (!launcherNote) return false;
-    return !!(getVisibleLauncherBranch(launcherNote) || getBookmarkBranch(launcherNote));
+    return !!getLaunchBarBranch(launcherNote, parentNoteId);
 }
 
 export interface ShowLauncherContextMenuOptions<T extends string> {
@@ -56,6 +98,8 @@ export interface ShowLauncherContextMenuOptions<T extends string> {
     extraItems?: MenuItem<T>[];
     /** Handler for the {@link extraItems}. The "Remove from launch bar" item is handled internally and will not be forwarded. */
     onCommand?: (command: T | undefined) => void;
+    /** The launch bar section that shows the button. "Remove from launch bar" removes it there. */
+    parentNoteId?: string;
 }
 
 const REMOVE_COMMAND = "__removeFromLaunchBar__";
@@ -63,7 +107,8 @@ const REMOVE_COMMAND = "__removeFromLaunchBar__";
 /**
  * Displays the launch bar icon context menu. When the launcher can be removed (i.e. it is a direct
  * child of the visible launchers root or of `_lbBookmarks`), a "Remove from launch bar" entry is
- * appended. Extra items can be supplied to preserve launcher-specific actions (e.g. "Open in new tab").
+ * appended, after a "Show as a folder" toggle for a bookmark or a dropped note. Extra items can be
+ * supplied to preserve launcher-specific actions (e.g. "Open in new tab").
  */
 export async function showLauncherContextMenu<T extends string>(
     launcherNote: FNote | null | undefined,
@@ -75,14 +120,19 @@ export async function showLauncherContextMenu<T extends string>(
     // Widget-specific items (e.g. "Open in new tab" for note launchers, history entries, "Remove from launch bar").
     const widgetItems = [...(options.extraItems ?? [])] as MenuItem<string>[];
 
-    if (canRemoveFromLaunchBar(launcherNote)) {
-        if (widgetItems.length > 0) {
-            widgetItems.push({ kind: "separator" });
+    if (launcherNote && canRemoveFromLaunchBar(launcherNote, options.parentNoteId)) {
+        // Bookmarks and dropped notes are regular notes, which `#bookmarkFolder` shows as folders.
+        if (launcherNote.type !== "launcher") {
+            pushGroup(
+                widgetItems,
+                buildOpenModeItem(launcherNote),
+                buildShowAsFolderItem(launcherNote)
+            );
         }
-        widgetItems.push({
+        pushGroup(widgetItems, {
             title: t("launcher_button_context_menu.remove_from_launch_bar"),
             command: REMOVE_COMMAND,
-            uiIcon: "bx bx-x-circle"
+            uiIcon: "bx bx-x-circle destructive-action-icon"
         });
     }
 
@@ -99,13 +149,56 @@ export async function showLauncherContextMenu<T extends string>(
         selectMenuItemHandler: ({ command }) => {
             if (command === REMOVE_COMMAND) {
                 if (launcherNote) {
-                    void removeFromLaunchBar(launcherNote);
+                    void removeFromLaunchBar(launcherNote, options.parentNoteId);
                 }
                 return;
             }
             options.onCommand?.(command as T | undefined);
         }
     });
+}
+
+/** Appends `group` to `items` as a group of its own. */
+function pushGroup(items: MenuItem<string>[], ...group: MenuItem<string>[]) {
+    if (items.length > 0) {
+        items.push({ kind: "separator" });
+    }
+    items.push(...group);
+}
+
+/**
+ * The _Open mode_ submenu, which sets where a click on the note's button opens it. A folder's mode
+ * is inheritable, so the notes in its menu follow it, and the check shows the mode they follow.
+ */
+function buildOpenModeItem(note: FNote): MenuItem<string> {
+    const isFolder = note.isLabelTruthy("bookmarkFolder");
+    const labels = note.getLabels("bookmarkOpenMode");
+    const labelValue = (isFolder ? labels.find((label) => label.isInheritable) : labels[0])?.value;
+    const current = BOOKMARK_OPEN_MODES.find((mode) => mode.value === labelValue)?.value
+        ?? DEFAULT_OPEN_MODE;
+
+    return {
+        title: t("launcher_button_context_menu.open_mode"),
+        uiIcon: "bx bx-link-external",
+        items: BOOKMARK_OPEN_MODES.map(({ value, titleKey, uiIcon }) => ({
+            title: t(titleKey),
+            uiIcon,
+            checked: value === current,
+            handler: () => setLabelValueWithInheritance(
+                note, "bookmarkOpenMode", value, DEFAULT_OPEN_MODE, isFolder
+            )
+        }))
+    };
+}
+
+function buildShowAsFolderItem(note: FNote): MenuItem<string> {
+    const isFolder = note.isLabelTruthy("bookmarkFolder");
+    return {
+        title: t("launcher_button_context_menu.show_as_folder"),
+        uiIcon: "bx bx-folder",
+        checked: isFolder,
+        handler: () => setBooleanWithInheritance(note, "bookmarkFolder", !isFolder)
+    };
 }
 
 /**

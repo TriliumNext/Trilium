@@ -14,6 +14,23 @@
     }
 }
 
+.rendered-mermaid-diagram,
+.rendered-mermaid-diagram svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.rendered-mermaid-diagram.mermaid-error {
+    display: block;
+    white-space: pre-wrap;
+    padding: 0.75em 1em;
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    color: var(--muted-text-color);
+    font-family: var(--monospace-font-family, monospace);
+    font-size: 0.85em;
+}
+
 /* An interactive embedded web view (RenderOptions.interactive) fills the height its host provides. */
 .rendered-content:has(> .note-detail-web-view) {
     height: 100%;
@@ -35,6 +52,16 @@
    to follow it. In a content-sized host (a list row) this resolves to auto, leaving the floor below to apply. */
 .rendered-content:has(.rendered-media) {
     height: 100%;
+}
+
+/* Fills a host of fixed height, such as a fullscreen embed; elsewhere the image sets the height. */
+.rendered-content .rendered-image-viewer {
+    height: 100%;
+
+    /* A failed image has no size, so the error message needs a floor. */
+    .image-viewer-root:has(.img-loading-error) {
+        min-height: 8rem;
+    }
 }
 
 /* The mounted media player (placeholder or full) takes the space its host gives it, above the file footer,

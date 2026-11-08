@@ -1,5 +1,7 @@
-import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
+import type { ResourcesStatusResponse } from "@triliumnext/commons";
 import { Modal } from "bootstrap";
+
+import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
 
 import appContext from "../components/app_context.js";
 import type { ConfirmDeleteNoteBoxOptions, ConfirmDialogOptions, ConfirmDialogResult, ConfirmWithMessageOptions, MessageType } from "../widgets/dialogs/confirm.js";
@@ -9,6 +11,7 @@ import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
 import keyboardActionsService from "./keyboard_actions.js";
 import type { NoteDeletionTarget } from "./note_deletion.js";
+import server from "./server.js";
 
 /**
  * @param declaredZIndex the z-index the dialog defines for itself, if any (see {@link raiseAboveStackedPopup}).
@@ -51,11 +54,6 @@ export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = 
 
     $dialog.on("hidden.bs.modal", () => {
         sendDialogHome($dialog[0]);
-
-        const $autocompleteEl = $(".aa-input");
-        if ("autocomplete" in $autocompleteEl) {
-            $autocompleteEl.autocomplete("close");
-        }
 
         if (!glob.activeDialog || glob.activeDialog === $dialog) {
             focusSavedElement();
@@ -184,15 +182,19 @@ const STANDARD_MODAL_LAYER = 1055;
 const SELF_MANAGED_POPUP_SELECTOR = ".popup-editor-dialog, .tree-popup-editor-dialog";
 
 /**
- * Raises a dialog above every modal already open, and returns the z-index it was given.
+ * Raises a dialog above every modal already open, and returns the layer its backdrop must sit
+ * just under.
  *
- * Two cases need this. A quick-edit or tree popup stacked on a modal sits at 1100, above the
+ * Two cases need the lift. A quick-edit or tree popup stacked on a modal sits at 1100, above the
  * standard 1055, so a dialog opened from it renders behind. Two dialogs that declare the same
  * layer tie, and DOM order decides, which is not the dialog just opened.
  *
  * The z-index is rewritten on every open so a lift does not outlive it, and `declaredZIndex`
- * (`Modal`'s `zIndex` prop) is what an unlifted dialog falls back to. The caller matches the
- * backdrop to the result. Returns `null` when no lift is needed.
+ * (`Modal`'s `zIndex` prop) is what an unlifted dialog falls back to. A dialog that declares a
+ * layer above everything open keeps it, but its backdrop is raised with it all the same: Bootstrap
+ * puts the backdrop at 1050, under a modal at 1055, so a confirmation at 2000 asked from the
+ * Options dialog would leave the settings undimmed beside it. Returns `null` when the backdrop can
+ * stay on Bootstrap's own layer, which is when nothing else is open under the dialog.
  */
 function raiseAboveWhatIsOpen(dialogEl: HTMLElement, declaredZIndex?: number): number | null {
     const others = Array.from(document.querySelectorAll<HTMLElement>(".modal.show"))
@@ -207,7 +209,7 @@ function raiseAboveWhatIsOpen(dialogEl: HTMLElement, declaredZIndex?: number): n
 
     if (!isCovered || dialogEl.matches(SELF_MANAGED_POPUP_SELECTOR)) {
         dialogEl.style.zIndex = declaredZIndex ? String(declaredZIndex) : "";
-        return null;
+        return declaredZIndex && others.length > 0 ? declaredZIndex : null;
     }
 
     // A dialog declaring a layer above everything open keeps it: the lift only raises.
@@ -223,9 +225,10 @@ async function info(message: MessageType, extraProps?: InfoExtraProps) {
 /**
  * Displays a confirmation dialog with the given message.
  *
- * @param message the message to display in the dialog. A string is rendered as HTML; pass an element
- *                where the wording needs structure the dialog should not have to parse — an
- *                admonition warning about what the action costs, say.
+ * @param message the message to display in the dialog. A string is rendered as HTML, sanitized by
+ *                DOMPurify so the note titles and attribute names these questions name cannot inject
+ *                markup; pass an element where the wording needs structure the dialog should not
+ *                have to parse — an admonition warning about what the action costs, say.
  * @returns A promise that resolves to true if the user confirmed, false otherwise.
  */
 async function confirm(message: MessageType) {
@@ -295,6 +298,22 @@ export async function prompt(props: PromptDialogOptions) {
     return new Promise<string | null>((res) => appContext.triggerCommand("showPromptDialog", { ...props, callback: res }));
 }
 
+/**
+ * Makes sure the resources `ids` are installed, asking to download those that are not and showing
+ * the download.
+ *
+ * @returns `true` once every resource is installed, `false` when the download was declined,
+ *   canceled or failed.
+ */
+export async function requireResources(ids: string[]) {
+    const status = await server.get<ResourcesStatusResponse>(`resources?ids=${ids.map(encodeURIComponent).join(",")}`);
+    if (status.resources.every(({ installed }) => installed)) {
+        return true;
+    }
+    return new Promise<boolean>((res) =>
+        appContext.triggerCommand("showResourceDownloadDialog", { ids, status, callback: res }));
+}
+
 export default {
     info,
     chooseNote,
@@ -302,5 +321,6 @@ export default {
     confirmWithNoteDeletion,
     confirmDeleteNoteBoxWithNote,
     pickSingleItem,
-    prompt
+    prompt,
+    requireResources
 };

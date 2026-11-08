@@ -18,6 +18,7 @@
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序，专注于建立大型个人知识库。
@@ -276,13 +277,15 @@ Trilium 的诞生离不开其背后的技术支持：
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 文本笔记背后的可视化编辑器。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支持海量编程语言的代码编辑器。
+* [Mermaid](https://github.com/mermaid-js/mermaid)——渲染 Mermaid
+  笔记的图表；它的解析器也是这些笔记语法高亮所依据的模型。
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)——Mermaid
+  语法高亮的基础。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— 画布笔记中使用的无限白板。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供思维导图功能。
 * [Leaflet](https://github.com/Leaflet/Leaflet) —— 用于渲染地理地图。
 * [Tabulator](https://github.com/olifolkerd/tabulator) —— 用于集合中的交互式表格。
 * [FancyTree](https://github.com/mar10/fancytree) —— 功能丰富的树形控件库，无可匹敌。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) ——
-  可视化连接库。用于[关系图](https://docs.triliumnotes.org/user-guide/note-types/relation-map)和[链接图](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 支持我们
 

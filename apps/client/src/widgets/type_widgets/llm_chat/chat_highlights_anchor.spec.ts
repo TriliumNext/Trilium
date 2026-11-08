@@ -47,10 +47,11 @@ describe("resolveAnchorIndices", () => {
 });
 
 describe("buildProseProjection", () => {
-    it("concatenates prose while skipping code, math, and non-markdown text", () => {
+    it("concatenates prose while skipping code, math, non-markdown text and thoughts", () => {
         const root = contentRoot(
             `<p>Hello <code>skip()</code> world</p><pre>ignored block</pre><p>bye</p>`,
-            `<div class="tool-card">tool noise</div>`
+            `<div class="tool-card">tool noise</div>` +
+            `<div class="llm-chat-thinking"><div class="llm-chat-markdown"><p>thought</p></div></div>`
         );
         expect(buildProseProjection(root).text).toBe("Hello  worldbye");
     });

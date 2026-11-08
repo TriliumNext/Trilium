@@ -33,4 +33,9 @@ export interface SearchParams {
      * results and never read the rest, so the full set is never fully ranked.
      */
     rankInTwoPasses?: boolean;
+    /**
+     * Whether the query can use the `%=` regex operator. Defaults to true; a surface open to
+     * anonymous callers turns it off, since a backtracking pattern blocks the event loop.
+     */
+    allowRegex?: boolean;
 }

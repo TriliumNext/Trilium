@@ -10,17 +10,19 @@ The floating bar is a more minimalist option, in which the formatting is hidden 
 ### Block-level popup
 
 The first popup is the block-level popup. This will appear to the left of the current paragraph you are currently editing, as a sequence of dots:  
-![](1_Formatting%20toolbar_image.png)
+![](Formatting%20toolbar_image.jpg)
 
 Clicking this popup will reveal the formatting options that are specific to the entire paragraph, such as setting a heading, lists, tables, etc.
 
-![](3_Formatting%20toolbar_image.png)
+The dots are also a drag handle: drag them to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Right-clicking them opens a menu that copies a reference to the paragraph or to the selected paragraphs, see <a class="reference-link" href="Block%20references.md">Block references</a>. The menu is headed by the type of the block it acts on, such as _Paragraph_, _Table_ or _List item_, or by the number of blocks when there are several. For a single block other than a paragraph, the <span class="tn-icon bx bx-help-circle"></span> button at the end of the heading opens the help page of its type in a split beside the note. Its first items, _Insert above_ and _Insert below_, list the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> that insert content or turn a paragraph into another block, and add the one picked in a new paragraph above or below the paragraph. Beside a list item, _Insert item above_, _Insert item below_ and _Insert child item_ take their place and add an empty item. After them, _Cut_ and _Copy_ put the whole paragraph or the selected paragraphs on the clipboard, even when only part of their text is selected; _Cut_ also removes them. Once an AI provider is configured, _AI assistant_ follows them, with the same items as the <span class="tn-icon cke cke-trilium-ai"></span> button of the toolbar, and works on the whole paragraph or the selected paragraphs rather than on the selected text, see <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>. Its last item, _Delete_, deletes the paragraph or the selected paragraphs at once, without asking for confirmation; <kbd>Ctrl</kbd>+<kbd>Z</kbd> brings them back.
+
+<figure class="image"><img style="aspect-ratio:1404/156;" src="2_Formatting toolbar_image.png" width="1404" height="156"></figure>
 
 ### Inline popup
 
 The inline popup appears automatically when selecting a text:
 
-![](Formatting%20toolbar_image.png)
+<figure class="image"><img style="aspect-ratio:1008/154;" src="1_Formatting toolbar_image.png" width="1008" height="154"></figure>
 
 All the options here apply only to the selected portion of text, such as changing the font size, or making the text bold.
 
@@ -28,8 +30,12 @@ All the options here apply only to the selected portion of text, such as changin
 
 The fixed formatting offers a more traditional editing paradigm, usually useful if a lot of formatting is needed.
 
-All the options are combined into a single toolbar that will appear as part of the [Ribbon](../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md).
+All the options are combined into a single toolbar that will appear at the above the note. When using <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Split%20View.md">Split View</a>, a single toolbar will be available to save space and it acts on the active note.
 
-![](2_Formatting%20toolbar_image.png)
+The sequence of dots to the left of the current paragraph is still shown as a drag handle: drag it to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Releasing it above the first paragraph or below the last one moves it to the start or the end of the note. Clicking or right-clicking it opens a menu that copies a reference to the block, see <a class="reference-link" href="Block%20references.md">Block references</a>. The last item of that menu, _Delete_, deletes the blocks that a drag would move, without asking for confirmation; <kbd>Ctrl</kbd>+<kbd>Z</kbd> brings them back. Hovering the drag handle shades the blocks that it moves, and they stay shaded while its menu is open: inside a table, this is the paragraph in the current cell, and with several cells selected, the whole table. The menu is headed by the type of the shaded block, such as _Paragraph_, _Table_ or _List item_, or by the number of shaded blocks when there are several. For a single block other than a paragraph, the <span class="tn-icon bx bx-help-circle"></span> button at the end of the heading opens the help page of its type in a split beside the note. Its first items, _Insert above_ and _Insert below_, list the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> that insert content or turn a paragraph into another block, and add the one picked in a new paragraph above or below the shaded blocks; typing while one of them is open filters it. They are shown only while slash commands are turned on. Beside a list item, _Insert item above_, _Insert item below_ and _Insert child item_ take their place and add an empty item: above the item, below it and its nested items, or as its first nested item. In a table cell, _Insert row above_ and _Insert row below_ follow them. After them, _Cut_ and _Copy_ put the shaded blocks on the clipboard, and _Cut_ also removes them. Once an AI provider is configured, _AI assistant_ follows them, with the same items as the <span class="tn-icon cke cke-trilium-ai"></span> button of the toolbar, and works on the shaded blocks rather than on the selected text, see <a class="reference-link" href="In-editor%20AI%20assistant.md">In-editor AI assistant</a>. The drag handle is not shown in the mobile layout.
+
+Beside an empty paragraph, the dots turn into a <span class="tn-icon cke cke-plus"></span> button. Clicking it opens the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a> that insert content or turn the paragraph into another block as a menu, with a box at its top to filter them, and right-clicking it still opens the menu of the block. The button is shown only while <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_ → _Slash commands_ is turned on.
+
+<figure class="image"><img style="aspect-ratio:1440/60;" src="Formatting toolbar_image.png" width="1440" height="60"></figure>
 
 By default, if the toolbar does not fit on the screen, the rest of the options will be grouped into a single option at the end. It is possible to display items on multiple lines by checking the corresponding option in the _Formatting toolbar_ section.

@@ -22,8 +22,10 @@ import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CLUSTER_COUNT_LAYER, CLUSTER_LAYER } from "./clusters";
+import type { Bounds } from "./coordinates";
 import { MapStyleLoaded, ParentMap } from "./map";
-import Markers, { FitToNotes, formatLocation, MARKER_LAYER, MARKER_SOURCE, parseLocation, SELECTION_LAYER } from "./Markers";
+import Markers, { FitToNotes, MARKER_LAYER, MARKER_SOURCE, SELECTION_LAYER } from "./Markers";
+import { formatLocation, parseLocation } from "./space";
 
 vi.mock("../../../services/icon_glyphs", () => ({
     renderIconImage: vi.fn(async () => "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=")
@@ -618,6 +620,10 @@ describe("Markers", () => {
             // The glow stands from the start, aimed at nothing: no note's id is the empty string.
             expect(map.layer(SELECTION_LAYER)?.filter).toEqual([ "==", [ "get", "id" ], "" ]);
             expect(map.layer(MARKER_LAYER)?.layout?.["icon-size"]).toBe(1);
+            // An expression even with nothing to sort, so selecting a marker never turns it from a
+            // constant into one (see selectionSortKey).
+            expect(map.layer(MARKER_LAYER)?.layout?.["symbol-sort-key"])
+                .toEqual([ "case", [ "==", [ "get", "id" ], "" ], 1, 0 ]);
             const layersBefore = map.calls.addLayer;
 
             // A marker is selected: everything is repointed rather than rebuilt.
@@ -638,6 +644,8 @@ describe("Markers", () => {
             await mount([ note ], map, parent, { isDarkTheme: true });
             expect(map.property(SELECTION_LAYER, "filter")).toEqual([ "==", [ "get", "id" ], "" ]);
             expect(map.property(MARKER_LAYER, "icon-size")).toBe(1);
+            expect(map.property(MARKER_LAYER, "symbol-sort-key"))
+                .toEqual([ "case", [ "==", [ "get", "id" ], "" ], 1, 0 ]);
         });
 
         /**
@@ -717,11 +725,11 @@ describe("framing a map around its notes", () => {
         container.remove();
     });
 
-    function mountFit(notes: FNote[], map: ReturnType<typeof fakeMap>, enabled = true) {
+    function mountFit(notes: FNote[], map: ReturnType<typeof fakeMap>, enabled = true, bounds?: Bounds) {
         return act(async () => {
             render(
                 <ParentMap.Provider value={map as never}>
-                    <FitToNotes notes={notes} enabled={enabled} />
+                    <FitToNotes notes={notes} enabled={enabled} bounds={bounds} />
                 </ParentMap.Provider>,
                 container
             );
@@ -742,6 +750,20 @@ describe("framing a map around its notes", () => {
         // A single note would otherwise fit at whatever zoom solves a box with no width, and a map
         // that flew to its own notes would show the stock view first.
         expect(map.fits[0].options).toMatchObject({ maxZoom: expect.any(Number), animate: false });
+    });
+
+    it("frames the bounds it is given instead of the notes, passing no option as undefined", async () => {
+        const map = fakeMap();
+        const image: Bounds = [ [ -90, -40 ], [ 90, 40 ] ];
+
+        await mountFit([ PARIS ], map, true, image);
+
+        expect(map.fits).toHaveLength(1);
+        expect(map.fits[0].bounds).toEqual(image);
+        // MapLibre merges the options over its defaults key by key, so an `undefined` replaces the
+        // default rather than leaving it be: `maxZoom: undefined` made the zoom, and so the centre, NaN.
+        const options = map.fits[0].options as Record<string, unknown>;
+        expect(Object.keys(options).filter((key) => options[key] === undefined)).toEqual([]);
     });
 
     it("leaves a map that has a saved view exactly where the reader put it", async () => {

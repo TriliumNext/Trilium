@@ -1,0 +1,73 @@
+# Packet
+
+packet-beta
+
+==>
+
+PacketDiagram(DiagramName)
+
+# Packet (bare keyword)
+
+packet
+
+==>
+
+PacketDiagram(DiagramName)
+
+# Title
+
+packet-beta
+title UDP Packet
+
+==>
+
+PacketDiagram(DiagramName,Title,TitleText)
+
+# Field with range
+
+packet-beta
+0-15: "Source Port"
+
+==>
+
+PacketDiagram(DiagramName,Field(Range(Number,Number),String))
+
+# Single bit field
+
+packet-beta
+96: "Data"
+
+==>
+
+PacketDiagram(DiagramName,Field(Range(Number),String))
+
+# Multiple fields
+
+packet-beta
+0-15: "Source Port"
+16-31: "Destination Port"
+32-63: "Length"
+
+==>
+
+PacketDiagram(DiagramName,Field(Range(Number,Number),String),Field(Range(Number,Number),String),Field(Range(Number,Number),String))
+
+# Title and fields with comment
+
+packet-beta
+title UDP Packet
+0-15: "Source Port" %% first field
+16-31: "Destination Port"
+
+==>
+
+PacketDiagram(DiagramName,Title,TitleText,Field(Range(Number,Number),String),LineComment,Field(Range(Number,Number),String))
+
+# Title without text
+
+packet-beta
+title
+
+==>
+
+PacketDiagram(DiagramName,Title,⚠)

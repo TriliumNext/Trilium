@@ -7,10 +7,10 @@
         white-space: nowrap;
     }
 
-    /* Reads as a note about the row rather than as something to press. */
-    .promoted-attribute-type {
+    /* Shaped like `.shortcut-conflicts-badge`, in the warning color `MfaStatusBadge` uses. */
+    .promoted-attribute-conflict {
         flex-shrink: 0;
-        --color: var(--muted-text-color);
+        --color: var(--admonition-warning-accent-color, #e0a800);
         font-size: 0.8em;
     }
 

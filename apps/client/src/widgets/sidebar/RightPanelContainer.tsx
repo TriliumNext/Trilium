@@ -1,10 +1,9 @@
-//! This is currently only used for the new layout.
 import "./RightPanelContainer.css";
 
 import Split from "@triliumnext/split.js";
 import clsx from "clsx";
 import { VNode } from "preact";
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { WidgetsByParent } from "../../services/bundle";
@@ -13,10 +12,11 @@ import options from "../../services/options";
 import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
-import { useActiveNoteContext, useGetContextData, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useGetContextData, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
 import LazyComponent from "../react/LazyComponent";
 import NoItems from "../react/NoItems";
 import { PaneMode, usePaneMode, usePeekDismiss } from "../react/peek_pane";
+import PeekPaneButton from "../react/PeekPaneButton";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import AttributeList from "./AttributeList";
 import Backlinks from "./Backlinks";
@@ -29,8 +29,7 @@ import PdfAnnotations from "./pdf/PdfAnnotations";
 import PdfAttachments from "./pdf/PdfAttachments";
 import PdfLayers from "./pdf/PdfLayers";
 import PdfPages from "./pdf/PdfPages";
-import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests } from "./RightPanelWidget";
-import RightPanePeekButton from "./RightPanePeekButton";
+import RightPanelWidget, { CollapsibleWidgets, ExpandWidgetRequest, ExpandWidgetRequests, StackedWidgets, TabHeaderSlot } from "./RightPanelWidget";
 import RightPaneTabs, { RIGHT_PANE_TABS, RightPaneTabDefinition, RightPaneTabId } from "./RightPaneTabs";
 import TableOfContents from "./TableOfContents";
 
@@ -51,9 +50,16 @@ export interface RightPaneTabContents extends RightPaneTabDefinition {
 }
 
 export default function RightPanelContainer({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
-    const { mode, visible, mounted, togglePeek, toggleDocked, dock, close, dismiss } = usePaneMode("rightPaneVisible");
-    const tabs = useItems(mounted, widgetsByParent);
-    const [ selectedTabId, setSelectedTabId ] = useTriliumOption("rightPaneSelectedTab");
+    const { mode, visible, mounted, togglePeek, toggleDocked, dock, close, dismiss } = usePaneMode("rightPaneVisible", "right");
+    const tabs = useRightPaneTabs(mounted, widgetsByParent);
+    // This window's own choice, seeded from the option and written back for the next window to start
+    // from — the same treatment usePaneMode gives the pane's visibility. Subscribing to the option
+    // (useTriliumOption) would let a click in one window flip the strip in every other.
+    const [ selectedTabId, setSelectedTabIdState ] = useState(() => options.get("rightPaneSelectedTab"));
+    const setSelectedTabId = useCallback((tabId: RightPaneTabId) => {
+        setSelectedTabIdState(tabId);
+        void options.save("rightPaneSelectedTab", tabId);
+    }, []);
     const [ expandRequest, setExpandRequest ] = useState<ExpandWidgetRequest | null>(null);
     useSplit(mode);
 
@@ -61,14 +67,6 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     // chat once AI is switched off), in which case the first one that does stands in — without
     // overwriting the choice, so it is back as soon as the note has that tab again.
     const activeTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
-
-    // A tab's widgets are mounted when it is first opened and kept mounted afterwards: switching back
-    // is instant and stateful (a chat in progress survives it), while a tab never opened costs
-    // nothing — which is what keeps the LLM chat's bundle out of the pane until it is asked for.
-    const openedTabs = useRef(new Set<RightPaneTabId>());
-    if (activeTab) {
-        openedTabs.current.add(activeTab.id);
-    }
 
     // Legacy entry points (tab-row toggle, empty-state button) open/close the *docked* pane;
     // the keyboard shortcut peeks it (same as clicking the peek button).
@@ -91,7 +89,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
             return;
         }
 
-        void setSelectedTabId(tabId);
+        setSelectedTabId(tabId);
         // Raised before the pane opens, so a widget mounted for the first time already reads it.
         if (expandWidgetId) {
             setExpandRequest((prev) => ({ id: expandWidgetId, counter: (prev?.counter ?? 0) + 1 }));
@@ -122,19 +120,30 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
         <>
             {/* Absolutely positioned in a reserved gutter on the viewport's right edge, so it
                 stays put regardless of the right pane's open/collapsed state (see RightPanelContainer.css). */}
-            <RightPanePeekButton rightPaneVisible={visible} onToggle={togglePeek} />
+            <PeekPaneButton
+                side="end"
+                className="right-pane-peek-button"
+                isOpen={visible}
+                onToggle={togglePeek}
+                hideText={t("right_pane.hide")}
+                peekText={t("right_pane.peek")}
+                keyboardAction="peekRightPane"
+            />
             {/* Persistent host so #right-pane never reparents between modes (which would remount the
                 right pane widgets). Docked: an in-flow flex child Split resizes against #center-pane.
                 Peek: an absolute layer over the content where Split resizes the spacer vs the pane.
                 `hidden` (display:none) keeps soft-dismissed peek content mounted but out of layout. */}
-            <div id="right-pane-host" class={clsx(mode === "peek" && "peek", !visible && "hidden")}>
+            <div
+                id="right-pane-host"
+                class={clsx("peek-pane-host side-end", mode === "peek" && "peek", !visible && "hidden")}
+            >
                 {/* The spacer is both the left Split target and the dismiss backdrop in peek mode:
                     it covers the content (a click dismisses) and shields the PDF iframe so Split's
                     drag tracking isn't interrupted. Always rendered + CSS-toggled to keep the host's
                     child list structurally stable for Split's gutter injection. */}
-                <div class="right-pane-peek-spacer" />
+                <div class="peek-pane-spacer" />
                 {/* Mode class (right-pane-mode-docked / -peek) as a styling hook; none when closed. */}
-                <div id="right-pane" class={visible ? `right-pane-mode-${mode}` : undefined}>
+                <div id="right-pane" class={clsx("peek-pane", visible && `right-pane-mode-${mode}`)}>
                     {mounted && (
                         <>
                             {/* One flex row holding the tab strip and the pane's own actions, so a
@@ -145,7 +154,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                                     <RightPaneTabs
                                         tabs={tabs}
                                         activeTabId={activeTab?.id}
-                                        onSelect={(tabId) => void setSelectedTabId(tabId)}
+                                        onSelect={setSelectedTabId}
                                     />
                                 )}
                                 <div class="right-pane-actions">
@@ -155,25 +164,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                                 </div>
                             </div>
                             {tabs.length > 0 ? (
-                                tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
-                                    <div
-                                        key={tab.id}
-                                        role="tabpanel"
-                                        class={clsx("right-pane-tab-body", tab.id !== activeTab?.id && "hidden-ext")}
-                                    >
-                                        {/* Collapsing the only widget of a tab would leave the tab empty,
-                                            so a tab of one offers no collapsing at all. */}
-                                        <CollapsibleWidgets.Provider value={tab.items.length > 1}>
-                                            <ExpandWidgetRequests.Provider value={expandRequest}>
-                                                {tab.items.length > 0 ? tab.items : (
-                                                    // A tab that stays for a note it has nothing to show
-                                                    // (see RightPaneTabDefinition.alwaysShown) says so.
-                                                    <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
-                                                )}
-                                            </ExpandWidgetRequests.Provider>
-                                        </CollapsibleWidgets.Provider>
-                                    </div>
-                                ))
+                                <RightPaneTabBodies tabs={tabs} activeTabId={activeTab?.id} expandRequest={expandRequest} />
                             ) : (
                                 <NoItems
                                     icon="bx bx-sidebar"
@@ -196,7 +187,59 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
     );
 }
 
-function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): RightPaneTabContents[] {
+/**
+ * The bodies of the pane's tabs, all but the active one hidden. A tab's widgets are mounted when it is
+ * first opened and kept mounted afterwards: switching back is instant and keeps its state (a chat in
+ * progress), and a tab never opened costs nothing, which keeps the LLM chat's bundle out until it is
+ * asked for.
+ *
+ * A `flat` tab scrolls as a whole, its widgets stacked at their content's height with nothing to
+ * collapse, as the mobile note panel lays it out.
+ */
+export function RightPaneTabBodies({ tabs, activeTabId, expandRequest, flat, headerSlots }: {
+    tabs: RightPaneTabContents[];
+    activeTabId?: RightPaneTabId;
+    expandRequest?: ExpandWidgetRequest | null;
+    flat?: boolean;
+    /** Per tab, the host's header element its widgets put their controls in (see `TabHeaderSlot`). */
+    headerSlots?: Partial<Record<RightPaneTabId, HTMLElement | null>>;
+}) {
+    const openedTabs = useRef(new Set<RightPaneTabId>());
+    if (activeTabId) {
+        openedTabs.current.add(activeTabId);
+    }
+
+    return tabs.filter((tab) => openedTabs.current.has(tab.id)).map((tab) => (
+        <div
+            key={tab.id}
+            role="tabpanel"
+            data-tab-id={tab.id}
+            class={clsx(flat ? "right-pane-flat-tab-body" : "right-pane-tab-body", tab.id !== activeTabId && "hidden-ext")}
+        >
+            {/* Collapsing the only widget of a tab would leave the tab empty, so a tab of one offers
+                no collapsing at all. */}
+            <CollapsibleWidgets.Provider value={!flat && tab.items.length > 1}>
+                <StackedWidgets.Provider value={!!flat && tab.items.length > 1}>
+                    <ExpandWidgetRequests.Provider value={expandRequest ?? null}>
+                        <TabHeaderSlot.Provider value={headerSlots?.[tab.id] ?? null}>
+                            {tab.items.length > 0 ? tab.items : (
+                                // A tab that stays for a note it has nothing to show
+                                // (see RightPaneTabDefinition.alwaysShown) says so.
+                                <NoItems icon={tab.icon} text={t("right_pane.empty_message")} />
+                            )}
+                        </TabHeaderSlot.Provider>
+                    </ExpandWidgetRequests.Provider>
+                </StackedWidgets.Provider>
+            </CollapsibleWidgets.Provider>
+        </div>
+    ));
+}
+
+/**
+ * The pane's tabs with the widgets enabled for the active note, or none while `rightPaneVisible` is
+ * false. Shared by the desktop pane and the mobile note panel.
+ */
+export function useRightPaneTabs(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): RightPaneTabContents[] {
     const { note } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
     const noteMime = useNoteProperty(note, "mime");
@@ -243,7 +286,7 @@ function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent): 
         },
         {
             el: <TableOfContents />,
-            enabled: (noteType === "text" || noteType === "doc" || isPdf || noteType === "llmChat" || !!note?.isMarkdown()),
+            enabled: (noteType === "text" || isPdf || noteType === "llmChat" || !!note?.isMarkdown()),
             tab: "outline"
         },
         {
@@ -390,7 +433,7 @@ function useSplit(mode: PaneMode) {
         // they're always present; #center-pane is untouched, so it never reflows.
         const selectors = mode === "docked"
             ? [ "#center-pane", "#right-pane-host" ]
-            : [ ".right-pane-peek-spacer", "#right-pane" ];
+            : [ "#right-pane-host > .peek-pane-spacer", "#right-pane" ];
         const minSize = mode === "docked" ? [ 300, 230 ] : [ 0, 230 ];
 
         const createSplit = () => Split(selectors, {

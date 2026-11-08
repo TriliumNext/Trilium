@@ -1,6 +1,7 @@
 import clsx from "clsx";
-import { ComponentChild } from "preact";
+import { ComponentChild, HTMLAttributes } from "preact";
 import { CommandNames } from "../../components/app_context";
+import { useCommandTrigger } from "./react_utils";
 
 interface LinkButtonProps {
     onClick?: () => void;
@@ -10,25 +11,27 @@ interface LinkButtonProps {
 }
 
 export default function LinkButton({ onClick, text, triggerCommand, className }: LinkButtonProps) {
+    const triggerOwnCommand = useCommandTrigger(triggerCommand);
+    const handleClick = onClick ?? triggerOwnCommand;
+
     return (
         <a class={clsx("tn-link", className)} href="#"
-           data-trigger-command={triggerCommand}
            role="button"
            onKeyDown={(e)=> {
                 if (e.code === "Space") {
-                    onClick?.();
+                    handleClick?.();
                 }
            }}
            onClick={(e) => {
                 e.preventDefault();
-                onClick?.();
+                handleClick?.();
            }}>
             {text}
         </a>
     )
 }
 
-interface PageLinkProps {
+interface PageLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onClick"> {
     /** Where the link goes, as a note path such as `#root/_hidden/_options/_optionsBackup`. */
     href: string;
     /** The words the link is read as. */
@@ -40,6 +43,6 @@ interface PageLinkProps {
  * of the page it goes to. That wording is also why the note preview is left out: the text has
  * already said what the page holds, so the preview would only repeat it in less readable form.
  */
-export function PageLink({ href, text }: PageLinkProps) {
-    return <a className="tn-link no-tooltip-preview" href={href}>{text}</a>;
+export function PageLink({ href, text, onClick }: PageLinkProps) {
+    return <a className="tn-link no-tooltip-preview" href={href} onClick={onClick}>{text}</a>;
 }

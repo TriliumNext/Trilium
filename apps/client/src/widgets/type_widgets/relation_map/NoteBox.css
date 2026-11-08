@@ -1,0 +1,76 @@
+.note-detail-relation-map .note-box {
+    --board-item-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --board-item-hover-shadow: 0 2px 7px rgba(0, 0, 0, 0.22);
+
+    position: absolute !important;
+    z-index: 4;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    box-sizing: border-box;
+    min-width: 150px;
+    max-width: 200px;
+    padding: 0.6em 1.8em 0.6em 0.6em;
+    font-size: 0.9em;
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+
+    > .note-box-icon {
+        flex-shrink: 0;
+        font-size: 1.1em;
+        line-height: inherit;
+    }
+
+    > .note-box-title {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    > .endpoint {
+        position: absolute;
+        top: 50%;
+        inset-inline-end: 0.6em;
+        width: 0.7em;
+        height: 0.7em;
+        translate: 0 -50%;
+        border-radius: 50%;
+        background-color: var(--board-muted-text-color);
+        opacity: 0.4;
+        cursor: crosshair;
+    }
+
+    &:hover > .endpoint {
+        opacity: 1;
+    }
+
+    &.selected {
+        box-shadow: inset 0 0 0 2px var(--board-selected-ring-color);
+    }
+
+    &.selected:hover {
+        box-shadow:
+            inset 0 0 0 2px var(--board-selected-ring-color),
+            var(--board-item-hover-shadow);
+    }
+
+    &.drop-target {
+        outline: 2px solid var(--board-selected-ring-color);
+    }
+
+    &.relation-map-ghost-note {
+        outline: 1px dashed var(--board-muted-text-color);
+        pointer-events: none;
+        opacity: 0;
+
+        &.visible {
+            opacity: 0.6;
+        }
+    }
+}
+
+.note-detail-relation-map .note-box.highlighted {
+    background-color: var(--note-card-hover-background);
+    box-shadow: var(--board-item-hover-shadow);
+}

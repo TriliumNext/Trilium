@@ -66,7 +66,6 @@
         "sync-from-desktop-unreachable-description": "Senkronize etmek için diğer masaüstünün ağ üzerinden buna bağlanması gerekir. Güvenlik için bu masaüstü uygulaması yalnızca bu bilgisayardan gelen bağlantıları kabul eder, bu yüzden diğer masaüstü henüz buna ulaşamaz. Aşağıdan ağ erişimine izin verin — Trilium bunu uygulamak için yeniden başlayacaktır.",
         "sync-from-desktop-allow-access": "Ağ erişimine izin ver ve yeniden başlat",
         "advanced-options": "Gelişmiş seçenekler",
-        "sync-failed": "Senkronizasyon başarısız: {{- message}}",
         "sync-failed-title": "Senkronizasyon başarısız oldu",
         "sync-failed-description": "İlk senkronizasyon tamamlanamadı. Tekrar deneyebilir veya sunucu adresini ve kimlik bilgilerini kontrol etmek için geri dönebilirsiniz.",
         "sync-failed-admonition-title": "Son senkronizasyon denemesi başarısız oldu",

@@ -174,7 +174,7 @@ describe("Notion importer — integration", () => {
         const content = page?.getContent() ?? "";
         expect(content).toContain(`class="include-note"`);
         expect(content).toContain(`data-note-id="${database?.noteId}"`);
-        expect(content).toContain(`data-box-size="medium"`);
+        expect(content).toContain(`data-box-size="resizable"`);
         expect(content).not.toContain("data-notion-id");
         expect(content).not.toContain(".csv");
         expect(content).not.toContain("collection-content");

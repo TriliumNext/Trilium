@@ -1,32 +1,64 @@
 import "./EditableText.css";
 import "./LinkEmbed.css";
 
-import { CKTextEditor, EditorWatchdog, SnippetDefinition } from "@triliumnext/ckeditor5";
-import { deferred } from "@triliumnext/commons";
-import { createPortal } from "preact/compat";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import {
+    type AttachmentLinkChange,
+    type CKEditorError,
+    CKTextEditor,
+    type ContentEmbedDialogRequest,
+    type FileUploadData,
+    type FileUploadEvent,
+    type LinkDialogRequest,
+    SnippetDefinition
+} from "@triliumnext/ckeditor5";
+import {
+    deferred, encodeBlockParameter, formatBlockRange, parseBlockRange
+} from "@triliumnext/commons";
+import { createPortal } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import dateNoteService from "../../../services/date_notes";
 import dialog from "../../../services/dialog";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import link, { parseNavigationStateFromUrl } from "../../../services/link";
+import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
+import type LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
-import options from "../../../services/options";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import type { IconPickerOpts } from "../../dialogs/icon_picker";
-import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import IconPicker from "../../react/IconPicker";
+import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
+import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
+import {
+    useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
+    useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
-import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditorWithWatchdog";
+import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
+import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
+import type { ContentEmbedHandlers } from "./config";
+import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
+import { useEmbedEditors } from "./editable_embed";
+import EmbedHistories from "./embed_history";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
-import linkEmbedService from "../../../services/link_embed";
 import { usesClassicToolbar } from "./toolbar";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import {
+    getAttachmentHref,
+    loadEmbeddedAttachment,
+    loadEmbeddedNote,
+    loadInlineEmbed,
+    loadUnknownEmbed,
+    loadMediaEmbed,
+    openContentEmbedMenu,
+    refreshEmbeddedNote,
+    setupImageOpening,
+    setupTodoCheckboxTaps,
+    showsAttachmentSave,
+    watchContentEmbeds
+} from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -34,15 +66,29 @@ import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./util
  * - Ballon block mode, in which there is a floating toolbar for the selected text, but another floating button for the entire block (i.e. paragraph).
  * - Decoupled mode, in which the editing toolbar is actually added on the client side (in {@link ClassicEditorToolbar}), see https://ckeditor.com/docs/ckeditor5/latest/examples/framework/bottom-toolbar-editor.html for an example on how the decoupled editor works.
  */
-export default function EditableText({ note, parentComponent, ntxId, noteContext }: TypeWidgetProps) {
+interface EditableTextProps extends TypeWidgetProps {
+    /** The blocks of the note to edit instead of the whole note, a `block` link parameter. */
+    block?: string;
+    /** Receives the blocks that the editor of `block` holds, each time they change. */
+    onBlockChange?: (block: string) => void;
+    /** Called each time the editor shows the content of the note, once it has loaded. */
+    onContentShown?: () => void;
+}
+
+export default function EditableText({
+    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange, onContentShown
+}: EditableTextProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
-    /** The note `contentRef` holds the content of, so a restarted editor can be marked as holding it. */
-    const contentNoteIdRef = useRef<string>();
-    const watchdogRef = useRef<EditorWatchdog>(null);
+    /** The note `contentRef` holds the content of, so a rebuilt editor can be marked as holding it. */
+    const contentNoteIdRef = useRef<string | undefined>(undefined);
+    const pendingAttachmentChangesRef = useRef<PendingAttachmentChanges | undefined>(undefined);
+    /** The attachment whose embed takes the focus when it renders next. */
+    const focusedAttachmentIdRef = useRef<string | undefined>(undefined);
+    const editorRef = useRef<CKTextEditor>(null);
+    const stopWatchingEmbedsRef = useRef<(() => void) | undefined>(undefined);
+    const stopTodoCheckboxTapsRef = useRef<(() => void) | undefined>(undefined);
     const editorApiRef = useRef<CKEditorApi>(null);
-    /** The open icon picker request and its balloon container, or `null` when none is open. */
-    const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerOpts & { container: HTMLElement } | null>(null);
     const [ language ] = useNoteLabel(note, "language");
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
@@ -53,57 +99,107 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         textNoteEditorType
     });
     const initialized = useRef(deferred<void>());
+    const [ reportBlocks ] = useState(() => (block !== undefined && onBlockChange
+        ? watchEditorBlocks(block, onBlockChange)
+        : undefined));
+    const [ attachmentSaves ] = useState(() =>
+        new AttachmentSaves(() => spacedUpdate, parentComponent?.componentId));
+    const [ inlineSourceSaves ] = useState(() =>
+        new InlineSourceSaves(() => spacedUpdate.scheduleUpdate()));
+    const [ embedHistories ] = useState(() => new EmbedHistories(() => editorRef.current));
+    const noteEditor = useNoteEditor(noteContext);
+    const {
+        noteEditor: embedNoteEditor, attachmentEditor: embedAttachmentEditor, histories
+    } = useEmbedEditors({
+        noteEditor, attachmentEditor: attachmentSaves, histories: embedHistories
+    });
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
         noteType: "text",
+        block,
+        shownRef: containerRef,
         getData() {
-            const editor = watchdogRef.current?.editor;
+            const editor = editorRef.current;
             if (!editor) {
-                // There is nothing to save, most likely a result of the editor crashing and reinitializing.
+                // The editor is still being built, so there is nothing to save.
                 return;
             }
 
-            const content = editor.getData() ?? "";
+            inlineSourceSaves.flush();
+            const attachments = attachmentSaves.collect();
+            const savedAttachments = attachments.length ? { attachments } : {};
+            if (block !== undefined) {
+                return { ...getBlockData(editor, block), ...savedAttachments };
+            }
 
+            const content = editor.getData() ?? "";
             // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
             // this is important when setting a new note to code
             return {
-                content: utils.isHtmlEmpty(content) ? "" : content
+                content: utils.isHtmlEmpty(content) ? "" : content,
+                ...savedAttachments
             };
         },
         onContentChange(newContent) {
+            attachmentSaves.setNoteId(note?.noteId);
             contentRef.current = newContent;
             contentNoteIdRef.current = note?.noteId;
-            const editor = watchdogRef.current?.editor;
+            const editor = editorRef.current;
             if (editor && note) {
                 setEditorNoteId(editor, note.noteId);
             }
             editor?.setData(newContent);
+            if (editor && note) {
+                applyPendingAttachmentChanges(editor, note.noteId, pendingAttachmentChangesRef);
+            }
+            if (editor) {
+                onContentShown?.();
+            }
 
             // Jump to the first search match when navigated from search results.
-            consumeSearchTerms(noteContext, ntxId);
+            consumeSearchTerms(noteContext, ntxId, initialized.current);
 
-            // Scroll to bookmark anchor if navigated with ?bookmark=...
-            const viewScope = noteContext?.viewScope;
-            if (viewScope?.bookmark) {
-                requestAnimationFrame(() => {
-                    consumeBookmark(watchdogRef.current?.editor?.editing.view.getDomRoot(), viewScope);
-                });
-            }
+            // Scroll to the bookmark or the blocks a link points at.
+            revealLinkTargetWhenReady(
+                noteContext?.viewScope, initialized.current, revealLinkTarget
+            );
         },
         dataSaved(savedData) {
-            // Store back the saved data in order to retrieve it in case the CKEditor crashes.
+            // Keeps the saved data, which a rebuilt editor loads in `onEditorInitialized`.
             contentRef.current = savedData.content;
             contentNoteIdRef.current = note?.noteId;
+            attachmentSaves.markSaved(savedData.attachments);
         }
     });
     const templates = useTemplates();
+    const [ editorRebuildKey, setEditorRebuildKey ] = useState(0);
+
+    /** Saves what the model holds, then builds a new editor from the saved content. */
+    async function reloadEditor() {
+        try {
+            await spacedUpdate.updateNowIfNecessary();
+        } finally {
+            setEditorRebuildKey((key) => key + 1);
+        }
+    }
 
     useSearchTermsConsumer(note, noteContext, ntxId);
+    // A hidden widget leaves the link target to the one on display.
+    useSameNoteSwitch(note, ntxId, () => {
+        if (isVisible !== false && contentNoteIdRef.current === note?.noteId) {
+            revealLinkTarget();
+        }
+    });
+
+    function revealLinkTarget() {
+        const root = editorRef.current?.editing.view.getDomRoot();
+        consumeBookmark(root, noteContext?.viewScope);
+        consumeBlockReference(root, noteContext?.viewScope);
+    }
 
     useTriliumEvent("scrollToEnd", () => {
-        const editor = watchdogRef.current?.editor;
+        const editor = editorRef.current;
         if (!editor) return;
 
         editor.model.change((writer) => {
@@ -117,7 +213,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
     useTriliumEvent("focusOnDetail", async ({ ntxId: eventNtxId, insertNewlineAtTop }) => {
         if (eventNtxId !== ntxId) return;
-        const editor = await waitForEditor() as CKTextEditor | undefined;
+        const editor = await waitForEditor();
         if (!editor) return;
         if (insertNewlineAtTop) {
             placeCursorInNewTopParagraph(editor);
@@ -125,17 +221,100 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         editor.editing.view.focus();
     });
 
-    useLegacyImperativeHandlers({
-        addLinkToTextCommand() {
-            if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showAddLinkDialog", {
-                text: editorApiRef.current.getSelectedText(),
-                hasSelection: editorApiRef.current.hasSelection(),
-                async addLink(notePath, linkTitle, externalLink) {
-                    await waitForEditor();
-                    return editorApiRef.current?.addLink(notePath, linkTitle, externalLink);
-                }
+    // An embed in the content of an embed links to this note rather than showing it again.
+    const seenNoteIds = new Set([ note.noteId ]);
+    const contentEmbedHandlers: ContentEmbedHandlers = {
+        loadNote(noteId, wrapper, boxSize, embedBlock, onEmbedBlockChange) {
+            void loadEmbeddedNote(noteId, $(wrapper), boxSize, {
+                noteEditor: embedNoteEditor,
+                histories,
+                block: embedBlock,
+                onBlockChange: onEmbedBlockChange,
+                seenNoteIds
             });
+        },
+        loadAttachment(attachmentId, wrapper, boxSize) {
+            const isFocused = focusedAttachmentIdRef.current === attachmentId;
+            if (isFocused) {
+                focusedAttachmentIdRef.current = undefined;
+            }
+            void loadEmbeddedAttachment(attachmentId, $(wrapper), boxSize, {
+                attachmentEditor: embedAttachmentEditor,
+                histories,
+                isFocused,
+                seenNoteIds
+            });
+        },
+        loadInline(source, wrapper, boxSize, options) {
+            void loadInlineEmbed(source, $(wrapper), boxSize, {
+                ...options, saves: inlineSourceSaves, histories
+            });
+        },
+        flushInline: () => inlineSourceSaves.flush(),
+        loadUnknown(wrapper, boxSize) {
+            void loadUnknownEmbed(wrapper, boxSize);
+        },
+        loadMedia(preview, wrapper, boxSize) {
+            void loadMediaEmbed(preview, wrapper, { boxSize, hasMenu: true });
+        },
+        focusAttachment(attachmentId) {
+            focusedAttachmentIdRef.current = attachmentId;
+        },
+        getAttachmentHref,
+        openMenu: (embed, anchor) => void openContentEmbedMenu(embed, anchor),
+        getTools: getContentEmbedTools,
+        enter: enterContentEmbed
+    };
+
+    const [ linkDialog, setLinkDialog ] = useState<{
+        opts: EditLinkOpts;
+        request: LinkDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `EditLinkBalloon` renders into its container.
+    // On mobile, `showEditLinkDialog` opens the form in a modal instead.
+    function showLinkDialog(request: LinkDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, {
+            target: request.target,
+            display: request.display,
+            notePath: noteContext?.notePath
+        });
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showEditLinkDialog", opts);
+            return null;
+        }
+
+        setLinkDialog({ opts, request });
+        return () => setLinkDialog(null);
+    }
+
+    const [ contentEmbedDialog, setContentEmbedDialog ] = useState<{
+        opts: ContentEmbedOpts;
+        request: ContentEmbedDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `ContentEmbedBalloon` renders into its container.
+    // On mobile, `showContentEmbedDialog` opens the form in a modal instead.
+    function showContentEmbedDialog(request: ContentEmbedDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = { editorApi: editorApiRef.current, sizeEditable: true };
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showContentEmbedDialog", opts);
+            return null;
+        }
+
+        setContentEmbedDialog({ opts, request });
+        return () => setContentEmbedDialog(null);
+    }
+
+    useLegacyImperativeHandlers({
+        // Keyboard shortcut
+        async addLinkToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertInternalLink");
         },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
@@ -143,59 +322,15 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
-        // CKEditor creates and positions the balloon; `IconPicker` renders into its container.
-        // On mobile, `showIconPickerDialog` opens the picker in a modal instead.
-        showIconPicker(request: IconPickerOpts & { container: HTMLElement }) {
-            if (isMobile()) {
-                parentComponent?.triggerCommand("showIconPickerDialog", { onSelect: request.onSelect });
-                return null;
-            }
-
-            setIconPickerRequest(request);
-            return () => setIconPickerRequest(null);
-        },
-        formatDateTime(date: Date, format?: string) {
-            return utils.formatDateTime(date, format ?? options.get("customDateTimeFormat"));
-        },
         // Keyboard shortcut
         async insertDateTimeToTextCommand() {
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
         },
-        // Include note functionality note
-        addIncludeNoteToTextCommand() {
-            if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showIncludeNoteDialog", {
-                editorApi: editorApiRef.current,
-            });
-        },
-        loadIncludedNote,
-        // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
-        // so the host only has to supply the metadata and the rendering.
-        async fetchLinkMetadata(url: string) {
-            return await linkEmbedService.fetchMetadata(url, note.noteId);
-        },
-        detectEmbedType(url: string) {
-            return linkEmbedService.detectEmbedType(url);
-        },
-        renderLinkEmbed(container, metadata, editable) {
-            linkEmbedService.renderEmbedPreview(container, metadata, editable);
-        },
-        renderLinkMention(container, metadata, editable) {
-            linkEmbedService.renderMentionPreview(container, metadata, editable);
-        },
-        // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string, intoInbox: boolean) {
-            const notePath = intoInbox ? await dateNoteService.getInboxNotePath() : noteContext?.notePath;
-            if (!notePath) return;
-
-            const resp = await note_create.createNoteWithTypePrompt(notePath, {
-                activate: false,
-                title
-            });
-
-            if (!resp || !resp.note) return;
-            return resp.note.getBestNotePathString();
+        // Keyboard shortcut
+        async addIncludeNoteToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertContentEmbed");
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -236,7 +371,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // This component's own editor, rather than noteContext.getTextEditor(): that one races the
             // round trip through the event bus against a 200 ms timeout and resolves to null when it
             // loses, which again meant an empty sub-note and a selection left where it was.
-            const textEditor = await waitForEditor() as CKTextEditor | undefined;
+            const textEditor = await waitForEditor();
             if (!sourceNote || !parentNotePath || !textEditor) return;
 
             if (!textEditor.getSelectedHtml()) {
@@ -252,19 +387,43 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             });
         },
         async saveNoteDetailNowCommand() {
-            // used by cutToNote in CKEditor build
+            // Used by `cutToNote` and by the block and tab references the editor copies.
             spacedUpdate.updateNowIfNecessary();
         }
     });
 
-    useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
+    useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
-        refreshIncludedNote(containerRef.current, noteId);
+        refreshEmbeddedNote(containerRef.current, noteId, {
+            noteEditor: embedNoteEditor, histories, seenNoteIds
+        });
+    });
+
+    useEffect(() => () => {
+        stopWatchingEmbedsRef.current?.();
+        stopTodoCheckboxTapsRef.current?.();
+    }, []);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const editor = editorRef.current;
+        if (editor && note) {
+            notifyAttachmentChanges(
+                editor,
+                loadResults,
+                note.noteId,
+                parentComponent?.componentId,
+                pendingAttachmentChangesRef
+            );
+        }
+        editor?.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
+        if (editor?.plugins.has("ImageEditingSource")) {
+            editor.plugins.get("ImageEditingSource").refresh();
+        }
     });
 
     useTriliumEvent("executeWithTextEditor", async ({ callback, resolve, ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;
-        const editor = await waitForEditor() as CKTextEditor | undefined;
+        const editor = await waitForEditor();
         if (!editor) return;
         if (callback) callback(editor);
         resolve(editor);
@@ -272,7 +431,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
     async function waitForEditor() {
         await initialized.current;
-        const editor = watchdogRef.current?.editor;
+        const editor = editorRef.current;
         if (!editor) return;
         return editor;
     }
@@ -291,8 +450,6 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         if (!noteContext?.isActive()) return;
         addTextToEditor(text);
     });
-
-    const onWatchdogStateChange = useWatchdogCrashHandling();
 
     useEffect(() => {
         document.body.style.setProperty("--code-block-tab-width", codeBlockTabWidth || "4");
@@ -347,6 +504,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         };
 
         const scrollCaretIntoView = () => {
+            if (!isCaretInFocus(document.activeElement, window.getSelection())) return;
+
             const caretRect = getCaretRect();
             if (!caretRect) return;
             const scroller = findScrollableAncestor(window.getSelection()?.focusNode);
@@ -359,7 +518,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             const visibleBottom = Math.min(containerRect.bottom, viewportBottom);
             const visibleTop = Math.max(containerRect.top, viewportTop);
 
-            const overshoot = caretRect.bottom - (visibleBottom - CARET_BOTTOM_MARGIN_PX);
+            // The mobile formatting toolbar floats over the scroller and reserves its height here.
+            const toolbarClearance = parseFloat(getComputedStyle(scroller).scrollPaddingBottom) || 0;
+            const overshoot = caretRect.bottom - (visibleBottom - toolbarClearance - CARET_BOTTOM_MARGIN_PX);
             if (overshoot > 0) {
                 scroller.scrollTop += overshoot;
                 return;
@@ -392,131 +553,261 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         };
     }, []);
 
-    // Mobile-only: toggle todo-list checkboxes on the first tap and widen the
-    // hit area so finger taps don't have to land precisely on the ~16px box.
-    // Two problems are being solved:
-    //   1. iOS WKWebView doesn't dispatch `change` on the first tap inside a
-    //      contenteditable that isn't focused — users have to tap twice.
-    //   2. The native checkbox is too small to hit reliably with a finger.
-    // We accept any tap whose point lands within ~14px of the checkbox's
-    // bounding box (roughly a 44px touch target, matching Apple HIG), flip
-    // the checkbox, and fire a synthetic change event that CKEditor's
-    // TodoCheckboxChangeObserver picks up.
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container || !isMobile()) return;
-
-        const HIT_PAD = 14;
-        let tapped: HTMLInputElement | null = null;
-
-        const findCheckboxFromTap = (e: TouchEvent): HTMLInputElement | null => {
-            const target = e.target as HTMLElement | null;
-            if (!target) return null;
-
-            // Direct hit on the checkbox.
-            const direct = target.closest<HTMLInputElement>(
-                '.todo-list__label input[type="checkbox"]'
-            );
-            if (direct) return direct;
-
-            // Near-miss: tap landed on the label or its surroundings. Accept
-            // if the touch point is within HIT_PAD of the checkbox rect.
-            const label = target.closest(".todo-list__label");
-            if (!label) return null;
-            const checkbox = label.querySelector<HTMLInputElement>(
-                'input[type="checkbox"]'
-            );
-            if (!checkbox) return null;
-
-            const touch = e.touches[0] ?? e.changedTouches[0];
-            if (!touch) return null;
-            const rect = checkbox.getBoundingClientRect();
-            if (
-                touch.clientX >= rect.left - HIT_PAD &&
-                touch.clientX <= rect.right + HIT_PAD &&
-                touch.clientY >= rect.top - HIT_PAD &&
-                touch.clientY <= rect.bottom + HIT_PAD
-            ) {
-                return checkbox;
-            }
-            return null;
-        };
-
-        const onTouchStart = (e: TouchEvent) => {
-            tapped = findCheckboxFromTap(e);
-        };
-
-        const onTouchEnd = (e: TouchEvent) => {
-            if (!tapped) return;
-            const checkbox = tapped;
-            tapped = null;
-            // Suppress the synthesised click so we don't toggle twice.
-            e.preventDefault();
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-        };
-
-        container.addEventListener("touchstart", onTouchStart, { passive: true });
-        container.addEventListener("touchend", onTouchEnd, { passive: false });
-        return () => {
-            container.removeEventListener("touchstart", onTouchStart);
-            container.removeEventListener("touchend", onTouchEnd);
-        };
-    }, []);
-
     return (
         <>
-            {note && !!templates && <CKEditorWithWatchdog
+            {note && !!templates && <CKEditor
                 containerRef={containerRef}
                 className={`note-detail-editable-text-editor use-tn-links ${codeBlockWordWrap ? "word-wrap" : ""}`}
                 tabIndex={300}
                 contentLanguage={language}
                 isClassicEditor={isClassicEditor}
                 editorApi={editorApiRef}
-                watchdogRef={watchdogRef}
-                watchdogConfig={{
-                    // An average number of milliseconds between the last editor errors (defaults to 5000). When the period of time between errors is lower than that and the crashNumberLimit is also reached, the watchdog changes its state to crashedPermanently, and it stops restarting the editor. This prevents an infinite restart loop.
-                    minimumNonErrorTimePeriod: 5000,
-                    // A threshold specifying the number of errors (defaults to 3). After this limit is reached and the time between last errors is shorter than minimumNonErrorTimePeriod, the watchdog changes its state to crashedPermanently, and it stops restarting the editor. This prevents an infinite restart loop.
-                    crashNumberLimit: 10,
-                    // A minimum number of milliseconds between saving the editor data internally (defaults to 5000). Note that for large documents, this might impact the editor performance.
-                    saveInterval: Number.MAX_SAFE_INTEGER
-                }}
+                editorRef={editorRef}
                 templates={templates}
                 onNotificationWarning={onNotificationWarning}
-                onWatchdogStateChange={onWatchdogStateChange}
-                onChange={() => spacedUpdate.scheduleUpdate()}
+                onNotificationInfo={onNotificationInfo}
+                onEditorError={(error) => reportEditorError(error, reloadEditor)}
+                rebuildKey={editorRebuildKey}
+                contentEmbedHandlers={contentEmbedHandlers}
+                showLinkDialog={showLinkDialog}
+                showContentEmbedDialog={showContentEmbedDialog}
+                isExcerpt={block !== undefined}
+                onChange={() => {
+                    // `getData()` serializes the whole note, so saves wait for typing to pause.
+                    spacedUpdate.resetUpdateTimer();
+                    spacedUpdate.scheduleUpdate();
+                    const editor = editorRef.current;
+                    if (editor) {
+                        reportBlocks?.(editor);
+                    }
+                }}
                 onEditorInitialized={(editor) => {
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
+                        stopWatchingEmbedsRef.current?.();
+                        stopWatchingEmbedsRef.current = watchContentEmbeds(
+                            containerRef.current,
+                            editor
+                        );
+                        stopTodoCheckboxTapsRef.current?.();
+                        stopTodoCheckboxTapsRef.current = isMobile()
+                            ? setupTodoCheckboxTaps(containerRef.current)
+                            : undefined;
                     }
 
+                    editor.plugins.get("FileUploadEditing")
+                        .on<FileUploadEvent>("upload", showFileUploadProgress);
+
+                    if (block !== undefined) {
+                        editor.plugins.get("BlockReferenceEditing").editRange();
+                    }
                     initialized.current.resolve();
-                    // Restore the data, either on the first render or if the editor crashes.
-                    // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
+                    // Loads the content on the first build and after a rebuild, from the data the
+                    // spaced update last saved (see `dataSaved`).
                     if (contentNoteIdRef.current) {
                         setEditorNoteId(editor, contentNoteIdRef.current);
                     }
                     editor.setData(contentRef.current);
+                    if (contentNoteIdRef.current) {
+                        onContentShown?.();
+                    }
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
 
                 }}
             />}
 
-            {iconPickerRequest && createPortal(
-                <IconPicker
-                    columnCount={ICON_PICKER_COLUMNS}
-                    compact
-                    onSelect={iconPickerRequest.onSelect}
+            {linkDialog && createPortal(
+                <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
+                linkDialog.request.container
+            )}
+
+            {contentEmbedDialog && createPortal(
+                <ContentEmbedBalloon
+                    opts={contentEmbedDialog.opts} onClose={contentEmbedDialog.request.close}
                 />,
-                iconPickerRequest.container
+                contentEmbedDialog.request.container
             )}
         </>
     );
 }
 
-/** The number of icons per row of the picker in the editor's balloon. */
-const ICON_PICKER_COLUMNS = 9;
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
+/** What the edit link dialog opens on, besides the editor. */
+interface EditLinkRequest extends Pick<EditLinkOpts, "target" | "display"> {
+    /** The path of the note in the editor. Without it, the dialog lists no headings. */
+    notePath?: string | null;
+}
+
+/**
+ * What the edit link dialog opens on: the link around the caret or the selected link preview, which
+ * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
+ */
+export function getEditLinkOpts(
+    api: CKEditorApi, ready: () => Promise<unknown>,
+    { target, display, notePath }: EditLinkRequest = {}
+): EditLinkOpts {
+    async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
+        await ready();
+        try {
+            await api.addLinkPreview(...args);
+        } catch (e) {
+            // Only a media embed given an address that plays nothing rejects.
+            console.error("Failed to change the media:", e);
+            toast.showError(t("youtube_video.insert_failed"));
+        }
+    }
+
+    const anchors = api.getAnchors();
+    const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
+    const currentLink = api.getCurrentLink();
+    if (currentLink) {
+        const currentHeading = notePath && headings
+            ? findLinkedHeading(currentLink.href, headings, notePath)
+            : undefined;
+        return {
+            text: currentLink.text,
+            hasSelection: false,
+            currentTitle: currentLink.isReference ? undefined : currentLink.text,
+            currentDescription: currentLink.description,
+            display: currentLink.display,
+            isMedia: currentLink.isMedia,
+            anchors,
+            headings,
+            ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),
+            async addLink(notePath, linkTitle, externalLink) {
+                await ready();
+                await api.updateLink(notePath, linkTitle, externalLink);
+            },
+            addLinkPreview
+        };
+    }
+
+    return {
+        text: api.getSelectedText(),
+        hasSelection: api.hasSelection(),
+        target,
+        display,
+        anchors,
+        headings,
+        async addLink(notePath, linkTitle, externalLink) {
+            await ready();
+            api.addLink(notePath, linkTitle, externalLink);
+        },
+        addLinkPreview
+    };
+}
+
+/** The headings of the editor, which link to their blocks in the note at `notePath`. */
+function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
+    return api.getHeadings().map((heading) => ({
+        title: heading.text,
+        level: heading.level,
+        blockId: heading.blockId,
+        createLinkPath() {
+            const blockId = api.assignBlockId(heading);
+            return blockId ? `${notePath}?block=${encodeBlockParameter(blockId)}` : notePath;
+        }
+    }));
+}
+
+/** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
+function findLinkedHeading(href: string, headings: LinkHeading[], notePath: string) {
+    if (!href.startsWith("#")) return undefined;
+
+    const [ path, query = "" ] = href.slice(1).split("?", 2);
+    const blockId = new URLSearchParams(query).get("block");
+    const isSameNote = path.split("/").at(-1) === notePath.split("/").at(-1);
+    return blockId && isSameNote
+        ? headings.find((heading) => heading.blockId === blockId)
+        : undefined;
+}
+
+/**
+ * What a link's `href` opens the edit link dialog on: one of the document's `anchors`, the note
+ * with the anchor it points at, or the address.
+ */
+export function parseLinkHref(
+    href: string, anchors: string[] = []
+): Pick<EditLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
+    if (href.startsWith("#") && anchors.includes(href.slice(1))) {
+        return { currentAnchor: href.slice(1) };
+    }
+
+    if (!href.startsWith("#")) {
+        return { currentLink: { externalLink: href }, currentBookmark: undefined };
+    }
+
+    const [ path, query = "" ] = href.slice(1).split("?", 2);
+    const params = new URLSearchParams(query);
+    const bookmark = params.get("bookmark") ?? undefined;
+    params.delete("bookmark");
+    const rest = params.toString();
+    const notePath = rest ? `${path}?${rest}` : path;
+    return { currentLink: { notePath }, currentBookmark: bookmark };
+}
+
+export function getBlockData(editor: CKTextEditor, block: string) {
+    return {
+        content: editor.getData({ trim: "none" }),
+        block: getEditorBlocks(editor, block)
+    };
+}
+
+/**
+ * Calls `onBlockChange()` with the blocks that an editor of the blocks `block` holds, each time
+ * they differ from the blocks it reported last.
+ *
+ * Exported for testing.
+ */
+export function watchEditorBlocks(block: string, onBlockChange: (block: string) => void) {
+    let reportedBlock = block;
+    return (editor: CKTextEditor) => {
+        const editorBlock = getEditorBlocks(editor, block);
+        if (editorBlock && editorBlock !== reportedBlock) {
+            reportedBlock = editorBlock;
+            onBlockChange(editorBlock);
+        }
+    };
+}
+
+/**
+ * Calls `reveal()` to scroll to the bookmark or the blocks that `viewScope` points at, once
+ * `ready` resolves. The editor of a new tab can still be starting when the content arrives.
+ *
+ * Exported for testing.
+ */
+export function revealLinkTargetWhenReady(
+    viewScope: ViewScope | undefined,
+    ready: Promise<unknown>,
+    reveal: () => void
+) {
+    if (viewScope?.bookmark || viewScope?.block) {
+        void ready.then(() => requestAnimationFrame(reveal));
+    }
+}
+
+/**
+ * Whether focus is in an editable element that holds the selection. Focus taken by something else,
+ * such as a menu, leaves the selection behind in the editor, which is then no caret to scroll to.
+ * Neither is the fake selection CKEditor puts in a hidden element pinned to the top of the viewport
+ * while a widget, such as an image, is selected.
+ */
+export function isCaretInFocus(focused: Element | null, selection: Selection | null) {
+    const focusNode = selection?.focusNode;
+    const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement;
+    return focused instanceof HTMLElement && focused.isContentEditable
+        && !!focusNode && focused.contains(focusNode)
+        && !focusElement?.closest(".ck-fake-selection-container");
+}
+
+/** The blocks that an editor of the blocks `block` holds, preferring the ids of `block`. */
+function getEditorBlocks(editor: CKTextEditor, block: string) {
+    const range = editor.plugins.get("BlockReferenceEditing").getRange(parseBlockRange(block));
+    return range ? formatBlockRange(range) : undefined;
+}
 
 /**
  * Inserts an empty paragraph at the very top of the document and places the cursor in it, giving the
@@ -565,62 +856,56 @@ function useTemplates() {
     return templates;
 }
 
-function useWatchdogCrashHandling() {
-    const hasCrashed = useRef(false);
-    const onWatchdogStateChange = useCallback((watchdog: EditorWatchdog) => {
-        const currentState = watchdog.state;
-        logInfo(`CKEditor state changed to ${currentState}`);
+/**
+ * Tells the user about an error that escaped the editor in a toast, which offers to reload the
+ * editor and opens the error details for a bug report; the toast returns once the details close.
+ * The editor keeps running until it is reloaded, so a later error replaces the toast. The global
+ * error handlers in `glob.ts` log the error.
+ *
+ * Exported for testing.
+ */
+export function reportEditorError(error: CKEditorError, reloadEditor: () => void) {
+    const details = JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        date: new Date().toISOString()
+    }, null, 4);
 
-        if (currentState === "ready" && hasCrashed.current) {
-            hasCrashed.current = false;
-            watchdog.editor?.focus();
-        }
+    showErrorToast();
 
-        if (!["crashed", "crashedPermanently"].includes(currentState)) {
-            return;
-        }
-
-        hasCrashed.current = true;
-        const formattedCrash = JSON.stringify(watchdog.crashes, null, 4);
-        logError(`CKEditor crash logs: ${formattedCrash}`);
-
-        if (currentState === "crashed") {
-            toast.showPersistent({
-                id: "editor-crashed",
-                icon: "bx bx-bug",
-                title: t("editable_text.editor_crashed_title"),
-                message: t("editable_text.editor_crashed_content"),
-                buttons: [
-                    {
-                        text: t("editable_text.editor_crashed_details_button"),
-                        onClick: ({ dismissToast }) => {
-                            dismissToast();
-                            dialog.info(<>
-                                <p>{t("editable_text.editor_crashed_details_intro")}</p>
-                                <h3>{t("editable_text.editor_crashed_details_title")}</h3>
-                                <pre><code class="language-application-json">{formattedCrash}</code></pre>
-                            </>, {
-                                title: t("editable_text.editor_crashed_title"),
-                                size: "lg",
-                                copyToClipboardButton: true
-                            });
-                        }
+    function showErrorToast() {
+        toast.showPersistent({
+            id: "editor-error",
+            icon: "bx bx-bug",
+            title: t("editable_text.editor_error_title"),
+            message: t("editable_text.editor_error_content"),
+            buttons: [
+                {
+                    text: t("editable_text.editor_error_reload_button"),
+                    onClick: ({ dismissToast }) => {
+                        dismissToast();
+                        reloadEditor();
                     }
-                ],
-                timeout: 20_000
-            });
-        } else if (currentState === "crashedPermanently") {
-            toast.showPersistent({
-                id: "editor-crashed-permanently",
-                icon: "bx bx-error-circle",
-                title: t("editable_text.editor_crashed_title"),
-                message: t("editable_text.keeps-crashing")
-            });
-            watchdog.editor?.enableReadOnlyMode("crashed-editor");
-        }
-    }, []);
-
-    return onWatchdogStateChange;
+                },
+                {
+                    text: t("editable_text.editor_crashed_details_button"),
+                    onClick: async ({ dismissToast }) => {
+                        dismissToast();
+                        await dialog.info(<>
+                            <p>{t("editable_text.editor_crashed_details_intro")}</p>
+                            <h3>{t("editable_text.editor_crashed_details_title")}</h3>
+                            <pre><code class="language-application-json">{details}</code></pre>
+                        </>, {
+                            title: t("editable_text.editor_error_title"),
+                            size: "lg",
+                            copyToClipboardButton: true
+                        });
+                        showErrorToast();
+                    }
+                }
+            ]
+        });
+    }
 }
 
 /**
@@ -642,3 +927,100 @@ export function onNotificationWarning(evt: NotificationEventInfo, data: Notifica
     evt.stop();
 }
 
+/**
+ * Shows a CKEditor info notification, such as the notice after sorting a table, as a Trilium toast.
+ *
+ * Exported for testing.
+ */
+export function onNotificationInfo(_evt: NotificationEventInfo, data: NotificationEventData) {
+    toast.showMessage(data.message);
+}
+
+interface PendingAttachmentChanges {
+    noteId: string;
+    changes: AttachmentLinkChange[];
+}
+
+/**
+ * Passes the attachments changed in `loadResults` to the editor's reference links, so a link shows
+ * the new title of its attachment or goes away with it. Changes that this editor saved, such as a
+ * canvas drawing, are skipped: redrawing an embed remounts what it shows. So are the saves that
+ * every embed of the attachment shows by itself (`showsAttachmentSave()`).
+ *
+ * When `loadResults` also reloads the note's content, the changes wait in `pending` until
+ * `applyPendingAttachmentChanges()` runs on the reloaded content.
+ *
+ * Exported for testing.
+ */
+export function notifyAttachmentChanges(
+    editor: CKTextEditor,
+    loadResults: LoadResults,
+    noteId: string,
+    componentId: string | undefined,
+    pending: { current: PendingAttachmentChanges | undefined }
+) {
+    const root = editor.editing.view.getDomRoot();
+    const rows = loadResults.getAttachmentRows(componentId);
+    const changes = rows.flatMap(({ attachmentId, isDeleted }) => {
+        if (!attachmentId) return [];
+        const attachment = froca.attachments[attachmentId];
+        const isShown = !isDeleted && !!root && !!attachment
+            && showsAttachmentSave(root, attachment);
+        return isShown ? [] : [ { attachmentId, isDeleted: !!isDeleted } ];
+    });
+    if (!changes.length) {
+        return;
+    }
+
+    // `useNoteBlob()` reloads the content under the same condition, and `setData()` would discard
+    // the updated links.
+    if (loadResults.isNoteContentReloaded(noteId, componentId)) {
+        const held = pending.current?.noteId === noteId ? pending.current.changes : [];
+        pending.current = { noteId, changes: [ ...held, ...changes ] };
+        return;
+    }
+
+    editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks(changes);
+}
+
+/**
+ * Applies the changes `notifyAttachmentChanges()` held for `noteId`, once the editor holds its
+ * reloaded content. Changes held for another note are dropped.
+ *
+ * Exported for testing.
+ */
+export function applyPendingAttachmentChanges(
+    editor: CKTextEditor,
+    noteId: string,
+    pending: { current: PendingAttachmentChanges | undefined }
+) {
+    const held = pending.current;
+    pending.current = undefined;
+    if (held?.noteId === noteId) {
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks(held.changes);
+    }
+}
+
+/**
+ * Shows the progress of a file attachment upload in a toast until the upload ends.
+ *
+ * Exported for testing.
+ */
+export function showFileUploadProgress(_evt: unknown, { fileName, loader, done }: FileUploadData) {
+    const id = `file-upload-${loader.id}`;
+    const showProgress = () => toast.showPersistent({
+        id,
+        icon: "bx bx-paperclip",
+        title: t("editable_text.uploading_attachment"),
+        message: fileName,
+        progress: loader.uploadedPercent / 100,
+        dismissible: false
+    });
+
+    showProgress();
+    loader.on("change:uploadedPercent", showProgress);
+    void done.then(() => {
+        loader.off("change:uploadedPercent", showProgress);
+        toast.closePersistent(id);
+    });
+}

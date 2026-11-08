@@ -1,0 +1,180 @@
+#toc-pane {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    position: sticky;
+    top: 0;
+    order: 3;
+    width: 250px;
+    flex-shrink: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-top: var(--page-top-spacing);
+    z-index: 1;
+    background: var(--background-primary);
+}
+
+#split-pane:has(#content.full-content-width) #toc-pane:empty {
+    display: none;
+}
+
+/* The pane reaches the edge of the window, so its scrollbar sits there, and pads its entries back
+   to the edge of the layout. `100%` is the width of `#right-pane`, and the space after the layout
+   is what `#right-pane` has beyond the layout, plus the growth that keeps the content centered. */
+@media not all and (max-width: 48em) {
+    #split-pane:not(:has(#content.full-content-width)) #toc-pane {
+        --toc-pane-overhang: calc(max(0px, 100% + var(--left-pane-width) - var(--layout-width))
+                                  + var(--left-pane-growth));
+
+        width: calc(250px + var(--toc-pane-overhang));
+        padding-inline-end: var(--toc-pane-overhang);
+    }
+}
+
+#toc-pane h3,
+#tree-toc-title {
+    margin: 0 0 0.5em;
+    padding-inline: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.3pt;
+    color: var(--right-pane-heading-color);
+}
+
+#toc,
+#toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#toc ul {
+    margin-inline-start: 12px;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
+}
+
+#toc li a {
+    display: block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    line-height: 1.3;
+    overflow-wrap: break-word;
+    transition: background-color 150ms ease-in;
+}
+
+#toc li a:hover {
+    background: var(--right-pane-item-hover-background);
+    text-decoration: none;
+}
+
+#toc li a.active {
+    font-weight: bold;
+}
+
+/* The copy of the table of contents that narrow screens show in the navigation pane: below the
+   page's entry in the tree, or at the top of the pane for a page the tree does not list. */
+.tree-toc {
+    display: none;
+}
+
+#menu .tree-toc,
+.tree-toc-children {
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
+}
+
+#menu .tree-toc {
+    margin-block: 2px 6px;
+    margin-inline-start: 40px;
+}
+
+.tree-toc-children {
+    margin-inline-start: 12px;
+}
+
+#navigation > .tree-toc {
+    margin-bottom: 16px;
+    padding-inline: 4px;
+}
+
+#navigation .tree-toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--tree-item-color);
+    font-size: 0.9em;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+#navigation .tree-toc a:hover {
+    background: var(--tree-item-hover-background);
+}
+
+#navigation .tree-toc a.active {
+    color: var(--tree-item-active-color);
+    font-weight: 600;
+}
+
+#content :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: 16px;
+}
+
+#content .toc-anchor {
+    margin-inline-start: 0.3em;
+    font-size: 0.6em;
+    vertical-align: middle;
+    color: var(--text-menu);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+
+#content :is(h1, h2, h3, h4, h5, h6):hover > .toc-anchor,
+#content .toc-anchor:focus-visible,
+#content .toc-anchor.copied {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    #content .toc-anchor {
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 48em) {
+    #toc-pane {
+        display: flex;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 80%;
+        max-width: 300px;
+        padding: 20px;
+        background: var(--background-secondary);
+        transform: translateX(100%);
+        transition: transform 200ms ease;
+        z-index: 2;
+        overflow-y: auto;
+    }
+
+    .toc-open #toc-pane {
+        transform: translateX(0);
+    }
+
+    .tree-toc {
+        display: block;
+    }
+
+    #menu li:not(.expanded) > .tree-toc {
+        display: none;
+    }
+
+    #toc-pane:empty {
+        display: none;
+    }
+}

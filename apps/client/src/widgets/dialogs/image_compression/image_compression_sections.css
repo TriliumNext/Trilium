@@ -43,15 +43,13 @@
         width: 140px;
     }
 
-    /* Never wraps: the choices are read across, and a button folding onto a second line would
-       break the row into two heights. A long translation widens the dialog instead. */
     .image-compression-section-choice {
         flex: 0 0 auto;
-        white-space: nowrap;
-        /* Smaller than the label it answers: three of these across a row read as a control,
-           where at full size they compete with the title for it. */
-        font-size: 0.85em;
     }
+}
+
+.image-compression-choice-menu {
+    max-width: 22em;
 }
 
 /* Indented by the card itself; quieting the title is what marks it as qualifying the row above

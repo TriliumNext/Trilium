@@ -1,3 +1,20 @@
+// Content styles shared with the share theme. `stylesheets/` is served as is, so a bare package
+// `@import` there would reach the browser unresolved; Vite bundles these into the entry's CSS,
+// which loads ahead of the stylesheets `loadStylesheets()` appends.
+import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
+import "@triliumnext/ckeditor5/src/theme/admonitions.css";
+import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
+import "@triliumnext/ckeditor5/src/theme/external_links.css";
+import "@triliumnext/ckeditor5/src/theme/footnotes.css";
+import "@triliumnext/ckeditor5/src/theme/headings.css";
+import "@triliumnext/ckeditor5/src/theme/lists.css";
+import "@triliumnext/ckeditor5/src/theme/reference_links.css";
+import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
+import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
+import "@triliumnext/ckeditor5/src/theme/tables.css";
+import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
+import "@triliumnext/commons/src/lib/scroll_fade.css";
+
 import { createFontStylesheetLink } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
@@ -24,6 +41,9 @@ async function bootstrap() {
     // sequence of its own before this one, so these phases only take effect on server and desktop.
     initSplashProgress(CLIENT_STARTUP_PHASES);
     reportSplashPhase("bootstrap");
+    // Only iOS sets `navigator.standalone`, and only for a web app added to the home screen.
+    const isIosWebApp = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
     await setupGlob();
     await Promise.all([
         initJQuery(),
@@ -33,9 +53,26 @@ async function bootstrap() {
     initThemeChangeNotifier();
     loadIcons();
     setBodyAttributes();
+    const debugSafeAreaInsets = import.meta.env.VITE_DEBUG_SAFE_AREA_INSETS;
+    if (debugSafeAreaInsets) {
+        (await import("./services/debug_safe_area")).default(debugSafeAreaInsets);
+    }
     reportSplashPhase("application");
     await loadScripts();
     hideSplash();
+}
+
+/**
+ * Whether the page is drawn under the status bar, which gives it a top safe-area inset. With the
+ * status bar above the page instead, there is no inset and the viewport already fits the screen.
+ */
+function extendsUnderStatusBar() {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;visibility:hidden;padding-top:var(--safe-area-inset-top, env(safe-area-inset-top))";
+    document.documentElement.append(probe);
+    const insetTop = parseFloat(getComputedStyle(probe).paddingTop);
+    probe.remove();
+    return insetTop > 0;
 }
 
 async function initJQuery() {
@@ -43,7 +80,7 @@ async function initJQuery() {
     window.$ = $;
     window.jQuery = $;
 
-    // Polyfill removed jQuery methods for autocomplete.js compatibility
+    // Polyfills the jQuery methods jQuery 4 removed, which Fancytree still calls.
     ($ as any).isArray = Array.isArray;
     ($ as any).isFunction = function(obj: any) { return typeof obj === 'function'; };
     ($ as any).isPlainObject = function(obj: any) {
@@ -64,6 +101,9 @@ async function setupGlob() {
     const response = localFetch
         ? await withTimeout(localFetch(new Request(url)), LOCAL_BOOTSTRAP_TIMEOUT_MS)
         : await fetch(url);
+    if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+    }
     const json = await response.json();
     if (import.meta.env.DEV && localFetch) {
         // The worker answers this one only once it has finished starting up, so the time it
@@ -78,6 +118,19 @@ async function setupGlob() {
         device: json.device || getDevice()
     };
     window.glob.getThemeStyle = getThemeStyle;
+}
+
+/** The `message` of a JSON error body, or the status line when the body has none. */
+async function readErrorMessage(response: Response): Promise<string> {
+    try {
+        const body = await response.json();
+        if (typeof body?.message === "string") {
+            return body.message;
+        }
+    } catch {
+        // Not JSON: fall through to the status line.
+    }
+    return `the server answered ${response.status} ${response.statusText}`.trim();
 }
 
 /**

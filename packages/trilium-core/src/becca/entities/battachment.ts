@@ -2,6 +2,7 @@
 
 import { type AttachmentRow, isImageAttachmentRole } from "@triliumnext/commons";
 
+import { ValidationError } from "../../errors.js";
 import dateUtils from "../../services/utils/date";
 import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -171,7 +172,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
             title: this.title,
             type: (attachmentRoleToNoteTypeMapping as any)[this.role],
             mime: this.mime,
-            content: this.getContent(),
+            content: noteService.getPortableContent(this),
             isProtected: this.isProtected
         });
 
@@ -209,6 +210,13 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
                     new RegExp(`href="[^"]*attachmentId=${escapeRegExp(attachmentId)}[^"]*"`, "g"),
                     `href="#root/${note.noteId}"`
                 );
+
+                // An embed of the attachment becomes an include of the new note.
+                fixedContent = replaceAll(
+                    fixedContent,
+                    `data-attachment-id="${attachmentId}"`,
+                    `data-note-id="${note.noteId}"`
+                );
             }
 
             if (fixedContent !== origContent) {
@@ -230,6 +238,10 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     }
 
     override beforeSaving() {
+        if (this.becca.notes[this.ownerId]?.isVirtual) {
+            throw new ValidationError(`Cannot save an attachment of note '${this.ownerId}': virtual notes have no attachments.`);
+        }
+
         super.beforeSaving();
 
         if (this.position === undefined || this.position === null) {

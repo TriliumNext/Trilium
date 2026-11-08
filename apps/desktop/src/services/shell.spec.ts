@@ -16,7 +16,14 @@ vi.mock("electron", () => ({
     }
 }));
 
+const resourcesDir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-open-path-resources-"));
+vi.mock("@triliumnext/server/src/services/data_dir.js", async (importOriginal) => {
+    const actual = await importOriginal<{ default: object }>();
+    return { default: { ...actual.default, RESOURCES_DIR: resourcesDir } };
+});
+
 const {
+    getConfiguredOpenRoots,
     validateDownloadUrl,
     validateOpenCustomPath,
     validateOpenExternalUrl,
@@ -202,6 +209,19 @@ describe("validateOpenPath", () => {
         it("does not widen the sandbox beyond the backup directory", () => {
             const outside = path.join(backupDir, "..", "elsewhere.txt");
             expect(() => validateOpenPath(outside, dataDir, tmpDir, backupDir)).toThrow(/outside data dir/);
+        });
+    });
+
+    describe("resources directory root", () => {
+        afterAll(() => fs.rmSync(resourcesDir, { recursive: true, force: true }));
+
+        it("accepts a resources directory moved outside the data directory, and what it holds", () => {
+            const resource = path.join(resourcesDir, "transcription.parakeet-0123456789ab");
+            fs.mkdirSync(resource);
+
+            expect(validateOpenPath(resource, dataDir, tmpDir, ...getConfiguredOpenRoots()))
+                .toBe(path.resolve(resource));
+            expect(() => validateOpenPath(resource, dataDir, tmpDir)).toThrow(/outside data dir/);
         });
     });
 

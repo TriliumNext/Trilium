@@ -1,0 +1,70 @@
+:where(:root) {
+    --overlay-rail-enter-duration: 250ms;
+    /* Must match RAIL_EXIT_MS in OverlayRail.tsx. */
+    --overlay-rail-exit-duration: 400ms;
+}
+
+.tn-overlay-rail {
+    display: contents;
+
+    .tn-overlay-control-group {
+        /* 48px meets Material's 48dp, Apple's 44pt and WCAG 2.5.5. */
+        --overlay-button-height: 48px;
+        --overlay-button-icon-size: 24px;
+        --overlay-group-inset-end: 0;
+        border-inline-end: none;
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        animation: overlay-rail-enter var(--overlay-rail-enter-duration) ease-out;
+
+        .tn-overlay-icon-button {
+            width: 48px;
+        }
+
+        .tn-overlay-rail-destructive {
+            color: var(--dropdown-item-icon-destructive-color);
+        }
+
+        button:first-child {
+            border-start-end-radius: 0;
+        }
+
+        button:last-child {
+            border-end-end-radius: 0;
+        }
+    }
+
+    &.takes-over .tn-overlay-control-group {
+        animation: none;
+    }
+
+    &.leaving .tn-overlay-control-group {
+        pointer-events: none;
+        animation: overlay-rail-leave var(--overlay-rail-exit-duration) ease-in forwards;
+    }
+}
+
+@keyframes overlay-rail-enter {
+    from {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes overlay-rail-leave {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tn-overlay-rail {
+        .tn-overlay-control-group,
+        &.leaving .tn-overlay-control-group {
+            animation: none;
+        }
+
+        &.leaving {
+            display: none;
+        }
+    }
+}

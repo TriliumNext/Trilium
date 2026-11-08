@@ -46,6 +46,59 @@ describe("ensureMimeTypes", () => {
         expect(highlight("{}", { language: "application-json" })).not.toBeNull();
     });
 
+    it("limits highlightAuto to the registered mime types", async () => {
+        const { ensureMimeTypes, highlightAuto } = await freshModule();
+        const python = "def greet(name):\n    return f\"Hello, {name}\"\n";
+
+        expect(highlightAuto(python).language).toBeUndefined();
+
+        await ensureMimeTypes([mime("text/x-python")]);
+        expect(highlightAuto(python).language).toBe("text-x-python");
+    });
+
+    it("syncMimeTypes unregisters a mime type that was disabled", async () => {
+        const { syncMimeTypes, getLanguage } = await freshModule();
+
+        await syncMimeTypes([ mime("text/x-python"), mime("application/json") ]);
+        await syncMimeTypes([ mime("text/x-python", false), mime("application/json") ]);
+
+        expect(getLanguage("text-x-python")).toBeUndefined();
+        expect(getLanguage("application-json")).toBeDefined();
+
+        await syncMimeTypes([ mime("text/x-python") ]);
+        expect(getLanguage("text-x-python")).toBeDefined();
+    });
+
+    it("syncMimeTypes applies overlapping calls in order", async () => {
+        const { syncMimeTypes, getLanguage } = await freshModule();
+
+        const enabling = syncMimeTypes([ mime("text/x-python") ]);
+        const disabling = syncMimeTypes([ mime("text/x-python", false) ]);
+        await Promise.all([ enabling, disabling ]);
+
+        expect(getLanguage("text-x-python")).toBeUndefined();
+    });
+
+    it("syncMimeTypes keeps running calls after one fails", async () => {
+        const pythonLoader = vi.fn()
+            .mockRejectedValueOnce(new Error("offline"))
+            .mockImplementation(() => import("highlight.js/lib/languages/python"));
+        vi.doMock("./syntax_highlighting.js", async (importOriginal) => {
+            const original = await importOriginal<typeof import("./syntax_highlighting.js")>();
+            return { default: { ...original.default, "text-x-python": pythonLoader } };
+        });
+
+        try {
+            const { syncMimeTypes, getLanguage } = await freshModule();
+
+            await expect(syncMimeTypes([ mime("text/x-python") ])).rejects.toThrow("offline");
+            await syncMimeTypes([ mime("text/x-python") ]);
+            expect(getLanguage("text-x-python")).toBeDefined();
+        } finally {
+            vi.doUnmock("./syntax_highlighting.js");
+        }
+    });
+
     it("remembers a mime type with no highlight.js definition as unsupported", async () => {
         const { ensureMimeTypes, highlight } = await freshModule();
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

@@ -13,6 +13,7 @@ import dialogService from "../services/dialog.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import noteCreateService from "../services/note_create.js";
+import { notePresetOptions } from "../services/note_presets.js";
 import noteTypesService from "../services/note_types.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
@@ -73,10 +74,10 @@ export interface TreeContextMenuContext {
      */
     target?: "desktop" | "mobile";
     /**
-     * Invoked right before any command's handler runs. Fancytree uses this to
-     * switch to the detail screen on mobile so dialogs/navigations are visible.
+     * Invoked right before a command in `COMMANDS_THAT_SHOW_A_NOTE` runs. On mobile, callers
+     * switch to the detail screen here so that the note the command opens is visible.
      */
-    onBeforeCommand?: () => void;
+    onRevealNote?: () => void;
     /**
      * Fancytree node for the target, when available. A handful of tree
      * commands (cut/paste/export/expand/collapse/sort) read `node.data` or call
@@ -124,9 +125,17 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
 
     const notSearch = note.type !== "search";
     const hasSubtreeHidden = note.isLabelTruthy("subtreeHidden") ?? false;
-    const notOptionsOrHelp = !note.noteId.startsWith("_options") && !note.noteId.startsWith("_help");
+    const notOptions = !note.noteId.startsWith("_options");
+    // Help pages are virtual notes, which the server never clones, moves or gives children.
+    const notHelp = !note.noteId.startsWith("_help");
+    const notOptionsOrHelp = notOptions && notHelp;
     const parentNotSearch = !parentNote || parentNote.type !== "search";
     const insertNoteAfterEnabled = isNotRoot && !isHoisted && parentNotSearch;
+    const clipboardContents = clipboard.getContents();
+    // Pasting copied notes clones them; pasting cut notes moves them.
+    const pasteTooltip = (key: string) => clipboardContents?.mode === "copy"
+        ? t(key, { count: clipboardContents.noteIds.length })
+        : undefined;
 
     // Both submenus are built from the same templates, so they are fetched once and shared.
     const noteTypeData = insertNoteAfterEnabled || notSearch
@@ -139,10 +148,70 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
         ? noteTypesService.buildNoteTypeItems(noteTypeData, "insertChildNote")
         : null;
 
+    const protectItem: MenuCommandItem<TreeCommandNames> = { title: t("tree-context-menu.protect-subtree"), command: "protectSubtree", uiIcon: "bx bx-check-shield", enabled: noSelectedNotes };
+    const unprotectItem: MenuCommandItem<TreeCommandNames> = { title: t("tree-context-menu.unprotect-subtree"), command: "unprotectSubtree", uiIcon: "bx bx-shield", enabled: noSelectedNotes };
+
     const items: (MenuItem<TreeCommandNames> | null)[] = [
-        { title: t("tree-context-menu.open-in-a-new-tab"), command: "openInTab", shortcut: "Ctrl+Click", uiIcon: "bx bx-link-external", enabled: noSelectedNotes },
-        { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right", enabled: noSelectedNotes },
-        { title: t("tree-context-menu.open-in-a-new-window"), command: "openNoteInWindow", uiIcon: "bx bx-window-open", enabled: noSelectedNotes },
+        {
+            kind: "actions",
+            items: [
+                {
+                    title: t("tree-context-menu.cut"),
+                    command: "cutNotesToClipboard",
+                    keyboardShortcut: "cutNotesToClipboard",
+                    uiIcon: "bx bx-cut",
+                    enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp
+                },
+                { title: t("tree-context-menu.clone"), tooltip: t("tree-context-menu.clone-tooltip"), command: "copyNotesToClipboard", keyboardShortcut: "copyNotesToClipboard", uiIcon: "bx bx-copy", enabled: isNotRoot && !isHoisted && notHelp },
+                // Shown only while something is cut or copied, which is when they are looked for.
+                ...(!clipboardContents ? [] : [
+                    {
+                        title: t("tree-context-menu.paste-into"),
+                        tooltip: pasteTooltip("tree-context-menu.paste-into-tooltip"),
+                        command: "pasteNotesFromClipboard",
+                        keyboardShortcut: "pasteNotesFromClipboard",
+                        uiIcon: "bx bx-clipboard",
+                        uiIconBadge: "bx bx-subdirectory-right",
+                        enabled: notSearch && noSelectedNotes && notHelp
+                    },
+                    {
+                        title: t("tree-context-menu.paste-after"),
+                        tooltip: pasteTooltip("tree-context-menu.paste-after-tooltip"),
+                        command: "pasteNotesAfterFromClipboard",
+                        uiIcon: "bx bx-clipboard",
+                        uiIconBadge: "bx bx-down-arrow-alt",
+                        enabled: isNotRoot && !isHoisted && parentNotSearch && noSelectedNotes && notHelp
+                    }
+                ] satisfies MenuCommandItem<TreeCommandNames>[]),
+                {
+                    title: t("tree-context-menu.delete-short"),
+                    command: "deleteNotes",
+                    keyboardShortcut: "deleteNotes",
+                    uiIcon: "bx bx-trash destructive-action-icon",
+                    enabled: isNotRoot && !isHoisted && parentNotSearch && notOptionsOrHelp
+                }
+            ]
+        },
+
+        { kind: "separator" },
+
+        // As the link context menu has it: the row opens a new tab, its arrow the other places. A
+        // mobile menu runs no action of a submenu's row, so there the places are rows of their own.
+        ...(isMobileTarget ? [
+            { title: t("tree-context-menu.open"), command: "openNote", uiIcon: "bx bx-file", enabled: noSelectedNotes },
+            { title: t("tree-context-menu.open-in-a-new-tab"), command: "openInTab", uiIcon: "bx bx-link-external", enabled: noSelectedNotes },
+            { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right", enabled: noSelectedNotes }
+        ] satisfies MenuItem<TreeCommandNames>[] : [ {
+            title: t("link_context_menu.open_note"),
+            command: "openInTab",
+            uiIcon: "bx bx-link-external",
+            enabled: noSelectedNotes,
+            items: [
+                { title: t("tree-context-menu.open-in-a-new-tab"), command: "openInTab", shortcut: "Ctrl+Click", uiIcon: "bx bx-link-external" },
+                { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right" },
+                { title: t("tree-context-menu.open-in-a-new-window"), command: "openNoteInWindow", uiIcon: "bx bx-window-open" }
+            ]
+        } satisfies MenuItem<TreeCommandNames> ]),
         { title: t("tree-context-menu.open-in-popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit", enabled: noSelectedNotes },
 
         isHoisted
@@ -166,27 +235,99 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             keyboardShortcut: "createNoteAfter",
             uiIcon: "bx bx-plus",
             items: insertNoteAfterItems,
-            enabled: insertNoteAfterEnabled && noSelectedNotes && notOptionsOrHelp,
-            columns: 2
+            filterable: true,
+            enabled: insertNoteAfterEnabled && noSelectedNotes && notOptionsOrHelp
         },
 
         {
             title: t("tree-context-menu.insert-child-note"),
             command: "insertChildNote",
             keyboardShortcut: "createNoteInto",
-            uiIcon: "bx bx-plus",
+            uiIcon: "bx bx-subdirectory-right",
             items: insertChildNoteItems,
-            enabled: notSearch && noSelectedNotes && notOptionsOrHelp && !hasSubtreeHidden && !isSpotlighted,
-            columns: 2
+            filterable: true,
+            enabled: notSearch && noSelectedNotes && notOptionsOrHelp && !hasSubtreeHidden && !isSpotlighted
         },
 
         { kind: "separator" },
 
-        { title: t("tree-context-menu.protect-subtree"), command: "protectSubtree", uiIcon: "bx bx-check-shield", enabled: noSelectedNotes },
+        {
+            title: t("tree-context-menu.move-to"),
+            command: "moveNotesTo",
+            keyboardShortcut: "moveNotesTo",
+            uiIcon: "bx bx-transfer",
+            enabled: isNotRoot && !isHoisted && parentNotSearch && notHelp
+        },
 
-        { title: t("tree-context-menu.unprotect-subtree"), command: "unprotectSubtree", uiIcon: "bx bx-shield", enabled: noSelectedNotes },
+        { title: t("tree-context-menu.clone-to"), command: "cloneNotesTo", keyboardShortcut: "cloneNotesTo", uiIcon: "bx bx-duplicate", enabled: isNotRoot && !isHoisted && notHelp },
+
+        {
+            title: t("tree-context-menu.duplicate"),
+            command: "duplicateSubtree",
+            keyboardShortcut: "duplicateSubtree",
+            uiIcon: "bx bx-outline",
+            enabled: parentNotSearch && isNotRoot && !isHoisted && notOptionsOrHelp,
+            items: getDuplicateItems(selectedNotes)
+        },
+
+        {
+            title: !isArchived ? t("tree-context-menu.archive") : t("tree-context-menu.unarchive"),
+            uiIcon: !isArchived ? "bx bx-archive" : "bx bx-archive-out",
+            enabled: canToggleArchived,
+            handler: () => {
+                if (!selectedNotes.length) return;
+
+                if (selectedNotes.length == 1) {
+                    const n = selectedNotes[0];
+                    if (!isArchived) {
+                        attributes.addLabel(n.noteId, "archived");
+                    } else {
+                        attributes.removeOwnedLabelByName(n, "archived");
+                    }
+                } else {
+                    const noteIds = selectedNotes.map((n) => n.noteId);
+                    if (!isArchived) {
+                        executeBulkActions(noteIds, [{
+                            name: "addLabel", labelName: "archived"
+                        }]);
+                    } else {
+                        executeBulkActions(noteIds, [{
+                            name: "deleteLabel", labelName: "archived"
+                        }]);
+                    }
+                }
+            }
+        },
+
+        // Runs what the note's own state calls for; the submenu keeps both, for a subtree that is
+        // protected only in part.
+        {
+            ...(note.isProtected ? unprotectItem : protectItem),
+            items: [ protectItem, unprotectItem ]
+        },
 
         { kind: "separator" },
+
+        (notOptionsOrHelp && selectedNotes.length === 1) ? {
+            kind: "custom",
+            componentFn: () => NoteColorPicker({ note })
+        } : null,
+
+        { kind: "separator" },
+
+        { title: t("tree-context-menu.import-into-note"), command: "importIntoNote", uiIcon: "bx bx-import", enabled: notSearch && noSelectedNotes && notOptionsOrHelp },
+
+        { title: t("tree-context-menu.export"), command: "exportNote", uiIcon: "bx bx-export", enabled: notSearch && noSelectedNotes && notOptions },
+
+        { kind: "separator" },
+
+        {
+            title: t("tree-context-menu.search-in-subtree"),
+            command: "searchInSubtree",
+            keyboardShortcut: "searchInSubtree",
+            uiIcon: "bx bx-search",
+            enabled: notSearch && noSelectedNotes
+        },
 
         {
             title: t("tree-context-menu.advanced"),
@@ -197,7 +338,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                 {
                     // One note at a time: the dialog is configured against what that note holds and
                     // reports on what it changed there, neither of which a multi-selection has.
-                    title: t("compress-images"),
+                    title: t("compress-images-menu"),
                     uiIcon: "bx bx-collapse-alt",
                     enabled: noSelectedNotes && notOptionsOrHelp,
                     handler: () => void showImageCompressionDialog({ type: "note", noteId: note.noteId })
@@ -244,110 +385,6 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
                 { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
                 { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
             ].filter(Boolean) as MenuItem<TreeCommandNames>[]
-        },
-
-        { kind: "separator" },
-
-        {
-            title: t("tree-context-menu.cut"),
-            command: "cutNotesToClipboard",
-            keyboardShortcut: "cutNotesToClipboard",
-            uiIcon: "bx bx-cut",
-            enabled: isNotRoot && !isHoisted && parentNotSearch
-        },
-
-        { title: t("tree-context-menu.copy-clone"), command: "copyNotesToClipboard", keyboardShortcut: "copyNotesToClipboard", uiIcon: "bx bx-copy", enabled: isNotRoot && !isHoisted },
-
-        {
-            title: t("tree-context-menu.paste-into"),
-            command: "pasteNotesFromClipboard",
-            keyboardShortcut: "pasteNotesFromClipboard",
-            uiIcon: "bx bx-paste",
-            enabled: !clipboard.isClipboardEmpty() && notSearch && noSelectedNotes
-        },
-
-        {
-            title: t("tree-context-menu.paste-after"),
-            command: "pasteNotesAfterFromClipboard",
-            uiIcon: "bx bx-paste",
-            enabled: !clipboard.isClipboardEmpty() && isNotRoot && !isHoisted && parentNotSearch && noSelectedNotes
-        },
-
-        {
-            title: t("tree-context-menu.move-to"),
-            command: "moveNotesTo",
-            keyboardShortcut: "moveNotesTo",
-            uiIcon: "bx bx-transfer",
-            enabled: isNotRoot && !isHoisted && parentNotSearch
-        },
-
-        { title: t("tree-context-menu.clone-to"), command: "cloneNotesTo", keyboardShortcut: "cloneNotesTo", uiIcon: "bx bx-duplicate", enabled: isNotRoot && !isHoisted },
-
-        {
-            title: t("tree-context-menu.duplicate"),
-            command: "duplicateSubtree",
-            keyboardShortcut: "duplicateSubtree",
-            uiIcon: "bx bx-outline",
-            enabled: parentNotSearch && isNotRoot && !isHoisted && notOptionsOrHelp
-        },
-
-        {
-            title: !isArchived ? t("tree-context-menu.archive") : t("tree-context-menu.unarchive"),
-            uiIcon: !isArchived ? "bx bx-archive" : "bx bx-archive-out",
-            enabled: canToggleArchived,
-            handler: () => {
-                if (!selectedNotes.length) return;
-
-                if (selectedNotes.length == 1) {
-                    const n = selectedNotes[0];
-                    if (!isArchived) {
-                        attributes.addLabel(n.noteId, "archived");
-                    } else {
-                        attributes.removeOwnedLabelByName(n, "archived");
-                    }
-                } else {
-                    const noteIds = selectedNotes.map((n) => n.noteId);
-                    if (!isArchived) {
-                        executeBulkActions(noteIds, [{
-                            name: "addLabel", labelName: "archived"
-                        }]);
-                    } else {
-                        executeBulkActions(noteIds, [{
-                            name: "deleteLabel", labelName: "archived"
-                        }]);
-                    }
-                }
-            }
-        },
-        {
-            title: t("tree-context-menu.delete"),
-            command: "deleteNotes",
-            keyboardShortcut: "deleteNotes",
-            uiIcon: "bx bx-trash destructive-action-icon",
-            enabled: isNotRoot && !isHoisted && parentNotSearch && notOptionsOrHelp
-        },
-
-        { kind: "separator" },
-
-        (notOptionsOrHelp && selectedNotes.length === 1) ? {
-            kind: "custom",
-            componentFn: () => NoteColorPicker({ note })
-        } : null,
-
-        { kind: "separator" },
-
-        { title: t("tree-context-menu.import-into-note"), command: "importIntoNote", uiIcon: "bx bx-import", enabled: notSearch && noSelectedNotes && notOptionsOrHelp },
-
-        { title: t("tree-context-menu.export"), command: "exportNote", uiIcon: "bx bx-export", enabled: notSearch && noSelectedNotes && notOptionsOrHelp },
-
-        { kind: "separator" },
-
-        {
-            title: t("tree-context-menu.search-in-subtree"),
-            command: "searchInSubtree",
-            keyboardShortcut: "searchInSubtree",
-            uiIcon: "bx bx-search",
-            enabled: notSearch && noSelectedNotes
         }
     ];
 
@@ -363,13 +400,17 @@ export async function handleTreeContextMenuSelect(
     item: MenuCommandItem<TreeCommandNames>,
     ctx: TreeContextMenuContext
 ) {
-    const { command, type, mime, templateNoteId } = item;
+    const { command, type, mime, templateNoteId, notePreset } = item;
     const resolved = resolveContext(ctx);
     const { note, branch, notePath, component, selectedOrActiveBranchIds, selectedOrActiveNoteIds } = resolved;
 
-    resolved.onBeforeCommand?.();
+    if (command && COMMANDS_THAT_SHOW_A_NOTE.has(command)) {
+        resolved.onRevealNote?.();
+    }
 
-    if (command === "openInTab") {
+    if (command === "openNote") {
+        await (resolved.noteContext ?? appContext.tabManager.getActiveContext())?.setNote(notePath);
+    } else if (command === "openInTab") {
         appContext.tabManager.openTabWithNoteWithHoisting(notePath, { placement: "afterCurrent" });
     } else if (command === "insertNoteAfter") {
         const parentNotePath = parentNotePathOf(notePath);
@@ -381,6 +422,7 @@ export async function handleTreeContextMenuSelect(
             mime,
             isProtected: parentNote?.isProtected ?? false,
             templateNoteId,
+            ...notePresetOptions(notePreset),
             noteContext: resolved.noteContext
         });
     } else if (command === "insertChildNote") {
@@ -389,6 +431,7 @@ export async function handleTreeContextMenuSelect(
             mime,
             isProtected: note.isProtected,
             templateNoteId,
+            ...notePresetOptions(notePreset),
             noteContext: resolved.noteContext
         });
     } else if (command === "openNoteInSplit") {
@@ -437,6 +480,33 @@ export async function handleTreeContextMenuSelect(
             selectedOrActiveNoteIds
         });
     }
+}
+
+/**
+ * The commands whose result is a note on the detail screen: a new note, a duplicate, a split or a
+ * search. Every other command acts on the tree, the clipboard or a dialog, so the tree stays shown.
+ */
+const COMMANDS_THAT_SHOW_A_NOTE = new Set<TreeCommandNames>([
+    "insertNoteAfter",
+    "insertChildNote",
+    "duplicateNote",
+    "duplicateSubtree",
+    "openNoteInSplit",
+    "searchInSubtree"
+]);
+
+/**
+ * The choice between copying the children or not, offered only when a note to copy has children.
+ */
+export function getDuplicateItems(notes: FNote[]): MenuItem<TreeCommandNames>[] | null {
+    if (!notes.some((n) => n.hasChildren())) {
+        return null;
+    }
+
+    return [
+        { title: t("tree-context-menu.duplicate-with-children"), command: "duplicateSubtree", keyboardShortcut: "duplicateSubtree", uiIcon: "bx bx-sitemap" },
+        { title: t("tree-context-menu.duplicate-note-only"), command: "duplicateNote", keyboardShortcut: "duplicateNote", uiIcon: "bx bx-file" }
+    ];
 }
 
 function parentNotePathOf(notePath: string): string {
@@ -500,7 +570,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             selectedNotes,
             isSpotlighted: this.node.extraClasses.includes("spotlighted-node"),
             node: this.node,
-            onBeforeCommand: () => {
+            onRevealNote: () => {
                 if (utils.isMobile()) {
                     this.treeWidget.triggerCommand("setActiveScreen", { screen: "detail" });
                 }

@@ -84,7 +84,7 @@ export async function openSpaceUsageContextMenu(
             handler: () => onShowDetails(notePath)
         },
         {
-            title: t("compress-images"),
+            title: t("compress-images-menu"),
             uiIcon: "bx bx-image",
             handler: () => {
                 // An image note *is* one image, so the dialog is told its type and offers only the
@@ -263,7 +263,7 @@ export function openNoteInNewTab(noteId: string) {
     });
 }
 
-/** Note types whose content is a saveable file — the same ones the ribbon offers Download for. */
+/** Note types whose content is a saveable file — the same ones the note actions offer Download for. */
 function isDownloadable(note: FNote) {
     return note.type === "file" || note.type === "image";
 }

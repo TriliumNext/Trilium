@@ -16,7 +16,7 @@ vi.mock("../services/i18n", async () => {
 import { LOCALES } from "@triliumnext/commons";
 
 import options from "../services/options";
-import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, isContentRightToLeft, normalizeLocale, resolveContentLanguage } from "./formatters";
+import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, isContentRightToLeft, resolveContentLanguage } from "./formatters";
 
 describe("formatters", () => {
     it("tolerates incorrect locale", () => {
@@ -35,14 +35,6 @@ describe("formatters", () => {
         expect(formatDateTime(new Date())).toBeTruthy();
         expect(formatDateTime(new Date(), "full", "none")).toBeTruthy();
         expect(formatDateTime(new Date(), "none", "full")).toBeTruthy();
-    });
-
-    it("normalizes locale", () => {
-        expect(normalizeLocale("zh_CN")).toBe("zh-CN");
-        expect(normalizeLocale("cn")).toBe("zh-CN");
-        expect(normalizeLocale("tw")).toBe("zh-TW");
-        // The default branch returns the (underscore-normalized) locale unchanged.
-        expect(normalizeLocale("en_US")).toBe("en-US");
     });
 
     it("returns an empty string for falsy dates", () => {
@@ -140,9 +132,17 @@ describe("formatters", () => {
                 // The two things a dateStyle preset could not guarantee across locales: "short"
                 // yields a two-digit year in some ("31.01.26" in German), and "medium" spells the
                 // month out in others ("Jan 31, 2026" in US English).
-                expect(formatted, locale.id).toContain("2026");
+                expect(toLatinDigits(formatted), locale.id).toContain("2026");
                 expect(formatted, locale.id).not.toMatch(/\p{L}/u);
             }
+        });
+
+        it("renders Persian on the Gregorian calendar, in Persian digits", () => {
+            // CLDR defaults Persian to the Solar Hijri calendar, where this date is 1404/11/11.
+            options.set("formattingLocale", "fa");
+
+            expect(formatDateNumeric("2026-01-31")).toBe("۲۰۲۶/۰۱/۳۱");
+            expect(toLatinDigits(formatDateTime("2026-01-31", "long", "none"))).toContain("2026");
         });
 
         it("formats the reported German case as DD.MM.YYYY", () => {
@@ -329,3 +329,9 @@ describe("isContentRightToLeft", () => {
         expect(isContentRightToLeft("also-not-a-locale")).toBe(false);
     });
 });
+
+/** Replaces Eastern Arabic and Persian digits with ASCII ones, so a year matches in any locale. */
+function toLatinDigits(text: string) {
+    return text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g,
+        (digit) => String((digit.codePointAt(0) ?? 0) & 0xf));
+}

@@ -1,5 +1,6 @@
 import Component from "../components/component.js";
 import FNote from "../entities/fnote.js";
+import { watchOpenedFile } from "./file_watcher.js";
 import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
@@ -59,18 +60,21 @@ function downloadAttachment(attachmentId: string) {
     download(url);
 }
 
-async function openCustom(type: string, entityId: string, mime: string) {
+async function openCustom(type: string, entityId: string) {
     checkType(type);
-    if (!window.electronApi || utils.isMac()) {
+    if (!window.electronApi) {
         return;
     }
 
     const resp = await server.post<TmpResponse>(`${type}/${entityId}/save-to-tmp-dir`);
-    window.electronApi.shell.openCustom(resp.tmpFilePath);
+    watchOpenedFile(resp.tmpFilePath);
+    if (!await window.electronApi.shell.openCustom(resp.tmpFilePath)) {
+        toast.showError(t("open.custom_failed"));
+    }
 }
 
-const openNoteCustom = async (noteId: string, mime: string) => await openCustom("notes", noteId, mime);
-const openAttachmentCustom = async (attachmentId: string, mime: string) => await openCustom("attachments", attachmentId, mime);
+const openNoteCustom = async (noteId: string) => await openCustom("notes", noteId);
+const openAttachmentCustom = async (attachmentId: string) => await openCustom("attachments", attachmentId);
 
 function downloadRevision(noteId: string, revisionId: string) {
     const url = getUrlForDownload(`api/revisions/${revisionId}/download`);
@@ -100,6 +104,7 @@ async function openExternally(type: string, entityId: string, mime: string) {
 
     if (utils.isElectron()) {
         const resp = await server.post<TmpResponse>(`${type}/${entityId}/save-to-tmp-dir`);
+        watchOpenedFile(resp.tmpFilePath);
 
         const res = await window.electronApi?.shell.openPath(resp.tmpFilePath);
 
@@ -121,6 +126,18 @@ async function openExternally(type: string, entityId: string, mime: string) {
 
 export const openNoteExternally = async (noteId: string, mime: string) => await openExternally("notes", noteId, mime);
 const openAttachmentExternally = async (attachmentId: string, mime: string) => await openExternally("attachments", attachmentId, mime);
+
+/**
+ * Opens `url` outside Trilium, with the browser or the app that handles it, such as the YouTube app
+ * on Android, where the WebView hands the new window to the system.
+ */
+export function openUrlExternally(url: string) {
+    if (window.electronApi) {
+        window.electronApi.shell.openExternal(url);
+    } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+}
 
 function getHost() {
     const url = new URL(window.location.href);
@@ -207,6 +224,7 @@ export default {
     getUrlForDownload,
     openNoteExternally,
     openAttachmentExternally,
+    openUrlExternally,
     openNoteCustom,
     openAttachmentCustom,
     openNoteOnServer,

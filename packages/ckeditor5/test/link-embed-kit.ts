@@ -4,13 +4,12 @@ import { vi } from "vitest";
 
 import LinkEmbed, { CHANGE_LINK_DISPLAY_COMMAND } from "../src/plugins/link_embed/link_embed.js";
 import { createTestEditor } from "./editor-kit.js";
-import { installGlobMock } from "./globals-test-kit.js";
 
 export { createTestEditor } from "./editor-kit.js";
 
 /**
- * Shared fixtures for the link_embed specs: the mocked host component, the editor plugin list, and
- * the model-manipulation helpers that simulate what AutoLink does.
+ * Shared fixtures for the link_embed specs: the mocked `linkEmbed` config entry, the editor plugin
+ * list, and the model-manipulation helpers that simulate what AutoLink does.
  */
 
 export const META = {
@@ -26,33 +25,25 @@ export const META = {
     image: "https://example.com/image.png"
 } satisfies LinkEmbedMetadata;
 
-export interface LinkEmbedComponentMocks {
-    triggerCommand: ReturnType<typeof vi.fn>;
-    renderLinkEmbed: ReturnType<typeof vi.fn>;
-    renderLinkMention: ReturnType<typeof vi.fn>;
-    fetchLinkMetadata: ReturnType<typeof vi.fn>;
+export interface LinkEmbedHostMocks {
+    renderEmbed: ReturnType<typeof vi.fn>;
+    renderMention: ReturnType<typeof vi.fn>;
+    fetchMetadata: ReturnType<typeof vi.fn>;
     detectEmbedType: ReturnType<typeof vi.fn>;
 }
 
 /**
- * Installs the glob mock every link_embed editor resolves its host component from, and returns the
- * individual mocks for assertions. Call from `beforeEach`, before creating the editor.
+ * A mocked `linkEmbed` config entry, to pass to the editor as `{ linkEmbed: host }` and to assert
+ * on.
  */
-export function installLinkEmbedComponentMock(): LinkEmbedComponentMocks {
-    const mocks: LinkEmbedComponentMocks = {
-        triggerCommand: vi.fn(),
-        renderLinkEmbed: vi.fn(),
-        renderLinkMention: vi.fn(),
-        fetchLinkMetadata: vi.fn(async (url: string) => ({ ...META, url })),
+export function createLinkEmbedHost(): LinkEmbedHostMocks {
+    return {
+        renderEmbed: vi.fn(),
+        renderMention: vi.fn(),
+        fetchMetadata: vi.fn(async (url: string) => ({ ...META, url })),
         // YouTube-like URLs => "youtube" (embeddable); everything else => "opengraph".
         detectEmbedType: vi.fn((url: string) => (url.includes("youtube") ? "youtube" : "opengraph"))
     };
-
-    installGlobMock({
-        getComponentByEl: () => mocks
-    });
-
-    return mocks;
 }
 
 /**
@@ -162,7 +153,7 @@ export function addLinkedText(editor: ClassicEditor, href: string, text = href):
 }
 
 /**
- * Lets the `fetchLinkMetadata().then(...)` chain resolve and the resulting model change apply.
+ * Lets the `fetchMetadata().then(...)` chain resolve and the resulting model change apply.
  * A task turn is awaited rather than a fixed number of microtasks: the latter is a guess at the
  * chain's depth that silently under-waits, which makes a conversion test fail and — worse — makes a
  * test asserting that NO conversion happened pass for the wrong reason.
@@ -175,9 +166,9 @@ export async function flushFetch(): Promise<void> {
  * Replaces the fetch mock's implementation with one that hangs until the returned resolver is
  * called, so a test can interleave model edits between the fetch starting and resolving.
  */
-export function useDeferredFetch(fetchLinkMetadata: ReturnType<typeof vi.fn>) {
+export function useDeferredFetch(fetchMetadata: ReturnType<typeof vi.fn>) {
     let resolveFetch: (metadata: LinkEmbedMetadata) => void = () => {};
-    fetchLinkMetadata.mockImplementation(
+    fetchMetadata.mockImplementation(
         () => new Promise<LinkEmbedMetadata>((resolve) => {
             resolveFetch = resolve;
         })

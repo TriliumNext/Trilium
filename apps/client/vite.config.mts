@@ -5,7 +5,9 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { stripUniverHyphenation } from './vite-plugins.mjs';
+import {
+    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+} from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
@@ -18,11 +20,17 @@ if (isDev) {
         // a view with thousands of instances of one component slows to a stop. Set TRILIUM_NO_HMR to
         // work on such a view; components then reload with the page instead of in place.
         ...(process.env.TRILIUM_NO_HMR ? [] : [ prefresh() ]),
-        stripUniverHyphenation()
+        stripUniverHyphenation(),
+        stripUniverEmojiData(),
+        narrowThirdPartySelectors(),
+        ...shareTheme()
     ];
 } else {
     plugins = [
         stripUniverHyphenation(),
+        stripUniverEmojiData(),
+        narrowThirdPartySelectors(),
+        ...shareTheme(),
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,
@@ -62,7 +70,11 @@ export default defineConfig(() => ({
     },
     css: {
         transformer: 'lightningcss',
-        devSourcemap: isDev
+        devSourcemap: isDev,
+        preprocessorOptions: {
+            // The share theme builds Bootstrap's tooltips from its partials, which only `@import` loads.
+            scss: { silenceDeprecations: [ "import" ], quietDeps: true }
+        }
     },
     server: {
         watch: {
@@ -136,9 +148,27 @@ export default defineConfig(() => ({
         setupFiles: [
             "./src/test/setup.ts"
         ],
+        server: {
+            deps: {
+                // The plugin reads `rrule` through a namespace import, which Node resolves to the
+                // package's CommonJS build with no named exports. Bundling it applies Vite's interop.
+                inline: [
+                    "@fullcalendar/rrule",
+                    // Univer's components and the React libraries under them run on preact/compat
+                    // in the app, so specs bundle them to apply the same `react` alias.
+                    /@univerjs\/design/,
+                    /@radix-ui\//,
+                    /@floating-ui\/react-dom/,
+                    /react-remove-scroll/,
+                    /react-style-singleton/,
+                    /use-callback-ref/,
+                    /use-sidecar/
+                ]
+            }
+        },
         reporters: [
             "verbose",
-            ["html", { outputFile: "./test-output/vitest/html/index.html" }],
+            ["html", { outputDir: "./test-output/vitest/html" }],
             ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]
         ],
         coverage: {

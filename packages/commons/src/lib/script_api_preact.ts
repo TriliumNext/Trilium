@@ -138,7 +138,6 @@ interface DropdownProps {
     className?: string;
     buttonClassName?: string;
     buttonProps?: Record<string, unknown>;
-    isStatic?: boolean;
     children?: ComponentChildren;
     title?: string;
     dropdownContainerStyle?: Css;
@@ -147,19 +146,32 @@ interface DropdownProps {
     hideToggleArrow?: boolean;
     iconAction?: boolean;
     noSelectButtonStyle?: boolean;
-    noDropdownListStyle?: boolean;
     disabled?: boolean;
     text?: ComponentChildren;
-    forceShown?: boolean;
     onShown?: () => void;
     onHidden?: () => void;
-    dropdownOptions?: Record<string, unknown>;
+    /** The side of the toggle the popup prefers, as Floating UI names it: `"top"`, `"bottom-start"`, … */
+    placement?: "top" | "top-start" | "top-end" | "right" | "right-start" | "right-end"
+        | "bottom" | "bottom-start" | "bottom-end" | "left" | "left-start" | "left-end";
+    /**
+     * What closes the popup besides Escape and the toggle: `true` a click inside and a press
+     * outside, `"inside"` or `"outside"` that one alone, `false` neither.
+     */
+    autoClose?: boolean | "inside" | "outside";
     dropdownRef?: RefObject<unknown>;
     titlePosition?: "top" | "right" | "bottom" | "left";
     titleOptions?: Record<string, unknown>;
     mobileBackdrop?: boolean;
 }
+/** A menu under a toggle, whose rows are `FormListItem`s and the other `FormList` rows. */
 export declare const Dropdown: FunctionComponent<DropdownProps>;
+
+interface DropdownPanelProps extends DropdownProps {
+    /** Caps the panel to the room beside its toggle and scrolls its content inside it. */
+    scrollable?: boolean;
+}
+/** A popup under a toggle for content other than a menu's rows, such as a form or a picker. */
+export declare const DropdownPanel: FunctionComponent<DropdownPanelProps>;
 
 interface FormCheckboxProps {
     name?: string;
@@ -229,8 +241,11 @@ interface FormDropdownSubmenuProps {
     title: ComponentChildren;
     children?: ComponentChildren;
     onDropdownToggleClicked?: () => void;
-    dropStart?: boolean;
 }
+/**
+ * A row that opens its children as a submenu. Outside a `Dropdown` menu, its title is shown as a
+ * header above them.
+ */
 export declare const FormDropdownSubmenu: FunctionComponent<FormDropdownSubmenuProps>;
 
 interface FormRadioGroupProps {
@@ -306,7 +321,7 @@ export declare const LinkButton: FunctionComponent<LinkButtonProps>;
 export declare const LoadingSpinner: FunctionComponent<{}>;
 
 interface ModalProps {
-    className: string;
+    className?: string;
     title?: ComponentChildren;
     customTitleBarButtons?: ({ title: string; iconClassName: string; onClick: (e: MouseEvent) => void } | null)[];
     size: "xl" | "lg" | "md" | "sm";
@@ -428,6 +443,8 @@ interface SortableCardProps<T extends SortableItem> {
     itemCreationButtons?: ItemCreationButton<T>[];
     /** Which edge of a segment the grip stands on. The trailing one by default. */
     gripPlacement?: "start" | "end";
+    /** Whether the reader can reorder the entries. Off, the card has no grip. True by default. */
+    isReorderable?: boolean;
     /** Called with the focused entry for a key the card does not handle itself. */
     onItemKeyDown?: (item: T, event: KeyboardEvent) => void;
     selectedKey?: string;

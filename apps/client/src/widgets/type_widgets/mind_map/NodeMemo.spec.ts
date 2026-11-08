@@ -1,7 +1,8 @@
 import type { NodeObj, Topic } from "mind-elixir";
 import { describe, expect, it } from "vitest";
 
-import { getNodeMemo, MEMO_MARKER_ATTRIBUTE, renderMemoMarkers, toMemoHtml } from "./NodeMemo";
+import link from "../../../services/link";
+import { buildMemoEditorConfig, getNodeMemo, MEMO_MARKER_ATTRIBUTE, renderMemoMarkers, toMemoHtml } from "./NodeMemo";
 
 function buildNode(node: Partial<NodeObj> = {}): NodeObj {
     return { id: "n1", topic: "Node", ...node };
@@ -103,5 +104,14 @@ describe("renderMemoMarkers", () => {
 
         expect(() => renderMemoMarkers(container)).not.toThrow();
         expect(container.querySelector("me-tpc")?.hasAttribute(MEMO_MARKER_ATTRIBUTE)).toBe(false);
+    });
+});
+
+describe("buildMemoEditorConfig", () => {
+    it("titles the reference links a memo holds", () => {
+        const referenceLink = buildMemoEditorConfig().referenceLink;
+
+        expect(referenceLink?.getTitle).toBe(link.getReferenceLinkTitle);
+        expect(referenceLink?.getTitleSync).toBe(link.getReferenceLinkTitleSync);
     });
 });

@@ -60,8 +60,14 @@ export function useZoomPanPinch({ minScale, maxScale, resetOn, onScaleChange }: 
  * `zoomIn`/`zoomOut` take the increment up to that target, so the library still clamps to
  * `minScale`/`maxScale` and recomputes its bounds. It zooms toward the middle of the view, so the
  * `setTransform` that follows re-anchors the content under the pointer.
+ *
+ * With `isFocusRequired`, the wheel scrolls the page until `element` has focus or is fullscreen.
  */
-export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element: HTMLElement | null) {
+export function useZoomPanWheel(
+    apiRef: RefObject<ReactZoomPanPinchRef | null>,
+    element: HTMLElement | null,
+    isFocusRequired = false
+) {
     useEffect(() => {
         if (!element) return;
 
@@ -69,6 +75,9 @@ export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element
             const api = apiRef.current;
             // A purely horizontal wheel means no zoom; leave the event for anything else to use.
             if (!api || event.deltaY === 0) return;
+            const isActive = element.contains(document.activeElement)
+                || !!document.fullscreenElement?.contains(element);
+            if (isFocusRequired && !isActive) return;
             event.preventDefault();
 
             const { scale, positionX, positionY } = api.instance.state;
@@ -84,18 +93,18 @@ export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element
                 scale, positionX, positionY, zoomed,
                 event.clientX - rect.left, event.clientY - rect.top
             );
-            const bounds = api.instance.bounds;
+            const bounds = panBounds(api);
             const { x, y } = bounds ? clampPan(anchored.x, anchored.y, bounds) : anchored;
             api.setTransform(x, y, zoomed, 0);
         };
 
         element.addEventListener("wheel", onWheel, { passive: false });
         return () => element.removeEventListener("wheel", onWheel);
-    }, [ apiRef, element ]);
+    }, [ apiRef, element, isFocusRequired ]);
 }
 
 /** What one press of a zoom step multiplies the scale by. */
-const ZOOM_STEP = 1.2;
+export const ZOOM_STEP = 1.2;
 /** What one wheel notch multiplies the scale by. Below {@link ZOOM_STEP}: notches arrive in bursts. */
 const WHEEL_STEP = 1.1;
 /** The pixel `deltaY` of one mouse-wheel notch. A trackpad reports a fraction of this per event. */
@@ -154,6 +163,14 @@ export function wheelTargetScale(scale: number, deltaY: number, deltaMode = 0) {
 
 interface PanBounds { minPositionX: number; maxPositionX: number; minPositionY: number; maxPositionY: number; }
 
+/**
+ * The bounds a pan is clamped to, or `null` when the instance has none to keep to. The library
+ * computes `bounds` even with `limitToBounds={false}`, as on the relation map's unbounded canvas.
+ */
+export function panBounds(api: ReactZoomPanPinchRef): PanBounds | null {
+    return api.instance.setup.limitToBounds ? api.instance.bounds : null;
+}
+
 /** Clamps a candidate content position to the library's computed pan bounds. */
 export function clampPan(x: number, y: number, bounds: PanBounds): { x: number; y: number } {
     return {
@@ -174,6 +191,6 @@ export function zoomToPointPosition(scale0: number, posX0: number, posY0: number
 }
 
 /** The instance's live scale. Read at click time rather than render time, so the step is current. */
-function currentScale(ref: RefObject<ReactZoomPanPinchRef>) {
+function currentScale(ref: RefObject<ReactZoomPanPinchRef | null>) {
     return ref.current?.instance?.state?.scale ?? 1;
 }

@@ -132,8 +132,9 @@ async function token(req: Request) {
     const password = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    if (await verifyLoginCredentials(password, submittedTotpToken)) {
-        return [401, "Incorrect credential"];
+    const failedFactor = await verifyLoginCredentials(password, submittedTotpToken);
+    if (failedFactor) {
+        return [401, { message: "Incorrect credential", factor: failedFactor }];
     }
 
     // for backwards compatibility with Sender which does not send the name

@@ -105,7 +105,8 @@ describe("hierarchy_tools", () => {
                 success: true,
                 noteId: note.noteId,
                 newParentNoteId: newParent.noteId,
-                newParentTitle: "New parent"
+                newParentTitle: "New parent",
+                oldParentNoteId: oldParent.noteId
             });
             expect(note.getParentNotes().map((p) => p.noteId)).toContain(newParent.noteId);
         });

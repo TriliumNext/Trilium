@@ -2,15 +2,16 @@ import "./TableOfContents.css";
 
 import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
+import { revealElement } from "../../services/collapsible";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
 import { getEditorNoteId } from "../react/NoteStore";
 import RawHtml from "../react/RawHtml";
-import RightPanelWidget from "./RightPanelWidget";
+import RightPanelWidget, { NavigatedInNote } from "./RightPanelWidget";
 
 //#region Generic impl.
 interface RawHeading {
@@ -37,7 +38,7 @@ export default function TableOfContents() {
 
     return (
         <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
-            {((noteType === "text" && isReadOnly) || (noteType === "doc")) && <ReadOnlyTextTableOfContents />}
+            {noteType === "text" && isReadOnly && <ReadOnlyTextTableOfContents />}
             {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
             {noteType === "file" && noteMime === "application/pdf" && <ContextDataTableOfContents />}
             {noteType === "llmChat" && <ContextDataTableOfContents />}
@@ -92,6 +93,7 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
     activeHeadingId?: string | null;
 }) {
     const [ collapsed, setCollapsed ] = useState(false);
+    const onNavigated = useContext(NavigatedInNote);
     const isActive = heading.id === activeHeadingId;
     const contentRef = useRef<HTMLElement>(null);
 
@@ -110,7 +112,10 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
                 <RawHtml
                     containerRef={contentRef}
                     className="item-content"
-                    onClick={() => scrollToHeading(heading)}
+                    onClick={() => {
+                        scrollToHeading(heading);
+                        onNavigated?.();
+                    }}
                     html={heading.text}
                 />
             </li>
@@ -197,7 +202,7 @@ export function useActiveHeading<T extends RawHeading>({ headings, scrollingCont
             window.clearTimeout(timeoutId);
             scrollingContainer.removeEventListener("scroll", handleScroll);
         };
-        // getHeadingElement must re-subscribe the listener: when the watchdog replaces the editor,
+        // getHeadingElement must re-subscribe the listener: when a rebuild replaces the editor,
         // .scrolling-container is an ancestor of the editor root and stays the same element, so
         // scrollingContainer alone would keep the listener mapping through the destroyed editor.
     }, [scrollingContainer, getHeadingElement]);
@@ -207,7 +212,8 @@ export function useActiveHeading<T extends RawHeading>({ headings, scrollingCont
 //#endregion
 
 //#region Editable text (CKEditor)
-const TOC_ID = 'tocId';
+/** The id of each heading element, outside the model: reading the headings must not edit the note. */
+const headingIds = new WeakMap<ModelElement, string>();
 
 interface CKHeading extends RawHeading {
     element: ModelElement;
@@ -243,6 +249,8 @@ function EditableTextTableOfContents() {
             affectsHeading = attributeChangeAffectsHeading;
         });
 
+        // One extraction per frame, however many changes arrive in it.
+        let frame: number | undefined;
         const changeCallback = () => {
             const changes = textEditor.model.document.differ.getChanges();
 
@@ -252,8 +260,9 @@ function EditableTextTableOfContents() {
                     (change.type === 'attribute' && (affectsHeading?.(change, textEditor) ?? false))
                 );
             });
-            if (affectsHeadings) {
-                requestAnimationFrame(() => {
+            if (affectsHeadings && frame === undefined) {
+                frame = requestAnimationFrame(() => {
+                    frame = undefined;
                     setHeadings(extractTocFromTextEditor(textEditor));
                 });
             }
@@ -261,7 +270,12 @@ function EditableTextTableOfContents() {
 
         textEditor.model.document.on("change:data", changeCallback);
 
-        return () => textEditor.model.document.off("change:data", changeCallback);
+        return () => {
+            textEditor.model.document.off("change:data", changeCallback);
+            if (frame !== undefined) {
+                cancelAnimationFrame(frame);
+            }
+        };
     }, [ textEditor, note?.noteId ]);
 
     useEffect(() => {
@@ -293,7 +307,10 @@ function EditableTextTableOfContents() {
         if (!viewEl) return;
 
         const domEl = textEditor.editing.view.domConverter.mapViewToDom(viewEl);
-        domEl?.scrollIntoView();
+        if (domEl) {
+            revealElement(domEl);
+            domEl.scrollIntoView();
+        }
     }, [ textEditor ]);
 
     return <AbstractTableOfContents
@@ -309,59 +326,53 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
     const root = editor.model.document.getRoot();
     if (!root) return [];
 
-    editor.model.change(writer => {
-        for (const { type, item } of editor.model.createRangeIn(root).getWalker()) {
-            if (type !== "elementStart" || !item.is('element') || !item.name.startsWith('heading')) continue;
+    for (const { type, item } of editor.model.createRangeIn(root).getWalker()) {
+        if (type !== "elementStart" || !item.is('element') || !item.name.startsWith('heading')) continue;
 
-            const level = Number(item.name.replace( 'heading', '' ));
+        const level = Number(item.name.replace( 'heading', '' ));
 
-            // Convert model element to view, then to DOM to get HTML.
-            // Math UIElements render their KaTeX content asynchronously, so
-            // ck-math-tex spans may be empty at read time. Replace them with
-            // math-tex spans (the data format) using the equation from the model,
-            // so useMathRendering can render them synchronously in the sidebar.
-            const viewEl = editor.editing.mapper.toViewElement(item);
-            let text = '';
-            if (viewEl) {
-                const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
-                if (domEl instanceof HTMLElement) {
-                    const clone = domEl.cloneNode(true) as HTMLElement;
-                    const ckMathSpans = clone.querySelectorAll('.ck-math-tex');
-                    let mathIdx = 0;
-                    for (const child of item.getChildren()) {
-                        if (!child.is('element', 'mathtex-inline')) continue;
-                        if (mathIdx >= ckMathSpans.length) break;
-                        const equation = String(child.getAttribute('equation') ?? '');
-                        const span = document.createElement('span');
-                        span.className = 'math-tex';
-                        span.textContent = `\\(${equation}\\)`;
-                        ckMathSpans[mathIdx].replaceWith(span);
-                        mathIdx++;
-                    }
-                    text = clone.innerHTML;
+        // Convert model element to view, then to DOM to get HTML.
+        // Math UIElements render their KaTeX content asynchronously, so
+        // ck-math-tex spans may be empty at read time. Replace them with
+        // math-tex spans (the data format) using the equation from the model,
+        // so useMathRendering can render them synchronously in the sidebar.
+        const viewEl = editor.editing.mapper.toViewElement(item);
+        let text = '';
+        if (viewEl) {
+            const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
+            if (domEl instanceof HTMLElement) {
+                const clone = domEl.cloneNode(true) as HTMLElement;
+                const ckMathSpans = clone.querySelectorAll('.ck-math-tex');
+                let mathIdx = 0;
+                for (const child of item.getChildren()) {
+                    if (!child.is('element', 'mathtex-inline')) continue;
+                    if (mathIdx >= ckMathSpans.length) break;
+                    const equation = String(child.getAttribute('equation') ?? '');
+                    const span = document.createElement('span');
+                    span.className = 'math-tex';
+                    span.textContent = `\\(${equation}\\)`;
+                    ckMathSpans[mathIdx].replaceWith(span);
+                    mathIdx++;
                 }
+                text = clone.innerHTML;
             }
-
-            // Fallback to plain text if DOM conversion fails
-            if (!text) {
-                text = Array.from( item.getChildren() )
-                    .map( (c: ModelNode) => c.is( '$text' ) ? c.data : '' )
-                    .join( '' );
-            }
-
-            // Assign a unique ID
-            let tocId = item.getAttribute(TOC_ID) as string | undefined;
-            // Splitting a heading with Enter copies its attributes onto the new element, so two
-            // headings can carry the same tocId and collide as React keys and as activeHeadingId.
-            const tocIdExists = headings.some(h => h.id === tocId);
-            if (!tocId || tocIdExists) {
-                tocId = randomString();
-                writer.setAttribute(TOC_ID, tocId, item);
-            }
-
-            headings.push({ level, text, element: item, id: tocId });
         }
-    });
+
+        // Fallback to plain text if DOM conversion fails
+        if (!text) {
+            text = Array.from( item.getChildren() )
+                .map( (c: ModelNode) => c.is( '$text' ) ? c.data : '' )
+                .join( '' );
+        }
+
+        let id = headingIds.get(item);
+        if (!id) {
+            id = randomString();
+            headingIds.set(item, id);
+        }
+
+        headings.push({ level, text, element: item, id });
+    }
 
     return headings;
 }
@@ -392,6 +403,7 @@ function ReadOnlyTextTableOfContents() {
     }, [contentEl]);
 
     const scrollToHeading = useCallback((heading: DomHeading) => {
+        revealElement(heading.element);
         heading.element.scrollIntoView();
     }, []);
 

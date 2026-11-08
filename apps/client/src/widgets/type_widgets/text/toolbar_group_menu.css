@@ -1,0 +1,10 @@
+/* `--_size` is set per size in `theme-next/notes/text.css`, as it is for CKEditor's own list. */
+.tn-dropdown-menu .dropdown-item.ck-fontsize-option .toolbar-group-menu-label {
+    font-size: var(--_size);
+}
+
+.tn-dropdown-menu .tn-menu-actions.toolbar-group-menu-tiles {
+    &:has(> .tn-menu-action:nth-child(4):last-child) {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

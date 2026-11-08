@@ -1,0 +1,73 @@
+@top GitDiagram {
+  document
+}
+
+@skip { spaces | LineComment }
+
+document {
+  DiagramName Direction? ":"? statement*
+}
+
+statement {
+  Commit |
+  Branch |
+  Checkout |
+  Merge |
+  CherryPick
+}
+
+Commit { CommitKeyword Option* }
+Branch { BranchKeyword BranchName Option* }
+Checkout { CheckoutKeyword BranchName }
+Merge { MergeKeyword BranchName Option* }
+CherryPick { CherryPickKeyword Option* }
+
+Option { OptionKey ":" optionValue }
+optionValue { String | Number | Value }
+
+BranchName { identifier }
+Value { identifier }
+
+CommitKeyword { @specialize<identifier, "commit"> }
+BranchKeyword { @specialize<identifier, "branch"> }
+CheckoutKeyword {
+  @specialize<identifier, "checkout"> |
+  @specialize<identifier, "switch">
+}
+MergeKeyword { @specialize<identifier, "merge"> }
+CherryPickKeyword { @specialize<identifier, "cherry-pick"> }
+
+OptionKey {
+  @specialize<identifier, "id"> |
+  @specialize<identifier, "msg"> |
+  @specialize<identifier, "tag"> |
+  @specialize<identifier, "type"> |
+  @specialize<identifier, "order"> |
+  @specialize<identifier, "parent">
+}
+
+Direction {
+  @specialize<identifier, "LR"> |
+  @specialize<identifier, "TB"> |
+  @specialize<identifier, "BT"> |
+  @specialize<identifier, "TD">
+}
+
+DiagramName { @specialize<identifier, "gitGraph"> }
+
+@skip {} {
+  String {
+    '"' (stringContentDouble)* '"'
+  }
+}
+
+@tokens {
+  spaces { @whitespace+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[A-Za-z_] $[A-Za-z0-9_./\-]* }
+  Number { @digit+ }
+  stringContentDouble { !["]+ }
+  ":"
+}
+
+@external propSource gitHighlighting from "./highlight.js"

@@ -1,4 +1,5 @@
 import { type ComponentChild, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach } from "vitest";
 
 const containers: HTMLDivElement[] = [];
@@ -20,7 +21,7 @@ export function renderInto(vnode: ComponentChild) {
 
 afterEach(() => {
     for (const container of containers) {
-        render(null, container);
+        act(() => render(null, container));
         container.remove();
     }
     containers.length = 0;

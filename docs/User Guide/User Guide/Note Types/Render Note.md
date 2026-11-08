@@ -64,8 +64,19 @@ Here are the steps to creating a simple render note:
 
 It's possible to refresh the note via:
 
-*   The corresponding button in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
+*   The <span class="tn-icon bx bx-refresh"></span> button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area.
 *   The “Render active note” [keyboard shortcut](../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md) (not assigned by default).
+
+## Printing
+
+A render note can be printed or exported as PDF from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> once its `~renderNote` relation is set (see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>). Unlike other notes, it is printed exactly as it is displayed: the script does not run again, so what was typed, selected or loaded in the note is kept.
+
+*   The content is laid out again at the width of the page, so elements sized by the script for the screen (such as charts) might not fit.
+*   Scrolling areas, such as a table in a scrolling container, are printed at their full height, without a scrollbar.
+*   To adjust the layout for printing, use a `~printCss` relation.
+*   The light colors are used for printing, whatever the current theme.
+
+When a render note is printed as part of a <a class="reference-link" href="../Collections/List%20View.md">List View</a> collection, or from another view such as its attachments, it is not on screen, so its script runs again for the print. In a collection, the output is printed without the note's own styles.
 
 ## Examples
 

@@ -33,37 +33,38 @@ standalone packages (and legacy specs mid-migration) still hand-roll the scaffol
 `document.createElement('div')` + `ClassicEditor.create(...)` + an `afterEach` that calls
 `editor.destroy()` and `editorElement.remove()`.
 
-## Stubbing the Trilium glue (`glob` / `navigator.clipboard` / jQuery `$`)
+## Stubbing the host and browser globals
 
-Many in-aggregate plugins reach for a global `glob` (the Trilium bridge — typed in
-`packages/ckeditor5/src/augmentation.ts` with `getComponentByEl`, `getReferenceLinkTitle`,
-`getReferenceLinkTitleSync`, `getActiveContextNote`, `getHeaders`), some buttons hit
-`navigator.clipboard`, and some converters call jQuery `$(...)` (e.g. the `editingDowncast`
-converter in `packages/ckeditor5/src/plugins/referencelink.ts`). Use the globals kit
-(`test/globals-test-kit.ts`) so each stub **tears itself down** after the test — never hand-roll
-`globalThis.glob = …` plus a manual `delete`:
+Everything the plugins need from Trilium comes through the editor config, so a spec passes it to
+`createTestEditor( plugins, { … } )`: `formatDateTime` (date/time),
+`referenceLink: { getTitle, getTitleSync, renderTitle, fixLink }` (reference links), `linkEmbed` (link previews —
+`createLinkEmbedHost()` in `test/link-embed-kit.ts` builds the mocked entry), and `getNoteId` plus
+`attachmentUpload: { getHeaders, getLocalUpload, getEmbedBoxSize }` (uploads), and the dialogs a
+button hands over to the host: `internalLink: { openDialog }`, `markdownImport: { open }`,
+`contentEmbed` (`pickNote`, the `load…` renderers, `getTools`, `enter` and the rest of
+`ContentEmbedHost`), `cutToNote: { cut, saveNow }`, `inlineIcon: { showPicker }`,
+`blockReference: { openHandleMenu, copyReference }`, `tabs: { copyReference }` and
+`imageToDrawing: { convert }`. Each falls back to a placeholder or a no-op when left out (an
+upload without `getNoteId` is rejected), so a spec that does not assert on it can omit it. A
+spec sharing one editor across tests can swap an entry with `editor.config.set()`, which the
+plugins read at call time.
+
+The editor package reads no Trilium global and calls no jQuery. A spec that has to swap a browser
+global (`navigator.clipboard`, a `window` method) queues its restore with `registerTestCleanup()`
+from `test/globals-test-kit.ts`, which the global `afterEach` in `test/setup.ts` runs:
 
 ```ts
-import { installGlobMock, mockClipboard } from '../../test/globals-test-kit.js';
+import { registerTestCleanup } from '../../test/globals-test-kit.js';
 
-beforeEach( async () => {
-	const triggerCommand = vi.fn();
-	installGlobMock( { getComponentByEl: () => ( { triggerCommand } ) } ); // removed after the test
-	editor = await createTestEditor( [ Essentials, Paragraph, InternalLinkPlugin ] );
+const original = navigator.clipboard;
+Object.defineProperty( navigator, 'clipboard', { value: clipboard, configurable: true } );
+registerTestCleanup( () => {
+	Object.defineProperty( navigator, 'clipboard', { value: original, configurable: true } );
 } );
-// no afterEach: setup.ts runs the kit's cleanups (and destroys the editor)
 ```
 
-- `installGlobMock( obj )` casts to the global `glob` type for you and returns `obj` for assertions; its teardown is queued and run by the global `afterEach` in `test/setup.ts`.
-- `mockClipboard( obj )` swaps `navigator.clipboard` and restores the original afterwards.
-- jQuery `$` is already a global passthrough installed by `test/setup.ts` — specs don't set it.
-
-**Why a kit and not hand-rolled globals:** browser mode runs every spec in **one shared page**, so a
-leaked `glob`/`$`/clipboard survives into later specs and causes test-order-dependent flakiness — a
-review caught exactly this missing cleanup. The kit makes teardown automatic. (Existing specs still
-hand-roll `globalThis.glob = … as unknown as typeof glob` + a manual `delete` in `afterEach`; that's
-the legacy pattern being migrated to `installGlobMock` — see
-`packages/ckeditor5/src/plugins/internallink.spec.ts`.)
+Browser mode runs every spec in **one shared page**, so a global left swapped leaks into later specs
+and causes test-order-dependent failures.
 
 ## Schema
 
@@ -202,6 +203,42 @@ it( 'throws on invalid config', () => {
 ```
 
 For `CKEditorError`, match the error id substring.
+
+### Errors that escape the editor (`onEditorError()`)
+
+CKEditor 49 reports an escaped error from `window`'s `error` and `unhandledrejection` events, and
+only a `CKEditorError` whose `context` resolves to a ready editor. Native errors arrive wrapped by
+`CKEditorError.rethrowUnexpectedError(error, context)` (`unexpected-error … Original error: …`).
+Test a listener by dispatching the event a thrown error would raise (`src/editor_errors.spec.ts`):
+
+```ts
+function escape( error: Error ) {
+	const listener = () => {};
+	window.addEventListener( 'error', listener );
+	window.dispatchEvent( new ErrorEvent( 'error', { error } ) );
+	window.removeEventListener( 'error', listener );
+}
+```
+
+The extra listener is the point: Vitest's browser runner reports an `error` event as an
+**unhandled error** (failing the run) whenever no user listener is registered on `window`, and
+`preventDefault()` does not change that. Once the code under test unregisters its own listener, an
+event dispatched without one fails the file even though every test passed.
+
+## Measuring real CSS
+
+Specs that assert layout load a stylesheet and read `getComputedStyle()` /
+`getBoundingClientRect()` (`tile_row_view.spec.ts`, `multicolumn_layout.spec.ts`):
+
+- `import url from "ckeditor5/ckeditor5.css?url"` plus a `<link>` loads CKEditor's sheet as the app
+  does. `?inline` returns the CSS text with `@import`s resolved — use it to load a client
+  stylesheet chain (`apps/client/src/stylesheets/style.css?inline`) into a `<style>`. `?raw` keeps
+  `@import` lines as text, which the browser then cannot resolve.
+- Disable transitions (`* { transition: none !important; }`) before reading `box-shadow` or
+  colors of a state you just entered; otherwise you read the transition's first frame.
+- `element.focus()` from a test counts as `:focus-visible`.
+- To compare a stylesheet between two CKEditor versions, don't write a spec: use `ck_css.mjs` from
+  the `ckeditor5-plugin-development` skill (`references/upgrading-ckeditor.md`).
 
 ## Reaching 100% coverage
 

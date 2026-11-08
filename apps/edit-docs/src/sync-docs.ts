@@ -1,8 +1,8 @@
 /**
  * Regenerates every export target in `edit-docs-config.yaml` from the Markdown trees, with no
  * window: the same import and export that `edit-docs.ts` runs after an edit, so a page edited
- * by hand gets its normalized Markdown, the help HTML under `doc_notes` and the standalone
- * `help_meta.json` without opening Electron.
+ * by hand gets its normalized Markdown and the in-app help artifacts under `assets/help` without
+ * opening Electron.
  *
  *   pnpm edit-docs:sync-docs [-- -c <config>]
  *

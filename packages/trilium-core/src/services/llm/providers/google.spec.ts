@@ -3,11 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const createGoogleMock = vi.fn();
 const googleSearchMock = vi.fn(() => ({ kind: "google_search" }));
+const googleModelMock = vi.fn();
 
 vi.mock("@ai-sdk/google", () => ({
     createGoogleGenerativeAI: (opts: unknown) => {
         createGoogleMock(opts);
-        const fn: any = () => ({});
+        const fn: any = (modelId: string) => {
+            googleModelMock(modelId);
+            return {};
+        };
         fn.tools = { googleSearch: googleSearchMock };
         return fn;
     }
@@ -109,6 +113,15 @@ describe("GoogleProvider message building", () => {
         expect(opts.telemetry).toEqual({ isEnabled: false });
     });
 
+    it("chat() falls back to a Gemini 3 model when none is configured", () => {
+        googleModelMock.mockClear();
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hello" }], {});
+
+        // The 2.5 models are no longer open to new Gemini API keys.
+        expect(googleModelMock).toHaveBeenCalledWith("gemini-3.8-flash");
+    });
+
     it("chat() with extended thinking also guards against system messages in `messages`", () => {
         const provider = new GoogleProvider("test-key");
         provider.chat(
@@ -128,6 +141,14 @@ describe("GoogleProvider message building", () => {
         // Extended thinking forwards Gemini's thinkingConfig.
         expect(opts.providerOptions.google.thinkingConfig.thinkingBudget).toBe(10000);
     });
+
+    it("chat() with extended thinking passes the turn's abort signal to streamText", () => {
+        const provider = new GoogleProvider("test-key");
+        const signal = new AbortController().signal;
+        provider.chat([{ role: "user", content: "hello" }], { enableExtendedThinking: true }, signal);
+
+        expect((streamTextMock.mock.calls[0][0] as any).abortSignal).toBe(signal);
+    });
 });
 
 describe("GoogleProvider tool handling", () => {
@@ -143,6 +164,8 @@ describe("GoogleProvider tool handling", () => {
         expect(googleSearchMock).toHaveBeenCalledOnce();
         const opts = streamTextMock.mock.calls[0][0] as any;
         expect(opts.tools.google_search).toEqual({ kind: "google_search" });
+        // The built-in search reads pages its own way.
+        expect(opts.tools.read_web_page).toBeUndefined();
         expect(opts.toolChoice).toBe("auto");
     });
 
@@ -160,6 +183,23 @@ describe("GoogleProvider tool handling", () => {
         expect(Object.keys(opts.tools).length).toBeGreaterThan(0);
         // The system prompt gains the conflict explanation.
         expect(opts.system).toContain("web search is unavailable in this turn");
+    });
+
+    it("keeps note tools beside a configured search provider, which has no conflict to drop", () => {
+        const provider = new GoogleProvider("test-key");
+        provider.chat([{ role: "user", content: "hi" }], {
+            enableWebSearch: true,
+            enableNoteTools: true,
+            webSearch: { provider: "tavily", apiKey: "tk" }
+        });
+
+        expect(googleSearchMock).not.toHaveBeenCalled();
+        const opts = streamTextMock.mock.calls[0][0] as any;
+        expect(opts.tools.google_search).toBeUndefined();
+        expect(opts.tools.web_search).toBeDefined();
+        expect(opts.tools.read_web_page).toBeDefined();
+        expect(opts.tools.search_notes).toBeDefined();
+        expect(opts.system).not.toContain("web search is unavailable in this turn");
     });
 
     it("forwards thinkingBudget override under extended thinking with tools enabled", () => {
@@ -196,7 +236,7 @@ describe("GoogleProvider model listing", () => {
     it("keeps generateContent-capable chat models, stripping the models/ prefix", async () => {
         fetchMock.mockResolvedValue(okJson({
             models: [
-                { name: "models/gemini-2.5-flash", displayName: "Gemini 2.5 Flash", inputTokenLimit: 1048576, supportedGenerationMethods: ["generateContent"] },
+                { name: "models/gemini-3.8-flash", displayName: "Gemini 3.8 Flash", inputTokenLimit: 1048576, supportedGenerationMethods: ["generateContent"] },
                 { name: "models/gemini-3-pro", displayName: "Gemini 3 Pro", inputTokenLimit: 2097152, supportedGenerationMethods: ["generateContent"] },
                 { name: "models/text-embedding-004", supportedGenerationMethods: ["embedContent"] },
                 { name: "models/imagen-3.0-generate-002", supportedGenerationMethods: ["generateContent"] }
@@ -209,10 +249,10 @@ describe("GoogleProvider model listing", () => {
             "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000",
             expect.objectContaining({ headers: { "x-goog-api-key": "g-key" } })
         );
-        expect(models.map((m) => m.id)).toEqual(["gemini-2.5-flash", "gemini-3-pro"]);
+        expect(models.map((m) => m.id)).toEqual(["gemini-3.8-flash", "gemini-3-pro"]);
         // Curated entry keeps its metadata; the unknown one takes the API's
         // display name and token limit.
-        expect(models[0]).toMatchObject({ name: "Gemini 2.5 Flash", isDefault: true });
+        expect(models[0]).toMatchObject({ name: "Gemini 3.8 Flash", isDefault: true });
         expect(models[1]).toMatchObject({ name: "Gemini 3 Pro", contextWindow: 2097152 });
     });
 

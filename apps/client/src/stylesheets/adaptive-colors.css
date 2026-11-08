@@ -1,0 +1,40 @@
+body.dark-theme {
+    --_adaptive-text-min: var(--adaptive-text-dark-min-lightness);
+    --_adaptive-text-max: 100;
+    --_adaptive-text-chroma: var(--adaptive-text-dark-max-chroma);
+    --_adaptive-background-min: 0;
+    --_adaptive-background-max: var(--adaptive-background-dark-max-lightness);
+    --_adaptive-background-chroma: var(--adaptive-background-dark-max-chroma);
+    --_adaptive-table-border-min: var(--adaptive-table-border-dark-min-lightness);
+    --_adaptive-table-border-max: 100;
+    --_adaptive-table-border-chroma: var(--adaptive-table-border-dark-max-chroma);
+    --_adaptive-table-background-min: 0;
+    --_adaptive-table-background-max: var(--adaptive-table-background-dark-max-lightness);
+    --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
+}
+
+/* The shared stylesheet adapts the `color` or `background-color` of each tile from its variable. */
+@media (forced-colors: none) {
+    :root .ck.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"]) {
+        &::before {
+            content: "Ab";
+            font-weight: bold;
+        }
+
+        & .ck.ck-icon {
+            display: none;
+        }
+    }
+
+    :root .ck.ck-color-grid__tile[style*="--tn-color"] {
+        background-color: transparent !important;
+
+        &:hover:not(.ck-on, .ck-disabled) {
+            background-color: var(--icon-button-hover-background) !important;
+        }
+    }
+
+    :root .ck.ck-color-grid__tile[style*="--tn-background"]::before {
+        color: var(--main-text-color);
+    }
+}

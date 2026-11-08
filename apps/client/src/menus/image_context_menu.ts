@@ -5,6 +5,7 @@ import imageService from "../services/image.js";
 
 const PROP_NAME = "imageContextMenuInstalled";
 
+/** Adds the Electron image menu to `$image`: an `<img>`, or the container of an image viewer. */
 function setupContextMenu($image: JQuery<HTMLElement>) {
     if (!utils.isElectron() || $image.prop(PROP_NAME)) {
         return;
@@ -30,10 +31,13 @@ function setupContextMenu($image: JQuery<HTMLElement>) {
                 }
             ],
             selectMenuItemHandler: async ({ command }) => {
+                // An image viewer passes its container: its <img> takes no pointer events.
+                const isContainer = !$image.is("img");
+                const $img = isContainer ? $image.find("img").first() : $image;
                 if (command === "copyImageReferenceToClipboard") {
-                    imageService.copyImageReferenceToClipboard($image);
+                    imageService.copyImageReferenceToClipboard(isContainer ? $img.parent() : $img);
                 } else if (command === "copyImageToClipboard") {
-                    const src = $image.attr("src");
+                    const src = $img.attr("src");
                     if (!src) {
                         console.error("Missing src");
                         return;

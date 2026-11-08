@@ -1,13 +1,16 @@
 import "./shortcut_hints_kbd.css";
 import "./shortcut_hints_panel.css";
 
-import { createPortal } from "preact/compat";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { autoUpdate } from "@floating-ui/dom";
+import clsx from "clsx";
+import { createPortal } from "preact";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n.js";
 import keyboard_actions from "../../services/keyboard_actions.js";
 import type { ShortcutHint, ShortcutHintSection } from "../../services/shortcut_hints.js";
 import { useTriliumEvent } from "../react/hooks.js";
+import { placeFloating } from "../react/Popup.js";
 import { renderShortcutKbds } from "../react/shortcut_kbd.js";
 
 /** How long the panel stays up when left untouched. Paused while hovered; other signals dismiss it sooner. */
@@ -25,7 +28,7 @@ export default function ShortcutHintsPanel() {
     // `undefined` means closed. Only ever set with a non-empty section list, so presence == open.
     const [ state, setState ] = useState<OpenState>();
     const panelRef = useRef<HTMLDivElement>(null);
-    const timerRef = useRef<number>();
+    const timerRef = useRef<number | undefined>(undefined);
     // Kept in a ref so the outside-click handler always sees the current anchor without re-subscribing.
     const anchorRef = useRef<HTMLElement | null>(null);
     anchorRef.current = state?.anchor ?? null;
@@ -74,19 +77,31 @@ export default function ShortcutHintsPanel() {
         };
     }, [ isOpen, startTimer, clearTimer, close ]);
 
+    // Under the anchor with the right edges lined up, flipped and shifted as the window requires,
+    // and following the anchor while it moves.
+    const anchor = state?.anchor;
+    useLayoutEffect(() => {
+        const panel = panelRef.current;
+        if (!panel || !anchor) return;
+        return autoUpdate(anchor, panel, () => void placeFloating(panel, anchor, {
+            placement: "bottom-end",
+            offset: ANCHOR_GAP
+        }));
+    }, [ anchor ]);
+
     if (!state) {
         return null;
     }
 
-    // Anchored: position the dropdown beside the anchor, right edges aligned. The rect is a
-    // genuinely dynamic value, so it belongs in an inline style rather than CSS.
-    const anchorRect = state.anchor?.getBoundingClientRect();
-    const style = anchorRect ? anchoredStyle(anchorRect) : undefined;
-
     // Portal to <body> so no transformed / contained / overflow-clipped ancestor breaks the fixed
     // positioning or hides it behind content.
     return createPortal(
-        <div ref={panelRef} className="shortcut-hints-panel tn-shortcut-hints-kbd" style={style} onMouseEnter={clearTimer} onMouseLeave={startTimer}>
+        <div
+            ref={panelRef}
+            className={clsx("shortcut-hints-panel tn-shortcut-hints-kbd", state.anchor && "anchored")}
+            onMouseEnter={clearTimer}
+            onMouseLeave={startTimer}
+        >
             <ShortcutHintsSections sections={state.sections} />
             {/* Keyboard users get the Esc reminder; mouse users (opened via the button) click away. */}
             {!state.anchor && (
@@ -97,23 +112,6 @@ export default function ShortcutHintsPanel() {
         </div>,
         document.body
     );
-}
-
-/**
- * Where an anchored panel stands: under the anchor, or over it where there is more room that way.
- *
- * Which side it takes is read off the room around the anchor rather than told to it, so a button
- * pinned to the foot of what it sits over drops its panel upwards instead of off the window. The
- * side not used is cleared, the corner placement the stylesheet gives otherwise being the one that
- * would fight it.
- */
-function anchoredStyle(anchor: DOMRect) {
-    const right = `${Math.max(ANCHOR_GAP, window.innerWidth - anchor.right)}px`;
-    const opensUp = window.innerHeight - anchor.bottom < anchor.top;
-
-    return opensUp
-        ? { bottom: `${window.innerHeight - anchor.top + ANCHOR_GAP}px`, top: "auto", right }
-        : { top: `${anchor.bottom + ANCHOR_GAP}px`, bottom: "auto", right };
 }
 
 export function ShortcutHintsSections({ sections }: { sections: ShortcutHintSection[] }) {

@@ -7,7 +7,7 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han script)](./README-ZH_TW.md) | [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) | [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) | [Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) | [Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md) | [Russian](./README-ru.md) | [Spanish](./README-es.md) | [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+[Arabic](./README-ar.md) | [Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han script)](./README-ZH_TW.md) | [Czech](./README-cs.md) | [English (United Kingdom)](./README-en_GB.md) | [English](../README.md) | [French](./README-fr.md) | [German](./README-de.md) | [Greek](./README-el.md) | [Indonesian](./README-id.md) | [Irish](./README-ga.md) | [Italian](./README-it.md) | [Japanese](./README-ja.md) | [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md) | [Russian](./README-ru.md) | [Spanish](./README-es.md) | [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md) | [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes is a free and open-source, cross-platform hierarchical note taking application with focus on building large personal knowledge bases.
@@ -241,12 +241,13 @@ Trilium would not be possible without the technologies behind it:
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with support for huge amount of languages.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid) - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite whiteboard used in Canvas notes.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the mind map functionality.
 * [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical maps.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive table used in collections.
 * [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library without real competition. 
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library. Used in [relation maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and [link maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Support
 

@@ -3,9 +3,8 @@ import chokidar from "chokidar";
 import type { Request } from "express";
 import fs from "fs";
 import path from "path";
-import tmp from "tmp";
 
-import { becca } from "@triliumnext/core";
+import { becca, note_service as noteService } from "@triliumnext/core";
 import dataDirs from "../../services/data_dir.js";
 import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
@@ -21,7 +20,7 @@ function saveNoteToTmpDir(req: Request<{ noteId: string }>) {
 function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
     const fileName = attachment.getFileName();
-    const content = attachment.getContent();
+    const content = noteService.getPortableContent(attachment);
 
     if (!attachment.attachmentId) {
         throw new ValidationError("Missing attachment ID.");
@@ -30,40 +29,63 @@ function saveAttachmentToTmpDir(req: Request<{ attachmentId: string }>) {
 }
 
 const createdTemporaryFiles = new Set<string>();
+/** The latest temp file of each entity, keyed by `entityType/entityId`. */
+const latestTemporaryFiles = new Map<string, { tmpFilePath: string; fileName: string }>();
 
 function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
-    const tmpObj = tmp.fileSync({
-        postfix: fileName,
-        tmpdir: dataDirs.TMP_DIR
-    });
-
-    if (typeof content === "string") {
-        fs.writeSync(tmpObj.fd, content);
-    } else {
-        fs.writeSync(tmpObj.fd, content);
+    // Opening an entity again reuses its temp file and watcher, unless the file holds edits that are not uploaded yet
+    // or the entity's file name, and so its extension, has changed.
+    const entityKey = `${entityType}/${entityId}`;
+    const latest = latestTemporaryFiles.get(entityKey);
+    if (latest && latest.fileName === fileName && holdsContent(latest.tmpFilePath, content)) {
+        return { tmpFilePath: latest.tmpFilePath };
     }
 
-    fs.closeSync(tmpObj.fd);
+    const tmpFileName = `tmp-${process.pid}-${utils.randomString(12)}-${fileName}`;
+    const tmpFilePath = path.resolve(dataDirs.TMP_DIR, tmpFileName);
+    fs.writeFileSync(tmpFilePath, content, { flag: "wx", mode: 0o600 });
 
-    createdTemporaryFiles.add(tmpObj.name);
+    if (createdTemporaryFiles.size === 0) {
+        process.once("exit", removeTemporaryFiles);
+    }
+    createdTemporaryFiles.add(tmpFilePath);
+    latestTemporaryFiles.set(entityKey, { tmpFilePath, fileName });
 
-    getLog().info(`Saved temporary file ${tmpObj.name}`);
+    getLog().info(`Saved temporary file ${tmpFilePath}`);
 
     if (utils.isElectron) {
-        chokidar.watch(tmpObj.name).on("change", (path, stats) => {
+        chokidar.watch(tmpFilePath, { alwaysStat: true }).on("change", (path, stats) => {
             ws.sendMessageToAllClients({
                 type: "openedFileUpdated",
                 entityType,
                 entityId,
-                lastModifiedMs: stats?.atimeMs,
-                filePath: tmpObj.name
+                lastModifiedMs: stats?.mtimeMs,
+                filePath: tmpFilePath
             });
         });
     }
 
     return {
-        tmpFilePath: tmpObj.name
+        tmpFilePath
     };
+}
+
+function holdsContent(filePath: string, content: string | Uint8Array) {
+    try {
+        return fs.readFileSync(filePath).equals(Buffer.from(content));
+    } catch {
+        return false;
+    }
+}
+
+function removeTemporaryFiles() {
+    for (const filePath of createdTemporaryFiles) {
+        try {
+            fs.rmSync(filePath, { force: true });
+        } catch {
+            // On Windows, an editor that still holds the file open makes `rmSync()` throw.
+        }
+    }
 }
 
 /**

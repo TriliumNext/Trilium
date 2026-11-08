@@ -224,19 +224,43 @@ describe("PDFProcessor", () => {
 
         expect(result.text).toBe("");
         expect(result.confidence).toBe(0);
+        expect(result.failedPageCount).toBeUndefined();
     });
 
-    it("tolerates a render failure on a page without aborting the document", async () => {
+    it("keeps the other pages and counts the failure when OCR fails on one page", async () => {
         const processor = new PDFProcessor();
-        mockExtractText.mockResolvedValue({ totalPages: 1, text: [""] });
+        mockExtractText.mockResolvedValue({ totalPages: 2, text: [ "", "" ] });
+        mockRenderPage
+            .mockRejectedValueOnce(new Error("broken page"))
+            .mockImplementationOnce(async () => renderedPage());
+        mockRecognize.mockResolvedValue({ text: "second page", confidence: 0.8 });
+
+        const result = await processor.extractText(buffer, { language: "eng" });
+
+        expect(result.text).toBe("second page");
+        expect(result.failedPageCount).toBe(1);
+        expect(mockLog.error).toHaveBeenCalledWith(expect.stringContaining("PDF OCR failed for page 1"));
+    });
+
+    it("fails the document when OCR fails on every scanned page", async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 2, text: [ "", "" ] });
+        mockRenderPage.mockRejectedValue(new Error("Cannot find module 'pdfium.wasm'"));
+
+        await expect(processor.extractText(buffer, { language: "eng" })).rejects.toThrow(
+            "OCR failed on all 2 scanned pages: Error: Cannot find module 'pdfium.wasm'");
+        expect(mockRecognize).not.toHaveBeenCalled();
+    });
+
+    it("keeps the text pages but counts the failures when every scanned page fails", async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 2, text: [ densePage("text page"), "" ] });
         mockRenderPage.mockRejectedValue(new Error("broken page"));
 
         const result = await processor.extractText(buffer, { language: "eng" });
 
-        expect(result.text).toBe("");
-        expect(result.confidence).toBe(0);
-        expect(mockRecognize).not.toHaveBeenCalled();
-        expect(mockLog.error).toHaveBeenCalledWith(expect.stringContaining("PDF OCR failed for page 1"));
+        expect(result.text).toBe(densePage("text page").trim());
+        expect(result.failedPageCount).toBe(1);
     });
 
     it("caps the number of OCR pages and logs the pages it skipped", async () => {

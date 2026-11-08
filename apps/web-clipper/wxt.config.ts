@@ -1,11 +1,25 @@
-import { copyFile, readFile, rm, writeFile } from "fs/promises";
+import { mkdirSync } from "fs";
+import { readFile, writeFile } from "fs/promises";
 import JSZip from "jszip";
+import { resolve } from "path";
 import { defineConfig } from "wxt";
 
-let originalTsConfig: object;
-
 export default defineConfig({
-    modules: ['@wxt-dev/auto-icons'],
+    webExt: {
+        // A persistent profile keeps the toolbar pin and the extension's settings across dev runs.
+        // The Firefox one is not in /tmp, where web-ext puts it by default and the Firefox snap cannot read it.
+        chromiumProfile: profileDir("chrome-data"),
+        firefoxProfile: profileDir("firefox-data"),
+        keepProfileChanges: true
+    },
+    vite: () => ({
+        oxc: {
+            jsx: {
+                runtime: "automatic",
+                importSource: "preact"
+            }
+        }
+    }),
     manifest: ({ manifestVersion }) => ({
         name: "Trilium Web Clipper",
         description: "Save web clippings to Trilium Notes.",
@@ -15,6 +29,7 @@ export default defineConfig({
             "tabs",
             "storage",
             "contextMenus",
+            "scripting",
             manifestVersion === 3 && "offscreen"
         ].filter(Boolean),
         host_permissions: [
@@ -49,40 +64,60 @@ export default defineConfig({
                 }
             },
             saveCroppedScreenshot: {
-                description: "Take a cropped screenshot of the current page",
+                description: "Take a screenshot of an area of the current page",
                 suggested_key: {
                     default: "Ctrl+Shift+E"
                 }
+            },
+            saveTabs: {
+                description: "Save all tabs of the current window into a note"
+            },
+            saveFullPageScreenshot: {
+                description: "Take a screenshot of the whole page"
             }
         }
     }),
     zip: {
-        artifactTemplate: "trilium-web-clipper-{{version}}-{{browser}}.zip"
+        artifactTemplate: "trilium-web-clipper-{{version}}-{{browser}}.zip",
+        sourcesTemplate: "trilium-web-clipper-{{version}}-sources.zip",
+        // AMO rebuilds the extension from the sources zip, so it holds the monorepo files the
+        // build reads: the workspace and lockfile, the clipper, and the client styles and fonts.
+        sourcesRoot: resolve("../.."),
+        includeSources: [
+            "package.json",
+            "pnpm-workspace.yaml",
+            "pnpm-lock.yaml",
+            "tsconfig.base.json",
+            "patches/**",
+            "apps/web-clipper/**",
+            "apps/client/package.json",
+            "apps/client/src/stylesheets/buttons.css",
+            "apps/client/src/stylesheets/theme-next/buttons.css",
+            "apps/client/src/stylesheets/theme-next/forms.css",
+            "apps/client/src/fonts/Inter/**",
+            "apps/client/src/fonts/JetBrainsMono-Light.woff2"
+        ],
+        excludeSources: [
+            "apps/web-clipper/test-output/**",
+            "apps/web-clipper/*.tsbuildinfo"
+        ]
     },
     hooks: {
-        'zip:sources:start': async () => {
-            // Rewrite tsconfig.base.json into the web-clipper app folder
-            await copyFile("../../tsconfig.base.json", "./tsconfig.base.json");
-
-            originalTsConfig = JSON.parse(await readFile("./tsconfig.json", "utf-8"));
-            const adjustedTsConfig = {
-                ...originalTsConfig,
-                extends: ["./tsconfig.base.json", "./.wxt/tsconfig.json"]
-            };
-
-            await writeFile("./tsconfig.json", JSON.stringify(adjustedTsConfig, null, 4), 'utf-8');
+        "build:manifestGenerated": (wxt, manifest) => {
+            // Firefox places a new extension's button in the extensions panel unless asked otherwise.
+            const action = manifest.browser_action ?? manifest.action;
+            if (wxt.config.command === "serve" && wxt.config.browser === "firefox" && action) {
+                Object.assign(action, { default_area: "navbar" });
+            }
         },
         "zip:sources:done": async (_wxt, sourcesZipPath) => {
-            // Restore original tsconfig.json
-            await writeFile("./tsconfig.json", JSON.stringify(originalTsConfig, null, 4), 'utf-8');
-
-            // Remove the copied tsconfig.base.json
-            await rm("./tsconfig.base.json");
-
             // wxt always excludes skipped entrypoints (offscreen is Chrome-only) from the
             // sources zip, but AMO needs complete sources to reproduce the build.
             const archive = await JSZip.loadAsync(await readFile(sourcesZipPath));
-            archive.file("entrypoints/offscreen/index.html", await readFile("entrypoints/offscreen/index.html"));
+            archive.file("apps/web-clipper/entrypoints/offscreen/index.html",
+                await readFile("entrypoints/offscreen/index.html"));
+            // The reviewer's build instructions, where the archive opens.
+            archive.file("README.md", await readFile("README.md"));
             await writeFile(sourcesZipPath, await archive.generateAsync({
                 type: "nodebuffer",
                 compression: "DEFLATE"
@@ -90,3 +125,10 @@ export default defineConfig({
         }
     }
 });
+
+/** A dev browser profile in `.wxt`, created if missing: neither browser's launcher creates it. */
+function profileDir(name: string) {
+    const dir = resolve(".wxt", name);
+    mkdirSync(dir, { recursive: true });
+    return dir;
+}

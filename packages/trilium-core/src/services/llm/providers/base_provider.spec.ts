@@ -3,6 +3,7 @@ import { encodeUtf8 } from "../../../services/utils/binary.js";
 import type { LanguageModel } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TOOL_CALL_DECLINED_REASON, ToolApprovals } from "../tool_approval.js";
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
 
 const { streamTextMock, generateTextMock, noteMetaMock, errorLogMock, beccaStub } = vi.hoisted(() => ({
@@ -13,7 +14,7 @@ const { streamTextMock, generateTextMock, noteMetaMock, errorLogMock, beccaStub 
     // becca is accessed directly during message-part resolution and note-hint
     // building. Stub just these while keeping the rest of core intact.
     beccaStub: {
-        getNote: vi.fn((noteId: string) => ({ noteId }) as any),
+        getNote: vi.fn((noteId: string) => ({ noteId, isLabelTruthy: () => false }) as any),
         getAttachment: vi.fn() as any
     }
 }));
@@ -46,7 +47,6 @@ vi.mock("../tools/index.js", () => ({
 
 import {
     BaseProvider,
-    buildModelList,
     buildModelMessage,
     mergeModelLists,
     type ProviderPrices,
@@ -57,14 +57,6 @@ import { installGlobalFetchAsApiTransport } from "../../../test/request_provider
 // A provider reaches its endpoint through the request provider rather than the global `fetch`, so
 // the specs that stub that global need one installed which leads back to it.
 beforeEach(installGlobalFetchAsApiTransport);
-
-const TEST_MODELS: Parameters<typeof buildModelList>[0] = [
-    { id: "cheap", name: "Cheap", pricing: { input: 1, output: 2 } },
-    { id: "mid", name: "Mid", pricing: { input: 2, output: 4 }, isDefault: true },
-    { id: "spendy", name: "Spendy", pricing: { input: 10, output: 30 } }
-];
-
-const { pricing: BUILT_PRICING } = buildModelList(TEST_MODELS);
 
 /** Injected price-table slice — the base class reads this instead of the JSON file. */
 const TEST_PRICES: ProviderPrices = {
@@ -98,7 +90,7 @@ class TestProvider extends BaseProvider {
         return this.applyNoteHint(m, c);
     }
     public callBuildMessages(m: LlmMessage[]) {
-        return this.buildMessages(m);
+        return this.buildMessages(m, "mid");
     }
     /** Reach the base implementation past this class's own override. */
     public callBaseFetchRemoteModels() {
@@ -126,16 +118,6 @@ function makeAttachment(over: Partial<Record<string, unknown>> = {}) {
         ...over
     } as any;
 }
-
-describe("buildModelList", () => {
-    it("maps each model id to its pricing", () => {
-        expect(BUILT_PRICING).toMatchObject({
-            cheap: { input: 1, output: 2 },
-            mid: { input: 2, output: 4 },
-            spendy: { input: 10, output: 30 }
-        });
-    });
-});
 
 describe("getAvailableModels / getModelPricing (from the price table)", () => {
     it("builds the model list from the price table, sorted, with the default flagged", () => {
@@ -191,7 +173,7 @@ describe("mergeModelLists", () => {
         expect(merged.map(m => m.id)).toEqual(["gpt-4.1", "gpt-4.1-mini", "gpt-5", "gpt-9"]);
         // Base entries keep their pricing/default metadata...
         expect(merged[0]).toMatchObject({ name: "GPT-4.1", pricing: { input: 2, output: 8 }, isDefault: true });
-        // ...unknown ones carry no pricing.
+        // ...unknown ones carry no pricing unless the endpoint lists one.
         expect(merged[2]).toEqual({ id: "gpt-5", name: "gpt-5", contextWindow: undefined });
     });
 
@@ -215,6 +197,14 @@ describe("mergeModelLists", () => {
     it("fills a curated model's missing context window from the remote data", () => {
         const curated: ModelInfo[] = [{ id: "m", name: "M", pricing: { input: 1, output: 1 } }];
         expect(mergeModelLists(curated, [{ id: "m", contextWindow: 32000 }])[0].contextWindow).toBe(32000);
+    });
+
+    it("takes a listed price where the base list has none, and keeps the base list's otherwise", () => {
+        const merged = mergeModelLists(
+            [{ id: "m", name: "M", pricing: { input: 1, output: 1 } }],
+            [{ id: "m", pricing: { input: 9, output: 9 } }, { id: "n", pricing: { input: 0.1, output: 0.5 } }]
+        );
+        expect(merged.map(m => m.pricing)).toEqual([{ input: 1, output: 1 }, { input: 0.1, output: 0.5 }]);
     });
 
     it("promotes the first model to default when the curated default is unavailable", () => {
@@ -247,6 +237,22 @@ describe("listModels", () => {
     it("returns the price-table list when the provider has no dynamic listing", async () => {
         const models = await new TestProvider().listModels();
         expect(models.map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
+    });
+
+    it("lists attachmentKinds only on models that don't read every kind", async () => {
+        class NoPdfProvider extends TestProvider {
+            protected override acceptsAttachment(kind: "image" | "file", modelId: string) {
+                return kind === "image" || modelId === "spendy";
+            }
+        }
+        const fromTable = await new NoPdfProvider().listModels();
+        expect(fromTable.map(m => m.attachmentKinds)).toEqual([["image"], ["image"], undefined]);
+
+        const listed = new NoPdfProvider();
+        listed.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);
+        expect((await listed.listModels()).map(m => m.attachmentKinds)).toEqual([["image"], ["image"]]);
+
+        expect((await new TestProvider().listModels()).some(m => "attachmentKinds" in m)).toBe(false);
     });
 
     it("merges the remote list with price-table metadata and caches the result", async () => {
@@ -373,6 +379,25 @@ describe("buildModelMessage", () => {
         expect(part.text).toContain("<svg/>");
     });
 
+    it("names an attachment the filter rejects, but still inlines an SVG, which is text", () => {
+        beccaStub.getAttachment.mockImplementation((id: string) => makeAttachment(id === "svg1"
+            ? { mime: "image/svg+xml", title: "d.svg", getContent: () => encodeUtf8("<svg/>") }
+            : { mime: id === "f1" ? "application/pdf" : "image/png" }));
+        const msg = buildModelMessage({
+            role: "user",
+            content: [
+                { type: "image", attachmentId: "a1", mime: "image/png" },
+                { type: "file", attachmentId: "f1", mime: "application/pdf", filename: "doc.pdf" },
+                { type: "image", attachmentId: "svg1", mime: "image/svg+xml" }
+            ]
+        }, () => false);
+        const parts = msg.content as any[];
+        expect(parts.map(p => p.type)).toEqual(["text", "text", "text"]);
+        expect(parts[0].text).toContain("[attached image]");
+        expect(parts[1].text).toContain("[attached file: doc.pdf]");
+        expect(parts[2].text).toContain("<svg/>");
+    });
+
     it("resolves a file attachment, using part overrides for mime and filename", () => {
         beccaStub.getAttachment.mockReturnValue(makeAttachment({ mime: "application/octet-stream", title: "fallback" }));
         const msg = buildModelMessage({
@@ -475,7 +500,7 @@ describe("BaseProvider applyNoteHint", () => {
     const provider = new TestProvider();
 
     beforeEach(() => {
-        beccaStub.getNote.mockReset().mockImplementation((noteId: string) => ({ noteId }) as any);
+        beccaStub.getNote.mockReset().mockImplementation((noteId: string) => ({ noteId, isLabelTruthy: () => false }) as any);
         noteMetaMock.mockReset().mockReturnValue({ noteId: "ctx", contentPreview: "PREVIEW" });
     });
 
@@ -537,7 +562,7 @@ describe("BaseProvider chat / pricing / models / title", () => {
     beforeEach(() => {
         streamTextMock.mockClear();
         generateTextMock.mockClear();
-        beccaStub.getNote.mockReset().mockImplementation((noteId: string) => ({ noteId }) as any);
+        beccaStub.getNote.mockReset().mockImplementation((noteId: string) => ({ noteId, isLabelTruthy: () => false }) as any);
     });
 
     it("omits tool options when no tools are enabled", () => {
@@ -582,6 +607,30 @@ describe("BaseProvider chat / pricing / models / title", () => {
         expect(opts.toolChoice).toBe("auto");
         expect(opts.stopWhen).toBeDefined();
         expect(opts.maxOutputTokens).toBe(1234);
+        // Nothing to ask the user through, so the tools run unasked.
+        expect(opts.toolApproval).toBeUndefined();
+    });
+
+    it("holds every call the provider does not run itself until the user answers it", async () => {
+        const toolApprovals = new ToolApprovals();
+        const requests: unknown[] = [];
+        toolApprovals.onRequest = (request) => requests.push(request);
+        new TestProvider().chat([{ role: "user", content: "hi" }], { enableNoteTools: true, toolApprovals });
+        const { toolApproval } = streamTextMock.mock.calls[0][0] as any;
+        const call = (toolCallId: string, providerExecuted?: boolean) =>
+            toolApproval({ toolCall: { toolCallId, toolName: "fake_tool", input: { q: 1 }, providerExecuted } });
+
+        const approved = call("c1");
+        expect(requests).toEqual([{ toolCallId: "c1", toolName: "fake_tool", toolInput: { q: 1 } }]);
+        toolApprovals.answer("c1", true);
+        await expect(approved).resolves.toBe("approved");
+
+        const declined = call("c2");
+        toolApprovals.answer("c2", false);
+        await expect(declined).resolves.toEqual({ type: "denied", reason: TOOL_CALL_DECLINED_REASON });
+
+        await expect(call("c3", true)).resolves.toBe("not-applicable");
+        expect(requests).toHaveLength(2);
     });
 
     it("creates the model from config.model, falling back to the default", () => {
@@ -601,6 +650,7 @@ describe("BaseProvider chat / pricing / models / title", () => {
         expect(provider.createdModelIds).toContain("cheap");
         const args = generateTextMock.mock.calls[0][0] as any;
         expect(args.maxOutputTokens).toBe(30);
+        expect(args.reasoning).toBe("none");
         expect(args.messages[0].content).toContain("Some long first message");
     });
 

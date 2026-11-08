@@ -1,8 +1,7 @@
 .mind-map-node-panel {
-    /* Below the floating buttons of the note, which stand in this corner. */
-    --node-panel-top: 60px;
+    --node-panel-top: var(--mind-map-inset-top);
     /*
-     * And above the map's toolbar, which stands in the corner under it, inset as far from the edge
+     * Above the map's toolbar, which stands in the corner under it, inset as far from the edge
      * as the panel is (see MapToolbar.css). The panel is drawn over it, so a panel that reached the
      * foot of the map would take the top half of every one of those buttons with it — the clicks
      * along with the sight of them. What is kept is the bar's own room and as much again over it.
@@ -16,19 +15,6 @@
     inset-inline-end: var(--mind-map-inset);
     width: 240px;
     max-height: calc(100% - var(--node-panel-top) - var(--node-panel-foot));
-}
-
-/* On a screen of its own the panel starts where the map does, there being no note buttons over it
-   there. The room it leaves for the toolbar follows the foot of the map on its own, both being
-   reckoned from the same insets (see MindMap.css). */
-.mind-map-container:fullscreen .mind-map-node-panel {
-    --node-panel-top: var(--mind-map-inset-top);
-}
-
-/* The new layout keeps no floating buttons over that corner — what they did is done from the title
-   row above the note instead — so there is nothing there for the panel to start under. */
-body.experimental-feature-new-layout .mind-map-node-panel {
-    --node-panel-top: var(--mind-map-inset-top);
 }
 
 /*

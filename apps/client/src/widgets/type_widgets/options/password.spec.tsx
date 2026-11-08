@@ -23,8 +23,7 @@ const mocks = vi.hoisted(() => {
         post: vi.fn(async (_url: string): Promise<{ success: boolean; message?: string }> => ({ success: true })),
         confirm: vi.fn(async () => true),
         showMessage: vi.fn(),
-        showError: vi.fn(),
-        resetProtectedSession: vi.fn()
+        showError: vi.fn()
     };
 });
 
@@ -64,11 +63,6 @@ vi.mock("../../../services/server", () => ({
 
 vi.mock("../../../services/dialog", () => ({
     default: { confirm: mocks.confirm, prompt: vi.fn() }
-}));
-
-// A changed password invalidates whatever the old one unlocked, so the session is dropped with it.
-vi.mock("../../../services/protected_session_holder", () => ({
-    default: { resetProtectedSession: mocks.resetProtectedSession }
 }));
 
 vi.mock("../../../services/toast", () => ({
@@ -236,25 +230,23 @@ describe("changing the password", () => {
         expect(mocks.post).not.toHaveBeenCalled();
     });
 
-    it("sends the change and clears the protected session, which the old password unlocked", async () => {
+    it("sends only the change, since the server closes the sessions the old password opened", async () => {
         await open();
         await fillIn("old", "new", "new");
 
-        expect(mocks.post).toHaveBeenCalledWith("password/change", {
+        expect(mocks.post.mock.calls).toEqual([ [ "password/change", {
             current_password: "old",
             new_password: "new"
-        });
-        expect(mocks.resetProtectedSession).toHaveBeenCalled();
+        } ] ]);
         expect(mocks.showMessage).toHaveBeenCalledWith("password.password_changed_success");
     });
 
-    it("reports what the server objected to, and keeps the session as it was", async () => {
+    it("reports what the server objected to", async () => {
         mocks.post.mockResolvedValueOnce({ success: false, message: "password.wrong_password" });
         await open();
         await fillIn("wrong", "new", "new");
 
         expect(mocks.showError).toHaveBeenCalledWith("password.wrong_password");
-        expect(mocks.resetProtectedSession).not.toHaveBeenCalled();
     });
 });
 

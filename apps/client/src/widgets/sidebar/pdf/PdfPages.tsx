@@ -1,13 +1,15 @@
 import "./PdfPages.css";
 
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import type { CSSProperties } from "preact";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 import type React from "react";
 import { List, type RowComponentProps } from "react-window";
 
 import { NoteContextDataMap } from "../../../components/note_context";
 import { t } from "../../../services/i18n";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
-import RightPanelWidget from "../RightPanelWidget";
+import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
+import { showCopyReferenceMenu } from "./PdfAnnotations";
 
 const ROW_HEIGHT = 180;
 const COLUMNS = 2;
@@ -83,9 +85,10 @@ function PdfPagesList({ pagesData, ntxId }: { pagesData: NoteContextDataMap["pdf
                         thumbnails,
                         currentPage: pagesData.currentPage,
                         requestThumbnail,
-                        scrollToPage: pagesData.scrollToPage
+                        scrollToPage: pagesData.scrollToPage,
+                        copyReference: pagesData.copyReference
                     }}
-                    style={{ height: containerHeight }}
+                    style={{ height: `${containerHeight}px` }}
                 />
             )}
         </div>
@@ -98,15 +101,16 @@ interface PdfPageRowData {
     currentPage: number;
     requestThumbnail: (page: number) => void;
     scrollToPage: (page: number) => void;
+    copyReference: (page: number) => void;
 }
 
 function PdfPageRow({ index, style, ...data }: RowComponentProps<PdfPageRowData>) {
-    const { totalPages, thumbnails, currentPage, requestThumbnail, scrollToPage } = data;
+    const { totalPages, thumbnails, currentPage, requestThumbnail, scrollToPage, copyReference } = data;
     const startPage = index * COLUMNS + 1;
     const pages = Array.from({ length: COLUMNS }, (_, i) => startPage + i).filter(p => p <= totalPages);
 
     return (
-        <div style={style as preact.JSX.CSSProperties} className="pdf-page-row">
+        <div style={style as CSSProperties} className="pdf-page-row">
             {pages.map(pageNumber => (
                 <PdfPageCell
                     key={pageNumber}
@@ -115,20 +119,23 @@ function PdfPageRow({ index, style, ...data }: RowComponentProps<PdfPageRowData>
                     thumbnail={thumbnails.get(pageNumber)}
                     requestThumbnail={requestThumbnail}
                     scrollToPage={scrollToPage}
+                    copyReference={copyReference}
                 />
             ))}
         </div>
     ) as React.ReactElement;
 }
 
-function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scrollToPage }: {
+function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scrollToPage, copyReference }: {
     pageNumber: number;
     isActive: boolean;
     thumbnail?: string;
     requestThumbnail: (page: number) => void;
     scrollToPage: (page: number) => void;
+    copyReference: (page: number) => void;
 }) {
     const hasRequested = useRef(false);
+    const onNavigated = useContext(NavigatedInNote);
 
     useEffect(() => {
         if (!thumbnail && !hasRequested.current) {
@@ -140,7 +147,11 @@ function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scroll
     return (
         <div
             className={`pdf-page-item ${isActive ? 'active' : ''}`}
-            onClick={() => scrollToPage(pageNumber)}
+            onClick={() => {
+                scrollToPage(pageNumber);
+                onNavigated?.();
+            }}
+            onContextMenu={(e) => showCopyReferenceMenu(e, () => copyReference(pageNumber))}
         >
             <div className="pdf-page-thumbnail">
                 {thumbnail ? (

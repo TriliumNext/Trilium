@@ -116,20 +116,18 @@ export default class App {
     async goToNoteInNewTab(noteTitle: string) {
         const autocomplete = this.currentNoteSplit.locator(".note-autocomplete");
         await expect(autocomplete).toBeVisible();
-        // The algolia autocomplete listens to keyboard events. `fill()` only
-        // dispatches `input`, which doesn't reliably open the dropdown — clear
-        // and type with real key events instead.
+        // Typed with real key events, as a person types, rather than `fill()`.
         await autocomplete.click();
         await autocomplete.clear();
         await autocomplete.pressSequentially(noteTitle);
 
-        // The best candidate follows the two creation suggestions ("Create note" and
-        // "Create child note"). Asserting on the suggestion itself (instead of the parent
-        // `.note-detail-empty-results`, which also contains the recent-notes
-        // list) ensures the dropdown actually opened.
+        // The notes come first, ahead of the search and creation rows, which also carry the
+        // title. Asserting on the suggestion itself (instead of the parent
+        // `.note-detail-empty-results`, which also contains the recent-notes list) ensures the
+        // dropdown actually opened.
         const suggestionSelector = this.currentNoteSplit
-            .locator(".note-detail-empty-results .aa-suggestion")
-            .nth(2);
+            .locator(".note-detail-empty-results .note-suggestion-list > .dropdown-item")
+            .first();
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }
@@ -201,7 +199,7 @@ export default class App {
         const noteActionsButton = this.currentNoteSplit.locator(".note-actions");
         await noteActionsButton.click();
 
-        const dropdownMenu = noteActionsButton.locator(".dropdown-menu").first();
+        const dropdownMenu = this.page.locator(".tn-dropdown-portal.note-actions .dropdown-menu").first();
         await this.page.waitForTimeout(100);
         await expect(dropdownMenu).toBeVisible();
         dropdownMenu.getByText(itemToFind).click();

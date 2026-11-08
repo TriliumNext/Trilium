@@ -1,6 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
+import becca from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
 import { getSql } from "../../services/sql/index";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -22,6 +26,50 @@ function getBranchRow(branchId: string): BranchRow | null {
         "SELECT parentNoteId, prefix, isExpanded, isDeleted FROM branches WHERE branchId = ?",
         [ branchId ]
     );
+}
+
+function setExpanded(branchIds: string[], isExpanded: number) {
+    for (const branchId of branchIds) {
+        getSql().execute(
+            "UPDATE branches SET isExpanded = ? WHERE branchId = ?",
+            [ isExpanded, branchId ]
+        );
+        becca.getBranchOrThrow(branchId).isExpanded = !!isExpanded;
+    }
+}
+
+/**
+ * Builds `root → { child → grandchild → leaf, left → shared, right → shared }`, where
+ * `shared` is one note cloned under two parents and has a child of its own.
+ */
+async function createSubtreeWithClone() {
+    const create = (title: string, parentNoteId?: string) =>
+        createTextNote(api, { parentNoteId, title });
+    const root = await create("Subtree root");
+    const child = await create("Subtree child", root.noteId);
+    const grandchild = await create("Subtree grandchild", child.noteId);
+    const leaf = await create("Subtree leaf", grandchild.noteId);
+    const left = await create("Subtree left", root.noteId);
+    const right = await create("Subtree right", root.noteId);
+    const shared = await create("Subtree shared", left.noteId);
+    const sharedChild = await create("Subtree shared child", shared.noteId);
+
+    const clone = await api.put<{ success: boolean; branchId: string }>(
+        `/api/notes/${shared.noteId}/clone-to-note/${right.noteId}`,
+        { body: {} }
+    );
+    expect(clone.body.success).toBe(true);
+
+    const collapsed = [
+        root.branchId, grandchild.branchId, leaf.branchId, left.branchId, right.branchId,
+        shared.branchId, clone.body.branchId, sharedChild.branchId
+    ];
+    return {
+        root: root.branchId,
+        expandedChild: child.branchId,
+        collapsed,
+        all: [ ...collapsed, child.branchId ]
+    };
 }
 
 function noteExists(noteId: string): boolean {
@@ -47,25 +95,68 @@ describe("Branches API (core)", () => {
     });
 
     describe("moving", () => {
-        it("moves a branch under a different parent and returns the new clone", async () => {
-            const parent = await createTextNote(api, { title: "Move target parent" });
-            const child = await createTextNote(api, { title: "Branch to move" });
+        it("moves several branches into a childless note, in order, and expands it", async () => {
+            const source = await createTextNote(api, { title: "Move source" });
+            const target = await createTextNote(api, { parentNoteId: source.noteId, title: "Move target" });
+            const children = [
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 1" }),
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 2" }),
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 3" })
+            ];
 
-            const res = await api.put<{ success: boolean; branch?: { parentNoteId: string } }>(
-                `/api/branches/${child.branchId}/move-to/${parent.branchId}`
-            );
+            const res = await api.put<{ success: boolean }>(`/api/branches/move-to/${target.branchId}`, {
+                body: { branchIds: children.map((child) => child.branchId) }
+            });
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.branch?.parentNoteId).toBe(parent.noteId);
-            // The original branch is replaced by a clone under the new parent.
-            expect(getBranchRow(child.branchId)?.isDeleted).toBe(1);
+            // Each original branch is replaced by a clone under the new parent.
+            for (const child of children) {
+                expect(getBranchRow(child.branchId)?.isDeleted).toBe(1);
+            }
+            expect(getSql().getColumn(
+                "SELECT noteId FROM branches WHERE parentNoteId = ? AND isDeleted = 0 ORDER BY notePosition",
+                [ target.noteId ]
+            )).toEqual(children.map((child) => child.noteId));
+            expect(getBranchRow(target.branchId)?.isExpanded).toBe(1);
         });
 
-        it("400s when moving a non-existent branch", async () => {
+        it("stops at the first move that fails validation", async () => {
+            const movable = await createTextNote(api, { title: "Movable" });
+            const ancestor = await createTextNote(api, { title: "Ancestor of target" });
+            const nestedTarget = await createTextNote(api, { parentNoteId: ancestor.noteId, title: "Nested target" });
+            const notReached = await createTextNote(api, { title: "Not reached" });
+
+            // Moving `ancestor` under its own descendant would create a cycle.
+            const res = await api.put<{ success: boolean; message: string }>(
+                `/api/branches/move-to/${nestedTarget.branchId}`,
+                { body: { branchIds: [ movable.branchId, ancestor.branchId, notReached.branchId ] } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBeTruthy();
+            expect(getBranchRow(movable.branchId)?.isDeleted).toBe(1);
+            expect(getBranchRow(ancestor.branchId)?.isDeleted).toBe(0);
+            expect(getBranchRow(notReached.branchId)?.isDeleted).toBe(0);
+        });
+
+        it("400s without moving anything when a branch or the target does not exist", async () => {
             const parent = await createTextNote(api, { title: "Has a valid parent branch" });
-            const res = await api.put(`/api/branches/missingBranch123/move-to/${parent.branchId}`);
-            expect(res.status).toBe(400);
+            const child = await createTextNote(api, { title: "Not moved" });
+
+            const missingBranch = await api.put(`/api/branches/move-to/${parent.branchId}`, {
+                body: { branchIds: [ child.branchId, "missingBranch123" ] }
+            });
+            const missingTarget = await api.put("/api/branches/move-to/missingBranch123", {
+                body: { branchIds: [ child.branchId ] }
+            });
+            const notAnArray = await api.put(`/api/branches/move-to/${parent.branchId}`, {
+                body: { branchIds: child.branchId }
+            });
+
+            expect([ missingBranch.status, missingTarget.status, notAnArray.status ]).toEqual([ 400, 400, 400 ]);
+            expect(getBranchRow(child.branchId)?.isDeleted).toBe(0);
         });
 
         it("reorders a branch before a sibling", async () => {
@@ -170,17 +261,104 @@ describe("Branches API (core)", () => {
             expect(getBranchRow(branchId)?.isExpanded).toBe(0);
         });
 
-        it("expands a subtree and returns the affected branch ids", async () => {
-            const parent = await createTextNote(api, { title: "Subtree root" });
-            await createTextNote(api, { parentNoteId: parent.noteId, title: "Subtree child" });
+        it("expands every descendant of a subtree, once per branch", async () => {
+            const tree = await createSubtreeWithClone();
+            setExpanded(tree.collapsed, 0);
+            setExpanded([ tree.expandedChild ], 1);
 
             const res = await api.put<{ branchIds: string[] }>(
-                `/api/branches/${parent.branchId}/expanded-subtree/1`
+                `/api/branches/${tree.root}/expanded-subtree/1`
             );
             expect(res.status).toBe(200);
-            expect(Array.isArray(res.body.branchIds)).toBe(true);
-            expect(res.body.branchIds).toContain(parent.branchId);
+            expect(res.body.branchIds).toHaveLength(tree.collapsed.length);
+            expect(new Set(res.body.branchIds)).toEqual(new Set(tree.collapsed));
+            for (const branchId of tree.all) {
+                expect(getBranchRow(branchId)?.isExpanded).toBe(1);
+            }
         });
+
+        it("collapses every descendant of a subtree, also below a collapsed note", async () => {
+            const tree = await createSubtreeWithClone();
+            setExpanded(tree.all, 1);
+            setExpanded([ tree.expandedChild ], 0);
+
+            const res = await api.put<{ branchIds: string[] }>(
+                `/api/branches/${tree.root}/expanded-subtree/0`
+            );
+            expect(res.status).toBe(200);
+            expect(res.body.branchIds).toHaveLength(tree.all.length - 1);
+            expect(res.body.branchIds).not.toContain(tree.expandedChild);
+            for (const branchId of tree.all) {
+                expect(getBranchRow(branchId)?.isExpanded).toBe(0);
+            }
+        });
+
+        it("reaches the virtual subtree below a note, and a subtree that is virtual itself", async () => {
+            const anchor = await createTextNote(api, { title: "Virtual anchor" });
+            const persistedChild = await createTextNote(api, { parentNoteId: anchor.noteId, title: "Persisted child" });
+            registerVirtualNoteProvider({
+                namespace: "_vexp",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [{
+                    id: "_vexp",
+                    title: "Virtual root",
+                    type: "book",
+                    children: [{
+                        id: "_vexpBook",
+                        title: "Virtual book",
+                        type: "book",
+                        children: [{ id: "_vexpPage", title: "Virtual page", type: "text" }]
+                    }]
+                }]
+            });
+
+            try {
+                getContext().init(() => load());
+                const virtualBranchIds = [ `${anchor.noteId}__vexp`, "_vexp__vexpBook", "_vexpBook__vexpPage" ];
+                const isExpanded = (branchId: string) => becca.getBranch(branchId)?.isExpanded;
+
+                const expand = await api.put<{ branchIds: string[] }>(`/api/branches/${anchor.branchId}/expanded-subtree/1`);
+                expect(new Set(expand.body.branchIds)).toEqual(new Set([ anchor.branchId, persistedChild.branchId, ...virtualBranchIds ]));
+                expect(getBranchRow(persistedChild.branchId)?.isExpanded).toBe(1);
+                expect(virtualBranchIds.map(isExpanded)).toEqual([ true, true, true ]);
+
+                const collapse = await api.put<{ branchIds: string[] }>(`/api/branches/_vexp__vexpBook/expanded-subtree/0`);
+                expect(new Set(collapse.body.branchIds)).toEqual(new Set([ "_vexp__vexpBook", "_vexpBook__vexpPage" ]));
+                expect(virtualBranchIds.map(isExpanded)).toEqual([ true, false, false ]);
+                expect(getBranchRow(persistedChild.branchId)?.isExpanded).toBe(1);
+            } finally {
+                unregisterVirtualNoteProvider("_vexp");
+                getContext().init(() => load());
+            }
+        });
+
+        it("expands a note with more children than a call can take as arguments", async () => {
+            const anchor = await createTextNote(api, { title: "Crowded anchor" });
+            const childCount = 200_000;
+            registerVirtualNoteProvider({
+                namespace: "_vbig",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [{
+                    id: "_vbig",
+                    title: "Crowded note",
+                    type: "book",
+                    children: Array.from({ length: childCount }, (_, index) => ({
+                        id: `_vbig${index}`, title: `Child ${index}`, type: "text" as const
+                    }))
+                }]
+            });
+
+            try {
+                getContext().init(() => load());
+
+                const res = await api.put<{ branchIds: string[] }>(`/api/branches/${anchor.noteId}__vbig/expanded-subtree/1`);
+                expect(res.status).toBe(200);
+                expect(res.body.branchIds).toHaveLength(childCount + 1);
+            } finally {
+                unregisterVirtualNoteProvider("_vbig");
+                getContext().init(() => load());
+            }
+        }, 60_000);
     });
 
     describe("prefixes", () => {

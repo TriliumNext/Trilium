@@ -31,6 +31,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'happy-dom',
+    setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: [
       'default',
@@ -45,7 +46,12 @@ export default defineConfig(() => ({
       },
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}', '**/*.d.ts'],
+      exclude: [
+        '**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}',
+        '**/*.d.ts',
+        'src/test/**',
+        'src/languages/mermaid/parsers/*/parser*.ts'
+      ],
       // Codecov resolves an lcov `SF:` path by matching it against the repo's file list, so the
       // package-relative paths istanbul emits by default (`src/index.ts`, relative to cwd) are
       // ambiguous in this monorepo and get attributed to whichever package wins the match. Emit

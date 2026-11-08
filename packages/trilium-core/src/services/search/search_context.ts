@@ -26,6 +26,8 @@ class SearchContext {
     /** When true, a single-token flat-text search resolves each match's best note path directly. */
     autocomplete: boolean;
     rankInTwoPasses: boolean;
+    /** Whether the query can use the `%=` regex operator. */
+    allowRegex: boolean;
     highlightedTokens: string[];
     /**
      * Subset of {@link highlightedTokens} that came from the `%=` (regex) operator
@@ -64,6 +66,7 @@ class SearchContext {
         this.fuzzyAttributeSearch = !!params.fuzzyAttributeSearch;
         this.autocomplete = !!params.autocomplete;
         this.rankInTwoPasses = !!params.rankInTwoPasses;
+        this.allowRegex = params.allowRegex ?? true;
         let fuzzyMatchingEnabled: boolean;
         try {
             fuzzyMatchingEnabled = optionService.getOptionBool("searchEnableFuzzyMatching");

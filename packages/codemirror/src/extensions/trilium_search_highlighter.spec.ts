@@ -77,6 +77,13 @@ describe("tokenizeSearchQuery", () => {
         expect(tokenize("note.")).toEqual([ "property:note", "property:." ]);
     });
 
+    it("reads # and ~ inside a full-text word as text, as lex() does", () => {
+        expect(tokenize("learn c# towers#book a~b")).toEqual([]);
+        expect(tokenize("c# #book")).toEqual([ "label:#book" ]);
+        expect(tokenize("(#a)")).toEqual([ "bracket:(", "label:#a", "bracket:)" ]);
+        expect(tokenize("#a and b#c")).toEqual([ "label:#a", "keyword:and", "label:#c" ]);
+    });
+
     it("runs an unclosed quote to the end of the query", () => {
         expect(tokenize("#title = \"unfinished")).toEqual([
             "label:#title",

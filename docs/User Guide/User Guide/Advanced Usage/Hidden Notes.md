@@ -9,7 +9,7 @@ The hidden notes are stored in the user's <a class="reference-link" href="Datab
 
 ## Accessing the hidden note tree
 
-From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, select _Advanced_ → _Show Hidden Subtree_.
+From the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>, select _Advanced_ → _Hidden notes_.
 
 ## Contents of the hidden note tree
 
@@ -33,11 +33,11 @@ Here is a brief summary of all the notes within the hidden tree:
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_sqlConsole">SQL Console History</a></td>
-            <td><p>When SQL queries or commands are executed in the&nbsp;<a class="reference-link" href="Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, they are stored here, grouped by month. Only the query is stored and not the results.</p><p>This section can be accessed without going to the hidden tree by simply going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → Open SQL Console History.</p><p>Notes can be added as children of this tree, but it's generally not recommended to do so to not interfere with the normal history process.</p></td>
+            <td><p>When SQL queries or commands are executed in the&nbsp;<a class="reference-link" href="Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a>, they are stored here, grouped by month. Only the query is stored and not the results.</p><p>This section can be accessed without going to the hidden tree by simply going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → SQL console history.</p><p>Notes can be added as children of this tree, but it's generally not recommended to do so to not interfere with the normal history process.</p></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_search">Search History</a></td>
-            <td><p>Whenever a search is executed from the full&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>, the query will be stored here, grouped by month. Only the search parameters are stored and not the results themselves.</p><p>This section can be accessed without going to the hidden tree by simply going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → Open Search History.</p><p>Notes can be added as children of this tree, but it's generally not recommended to do so to not interfere with the normal history process.</p></td>
+            <td><p>Whenever a search is executed from the full&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>, the query will be stored here, grouped by month. Only the search parameters are stored and not the results themselves.</p><p>This section can be accessed without going to the hidden tree by simply going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → Search history.</p><p>Notes can be added as children of this tree, but it's generally not recommended to do so to not interfere with the normal history process.</p></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_bulkAction">Bulk Action</a></td>
@@ -45,7 +45,7 @@ Here is a brief summary of all the notes within the hidden tree:
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_backendLog">Backend Log</a></td>
-            <td><p>This note corresponds to the backend log feature (see&nbsp;<a class="reference-link" href="../Troubleshooting/Error%20logs.md">Error logs</a>).</p><p>This item can be accessed without going to the hidden try by going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → Show backend log.</p></td>
+            <td><p>This note corresponds to the backend log feature (see&nbsp;<a class="reference-link" href="../Troubleshooting/Error%20logs.md">Error logs</a>).</p><p>This item can be accessed without going to the hidden try by going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting Advanced → Backend log.</p></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_userHidden">User Hidden</a></td>
@@ -57,11 +57,11 @@ Here is a brief summary of all the notes within the hidden tree:
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_share">Shared Notes</a></td>
-            <td><p>This tree lists all of the notes that are <a href="Sharing.md">shared</a> publicly. It can be useful to track down which notes are shared regardless of their position in the note tree.</p><p>This section can be accessed without going to the hidden tree simply by going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting <em>Show Shared Notes Subtree</em>.</p><p>Sub-notes cannot be created here.</p></td>
+            <td><p>This tree lists all of the notes that are <a href="Sharing.md">shared</a> publicly. It can be useful to track down which notes are shared regardless of their position in the note tree.</p><p>This section can be accessed without going to the hidden tree simply by going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting <em>Advanced</em> → <em>Shared notes</em>.</p><p>Sub-notes cannot be created here.</p></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_lbRoot">Launch Bar</a></td>
-            <td><p>The tree contains both available and displayed items of the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.</p><p>This section can be accessed without going to the hidden tree by:</p><ul><li>Going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting <em>Configure Launchbar</em>.</li><li>Right-clicking an empty space on the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>&nbsp;and selecting <em>Configure Launchbar</em>.</li></ul><p>Sub-notes cannot be created here.</p></td>
+            <td><p>The tree contains both available and displayed items of the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.</p><p>This section can be accessed without going to the hidden tree by:</p><ul><li>Going to the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a>&nbsp;and selecting <em>Configure launch bar…</em>.</li><li>Right-clicking an empty space on the&nbsp;<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>&nbsp;and selecting <em>Configure launch bar…</em>.</li></ul><p>Sub-notes cannot be created here.</p></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_options">Options</a></td>
@@ -73,7 +73,7 @@ Here is a brief summary of all the notes within the hidden tree:
         </tr>
         <tr>
             <td><a class="reference-link" href="#root/_hidden/_help">User Guide</a></td>
-            <td>This is where the note structure for the User Guide is actually stored. Only the metadata is stored, as the help itself is present as actual files in the application directory.</td>
+            <td>This is where the User Guide appears in the note tree. Its notes are not stored in the database: Trilium builds them from files that ship with the application each time it starts, so they cannot be edited, moved or cloned, and they are not synchronized.</td>
         </tr>
     </tbody>
 </table>

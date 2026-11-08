@@ -1,5 +1,6 @@
 import i18next from "i18next";
 import type { MindElixirInstance, NodeObj, Topic } from "mind-elixir";
+import { render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -152,5 +153,18 @@ describe("MapContextMenu", () => {
         expect(mind.createArrow).not.toHaveBeenCalled();
         // Given up all the same: the click was spent, and a hint left standing would be a lie.
         expect(hint(container)).toBeNull();
+    });
+
+    it("stops listening to the map's bus after the map is destroyed", () => {
+        const { mind } = buildMind();
+        const { bus } = mind;
+        const removeListener = vi.spyOn(bus, "removeListener");
+        const container = renderMenu(mind);
+
+        // `MindElixirInstance.destroy()` clears `bus` before the overlay drawn over the map unmounts.
+        (mind as { bus?: unknown }).bus = undefined;
+        expect(() => act(() => render(null, container))).not.toThrow();
+
+        expect(removeListener).toHaveBeenCalledWith("showContextMenu", expect.any(Function));
     });
 });

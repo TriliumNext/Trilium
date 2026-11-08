@@ -1,0 +1,134 @@
+# State
+
+stateDiagram-v2
+
+==>
+
+StateDiagram(DiagramName)
+
+# StateDiagram v1
+
+stateDiagram
+
+==>
+
+StateDiagram(DiagramName)
+
+# Transition from Start
+
+stateDiagram-v2
+[*] --> Still
+
+==>
+
+StateDiagram(DiagramName,Transition(StateRef(StartEnd),Arrow,StateRef(StateName)))
+
+# Transition to End
+
+stateDiagram-v2
+Crash --> [*]
+
+==>
+
+StateDiagram(DiagramName,Transition(StateRef(StateName),Arrow,StateRef(StartEnd)))
+
+# Transition with Label
+
+stateDiagram-v2
+Still --> Moving : go
+
+==>
+
+StateDiagram(DiagramName,Transition(StateRef(StateName),Arrow,StateRef(StateName),Label(LabelText)))
+
+# State with Description
+
+stateDiagram-v2
+state "Description here" as s2
+
+==>
+
+StateDiagram(DiagramName,StateDecl(State,String,As,StateName))
+
+# State with Annotation
+
+stateDiagram-v2
+state Choice <<choice>>
+
+==>
+
+StateDiagram(DiagramName,StateDecl(State,StateName,Annotation))
+
+# Composite State
+
+stateDiagram-v2
+state Composite {
+  [*] --> sub
+  sub --> [*]
+}
+
+==>
+
+StateDiagram(DiagramName,StateDecl(State,StateName,StateBody(Transition(StateRef(StartEnd),Arrow,StateRef(StateName)),Transition(StateRef(StateName),Arrow,StateRef(StartEnd)))))
+
+# Note
+
+stateDiagram-v2
+note right of Still : This is a note
+
+==>
+
+StateDiagram(DiagramName,Note(NoteKw,Position(Right),Of,StateName,Label(LabelText)))
+
+# Note Left
+
+stateDiagram-v2
+note left of Still : text
+
+==>
+
+StateDiagram(DiagramName,Note(NoteKw,Position(Left),Of,StateName,Label(LabelText)))
+
+# Direction
+
+stateDiagram-v2
+direction LR
+
+==>
+
+StateDiagram(DiagramName,Direction(DirectionKw,DirectionValue))
+
+# Line Comment
+
+stateDiagram-v2
+%% a comment
+[*] --> Still
+
+==>
+
+StateDiagram(DiagramName,LineComment,Transition(StateRef(StartEnd),Arrow,StateRef(StateName)))
+
+# All Features
+
+stateDiagram-v2
+  direction LR
+  [*] --> Still
+  Still --> Moving : go
+  state Choice <<choice>>
+  state Composite {
+    [*] --> sub
+  }
+  note right of Still : note text
+
+==>
+
+StateDiagram(DiagramName,Direction(DirectionKw,DirectionValue),Transition(StateRef(StartEnd),Arrow,StateRef(StateName)),Transition(StateRef(StateName),Arrow,StateRef(StateName),Label(LabelText)),StateDecl(State,StateName,Annotation),StateDecl(State,StateName,StateBody(Transition(StateRef(StartEnd),Arrow,StateRef(StateName)))),Note(NoteKw,Position(Right),Of,StateName,Label(LabelText)))
+
+# Comment after a transition colon
+
+stateDiagram-v2
+  A --> B : %% comment
+
+==>
+
+StateDiagram(DiagramName,Transition(StateRef(StateName),Arrow,StateRef(StateName),Label(":",LineComment,⚠)))

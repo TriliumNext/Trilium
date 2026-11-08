@@ -19,17 +19,20 @@ vi.mock("../../data_dir.js", async () => {
 });
 
 vi.mock("./antigravity_binary.js", () => ({ resolveAntigravityBinaryPath: async () => "/opt/agy/agy_acp_server.par" }));
-const getAcpHookEndpointUrlMock = vi.hoisted(() => vi.fn(async (_handler: (payload: unknown) => unknown) => "http://127.0.0.1:12345/hook-secret"));
+const getAcpHookEndpointUrlMock = vi.hoisted(() => vi.fn(async (_name: string, _handler: (payload: unknown) => unknown) => "http://127.0.0.1:12345/hook-secret/antigravity"));
 vi.mock("./acp_mcp_endpoint.js", () => ({
     getAcpMcpEndpointUrl: async () => "http://127.0.0.1:12345/mcp-secret",
     getAcpHookEndpointUrl: getAcpHookEndpointUrlMock
 }));
-vi.mock("./antigravity_hook.js", async (importOriginal) => ({
-    ...await importOriginal<typeof import("./antigravity_hook.js")>(),
+vi.mock("./acp_hook.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./acp_hook.js")>(),
     resolveCurlPath: async () => "/usr/bin/curl"
 }));
 vi.mock("@triliumnext/core/src/services/llm/note_hint.js", () => ({ buildNoteHint: () => null }));
-vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: vi.fn() }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/attachment_content.js")>(),
+    resolveAttachmentPart: vi.fn()
+}));
 
 class FakeAcpError extends Error {
     constructor(public readonly code: number, message: string) {
@@ -101,6 +104,7 @@ vi.mock("./acp_client.js", () => ({ AcpClient: FakeAcpClient, AcpError: FakeAcpE
 
 const { createUpdateCollector, resetAcpAgentStateForTests } = await import("./acp_agent.js");
 const { AntigravityAgentProvider, buildAntigravityEnv, buildAntigravityModelList, decideAntigravityPermission } = await import("./antigravity_agent.js");
+const { ToolApprovals } = await import("@triliumnext/core/src/services/llm/tool_approval.js");
 const { parseBuildLabel } = await vi.importActual<typeof import("./antigravity_binary.js")>("./antigravity_binary.js");
 
 /** The reply chunks of a turn, without the status that precedes a cold start (see {@link collectAll}). */
@@ -159,8 +163,8 @@ async function decideDuringTurn(config: Record<string, unknown>, requests: Recor
 
 describe("decideAntigravityPermission", () => {
     // Shapes captured from agy_acp_server 1.1.1.
-    it("approves once a call to Trilium's note-tools MCP server", () => {
-        expect(decideAntigravityPermission({
+    it("approves once a call to Trilium's note-tools MCP server", async () => {
+        expect(await decideAntigravityPermission({
             toolCall: {
                 toolCallId: "fa53",
                 kind: "other",
@@ -172,7 +176,7 @@ describe("decideAntigravityPermission", () => {
         }, "test")).toEqual({ outcome: { outcome: "selected", optionId: "allow" } });
     });
 
-    it("denies built-in tools, other MCP servers, and calls that only name Trilium in model-controlled fields", () => {
+    it("denies built-in tools, other MCP servers, and calls that only name Trilium in model-controlled fields", async () => {
         const denied = { outcome: { outcome: "selected", optionId: "deny" } };
         // A shell command, as the server asks for it.
         expect(decideAntigravityPermission({
@@ -190,7 +194,7 @@ describe("decideAntigravityPermission", () => {
             options: PERMISSION_OPTIONS
         }, "test")).toEqual(denied);
         // A note-tool call with no one-shot allow on offer is not approved permanently.
-        expect(decideAntigravityPermission({
+        expect(await decideAntigravityPermission({
             toolCall: { kind: "other", _meta: { mcp: { server: "trilium" }, is_mcp_tool_call: true } },
             options: [PERMISSION_OPTIONS[0], PERMISSION_OPTIONS[2]]
         }, "test")).toEqual(denied);
@@ -244,10 +248,11 @@ describe("AntigravityAgentProvider", () => {
         const hooks = JSON.parse(fs.readFileSync(path.join(home, "config", "hooks.json"), "utf8"));
         expect(hooks["trilium-file-access"].PreToolUse[0]).toMatchObject({
             matcher: ".*",
-            hooks: [ { command: "\"/usr/bin/curl\" --silent --show-error --fail --noproxy 127.0.0.1 --max-time 8 --data-binary @- http://127.0.0.1:12345/hook-secret" } ]
+            hooks: [ { command: "\"/usr/bin/curl\" --silent --show-error --fail --noproxy 127.0.0.1 --max-time 8 --data-binary @- http://127.0.0.1:12345/hook-secret/antigravity" } ]
         });
 
-        const decide = getAcpHookEndpointUrlMock.mock.calls[0][0];
+        const [ name, decide ] = getAcpHookEndpointUrlMock.mock.calls[0];
+        expect(name).toBe("antigravity");
         const tokenRead = { toolCall: { name: "view_file", args: { AbsolutePath: path.join(home, "antigravity-acp", "acp_token.json") } } };
         expect(decide(tokenRead)).toMatchObject({ decision: "deny" });
         expect(infoLogMock).toHaveBeenCalledWith(expect.stringContaining(`kept view_file out of the server's private folder`));
@@ -266,6 +271,38 @@ describe("AntigravityAgentProvider", () => {
         // turn owns gets no chat's settings.
         expect(FakeAcpClient.current?.onAgentRequest?.("session/request_permission", { sessionId: "sess-1", ...request }))
             .toEqual({ outcome: { outcome: "selected", optionId: "deny" } });
+    });
+
+    it("asks the turn's approvals about a note-tool call, and rejects only that call when the user declines", async () => {
+        const request = {
+            toolCall: {
+                toolCallId: "fa53",
+                kind: "other",
+                title: "trilium_rename_note",
+                rawInput: { arguments: { noteId: "n", newTitle: "New" } },
+                _meta: { mcp: { tool: "rename_note", server: "trilium" }, is_mcp_tool_call: true }
+            },
+            options: [ ...PERMISSION_OPTIONS, { optionId: "deny_always", name: "Deny Always", kind: "reject_always" } ]
+        };
+        const approvalsAnswering = (approved: boolean) => {
+            const approvals = new ToolApprovals();
+            approvals.onRequest = (asked) => {
+                requests.push(asked);
+                queueMicrotask(() => approvals.answer(asked.toolCallId, approved));
+            };
+            return approvals;
+        };
+        const requests: unknown[] = [];
+
+        expect(await decideDuringTurn({ enableNoteTools: true, toolApprovals: approvalsAnswering(true) }, [request]))
+            .toEqual([{ outcome: { outcome: "selected", optionId: "allow" } }]);
+        // A declined call is rejected once: "reject always" would stop the agent asking about the tool again.
+        expect(await decideDuringTurn({ enableNoteTools: true, toolApprovals: approvalsAnswering(false) }, [request]))
+            .toEqual([{ outcome: { outcome: "selected", optionId: "deny" } }]);
+        expect(requests).toEqual([
+            { toolCallId: "fa53", toolName: "rename_note", toolInput: { noteId: "n", newTitle: "New" } },
+            { toolCallId: "fa53", toolName: "rename_note", toolInput: { noteId: "n", newTitle: "New" } }
+        ]);
     });
 
     it("lets the agent read a public web page only when the chat allows web access", async () => {
@@ -340,13 +377,15 @@ describe("AntigravityAgentProvider", () => {
     it("signs in during the model probe, but reports a missing sign-in in the chat instead", async () => {
         FakeAcpClient.signedIn = false;
         const chunks = await collect(new AntigravityAgentProvider().chatChunks([{ role: "user", content: "hi" }], {}));
-        expect(chunks).toEqual([{ type: "error", error: expect.stringContaining("not signed in") }]);
+        expect(chunks).toEqual([{ type: "error", error: "Google Antigravity is not signed in. Open this provider in the AI settings and go to the model selection, which opens the Google sign-in page in a browser on the device running Trilium." }]);
         expect(FakeAcpClient.current?.methods()).not.toContain("authenticate");
 
         const models = await new AntigravityAgentProvider().listModels();
         expect(FakeAcpClient.current?.methods()).toEqual(["initialize", "session/new", "authenticate", "session/new"]);
         expect(FakeAcpClient.current?.requests[2].params).toEqual({ methodId: "oauth-personal" });
         expect(models.map(m => m.id)).toEqual(["default", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro"]);
+        // The ACP prompt carries images but no PDFs, which become placeholders.
+        expect(models.map(m => m.attachmentKinds)).toEqual(models.map(() => ["image"]));
     });
 
     it("leaves the default model to the server, selects any other, and titles on the newest Flash Low", async () => {

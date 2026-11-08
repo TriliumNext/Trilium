@@ -1,4 +1,4 @@
-import { Command, type Editor, Plugin } from "ckeditor5";
+import { Command, type Editor, type ModelRange, Plugin } from "ckeditor5";
 
 import { COPY_FORMAT_COMMAND, PASTE_FORMAT_COMMAND } from "./constants.js";
 
@@ -156,17 +156,24 @@ function applyFormatting(editor: Editor, formatting: FormattingAttributes): void
         for (const range of [ ...selection.getRanges() ]) {
             // Clearing first is what makes the paste replace the target's formatting rather than
             // layer onto it. Attribute edits never shift offsets, so `range` stays valid afterwards.
-            for (const item of [ ...range.getItems() ]) {
+            // Clearing a text node can merge it with its neighbors and detach the text proxies read
+            // before the change, so every item range is created before anything is cleared.
+            const clears: [ ModelRange, string[] ][] = [];
+
+            for (const item of range.getItems()) {
                 if (!item.is("$textProxy")) {
                     continue;
                 }
 
-                const itemRange = writer.createRangeOn(item);
+                const names = [ ...item.getAttributeKeys() ]
+                    .filter((name) => schema.getAttributeProperties(name).isFormatting);
 
-                for (const name of [ ...item.getAttributeKeys() ]) {
-                    if (schema.getAttributeProperties(name).isFormatting) {
-                        writer.removeAttribute(name, itemRange);
-                    }
+                clears.push([ writer.createRangeOn(item), names ]);
+            }
+
+            for (const [ itemRange, names ] of clears) {
+                for (const name of names) {
+                    writer.removeAttribute(name, itemRange);
                 }
             }
 

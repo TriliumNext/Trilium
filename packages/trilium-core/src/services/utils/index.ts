@@ -1,13 +1,17 @@
 import { isFontMimeType } from "@triliumnext/commons/src/lib/font_mimes.js";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 
 import { getCrypto } from "../encryption/crypto";
 import { getPlatform } from "../platform";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
-import escape from "escape-html";
 import { basename, extname } from "./path";
+import { stripTags } from "./strip_tags";
 import { NoteMeta } from "../../meta";
+
+export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+export { stripTags };
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
@@ -18,7 +22,10 @@ export function isLinux() { return getPlatform().isLinux; }
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
-const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml", "application/inkml+xml"]);
+const STRING_MIME_TYPES = new Set([
+    "application/javascript", "application/x-javascript", "application/json", "application/x-sql",
+    "image/svg+xml", "application/inkml+xml", CANVAS_ATTACHMENT_MIME
+]);
 
 export function hash(text: string) {
     return encodeBase64(getCrypto().createHash("sha1", text.normalize()));
@@ -116,6 +123,20 @@ export function normalizePreservingLength(str: string) {
 }
 
 /**
+ * Removes every trailing `/` from `str`.
+ *
+ * Written as an index scan rather than `replace(/\/+$/, "")`: that pattern backtracks
+ * polynomially on a value with many slashes (CodeQL js/polynomial-redos).
+ */
+export function trimTrailingSlashes(str: string) {
+    let end = str.length;
+    while (end > 0 && str.charAt(end - 1) === "/") {
+        end--;
+    }
+    return str.slice(0, end);
+}
+
+/**
  * Normalizes URL by removing trailing slashes and fixing double slashes.
  * Preserves the protocol (http://, https://) but removes trailing slashes from the rest.
  *
@@ -195,6 +216,19 @@ export function sanitizeSqlIdentifier(str: string) {
 export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
 
 /**
+ * Headers for stored, non-SVG content served without a `Content-Disposition`. A browser that
+ * navigates to such a response renders it as a document in Trilium's origin, so `sandbox` keeps
+ * its scripts from running. Embedders (`<img>`, `<video>`, `fetch()`, `@font-face`) ignore the
+ * policy. A PDF goes without it, because Chrome refuses to display a sandboxed PDF.
+ */
+export function getInlineContentHeaders(mime: string): Record<string, string> {
+    return {
+        "X-Content-Type-Options": "nosniff",
+        ...(mime === "application/pdf" ? {} : { "Content-Security-Policy": "sandbox" })
+    };
+}
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */
@@ -253,8 +287,6 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
     }
     return map;
 }
-
-export const escapeHtml = escape;
 
 /**
  * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.
@@ -372,8 +404,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
 }
 
 export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boolean, noteMeta?: NoteMeta) {
-    const trimmedNoteMeta = noteMeta?.title?.trim();
-    if (trimmedNoteMeta) return trimmedNoteMeta;
+    // An empty title in `!!!meta.json` is an untitled note, not a missing title.
+    if (noteMeta?.title !== undefined) return noteMeta.title.trim();
 
     const fileBasename = basename(removeFileExtension(filePath, noteMeta?.mime));
     return replaceUnderscoresWithSpaces ? fileBasename.replace(/_/g, " ").trim() : fileBasename;
@@ -487,10 +519,6 @@ export function slugify(text: string) {
         .replace(/(^-|-$)+/g, ""); // trim dashes
 }
 
-export function stripTags(text: string) {
-    return text.replace(/<(?:.|\n)*?>/gm, "");
-}
-
 /**
  * Generates a list of unique slugs for the given heading titles, preserving
  * document order. Titles are stripped of HTML tags and slugified; when the same
@@ -499,9 +527,10 @@ export function stripTags(text: string) {
  *
  * This keeps anchor IDs and their table-of-contents links unique on shared
  * pages, so clicking a duplicate heading in the ToC jumps to the right one.
+ * No slug is one of `reserved`, the IDs the page already uses.
  */
-export function slugifyHeadings(titles: string[]): string[] {
-    const used = new Set<string>();
+export function slugifyHeadings(titles: string[], reserved: Iterable<string> = []): string[] {
+    const used = new Set(reserved);
     return titles.map((title) => {
         const base = slugify(stripTags(title));
         let slug = base;

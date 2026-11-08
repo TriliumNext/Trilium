@@ -25,7 +25,7 @@ export function serializeStructuralHtml(node: Element, containerTags: string[], 
 
   if (containerTags.indexOf(node.nodeName) === -1 || hasDirectText) {
     // Leaf element (td/th/caption/col, or a <details> body child): keep it on one line.
-    return isVoid ? indent + openTag : indent + openTag + node.innerHTML.trim() + closeTag;
+    return isVoid ? indent + openTag : indent + openTag + withoutBlankLines(node.innerHTML.trim()) + closeTag;
   }
 
   const lines = [indent + openTag];
@@ -37,6 +37,13 @@ export function serializeStructuralHtml(node: Element, containerTags: string[], 
   }
   lines.push(indent + closeTag);
   return lines.join('\n');
+}
+
+// A blank line ends a raw-HTML block in CommonMark, so one inside a leaf (an empty line of
+// <pre> code) is joined to the line before it through a `&#10;` reference. Each such line
+// break decodes to the same newline, so the text is unchanged.
+function withoutBlankLines(html: string): string {
+  return html.replace(/\n(?=[ \t]*(?:\n|$))/g, '&#10;');
 }
 
 function hasSignificantTextChild(node: Element): boolean {

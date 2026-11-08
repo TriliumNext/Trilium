@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { trimIcoToSmallestEntry } from "./ico.js";
+import { pngInsideIco, trimIcoToSmallestEntry } from "./ico.js";
 
 interface FakeEntry {
     edge: number;
@@ -178,5 +178,23 @@ describe("trimIcoToSmallestEntry", () => {
         ]);
         new DataView(holdsNothing.buffer).setUint32(6 + 8, 0, true);
         expect(trimIcoToSmallestEntry(holdsNothing)).toBeNull();
+    });
+});
+
+describe("pngInsideIco", () => {
+    it("lifts the PNG out of a one-picture icon, whatever size the directory claims", () => {
+        const png = Uint8Array.from([ ...PNG_SIGNATURE, 1, 2, 3 ]);
+
+        for (const edge of [ 48, 256 ]) {
+            expect(pngInsideIco(buildIco([ { edge, payload: png } ]))).toEqual(png);
+        }
+    });
+
+    it("answers nothing for a BMP picture, several pictures, or bytes that are not an icon", () => {
+        const png = Uint8Array.from([ ...PNG_SIGNATURE, 1, 2, 3 ]);
+
+        expect(pngInsideIco(buildIco([ { edge: 32, payload: payload(7) } ]))).toBeNull();
+        expect(pngInsideIco(buildIco([ { edge: 16, payload: png }, { edge: 32, payload: png } ]))).toBeNull();
+        expect(pngInsideIco(png)).toBeNull();
     });
 });

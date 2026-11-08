@@ -4,6 +4,12 @@ import { generateConfig, Hotp, Totp } from "time2fa";
 import recoveryCodesService from "./encryption/recovery_codes.js";
 import totpEncryptionService from "./encryption/totp_encryption.js";
 
+/**
+ * Bytes in a new secret: 160 bits, the length RFC 4226 (section 4) recommends and the output size
+ * of HMAC-SHA-1. It encodes to 32 base32 characters with no `=` padding.
+ */
+const SECRET_SIZE = 20;
+
 function isTotpEnabled(): boolean {
     return options.getOptionOrNull("mfaMethod") === "totp" &&
         totpEncryptionService.isTotpSecretSet();
@@ -22,7 +28,8 @@ function isTotpEnabled(): boolean {
  */
 function generateSecret(accountName = "Trilium"): { success: boolean; message?: string; url?: string } {
     try {
-        const key = Totp.generateKey({ issuer: "Trilium", user: accountName });
+        const key = Totp.generateKey(
+            { issuer: "Trilium", user: accountName }, { secretSize: SECRET_SIZE });
 
         return {
             success: true,
@@ -68,7 +75,7 @@ function findTimeStep(
     drift: number,
     lastUsedStep = -Infinity
 ): number | null {
-    const config = generateConfig();
+    const config = generateConfig({ secretSize: getSecretSize(secret) });
     const currentStep = Math.floor(Date.now() / 1000 / config.period);
     const firstStep = Math.max(currentStep - drift, lastUsedStep + 1);
 
@@ -82,6 +89,14 @@ function findTimeStep(
     }
 
     return null;
+}
+
+/**
+ * Returns the byte length of a base32 `secret`. `Hotp.validate` rejects a secret whose length
+ * differs from `secretSize`, and secrets enrolled before v0.107.0 are 10 bytes long.
+ */
+function getSecretSize(secret: string): number {
+    return Math.floor(secret.trim().replaceAll("=", "").length * 5 / 8);
 }
 
 /**

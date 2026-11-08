@@ -142,13 +142,13 @@ export function buildSortMenuItems<T>(options: SortMenuOptions): MenuItem<T>[] {
     ];
 }
 
-/** One entry as a menu reads it: a title of markup, the mark at the trailing edge. */
+/** One entry as a menu reads it: a title of markup, checked when selected. */
 function toMenuItem<T>(entry: SortEntry): MenuItem<T> {
     return {
         title: entry.isUserNamed ? menuName(entry.title) : entry.title,
         uiIcon: entry.icon,
         enabled: entry.isEnabled,
-        trailingIcon: entry.isSelected ? "bx bx-check" : undefined,
+        checked: entry.isSelected,
         handler: () => entry.pick()
     };
 }

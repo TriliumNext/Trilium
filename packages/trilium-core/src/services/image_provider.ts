@@ -11,6 +11,12 @@ export interface ImageFormat {
     mime: string;
 }
 
+/**
+ * How an arriving image is shrunk: not at all, to fit `imageMaxWidthHeight` on its longest edge,
+ * or with that bound on its width alone (`"width"`), which keeps a long screenshot readable.
+ */
+export type ImageShrink = boolean | "width";
+
 export interface ProcessedImage {
     buffer: Uint8Array;
     format: ImageFormat;
@@ -25,6 +31,8 @@ export interface ImageCompressionRequest {
     resize: boolean;
     /** Longest edge in pixels. Only consulted when {@link resize} is on. */
     maxWidthHeight: number;
+    /** Whether {@link maxWidthHeight} bounds the width alone, so a tall image keeps its height. */
+    widthOnly?: boolean;
     /** What becomes of an already-lossy image (JPEG): left as encoded, or recompressed. */
     jpegHandling: ImageJpegHandling;
     /** What becomes of a lossless image (PNG): left alone, quantized in place, or converted. */
@@ -49,10 +57,10 @@ export interface ImageProvider {
      * Process image - may resize/compress depending on implementation.
      * @param buffer - Raw image data
      * @param originalName - Original filename for logging
-     * @param shrink - Whether to attempt shrinking the image
+     * @param shrink - Whether to attempt shrinking the image, and by which edge
      * @returns Processed image buffer and detected format
      */
-    processImage(buffer: Uint8Array, originalName: string, shrink: boolean): Promise<ProcessedImage>;
+    processImage(buffer: Uint8Array, originalName: string, shrink: ImageShrink): Promise<ProcessedImage>;
 
     /**
      * Recompress an image the user has explicitly asked to shrink, ignoring the `compressImages`

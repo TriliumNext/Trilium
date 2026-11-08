@@ -168,4 +168,38 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importZip).toHaveBeenCalledWith(taskContext, { path: "/tmp/v.zip" }, parentNote);
         });
     });
+
+    describe("a Blob upload (standalone, where the page posts the picked File)", () => {
+        it("hands a zip importer the Blob without reading it", async () => {
+            const blob = new Blob([ "zip bytes" ]);
+            const arrayBuffer = vi.spyOn(blob, "arrayBuffer");
+            const file = { originalname: "notes.zip", mimetype: "application/zip", blob } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions(), "notion");
+
+            expect(stubbed.importNotion).toHaveBeenCalledWith(taskContext, { blob }, parentNote);
+            expect(arrayBuffer).not.toHaveBeenCalled();
+            expect(file.buffer).toBeUndefined();
+        });
+
+        it("reads the Blob into the buffer for an importer that needs the whole file", async () => {
+            const file = { originalname: "page.md", mimetype: "text/markdown", blob: new Blob([ "# Hi" ]) } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions());
+
+            expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
+            expect(new TextDecoder().decode(file.buffer as Uint8Array)).toBe("# Hi");
+        });
+
+        it("reads the Blob for a zip the user chose not to explode", async () => {
+            const file = { originalname: "keep.zip", mimetype: "application/zip", blob: new Blob([ "PK" ]) } as File;
+
+            await importFile(taskContext, file, parentNote, makeOptions({ explodeArchives: false }));
+
+            expect(stubbed.importZip).not.toHaveBeenCalled();
+            expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
+            expect(file.buffer).toBeInstanceOf(Uint8Array);
+        });
+    });
 });
+

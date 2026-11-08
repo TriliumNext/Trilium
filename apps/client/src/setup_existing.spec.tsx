@@ -321,7 +321,8 @@ describe("backing it up first", () => {
 
         statusAnswers({ state: "running", fraction: 0.42 });
         await vi.advanceTimersByTimeAsync(1000);
-        expect(container.querySelector("progress")?.value).toBeCloseTo(0.42);
+        expect(Number(container.querySelector("[role=progressbar]")?.getAttribute("aria-valuenow")))
+            .toBeCloseTo(0.42);
         expect(container.textContent).toContain("42%");
         // ...and steps aside once there is one, rather than the two competing.
         expect(container.querySelector(".spinner-border")).toBeNull();

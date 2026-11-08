@@ -3,7 +3,6 @@
 Object.entries({
     "Name": productName,
     "Comment": description,
-    "GenericName": genericName,
     "Keywords": "Trillium;",
     "Exec": `${typeof desktopExec !== "undefined" ? desktopExec : name} %U`,
     "Icon": typeof id !== "undefined" ? id : name,
@@ -11,8 +10,13 @@ Object.entries({
     "StartupNotify": "true",
     "StartupWMClass": name,
     "Categories": categories?.length ? `${categories.join(";")};` : undefined,
-    "MimeType": mimeType?.length ? `${mimeType.join(";")};` : undefined
+    "MimeType": mimeType?.length ? `${mimeType.join(";")};` : undefined,
+    "Actions": "new-window;"
 })
 .map(line => line[1] ? line.join("=") : undefined)
 .filter(line => !!line)
 .join("\n")%>
+
+[Desktop Action new-window]
+Name=New Window
+Exec=<%= typeof desktopExec !== "undefined" ? desktopExec : name %> --new-window

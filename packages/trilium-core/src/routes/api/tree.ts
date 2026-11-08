@@ -53,7 +53,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         collectEntityIds(note);
     }
 
-    const notes: NoteRow[] = [];
+    const notes: (NoteRow & { isContentWritable?: false })[] = [];
 
     for (const noteId of collectedNoteIds) {
         const note = becca.notes[noteId];
@@ -64,7 +64,8 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
             isProtected: note.isProtected,
             type: note.type,
             mime: note.mime,
-            blobId: note.blobId
+            blobId: note.blobId,
+            ...(note.isContentWritable() ? {} : { isContentWritable: false })
         });
     }
 

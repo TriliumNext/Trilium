@@ -28,7 +28,7 @@ To do so:
 5.  Press "Write Changes" in the main toolbar.
 6.  Close the application or close the database.
 
-![](Manually%20altering%20the%20database_image.png)
+![](Manually%20altering%20the%20database_image.jpg)
 
 ### Using the SQLite CLI
 

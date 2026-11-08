@@ -96,7 +96,9 @@ export const ATTACHMENT_ROLES = {
     /** Shapes saved into an Excalidraw canvas's library. */
     canvasLibraryItem: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-shape-square" },
     /** The file an import was read from, kept so an import that went wrong can be looked at again. */
-    importSource: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-import" }
+    importSource: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-import" },
+    /** A meeting recording's transcript, which the recording rewrites as it transcribes. */
+    transcript: { picture: false, deduplicated: false, embedded: false, copiedAs: "file", icon: "bx bx-microphone" }
 } as const satisfies Record<string, AttachmentRoleTraits>;
 
 /** A role the app itself creates. Arbitrary strings reach the same fields — see {@link ATTACHMENT_ROLES}. */

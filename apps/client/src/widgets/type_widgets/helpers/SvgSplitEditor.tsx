@@ -1,3 +1,4 @@
+import type { ComponentChildren, Ref } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
@@ -13,6 +14,11 @@ import { useZoomPanKeyboard, ZOOM_PAN_HINTS, ZOOM_PAN_VIEWPORT_CLASS } from "../
 import { ShortcutHintOverlayButton } from "../../shortcut_hints/shortcut_hint_button";
 import SplitEditor, { SplitEditorProps } from "./SplitEditor";
 import { resolveDisplayMode } from "./split_editor_mode";
+
+/** How long the rendered SVG stays the same before it is saved, in ms. */
+const SVG_SAVE_DELAY = 500;
+/** The picture of a note without content. */
+const EMPTY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"></svg>`;
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
@@ -42,9 +48,8 @@ interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
  *
  */
 export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg, ...props }: SvgSplitEditorProps) {
-    const [ svg, setSvg ] = useState<string>();
-    const [ error, setError ] = useState<string | null | undefined>();
-    const zoom = useZoomPanPinch({ minScale: MIN_ZOOM, maxScale: MAX_ZOOM, resetOn: note.noteId });
+    const { svg, error, render, reset } = useSvgRender(renderSvg);
+    const zoom = useSvgZoom(note.noteId);
     const [ previewEl, setPreviewEl ] = useState<HTMLDivElement | null>(null);
 
     // Wire the keys in every display mode: without a pointer there is no other way to pan the
@@ -56,52 +61,53 @@ export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg
     useZoomPanWheel(zoom.ref, previewEl);
     useContextualShortcutHints(mode !== "source" ? ZOOM_PAN_HINTS : []);
 
+    // The SVG that the attachment holds, as far as the editor knows: the first one rendered for the
+    // note, which the attachment was saved from, then each one saved.
+    const savedSvgRef = useRef<string | undefined>(undefined);
+
     // Reset the render state when switching notes so a previous note's render (and the
     // "showing last valid render" badge) can't briefly carry over to a different note.
     useEffect(() => {
-        setSvg(undefined);
-        setError(undefined);
+        reset();
+        savedSvgRef.current = undefined;
     }, [ note.noteId ]);
 
-    // Render the SVG.
-    async function onContentChanged(content: string) {
-        try {
-            const svg = await renderSvg(content);
-
-            // Rendering was successful.
-            setError(null);
-            setSvg(svg);
-        } catch (e) {
-            // Rendering failed.
-            setError((e as Error)?.message);
-        }
-    }
-
-    // Save as attachment.
-    const onSave = useCallback(() => {
-        if (!svg) return; // Don't save if SVG hasn't been rendered yet
-
-        const payload = {
+    const saveSvg = useCallback((toSave: string) => {
+        if (toSave === savedSvgRef.current) return;
+        savedSvgRef.current = toSave;
+        server.post(`notes/${note.noteId}/attachments?matchBy=title`, {
             role: "image",
             title: attachmentTitle,
             mime: "image/svg+xml",
-            content: svg,
+            content: toSave || EMPTY_SVG,
             position: 0
-        };
+        });
+    }, [ attachmentTitle, note.noteId ]);
 
-        server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }, [ svg, attachmentTitle, note.noteId ]);
+    // A save of the note saves the SVG at once, which also covers a save as the editor closes.
+    const onSave = useCallback(() => {
+        if (svg !== undefined) saveSvg(svg);
+    }, [ svg, saveSvg ]);
 
-    // Save the SVG when entering a note only when it does not have an attachment.
+    // The SVG also changes with content that the editor does not save, such as a sample diagram
+    // written to the note, so each SVG that differs from the attachment's is saved once it settles.
     useEffect(() => {
-        if (!svg) return; // Wait until SVG is rendered
-
-        note?.getAttachments().then((attachments) => {
-            if (!attachments.find((a) => a.title === attachmentTitle)) {
-                onSave();
-            }
-        }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
-    }, [ note, svg, attachmentTitle, onSave ]);
+        if (svg === undefined) return;
+        if (savedSvgRef.current === undefined) {
+            savedSvgRef.current = svg;
+            // A note made before its pictures were saved has no attachment yet.
+            note.getAttachments().then((attachments) => {
+                if (!attachments.some((a) => a.title === attachmentTitle)) {
+                    savedSvgRef.current = undefined;
+                    saveSvg(svg);
+                }
+            }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
+            return;
+        }
+        if (readOnly || svg === savedSvgRef.current) return;
+        const timer = setTimeout(() => saveSvg(svg), SVG_SAVE_DELAY);
+        return () => clearTimeout(timer);
+    }, [ svg ]);
 
     // Import/export. Exports the `svg` string from `renderSvg()` rather than the on-screen element,
     // which CSS has sized to the preview pane.
@@ -132,53 +138,116 @@ export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg
             note={note} ntxId={ntxId}
             error={error}
             previewStale={!!svg}
-            onContentChanged={onContentChanged}
+            onContentChanged={render}
             dataSaved={onSave}
             placeholder={t("mermaid.placeholder")}
             previewContent={(
-                <div
-                    ref={setPreviewEl}
-                    tabIndex={0}
-                    role="group"
-                    aria-label={t("svg.preview")}
-                    className={`svg-preview-root ${ZOOM_PAN_VIEWPORT_CLASS}`}
-                >
-                    <TransformWrapper
-                        // The transform sits on an ancestor of the diagram, so it survives a re-render
-                        // of the same note. Keying it on the note drops it when a different one opens.
-                        key={note.noteId}
-                        ref={zoom.ref}
-                        minScale={MIN_ZOOM}
-                        maxScale={MAX_ZOOM}
-                        centerOnInit
-                        centerZoomedOut
-                        wheel={zoom.wheel}
-                        doubleClick={{ mode: "reset" }}
-                        onTransform={zoom.onTransform}
-                    >
-                        <TransformComponent wrapperClass="svg-preview-viewport" contentClass="svg-preview-content">
-                            <RawHtmlBlock className="render-container" html={svg} />
-                        </TransformComponent>
-                    </TransformWrapper>
-                </div>
+                // The transform sits on an ancestor of the diagram, so it survives a re-render of
+                // the same note. Keying it on the note drops it when a different one opens.
+                <SvgPreview key={note.noteId} svg={svg} zoom={zoom} viewportRef={setPreviewEl} />
             )}
             previewButtons={!!svg && (
-                <OverlayControlGroup className="svg-preview-controls" placement="bottom-end">
+                <SvgZoomControls zoom={zoom}>
                     {/* At the leading end of the group rather than in the corner opposite, which the
                         render-error card spans the full width of. */}
                     {!isMobile() && <ShortcutHintOverlayButton />}
-                    <ZoomControls
-                        percent={zoom.scale * 100}
-                        canZoomIn={zoom.canZoomIn}
-                        canZoomOut={zoom.canZoomOut}
-                        onZoomIn={zoom.zoomIn}
-                        onZoomOut={zoom.zoomOut}
-                        onReset={zoom.reset}
-                    />
-                </OverlayControlGroup>
+                </SvgZoomControls>
             )}
             {...props}
         />
+    );
+}
+
+/**
+ * The SVG that `renderSvg` makes of the content passed to `render()`. While the content fails to
+ * render, `error` holds why and `svg` keeps the last SVG that rendered. Only the latest
+ * `render()` call updates them.
+ */
+export function useSvgRender(renderSvg: (content: string) => string | Promise<string>) {
+    const [ svg, setSvg ] = useState<string>();
+    const [ error, setError ] = useState<string | null | undefined>();
+    const latestRender = useRef(0);
+
+    const render = useCallback(async (content: string) => {
+        const id = ++latestRender.current;
+        try {
+            const rendered = await renderSvg(content);
+            if (id !== latestRender.current) return;
+            setError(null);
+            setSvg(rendered);
+        } catch (e) {
+            if (id !== latestRender.current) return;
+            setError((e as Error)?.message ?? String(e));
+        }
+    }, [ renderSvg ]);
+
+    const reset = useCallback(() => {
+        setSvg(undefined);
+        setError(undefined);
+    }, []);
+
+    return { svg, error, render, reset };
+}
+
+export type SvgZoom = ReturnType<typeof useSvgZoom>;
+
+/** The zoom of an {@link SvgPreview}, reset when `resetOn` changes. */
+export function useSvgZoom(resetOn?: unknown) {
+    return useZoomPanPinch({ minScale: MIN_ZOOM, maxScale: MAX_ZOOM, resetOn });
+}
+
+/** The SVG in a pan/zoom viewer, which CSS fits to the preview pane at a scale of 1. */
+export function SvgPreview({ svg, zoom, viewportRef }: {
+    svg: string | undefined;
+    zoom: SvgZoom;
+    /** Receives the focusable viewer, for the keyboard and wheel zoom. */
+    viewportRef: Ref<HTMLDivElement>;
+}) {
+    return (
+        <div
+            ref={viewportRef}
+            tabIndex={0}
+            role="group"
+            aria-label={t("svg.preview")}
+            className={`svg-preview-root ${ZOOM_PAN_VIEWPORT_CLASS}`}
+        >
+            <TransformWrapper
+                ref={zoom.ref}
+                minScale={MIN_ZOOM}
+                maxScale={MAX_ZOOM}
+                centerOnInit
+                centerZoomedOut
+                wheel={zoom.wheel}
+                doubleClick={{ mode: "reset" }}
+                onTransform={zoom.onTransform}
+            >
+                <TransformComponent wrapperClass="svg-preview-viewport" contentClass="svg-preview-content">
+                    <RawHtmlBlock className="render-container" html={svg} />
+                </TransformComponent>
+            </TransformWrapper>
+        </div>
+    );
+}
+
+/** The zoom buttons over an {@link SvgPreview}, between `children` and `after`. */
+export function SvgZoomControls({ zoom, children, after }: {
+    zoom: SvgZoom;
+    children?: ComponentChildren;
+    after?: ComponentChildren;
+}) {
+    return (
+        <OverlayControlGroup className="svg-preview-controls" placement="bottom-end">
+            {children}
+            <ZoomControls
+                percent={zoom.scale * 100}
+                canZoomIn={zoom.canZoomIn}
+                canZoomOut={zoom.canZoomOut}
+                onZoomIn={zoom.zoomIn}
+                onZoomOut={zoom.zoomOut}
+                onReset={zoom.reset}
+            />
+            {after}
+        </OverlayControlGroup>
     );
 }
 

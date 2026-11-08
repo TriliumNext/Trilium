@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon,
-    NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+    CALENDAR_EVENT_ICON, CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE,
+    getAttachedFileMime, getContentRendererGroup, getDrawingPictureTitle,
+    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
+    MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
+    MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink,
+    readDrawingFrame
 } from "./notes.js";
 import { NoteType } from "./rows.js";
 
@@ -63,6 +67,27 @@ describe("getImageAttachmentTitle", () => {
     });
 });
 
+describe("getDrawingPictureTitle", () => {
+    it("titles the picture of a canvas drawing after the attachment of the drawing", () => {
+        expect(getDrawingPictureTitle("drawing1")).toBe("drawing1.svg");
+    });
+});
+
+describe("readDrawingFrame", () => {
+    it("reads a frame with a size and a scale, and nothing else", () => {
+        const frame = { x: 1, y: 2, width: 3, height: 4, scale: 0.5 };
+        expect(readDrawingFrame(frame)).toEqual(frame);
+        expect(readDrawingFrame({ ...frame, extra: true })).toEqual(frame);
+        const malformed = [
+            null, undefined, "frame", { x: 1, y: 2 }, { ...frame, width: 0 },
+            { ...frame, scale: -1 }, { ...frame, x: "1" }, { ...frame, height: NaN }
+        ];
+        for (const value of malformed) {
+            expect(readDrawingFrame(value)).toBeNull();
+        }
+    });
+});
+
 describe("getNoteIcon", () => {
     it("returns the explicit iconClass when provided", () => {
         const icon = getNoteIcon(buildArgs({ iconClass: "bx bx-custom", workspaceIconClass: "bx bx-ws" }));
@@ -109,6 +134,56 @@ describe("getNoteIcon", () => {
         }))).toBe("bx bx-trip");
     });
 
+    it("draws a web clipping by its clip type, behind its own icon", () => {
+        const clipped = (clipType: string) => (name: string) => name === "clipType" ? clipType : null;
+
+        expect([ "clippings", "page", "note", "tabs", "share" ].map((clipType) =>
+            getNoteIcon(buildArgs({ getLabelValue: clipped(clipType) }))))
+            .toEqual([ "bx bx-paperclip", "bx bx-globe", "bx bx-bookmark", "bx bx-window-alt", "bx bx-share" ]);
+        expect(getNoteIcon(buildArgs({ getLabelValue: clipped("page"), isFolder: () => true })))
+            .toBe("bx bx-globe");
+        expect(getNoteIcon(buildArgs({ getLabelValue: clipped("page"), iconClass: "bx bx-star" })))
+            .toBe("bx bx-star");
+        for (const clipType of [ "unknown", "constructor" ]) {
+            expect(getNoteIcon(buildArgs({ getLabelValue: clipped(clipType) }))).toBe("bx bx-note");
+        }
+    });
+
+    it("draws a recorded meeting by its label, ahead of a start date and the folder icon", () => {
+        const labelled = (labels: Record<string, string>) => (name: string) => labels[name] ?? null;
+        const meeting = labelled({ [MEETING_RECORDING_LABEL]: "" });
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: meeting }))).toBe(MEETING_RECORDING_ICON);
+        expect(getNoteIcon(buildArgs({ getLabelValue: meeting, isFolder: () => true })))
+            .toBe(MEETING_RECORDING_ICON);
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ [MEETING_RECORDING_LABEL]: "", startDate: "2026-10-13" })
+        }))).toBe(MEETING_RECORDING_ICON);
+        expect(getNoteIcon(buildArgs({ getLabelValue: meeting, iconClass: "bx bx-star" })))
+            .toBe("bx bx-star");
+    });
+
+    it("draws a calendar event by its start date, under its own name where it renames it", () => {
+        const labelled = (labels: Record<string, string>) => (name: string) => labels[name] ?? null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ startDate: "2026-10-12" }) })))
+            .toBe(CALENDAR_EVENT_ICON);
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ startDate: "2026-10-12" }), isFolder: () => true
+        }))).toBe(CALENDAR_EVENT_ICON);
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ "calendar:startDate": "due", due: "2026-10-12" })
+        }))).toBe(CALENDAR_EVENT_ICON);
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ startDate: "2026-10-12" }), iconClass: "bx bx-cake"
+        }))).toBe("bx bx-cake");
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ startDate: "" }) })))
+            .toBe("bx bx-note");
+        expect(getNoteIcon(buildArgs({
+            type: "file", mime: "application/pdf", getLabelValue: labelled({ startDate: "2026-10-12" })
+        }))).toBe("bx bxs-file-pdf");
+    });
+
     it("draws a shape note as the shape its label names, by the same rules as a pin", () => {
         const drawn = (value: string) =>
             (name: string) => name === GEO_SHAPE_ATTRIBUTE ? value : null;
@@ -128,6 +203,19 @@ describe("getNoteIcon", () => {
         // the line icon is the fallback.
         expect(getNoteIcon(buildArgs({ getLabelValue: drawn("nonsense") }))).toBe("bx bx-vector");
         expect(getNoteIcon(buildArgs({ getLabelValue: drawn("") }))).toBe("bx bx-note");
+    });
+
+    it("draws the notes of an image map by their map labels, as it does those of a geo map", () => {
+        const labelled = (labels: Record<string, string>) => (name: string) => labels[name] ?? null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ [MAP_POSITION_ATTRIBUTE]: "10,20" }) })))
+            .toBe("bx bx-pin");
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ [MAP_SHAPE_ATTRIBUTE]: "circle:10,20 5" }) })))
+            .toBe("bx bx-shape-circle");
+        // A note taken off a geo map keeps an empty `#geoShape`, which leaves the image's to answer.
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ [GEO_SHAPE_ATTRIBUTE]: "", [MAP_SHAPE_ATTRIBUTE]: "polygon:0,0 1,0 1,1" })
+        }))).toBe("bx bx-shape-polygon");
     });
 
     it("returns the note icon for a text note that is not a folder", () => {
@@ -243,6 +331,8 @@ describe("getMimeIcon", () => {
         expect(getMimeIcon("application/gpx+xml")).toBe("bx bx-trip");
         expect(getMimeIcon("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe("bx bx-spreadsheet");
         expect(getMimeIcon("text/csv")).toBe("bx bx-spreadsheet");
+        expect(getMimeIcon(CANVAS_ATTACHMENT_MIME)).toBe(NOTE_TYPE_ICONS.canvas);
+        expect(getMimeIcon(MERMAID_ATTACHMENT_MIME)).toBe(NOTE_TYPE_ICONS.mermaid);
         expect(getMimeIcon("text/plain")).toBe("bx bx-file");
     });
 
@@ -257,5 +347,80 @@ describe("getMimeIcon", () => {
         // these return a function, which survives the `??` and is handed on as an icon class.
         expect(getMimeIcon("constructor")).toBe("bx bx-file");
         expect(getMimeIcon("toString")).toBe("bx bx-file");
+    });
+});
+
+describe("isFullWidthNoteType", () => {
+    it("takes the full width for canvas-like types and for PDF, video and audio files", () => {
+        for (const type of [ "code", "image", "mermaid", "book", "canvas", "webView", "mindMap", "spreadsheet" ]) {
+            expect(isFullWidthNoteType(type, "")).toBe(true);
+        }
+        expect(isFullWidthNoteType("file", "application/pdf")).toBe(true);
+        expect(isFullWidthNoteType("file", "video/mp4")).toBe(true);
+        expect(isFullWidthNoteType("file", "audio/ogg")).toBe(true);
+
+        expect(isFullWidthNoteType("text", "text/html")).toBe(false);
+        expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
+        expect(isFullWidthNoteType("search", "")).toBe(false);
+    });
+});
+
+describe("getNoteContentType", () => {
+    it("names the content a note renders as, and the group of its renderer", () => {
+        const kinds = [
+            [ "code", "text/x-gfm", false ],
+            [ "code", "application/json", true ],
+            [ "file", "application/json", true ],
+            [ "code", "application/json", false ],
+            [ "file", "application/json", false ],
+            [ "file", "application/pdf", false ],
+            [ "file", CANVAS_ATTACHMENT_MIME, false ],
+            [ "file", MERMAID_ATTACHMENT_MIME, false ],
+            [ "file", "audio/mpeg", false ],
+            [ "file", "video/mp4", false ],
+            [ "file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", false ],
+            [ "file", "application/zip", false ],
+            [ "mermaid", "text/vnd.mermaid", false ]
+        ] as const;
+
+        expect(kinds.map(([ type, mime, hasIconPackLabel ]) => {
+            const kind = getNoteContentType(type, mime, hasIconPackLabel);
+            return [ kind, getContentRendererGroup(kind) ];
+        })).toEqual([
+            [ "markdown", "markdown" ],
+            [ "iconPack", "iconPack" ],
+            [ "iconPack", "iconPack" ],
+            [ "code", undefined ],
+            [ "code", undefined ],
+            [ "pdf", "file" ],
+            [ "canvasDrawing", "file" ],
+            [ "mermaidDiagram", "file" ],
+            [ "audio", "file" ],
+            [ "video", "file" ],
+            [ "office", undefined ],
+            [ "file", undefined ],
+            [ "mermaid", undefined ]
+        ]);
+        expect(getContentRendererGroup("constructor")).toBeUndefined();
+    });
+});
+
+describe("getAttachedFileMime", () => {
+    it("saves an Excalidraw file as a canvas drawing and keeps the type of any other", () => {
+        expect([
+            getAttachedFileMime("Drawing.excalidraw", "application/octet-stream"),
+            getAttachedFileMime("Sketch.EXCALIDRAW", ""),
+            getAttachedFileMime("Drawing.excalidraw", "application/json"),
+            getAttachedFileMime("data.json", "application/json"),
+            getAttachedFileMime("excalidraw", "application/octet-stream"),
+            getAttachedFileMime("Drawing.excalidraw.md", "text/markdown")
+        ]).toEqual([
+            CANVAS_ATTACHMENT_MIME,
+            CANVAS_ATTACHMENT_MIME,
+            CANVAS_ATTACHMENT_MIME,
+            "application/json",
+            "application/octet-stream",
+            "text/markdown"
+        ]);
     });
 });

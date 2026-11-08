@@ -24,7 +24,7 @@ export interface FilesystemFriendlyNameProps
  */
 export default function FilesystemFriendlyName({ currentValue, onChange, inputRef, ...rest }: FilesystemFriendlyNameProps) {
     const ownRef = useRef<HTMLInputElement | null>(null);
-    const element = (inputRef ?? ownRef) as RefObject<HTMLInputElement>;
+    const element = (inputRef ?? ownRef) as RefObject<HTMLInputElement | null>;
     /** Where to put the caret once the refused character is gone, or null when nothing was. */
     const caret = useRef<number | null>(null);
 

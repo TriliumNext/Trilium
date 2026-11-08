@@ -42,6 +42,7 @@ vi.mock("./providers/anthropic.js", () => ({ AnthropicProvider: makeProviderMock
 vi.mock("./providers/openai.js", () => ({ OpenAiProvider: makeProviderMock("openai") }));
 vi.mock("./providers/google.js", () => ({ GoogleProvider: makeProviderMock("google") }));
 vi.mock("./providers/deepseek.js", () => ({ DeepSeekProvider: makeProviderMock("deepseek") }));
+vi.mock("./providers/openrouter.js", () => ({ OpenRouterProvider: makeProviderMock("openrouter") }));
 vi.mock("./providers/local.js", () => ({ LocalProvider: makeProviderMock("local") }));
 
 import {
@@ -49,6 +50,7 @@ import {
     clearProviderCache,
     getProvider,
     getProviderByType,
+    getSearchProviderSetup,
     getSelectedModel,
     hasConfiguredProviders,
     HOST_PROVIDED_TYPES,
@@ -111,6 +113,7 @@ describe("llm/index provider registry", () => {
                 { id: "o", name: "O", provider: "openai", apiKey: "ko" },
                 { id: "g", name: "G", provider: "google", apiKey: "kg" },
                 { id: "d", name: "D", provider: "deepseek", apiKey: "kd" },
+                { id: "or", name: "OR", provider: "openrouter", apiKey: "kor" },
                 { id: "c", name: "C", provider: "claude-agent", apiKey: "" },
                 { id: "l", name: "L", provider: "ollama", apiKey: "", baseURL: "http://ollama.lan:11434" },
                 { id: "lm", name: "LM", provider: "lmstudio", apiKey: "", baseURL: "http://box:1234/v1" },
@@ -123,6 +126,7 @@ describe("llm/index provider registry", () => {
             // Its own class rather than the shared self-hosted one, despite speaking
             // the same protocol — that is what gives its models a price.
             expect(await constructorArgs("d")).toEqual(["kd", undefined]);
+            expect(await constructorArgs("or")).toEqual(["kor", undefined]);
             // The subscription provider takes no constructor args — auth is Claude Code's.
             expect(await constructorArgs("c")).toEqual([]);
             // The three self-hosted cards share one class, which receives the card
@@ -199,6 +203,30 @@ describe("llm/index provider registry", () => {
         it("reports true when providers exist", () => {
             setProviders(TWO);
             expect(hasConfiguredProviders()).toBe(true);
+        });
+
+        it("finds a search provider by config id, never a chat provider", () => {
+            const search = { id: "s1", name: "Tavily", provider: "tavily", kind: "search", apiKey: "k" };
+            setProviders([ ...TWO, search ]);
+            expect(getSearchProviderSetup("s1")).toEqual(search);
+            expect(getSearchProviderSetup("a1")).toBeUndefined();
+            expect(getSearchProviderSetup(undefined)).toBeUndefined();
+            getOptionOrNullMock.mockReturnValue(null);
+            expect(getSearchProviderSetup("s1")).toBeUndefined();
+
+            getOptionOrNullMock.mockReturnValue("{not json");
+            expect(getSearchProviderSetup("s1")).toBeUndefined();
+        });
+
+        it("leaves search providers out of the chat providers", async () => {
+            const search = { id: "s1", name: "Brave Search", provider: "brave", kind: "search", apiKey: "k" };
+            setProviders([ search ]);
+            expect(hasConfiguredProviders()).toBe(false);
+
+            setProviders([ search, ...TWO ]);
+            const first = await getProvider();
+            expect((first.constructor as any).lastArgs).toEqual(["k1", "https://proxy"]);
+            await expect(getProvider("s1")).rejects.toThrow("LLM provider not found: s1");
         });
     });
 

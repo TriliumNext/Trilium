@@ -8,36 +8,15 @@ import attributes from "../services/attributes";
 import { renderInto } from "../test/render";
 import { ReactWrappedWidget } from "./basic_widget";
 
-const { dropdownInstances, getOrCreateInstance } = vi.hoisted(() => {
-    const dropdownInstances: Array<{
-        show: ReturnType<typeof vi.fn>;
-        hide: ReturnType<typeof vi.fn>;
-        update: ReturnType<typeof vi.fn>;
-        dispose: ReturnType<typeof vi.fn>;
-        _menu: HTMLElement | null;
-    }> = [];
-    const instancesByToggle = new Map<HTMLElement, typeof dropdownInstances[number]>();
-    const getOrCreateInstance = vi.fn((toggle: HTMLElement) => {
-        let instance = instancesByToggle.get(toggle);
-        if (!instance) {
-            instance = {
-                show: vi.fn(),
-                hide: vi.fn(),
-                update: vi.fn(),
-                dispose: vi.fn(),
-                _menu: null
-            };
-            instancesByToggle.set(toggle, instance);
-            dropdownInstances.push(instance);
-        }
-        return instance;
-    });
-    return { dropdownInstances, getOrCreateInstance };
-});
-
 vi.mock("bootstrap", () => ({
-    Dropdown: { getOrCreateInstance },
     Tooltip: class {}
+}));
+
+// i18next is not initialized under test, where t() answers with nothing; echoing the key back keeps
+// the assertions about whether there is a tooltip at all.
+vi.mock("i18next", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("i18next")>()),
+    t: (key: string) => key
 }));
 
 const noteContext = vi.hoisted(() => ({
@@ -45,8 +24,10 @@ const noteContext = vi.hoisted(() => ({
     setNote: undefined as ((note: FNote) => void) | undefined
 }));
 const tooltipStub = vi.hoisted(() => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() }));
+const tooltipConfig = vi.hoisted(() => ({ current: undefined as { title?: unknown } | undefined }));
 const iconPickerProps = vi.hoisted(() => ({
     current: undefined as undefined | {
+        disabled?: boolean;
         onSelect(icon: string): void;
         onReset?: () => void;
     }
@@ -61,7 +42,10 @@ vi.mock("./react/hooks", async (importOriginal) => ({
     },
     useNoteLabel: () => [ undefined ],
     useStaticTooltip: () => {},
-    useTooltip: () => tooltipStub
+    useTooltip: (_ref: unknown, config: { title?: unknown }) => {
+        tooltipConfig.current = config;
+        return tooltipStub;
+    }
 }));
 
 vi.mock("../services/server", () => ({
@@ -127,6 +111,17 @@ describe("NoteIcon", () => {
         expect(attributes.setLabel).toHaveBeenLastCalledWith("note-b", "workspaceIconClass", "bx-moon");
     });
 
+    it("offers no tooltip to change the icon of a note whose icon cannot be changed", () => {
+        noteContext.initialNote = buildNote("note-a");
+        renderInto(<NoteIcon />);
+        expect(tooltipConfig.current?.title).toBe("note_icon.change_note_icon");
+
+        noteContext.initialNote = { ...buildNote("_help_page"), isMetadataReadOnly: true } as FNote;
+        renderInto(<NoteIcon />);
+        expect(iconPickerProps.current?.disabled).toBe(true);
+        expect(tooltipConfig.current?.title).toBe("");
+    });
+
     it("stays in the legacy widget tree when the active note changes", () => {
         glob.iconRegistry = { sources: [] };
         noteContext.initialNote = buildNote("note-a");
@@ -156,14 +151,8 @@ describe("NoteIcon", () => {
         const dropdown = container.querySelector<HTMLElement>(".dropdown");
         expect(toggle).not.toBeNull();
         expect(dropdown).not.toBeNull();
-        const pickerDropdown = dropdownInstances.at(-1);
-        expect(pickerDropdown).toBeTruthy();
-
         void act(() => {
-            toggle?.dispatchEvent(new Event("pointerdown", { bubbles: true }));
-        });
-        void act(() => {
-            $(dropdown as HTMLElement).trigger("show.bs.dropdown");
+            $(dropdown as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
         });
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
 
@@ -173,14 +162,12 @@ describe("NoteIcon", () => {
         expect(toggle?.classList.contains("bx-updated")).toBe(true);
         expect(toggle?.classList.contains("show")).toBe(true);
         expect(toggle?.getAttribute("aria-expanded")).toBe("true");
-        expect(pickerDropdown?.dispose).not.toHaveBeenCalled();
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
 
         void act(() => noteContext.setNote?.(buildNote("note-b")));
 
         expect(container.querySelector("button")?.classList.contains("bx-note-b")).toBe(true);
         expect(container.querySelector("button")).not.toBe(toggle);
-        expect(pickerDropdown?.dispose).toHaveBeenCalledTimes(1);
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).toBeNull();
     });
 });

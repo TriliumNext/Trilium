@@ -121,7 +121,18 @@ function isClipboardEmpty() {
     return clipboardBranchIds.length === 0;
 }
 
+/** The notes on the clipboard and whether they were cut or copied, or `null` when it is empty. */
+function getContents() {
+    if (isClipboardEmpty() || (clipboardMode !== "cut" && clipboardMode !== "copy")) {
+        return null;
+    }
+
+    const noteIds = froca.getBranches(clipboardBranchIds).map((branch) => branch.noteId);
+    return { noteIds, mode: clipboardMode };
+}
+
 export default {
+    getContents,
     pasteAfter,
     pasteInto,
     cut,

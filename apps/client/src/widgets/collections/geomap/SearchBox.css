@@ -62,64 +62,9 @@
     visibility: visible;
 }
 
-/* The dropdown is portalled to the body, so these are not scoped under .geo-map-container. */
-.form-autocomplete-dropdown .geo-search-entry {
-    display: flex;
-    /* The icon sits on the first line of a row that runs to two. */
-    align-items: flex-start;
-    gap: 6px;
-    overflow: hidden;
-}
-
-.form-autocomplete-dropdown .geo-search-entry .tn-icon {
-    flex-shrink: 0;
-    opacity: 0.7;
-    line-height: 1.4;
-}
-
-/* Overrides the single-line ellipsis in FormAutocomplete.css, so an address can wrap. */
-.form-autocomplete-dropdown .form-autocomplete-item:has(.geo-search-entry) {
-    white-space: normal;
-    padding-block: 6px;
-}
-
-.form-autocomplete-dropdown .geo-search-entry-lines {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    flex: 1;
-}
-
-.form-autocomplete-dropdown .geo-search-entry-distance {
-    flex-shrink: 0;
-    align-self: center;
-    padding-inline-start: 8px;
-    font-size: 0.85em;
-    font-variant-numeric: tabular-nums;
-    opacity: 0.6;
-}
-
-.form-autocomplete-dropdown .geo-search-entry-address {
-    font-size: 0.85em;
-    opacity: 0.7;
-    /* Two lines at most: a Nominatim address can run to five. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* The geocoder row and its reports are set apart from the places they produce. */
-.form-autocomplete-dropdown .geo-search-entry-geocode,
-.form-autocomplete-dropdown .geo-search-entry-info {
+/* The dropdown is portalled to the body, so this is not scoped under .geo-map-container. The rest of
+   a row's shape is the shared entry's (see FormEntryAutocomplete.css). */
+.form-autocomplete-dropdown .geo-search-entry-geocode {
     font-style: italic;
     opacity: 0.85;
-}
-
-/* A report is not a choice, so it neither highlights nor takes a pointer. */
-.form-autocomplete-dropdown .form-autocomplete-item:has(.geo-search-entry-info) {
-    cursor: default;
-    background: none;
-    color: inherit;
 }

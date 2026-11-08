@@ -30,7 +30,8 @@ span.fancytree-node.fancytree-hide {
 .fancytree-node {
     display: flex;
     align-items: center;
-    height: 2.4em;
+    /* The line box follows the tree font; the space around it stays fixed. */
+    height: calc(1lh + 14px);
     padding: 4px;
     border: 1px solid transparent;
     border-radius: 5px;
@@ -41,6 +42,20 @@ span.fancytree-node.fancytree-hide {
     user-select: none !important;
     -webkit-user-select: none !important;
     color: var(--custom-color, inherit);
+}
+
+.tree-wrapper.dense {
+    .fancytree-node {
+        height: calc(1lh + 6px);
+    }
+
+    .fancytree-title {
+        font-size: 0.9em;
+    }
+
+    .tn-icon.tree-item-button {
+        font-size: 1em;
+    }
 }
 
 .fancytree-node:not(.fancytree-loading) .fancytree-expander {
@@ -160,6 +175,11 @@ span.fancytree-node.protected > span.fancytree-custom-icon {
     filter: drop-shadow(2px 2px 2px var(--main-text-color));
 }
 
+.fancytree-title .protected-title {
+    font-style: italic;
+    opacity: .75;
+}
+
 /* Note indicator icons (clone, shared) - real DOM elements for tooltip support */
 .note-indicator-icon {
     font-family: "boxicons" !important;
@@ -170,16 +190,12 @@ span.fancytree-node.protected > span.fancytree-custom-icon {
 }
 
 .note-indicator-icon.clone-indicator::before {
-    content: "\eb3d"; /* bx-link-alt */
+    content: "\ed82";
+    opacity: 0.5;
 }
 
 .note-indicator-icon.shared-indicator::before {
     content: "\ec03"; /* bx-share-alt */
-}
-
-body.experimental-feature-new-layout .note-indicator-icon.clone-indicator::before {
-    content: "\ed82";
-    opacity: 0.5;
 }
 
 span.fancytree-node.fancytree-active-clone:not(.fancytree-active) .fancytree-title {

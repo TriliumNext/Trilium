@@ -1,4 +1,3 @@
-import $ from "jquery";
 import { render } from "preact";
 import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -6,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
+import type NoteContext from "../../../components/note_context";
 import type FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import linkContextMenu from "../../../menus/link_context_menu";
@@ -71,10 +71,7 @@ vi.mock("../../../services/clipboard_ext", async (importOriginal) => ({
     copyTextWithToast: (...args: unknown[]) => copied(...args)
 }));
 
-// A promoted text field suggests what other notes hold under its name, asked for through the Algolia
-// jQuery plugin and answered by the server. Neither is loaded here.
-type PluggedIn = { autocomplete(...args: unknown[]): PluggedIn };
-($.fn as unknown as PluggedIn).autocomplete = function (this: PluggedIn) { return this; };
+// A promoted text field asks the server for the values other notes hold under its name.
 server.get = (async () => []) as unknown as typeof server.get;
 
 /** What a marker click hands the handler, and what the pane reads the note out of. */
@@ -180,12 +177,14 @@ describe("DetailPane", () => {
         container = document.createElement("div");
         document.body.appendChild(container);
 
-        // `tabManager` is only built when the app starts, and the pane asks it where the reader is
-        // hoisted.
+        // `tabManager` is only built when the app starts. The pane asks it where the reader is
+        // hoisted, and registers its note context with it.
         (appContext as unknown as { tabManager: unknown }).tabManager = {
             getActiveContext: () => undefined,
             getActiveContextNotePath: () => undefined,
-            openContextWithNote: async () => undefined
+            openContextWithNote: async () => undefined,
+            registerDetachedContext: () => undefined,
+            unregisterDetachedContext: () => undefined
         };
         editorAskedToSave.mockClear();
         onRelocate.mockClear();
@@ -195,14 +194,15 @@ describe("DetailPane", () => {
     });
 
     afterEach(() => {
-        (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
         mapComponent = undefined;
 
         if (container) {
-            render(null, container);
+            const mounted = container;
+            act(() => render(null, mounted));
             container.remove();
             container = undefined;
         }
+        (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
     });
 
     /** Stands in for the map's own component, which is what the pane hangs under. */
@@ -997,6 +997,38 @@ describe("DetailPane", () => {
             expect(pane()?.querySelector(".note-detail-stub")?.textContent).toBe("Somewhere");
         });
 
+        /** Commands name a note context by its ntxId, so two maps in two splits need two of them. */
+        it("registers a note context of its own in every map", async () => {
+            const registered: string[] = [];
+            (appContext.tabManager as unknown as Record<string, unknown>).registerDetachedContext =
+                (noteContext: NoteContext) => registered.push(noteContext.ntxId ?? "");
+            await openPane(fakeMap());
+
+            const second = document.createElement("div");
+            document.body.appendChild(second);
+            try {
+                await act(async () => {
+                    render(
+                        <ParentComponent.Provider value={new Component()}>
+                            <ParentMap.Provider value={fakeMap() as never}>
+                                <Harness notes={[]} placing={false} isReadOnly={false} />
+                            </ParentMap.Provider>
+                        </ParentComponent.Provider>,
+                        second
+                    );
+                });
+
+                expect(registered).toEqual([
+                    expect.stringMatching(/^_geo-detail-pane_/),
+                    expect.stringMatching(/^_geo-detail-pane_/)
+                ]);
+                expect(registered[0]).not.toBe(registered[1]);
+            } finally {
+                act(() => render(null, second));
+                second.remove();
+            }
+        });
+
         /** A toolbar built for the width of a note does not fit a pane a third that wide. */
         it("is asked for the floating toolbar rather than a bar of its own", async () => {
             const map = fakeMap();
@@ -1040,7 +1072,7 @@ describe("DetailPane", () => {
 
             await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); });
 
-            expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ "_geo-detail-pane" ] });
+            expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ expect.stringMatching(/^_geo-detail-pane_/) ] });
             expect(pane()).toBeNull();
         });
     });
@@ -1141,7 +1173,7 @@ describe("DetailPane", () => {
             expect(onRelocate).toHaveBeenCalledWith(note.noteId);
             expect(pane()).toBeNull();
             // Going away this way is still a close, so whatever was being written is saved first.
-            expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ "_geo-detail-pane" ] });
+            expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ expect.stringMatching(/^_geo-detail-pane_/) ] });
         });
 
         it("is not offered at all on a map that cannot be edited", async () => {

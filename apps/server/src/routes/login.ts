@@ -117,9 +117,9 @@ async function login(req: Request, res: Response) {
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
     if (totp.isTotpEnabled()) {
-        getLog().info(`WARNING: Wrong ${errorType} from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong ${errorType} from ${req.ip}, rejecting.`);
     } else {
-        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
     }
 
     // The client submits via fetch; report the failed factor as JSON. The 401 keeps the

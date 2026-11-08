@@ -82,7 +82,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Copy test fixture database
         run: cp packages/trilium-core/src/test/fixtures/document.db apps/server/spec/db/document.db
@@ -118,14 +118,14 @@ jobs:
         run: pkill -f trilium || true
 
   e2e-pdfjs-viewer:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-26.04
     name: PDF viewer E2E tests
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -168,7 +168,7 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -178,7 +178,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build standalone
         run: TRILIUM_INTEGRATION_TEST=memory pnpm --filter standalone build

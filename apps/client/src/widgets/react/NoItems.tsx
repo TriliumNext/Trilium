@@ -12,7 +12,7 @@ interface NoItemsProps {
     className?: string;
     /**
      * How much room the placeholder takes. `small` shrinks the icon and the spacing around it, for
-     * the places that only have a few lines to spare — a sidebar card or a ribbon tab — where the
+     * the places that only have a few lines to spare — a sidebar card or a status bar pane — where the
      * full-size one would tower over the content it stands in for.
      */
     size?: "normal" | "small";

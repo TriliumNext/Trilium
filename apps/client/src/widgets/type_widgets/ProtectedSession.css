@@ -1,3 +1,7 @@
+.component.note-detail:has(> .protected-session-password-component.visible) {
+    --max-content-width: none;
+}
+
 .protected-session-password-component {
     display: flex;
     margin-inline: 40px;

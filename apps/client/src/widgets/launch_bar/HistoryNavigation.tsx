@@ -1,98 +1,118 @@
-import { useMemo } from "preact/hooks";
+import { useCallback } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuCommandItem } from "../../menus/context_menu";
+import { notePathMenuItem } from "../../menus/context_menu_utils";
 import { showLauncherContextMenu } from "../../menus/launcher_button_context_menu";
-import froca from "../../services/froca";
 import link from "../../services/link";
-import tree from "../../services/tree";
-import { isElectron } from "../../services/utils";
+import { useHoldContextMenu } from "../react/hooks";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
+
+export type HistoryDirection = "back" | "forward";
 
 interface HistoryNavigationProps {
     launcherNote: FNote;
     command: "backInNoteHistory" | "forwardInNoteHistory";
 }
 
+interface HistoryEntry {
+    url: string;
+    go: () => void;
+}
+
+/** The number of notes the menu lists in one direction. */
 const HISTORY_LIMIT = 20;
+const HOLD_DURATION = 500;
 
 export default function HistoryNavigationButton({ launcherNote, command }: HistoryNavigationProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
-    const hasApi = useMemo(() => isElectron() && !!window.electronApi, []);
+    const direction = command === "backInNoteHistory" ? "back" : "forward";
+    const historyMenuProps = useHistoryContextMenu(direction, launcherNote);
 
     return (
         <LaunchBarActionButton
             icon={icon}
             text={title}
             triggerCommand={command}
-            onContextMenu={async (e) => {
-                e.preventDefault();
-                const items = hasApi ? await getHistoryItems() : [];
-                showLauncherContextMenu<string>(launcherNote, e, {
-                    extraItems: items,
-                    onCommand: (cmd) => {
-                        if (cmd && hasApi) {
-                            window.electronApi?.navigation.navigationGoToIndex(parseInt(cmd, 10));
-                        }
-                    }
-                });
-            }}
+            {...historyMenuProps}
         />
     );
 }
 
-async function getHistoryItems(): Promise<MenuCommandItem<string>[]> {
-    const api = window.electronApi?.navigation;
-    if (!api || api.navigationLength() < 2) return [];
+/**
+ * Returns props that open a menu of the notes `direction` leads to, on a right-click or a held
+ * press. The menu of a launcher also has the launch bar items.
+ */
+export function useHistoryContextMenu(direction: HistoryDirection, launcherNote?: FNote) {
+    const handler = useCallback((e: MouseEvent) => {
+        e.preventDefault();
+        void showHistoryContextMenu(e, direction, launcherNote);
+    }, [direction, launcherNote]);
 
-    let items: MenuCommandItem<string>[] = [];
+    return useHoldContextMenu(handler, HOLD_DURATION);
+}
 
-    const history = api.navigationGetAllEntries();
-    const activeIndex = api.navigationGetActiveIndex();
+async function showHistoryContextMenu(
+    e: MouseEvent,
+    direction: HistoryDirection,
+    launcherNote?: FNote
+) {
+    const items = await getHistoryItems(direction);
 
-    for (const idx in history) {
-        const { noteId, notePath } = link.parseNavigationStateFromUrl(history[idx].url);
+    if (launcherNote) {
+        await showLauncherContextMenu(launcherNote, e, { extraItems: items });
+    } else if (items.length > 0) {
+        await contextMenu.show({ x: e.pageX, y: e.pageY, items, selectMenuItemHandler: () => {} });
+    }
+}
+
+export async function getHistoryItems(
+    direction: HistoryDirection
+): Promise<MenuCommandItem<string>[]> {
+    const items: MenuCommandItem<string>[] = [];
+
+    for (const { url, go } of getReachableEntries(direction)) {
+        if (items.length >= HISTORY_LIMIT) break;
+
+        const { noteId, notePath } = link.parseNavigationStateFromUrl(url);
         if (!noteId || !notePath) continue;
 
-        const title = await tree.getNotePathTitle(notePath);
-        const index = parseInt(idx, 10);
-        const note = froca.getNoteFromCache(noteId);
-
-        items.push({
-            title,
-            command: idx,
-            checked: index === activeIndex,
-            enabled: index !== activeIndex,
-            uiIcon: note?.getIcon()
-        });
-    }
-
-    items.reverse();
-
-    if (items.length > HISTORY_LIMIT) {
-        items = items.slice(0, HISTORY_LIMIT);
+        items.push(await notePathMenuItem(notePath, go));
     }
 
     return items;
 }
 
-export function handleHistoryContextMenu() {
-    return async (e: MouseEvent) => {
-        e.preventDefault();
+/**
+ * Returns the history entries `direction` leads to, nearest first: from `navigationHistory` in the
+ * desktop app, and from the Navigation API in a browser.
+ */
+function getReachableEntries(direction: HistoryDirection): HistoryEntry[] {
+    const electronNavigation = window.electronApi?.navigation;
+    if (electronNavigation) {
+        const entries = electronNavigation.navigationGetAllEntries().map(({ url }, index) => ({
+            url,
+            go: () => electronNavigation.navigationGoToIndex(index)
+        }));
+        return sliceInDirection(entries, electronNavigation.navigationGetActiveIndex(), direction);
+    }
 
-        const items = await getHistoryItems();
-        if (items.length === 0) return;
+    const navigation = "navigation" in window ? window.navigation : undefined;
+    if (!navigation?.currentEntry) return [];
 
-        contextMenu.show({
-            x: e.pageX,
-            y: e.pageY,
-            items,
-            selectMenuItemHandler: (item: MenuCommandItem<string>) => {
-                if (item && item.command) {
-                    const idx = parseInt(item.command, 10);
-                    window.electronApi?.navigation.navigationGoToIndex(idx);
-                }
-            }
-        });
-    };
+    const entries = navigation.entries().map((entry) => ({
+        url: entry.url ?? "",
+        go: () => {
+            const { committed, finished } = navigation.traverseTo(entry.key);
+            // A traversal that another navigation interrupts rejects both promises.
+            void Promise.allSettled([ committed, finished ]);
+        }
+    }));
+    return sliceInDirection(entries, navigation.currentEntry.index, direction);
+}
+
+function sliceInDirection<T>(entries: T[], activeIndex: number, direction: HistoryDirection) {
+    return direction === "back"
+        ? entries.slice(0, activeIndex).reverse()
+        : entries.slice(activeIndex + 1);
 }

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+    <path class="embed-position-text" d="M2 3.75h16M13.5 6.75H18M13.5 9.75H18M13.5 12.75H18M2 15.75h16" fill="none" stroke="currentColor" stroke-width=".75"/>
+    <rect class="embed-position-content" x="2.375" y="6.375" width="9.25" height="6.75" rx=".625" fill="none" stroke="currentColor" stroke-width=".75"/>
+</svg>

@@ -3,6 +3,7 @@ import noteService from "../../services/notes.js";
 import becca from "../../becca/becca.js";
 import type { Request } from "../../http_interface";
 import type { RecentChangeRow } from "@triliumnext/commons";
+import { ValidationError } from "../../errors.js";
 import { getSql } from "../../services/sql/index.js";
 
 function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly?: string }>) {
@@ -115,6 +116,40 @@ function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly
     return recentChanges;
 }
 
+/** Returns the IDs of the most recently modified live notes under the ancestor, newest first. */
+function getRecentlyChangedNoteIds(req: Request<{ ancestorNoteId: string }, { limit?: string }>) {
+    const { ancestorNoteId } = req.params;
+    const limit = Number.parseInt(req.query.limit ?? "", 10);
+    if (!(limit > 0)) {
+        throw new ValidationError("'limit' must be a positive integer.");
+    }
+
+    const noteIds: string[] = [];
+    // Walks `IDX_notes_isDeleted_utcDateModified` and stops once the list is full.
+    const rows = getSql().iterateRows<{ noteId: string }>(`
+        SELECT noteId FROM notes WHERE isDeleted = 0 ORDER BY utcDateModified DESC`);
+
+    for (const { noteId } of rows) {
+        const note = becca.getNote(noteId);
+        if (!note?.hasAncestor(ancestorNoteId)) {
+            continue;
+        }
+
+        // `BNote.isHiddenCompletely()` is false for `_hidden` itself.
+        if (ancestorNoteId === "root" && (noteId === "_hidden" || note.isHiddenCompletely())) {
+            continue;
+        }
+
+        noteIds.push(noteId);
+        if (noteIds.length === limit) {
+            break;
+        }
+    }
+
+    return noteIds;
+}
+
 export default {
-    getRecentChanges
+    getRecentChanges,
+    getRecentlyChangedNoteIds
 };

@@ -1,4 +1,12 @@
-import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, ClickObserver, Essentials, Paragraph } from "ckeditor5";
+import {
+    _getModelData as getModelData,
+    _setModelData as setModelData,
+    ClassicEditor,
+    ClickObserver,
+    Essentials,
+    LinkEditing,
+    Paragraph
+} from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
@@ -228,7 +236,7 @@ describe("collapsible summary affordances", () => {
             expect(getModelData(editor.model, { withoutSelection: true })).not.toContain("open=\"true\"");
         });
 
-        it("lets a modifier-click on a link inside the title through", () => {
+        it("still suppresses a modifier-click on the title text", () => {
             setModelData(editor.model, "<details><summary>T[]</summary><paragraph>body</paragraph></details>");
             const summary = root.querySelector("summary");
             if (!(summary instanceof HTMLElement)) {
@@ -238,9 +246,31 @@ describe("collapsible summary affordances", () => {
             const click = new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true });
             summary.dispatchEvent(click);
 
-            // Still handled by the summary branch — there is no link here — but the
-            // modifier path is what an <a> inside the title relies on.
             expect(click.defaultPrevented).toBe(true);
+        });
+
+        it("lets a modifier-click on a link inside the title through", async () => {
+            const linkEditor = await createTestEditor([
+                Essentials, Paragraph, LinkEditing, CollapsibleEditing
+            ]);
+            linkEditor.editing.view.addObserver(ClickObserver);
+            setModelData(
+                linkEditor.model,
+                "<details><summary><$text linkHref=\"#target\">link</$text>[]</summary>" +
+                "<paragraph>body</paragraph></details>"
+            );
+            const link = linkEditor.editing.view.getDomRoot()?.querySelector("summary a");
+            if (!(link instanceof HTMLElement)) {
+                throw new Error("Expected a rendered link in the title.");
+            }
+
+            // LinkEditing handles Ctrl+click on a link and stops the event, so use Shift.
+            const click = new MouseEvent("click", {
+                bubbles: true, cancelable: true, shiftKey: true
+            });
+            link.dispatchEvent(click);
+
+            expect(click.defaultPrevented).toBe(false);
         });
     });
 

@@ -451,7 +451,8 @@ describe("SyncFromServer", () => {
         await flushEffects();
 
         expect(window.glob.hasExistingData).toBe(false);
-        expect(c.querySelector(".page-error")?.textContent).toContain("setup.sync-failed");
+        expect(c.querySelector(".page-error .admonition-title")?.textContent).toBe("setup.sync-from-server-failed");
+        expect(c.querySelector(".page-error-message")?.textContent).toBe("the disk is full");
     });
 
     it("keeps it where the server refused the credentials, which erases nothing", async () => {
@@ -467,6 +468,67 @@ describe("SyncFromServer", () => {
         await flushEffects();
 
         expect(window.glob.hasExistingData).toBe(true);
+    });
+
+    it("sends the optional one-time password with the first attempt", async () => {
+        mockRoutes({ "setup/status": {} });
+        serverMock.post.mockResolvedValue({ result: "success" });
+        const c = renderInto(<SyncFromServer setState={vi.fn()} />);
+        await flushEffects();
+        fillSyncForm(c);
+
+        const totp = c.querySelector<HTMLInputElement>("input[autocomplete=one-time-code]");
+        expect(totp).not.toBeNull();
+        expect(totp?.required).toBe(false);
+        if (!totp) return;
+        totp.value = " 123456 ";
+        totp.dispatchEvent(new Event("input", { bubbles: true }));
+        await flushEffects();
+
+        c.querySelector<HTMLElement>("footer button")?.click();
+        await flushEffects();
+
+        expect(serverMock.post).toHaveBeenCalledWith("setup/sync-from-server", expect.objectContaining({
+            password: "pw",
+            totpToken: "123456"
+        }));
+    });
+
+    it("points at the one-time password field when the server asks for it or refuses it", async () => {
+        mockRoutes({ "setup/status": {} });
+        const c = renderInto(<SyncFromServer setState={vi.fn()} />);
+        await flushEffects();
+        fillSyncForm(c);
+        await flushEffects();
+
+        const totp = c.querySelector<HTMLInputElement>("input[autocomplete=one-time-code]");
+        const password = c.querySelector<HTMLInputElement>("input[type=password]");
+        expect(totp).not.toBeNull();
+        expect(password).not.toBeNull();
+        if (!totp || !password) return;
+        const errorOf = (input: HTMLInputElement) => input.closest(".form-group")?.querySelector(".text-danger")?.textContent;
+
+        serverMock.post.mockResolvedValue({ result: "failure", error: "Request to GET https://srv/api/setup/sync-seed failed, error: 401 Unauthorized TOTP token is required" });
+        c.querySelector<HTMLElement>("footer button")?.click();
+        await flushEffects();
+        expect(errorOf(totp)).toBe("setup.totp-required");
+        expect(document.activeElement).toBe(totp);
+        expect(c.querySelector(".page-error")).toBeNull();
+
+        totp.value = "000000";
+        totp.dispatchEvent(new Event("input", { bubbles: true }));
+        serverMock.post.mockResolvedValue({ result: "failure", error: "Request to GET https://srv/api/setup/sync-seed failed, error: 401 Unauthorized Incorrect TOTP token" });
+        c.querySelector<HTMLElement>("footer button")?.click();
+        await flushEffects();
+        expect(errorOf(totp)).toBe("setup.wrong-totp");
+        expect(totp.value).toBe("");
+
+        // A later refusal of the password replaces the error on the one-time password field.
+        serverMock.post.mockResolvedValue({ result: "failure", error: "Request to GET https://srv/api/setup/sync-seed failed, error: 401 Unauthorized Incorrect password" });
+        c.querySelector<HTMLElement>("footer button")?.click();
+        await flushEffects();
+        expect(errorOf(password)).toBe("setup.wrong-password");
+        expect(errorOf(totp)).toBeUndefined();
     });
 
     it("leaves the form empty on a fresh setup (no stored sync options)", async () => {

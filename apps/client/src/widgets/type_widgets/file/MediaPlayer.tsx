@@ -2,6 +2,7 @@ import "./MediaPlayer.css";
 
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Trans } from "react-i18next";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -16,20 +17,25 @@ import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
+import NoItems from "../../react/NoItems";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
 import { attachmentSiblingProvider, noteSiblingProvider, type SiblingNavigationState, useSiblingKeyboard, useSiblingNavigation } from "../../react/SiblingNavigator";
 import type { MediaEnvironment } from "./media_environment";
 import { getAutoAdvanceTarget, MEDIA_PLAY_MODE_ICONS, MEDIA_PLAY_MODE_LABEL, MEDIA_PLAY_MODE_LABEL_KEYS, MEDIA_PLAY_MODES, type MediaPlayMode, playModeFromLabel, playModeToLabel, shouldLoop } from "./media_play_mode";
-import type { MediaSource } from "./media_source";
+import { fetchHttpStatus, type MediaSource } from "./media_source";
 
 const NO_KEYS: readonly string[] = [];
 
 /** What {@link AudioPreview} and {@link VideoPreview} are given, whichever environment they render in. */
 export interface MediaPlayerProps {
-    /** What is being played: a file note, or an attachment. {@link source} is its resolved media. */
-    entity: FNote | FAttachment;
+    /**
+     * What is being played: a file note, or an attachment. {@link source} is its resolved media.
+     * Media on another site has none.
+     */
+    entity?: FNote | FAttachment;
     source: MediaSource;
     environment: MediaEnvironment;
     /**
@@ -46,6 +52,88 @@ export interface MediaPlayerProps {
     isVisible?: boolean;
     /** Start playing as soon as the media is ready — the user just activated a lazy preview. */
     autoPlay?: boolean;
+}
+
+/**
+ * Gives the player root `rootRef` the focus that the placeholder had once a click on it mounted the
+ * player (`autoPlay`): removing the focused placeholder moves the focus to the page, which blurs a
+ * text editor that holds the player.
+ */
+export function useFocusOnActivation(rootRef: RefObject<HTMLElement | null>, autoPlay?: boolean) {
+    useEffect(() => {
+        if (autoPlay && document.activeElement === document.body) {
+            rootRef.current?.focus({ preventScroll: true });
+        }
+    }, []);
+}
+
+/** The HTTP statuses that have a name of their own under `media.http-status-names`. */
+const NAMED_HTTP_STATUSES = new Set([
+    400, 401, 403, 404, 405, 406, 408, 410, 416, 429, 451, 500, 501, 502, 503, 504
+]);
+
+/**
+ * What a player shows in place of media that it cannot play. For a file on another site whose
+ * host answers with an HTTP error, the error is on a line under the message.
+ */
+export function PlaybackError({ source, icon }: { source: MediaSource; icon: string }) {
+    const status = useHttpErrorStatus(source);
+
+    return (
+        <NoItems icon={icon} text={getPlaybackError(source)}>
+            {status && (
+                <div className="media-playback-status">
+                    <Trans
+                        i18nKey="media.http-error"
+                        values={{ status, name: getHttpStatusName(status) }}
+                        components={{ bold: <strong /> }}
+                    />
+                </div>
+            )}
+        </NoItems>
+    );
+}
+
+/**
+ * The message for media that cannot be played: its format, or for a file on another site, which
+ * also fails while its host is unreachable, that it cannot be played.
+ */
+function getPlaybackError(source: MediaSource) {
+    return source.isExternal
+        ? t("media.external-unavailable")
+        : t("media.unsupported-format", { mime: source.mime.replace("/", "-") });
+}
+
+/** The HTTP error status that the host of a file on another site answers, once it is known. */
+function useHttpErrorStatus({ isExternal, streamUrl }: MediaSource) {
+    const [ status, setStatus ] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!isExternal) {
+            return;
+        }
+        let isCurrent = true;
+        void fetchHttpStatus(streamUrl).then((answer) => {
+            if (isCurrent && answer !== null && answer >= 400) {
+                setStatus(answer);
+            }
+        });
+        return () => {
+            isCurrent = false;
+        };
+    }, [ isExternal, streamUrl ]);
+
+    return status;
+}
+
+/** The name of the HTTP error `status`, or of its class for a status without a name of its own. */
+export function getHttpStatusName(status: number) {
+    if (NAMED_HTTP_STATUSES.has(status)) {
+        return t(`media.http-status-names.${status}`);
+    }
+    return status < 500
+        ? t("media.http-status-names.client-error")
+        : t("media.http-status-names.server-error");
 }
 
 // Navigation is Page Up/Down only — the player reserves Home/End for seeking (edgeKeys: false), and
@@ -94,7 +182,7 @@ export function claimsKeystroke(e: KeyboardEvent): boolean {
     return isMinuteJump && e.ctrlKey && !e.altKey && !e.metaKey;
 }
 
-export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
 
@@ -138,15 +226,32 @@ export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | H
                 value={currentTime}
                 onInput={onSeek}
             />
-            <span class="media-time">-{formatTime(Math.max(0, duration - currentTime))}</span>
+            <span class="media-time">{formatRemainingTime(currentTime, duration)}</span>
         </div>
     );
 }
 
+/** What the player shows for a time that is not known. */
+const UNKNOWN_TIME = "--:--";
+
+/** Formats `seconds` as m:ss, or as `--:--` for a time that is not known. */
 export function formatTime(seconds: number): string {
+    if (!Number.isFinite(seconds)) {
+        return UNKNOWN_TIME;
+    }
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+
+/**
+ * The time left until `duration` after a minus sign, or `--:--` while the duration is not known:
+ * a media element reports NaN until it loads its metadata, and Infinity for a stream.
+ */
+export function formatRemainingTime(currentTime: number, duration: number) {
+    return Number.isFinite(duration)
+        ? `-${formatTime(Math.max(0, duration - currentTime))}`
+        : UNKNOWN_TIME;
 }
 
 export function PlayPauseButton({ playing, togglePlayback }: {    
@@ -163,7 +268,7 @@ export function PlayPauseButton({ playing, togglePlayback }: {
     );
 }
 
-export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [volume, setVolume] = useState(() => mediaRef.current?.volume ?? 1);
     const [muted, setMuted] = useState(() => mediaRef.current?.muted ?? false);
 
@@ -260,12 +365,12 @@ const OWNED_MEDIA_ACTIONS: MediaSessionAction[] = [ "previoustrack", "nexttrack"
  */
 export function useMediaSessionController({ source, entity, noteContext, ownerNote, viewScope, mimePrefix, mediaRef, isVisible = true, playMode, autoPlay }: MediaPlayerProps & {
     mimePrefix: string;
-    mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>;
+    mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>;
     playMode: MediaPlayMode;
 }) {
     // A note cycles the playable siblings in its folder; an attachment cycles the owner note's playable
     // attachments. Either way it takes a tab to navigate in, so without one there is nothing to move between.
-    const note = "noteId" in entity ? entity : undefined;
+    const note = entity && "noteId" in entity ? entity : undefined;
     const navigation = useSiblingNavigation(note
         ? noteSiblingProvider(note, noteContext, { mimePrefix })
         : attachmentSiblingProvider(ownerNote, noteContext, viewScope ?? {}, { mimePrefix }));
@@ -479,18 +584,18 @@ function setActiveMediaPlayer(player: object | null) {
     for (const notify of mediaPlayerSubscribers) notify();
 }
 
-function seekBy(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, offset: number) {
+function seekBy(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, offset: number) {
     const media = mediaRef.current;
     // duration is NaN until metadata loads; setting currentTime to NaN throws.
     if (media && Number.isFinite(media.duration)) media.currentTime = Math.max(0, Math.min(media.duration, media.currentTime + offset));
 }
 
-function seekTo(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, time: number) {
+function seekTo(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, time: number) {
     const media = mediaRef.current;
     if (media && Number.isFinite(time)) media.currentTime = time;
 }
 
-function stopMedia(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>) {
+function stopMedia(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>) {
     const media = mediaRef.current;
     if (!media) return;
     media.pause();
@@ -510,7 +615,7 @@ export function MediaSiblingButton({ navigation, direction, tooltipI18nKey }: { 
     );
 }
 
-export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, seconds: number, icon: string, text: string }) {
+export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, seconds: number, icon: string, text: string }) {
     const skip = () => {
         const media = mediaRef.current;
         if (!media) return;
@@ -529,7 +634,7 @@ export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObj
  * mode and persists changes back there; the `next` mode's actual auto-advance is handled by
  * {@link useMediaSessionController} (which receives the resolved `mode`).
  */
-export function useMediaPlayMode(noteContext: NoteContext | undefined, mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, playlistNoteId?: string): { mode: MediaPlayMode; setMode: (mode: MediaPlayMode) => void } {
+export function useMediaPlayMode(noteContext: NoteContext | undefined, mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, playlistNoteId?: string): { mode: MediaPlayMode; setMode: (mode: MediaPlayMode) => void } {
     const parentNoteId = playlistNoteId ?? getParentFromNotePath(noteContext?.notePath)?.parentNoteId;
     const [ mode, setLocalMode ] = useState<MediaPlayMode>("once");
     const [ refreshCounter, setRefreshCounter ] = useState(0);
@@ -596,17 +701,14 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
             title={t("media.play-mode-title", { mode: t(MEDIA_PLAY_MODE_LABEL_KEYS[mode]) })}
         >
             {MEDIA_PLAY_MODES.map((candidate) => (
-                <li key={candidate}>
-                    <button
-                        type="button"
-                        class={`dropdown-item ${candidate === mode ? "active" : ""}`}
-                        onClick={() => onSelectMode(candidate)}
-                    >
-                        <Icon icon={MEDIA_PLAY_MODE_ICONS[candidate]} />
-                        <span class="play-mode-name">{t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}</span>
-                        {candidate === mode && <Icon icon="bx bx-check" className="play-mode-check" />}
-                    </button>
-                </li>
+                <FormListItem
+                    key={candidate}
+                    icon={MEDIA_PLAY_MODE_ICONS[candidate]}
+                    checked={candidate === mode}
+                    onClick={() => onSelectMode(candidate)}
+                >
+                    {t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}
+                </FormListItem>
             ))}
         </Dropdown>
     );
@@ -614,7 +716,7 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
 
 const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
 
-export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [speed, setSpeed] = useState(() => mediaRef.current?.playbackRate ?? 1);
 
     useEffect(() => {
@@ -647,14 +749,14 @@ export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoEleme
             title={t("media.playback-speed")}
         >
             {PLAYBACK_SPEEDS.map((rate) => (
-                <li key={rate}>
-                    <button
-                        class={`dropdown-item ${rate === speed ? "active" : ""}`}
-                        onClick={() => selectSpeed(rate)}
-                    >
-                        {rate}x
-                    </button>
-                </li>
+                <FormListItem
+                    key={rate}
+                    checkable
+                    checked={rate === speed}
+                    onClick={() => selectSpeed(rate)}
+                >
+                    {rate}x
+                </FormListItem>
             ))}
         </Dropdown>
     );

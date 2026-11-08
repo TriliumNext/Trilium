@@ -474,13 +474,6 @@ export function renderBookmark(bookmark: NonNullable<AnytypeBlock["bookmark"]>):
 // #endregion
 
 // #region Code blocks
-// PrismJS language ids Anytype uses that don't line up with a Trilium markdown language code. Most ids
-// (javascript, python, go, rust, …) match directly; only the mismatches need listing here. `clike` is
-// PrismJS's generic C-family base, mapped to plain C as the closest concrete language.
-const LANGUAGE_ALIASES: Record<string, string> = {
-    clike: "c"
-};
-
 /**
  * Renders an Anytype `Code`-style block as a Trilium/CKEditor code block. Anytype tags the block with a
  * PrismJS language id in `fields.lang`; we map that to a Trilium MIME and emit it as the CKEditor
@@ -495,7 +488,7 @@ export function renderCodeBlock(text: string, lang: string | undefined): string 
 /** The CKEditor code-block language class value for an Anytype language id, or auto-detect when unknown. */
 function codeLanguage(lang: string | undefined): string {
     if (lang) {
-        const mimeDefinition = getMimeTypeFromMarkdownName(LANGUAGE_ALIASES[lang] ?? lang);
+        const mimeDefinition = getMimeTypeFromMarkdownName(lang);
         if (mimeDefinition) {
             return normalizeMimeTypeForCKEditor(mimeDefinition.mime);
         }
@@ -526,10 +519,12 @@ export function renderLatexBlock(text: string, processor: string | undefined): s
  * Finds the inline-math runs in a text block. Anytype carries an inline formula as literal `$…$` (inline) or
  * `$$…$$` (display) text with no mark. The delimiter rules mirror Trilium's markdown renderer: a delimiter
  * `$`/`$$` may not sit next to another `$` (so `${VAR}` and mismatched `$$x$` stay literal) and the body may
- * not contain a `$` or a blank line. Ranges are returned in document order with their original offsets.
+ * not contain a `$` or a blank line. An inline `$` pair also needs a non-space character inside each
+ * delimiter and no digit after the closing one, so prices such as `$15 and $6` stay literal. Ranges are
+ * returned in document order with their original offsets.
  */
 function splitInlineFormulas(text: string): { from: number; to: number; body: string; display: boolean }[] {
-    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?!\$)/g;
+    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![$\d])/g;
     const formulas: { from: number; to: number; body: string; display: boolean }[] = [];
     for (const match of text.matchAll(pattern)) {
         const display = match[1] !== undefined;

@@ -1,9 +1,11 @@
+import { markdown } from "@codemirror/lang-markdown";
+import { ensureSyntaxTree } from "@codemirror/language";
 import { EditorSelection, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createFieldEditor, type FieldEditor } from "../field_editor.js";
-import { type NoteChip, type NoteChipResolver, triliumNoteChips } from "./trilium_note_chips.js";
+import { findWikilinkNoteIds, type NoteChip, type NoteChipOptions, type NoteChipResolver, triliumNoteChips } from "./trilium_note_chips.js";
 
 let editor: FieldEditor | undefined;
 
@@ -86,6 +88,17 @@ describe("triliumNoteChips", () => {
         expect(resolve).toHaveBeenCalledTimes(1);
     });
 
+    it("asks only once for a missing note whose lookup settles to undefined", async () => {
+        const redrawn = vi.fn();
+        const resolve = vi.fn(() => Promise.resolve(undefined)) as unknown as NoteChipResolver;
+        const parent = build("~author.noteId = gone", resolve, [ EditorView.updateListener.of(redrawn) ]);
+
+        await vi.waitFor(() => expect(redrawn).toHaveBeenCalled());
+        await new Promise((settle) => setTimeout(settle, 20));
+        expect(resolve).toHaveBeenCalledTimes(1);
+        expect(parent.textContent).toContain("gone");
+    });
+
     it("keeps a drawn chip across an edit elsewhere in the query", () => {
         const parent = build("~author.noteId = abc123", () => TOLKIEN);
         const chip = parent.querySelector(".cm-note-chip");
@@ -125,12 +138,54 @@ describe("triliumNoteChips", () => {
     });
 });
 
-function build(doc: string, resolve: NoteChipResolver, extensions: Extension[] = []) {
+describe("triliumNoteChips over Markdown's note links", () => {
+    const WIKILINKS: NoteChipOptions = { find: findWikilinkNoteIds, revealAtSelection: true };
+
+    /** A Markdown editor over `doc`, its syntax tree parsed, the caret at `caret`. */
+    function buildMarkdown(doc: string, caret = 0) {
+        const parent = build(doc, () => TOLKIEN, [ markdown() ], WIKILINKS);
+        const view = editorFor(parent);
+        ensureSyntaxTree(view.state, doc.length);
+        view.dispatch({ selection: EditorSelection.cursor(caret) });
+        return { parent, view };
+    }
+
+    it("draws each link as one chip, leaving the text and the links in code alone", () => {
+        const { parent, view } = buildMarkdown("See [[abc123]] and `[[code1]]`, or [[ bad ]].\n\n```\n[[block1]]\n```");
+
+        const chips = [ ...parent.querySelectorAll(".cm-note-chip") ];
+        expect(chips.map((chip) => chip.getAttribute("title"))).toEqual([ "abc123" ]);
+        expect(parent.textContent).toContain("See Tolkien and");
+        expect(parent.textContent).not.toContain("[[abc123]]");
+        expect(parent.textContent).toContain("[[code1]]");
+        expect(parent.textContent).toContain("[[block1]]");
+        expect(view.state.doc.toString()).toContain("[[abc123]]");
+    });
+
+    it("shows the link's text while the selection touches it, and lets the caret into it", () => {
+        const { parent, view } = buildMarkdown("See [[abc123]] here", 0);
+        expect(parent.querySelector(".cm-note-chip")).not.toBe(null);
+
+        // At its edge, the link shows as text, and a step goes into it rather than over it.
+        view.dispatch({ selection: EditorSelection.cursor(4) });
+        expect(parent.querySelector(".cm-note-chip")).toBe(null);
+        expect(parent.textContent).toContain("[[abc123]]");
+        expect(view.moveByChar(view.state.selection.main, true).head).toBe(5);
+
+        // A selection across it shows it too, and one away from it draws the chip again.
+        view.dispatch({ selection: EditorSelection.range(0, 17) });
+        expect(parent.querySelector(".cm-note-chip")).toBe(null);
+        view.dispatch({ selection: EditorSelection.cursor(18) });
+        expect(parent.querySelector(".cm-note-chip")?.textContent).toBe("Tolkien");
+    });
+});
+
+function build(doc: string, resolve: NoteChipResolver, extensions: Extension[] = [], options?: NoteChipOptions) {
     editor?.destroy();
 
     const parent = document.createElement("div");
     document.body.appendChild(parent);
-    editor = createFieldEditor({ parent, doc, extensions: [ triliumNoteChips(resolve), ...extensions ] });
+    editor = createFieldEditor({ parent, doc, extensions: [ ...extensions, triliumNoteChips(resolve, options) ] });
 
     return parent;
 }

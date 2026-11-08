@@ -1,11 +1,10 @@
-import { cloneElement, ComponentChildren, RefObject, VNode } from "preact";
-import { CSSProperties } from "preact/compat";
+import { cloneElement, ComponentChildren, CSSProperties, RefObject, VNode } from "preact";
 
 import { useUniqueName } from "./hooks";
 
 interface FormGroupProps {
     name: string;
-    labelRef?: RefObject<HTMLLabelElement>;
+    labelRef?: RefObject<HTMLLabelElement | null>;
     label?: string;
     title?: string;
     className?: string;

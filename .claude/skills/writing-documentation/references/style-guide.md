@@ -67,6 +67,13 @@ normalizes what it can.
 - Paths are relative to the current file (`../` as needed). Spaces `%20`, `&` `%26`, `,` `%2C`.
   Parentheses stay literal inside `href="…"` but are escaped in Markdown links:
   `Server%20Installation/HTTPS%20\(TLS\).md`.
+- **UI elements are pills.** The parts of the app's chrome documented under _UI Elements_ (Note
+  menu, Note Tree, Launch Bar, Options, Global menu, Right Sidebar, Status bar, Breadcrumb, …) are
+  named with a pill every time, including as the first segment of a menu path:
+  `<a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Board properties_`.
+  `**Note menu**` or plain "Note menu" sends the reader nowhere; `check` warns on the bold form and
+  prints the pill to paste. Italics stay for a menu *item* that happens to share a page's name
+  (_Insert_ → _Tabs_, the Global menu's _Options_ item).
 - Links into hidden system notes stay as `#root/_hidden/_options/_optionsTextNotes` (17); the
   `_hidden/` segment is mandatory.
 - Issues are reported via the internal page: "feel free to [report the
@@ -138,6 +145,7 @@ A button, menu or toolbar control is named by its icon, never by a cropped scree
 ```html
 <span class="tn-icon bx bx-history"></span>            <!-- app UI: Boxicons v2 -->
 <span class="tn-icon cke cke-three-vertical-dots"></span>   <!-- text editor toolbar: Text Editor Icons -->
+<span class="tn-icon tn-brand tn-brand-openai"></span>      <!-- AI provider or import source: Brand Icons -->
 ```
 
 - 106 icons on 36 pages (55 `bx`, 51 `cke`), almost all under Note Types and Basic Concepts. Class is
@@ -151,8 +159,10 @@ A button, menu or toolbar control is named by its icon, never by a cropped scree
 - `cke` (235 glyphs) is the editor's own icon set built into a font (`packages/trilium-core/src/
   services/icon_pack_text_editor.json`); upstream `IconTableMergeCell` → `cke-table-merge-cell`,
   Trilium's own SVGs → `cke-trilium-<file>` (`cke-trilium-kbd`, `cke-trilium-ai`). `bx` is
-  `icon_pack_boxicons-v2.json` (1635). `docs.mjs icons <terms>` searches both; `icons --check`
-  validates every class in the docs. `iconClass` in the meta uses `bx` only.
+  `icon_pack_boxicons-v2.json` (1635). `tn-brand` holds the marks of the AI providers and import
+  sources (`icon_pack_brands.json`). `docs.mjs icons <terms>` searches all three; `icons --check`
+  validates every class in the docs. `iconClass` in the meta uses `bx` only. The `cke` font is
+  rebuilt by hand, so a new editor button can be missing from it; see rule 8 in `SKILL.md`.
 
 ## Lists, tables, code
 

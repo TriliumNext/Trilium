@@ -15,10 +15,13 @@ vi.mock("tesseract.js", () => ({
 }));
 
 // Avoid touching the real filesystem for the worker cache directory.
+const mockFs = {
+    mkdirSync: vi.fn(),
+    existsSync: vi.fn()
+};
+
 vi.mock("fs", () => ({
-    default: {
-        mkdirSync: vi.fn()
-    }
+    default: mockFs
 }));
 
 vi.mock("../data_dir.js", () => ({
@@ -102,6 +105,23 @@ describe("TesseractRecognizer", () => {
             1,
             expect.objectContaining({ cachePath: "/tmp/trilium-ocr-test-cache" })
         );
+    });
+
+    it("spawns the bundled worker when the build placed one beside the bundle", async () => {
+        mockWorker.recognize.mockResolvedValue({ data: pageWithoutBlocks("text", 90) });
+
+        mockFs.existsSync.mockReturnValue(true);
+        await recognizer.recognize(image, "eng");
+        const bundledConfig = mockTesseract.createWorker.mock.calls[0][2];
+        expect(mockFs.existsSync).toHaveBeenCalledWith(expect.stringMatching(/tesseract_worker\.cjs$/));
+        expect(bundledConfig.workerPath).toMatch(/tesseract_worker\.cjs$/);
+
+        // From source there is no bundle, and an explicit `workerPath: undefined` would override
+        // the default tesseract.js resolves inside its own package.
+        mockFs.existsSync.mockReturnValue(false);
+        await recognizer.recognize(image, "ron");
+        const sourceConfig = mockTesseract.createWorker.mock.calls[1][2];
+        expect(sourceConfig).not.toHaveProperty("workerPath");
     });
 
     it("asks tesseract for the per-word breakdown the confidence filter needs", async () => {

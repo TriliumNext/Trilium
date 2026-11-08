@@ -4,7 +4,7 @@ Trilium allows importing from OneNote. Currently the only mechanism supported is
 ## Import process
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _OneNote_.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-onenote"></span> _OneNote_.
 3.  Press the _Connect_ button:
     1.  On the desktop app, you will be redirected to Microsoft's authentication screen where you can log into your account.
     2.  On the web app, the process is slightly more involved as it requires copying the code to clipboard, accessing the link, pasting the code and then signing in once more.

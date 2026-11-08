@@ -95,6 +95,8 @@ let StandaloneLogService: typeof import('./lightweight/log_provider').default;
 let StandaloneBackupService: typeof import('./lightweight/backup_provider').default;
 let removeBackupLeftovers: typeof import('./lightweight/backup_provider').removeBackupLeftovers;
 let StandaloneInAppHelpProvider: typeof import('./lightweight/in_app_help_provider').default;
+let inAppHelpProvider: InstanceType<typeof import('./lightweight/in_app_help_provider').default>;
+let inAppHelpLoaded: Promise<void>;
 let translationProvider: typeof import('./lightweight/translation_provider').default;
 let createConfiguredRouter: typeof import('./lightweight/browser_routes').createConfiguredRouter;
 let waitForSahPoolRelease: typeof import('./lightweight/sql_provider').waitForSahPoolRelease;
@@ -214,6 +216,11 @@ async function loadModules(): Promise<void> {
     // Loaded separately to avoid breaking Promise.all tuple inference
     BridgedRequestProvider = (await import('./lightweight/bridged_request_provider.js')).default;
     StandaloneInAppHelpProvider = (await import('./lightweight/in_app_help_provider.js')).default;
+    // Started here rather than at the point of use: the guide's content is a plain fetch, so it
+    // can run alongside opening the database instead of adding to startup, and it has to be in
+    // memory before anything reads a page — `getContent` is synchronous by then.
+    inAppHelpProvider = new StandaloneInAppHelpProvider();
+    inAppHelpLoaded = inAppHelpProvider.load();
 
     // Create instances
     sqlProvider = new BrowserSqlProvider();
@@ -335,7 +342,7 @@ async function initialize(): Promise<void> {
                     if (!response.ok) return null;
                     return new Uint8Array(await response.arrayBuffer());
                 },
-                inAppHelp: new StandaloneInAppHelpProvider(),
+                inAppHelp: inAppHelpProvider,
                 image: (await import("./services/image_provider.js")).standaloneImageProvider,
                 // What `assertScriptingEnabled()` answers from. Read from a locked OPFS file rather
                 // than the database, because the SQL console is enabled separately and an `UPDATE
@@ -362,6 +369,11 @@ async function initialize(): Promise<void> {
                 }
             });
             coreModule.ws.init();
+
+            // Nothing can read a help page before the routes are up, and by then this has long
+            // since resolved; awaited so a slow network delays the first page rather than
+            // silently serving it empty.
+            await inAppHelpLoaded;
 
             // This build's half of the LLM stack, mirroring what the server
             // contributes in registerServerLlmExtensions. Imported here rather than

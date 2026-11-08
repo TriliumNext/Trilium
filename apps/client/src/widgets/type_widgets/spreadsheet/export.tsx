@@ -1,5 +1,5 @@
 import { FUniver } from "@univerjs/presets";
-import { MutableRef } from "preact/hooks";
+import { RefObject } from "preact";
 
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
@@ -24,7 +24,7 @@ const UTF8_BOM = "\uFEFF";
  * `@triliumnext/commons`, dynamically imported so they are only fetched on export; XLSX is
  * rendered by the backend, which keeps exceljs out of the client bundle entirely.
  */
-export default function useSpreadsheetExport(apiRef: MutableRef<FUniver | undefined>, note: FNote, noteContext: NoteContext | null | undefined, spacedUpdate: SpacedUpdate<SavedData | undefined>) {
+export default function useSpreadsheetExport(apiRef: RefObject<FUniver | undefined>, note: FNote, noteContext: NoteContext | null | undefined, spacedUpdate: SpacedUpdate<SavedData | undefined>) {
     useTriliumEvent("exportXlsx", ({ ntxId }) => {
         if (ntxId !== noteContext?.ntxId) return;
         void exportToXlsx(note, spacedUpdate);

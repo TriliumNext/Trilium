@@ -1,4 +1,4 @@
-import { attributes, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
+import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
 
 import config from "./config.js";
@@ -267,9 +267,23 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
     const password = colonIndex === -1 ? "" : auth.substr(colonIndex + 1);
     // username is ignored
 
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+    // Checked before the password so that the answer says nothing about the password.
+    const totpToken = req.headers["trilium-totp"];
+    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !totpToken)) {
+        res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
+        getLog().warn(`Missing TOTP token from ${req.ip}, rejecting.`);
+        return;
+    }
+
+    // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
+    // `verifyRecoveryCode()` write options when they accept a code.
+    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
-        getLog().info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
+        getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
+    } else if (failedFactor === "totp") {
+        res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect TOTP token");
+        getLog().warn(`Wrong TOTP token from ${req.ip}, rejecting.`);
     } else {
         next();
     }
@@ -287,12 +301,12 @@ export type LoginFactor = "password" | "totp";
  * wrong password — silently wasting one of the user's limited codes. Password-first guarantees a
  * recovery code is only ever consumed once the rest of the login is known to succeed.
  */
-export async function verifyLoginCredentials(password: string, totpToken: string): Promise<LoginFactor | null> {
-    if (!(await passwordEncryptionService.verifyPassword(password))) {
+export async function verifyLoginCredentials(password: unknown, totpToken: unknown): Promise<LoginFactor | null> {
+    if (typeof password !== "string" || !(await passwordEncryptionService.verifyPassword(password))) {
         return "password";
     }
 
-    if (totp.isTotpEnabled() && !verifyTOTP(totpToken)) {
+    if (totp.isTotpEnabled() && (typeof totpToken !== "string" || !verifyTOTP(totpToken))) {
         return "totp";
     }
 

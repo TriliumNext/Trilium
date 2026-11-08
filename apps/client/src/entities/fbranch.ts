@@ -18,9 +18,6 @@ export interface FBranchRow {
 class FBranch {
     private froca: Froca;
 
-    /**
-     * primary key
-     */
     branchId!: string;
     noteId!: string;
     parentNoteId!: string;
@@ -60,7 +57,6 @@ class FBranch {
         return this.froca.getNote(this.parentNoteId);
     }
 
-    /** @returns true if it's top level, meaning its parent is the root note */
     isTopLevel() {
         return this.parentNoteId === "root";
     }

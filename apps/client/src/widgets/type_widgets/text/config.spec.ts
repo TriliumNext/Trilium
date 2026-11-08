@@ -1,10 +1,15 @@
-import type { EditorConfig } from "@triliumnext/ckeditor5";
+import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
+import { getEmbedContentInfo } from "../../../services/content_renderer.js";
+import froca from "../../../services/froca.js";
 import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
-import noteAutocompleteService from "../../../services/note_autocomplete.js";
+import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
+import type { EditLinkOpts } from "../../dialogs/edit_link.js";
+import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
@@ -26,7 +31,9 @@ const catalogState = vi.hoisted(() => ({
 vi.mock("../../../services/i18n.js", () => ({
     t: (key: string) => catalogState.entries[key] ?? key,
     // Read while the AI assistant's Translate submenu is built, which every config goes through.
-    getAvailableLocales: () => []
+    getAvailableLocales: () => [],
+    // Awaited by `command_registry.ts` as it loads, through the `@` list's note autocomplete.
+    translationsInitializedPromise: Promise.resolve()
 }));
 vi.mock("i18next", () => ({
     default: {
@@ -36,6 +43,11 @@ vi.mock("i18next", () => ({
             return catalogState.bundle && (() => catalogState.bundle);
         }
     }
+}));
+
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
 }));
 
 vi.mock("../../../services/options.js", () => ({
@@ -76,12 +88,6 @@ vi.mock("../../../services/image.js", () => ({
     }
 }));
 
-vi.mock("../../../services/note_autocomplete.js", () => ({
-    default: {
-        autocompleteSourceForCKEditor: vi.fn(async () => [])
-    }
-}));
-
 // Keep the real module, but skip the actual theme/mime loading the lazy loader would trigger.
 vi.mock("../../../services/syntax_highlight.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/syntax_highlight.js")>()),
@@ -89,9 +95,50 @@ vi.mock("../../../services/syntax_highlight.js", async (importOriginal) => ({
 }));
 
 // Heavy modules pulled in lazily by the editor config — replace with light stubs.
-vi.mock("mermaid", () => ({ default: { name: "mermaid-stub" } }));
+const promptState = vi.hoisted(() => ({ answer: null as string | null, seen: [] as unknown[] }));
+vi.mock("../../../services/dialog.js", () => ({
+    prompt: vi.fn(async (props: unknown) => {
+        promptState.seen.push(props);
+        return promptState.answer;
+    })
+}));
 vi.mock("@triliumnext/highlightjs", () => ({ default: { name: "hljs-stub" } }));
 vi.mock("../../../services/math.js", () => ({ default: { name: "katex-stub" } }));
+vi.mock("../../../services/content_renderer.js", () => ({
+    getUploadBoxDefaults: vi.fn((mime: string) => ({
+        boxSize: mime.startsWith("audio/") ? "compact" : "resizable",
+        isTitleHidden: mime.startsWith("audio/")
+    })),
+    getEmbedContentInfo: vi.fn()
+}));
+const { convertImageToDrawing } = vi.hoisted(() => ({
+    convertImageToDrawing: vi.fn(async () => "d1")
+}));
+vi.mock("../canvas/image_to_drawing.js", () => ({ convertImageToDrawing }));
+vi.mock("../../../services/server.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../../services/server.js")>();
+    return {
+        default: {
+            ...original.default,
+            // `keyboard_actions` loads its actions through `get` on import.
+            get: vi.fn(async () => []),
+            getHeaders: vi.fn(async (headers?: Record<string, string | null | undefined>) => ({
+                "x-csrf-token": "csrf",
+                "trilium-hoisted-note-id": null,
+                ...headers
+            }))
+        }
+    };
+});
+const { openInCurrentNoteContext } = vi.hoisted(() => ({ openInCurrentNoteContext: vi.fn() }));
+vi.mock("../../../components/note_context.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../components/note_context.js")>()),
+    openInCurrentNoteContext
+}));
+vi.mock("../../../services/link_embed.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/link_embed.js")>()),
+    fetchMetadata: vi.fn(async (url: string, ownerNoteId: string) => ({ url, embedType: "opengraph", title: ownerNoteId }))
+}));
 
 function baseOpts(overrides: Partial<BuildEditorOptions> = {}): BuildEditorOptions {
     return {
@@ -103,12 +150,6 @@ function baseOpts(overrides: Partial<BuildEditorOptions> = {}): BuildEditorOptio
     };
 }
 
-interface MentionSuggestion {
-    icon?: string;
-    action?: string;
-    highlightedNotePathTitle?: string;
-}
-
 /** The dynamically-attached config members that CKEditor's `EditorConfig` type doesn't declare. */
 interface DynamicConfig {
     renderShortcut(shortcut: string): string;
@@ -117,16 +158,12 @@ interface DynamicConfig {
         copyToClipboard(src: string): void;
         download(src: string): void;
     };
-    math: { lazyLoad(): Promise<void> };
-    mermaid: { lazyLoad(): Promise<unknown> };
+    math: { enableMathField: boolean; lazyLoad(): Promise<void> };
+    contentEmbed: { inlineLanguages: string[] };
     syntaxHighlighting: { loadHighlightJs(): Promise<{ default: unknown }> };
     mention?: {
-        feeds: {
-            marker: string;
-            minimumCharacters: number;
-            feed(queryText: string): Promise<unknown>;
-            itemRenderer(item: MentionSuggestion): HTMLElement;
-        }[];
+        feeds: unknown[];
+        hostedFeeds?: { marker: string; minimumCharacters?: number; allowSpaces?: boolean; list(): unknown }[];
     };
 }
 
@@ -137,6 +174,7 @@ async function buildDynamicConfig(overrides: Partial<BuildEditorOptions> = {}) {
 beforeEach(() => {
     optionsState.map = {};
     optionsState.json = {};
+    experimentalState.enabled.clear();
     imageState.copySupported = false;
     catalogState.bundle = undefined;
     catalogState.entries = {};
@@ -175,6 +213,18 @@ describe("CK config", () => {
             }
         }
     }, 20_000);
+
+    it("mounts the floating UI in the document body, even for an editor in a shadow root", async () => {
+        const config = await buildConfig(baseOpts());
+        expect(config.ui?.overlayContainer).toBe(document.body);
+    });
+
+    // With "auto", a pasted image goes inline in a list item or after text, and on its own line in an
+    // empty paragraph; CKEditor's fallback inserts every image as a block.
+    it("inserts images inline or as a block depending on where the cursor is", async () => {
+        const config = await buildConfig(baseOpts());
+        expect((config.image as { insert?: { type?: string } }).insert?.type).toBe("auto");
+    });
 
     // The `text-editor.ck` section of the English catalog is the registry of editor strings: each
     // entry names the English message id a plugin passes to `editor.t()`, and the value the editor
@@ -310,6 +360,320 @@ describe("CK config - HTML support", () => {
         expect(names).not.toContain("div");
         // Everything else the default list names still comes through.
         expect(names).toEqual(SANITIZER_DEFAULT_ALLOWED_TAGS.filter((tag) => tag !== "div"));
+    });
+});
+
+describe("CK config - tables", () => {
+    it("keeps the column bar above the phone's toolbar while it is shown", async () => {
+        const bottomObstacle = (await buildConfig(baseOpts())).tableColumnBar?.bottomObstacle;
+        expect(bottomObstacle?.()).toBeNull();
+
+        const container = document.createElement("div");
+        container.className = "classic-toolbar-outer-container visible active";
+        const island = document.createElement("div");
+        island.className = "classic-toolbar-island";
+        container.appendChild(island);
+        document.body.appendChild(container);
+        expect(bottomObstacle?.()).toBe(island);
+
+        container.classList.remove("active");
+        expect(bottomObstacle?.()).toBeNull();
+        container.remove();
+    });
+
+    it("offers the Sort dropdown just before the table properties", async () => {
+        const toolbar = (await buildConfig(baseOpts())).table?.contentToolbar ?? [];
+        expect(toolbar).toContain("tableSort");
+        expect(toolbar.indexOf("tableSort")).toBe(toolbar.indexOf("tableProperties") - 1);
+    });
+
+    it("hands the user's date format to table sorting", async () => {
+        expect((await buildConfig(baseOpts())).autoSort).toEqual({ dateFormats: [] });
+
+        optionsState.map.customDateTimeFormat = "DD.MM.YYYY HH:mm";
+        expect((await buildConfig(baseOpts())).autoSort)
+            .toEqual({ dateFormats: ["DD.MM.YYYY HH:mm"] });
+    });
+
+    it("formats inserted dates in a chosen format or the user's current one", async () => {
+        const { formatDateTime } = await buildConfig(baseOpts());
+        const date = new Date(2026, 8, 25, 10, 30);
+
+        expect(formatDateTime?.(date, "YYYY")).toBe("2026");
+
+        optionsState.map.customDateTimeFormat = "DD.MM.YYYY HH:mm";
+        expect(formatDateTime?.(date)).toBe("25.09.2026 10:30");
+    });
+
+    it("fetches link previews for the open note, and none without one", async () => {
+        let noteId: string | undefined = "noteAbc";
+        const linkEmbed = (await buildConfig(baseOpts({ getNoteId: () => noteId }))).linkEmbed;
+
+        expect(await linkEmbed?.fetchMetadata?.("https://a.example/"))
+            .toStrictEqual({ url: "https://a.example/", embedType: "opengraph", title: "noteAbc" });
+
+        noteId = undefined;
+        expect(await linkEmbed?.fetchMetadata?.("https://a.example/")).toMatchObject({ unresolved: true });
+        expect(linkEmbed?.detectEmbedType?.("https://youtube.com/watch?v=abc12345678")).toBe("youtube");
+    });
+
+    it("uploads to the open note, as a change of the editor's component", async () => {
+        const config = await buildConfig(baseOpts({ getNoteId: () => "noteAbc", getComponentId: () => "editor1" }));
+
+        expect(config.getNoteId?.()).toBe("noteAbc");
+        // Headers without a value are left out rather than sent as the text "null".
+        expect(await config.attachmentUpload?.getHeaders?.())
+            .toStrictEqual({ "x-csrf-token": "csrf", "trilium-component-id": "editor1" });
+        expect(config.attachmentUpload?.getEmbedBox?.("image/png", 1))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
+        expect(config.attachmentUpload?.getEmbedBox?.("audio/mpeg", 1))
+            .toEqual({ boxSize: "compact", isTitleHidden: true });
+    });
+
+    it("tells the editor what the cache knows of an embedded note or attachment", async () => {
+        const config = await buildConfig(baseOpts());
+        const info = { defaultBoxSize: "compact" as const, hasCompactContent: true };
+        vi.mocked(getEmbedContentInfo).mockReturnValue(info);
+        const describe = config.contentEmbed?.getEmbedContentInfo;
+        if (!describe) throw new Error("Expected the host to describe embeds.");
+
+        expect(describe({ noteId: "unknown" })).toBeNull();
+        expect(describe({ attachmentId: "unknown" })).toBeNull();
+        froca.notes.cached = { noteId: "cached" } as never;
+        froca.attachments.att = { attachmentId: "att" } as never;
+        try {
+            expect(describe({ noteId: "cached" })).toBe(info);
+            expect(describe({ attachmentId: "att" })).toBe(info);
+            expect(vi.mocked(getEmbedContentInfo).mock.calls)
+                .toEqual([ [ froca.notes.cached ], [ froca.attachments.att ] ]);
+        } finally {
+            delete froca.notes.cached;
+            delete froca.attachments.att;
+        }
+    });
+
+    it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {
+        const triggerHostCommand = vi.fn(async () => undefined);
+        const config = await buildConfig(baseOpts({ triggerHostCommand }));
+
+        const callbacks = [
+            [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
+            [ config.cutToNote?.cut, "cutIntoNote" ],
+            [ config.cutToNote?.saveNow, "saveNoteDetailNow" ]
+        ] as const;
+
+        for (const [ callback, command ] of callbacks) {
+            await callback?.();
+            expect(triggerHostCommand).toHaveBeenLastCalledWith(command);
+        }
+        expect(triggerHostCommand).toHaveBeenCalledTimes(callbacks.length);
+    });
+
+    it("shows the icon picker the editor asks for, and none without a host for it", async () => {
+        const release = vi.fn();
+        const showIconPicker = vi.fn(() => release);
+        const request = { container: document.createElement("div"), onSelect: vi.fn() };
+
+        expect((await buildConfig(baseOpts({ showIconPicker }))).inlineIcon?.showPicker(request)).toBe(release);
+        expect(showIconPicker).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).inlineIcon?.showPicker(request)).toBeNull();
+    });
+
+    it("shows the link dialog the editor asks for, and none without a host for it", async () => {
+        const release = vi.fn();
+        const showLinkDialog = vi.fn(() => release);
+        const request = {
+            container: document.createElement("div"), target: "url" as const, close: vi.fn()
+        };
+
+        expect((await buildConfig(baseOpts({ showLinkDialog }))).internalLink?.showDialog(request))
+            .toBe(release);
+        expect(showLinkDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).internalLink?.showDialog(request)).toBeNull();
+        // The note suggestions of the dialog render in the page's body.
+        expect((await buildConfig(baseOpts())).hostedBalloon)
+            .toStrictEqual({ keepOpenSelector: FLOATING_LAYER_SELECTOR });
+    });
+
+    it("shows the Include note dialog the editor asks for, and none without a host", async () => {
+        const release = vi.fn();
+        const showContentEmbedDialog = vi.fn(() => release);
+        const request = { container: document.createElement("div"), close: vi.fn() };
+
+        const config = await buildConfig(baseOpts({ showContentEmbedDialog }));
+        expect(config.contentEmbed?.pickNote?.(request)).toBe(release);
+        expect(showContentEmbedDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).contentEmbed?.pickNote?.(request)).toBeNull();
+    });
+
+    it("hands the menu of a link the path and the view scope of the note it links to", async () => {
+        const getEntries = vi.spyOn(linkContextMenu, "getLinkToolbarEntries")
+            .mockResolvedValue({ target: [], actions: [], afterUnlink: [] });
+        const download = vi.spyOn(linkContextMenu, "downloadLinkedAttachment")
+            .mockResolvedValue();
+        onTestFinished(() => {
+            getEntries.mockRestore();
+            download.mockRestore();
+        });
+        const host = (await buildConfig(baseOpts())).linkMenu;
+        const element = document.createElement("a");
+        const run = vi.fn();
+        const notePath = "root/parent1/note1";
+        const href = `#${notePath}?viewMode=attachments&attachmentId=a1`;
+        const viewScope = expect.objectContaining({ viewMode: "attachments", attachmentId: "a1" });
+
+        await host?.describeNoteLink(href, element, run);
+        host?.openNote(href, element);
+        host?.downloadAttachment(href);
+        expect(getEntries).toHaveBeenCalledExactlyOnceWith(notePath, viewScope, element, run);
+        expect(openInCurrentNoteContext)
+            .toHaveBeenCalledExactlyOnceWith({ target: element }, notePath, viewScope);
+        expect(download).toHaveBeenCalledExactlyOnceWith(notePath, viewScope);
+
+        // An address that names no note.
+        await host?.describeNoteLink("https://example.com", element, run);
+        host?.openNote("https://example.com", element);
+        host?.downloadAttachment("https://example.com");
+        expect(getEntries).toHaveBeenLastCalledWith("", {}, element, run);
+        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+        expect(download).toHaveBeenLastCalledWith("", {});
+    });
+
+    it("copies block and tab references from the reference source, and none without one", async () => {
+        const getEditor = vi.fn(() => null);
+        const referenceSource = {
+            getEditor, getNote: () => null, getNotePath: () => undefined, save: vi.fn()
+        };
+        const config = await buildConfig(baseOpts({ referenceSource }));
+
+        config.blockReference?.copyReference?.();
+        config.tabs?.copyReference?.();
+
+        expect(getEditor).toHaveBeenCalledTimes(2);
+        const bare = await buildConfig(baseOpts());
+        expect(bare.blockReference).toBeUndefined();
+        expect(bare.tabs).toBeUndefined();
+    });
+
+    it("converts images to drawings in the note open at the time, as changes of the host", async () => {
+        let noteId: string | undefined = "n1";
+        const config = await buildConfig(baseOpts({
+            getNoteId: () => noteId,
+            getComponentId: () => "component1"
+        }));
+
+        expect(await config.imageToDrawing?.convert?.("api/images/a.png")).toBe("d1");
+        noteId = undefined;
+        expect(await config.imageToDrawing?.convert?.("api/images/b.png")).toBeNull();
+
+        expect(convertImageToDrawing).toHaveBeenCalledExactlyOnceWith("n1", "api/images/a.png", "component1");
+    });
+
+    it("hands embeds to the content embed handlers of the moment, and falls back without any", async () => {
+        const tools = { getTools: () => [], execute: vi.fn(), subscribe: () => () => {} };
+        const first = {
+            loadNote: vi.fn(),
+            loadAttachment: vi.fn(),
+            loadInline: vi.fn(),
+            flushInline: vi.fn(),
+            loadUnknown: vi.fn(),
+            loadMedia: vi.fn(),
+            focusAttachment: vi.fn(),
+            getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
+            openMenu: vi.fn(),
+            getTools: vi.fn(() => tools),
+            enter: vi.fn(() => true)
+        };
+        const second = { ...first, loadNote: vi.fn() };
+        let handlers: typeof first | undefined = first;
+        const embed = document.createElement("figure");
+        const wrapper = document.createElement("div");
+        const source = {} as InlineEmbedSource;
+        const video = { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", embedType: "youtube" };
+        const onBlockChange = vi.fn();
+        const host = (await buildConfig(baseOpts({ getContentEmbedHandlers: () => handlers })))
+            .contentEmbed;
+
+        host?.loadNote?.("n1", wrapper, "small", "b1", onBlockChange);
+        handlers = second;
+        host?.loadNote?.("n2", wrapper, undefined, undefined, onBlockChange);
+        host?.loadAttachment?.("a1", wrapper, "medium");
+        host?.loadInline?.(source, wrapper, "full", { isFocused: true });
+        host?.flushInline?.();
+        host?.loadUnknown?.(wrapper, "small");
+        host?.loadMedia?.(video, wrapper, "compact");
+        host?.focusAttachment?.("a1");
+        host?.openMenu?.(embed, wrapper);
+
+        expect(first.loadNote).toHaveBeenCalledExactlyOnceWith("n1", wrapper, "small", "b1", onBlockChange);
+        expect(second.loadNote).toHaveBeenCalledExactlyOnceWith("n2", wrapper, undefined, undefined, onBlockChange);
+        expect(first.loadAttachment).toHaveBeenCalledWith("a1", wrapper, "medium");
+        expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
+        expect(first.flushInline).toHaveBeenCalledOnce();
+        expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
+        expect(first.loadMedia).toHaveBeenCalledWith(video, wrapper, "compact");
+        expect(first.focusAttachment).toHaveBeenCalledWith("a1");
+        expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
+        expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");
+        expect(host?.getTools?.(embed)).toBe(tools);
+        expect(host?.enter?.(embed, "end")).toBe(true);
+        expect(first.enter).toHaveBeenCalledWith(embed, "end");
+
+        handlers = undefined;
+        expect(await host?.getAttachmentHref?.("a1")).toBeNull();
+        expect(host?.getTools?.(embed)).toBeNull();
+        expect(host?.enter?.(embed, "start")).toBe(false);
+        expect(() => host?.loadNote?.("n1", wrapper, undefined, undefined, onBlockChange)).not.toThrow();
+        expect(() => host?.flushInline?.()).not.toThrow();
+    });
+
+    it("titles reference links through the link service, in the note open at the time", async () => {
+        const loadTitle = vi.spyOn(linkService, "loadReferenceLinkTitle").mockResolvedValue();
+        const getTitleSync = vi.spyOn(linkService, "getReferenceLinkTitleSync")
+            .mockReturnValue("Title");
+        onTestFinished(() => {
+            loadTitle.mockRestore();
+            getTitleSync.mockRestore();
+        });
+        let noteId = "n1";
+        let isExcerpt = false;
+        const referenceLink = (await buildConfig(baseOpts({
+            getNoteId: () => noteId, isExcerpt: () => isExcerpt
+        }))).referenceLink;
+        const element = document.createElement("span");
+        const content = document.createElement("div");
+
+        referenceLink?.renderTitle?.(element, "#root/n2", "Stored", content);
+        expect(referenceLink?.getTitleSync?.("#root/n2", "Stored", content)).toBe("Title");
+        noteId = "n3";
+        isExcerpt = true;
+        referenceLink?.renderTitle?.(element, "#root/n2");
+        referenceLink?.getTitleSync?.("#root/n2");
+
+        expect(referenceLink?.getTitle).toBe(linkService.getReferenceLinkTitle);
+        expect(loadTitle.mock.calls.map(([ $el, ...rest ]) => [ $el[0], ...rest ])).toEqual([
+            [ element, "#root/n2", "n1", "Stored", content, false ],
+            [ element, "#root/n2", "n3", undefined, undefined, true ]
+        ]);
+        expect(getTitleSync.mock.calls).toEqual([
+            [ "#root/n2", "Stored", content, false ],
+            [ "#root/n2", undefined, undefined, true ]
+        ]);
+    });
+
+    it("asks the host to fix a link to a missing note through the add link dialog", async () => {
+        const triggerHostCommand = vi.fn(async () => undefined);
+        const fix = vi.fn();
+        const referenceLink = (await buildConfig(baseOpts({ triggerHostCommand }))).referenceLink;
+
+        referenceLink?.fixLink?.("Gone", fix);
+
+        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showEditLinkDialog", expect.objectContaining({
+            text: "Gone", hasSelection: false, fixLink: true
+        }));
+        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, EditLinkOpts ];
+        await dialog.addLink("root/n9", null);
+        expect(fix).toHaveBeenCalledExactlyOnceWith("#root/n9");
     });
 });
 
@@ -493,12 +857,38 @@ describe("CK config - language & emoji", () => {
     });
 });
 
+describe("CK config - list start", () => {
+    it("asks for the number in the app's prompt, keeping only a whole number of 0 or more", async () => {
+        const config = await buildConfig(baseOpts());
+        const ask = config.listStartPrompt;
+        if (!ask) throw new Error("expected listStartPrompt");
+
+        promptState.answer = " 12 ";
+        expect(await ask("Start at", 3)).toBe(12);
+        expect(promptState.seen.at(-1)).toMatchObject({ title: "Start at", defaultValue: "3" });
+
+        for (const answer of [ null, "", "abc", "-1", "2.5" ]) {
+            promptState.answer = answer;
+            expect(await ask("Start at", 3)).toBeNull();
+        }
+        promptState.answer = "0";
+        expect(await ask("Start at", 3)).toBe(0);
+    });
+});
+
 describe("CK config - image actions", () => {
+    it("places the image in one position menu, in place of the style buttons", async () => {
+        const toolbar = ((await buildConfig(baseOpts())).image as { toolbar: unknown[] }).toolbar;
+        expect(toolbar[0]).toBe("imagePosition");
+        expect(JSON.stringify(toolbar)).not.toContain("imageStyle:");
+    });
+
     it("adds the copy-image toolbar action only when raw image copy is supported", async () => {
         const unsupported = await buildConfig(baseOpts());
         const unsupportedToolbar = (unsupported.image as { toolbar: unknown[] }).toolbar;
         expect(unsupportedToolbar).not.toContain("copyImageToClipboard");
         expect(unsupportedToolbar).toContain("downloadImage");
+        expect(unsupportedToolbar).toContain("convertImageToDrawing");
 
         imageState.copySupported = true;
         const supported = await buildConfig(baseOpts());
@@ -538,14 +928,11 @@ describe("CK config - image actions", () => {
 });
 
 describe("CK config - lazy loaders", () => {
-    it("lazy-loads KaTeX, Mermaid and highlight.js on demand", async () => {
+    it("lazy-loads KaTeX and highlight.js on demand", async () => {
         const config = await buildDynamicConfig();
 
         await config.math.lazyLoad();
         expect((window as unknown as { katex: unknown }).katex).toEqual({ name: "katex-stub" });
-
-        const mermaid = await config.mermaid.lazyLoad();
-        expect(mermaid).toEqual({ name: "mermaid-stub" });
 
         const hljs = await config.syntaxHighlighting.loadHighlightJs();
         expect(hljs.default).toEqual({ name: "hljs-stub" });
@@ -553,41 +940,34 @@ describe("CK config - lazy loaders", () => {
     });
 });
 
-describe("CK config - mention feed", () => {
-    it("is omitted when note completion is disabled", async () => {
+describe("CK config - inline embeds", () => {
+    it("keeps the source of every source embed type inline, as a code block of its language", async () => {
         const config = await buildDynamicConfig();
-        expect(config.mention).toBeUndefined();
+        expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
     });
 
-    it("builds the @-mention feed and renders suggestions when note completion is enabled", async () => {
+    it("offers the slash command of extended code blocks while their feature is on", async () => {
+        const getRemoved = async () =>
+            (await buildConfig(baseOpts())).slashCommand?.removeCommands ?? [];
+
+        expect(await getRemoved()).toContain("extended-code-block");
+        experimentalState.enabled.add("extendedCodeBlocks");
+        expect(await getRemoved()).not.toContain("extended-code-block");
+        expect(await getRemoved()).toEqual([ "bulletedList", "numberedList" ]);
+    });
+});
+
+describe("CK config - mention feed", () => {
+    it("lists notes after @ as the note autocomplete does, only when note completion is enabled", async () => {
+        const off = await buildDynamicConfig();
+        expect(off.mention?.feeds).toEqual([]);
+        expect(off.mention?.hostedFeeds).toEqual([]);
+
         optionsState.map["textNoteCompletionEnabled"] = "true";
         const config = await buildDynamicConfig();
-
-        const feedConfig = config.mention?.feeds[0];
-        if (!feedConfig) throw new Error("expected the mention feed to be configured");
-        expect(feedConfig.marker).toBe("@");
-        expect(feedConfig.minimumCharacters).toBe(0);
-
-        await feedConfig.feed("query-text");
-        expect(noteAutocompleteService.autocompleteSourceForCKEditor).toHaveBeenCalledWith("query-text");
-
-        // A normal note suggestion keeps its own icon and renders its highlighted title.
-        const noteItem = feedConfig.itemRenderer({ icon: "bx bx-folder", action: "open", highlightedNotePathTitle: "<b>Hello</b>" });
-        expect(noteItem.tagName).toBe("BUTTON");
-        expect((noteItem.firstChild as HTMLElement).className).toBe("bx bx-folder");
-        expect(noteItem.querySelector("b")?.textContent).toBe("Hello");
-
-        // The row is exactly the icon and a wrapped title: the stylesheet lays the two out against
-        // each other, which it cannot do if the title is spread into the button as loose nodes.
-        expect(noteItem.className).toBe("note-mention-suggestion");
-        expect(noteItem.childNodes).toHaveLength(2);
-        const title = noteItem.querySelector(".note-mention-suggestion-title");
-        expect(title?.textContent).toBe("Hello");
-
-        // A "create note" suggestion with no icon/title gets the plus icon and an empty title.
-        const createItem = feedConfig.itemRenderer({ action: "create-note" });
-        expect((createItem.firstChild as HTMLElement).className).toBe("bx bx-plus");
-        expect(createItem.querySelector("b")).toBeNull();
+        const hosted = config.mention?.hostedFeeds?.[0];
+        expect(hosted).toMatchObject({ marker: "@", minimumCharacters: 0, allowSpaces: true });
+        expect(hosted?.list()).toEqual(expect.objectContaining({ show: expect.any(Function), handleKeyDown: expect.any(Function) }));
     });
 });
 
@@ -620,6 +1000,15 @@ function toolbarItems(config: EditorConfig): unknown[] {
 }
 
 describe("CK config - disabled plugins", () => {
+    it("passes the MathLive option to the math editor", async () => {
+        const defaultConfig = await buildDynamicConfig();
+        expect(defaultConfig.math.enableMathField).toBe(true);
+
+        optionsState.map["mathFieldEnabled"] = "false";
+        const disabledConfig = await buildDynamicConfig();
+        expect(disabledConfig.math.enableMathField).toBe(false);
+    });
+
     it("removes the emoji and slash-command plugins based on their option toggles", async () => {
         const disabled = await buildConfig(baseOpts());
         expect(disabled.removePlugins).toContain("TriliumEmojiMention");
@@ -630,5 +1019,43 @@ describe("CK config - disabled plugins", () => {
         const enabled = await buildConfig(baseOpts());
         expect(enabled.removePlugins).not.toContain("TriliumEmojiMention");
         expect(enabled.removePlugins).not.toContain("TriliumSlashCommands");
+    });
+
+    it("hands the toolbar's group menus and the color menu to the app's own menu", async () => {
+        const config = await buildConfig(baseOpts());
+        const editor = {} as Parameters<NonNullable<typeof config.colorMenu>["host"]>[0];
+        for (const host of [ config.toolbarGroupMenu?.host(editor), config.colorMenu?.host(editor) ]) {
+            expect(host).toMatchObject({ show: expect.any(Function), hide: expect.any(Function) });
+            host?.destroy();
+        }
+    });
+
+    it("removes the block drag handle in the mobile layout", async () => {
+        const originalDevice = window.glob.device;
+        try {
+            window.glob.device = "desktop";
+            expect((await buildConfig(baseOpts())).removePlugins).not.toContain("BlockDragHandle");
+
+            window.glob.device = "mobile";
+            expect((await buildConfig(baseOpts())).removePlugins).toContain("BlockDragHandle");
+        } finally {
+            window.glob.device = originalDevice;
+        }
+    });
+
+    it("leaves out the content hints in the mobile layout, whatever their option", async () => {
+        const originalDevice = window.glob.device;
+        const contentHints = async () => (await buildConfig(baseOpts()) as { contentHintsEnabled?: boolean })
+            .contentHintsEnabled;
+        optionsState.map["textNoteContentHintsEnabled"] = "true";
+        try {
+            window.glob.device = "desktop";
+            expect(await contentHints()).toBe(true);
+
+            window.glob.device = "mobile";
+            expect(await contentHints()).toBe(false);
+        } finally {
+            window.glob.device = originalDevice;
+        }
     });
 });

@@ -22,6 +22,8 @@ const DIRECTORY_ENTRY_SIZE = 16;
 const ICON_TYPE = 1;
 /** Below this an icon is too small to draw a preview with, whatever else the file offers. */
 const DEFAULT_MIN_EDGE = 16;
+/** The first eight bytes of every PNG file. */
+const PNG_SIGNATURE = [ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a ];
 
 interface IconDirectoryEntry {
     /** Longest edge in pixels. */
@@ -66,6 +68,19 @@ export function trimIcoToSmallestEntry(bytes: Uint8Array, minEdge = DEFAULT_MIN_
     trimmed.set(bytes.subarray(kept.offset, kept.offset + kept.length), pictureAt);
 
     return trimmed;
+}
+
+/**
+ * The PNG an icon file of one picture holds, or null when it holds several pictures, a BMP picture
+ * or is not an icon file. Browsers re-encode favicons into such files with a directory size of 256
+ * whatever the PNG measures, and Chromium sizes the image by the directory and draws nothing.
+ */
+export function pngInsideIco(bytes: Uint8Array): Uint8Array | null {
+    const entries = readIconDirectory(bytes);
+    const entry = entries?.length === 1 ? entries[0] : undefined;
+    const picture = entry ? bytes.subarray(entry.offset, entry.offset + entry.length) : null;
+
+    return picture && PNG_SIGNATURE.every((byte, index) => picture[index] === byte) ? picture : null;
 }
 
 /** The pictures an icon file says it holds, or null if it does not read as one. */

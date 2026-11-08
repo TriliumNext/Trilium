@@ -3,6 +3,12 @@ export type ColorScheme = "system" | "light" | "dark";
 /** Order the color-scheme switcher cycles through on each click. */
 export const COLOR_SCHEME_CYCLE: readonly ColorScheme[] = [ "system", "light", "dark" ];
 
+export const COLOR_SCHEME_ICONS: Record<ColorScheme, string> = {
+    system: "bx bx-brightness-half",
+    light: "bx bx-sun",
+    dark: "bx bx-moon"
+};
+
 /** Maps each theme family and color scheme to the concrete `theme` option value. */
 export const THEME_FAMILY_SCHEMES: Record<string, Record<ColorScheme, string>> = {
     modern: { system: "next", light: "next-light", dark: "next-dark" },

@@ -10,11 +10,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
-// The new layout drops the right pane's own settings; this file's page is the old-layout one.
-vi.mock("../../../services/experimental_features", () => ({
-    isExperimentalFeatureEnabled: () => false
-}));
-
 vi.mock("../../../services/syntax_highlight", () => ({
     ensureMimeTypesForHighlighting: async () => {},
     loadHighlightingTheme: vi.fn()
@@ -85,15 +80,6 @@ describe("the page's shape", () => {
         // A pair of pictures, given a card that stands back behind them.
         expect(host.querySelector(".thumbnail-selector-option-card .radio-with-illustration")).not.toBeNull();
     });
-
-    it("tells what the highlights list is made of apart from where it is shown", () => {
-        open();
-
-        expect(cardHeadings()).toEqual(expect.arrayContaining([
-            "highlights_list.title",
-            "highlights_list.visibility_title"
-        ]));
-    });
 });
 
 describe("the formatting toolbar", () => {
@@ -113,6 +99,35 @@ describe("the formatting toolbar", () => {
         act(() => floating.click());
 
         expect(mocks.saved).toContainEqual([ "textNoteEditorType", "ckeditor-balloon" ]);
+    });
+});
+
+describe("the editor features", () => {
+    it("offers link retrieval and sticky headers after link previews, writing them back", () => {
+        open();
+        const labels = optionLabels();
+        const linkPreviews = labels.indexOf("editorfeatures.auto_link_previews_enabled");
+        expect(linkPreviews).not.toBe(-1);
+        expect(labels.slice(linkPreviews + 1, linkPreviews + 4)).toStrictEqual([
+            "editorfeatures.link_title_retrieval_enabled",
+            "editorfeatures.link_details_retrieval_enabled",
+            "editorfeatures.sticky_table_headers_enabled"
+        ]);
+
+        const switches = [
+            "link-title-retrieval-enabled",
+            "link-details-retrieval-enabled",
+            "sticky-table-headers-enabled"
+        ].map(toggle);
+        expect(switches).not.toContain(null);
+        for (const toggled of switches) {
+            act(() => toggled?.click());
+        }
+        expect(mocks.saved).toEqual(expect.arrayContaining([
+            [ "textNoteLinkTitleRetrievalEnabled", true ],
+            [ "textNoteLinkDetailsRetrievalEnabled", true ],
+            [ "textNoteStickyTableHeadersEnabled", true ]
+        ]));
     });
 });
 

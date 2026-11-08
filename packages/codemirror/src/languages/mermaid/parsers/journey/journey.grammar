@@ -1,0 +1,59 @@
+@top JourneyDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName newlines* (
+    () |
+    subDocument newlines* |
+    subDocument (newlines+ subDocument)+ newlines*
+  )
+}
+
+subDocument {
+  LineComment |
+  Keyword Text |
+  Task
+}
+
+Task {
+  TaskName ":" Score (":" Actor ("," Actor)*)?
+}
+
+Text {
+  text1
+}
+
+TaskName {
+  text2
+}
+
+Score {
+  text2
+}
+
+Actor {
+  text3
+}
+
+DiagramName { kw<"journey"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens keywordTokens from "./tokens.js" { Keyword }
+@external tokens textTokens1 from "./tokens.js" { text1 }
+@external tokens textTokens2 from "./tokens.js" { text2 }
+@external tokens textTokens3 from "./tokens.js" { text3 }
+
+@tokens {
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { @asciiLetter+ }
+
+  @precedence { newlines, spaces }
+}
+
+@external propSource journeyHighlighting from "./highlight.js"

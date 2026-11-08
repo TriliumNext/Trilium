@@ -34,7 +34,7 @@ blanket-stamping the folder:
 
 CKEditor 5 is dual-licensed; the derived files are used under its
 [GPL-2.0-or-later arm](https://ckeditor.com/legal/ckeditor-licensing-options), which combines with
-this repository's AGPL-3.0-only license. GPL-2.0 §2(a) requires derived files to carry notice that
+this repository's AGPL-3.0-or-later license. GPL-2.0 §2(a) requires derived files to carry notice that
 they were changed, which is what the headers on the two derived files do.
 
 Separately, [aarkue/ckeditor5-admonition](https://github.com/aarkue/ckeditor5-admonition) was an

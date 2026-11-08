@@ -9,7 +9,7 @@ import { t } from "./i18n.js";
 import options from "./options.js";
 import server from "./server.js";
 import toastService, { showUnhandledError } from "./toast.js";
-import utils, { isPreAuthScreen } from "./utils.js";
+import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
@@ -24,6 +24,7 @@ let lastAcceptedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastAcceptedEntityChangeSyncId = window.glob.maxEntityChangeSyncIdAtLoad ?? 0;
 let lastProcessedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastPingTs: number;
+let unansweredPingSince: number | null = null;
 let frontendUpdateDataQueue: EntityChange[] = [];
 
 function sendOutgoing(message: object): boolean {
@@ -86,6 +87,8 @@ export async function dispatchMessage(message: WebSocketMessage) {
     // Process the message
     if (messageType === "ping") {
         lastPingTs = Date.now();
+        unansweredPingSince = null;
+        toastService.closePersistent("lost-websocket-connection");
 
         // The backend expires the protected session with a one-shot `reload-frontend` broadcast;
         // if the connection was down at that moment, the client would keep showing decrypted
@@ -95,6 +98,9 @@ export async function dispatchMessage(message: WebSocketMessage) {
         }
     } else if (messageType === "reload-frontend") {
         utils.reloadFrontendApp("received request from backend to reload frontend");
+    } else if (messageType === "reload-froca") {
+        logInfo(`Reloading froca: ${msg.reason}`);
+        await reloadFroca();
     } else if (messageType === "frontend-update") {
         await executeFrontendUpdate(msg.data.entityChanges);
     } else if (messageType === "sync-hash-check-failed") {
@@ -139,6 +145,8 @@ function logRows(entityChanges: EntityChange[]) {
 
 async function executeFrontendUpdate(entityChanges: EntityChange[]) {
     lastPingTs = Date.now();
+    unansweredPingSince = null;
+    toastService.closePersistent("lost-websocket-connection");
 
     if (entityChanges.length > 0) {
         logRows(entityChanges);
@@ -161,20 +169,44 @@ async function executeFrontendUpdate(entityChanges: EntityChange[]) {
 
         sendPing();
 
-        // first wait for all the preceding consumers to finish
-        while (consumeQueuePromise) {
-            await consumeQueuePromise;
-        }
+        await runInUpdateQueue(consumeFrontendUpdateData);
+    }
+}
 
+/**
+ * Rebuilds froca from the backend and has the widgets switch to the new objects. It runs in the
+ * update queue, so entity changes that arrive meanwhile apply on top of the rebuilt cache.
+ */
+export async function reloadFroca() {
+    await runInUpdateQueue(async () => {
         try {
-            // it's my turn, so start it up
-            consumeQueuePromise = consumeFrontendUpdateData();
-
-            await consumeQueuePromise;
-        } finally {
-            // finish and set to null to signal somebody else can pick it up
-            consumeQueuePromise = null;
+            await froca.reloadAll();
+            await appContext.triggerEvent("frocaReloaded", {});
+        } catch (e: unknown) {
+            // A partly rebuilt froca is not safe to keep using.
+            utils.reloadFrontendApp(`rebuilding froca failed: ${getErrorMessage(e)}`);
         }
+    });
+}
+
+/**
+ * Runs `task` once the tasks queued before it finish. `task` must handle its own errors: a
+ * rejection would also reject every task waiting behind it, leaving their changes unapplied.
+ */
+async function runInUpdateQueue(task: () => Promise<void>) {
+    // first wait for all the preceding consumers to finish
+    while (consumeQueuePromise) {
+        await consumeQueuePromise;
+    }
+
+    try {
+        // it's my turn, so start it up
+        consumeQueuePromise = task();
+
+        await consumeQueuePromise;
+    } finally {
+        // finish and set to null to signal somebody else can pick it up
+        consumeQueuePromise = null;
     }
 }
 
@@ -241,8 +273,7 @@ async function consumeFrontendUpdateData() {
 
             if (!glob.isDev && !options.is("debugModeEnabled")) {
                 // if there's an error in updating the frontend, then the easy option to recover is to reload the frontend completely
-
-                utils.reloadFrontendApp();
+                utils.reloadFrontendApp(`processing entity changes failed: ${e.message}`);
             } else {
                 console.log("nonProcessedEntityChanges causing the timeout", nonProcessedEntityChanges);
 
@@ -294,7 +325,10 @@ async function sendPing() {
         return;
     }
 
-    if (Date.now() - lastPingTs > 30000) {
+    const now = Date.now();
+    const isConnectionLost = unansweredPingSince !== null && now - unansweredPingSince > 30000;
+
+    if (isConnectionLost) {
         console.warn(utils.now(), "Lost websocket connection to the backend");
         toastService.showPersistent({
             id: "lost-websocket-connection",
@@ -305,17 +339,27 @@ async function sendPing() {
     }
 
     if (ws.readyState === ws.OPEN) {
-        toastService.closePersistent("lost-websocket-connection");
+        if (!isConnectionLost) {
+            toastService.closePersistent("lost-websocket-connection");
+        }
+        if (unansweredPingSince === null) {
+            unansweredPingSince = now;
+        }
         ws.send(
             JSON.stringify({
                 type: "ping",
                 lastEntityChangeId: lastAcceptedEntityChangeId
             })
         );
-    } else if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
-        console.log(utils.now(), "WS closed or closing, trying to reconnect");
+    } else {
+        if (unansweredPingSince === null) {
+            unansweredPingSince = now;
+        }
+        if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
+            console.log(utils.now(), "WS closed or closing, trying to reconnect");
 
-        ws = connectWebSocket();
+            ws = connectWebSocket();
+        }
     }
 }
 
@@ -367,5 +411,6 @@ export default {
     logError,
     subscribeToMessages,
     waitForMaxKnownEntityChangeId,
+    reloadFroca,
     getMaxKnownEntityChangeSyncId: () => lastAcceptedEntityChangeSyncId
 };

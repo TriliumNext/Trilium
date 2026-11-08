@@ -6,7 +6,6 @@ import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/anytype.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 import useProviderImport from "./useProviderImport.js";
 
@@ -57,7 +56,7 @@ const provider: ImportProvider = {
     id: "anytype",
     helpPage: "83zmPBJRgfnW",
     name: t("anytype_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-anytype",
     description: t("anytype_import.description"),
     Panel: AnytypePanel
 };

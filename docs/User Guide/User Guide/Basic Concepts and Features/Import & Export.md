@@ -4,11 +4,11 @@ To import a note:
 *   The easiest way to import is to simply drag & drop a file or an archive into the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
     *   This will automatically detect some formats such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a>.
     *   _Safe import_ is automatically on to prevent accidental running of foreign scripts.
-*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> → _Import into note_.
+*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Import into note_.
     *   This feature allows for dedicated importers for others apps such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a> or <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a>.
     *   _Safe import_ as well as other options can be configured from the collapsed _Options_ section at the bottom.
 
-To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> there is a _Export note_ option.
+To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> there is a _Export note_ option.
 
 ## Supported formats
 
@@ -37,7 +37,7 @@ During large imports or exports, memory consumption might spike but it will rema
 > For the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>, there are two distinct import mechanisms:
 > 
 > *   A quick import, from the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
-> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a>).
+> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a>).
 > 
 > When dealing with large files (multi-gigabyte), prefer using the import dialog as it has a special mechanism which makes sure that the file is read directly from disk rather than uploaded again.
 
@@ -66,3 +66,10 @@ You can easily move the notes onto the root using the tree's <a class="referenc
 
 > [!TIP]
 > Instead of exporting full ZIPs (including the root note), consider using [backups](../Installation%20%26%20Setup/Backup.md) instead. Backups always contain the entire structure, as well as additional information a ZIP export does not have: maintains note IDs, contains the options/tokens and handle <a class="reference-link" href="Notes/Protected%20Notes.md">Protected Notes</a> better.
+
+## Exporting the User Guide
+
+The in-app User Guide can be exported like any other note: right click one of its pages or chapters in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_, or use <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Export note_.
+
+*   Exporting a chapter with _This note & all descendants_ writes the pictures and files of each page as its attachments. Importing that archive creates an ordinary copy that you can edit, with its pictures and the links between its pages working.
+*   Exporting a single page with _Only this note_ embeds its pictures in the exported file.

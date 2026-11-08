@@ -1,3 +1,5 @@
+import { Mutex } from "@triliumnext/commons";
+
 import Component from "./component.js";
 import SpacedUpdate from "../services/spaced_update.js";
 import server from "../services/server.js";
@@ -6,7 +8,6 @@ import froca from "../services/froca.js";
 import treeService from "../services/tree.js";
 import NoteContext from "./note_context.js";
 import appContext from "./app_context.js";
-import Mutex from "../utils/mutex.js";
 import linkService from "../services/link.js";
 import { partitionPinnedFirst } from "../services/tab_pinning.js";
 import type { EventData, NoteCommandData } from "./app_context.js";
@@ -31,12 +32,19 @@ export interface NoteContextState {
     lastActiveNtxId?: string | null;
 }
 
+/** A `switchToHistoryEntry()` call, and the note context that shows its entry. */
+export interface HistoryEntry {
+    noteContext: NoteContext;
+}
+
 export default class TabManager extends Component {
     public children: NoteContext[];
     public mutex: Mutex;
     public activeNtxId: string | null;
     public recentlyClosedTabs: TabState[];
     public tabsUpdate: SpacedUpdate;
+    /** The current `switchToHistoryEntry()` call, until another note context is activated. */
+    private historyEntry: HistoryEntry | null = null;
 
     constructor() {
         super();
@@ -68,6 +76,22 @@ export default class TabManager extends Component {
 
     get noteContexts(): NoteContext[] {
         return this.children;
+    }
+
+    /** Note contexts outside the tab row, such as the quick edit popup's, which commands can still name by `ntxId`. */
+    private detachedContexts = new Map<string, NoteContext>();
+
+    registerDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId) {
+            this.detachedContexts.set(noteContext.ntxId, noteContext);
+        }
+    }
+
+    /** Removes `noteContext`, unless another context has since been registered under its `ntxId`. */
+    unregisterDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId && this.detachedContexts.get(noteContext.ntxId) === noteContext) {
+            this.detachedContexts.delete(noteContext.ntxId);
+        }
     }
 
     get mainNoteContexts(): NoteContext[] {
@@ -165,14 +189,23 @@ export default class TabManager extends Component {
 
     setCurrentNavigationStateToHash() {
         const calculatedHash = this.calculateHash();
+        const activeNoteContext = this.getActiveContext();
+
+        // Activating another note context is a new navigation, even while the history entry loads.
+        if (this.historyEntry?.noteContext !== activeNoteContext) {
+            this.historyEntry = null;
+        }
 
         // update if it's the first history entry or there has been a change
         if (window.history.length === 0 || calculatedHash !== window.location?.hash) {
             // using pushState instead of directly modifying document.location because it does not trigger hashchange
-            window.history.pushState(null, "", calculatedHash);
+            if (this.historyEntry) {
+                window.history.replaceState(null, "", calculatedHash);
+            } else {
+                window.history.pushState(null, "", calculatedHash);
+            }
         }
 
-        const activeNoteContext = this.getActiveContext();
         this.updateDocumentTitle(activeNoteContext);
 
         this.triggerEvent("activeNoteChanged", {ntxId:activeNoteContext?.ntxId}); // trigger this even in on popstate event
@@ -201,7 +234,8 @@ export default class TabManager extends Component {
     }
 
     getNoteContextById(ntxId: string | null): NoteContext {
-        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId);
+        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId)
+            ?? (ntxId ? this.detachedContexts.get(ntxId) : undefined);
 
         if (!noteContext) {
             throw new Error(`Cannot find noteContext id='${ntxId}'`);
@@ -216,6 +250,15 @@ export default class TabManager extends Component {
 
     getActiveMainContext(): NoteContext | null {
         return this.activeNtxId ? this.getNoteContextById(this.activeNtxId).getMainContext() : null;
+    }
+
+    /** Returns the note context with the given `ntxId`, or the active one when `ntxId` is empty. Returns `null` for an unknown `ntxId`. */
+    getCommandContext(ntxId: string | null | undefined): NoteContext | null {
+        if (!ntxId) {
+            return this.getActiveContext();
+        }
+
+        return this.noteContexts.find((nc) => nc.ntxId === ntxId) ?? this.detachedContexts.get(ntxId) ?? null;
     }
 
     getActiveContextNotePath(): string | null {
@@ -260,6 +303,30 @@ export default class TabManager extends Component {
 
         if (notePath) {
             await noteContext.setNote(notePath, { viewScope });
+        }
+    }
+
+    /**
+     * Shows the history entry the browser went to. While its note context is active, the hash
+     * updates replace the entry instead of pushing one, so the entries after it stay reachable.
+     */
+    async switchToHistoryEntry(
+        ntxId: string | null,
+        notePath: string,
+        viewScope: Record<string, any> = {}
+    ) {
+        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId) ||
+            await this.openEmptyTab();
+        const historyEntry: HistoryEntry = { noteContext };
+        this.historyEntry = historyEntry;
+
+        try {
+            await this.activateNoteContext(noteContext.ntxId);
+            await noteContext.setNote(notePath, { viewScope, historyEntry });
+        } finally {
+            if (this.historyEntry === historyEntry) {
+                this.historyEntry = null;
+            }
         }
     }
 
@@ -409,6 +476,8 @@ export default class TabManager extends Component {
             pinned?: boolean | null;
             /** Where the new tab is placed in the row. Defaults to `"end"`; link/middle-click opens pass `"afterCurrent"`. */
             placement?: TabPlacement | null;
+            /** The `switchToHistoryEntry()` call that opens this tab. */
+            historyEntry?: HistoryEntry | null;
         } = {}
     ): Promise<NoteContext> {
         const activate = !!opts.activate;
@@ -428,11 +497,18 @@ export default class TabManager extends Component {
             await noteContext.setNote(notePath, {
                 // if activate is false, then send normal noteSwitched event
                 triggerSwitchEvent: !activate,
+                // A tab opened in the background leaves the mobile layout on the tab the user is in.
+                keepScreen: !activate,
                 viewScope: viewScope
             });
         }
 
         if (activate && noteContext.notePath) {
+            // The new tab shows the history entry in place of the pinned tab.
+            if (opts.historyEntry) {
+                opts.historyEntry.noteContext = noteContext;
+            }
+
             this.activateNoteContext(noteContext.ntxId, false);
 
             await this.triggerEvent("noteSwitchedAndActivated", {
@@ -508,7 +584,7 @@ export default class TabManager extends Component {
     async removeNoteContext(ntxId: string | null): Promise<boolean> {
         // removing note context is an async process which can take some time, if users presses CTRL-W quickly, two
         // close events could interleave which would then lead to attempting to activate already removed context.
-        return await this.mutex.runExclusively(async (): Promise<boolean> => {
+        return await this.mutex.runExclusive(async (): Promise<boolean> => {
             let noteContextToRemove;
 
             try {
@@ -537,12 +613,6 @@ export default class TabManager extends Component {
 
                     await this.openEmptyTab();
                 }
-            }
-
-            // close dangling autocompletes after closing the tab
-            const $autocompleteEl = $(".aa-input");
-            if ("autocomplete" in $autocompleteEl) {
-                $autocompleteEl.autocomplete("close");
             }
 
             // close dangling tooltips
@@ -835,7 +905,7 @@ export default class TabManager extends Component {
     }
 
     async reopenLastTabCommand() {
-        const closeLastEmptyTab: NoteContext | undefined = await this.mutex.runExclusively(async () => {
+        const closeLastEmptyTab: NoteContext | undefined = await this.mutex.runExclusive(async () => {
             let closeLastEmptyTab
             if (this.recentlyClosedTabs.length === 0) {
                 return closeLastEmptyTab;
@@ -959,6 +1029,16 @@ export default class TabManager extends Component {
     }
 
     async frocaReloadedEvent() {
+        // A rebuild drops the notes the backend no longer has. Collected before the per-context
+        // handlers clear noteId, as in entitiesReloadedEvent().
+        const removedPinnedNtxIds = this.mainNoteContexts
+            .filter((nc) => nc.pinned && nc.noteId && !(nc.noteId in froca.notes))
+            .map((nc) => nc.ntxId);
+
+        for (const ntxId of removedPinnedNtxIds) {
+            await this.setTabPinned(ntxId, false);
+        }
+
         const activeContext = this.getActiveContext();
         if (activeContext) {
             await this.updateDocumentTitle(activeContext);

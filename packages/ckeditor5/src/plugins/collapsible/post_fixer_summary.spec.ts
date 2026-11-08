@@ -46,4 +46,26 @@ describe("summaryInvariantPostFixer", () => {
             "<details><summary>Title</summary><paragraph>Body</paragraph></details>"
         );
     });
+
+    it("demotes a summary moved into a collapsible that already has one", () => {
+        setModelData(model,
+            "<details><summary>A</summary><paragraph>a</paragraph></details>" +
+            "<details><summary>B</summary><paragraph>b</paragraph></details>"
+        );
+
+        model.change(writer => {
+            const target = model.document.getRoot()?.getChild(0);
+            const source = model.document.getRoot()?.getChild(1);
+            const title = source?.is("element") ? source.getChild(0) : null;
+            if (target?.is("element") && title) {
+                writer.move(writer.createRangeOn(title), writer.createPositionAt(target, "end"));
+            }
+        });
+
+        // The receiving block keeps its own title; the source block gets a blank one.
+        expect(getModelData(model, { withoutSelection: true })).toBe(
+            "<details><summary>A</summary><paragraph>a</paragraph><paragraph>B</paragraph>" +
+            "</details><details><summary></summary><paragraph>b</paragraph></details>"
+        );
+    });
 });

@@ -50,7 +50,7 @@ The bottom bar has the following features:
 
 <a class="reference-link" href="../Text.md">Text</a> and <a class="reference-link" href="../Markdown.md">Markdown</a> notes can embed an interactive media player directly in the note content. To do so, include the audio or video file:
 
-*   **Text notes:** in the formatting toolbar, click “**Insert”** → **“Include”.**
+*   **Text notes:** in the formatting toolbar, click _Insert_ → _Include_.
 *   **Markdown notes:** type `/include` press <kbd>Enter</kbd>.
 
 Then select the audio/video file note to be included.
@@ -59,19 +59,63 @@ Then select the audio/video file note to be included.
 
 The following keyboard shortcuts are supported by the media player:
 
-|  |  |
-| --- | --- |
-| <kbd>Space</kbd> | Play/pause |
-| <kbd>Left arrow key</kbd> | Go back by 10s |
-| <kbd>Right arrow key</kbd> | Go forward by 10s |
-| <kbd>Ctrl</kbd> + <kbd>Left arrow key</kbd> | Go back by 1 min |
-| <kbd>Ctrl</kbd> + <kbd>Right arrow key</kbd> | Go right by 1 min |
-| <kbd>Page Up</kbd> | Navigate to the previous media |
-| <kbd>Page Down</kbd> | Navigate to the next media |
-| <kbd>F</kbd> | Toggle full-screen |
-| <kbd>M</kbd> | Mute/unmute |
-| <kbd>Home</kbd> | Go to the beginning of the media |
-| <kbd>End</kbd> | Go to the end of the media |
-| <kbd>Up</kbd> | Increase volume by 5% |
-| <kbd>Down</kbd> | Decrease volume by 5% |
-| <kbd>Alt+F1</kbd> (customizable) | Show this list of keyboard shortcuts on screen. |
+<table>
+    <tbody>
+        <tr>
+            <td><kbd>Space</kbd></td>
+            <td>Play/pause</td>
+        </tr>
+        <tr>
+            <td><kbd>Left arrow key</kbd></td>
+            <td>Go back by 10s</td>
+        </tr>
+        <tr>
+            <td><kbd>Right arrow key</kbd></td>
+            <td>Go forward by 10s</td>
+        </tr>
+        <tr>
+            <td><kbd>Ctrl</kbd> + <kbd>Left arrow key</kbd></td>
+            <td>Go back by 1 min</td>
+        </tr>
+        <tr>
+            <td><kbd>Ctrl</kbd> + <kbd>Right arrow key</kbd></td>
+            <td>Go right by 1 min</td>
+        </tr>
+        <tr>
+            <td><kbd>Page Up</kbd></td>
+            <td>Navigate to the previous media</td>
+        </tr>
+        <tr>
+            <td><kbd>Page Down</kbd></td>
+            <td>Navigate to the next media</td>
+        </tr>
+        <tr>
+            <td><kbd>F</kbd></td>
+            <td>Toggle full-screen</td>
+        </tr>
+        <tr>
+            <td><kbd>M</kbd></td>
+            <td>Mute/unmute</td>
+        </tr>
+        <tr>
+            <td><kbd>Home</kbd></td>
+            <td>Go to the beginning of the media</td>
+        </tr>
+        <tr>
+            <td><kbd>End</kbd></td>
+            <td>Go to the end of the media</td>
+        </tr>
+        <tr>
+            <td><kbd>Up</kbd></td>
+            <td>Increase volume by 5%</td>
+        </tr>
+        <tr>
+            <td><kbd>Down</kbd></td>
+            <td>Decrease volume by 5%</td>
+        </tr>
+        <tr>
+            <td><kbd>Alt+F1</kbd> (customizable)</td>
+            <td>Show this list of keyboard shortcuts on screen.</td>
+        </tr>
+    </tbody>
+</table>

@@ -148,7 +148,8 @@ const OIDC_ROUTES = {
 function generateOAuthConfig(
     endSessionSupported = false,
     issuerBaseUrl = config.MultiFactorAuthentication.oauthIssuerBaseUrl,
-    idTokenSigningAlg = resolveIdTokenSigningAlg(null)
+    idTokenSigningAlg = resolveIdTokenSigningAlg(null),
+    sessionStore?: OidcSessionStore
 ) {
     const logoutParams = {
     };
@@ -182,10 +183,14 @@ function generateOAuthConfig(
         // Both bounds are set to cookieMaxAge (seconds; default 21d): rollingDuration is required when
         // rolling: true, and keeping absoluteDuration as a hard cap follows OWASP / Auth0 guidance that every
         // session should have an upper bound regardless of activity.
+        // The tokens live in Trilium's `sessions` table, so the appSession cookie carries only the
+        // session ID. Inline, the encrypted tokens push the callback's response headers past the
+        // 4 KB default `proxy_buffer_size` of nginx.
         session: {
             rolling: true,
             rollingDuration: config.Session.cookieMaxAge,
             absoluteDuration: config.Session.cookieMaxAge,
+            store: sessionStore
         },
         routes: { ...OIDC_ROUTES },
         // Only enable RP-Initiated Logout when the provider actually advertises an end_session_endpoint
@@ -278,6 +283,8 @@ function generateOAuthConfig(
 }
 
 type AuthBuilder = typeof import("express-openid-connect").auth;
+type OidcSessionConfig = NonNullable<NonNullable<Parameters<AuthBuilder>[0]>["session"]>;
+type OidcSessionStore = NonNullable<OidcSessionConfig["store"]>;
 
 interface ReactiveOidcDeps {
     /** Whether OAuth is currently configured and selected as the sign-in method. Re-checked per request. */
@@ -285,7 +292,14 @@ interface ReactiveOidcDeps {
     /** Discovery probe supplying the issuer identifier and RP-Initiated Logout support. */
     probeDiscovery: () => Promise<DiscoveryProbe>;
     /** Builds the express-openid-connect config for the current provider settings. */
-    generateOAuthConfig: (endSessionSupported: boolean, issuerBaseUrl: string, idTokenSigningAlg: string) => Parameters<AuthBuilder>[0];
+    generateOAuthConfig: (
+        endSessionSupported: boolean,
+        issuerBaseUrl: string,
+        idTokenSigningAlg: string,
+        sessionStore: OidcSessionStore
+    ) => Parameters<AuthBuilder>[0];
+    /** Loads the server-side store that holds the OIDC session. */
+    loadSessionStore: () => Promise<OidcSessionStore>;
     /** The express-openid-connect `auth()` factory (injectable so the middleware is unit-testable). */
     buildAuth: AuthBuilder;
 }
@@ -309,6 +323,7 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
         isConfigured = isOpenIDConfigured,
         probeDiscovery: probe = probeDiscovery,
         generateOAuthConfig: buildOAuthConfig = generateOAuthConfig,
+        loadSessionStore = loadSqliteSessionStore,
         buildAuth
     } = deps;
 
@@ -334,7 +349,12 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
                 const oidc = await import("express-openid-connect");
                 const authFactory = buildAuth ?? (oidc.default ?? oidc).auth;
                 const { endSessionSupported, issuerBaseUrl, idTokenSigningAlg, metadataAvailable } = await probe();
-                const built = authFactory(buildOAuthConfig(endSessionSupported, issuerBaseUrl, idTokenSigningAlg));
+                const sessionStore = await loadSessionStore();
+                const built = authFactory(
+                    buildOAuthConfig(
+                        endSessionSupported, issuerBaseUrl, idTokenSigningAlg, sessionStore
+                    )
+                );
 
                 // Only commit to the handler when the probe actually read the provider's document.
                 //
@@ -391,6 +411,18 @@ export function createReactiveOidcMiddleware(deps: Partial<ReactiveOidcDeps> = {
             return failRoundTrip(req, res, next, error);
         });
     };
+}
+
+/**
+ * Loads the store behind `trilium.sid`, so the OIDC session shares its table, its expiry cleanup
+ * and the revocation on password change. Imported lazily because `session_parser.ts` writes the
+ * session secret on load.
+ */
+async function loadSqliteSessionStore(): Promise<OidcSessionStore> {
+    const { sessionStore } = await import("../routes/session_parser.js");
+    // Typed for express-session's data, but it stores any JSON and reads only `cookie.expires`,
+    // which the OIDC payload carries too.
+    return sessionStore as unknown as OidcSessionStore;
 }
 
 /**

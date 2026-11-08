@@ -21,7 +21,7 @@ If you want to start again and:
 *   Use a different knowledge base synced from a server or desktop application
 *   Restore a backup
 
-You can navigate to **Settings → Database** and click the **Start over** button. You'll be prompted to restart the application, with the option to back up your current database before proceeding.
+You can navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Database_ and click the _Start over_ button. You'll be prompted to restart the application, with the option to back up your current database before proceeding.
 
 > [!IMPORTANT]
 > For the web client, Trilium cannot restart automatically. You'll need to manually restart the server/container and then reload the web application.

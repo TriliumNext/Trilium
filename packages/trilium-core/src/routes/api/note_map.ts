@@ -6,12 +6,16 @@ import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
 
-interface TreeLink {
+export interface TreeLink {
     sourceNoteId: string;
     targetNoteId: string;
 }
 
-function buildDescendantCountMap(noteIdsToCount: string[]) {
+/**
+ * Counts the descendants of each note, of which only those `isCounted` accepts: a note it refuses
+ * is left out together with everything under it.
+ */
+function buildDescendantCountMap(noteIdsToCount: string[], isCounted: (noteId: string) => boolean) {
     /* v8 ignore next 3 -- defensive guard: callers always pass a real array (noteIdsArray / Array.from(noteIds)) */
     if (!Array.isArray(noteIdsToCount)) {
         throw new Error("noteIdsToCount: type error");
@@ -28,12 +32,14 @@ function buildDescendantCountMap(noteIdsToCount: string[]) {
             }
 
             const hiddenImageNoteIds = note.getRelations("imageLink").map((rel) => rel.value);
-            const childNoteIds = note.children.map((child) => child.noteId);
-            const nonHiddenNoteIds = childNoteIds.filter((childNoteId) => !hiddenImageNoteIds.includes(childNoteId));
+            const children = note.children.filter((child) => isCounted(child.noteId));
+            const nonHiddenNoteIds = children
+                .map((child) => child.noteId)
+                .filter((childNoteId) => !hiddenImageNoteIds.includes(childNoteId));
 
             noteIdToCountMap[noteId] = nonHiddenNoteIds.length;
 
-            for (const child of note.children) {
+            for (const child of children) {
                 noteIdToCountMap[noteId] += getCount(child.noteId);
             }
         }
@@ -99,7 +105,22 @@ function getNeighbors(note: BNote, depth: number): string[] {
 }
 
 function getLinkMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    const toNames = (data: unknown) => (data instanceof Array ? data.map(String) : []);
+    return buildLinkMap(becca.getNoteOrThrow(req.params.noteId), {
+        excludeRelations: toNames(req.body.excludeRelations),
+        includeRelations: toNames(req.body.includeRelations)
+    });
+}
+
+/**
+ * Returns the notes of the link map of `mapRootNote` (its subtree, or a search note's results, and
+ * the notes within three relations of it) and the relations between them, which `filters` narrow.
+ */
+export function buildLinkMap(
+    mapRootNote: BNote,
+    filters: { excludeRelations: string[]; includeRelations: string[] },
+    isCounted: (noteId: string) => boolean = () => true
+) {
 
     // if the map root itself has "excludeFromNoteMap" attribute (journal typically) then there wouldn't be anything
     // to display, so we'll just ignore it
@@ -111,10 +132,8 @@ function getLinkMap(req: Request<{ noteId: string }>) {
     const includeArchived = mapRootNote.isArchived;
     let unfilteredNotes;
 
-    const toSet = (data: unknown) => new Set<string>(data instanceof Array ? data : []);
-
-    const excludeRelations = toSet(req.body.excludeRelations);
-    const includeRelations = toSet(req.body.includeRelations);
+    const excludeRelations = new Set(filters.excludeRelations);
+    const includeRelations = new Set(filters.includeRelations);
 
     if (mapRootNote.type === "search") {
         // for search notes, we want to consider the direct search results only without the descendants
@@ -176,13 +195,17 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 
     return {
         notes,
-        noteIdToDescendantCountMap: buildDescendantCountMap(noteIdsArray),
+        noteIdToDescendantCountMap: buildDescendantCountMap(noteIdsArray, isCounted),
         links
     };
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    return buildTreeMap(becca.getNoteOrThrow(req.params.noteId));
+}
+
+/** Returns the notes of the subtree of `mapRootNote` and the branches between them. */
+export function buildTreeMap(mapRootNote: BNote, isCounted: (noteId: string) => boolean = () => true) {
     // if the map root itself has "excludeFromNoteMap" (journal typically) then there wouldn't be anything to display,
     // so we'll just ignore it
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");
@@ -226,7 +249,7 @@ function getTreeMap(req: Request<{ noteId: string }>) {
         });
     }
 
-    const noteIdToDescendantCountMap = buildDescendantCountMap(Array.from(noteIds));
+    const noteIdToDescendantCountMap = buildDescendantCountMap(Array.from(noteIds), isCounted);
 
     updateDescendantCountMapForSearch(noteIdToDescendantCountMap, subtree.relationships);
 

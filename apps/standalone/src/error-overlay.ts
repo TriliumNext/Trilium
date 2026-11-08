@@ -31,6 +31,10 @@ export function showErrorOverlay(title: string, message: string, detail?: string
     }
     shown = true;
 
+    if (isModuleLoadFailure(message) && reloadOnce()) {
+        return;
+    }
+
     // The startup splash sits above everything and would cover the overlay.
     document.getElementById("splash")?.remove();
 
@@ -75,6 +79,38 @@ export function showErrorOverlay(title: string, message: string, detail?: string
     card.append(reload);
     overlay.append(card);
     document.body.append(overlay);
+}
+
+/**
+ * True for the message an engine gives when a script module could not be fetched, which during
+ * startup is usually a connection that dropped and works again on the next try.
+ */
+export function isModuleLoadFailure(message: string) {
+    return message.includes("Importing a module script failed")
+        || message.includes("Failed to fetch dynamically imported module")
+        || message.includes("error loading dynamically imported module");
+}
+
+const RELOAD_MARKER_KEY = "trilium-module-failure-reload";
+const RELOAD_INTERVAL_MS = 60_000;
+
+/**
+ * Reloads the page unless it already reloaded for the same reason in the last minute, so a
+ * connection that stays down ends on the overlay rather than in a loop. Returns whether it reloaded.
+ */
+function reloadOnce() {
+    try {
+        const lastReload = Number(sessionStorage.getItem(RELOAD_MARKER_KEY));
+        if (Date.now() - lastReload < RELOAD_INTERVAL_MS) {
+            return false;
+        }
+        sessionStorage.setItem(RELOAD_MARKER_KEY, String(Date.now()));
+    } catch {
+        return false;
+    }
+
+    location.reload();
+    return true;
 }
 
 const WARNING_SVG = `

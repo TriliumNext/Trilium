@@ -67,15 +67,7 @@ class FAttribute {
     }
 
     get isAutoLink() {
-        if (this.type === "relation") {
-            return ["internalLink", "imageLink", "relationMapLink", "includeNoteLink"].includes(this.name);
-        }
-
-        if (this.type === "label") {
-            return this.name === "internalBookmark";
-        }
-
-        return false;
+        return isAutoLinkAttribute(this.type, this.name);
     }
 
     get toString() {
@@ -110,6 +102,14 @@ export const DEFINITION_PREFIXES = [ "label:", "relation:" ];
  */
 export function isDefinitionName(name: string) {
     return DEFINITION_PREFIXES.some((prefix) => name.startsWith(prefix) && name.length > prefix.length);
+}
+
+/** Whether an attribute is one Trilium maintains from a note's links rather than one the user set. */
+export function isAutoLinkAttribute(type: string, name: string) {
+    if (type === "relation") {
+        return [ "internalLink", "imageLink", "relationMapLink", "includeNoteLink" ].includes(name);
+    }
+    return type === "label" && name === "internalBookmark";
 }
 
 export default FAttribute;

@@ -7,6 +7,7 @@ import { getSql } from "../services/sql/index.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
 import beccaLoader, { load, reload } from "./becca_loader.js";
+import BAttribute from "./entities/battribute.js";
 import BNote from "./entities/bnote.js";
 
 let counter = 0;
@@ -135,6 +136,33 @@ describe("becca_loader", () => {
 
             expect(Object.keys(becca.attributes).length).toBe(attributesBefore);
         });
+
+        it("attributeDeleted removes an attribute from its index bucket without rebuilding it", () => {
+            const makeLabel = (attributeId: string, noteId: string) => new BAttribute({
+                attributeId, noteId, type: "label", name: "loaderSharedLabel",
+                value: "", isInheritable: false, position: 0
+            });
+            const deleteAttribute = (attribute: BAttribute) => eventService.emit(
+                eventService.ENTITY_DELETED,
+                { entityName: "attributes", entityId: attribute.attributeId, entity: attribute }
+            );
+
+            const first = makeLabel("loaderShared1", "loaderSharedNote1");
+            const second = makeLabel("loaderShared2", "loaderSharedNote2");
+            const third = makeLabel("loaderShared3", "loaderSharedNote1");
+            const bucket = becca.attributeIndex["label-loadersharedlabel"];
+
+            deleteAttribute(second);
+
+            // Rebuilding the bucket per deletion makes deleting n same-named attributes O(n²).
+            expect(becca.attributeIndex["label-loadersharedlabel"]).toBe(bucket);
+            expect(becca.findAttributes("label", "loaderSharedLabel")).toEqual([ first, third ]);
+            expect(becca.getNote("loaderSharedNote2")).toBeNull();
+
+            deleteAttribute(first);
+            deleteAttribute(third);
+            expect(becca.findAttributes("label", "loaderSharedLabel")).toEqual([]);
+        });
     });
 
     describe("ENTER_PROTECTED_SESSION listener", () => {
@@ -227,21 +255,22 @@ describe("becca_loader", () => {
     });
 
     describe("reload()", () => {
-        it("reloads becca and notifies the frontend with the supplied reason", () => {
-            const spy = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
+        it("reloads becca and has the clients refresh froca with the supplied reason", () => {
+            const refresh = vi.spyOn(ws, "reloadFroca").mockImplementation(() => {});
+            const fullReload = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
 
             getContext().init(() => reload("custom reason"));
 
             expect(becca.loaded).toBe(true);
-            expect(spy).toHaveBeenCalledWith("custom reason");
+            expect(refresh).toHaveBeenCalledWith("custom reason");
+            expect(fullReload).not.toHaveBeenCalled();
         });
 
         it("falls back to a default reason when none is given", () => {
-            const spy = vi.spyOn(ws, "reloadFrontend").mockImplementation(() => {});
+            const spy = vi.spyOn(ws, "reloadFroca").mockImplementation(() => {});
 
             getContext().init(() => reload(""));
 
-            // The empty reason triggers the `reason || "becca reloaded"` fallback.
             expect(spy).toHaveBeenCalledWith("becca reloaded");
         });
     });

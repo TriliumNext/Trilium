@@ -1,0 +1,121 @@
+# Wardley map
+
+wardley-beta
+
+==>
+
+WardleyDiagram(DiagramName)
+
+# Trilium's sample
+
+wardley-beta
+    title Tea Shop
+
+    anchor Customers [0.95, 0.63]
+    anchor Business [0.95, 0.27]
+
+    component Cup of Tea [0.79, 0.61]
+    component Tea [0.63, 0.81]
+
+    Customers -> Cup of Tea
+    Cup of Tea -> Tea
+
+==>
+
+WardleyDiagram(DiagramName,Title(Keyword,TitleText),Anchor(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Anchor(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Link(Name,Arrow,Name),Link(Name,Arrow,Name))
+
+# Size and evolution stages
+
+wardley-beta
+  size [800, 600]
+  evolution Genesis -> Custom@0.3 -> Product / Rental -> Commodity
+
+==>
+
+WardleyDiagram(DiagramName,Size(Keyword,Coordinates("[",Number,",",Number,"]")),Evolution(Keyword,Stage(Name),Arrow,Stage(Name,"@",Number),Arrow,Stage(Name,"/",Name),Arrow,Stage(Name)))
+
+# Component label, decorator and inertia
+
+wardley-beta
+  component Tea [0.63, 0.81] label [-10, 5] (build) inertia
+  component Pot [0.6, 0.8] (inertia)
+
+==>
+
+WardleyDiagram(DiagramName,Component(Keyword,Name,Coordinates("[",Number,",",Number,"]"),LabelOffset(Keyword,Coordinates("[",Number,",",Number,"]")),Decorator("(",Strategy,")"),Keyword),Component(Keyword,Name,Coordinates("[",Number,",",Number,"]"),"(",Keyword,")"))
+
+# Keywords inside names
+
+wardley-beta
+  component builder [0.5, 0.5]
+  component size_2 [0.5, 0.5]
+  component Tea(hot) [0.5, 0.5]
+
+==>
+
+WardleyDiagram(DiagramName,Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")))
+
+# Link ports, arrows and labels
+
+wardley-beta
+  A +> -.-> B +< ; uses it
+  A +'limits'> B
+  evolve A 0.8
+
+==>
+
+WardleyDiagram(DiagramName,Link(Name,Port,Arrow,Name,Port,LinkLabel),Link(Name,Arrow,Name),Evolve(Keyword,Name,Number))
+
+# Pipeline
+
+wardley-beta
+  pipeline Kettle {
+    component Electric [0.4]
+    component Gas [0.6] label [5, 5]
+  }
+
+==>
+
+WardleyDiagram(DiagramName,Pipeline(Keyword,Name,"{",PipelineComponent(Keyword,Name,Coordinates("[",Number,"]")),PipelineComponent(Keyword,Name,Coordinates("[",Number,"]"),LabelOffset(Keyword,Coordinates("[",Number,",",Number,"]"))),"}"))
+
+# Notes, annotations and accelerators
+
+wardley-beta
+  note "A note" [0.5, 0.5]
+  annotations [0.1, 0.9]
+  annotation 1, [0.2, 0.3] "First"
+  accelerator Faster [0.5, 0.5]
+  deaccelerator Slower [0.4, 0.4] %% a comment
+
+==>
+
+WardleyDiagram(DiagramName,Note(Keyword,String,Coordinates("[",Number,",",Number,"]")),Annotations(Keyword,Coordinates("[",Number,",",Number,"]")),Annotation(Keyword,Number,",",Coordinates("[",Number,",",Number,"]"),String),Accelerator(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Deaccelerator(Keyword,Name,Coordinates("[",Number,",",Number,"]")),LineComment)
+
+# Names on separate lines (invalid, parses as a link)
+
+wardley-beta
+  A
+  B
+
+==>
+
+WardleyDiagram(DiagramName,Link(Name,Name))
+
+# Ampersand starting a word (invalid)
+
+wardley-beta
+  component Tea & Co [0.5, 0.5]
+
+==>
+
+WardleyDiagram(DiagramName,Component(Keyword,Name,⚠,⚠,Coordinates("[",Number,",",Number,"]")))
+
+# Hyphenated name before an arrow
+
+wardley-beta
+  component Tea-pot [0.5, 0.5]
+  Tea-pot->B
+
+==>
+
+WardleyDiagram(DiagramName,Component(Keyword,Name,Coordinates("[",Number,",",Number,"]")),Link(Name,Arrow,Name))

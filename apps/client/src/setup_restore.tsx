@@ -15,6 +15,7 @@ import DatabaseFileBadges from "./widgets/react/DatabaseFileBadges";
 import FormGroup from "./widgets/react/FormGroup";
 import FormTextBox from "./widgets/react/FormTextBox";
 import Icon from "./widgets/react/Icon";
+import ProgressBar from "./widgets/react/ProgressBar";
 import SetupPage from "./widgets/react/SetupPage";
 import SlidePages from "./widgets/react/SlidePages";
 
@@ -466,7 +467,7 @@ function UploadProgress({ upload }: { upload: UploadState }) {
                     <Icon icon="bx bx-loader-circle bx-spin" /> {t("setup.restore-uploading")}
                 </div>
 
-                <progress value={upload.sentBytes} max={upload.totalBytes} />
+                <ProgressBar value={upload.sentBytes} max={upload.totalBytes} />
 
                 <div class="restore-progress-detail">
                     <span>
@@ -611,7 +612,7 @@ function RestoreProgress({ reported, onRestored, onFailed }: {
                 rather than an empty bar that never moves. */}
             {shownFraction !== null && (
                 <div class="restore-stage-progress">
-                    <progress value={shownFraction} max={1} />
+                    <ProgressBar value={shownFraction} max={1} />
                     <span>{Math.floor(shownFraction * 100)}%</span>
                 </div>
             )}

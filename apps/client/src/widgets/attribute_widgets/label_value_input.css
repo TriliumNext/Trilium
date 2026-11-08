@@ -99,3 +99,14 @@ body[dir=rtl] .label-select-combobox.form-control:focus {
 .input-group:has(> .label-color-picker) {
     width: fit-content;
 }
+
+/* One class, so the next theme's `.input-group .input-group-text` overrides it. */
+.open-external-link-button {
+    cursor: pointer;
+}
+
+/* Outranks Bootstrap's `.input-group-text`. */
+.input-group-text.open-external-link-button {
+    font-size: 1.3em;
+    padding-inline: 5px;
+}

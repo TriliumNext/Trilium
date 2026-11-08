@@ -5,41 +5,30 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
+import type NoteContext from "../../components/note_context";
+import type TabManager from "../../components/tab_manager";
+import keyboard_actions from "../../services/keyboard_actions";
 import { buildNote } from "../../test/easy-froca";
-import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useNoteLabelBoolean, useStaticTooltip, useTooltip } from "./hooks";
-
-/**
- * mark.js delegating to the real implementation, so marking still works, while recording the calls
- * `unmark()` receives — its DOM effect cannot be observed under happy-dom, where it removes nothing.
- */
-const markSpies = vi.hoisted(() => ({ unmark: vi.fn() }));
-
-vi.mock("mark.js", async (importOriginal) => {
-    const actual = await importOriginal<{ default: new (ctx: unknown) => Record<string, (...args: unknown[]) => unknown> }>();
-
-    return {
-        default: class {
-            private inner: Record<string, (...args: unknown[]) => unknown>;
-
-            constructor(ctx: unknown) {
-                this.inner = new actual.default(ctx);
-            }
-
-            mark(...args: unknown[]) {
-                return this.inner.mark(...args);
-            }
-
-            markRegExp(...args: unknown[]) {
-                return this.inner.markRegExp(...args);
-            }
-
-            unmark(...args: unknown[]) {
-                markSpies.unmark(...args);
-                return this.inner.unmark(...args);
-            }
-        }
-    };
-});
+import { highlightedTexts } from "../../test/highlights";
+import { setupHoldContextMenu } from "../widget_utils";
+import {
+    type DelayedVisibilityPhase,
+    useBodyClass,
+    useDelayedVisibility,
+    useDetachedNoteContext,
+    useDocumentFocus,
+    useFindShortcut,
+    useFocusWithin,
+    useHoldContextMenu,
+    useImperativeSearchHighlighlighting,
+    useMediaQuery,
+    useNoteLabelBoolean,
+    useParentClass,
+    useStaticTooltip,
+    useTooltip,
+    useWhenShown
+} from "./hooks";
 
 let currentPhase: DelayedVisibilityPhase | undefined;
 
@@ -116,6 +105,241 @@ describe("useDelayedVisibility", () => {
         await show(false);
         await advance(0);
         expect(currentPhase).toBe("hidden");
+    });
+});
+
+describe("useDetachedNoteContext", () => {
+    it("registers the context while it is in use, and unregisters it once replaced or unmounted", () => {
+        const tabManager = appContext.tabManager;
+        const registerDetachedContext = vi.fn();
+        const unregisterDetachedContext = vi.fn();
+        appContext.tabManager = { registerDetachedContext, unregisterDetachedContext } as unknown as TabManager;
+        try {
+            const first = { ntxId: "_tree-popup" } as NoteContext;
+            const second = { ntxId: "_tree-popup" } as NoteContext;
+            function Host({ noteContext }: { noteContext: NoteContext }) {
+                useDetachedNoteContext(noteContext);
+                return null;
+            }
+            const container = document.createElement("div");
+
+            act(() => render(<Host noteContext={first} />, container));
+            expect(registerDetachedContext).toHaveBeenLastCalledWith(first);
+
+            act(() => render(<Host noteContext={second} />, container));
+            expect(unregisterDetachedContext).toHaveBeenLastCalledWith(first);
+            expect(registerDetachedContext).toHaveBeenLastCalledWith(second);
+
+            act(() => render(null, container));
+            expect(unregisterDetachedContext).toHaveBeenLastCalledWith(second);
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+    });
+});
+
+describe("useFocusWithin", () => {
+    let container: HTMLElement;
+    let isFocusWithin: boolean | undefined;
+
+    function FocusProbe() {
+        const ref = useRef<HTMLDivElement>(null);
+        isFocusWithin = useFocusWithin(ref);
+        return (
+            <div ref={ref}>
+                <button />
+                <iframe />
+            </div>
+        );
+    }
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        isFocusWithin = undefined;
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(<FocusProbe />, container));
+    });
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+        vi.useRealTimers();
+    });
+
+    /** Fires `type` at the window, and runs what the hook defers until the focus settles. */
+    async function fireOnWindow(type: "blur" | "focus") {
+        await act(async () => {
+            window.dispatchEvent(new FocusEvent(type));
+            await vi.runAllTimersAsync();
+        });
+    }
+
+    it("follows the focus into the element and out of it, but not out of the window", async () => {
+        const inside = container.querySelector("button");
+        const outside = document.createElement("button");
+        document.body.appendChild(outside);
+        expect(isFocusWithin).toBe(false);
+
+        act(() => inside?.focus());
+        expect(isFocusWithin).toBe(true);
+
+        // Switching to another window leaves the document's active element where it was.
+        await fireOnWindow("blur");
+        expect(isFocusWithin).toBe(true);
+
+        await act(async () => {
+            outside.focus();
+            await vi.runAllTimersAsync();
+        });
+        expect(isFocusWithin).toBe(false);
+        outside.remove();
+    });
+
+    it("counts the focus in a frame inside, which only the window reports", async () => {
+        const activeElement = vi.spyOn(document, "activeElement", "get");
+
+        activeElement.mockReturnValue(container.querySelector("iframe"));
+        await fireOnWindow("blur");
+        expect(isFocusWithin).toBe(true);
+
+        activeElement.mockReturnValue(document.body);
+        await fireOnWindow("focus");
+        expect(isFocusWithin).toBe(false);
+
+        activeElement.mockRestore();
+    });
+
+    it("follows a frame inside that the editor reports focused or blurred", async () => {
+        const frame = container.querySelector("iframe");
+        const otherFrame = document.createElement("iframe");
+        document.body.appendChild(otherFrame);
+        const activeElement = vi.spyOn(document, "activeElement", "get");
+        /** Fires `type` at the frame, as `fireFrameFocusEvents()` does, with no window event. */
+        async function fireOnFrame(type: "blur" | "focus", active: Element | null) {
+            activeElement.mockReturnValue(active);
+            await act(async () => {
+                frame?.dispatchEvent(new FocusEvent(type));
+                await vi.runAllTimersAsync();
+            });
+        }
+
+        expect(frame).not.toBeNull();
+        await fireOnFrame("focus", frame);
+        expect(isFocusWithin).toBe(true);
+
+        // The focus moves on to a frame outside.
+        await fireOnFrame("blur", otherFrame);
+        expect(isFocusWithin).toBe(false);
+
+        activeElement.mockRestore();
+        otherFrame.remove();
+    });
+});
+
+describe("useParentClass", () => {
+    function Child({ enabled }: { enabled: boolean }) {
+        const ref = useRef<HTMLDivElement>(null);
+        useParentClass(ref, "child-is-tall", enabled);
+        return <div ref={ref} />;
+    }
+
+    it("marks the parent while enabled, and unmarks it when disabled or unmounted", () => {
+        const parent = document.createElement("div");
+        document.body.appendChild(parent);
+
+        act(() => render(<Child enabled={true} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(true);
+
+        act(() => render(<Child enabled={false} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(false);
+
+        act(() => render(<Child enabled={true} />, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(true);
+        act(() => render(null, parent));
+        expect(parent.classList.contains("child-is-tall")).toBe(false);
+        parent.remove();
+    });
+});
+
+describe("useBodyClass", () => {
+    function Marker({ enabled }: { enabled: boolean }) {
+        useBodyClass("probe-open", enabled);
+        return null;
+    }
+
+    it("keeps the class while any component enables it", () => {
+        const first = document.createElement("div");
+        const second = document.createElement("div");
+        act(() => render(<Marker enabled={true} />, first));
+        act(() => render(<Marker enabled={true} />, second));
+        expect(document.body.classList.contains("probe-open")).toBe(true);
+
+        act(() => render(<Marker enabled={false} />, first));
+        expect(document.body.classList.contains("probe-open")).toBe(true);
+
+        act(() => render(null, second));
+        expect(document.body.classList.contains("probe-open")).toBe(false);
+        act(() => render(null, first));
+    });
+});
+
+describe("useDocumentFocus", () => {
+    let host: HTMLElement;
+    let root: HTMLElement;
+    let isFocused: boolean | undefined;
+
+    function Probe({ selector }: { selector?: string }) {
+        isFocused = useDocumentFocus(selector);
+        return null;
+    }
+
+    beforeEach(() => {
+        host = document.createElement("div");
+        host.innerHTML = `
+            <div class="note-split type-text"><input class="in-text"></div>
+            <div class="note-split type-code"><input class="in-code"></div>`;
+        root = document.createElement("div");
+        document.body.append(host, root);
+    });
+
+    afterEach(() => {
+        act(() => render(null, root));
+        host.remove();
+        root.remove();
+    });
+
+    function inputs() {
+        const inText = host.querySelector<HTMLInputElement>(".in-text");
+        const inCode = host.querySelector<HTMLInputElement>(".in-code");
+        expect(inText && inCode).toBeTruthy();
+        return { inText, inCode };
+    }
+
+    it("follows the focus into an element that matches the selector and out of it", () => {
+        const { inText, inCode } = inputs();
+        act(() => render(<Probe selector=".note-split.type-text" />, root));
+        expect(isFocused).toBe(false);
+
+        act(() => inText?.focus());
+        expect(isFocused).toBe(true);
+
+        act(() => inCode?.focus());
+        expect(isFocused).toBe(false);
+
+        act(() => inText?.focus());
+        act(() => inText?.blur());
+        expect(isFocused).toBe(false);
+    });
+
+    it("follows any focus without a selector, including one held before it mounts", () => {
+        const { inCode } = inputs();
+        act(() => inCode?.focus());
+        act(() => render(<Probe />, root));
+        expect(isFocused).toBe(true);
+
+        act(() => inCode?.blur());
+        expect(isFocused).toBe(false);
     });
 });
 
@@ -272,6 +496,41 @@ describe("useStaticTooltip", () => {
         expect(span && Tooltip.getInstance(span), "instance untouched by the observer").not.toBeNull();
     });
 
+    it("hides a delegated tooltip once scrolling moves its child out of view", async () => {
+        const removeListener = vi.spyOn(document, "removeEventListener");
+        await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
+
+        const span = container.querySelector("span");
+        expect(span).not.toBeNull();
+        act(() => {
+            if (span) {
+                Tooltip.getOrCreateInstance(span, {
+                    animation: false,
+                    title() {
+                        return this.getAttribute("title") || "";
+                    }
+                }).show();
+            }
+        });
+        expect(document.querySelector(".tooltip"), "shown").not.toBeNull();
+
+        // The test container is the scroller, its view 100px tall; the span is 20px tall.
+        container.getBoundingClientRect = () => new DOMRect(0, 0, 300, 100);
+        const scrollSpanTo = (top: number) => act(() => {
+            if (span) span.getBoundingClientRect = () => new DOMRect(0, top, 50, 20);
+            container.dispatchEvent(new Event("scroll"));
+        });
+
+        scrollSpanTo(40);
+        expect(document.querySelector(".tooltip"), "kept while in view").not.toBeNull();
+
+        scrollSpanTo(90);
+        expect(document.querySelector(".tooltip"), "hidden once partly out of view").toBeNull();
+        expect(removeListener.mock.calls.some(([ type ]) => type === "scroll"),
+            "stops listening once nothing is shown").toBe(true);
+        removeListener.mockRestore();
+    });
+
     it("leaves a shown delegated tooltip standing when the mutation removed something else", async () => {
         await act(async () => render(<DelegatedTooltipHarness generation={1} />, container));
 
@@ -406,7 +665,7 @@ describe("useImperativeSearchHighlighlighting", () => {
         return null;
     }
 
-    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    /** Mounts a fresh hook instance and applies it to `target`. */
     function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
         target.innerHTML = html;
         render(null, container);
@@ -419,13 +678,13 @@ describe("useImperativeSearchHighlighlighting", () => {
     }
 
     function markedTexts(el: HTMLElement) {
-        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+        return highlightedTexts("search-match", el);
     }
 
     /**
      * Re-renders the *same* hook instance with new tokens, unlike {@link highlight}, which remounts.
-     * Keeping the instance alive is the point: its `Mark` has to survive into the next call for the
-     * clear-on-empty behaviour to be observable at all.
+     * Keeping the instance alive is the point: its highlights have to survive into the next call
+     * for the clear-on-empty behaviour to be observable at all.
      */
     async function remount(tokens: (string | HighlightedTokenInfo)[] | null | undefined) {
         await act(async () => {
@@ -446,6 +705,36 @@ describe("useImperativeSearchHighlighlighting", () => {
         expect(markedTexts(el)).toEqual(["ktorý"]);
     });
 
+    it("wraps an unaccented match when searching an accented token", () => {
+        const el = highlight(["ktorý"], "<p>Aky ktory</p>");
+        expect(markedTexts(el)).toEqual(["ktory"]);
+    });
+
+    it("keeps a decomposed accent inside the match it belongs to", () => {
+        const el = highlight(["ktory"], "<p>ktorý a</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
+    });
+
+    it("matches a multi-word token as one phrase across any whitespace, ignoring case", () => {
+        const el = highlight(["Foo bar"], "<p>foo   bar foo baz</p>");
+        expect(markedTexts(el)).toEqual(["foo   bar"]);
+    });
+
+    it("leaves the content of script and style elements alone", () => {
+        const el = highlight(["needle"], "<p>needle</p><style>.needle {}</style>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+    });
+
+    it("caps the matches of a regex token", () => {
+        const el = highlight([{ token: "a", type: "regex" }], `<p>${"a".repeat(600)}</p>`);
+        expect(markedTexts(el)).toHaveLength(500);
+    });
+
+    it("matches a final sigma whatever the case of the text", () => {
+        const el = highlight(["ος"], "<p>ΛΟΓΟΣ λογος</p>");
+        expect(markedTexts(el)).toEqual(["ΟΣ", "ος"]);
+    });
+
     it("wraps a CJK substring match inside a larger word", () => {
         const el = highlight(["笔记"], "<p>我的笔记本</p>");
         expect(markedTexts(el)).toEqual(["笔记"]);
@@ -454,31 +743,37 @@ describe("useImperativeSearchHighlighlighting", () => {
     it("clears previous highlights once the tokens are cleared", async () => {
         // Callers that keep the same element and merely drop the tokens — emptying a filter box —
         // rely on this, or the old highlights stay in the DOM for good.
-        //
-        // The removal itself is asserted through mark.js rather than the DOM: its `unmark()` is a
-        // no-op under happy-dom (it removes nothing even from a fresh instance), so only the call
-        // can be observed here.
         await remount([ "needle" ]);
         const el = content("<p>a needle here</p>");
         liveHighlight?.(el);
-        expect(el.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
-        markSpies.unmark.mockClear();
+        expect(markedTexts(el)).toEqual([ "needle" ]);
 
         await remount(null);
         liveHighlight?.(el);
 
-        expect(markSpies.unmark).toHaveBeenCalled();
+        expect(markedTexts(el)).toEqual([]);
         el.remove();
     });
 
-    it("does not touch an element that was never highlighted", async () => {
-        await remount(null);
+    it("stops drawing its highlights once unmounted", async () => {
+        await remount([ "needle" ]);
         const el = content("<p>a needle here</p>");
-        markSpies.unmark.mockClear();
+        liveHighlight?.(el);
+        expect(markedTexts(el)).toEqual([ "needle" ]);
+
+        act(() => render(null, container));
+
+        expect(markedTexts(el)).toEqual([]);
+        el.remove();
+    });
+
+    it("leaves the DOM of the highlighted element untouched", async () => {
+        await remount([ "needle" ]);
+        const el = content("<p>a needle here</p>");
 
         liveHighlight?.(el);
 
-        expect(markSpies.unmark).not.toHaveBeenCalled();
+        expect(markedTexts(el)).toEqual([ "needle" ]);
         expect(el.innerHTML).toBe("<p>a needle here</p>");
         el.remove();
     });
@@ -491,6 +786,11 @@ describe("useImperativeSearchHighlighlighting", () => {
     it("skips an invalid regex token without throwing", () => {
         expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
         expect(markedTexts(target)).toEqual([]);
+    });
+
+    it("wraps only the non-empty matches of a regex that can match nothing", () => {
+        const el = highlight([{ token: "o*", type: "regex" }], "<p>foo bar</p>");
+        expect(markedTexts(el)).toEqual(["oo"]);
     });
 
     it("still highlights when given legacy string[] input", () => {
@@ -555,5 +855,273 @@ describe("useNoteLabelBoolean", () => {
         });
 
         expect(draws).toEqual([ true ]);
+    });
+});
+
+describe("useMediaQuery", () => {
+    it("follows whether the query matches, and stops listening once unmounted", async () => {
+        const listeners = new Set<() => void>();
+        const query = { matches: false, addEventListener: (_: string, cb: () => void) => listeners.add(cb),
+            removeEventListener: (_: string, cb: () => void) => listeners.delete(cb) };
+        vi.spyOn(window, "matchMedia").mockReturnValue(query as unknown as MediaQueryList);
+
+        function Consumer() {
+            return <span>{String(useMediaQuery("(min-width: 1100px)"))}</span>;
+        }
+        const host = document.body.appendChild(document.createElement("div"));
+        await act(async () => { render(<Consumer />, host); });
+        expect(host.textContent).toBe("false");
+
+        query.matches = true;
+        await act(async () => { for (const listener of listeners) listener(); });
+        expect(host.textContent).toBe("true");
+
+        await act(async () => { render(null, host); });
+        expect(listeners.size).toBe(0);
+        host.remove();
+        vi.restoreAllMocks();
+    });
+});
+
+describe("useWhenShown", () => {
+    it("runs at once while shown, otherwise the last callback once the element shows", async () => {
+        const observers: { callback: () => void; disconnect: ReturnType<typeof vi.fn> }[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            disconnect = vi.fn();
+            constructor(callback: () => void) {
+                observers.push({ callback, disconnect: this.disconnect });
+            }
+            observe() {}
+        } as unknown as typeof ResizeObserver;
+        let whenShown: ((callback: () => void) => void) | undefined;
+        function Consumer() {
+            const ref = useRef<HTMLDivElement>(null);
+            whenShown = useWhenShown(ref);
+            return <div ref={ref} />;
+        }
+        const host = document.body.appendChild(document.createElement("div"));
+
+        try {
+            await act(async () => { render(<Consumer />, host); });
+            const runs: string[] = [];
+            whenShown?.(() => runs.push("shown"));
+            expect(runs).toEqual([ "shown" ]);
+
+            host.style.display = "none";
+            whenShown?.(() => runs.push("first"));
+            whenShown?.(() => runs.push("last"));
+            expect(observers).toHaveLength(1);
+            observers[0].callback();
+            expect(runs).toEqual([ "shown" ]);
+
+            host.style.display = "";
+            observers[0].callback();
+            observers[0].callback();
+            expect(runs).toEqual([ "shown", "last" ]);
+            expect(observers[0].disconnect).toHaveBeenCalled();
+
+            // Unmounted while a callback waits, it stops watching.
+            host.style.display = "none";
+            whenShown?.(() => runs.push("unmounted"));
+            await act(async () => { render(null, host); });
+            expect(observers[1].disconnect).toHaveBeenCalled();
+            expect(runs).toEqual([ "shown", "last" ]);
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+            host.remove();
+        }
+    });
+});
+
+type HoldMount = (container: HTMLElement, handler: () => void, onClick: () => void) => void;
+
+describe.each<{ name: string, mount: HoldMount }>([
+    {
+        name: "useHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            function HoldProbe() {
+                return <button type="button" onClick={onClick} {...useHoldContextMenu(handler)} />;
+            }
+            act(() => render(<HoldProbe />, container));
+        }
+    },
+    {
+        name: "setupHoldContextMenu",
+        mount: (container, handler, onClick) => {
+            const button = document.createElement("button");
+            button.addEventListener("click", onClick);
+            setupHoldContextMenu(button, handler);
+            container.append(button);
+        }
+    }
+])("$name", ({ mount }) => {
+    let container: HTMLElement;
+    let button: HTMLButtonElement;
+    const handler = vi.fn();
+    const onClick = vi.fn();
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        handler.mockReset();
+        onClick.mockReset();
+        container = document.createElement("div");
+        document.body.append(container);
+        mount(container, handler, onClick);
+        const rendered = container.querySelector("button");
+        if (!rendered) throw new Error("The probe did not render its button.");
+        button = rendered;
+    });
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+        vi.useRealTimers();
+    });
+
+    function fire(type: string, init: PointerEventInit = {}) {
+        const event = type === "click" || type === "contextmenu"
+            ? new MouseEvent(type, { bubbles: true, cancelable: true, ...init })
+            : new PointerEvent(type, { bubbles: true, cancelable: true, ...init });
+        button.dispatchEvent(event);
+        return event;
+    }
+
+    it("opens after a 500 ms hold and swallows the click that ends it", () => {
+        fire("pointerdown", { button: 0, clientX: 12, clientY: 34 });
+        vi.advanceTimersByTime(499);
+        expect(handler).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(handler).toHaveBeenCalledOnce();
+        expect(handler.mock.calls[0][0])
+            .toMatchObject({ type: "pointerdown", clientX: 12, clientY: 34 });
+
+        // The `contextmenu` Android raises for the same press.
+        expect(fire("contextmenu").defaultPrevented).toBe(true);
+        fire("pointerup", { button: 0 });
+        expect(fire("click").defaultPrevented).toBe(true);
+        expect(handler).toHaveBeenCalledOnce();
+        expect(onClick).not.toHaveBeenCalled();
+
+        vi.runAllTimers();
+        fire("click");
+        expect(onClick).toHaveBeenCalledOnce();
+    });
+
+    it("ends the hold when the press is released off the button", () => {
+        fire("pointerdown", { button: 0 });
+        vi.advanceTimersByTime(500);
+        fire("pointerleave");
+        document.body.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, button: 0 }));
+        vi.runAllTimers();
+
+        // A keyboard click and the context menu key.
+        fire("click");
+        expect(onClick).toHaveBeenCalledOnce();
+        fire("contextmenu");
+        expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    it("ignores a short press, a press that slides off or is canceled, and another button", () => {
+        fire("pointerdown", { button: 0 });
+        vi.advanceTimersByTime(300);
+        fire("pointerup", { button: 0 });
+        vi.advanceTimersByTime(500);
+        fire("click");
+
+        for (const end of [ "pointerleave", "pointercancel" ]) {
+            fire("pointerdown", { button: 0 });
+            fire(end);
+            vi.advanceTimersByTime(500);
+        }
+        fire("pointerdown", { button: 1 });
+        vi.runAllTimers();
+
+        expect(handler).not.toHaveBeenCalled();
+        expect(onClick).toHaveBeenCalledOnce();
+    });
+
+    it("opens on a right-click", () => {
+        fire("pointerdown", { button: 2 });
+        const event = fire("contextmenu");
+        expect(handler).toHaveBeenCalledWith(event);
+        vi.runAllTimers();
+        expect(handler).toHaveBeenCalledOnce();
+    });
+});
+
+describe("useFindShortcut", () => {
+    it("searches the note context around the container on Ctrl+F, else the one given", async () => {
+        vi.spyOn(keyboard_actions, "getAction")
+            .mockResolvedValue({ effectiveShortcuts: [ "Ctrl+F" ] } as never);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockResolvedValue(undefined as never);
+        function Consumer({ ntxId }: { ntxId?: string }) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref, ntxId);
+            return <div ref={ref}><span className="inside" /></div>;
+        }
+        const split = document.body.appendChild(document.createElement("div"));
+        split.setAttribute("data-ntx-id", "split");
+        const press = () => split.querySelector(".inside")?.dispatchEvent(new KeyboardEvent(
+            "keydown", { key: "f", code: "KeyF", ctrlKey: true, bubbles: true, cancelable: true }));
+
+        try {
+            await act(async () => { render(<Consumer />, split); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "split" });
+            });
+
+            await act(async () => { render(<Consumer ntxId="popup" />, split); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "popup" });
+            });
+        } finally {
+            render(null, split);
+            split.remove();
+            vi.restoreAllMocks();
+        }
+    });
+
+    it("searches the context of an enclosing binding outside any note split", async () => {
+        vi.spyOn(keyboard_actions, "getAction")
+            .mockResolvedValue({ effectiveShortcuts: [ "Ctrl+F" ] } as never);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockResolvedValue(undefined as never);
+        function Embed() {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref);
+            return <div ref={ref}><span className="inside" /></div>;
+        }
+        function Popup({ ntxId }: { ntxId: string }) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFindShortcut(ref, ntxId);
+            return <div ref={ref} className="popup"><Embed /></div>;
+        }
+        const root = document.body.appendChild(document.createElement("div"));
+        const press = () => root.querySelector(".inside")?.dispatchEvent(new KeyboardEvent(
+            "keydown", { key: "f", code: "KeyF", ctrlKey: true, bubbles: true, cancelable: true }));
+
+        try {
+            await act(async () => { render(<Popup ntxId="popup" />, root); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand).toHaveBeenLastCalledWith("findInText", { ntxId: "popup" });
+            });
+            expect(triggerCommand).toHaveBeenCalledTimes(1);
+
+            await act(async () => { render(<Popup ntxId="nested-popup" />, root); });
+            await vi.waitFor(() => {
+                press();
+                expect(triggerCommand)
+                    .toHaveBeenLastCalledWith("findInText", { ntxId: "nested-popup" });
+            });
+        } finally {
+            render(null, root);
+            root.remove();
+            vi.restoreAllMocks();
+        }
     });
 });

@@ -1,7 +1,8 @@
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { SHEET_DRAWING_RESOURCE } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import { CommandType, FUniver, IDisposable, IWorkbookData, LocaleType } from "@univerjs/presets";
-import { MutableRef, useEffect, useRef } from "preact/hooks";
+import { RefObject } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
@@ -22,7 +23,7 @@ interface SpreadsheetViewState {
     scrollCol?: number;
 }
 
-export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: MutableRef<FUniver | undefined>, containerRef: MutableRef<HTMLDivElement | null>) {
+export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>) {
     const changeListener = useRef<IDisposable>(null);
     const pendingContent = useRef<string | null>(null);
     // Set when a value edit has been made whose formula recalculation hasn't been

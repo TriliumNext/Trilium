@@ -1,11 +1,13 @@
 import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
+import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";
+import { getNoteImageUrl } from "./image_urls.js";
 import type { ViewMode, ViewScope } from "./link.js";
 
 const SVG_MIME = "image/svg+xml";
 
-export const isShare = !window.glob;
+export const isShare = !window.glob || !!window.glob.isShare;
 
 /**
  * True when the client is showing a *pre-auth* SPA screen — the login screen (`loggedIn: false`),
@@ -259,20 +261,27 @@ const SIZE_UNITS = ["B", "KiB", "MiB", "GiB", "TiB"];
  *   what is not needed, which reads best for a size at rest. Pass a number for a counter that is
  *   still climbing: there, dropping a trailing zero shortens the text on every other update and the
  *   line shifts about while it is being read.
+ * @param unitOf a size whose unit to show `size` in instead, so that a column of sizes shares one
+ *   unit and can be summed by eye: the largest of them, or their total.
  */
-export function formatSize(size: number | null | undefined, decimals?: number) {
+export function formatSize(size: number | null | undefined, decimals?: number, unitOf?: number) {
     if (size === null || size === undefined) {
         return "";
     }
 
-    if (size <= 0) {
+    const reference = unitOf ?? size;
+    if (reference <= 0) {
         return "0 B";
     }
 
-    const unit = Math.min(Math.floor(Math.log(size) / Math.log(1024)), SIZE_UNITS.length - 1);
+    const unit = Math.min(Math.floor(Math.log(reference) / Math.log(1024)), SIZE_UNITS.length - 1);
     const value = size / Math.pow(1024, unit);
     // Nothing below a byte to show, however many places were asked for.
     const places = decimals !== undefined && unit === 0 ? 0 : decimals;
+    const step = Math.pow(10, -(places ?? 2));
+    if (size > 0 && value < step / 2) {
+        return `<${step.toFixed(places ?? 2)} ${SIZE_UNITS[unit]}`;
+    }
 
     return `${places === undefined ? Math.round(value * 100) / 100 : value.toFixed(places)} ${SIZE_UNITS[unit]}`;
 }
@@ -307,6 +316,24 @@ export function isMobile() {
         (!window.glob?.device && /Mobi/.test(navigator.userAgent))
     );
 }
+
+/**
+ * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
+ * only then; a tablet's wider layout places it beside what opened it. Must match the media query
+ * around the `.mobile-bottom-menu` rules in style.css.
+ */
+export function isNarrowLayout() {
+    return window.matchMedia(NARROW_LAYOUT).matches;
+}
+
+/** Calls `onChange` whenever {@link isNarrowLayout} changes, until the returned function runs. */
+export function onNarrowLayoutChange(onChange: () => void) {
+    const query = window.matchMedia(NARROW_LAYOUT);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
+
+const NARROW_LAYOUT = "(max-width: 991px)";
 
 /**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).
@@ -379,6 +406,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("include-note") &&
         !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
@@ -453,19 +481,18 @@ function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?: strin
     const error = new Error(errorMessage || `Process exceeded time limit ${limitMs}`);
 
     return new Promise<T>((res, rej) => {
-        let resolved = false;
+        const timer = setTimeout(() => rej(error), limitMs);
 
-        promise.then((result) => {
-            resolved = true;
-
-            res(result);
-        });
-
-        setTimeout(() => {
-            if (!resolved) {
-                rej(error);
+        promise.then(
+            (result) => {
+                clearTimeout(timer);
+                res(result);
+            },
+            (e) => {
+                clearTimeout(timer);
+                rej(e);
             }
-        }, limitMs);
+        );
     });
 }
 
@@ -658,7 +685,7 @@ function copyHtmlToClipboard(html: string, plainText: string = html) {
 }
 
 export function createImageSrcUrl(note: FNote) {
-    return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
+    return getNoteImageUrl(note.noteId, note.title, `timestamp=${Date.now()}`);
 }
 
 
@@ -939,6 +966,21 @@ export function* causeChain(e: unknown): Generator<unknown> {
     }
 }
 
+/**
+ * Returns the instance a previous evaluation of the calling module stored in `hot.data`, or
+ * creates and stores one. Pass `import.meta.hot` from a module that holds an app-wide
+ * singleton: an HMR update can import that module again under a new `?t=` URL, and without
+ * this the re-evaluated copy builds a second, uninitialized instance.
+ */
+export function reuseAcrossHotReloads<T>(hot: ViteHotContext | undefined, create: () => T): T {
+    const data = hot?.data as { instance?: T } | undefined;
+    if (!data) {
+        return create();
+    }
+    data.instance ??= create();
+    return data.instance;
+}
+
 export function replaceHtmlEscapedSlashes(str: string) {
     return str.replace(/&#x2F;/g, "/");
 }
@@ -980,6 +1022,8 @@ export default {
     toObject,
     randomString,
     isMobile,
+    isNarrowLayout,
+    onNarrowLayoutChange,
     isDesktop,
     setCookie,
     getNoteTypeClass,

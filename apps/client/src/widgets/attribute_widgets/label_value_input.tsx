@@ -297,7 +297,7 @@ export function getTypedInputForLabel(labelType: LabelType | undefined): LabelTy
  * memory. An empty `name` returns no suggestions, since `attribute-values/` matches no route.
  */
 export function useLabelValueSuggestions(name: string) {
-    const known = useRef<{ name: string; values: string[] }>();
+    const known = useRef<{ name: string; values: string[] } | undefined>(undefined);
 
     return useCallback(async (query: string) => {
         if (!name.trim()) {

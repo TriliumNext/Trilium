@@ -45,6 +45,16 @@ describe("buildMessageDictionary", () => {
 
         expect(dictionary.Bookmark).toBe("Anchor");
         expect(dictionary["Edit bookmark"]).toBe("Edit anchor");
+        expect(dictionary["Insert code block"]).toBe("Code block");
+    });
+
+    // A replacement CKEditor translates itself, such as "Code block", needs no entry of ours.
+    it("renames to CKEditor's own translation of the replacement when the locale has none of ours", () => {
+        const upstream = { "Code block": "Codeblock", "Bookmark": "Lesezeichen" };
+        const dictionary = buildMessageDictionary({}, (key) => key, upstream);
+
+        expect(dictionary["Insert code block"]).toBe("Codeblock");
+        expect(dictionary.Bookmark).toBe("Anchor");
     });
 
     // i18next echoes the key back when an entry is missing. Putting that in the dictionary would

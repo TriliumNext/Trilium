@@ -6,13 +6,19 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
-import { ExperimentalFeature, ExperimentalFeatureId, getAvailableExperimentalFeatures, isExperimentalFeatureEnabled, toggleExperimentalFeature } from "../../services/experimental_features";
+import type { MenuCommandItem } from "../../menus/context_menu";
+import {
+    COLOR_SCHEME_CYCLE, COLOR_SCHEME_ICONS, ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES
+} from "../../services/color_scheme";
 import { t } from "../../services/i18n";
-import utils, { isElectron, isMobile, isStandalone, reloadFrontendApp } from "../../services/utils";
+import utils, { isElectron, isMobile, isStandalone } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
-import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
-import KeyboardShortcut from "../react/KeyboardShortcut";
+import {
+    useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool,
+    useUserThemes
+} from "../react/hooks";
+import { MenuItemRows } from "../react/Menu";
 import { ParentComponent } from "../react/react_utils";
 
 interface MenuItemProps<T> {
@@ -23,6 +29,7 @@ interface MenuItemProps<T> {
     disabled?: boolean
     active?: boolean;
     outsideChildren?: ComponentChildren;
+    keyboardShortcut?: KeyboardActionNames;
 }
 
 export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
@@ -31,6 +38,15 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
     const logoRef = useRef<SVGSVGElement>(null);
     useStaticTooltip(logoRef);
+    const commandAction = (command: CommandNames, uiIcon: string, title: string): MenuCommandItem<CommandNames> => ({
+        title, uiIcon, handler: () => void parentComponent?.triggerCommand(command)
+    });
+    /** Drawn as a strip of cards at the top of the menu on a phone. */
+    const mobileActions = [
+        commandAction("searchNotes", "bx bx-search", t("global_menu.search_notes")),
+        commandAction("showRecentChanges", "bx bx-history", t("recent_changes.title")),
+        commandAction("showDeletedNotes", "bx bx-trash-alt", t("global_menu.show_deleted_notes"))
+    ];
 
     return (
         <Dropdown
@@ -42,34 +58,37 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
                     <span className="bx bxs-down-arrow-alt global-menu-button-update-available-button" title={t("update_available.update_available")} />
                 </div>}
             </>}
-            noDropdownListStyle
             mobileBackdrop
         >
-            {isMobile() && <>
-                <MenuItem command="searchNotes" icon="bx bx-search" text={t("global_menu.search_notes")} />
-                <MenuItem command="showRecentChanges" icon="bx bx-history" text={t("recent_changes.title")} />
+            {isMobile() ? (
+                <MenuItemRows items={[ { kind: "actions", items: mobileActions, className: "global-menu-strip tn-menu-actions-cards" } ]} />
+            ) : <>
+                <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
+                <MenuItem command="showDeletedNotes" icon="bx bx-trash-alt" text={t("global_menu.show_deleted_notes")} />
                 <FormDropdownDivider />
             </>}
 
-            <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
-            <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
-            <MenuItem command="showDeletedNotes" icon="bx bx-trash-alt" text={t("global_menu.show_deleted_notes")} />
-            <KeyboardActionMenuItem command="showSpaceUsage" icon="bx bx-pie-chart-alt-2" text={t("global_menu.show_space_usage")} />
+            {isMobile() ? (
+                <MenuItemColumns>
+                    <MenuItem command="toggleFullscreen" icon="bx bx-expand-alt" text={t("global_menu.fullscreen")} />
+                    <MenuItem command="toggleZenMode" icon="bx bxs-yin-yang" text={t("global_menu.toggle-zen-mode")} />
+                </MenuItemColumns>
+            ) : <>
+                <ZoomControls parentComponent={parentComponent} />
+                <ToggleWindowOnTop />
+                <KeyboardActionMenuItem command="toggleZenMode" icon="bx bxs-yin-yang" text={t("global_menu.toggle-zen-mode")} />
+            </>}
             <FormDropdownDivider />
 
-            <ZoomControls parentComponent={parentComponent} />
-            <ToggleWindowOnTop />
-            <KeyboardActionMenuItem command="toggleZenMode" icon="bx bxs-yin-yang" text={t("global_menu.toggle-zen-mode")} />
-            <FormDropdownDivider />
-
-            <SwitchToOptions />
+            {!isMobile() && <SwitchToOptions />}
             <MenuItem command="showLaunchBarSubtree" icon={`bx ${isMobile() ? "bx-mobile" : "bx-sidebar"}`} text={t("global_menu.configure_launchbar")} />
-            <AdvancedMenu dropStart={!isVerticalLayout} />
+            {!isMobile() && <ThemeMenu />}
+            <AdvancedMenu />
             <MenuItem command="showOptions" icon="bx bx-cog" text={t("global_menu.options")} />
             <FormDropdownDivider />
 
             <KeyboardActionMenuItem command="showHelp" icon="bx bx-help-circle" text={t("global_menu.show_help")} />
-            <KeyboardActionMenuItem command="showCheatsheet" icon="bx bxs-keyboard" text={t("global_menu.show-cheatsheet")} />
+            {!isMobile() && <KeyboardActionMenuItem command="showCheatsheet" icon="bx bxs-keyboard" text={t("global_menu.show-cheatsheet")} />}
             <MenuItem command="openAboutDialog" icon="bx bx-info-circle" text={t("global_menu.about")} />
 
             {isUpdateAvailable &&  <>
@@ -80,25 +99,85 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             </>}
 
             {!isElectron() && !isStandalone && <BrowserOnlyOptions />}
-            {glob.isDev && <DevelopmentOptions dropStart={!isVerticalLayout} />}
         </Dropdown>
     );
 }
 
-function AdvancedMenu({ dropStart }: { dropStart: boolean }) {
+/** Picks the color scheme and the theme. */
+function ThemeMenu() {
+    const [ theme, setTheme ] = useTriliumOption("theme");
+    const userThemes = useUserThemes();
+    const { family, scheme, isCustom } = resolveColorScheme(theme);
+    const schemeLabels: Record<ColorScheme, string> = {
+        system: t("theme.color_scheme_system"),
+        light: t("theme.color_scheme_light"),
+        dark: t("theme.color_scheme_dark")
+    };
+
     return (
-        <FormDropdownSubmenu icon="bx bx-chip" title={t("global_menu.advanced")} dropStart={dropStart}>
+        <FormDropdownSubmenu icon="bx bx-palette" title={t("global_menu.theme")}>
+            <FormListHeader text={t("theme.color_scheme")} />
+            {COLOR_SCHEME_CYCLE.map((value) => (
+                <FormListItem
+                    key={value}
+                    icon={COLOR_SCHEME_ICONS[value]}
+                    checkable
+                    checked={!isCustom && scheme === value}
+                    disabled={isCustom}
+                    disabledTooltip={t("theme.color_scheme_custom_disabled")}
+                    onClick={() => {
+                        if (family) void setTheme(THEME_FAMILY_SCHEMES[family][value]);
+                    }}
+                >
+                    {schemeLabels[value]}
+                </FormListItem>
+            ))}
+
+            <FormListHeader text={t("global_menu.theme")} />
+            <FormListItem
+                icon="bx bx-star"
+                checkable
+                checked={family === "modern"}
+                onClick={() => void setTheme(THEME_FAMILY_SCHEMES.modern[scheme])}
+            >
+                {t("theme.modern_themes")}
+            </FormListItem>
+            {userThemes.map((userTheme) => (
+                <FormListItem
+                    key={userTheme.val}
+                    icon={userTheme.icon}
+                    checkable
+                    checked={theme === userTheme.val}
+                    onClick={() => void setTheme(userTheme.val)}
+                >
+                    {userTheme.title}
+                </FormListItem>
+            ))}
+        </FormDropdownSubmenu>
+    );
+}
+
+function AdvancedMenu() {
+    return (
+        <FormDropdownSubmenu icon="bx bx-chip" title={t("global_menu.advanced")}>
+            <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
+            <KeyboardActionMenuItem command="showSpaceUsage" icon="bx bx-pie-chart-alt-2" text={t("global_menu.show_space_usage")} />
             <MenuItem command="showHiddenSubtree" icon="bx bx-hide" text={t("global_menu.show_hidden_subtree")} />
             <MenuItem command="showSearchHistory" icon="bx bx-search-alt" text={t("global_menu.open_search_history")} />
             <FormDropdownDivider />
 
-            <KeyboardActionMenuItem command="showBackendLog" icon="bx bx-detail" text={t("global_menu.show_backend_log")} />
+            <KeyboardActionMenuItem command="showBackendLog" icon="bx bx-receipt" text={t("global_menu.show_backend_log")} />
             <KeyboardActionMenuItem command="showSQLConsole" icon="bx bx-data" text={t("global_menu.open_sql_console")} />
             <MenuItem command="showSQLConsoleHistory" icon="bx bx-data" text={t("global_menu.open_sql_console_history")} />
             <FormDropdownDivider />
 
             {isElectron() && <MenuItem command="openDevTools" icon="bx bx-bug-alt" text={t("global_menu.open_dev_tools")} />}
             <KeyboardActionMenuItem command="reloadFrontendApp" icon="bx bx-refresh" text={t("global_menu.reload_frontend")} title={t("global_menu.reload_hint")} />
+
+            {isMobile() && <>
+                <FormDropdownDivider />
+                <SwitchToOptions />
+            </>}
         </FormDropdownSubmenu>
     );
 }
@@ -108,32 +187,6 @@ function BrowserOnlyOptions() {
         <FormDropdownDivider />
         <MenuItem command="logout" icon="bx bx-log-out" text={t("global_menu.logout")} />
     </>;
-}
-
-function DevelopmentOptions({ dropStart }: { dropStart: boolean }) {
-    return <>
-        <FormListHeader text="Development Options" />
-        <FormDropdownSubmenu icon="bx bx-test-tube" title="Experimental features" dropStart={dropStart}>
-            {getAvailableExperimentalFeatures().map((feature) => (
-                <ExperimentalFeatureToggle key={feature.id} experimentalFeature={feature as ExperimentalFeature} />
-            ))}
-        </FormDropdownSubmenu>
-    </>;
-}
-
-function ExperimentalFeatureToggle({ experimentalFeature }: { experimentalFeature: ExperimentalFeature }) {
-    const featureEnabled = isExperimentalFeatureEnabled(experimentalFeature.id as ExperimentalFeatureId);
-
-    return (
-        <FormListItem
-            checked={featureEnabled}
-            title={experimentalFeature.description}
-            onClick={async () => {
-                await toggleExperimentalFeature(experimentalFeature.id as ExperimentalFeatureId, !featureEnabled);
-                reloadFrontendApp();
-            }}
-        >{experimentalFeature.name}</FormListItem>
-    );
 }
 
 function SwitchToOptions() {
@@ -146,26 +199,23 @@ function SwitchToOptions() {
 
 }
 
-function MenuItem({ icon, text, title, command, disabled, active }: MenuItemProps<KeyboardActionNames | CommandNames | (() => void)>) {
+function MenuItem({ icon, text, title, command, disabled, active, keyboardShortcut }: MenuItemProps<KeyboardActionNames | CommandNames | (() => void)>) {
+    const parentComponent = useContext(ParentComponent);
     return <FormListItem
         icon={icon}
         title={title}
-        triggerCommand={typeof command === "string" ? command : undefined}
-        onClick={typeof command === "function" ? command : undefined}
+        keyboardShortcut={keyboardShortcut}
+        onClick={typeof command === "function" ? command : () => void parentComponent?.triggerCommand(command)}
         disabled={disabled}
         active={active}
     >{text}</FormListItem>;
 }
 
-function KeyboardActionMenuItem({ text, command, ...props }: MenuItemProps<KeyboardActionNames>) {
-    return <MenuItem
-        {...props}
-        command={command}
-        text={<>{text} <KeyboardShortcut actionName={command as KeyboardActionNames} /></>}
-    />;
+function KeyboardActionMenuItem({ command, ...props }: MenuItemProps<KeyboardActionNames>) {
+    return <MenuItem {...props} command={command} keyboardShortcut={command} />;
 }
 
-export function VerticalLayoutIcon({ logoRef }: { logoRef?: RefObject<SVGSVGElement> }) {
+function VerticalLayoutIcon({ logoRef }: { logoRef?: RefObject<SVGSVGElement | null> }) {
     return (
         <svg ref={logoRef} viewBox="0 0 256 256" title={t("global_menu.menu")}>
             <g>
@@ -229,6 +279,15 @@ function ZoomControls({ parentComponent }: { parentComponent?: Component | null 
         </FormListItem>
     ) : (
         <MenuItem icon="bx bx-expand-alt" command="toggleFullscreen" text={t("global_menu.toggle_fullscreen")} />
+    );
+}
+
+/** Sets menu items side by side, one per column, as the mobile note menu sets backlinks and note paths. */
+function MenuItemColumns({ children }: { children: ComponentChildren[] }) {
+    return (
+        <div className="form-list-row">
+            {children.map((child, index) => <div key={index} className="form-list-col">{child}</div>)}
+        </div>
     );
 }
 

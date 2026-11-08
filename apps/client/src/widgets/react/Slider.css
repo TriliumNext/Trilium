@@ -1,0 +1,87 @@
+.slider {
+    --slider-track-height: 6px;
+    --slider-thumb-size: 16px;
+    --slider-fill-percent: 0%;
+    --slider-track-background: var(--cmd-button-background-color, var(--main-border-color));
+    --slider-fill-background: var(--cmd-button-text-color, var(--muted-text-color));
+    --slider-thumb-background: var(--main-text-color);
+
+    appearance: none;
+    -webkit-appearance: none;
+    width: 200px;
+    height: var(--slider-thumb-size);
+    background: transparent;
+    cursor: pointer;
+
+    /* WebKit and Blink have no progress pseudo-element, so the track paints the filled part from
+       `--slider-fill-percent`, which `Slider` sets. */
+    &::-webkit-slider-runnable-track {
+        height: var(--slider-track-height);
+        border-radius: calc(var(--slider-track-height) / 2);
+        background: linear-gradient(
+            to right,
+            var(--slider-fill-background) var(--slider-fill-percent),
+            var(--slider-track-background) var(--slider-fill-percent)
+        );
+    }
+
+    &::-moz-range-track {
+        height: var(--slider-track-height);
+        border-radius: calc(var(--slider-track-height) / 2);
+        background: var(--slider-track-background);
+    }
+
+    &::-moz-range-progress {
+        height: var(--slider-track-height);
+        border-radius: calc(var(--slider-track-height) / 2);
+        background: var(--slider-fill-background);
+    }
+
+    &::-webkit-slider-thumb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: var(--slider-thumb-size);
+        height: var(--slider-thumb-size);
+        margin-top: calc((var(--slider-track-height) - var(--slider-thumb-size)) / 2);
+        border: unset;
+        border-radius: 50%;
+        background: var(--slider-thumb-background);
+        transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    &::-moz-range-thumb {
+        width: var(--slider-thumb-size);
+        height: var(--slider-thumb-size);
+        border: unset;
+        border-radius: 50%;
+        background: var(--slider-thumb-background);
+        transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* A browser drops a rule naming another engine's pseudo-element, so each engine gets its own. */
+    &:not(:disabled):is(:hover, :active)::-webkit-slider-thumb {
+        transform: scale(1.15);
+    }
+
+    &:not(:disabled):is(:hover, :active)::-moz-range-thumb {
+        transform: scale(1.15);
+    }
+
+    &:focus {
+        outline: unset;
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+        outline: 2px solid var(--input-focus-outline-color, var(--main-text-color));
+        outline-offset: 2px;
+    }
+
+    &:focus-visible::-moz-range-thumb {
+        outline: 2px solid var(--input-focus-outline-color, var(--main-text-color));
+        outline-offset: 2px;
+    }
+
+    &:disabled {
+        cursor: default;
+    }
+}

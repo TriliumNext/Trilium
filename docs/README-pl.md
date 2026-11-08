@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes to darmowa i otwartoźródłowa, wieloplatformowa aplikacja do
@@ -368,6 +369,10 @@ Trilium nie byłoby możliwe bez technologii, które za nim stoją:
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) — edytor kodu z obsługą
   ogromnej liczby języków.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) — nieskończona tablica
   wykorzystywana w notatkach typu Canvas.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) — biblioteka do
@@ -378,11 +383,6 @@ Trilium nie byłoby możliwe bez technologii, które za nim stoją:
   wykorzystywanych w kolekcjach.
 * [FancyTree](https://github.com/mar10/fancytree) — bogata w funkcje biblioteka
   drzew, praktycznie bez konkurencji.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) — biblioteka do wizualnego
-  łączenia elementów. Wykorzystywana w [mapach
-  relacji](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  oraz [mapach
-  linków](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Wsparcie
 

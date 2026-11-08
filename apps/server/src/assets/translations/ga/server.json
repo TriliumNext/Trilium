@@ -48,8 +48,6 @@
     "attributes-labels-and-relations": "Tréithe (lipéid & caidrimh)",
     "add-new-label": "Cruthaigh lipéad nua",
     "create-new-relation": "Cruthaigh caidreamh nua",
-    "ribbon-tabs": "Cluaisíní ribín",
-    "toggle-link-map": "Léarscáil Nasc a Athsholáthar",
     "other": "Eile",
     "toggle-right-pane": "Athraigh taispeáint an phainéil dheis, lena n-áirítear Clár Ábhair agus Buaicphointí",
     "open-note-externally": "Oscail nóta mar chomhad leis an bhfeidhmchlár réamhshocraithe",
@@ -62,8 +60,6 @@
     "note-navigation": "Nascleanúint nótaí",
     "copy-without-formatting": "Cóipeáil téacs roghnaithe gan fhormáidiú",
     "force-save-revision": "Cruthú/sábháil nóta nua den nóta gníomhach i bhfeidhm",
-    "toggle-book-properties": "Airíonna an Bhailiúcháin a Athrú",
-    "toggle-classic-editor-toolbar": "Athraigh an cluaisín Formáidithe don eagarthóir leis an mbarra uirlisí socraithe",
     "toggle-zen-mode": "Cumasaíonn/díchumasaíonn sé an mód zen (comhad úsáideora íosta le haghaidh eagarthóireacht níos dírithe)",
     "save-named-revision": "Sábháil athbhreithniú ainmnithe den nóta gníomhach",
     "toggle-archived-notes": "Taispeáin/folaigh nótaí cartlannaithe sa chrann nótaí",
@@ -77,7 +73,12 @@
     "focus-split-right": "Bog an fócas go dtí an scoilt ar dheis an cheann gníomhach",
     "split-view": "Radharc scoilte",
     "move-split-left": "Malartaigh an scoilt ghníomhach leis an gceann ar a chlé, ionas go mbogann an nóta agus go leanann an fócas é",
-    "move-split-right": "Malartaigh an scoilt ghníomhach leis an gceann ar a dheis, ionas go mbogann an nóta agus go leanann an fócas é"
+    "move-split-right": "Malartaigh an scoilt ghníomhach leis an gceann ar a dheis, ionas go mbogann an nóta agus go leanann an fócas é",
+    "note-panels": "Painéil nótaí",
+    "show-note-map": "Taispeánann sé léarscáil na nótaí sa phána ar dheis",
+    "focus-collection-properties": "Bogann sé an fócas chuig roghnóir chineál an amhairc don bhailiúchán",
+    "focus-formatting-toolbar": "Bogann sé an fócas idir an barra uirlisí formáidithe seasta agus an t-eagarthóir",
+    "peek-left-pane": "Breathnaigh ar chrann na nótaí mar phainéal sealadach a bhíonn ar snámh os cionn an ábhair"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -145,18 +146,6 @@
     "edit-read-only-note": "Cuir Nóta Léite Amháin in Eagar",
     "add-new-label": "Cuir Lipéad Nua leis",
     "add-new-relation": "Cuir Gaol Nua leis",
-    "toggle-ribbon-tab-classic-editor": "Eagarthóir Clasaiceach Cluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-basic-properties": "Airíonna Bunúsacha an Chluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-book-properties": "Airíonna Leabhar an Chluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-file-properties": "Airíonna Comhaid Tab Ribín a Athrú",
-    "toggle-ribbon-tab-image-properties": "Airíonna Íomhá an Chluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-owned-attributes": "Tréithe atá faoi úinéireacht ag an gcluaisín ribín",
-    "toggle-ribbon-tab-inherited-attributes": "Tréithe Oidhreachta Cluaisín Ribín a Scor",
-    "toggle-ribbon-tab-promoted-attributes": "Tréithe Curtha Chun Cinn sa Chluaisín Ribín",
-    "toggle-ribbon-tab-note-map": "Léarscáil Nótaí Tab Ribín a Athrú",
-    "toggle-ribbon-tab-note-info": "Eolas Nóta Cluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-note-paths": "Cosáin Nóta Cluaisín Ribín a Athrú",
-    "toggle-ribbon-tab-similar-notes": "Nótaí Cosúla a Athraigh an Cluaisín Ribín",
     "toggle-right-pane": "Scoránaigh an Phána Ar Dheis",
     "print-active-note": "Priontáil Nóta Gníomhach",
     "export-active-note-as-pdf": "Easpórtáil Nóta Gníomhach mar PDF",
@@ -186,7 +175,21 @@
     "move-split-left": "Bog Scoilt Ar Chlé",
     "move-split-right": "Bog Scoilt ar Dheis",
     "focus-split-left": "Fócas Scoilte ar Chlé",
-    "focus-split-right": "Fócas Scoilte ar Dheis"
+    "focus-split-right": "Fócas Scoilte ar Dheis",
+    "duplicate-note": "Macasamhail nóta gan fho-nótaí",
+    "focus-formatting-toolbar": "Barra Uirlisí Formáidithe Fócais",
+    "show-basic-properties": "Taispeáin Buntréithe",
+    "focus-collection-properties": "Airíonna an Bhailiúcháin Fócais",
+    "focus-file-actions": "Dírigh ar Ghníomhartha Comhaid",
+    "focus-image-actions": "Gníomhartha Íomhá Fócais",
+    "toggle-owned-attributes": "Scoránaigh Tréithe faoi Úinéireacht",
+    "toggle-inherited-attributes": "Scoránaigh tréithe oidhreachta",
+    "toggle-promoted-attributes": "Scoránaigh Tréithe Curtha chun Cinn",
+    "show-note-map": "Léarscáil Nótaí an Chláir",
+    "show-note-info": "Eolas faoi Nótaí an Chláir",
+    "show-note-paths": "Taispeáin Conairí Nótaí",
+    "toggle-similar-notes": "Scoránaigh Nótaí Cosúla",
+    "peek-left-pane": "Pána Réamhamhairc Crann"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -325,7 +328,10 @@
     "color-scheme-switcher-title": "Athraitheoir Scéim Dathanna",
     "content-manager-title": "Bainisteoir Ábhair",
     "database-title": "Bunachar Sonraí",
-    "space-usage-title": "Úsáid Spáis"
+    "space-usage-title": "Úsáid Spáis",
+    "record-meeting-title": "Trasscríobh cruinniú",
+    "transcription-title": "Tras-scríobh",
+    "resources-title": "Acmhainní íoslódáilte"
   },
   "notes": {
     "new-note": "Nóta nua",
@@ -335,18 +341,25 @@
   },
   "backend_log": {
     "log-does-not-exist": "Níl an comhad loga cúil '{{ fileName }}' ann (go fóill).",
-    "reading-log-failed": "Theip ar an gcomhad loga cúil '{{ fileName }}' a léamh."
+    "reading-log-failed": "Theip ar an gcomhad loga cúil '{{ fileName }}' a léamh.",
+    "log-file-unavailable": "Níorbh fhéidir an comhad logála a oscailt, mar sin ní thaispeántar ach na hiontrálacha is déanaí atá sa chuimhne. Bíonn Trilium ag iarraidh é a oscailt go leanúnach agus scríobhann sé na hiontrálacha seo ann a luaithe is féidir leis é sin a dhéanamh."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint.",
-    "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo."
+    "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo.",
+    "broken-block-reference": "Tagairt bhriste",
+    "play-video": "Seinn físeán",
+    "content-not-available": "Níl an t-ábhar seo ar fáil.",
+    "untitled-block": "Bloc",
+    "play-audio": "Seinn fuaim"
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",
     "unable-to-export-message": "Níorbh fhéidir an nóta reatha a easpórtáil mar PDF.",
     "unable-to-export-title": "Ní féidir a onnmhairiú mar PDF",
     "unable-to-save-message": "Níorbh fhéidir scríobh chuig an gcomhad roghnaithe. Déan iarracht eile nó roghnaigh ceann scríbe eile.",
-    "unable-to-print": "Ní féidir an nóta a phriontáil"
+    "unable-to-print": "Ní féidir an nóta a phriontáil",
+    "render-timeout": "Níor chríochnaigh an nóta á rindreáil laistigh de {{seconds}} soicind."
   },
   "tray": {
     "close": "Scoir de Trilium",
@@ -379,7 +392,26 @@
     "toggle-navigation": "Nascleanúint a Athrú",
     "toggle-toc": "Clár Ábhair a Athsholáthar",
     "logo-alt": "Lógó",
-    "login": "Logáil Isteach"
+    "login": "Logáil Isteach",
+    "tab-title": "Teideal an chluaisín",
+    "appearance": "Cuma",
+    "theme-light": "Solas",
+    "theme-dark": "Dorcha",
+    "theme-system": "Córas",
+    "theme-current": "Cuma: {{- theme}}",
+    "subpages-of": "Fo-leathanaigh de {{- title}}",
+    "hidden-subpages_one": "{{count}} fho-leathanach atá i bhfolach ón gcrann",
+    "hidden-subpages_two": "{{count}} fo-leathanach atá i bhfolach ón gcrann",
+    "hidden-subpages_few": "{{count}} fo-leathanach atá i bhfolach ón gcrann",
+    "hidden-subpages_many": "{{count}} fo-leathanach atá i bhfolach ón gcrann",
+    "hidden-subpages_other": "{{count}} fo-leathanach atá i bhfolach ón gcrann",
+    "heading-link": "Nasc chuig an rannán seo",
+    "previous": "Roimhe seo",
+    "next": "Ar Aghaidh",
+    "page-navigation": "Leathanaigh roimhe seo agus an chéad leathanach eile",
+    "previous-tabs": "Scrollaigh chuig na cluaisíní roimhe seo",
+    "next-tabs": "Scrollaigh chuig na cluaisíní eile",
+    "copy-code": "Cóipeáil an cód"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -407,7 +439,6 @@
     "presentation_slide": "Sleamhnán cur i láthair",
     "presentation_slide_first": "An chéad sleamhnán",
     "presentation_slide_second": "An dara sleamhnán",
-    "background": "Cúlra",
     "markdown-snippet": "Sleachta Marcála",
     "code-snippet": "Sleachta Cód",
     "dashboard": "Dashboard",
@@ -427,7 +458,8 @@
       "cannot-compare-with": "ní féidir comparáid a dhéanamh le \"{{- token}}\". Chun luach liteartha a chuardach, bain úsáid as comharthaí athfhriotail: \"{{- token}}\"",
       "misplaced-expression": "Slonn mí-áitithe nó neamhiomlán \"{{- token}}\"",
       "fulltext-after-expression": "Ní abairt bhailí í \"{{- token}}\". Chun téacs a chuardach, cuir é roimh scagairí tréithe (m.sh., \"{{- token}} #label\" in ionad \"#label {{- token}}\").",
-      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\""
+      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\"",
+      "regex-not-allowed": "Níl an t-oibreoir slonn rialta \"%=\" ar fáil anseo."
     }
   },
   "password": {
@@ -548,5 +580,45 @@
     "detail": "Tairgfear cúltaca de do bhunachar eolais reatha duit ar dtús. Ní scriostar aon rud go dtí go roghnaíonn tú bunachar eolais nua a chruthú, cúltaca a athbhunú nó sioncrónú ó ghléas eile.\n\nNá lean ar aghaidh má spreag script nó nóta nach bhfuil tú eolach air thú.",
     "cancel": "Cealaigh",
     "confirm": "Atosaigh agus tosaigh arís"
+  },
+  "transcription": {
+    "already-recording": "Tá cruinniú á thras-scríobh cheana féin.",
+    "note-not-found": "Níl an nóta cruinnithe ann a thuilleadh.",
+    "start-failed": "Níorbh fhéidir an tras-scríobh a thosú: {{- message}}",
+    "stopped-unexpectedly": "Chuir an tras-scríobh stad go tobann. Coinnítear an méid a bhí tras-scríofa go dtí sin.",
+    "save-locked": "Ní féidir an tras-scríbhinn a shábháil fad is atá an seisiún cosanta faoi ghlas. Coinníonn an córas tras-scríofa í agus sábhálann sé í a luaithe a théann tú isteach sa seisiún cosanta, ar choinníoll go bhfanann Trilium ar oscailt.",
+    "save-failed": "Níorbh fhéidir an tras-scríbhinn a shábháil: {{- message}} Coinníonn an próiseas tras-scríofa í agus déanann sé iarracht arís leis an gcéad abairt eile.",
+    "capture-lost": "Chuir an tras-scríobh stad toisc nach raibh sé indéanta an fhuaim a ghabháil a thuilleadh. Coinnítear an méid a bhí tras-scríofa go dtí sin.",
+    "attachment-title": "Tras-scríbhinn",
+    "model-not-downloaded": "Níl an tsamhail aitheantais cainte íoslódáilte go fóill. Tosaigh taifeadadh ón lainseálaí chun í a íoslódáil.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, cruinneas ard",
+    "recognizer-description": "Múnla aitheantais cainte ó NVIDIA a thacaíonn le 25 teanga Eorpach. Déantar an t-aitheantas go hiomlán ar an ngléas seo, mar sin ní fhágann do thaifeadtaí an gléas riamh.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Úsáidtear é chun caint a bhrath san fhuaim, ionas nach ndéanfar ach na codanna ina bhfuil caint a thras-scríobh.",
+    "speaker-title": "TitaNet beag",
+    "speaker-description": "Úsáidtear é chun idirdhealú a dhéanamh idir cainteoirí, ionas gur féidir a fheiceáil cé a dúirt cad sa tras-scríbhinn."
+  },
+  "resources": {
+    "unknown": "Níl acmhainn ar a bhfuil an t-ainm {{id}} ann.",
+    "http-error": "Theip ar íoslódáil {{name}} le stádas HTTP {{status}}.",
+    "size-mismatch": "Níl an méid a bhfuiltear ag súil leis ag {{name}}.",
+    "hash-mismatch": "Ní mheaitseálann {{name}} leis an suim sheiceála a bhíothas ag sú leis, mar sin caitheadh i leataobh é.",
+    "delete-while-downloading": "Tá {{- title}} á íoslódáil. Cealaigh an íoslódáil sula scriosann tú é.",
+    "not-foreign": "Ní iontráil neamhúsáidte i bhfillteán na n-acmhainní é {{- name}}.",
+    "stalled": "Cuireadh stop le híoslódáil {{name}}: níor tháinig aon rud ar feadh {{seconds}} soicind. Seiceáil do nasc, ansin bain triail as arís."
+  },
+  "share_target": {
+    "default-title": "Ábhar comhroinnte",
+    "nothing-to-share": "Níl aon rud le roinnt: ní bhfuarthas téacs, nasc ná comhaid ar bith.",
+    "rejected": "Diúltaíodh don scair: {{- reason}}",
+    "other-page": "Ní féidir ach le roghchlár comhroinnte an chórais ábhar a sheoladh chuig an seoladh seo."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Ritheann Trilium mar Flatpak, mar sin ní féidir leis cláir a shuiteáiltear lasmuigh dá bhosca gainimh a thosú, mar shampla {{- cli}}. Chun {{- cli}} a úsáid:\n\n1. Suiteáil é ar an ríomhaire seo agus logáil isteach ann ó theirminéal.\n2. Tabhair cead do Trilium cláir a thosú lasmuigh dá bhosca gainimh tríd an méid seo a rith i dteirminéal:\n\n{{- grantCommand}}\n\n3. Atosaigh Trilium.\n\nLeis seo, bíonn an rochtain chéanna ag Trilium ar do ríomhaire is a bheadh aige dá mbeadh sé suiteáilte lasmuigh de Flatpak. Chun an cead sin a tharraingt siar, rith:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "Roghnaigh feidhmchlár chun an comhad a oscailt leis.",
+    "applications_filter": "Feidhmchláir"
   }
 }

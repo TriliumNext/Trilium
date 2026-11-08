@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Το Trilium Notes είναι μια δωρεάν και ανοιχτού κώδικα, ιεραρχική εφαρμογή
@@ -374,6 +375,10 @@ development](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20G
   από σημειώσεις κειμένου.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - επεξεργαστής κώδικα
   με υποστήριξη για τεράστιο αριθμό γλωσσών.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - ο άπειρος πίνακας που
   χρησιμοποιείται στις σημειώσεις του Καμβά.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - παροχή της
@@ -384,11 +389,6 @@ development](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20G
   πίνακα που χρησιμοποιείται στις συλλογές.
 * [FancyTree](https://github.com/mar10/fancytree) - πλούσια βιβλιοθήκη δέντρων
   χωρίς πραγματικό ανταγωνισμό.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - βιβλιοθήκη οπτικής σύνδεσης.
-  Χρησιμοποιείται σε [χάρτες
-  σχέσεων](https://docs.triliumnotes.org/user-guide/note-types/relation-map) και
-  [χάρτες
-  συνδέσμων](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Υποστήριξη
 

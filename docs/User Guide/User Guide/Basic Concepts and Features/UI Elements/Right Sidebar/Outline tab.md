@@ -19,19 +19,7 @@ The following note types are supported:
 
 *   Clicking on a heading will scroll the document to the position of the heading.
 *   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
-*   Pressing the close button will dismiss the table of contents but it can be shown again from the <a class="reference-link" href="../Floating%20buttons.md">Floating buttons</a> section.
-
-### Configuration
-
-> [!NOTE]
-> This section is relevant only for the old layout, the <a class="reference-link" href="../New%20Layout.md">New Layout</a> shows the table of contents regardless of the number of headings.
-
-*   To change the option globally, go to <a class="reference-link" href="#root/_hidden/_options/_optionsTextNotes">Text Notes</a> options, look for the _Table of Contents_ section and configure the minimum amount of headings that need to be present in the current note in order for the table of contents to show:
-    *   To always hide it, set the value to a really large number (e.g. 10000).
-    *   To always display it if there's at least a single heading, set the value to 1.
-*   Use <a class="reference-link" href="../../../Advanced%20Usage/Attributes.md">Attributes</a> to configure the table of contents for a particular note:
-    *   `#toc=show` will show the table of contents for that note regardless of the global settings.
-    *   Similarly, `#toc=hide` will always hide the table of contents for that note.
+*   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 
 ## Highlights
 
@@ -52,14 +40,12 @@ Highlighted text is defined as:
 ### Interaction
 
 *   Clicking on a highlighted text will scroll the document to its position.
-*   For the old layout only, pressing the close button will dismiss the list of highlights but it can be shown again from the <a class="reference-link" href="../Floating%20buttons.md">Floating buttons</a> section.
 
 ### Configuration
 
 *   Globally, it's possible to toggle the display of each category of highlighted text (as defined above) 
-    *   For the new layout, pressing the gear button in the top-right part of the section will reveal a menu to toggle between the highlight categories.
+    *   Pressing the gear button in the top-right part of the section will reveal a menu to toggle between the highlight categories.
     *   Alternatively, they can be changed by going to <a class="reference-link" href="#root/_hidden/_options/_optionsTextNotes">Text Notes</a> settings and looking for the _Highlights List_ section.
-*   For the old layout only, to suppress the display of highlighted text for one specific note, use <a class="reference-link" href="../../../Advanced%20Usage/Attributes.md">Attributes</a> to add the `#hideHighlightWidget` label.
 
 ## PDF-specific outline
 
@@ -72,9 +58,10 @@ When <a class="reference-link" href="../../../Note%20Types/File/PDFs.md">PDFs</
 *   Pages
     *   A preview of all the pages with a small thumbnail.
     *   Clicking on a page will automatically navigate to that page.
+    *   Right-clicking a page and selecting _Copy reference_ copies a link that opens the PDF at that page.
 *   Annotations
     *   Highlight and comment annotations are listed here.
-    *   For the old layout, this feature is not directly available, however there is a listing of comments directly in the PDF toolbar.
+    *   Right-clicking an annotation and selecting _Copy reference_ copies a link that opens the PDF at that annotation.
 *   Attachments
     *   If the PDF has its own attachments (not to be confused with Trilium's <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>), they will be displayed in a list.
     *   Some information such as the name and size of the attachment are displayed.

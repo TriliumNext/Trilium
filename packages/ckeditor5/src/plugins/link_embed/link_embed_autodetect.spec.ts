@@ -4,26 +4,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     addLinkedText,
     autoLinkIn,
+    createLinkEmbedHost,
     createTestEditor,
     findElement,
     flushFetch,
     hostConfig,
-    installLinkEmbedComponentMock,
     LINK_EMBED_TEST_PLUGINS,
     META,
     urlLeftAloneOnItsOwnLine,
     useDeferredFetch,
-    type LinkEmbedComponentMocks
+    type LinkEmbedHostMocks
 } from "../../../test/link-embed-kit.js";
 import { LINK_EMBED_COMMAND } from "./link_embed_commands.js";
 
 describe("AutoLinkToMention", () => {
     let editor: ClassicEditor;
-    let fetchLinkMetadata: LinkEmbedComponentMocks["fetchLinkMetadata"];
+    let host: LinkEmbedHostMocks;
+    let fetchMetadata: LinkEmbedHostMocks["fetchMetadata"];
 
     beforeEach(async () => {
-        ({ fetchLinkMetadata } = installLinkEmbedComponentMock());
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
+        host = createLinkEmbedHost();
+        ({ fetchMetadata } = host);
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, { linkEmbed: host });
     });
 
     it("converts a bare linked URL into a linkMention after fetching metadata", async () => {
@@ -32,22 +34,22 @@ describe("AutoLinkToMention", () => {
 
         await flushFetch();
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
         const mention = findElement(editor, "linkMention");
         expect(mention).toBeDefined();
         expect(mention?.getAttribute("url")).toBe(url);
         expect(mention?.getAttribute("title")).toBe(META.title);
     });
 
-    it("leaves the plain link untouched when the metadata could not be resolved, and says why", async () => {
+    it("leaves the text link untouched when the metadata could not be resolved, and says why", async () => {
         const url = "https://blocked.example.com/article";
-        fetchLinkMetadata.mockResolvedValueOnce({ url, embedType: "opengraph", title: "blocked.example.com", unresolved: true });
+        fetchMetadata.mockResolvedValueOnce({ url, embedType: "opengraph", title: "blocked.example.com", unresolved: true });
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         addLinkedText(editor, url);
         await flushFetch();
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
         expect(findElement(editor, "linkMention")).toBeUndefined();
         expect(findElement(editor, "linkEmbed")).toBeUndefined();
         // The link AutoLink created is still there, as plain linked text.
@@ -62,24 +64,24 @@ describe("AutoLinkToMention", () => {
 
     it("does not auto-convert when autoLinkPreviewsEnabled is false, but still offers the insert command", async () => {
         const url = "https://example.com/article";
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({ autoLinkPreviewsEnabled: false }));
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({ linkEmbed: host, autoLinkPreviewsEnabled: false }));
 
         addLinkedText(editor, url);
         await flushFetch();
 
         // The URL is not even looked up: the check runs before the metadata request.
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(findElement(editor, "linkMention")).toBeUndefined();
         expect(editor.getData()).toContain(`<a href="${url}">${url}</a>`);
 
         // Inserting a preview by hand is unaffected by the option: only auto-detection is gated.
-        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "cardLink" });
         expect(findElement(editor, "linkEmbed")?.getAttribute("url")).toBe(url);
     });
 
     it("re-reads a getter on every detected URL, so toggling the option needs no new editor", async () => {
         let enabled = false;
-        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({ autoLinkPreviewsEnabled: () => enabled }));
+        editor = await createTestEditor(LINK_EMBED_TEST_PLUGINS, hostConfig({ linkEmbed: host, autoLinkPreviewsEnabled: () => enabled }));
 
         addLinkedText(editor, "https://example.com/off");
         await flushFetch();
@@ -102,7 +104,7 @@ describe("AutoLinkToMention", () => {
 
         /** Makes the next fetch report `url` as embeddable, the way a YouTube link comes back. */
         function embeddable(url: string) {
-            fetchLinkMetadata.mockResolvedValueOnce({ ...META, url, embedType: "youtube" });
+            fetchMetadata.mockResolvedValueOnce({ ...META, url, embedType: "youtube" });
         }
 
         it("turns a URL left alone on its own line into a card", async () => {
@@ -117,13 +119,36 @@ describe("AutoLinkToMention", () => {
         });
 
         it("turns an embeddable URL left alone on its own line into a player", async () => {
-            embeddable(VIDEO_URL);
+            fetchMetadata.mockResolvedValueOnce({
+                ...META, url: VIDEO_URL, embedType: "youtube", aspectRatio: "9/16"
+            });
 
             autoLinkIn(editor, urlLeftAloneOnItsOwnLine(VIDEO_URL), VIDEO_URL);
             await flushFetch();
 
             expect(findElement(editor, "linkMention")).toBeUndefined();
-            expect(findElement(editor, "linkEmbed")?.getAttribute("embedType")).toBe("youtube");
+            expect(findElement(editor, "linkEmbed")).toBeUndefined();
+            const embed = findElement(editor, "contentEmbed");
+            expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(embed?.getAttribute("embedType")).toBe("youtube");
+            expect(embed?.getAttribute("title")).toBe(META.title);
+            expect(embed?.getAttribute("boxSize")).toBe("resizable");
+            expect(embed?.getAttribute("aspectRatio")).toBe("9/16");
+            expect(embed?.getAttribute("customWidth")).toBe("11.3em");
+        });
+
+        it("turns a URL after empty lines into a player and drops the lines", async () => {
+            embeddable(VIDEO_URL);
+
+            const emptyLines = "<softBreak></softBreak><softBreak></softBreak>";
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(`${emptyLines}${VIDEO_URL}`), VIDEO_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+            const root = editor.model.document.getRoot();
+            expect(root?.getChild(0)?.is("element", "contentEmbed")).toBe(true);
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(findElement(editor, "softBreak")).toBeUndefined();
         });
 
         it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {
@@ -137,12 +162,22 @@ describe("AutoLinkToMention", () => {
             expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(VIDEO_URL);
         });
 
-        it("keeps the URL inline when text sits beside it on the line", async () => {
-            autoLinkIn(editor, `<paragraph>See ${PLAIN_URL}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL);
-            await flushFetch();
+        it("keeps the URL inline beside text or another element, or below text", async () => {
+            const lines = [
+                `See ${PLAIN_URL}`,
+                `See<softBreak></softBreak>${PLAIN_URL}`,
+                `${PLAIN_URL}<linkMention url="https://example.com/other"></linkMention>`
+            ];
+            for (const line of lines) {
+                autoLinkIn(
+                    editor, `<paragraph>${line}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL
+                );
+                await flushFetch();
 
-            expect(findElement(editor, "linkEmbed")).toBeUndefined();
-            expect(findElement(editor, "linkMention")).toBeDefined();
+                expect(findElement(editor, "linkEmbed"), line).toBeUndefined();
+                const mention = findElement(editor, "linkMention");
+                expect(mention?.getAttribute("url"), line).toBe(PLAIN_URL);
+            }
         });
 
         it("keeps the URL inline inside a list item, a quote and a heading", async () => {
@@ -164,7 +199,7 @@ describe("AutoLinkToMention", () => {
         });
 
         it("leaves the caret where the user moved it, even if they typed while the fetch was in flight", async () => {
-            const { resolveFetch } = useDeferredFetch(fetchLinkMetadata);
+            const { resolveFetch } = useDeferredFetch(fetchMetadata);
             autoLinkIn(editor, urlLeftAloneOnItsOwnLine(PLAIN_URL), PLAIN_URL);
 
             // The user carries on typing on the new line while the metadata is still being fetched.
@@ -189,7 +224,7 @@ describe("AutoLinkToMention", () => {
         });
 
         it("does not drag the caret back when an inline mention lands mid-typing", async () => {
-            const { resolveFetch } = useDeferredFetch(fetchLinkMetadata);
+            const { resolveFetch } = useDeferredFetch(fetchMetadata);
             // Text beside the URL makes this a mention; the caret has already moved to the next line.
             autoLinkIn(editor, `<paragraph>see ${PLAIN_URL}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL);
 
@@ -221,7 +256,7 @@ describe("AutoLinkToMention", () => {
         await flushFetch();
 
         expect(findElement(editor, "linkMention")).toBeUndefined();
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
     });
 
     it("ignores non-http(s) links that fail the embeddable URL regex", async () => {
@@ -230,7 +265,7 @@ describe("AutoLinkToMention", () => {
         await flushFetch();
 
         expect(findElement(editor, "linkMention")).toBeUndefined();
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
     });
 
     it("skips non-text items in the affected range before reaching the URL text", async () => {
@@ -256,7 +291,7 @@ describe("AutoLinkToMention", () => {
 
         await flushFetch();
 
-        expect(fetchLinkMetadata).toHaveBeenCalledWith(url);
+        expect(fetchMetadata).toHaveBeenCalledWith(url);
         expect(findElement(editor, "linkMention")).toBeDefined();
     });
 
@@ -274,7 +309,7 @@ describe("AutoLinkToMention", () => {
         editor.execute("undo");
         await flushFetch();
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
     });
 
     it("records the URL on undo and does not re-convert it afterwards", async () => {
@@ -301,7 +336,7 @@ describe("AutoLinkToMention", () => {
         addLinkedText(editor, url);
         await flushFetch();
 
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
         expect(findElement(editor, "linkMention")).toBeUndefined();
     });
 
@@ -320,7 +355,7 @@ describe("AutoLinkToMention", () => {
         await flushFetch();
 
         expect(findElement(editor, "linkMention")).toBeUndefined();
-        expect(fetchLinkMetadata).not.toHaveBeenCalled();
+        expect(fetchMetadata).not.toHaveBeenCalled();
     });
 
     // The following tests exercise the defensive re-resolution guards in
@@ -328,7 +363,7 @@ describe("AutoLinkToMention", () => {
     // when it resolves, so the path/text are re-resolved and bail out gracefully.
 
     it("bails out when the parent block was removed before the fetch resolved", async () => {
-        const { resolveFetch } = useDeferredFetch(fetchLinkMetadata);
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
         const url = "https://example.com/gone";
 
         // The URL lives in the SECOND paragraph (stored parent path [1]).
@@ -356,7 +391,7 @@ describe("AutoLinkToMention", () => {
     });
 
     it("bails out when an intermediate path segment no longer resolves", async () => {
-        const { resolveFetch } = useDeferredFetch(fetchLinkMetadata);
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
         const url = "https://example.com/nested";
 
         // Nest the URL two block-quotes deep so the stored parent path has depth 3
@@ -390,7 +425,7 @@ describe("AutoLinkToMention", () => {
     });
 
     it("skips non-matching text and bails when the URL text lost its linkHref", async () => {
-        const { resolveFetch } = useDeferredFetch(fetchLinkMetadata);
+        const { resolveFetch } = useDeferredFetch(fetchMetadata);
         const url = "https://example.com/edited";
 
         // Paragraph holds a non-matching text node followed by the URL text. Only the

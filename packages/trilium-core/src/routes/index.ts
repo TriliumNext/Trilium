@@ -103,6 +103,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
     apiRoute(PST, "/api/notes/metadata", notesApiRoute.getNotesMetadata);
     apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
+    apiRoute(GET, "/api/notes/:noteId/blocks", notesApiRoute.getNoteBlocks);
+    apiRoute(PUT, "/api/notes/:noteId/blocks", notesApiRoute.updateNoteBlocks);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
     apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
@@ -147,7 +149,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PST, "/api/revisions/:revisionId/restore", revisionsApiRoute.restoreRevision);
     apiRoute(GET, "/api/edited-notes/:date", revisionsApiRoute.getEditedNotesOnDate);
 
-    apiRoute(PUT, "/api/branches/:branchId/move-to/:parentBranchId", branchesApiRoute.moveBranchToParent);
+    apiRoute(PUT, "/api/branches/move-to/:parentBranchId", branchesApiRoute.moveBranchesToParent);
     apiRoute(PUT, "/api/branches/:branchId/move-before/:beforeBranchId", branchesApiRoute.moveBranchBeforeNote);
     apiRoute(PUT, "/api/branches/:branchId/move-after/:afterBranchId", branchesApiRoute.moveBranchAfterNote);
     apiRoute(PUT, "/api/branches/:branchId/expanded/:expanded", branchesApiRoute.setExpanded);
@@ -175,6 +177,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // POSTed rather than taking the URL in a query string: a link can carry a one-time token or a
     // signature, and a query string ends up in every access log along the way.
     asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
+    asyncApiRoute(PST, "/api/link-embed/details", linkEmbedRoute.getPageDetails);
+    asyncApiRoute(PST, "/api/link-embed/status", linkEmbedRoute.getHttpStatus);
+    asyncApiRoute(PST, "/api/link-embed/thumbnail", linkEmbedRoute.storeMediaThumbnail);
 
     asyncRoute(GET, "/api/spreadsheet/:noteId/xlsx", [checkApiAuthOrElectron], spreadsheetRoute.exportXlsx);
 
@@ -238,22 +243,24 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncRoute(GET, "/api/branches/:branchId/export/:type/:format/:taskId", [checkApiAuthOrElectron], exportRoute.exportBranch);
     //#endregion
 
-    apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);
+    apiRoute(GET, "/api/quick-search", searchRoute.quickSearch);
     apiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
     apiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
     apiRoute(PST, "/api/search-and-execute-note/:noteId", searchRoute.searchAndExecute);
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
-    // Ahead of the `:searchString` catch-all below, which would otherwise claim the literal path
-    // were it ever given a POST handler too.
     apiRoute(PST, "/api/search/lint", searchRoute.lintSearchString);
-    apiRoute(GET, "/api/search/:searchString", searchRoute.search);
+    apiRoute(GET, "/api/search/note-mimes", searchRoute.getNoteMimes);
+    apiRoute(GET, "/api/search", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
 
     // Streaming a chat is not here — it has no single form every runtime can serve.
     // The server and the desktop app answer `/api/llm-chat/stream` with Server-Sent
     // Events; standalone, whose bridge cannot hold a response open, registers
     // `llmRoute.startChatStream` itself. See `apps/standalone`'s browser_routes.ts.
+    // Answering a tool call is here: it reaches the turn by its stream id, whichever
+    // transport streams it.
     asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
+    apiRoute(PST, "/api/llm-chat/tool-approval", llmRoute.answerToolCall);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
 
@@ -261,6 +268,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
     apiRoute(PUT, "/api/notes/:noteId/clone-to-note/:parentNoteId", cloningApiRoute.cloneNoteToParentNote);
     apiRoute(PUT, "/api/notes/:noteId/clone-after/:afterBranchId", cloningApiRoute.cloneNoteAfter);
+    apiRoute(PUT, "/api/notes/:noteId/clone-before/:beforeBranchId",
+        cloningApiRoute.cloneNoteBefore);
 
     asyncApiRoute(GET, "/api/special-notes/inbox/:date", specialNotesRoute.getInboxNote);
     apiRoute(GET, "/api/special-notes/inbox-target", specialNotesRoute.getInboxTarget);
@@ -280,7 +289,6 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/special-notes/api-script-launcher", specialNotesRoute.createOrUpdateScriptLauncherFromApi);
     apiRoute(PST, "/api/special-notes/llm-chat", specialNotesRoute.createLlmChat);
     apiRoute(GET, "/api/special-notes/most-recent-llm-chat", specialNotesRoute.getMostRecentLlmChat);
-    apiRoute(GET, "/api/special-notes/get-or-create-llm-chat", specialNotesRoute.getOrCreateLlmChat);
     apiRoute(GET, "/api/special-notes/recent-llm-chats", specialNotesRoute.getRecentLlmChats);
     apiRoute(PST, "/api/special-notes/save-llm-chat", specialNotesRoute.saveLlmChat);
 
@@ -329,6 +337,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
+    apiRoute(GET, "/api/recent-changes/:ancestorNoteId/note-ids",
+        recentChangesApiRoute.getRecentlyChangedNoteIds);
 
     apiRoute(GET, "/api/deleted-notes/:noteId/metadata", deletedNotesApiRoute.getDeletedNoteMetadata);
     apiRoute(GET, "/api/deleted-notes/:noteId/blob", deletedNotesApiRoute.getDeletedNoteBlob);

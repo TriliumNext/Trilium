@@ -14,8 +14,6 @@
  * following a freehand stroke, and why an imported track keeps its file-note form (see GpxTrack).
  */
 
-import { GEO_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
-
 import { type Bounds, boundsOf } from "./coordinates";
 
 /** The label a shape note carries its geometry in. Declared in commons because `getNoteIcon`
@@ -46,6 +44,12 @@ export interface GeoShapeCircle {
     center: [number, number];
     /** The circle's radius in meters, which a ring of points would only approximate. */
     radiusMeters: number;
+    /**
+     * The ring the circle is drawn as, where it is known already: the one a drawing tool produced,
+     * or one an image map computes in pixels (see `imageSpace`). Without it the ring is walked out
+     * of the radius by {@link circleRing}.
+     */
+    ring?: [number, number][];
 }
 
 /** Every kind of shape a note can carry. */
@@ -65,11 +69,14 @@ const MINIMUM_POINTS = { line: 2, polygon: 3 } as const;
  */
 export function serializeGeoShape(shape: GeoShape): string {
     if (shape.type === "circle") {
-        const [ lng, lat ] = shape.center;
-        return `circle:${round(lat)},${round(lng)} ${Math.round(shape.radiusMeters * 10) / 10}`;
+        return writeShape({
+            type: "circle",
+            points: [ toLatLng(shape.center) ],
+            radius: Math.round(shape.radiusMeters * 10) / 10
+        });
     }
 
-    return `${shape.type}:${serializePoints(shape.coordinates)}`;
+    return writeShape({ type: shape.type, points: shape.coordinates.map(toLatLng) });
 }
 
 /**
@@ -81,6 +88,28 @@ export function serializeGeoShape(shape: GeoShape): string {
  * {@link MINIMUM_POINTS}).
  */
 export function parseGeoShape(value: string): GeoShape | null {
+    const written = readShape(value);
+    if (!written) return null;
+
+    const [ first ] = written.points;
+    if (written.type === "circle") {
+        return { type: "circle", center: [ first[1], first[0] ], radiusMeters: written.radius };
+    }
+
+    return { type: written.type, coordinates: written.points.map(([ lat, lng ]) => [ lng, lat ]) };
+}
+
+/**
+ * A shape label's value as it is written, before its pairs are read as places: the kind, each point
+ * as the pair written for it, and a circle's radius. A geo map writes `lat,lng` pairs and a radius
+ * in meters, an image map `x,y` pairs and a radius in pixels (see `imageSpace`).
+ */
+export type WrittenShape =
+    | { type: "line" | "polygon"; points: [number, number][] }
+    | { type: "circle"; points: [[number, number]]; radius: number };
+
+/** The written shape a label value spells, or null where it spells none (see {@link parseGeoShape}). */
+export function readShape(value: string): WrittenShape | null {
     const divide = value.indexOf(":");
     if (divide < 0) return null;
 
@@ -88,37 +117,36 @@ export function parseGeoShape(value: string): GeoShape | null {
     const rest = value.slice(divide + 1);
 
     if (type === "circle") {
-        return parseCircle(rest);
+        return readCircle(rest);
     }
 
     if (!isPointKind(type)) return null;
 
-    const coordinates = parsePoints(rest);
-    if (!coordinates || coordinates.length < MINIMUM_POINTS[type]) return null;
+    const points = parsePoints(rest);
+    if (!points || points.length < MINIMUM_POINTS[type]) return null;
 
-    return { type, coordinates };
+    return { type, points };
 }
 
-/**
- * Whether the note is drawn on the map as a shape, which is what a readable geometry label means.
- * Asked wherever a shape is offered something different from a marker, such as having no pin to
- * move (see DetailPane and ContextMenus).
- */
-export function isShapeNote(note: { getLabelValue(name: string): string | null }): boolean {
-    return !!parseGeoShape(note.getLabelValue(GEO_SHAPE_ATTRIBUTE) ?? "");
+/** A written shape as its label value. The numbers are written as given, rounded by the caller. */
+export function writeShape(shape: WrittenShape): string {
+    const points = shape.points.map(([ a, b ]) => `${a},${b}`).join(" ");
+    return shape.type === "circle"
+        ? `circle:${points} ${shape.radius}`
+        : `${shape.type}:${points}`;
 }
 
-function parseCircle(rest: string): GeoShapeCircle | null {
+function readCircle(rest: string): WrittenShape | null {
     const parts = rest.trim().split(/\s+/);
     if (parts.length !== 2) return null;
 
     const center = parsePoints(parts[0]);
-    const radiusMeters = Number(parts[1]);
-    if (!center || center.length !== 1 || !Number.isFinite(radiusMeters) || radiusMeters <= 0) {
+    const radius = Number(parts[1]);
+    if (!center || center.length !== 1 || !Number.isFinite(radius) || radius <= 0) {
         return null;
     }
 
-    return { type: "circle", center: center[0], radiusMeters };
+    return { type: "circle", points: [ center[0] ], radius };
 }
 
 /**
@@ -141,7 +169,7 @@ export function closeRing(coordinates: [number, number][]): [number, number][] {
 const EARTH_RADIUS_METERS = 6371008.8;
 
 /** How many corners a circle's ring is drawn with, enough that none of them show. */
-const CIRCLE_SEGMENTS = 64;
+export const CIRCLE_SEGMENTS = 64;
 
 /**
  * A circle's radius walked out as a ring, one point per bearing, without the closing repeat. This
@@ -193,9 +221,12 @@ export function ringCenter(ring: [number, number][]): [number, number] | null {
  * {@link boundsOf}'s to deal with, as it is for a track.
  */
 export function geoShapeBounds(shape: GeoShape): Bounds | null {
-    return boundsOf(shape.type === "circle"
-        ? circleRing(shape.center, shape.radiusMeters)
-        : shape.coordinates);
+    return boundsOf(shape.type === "circle" ? shapeRing(shape) : shape.coordinates);
+}
+
+/** The ring a circle is drawn as: the one it carries, or one walked out of its radius. */
+export function shapeRing(shape: GeoShapeCircle): [number, number][] {
+    return shape.ring ?? circleRing(shape.center, shape.radiusMeters);
 }
 
 function toRadians(degrees: number): number {
@@ -210,30 +241,30 @@ function isPointKind(type: string): type is keyof typeof MINIMUM_POINTS {
     return Object.hasOwn(MINIMUM_POINTS, type);
 }
 
-function serializePoints(coordinates: [number, number][]): string {
-    return coordinates
-        .map(([ lng, lat ]) => `${round(lat)},${round(lng)}`)
-        .join(" ");
+/** A `[lng, lat]` point as the `lat,lng` pair a geo label writes, at the precision it keeps. */
+function toLatLng([ lng, lat ]: [number, number]): [number, number] {
+    return [ round(lat), round(lng) ];
 }
 
+/** Each `a,b` pair in a run of them, in the order written. */
 function parsePoints(value: string): [number, number][] | null {
-    const coordinates: [number, number][] = [];
+    const points: [number, number][] = [];
     for (const point of value.trim().split(/\s+/)) {
         const parts = point.split(",");
         if (parts.length !== 2) {
             return null;
         }
 
-        const lat = Number(parts[0]);
-        const lng = Number(parts[1]);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        const a = Number(parts[0]);
+        const b = Number(parts[1]);
+        if (!Number.isFinite(a) || !Number.isFinite(b)) {
             return null;
         }
 
-        coordinates.push([ lng, lat ]);
+        points.push([ a, b ]);
     }
 
-    return coordinates;
+    return points;
 }
 
 /** A coordinate at the precision the label keeps, without `toFixed`'s trailing zeros. */

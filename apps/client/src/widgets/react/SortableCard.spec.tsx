@@ -433,7 +433,7 @@ describe("SortableCard", () => {
     describe("adding an entry", () => {
         it("draws no segment for adding unless it is given one", () => {
             draw();
-            expect(container.querySelector(".tn-sortable-adders")).toBeNull();
+            expect(container.querySelector(".tn-card-adders")).toBeNull();
 
             draw({ itemCreationButtons: [ makes("d", "Delta") ] });
             expect(adder()?.textContent).toContain("Add");
@@ -481,6 +481,22 @@ describe("SortableCard", () => {
             await act(async () => { answer({ key: "d", caption: "Delta" }); });
             expect(changed.at(-1)?.map((item) => item.key)).toEqual([ "a", "b", "c", "d" ]);
         });
+
+        it("reports to the caller's latest onChange, after the list changed while it asked",
+            async () => {
+                let answer: (item: SortableItem | undefined) => void = () => {};
+                const stale = vi.fn();
+                const props = { itemCreationButtons: [ { label: "Add", onCreateItem: () =>
+                    new Promise<SortableItem | undefined>((resolve) => { answer = resolve; }) } ] };
+                draw({ ...props, onChange: stale });
+
+                await click(adder());
+                redraw(items.slice(1), props);
+                await act(async () => { answer({ key: "d", caption: "Delta" }); });
+
+                expect(stale).not.toHaveBeenCalled();
+                expect(changed.at(-1)?.map((item) => item.key)).toEqual([ "b", "c", "d" ]);
+            });
 
         it("offers a button for each way of making one, each the width of the others", async () => {
             draw({ itemCreationButtons: [
@@ -620,6 +636,80 @@ describe("SortableCard", () => {
         });
     });
 
+    /** The caller removes it, from Delete, a button inside it, or a change made elsewhere. */
+    describe("removing the focused entry", () => {
+        it("moves the focus to the entry in its place, else the one before, else the creation row",
+            () => {
+                const props = { itemCreationButtons: [ makes("d", "Delta") ] };
+                draw(props);
+
+                focus(segmentOf("b"));
+                redraw([ items[0], items[2] ], props);
+                expect(document.activeElement).toBe(segmentOf("c"));
+
+                redraw([ items[0] ], props);
+                expect(document.activeElement).toBe(segmentOf("a"));
+
+                redraw([], props);
+                expect(document.activeElement).toBe(adder());
+            });
+
+        it("moves the focus from a control inside the entry too", () => {
+            const props = { renderItem: (item: SortableItem) =>
+                <button type="button" className="own">{item.caption}</button> };
+            draw(props);
+
+            focus(segmentOf("a")?.querySelector<HTMLElement>(".own") ?? null);
+            redraw(items.slice(1), props);
+
+            expect(document.activeElement).toBe(segmentOf("b"));
+        });
+
+        it("leaves the focus where it went once it left the card", () => {
+            draw();
+            const outside = document.createElement("button");
+            document.body.append(outside);
+
+            focus(segmentOf("b"));
+            focus(outside);
+            redraw([ items[0], items[2] ]);
+
+            expect(document.activeElement).toBe(outside);
+            outside.remove();
+        });
+    });
+
+    /** For a caller that sorts the entries itself, such as by name. */
+    describe("with the order fixed", () => {
+        it("draws no grip", () => {
+            draw({ isReorderable: false });
+
+            expect(container.querySelector(".tn-sortable-grip")).toBeNull();
+            expect(captions()).toEqual([ "Alpha", "Beta", "Gamma" ]);
+        });
+
+        it("takes nothing up for a finger resting on a segment", () => {
+            draw({ isReorderable: false });
+
+            touch(segmentOf("a"), { onGrip: false });
+            rest();
+
+            expect(segmentOf("a")?.className).not.toContain("tn-sortable-dragging");
+            expect(captured).toEqual([]);
+        });
+
+        it("moves nothing with Control, but still steps between the entries", () => {
+            draw({ isReorderable: false });
+
+            press(segmentOf("a"), "ArrowDown", { ctrlKey: true });
+            expect(changed).toEqual([]);
+            expect(captions()).toEqual([ "Alpha", "Beta", "Gamma" ]);
+
+            press(segmentOf("a"), "ArrowDown");
+            expect(document.activeElement).toBe(segmentOf("b"));
+        });
+    });
+
     it("carries the grip on the trailing edge of each segment, after what it reads", () => {
         draw();
         const [ first ] = segments();
@@ -748,16 +838,16 @@ describe("SortableCard", () => {
     }
 
     function row() {
-        return container.querySelector<HTMLElement>(".tn-sortable-adders");
+        return container.querySelector<HTMLElement>(".tn-card-adders");
     }
 
     /** The first of the buttons at the foot of the card, there being at least one in these. */
     function adder() {
-        return container.querySelector<HTMLElement>(".tn-sortable-adder");
+        return container.querySelector<HTMLElement>(".tn-card-adder");
     }
 
     function adders() {
-        return [ ...container.querySelectorAll<HTMLElement>(".tn-sortable-adder") ];
+        return [ ...container.querySelectorAll<HTMLElement>(".tn-card-adder") ];
     }
 
     /** A way of making one entry, named so a test can tell which button made what. */

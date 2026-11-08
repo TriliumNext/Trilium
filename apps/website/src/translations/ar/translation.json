@@ -110,7 +110,6 @@
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
         "download_rpm": "rpm.",
-        "download_flatpak": "flatpak.",
         "title_x64": "لينيكس 64 بت",
         "download_zip": "النسخة المحمولة بصيغة zip",
         "title_arm64": "نظام لينكس على ARM",

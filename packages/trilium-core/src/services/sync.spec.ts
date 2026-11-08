@@ -7,15 +7,17 @@ import contentHashService from "./content_hash.js";
 import * as cls from "./context.js";
 import entityChangesService from "./entity_changes.js";
 import getInstanceId from "./instance_id.js";
+import notes from "./notes.js";
 import options from "./options.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
 import setupService from "./setup.js";
 import sqlInit from "./sql_init.js";
-import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS } from "./sync.js";
+import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS, serializeSyncRequestBody } from "./sync.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
+import { encodeBase64 } from "./utils/binary.js";
 import dateUtils from "./utils/date.js";
 import ws from "./ws.js";
 
@@ -351,6 +353,67 @@ describe("sync service", () => {
         expect(pushedEntityIds()).toContain(blobId);
     });
 
+    // The server edited the note and dropped the client's blob in `deleteBlobIfNotUsed()`. The
+    // client's later row wins the pull, so the push must carry the blob that row points at.
+    it("pushes the blob of a local note that wins against an older server edit", async () => {
+        const { noteId, clientBlobId } = cls.init(() => {
+            const { note } = notes.createNewNote({ parentNoteId: "root", title: "local-wins", content: "<p>client text</p>", type: "text" });
+            options.setOption("lastSyncedPush", String(syncService.getMaxEntityChangeId()));
+            return { noteId: note.noteId, clientBlobId: note.blobId };
+        });
+        const serverBlobId = "suLocalWinsServerEdit";
+        const now = dateUtils.utcDateTimeStr(new Date(Date.now() - 60 * 1000));
+        const clientRow = getSql().getRow<Record<string, unknown>>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
+
+        config.changed = [
+            {
+                entityChanges: [
+                    { entityChange: ec({ entityName: "blobs", entityId: serverBlobId, utcDateChanged: now }), entity: { blobId: serverBlobId, content: encodeBase64("<p>server text</p>"), dateModified: now, utcDateModified: now } },
+                    { entityChange: ec({ entityId: noteId, hash: "serverEdit", utcDateChanged: now }), entity: { ...clientRow, blobId: serverBlobId, utcDateModified: now } }
+                ],
+                lastEntityChangeId: 2,
+                outstandingPullCount: 0
+            },
+            { entityChanges: [], lastEntityChangeId: 2, outstandingPullCount: 0 }
+        ];
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+        expect(getSql().getValue("SELECT blobId FROM notes WHERE noteId = ?", [noteId])).toBe(clientBlobId);
+        expect(pushedEntityIds()).toContain(noteId);
+        expect(pushedEntityIds()).toContain(clientBlobId);
+    });
+
+    it("lets a server edit made after the sync beat a note stamped while the clock ran ahead", async () => {
+        const clockAhead = dateUtils.utcDateTimeStr(new Date(Date.now() + 3600 * 1000));
+        const noteId = cls.init(() => {
+            const { note } = notes.createNewNote({ parentNoteId: "root", title: "clock-ahead", content: "<p>client text</p>", type: "text" });
+            getSql().execute("UPDATE entity_changes SET utcDateChanged = ? WHERE entityName = 'notes' AND entityId = ?", [clockAhead, note.noteId]);
+            return note.noteId;
+        });
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+        expect(pushedEntityIds()).toContain(noteId);
+
+        const serverBlobId = "suClockAheadServerEdit";
+        const later = dateUtils.utcNowDateTime();
+        const clientRow = getSql().getRow<Record<string, unknown>>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
+        changedIdx = 0;
+        config.changed = [
+            {
+                entityChanges: [
+                    { entityChange: ec({ entityName: "blobs", entityId: serverBlobId, utcDateChanged: later }), entity: { blobId: serverBlobId, content: encodeBase64("<p>server text</p>"), dateModified: later, utcDateModified: later } },
+                    { entityChange: ec({ entityId: noteId, hash: "serverEdit", utcDateChanged: later }), entity: { ...clientRow, blobId: serverBlobId, utcDateModified: later } }
+                ],
+                lastEntityChangeId: 2,
+                outstandingPullCount: 0
+            },
+            { entityChanges: [], lastEntityChangeId: 2, outstandingPullCount: 0 }
+        ];
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+        expect(getSql().getValue("SELECT blobId FROM notes WHERE noteId = ?", [noteId])).toBe(serverBlobId);
+    });
+
     describe("unresolvable content hash divergence", () => {
         // A sector that keeps diverging after being re-queued used to spin the sync loop forever,
         // re-pushing the same sector every round without ever converging (#11073).
@@ -453,9 +516,15 @@ describe("sync service", () => {
         await expect(runSync()).resolves.toEqual({ success: false, message: "Got no response." });
     });
 
-    it("reports a connection failure without a stack-trace message", async () => {
-        config.loginThrows = new Error("connect ECONNREFUSED 127.0.0.1:8080");
-        await expect(runSync()).resolves.toEqual({ success: false, message: "No connection to sync server." });
+    it("reports a connection failure together with its cause", async () => {
+        config.loginThrows = new Error(
+            "Request to POST https://sync.example:8443/api/login/sync failed, error: connect ECONNREFUSED 10.0.0.5:8443"
+        );
+        await expect(runSync()).resolves.toEqual({
+            success: false,
+            message: "No connection to sync server: Request to POST https://sync.example:8443/api/login/sync failed, "
+                + "error: connect ECONNREFUSED 10.0.0.5:8443"
+        });
     });
 
     it("reports other sync errors with their message", async () => {
@@ -481,10 +550,14 @@ describe("sync service", () => {
             );
         });
 
-        it("records connection failures with the user-facing message", async () => {
-            config.loginThrows = new Error("connect ECONNREFUSED 127.0.0.1:8080");
+        it("records connection failures with their cause and the host redacted", async () => {
+            config.loginThrows = new Error(
+                "Request to POST https://sync.example:8443/api/login/sync failed, error: 502 Bad Gateway"
+            );
             await expect(runSync()).resolves.toMatchObject({ success: false });
-            expect(syncService.getLastSyncError()).toBe("No connection to sync server.");
+            expect(syncService.getLastSyncError()).toBe(
+                "No connection to sync server: Request to POST https://[redacted]/api/login/sync failed, error: 502 Bad Gateway"
+            );
         });
 
         it("clears the recorded error once a subsequent sync succeeds", async () => {
@@ -643,12 +716,75 @@ describe("estimateEntityChangeRecordSize", () => {
     });
 });
 
+describe("serializeSyncRequestBody", () => {
+    // Electron 45.2.3 aborts the process when `JSON.stringify` output reaches 268,173,323 characters.
+    const ELECTRON_STRINGIFY_LIMIT = 268_173_259;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps each JSON.stringify input under Electron's limit for a blob above it", () => {
+        const content = "A".repeat(ELECTRON_STRINGIFY_LIMIT + 1);
+        const blobRecord = (blobContent: string) => ({
+            entityChange: ec({ entityName: "blobs", entityId: "largeBlob" }),
+            entity: { blobId: "largeBlob", content: blobContent }
+        });
+        const stringify = JSON.stringify;
+        const expectedLength = stringify({ entities: [ blobRecord("") ], instanceId: "desktop" }).length + content.length;
+
+        vi.spyOn(JSON, "stringify").mockImplementation((...args: Parameters<typeof JSON.stringify>) => {
+            const inputLength = measureStrings(args[0]);
+            if (inputLength > ELECTRON_STRINGIFY_LIMIT) {
+                throw new Error(`Electron aborts the process on JSON.stringify of ${inputLength} characters`);
+            }
+            return stringify(...args);
+        });
+
+        const body = serializeSyncRequestBody({ entities: [ blobRecord(content) ], instanceId: "desktop" });
+
+        expect(body.length).toBe(expectedLength);
+    });
+
+    it("produces the same JSON as JSON.stringify", () => {
+        const base64 = "QUJD+/9=".repeat(256 * 1024);
+        const body = {
+            entities: [
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "a", content: base64 } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "b", content: `${base64}"\n\\` } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "c", content: base64.slice(1) } },
+                { entityChange: ec({ isErased: true }), entity: { content: null, missing: undefined } },
+                { entityChange: ec({}), entity: { title: "short \"quoted\"", list: [ 1, undefined, base64 ] } }
+            ],
+            instanceId: "desktop"
+        };
+
+        expect(serializeSyncRequestBody(body)).toBe(JSON.stringify(body));
+        expect(serializeSyncRequestBody(undefined)).toBe("");
+    });
+});
+
 function pulledOptionChange(): { entityChange: EntityChange; entity: undefined } {
     // An options change with no entity row -> applied as a no-op by updateEntities.
     return {
         entityChange: ec({ entityName: "options", entityId: "sync_spec_noop_opt" }),
         entity: undefined
     };
+}
+
+/** Sums the lengths of every string in `value`, keys included: a lower bound on its JSON length. */
+function measureStrings(value: unknown): number {
+    if (typeof value === "string") {
+        return value.length;
+    }
+    if (value === null || typeof value !== "object") {
+        return 0;
+    }
+    let length = 0;
+    for (const [ key, child ] of Object.entries(value)) {
+        length += key.length + measureStrings(child);
+    }
+    return length;
 }
 
 function ec(overrides: Partial<EntityChange>): EntityChange {

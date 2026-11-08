@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import { useTriliumEvent } from "../../react/hooks";
 import { resolveCssColor } from "./css_color";
-import { formatTime } from "./MediaPlayer";
+import { formatRemainingTime, formatTime } from "./MediaPlayer";
 
 /** Below this normalized amplitude a bucket is considered silence and painted with the silence color. */
 const SILENCE_THRESHOLD = 0.06;
@@ -26,7 +26,7 @@ const KEYBOARD_STEP = 0.05;
  * placeholder band; when {@link peaks} arrives the bars animate from flat to their real heights. Scrubbing works
  * throughout (it only needs the media element's duration), by mouse, touch (Pointer Events), or keyboard.
  */
-export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>; peaks: number[] | null }) {
+export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>; peaks: number[] | null }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -115,6 +115,8 @@ export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLV
     // Pointer Events unify mouse and touch. Capturing the pointer keeps scrubbing live even when the finger or
     // cursor strays outside the canvas mid-drag.
     const onPointerDown = useCallback((e: PointerEvent) => {
+        // Only the primary button seeks; a right-click keeps its context menu.
+        if (e.button !== 0) return;
         e.preventDefault();
         // preventDefault suppresses the default focus-on-click, so focus explicitly to keep keyboard seeking
         // reachable after a mouse/touch interaction.
@@ -167,7 +169,7 @@ export function WaveformSeekBar({ mediaRef, peaks }: { mediaRef: RefObject<HTMLV
                 onPointerMove={onPointerMove}
                 onKeyDown={onKeyDown}
             />
-            <span class="media-time">-{formatTime(Math.max(0, duration - currentTime))}</span>
+            <span class="media-time">{formatRemainingTime(currentTime, duration)}</span>
         </div>
     );
 }

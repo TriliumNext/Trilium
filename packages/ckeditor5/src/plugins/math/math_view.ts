@@ -45,7 +45,6 @@ export default class MathView extends View {
 		// Update rendering when state changes.
 		// Checking isRendered prevents errors during initialization.
 		this.on( 'change', () => {
-			/* v8 ignore next -- the view is always rendered before it is handed a value */
 			if ( this.isRendered ) {
 				this.updateMath();
 			}
@@ -88,7 +87,7 @@ export default class MathView extends View {
 		).catch( error => {
 			console.error( 'Math rendering failed:', error );
 
-			/* v8 ignore next -- defensive: updateMath() returns early when there is no element */
+			/* v8 ignore else -- defensive: updateMath() returns early when there is no element */
 			if ( this.element ) {
 				this.element.textContent = this.renderErrorLabel;
 				this.element.classList.add( 'ck-math-render-error' );

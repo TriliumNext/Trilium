@@ -1,6 +1,7 @@
 import type { CKTextEditor, ModelText } from "@triliumnext/ckeditor5";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { revealElement } from "../../services/collapsible";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
@@ -77,9 +78,10 @@ function AbstractHighlightsList<T extends RawHighlight>({ highlights, scrollToHi
             <span className="highlights-list">
                 {filteredHighlights.length > 0 ? (
                     <ol>
-                        {filteredHighlights.map(highlight => (
+                        {/* Keyed by position, so a new extraction updates the items in place. */}
+                        {filteredHighlights.map((highlight, index) => (
                             <HighlightItem
-                                key={highlight.id}
+                                key={index}
                                 highlight={highlight}
                                 onClick={() => scrollToHighlight(highlight)}
                             />
@@ -116,9 +118,6 @@ function HighlightsListMenu({ currentValue, onChange }: {
             iconAction
             hideToggleArrow
             noSelectButtonStyle
-            // The card establishes a stacking context of its own and clips its overflow, so the menu
-            // is rendered into the body to stand clear of it — as the card's help popup is.
-            portalToBody
         >
             {HIGHLIGHT_FORMATS.map(({ val, titleKey, icon }) => (
                 <FormListToggleableItem
@@ -152,7 +151,10 @@ function HighlightItem<T extends RawHighlight>({ highlight, onClick }: {
                     fontStyle: highlight.attrs.italic ? "italic" : undefined,
                     textDecoration: highlight.attrs.underline ? "underline" : undefined,
                     color: highlight.attrs.color,
-                    backgroundColor: highlight.attrs.background
+                    backgroundColor: highlight.attrs.background,
+                    // Adapted to the theme by `adaptive-colors.css`, like the note's own colors.
+                    "--tn-color": highlight.attrs.color,
+                    "--tn-background": highlight.attrs.background
                 }}
                 html={highlight.text}
             />
@@ -218,10 +220,10 @@ function EditableTextHighlightsList() {
         const domPos = domConverter.viewPositionToDom(viewPos);
 
         if (!domPos) return;
-        if (domPos.parent instanceof HTMLElement) {
-            domPos.parent.scrollIntoView();
-        } else if (domPos.parent instanceof Text) {
-            domPos.parent.parentElement?.scrollIntoView();
+        const element = domPos.parent instanceof Text ? domPos.parent.parentElement : domPos.parent;
+        if (element instanceof HTMLElement) {
+            revealElement(element);
+            element.scrollIntoView();
         }
 
     }, [ textEditor ]);
@@ -284,6 +286,7 @@ function ReadOnlyTextHighlightsList() {
     const highlights = extractHighlightsFromStaticHtml(contentEl);
 
     const scrollToHighlight = useCallback((highlight: DomHighlight) => {
+        revealElement(highlight.element);
         highlight.element.scrollIntoView();
     }, []);
 

@@ -1,3 +1,6 @@
+import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+
+import { isDefinitionName } from "../../entities/fattribute";
 import type { PromotedAttribute } from "../collections/promoted_attributes";
 
 /** The kind a definition takes when it points at a note instead of holding a value. */
@@ -25,6 +28,25 @@ export const DEFINITION_TYPE_ICONS: Record<string, string> = {
     color: "bx bx-palette",
     [RELATION_DEFINITION_TYPE]: "bx bx-transfer"
 };
+
+/** The icon of a label, which a definition naming a field the editor does not know keeps. */
+const LABEL_ICON = "bx bx-hash";
+
+/**
+ * What an attribute is, as the attributes panel draws it: the icon of a label or of a relation, or for
+ * a definition (`label:foo`, `relation:foo`) the icon of the field it sets up.
+ */
+export function attributeKindIcon(type: string, name: string, value: string) {
+    if (type === "relation" || (isDefinitionName(name) && name.startsWith("relation:"))) {
+        return DEFINITION_TYPE_ICONS[RELATION_DEFINITION_TYPE];
+    }
+    if (!isDefinitionName(name)) {
+        return LABEL_ICON;
+    }
+
+    const labelType = promotedAttributeDefinitionParser.parse(value).labelType ?? "text";
+    return DEFINITION_TYPE_ICONS[labelType] ?? LABEL_ICON;
+}
 
 /** The icon for an attribute's kind: its `labelType`, or the relation icon for a relation. */
 export function promotedAttributeIcon(attribute: PromotedAttribute) {

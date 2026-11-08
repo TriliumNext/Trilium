@@ -43,3 +43,11 @@
         }
     }
 }
+
+.modal.collection-properties-dialog .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-inline: 25px;
+    padding-block-end: 25px;
+}

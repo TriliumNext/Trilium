@@ -13,6 +13,10 @@ Wherever possible, widget examples will be both in the legacy and Preact format.
 
 ## Creating a custom widget
 
+The quickest way is _Insert child note_ → _Code_ → _Widget_ in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>. It creates a JSX note with the `#widget` label and a minimal Preact widget to start from.
+
+To set one up by hand instead:
+
 1.  Create a <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
 2.  Set the language to:
     1.  JavaScript (frontend) for legacy widgets using jQuery.
@@ -23,39 +27,37 @@ Wherever possible, widget examples will be both in the legacy and Preact format.
 
 Let's start by creating a widget that shows a message near the content area. Follow the previous section to create a code note, and use the following content.
 
-### Legacy version (jQuery)
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
-```
-class HelloCenterPane extends api.BasicWidget {
+    ```
+    import { defineWidget } from "trilium:preact";
 
-    constructor() {
-        super();
-        this.contentSized();
+    export default defineWidget({
+        parent: "center-pane",
+        render: () => <span>Center pane from Preact.</span>
+    });
+    ```
+
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
+
+    ```
+    class HelloCenterPane extends api.BasicWidget {
+
+        constructor() {
+            super();
+            this.contentSized();
+        }
+
+        get parentWidget() { return "center-pane" }
+
+        doRender() {
+            this.$widget = $("<span>Center pane</span>");
+        }
+        
     }
 
-    get parentWidget() { return "center-pane" }
-
-    doRender() {
-        this.$widget = $("<span>Center pane</span>");
-    }
-    
-}
-
-module.exports = new HelloCenterPane();
-```
-
-[Refresh the application](../../Troubleshooting/Refreshing%20the%20application.md) and the widget should appear underneath the content area.
-
-### Preact version
-
-```
-import { defineWidget } from "trilium:preact";
-
-export default defineWidget({
-    parent: "center-pane",
-    render: () => <span>Center pane from Preact.</span>
-});
-```
+    module.exports = new HelloCenterPane();
+    ```
 
 [Refresh the application](../../Troubleshooting/Refreshing%20the%20application.md) and the widget should appear underneath the content area.
 
@@ -114,38 +116,38 @@ A widget note usually returns one widget, but it can also return an array of the
 
 Each widget of the array is registered on its own, so they can have different parents and positions. A widget that is missing its `parentWidget` (or `parent` for Preact) is reported as an error without affecting the other widgets of the note.
 
-### Legacy version (jQuery)
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
-```
-class TreeWidget extends api.BasicWidget {
-    get parentWidget() { return "left-pane"; }
-    doRender() { this.$widget = $("<span>Left pane</span>"); }
-}
+    ```
+    import { defineWidget } from "trilium:preact";
 
-class SidebarWidget extends api.BasicWidget {
-    get parentWidget() { return "right-pane"; }
-    doRender() { this.$widget = $("<span>Right pane</span>"); }
-}
+    export default [
+        defineWidget({
+            parent: "left-pane",
+            render: () => <span>Left pane from Preact.</span>
+        }),
+        defineWidget({
+            parent: "right-pane",
+            render: () => <span>Right pane from Preact.</span>
+        })
+    ];
+    ```
 
-module.exports = [ new TreeWidget(), new SidebarWidget() ];
-```
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
 
-### Preact version
+    ```
+    class TreeWidget extends api.BasicWidget {
+        get parentWidget() { return "left-pane"; }
+        doRender() { this.$widget = $("<span>Left pane</span>"); }
+    }
 
-```
-import { defineWidget } from "trilium:preact";
+    class SidebarWidget extends api.BasicWidget {
+        get parentWidget() { return "right-pane"; }
+        doRender() { this.$widget = $("<span>Right pane</span>"); }
+    }
 
-export default [
-    defineWidget({
-        parent: "left-pane",
-        render: () => <span>Left pane from Preact.</span>
-    }),
-    defineWidget({
-        parent: "right-pane",
-        render: () => <span>Right pane from Preact.</span>
-    })
-];
-```
+    module.exports = [ new TreeWidget(), new SidebarWidget() ];
+    ```
 
 ## Launch bar widgets
 
@@ -155,20 +157,20 @@ Launch bar widgets are similar to _Custom widgets_ but are specific to the <a c
 
 The position of a custom widget is defined via a `position` integer.
 
-In legacy widgets:
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
-```
-class MyWidget extends api.BasicWidget {
-	// [..
-	get position() { return 10; }
-}
-```
+    ```
+    export default defineWidget({
+        // [...]
+        position: 10
+    });
+    ```
 
-In Preact widgets:
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
 
-```
-export default defineWidget({
-    // [...]
-    position: 10
-});
-```
+    ```
+    class MyWidget extends api.BasicWidget {
+    	// [..
+    	get position() { return 10; }
+    }
+    ```

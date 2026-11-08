@@ -31,6 +31,8 @@ Note that most `api.*` methods (e.g. `api.getNote`, `api.searchForNotes`, `api.c
 
 ## Script API (`api` global)
 
+The API reference at the end of this sheet lists every member of `api` and of the objects it returns (`BNote`, `BBranch`, `BAttachment`, `api.sql`), with exact signatures. The sections below cover what a signature cannot say.
+
 ### Script context
 - `api.startNote` - note where the script execution started (the entry point of the script bundle; in C terms, the file with `main()`). All module notes loaded via `require()` share the same `startNote`. May be null when the execution came from the frontend via `runOnBackend()` (the frontend's `startNote` is preserved). `api.log()` messages are grouped under this note.
 - `api.currentNote` - note containing the source code currently executing (in C terms, `__FILE__`). Equal to `startNote` except inside child module notes loaded via `require()`. NOT the note open in the UI.
@@ -48,43 +50,8 @@ Concrete examples:
 
 Note: `#customResourceProvider` notes never execute a script — the note's content is served directly as the HTTP response, so there is no `api` context at all. Only `#customRequestHandler` runs code.
 
-### Note retrieval
-- `api.getNote(noteId)` - get note by ID
-- `api.searchForNotes(query, searchParams)` - search notes (returns array)
-- `api.searchForNote(query)` - search notes (returns first match)
-- `api.getNotesWithLabel(name, value?)` - find notes by label
-- `api.getNoteWithLabel(name, value?)` - find first note by label
-- `api.getBranch(branchId)` - get branch by ID
-- `api.getAttribute(attributeId)` - get attribute by ID
-
-### Note creation
-- `api.createTextNote(parentNoteId, title, content)` - create text note
-- `api.createDataNote(parentNoteId, title, content)` - create JSON note
-- `api.createNewNote({ parentNoteId, title, content, type })` - create note with full options
-
-### Branch management
-- `api.ensureNoteIsPresentInParent(noteId, parentNoteId, prefix?)` - create or reuse branch
-- `api.ensureNoteIsAbsentFromParent(noteId, parentNoteId)` - remove branch if exists
-- `api.toggleNoteInParent(present, noteId, parentNoteId, prefix?)` - toggle branch
-
-### Calendar/date notes
-- `api.getTodayNote()` - get/create today's day note
-- `api.getDayNote(date)` - get/create day note (YYYY-MM-DD)
-- `api.getWeekNote(date)` - get/create week note
-- `api.getMonthNote(date)` - get/create month note (YYYY-MM)
-- `api.getYearNote(year)` - get/create year note (YYYY)
-
-### Utilities
-- `api.log(message)` - log to Trilium logs and UI
-- `api.randomString(length)` - generate random string
-- `api.escapeHtml(string)` / `api.unescapeHtml(string)`
-- `api.getInstanceName()` - get instance name
-- `api.getAppInfo()` - get application info
-
-### Libraries
-- `api.dayjs` - date manipulation
-- `api.xml2js` - XML parser
-- `api.htmlParser` - HTML parser (node-html-parser), use `api.htmlParser.parse(html)` to parse
+### Note content
+Text notes store **HTML**, not Markdown: pass HTML to `api.createTextNote()` and `note.setContent()`, or convert with `api.markdownToHtml()`. `note.setContent()` saves immediately; there is no need to call `note.save()` afterwards.
 
 ### HTTP Requests
 Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top-level `await` is not allowed (see "Async code" above), wrap it in an async IIFE:
@@ -97,56 +64,6 @@ Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top
 ```
 
 Note: `api.axios` was removed in March 2026 following an npm supply chain attack. Use `fetch()` instead.
-
-### Advanced
-- `api.transactional(func)` - wrap code in a database transaction
-- `api.sql` - direct SQL access
-- `api.sortNotes(parentNoteId, sortConfig)` - sort child notes
-- `api.runOnFrontend(script, params)` - execute code on all connected frontends
-- `api.backupNow(backupName)` - create a backup
-- `api.exportSubtreeToZipFile(noteId, format, zipFilePath)` - export subtree (format: "markdown" or "html")
-- `api.duplicateSubtree(origNoteId, newParentNoteId)` - clone note and children
-
-## BNote object
-
-Available on notes returned from API methods (`api.getNote()`, `api.originEntity`, etc.).
-
-### Content
-- `note.getContent()` / `note.setContent(content)`
-- `note.getJsonContent()` / `note.setJsonContent(obj)`
-- `note.getJsonContentSafely()` - returns null on parse error
-
-### Properties
-- `note.noteId`, `note.title`, `note.type`, `note.mime`
-- `note.dateCreated`, `note.dateModified`
-- `note.isProtected`, `note.isArchived`
-
-### Hierarchy
-- `note.getParentNotes()` / `note.getChildNotes()`
-- `note.getParentBranches()` / `note.getChildBranches()`
-- `note.hasChildren()`, `note.getAncestors()`
-- `note.getSubtreeNoteIds()` - all descendant IDs
-- `note.hasAncestor(ancestorNoteId)`
-
-### Attributes (including inherited)
-- `note.getLabels(name?)` / `note.getLabelValue(name)`
-- `note.getRelations(name?)` / `note.getRelation(name)`
-- `note.hasLabel(name, value?)` / `note.hasRelation(name, value?)`
-
-### Attribute modification
-- `note.setLabel(name, value?)` / `note.removeLabel(name, value?)`
-- `note.setRelation(name, targetNoteId)` / `note.removeRelation(name, value?)`
-- `note.addLabel(name, value?, isInheritable?)` / `note.addRelation(name, targetNoteId, isInheritable?)`
-- `note.toggleLabel(enabled, name, value?)`
-
-### Operations
-- `note.save()` - persist changes
-- `note.deleteNote()` - soft delete
-- `note.cloneTo(parentNoteId)` - clone to another parent
-
-### Type checks
-- `note.isJson()`, `note.isJavaScript()`, `note.isHtml()`, `note.isImage()`
-- `note.hasStringContent()` - true if not binary
 
 ## Events and triggers
 
@@ -223,7 +140,7 @@ let summary = "## Open Tasks\n";
 for (const task of tasks) {
     summary += `- ${task.title}\n`;
 }
-api.createTextNote(today.noteId, "Daily Summary", summary);
+api.createTextNote(today.noteId, "Daily Summary", api.markdownToHtml(summary));
 ```
 
 ## Module system

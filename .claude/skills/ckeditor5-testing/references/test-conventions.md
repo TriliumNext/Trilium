@@ -44,11 +44,10 @@ standalone packages (and legacy specs mid-migration to the kit) still hand-roll 
 `afterEach` calling `editor.destroy()` and `editorElement.remove()`; forgetting either there leaks
 editor DOM / body wrappers across tests and causes flakiness.
 
-**Globals: use the kit's installers.** Stub the Trilium `glob` / `navigator.clipboard` via
-`installGlobMock()` / `mockClipboard()` from `test/globals-test-kit.ts` — they register their own
-teardown (run by `setup.ts`), and `$` is a global passthrough from `setup.ts`. Don't hand-roll
-`globalThis.glob` + a manual `delete`; browser mode's shared page leaks a forgotten global into
-later specs (see `patterns.md`).
+**Host services come through config; globals get a queued restore.** Pass what a plugin needs from
+Trilium as an editor config entry. A spec that swaps a browser global queues its restore with
+`registerTestCleanup()` from `test/globals-test-kit.ts` (run by `setup.ts`); browser mode's shared
+page leaks a global left swapped into later specs (see `patterns.md`).
 
 ## Assertion styles — both work
 

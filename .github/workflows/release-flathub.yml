@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   update-flathub-repo:
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ !github.event.release.prerelease && !startsWith(github.event.release.tag_name, 'web-clipper-v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

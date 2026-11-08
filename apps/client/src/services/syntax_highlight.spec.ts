@@ -142,6 +142,15 @@ describe("syntax_highlight", () => {
             expect(mod.isSyntaxHighlightEnabled()).toBe(false);
         });
 
+        it("is disabled while the options have not loaded yet, under either theme source", async () => {
+            const mod = await freshModule();
+            setOptions({});
+            expect(mod.isSyntaxHighlightEnabled()).toBe(false);
+
+            setOptions({ codeBlockThemeMatchesApp: "true" });
+            expect(mod.isSyntaxHighlightEnabled()).toBe(false);
+        });
+
         it("uses the dark/light theme option when matching the app appearance", async () => {
             const mod = await freshModule();
             setOptions({
@@ -263,6 +272,20 @@ describe("syntax_highlight", () => {
             const $a = $codeBlock("noresult", "text-x-csrc");
             await mod.applySingleBlockSyntaxHighlight($a, "text-x-csrc");
             expect($a.html()).toBe("noresult");
+        });
+
+        it("leaves code beyond the size cutoff plain", async () => {
+            const mod = await freshModule();
+            const longCode = Array(501).fill("x").join("\n");
+            const $a = $codeBlock(longCode, "text-x-csrc");
+            await mod.applySingleBlockSyntaxHighlight($a, "text-x-csrc");
+            const $b = $codeBlock(longCode, "text-x-trilium-auto");
+            await mod.applySingleBlockSyntaxHighlight($b, "text-x-trilium-auto");
+
+            expect(hl.highlight).not.toHaveBeenCalled();
+            expect(hl.highlightAuto).not.toHaveBeenCalled();
+            expect($a.text()).toBe(longCode);
+            expect($b.text()).toBe(longCode);
         });
 
         it("does not highlight when the mime type is empty", async () => {

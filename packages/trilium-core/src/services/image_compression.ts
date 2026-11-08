@@ -246,8 +246,12 @@ export const HEADER_BYTES = 64 * 1024;
  * One image the run can act on, hiding whether it lives in a note's content or in an attachment.
  *
  * Neither kind is renamed when its format changes: an attachment's title is a reference elsewhere
- * (a canvas addresses its images by the Excalidraw file id stored as the title), and download and
- * export filenames already derive their extension from the mime when the title disagrees.
+ * (a canvas addresses its images by the Excalidraw file id stored as the title), so the mime is
+ * left to carry the format on its own.
+ *
+ * That makes the mime load-bearing rather than merely informative, since it is then the only
+ * record of what the bytes are: download and export filenames both derive their extension from it
+ * where the title disagrees, which is the whole reason they may be left disagreeing.
  */
 export interface CompressionTarget {
     entityType: "note" | "attachment";

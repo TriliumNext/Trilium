@@ -29,9 +29,7 @@ class SBranch extends AbstractShacaEntity {
             childNote.parents.push(parentNote);
         }
 
-        if (!childNote.parentBranches.includes(this)) {
-            childNote.parentBranches.push(this);
-        }
+        childNote.parentBranches.push(this);
 
         if (!parentNote.children.includes(childNote)) {
             parentNote.children.push(childNote);
@@ -55,6 +53,18 @@ class SBranch extends AbstractShacaEntity {
 
     getParentNote() {
         return this.parentNote;
+    }
+
+    getPojo() {
+        return {
+            branchId: this.branchId,
+            noteId: this.noteId,
+            parentNoteId: this.parentNoteId,
+            notePosition: this.parentNote.children.indexOf(this.childNote) * 10,
+            prefix: this.prefix,
+            isExpanded: this.isExpanded,
+            fromSearchNote: false
+        };
     }
 }
 

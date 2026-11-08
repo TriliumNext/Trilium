@@ -3,7 +3,6 @@ import "./TitleRow.css";
 import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import NoteIcon from "../note_icon";
@@ -12,7 +11,6 @@ import { useNoteContext, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoteBadges from "./NoteBadges";
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 /**
  * What heads a note shown outside a split of its own: icon, title and badges, each editable in place
@@ -36,7 +34,7 @@ export default function TitleRow({ compact }: {
         <div className={className}>
             <NoteIcon />
             <NoteTitleWidget />
-            {isNewLayout && <NoteBadges />}
+            <NoteBadges />
         </div>
     );
 }

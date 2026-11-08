@@ -6,7 +6,7 @@
     --options-card-max-width: 100%;
 }
 
-.note-detail-content-widget-content.options:has(.active-content-toolbar) > *:not(.options-page-header) {
+.note-detail-content-widget-content.options > .active-content-list {
     margin-bottom: 0;
 }
 
@@ -137,4 +137,16 @@ body.mobile {
     font-weight: 500;
     letter-spacing: normal;
     text-transform: none;
+}
+
+/* One class, so the next theme's input-group rules override these. */
+.input-clearer-button {
+    cursor: pointer;
+    background: inherit !important;
+}
+
+/* Outranks Bootstrap's `.input-group-text`. */
+.active-content-filter > .input-clearer-button {
+    font-size: 1.3em;
+    padding-inline: 5px;
 }

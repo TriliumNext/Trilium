@@ -1,6 +1,6 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
-import { showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
+import { runBackendScript, showBackendScriptingDisabledToast } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import dialog from "../services/dialog.js";
 import dateNoteService from "../services/date_notes.js";
@@ -13,7 +13,7 @@ import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
-import appContext, { type NoteCommandData } from "./app_context.js";
+import appContext, { type CommandListenerData, type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
 
 export default class Entrypoints extends Component {
@@ -90,6 +90,8 @@ export default class Entrypoints extends Component {
         const api = window.electronApi?.window;
         if (api) {
             api.setFullScreen(!api.isFullScreen());
+        } else if (document.fullscreenElement) {
+            document.exitFullscreen();
         } else {
             document.documentElement.requestFullscreen();
         }
@@ -171,8 +173,8 @@ export default class Entrypoints extends Component {
         await appContext.tabManager.openInSameTab(todayNote.noteId);
     }
 
-    async runActiveNoteCommand() {
-        const noteContext = appContext.tabManager.getActiveContext();
+    async runActiveNoteCommand({ ntxId: requestedNtxId }: CommandListenerData<"runActiveNote"> = {}) {
+        const noteContext = appContext.tabManager.getCommandContext(requestedNtxId);
         if (!noteContext) {
             return;
         }
@@ -200,9 +202,9 @@ export default class Entrypoints extends Component {
                 return;
             }
             try {
-                await server.post(`script/run/${note.noteId}`);
+                await runBackendScript(note.noteId);
             } catch {
-                // server.js already reported the error; don't fall through to "Note executed".
+                // Already reported as a scripting error; don't fall through to "Note executed".
                 return;
             }
         } else if (note.mime === "text/x-sqlite;schema=trilium") {
@@ -213,30 +215,16 @@ export default class Entrypoints extends Component {
         toastService.showMessage(t("entrypoints.note-executed"));
     }
 
-    hideAllPopups() {
-        if (utils.isDesktop()) {
-            $(".aa-input").autocomplete("close");
-        }
-    }
-
-    noteSwitchedEvent() {
-        this.hideAllPopups();
-    }
-
-    activeContextChangedEvent() {
-        this.hideAllPopups();
-    }
-
-    async forceSaveRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async forceSaveRevisionCommand({ ntxId }: CommandListenerData<"forceSaveRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
 
         await server.post(`notes/${noteId}/revision`);
 
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
 
-    async saveNamedRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async saveNamedRevisionCommand({ ntxId }: CommandListenerData<"saveNamedRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (!noteId) return;
 
         const name = await dialog.prompt({

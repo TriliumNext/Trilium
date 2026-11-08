@@ -28,8 +28,8 @@ In Notion, there are two ways to export data:
 
 In Trilium Notes:
 
-1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _Notion_.
+1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_ (<span class="tn-icon bx bx-import"></span>).
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-notion"></span> _Notion_.
 3.  Upload the ZIP obtained in the previous step.
 
 ## Supported features

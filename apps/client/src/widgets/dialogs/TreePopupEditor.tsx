@@ -8,7 +8,7 @@ import TitleRow from "../layout/TitleRow";
 import NoteTreeWidget from "../note_tree";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
-import { useContainedLinkNavigation, useLegacyWidget, useTriliumEvent } from "../react/hooks";
+import { useContainedLinkNavigation, useDetachedNoteContext, useLegacyWidget, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 
@@ -25,6 +25,7 @@ export default function TreePopupEditor() {
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_tree-popup"));
     const modalRef = useRef<HTMLDivElement>(null);
+    useDetachedNoteContext(noteContext);
 
     useTriliumEvent("openInTreePopup", async ({ noteIdOrPath, hoistedNoteId }) => {
         // Fresh context per open so the sidebar tree is hoisted to the requested subtree.

@@ -19,8 +19,9 @@ import { buildNote } from "../../../test/easy-froca";
 import { BoardViewData } from ".";
 import BoardApi, { getPendingWrites, PendingColumnWrites } from "./api";
 import { ColumnItem, ColumnMap } from "./data";
-import { BOARD_TEMPLATE_ID, DEFAULT_COLUMN_ICON, getStatusDefinition, INBOX_COLUMN } from "./columns";
-import { DEFAULT_CARD_TEMPLATES } from "./card_templates";
+import {
+    BOARD_TEMPLATE_ID, DEFAULT_CARD_TEMPLATES, DEFAULT_COLUMN_ICON, getStatusDefinition, INBOX_COLUMN
+} from "./columns";
 import { COLUMN_ID_LENGTH } from "./reference";
 
 vi.mock("../../../services/bulk_action", () => ({
@@ -100,7 +101,7 @@ function createApi(
         allByColumn,
         keepNote
     );
-    return { api, board, saved, editing, pendingRenames: pending.renames };
+    return { api, board, saved, editing, pending, pendingRenames: pending.renames };
 }
 
 /** Cards named by their note id, which is all the operations under test read them for. */
@@ -403,9 +404,9 @@ describe("BoardApi column mutations", () => {
         );
 
         let releaseSecond = () => {};
+        const second = new Promise<void>((resolve) => { releaseSecond = resolve; });
         failNextRename();
-        vi.mocked(executeBulkActions).mockImplementationOnce(
-            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+        vi.mocked(executeBulkActions).mockImplementationOnce(() => second);
 
         const failing = api.renameColumn("Done", "Shipped");
         const running = api.removeColumn("To Do");
@@ -478,9 +479,9 @@ describe("BoardApi column mutations", () => {
         );
 
         let releaseSecond = () => {};
+        const second = new Promise<void>((resolve) => { releaseSecond = resolve; });
         vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
-        vi.mocked(executeBulkActions).mockImplementationOnce(
-            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+        vi.mocked(executeBulkActions).mockImplementationOnce(() => second);
 
         // The same column, deleted twice over before either has answered.
         const failing = api.removeColumn("Done");
@@ -846,7 +847,7 @@ describe("BoardApi card operations", () => {
 
     it("takes a card off the board by removing the value it is grouped by", async () => {
         const { api, items } = createBoardWithCards();
-        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
 
         await api.removeFromBoard([ items[0].note.noteId ]);
         expect(removeLabel).toHaveBeenCalledWith(items[0].note, "status");
@@ -868,7 +869,7 @@ describe("BoardApi card operations", () => {
         });
         const [ cardId ] = [ ...board.getChildNoteIds() ];
         const { api } = createApi({}, [], board);
-        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+        const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName").mockResolvedValue(true);
         const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined as never);
 
         await api.removeFromBoard([ cardId ]);
@@ -881,7 +882,7 @@ describe("BoardApi card operations", () => {
         const board = buildNote({ title: "Board", children: [ { title: "Card" } ] });
         const { api } = createApi({}, [], board, "~status");
         const removeRelation = vi.spyOn(attributes, "removeOwnedRelationByName")
-            .mockReturnValue(true);
+            .mockResolvedValue(true);
 
         await api.removeFromBoard([ board.getChildNoteIds()[0] ]);
         expect(removeRelation).toHaveBeenCalledWith(expect.anything(), "status");
@@ -899,7 +900,7 @@ describe("BoardApi card operations", () => {
         });
         const { api } = createApi({}, [], board, "~status");
         const removeRelation = vi.spyOn(attributes, "removeOwnedRelationByName")
-            .mockReturnValue(true);
+            .mockResolvedValue(true);
         const message = vi.spyOn(toast, "showMessage").mockReturnValue(undefined);
 
         await api.removeFromBoard([ board.getChildNoteIds()[0] ]);
@@ -1031,7 +1032,7 @@ describe("BoardApi card operations", () => {
 
     it("sends a card to the head of its column, and leaves one already there alone", async () => {
         const { api, items } = createBoardWithCards();
-        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(undefined);
+        const moveBefore = vi.spyOn(branches, "moveBeforeBranch").mockResolvedValue(true);
 
         const last = items[items.length - 1];
         await api.moveToColumnStart(last.note.noteId, last.branch.branchId, "Done");
@@ -2037,7 +2038,7 @@ describe("filing a card under the inbox", () => {
         });
         const { api } = createApi({}, [], board, "~status");
         const removeRelation = vi.spyOn(attributes, "removeOwnedRelationByName")
-            .mockReturnValue(true);
+            .mockResolvedValue(true);
         const message = vi.spyOn(toast, "showMessage").mockReturnValue(undefined);
 
         await api.changeColumn(board.getChildNoteIds()[0], "");
@@ -2055,7 +2056,7 @@ describe("filing a card under the inbox", () => {
         });
         const { api } = createApi({}, [], board, "~status");
         const removeRelation = vi.spyOn(attributes, "removeOwnedRelationByName")
-            .mockReturnValue(true);
+            .mockResolvedValue(true);
 
         await api.removeFromBoard([ board.getChildNoteIds()[0] ]);
 
@@ -2127,6 +2128,32 @@ describe("the promoted attributes a card shows", () => {
         expect(api.getStoredPromotedAttributes()).toBe(stored);
     });
 
+    /** A card shows attributes defined by its template, so `getPromotedAttributes()` lists them. */
+    it("lists what the cards define through another note, after the board's own", () => {
+        buildNote({
+            id: "projectTemplate",
+            title: "Project",
+            "#label:project(inheritable)": "promoted,single,color",
+            "#label:owner(inheritable)": "promoted,single,relation"
+        });
+        const task = buildNote({ title: "Task", "~template": "projectTemplate" });
+        // `buildNote()` caches only the owned attributes. Deleting the entry makes
+        // `getAttributes()` rebuild it, including the template's attributes.
+        delete noteAttributeCache.attributes[task.noteId];
+        const plain = buildNote({ title: "Plain" });
+        const byColumn: ColumnMap = new Map([ [ "To Do", [
+            { note: task, branch: { branchId: "b_task" } as FBranch },
+            { note: plain, branch: { branchId: "b_plain" } as FBranch }
+        ] ] ]);
+        const { api } = createApi({}, [ "To Do" ], boardWithAttributes(), "status", byColumn);
+
+        expect(api.getVisiblePromotedAttributeNames()).toEqual([ "dueDate", "owner", "project" ]);
+        const [ , owner, project ] = api.getPromotedAttributes();
+        // The board and the template both define `owner`; the board's definition wins.
+        expect(owner).toMatchObject({ labelType: "text", isDefinedByItems: false });
+        expect(project).toMatchObject({ labelType: "color", isDefinedByItems: true });
+    });
+
     it("stores the whole list, an attribute the board has dropped along with it", async () => {
         const { api, saved } = createApi(
             { promotedAttributes: [ { name: "gone" } ] }, [], boardWithAttributes());
@@ -2136,6 +2163,83 @@ describe("the promoted attributes a card shows", () => {
 
         expect(saved.at(-1)?.promotedAttributes)
             .toEqual([ { name: "dueDate" }, { name: "owner", hidden: true } ]);
+    });
+});
+
+describe("deleting the attribute of a grouping", () => {
+    /**
+     * Left in `board.json`, the columns of a deleted grouping are written back into a new
+     * definition by `syncColumnsToDefinition` once the board groups by it again.
+     */
+    it("empties the stored columns of the grouping once deleted, leaving the rest", async () => {
+        const { api, saved } = createApi({
+            columns: [ { value: "To Do" }, { value: "Done" } ],
+            testViewColumns: [ { value: "A" } ],
+            filterQuery: "#urgent"
+        }, [ "A" ], undefined, "test");
+        const savedDuringDeletion: number[] = [];
+
+        await api.deleteGrouping("status", async () => { savedDuringDeletion.push(saved.length); });
+
+        expect(savedDuringDeletion).toEqual([ 0 ]);
+        expect(saved).toEqual([
+            { columns: [], testViewColumns: [ { value: "A" } ], filterQuery: "#urgent" }
+        ]);
+    });
+
+    /**
+     * A refresh that lands while the definition is being deleted still reads the stored columns,
+     * and would write them into a new definition; `pending.inFlight` holds its writes back.
+     */
+    it("counts as a write on the board while the definition is deleted", async () => {
+        const { api, pending, saved } = createApi(
+            { columns: [ { value: "To Do" } ] }, [ "To Do" ]);
+        let inFlightDuringDeletion = 0;
+
+        await api.deleteGrouping("status", async () => {
+            inFlightDuringDeletion = pending.inFlight;
+        });
+
+        expect(inFlightDuringDeletion).toBe(1);
+        expect(saved).toEqual([ { columns: [] } ]);
+        expect(pending.inFlight).toBe(0);
+    });
+
+    /**
+     * A refresh that started during the deletion reads the old columns, and can resolve after
+     * `pending.inFlight` drops back to 0. `hasStoredSince()` tells the board not to write them.
+     */
+    it("reports the config read before the deletion as replaced, until the board draws the new one",
+        async () => {
+            const config = { columns: [ { value: "To Do" } ] };
+            const { api, board, saved } = createApi(config, [ "To Do" ]);
+            expect(api.hasStoredSince(config)).toBe(false);
+
+            await api.deleteGrouping("status", async () => {});
+            expect(api.hasStoredSince(config)).toBe(true);
+
+            const [ stored ] = saved;
+            api.update(new Map(), [], board, "status", stored, () => {}, () => {});
+            expect(api.hasStoredSince(stored)).toBe(false);
+        });
+
+    it("keeps the columns of a grouping whose deletion failed, and stops counting it", async () => {
+        const { api, pending, saved } = createApi(
+            { columns: [ { value: "To Do" } ] }, [ "To Do" ]);
+
+        await expect(api.deleteGrouping("status", async () => { throw new Error("offline"); }))
+            .rejects.toThrow("offline");
+
+        expect(saved).toEqual([]);
+        expect(pending.inFlight).toBe(0);
+    });
+
+    it("writes nothing for a grouping that stores no columns", async () => {
+        const { api, saved } = createApi({ columns: [ { value: "To Do" } ] }, [ "To Do" ]);
+
+        await api.deleteGrouping("priority", async () => {});
+
+        expect(saved).toEqual([]);
     });
 });
 

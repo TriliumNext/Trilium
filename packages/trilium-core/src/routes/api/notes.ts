@@ -1,11 +1,12 @@
-import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
+import { type AttributeRow, type CreateChildrenResponse, type DeleteNotesPreview, isNoteType, type MetadataResponse } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import type { Request } from "../../http_interface";
 
 import blobService from "../../services/blob";
+import { getBlockRangeContent, replaceBlockRangeContent } from "../../services/block_ranges";
 import eraseService from "../../services/erase.js";
-import { ValidationError } from "../../errors.js";
+import { NotFoundError, ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import { getLog } from "../../services/log.js";
@@ -205,6 +206,52 @@ function updateNoteData(req: Request<{ noteId: string }>) {
     return noteService.updateNoteData(noteId, content, attachments);
 }
 
+/** The blocks of a text note that the `block` query parameter points at, to edit apart. */
+function getNoteBlocks(req: Request<{ noteId: string }>) {
+    const { content, block } = getBlockRangeRequest(req);
+    const blocks = getBlockRangeContent(content, block);
+    if (blocks === null) {
+        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    }
+
+    return { content: blocks };
+}
+
+/** Replaces the blocks of a text note that the `block` query parameter points at. */
+function updateNoteBlocks(req: Request<{ noteId: string }>) {
+    const { content, block } = getBlockRangeRequest(req);
+    const { content: blocks, attachments } = req.body;
+    if (typeof blocks !== "string") {
+        throw new ValidationError("Missing the content of the blocks.");
+    }
+
+    const newContent = replaceBlockRangeContent(content, block, blocks);
+    if (newContent === null) {
+        throw new NotFoundError(getBlockRangeError(req.params.noteId, block));
+    }
+
+    noteService.updateNoteData(req.params.noteId, newContent, attachments);
+}
+
+function getBlockRangeRequest(req: Request<{ noteId: string }>) {
+    const { block } = req.query;
+    if (typeof block !== "string") {
+        throw new ValidationError("Missing the 'block' parameter.");
+    }
+
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    const content = note.type === "text" && note.isContentAvailable() ? note.getContent() : null;
+    if (typeof content !== "string") {
+        throw new ValidationError(`Note '${note.noteId}' has no text content to edit.`);
+    }
+
+    return { content, block };
+}
+
+function getBlockRangeError(noteId: string, block: string) {
+    return `Blocks '${block}' of note '${noteId}' do not exist or cannot be edited apart.`;
+}
+
 /**
  * @swagger
  * /api/notes/{noteId}:
@@ -320,6 +367,10 @@ function setNoteTypeMime(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { type, mime } = req.body;
 
+    if (!isNoteType(type)) {
+        throw new ValidationError(`'${type}' is not a valid note type`);
+    }
+
     const note = becca.getNoteOrThrow(noteId);
     note.type = type;
     note.mime = mime;
@@ -355,8 +406,9 @@ function changeTitle(req: Request<{ noteId: string }>) {
 
 function duplicateSubtree(req: Request<{ noteId: string; parentNoteId: string }>) {
     const { noteId, parentNoteId } = req.params;
+    const { withChildren } = (req.body ?? {}) as { withChildren?: unknown };
 
-    return noteService.duplicateSubtree(noteId, parentNoteId);
+    return noteService.duplicateSubtree(noteId, parentNoteId, { withChildren: withChildren !== false });
 }
 
 function eraseDeletedNotesNow() {
@@ -543,6 +595,8 @@ export default {
     getNoteMetadata,
     getNotesMetadata,
     updateNoteData,
+    getNoteBlocks,
+    updateNoteBlocks,
     deleteNote,
     undeleteNote,
     createNote,

@@ -3,8 +3,15 @@ import { describe, expect, it, vi } from "vitest";
 import { renderInto } from "../../../../test/render";
 
 const mocks = vi.hoisted(() => ({
-    pages: [] as { noteId: string; title: string; getIcon: () => string }[]
+    pages: [] as {
+        noteId: string;
+        title: string;
+        getIcon: () => string;
+        hasLabel: (name: string) => boolean;
+    }[]
 }));
+
+vi.mock("../../../../services/i18n", () => ({ t: (key: string) => key }));
 
 // The list is read straight from the `_options` subtree, so titles, icons and ordering stay in step
 // with the note tree rather than being restated here.
@@ -13,8 +20,8 @@ vi.mock("../../../dialogs/OptionsDialog", () => ({ useOptionPages: () => mocks.p
 import SettingsNavigation from "./SettingsNavigation";
 
 const PAGES = [
-    { noteId: "_optionsAppearance", title: "Appearance", getIcon: () => "bx bx-palette" },
-    { noteId: "_optionsShortcuts", title: "Shortcuts", getIcon: () => "bx bx-keyboard" }
+    { noteId: "_optionsAppearance", title: "Appearance", getIcon: () => "bx bx-palette", hasLabel: () => false },
+    { noteId: "_optionsShortcuts", title: "Shortcuts", getIcon: () => "bx bx-keyboard", hasLabel: () => false }
 ];
 
 describe("SettingsNavigation", () => {
@@ -45,6 +52,20 @@ describe("SettingsNavigation", () => {
         expect(links[0].getAttribute("aria-current")).toBeNull();
         expect(links[1].className).toContain("active");
         expect(links[1].getAttribute("aria-current")).toBe("page");
+    });
+
+    it("marks a page labeled #beta as beta", () => {
+        mocks.pages = [
+            ...PAGES,
+            {
+                noteId: "_optionsTranscription", title: "Transcription", getIcon: () => "bx bx-microphone",
+                hasLabel: (name) => name === "beta"
+            }
+        ];
+        const links = [ ...renderInto(<SettingsNavigation activeNoteId="_optionsAppearance" />).querySelectorAll("a") ];
+
+        expect(links.map((link) => link.querySelector(".ext-badge")?.textContent ?? null))
+            .toEqual([ null, null, "common.beta" ]);
     });
 
     it("draws an empty list rather than failing when the subtree has nothing to show", () => {

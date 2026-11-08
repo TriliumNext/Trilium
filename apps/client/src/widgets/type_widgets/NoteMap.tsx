@@ -14,6 +14,7 @@ export default function NoteMap({ note, noteContext }: TypeWidgetProps) {
             <NoteMapEl
                 parentRef={containerRef}
                 note={note}
+                noteContext={noteContext}
                 widgetMode={noteContext?.viewScope?.viewMode === "note-map" ? "expanded" : "type"} />
         </div>
     );

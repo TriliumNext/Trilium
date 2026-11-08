@@ -11,6 +11,9 @@ import App from "./support/app";
  */
 test("An icon picked while its modal is still opening takes the modal away with it", async ({ page, context }) => {
     await page.setViewportSize({ width: 412, height: 900 });
+    // A phone slides the sheet up, and an icon cannot be tapped until it stops moving, by which
+    // time it has opened; with reduced motion the sheet is in place while it is still opening.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     const app = new App(page, context);
     // A note of the shared database, straight from its address: a phone opens on no note at all, and
     // the icon of no note is not there to be picked (see NoteIcon).

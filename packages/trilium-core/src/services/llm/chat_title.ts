@@ -2,7 +2,7 @@ import becca from "../../becca/becca.js";
 import { getLog } from "../../services/log.js";
 import { t } from "i18next";
 
-import { getProvider } from "./index.js";
+import type { LlmProvider } from "./types.js";
 
 /** Default title prefixes that indicate the note hasn't been manually renamed. */
 function hasDefaultTitle(title: string): boolean {
@@ -16,9 +16,10 @@ function hasDefaultTitle(title: string): boolean {
 
 /**
  * Generate a short descriptive title for a chat note based on the first user message,
- * then rename the note. Only renames if the note still has a default title.
+ * using the provider the chat talks to, then rename the note. Only renames if the
+ * note still has a default title.
  */
-export async function generateChatTitle(chatNoteId: string, firstMessage: string): Promise<void> {
+export async function generateChatTitle(chatNoteId: string, firstMessage: string, provider: LlmProvider): Promise<void> {
     const log = getLog();
 
     const note = becca.getNote(chatNoteId);
@@ -35,9 +36,6 @@ export async function generateChatTitle(chatNoteId: string, firstMessage: string
         return;
     }
 
-    // Whichever provider is configured first, which is not necessarily the one
-    // the chat itself is talking to.
-    const provider = await getProvider();
     log.info(`Naming chat note ${chatNoteId} with the ${provider.name} provider.`);
 
     const title = await provider.generateTitle(firstMessage);

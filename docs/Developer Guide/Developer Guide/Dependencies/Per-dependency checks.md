@@ -102,13 +102,6 @@
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td><code>jsplumb</code></td>
-            <td><code>RELATION_MAP</code></td>
-            <td><ul><li>Relation map note type</li></ul></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-        </tr>
-        <tr>
             <td><code>jquery.mark.es6</code></td>
             <td><code>MARKJS</code></td>
             <td><ul><li>In search, when highlighting the text that matched.</li><li>In search in HTML, which might not actually be used since it seems to have been replaced by CKEditor's own find &amp; replace dialog.</li></ul></td>

@@ -14,12 +14,15 @@ describe("useData", () => {
     let container: HTMLElement;
     let handlers: Map<string, (data: unknown) => void>;
     let captured: ReturnType<typeof useData> | undefined;
+    /** Every distinct row set and column set the hook has handed out, in order. */
+    let builds: { rows: Set<unknown>; columns: Set<unknown> };
     let resetNewAttributePosition: ReturnType<typeof vi.fn<() => void>>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = new Map();
         captured = undefined;
+        builds = { rows: new Set(), columns: new Set() };
         resetNewAttributePosition = vi.fn();
         container = document.createElement("div");
         document.body.appendChild(container);
@@ -28,15 +31,18 @@ describe("useData", () => {
     afterEach(() => {
         render(null, container);
         container.remove();
+        vi.restoreAllMocks();
     });
 
     /** Runs the hook as the table does, under a parent that can hand it a reload. */
-    function Probe({ note, noteIds }: { note: FNote; noteIds: string[] }) {
-        captured = useData(note, noteIds, undefined, { current: undefined }, resetNewAttributePosition);
+    function Probe({ note, noteIds, isReadOnly }: { note: FNote; noteIds: string[]; isReadOnly?: boolean }) {
+        captured = useData(note, noteIds, undefined, { current: undefined }, resetNewAttributePosition, isReadOnly);
+        if (captured.rowData) builds.rows.add(captured.rowData);
+        if (captured.columnDefs) builds.columns.add(captured.columnDefs);
         return null;
     }
 
-    async function mount(note: FNote, noteIds: string[]) {
+    async function mount(note: FNote, noteIds: string[], isReadOnly?: boolean) {
         const parent = {
             componentId: "table-cid",
             registerHandler: (name: string, callback: (data: unknown) => void) => handlers.set(name, callback),
@@ -44,7 +50,7 @@ describe("useData", () => {
         } as unknown as Component;
         await act(async () => render(
             <ParentComponent.Provider value={parent}>
-                <Probe note={note} noteIds={noteIds} />
+                <Probe note={note} noteIds={noteIds} isReadOnly={isReadOnly} />
             </ParentComponent.Provider>,
             container
         ));
@@ -53,9 +59,22 @@ describe("useData", () => {
         await settle();
     }
 
-    function settle() {
+    function settle(ms = 0) {
         return act(async () => {
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            await new Promise((resolve) => setTimeout(resolve, ms));
+        });
+    }
+
+    /** Holds back the next `froca.getNotes()` call, as a cold cache does the refresh that fetches. */
+    function delayNextGetNotes() {
+        const getNotes = froca.getNotes.bind(froca);
+        let delayed = false;
+        vi.spyOn(froca, "getNotes").mockImplementation(async (...args) => {
+            if (!delayed) {
+                delayed = true;
+                await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            return getNotes(...args);
         });
     }
 
@@ -98,6 +117,73 @@ describe("useData", () => {
         const editorParams = statusColumn?.editorParams;
         if (typeof editorParams !== "function") throw new Error("expected the params to be a function");
         expect(editorParams(undefined as never)).toMatchObject({ options: [ "Todo", "Done" ] });
+    });
+
+    it("builds a read-only table's columns without editors and keeps its rows from being dragged", async () => {
+        const { note, noteIds } = collection();
+        await mount(note, noteIds);
+        expect(captured?.columnDefs?.some((column) => column.editor)).toBe(true);
+        expect(captured?.movableRows).toBe(true);
+
+        render(null, container);
+        await mount(note, noteIds, true);
+        expect(captured?.columnDefs?.map((column) => column.field)).toContain("labels.status");
+        expect(captured?.columnDefs?.some((column) => column.editor || column.editorParams)).toBe(false);
+        expect(captured?.columnDefs?.every((column) => column.editable === false)).toBe(true);
+        expect(captured?.movableRows).toBe(false);
+    });
+
+    it("gives movable rows a handle even when the first refresh finishes last", async () => {
+        const { note, noteIds } = collection();
+        delayNextGetNotes();
+        await mount(note, noteIds);
+        await settle(50);
+
+        // Without the handle column, Tabulator drags a row by any cell, and opening a cell's
+        // editor on mousedown keeps the mouseup from cancelling the drag (#12225).
+        expect(captured?.movableRows).toBe(true);
+        expect(captured?.columnDefs?.[0]).toMatchObject({ title: "#", rowHandle: true });
+    });
+
+    it("keeps an older, slower refresh from overwriting a newer one", async () => {
+        const { note, noteIds } = collection();
+        await mount(note, noteIds);
+
+        const other = buildNote({ title: "Other", children: [ { title: "Other task" } ] });
+        delayNextGetNotes();
+        await mount(other, []);
+        await mount(note, noteIds);
+        await settle(50);
+
+        expect(captured?.rowData?.map((row) => row.title)).toEqual([ "Task 1", "Task 2" ]);
+    });
+
+    it("builds a nested table once, though its note list and its subtree are known only later", async () => {
+        const note = buildNote({
+            title: "Collection",
+            children: [ { title: "Task", children: [ { title: "Subtask" } ] }, { title: "Other" } ]
+        });
+
+        // `useNoteIds()` starts out empty and hands over the list once its search returns.
+        await mount(note, []);
+        await mount(note, [ ...note.children ]);
+
+        expect(builds.rows.size).toBe(1);
+        expect(builds.columns.size).toBe(1);
+        // The subtree keeps the rows from being dragged, and the one column set built knows it.
+        expect(captured?.movableRows).toBe(false);
+        expect(captured?.columnDefs?.[0]).toMatchObject({ title: "#", rowHandle: false });
+    });
+
+    it("rebuilds the rows for a note list that differs from the one it walked", async () => {
+        const { note, noteIds } = collection();
+        await mount(note, noteIds);
+
+        // A search collection's results change without a branch reload; only the list tells.
+        note.children.reverse();
+        await mount(note, [ ...note.children ]);
+
+        expect(captured?.rowData?.map((row) => row.title)).toEqual([ "Task 2", "Task 1" ]);
     });
 
     it("refreshes only the rows for a row change, leaving the columns be", async () => {

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // --- Mocks (hoisted above the module-under-test import) ---
 
 vi.mock("ejs", () => ({ default: { render: vi.fn(() => "<html>404</html>") } }));
-vi.mock("html-to-text", () => ({ convert: vi.fn((s: string) => `TEXT:${s}`) }));
 
 const mockContentRenderer = {
     readShareTemplate: vi.fn(() => "TEMPLATE"),
@@ -26,7 +25,24 @@ vi.mock("../../../becca/becca.js", () => ({ default: mockBecca }));
 const mockLog = { error: vi.fn(), info: vi.fn() };
 vi.mock("../../log.js", () => ({ getLog: () => mockLog }));
 
-const { default: ShareThemeExportProvider } = await import("./share_theme.js");
+const mockOptions = { getOptionOrNull: vi.fn((_name: string): string | null => null) };
+vi.mock("../../options.js", () => ({ default: mockOptions }));
+
+const buildShareData = vi.hoisted(() => vi.fn((..._args: unknown[]) =>
+    new Map([ [ "data/rows.json", "{}" ] ])));
+vi.mock("./share_data.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./share_data.js")>(),
+    buildShareData
+}));
+
+const {
+    default: ShareThemeExportProvider,
+    hasMermaidDiagrams,
+    htmlToSearchText,
+    getAppViewGroups,
+    getShareThemeExportFiles,
+    getShareThemeTranslationFiles
+} = await import("./share_theme.js");
 
 // --- Test scaffolding -------------------------------------------------------
 
@@ -100,11 +116,13 @@ describe("ShareThemeExportProvider", () => {
     });
 
     describe("mapExtension", () => {
-        it("returns null for images, js for javascript, null for .zip, html otherwise", () => {
+        it("keeps an attachment's image or .zip file, js for javascript, html otherwise", () => {
             const p = makeProvider();
-            expect(p.mapExtension("image", "image/png", "", "share")).toBeNull();
+            expect(p.mapExtension(null, "image/png", ".png", "share")).toBeNull();
+            expect(p.mapExtension(null, "application/zip", ".zip", "share")).toBeNull();
             expect(p.mapExtension("code", "application/javascript", "", "share")).toBe("js");
-            expect(p.mapExtension("file", "application/zip", ".zip", "share")).toBeNull();
+            expect(p.mapExtension("image", "image/png", ".png", "share")).toBe("html");
+            expect(p.mapExtension("file", "application/zip", ".zip", "share")).toBe("html");
             expect(p.mapExtension("text", "text/html", "", "share")).toBe("html");
         });
     });
@@ -156,7 +174,7 @@ describe("ShareThemeExportProvider", () => {
 
             const entry = (p as any).searchIndex.get("noteABC");
             expect(entry.title).toBe("Title");
-            expect(entry.content).toContain("TEXT:");
+            expect(entry.content).toBe("html");
             // Path built from titles, excluding root and falsy titles.
             expect(entry.path).toBe("Parent");
         });
@@ -195,6 +213,31 @@ describe("ShareThemeExportProvider", () => {
             const out = p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any) as string;
             // basePath for a 2-element path is "" (root link points to the base).
             expect(out).toContain('href=""');
+        });
+
+        it("links the notes of an app view to their pages, the root to the base path", () => {
+            const note = { noteId: "viewNote", getBestNotePath: () => [ "root", "viewNote" ] };
+            mockBecca.getNote.mockReturnValue(null);
+            const p = makeProvider();
+            (p as any).rootMeta = { noteId: "rootNote1234" };
+            const noteMeta: any = {
+                notePath: [ "root", "rootNote1234", "dir", "viewNote" ],
+                attachments: []
+            };
+
+            const { mock } = mockContentRenderer.renderNoteForExport;
+            const lastCall = () => mock.lastCall as unknown[] | undefined;
+            const getLink = (noteId: string) =>
+                (lastCall()?.[5] as ((id: string) => string | null) | undefined)?.(noteId);
+
+            p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any);
+            expect(getLink("rootNote1234")).toBe("../../");
+            expect(getLink("other")).toBe("url/other");
+
+            (p as any).rootMeta = { noteId: "viewNote" };
+            const rootMeta: any = { notePath: [ "root", "viewNote" ], attachments: [] };
+            p.prepareContent("t", "<p>c</p>", rootMeta, note as any, {} as any);
+            expect(getLink("viewNote")).toBe("./");
         });
 
         it("leaves binary (non-string) content untouched but still indexes the note", () => {
@@ -290,6 +333,37 @@ describe("ShareThemeExportProvider", () => {
             expect(appendCalls.map((c) => c.options.name)).toContain("404.html");
         });
 
+        it("writes the data of the app views, with the paths of the notes and attachments", () => {
+            const p = makeProvider();
+            (p as any).indexMeta = null;
+            (p as any).getNoteTargetUrl.mockImplementation((id: string) => `dir/${id}.html`);
+            const rootMeta: any = {
+                noteId: "rootNote",
+                title: "Root",
+                children: [
+                    { noteId: "child", attachments: [
+                        { attachmentId: "att", dataFileName: "child_a b.svg" },
+                        { dataFileName: "untracked.svg" }
+                    ] },
+                    { noteId: "clone", isClone: true, attachments: [
+                        { attachmentId: "cloneAtt", dataFileName: "clone.svg" }
+                    ] }
+                ]
+            };
+
+            p.afterDone(rootMeta);
+
+            expect(findAppend("data/rows.json").data).toBe("{}");
+            const paths = buildShareData.mock.lastCall?.[1] as {
+                getNotePath(noteId: string): string | null;
+                getAttachmentPath(attachmentId: string): string | null;
+            } | undefined;
+            expect(paths?.getNotePath("rootNote")).toBe("");
+            expect(paths?.getNotePath("child")).toBe("dir/child.html");
+            expect(paths?.getAttachmentPath("att")).toBe("dir/child_a%20b.svg");
+            expect(paths?.getAttachmentPath("cloneAtt")).toBeNull();
+        });
+
         it("logs an error and skips a font when its data cannot be found", () => {
             const p = makeProvider();
             (p as any).indexMeta = null;
@@ -310,3 +384,175 @@ describe("ShareThemeExportProvider", () => {
         });
     });
 });
+
+describe("hasMermaidDiagrams", () => {
+    it("finds a mermaid block only in a readable text note", () => {
+        const mermaid = `<pre><code class="language-mermaid">graph TD;</code></pre>`;
+
+        expect(hasMermaidDiagrams(subtreeOf(
+            { type: "text", content: "<p>root</p>" },
+            { type: "text", content: mermaid }
+        ))).toBe(true);
+        expect(hasMermaidDiagrams(subtreeOf(
+            { type: "code", content: mermaid },
+            { type: "text", available: false, content: mermaid },
+            { type: "text", content: `<pre><code class="language-javascript">x</code></pre>` }
+        ))).toBe(false);
+    });
+
+    it("finds a readable Mermaid note", () => {
+        expect(hasMermaidDiagrams(subtreeOf({ type: "mermaid", content: "graph TD;" }))).toBe(true);
+        const unreadable = subtreeOf({ type: "mermaid", available: false, content: "graph TD;" });
+        expect(hasMermaidDiagrams(unreadable)).toBe(false);
+    });
+
+    it("finds a fenced mermaid block only in a Markdown note", () => {
+        const markdown = { type: "code", mime: "text/x-markdown" };
+
+        const fenced = "# Title\n\n~~~ mermaid\ngraph TD;\n~~~";
+
+        expect(hasMermaidDiagrams(subtreeOf({ ...markdown, content: fenced }))).toBe(true);
+        expect(hasMermaidDiagrams(subtreeOf(
+            { ...markdown, content: "Inline ```mermaid is not a fence.\n\n```js\nmermaid();\n```" },
+            { type: "code", mime: "application/javascript", content: "```mermaid" }
+        ))).toBe(false);
+    });
+});
+
+describe("htmlToSearchText", () => {
+    it("joins the text of the blocks and drops scripts, styles and markup", () => {
+        const html = `<h2>Hello &amp; <b>World</b></h2><p>A <a href="https://x.y">link</a>&nbsp;here.</p>`
+            + `<ul><li>one</li><li>two</li></ul><script>alert(1)</script><style>p {}</style>`
+            + `<p>zero​width and\tother\n\nspaces</p><pre>code\n  block</pre>`;
+
+        expect(htmlToSearchText(html))
+            .toBe("Hello & World A link here. one two zero width and other spaces code block");
+        expect(htmlToSearchText("a < b && c")).toBe("a < b && c");
+        expect(htmlToSearchText("")).toBe("");
+    });
+});
+
+describe("getAppViewGroups", () => {
+    it("names the groups of the views, note types and drawn notes the subtree hosts", () => {
+        const site = viewTree({ type: "text", children: [
+            { type: "book", viewType: "calendar" },
+            { type: "book", viewType: "geoMap", isProtected: true },
+            { type: "book", viewType: "dashboard", children: [
+                { type: "code", mime: "text/x-markdown" },
+                { type: "file", mime: "application/pdf" },
+                { type: "code", mime: "application/json", labels: [ "disabled:iconPack" ] },
+                { type: "code", mime: "application/javascript" },
+                { type: "book", viewType: "table" }
+            ] },
+            { type: "book", viewType: "presentation", children: [
+                { type: "text", children: [ { type: "render" } ] }
+            ] },
+            { type: "mermaid" },
+            { type: "book" }
+        ] });
+
+        // A drawn note names the group of the renderer the app loads for its content, and a note
+        // drawn with nothing loaded on demand, such as text or code, names none.
+        expect([ ...getAppViewGroups(site) ].sort()).toEqual([
+            "app", "content:file", "content:iconPack", "content:markdown", "content:render",
+            "scripting", "type:mermaid", "type:render", "view:calendar", "view:dashboard",
+            "view:presentation", "view:table"
+        ]);
+        const withoutViews = viewTree({ type: "text", children: [ { type: "book" } ] });
+        expect(getAppViewGroups(withoutViews).size).toBe(0);
+    });
+});
+
+describe("getShareThemeTranslationFiles", () => {
+    it("lists the catalogues of English and the display language only for app views", () => {
+        const calendar = viewTree({ type: "book", viewType: "calendar" });
+
+        expect(getShareThemeTranslationFiles(viewTree({ type: "text" }))).toEqual([]);
+        expect(getShareThemeTranslationFiles(calendar))
+            .toEqual([ "en/translation.json", "en/entry.json" ]);
+        mockOptions.getOptionOrNull.mockReturnValueOnce("ro");
+        expect(getShareThemeTranslationFiles(calendar)).toEqual([
+            "en/translation.json", "en/entry.json", "ro/translation.json", "ro/entry.json"
+        ]);
+    });
+});
+
+describe("getShareThemeExportFiles", () => {
+    it("adds the files of the app views the subtree hosts, with the groups they require", () => {
+        const manifest = {
+            files: [ "scripts.js" ],
+            lazy: {
+                app: [ "app.js" ],
+                "view:calendar": [ "calendar.js" ],
+                "view:table": [ "table.js" ]
+            },
+            requires: { "view:calendar": [ "app" ] }
+        };
+
+        const calendar = viewTree({ type: "book", viewType: "calendar" });
+        expect(getShareThemeExportFiles(manifest, calendar).sort())
+            .toEqual([ "app.js", "calendar.js", "scripts.js" ]);
+    });
+
+    const manifest = {
+        files: [ "scripts.js", "scripts.css" ],
+        lazy: { mermaid: [ "mermaid.core-a.js" ] },
+        requires: {}
+    };
+
+    it("adds the files of mermaid only for a subtree with a diagram", () => {
+        const diagram = `<pre><code class="language-mermaid">graph TD;</code></pre>`;
+
+        expect(getShareThemeExportFiles(manifest, subtreeOf({ type: "text", content: diagram })))
+            .toEqual([ "scripts.js", "scripts.css", "mermaid.core-a.js" ]);
+        const withoutDiagram = subtreeOf({ type: "text", content: "<p>No diagram.</p>" });
+        expect(getShareThemeExportFiles(manifest, withoutDiagram))
+            .toEqual([ "scripts.js", "scripts.css" ]);
+        expect(getShareThemeExportFiles({ files: [ "scripts.js" ], lazy: {}, requires: {} },
+            subtreeOf({ type: "text", content: diagram }))).toEqual([ "scripts.js" ]);
+    });
+});
+
+interface FakeViewNote {
+    type: string;
+    mime?: string;
+    labels?: string[];
+    viewType?: string;
+    isProtected?: boolean;
+    children?: FakeViewNote[];
+}
+
+/** A note with the children of `definition`, read for the app views it hosts. */
+function viewTree(definition: FakeViewNote): any {
+    const children = (definition.children ?? []).map(viewTree);
+    const note = {
+        type: definition.type,
+        mime: definition.mime ?? "text/html",
+        isProtected: !!definition.isProtected,
+        hasLabel: (name: string) => !!definition.labels?.includes(name),
+        isContentAvailable: () => true,
+        getContent: () => "",
+        getLabelValue: (name: string) => (name === "viewType" ? definition.viewType ?? null : null),
+        getChildNotes: () => children,
+        getSubtree: () => ({
+            notes: [ note, ...children.flatMap((child) => child.getSubtree().notes) ]
+        })
+    };
+    return note;
+}
+
+type FakeNote = { type: string; mime?: string; available?: boolean; content: string };
+
+/** A note whose subtree holds `notes`. */
+function subtreeOf(...notes: FakeNote[]) {
+    return {
+        getSubtree: () => ({
+            notes: notes.map(({ type, mime = "text/html", available = true, content }) => ({
+                type,
+                mime,
+                isContentAvailable: () => available,
+                getContent: () => content
+            }))
+        })
+    } as any;
+}

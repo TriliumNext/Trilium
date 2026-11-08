@@ -94,7 +94,7 @@ function decrypt(key: Uint8Array, cipherText: string | Uint8Array): Uint8Array |
     }
 }
 
-function decryptString(dataKey: Uint8Array, cipherText: string) {
+function decryptString(dataKey: Uint8Array, cipherText: string | Uint8Array) {
     const buffer = decrypt(dataKey, cipherText);
 
     if (buffer === null) {

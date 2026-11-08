@@ -1,9 +1,12 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
 import eraseService from "../../services/erase";
 import noteService from "../../services/notes";
 import { getSql } from "../../services/sql/index";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import ws from "../../services/ws";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -169,6 +172,49 @@ describe("Notes API (core)", () => {
 
             const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
             expect(blob.body.content).toContain("new");
+        });
+    });
+
+    describe("editing blocks", () => {
+        const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`;
+
+        it("reads and replaces the blocks of a text note", async () => {
+            const { noteId } = await createTextNote(api, {
+                content: `<p>Before</p>${blocks}<p>After</p>`
+            });
+
+            const read = await api.get<{ content: string }>(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" }
+            });
+            expect(read.status).toBe(200);
+            expect(read.body.content).toBe(blocks);
+
+            const update = await api.put(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" },
+                body: { content: `<p data-trilium-block-id="a">New</p>` }
+            });
+            expect(update.status).toBe(204);
+
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content)
+                .toBe(`<p>Before</p><p data-trilium-block-id="a">New</p><p>After</p>`);
+        });
+
+        it("rejects missing blocks and malformed requests", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const codeNote = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Code", type: "code", mime: "text/plain", content: blocks } }
+            );
+            const codeUrl = `/api/notes/${codeNote.body.note.noteId}/blocks`;
+
+            expect((await api.get(url, { query: { block: "a:x" } })).status).toBe(404);
+            expect((await api.get(url)).status).toBe(400);
+            expect((await api.get(codeUrl, { query: { block: "a" } })).status).toBe(400);
+            expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
+                .toBe(404);
+            expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
         });
     });
 
@@ -575,6 +621,19 @@ describe("Notes API (core)", () => {
             expect(note.body.type).toBe("code");
             expect(note.body.mime).toBe("text/x-python");
         });
+
+        it("rejects a type outside the note type set and leaves the note unchanged", async () => {
+            const { noteId } = await createTextNote(api, { title: "Bad type" });
+            for (const type of ["EVILTYPE", "html", undefined, 42]) {
+                const res = await api.put(`/api/notes/${noteId}/type`, {
+                    body: { type, mime: "application/x-anything" }
+                });
+                expect(res.status).toBe(400);
+            }
+
+            expect(becca.getNoteOrThrow(noteId).type).toBe("text");
+            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/html");
+        });
     });
 
     describe("structural operations", () => {
@@ -621,6 +680,18 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.note.noteId).not.toBe(original.noteId);
             expect(res.body.note.title).toContain("Original subtree");
+            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(1);
+        });
+
+        it("duplicates only the note when the body asks for no children", async () => {
+            const original = await createTextNote(api, { title: "Original note only" });
+            await createTextNote(api, { parentNoteId: original.noteId, title: "Child" });
+
+            const res = await api.post<{ note: { noteId: string } }>(
+                `/api/notes/${original.noteId}/duplicate/root`, { body: { withChildren: false } }
+            );
+            expect(res.status).toBe(200);
+            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(0);
         });
     });
 
@@ -688,6 +759,29 @@ describe("Notes API (core)", () => {
             );
             expect(res.status).toBe(200);
             expect(res.body.noteIdsToBeDeleted).toEqual([]);
+        });
+    });
+
+    describe("read-only virtual notes", () => {
+        beforeAll(() => {
+            registerVirtualNoteProvider({
+            namespace: "_vapi",
+            parentNoteId: "_hidden",
+            getSubtree: () => [{ id: "_vapiPage", title: "Page", type: "text" }],
+            getContent: () => "<p>shipped</p>"
+        });
+        getContext().init(() => load());
+        });
+
+        afterAll(() => {
+            unregisterVirtualNoteProvider("_vapi");
+            getContext().init(() => load());
+        });
+
+        it("refuses content and revision writes as a client error", async () => {
+            expect((await api.put("/api/notes/_vapiPage/data", { body: { content: "<p>edited</p>" } })).status).toBe(400);
+            expect((await api.post("/api/notes/_vapiPage/revision")).status).toBe(400);
+            expect(becca.getNoteOrThrow("_vapiPage").getContent()).toBe("<p>shipped</p>");
         });
     });
 });

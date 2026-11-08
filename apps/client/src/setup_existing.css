@@ -42,7 +42,7 @@
         /* Wide enough to read as a measure of the whole write, never wider than the page. */
         width: min(100%, 27.5em);
 
-        progress {
+        .tn-progress-bar {
             flex: 1;
         }
 

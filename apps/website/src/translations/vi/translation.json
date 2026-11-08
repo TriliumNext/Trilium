@@ -12,13 +12,276 @@
         "get_started": "Bắt đầu",
         "github": "Github",
         "dockerhub": "Kho Docker",
-        "screenshot_alt": "Ảnh chụp màn hình ứng dụng Trilium Notes (desktop)"
+        "screenshot_alt": "Ảnh chụp màn hình ứng dụng Trilium Notes (desktop)",
+        "tagline_license": "Giấy phép AGPL-3.0",
+        "tagline_no_account": "Không cần tài khoản",
+        "tagline_cross_platform": "Hoạt động ngoại tuyến"
     },
     "organization_benefits": {
-        "title": "Tổ chức",
+        "title": "Tự do sắp xếp ghi chú theo cách của bạn",
         "note_structure_title": "Cấu trúc ghi chú",
         "note_structure_description": "Ghi chú có thể được sắp xếp theo thứ bậc. Không cần thư mục, vì mỗi ghi chú có thể chứa các ghi chú phụ. Một ghi chú có thể được thêm vào nhiều vị trí trong hệ thống phân cấp.",
-        "attributes_title": "Các nhãn ghi chú và các mối quan hệ",
-        "attributes_description": "Sử dụng mối quan hệ giữa các ghi chú hoặc thêm nhãn để phân loại dễ dàng. Sử dụng các thuộc tính được khuyến khích để nhập thông tin có cấu trúc có thể được sử dụng trong bảng, bảng biểu."
+        "attributes_title": "Nhãn và mối liên hệ của ghi chú",
+        "attributes_description": "Dùng liên kết hoặc nhãn để dễ dàng phân loại ghi chú. Thêm thuộc tính nổi bật để nhập dữ liệu có cấu trúc cho bảng và board.",
+        "screenshot_alt": "Cây ghi chú phân cấp trong Trilium",
+        "hoisting_title": "Không gian làm việc và đặt ghi chú làm gốc",
+        "hoisting_description": "Dễ dàng tách biệt các ghi chú cá nhân và công việc bằng cách nhóm chúng dưới một không gian làm việc, giúp cây ghi chú chỉ hiển thị một tập hợp ghi chú cụ thể."
+    },
+    "collections": {
+        "calendar_title": "Lịch",
+        "table_title": "Bảng",
+        "presentation_title": "Trình chiếu",
+        "dashboard_title": "Bảng điều khiển",
+        "title": "Xem các ghi chú của bạn từ mọi góc độ",
+        "subtitle": "Bộ sưu tập cung cấp chế độ xem được thiết kế riêng cho một nhóm ghi chú. Hiển thị chính xác các ghi chú đó dưới dạng lịch, bảng, bảng Kanban, bản đồ tương tác và nhiều hơn nữa, sau đó chuyển đổi giữa các bố cục bất cứ khi nào nhu cầu của bạn thay đổi.",
+        "calendar_description": "Tổ chức các sự kiện cá nhân hoặc chuyên nghiệp của bạn bằng lịch, với hỗ trợ cho các sự kiện cả ngày và nhiều ngày. Xem các sự kiện của bạn một cách tổng quan với các chế độ xem tuần, tháng và năm. Thao tác dễ dàng để thêm hoặc kéo các sự kiện.",
+        "table_description": "Hiển thị và chỉnh sửa thông tin về các ghi chú trong cấu trúc bảng, với các loại cột khác nhau như văn bản, số, hộp kiểm, ngày & giờ, liên kết và màu sắc, cùng hỗ trợ cho các quan hệ. Tùy chọn, hiển thị các ghi chú trong hệ thống phân cấp cây bên trong bảng.",
+        "board_title": "Bảng Kanban",
+        "board_description": "Tổ chức các tác vụ hoặc trạng thái dự án của bạn thành một bảng Kanban với cách dễ dàng để tạo các mục và cột mới và đơn giản là thay đổi trạng thái của chúng bằng cách kéo chúng trên bảng.",
+        "geomap_title": "Bản đồ địa lý",
+        "geomap_description": "Lập kế hoạch kỳ nghỉ hoặc đánh dấu các điểm quan tâm của bạn trực tiếp trên bản đồ địa lý bằng các dấu mốc có thể tùy chỉnh. Hiển thị các tuyến GPX đã ghi để theo dõi lộ trình.",
+        "presentation_description": "Tổ chức thông tin thành các slide và trình bày chúng ở chế độ toàn màn hình với các hiệu ứng chuyển cảnh mượt mà. Các slide cũng có thể được xuất sang PDF để dễ dàng chia sẻ.",
+        "dashboard_description": "Sắp xếp các ghi chú của bạn thành các ô gạch có thể kéo và thay đổi kích thước trên lưới. Các ghi chú trở thành các widget trực tiếp hiển thị nội dung của chúng một cách tổng quan; lý tưởng để xây dựng trang chủ cá nhân hoặc tổng quan dự án tập hợp mọi thứ ở một nơi."
+    },
+    "section_nav": {
+        "aria_label": "Chuyển đến mục",
+        "organization": "Tổ chức",
+        "productivity": "Tính năng",
+        "note_types": "Loại ghi chú",
+        "import": "Nhập & xuất",
+        "collections": "Bộ sưu tập",
+        "scripting": "Scripting",
+        "ai_integration": "AI",
+        "faq": "Hỏi đáp"
+    },
+    "productivity_benefits": {
+        "title": "Tính năng mạnh mẽ hàng ngày",
+        "revisions_title": "Các phiên bản lịch sử ghi chú",
+        "revisions_content": "Các ghi chú được lưu định kỳ ở nền và các phiên bản lịch sử có thể được sử dụng để xem xét hoặc hoàn tác các thay đổi vô tình. Các phiên bản lịch sử cũng có thể được tạo theo yêu cầu.",
+        "protected_notes_title": "Ghi chú được bảo vệ",
+        "protected_notes_content": "Bảo vệ thông tin cá nhân nhạy cảm bằng cách mã hóa các ghi chú và khóa chúng bằng phiên có mật khẩu.",
+        "auth_title": "Đăng nhập an toàn",
+        "auth_content": "Bảo vệ đăng nhập server của bạn bằng xác thực đa yếu tố (TOTP), hoặc đăng nhập thông qua nhà cung cấp danh tính của bạn bằng OpenID Connect.",
+        "templates_title": "Bản mẫu",
+        "search_title": "Tìm kiếm & điều hướng nhanh",
+        "search_content": "Chuyển đến bất kỳ ghi chú hoặc lệnh nào theo tiêu đề với khớp mờ, hoặc chạy tìm kiếm toàn văn trên các ghi chú của bạn, kể cả văn bản bên trong hình ảnh và PDF thông qua OCR.",
+        "templates_content": "Định nghĩa các mẫu ghi chú có thể sử dụng lại với cấu trúc, thuộc tính và nội dung được thiết lập sẵn, sau đó tạo các ghi chú mới từ chúng chỉ với một cú nhấp.",
+        "web_clipper_title": "Web Clipper",
+        "web_clipper_content": "Lấy các trang web (hoặc ảnh chụp màn hình) và đặt chúng trực tiếp vào Trilium bằng tiện ích mở rộng trình duyệt Web Clipper.",
+        "sync_title": "Đồng bộ hóa",
+        "sync_content": "Sử dụng một instance tự lưu trữ hoặc trên cloud để dễ dàng đồng bộ hóa các ghi chú của bạn trên nhiều thiết bị và truy cập từ điện thoại di động bằng PWA.",
+        "share_title": "Chia sẻ ghi chú trên web",
+        "share_content": "Nếu bạn có một server, hãy xuất bản bất kỳ cây con nào của các ghi chú của bạn như một trang web công khai, chỉ đọc mà bất kỳ ai cũng có thể duyệt mà không cần tài khoản.",
+        "api_title": "REST API",
+        "api_content": "Đọc, tạo và cập nhật các ghi chú của bạn theo chương trình qua HTTP bằng REST API tích hợp sẵn của Trilium, lý tưởng cho tự động hóa và tích hợp bên thứ ba."
+    },
+    "note_types": {
+        "code_title": "Ghi chú mã",
+        "canvas_title": "Bảng vẽ",
+        "mindmap_title": "Sơ đồ tư duy",
+        "notemap_title": "Sơ đồ ghi chú",
+        "rendernote_title": "Hiển thị ghi chú",
+        "markdown_title": "Markdown",
+        "spreadsheet_title": "Bảng tính",
+        "title": "Một loại ghi chú cho mọi loại nội dung",
+        "subtitle": "Không phải mọi thứ đều vừa khít vào một đoạn văn. Trilium cung cấp một loạt các loại ghi chú, từ văn bản giàu định dạng và mã nguồn đến bảng tính, sơ đồ và bản đồ tư duy, để bạn có thể ghi lại mỗi ý tưởng theo hình thức phù hợp nhất và kết hợp chúng một cách tự do trong toàn bộ cây ghi chú của mình.",
+        "text_title": "Ghi chú văn bản",
+        "text_description": "Các ghi chú được chỉnh sửa bằng trình soạn thảo trực quan (WYSIWYG), hỗ trợ bảng, hình ảnh, biểu thức toán học, các block mã với tô sáng cú pháp. Định dạng văn bản nhanh chóng bằng cú pháp kiểu Markdown hoặc bằng các lệnh slash.",
+        "code_description": "Các mẫu mã nguồn hoặc script lớn sử dụng trình soạn thảo chuyên dụng, với tô sáng cú pháp cho nhiều ngôn ngữ lập trình và nhiều chủ đề màu khác nhau.",
+        "file_title": "Ghi chú tệp",
+        "file_description": "Nhúng các tệp đa phương tiện như PDF, hình ảnh, video với xem trước trong ứng dụng.",
+        "canvas_description": "Sắp xếp các hình dạng, hình ảnh và văn bản trên một canvas vô hạn, sử dụng cùng công nghệ đằng sau excalidraw.com. Lý tưởng cho sơ đồ, phác thảo và lập kế hoạch trực quan.",
+        "mermaid_title": "Sơ đồ Mermaid",
+        "mermaid_description": "Tạo các sơ đồ như sơ đồ luồng, sơ đồ lớp & trình tự, biểu đồ Gantt và nhiều hơn nữa, sử dụng cú pháp Mermaid.",
+        "mindmap_description": "Tổ chức suy nghĩ của bạn một cách trực quan hoặc brainstorm ý tưởng.",
+        "others_label": "Và nhiều hơn nữa",
+        "relationmap_title": "Sơ đồ quan hệ",
+        "savedsearch_title": "Tìm kiếm đã lưu",
+        "webview_title": "Giao diện web",
+        "markdown_description": "Ưu tiên văn bản thuần? Hãy viết ghi chú trực tiếp bằng Markdown, giữ cho chúng dễ di chuyển và dễ quản lý phiên bản, đồng thời vẫn hiển thị bảng, khối mã và định dạng phong phú trong chế độ xem trước song song.",
+        "spreadsheet_description": "Bảng tính đầy đủ tính năng cho dữ liệu dạng bảng, với công thức, định dạng có điều kiện, xác thực dữ liệu, sắp xếp và lọc. Nhập và xuất tệp Excel (.xlsx) và CSV."
+    },
+    "import": {
+        "pillar_import_title": "Nhập",
+        "pillar_export_title": "Xuất",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian",
+        "title": "Ghi chú của bạn không bao giờ bị khóa",
+        "subtitle": "Ghi chú của bạn là của bạn để di chuyển tự do. Mang chúng vào từ các ứng dụng khác, lấy chúng ra bằng các định dạng mở, hoặc biến chúng thành các tài liệu hoàn chỉnh, bất cứ khi nào bạn muốn.",
+        "pillar_import_description": "Lấy ghi chú của bạn từ các ứng dụng khác với cấu trúc nguyên vẹn, hoặc nhập các tệp Markdown, HTML và OPML tiêu chuẩn.",
+        "pillar_export_description": "Lấy bất kỳ ghi chú nào hoặc toàn bộ cây ghi chú của bạn ra bằng định dạng mở, dễ di chuyển bất cứ lúc nào:",
+        "pillar_export_markdown": "Markdown cho văn bản thuần dễ di chuyển",
+        "pillar_export_html": "HTML cho các trang tự chứa",
+        "pillar_export_opml": "OPML cho các dàn ý",
+        "pillar_pdf_title": "In ra PDF",
+        "pillar_pdf_description": "Biến các ghi chú của bạn thành PDF chỉn chu như sách:",
+        "pillar_pdf_single": "Một ghi chú duy nhất",
+        "pillar_pdf_subtree": "Toàn bộ cây con, giữ nguyên thứ tự",
+        "pillar_pdf_ready": "Sẵn sàng để in hoặc chia sẻ",
+        "sources_label": "Nhập trực tiếp từ"
+    },
+    "ai_integration": {
+        "providers_title": "Nhà cung cấp của bạn, khóa của bạn",
+        "providers_description": "Kết nối OpenAI, Anthropic hoặc Google bằng khóa API của riêng bạn, hoặc trỏ Trilium đến một mô hình tự lưu trữ, tương thích OpenAI. Chia sẻ các ghi chú của bạn với các trợ lý bên ngoài qua MCP.",
+        "learn_more": "Tìm hiểu thêm",
+        "title": "AI theo điều kiện của bạn",
+        "subtitle": "Tùy chọn và hoàn toàn theo điều kiện của bạn. Các tính năng AI là tùy chọn và bị tắt mặc định: các ghi chú của bạn sẽ không bao giờ được gửi đi đâu trừ khi bạn bật chúng và kết nối nhà cung cấp của riêng bạn.",
+        "screenshot_alt": "Trilium AI chat tạo các ghi chú thay mặt bạn thông qua các công cụ tích hợp sẵn",
+        "chat_title": "Trò chuyện với các ghi chú của bạn",
+        "chat_description": "Đặt câu hỏi và brainstorm trong một chat tích hợp sẵn có thể khai thác nội dung từ chính các ghi chú của bạn.",
+        "tools_title": "AI hoạt động cùng các ghi chú của bạn",
+        "tools_description": "Để trợ lý tìm kiếm, tạo và cập nhật các ghi chú thay mặt bạn thông qua một bộ công cụ tích hợp sẵn."
+    },
+    "scripting": {
+        "title": "Nếu bạn có thể tưởng tượng, bạn có thể viết script",
+        "subtitle": "Trilium không chỉ là nơi lưu trữ ghi chú, mà còn có thể lập trình được. Viết JavaScript chạy trong ứng dụng hoặc trên server, xây dựng giao diện của riêng bạn và tự động hóa quy trình làm việc, từ một chỉnh sửa đơn giản đến một ứng dụng tùy chỉnh hoàn chỉnh.",
+        "screenshot_alt": "Một ghi chú render của Trilium hiển thị đồng hồ analog tương tác được xây dựng bằng script",
+        "widgets_title": "Widget tùy chỉnh",
+        "widgets_description": "Thêm các nút, bảng và widget launcher của riêng bạn vào giao diện Trilium bằng JavaScript frontend.",
+        "backend_title": "Script backend & sự kiện",
+        "backend_description": "Chạy script phía server theo lịch hoặc phản hồi các sự kiện như tạo hoặc thay đổi ghi chú.",
+        "render_title": "Ghi chú render",
+        "render_description": "Xây dựng các bảng điều khiển tương tác và mini-app được render ngay bên trong ghi chú, giống như đồng hồ được hiển thị ở đây.",
+        "api_title": "Script API",
+        "api_description": "API có kiểu cho ghi chú, nhánh, thuộc tính và tìm kiếm, có sẵn cho cả script frontend và backend."
+    },
+    "faq": {
+        "title": "Câu hỏi thường gặp",
+        "mobile_question": "Có ứng dụng di động không?",
+        "mobile_answer": "Hiện tại chưa có ứng dụng di động chính thức. Tuy nhiên, nếu bạn có một instance server, bạn có thể truy cập bằng trình duyệt web và thậm chí cài đặt nó như một PWA. Đối với Android, có một ứng dụng không chính thức tên là TriliumDroid, thậm chí hoạt động ngoại tuyến (giống như client desktop).",
+        "database_question": "Dữ liệu được lưu ở đâu?",
+        "database_answer": "Tất cả các ghi chú của bạn sẽ được lưu trong cơ sở dữ liệu SQLite trong thư mục ứng dụng. Trilium sử dụng cơ sở dữ liệu thay vì các tệp văn bản thuần túy vì hai lý do: hiệu suất và một số tính năng, chẳng hạn như việc đặt cùng một ghi chú ở nhiều vị trí trong cây sẽ khó triển khai hơn nhiều nếu không có cơ sở dữ liệu. Để tìm thư mục ứng dụng, chỉ cần mở cửa sổ Giới thiệu.",
+        "server_question": "Tôi có cần server để sử dụng Trilium không?",
+        "server_answer": "Không, server cho phép truy cập qua trình duyệt web và quản lý đồng bộ hóa nếu bạn có nhiều thiết bị. Để bắt đầu, chỉ cần tải xuống ứng dụng desktop và bắt đầu sử dụng.",
+        "scaling_question": "Ứng dụng mở rộng tốt như thế nào với một lượng lớn ghi chú?",
+        "scaling_answer": "Tùy thuộc vào cách sử dụng, ứng dụng nên có thể xử lý ít nhất 100.000 ghi chú mà không gặp vấn đề. Lưu ý rằng quá trình đồng bộ đôi khi có thể thất bại khi tải lên nhiều tệp lớn (1 GB mỗi tệp) vì Trilium được thiết kế nhiều hơn như một ứng dụng cơ sở tri thức chứ không phải kho lưu trữ tệp (chẳng hạn như NextCloud).",
+        "network_share_question": "Tôi có thể chia sẻ cơ sở dữ liệu của mình qua ổ đĩa mạng không?",
+        "network_share_answer": "Không, nhìn chung không nên chia sẻ cơ sở dữ liệu SQLite qua ổ đĩa mạng. Mặc dù đôi khi nó có thể hoạt động, nhưng có nguy cơ CSDL sẽ bị hỏng do khóa tệp không hoàn hảo trên mạng.",
+        "security_question": "Dữ liệu của tôi được bảo vệ như thế nào?",
+        "security_answer": "Mặc định, các ghi chú không được mã hóa và có thể được đọc trực tiếp từ cơ sở dữ liệu. Khi một ghi chú được đánh dấu là mã hóa, ghi chú đó sẽ được mã hóa bằng AES-128-CBC.",
+        "free_question": "Trilium có miễn phí không?",
+        "free_answer": "Có, hoàn toàn miễn phí. Trilium là phần mềm mã nguồn mở miễn phí theo giấy phép AGPL-3.0, không có gói trả phí, tài khoản hoặc rào cản tính năng. Bạn có thể sử dụng, tự lưu trữ và sửa đổi nó theo bất kỳ cách nào bạn muốn.",
+        "cloud_question": "Có phiên bản lưu trữ hoặc đám mây không?",
+        "cloud_answer": "Chưa có phiên bản chính thức, mặc dù đây là điều chúng tôi muốn cung cấp trong tương lai. Hiện tại, Trilium được tự lưu trữ: chạy ứng dụng desktop hoặc tự lưu trữ server. Nếu bạn không muốn quản lý server, các nhà cung cấp bên thứ ba như <0>PikaPods</0> cung cấp dịch vụ lưu trữ Trilium được quản lý.",
+        "collaboration_question": "Nhiều người có thể cộng tác trên cùng các ghi chú không?",
+        "collaboration_answer": "Trilium được thiết kế như một ứng dụng cho một người dùng. Bạn có thể đồng bộ hóa các ghi chú của mình trên tất cả các thiết bị và xuất bản các ghi chú chỉ đọc lên web để người khác xem, nhưng việc chỉnh sửa thời gian thực bởi nhiều người dùng trên cùng các ghi chú không được hỗ trợ.",
+        "more_questions": "Vẫn còn câu hỏi? <0>Hỏi cộng đồng</0>"
+    },
+    "final_cta": {
+        "get_started": "Bắt đầu",
+        "title": "Bắt đầu xây dựng cơ sở tri thức của bạn",
+        "description": "Tổ chức mọi thứ trong một ứng dụng mã nguồn mở: các ghi chú phân cấp, tìm kiếm mạnh mẽ và đồng bộ hóa với server do bạn kiểm soát."
+    },
+    "header": {
+        "get-started": "Bắt đầu",
+        "documentation": "Tài liệu",
+        "language": "Ngôn ngữ",
+        "resources": "Tài nguyên",
+        "support-us": "Hỗ trợ chúng tôi"
+    },
+    "social_buttons": {
+        "github": "Github",
+        "github_discussions": "GitHub Discussions",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "download_helper_server_docker": {
+        "download_dockerhub": "Kho Docker",
+        "download_ghcr": "Ghcr.io",
+        "title": "Tự lưu trữ bằng Docker",
+        "description": "Triển khai dễ dàng trên Windows, Linux hoặc macOS bằng một container Docker."
+    },
+    "download_helper_server_linux": {
+        "title": "Tự lưu trữ trên Linux",
+        "description": "Triển khai Trilium Notes trên server hoặc VPS của bạn, tương thích với hầu hết các bản phân phối.",
+        "download_tar_x64": "X64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Module NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Lưu trữ trả phí",
+        "description": "Trilium Notes được lưu trữ trên PikaPods, một dịch vụ trả phí để truy cập và quản lý dễ dàng. Không trực thuộc đội ngũ Trilium.",
+        "download_pikapod": "Cài đặt trên PikaPods"
+    },
+    "resources": {
+        "title": "Tài nguyên",
+        "icon_packs": "Gói biểu tượng",
+        "icon_packs_intro": "Mở rộng lựa chọn biểu tượng có sẵn cho các ghi chú của bạn bằng cách sử dụng một gói biểu tượng. Để biết thêm thông tin về gói biểu tượng, xem <DocumentationLink>tài liệu chính thức</DocumentationLink>.",
+        "download": "Tải xuống",
+        "website": "Trang web"
+    },
+    "components": {
+        "link_learn_more": "Tìm hiểu thêm..."
+    },
+    "download_now": {
+        "text": "Tải xuống ngay ",
+        "platform_big": "V{{version}} cho {{platform}}",
+        "platform_small": "Cho {{platform}}",
+        "linux_big": "V{{version}} cho Linux",
+        "linux_small": "Cho Linux",
+        "more_platforms": "Nhiều nền tảng & cài đặt server khác"
+    },
+    "footer": {
+        "copyright_and_the": " Và ",
+        "copyright_community": "Cộng đồng"
+    },
+    "support_us": {
+        "title": "Hỗ trợ chúng tôi",
+        "financial_donations_title": "Quyên góp tài chính",
+        "financial_donations_description": "Trilium được xây dựng và bảo trì với <Link>hàng trăm giờ làm việc</Link>. Sự hỗ trợ của bạn giúp ứng dụng duy trì mã nguồn mở, cải thiện tính năng và chi trả các chi phí như hosting.",
+        "financial_donations_cta": "Hãy cân nhắc hỗ trợ nhà phát triển chính (<Link>eliandoran</Link>) của ứng dụng thông qua:",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "Các cách đóng góp khác",
+        "way_translate": "Dịch ứng dụng sang ngôn ngữ mẹ đẻ của bạn thông qua <Link>Weblate</Link>.",
+        "way_community": "Tương tác với cộng đồng trên <Discussions>GitHub Discussions</Discussions> hoặc trên <Matrix>Matrix</Matrix>.",
+        "way_reports": "Báo lỗi qua <Link>GitHub issues</Link>.",
+        "way_document": "Cải thiện tài liệu bằng cách thông báo cho chúng tôi về các khoảng trống trong tài liệu hoặc đóng góp hướng dẫn, FAQ hoặc hướng dẫn sử dụng.",
+        "way_market": "Chia sẻ thông tin: Chia sẻ Trilium Notes với bạn bè, hoặc trên blog và mạng xã hội."
+    },
+    "404": {
+        "title": "404: Không tìm thấy",
+        "description": "Trang bạn đang tìm kiếm không thể được tìm thấy. Có thể nó đã bị xóa hoặc URL không chính xác."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows trên ARM",
+        "description_x64": "Tương thích với các thiết bị Intel hoặc AMD chạy Windows 10 và 11.",
+        "description_arm64": "Tương thích với các thiết bị ARM (ví dụ: có Qualcomm Snapdragon).",
+        "quick_start": "Để cài đặt qua Winget:",
+        "download_exe": "Tải trình cài đặt (.exe)",
+        "download_zip": "Di động (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux trên ARM",
+        "description_x64": "Đối với hầu hết các bản phân phối Linux, tương thích với kiến trúc x86_64.",
+        "description_arm64": "Đối với các bản phân phối Linux dựa trên ARM, tương thích với kiến trúc aarch64.",
+        "quick_start": "Chọn định dạng gói phù hợp, tùy thuộc vào bản phân phối của bạn:",
+        "download_deb": ".Deb",
+        "download_rpm": ".Rpm",
+        "download_flathub": "Flathub",
+        "download_appimage": ".AppImage",
+        "download_zip": "Di động (.zip)",
+        "download_nixpkgs": "Nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "MacOS cho Intel",
+        "title_arm64": "MacOS cho Apple Silicon",
+        "description_x64": "Dành cho các Mac dựa trên Intel chạy macOS Ventura hoặc mới hơn.",
+        "description_arm64": "Dành cho các Mac Apple Silicon như những máy có chip M1 và M2.",
+        "quick_start": "Để cài đặt qua Homebrew:",
+        "download_dmg": "Tải trình cài đặt (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Di động (.zip)"
     }
 }

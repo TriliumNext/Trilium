@@ -17,7 +17,7 @@ Separate workspace packages are no longer the pattern (see "Where a new plugin g
   Nothing sits outside it any more: `mathlive` and the other former plugin-package dependencies
   are declared on the aggregate itself.
 - `apps/client/src/widgets/type_widgets/text/` — the rich-text note widget that instantiates the
-  editor (`config.ts`, `CKEditorWithWatchdog.tsx`, `toolbar.ts`).
+  editor (`config.ts`, `CKEditor.tsx`, `toolbar.ts`).
 
 The library's own packages (basic-styles, link, image, engine, ui, core, widget, typing, …) are
 **upstream** and not present in this repo — they ship inside the `ckeditor5` npm aggregate.
@@ -154,10 +154,17 @@ keep in sync. `src/index.ts` imports `ckeditor5/ckeditor5.css` and the Trilium t
 `apps/client/src/widgets/type_widgets/text/`:
 
 - `config.ts` builds the `EditorConfig` (toolbar from `toolbar.ts`, language, feature config such as
-  `syntaxHighlighting`, `moveBlockUp/Down`, mention feeds, etc.).
-- `CKEditorWithWatchdog.tsx` wraps editor creation in the **custom `EditorWatchdog`**
-  (`packages/ckeditor5/src/custom_watchdog.ts`, re-exported from `@triliumnext/ckeditor5`), which
-  recreates the editor on a crash while preserving data.
+  `syntaxHighlighting`, `moveBlockUp/Down`, the `mention.hostedFeeds` whose lists
+  `mention_list_view.tsx` draws, etc.).
+- `CKEditor.tsx` creates the editor, rebuilds it when an option it bakes in at creation changes
+  (content language, transformations, HTML support, …), and serializes builds on one container.
+  CKEditor 49 removed the Watchdog, so nothing restarts the editor after an unhandled error: the
+  editor keeps running, and `onTextEditorError(editor, callback)` from `@triliumnext/ckeditor5`
+  (`src/editor_errors.ts`, over CKEditor's page-wide `onEditorError()`) reports the errors of one
+  editor, minus the known harmless ones in its `IGNORED_ERRORS`. `EditableText.tsx` turns each into
+  the `editor-error` toast with a copyable details dialog (`reportEditorError()`). A new ignored
+  error goes into `IGNORED_ERRORS` — it matches on substrings of the message, which for a native
+  error is CKEditor's `unexpected-error … Original error: TypeError: …` wrapping.
 - The client picks `ClassicEditor` (fixed toolbar) or `PopupEditor` (floating) per the note's
   editing mode; `AttributeEditor` is used elsewhere for attribute/relation inputs.
 
@@ -237,5 +244,5 @@ For test setup, model/view assertions, and command/UI test patterns, use the sep
 
 Paths here (`packages/ckeditor5`, `packages/ckeditor5/src/plugins/<name>/`, `apps/client/...`) are **this
 Trilium repository**. The CKEditor 5 library mechanics referenced (editor bases `BalloonEditor`/
-`DecoupledEditor`, `EditorConfig`, the watchdog) come from the external `ckeditor5` package,
+`DecoupledEditor`, `EditorConfig`, `onEditorError()`) come from the external `ckeditor5` package,
 **48 or later**.

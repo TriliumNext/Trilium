@@ -1,12 +1,17 @@
 # System Requirements
 The desktop version of Trilium supports all three main operating systems:
 
-*   Windows
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
+
     *   Windows 11 is officially supported.
     *   Windows on ARM is also supported
-*   Linux:
+
+=== "<span class="tn-icon bx bxl-tux"></span> Linux"
+
     *   Most modern distributions are supported, including NixOS.
     *   ARM is supported in `aarch64` (no ARM v7 support).
-*   macOS
+
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
+
     *   Minimum supported operating system: macOS Ventura
     *   Both Intel and Apple Silicon devices are supported.

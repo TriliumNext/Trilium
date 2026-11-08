@@ -1,0 +1,6 @@
+/* The zoom level keeps the width of "3000%", the largest zoom, in a CKEditor dropdown button. */
+.ck.ck-toolbar .ck.ck-dropdown .ck-button.canvas-drawing-zoom-level .ck-button__label {
+    width: 6ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}

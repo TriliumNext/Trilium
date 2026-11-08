@@ -1,3 +1,4 @@
+import type { ViteHotContext } from "vite/types/hot.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import utils, {
@@ -31,6 +32,7 @@ import utils, {
     reloadFrontendApp,
     replaceHtmlEscapedSlashes,
     restartDesktopApp,
+    reuseAcrossHotReloads,
     rootCauseMessage,
     toggleBodyClass
 } from "./utils.js";
@@ -116,6 +118,20 @@ describe("formatSize", () => {
         // list with whatever power of 1024 the size came to.
         expect(formatSize(3 * 1024 ** 4)).toBe("3 TiB");
         expect(formatSize(5 * 1024 ** 5)).toBe("5120 TiB");
+    });
+
+    it("shows a size in another size's unit, for figures read down a column", () => {
+        const total = 711_000_000;
+        expect(formatSize(643_854, 2, total)).toBe("0.61 MiB");
+        expect(formatSize(40_257_283, 2, total)).toBe("38.39 MiB");
+        expect(formatSize(0, 2, total)).toBe("0.00 MiB");
+    });
+
+    it("shows a size too small for the places of its unit as below the smallest step", () => {
+        const total = 2.5 * 1024 ** 3;
+        expect(formatSize(643_854, 2, total)).toBe("<0.01 GiB");
+        expect(formatSize(643_854, 0, total)).toBe("<1 GiB");
+        expect(formatSize(0, 2, total)).toBe("0.00 GiB");
     });
 
     it("keeps the places it is given, trailing zeros and all", () => {
@@ -217,9 +233,11 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<p>  </p>")).toBe(true);
     });
 
-    it("detects content via img / section / link-mention", () => {
+    it("detects content via img / section / include / link-mention", () => {
         expect(isHtmlEmpty("<IMG src='x'>")).toBe(false);
         expect(isHtmlEmpty("<SECTION></section>")).toBe(false);
+        expect(isHtmlEmpty("<figure class=\"include-note\" data-note-id=\"n1\">&nbsp;</figure>"))
+            .toBe(false);
         expect(isHtmlEmpty("<span class='link-mention'></span>")).toBe(false);
     });
 
@@ -581,10 +599,10 @@ describe("timeLimit (default export)", () => {
         expect(utils.timeLimit(42 as any, 1000)).toBe(42);
     });
 
-    it("resolves when the promise settles before the limit (timer sees it as resolved)", async () => {
+    it("resolves when the promise settles before the limit", async () => {
         const result = utils.timeLimit(Promise.resolve("done"), 1000);
         await expect(result).resolves.toBe("done");
-        // Advance past the limit so the timeout callback runs and observes `resolved === true`.
+        // Advancing past the limit checks that the timeout does not turn the result into a rejection.
         await vi.advanceTimersByTimeAsync(1000);
         await expect(result).resolves.toBe("done");
     });
@@ -594,6 +612,14 @@ describe("timeLimit (default export)", () => {
         const limited = utils.timeLimit(never, 50, "too slow");
         const assertion = expect(limited).rejects.toThrow("too slow");
         await vi.advanceTimersByTimeAsync(60);
+        await assertion;
+    });
+
+    it("forwards a rejection immediately instead of waiting for the limit", async () => {
+        const failing = Promise.reject(new Error("boom"));
+        const limited = utils.timeLimit(failing, 30000);
+        const assertion = expect(limited).rejects.toThrow("boom");
+        await vi.advanceTimersByTimeAsync(0);
         await assertion;
     });
 
@@ -1009,5 +1035,21 @@ describe("isPreAuthScreen", () => {
     it("does NOT flag an unset glob (unit-test / unknown state) — strict === false keeps eager loads working", () => {
         setGlob({});
         expect(isPreAuthScreen()).toBe(false);
+    });
+});
+
+describe("reuseAcrossHotReloads", () => {
+    it("returns the stored instance on re-evaluation, and a fresh one without `hot.data`", () => {
+        const hot = { data: {} } as unknown as ViteHotContext;
+        const create = vi.fn(() => ({}));
+
+        const first = reuseAcrossHotReloads(hot, create);
+        expect(reuseAcrossHotReloads(hot, create)).toBe(first);
+        expect(create).toHaveBeenCalledTimes(1);
+
+        // Vitest's `import.meta.hot` stub has no `data`.
+        const stub = {} as unknown as ViteHotContext;
+        expect(reuseAcrossHotReloads(stub, create)).not.toBe(reuseAcrossHotReloads(stub, create));
+        expect(reuseAcrossHotReloads(undefined, create)).not.toBe(first);
     });
 });

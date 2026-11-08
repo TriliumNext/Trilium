@@ -1,4 +1,3 @@
-import { GEO_LOCATION_ATTRIBUTE } from "@triliumnext/commons";
 import { AddLayerObject, type CircleLayerSpecification, type ExpressionSpecification, type GeoJSONSource, type MapGeoJSONFeature, type Map as MapLibreGLMap, type MapMouseEvent, type SymbolLayerSpecification } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
@@ -8,11 +7,11 @@ import { getReadableTextColor } from "../../../services/css_class_manager";
 import { renderIconImage } from "../../../services/icon_glyphs";
 import { useTriliumEvent } from "../../react/hooks";
 import { CLUSTER_LAYERS, CLUSTER_SOURCE_OPTIONS, installClusterLayers, UNCLUSTERED_ONLY, useClusterExpansion } from "./clusters";
-import { boundsOf } from "./coordinates";
+import { type Bounds, boundsOf } from "./coordinates";
 import { MapStyleLoaded, ParentMap } from "./map";
 import { NOTE_ZOOM } from "./results";
+import { locationOf, type MapSpace, MapSpaceContext } from "./space";
 
-export { GEO_LOCATION_ATTRIBUTE as LOCATION_ATTRIBUTE } from "@triliumnext/commons";
 export const MARKER_LAYER = "points-layer";
 export const MARKER_SOURCE = "points";
 /** The glow put under the selected marker, drawn from the same source beneath the pins. */
@@ -149,6 +148,7 @@ interface MarkersProps {
 
 export default function Markers({ notes, hideLabels, isDarkTheme, clustered, placing, opensNotes, selectedNoteId }: MarkersProps) {
     const map = useContext(ParentMap);
+    const space = useContext(MapSpaceContext);
     const version = useNoteChangeVersion(notes);
     // Whether there is a loaded style to add to. Read from the context rather than worked out here:
     // a raster basemap is handed to MapLibre as an object, which loads it one animation frame later,
@@ -157,7 +157,7 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
     const styleLoaded = useContext(MapStyleLoaded);
     // The markers last built, kept where both effects can reach them: the layer has to be able to
     // fill itself again the moment it is rebuilt, without waiting on a fresh build.
-    const markerData = useRef<Awaited<ReturnType<typeof buildMarkerData>>>();
+    const markerData = useRef<Awaited<ReturnType<typeof buildMarkerData>> | undefined>(undefined);
     // How the titles are to be drawn, read rather than depended on: `install` is what builds the
     // layer, so a version of it per look would take the layer down and every marker with it for
     // what is two paint properties and a layout one. Only a layer being added fresh reads this —
@@ -326,7 +326,7 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
         if (!map) return;
 
         let cancelled = false;
-        buildMarkerData(notes).then((built) => {
+        buildMarkerData(notes, space).then((built) => {
             if (cancelled) return;
             markerData.current = built;
             install();
@@ -335,7 +335,7 @@ export default function Markers({ notes, hideLabels, isDarkTheme, clustered, pla
         return () => {
             cancelled = true;
         };
-    }, [ map, notes, version, install ]);
+    }, [ map, notes, space, version, install ]);
 
     // The look of the titles, set on the layer already standing. Switching the map between a light
     // and a dark style — or hiding the titles — is a repaint of three properties, not a reason to
@@ -391,9 +391,15 @@ function selectionPinSize(selectedNoteId: string | null): ExpressionSpecificatio
     return selectedNoteId ? [ "case", isSelected(selectedNoteId), SELECTED_PIN_SCALE, 1 ] : 1;
 }
 
-/** The selected pin sorted above its neighbours, higher keys being drawn later and so on top. */
-function selectionSortKey(selectedNoteId: string | null): ExpressionSpecification | number {
-    return selectedNoteId ? [ "case", isSelected(selectedNoteId), 1, 0 ] : 0;
+/**
+ * The selected pin sorted above its neighbours, higher keys being drawn later and so on top.
+ *
+ * An expression even when nothing is selected. A constant key built into the tiles makes MapLibre
+ * place none of their symbols once the key becomes an expression, so every marker fades out and
+ * back in until the tiles are rebuilt.
+ */
+function selectionSortKey(selectedNoteId: string | null): ExpressionSpecification {
+    return [ "case", isSelected(selectedNoteId), 1, 0 ];
 }
 
 /**
@@ -476,15 +482,18 @@ function useMarkerOpening(map: MapLibreGLMap | null, enabled: boolean) {
  *
  * A component rather than an effect in the view above, so the map is read from the context every
  * other layer reads it from. Nothing is drawn.
+ *
+ * Given `bounds`, those are framed instead of the notes: an image map opens on the whole image.
  */
-export function FitToNotes({ notes, enabled }: { notes: FNote[], enabled: boolean }) {
+export function FitToNotes({ notes, enabled, bounds: fixedBounds }: { notes: FNote[], enabled: boolean, bounds?: Bounds }) {
     const map = useContext(ParentMap);
+    const space = useContext(MapSpaceContext);
     const framed = useRef(false);
 
     useEffect(() => {
         if (!map || !enabled || framed.current) return;
 
-        const bounds = boundsOf(locationsOf(notes));
+        const bounds = fixedBounds ?? boundsOf(locationsOf(notes, space));
         if (!bounds) return;
 
         framed.current = true;
@@ -494,16 +503,20 @@ export function FitToNotes({ notes, enabled }: { notes: FNote[], enabled: boolea
         //
         // Not animated: this is where the map opens, not somewhere it is taken. Flying would show
         // the stock view first and swoop off it every time a map is opened for the first time.
-        map.fitBounds(bounds, { padding: FIT_PADDING, maxZoom: NOTE_ZOOM, animate: false });
-    }, [ map, notes, enabled ]);
+        map.fitBounds(bounds, {
+            padding: FIT_PADDING,
+            animate: false,
+            ...(fixedBounds ? {} : { maxZoom: NOTE_ZOOM })
+        });
+    }, [ map, notes, space, enabled, fixedBounds ]);
 
     return null;
 }
 
 /** Every place a map's notes stand, in the `[lng, lat]` a box is drawn from. */
-function* locationsOf(notes: FNote[]) {
+function* locationsOf(notes: FNote[], space: MapSpace) {
     for (const note of notes) {
-        const location = parseLocation(note.getLabelValue(GEO_LOCATION_ATTRIBUTE));
+        const location = locationOf(note, space);
         if (location) {
             yield location;
         }
@@ -520,12 +533,12 @@ function* locationsOf(notes: FNote[]) {
  * it pays for the slowest of them only. A thousand notes in seven colours: fifty milliseconds
  * became eight.
  */
-async function buildMarkerData(notes: FNote[]) {
+async function buildMarkerData(notes: FNote[], space: MapSpace) {
     const features: GeoJSON.Feature[] = [];
     const wanted = new Map<string, { color: string, iconClass: string }>();
 
     for (const note of notes) {
-        const latLng = parseLocation(note.getLabelValue(GEO_LOCATION_ATTRIBUTE));
+        const latLng = locationOf(note, space);
         if (!latLng) continue;
 
         const color = note.getLabelValue("color") ?? DEFAULT_MARKER_COLOR;
@@ -560,28 +573,6 @@ async function buildMarkerData(notes: FNote[]) {
     }
 
     return { features, images };
-}
-
-/** `lat,lng` as the label stores it, as the `[lng, lat]` GeoJSON wants, or `null` if unreadable. */
-export function parseLocation(location: string | null | undefined): [number, number] | null {
-    if (!location) return null;
-
-    const [ lat, lng ] = location.split(",", 2).map((part) => parseFloat(part));
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-
-    return [ lng, lat ];
-}
-
-/**
- * A place as it is written and as the label stores it — latitude first — from the `[lng, lat]`
- * {@link parseLocation} yields and MapLibre reports.
- *
- * Six decimals name a spot to within a stride, which is as fine as anything is pointed out on a map.
- * The full stored value is worth having when it is being carried somewhere else, so what is copied
- * asks for every digit rather than what was read.
- */
-export function formatLocation([ lng, lat ]: [number, number], precision = 6) {
-    return `${lat.toFixed(precision)}, ${lng.toFixed(precision)}`;
 }
 
 export function markerImageId(color: string, iconClass: string) {

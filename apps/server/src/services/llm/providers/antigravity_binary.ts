@@ -20,7 +20,7 @@ import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { promisify } from "util";
 
-import { findOnPath } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -38,26 +38,16 @@ const PROBE_TIMEOUT_MS = 60_000;
 /** Where the setup steps live; the error messages point there. */
 const SETUP_HINT = "See \"Google Antigravity\" in the AI section of the User Guide for how to download it.";
 
-/**
- * The in-flight/successful resolution. Caching the promise lets concurrent
- * first calls share one probe; a failed probe clears it so a later install is
- * picked up without a restart.
- */
-let cachedResolution: Promise<string> | undefined;
+/** The probed binary, shared by concurrent first calls (see {@link cachedProbe}). */
+const probed = cachedProbe(probeBinary);
 
 export function resolveAntigravityBinaryPath(): Promise<string> {
-    if (!cachedResolution) {
-        cachedResolution = probeBinary().catch((err: unknown) => {
-            cachedResolution = undefined;
-            throw err;
-        });
-    }
-    return cachedResolution;
+    return probed.resolve();
 }
 
 /** For tests: forget the probed binary so the next call re-resolves. */
 export function resetAntigravityBinaryCache(): void {
-    cachedResolution = undefined;
+    probed.reset();
 }
 
 /**
@@ -102,5 +92,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error(`Google's Antigravity ACP server (agy_acp_server) was not found. Put the folder it was unpacked into on PATH, or set the TRILIUM_ANTIGRAVITY_ACP_PATH environment variable to the executable. ${SETUP_HINT}`);
+    throw new Error(await describeFlatpakSandbox("Google Antigravity ACP server") ?? `Google's Antigravity ACP server (agy_acp_server) was not found. Put the folder it was unpacked into on PATH, or set the TRILIUM_ANTIGRAVITY_ACP_PATH environment variable to the executable. ${SETUP_HINT}`);
 }

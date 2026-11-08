@@ -1,0 +1,55 @@
+# Use case
+
+usecase-beta
+
+==>
+
+UsecaseDiagram(DiagramName)
+
+# Trilium's sample
+
+usecase-beta
+actor User("User")
+actor Admin("Administrator")
+Login("Log in")
+User --> Login
+Admin --> Login
+
+==>
+
+UsecaseDiagram(DiagramName,Keyword,Name,String,Keyword,Name,String,Name,String,Name,Arrow,Name,Name,Arrow,Name)
+
+# Every kind of token
+
+usecase-beta
+direction LR
+actor User("User")@{ icon: person } <<human>> :::people
+systemBoundary Shop("`**Shop**`")
+  Login(Log in)
+end
+Admin --|> User
+Login ..> : include Pay
+note for Login 'Remember me'
+classDef people fill:#f9f,stroke-width:2px
+style Pay fill:#0f0
+json cfg @ { "a": [1.5px, true] }
+%% a comment
+
+==>
+
+UsecaseDiagram(DiagramName,Keyword,Direction,Keyword,Name,String,Name,Name,Stereotype,Name,Keyword,Name,MarkdownString,Name,Name,Name,Keyword,Name,Arrow,Name,Name,Arrow,Keyword,Name,Keyword,Keyword,Name,String,Keyword,Name,Name,Color,Name,Number,Keyword,Name,Name,Color,Keyword,Name,Symbol,String,Number,Boolean,LineComment)
+
+# Every arrow
+
+usecase-beta
+A --> B
+B <-- C
+A --o B
+B o-- C
+C --x D
+D x-- E
+E -- F --other
+
+==>
+
+UsecaseDiagram(DiagramName,Name,Arrow,Name,Name,Arrow,Name,Name,Arrow,Name,Name,Arrow,Name,Name,Arrow,Name,Name,Arrow,Name,Name,Arrow,Name,Arrow,Name)

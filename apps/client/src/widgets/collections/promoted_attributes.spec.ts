@@ -18,16 +18,17 @@ vi.mock("../../services/i18n", () => ({
 /** A definition as the collection note carries it, `label:dueDate` naming `dueDate`. */
 function definition(name: string, {
     alias, noteId = "board1", value = "promoted,single,text", isPromoted = true,
-    isInheritable = true
+    isInheritable = true, labelType, selectOptions
 }: {
-    alias?: string, noteId?: string, value?: string, isPromoted?: boolean, isInheritable?: boolean
+    alias?: string, noteId?: string, value?: string, isPromoted?: boolean, isInheritable?: boolean,
+    labelType?: string, selectOptions?: string[]
 } = {}) {
     return {
         name,
         value,
         noteId,
         isInheritable,
-        getDefinition: () => ({ isPromoted, promotedAlias: alias })
+        getDefinition: () => ({ isPromoted, promotedAlias: alias, labelType, selectOptions })
     };
 }
 
@@ -60,6 +61,8 @@ describe("resolvePromotedAttributes", () => {
                 drawnByCollection: false,
                 definitionValue: "promoted,single,text",
                 isOwned: true,
+                isDefinedByItems: false,
+                isConflicting: false,
                 isInheritable: true
             },
             // No alias, so the name is prefixed by the kind that defines it.
@@ -97,6 +100,16 @@ describe("resolvePromotedAttributes", () => {
             collection(DEFINED), [ { name: "dueDate", hidden: true } ]);
 
         expect(visiblePromotedAttributeNames(resolved)).toEqual([ "requiresResearch", "owner" ]);
+    });
+
+    it("hides an attribute the settings have never named, for a collection that opts in", () => {
+        const resolved = resolvePromotedAttributes(
+            collection(DEFINED), [ { name: "owner" } ], [], [], { unarrangedHidden: true });
+
+        expect(visiblePromotedAttributeNames(resolved)).toEqual([ "owner" ]);
+        // Still listed, after the arranged ones, so the reader can switch it on.
+        expect(resolved.map((attribute) => attribute.name))
+            .toEqual([ "owner", "dueDate", "requiresResearch" ]);
     });
 
     /** Writing the result back is what prunes the config. */
@@ -139,6 +152,15 @@ describe("resolvePromotedAttributes", () => {
     it("answers with nothing for a note that defines none, and for no note at all", () => {
         expect(resolvePromotedAttributes(collection([]), [ { name: "dueDate" } ])).toEqual([]);
         expect(resolvePromotedAttributes(undefined, undefined)).toEqual([]);
+    });
+
+    it("preserves colons in the attribute name when the definition name contains multiple colons", () => {
+        const resolved = resolvePromotedAttributes(
+            collection([ definition("label:sometool:parameter") ]), undefined);
+
+        expect(resolved).toHaveLength(1);
+        expect(resolved[0].name).toBe("sometool:parameter");
+        expect(resolved[0].type).toBe("label");
     });
 
     /** A definition names its kind before the colon; anything else is not one to draw. */
@@ -188,6 +210,63 @@ describe("resolvePromotedAttributes", () => {
         // However it is stored, it is never among what an item draws.
         expect(visiblePromotedAttributeNames(resolved))
             .toEqual([ "dueDate", "requiresResearch" ]);
+    });
+
+    /**
+     * The items' definitions follow the collection's, once per name, including non-inheritable
+     * ones.
+     */
+    it("appends what only the items define, once per name", () => {
+        const resolved = resolvePromotedAttributes(collection(DEFINED), undefined, [], [
+            collection([ definition("label:project", { noteId: "template1" }) ], "task1"),
+            collection([
+                definition("label:project", { noteId: "template1" }),
+                definition("label:dueDate", { noteId: "template1", alias: "Deadline" }),
+                definition("label:estimate", { noteId: "task2", isInheritable: false })
+            ], "task2")
+        ]);
+
+        expect(resolved.map((attribute) => attribute.name))
+            .toEqual([ "dueDate", "requiresResearch", "owner", "project", "estimate" ]);
+        expect(resolved.map((attribute) => attribute.isDefinedByItems))
+            .toEqual([ false, false, false, true, true ]);
+        expect(resolved[0].title).toBe("Due");
+    });
+
+    /**
+     * Items that define one name with a different type or different options are marked as
+     * conflicting, and so is an item that overrides the collection's definition with its own.
+     */
+    it("marks a name the items define in different ways", () => {
+        const item = (noteId: string, labelType?: string, selectOptions?: string[]) =>
+            collection([
+                definition("label:priority", { noteId: `tpl_${noteId}`, labelType, selectOptions })
+            ], noteId);
+
+        const conflicting = (items: FNote[]) => resolvePromotedAttributes(
+            collection([ definition("label:dueDate") ]), undefined, [], items)
+            .map((attribute) => [ attribute.name, attribute.isConflicting ]);
+
+        expect(conflicting([ item("a", "select", [ "Low" ]), item("b", "select", [ "Low" ]) ]))
+            .toEqual([ [ "dueDate", false ], [ "priority", false ] ]);
+        expect(conflicting([ item("a", "select", [ "Low" ]), item("b", "number") ]))
+            .toEqual([ [ "dueDate", false ], [ "priority", true ] ]);
+        expect(conflicting([ item("a", "select", [ "Low" ]), item("b", "select", [ "High" ]) ]))
+            .toEqual([ [ "dueDate", false ], [ "priority", true ] ]);
+        // A definition naming no type is a text field.
+        expect(conflicting([ item("a", "text"), item("b") ]))
+            .toEqual([ [ "dueDate", false ], [ "priority", false ] ]);
+
+        // An item inheriting the collection's `dueDate` reads the same definition back.
+        const board = collection([ definition("label:dueDate", { labelType: "date" }) ]);
+        const inheriting = collection([ definition("label:dueDate", { labelType: "date" }) ], "c");
+        const overriding = collection([
+            definition("label:dueDate", { noteId: "d", labelType: "text" })
+        ], "d");
+        const resolve = (items: FNote[]) =>
+            resolvePromotedAttributes(board, undefined, [], items)[0].isConflicting;
+        expect(resolve([ inheriting ])).toBe(false);
+        expect(resolve([ inheriting, overriding ])).toBe(true);
     });
 
     /** Two notes in the chain can define the same attribute; the nearer one is what applies. */

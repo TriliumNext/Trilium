@@ -19,6 +19,13 @@ const COMMENT_TYPES = new Set<number>([
     AnnotationType.INK,
 ]);
 
+/**
+ * Settles once pdf.js has applied the document's initial view, which restores the last-read
+ * position and would undo a scroll made before it. Already settled unless
+ * {@link trackInitialView} was called.
+ */
+let initialViewApplied: Promise<void> = Promise.resolve();
+
 const TYPE_NAMES: Record<number, string> = {
     [AnnotationType.TEXT]: "text",
     [AnnotationType.FREETEXT]: "freetext",
@@ -67,6 +74,19 @@ function resolveTypeName(ann: Record<string, any>): string {
     return TYPE_NAMES[ann.annotationType];
 }
 
+/**
+ * Holds back {@link scrollToAnnotation} until pdf.js has applied the initial view. pdf.js applies
+ * it at `documentinit` and, when the pages differ in size, once more after `pagesPromise`. Must be
+ * called before the document loads.
+ */
+export function trackInitialView(app: NonNullable<Window["PDFViewerApplication"]>) {
+    initialViewApplied = new Promise((resolve) => {
+        app.eventBus.on("documentinit", () => {
+            void app.pdfViewer.pagesPromise.then(() => requestAnimationFrame(() => resolve()));
+        }, { once: true });
+    });
+}
+
 export async function setupPdfAnnotations() {
     await extractAndSendAnnotations();
 
@@ -74,7 +94,7 @@ export async function setupPdfAnnotations() {
         if (event.origin !== window.location.origin) return;
 
         if (event.data?.type === "trilium-scroll-to-annotation") {
-            scrollToAnnotation(event.data.annotationId, event.data.pageNumber);
+            void scrollToAnnotation(event.data.annotationId, event.data.pageNumber);
         }
     });
 }
@@ -221,46 +241,71 @@ function sendAnnotations(annotations: PdfAnnotationInfo[]) {
     } satisfies PdfViewerAnnotationsMessage, window.location.origin);
 }
 
-function scrollToAnnotation(annotationId: string, pageNumber: number) {
+/**
+ * Centres an annotation in the viewer, or turns to the top of `pageNumber` when `annotationId` is
+ * not given or names no annotation on the page.
+ *
+ * Works from the annotation's rectangle in the document rather than from its rendered element:
+ * pdf.js renders a page only once it nears the viewport, and while an annotation tool is active it
+ * hides each editable annotation's element behind an editor.
+ *
+ * The scroll is instant and followed by `pdfViewer.update()`, which records the new position. On a
+ * resize, pdf.js reapplies an "auto" zoom and scrolls back to the position it last recorded, and a
+ * viewer shown again after being hidden resizes in the same frame as the scroll.
+ */
+async function scrollToAnnotation(annotationId: string | undefined, pageNumber: number) {
+    await initialViewApplied;
     const app = window.PDFViewerApplication;
-    const container = app.pdfViewer.container as HTMLElement;
+    if (!app) return;
 
-    function scrollToEl(el: Element) {
-        const containerRect = container.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const offsetTop = elRect.top - containerRect.top + container.scrollTop;
-        container.scrollTo({
-            top: offsetTop - container.clientHeight / 2 + elRect.height / 2,
-            behavior: "smooth"
-        });
-    }
-
-    // An annotation the document holds renders with its id in an attribute; one that so far
-    // exists only in the editor renders as an element carrying the editor id directly.
-    function findRendered() {
-        return document.querySelector(`[data-annotation-id="${CSS.escape(annotationId)}"]`)
-            ?? document.getElementById(annotationId);
-    }
-
-    // Try to find the element directly (nearby pages are pre-rendered)
-    const el = findRendered();
-    if (el) {
-        scrollToEl(el);
+    const rect = annotationId ? await findAnnotationRect(annotationId, pageNumber) : null;
+    // In single-page scroll mode the viewer holds only the current page's element, so the page
+    // is turned to before its element is measured.
+    app.pdfViewer.currentPageNumber = pageNumber;
+    const pageView = app.pdfViewer.getPageView(pageNumber - 1);
+    if (!rect || !pageView) {
+        app.pdfViewer.update();
         return;
     }
 
-    // Element not in DOM yet — jump to the page and wait for it to render
-    app.pdfViewer.currentPageNumber = pageNumber;
-    const observer = new MutationObserver(() => {
-        const el = findRendered();
-        if (el) {
-            observer.disconnect();
-            scrollToEl(el);
-        }
+    // The viewport maps PDF units, which grow upwards, to the page's CSS pixels at the current
+    // zoom and rotation.
+    const [ x1, y1 ] = pageView.viewport.convertToViewportPoint(rect[0], rect[1]);
+    const [ x2, y2 ] = pageView.viewport.convertToViewportPoint(rect[2], rect[3]);
+    const { div } = pageView;
+    const container = app.pdfViewer.container;
+    container.scrollTo({
+        left: div.offsetLeft + div.clientLeft + (x1 + x2 - container.clientWidth) / 2,
+        top: div.offsetTop + div.clientTop + (y1 + y2 - container.clientHeight) / 2,
+        behavior: "instant"
     });
-    observer.observe(document.getElementById("viewer")!, { childList: true, subtree: true });
-    // Clean up if annotation never appears
-    setTimeout(() => observer.disconnect(), 3000);
+    app.pdfViewer.update();
+}
+
+/**
+ * The rectangle of an annotation in PDF units, or `null` if it is not on the page or was deleted.
+ * An annotation edited in this session is read from `annotationStorage`, which holds where it is
+ * now and is keyed by the editor's id, with `id` naming the document annotation it edits.
+ */
+async function findAnnotationRect(annotationId: string, pageNumber: number): Promise<number[] | null> {
+    const app = window.PDFViewerApplication;
+    if (!app) return null;
+
+    const storage: any = app.pdfDocument.annotationStorage;
+    for (const [ id, serialized ] of storage?.serializable?.map ?? []) {
+        if (id === annotationId || serialized.id === annotationId) {
+            return serialized.deleted ? null : serialized.rect ?? null;
+        }
+    }
+
+    try {
+        const page = await app.pdfDocument.getPage(pageNumber);
+        const annotations = await page.getAnnotations({ intent: "display" });
+        return annotations.find((ann: Record<string, any>) => ann.id === annotationId)?.rect ?? null;
+    } catch {
+        // A page number past the end of the document, from a link to an older version of it.
+        return null;
+    }
 }
 
 export function rgbToHex(rgb: Uint8ClampedArray | Record<number, number> | number[]): string {

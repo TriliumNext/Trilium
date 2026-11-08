@@ -37,9 +37,6 @@
     "color": "Coloured text",
     "bg_color": "Text with background colour"
   },
-  "table_of_contents": {
-    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customise this number:"
-  },
   "custom_date_time_format": {
     "description": "Customise the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens."
   },
@@ -110,12 +107,9 @@
     "help_on_links": "Help on links",
     "note": "Note",
     "search_note": "search for note by its name",
-    "link_title_mirrors": "link title mirrors the note's current title",
-    "link_title_arbitrary": "link title can be changed arbitrarily",
     "link_title": "Link title",
     "anchor": "Anchor (optional)",
-    "anchor_none": "None (link to note)",
-    "button_add_link": "Add link"
+    "anchor_none": "None (link to note)"
   },
   "delete_notes": {
     "delete_clones_description_one": "Also delete {{count}} other clone. Can be undone in recent changes.",
@@ -148,11 +142,10 @@
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
-    "affected_notes": "Affected notes",
     "include_descendants": "Include descendants of the selected notes",
-    "available_actions": "Available actions",
     "chosen_actions": "Chosen actions",
-    "execute_bulk_actions": "Execute bulk actions",
+    "execute_bulk_actions_one": "Execute bulk actions",
+    "execute_bulk_actions_other": "",
     "bulk_actions_executed": "Bulk actions have been executed successfully.",
     "none_yet": "None yet... add an action by clicking one of the available ones above.",
     "labels": "Labels",
@@ -246,5 +239,32 @@
   },
   "sync_2": {
     "effective_server_disabled": "Synchronisation is turned off."
+  },
+  "relation_map": {
+    "note_color": "Note colour"
+  },
+  "resource_download": {
+    "license": "{{license}} licence"
+  },
+  "geo-map": {
+    "dark-image-description": "Draws the marker titles in a light colour, so that they can be read over a dark image.",
+    "dark-tiles-description": "Draws the marker titles in a light colour, so that they can be read over dark tiles."
+  },
+  "ocr": {
+    "no_text_recognized": "OCR found no text to recognise."
+  },
+  "text-editor": {
+    "color-menu": {
+      "text-color": "Text colour",
+      "background-color": "Background colour"
+    }
+  },
+  "link_context_menu": {
+    "align_center": "Align centre"
+  },
+  "media": {
+    "http-status-names": {
+      "401": "Unauthorised"
+    }
   }
 }

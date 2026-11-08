@@ -138,6 +138,8 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
         if (entity.parentNote?.hasLabel("sorted")) {
             treeService.sortNotesIfNeeded(entity.parentNoteId);
         }
+
+        sortParentsGroupingFolders(entity.parentNoteId, 1);
     } else if (entityName === "notes") {
         runAttachedRelations(entity, "runOnNoteCreation", entity);
     }
@@ -185,24 +187,58 @@ function handleMaybeSortingLabel(entity: BAttribute) {
     const note = becca.notes[entity.noteId];
 
     // this will not work on deleted notes, but in that case we don't really need to re-sort
-    if (note) {
-        for (const parentNote of note.getParentNotes()) {
-            const sorted = parentNote.getLabelValue("sorted");
-            if (sorted === null) {
-                // checking specifically for null since that means the label doesn't exist
-                // empty valued "sorted" is still valid
-                continue;
-            }
+    if (!note || !becca.findAttributes("label", "sorted").some(
+        (sorted) => sortsByLabel(sorted.value, entity.name)
+    )) {
+        return;
+    }
 
-            if (
-                entity.name === "top" ||
-                entity.name === "bottom" ||
-                parseSortCriteria(sorted).some((criterion) => criterion.key === entity.name)
-            ) {
-                treeService.sortNotesIfNeeded(parentNote.noteId);
-            }
+    // Covers inherited and chained templates as `invalidateSubTree()` does; for a non-inheritable
+    // label it also reaches the subtree, whose parents then keep the order they have.
+    const parentNotes = new Set<BNote>();
+
+    for (const affectedNote of note.getSubtreeNotesIncludingTemplated()) {
+        for (const parentNote of affectedNote.getParentNotes()) {
+            parentNotes.add(parentNote);
         }
     }
+
+    for (const parentNote of parentNotes) {
+        const sorted = parentNote.getLabelValue("sorted");
+        // checking specifically for null since that means the label doesn't exist
+        // empty valued "sorted" is still valid
+        if (sorted !== null && sortsByLabel(sorted, entity.name)) {
+            treeService.sortNotesIfNeeded(parentNote.noteId);
+        }
+    }
+}
+
+/**
+ * Re-sorts the parents that group folders once the note `noteId` has `childCount` children, that
+ * is, once it has just become a folder or stopped being one.
+ */
+function sortParentsGroupingFolders(noteId: string, childCount: number) {
+    const note = becca.notes[noteId];
+    if (!note || note.children.length !== childCount) {
+        return;
+    }
+
+    for (const parentNote of note.getParentNotes()) {
+        const sorted = parentNote.getLabelValue("sorted");
+        const groupsFolders = sorted !== null && (
+            parentNote.isLabelTruthy("sortFoldersFirst")
+            || parseSortCriteria(sorted).some(({ key, isLabel }) => !isLabel && key === "folders")
+        );
+        if (groupsFolders) {
+            treeService.sortNotesIfNeeded(parentNote.noteId);
+        }
+    }
+}
+
+function sortsByLabel(sorted: string, labelName: string) {
+    return labelName === "top"
+        || labelName === "bottom"
+        || parseSortCriteria(sorted).some(({ key, isLabel }) => isLabel && key === labelName);
 }
 
 eventService.subscribe(eventService.ENTITY_CHANGED, ({ entityName, entity }) => {
@@ -240,6 +276,7 @@ eventService.subscribe(eventService.ENTITY_DELETED, ({ entityName, entity }) => 
 
     if (entityName === "branches") {
         runAttachedRelations(entity.getNote(), "runOnBranchDeletion", entity);
+        sortParentsGroupingFolders(entity.parentNoteId, 0);
     }
 
     if (entityName === "notes" && entity.noteId.startsWith("_")) {

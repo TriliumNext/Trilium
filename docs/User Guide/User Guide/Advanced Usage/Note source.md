@@ -30,7 +30,7 @@ Here's part of the HTML representation of this note, as it's stored in the datab
 
 ## Viewing the source code
 
-It is possible to view the source code of a note by pressing the contextual menu in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> and selecting _Note source_.
+It is possible to view the source code of a note by pressing the contextual menu in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> and selecting _Note source_.
 
 ![](Note%20source_image.png)
 

@@ -1,6 +1,6 @@
 import type { Request } from "../../http_interface";
 
-import type { File } from "../../services/import/common.js";
+import { type File, loadUploadedBytes } from "../../services/import/common.js";
 
 type ImportRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
@@ -109,6 +109,7 @@ async function importAttachmentsToNote(req: ImportRequest<{ parentNoteId: string
     // unlike in note import, we let the events run, because a huge number of attachments is not likely
 
     try {
+        await loadUploadedBytes(file);
         singleImportService.importAttachment(taskContext, file, parentNote);
         // An imported image is stored once its compression answers, which is after the call above
         // has returned. Waited out for the same reason the note import waits: what is reported as

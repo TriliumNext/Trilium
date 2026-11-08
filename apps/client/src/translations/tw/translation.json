@@ -58,14 +58,35 @@
     "help_on_links": "連結說明",
     "note": "筆記",
     "search_note": "依名稱搜尋筆記",
-    "link_title_mirrors": "連結標題跟隨筆記標題變化",
-    "link_title_arbitrary": "連結標題可隨意修改",
     "link_title": "連結標題",
     "button_add_link": "新增連結",
     "anchor": "錨點（可選）",
     "anchor_none": "無（連結至筆記）",
     "edit_link": "編輯連結",
-    "button_edit_link": "儲存連結"
+    "button_edit_link": "儲存連結",
+    "fix_link": "修復連結",
+    "button_fix_link": "修復連結",
+    "web_link": "網頁",
+    "url": "網址（URL）",
+    "invalid_url": "這不是一個有效的網址。",
+    "script_link_not_allowed": "以 {{scheme}} 開頭的連結可能會執行程式碼，因此不允許使用。",
+    "display_as": "顯示為",
+    "display_plain": "文字",
+    "display_inline": "圖示與文字",
+    "display_card": "卡片",
+    "display_embed": "嵌入",
+    "page_title": "網頁標題",
+    "title_from_url": "與網址相同",
+    "title_from_note": "若未設定，將始終顯示該筆記的標題",
+    "description": "說明",
+    "page_description": "網頁說明",
+    "anchors": "標題／錨點",
+    "target_anchor": "錨點",
+    "headings": "標題",
+    "no_headings_or_anchors": "這則筆記中沒有任何標題或錨點。",
+    "title_from_heading": "若未設定，將始終顯示標題的文字",
+    "retrieving_from_page": "正在從網頁擷取資料……",
+    "title_from_attachment": "若未設定，將始終顯示附件的標題"
   },
   "branch_prefix": {
     "edit_branch_prefix": "編輯分支前綴",
@@ -82,9 +103,7 @@
   },
   "bulk_actions": {
     "bulk_actions": "批次操作",
-    "affected_notes": "受影響的筆記",
     "include_descendants": "包括所選筆記的子筆記",
-    "available_actions": "可用操作",
     "chosen_actions": "已選操作",
     "execute_bulk_actions": "執行批次操作",
     "bulk_actions_executed": "已成功執行批次操作。",
@@ -92,7 +111,15 @@
     "labels": "標籤",
     "relations": "關聯",
     "notes": "筆記",
-    "other": "其他"
+    "other": "其他",
+    "selected_notes": "已選取的筆記",
+    "remove_from_selection": "從選取範圍中移除",
+    "affected_note_count_one": "這些操作將應用於 {{count}} 篇筆記。",
+    "affected_note_count_other": "",
+    "add_action": "新增動作",
+    "remove_action": "移除此動作",
+    "no_actions_to_execute": "請先新增一個動作。",
+    "no_notes_to_execute_on": "所選的筆記均已不存在。"
   },
   "clone_to": {
     "clone_notes_to": "克隆筆記至…",
@@ -263,13 +290,22 @@
   "include_note": {
     "dialog_title": "內嵌筆記",
     "label_note": "筆記",
-    "placeholder_search": "依名稱搜尋筆記",
-    "box_size_prompt": "內嵌筆記的框大小：",
-    "box_size_small": "小型（顯示大約 10 行）",
-    "box_size_medium": "中型 (顯示大約30行)",
-    "box_size_full": "完整顯示（完整文字框）",
     "button_include": "內嵌筆記",
-    "box_size_expandable": "可展開（預設為摺疊狀態）"
+    "box_size": "框尺寸",
+    "size_tiny": "小",
+    "size_tiny_description": "只佔一列，包含標題和操作項目。",
+    "size_medium": "中等",
+    "size_medium_description": "約 30 行高的方框。",
+    "size_full": "完整",
+    "size_full_description": "顯示全部內容。",
+    "size_expandable": "可展開",
+    "size_expandable_description": "未展開時僅顯示標題。",
+    "inserted_as_image": "此筆記是以圖片形式插入。",
+    "size_hint": "尺寸可於之後更改。",
+    "image_size_hint": "圖片可於之後調整大小。",
+    "missing_note": "找不到 ID 為 {{noteId}} 的筆記。",
+    "missing_attachment": "找不到 ID 為{{attachmentId}} 的附件。",
+    "unknown_kind": "此內容需要較新版本的 Trilium。"
   },
   "info": {
     "modalTitle": "資訊消息",
@@ -278,7 +314,6 @@
     "copy_to_clipboard": "複製到剪貼簿"
   },
   "jump_to_note": {
-    "search_button": "全文搜尋",
     "search_placeholder": "依名稱或類型查詢筆記或按 > 查看命令…"
   },
   "markdown_import": {
@@ -298,11 +333,10 @@
   },
   "note_type_chooser": {
     "modal_title": "選擇筆記類型",
-    "modal_body": "選擇新筆記的類型或模板：",
     "templates": "模板",
-    "change_path_prompt": "變更建立新筆記的位置：",
-    "search_placeholder": "依名稱搜尋路徑（若為空則預設）",
-    "builtin_templates": "內建模板"
+    "location": "位置",
+    "location_placeholder": "若留空，則為預設位置",
+    "manage_templates": "在內容管理員中管理範本"
   },
   "password_not_set": {
     "title": "密碼未設定",
@@ -352,7 +386,15 @@
     "sort_with_respect_to_different_character_sorting": "根據不同語言或地區的字符排序和排序規則排序。",
     "natural_sort_language": "自然排序語言",
     "the_language_code_for_natural_sort": "自然排序的語言程式碼，例如繁體中文的 \"zh-TW\"。",
-    "sort": "排序"
+    "sort": "排序",
+    "sorting_criteria_description": "筆記是根據第一層級進行排序；下一層級僅用於區分前一層級中排序相同的筆記。",
+    "label": "標籤",
+    "label_name": "標籤名稱",
+    "add_level": "新增層級",
+    "remove_level": "移除層級",
+    "move_level_up": "上移層級",
+    "move_level_down": "下移層級",
+    "folders_follow_first_level": "當第一層級為降序時，則排在底部。"
   },
   "upload_attachments": {
     "upload_attachments_to_note": "上傳附件至筆記",
@@ -444,7 +486,6 @@
     "hide_relations": "應隱藏的逗號分隔關聯名稱。將顯示所有其他關聯。",
     "title_template": "新增為此筆記的子筆記時的預設標題。該值將作為 JavaScript 字串評估\n                        並因此可以透過注入的 <code>now</code> 和 <code>parentNote</code> 變數豐富動態內容。範例：\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}的文學作品</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        有關詳細資訊，請參見<a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">詳細資訊 wiki</a>，API 文件<a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a>和<a href=\"https://day.js.org/docs/en/display/format\">now</a>。",
     "template": "新增新筆記時將出現在可用模板的選擇中的筆記",
-    "toc": "<code>#toc</code>或<code>#toc=show</code>將強制顯示目錄。 <code>#toc=hide</code>將強制隱藏它。如果標籤不存在，則依照全域設定",
     "color": "定義筆記樹、連結等中筆記的顏色。使用任何有效的CSS顏色值，如'red'或#a13d5f",
     "keyboard_shortcut": "定義立即跳轉至此筆記的鍵盤快捷鍵。示例：'ctrl+alt+e'。需要前端重新載入才能生效。",
     "keep_current_hoisting": "即使筆記不在目前聚焦的子階層中顯示，打開此連結也不會修改聚焦。",
@@ -452,7 +493,6 @@
     "execute_description": "目前程式碼筆記更長的描述與執行按鈕一同顯示",
     "exclude_from_note_map": "含有此標籤的筆記將從筆記地圖中隱藏",
     "new_notes_on_top": "新筆記將新增在父級筆記的頂部，而不是底部。",
-    "hide_highlight_widget": "隱藏高亮列表元件",
     "run_on_note_creation": "在後端新增筆記時執行。如果要為在特定子階層下新增的所有筆記運行腳本，請使用此關聯。在這種情況下，在子階層根筆記上新增它並使其可繼承。在子階層中的任何深度新增新筆記都會觸發腳本。",
     "run_on_child_note_creation": "當新增新的子筆記時執行",
     "run_on_note_title_change": "當筆記標題修改時執行（包括筆記新增）",
@@ -490,7 +530,118 @@
     "add_option": "新增此選項",
     "remove_option": "移除此選項",
     "save_and_close_button": "儲存並關閉",
-    "definition": "屬性定義"
+    "definition": "屬性定義",
+    "custom_font": "標記在 Trilium 選項中字型選擇器內的字型檔案，置於筆記標題下方。",
+    "template_new_note_default_parent": "設定於模板筆記：從模板建立的筆記（例如透過 @ 自動補全功能），會被放置在目標筆記之下，除非明確指定了其他位置。",
+    "other_notes_count_one": "{{count}}篇其他筆記",
+    "other_notes_count_other": "",
+    "no_other_notes": "僅此筆記",
+    "no_other_notes_title": "沒有其他筆記具有 {{attributeType}} : \"{{attributeName}}\"。",
+    "show_all_in_search": "顯示所有搜尋結果",
+    "relation_type": "關聯",
+    "bookmark_open_mode": "當點擊啟動列中的筆記按鈕時，會開啟該筆記：<code>currentTab</code>（預設）、<code>newTab</code>、<code>newSplit</code>、<code>newWindow</code> 或 <code>quickEdit</code>。此功能適用於書籤、拖放至啟動列的筆記，以及書籤資料夾中的筆記。",
+    "exclude_from_llm": "將此筆記隱藏於 AI 聊天室及 MCP 伺服器中。若將此標籤設為可繼承，則其下方的備註也會一併隱藏。",
+    "versioning_limit": "限制此筆記可保留的修訂版本數量，並覆寫全域設定。",
+    "llm_chat_home": "新的 AI 聊天室會作為此筆記的子項目被建立。",
+    "workspace_llm_chat_home": "當聚焦至此工作區的某個父項目時，新的 AI 聊天室會作為此筆記的子筆記建立。",
+    "date_pattern": "在此日曆根節點下生成的每日筆記標題格式範例，例如：<code>{dateNumberPadded} - {weekDay}</code>。",
+    "week_pattern": "在此日曆根節點下生成的每週筆記標題格式範例。需啟用 <code>#enableWeekNote</code>。",
+    "month_pattern": "在此日曆根節點下生成的每月筆記標題格式範例，例如：<code>{monthNumberPadded} - {month}</code>。",
+    "quarter_pattern": "在此日曆根節點下生成的季度筆記標題格式範例。需啟用 <code>#enableQuarterNote</code>。",
+    "year_pattern": "在此日曆根節點下生成的年度筆記標題格式範例，例如：<code>{year}</code>。",
+    "enable_week_note": "在月記和日記之間產生一則週記。設定於日曆根節點；預設為關閉。",
+    "enable_quarter_note": "在年記和月記之間產生一則季度筆記。設定於日曆根節點；預設為關閉。",
+    "date_note": "每篇生成的日記筆記上，都會標註其代表的日期，格式為 <code>YYYY-MM-DD</code>，以便腳本能夠找到它。",
+    "week_note": "每篇生成的週筆記上都有標註其所代表的週數。",
+    "month_note": "每篇生成的月份筆記上均會標註其所代表的月份，格式為 <code>YYYY-MM</code>。",
+    "quarter_note": "在每篇生成的季度筆記上，都有標註其所代表的季度。",
+    "year_note": "在每篇生成的年度筆記上，都有標註其所代表的年份。",
+    "view_type": "設定此筆記的子筆記的顯示方式，例如以網格、清單、表格或日曆的形式呈現。",
+    "map_root_note_id": "用於繪製筆記地圖的源筆記。預設值為特殊值 <code>hoisted</code>。",
+    "map_exclude_relation": "要從筆記地圖中排除的關聯名稱，以逗號分隔。",
+    "map_include_relation": "要從筆記地圖中繪製的關聯名稱，以逗號分隔。",
+    "sort_natural": "將子筆記中的數字按自然順序排序，而非按字母順序，因此 2 會排在 10 之前。需使用 <code>#sorted</code>。",
+    "sort_locale": "自然排序所遵循的語言規範，例如 <code>de</code> 或 <code>zh-CN</code>。僅在搭配 <code>#sortNatural</code> 時才有意義。",
+    "bottom": "將此註記保留在其父項的底部，此設定僅在父項經過排序時生效。",
+    "full_content_width": "將筆記擴展至編輯器的完整寬度，並忽略已設定的內容寬度。此功能對於寬幅表格特別有用。",
+    "subtree_hidden": "將此筆記的子項目隱藏於樹中，並以顯示其數量的小標籤替代。這些子項目仍可透過搜尋或直接連結存取。",
+    "expanded": "清單或網格展開後所顯示多少子項目層級數。",
+    "share_external": "<code>#shareExternalLink</code> 的舊拼寫方式，目前仍可被「分享」主題讀取。",
+    "share_root_link": "共享頁面標誌所連結的網址。",
+    "share_logo_width": "共享頁面的標誌寬度，以像素為單位且不帶單位。預設值為 53。",
+    "share_logo_height": "共享頁面的標誌高度，以像素為單位且不帶單位。預設值為 40。",
+    "share_open_graph_color": "設定共享頁面的 <code>theme-color</code> 元屬性。",
+    "share_open_graph_url": "設定共享頁面的 <code>og:url</code> 及 <code>twitter:url</code> 元資料屬性。",
+    "share_open_graph_domain": "設定共享頁面的 <code>twitter:domain</code> 元屬性。",
+    "share_open_graph_image": "設定蹈享頁面的 <code>og:image</code> 元數據屬性，使其直接作為網址使用。若要從 Trilium 提供圖片，請將同名關聯指向圖片筆記。",
+    "share_html_location": "由 <code>~shareHtml</code> 插入的 HTML 應置於何處，即 <code>location:position</code> — <code>head</code>、<code>body</code> 或 <code>content</code>，並以 <code>start</code> 或 <code>end</code> 標示起訖點。此設定應直接在程式碼片段筆記中進行。",
+    "snippet": "將此程式碼筆記作為程式碼片段，以便插入到其他程式碼筆記中。",
+    "snippet_description": "在使用者插入此程式碼片段時於旁邊提供描述。",
+    "text_snippet": "將這則文字筆記作為片段，以便插入到其他文字筆記中。",
+    "text_snippet_description": "在使用者插入此文字片段時於旁邊提供描述。",
+    "ai_quick_action": "將此筆記作為文字編輯器 AI 助理選單中的操作指引。標題為該操作的名稱，內容為提示語。",
+    "execute_title": "此程式碼筆記執行時所屬的分頁名稱。",
+    "clipper_inbox": "Web Clipper 收集內容的儲存位置，而非每日筆記。",
+    "clip_type": "記錄此筆記的儲存方式：透過 Web Clipper（例如 <code>clippings</code>）或從系統的「分享」選單（<code>share</code>）儲存。",
+    "sent_from_sender": "將該筆記標記為由發件人傳送而來，而非在 Trilium 中撰寫。",
+    "hide_children_overview": "隱藏顯示於此筆記內容下方的子筆記清單。",
+    "media_notes_play_mode": "媒體播放器在曲目結束時執行的操作，例如：<code>next</code> 以繼續播放下一首。",
+    "collection": "將此範本標記為集合，以便在建立筆記時，該範本能出現在「集合」選項中。",
+    "web_view_src": "網頁視圖筆記所載入的網址。",
+    "icon_pack": "根據圖示名稱的前綴來識別自訂圖示包。",
+    "doc_name": "識別此說明所對應的應用程式內說明文件。僅供內部使用。",
+    "doc_url": "此說明筆記所對應的線上文件網址。僅供內部使用。",
+    "language": "本筆記內容所使用的語言，將影響拼字檢查及文字方向。",
+    "original_file_name": "保留該檔案在匯入時的名稱，以便日後能以該名稱再次匯出。",
+    "page_url": "該剪下頁面的來源地址，顯示於筆記標題旁。",
+    "page_description": "剪輯頁面的說明，在筆記的「網頁剪輯」標章詳細資訊中顯示。",
+    "page_author": "剪輯頁面的作者，在筆記的「網頁剪輯」標章詳細資訊中顯示。",
+    "published_date": "剪輯頁面的發布日期，在筆記的「網頁剪輯」標章詳細資訊中顯示。",
+    "modified_date": "剪輯頁面的最後更新日期，在筆記的「網頁剪輯」標章詳細資訊中顯示。",
+    "command": "啟動器在被按下時所執行的內建指令。",
+    "display_mode": "分割編輯器顯示的窗格：<code>原始碼</code>、<code>預覽</code>，或是兩者皆顯示的 <code>分割</code>。此設定會覆寫 <code>#readOnly</code> 原本選擇的選項。",
+    "search_string": "已儲存搜尋所執行的查詢條件。",
+    "ancestor_depth": "結果位於 <code>~ancestor</code> 筆記之下多少層，例如 <code>eq5</code> 表示正好向下五個層級。",
+    "order_by": "儲存的搜尋結果的排序依據，例如 <code>relevancy</code> 或標籤名稱。",
+    "order_direction": "已儲存搜尋結果的排序方式：<code>asc</code> 或 <code>desc</code>。",
+    "limit": "已儲存搜尋所能回傳的最多結果數。",
+    "fast_search": "僅搜尋標題和屬性，不包含筆記內容。在大型資料庫中搜尋速度會快得多。",
+    "include_archived_notes": "將已歸檔的筆記納入已儲存搜尋的結果中（預設排除）。",
+    "debug": "記錄查詢的解析過程，以便釐清為何某個儲存的搜尋會匹配特定結果。",
+    "launcher_type": "按下啟動器時的執行動作：<code>note</code>、<code>script</code>、<code>command</code>、<code>customWidget</code> 或 <code>spacer</code>。",
+    "builtin_widget": "啟動器顯示的內建小工具，例如 <code>spacer</code> 或 <code>bookmarks</code>。",
+    "script_in_launcher_content": "將啟動器筆記中的內容直接作為腳本執行，而非遵循其 <code>~script</code> 的關聯。",
+    "base_size": "在任何剩餘空間被分配之前，啟動列間隔符所佔用的空間（以像素為單位）。",
+    "growth_factor": "此間隔相對於其他間隔佔用啟動列多餘空間的比例。",
+    "desktop_only": "僅在桌面尺寸的螢幕上顯示此啟動器。",
+    "electron_only": "僅在桌面應用程式中顯示此內容，若透過瀏覽器存取 Trilium 則不會出現。",
+    "server_only": "僅在透過瀏覽器存取 Trilium 時顯示此內容，桌面應用程式中則不會出現。",
+    "beta": "將此範本標記為測試版功能，並在建立筆記的選單中提供此功能。",
+    "one_note_page_id": "該頁面在 OneNote 中的識別碼會在匯入時保留下來，以便日後追溯。Trilium 本身並不會讀取此識別碼。",
+    "one_note_section_id": "該章節於 OneNote 中原有的識別碼，在匯入時予以保留，以便日後追溯。",
+    "one_note_import_failed": "在無法從 OneNote 匯入的筆記上做標記，以便日後能搜尋這些失敗案例。",
+    "status": "此筆記在看板中所處的欄。除非另有指定，否則看板會依據此標籤進行分組。",
+    "board_group_by": "該看板根據哪個標籤來分組其欄位，而非 <code>#status</code>。",
+    "state_id": "任務狀態所儲存的值，也就是筆記處於該狀態時所具有的值。",
+    "markdown_symbol": "在 Markdown 任務清單中，任務狀態的標記方式，例如：已完成任務的標記為 <code>x</code>。",
+    "is_completed": "將任務狀態標記為「已完成」。",
+    "is_hidden": "將任務狀態從選單隱藏，而不刪除該任務或其中已有的筆記。",
+    "max_nesting_depth": "表格所顯示子項目的層級數。設定後無法重新排列筆記的順序。",
+    "include_archived": "包含本集合中已歸檔的筆記（預設排除）。",
+    "board_column_width": "對於看板集合，欄位的寬度設定如下：<code>narrow</code>、<code>medium</code> 或 <code>wide</code>。在行動裝置上會忽略此設定，系統會自行決定欄位寬度。",
+    "board_show_inbox": "對於看板集合，會顯示「收件匣」欄位，其中列出所有未指派至任何看板欄位的子筆記。",
+    "board_hide_add_column": "對於看板集合，將最後一欄後方的 <em>新增欄位</em> 按鈕隱藏。您仍可透過看板或欄位的快顯選單新增欄位。",
+    "board_card_redirect_to": "在看板卡片上，點擊該卡片會跳轉至其所指向的筆記，而非直接開啟該卡片本身。",
+    "board_sort_columns": "對於看板集合，各欄位對卡片進行排序的順序，除非該欄位已指定自己的排序順序，否則將遵循此順序。包含 <code>title</code>、<code>creationDate</code> 或 <code>attr:</code>，後面接著一個提升屬性的名稱。",
+    "board_sort_columns_descending": "對於看板集合，以 <code>#board:sortColumns</code> 的逆序執行排序。",
+    "calendar_view": "日曆開啟時顯示的檢視模式：<code>timeGridDay</code>、<code>timeGridWeek</code>、<code>dayGridMonth</code>、<code>multiMonthYear</code> 或 <code>listMonth</code>。",
+    "calendar_initial_date": "日曆開啟的日期。若未設定，則預設為今天。",
+    "calendar_hide_weekends": "從日曆中隱藏星期六和星期日。設定任意值即生效。",
+    "calendar_week_numbers": "在日曆中顯示週數。設定任意值即生效。",
+    "calendar_slot_duration": "日曆中每個時段的長度，格式為 <code>HH:MM:SS</code>。預設值為 15 分鐘。",
+    "calendar_slot_label_interval": "日曆中各時段標示的頻率，格式為 <code>HH:MM:SS</code>。預設值為每小時一次。",
+    "calendar_title": "指定事件標題所依據的屬性名稱（而非筆記標題）。該屬性可以是標籤（label）或關係（relation），內容不得包含 <code>#</code> 或 <code>~</code> 。",
+    "calendar_title_template": "行事曆中活動的標題，此標題將套用至每個重複活動。顯示格式為 <code>${title}</code>、<code>${years}</code>（自開始日期起算的完整年數），以及日期 <code>${date}</code> 和 <code>${startDate}</code>，例如每年生日的 <code>${title} (${years})</code>。"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
@@ -508,21 +659,13 @@
     "remove_this_search_action": "刪除此搜尋操作"
   },
   "execute_script": {
-    "execute_script": "執行腳本",
-    "help_text": "您可以在匹配的筆記上執行簡單的腳本。",
-    "example_1": "例如，要在筆記標題後附加字串，請使用以下腳本：",
-    "example_2": "更複雜的例子，刪除所有匹配的筆記屬性："
+    "execute_script": "執行腳本"
   },
   "add_label": {
     "add_label": "新增標籤",
     "label_name_placeholder": "標籤名稱",
     "label_name_title": "允許使用字母、數字、下劃線和冒號。",
-    "to_value": "值為",
-    "new_value_placeholder": "新值",
-    "help_text": "在所有匹配的筆記上：",
-    "help_text_item1": "如果筆記尚無此標籤，則新增給定的標籤",
-    "help_text_item2": "或更改現有標籤的值",
-    "help_text_note": "您也可以在不指定值的情況下調用此方法，這種情況下，標籤將分配給沒有值的筆記。"
+    "new_value_placeholder": "新值"
   },
   "delete_label": {
     "delete_label": "刪除標籤",
@@ -531,9 +674,7 @@
   },
   "rename_label": {
     "rename_label": "重新命名標籤",
-    "rename_label_from": "重新命名標籤從",
     "old_name_placeholder": "舊名稱",
-    "to": "改為",
     "new_name_placeholder": "新名稱",
     "name_title": "允許使用字母、數字、下劃線和冒號。"
   },
@@ -541,49 +682,26 @@
     "update_label_value": "更新標籤值",
     "label_name_placeholder": "標籤名稱",
     "label_name_title": "允許使用字母、數字、下劃線和冒號。",
-    "to_value": "值為",
-    "new_value_placeholder": "新值",
-    "help_text": "在所有匹配的筆記上，更改現有標籤的值。",
-    "help_text_note": "您也可以在不指定值的情況下調用此方法，這種情況下，標籤將分配給沒有值的筆記。"
+    "new_value_placeholder": "新值"
   },
   "delete_note": {
-    "delete_note": "刪除筆記",
-    "delete_matched_notes": "刪除匹配的筆記",
-    "delete_matched_notes_description": "這將刪除匹配的筆記。",
-    "undelete_notes_instruction": "刪除後，可以從「最近修改」對話方塊中還原它們。",
-    "erase_notes_instruction": "要永久擦除筆記，您可以在刪除後至「選項」→「其他」，然後點擊「立即擦除已刪除的筆記」按鈕。"
+    "delete_note": "刪除筆記"
   },
   "delete_revisions": {
-    "delete_note_revisions": "刪除筆記歷史",
-    "all_past_note_revisions": "所有匹配筆記的過去歷史都將被刪除。筆記本身將完全保留。換句話說，筆記的歷史將被刪除。"
+    "delete_note_revisions": "刪除筆記歷史"
   },
   "move_note": {
     "move_note": "移動筆記",
-    "to": "到",
-    "target_parent_note": "目標父級筆記",
-    "on_all_matched_notes": "對於所有匹配的筆記",
-    "move_note_new_parent": "如果筆記只有一個父級（即舊分支被移除並新增新分支至新父級），則將筆記移動至新父級",
-    "clone_note_new_parent": "如果筆記有多個克隆 / 分支（不清楚應該移除哪個分支），則將筆記克隆至新父級",
-    "nothing_will_happen": "如果筆記無法移動至目標筆記（即這會新增一個樹循環），則不會發生任何事情"
+    "target_parent_note": "目標父級筆記"
   },
   "rename_note": {
-    "rename_note": "重新命名筆記",
-    "rename_note_title_to": "重新命名筆記標題為",
-    "new_note_title": "新筆記標題",
-    "click_help_icon": "點擊右側的說明圖示查看所有選項",
-    "evaluated_as_js_string": "給定的值被認為是 JavaScript 字串，因此可以透過注入的 <code>note</code> 變數（正在重新命名的筆記）豐富動態內容。 例如：",
-    "example_note": "<code>Note</code> - 所有匹配的筆記都被重新命名為「Note」",
-    "example_new_title": "<code>NEW: ${note.title}</code> - 匹配的筆記標題以「NEW: 」為前綴",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - 匹配的筆記以筆記的新增月份-日期為前綴",
-    "api_docs": "有關詳細資訊，請參閱<a href='https://zadam.github.io/trilium/backend_api/Note.html'>筆記</a>及其<a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj 屬性</a>的API文檔。"
+    "rename_note": "重新命名筆記"
   },
   "add_relation": {
     "add_relation": "新增關聯",
     "relation_name": "關聯名稱",
     "allowed_characters": "允許的字符為字母數字、下劃線和冒號。",
-    "to": "到",
-    "target_note": "目標筆記",
-    "create_relation_on_all_matched_notes": "在所有匹配的筆記上新增指定的關聯。"
+    "target_note": "目標筆記"
   },
   "delete_relation": {
     "delete_relation": "刪除關聯",
@@ -592,20 +710,14 @@
   },
   "rename_relation": {
     "rename_relation": "重新命名關聯",
-    "rename_relation_from": "重新命名關聯，從",
     "old_name": "舊名稱",
-    "to": "改為",
     "new_name": "新名稱",
     "allowed_characters": "允許的字符為字母數字、下劃線和冒號。"
   },
   "update_relation_target": {
-    "update_relation": "更新關聯",
     "relation_name": "關聯名稱",
     "allowed_characters": "允許的字符為字母數字、下劃線和冒號。",
-    "to": "到",
     "target_note": "目標筆記",
-    "on_all_matched_notes": "在所有匹配的筆記上",
-    "change_target_note": "或更改現有關聯的目標筆記",
     "update_relation_target": "更新關聯目標"
   },
   "attachments_actions": {
@@ -674,15 +786,6 @@
   "create_pane_button": {
     "create_new_split": "分割頁面"
   },
-  "edit_button": {
-    "edit_this_note": "編輯此筆記"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "顯示目錄"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "顯示高亮列表"
-  },
   "global_menu": {
     "menu": "選單",
     "options": "選項",
@@ -724,7 +827,6 @@
     "in_progress": "正在與伺服器進行同步。"
   },
   "left_pane_toggle": {
-    "show_panel": "顯示面板",
     "hide_panel": "隱藏面板"
   },
   "move_pane_button": {
@@ -743,7 +845,6 @@
     "import_files": "匯入檔案",
     "export_note": "匯出筆記",
     "delete_note": "刪除筆記",
-    "print_note": "列印筆記……",
     "save_revision": "儲存筆記修訂",
     "convert_into_attachment_failed": "筆記 '{{title}}' 轉換失敗。",
     "convert_into_attachment_successful": "筆記 '{{title}}' 已成功轉換為附件。",
@@ -778,9 +879,6 @@
     "active": "已進入受保護的作業階段。點擊退出受保護的作業階段。",
     "inactive": "點擊進入受保護的作業階段"
   },
-  "revisions_button": {
-    "note_revisions": "筆記歷史版本"
-  },
   "update_available": {
     "update_available": "有更新可用"
   },
@@ -795,28 +893,10 @@
     "sql_console_saved_message": "SQL 控制台已儲存至 {{note_path}}",
     "electron_api_docs_button_title": "開啟 Electron API 文件"
   },
-  "copy_image_reference_button": {
-    "button_title": "複製圖片引用至剪貼簿，可貼上至文字筆記中。"
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "隱藏按鈕"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "顯示按鈕"
-  },
-  "svg_export_button": {
-    "button_title": "匯出 SVG 格式圖片"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "新增子筆記並添加至關聯圖"
   },
-  "zpetne_odkazy": {
-    "relation": "關聯",
-    "backlink_one": "{{count}} 個反連結",
-    "backlink_other": "{{count}} 個反連結"
-  },
   "mobile_detail_menu": {
-    "insert_child_note": "插入子筆記",
     "delete_this_note": "刪除此筆記",
     "error_cannot_get_branch_id": "無法獲取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "無法識別的命令 {{command}}",
@@ -840,8 +920,6 @@
   "basic_properties": {
     "note_type": "筆記類型",
     "editable": "可編輯",
-    "basic_properties": "基本屬性",
-    "language": "語言",
     "configure_code_notes": "設定程式碼筆記…"
   },
   "book_properties": {
@@ -871,37 +949,23 @@
     "dashboard": "控制台"
   },
   "edited_notes": {
-    "no_edited_notes_found": "今天還沒有編輯過的筆記...",
-    "title": "編輯過的筆記",
-    "deleted": "（已刪除）"
+    "no_edited_notes_found": "今天還沒有編輯過的筆記..."
   },
   "file_properties": {
-    "note_id": "筆記 ID",
     "original_file_name": "原始檔案名稱",
-    "file_type": "檔案類型",
-    "file_size": "檔案大小",
     "download": "下載",
     "open": "以外部程式打開",
-    "upload_new_revision": "上傳新版本",
     "upload_success": "已上傳新檔案版本。",
-    "upload_failed": "新檔案版本上傳失敗。",
-    "title": "檔案"
+    "upload_failed": "新檔案版本上傳失敗。"
   },
   "image_properties": {
-    "original_file_name": "原始檔案名稱",
-    "file_type": "檔案類型",
-    "file_size": "檔案大小",
-    "download": "下載",
-    "open": "打開",
     "copy_reference_to_clipboard": "複製引用至剪貼簿",
     "upload_new_revision": "上傳新版本",
     "upload_success": "已上傳新圖片版本。",
-    "upload_failed": "新圖片版本上傳失敗：{{message}}",
-    "title": "圖片"
+    "upload_failed": "新圖片版本上傳失敗：{{message}}"
   },
   "inherited_attribute_list": {
     "title": "繼承的屬性",
-    "no_inherited_attributes": "沒有繼承的屬性。",
     "none": "無"
   },
   "note_info_widget": {
@@ -919,8 +983,6 @@
     "show_similar_notes": "顯示相似筆記"
   },
   "note_map": {
-    "open_full": "展開顯示",
-    "collapse": "收摺到正常大小",
     "title": "筆記地圖",
     "fix-nodes": "固定節點",
     "link-distance": "連結距離",
@@ -931,18 +993,10 @@
   "note_paths": {
     "title": "筆記路徑",
     "clone_button": "克隆筆記至新位置...",
-    "intro_placed": "此筆記放置在以下路徑中：",
     "intro_not_placed": "此筆記尚未放入筆記樹中。",
     "outside_hoisted": "此路徑在聚焦的筆記之外，您需要取消聚焦。",
     "archived": "已封存",
     "search": "搜尋"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "筆記來源：",
-    "info": "資訊"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "自有屬性"
   },
   "promoted_attributes": {
     "promoted_attributes": "升級屬性",
@@ -955,26 +1009,10 @@
     "unset-field-placeholder": "未設定",
     "remove_color": "移除此顏色標籤"
   },
-  "script_executor": {
-    "query": "查詢",
-    "script": "腳本",
-    "execute_query": "執行查詢",
-    "execute_script": "執行腳本"
-  },
   "search_definition": {
     "add_search_option": "新增搜尋選項：",
-    "search_string": "搜尋字串",
-    "search_script": "搜尋腳本",
-    "ancestor": "祖先",
-    "fast_search": "快速搜尋",
-    "fast_search_description": "快速搜尋選項禁用筆記內容的全文搜尋，這可能會加速大資料庫中的搜尋。",
-    "include_archived": "包含封存",
     "include_archived_notes_description": "封存的筆記預設不包含在搜尋結果中，使用此選項將包含它們。",
-    "order_by": "排序方式",
-    "limit": "限制",
     "limit_description": "限制結果數量",
-    "debug": "除錯",
-    "debug_description": "除錯將顯示額外的除錯資訊至控制台，以幫助除錯複雜查詢",
     "action": "操作",
     "search_button": "搜尋",
     "search_execute": "搜尋並執行操作",
@@ -1017,8 +1055,7 @@
     "include_archived_notes": "包括已封存的筆記"
   },
   "limit": {
-    "limit": "限制",
-    "take_first_x_results": "僅取前 X 個指定結果。"
+    "limit": "限制"
   },
   "order_by": {
     "order_by": "排序方式",
@@ -1061,7 +1098,6 @@
     "label_rock_or_pop": "只需一個標籤存在即可",
     "label_year_comparison": "數字比較（也包括>，>=，<）。",
     "label_date_created": "上個月新增的筆記",
-    "error": "搜尋錯誤：{{error}}",
     "search_prefix": "搜尋："
   },
   "attachment_detail": {
@@ -1090,9 +1126,6 @@
   "editable_text": {
     "placeholder": "在這裡輸入您的筆記內容…",
     "auto-detect-language": "自動檢測",
-    "keeps-crashing": "編輯元件持續發生崩潰。請嘗試重新啟動 Trilium。若問題仍存在，請考慮提交錯誤報告。",
-    "editor_crashed_title": "文字編輯器崩潰",
-    "editor_crashed_content": "您的內容已成功恢復，但最近的幾項變更可能未被儲存。",
     "editor_crashed_details_button": "檢視更多資訊⋯",
     "editor_crashed_details_intro": "若您多次遇到此錯誤，請考慮在 GitHub 回報以下資訊。",
     "editor_crashed_details_title": "技術資訊"
@@ -1127,11 +1160,8 @@
     "connection_exists": "筆記之間的連接 '{{name}}' 已經存在。",
     "start_dragging_relations": "從這裡開始拖動關聯，並將其放置到另一個筆記上。",
     "note_not_found": "筆記 {{noteId}} 未找到！",
-    "cannot_match_transform": "無法匹配變換：{{transform}}",
     "note_already_in_diagram": "筆記 \"{{title}}\" 已經在圖中。",
-    "enter_title_of_new_note": "輸入新筆記的標題",
     "default_new_note_title": "新筆記",
-    "click_on_canvas_to_place_new_note": "點擊畫布以放置新筆記",
     "rename_relation": "重新命名關聯"
   },
   "backend_log": {
@@ -1232,9 +1262,6 @@
     "title": "原生標題列（需要重新啟動程式）",
     "enabled": "啟用",
     "disabled": "禁用"
-  },
-  "ribbon": {
-    "edited_notes_message": "日記筆記中自動打開編輯過的筆記功能區分頁"
   },
   "theme": {
     "title": "使用者介面",
@@ -1345,7 +1372,6 @@
   "search_engine": {
     "title": "搜尋引擎",
     "custom_search_engine_info": "用於在網路上搜尋選取的文字。若未設定，將使用 DuckDuckGo。",
-    "predefined_templates_label": "模板",
     "bing": "Bing",
     "baidu": "百度",
     "duckduckgo": "DuckDuckGo",
@@ -1376,17 +1402,7 @@
     "italic": "斜體",
     "underline": "下劃線",
     "color": "字體顏色",
-    "bg_color": "背景顏色",
-    "visibility_title": "高亮列表可見性",
-    "visibility_description": "您可以透過添加 #hideHighlightWidget 標籤來隱藏每個筆記的高亮元件。",
-    "shortcut_info": "您可以在「選項」→「快捷鍵」中設定鍵盤快捷鍵快速切換右側面板（包括高亮列表）（名稱為 'toggleRightPane'）。"
-  },
-  "table_of_contents": {
-    "title": "目錄",
-    "description": "當筆記中有超過一定數量的標題時，顯示目錄。您可以自訂此數量：",
-    "disable_info": "您可以設定一個非常大的數來禁用目錄。",
-    "shortcut_info": "您可以在「選項」→「快捷鍵」中設定一個鍵盤快捷鍵快速切換右側面板（包括目錄）（名稱為 'toggleRightPane'）。",
-    "unit": "標題"
+    "bg_color": "背景顏色"
   },
   "text_auto_read_only_size": {
     "title": "自動唯讀大小",
@@ -1524,9 +1540,7 @@
     "unrecognized_role": "無法識別的附件角色 '{{role}}'。"
   },
   "bookmark_switch": {
-    "bookmark": "書籤",
-    "bookmark_this_note": "將此筆記添加至左側面板的書籤",
-    "remove_bookmark": "移除書籤"
+    "bookmark": "書籤"
   },
   "editability_select": {
     "auto": "自動",
@@ -1559,7 +1573,6 @@
     "copy-note-path-to-clipboard": "複製筆記路徑至剪貼簿",
     "protect-subtree": "保護子階層",
     "unprotect-subtree": "取消保護子階層",
-    "copy-clone": "複製 / 克隆",
     "clone-to": "克隆至...",
     "cut": "剪下",
     "move-to": "移動至...",
@@ -1578,11 +1591,6 @@
     "open-in-a-new-window": "在新視窗打開",
     "hide-subtree": "隱藏子階層",
     "show-subtree": "顯示子階層"
-  },
-  "shared_info": {
-    "help_link": "如需幫助，請訪問 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>。",
-    "shared_publicly": "此筆記已公開分享於 {{- link}}。",
-    "shared_locally": "此筆記已於本地分享至 {{- link}}。"
   },
   "note_types": {
     "text": "文字",
@@ -1606,29 +1614,21 @@
     "beta-feature": "Beta",
     "task-list": "任務列表",
     "new-feature": "新增",
-    "collections": "集合",
     "ai-chat": "AI 聊天",
     "spreadsheet": "試算表",
     "llm-chat": "AI 對話",
     "markdown": "Markdown"
   },
   "protect_note": {
-    "toggle-on": "保護筆記",
-    "toggle-off": "取消保護筆記",
-    "toggle-on-hint": "筆記未受保護，點擊以保護",
-    "toggle-off-hint": "筆記已受保護，點擊以取消保護"
+    "toggle-on": "保護筆記"
   },
   "shared_switch": {
     "shared": "已分享",
-    "toggle-on-title": "分享筆記",
-    "toggle-off-title": "取消分享筆記",
     "shared-branch": "此筆記僅作為分享筆記存在，取消分享將刪除它。您確定要繼續並刪除此筆記嗎？",
     "inherited": "此筆記無法在此處取消分享，因為它透過繼承自父級筆記分享。"
   },
   "template_switch": {
-    "template": "模板",
-    "toggle-on-hint": "將此筆記設為模板",
-    "toggle-off-hint": "取消筆記模板設定"
+    "template": "模板"
   },
   "open-help-page": "打開說明頁面",
   "find": {
@@ -1640,8 +1640,6 @@
     "replace_all": "全部取代"
   },
   "highlights_list_2": {
-    "title": "高亮列表",
-    "options": "選項",
     "title_with_count_one": "{{count}} 處高亮",
     "title_with_count_other": "{{count}} 處高亮",
     "menu_configure": "設定高亮列表…",
@@ -1651,7 +1649,6 @@
     "placeholder": "快速搜尋",
     "searching": "正在搜尋…",
     "no-results": "未找到結果",
-    "more-results": "…以及另外 {{number}} 個結果。",
     "show-in-full-search": "在完整的搜尋界面中顯示"
   },
   "note_tree": {
@@ -1661,7 +1658,6 @@
     "hide-archived-notes": "隱藏已封存筆記",
     "automatically-collapse-notes": "自動收摺筆記",
     "automatically-collapse-notes-title": "筆記在一段時間內未使用將被收摺，以減少樹狀結構的雜亂。",
-    "save-changes": "儲存並套用更改",
     "auto-collapsing-notes-after-inactivity": "自動收摺非使用中筆記…",
     "saved-search-note-refreshed": "已儲存的搜尋筆記已重新整理。",
     "hoist-this-note-workspace": "聚焦此筆記（工作區）",
@@ -1700,7 +1696,6 @@
     "created_on": "建立於 <Value />",
     "last_modified": "修改於 <Value />",
     "note_type_switcher_label": "從 {{type}} 切換至：",
-    "note_type_switcher_others": "其他筆記類型",
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
     "edited_notes": "今天編輯過的筆記",
@@ -1735,13 +1730,10 @@
   },
   "toc": {
     "table_of_contents": "目錄",
-    "options": "選項",
     "no_headings": "無標題。"
   },
   "watched_file_update_status": {
-    "file_last_modified": "檔案 <code class=\"file-path\"></code> 最後修改時間為 <span class=\"file-last-modified\"></span>。",
-    "upload_modified_file": "上傳修改的檔案",
-    "ignore_this_change": "忽略此更改"
+    "upload_modified_file": "上傳修改的檔案"
   },
   "app_context": {
     "please_wait_for_save": "請等待幾秒鐘以完成儲存，然後再試一次。"
@@ -1813,9 +1805,6 @@
     "tab_width": "制表符寬度",
     "tab_width_unit": "空格"
   },
-  "classic_editor_toolbar": {
-    "title": "格式"
-  },
   "editor": {
     "title": "編輯器"
   },
@@ -1823,12 +1812,10 @@
     "editor_type": {
       "label": "格式工具欄",
       "floating": {
-        "title": "浮動",
-        "description": "編輯工具出現在游標附近；"
+        "title": "浮動"
       },
       "fixed": {
-        "title": "固定",
-        "description": "編輯工具出現在「格式」功能區分頁中。"
+        "title": "固定"
       },
       "multiline-toolbar": "如果工具列無法完全顯示，則分多行顯示",
       "toolbar_style": "工具列樣式"
@@ -1971,12 +1958,9 @@
     "zoom-factor": "縮放係數"
   },
   "note_autocomplete": {
-    "search-for": "搜尋 \"{{term}}\"",
     "create-note": "建立並連接子筆記 \"{{term}}\"",
     "insert-external-link": "插入至 \"{{term}}\" 的外部連結",
-    "clear-text-field": "清空文字欄位",
-    "show-recent-notes": "顯示最近的筆記",
-    "full-text-search": "全文搜尋"
+    "clear-text-field": "清空文字欄位"
   },
   "note_tooltip": {
     "note-has-been-deleted": "筆記已被刪除。",
@@ -2038,13 +2022,6 @@
   "switch_layout_button": {
     "title_vertical": "將編輯面板移至底部",
     "title_horizontal": "將編輯面板移至左側"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "解鎖編輯",
-    "lock-editing": "鎖定編輯"
-  },
-  "png_export_button": {
-    "button_title": "將圖表匯出為 PNG"
   },
   "svg": {
     "export_to_png": "無法將圖表匯出為 PNG。",
@@ -2152,10 +2129,7 @@
     "next_theme_title": "試用新 Trilium 主題",
     "next_theme_message": "您正在使用舊版主題，要試用新主題嗎？",
     "next_theme_button": "試用新主題",
-    "dismiss": "關閉",
-    "new_layout_title": "新版面配置",
-    "new_layout_button": "更多資訊",
-    "new_layout_message": "我們為 Trilium 推出了現代化版面配置。功能區分頁已移除並無縫整合至主介面，取而代之的是全新狀態列與可擴展區塊（例如提升屬性）承擔其主要功能。\n\n新版面配置預設為啟用狀態，您可透過「選項 → 外觀」暫時停用。"
+    "dismiss": "關閉"
   },
   "settings": {
     "related_settings": "相關設定"
@@ -2164,9 +2138,6 @@
     "related_code_blocks": "文字筆記中程式碼區塊的配色方案",
     "related_code_notes": "程式碼筆記的配色方案",
     "ui": "使用者介面",
-    "ui_old_layout": "舊版面配置",
-    "ui_new_layout": "新版面配置",
-    "ui_layout_style": "版面樣式",
     "ui_layout_orientation": "啟動列的方向"
   },
   "units": {
@@ -2198,8 +2169,6 @@
     "delete_note": "刪除筆記…"
   },
   "read-only-info": {
-    "read-only-note": "目前正在檢視唯讀筆記。",
-    "auto-read-only-note": "此筆記以唯讀模式顯示以加快載入速度。",
     "edit-note": "編輯筆記"
   },
   "note-color": {
@@ -2212,11 +2181,7 @@
   },
   "experimental_features": {
     "title": "實驗性選項",
-    "disclaimer": "這些選項屬實驗性質，可能導致系統不穩定。請謹慎使用。",
-    "new_layout_name": "新版面配置",
-    "new_layout_description": "體驗全新版面配置，呈現更現代的外觀與更佳的使用體驗。在未來版本將進行大幅調整。",
-    "llm_name": "AI / LLM 對話",
-    "llm_description": "啟用由大語言模型驅動的 AI 聊天側邊欄及 LLM 聊天筆記。"
+    "disclaimer": "這些選項屬實驗性質，可能導致系統不穩定。請謹慎使用。"
   },
   "server": {
     "unknown_http_error_title": "與伺服器通訊錯誤",
@@ -2468,8 +2433,7 @@
     "failed_to_load": "載入 OCR 文字失敗",
     "process_now": "處理 OCR",
     "processing": "正在處理…",
-    "processing_started": "OCR 處理已開始。請稍候片刻並重新整理頁面。",
-    "image_based_pdf_not_supported": "這份 PDF 檔案似乎是圖像檔（掃描檔）。目前尚不支援從圖像型 PDF 檔案中提取文字。"
+    "processing_started": "OCR 處理已開始。請稍候片刻並重新整理頁面。"
   },
   "mind-map": {
     "addChild": "新增子節點",
@@ -2486,9 +2450,6 @@
   "llm": {
     "feature_not_enabled": "請前往「設定」→「進階」→「實驗性功能」啟用 LLM 實驗性功能，即可使用 AI 整合。",
     "add_provider": "新增提供者",
-    "add_provider_title": "新增 AI 提供者",
-    "configured_providers": "已設定的提供者",
-    "no_providers_configured": "尚未設定任何提供者。",
     "provider_name": "名稱",
     "actions": "動作",
     "delete_provider": "刪除",
@@ -2636,7 +2597,6 @@
     "page_size": "頁面大小",
     "scale": "比例",
     "margins": "邊界",
-    "render_error": "無法使用目前設定渲染 PDF。請檢查邊界及縮放比例。",
     "margins_default": "預設",
     "margins_none": "無",
     "margins_minimum": "最小",
@@ -2679,7 +2639,30 @@
       "math": "方程式",
       "collapsible_summary": "摘要",
       "collapsible_details": "內容",
-      "table_column": "第 {{number}} 欄"
+      "table_column": "第 {{number}} 欄",
+      "tab_title": "分頁{{number}}",
+      "tab_content": "內容"
+    },
+    "tabs": "插入帶有標題的分頁，每次僅顯示一個面板",
+    "titles": {
+      "date": "插入日期／時間",
+      "include": "包含筆記",
+      "image": "上傳圖片",
+      "link": "內部連結",
+      "math": "數學方程式",
+      "footnote": "註腳",
+      "mermaid": "美人魚圖",
+      "mermaid_template": "美人魚圖：{{name}}",
+      "collapsible": "可摺疊區塊",
+      "tabs": "分頁",
+      "page_break": "分頁符號",
+      "table": "表格",
+      "note": "備註",
+      "tip": "提示",
+      "important": "重要",
+      "caution": "注意",
+      "warning": "警告",
+      "todo": "任務：{{title}}"
     }
   },
   "file_upload": {
@@ -2755,16 +2738,13 @@
   },
   "save_revision": {
     "save_revision": "儲存筆記修訂",
-    "revision_name_placeholder": "修訂名稱（選擇性）",
-    "help": "系統會針對每則符合條件的筆記儲存一個命名版本，並記錄其當前內容與標題。"
+    "revision_name_placeholder": "修訂名稱（選擇性）"
   },
   "convert_note": {
     "convert_note": "轉換",
-    "convert_note_to": "轉換筆記",
     "choose_conversion": "（選擇轉換方式）",
     "conversion_htmlToMarkdown": "文字筆記 → Markdown 筆記（有損轉換）",
     "conversion_markdownToHtml": "Markdown 筆記 → 文字筆記",
-    "help_text": "轉換僅套用至符合來源類型的筆記；其餘筆記則維持不變。每則經轉換的筆記，其修訂版本都會事先儲存。",
     "warning": "轉換筆記時可能會遺失部分格式，您之後可能需要進行一些修正。系統會事先儲存每則轉換後筆記的修訂版本，以便您能還原。您要繼續嗎？",
     "warning_risky": "您正在將兩種功能不完全相同的格式相互轉換，因此部分格式可能會遺失，某些不支援的元素可能會被刪除。<br><br>您是否完全承擔此風險，並希望繼續進行轉換？<br><br>每則轉換後的筆記都會事先儲存一份修訂版本，因此您可以還原至原始格式。"
   },
@@ -2824,7 +2804,6 @@
       "create-a-numbered-list": "建立編號清單",
       "create-a-to-do-list": "建立待辦事項清單",
       "display-the-content-of-another-note-in-this-note": "在此筆記中顯示另一則筆記的內容",
-      "insert-a-link-to-another-trilium-note": "插入另一則 Trilium 筆記的連結",
       "insert-a-math-equation": "插入數學方程式",
       "insert-a-new-admonition": "插入一個新的提示框",
       "insert-a-page-break-for-printing": "插入分頁符號（用於列印）",
@@ -2832,5 +2811,24 @@
       "insert-an-anchor-for-internal-linking": "插入一個錨點以建立內部連結",
       "justify-text-alignment": "將文字左右對齊"
     }
+  },
+  "note_chips": {
+    "more": "+{{count}} 個"
+  },
+  "doc_notes": {
+    "hidden": "<p>隱藏樹用於記錄各種應用層資料，這些資料在大多數情況下不會顯示給使用者看。</p><p>請務必確認您清楚自己在做什麼。若在此子樹中進行不當的變更，可能會導致應用程式當機。</p>",
+    "launchbar_command_launcher": "<p>此啟動器動作的鍵盤快捷鍵可於「選項」-&gt; 「快捷鍵」中進行設定。</p>",
+    "launchbar_history_navigation": "<p>「上一頁」和「下一頁」按鈕可讓您在瀏覽歷史紀錄中移動。</p><p>這些啟動器僅在桌面版中有效，在伺服器版中將被忽略；在伺服器版中，您可以改用瀏覽器的原生導覽按鈕。</p>",
+    "launchbar_intro": "<p>歡迎來到啟動欄設定介面。</p><p>您可以在這裡執行以下操作：</p><ul><li>透過拖曳，將「可用」清單中的啟動器移至「可見」清單（從而將其放入啟動欄）</li><li>透過拖曳，將「可見」清單中的啟動器移至「可用」清單 （從而將它們從啟動欄中隱藏）</li><li>您可以透過拖曳來重新排列清單中的項目</li><li>您可以透過在「可見啟動器」資料夾上按右鍵來建立新的啟動器</li><li>若要恢復預設設定，請在快顯選單中尋找「重設」選項。</li></ul>",
+    "launchbar_note_launcher": "<p>您可以定義以下屬性：</p><ol><li><code>target</code> — 啟動啟動器時應開啟的筆記</li><li><code>hoistedNote</code> — 可選，將在開啟目標筆記前變更當前顯示的筆記</li><li><code>keyboardShortcut</code> - 可選，按下鍵盤快捷鍵將開啟該筆記</li></ol><p>Launchbar 會顯示啟動器中的標題／圖示，這些內容未必與目標筆記的標題／圖示相同。</p>",
+    "launchbar_quick_search": "<p><a href=\"#root/_help_Ms1nauBra7gq\" target=\"_blank\">快速搜尋列</a> 僅在橫向佈局中顯示，因為在縱向佈局中它預設即為可見。</p><p>如需更多資訊，請參閱 <a href=\"#root/_help_x0JgW8UqGXvq\" target=\"_blank\">垂直與水平佈局</a>。</p>",
+    "launchbar_script_launcher": "<p>腳本啟動器可執行透過 <code>~script</code> 關聯連結的腳本（程式碼筆記）。</p><ol><li><code>script</code> — 指向應在啟動器啟動時執行的腳本註解的關聯</li><li><code>keyboardShortcut</code> — 可選，按下鍵盤快捷鍵將啟動啟動器</li></ol><h4>範例腳本</h4><pre>{{sample}}</pre>",
+    "launchbar_spacer": "<p>間隔器可讓您以視覺化方式將啟動器分組。您可以在以下推薦屬性中進行設定：</p><ul><li><code>baseSize</code> — 定義以像素為單位的大小（若空間充足時）</li><li><code>growthFactor</code> — 若希望間隔保持恆定為 <code>baseSize</code>，請設定為 0；若設定為正數，則會隨空間擴大而增長。</li></ul>",
+    "launchbar_widget_launcher": "<p>請在提升屬性中定義目標小工具筆記。該小工具將用於渲染啟動列圖示。</p><h4>啟動列小工具範例</h4><pre>{{sample}}</pre>",
+    "share": "<p>您可以在這裡找到所有已分享的筆記。</p>",
+    "system_state": "<p>這是內建的任務狀態，無法編輯或移除。</p><p>僅能變更其位置，這將決定它在核取方塊工具列及鍵盤循環中的順序。</p>",
+    "task_state": "<p>此筆記定義了一種待辦事項狀態。該狀態透過在核取方塊內顯示筆記圖示來呈現，而筆記標題則作為其顯示名稱。</p><p>此狀態可透過以下提升屬性進行設定：</p><ul><li><code>識別碼</code> — 必填。儲存於筆記標記中作為元資料的內部名稱。僅允許使用字母、數字、<code>-</code> 及 <code>_</code>。<p class=\"admonition warning\">請在自訂任務狀態的識別碼前加上底線 <code>_</code> 或連字號 <code>-</code>，以避免與 Trilium 未來版本中可能引入的任務狀態發生衝突。</p>範例：<code>_postponed</code>、<code>_awaiting-feedback</code>、<code>_validated</code>。</li><li><code>Markdown 符號</code> — 用於在匯出至 Markdown 時代表該狀態的單一字元；例如，<code>/</code> 會產生 <code>- [/]</code>。</li><li><code>視為已完成</code> — 啟用後，處於此狀態的任務將被視為已完成。</li><li><code>顏色</code> — 此狀態的核取方塊顏色。</li><li><code>從工具列隱藏</code> — 啟用後，該狀態將從狀態清單及鍵盤循環中排除。已使用該狀態的筆記仍會正確顯示。</li></ul><p class=\"admonition warning\">變更將在應用程式重新載入後生效。</p>",
+    "task_states": "<p>此筆記列出了文字編輯器中待辦事項核取方塊可用的狀態。每個子筆記代表一個狀態。</p><p>您可以新增、修改、重新排序或移除狀態。若要新增狀態，請建立一個子筆記並設定其提升屬性。</p><p class=\"admonition warning\">變更將在應用程式重新載入後生效。</p>",
+    "user_hidden": "<p>此筆記用作一個子樹，專門用於存放由使用者腳本產生的資料；否則，這些腳本不應在隱藏子樹中隨意建立資料。</p>"
   }
 }

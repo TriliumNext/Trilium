@@ -37,7 +37,7 @@ export const SEARCH_NOTE_PATH = {
     /** Matched against the note's text through a full-text expression rather than a property. */
     contentProperties: [ "content", "rawContent", "text" ],
     /** Step onto another note, so a further segment follows: `note.parents.title`. */
-    traversals: [ "parents", "children", "ancestors" ],
+    traversals: [ "parents", "children", "ancestors", "links", "backlinks" ],
     /** Expect an attribute name next, which nothing can enumerate ahead of time. */
     attributeSegments: [ "labels", "relations" ]
 } as const;

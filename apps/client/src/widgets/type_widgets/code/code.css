@@ -2,12 +2,15 @@
 .note-detail-readonly-code {
     min-height: 50px;
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Fills the wrapper in the full-height layout so the editor's own scroller can scroll; resolves
    to auto in the flowing layout, where the wrapper has no set height. */
 .note-detail-readonly-code .note-detail-readonly-code-content {
     height: 100%;
+    min-height: 0;
 }
 /* #endregion */
 
@@ -15,6 +18,8 @@
 .note-detail-code {
     position: relative;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .note-detail-code-editor {

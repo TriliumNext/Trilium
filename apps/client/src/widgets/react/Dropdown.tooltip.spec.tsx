@@ -90,12 +90,13 @@ describe("Dropdown with a disabled toggle", () => {
     it("closes an open menu when the toggle becomes disabled", () => {
         act(() => render(<Dropdown>item</Dropdown>, container));
         const toggle = container.querySelector("button");
-        const menu = container.querySelector(".dropdown-menu");
+        // The menu stands in the page's body, and only while it is open.
+        const menu = () => document.querySelector(".tn-popup.dropdown-menu");
         act(() => toggle?.click());
-        expect(menu?.classList.contains("show"), "opened by the click").toBe(true);
+        expect(menu(), "opened by the click").not.toBeNull();
 
         act(() => render(<Dropdown disabled>item</Dropdown>, container));
-        expect(menu?.classList.contains("show"), "closed by the disable").toBe(false);
+        expect(menu(), "closed by the disable").toBeNull();
         expect(toggle?.disabled).toBe(true);
         expect(toggle?.getAttribute("aria-expanded")).toBe("false");
     });

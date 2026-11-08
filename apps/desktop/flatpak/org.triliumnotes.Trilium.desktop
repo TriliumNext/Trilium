@@ -8,3 +8,8 @@ Type=Application
 StartupNotify=true
 StartupWMClass=trilium
 Categories=Office;Utility;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=trilium --new-window

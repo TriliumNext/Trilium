@@ -1,12 +1,14 @@
-import { dayjs, type SearchResultDetailsResponse, type SearchWithTokensResponse, type TemplatesResponse } from "@triliumnext/commons";
+import { dayjs, type NoteMimeCount, type SearchResultDetailsResponse, type SearchWithTokensResponse, type TemplatesResponse } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import becca from "../../becca/becca.js";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 import { isNewTemplate } from "./search";
 
 let api: CoreApiTester;
 const UNIQUE_TOKEN = "ZzUniqueSearchTokenQwerty";
+const SLASH_TOKEN = "ZzUniqueSearch/TokenQwerty";
 
 async function createSearchNote(searchString: string): Promise<string> {
     const created = await api.post<{ noteId: string }>("/api/special-notes/search-note", {
@@ -17,24 +19,40 @@ async function createSearchNote(searchString: string): Promise<string> {
 
 /** Runs a quick search as a client hoisted into `hoistedNoteId`, or unhoisted when it is omitted. */
 function quickSearch(searchString: string, hoistedNoteId?: string) {
-    return api.get<{ searchResultNoteIds: string[] }>(`/api/quick-search/${searchString}`, {
+    return api.get<{ searchResultNoteIds: string[] }>("/api/quick-search", {
+        query: { searchString },
         headers: hoistedNoteId ? { "trilium-hoisted-note-id": hoistedNoteId } : undefined
     });
 }
 
 describe("Search API (core)", () => {
     let createdNoteId: string;
+    let slashNoteId: string;
 
     beforeAll(async () => {
         api = CoreApiTester.build();
         ({ noteId: createdNoteId } = await createTextNote(api, { title: UNIQUE_TOKEN }));
+        ({ noteId: slashNoteId } = await createTextNote(api, { title: SLASH_TOKEN }));
     });
 
     it("returns matching note ids for a full search", async () => {
-        const res = await api.get<string[]>(`/api/search/${UNIQUE_TOKEN}`);
+        const res = await api.get<string[]>("/api/search", {
+            query: { searchString: UNIQUE_TOKEN }
+        });
         expect(res.status).toBe(200);
         expect(Array.isArray(res.body)).toBe(true);
         expect(res.body).toContain(createdNoteId);
+    });
+
+    it("describes a full search on one line for the request log", async () => {
+        const token = "ZzLoggedSearchQwerty";
+        await createTextNote(api, { title: `${token} one` });
+        await createTextNote(api, { title: `${token} two` });
+
+        const res = await api.get("/api/search", {
+            query: { searchString: `  note.title *=*\n   ${token} ` }
+        });
+        expect(res.locals?.logSummary).toBe(`Search: note.title *=* ${token}  (returned 2 items)`);
     });
 
     it("restricts a full search to the given ancestor's subtree", async () => {
@@ -43,21 +61,41 @@ describe("Search API (core)", () => {
         const inside = await createTextNote(api, { parentNoteId: board.noteId, title: `${token} inside` });
         const outside = await createTextNote(api, { title: `${token} outside` });
 
-        const scoped = await api.get<string[]>(`/api/search/${token}`, {
-            query: { ancestorNoteId: board.noteId }
+        const scoped = await api.get<string[]>("/api/search", {
+            query: { searchString: token, ancestorNoteId: board.noteId }
         });
         expect(scoped.status).toBe(200);
         expect(scoped.body).toContain(inside.noteId);
         expect(scoped.body).not.toContain(outside.noteId);
 
-        const unscoped = await api.get<string[]>(`/api/search/${token}`);
+        const unscoped = await api.get<string[]>("/api/search", { query: { searchString: token } });
         expect(unscoped.body).toContain(inside.noteId);
         expect(unscoped.body).toContain(outside.noteId);
     });
 
+    it("leaves archived notes out of a full search only when asked to", async () => {
+        const token = "ZzArchivedSearchQwerty";
+        const board = await createTextNote(api, { title: "Board" });
+        const live = await createTextNote(api, { parentNoteId: board.noteId, title: `${token} live` });
+        const archived = await createTextNote(api, { parentNoteId: board.noteId, title: `${token} archived` });
+        await api.post(`/api/notes/${archived.noteId}/attributes`, {
+            body: { type: "label", name: "archived", value: "" }
+        });
+
+        const search = (includeArchivedNotes?: string) => api.get<string[]>("/api/search", {
+            query: { searchString: token, ancestorNoteId: board.noteId, includeArchivedNotes }
+        });
+
+        expect((await search()).body).toEqual(expect.arrayContaining([ live.noteId, archived.noteId ]));
+        expect((await search("true")).body).toEqual(expect.arrayContaining([ live.noteId, archived.noteId ]));
+        const withoutArchived = await search("false");
+        expect(withoutArchived.body).toContain(live.noteId);
+        expect(withoutArchived.body).not.toContain(archived.noteId);
+    });
+
     it("returns note ids with token infos and the error when includeTokens is set", async () => {
-        const withTokens = await api.get<SearchWithTokensResponse>(`/api/search/${UNIQUE_TOKEN}`, {
-            query: { includeTokens: "true" }
+        const withTokens = await api.get<SearchWithTokensResponse>("/api/search", {
+            query: { searchString: UNIQUE_TOKEN, includeTokens: "true" }
         });
         expect(withTokens.status).toBe(200);
         expect(withTokens.body.searchResultNoteIds).toContain(createdNoteId);
@@ -70,16 +108,25 @@ describe("Search API (core)", () => {
         // A query the parser rejects still answers 200, with the parse error in the body for the
         // client to show inline.
         const broken = await api.get<SearchWithTokensResponse>(
-            `/api/search/${encodeURIComponent("#label = ")}`,
-            { query: { includeTokens: "true" } }
+            "/api/search",
+            { query: { searchString: "#label = ", includeTokens: "true" } }
         );
         expect(broken.status).toBe(200);
         expect(broken.body.error).toBeTruthy();
     });
 
+    it("accepts slash-bearing full-search queries", async () => {
+        const res = await api.get<string[]>("/api/search", {
+            query: { searchString: SLASH_TOKEN }
+        });
+        expect(res.status).toBe(200);
+        expect(res.body).toContain(slashNoteId);
+    });
+
     it("returns structured quick-search results with snippets", async () => {
         const res = await api.get<{ searchResultNoteIds: string[]; searchResults: unknown[]; highlightedTokens: string[] }>(
-            `/api/quick-search/${UNIQUE_TOKEN}`
+            "/api/quick-search",
+            { query: { searchString: UNIQUE_TOKEN } }
         );
         expect(res.status).toBe(200);
         expect(res.body.searchResultNoteIds).toContain(createdNoteId);
@@ -94,7 +141,8 @@ describe("Search API (core)", () => {
         // pattern would match nothing there (silent no-op), so the server must drop regex tokens.
         const pattern = "ZzRegexQwerty";
         const res = await api.get<{ highlightedTokens: string[]; error: string | null }>(
-            `/api/quick-search/${encodeURIComponent(`note.content %= '${pattern}'`)}`
+            "/api/quick-search",
+            { query: { searchString: `note.content %= '${pattern}'` } }
         );
 
         expect(res.status).toBe(200);
@@ -131,6 +179,26 @@ describe("Search API (core)", () => {
         expect(res.status).toBe(200);
         expect(res.body.searchResultNoteIds).toContain(visible.noteId);
         expect(res.body.searchResultNoteIds).not.toContain(hidden.noteId);
+    });
+
+    it("accepts slash-bearing quick-search queries", async () => {
+        const res = await api.get<{ searchResultNoteIds: string[] }>("/api/quick-search", {
+            query: { searchString: SLASH_TOKEN }
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.searchResultNoteIds).toContain(slashNoteId);
+    });
+
+    it("rejects missing and empty search query parameters", async () => {
+        for (const path of [ "/api/search", "/api/quick-search" ]) {
+            expect((await api.get(path)).status).toBe(400);
+            expect((await api.get(path, { query: { searchString: "" } })).status).toBe(400);
+        }
+    });
+
+    it("takes the search string only from the query", async () => {
+        expect((await api.get(`/api/search/${UNIQUE_TOKEN}`)).status).toBe(404);
+        expect((await api.get(`/api/quick-search/${UNIQUE_TOKEN}`)).status).toBe(404);
     });
 
     it("lists template note ids including a freshly-labelled template", async () => {
@@ -307,6 +375,35 @@ describe("Search API (core)", () => {
             // Match-centered: the padding-heavy head is trimmed to an ellipsis, not shown from index 0.
             expect(detail?.contentSnippet?.startsWith("padding words padding")).toBe(false);
         });
+    });
+
+    it("counts the MIME types of the user's notes, the most used first", async () => {
+        const createCodeNote = (parentNoteId: string, mime: string) =>
+            api.post(`/api/notes/${parentNoteId}/children?target=into`, {
+                body: { title: "MIME", type: "code", mime, content: "" }
+            });
+        await createCodeNote("root", "text/x-zz-once");
+        await createCodeNote("root", "text/x-zz-twice");
+        await createCodeNote("root", "text/x-zz-twice");
+        // `_share` lies in the hidden subtree, but what the user puts there is still theirs.
+        expect((await createCodeNote("_share", "text/x-zz-shared")).status).toBe(200);
+
+        const res = await api.get<NoteMimeCount[]>("/api/search/note-mimes");
+
+        expect(res.status).toBe(200);
+        const mimes = res.body.map(({ mime }) => mime);
+        expect(res.body.find(({ mime }) => mime === "text/x-zz-twice")?.count).toBe(2);
+        expect(res.body.find(({ mime }) => mime === "text/x-zz-once")?.count).toBe(1);
+        expect(mimes.indexOf("text/x-zz-twice")).toBeLessThan(mimes.indexOf("text/x-zz-once"));
+        expect(mimes).toContain("text/x-zz-shared");
+        expect(mimes).not.toContain("");
+
+        // System notes carry MIME types too, but only the user's notes are counted.
+        const notes = Object.values(becca.notes);
+        expect(notes.some(({ noteId, mime }) => noteId.startsWith("_") && mime)).toBe(true);
+        for (const { mime, count } of res.body) {
+            expect(count).toBe(notes.filter((note) => !note.noteId.startsWith("_") && note.mime === mime).length);
+        }
     });
 });
 

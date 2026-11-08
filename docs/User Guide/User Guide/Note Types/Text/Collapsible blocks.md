@@ -13,7 +13,7 @@ You can use the arrow keys to move freely with the cursor between the summary li
 
 ## Inserting a collapsible block
 
-In the formatting bar, go to “**Insert” → “Collapsible Block”**.
+In the formatting bar, go to _Insert_ → _Collapsible Block_.
 
 > [!TIP]
 > Place multiple collapsible blocks one after another to create an accordion, where each block can be expanded or collapsed independently.

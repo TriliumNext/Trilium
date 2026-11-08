@@ -5,12 +5,11 @@ import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import note_autocomplete from "../../services/note_autocomplete";
 import search from "../../services/search";
 import { isMobile } from "../../services/utils";
 import FormGroup from "../react/FormGroup";
-import NoteAutocomplete from "../react/NoteAutocomplete";
-import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
+import { ParentComponent } from "../react/react_utils";
 import { TypeWidgetProps } from "./type_widget";
 
 export default function Empty({ ntxId }: TypeWidgetProps) {
@@ -44,12 +43,10 @@ function MobileNoteSearch() {
 
 function DesktopNoteSearch({ ntxId }: { ntxId: string | null }) {
     const resultsContainerRef = useRef<HTMLDivElement>(null);
-    const autocompleteRef = useRef<HTMLInputElement>(null);
+    const handleRef = useRef<NoteAutocompleteHandle>(null);
 
-    // Show recent notes.
     useEffect(() => {
-        const $autoComplete = refToJQuerySelector(autocompleteRef);
-        note_autocomplete.showRecentNotes($autoComplete);
+        handleRef.current?.showRecentNotes();
     }, []);
 
     return (
@@ -58,7 +55,7 @@ function DesktopNoteSearch({ ntxId }: { ntxId: string | null }) {
                 <NoteAutocomplete
                     placeholder={t("empty.search_placeholder")}
                     container={resultsContainerRef}
-                    inputRef={autocompleteRef}
+                    handleRef={handleRef}
                     opts={{
                         hideGoToSelectedNoteButton: true,
                         allowCreatingNotes: true,

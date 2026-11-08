@@ -1,0 +1,520 @@
+# Mindmap
+
+mindmap
+
+==>
+
+MermaidDiagram(MindmapDiagram(DiagramName))
+
+# Pie
+
+pie
+
+==>
+
+MermaidDiagram(PieDiagram(DiagramName))
+
+# Flowchart
+
+flowchart
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName))
+
+# Graph
+
+graph
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName))
+
+# SequenceDiagram
+
+sequenceDiagram
+
+==>
+
+MermaidDiagram(SequenceDiagram(DiagramName))
+
+# Journey
+
+journey
+
+==>
+
+MermaidDiagram(JourneyDiagram(DiagramName))
+
+# RequirementDiagram
+
+requirementDiagram
+
+==>
+
+MermaidDiagram(RequirementDiagram(DiagramName))
+
+# Gantt
+
+gantt
+
+==>
+
+MermaidDiagram(GanttDiagram(DiagramName))
+
+# Timeline
+
+timeline
+
+==>
+
+MermaidDiagram(TimelineDiagram(DiagramName))
+
+# QuadrantChart
+
+quadrantChart
+
+==>
+
+MermaidDiagram(QuadrantDiagram(DiagramName))
+
+# Sankey
+
+sankey-beta
+
+==>
+
+MermaidDiagram(SankeyDiagram(DiagramName))
+
+# XYChart
+
+xychart-beta
+
+==>
+
+MermaidDiagram(XYChartDiagram(DiagramName))
+
+# Packet
+
+packet-beta
+
+==>
+
+MermaidDiagram(PacketDiagram(DiagramName))
+
+# Kanban
+
+kanban
+
+==>
+
+MermaidDiagram(KanbanDiagram(DiagramName))
+
+# Block
+
+block-beta
+
+==>
+
+MermaidDiagram(BlockDiagram(DiagramName))
+
+# Architecture
+
+architecture-beta
+
+==>
+
+MermaidDiagram(ArchitectureDiagram(DiagramName))
+
+# ClassDiagram
+
+classDiagram
+
+==>
+
+MermaidDiagram(ClassDiagram(DiagramName))
+
+# StateDiagram
+
+stateDiagram-v2
+
+==>
+
+MermaidDiagram(StateDiagram(DiagramName))
+
+# ERDiagram
+
+erDiagram
+
+==>
+
+MermaidDiagram(ERDiagram(DiagramName))
+
+# GitGraph
+
+gitGraph
+
+==>
+
+MermaidDiagram(GitDiagram(DiagramName))
+
+# C4Context
+
+C4Context
+
+==>
+
+MermaidDiagram(C4Diagram(DiagramName))
+
+# Front matter whose config names another diagram
+
+---
+config:
+  gantt:
+    barHeight: 30
+---
+sequenceDiagram
+  A->>B: hi
+
+==>
+
+MermaidDiagram(FrontMatter(DashLine,Stream(Document(BlockMapping(Pair(Key(Literal),":",BlockMapping(Pair(Key(Literal),":",BlockMapping(Pair(Key(Literal),":",Literal)))))))),DashLine),SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1))
+
+# Empty front matter
+
+---
+---
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(FrontMatter(DashLine,DashLine),PieDiagram(DiagramName,String,Number))
+
+# Unclosed front matter is not front matter
+
+---
+title: x
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(PieDiagram(DiagramName,String,Number))
+
+# Front matter after a directive is not front matter
+
+%%{init: {}}%%
+---
+title: x
+---
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(Directive,PieDiagram(DiagramName,String,Number))
+
+# Front matter with no diagram after it
+
+---
+title: x
+---
+
+==>
+
+MermaidDiagram(FrontMatter(DashLine,Stream(Document(BlockMapping(Pair(Key(Literal),":",Literal)))),DashLine),⚠)
+
+# A dash line followed by other text is not a delimiter
+
+---x
+title: x
+---
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(PieDiagram(DiagramName,String,Number))
+
+# Comments and a directive before the diagram
+
+%% a comment
+  %%{init: {"theme": "dark"}}%%
+
+%%comment-without-space
+flowchart LR
+  A --> B
+
+==>
+
+MermaidDiagram(LineComment,Directive,LineComment,FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId))
+
+# Multi-line directive
+
+%%{
+  init: {
+    "theme": "dark"
+  }
+}%%
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(Directive,PieDiagram(DiagramName,String,Number))
+
+# Two directives on one line
+
+%%{init: {"theme": "dark"}}%%%%{wrap}%%
+sequenceDiagram
+  A->>B: hi
+
+==>
+
+MermaidDiagram(Directive,Directive,SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1))
+
+# Directive after front matter
+
+---
+title: x
+---
+%%{init: {"theme": "dark"}}%%
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(FrontMatter(DashLine,Stream(Document(BlockMapping(Pair(Key(Literal),":",Literal)))),DashLine),Directive,PieDiagram(DiagramName,String,Number))
+
+# Unclosed directive (invalid, parses as a comment)
+
+%%{init: {"theme": "dark"}
+pie
+  "A": 1
+
+==>
+
+MermaidDiagram(LineComment,PieDiagram(DiagramName,String,Number))
+
+# A comment with no diagram after it
+
+%% only a comment
+
+==>
+
+MermaidDiagram(LineComment,⚠)
+
+# Accessibility title and description
+
+flowchart LR
+  accTitle: Order flow
+  accDescr: How an order moves
+  A --> B
+
+==>
+
+MermaidDiagram(FlowchartDiagram(AccTitle(Keyword,":",AccText),AccDescr(Keyword,":",AccText)))
+
+# Multi-line accessibility description
+
+sequenceDiagram
+  A->>B: hi
+  accDescr {
+    Line one
+    line two
+  }
+
+==>
+
+MermaidDiagram(SequenceDiagram(AccDescr(Keyword,"{",AccText,"}")))
+
+# Accessibility lines are content in a kanban
+
+kanban
+  accTitle: Board
+
+==>
+
+MermaidDiagram(KanbanDiagram(DiagramName,Column(ColumnTitle)))
+
+# Empty accessibility title and description
+
+pie
+  accTitle:
+  accDescr {}
+  "A": 1
+
+==>
+
+MermaidDiagram(PieDiagram(AccTitle(Keyword,":"),AccDescr(Keyword,"{","}")))
+
+# Accessibility keywords without their punctuation are diagram text
+
+flowchart LR
+  accTitleNode --> B
+  accDescr --> C
+  accTitle { x }
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId,NodeId,Link,NodeId,NodeId,Node(NodeText)))
+
+# Text after an accessibility description block (invalid)
+
+gitGraph
+  accDescr { x }commit
+
+==>
+
+MermaidDiagram(GitDiagram(AccDescr(Keyword,"{",AccText,"}")))
+
+# Radar
+
+radar-beta
+  axis a
+
+==>
+
+MermaidDiagram(RadarDiagram(DiagramName,Axes(Keyword,Axis(Name))))
+
+# Treemap
+
+treemap
+"A": 1
+
+==>
+
+MermaidDiagram(TreemapDiagram(DiagramName,Leaf(String,":",Number)))
+
+# Tree view
+
+treeView-beta
+  src
+
+==>
+
+MermaidDiagram(TreeViewDiagram(DiagramName,Node(Name)))
+
+# Wardley map
+
+wardley-beta
+  anchor A [0.5, 0.5]
+
+==>
+
+MermaidDiagram(WardleyDiagram(DiagramName,Anchor(Keyword,Name,Coordinates("[",Number,",",Number,"]"))))
+
+# Cynefin
+
+cynefin-beta
+  complex
+
+==>
+
+MermaidDiagram(CynefinDiagram(DiagramName,Domain(DomainName)))
+
+# Event modeling
+
+eventmodeling
+tf 01 ui A
+
+==>
+
+MermaidDiagram(EventModelingDiagram(DiagramName,Frame(Keyword,FrameId,EntityType(Type),QualifiedName(Name))))
+
+# Railroad
+
+railroad-beta
+  a = terminal("x");
+
+==>
+
+MermaidDiagram(RailroadDiagram(DiagramName,Rule(RuleName,"=",Call(Function,"(",String,")"),";")))
+
+# EBNF railroad
+
+railroad-ebnf-beta
+  a = "x";
+
+==>
+
+MermaidDiagram(RailroadEbnfDiagram(DiagramName,Rule(RuleName,"=",String,";")))
+
+# ABNF railroad
+
+railroad-abnf-beta
+  a = "x";
+
+==>
+
+MermaidDiagram(RailroadAbnfDiagram(DiagramName,Rule(RuleName,"=",String,";")))
+
+# PEG railroad
+
+railroad-peg-beta
+  a <- "x";
+
+==>
+
+MermaidDiagram(RailroadPegDiagram(DiagramName,Rule(RuleName,"<-",String,";")))
+
+# Ishikawa
+
+ishikawa-beta
+  Effect
+
+==>
+
+MermaidDiagram(IshikawaDiagram(DiagramName,Effect))
+
+# Venn
+
+venn-beta
+  set A
+
+==>
+
+MermaidDiagram(VennDiagram(DiagramName,Set(Keyword,Name)))
+
+# Use case
+
+usecase-beta
+  actor User
+
+==>
+
+MermaidDiagram(UsecaseDiagram(DiagramName,Keyword,Name))
+
+# Swimlane
+
+swimlane-beta LR
+  subgraph Customer
+    request[Request service]
+  end
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName,Orientation,Keyword,NodeId,NodeId,Node(NodeText),Keyword))
+
+# Agent flow
+
+agentflow-beta TB
+  flow reviewer["Review Agent"]
+    changes["Gather changes"]@{ shape: input }
+    changes --> analyse
+  end
+  global connector
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName,Orientation,Keyword,NodeId,Node(String),NodeId,Node(String),Metadata,NodeId,Link,NodeId,Keyword,Keyword,Keyword))
+
+# Agent flow keywords are node ids in a flowchart
+
+flowchart TB
+  flow --> global
+
+==>
+
+MermaidDiagram(FlowchartDiagram(DiagramName,Orientation,NodeId,Link,NodeId))

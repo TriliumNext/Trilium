@@ -1,10 +1,10 @@
 import "./IconPicker.css";
+import "./IconPickerButton.css";
 
 import { IconRegistry } from "@triliumnext/commons";
-import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
+import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
-import { CSSProperties } from "preact";
-import { createPortal } from "preact/compat";
+import { createPortal, CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type React from "react";
 import { CellComponentProps, Grid } from "react-window";
@@ -13,7 +13,7 @@ import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import Dropdown from "./Dropdown";
+import Dropdown, { type DropdownHandle, DropdownPanel } from "./Dropdown";
 import { FormDropdownDivider, FormListItem } from "./FormList";
 import FormTextBox from "./FormTextBox";
 import { useStaticTooltip, useWindowSize } from "./hooks";
@@ -91,10 +91,10 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount, 
                 class="icon-list"
                 ref={iconListRef}
                 style={{
-                    width: (columnCount * iconSize + 10),
+                    width: `calc(${columnCount * iconSize + 10}px + var(--icon-list-inset))`,
                     // The CSS sets the height of the regular grid; the compact grid shows
                     // `COMPACT_ROWS` rows.
-                    ...(compact && { height: COMPACT_ROWS * iconSize })
+                    ...(compact && { height: `${COMPACT_ROWS * iconSize}px` })
                 }}
                 onClick={(e) => {
                     // Make sure we are not clicking on something else than a button.
@@ -106,6 +106,7 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount, 
             >
                 {filteredIcons.length ? (
                     <Grid
+                        className="scroll-edge-fade"
                         columnCount={columnCount}
                         columnWidth={iconSize}
                         rowCount={Math.ceil(filteredIcons.length / columnCount)}
@@ -165,37 +166,19 @@ export function IconPickerButton({ className, ...props }: IconPickerButtonProps)
 function IconPickerDropdownButton({
     icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed, backdrop
 }: IconPickerButtonProps) {
-    const dropdownRef = useRef<BootstrapDropdown>(null);
+    const dropdownRef = useRef<DropdownHandle>(null);
     const [ pickerShown, setPickerShown ] = useState(false);
 
     return (
-        <Dropdown
+        <DropdownPanel
             // The legacy class dresses the menu the picker sits in, which the themes and the
             // picker's own stylesheet reach through it.
             className={clsx("note-icon-widget", className)}
             buttonClassName={`note-icon tn-focusable-button ${icon}`}
-            title={title}
+            title={disabled ? undefined : title}
             disabled={disabled}
             dropdownRef={dropdownRef}
-            dropdownContainerStyle={{ width: "620px" }}
-            dropdownOptions={{
-                autoClose: "outside",
-                // Popper guards only the main axis against overflow, so a menu this tall, hung off
-                // a button with room for it neither above nor below, was left hanging off the
-                // bottom of the screen. Guarding the other axis too slides it back into view; the
-                // side it opens on is still `flip`'s to choose.
-                popperConfig: (defaults) => ({
-                    ...defaults,
-                    modifiers: [
-                        ...(defaults.modifiers ?? []),
-                        { name: "preventOverflow", options: { altAxis: true, padding: 8 } }
-                    ]
-                })
-            }}
-            // The menu is wider than some of the places a button stands in, and the inline title
-            // establishes a backdrop root that would flatten its blur into a tint; hand the menu to
-            // the page rather than leaving it to be clipped or dulled.
-            portalToBody
+            autoClose="outside"
             backdrop={backdrop}
             hideToggleArrow
             onShown={() => {
@@ -223,7 +206,7 @@ function IconPickerDropdownButton({
                     })}
                 />
             )}
-        </Dropdown>
+        </DropdownPanel>
     );
 }
 
@@ -362,7 +345,6 @@ function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filte
                         buttonClassName="bx bx-filter-alt"
                         hideToggleArrow
                         noSelectButtonStyle
-                        noDropdownListStyle
                         iconAction
                         title={t("note_icon.filter")}
                     >
@@ -373,9 +355,8 @@ function FilterRow({ filterByPrefix, search, setSearch, setFilterByPrefix, filte
                         buttonClassName="bx bx-dots-vertical-rounded"
                         hideToggleArrow
                         noSelectButtonStyle
-                        noDropdownListStyle
                         iconAction
-                        dropdownContainerClassName="mobile-bottom-menu"
+                        mobileBottomSheet
                     >
                         {onReset && <>
                             <FormListItem

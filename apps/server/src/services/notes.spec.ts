@@ -1,4 +1,5 @@
-import { BAttribute, becca, becca_easy_mocking, checkImageAttachments, collectCanvasImageFileIds, findBookmarks, findLlmChatLinks, findMindMapLinks, saveLinks } from "@triliumnext/core";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
+import { BAttachment, BAttribute, becca, becca_easy_mocking, checkImageAttachments, collectCanvasImageFileIds, findBookmarks, findLlmChatLinks, findMindMapLinks, saveLinks } from "@triliumnext/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { randomString } from "./utils.js";
@@ -245,6 +246,133 @@ describe("checkImageAttachments", () => {
             checkImageAttachments(note, content);
 
             expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("keeps an attachment alive that only an embed shows", () => {
+            const pdf = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const note = buildNote({ title: "Test", attachments: [ pdf ] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, embedOf(att.attachmentId ?? ""));
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("keeps an attachment alive that an embed of another kind refers to", () => {
+            const pdf = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const note = buildNote({ title: "Test", attachments: [ pdf ] });
+            mockAttachmentSaves(note);
+            const [ att ] = note.getAttachments();
+
+            checkImageAttachments(note, `<section data-trilium-embed="future-kind">`
+                + `<p data-attachment-id="${att.attachmentId}">Fallback</p></section>`);
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("points an embed of a foreign attachment at the note's own copy", () => {
+            const report = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const source = buildNote({
+                title: "Source",
+                attachments: [{ id: "foreignAtt2", ...report }]
+            });
+            const [ foreign ] = source.getAttachments();
+            foreign.blobId = "sharedPdfBlob";
+
+            const target = buildNote({
+                title: "Target",
+                attachments: [{ id: "localAtt2", ...report }]
+            });
+            mockAttachmentSaves(target);
+            const [ local ] = target.getAttachments();
+            local.blobId = "sharedPdfBlob";
+
+            const getAttachments = vi.spyOn(becca, "getAttachments").mockReturnValue([ foreign ]);
+
+            try {
+                const { content } = checkImageAttachments(target, embedOf("foreignAtt2"));
+
+                expect(content).toBe(embedOf("localAtt2"));
+            } finally {
+                getAttachments.mockRestore();
+            }
+        });
+
+        it("keeps the images and the picture of a canvas drawing while it is embedded", () => {
+            const note = buildNote({
+                title: "Test",
+                attachments: [
+                    { id: "drawing1", ...DRAWING },
+                    { title: "f1.png", role: "image", mime: "image/png" },
+                    { title: "f2.png", role: "image", mime: "image/png" },
+                    { title: "drawing1.svg", role: "image", mime: "image/svg+xml" }
+                ]
+            });
+            mockAttachmentSaves(note);
+            const [ drawing, shown, removed, picture ] = note.getAttachments();
+            setDrawingContent(drawing, "f1.png");
+            shown.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            checkImageAttachments(note, embedOf("drawing1"));
+            expect(drawing.utcDateScheduledForErasureSince).toBeFalsy();
+            expect(shown.utcDateScheduledForErasureSince).toBeNull();
+            expect(removed.utcDateScheduledForErasureSince).toBeTruthy();
+            expect(picture.utcDateScheduledForErasureSince).toBeFalsy();
+
+            checkImageAttachments(note, "<p>The drawing is gone.</p>");
+            expect(drawing.utcDateScheduledForErasureSince).toBeTruthy();
+            expect(shown.utcDateScheduledForErasureSince).toBeTruthy();
+            expect(picture.utcDateScheduledForErasureSince).toBeTruthy();
+        });
+
+        it("copies with a foreign drawing its picture and the images the note lacks", () => {
+            const source = buildNote({
+                title: "Source",
+                attachments: [
+                    { id: "foreignDrawing", ...DRAWING },
+                    { title: "f1.png", role: "image", mime: "image/png" },
+                    { title: "f2.png", role: "image", mime: "image/png" },
+                    { title: "unrelated.png", role: "image", mime: "image/png" },
+                    { title: "foreignDrawing.svg", role: "image", mime: "image/svg+xml" }
+                ]
+            });
+            const [ foreign, ...images ] = source.getAttachments();
+            setDrawingContent(foreign, "f1.png", "f2.png");
+            for (const image of images) {
+                image.getContent = () => new Uint8Array([ 1 ]);
+            }
+
+            const target = buildNote({
+                title: "Target",
+                attachments: [ { title: "f2.png", role: "image", mime: "image/png" } ]
+            });
+            mockAttachmentSaves(target);
+            const [ kept ] = target.getAttachments();
+            kept.utcDateScheduledForErasureSince = "2025-01-01 00:00:00.000Z";
+
+            const copies: BAttachment[] = [];
+            const setContent = vi.spyOn(BAttachment.prototype, "setContent")
+                .mockImplementation(function (this: BAttachment) {
+                    // A saved attachment has an ID.
+                    this.attachmentId ??= `copy${copies.length + 1}`;
+                    copies.push(this);
+                });
+            const getAttachments = vi.spyOn(becca, "getAttachments").mockReturnValue([ foreign ]);
+
+            try {
+                checkImageAttachments(target, embedOf("foreignDrawing"));
+
+                expect(copies.map(({ ownerId, title }) => ({ ownerId, title }))).toEqual([
+                    { ownerId: target.noteId, title: "Canvas.excalidraw" },
+                    { ownerId: target.noteId, title: "f1.png" },
+                    { ownerId: target.noteId, title: "copy1.svg" }
+                ]);
+                expect(kept.utcDateScheduledForErasureSince).toBeNull();
+            } finally {
+                getAttachments.mockRestore();
+                setContent.mockRestore();
+            }
         });
     });
 
@@ -711,6 +839,41 @@ describe("saveLinks", () => {
         expect(imageLink.markAsDeleted).not.toHaveBeenCalled();
     });
 
+    it("keeps the includeNoteLink relations of a text note's includes, of either element", () => {
+        const note = buildNote({ title: "Test" });
+        const [ figureTarget, sectionTarget, staleTarget ] = [ "Figure", "Section", "Stale" ]
+            .map((title) => buildNote({ title }));
+        const [ figureLink, sectionLink, staleLink ] = [ figureTarget, sectionTarget, staleTarget ]
+            .map((target) => makeLinkRelation(note.noteId, "includeNoteLink", target.noteId));
+        note.getRelations = () => [ figureLink, sectionLink, staleLink ];
+        note.getAttachments = () => [];
+
+        saveLinks(note, `<figure class="include-note" data-note-id="${figureTarget.noteId}"`
+            + ` data-box-size="medium"><figcaption>Caption</figcaption></figure>`
+            + `<section class="include-note" data-note-id="${sectionTarget.noteId}"`
+            + ` data-box-size="small">&nbsp;</section>`);
+
+        expect(figureLink.markAsDeleted).not.toHaveBeenCalled();
+        expect(sectionLink.markAsDeleted).not.toHaveBeenCalled();
+        expect(staleLink.markAsDeleted).toHaveBeenCalled();
+    });
+
+    it("keeps the includeNoteLink relation of another kind of embed, from its section", () => {
+        const note = buildNote({ title: "Test" });
+        const [ target, childTarget ] = [ "Target", "Child" ].map((title) => buildNote({ title }));
+        const [ link, childLink ] = [ target, childTarget ]
+            .map((linked) => makeLinkRelation(note.noteId, "includeNoteLink", linked.noteId));
+        note.getRelations = () => [ link, childLink ];
+        note.getAttachments = () => [];
+
+        saveLinks(note, `<section class="future" data-trilium-embed="future-kind"`
+            + ` data-note-id="${target.noteId}">`
+            + `<p data-note-id="${childTarget.noteId}">Fallback</p></section>`);
+
+        expect(link.markAsDeleted).not.toHaveBeenCalled();
+        expect(childLink.markAsDeleted).toHaveBeenCalled();
+    });
+
     it("does not delete existing internalLink relations on markdown notes using #root links", () => {
         const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
         const targetNote = buildNote({ title: "Other Note" });
@@ -1059,3 +1222,17 @@ describe("findLlmChatLinks", () => {
         expect(links).toEqual([]);
     });
 });
+
+/** An embed of the attachment, as the text editor saves one. */
+function embedOf(attachmentId: string) {
+    return `<section class="include-note" data-attachment-id="${attachmentId}">` + "</section>";
+}
+
+const DRAWING = { title: "Canvas.excalidraw", role: "file", mime: CANVAS_ATTACHMENT_MIME };
+
+/** Gives `drawing` a scene with an image element for each of `fileIds`. */
+function setDrawingContent(drawing: BAttachment, ...fileIds: string[]) {
+    const elements = fileIds.map((fileId) => ({ type: "image", fileId }));
+    const content = JSON.stringify({ type: "excalidraw", version: 2, elements, files: {} });
+    drawing.getContent = () => new TextEncoder().encode(content);
+}

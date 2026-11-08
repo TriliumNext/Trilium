@@ -1,7 +1,21 @@
+import { useEffect } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
+import Component from "../../components/component";
 import FAttachment from "../../entities/fattachment";
+import froca from "../../services/froca";
+import LoadResults from "../../services/load_results";
+import options from "../../services/options";
 import { renderInto } from "../../test/render";
+import { ParentComponent } from "../react/react_utils";
+
+const CANVAS_MIME = "application/vnd.excalidraw+json";
+const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
+    getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
+    drawingMounts: vi.fn(),
+    uploadFiles: vi.fn(async () => {})
+}));
 
 // Nothing initialises i18next in a unit test, and an uninitialised one answers every lookup with an
 // empty string — which would make the two placeholder messages indistinguishable. Answering with the
@@ -15,8 +29,16 @@ vi.mock("i18next", () => {
 // were built at all.
 vi.mock("../../services/content_renderer", () => ({
     default: {
-        getRenderedContent: async () => ({ $renderedContent: [] }),
+        getRenderedContent,
         disposeInteractiveContent: () => {}
+    },
+    hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
+}));
+// Counts the mounts of the drawing editor, which loads a change saved elsewhere in place.
+vi.mock("./canvas/CanvasDrawing", () => ({
+    CanvasDrawingDetail: () => {
+        useEffect(() => drawingMounts(), []);
+        return <div className="drawing-detail-stub" />;
     }
 }));
 // Bootstrap's dropdown and the note link both reach well past this widget; the compression dialog only
@@ -24,8 +46,9 @@ vi.mock("../../services/content_renderer", () => ({
 vi.mock("../react/Dropdown", () => ({ default: () => <div class="dropdown-stub" /> }));
 vi.mock("../react/NoteLink", () => ({ default: () => <span class="note-link-stub" /> }));
 vi.mock("../dialogs/image_compression/image_compression_dialog", () => ({ showImageCompressionDialog: vi.fn() }));
+vi.mock("../../services/import", () => ({ default: { uploadFiles } }));
 
-const { AttachmentList } = await import("./Attachment");
+const { AttachmentDetail, AttachmentList } = await import("./Attachment");
 
 describe("AttachmentList", () => {
     it("lists what the reader placed, with nothing to unfold where the app has made nothing", async () => {
@@ -61,6 +84,50 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".attachment-system-group .collapsible-title")?.getAttribute("aria-expanded")).toBe("false");
     });
 
+    it("folds away the picture of a canvas note", async () => {
+        const picture = { ...role("image"), title: "canvas-export.svg", mime: "image/svg+xml" };
+        const container = await mount([ role("image"), picture ] as FAttachment[], "canvas");
+
+        expect(cards(container)).toHaveLength(1);
+        expect(container.querySelector(".attachment-system-group")).not.toBeNull();
+    });
+
+    it("previews a file as text only where the renderer draws nothing of it", async () => {
+        const drawingBlob = vi.fn(async () => ({ content: "{}" }));
+        const drawing = { ...role("file"), mime: CANVAS_MIME, getBlob: drawingBlob };
+        const text = { ...role("file"), mime: "text/plain", getBlob: async () => ({ content: "hi" }) };
+        const container = await mount([ drawing, text ] as FAttachment[]);
+
+        await vi.waitFor(() => expect(container.querySelector(".file-preview-content")).not.toBeNull());
+        expect(container.querySelectorAll(".file-preview-content")).toHaveLength(1);
+        expect(drawingBlob).not.toHaveBeenCalled();
+    });
+
+    it("files a transcript with the app's own, shown as its conversation", async () => {
+        const content = JSON.stringify({
+            version: 1,
+            startedAt: "2026-10-13T14:30:00.000Z",
+            utterances: [ { source: "system", offsetMs: 3000, text: "Yes." } ]
+        });
+        const transcript = {
+            ...role("transcript"),
+            mime: "application/json",
+            getBlob: async () => ({ content })
+        };
+        getRenderedContent.mockClear();
+        const container = await mount([ transcript ] as FAttachment[]);
+
+        expect(cards(container)).toHaveLength(0);
+        const disclosure = container.querySelector<HTMLButtonElement>(".attachment-system-group .collapsible-title");
+        expect(disclosure).not.toBeNull();
+        disclosure?.click();
+
+        await vi.waitFor(() =>
+            expect(container.querySelector(".attachment-system-group .attachment-transcript .transcript-turn")).not.toBeNull());
+        expect(container.querySelector(".attachment-transcript")?.textContent).toContain("Yes.");
+        expect(getRenderedContent).not.toHaveBeenCalled();
+    });
+
     it("says plainly that there is nothing where a note carries nothing at all", async () => {
         const container = await mount([]);
 
@@ -70,7 +137,98 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".no-items")?.textContent).toBe("attachment_list.no_attachments");
         expect(container.querySelector(".no-items-small, .beside-folded-away")).toBeNull();
     });
+
+    it("uploads files dropped from outside the app as attachments of the note", async () => {
+        vi.spyOn(options, "is").mockReturnValue(true);
+        uploadFiles.mockClear();
+        const container = await mount([ role("image") ]);
+        const list = container.querySelector(".attachment-list-container");
+        const card = cards(container)[0];
+        expect(list).not.toBeNull();
+        expect(card).toBeDefined();
+        if (!list) return;
+
+        expect(drag(card, "dragenter", [ "Files" ]).defaultPrevented).toBe(true);
+        expect(dropOverlay(container)?.textContent).toBe("attachment_list.drop_files");
+
+        // Moving from the card to the list around it keeps the overlay.
+        drag(list, "dragenter", [ "Files" ]);
+        drag(card, "dragleave", [ "Files" ]);
+        expect(dropOverlay(container)).not.toBeNull();
+        expect(drag(list, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+
+        const file = new File([ "x" ], "notes.txt");
+        expect(drag(list, "drop", [ "Files" ], [ file ]).defaultPrevented).toBe(true);
+        expect(uploadFiles).toHaveBeenCalledExactlyOnceWith(
+            "attachments", "note1", [ file ], { shrinkImages: true });
+        expect(dropOverlay(container)).toBeNull();
+    });
+
+    it("ignores a drag that carries no files or that started in the page", async () => {
+        uploadFiles.mockClear();
+        const container = await mount([ role("image") ]);
+        const card = cards(container)[0];
+        expect(card).toBeDefined();
+
+        // Notes dragged from the tree.
+        expect(drag(card, "dragenter", [ "text/plain" ]).defaultPrevented).toBe(false);
+        expect(dropOverlay(container)).toBeNull();
+
+        // An image dragged out of a card also carries files.
+        drag(card, "dragstart", [ "Files" ]);
+        expect(drag(card, "dragenter", [ "Files" ]).defaultPrevented).toBe(false);
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(false);
+        expect(dropOverlay(container)).toBeNull();
+        drag(card, "drop", [ "Files" ], [ new File([ "x" ], "image.png") ]);
+        expect(uploadFiles).not.toHaveBeenCalled();
+
+        // Either a drop or a `dragend` ends the drag from the page.
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+        drag(card, "dragstart", [ "Files" ]);
+        drag(card, "dragend", [ "Files" ]);
+        expect(drag(card, "dragover", [ "Files" ]).defaultPrevented).toBe(true);
+    });
 });
+
+describe("AttachmentDetail", () => {
+    it("edits a canvas drawing in an editor that stays mounted through every save", async () => {
+        const drawing = { ...role("file"), mime: CANVAS_MIME } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(drawing);
+        getRenderedContent.mockClear();
+        drawingMounts.mockClear();
+
+        const component = new Component();
+        const props = {
+            note: { noteId: "note1" },
+            viewScope: { viewMode: "attachments", attachmentId: drawing.attachmentId }
+        } as unknown as Parameters<typeof AttachmentDetail>[0];
+        const container = renderInto(
+            <ParentComponent.Provider value={component}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+
+        await vi.waitFor(() => expect(drawingMounts).toHaveBeenCalledOnce());
+        expect(container.querySelector(".attachment-canvas-drawing .drawing-detail-stub")).not.toBeNull();
+        expect(getRenderedContent).not.toHaveBeenCalled();
+
+        // The drawing shows a save made elsewhere in place.
+        await reloadAttachment(component, drawing.attachmentId, component.componentId);
+        await reloadAttachment(component, drawing.attachmentId, "otherComponent");
+        await reloadAttachment(component, "otherAttachment", "otherComponent");
+        expect(drawingMounts).toHaveBeenCalledOnce();
+        expect(getRenderedContent).not.toHaveBeenCalled();
+    });
+});
+
+/** Reports a saved change to an attachment, as the server does after a save from `componentId`. */
+async function reloadAttachment(component: Component, attachmentId: string, componentId: string) {
+    const loadResults = new LoadResults([]);
+    loadResults.addAttachmentRow({ attachmentId, ownerId: "note1" } as never, componentId);
+    await act(async () => {
+        await component.handleEvent("entitiesReloaded", { loadResults });
+    });
+}
 
 function role(role: string) {
     return {
@@ -86,10 +244,11 @@ function role(role: string) {
 }
 
 /** Renders the list for a note carrying the given attachments, once the asynchronous load has settled. */
-async function mount(attachments: FAttachment[]) {
+async function mount(attachments: FAttachment[], type = "text") {
     const props = {
         note: {
             noteId: "note1",
+            type,
             getAttachments: async () => attachments
         }
     } as unknown as Parameters<typeof AttachmentList>[0];
@@ -107,4 +266,18 @@ async function mount(attachments: FAttachment[]) {
 
 function cards(container: HTMLElement) {
     return container.querySelectorAll(".attachment-detail-widget");
+}
+
+function dropOverlay(container: HTMLElement) {
+    return container.querySelector(".attachment-list-drop-overlay");
+}
+
+/** Fires a drag event at `target` whose data has the given `types` and `files`. */
+function drag(target: Element, type: string, types: string[], files: File[] = []) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "dataTransfer", { value: { types, files, dropEffect: "none" } });
+    act(() => {
+        target.dispatchEvent(event);
+    });
+    return event;
 }

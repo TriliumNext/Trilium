@@ -1,6 +1,6 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     askForCard, type ColumnWindow, computeWindow, estimateFor, forgetWindowHeights,
@@ -219,6 +219,7 @@ describe("useColumnWindow", () => {
     });
 
     afterEach(() => {
+        vi.unstubAllGlobals();
         if (host) render(null, host);
         host?.remove();
         area?.remove();
@@ -276,6 +277,35 @@ describe("useColumnWindow", () => {
         expect(moved.above).toBeGreaterThan(first.above);
         // The flip has to be told, or it slides cards from places that named other cards.
         expect(last().windowChanged).toBe(true);
+    });
+
+    it("reads a resize on the next frame, not inside the observer's pass", async () => {
+        let reportResize = () => {};
+        vi.stubGlobal("ResizeObserver", class {
+            constructor(callback: () => void) {
+                reportResize = callback;
+            }
+            observe() {}
+            disconnect() {}
+        });
+        const { seen, last } = await probe(ids(2000));
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal("requestAnimationFrame", (frame: FrameRequestCallback) => frames.push(frame));
+        vi.stubGlobal("cancelAnimationFrame", () => {});
+
+        const before = last().bounds.until;
+        if (area) Object.defineProperty(area, "clientHeight", { value: 6000, configurable: true });
+        const renders = seen.length;
+        await act(async () => reportResize());
+
+        // Drawing inside the pass mounts cards whose first resize Chrome can no longer deliver.
+        expect(seen.length).toBe(renders);
+        expect(frames).toHaveLength(1);
+
+        await act(async () => {
+            for (const frame of frames.splice(0)) frame(0);
+        });
+        expect(last().bounds.until).toBeGreaterThan(before);
     });
 
     it("scrolls to a card the column is not drawing, placing it inside the area", async () => {

@@ -18,6 +18,12 @@ export const FREQUENCIES = [ "DAILY", "WEEKLY", "MONTHLY", "YEARLY" ] as const;
 
 export type Frequency = (typeof FREQUENCIES)[number];
 
+/**
+ * How many days a week a timed event repeats on before `#calendar:hideRoutineEvents` hides it from
+ * the views that summarize many days.
+ */
+export const ROUTINE_OCCURRENCES_PER_WEEK = 4;
+
 /** A rule the structured fields can say in full. */
 export interface SimpleRecurrence {
     frequency: Frequency;
@@ -79,6 +85,49 @@ export function serializeRecurrence(parsed: ParsedRecurrence): string | null {
     }
 }
 
+/**
+ * Returns how many days a week a `#recurrence` falls on, on average, summed over the RRULE lines
+ * of a rule set. A daily rule counts its BYDAY days (all seven without them), a weekly one its
+ * BYDAY days (one without them), both divided by INTERVAL. A rule repeating within a day counts
+ * as `Infinity`, and a monthly or yearly one as `0`.
+ */
+export function occurrencesPerWeek(recurrence: string | null | undefined): number {
+    let total = 0;
+    for (const line of recurrence?.split(/\r?\n/) ?? []) {
+        const rule = line.trim().replace(/^RRULE:/i, "");
+        // Lines such as `EXDATE:…` carry a property name; a bare `FREQ=…` line is an RRULE.
+        if (!rule || rule.includes(":")) {
+            continue;
+        }
+
+        const params = new Map<string, string>();
+        for (const part of rule.split(";")) {
+            const eq = part.indexOf("=");
+            if (eq > 0) {
+                params.set(part.substring(0, eq).toUpperCase(), part.substring(eq + 1));
+            }
+        }
+
+        const interval = parsePositiveInt(params.get("INTERVAL")) ?? 1;
+        const byDay = params.get("BYDAY");
+        const days = byDay ? byDay.split(",").length : undefined;
+        switch (params.get("FREQ")?.toUpperCase()) {
+            case "SECONDLY":
+            case "MINUTELY":
+            case "HOURLY":
+                return Infinity;
+            case "DAILY":
+                total += (days ?? 7) / interval;
+                break;
+            case "WEEKLY":
+                total += (days ?? 1) / interval;
+                break;
+        }
+    }
+
+    return total;
+}
+
 /** The one RRULE line of a simple rule, spelling out only what differs from the defaults. */
 function serializeSimpleRule({ frequency, interval, weekdays, ends }: SimpleRecurrence): string {
     const parts = [ `FREQ=${frequency}` ];
@@ -94,10 +143,10 @@ function serializeSimpleRule({ frequency, interval, weekdays, ends }: SimpleRecu
     }
 
     if (ends.type === "until" && ends.date) {
-        // The end of the picked day rather than its midnight, so "until June 5th" keeps June 5th:
-        // the builder's DTSTART is written floating (see event_builder.ts), which the rrule library
-        // reads as UTC, and a bare date would cut off before the day's own occurrence.
-        parts.push(`UNTIL=${ends.date.replaceAll("-", "")}T235959Z`);
+        // The end of the picked day rather than its midnight, so "until June 5th" keeps June 5th.
+        // Local time, like the DTSTART that `buildEvent()` writes: RFC 5545 requires the two to
+        // match, and FullCalendar reads the whole rule as UTC when UNTIL is in UTC.
+        parts.push(`UNTIL=${ends.date.replaceAll("-", "")}T235959`);
     } else if (ends.type === "count") {
         parts.push(`COUNT=${ends.count}`);
     }

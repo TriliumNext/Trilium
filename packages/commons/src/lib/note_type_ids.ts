@@ -1,4 +1,4 @@
-import { ALLOWED_NOTE_TYPES, type NoteType } from "./rows.js";
+import { isNoteType, type NoteType } from "./rows.js";
 
 /**
  * Naming what a note is made from, as one string.
@@ -61,8 +61,8 @@ export function parseNoteTypeId(id: NoteTypeId): NoteTypeSelection | undefined {
     const type = separator < 0 ? rest : rest.slice(0, separator);
     const mime = separator < 0 ? "" : rest.slice(separator + 1);
 
-    return (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)
-        ? { kind: "type", type: type as NoteType, mime: mime || undefined }
+    return isNoteType(type)
+        ? { kind: "type", type, mime: mime || undefined }
         : undefined;
 }
 

@@ -108,6 +108,36 @@
     }
 }
 
+.tn-card-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    .tn-card-choice-label {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .tn-card-choice-check {
+        flex-shrink: 0;
+        margin-inline-start: auto;
+    }
+
+    .tn-card-choice-expander {
+        flex-shrink: 0;
+        font-size: 1.25em;
+    }
+
+    .tn-card-choice-expander-empty {
+        visibility: hidden;
+    }
+}
+
+body[dir=rtl] .tn-card-choice-expander {
+    transform: scaleX(-1);
+}
+
 .tn-card-section-link {
     display: flex;
     align-items: center;
@@ -258,12 +288,18 @@ body[dir=rtl] .tn-card-option::after {
         max-width: none;
         /* Room at the end for the mark standing over it, so the value stops short of it. */
         padding-inline: 0 calc(var(--card-option-mark-size) + 8px);
+        border: 0;
         background: none;
         color: var(--muted-text-color);
         overflow: hidden;
         text-align: end;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* The row's chevron stands in for the toggle's own caret. */
+    .tn-card .tn-card-option > .dropdown > .btn::after {
+        content: none;
     }
 
     /* Each state the theme gives a combo box would put the frame and the arrow back, so all of them
@@ -377,6 +413,58 @@ body[dir=rtl] .tn-card-option::after {
             padding-left: calc(var(--card-padding-inline) + var(--card-nested-section-indent) * var(--tn-card-section-nesting-level));
             background-color: color-mix(in srgb, var(--card-background-color) calc(100% / (var(--tn-card-section-nesting-level) + 1)) , transparent);
         }
+    }
+
+    .tn-card-section.tn-card-adders {
+        display: flex;
+        gap: var(--card-section-gap);
+        border: none;
+        padding: 0;
+        background: transparent;
+    }
+
+    .tn-card-adders > button.tn-card-adder.btn {
+        display: flex;
+        flex: 1 1 0;
+        justify-content: center;
+        align-items: center;
+        gap: .3em;
+        min-width: 0;
+        box-shadow: none;
+        border: 1px solid var(--card-border-color, var(--main-border-color));
+        border-radius: 0;
+        padding: var(--card-padding-block) var(--card-padding-inline);
+        background: var(--card-background-color);
+        color: var(--muted-text-color);
+        font: inherit;
+        letter-spacing: normal;
+        text-transform: none;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--card-background-hover-color);
+            color: var(--main-text-color);
+        }
+
+        &:active {
+            background-color: var(--card-background-hover-color);
+        }
+    }
+
+    .tn-card-adders:first-of-type > button.tn-card-adder:first-child {
+        border-start-start-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:first-of-type > button.tn-card-adder:last-child {
+        border-start-end-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:last-of-type > button.tn-card-adder:first-child {
+        border-end-start-radius: var(--card-border-radius);
+    }
+
+    .tn-card-adders:last-of-type > button.tn-card-adder:last-child {
+        border-end-end-radius: var(--card-border-radius);
     }
 }
 

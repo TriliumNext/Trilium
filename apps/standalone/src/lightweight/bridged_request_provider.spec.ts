@@ -74,13 +74,14 @@ describe("BridgedRequestProvider.exec", () => {
         const promise = provider.exec({
             method: "POST",
             url: "http://x",
-            auth: { password: "pw" },
+            auth: { password: "pw", totpToken: "123456" },
             body: { a: 1 },
             paging: { pageCount: 2, pageIndex: 0, requestId: "r" }
         } as ExecOpts);
 
         const posted = lastPosted();
         expect(posted.request.headers["trilium-cred"]).toBe(btoa("dummy:pw"));
+        expect(posted.request.headers["trilium-totp"]).toBe("123456");
         expect(posted.request.headers["Content-Type"]).toBe("text/plain");
         expect(posted.request.body).toBe(JSON.stringify({ a: 1 }));
 
@@ -221,7 +222,7 @@ describe("BridgedRequestProvider.fetchResource", () => {
         expect(lastPosted().request).toMatchObject({
             method: "GET",
             url: "https://example.com/p",
-            headers: { "user-agent": "TriliumNotes" },
+            headers: { Range: "bytes=0-1000", "user-agent": "TriliumNotes" },
             responseType: "arraybuffer"
         });
 
@@ -233,6 +234,35 @@ describe("BridgedRequestProvider.fetchResource", () => {
             contentType: "text/html",
             bytes: new TextEncoder().encode("<html/>")
         });
+    });
+
+    it("asks the host for at most one byte past the ceiling, even for a media file", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            maxBytes: 10,
+            headers: { Accept: "*/*" },
+            prefixLength: () => 5
+        });
+
+        expect(lastPosted().request.headers).toEqual({ Range: "bytes=0-10", Accept: "*/*" });
+
+        respond({
+            status: 206, headers: { "content-type": "video/mp4" }, body: btoa("0123456789A")
+        });
+        await expect(promise).resolves.toMatchObject({
+            status: 206, ok: true, bytes: new TextEncoder().encode("01234")
+        });
+    });
+
+    it("asks with the method it is given", async () => {
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            method: "HEAD", maxBytes: 0
+        });
+
+        expect(lastPosted().request.method).toBe("HEAD");
+        respond({ status: 200, headers: {}, body: "" });
+        await promise;
     });
 
     it("answers a non-2xx rather than throwing, the page having said something", async () => {
@@ -250,6 +280,24 @@ describe("BridgedRequestProvider.fetchResource", () => {
 
         await expect(provider.fetchResource("file:///etc/passwd", { maxBytes: 10 })).rejects.toThrow(/http and https/);
         expect(postSpy.mock.calls.length).toBe(posted);
+    });
+
+    it("cuts a body of a type read by its prefix, decoding only the start of it", async () => {
+        const decode = vi.spyOn(globalThis, "atob");
+        const provider = new BridgedRequestProvider();
+        const promise = provider.fetchResource("https://example.com/clip.mp4", {
+            maxBytes: 10,
+            prefixLength: (contentType) => contentType === "video/mp4" ? 5 : undefined
+        });
+
+        respond({
+            status: 200, headers: { "content-type": "video/mp4" }, body: btoa("0123456789".repeat(100))
+        });
+
+        await expect(promise).resolves.toMatchObject({
+            contentType: "video/mp4", bytes: new TextEncoder().encode("01234")
+        });
+        expect(decode).toHaveBeenCalledExactlyOnceWith(btoa("012345"));
     });
 
     /**

@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 
 import type { CommandNames } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import contextMenu, { ContextMenuEvent, MenuItem } from "../../../menus/context_menu";
+import contextMenu, { ContextMenuEvent, MenuHandler, MenuItem } from "../../../menus/context_menu";
 import { getArchiveMenuItems, menuName } from "../../../menus/context_menu_utils";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
@@ -12,6 +12,7 @@ import { copyReferenceWithToast } from "../../../services/clipboard_ext";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { shared } from "../../../services/note_set";
+import { escapeHtml } from "../../../services/utils";
 import ColorPicker from "../../react/ColorPicker";
 import { buildAttributeMenuItems } from "../attribute_menu";
 import { buildSortMenuItems, type SortMenuOptions } from "../sort_menu";
@@ -65,6 +66,18 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
 
     // What the column is, which a collapsed column that is not the inbox has nothing of. Kept in
     // a group of its own only while it holds something, or the menu opens on a divider.
+    const copyReference: MenuItem<string> = {
+        title: t("board_view.copy-reference"),
+        uiIcon: "bx bx-copy",
+        handler: async () => copyReferenceWithToast(await api.getColumnReference(column.value))
+    };
+
+    // Everything else the menu offers changes the board.
+    if (api.isReadOnly) {
+        contextMenu.show({ x: event.pageX, y: event.pageY, items: [ copyReference ], selectMenuItemHandler() {} });
+        return;
+    }
+
     const identity: MenuItem<string>[] = [
         ...(column.canRename ? [ {
             title: t("board_view.rename-column"),
@@ -75,15 +88,10 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
         ...(isInbox ? [ {
             title: t("board_view.inbox-nested"),
             uiIcon: "bx bx-subdirectory-right",
-            // At the trailing edge, so the entry keeps its own icon in front.
-            trailingIcon: column.nested ? "bx bx-check" : undefined,
+            checked: column.nested,
             handler: () => api.setInboxNested(!column.nested)
         } ] : []),
-        {
-            title: t("board_view.copy-reference"),
-            uiIcon: "bx bx-copy",
-            handler: async () => copyReferenceWithToast(await api.getColumnReference(column.value))
-        }
+        copyReference
     ];
 
     contextMenu.show({
@@ -137,8 +145,7 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
             ...(column.canKeepCollapsed ? [ {
                 title: t("board_view.keep-column-collapsed"),
                 uiIcon: "bx bx-lock-alt",
-                // At the trailing edge, so the entry keeps its own icon in front.
-                trailingIcon: column.keepCollapsed ? "bx bx-check" : undefined,
+                checked: column.keepCollapsed,
                 handler: () => column.onKeepCollapsed(!column.keepCollapsed)
             } ] : []),
             {
@@ -246,7 +253,7 @@ export function openBoardContextMenu(event: ContextMenuEvent, board: BoardMenuTa
             {
                 title: t("board_view.show-archived-notes"),
                 uiIcon: "bx bx-archive",
-                trailingIcon: board.archivedShown ? "bx bx-check" : undefined,
+                checked: board.archivedShown,
                 handler: () => board.onShowArchived(!board.archivedShown)
             },
             { kind: "separator" },
@@ -367,9 +374,9 @@ function buildMoveColumnItems(api: Api, column: ColumnMenuTarget): MenuItem<stri
         const title = api.getColumnTitle(name);
 
         return [ {
-            // `t()` escapes what it interpolates, so the sentence it builds is boxed as it stands.
+            // `Menu` renders the title as HTML, and a column title is user text.
             title: `<span class="tn-menu-name">`
-                + `${t("board_view.move-column-after", { column: title })}</span>`,
+                + `${t("board_view.move-column-after", { column: escapeHtml(title) })}</span>`,
             uiIcon: api.getColumnIcon(name),
             iconColorClass: api.getColumnColorClass(name),
             badges: api.isColumnArchived(name)
@@ -446,7 +453,7 @@ function buildColumnItems(api: Api, target: NoteMenuTarget): MenuItem<CommandNam
         iconColorClass: api.getColumnColorClass(name),
         // The one they are already under is shown rather than hidden, so the list reads as the
         // whole set of columns and says which of them the cards belong to.
-        trailingIcon: name === current ? "bx bx-check" : undefined,
+        checked: name === current,
         className: name === current ? "board-current-column" : undefined,
         badges: api.isColumnArchived(name)
             ? [ { title: t("board_view.archived-badge") } ]
@@ -554,28 +561,36 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
     // What is done to the card itself, which a selection has none of: the menu it opens leads with
     // the columns instead.
     const identity: MenuItem<CommandNames>[] = !isSingle ? [] : [
-        // Space opens the same popup for the card the cursor stands on.
-        { ...link_context_menu.getQuickEditItem(), shortcut: "Space" },
-        {
+        // Space opens the same popup for the card the cursor stands on. It edits the card's note.
+        ...(api.isReadOnly ? [] : [ { ...link_context_menu.getQuickEditItem(), shortcut: "Space" } ]),
+        ...(api.isReadOnly ? [] : [ {
             title: t("board_view.edit-title"),
             uiIcon: "bx bx-rename",
             shortcut: "F2",
             handler: () => api.startEditing(branchId)
-        },
+        } ]),
         link_context_menu.getOpenNoteItem(event),
         {
             title: t("board_view.copy-reference"),
             uiIcon: "bx bx-copy",
             handler: () => copyReferenceWithToast(api.getCardReference(note.noteId))
-        },
-        { kind: "separator" }
+        }
     ];
+    const selectMenuItemHandler: MenuHandler<CommandNames> = ({ command }) =>
+        link_context_menu.handleLinkContextMenuItem(command, event, note.noteId);
+
+    // What a read-only board's menu keeps: the card's own entries, which change nothing.
+    if (api.isReadOnly) {
+        contextMenu.show({ x: event.pageX, y: event.pageY, items: identity, selectMenuItemHandler });
+        return;
+    }
 
     contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items: [
             ...identity,
+            ...(identity.length ? [ { kind: "separator" } as MenuItem<CommandNames> ] : []),
             ...placement,
             { kind: "header", title: api.getStatusLabel() },
             ...buildColumnItems(api, target),
@@ -607,7 +622,7 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
                     : CardsColorPicker({ notes })
             }
         ],
-        selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, event, note.noteId),
+        selectMenuItemHandler
     });
 }
 

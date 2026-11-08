@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 // everything, which is exactly what we want to exercise.
 import "./index.js";
 import { AttributeEditor, ClassicEditor, PopupEditor } from "./index.js";
-import { CORE_PLUGINS, COMMON_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import { CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 
 describe("index (aggregate entry point)", () => {
     it("sets the CKEditor distribution marker on the window object", () => {
@@ -15,8 +15,8 @@ describe("index (aggregate entry point)", () => {
         expect(AttributeEditor.builtinPlugins).toBe(CORE_PLUGINS);
     });
 
-    it("ClassicEditor.builtinPlugins returns COMMON_PLUGINS", () => {
-        expect(ClassicEditor.builtinPlugins).toBe(COMMON_PLUGINS);
+    it("ClassicEditor.builtinPlugins returns CLASSIC_EDITOR_PLUGINS", () => {
+        expect(ClassicEditor.builtinPlugins).toBe(CLASSIC_EDITOR_PLUGINS);
     });
 
     it("PopupEditor.builtinPlugins returns POPUP_EDITOR_PLUGINS", () => {
@@ -37,11 +37,10 @@ describe("index (aggregate entry point)", () => {
         }
     });
 
-    it("PopupEditor.builtinPlugins is a superset of ClassicEditor.builtinPlugins", () => {
-        const commonPlugins = ClassicEditor.builtinPlugins;
-        const popupPlugins = PopupEditor.builtinPlugins;
-        for (const plugin of commonPlugins) {
-            expect(popupPlugins).toContain(plugin);
+    it("ClassicEditor and PopupEditor both build on COMMON_PLUGINS", () => {
+        for (const plugin of COMMON_PLUGINS) {
+            expect(ClassicEditor.builtinPlugins).toContain(plugin);
+            expect(PopupEditor.builtinPlugins).toContain(plugin);
         }
     });
 });

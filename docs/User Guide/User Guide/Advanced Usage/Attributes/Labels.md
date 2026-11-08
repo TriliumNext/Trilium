@@ -9,23 +9,23 @@ A label is an [attribute](../Attributes.md) of a note which has a name and optio
 
 ## Creating a label using the visual editor
 
-1.  Go to the _Owned Attributes_ section in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-2.  Press the + button (_Add new attribute_) to the right.
-3.  Select _Add new label_ for the relation.
-
-> [!TIP]
-> If you prefer keyboard shortcuts, press Alt+L while focused on a note or in the _Owned Attributes_ section to display the visual editor.
+1.  Go to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Attributes%20tab.md">Attributes tab</a> in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
+2.  Press the <span class="tn-icon bx bx-plus"></span> (Add attribute) button at the end of the list, or via the <span class="tn-icon bx bx-plus"></span> button at the top-right of the section → _Add new label_.
 
 While in the visual editor:
 
-*   Set the desired name
+*   Set the desired name.
 *   Optionally, set the value of the label. Labels can exist without a value.
-*   Check _Inheritable_ if the label should be inherited by the child notes as well. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> for more information.
+*   Children can inherit this relation, click the relation and check _Inheritable_. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> for more information.
+
+> [!TIP]
+> Alternatively, press <kbd>Alt</kbd>+<kbd>L</kbd> which will open the attribute details (same view as when an existing attribute is clicked) in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>.
 
 ## Creating a label manually
 
-In the _Owned Attributes_ section in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>:
+In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, press the <span class="tn-icon bx bx-list-check"></span> button to show the list of the attributes.
 
+*   Click the input box to focus it.
 *   To create a label called `myLabel` with no value, simply type `#myLabel`.
 *   To create a label called `myLabel` with a value `value`, simply type `#myLabel=value`.
 *   If the value contains spaces, then the text must be quoted: `#myLabel="Hello world"`.
@@ -67,20 +67,21 @@ This is a list of labels that Trilium natively supports.
 | `inbox` | Default inbox location for new notes. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20Inbox.md">Note Inbox</a> for more information. |
 | `sqlConsoleHome` | Default location of <a class="reference-link" href="../Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a> saved queries. |
 | `bookmarked` | Indicates this note is a [bookmark](../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md). |
-| `bookmarkFolder` | Note with this label will appear in bookmarks as folder (allowing access to its children). See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
+| `bookmarkFolder` | Note with this label will appear in bookmarks, or on the launch bar when dropped onto it, as a folder (allowing access to its children). The _Show as a folder_ option in the button's context menu toggles it. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
+| `bookmarkOpenMode` | Where a click on the note's button in the launch bar opens it: `currentTab` (the default), `newTab`, `newSplit`, `newWindow` or `quickEdit`. Applies to bookmarks, notes dropped onto the launch bar and the notes in a bookmark folder. The _Open mode_ submenu in the button's context menu sets it, as an inheritable label on a folder so that the notes in it follow. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
 | `share*` | See the attribute reference in <a class="reference-link" href="../Sharing.md">Sharing</a>. |
 | `displayRelations`, `hideRelations` | Comma delimited names of relations which should be displayed/hidden in a <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">Relation Map</a> (both the note type and the <a class="reference-link" href="../Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a> general functionality). |
-| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.       <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
+| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.        <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
+| `template:titleTemplate` | Set on a template note: default title of notes created from the template, taking precedence over the parent's `titleTemplate`. Evaluated the same way as `titleTemplate`. See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a>. |
 | `template` | This note will appear in the selection of available template when creating new note. See <a class="reference-link" href="../Templates.md">Templates</a> for more information. |
-| `toc` | Controls the display of the <a class="reference-link" href="../../Note%20Types/Text/Table%20of%20contents.md">Table of contents</a> for a given note. `#toc` or `#toc=show` to always display the table of contents, `#toc=false` to always hide it. |
-| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f        <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
+| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f         <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
 | `keyboardShortcut` | Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect. |
 | `keepCurrentHoisting` | Opening this link won't change hoisting even if the note is not displayable in the current hoisted subtree. |
 | `executeButton` | Title of the button which will execute the current code note |
 | `executeDescription` | Longer description of the current code note displayed together with the execute button |
 | `excludeFromNoteMap` | Notes with this label will be hidden from the <a class="reference-link" href="../../Note%20Types/Note%20Map.md">Note Map</a>. |
+| `excludeFromLlm` | Hides this note from the AI chat and the MCP server. Make it inheritable to hide the notes below it as well. See <a class="reference-link" href="../../AI/Privacy.md">Privacy</a>. |
 | `newNotesOnTop` | New notes will be created at the top of the parent note, not on the bottom. |
-| `hideHighlightWidget` | Hides the <a class="reference-link" href="../../Note%20Types/Text/Highlights%20list.md">Highlights list</a> widget |
 | `hideChildrenOverview` | Hides the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> for that particular note. |
 | `subtreeHidden` | Hides all child notes of this note from the tree, displaying a badge with the count of hidden children. Children remain accessible via search or direct links. |
 | `printLandscape` | When exporting to PDF, changes the orientation of the page to landscape instead of portrait. |
@@ -98,6 +99,5 @@ This is a list of labels that Trilium natively supports.
 | `fullContentWidth` | Expands the note to the full editor width, ignoring the configured content width (useful for wide tables). See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a>. |
 | `iconPack` | Identifies a custom icon pack by its prefix. See <a class="reference-link" href="../../Theme%20development/Creating%20an%20icon%20pack.md">Creating an icon pack</a>. |
 | `clipperInbox` | Overrides the default location where the Web Clipper saves clippings (defaults to the day note). See <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a>. |
-| `similarNotesWidgetDisabled` | Disables the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Similar%20Notes.md">Similar Notes</a> ribbon tab (old layout only) |
 | `docName` , `docUrl` | Used internally for the in-app help. |
 | `aiQuickAction` | Defines a custom prompt to be used for the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>'s quick actions. |

@@ -1,19 +1,17 @@
 # Mark files as auto-generated to simplify reviews.
 package-lock.json linguist-generated=true
 **/package-lock.json linguist-generated=true
-apps/server/src/assets/doc_notes/en/User[[:space:]]Guide/** linguist-generated
+apps/server/src/assets/help/** linguist-generated=true
 
 # Ignore from GitHub language stats.
-apps/server/src/assets/doc_notes/** linguist-vendored=true
 apps/edit-docs/demo/** linguist-vendored=true
 docs/** linguist-vendored=true
 
-# Normalize line endings. edit-docs writes the three generated trees with LF, so they have to
+# Normalize line endings. edit-docs writes the generated trees with LF, so they have to
 # check out with LF too — otherwise every export leaves them looking modified on Windows.
 # `text=auto` keeps the images and other binary attachments they contain out of the conversion.
 patches/** eol=lf
 docs/** text=auto eol=lf
-apps/server/src/assets/doc_notes/** text=auto eol=lf
 apps/edit-docs/demo/** text=auto eol=lf
 *.sh eol=lf
 

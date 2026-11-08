@@ -33,6 +33,11 @@ class NoteSet {
         return this.noteIdSet.has(noteId);
     }
 
+    /** The note IDs as one JSON array, the parameter of `IN (SELECT value FROM json_each(?))`. */
+    toSqlParam() {
+        return JSON.stringify([ ...this.noteIdSet ]);
+    }
+
     mergeIn(anotherNoteSet: NoteSet) {
         this.addAll(anotherNoteSet.notes);
     }

@@ -20,30 +20,20 @@ import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { promisify } from "util";
 
-import { findOnPath } from "./binary_lookup.js";
+import { cachedProbe, describeFlatpakSandbox, findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
-/**
- * The in-flight/successful resolution. Caching the promise lets concurrent
- * first calls share one probe; a failed probe clears it so a later install is
- * picked up without a restart.
- */
-let cachedResolution: Promise<string> | undefined;
+/** The probed binary, shared by concurrent first calls (see {@link cachedProbe}). */
+const probed = cachedProbe(probeBinary);
 
 export function resolveClaudeBinaryPath(): Promise<string> {
-    if (!cachedResolution) {
-        cachedResolution = probeBinary().catch((err: unknown) => {
-            cachedResolution = undefined;
-            throw err;
-        });
-    }
-    return cachedResolution;
+    return probed.resolve();
 }
 
 /** For tests: forget the probed binary so the next call re-resolves. */
 export function resetClaudeBinaryCache(): void {
-    cachedResolution = undefined;
+    probed.reset();
 }
 
 async function probeBinary(): Promise<string> {
@@ -86,5 +76,5 @@ async function locateBinary(): Promise<string> {
         return onPath;
     }
 
-    throw new Error("Claude Code CLI not found. Install it (`npm install -g @anthropic-ai/claude-code`) and run `claude /login` on the machine running the Trilium server, or set the TRILIUM_CLAUDE_CODE_PATH environment variable to its location.");
+    throw new Error(await describeFlatpakSandbox("Claude Code") ?? "Claude Code CLI not found. Install it (`npm install -g @anthropic-ai/claude-code`) and run `claude /login` on the machine running the Trilium server, or set the TRILIUM_CLAUDE_CODE_PATH environment variable to its location.");
 }

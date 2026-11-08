@@ -108,7 +108,7 @@ copyright (c) 2020 Bohan Niu, **ISC** licensed. Trilium took it by way of
 [ThomasAitken/ckeditor5-footnotes](https://github.com/ThomasAitken/ckeditor5-footnotes), as the
 *Technologies used* page in the User Guide records. [`LICENSE.md`](./LICENSE.md) next to this file
 reproduces the original licence in full; ISC is permissive and combines with this repository's
-AGPL-3.0-only licence.
+AGPL-3.0-or-later licence.
 
 It is **not** tracked against upstream and cannot easily be: upstream targets a much older
 CKEditor 5, and the source here was ported to TypeScript and through the `Element` → `ModelElement`

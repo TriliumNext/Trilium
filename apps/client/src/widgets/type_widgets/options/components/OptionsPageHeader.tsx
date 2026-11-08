@@ -30,6 +30,11 @@ interface OptionsPageHeaderProps {
      * where the help is page-level rather than scoped to one card.
      */
     helpUrl?: string;
+    /**
+     * Shown beside the title as part of it, such as a "Beta" `Badge`: unlike {@link actions}, it does
+     * not keep a phone from showing the title in the back bar instead.
+     */
+    badge?: ComponentChildren;
     /** Title of a page that is not a note of its own, such as the options search. */
     title?: string;
     /** Icon to go with {@link OptionsPageHeaderProps.title}, in `bx bx-…` form. */
@@ -47,7 +52,7 @@ interface OptionsPageHeaderProps {
  * header the same way in all of them.
  */
 export default function OptionsPageHeader({
-    actions, below, helpUrl, title, icon
+    actions, below, badge, helpUrl, title, icon
 }: OptionsPageHeaderProps) {
     const { note } = useNoteContext();
     const shownTitle = title ?? note?.title;
@@ -76,6 +81,7 @@ export default function OptionsPageHeader({
                             <div className="options-page-header-titles">
                                 <span className={`options-page-header-icon ${shownIcon}`} aria-hidden="true" />
                                 <h2 className="options-page-header-title">{shownTitle}</h2>
+                                {badge}
                                 {helpUrl && !liftHelp &&
                                     <HelpButton className="options-page-header-help" helpPage={helpUrl} />}
                             </div>

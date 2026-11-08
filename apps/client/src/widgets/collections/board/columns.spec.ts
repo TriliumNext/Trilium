@@ -8,6 +8,7 @@ import { buildNote } from "../../../test/easy-froca";
 import {
     BOARD_TEMPLATE_ID,
     canStoreColumnsInDefinition,
+    DEFAULT_CARD_TEMPLATES,
     columnWidthClass,
     getStatusDefinition,
     parseColumnWidth,
@@ -234,5 +235,16 @@ describe("columnWidthClass", () => {
         expect(columnWidthClass("")).toBeUndefined();
         expect(columnWidthClass(null)).toBeUndefined();
         expect(columnWidthClass(undefined)).toBeUndefined();
+    });
+});
+
+describe("DEFAULT_CARD_TEMPLATES", () => {
+    it("offers text, Markdown, canvas and a spreadsheet until the reader says otherwise", () => {
+        expect(DEFAULT_CARD_TEMPLATES).toEqual([
+            "type:text:text/html",
+            "type:code:text/x-markdown",
+            "type:canvas:application/json",
+            "type:spreadsheet:application/json"
+        ]);
     });
 });

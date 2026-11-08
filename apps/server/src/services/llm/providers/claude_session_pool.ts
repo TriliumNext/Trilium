@@ -18,12 +18,14 @@
  * manual: `for await (…) { break }` calls `iterator.return()`, which would
  * close the query and defeat the whole point.
  *
- * Sessions are keyed by chat note, reaped after {@link IDLE_TIMEOUT_MS}, and
- * rebuilt whenever an option that is fixed at construction changes.
+ * Sessions are keyed by chat note, plus one key for the session chat titles
+ * share, reaped after {@link IDLE_TIMEOUT_MS}, and rebuilt whenever an option
+ * that is fixed at construction changes.
  */
 
 import type { Query, SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { getLog } from "@triliumnext/core";
+import type { ToolApprovals } from "@triliumnext/core/src/services/llm/tool_approval.js";
 
 /**
  * How long an unused session's subprocess is kept warm. Unlike the Copilot
@@ -102,6 +104,11 @@ export interface ClaudeSession {
     busy: boolean;
     /** Last model asked for via `setModel`, so it is only re-sent on change. */
     model?: string;
+    /**
+     * The approvals of the turn driving the session. `canUseTool` is fixed when the session
+     * starts, so it reads the running turn's approvals from here.
+     */
+    toolApprovals?: ToolApprovals;
     idleTimer?: NodeJS.Timeout;
 }
 

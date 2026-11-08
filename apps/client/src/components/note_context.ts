@@ -18,12 +18,19 @@ import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import type { ChatHighlightsContext } from "../widgets/type_widgets/llm_chat/chat_highlights.js";
 import appContext, { type EventData, type EventListener } from "./app_context.js";
 import Component from "./component.js";
+import type { HistoryEntry } from "./tab_manager.js";
 
 export interface SetNoteOpts {
     triggerSwitchEvent?: unknown;
     viewScope?: ViewScope;
     /** If true, skip closing the currently active dialog. Used when opening a note into a stackable popup (e.g. quick-edit) that must not dismiss the dialog it was launched from. */
     keepActiveDialog?: boolean;
+    /** If true, the note is not added to the recent notes, as for an included note being edited. */
+    skipRecentNotes?: boolean;
+    /** The `switchToHistoryEntry()` call that shows the note. Pinned tabs pass it on. */
+    historyEntry?: HistoryEntry;
+    /** If true, the mobile layout stays on the screen it shows instead of switching to the note. */
+    keepScreen?: boolean;
 }
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
@@ -36,18 +43,29 @@ const READ_ONLY_CAPABLE_TYPES: string[] = [
     "mermaid",
     "canvas",
     "mindMap",
-    "spreadsheet"
+    "spreadsheet",
+    "noteMap",
+    "relationMap",
+    "render"
 ];
 
 /**
  * Collection view types that honour `#readOnly`, making a `book` note read-only capable.
  *
  * Listed by view type rather than by note type because the other views ignore the label: reporting
- * a table or a board as read-only would put a badge over a collection that can still be edited.
+ * a list or a grid as read-only would put a badge over a collection that can still be edited.
  */
 const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
-    "geoMap"
+    "board",
+    "calendar",
+    "dashboard",
+    "geoMap",
+    "presentation",
+    "table"
 ];
+
+/** View scope keys that hold the context's own state rather than what a navigation asks for. */
+const VIEW_STATE_KEYS: string[] = [ "isReadOnly", "readOnlyTemporarilyDisabled" ];
 
 export interface NoteContextDataMap {
     toc: HeadingContext;
@@ -58,6 +76,8 @@ export interface NoteContextDataMap {
         currentPage: number;
         scrollToPage(page: number): void;
         requestThumbnail(page: number): void;
+        /** Copies a reference that opens the PDF at `page`. */
+        copyReference(page: number): void;
     };
     pdfAttachments: {
         attachments: PdfAttachment[];
@@ -70,6 +90,8 @@ export interface NoteContextDataMap {
     pdfAnnotations: {
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
+        /** Copies a reference that opens the PDF at the annotation. */
+        copyReference(annotationId: string, pageNumber: number): void;
     };
     /** Published by a board, so the right pane can list its columns and scroll the board to one. */
     boardColumns: {
@@ -87,6 +109,8 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the code editor of the note, so the status bar can show the cursor position. */
+    codeEditor: CodeMirror;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,
      * so the note detail can show a loading state instead of the previous note's content. */
     contentLoad: {
@@ -156,8 +180,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     /** @returns the note context that ended up showing the note: usually `this`, or a new tab when a pinned tab redirected the navigation. `undefined` if nothing was navigated. */
     async setNote(inputNotePath: string | undefined, opts: SetNoteOpts = {}): Promise<NoteContext | undefined> {
         opts.triggerSwitchEvent = opts.triggerSwitchEvent !== undefined ? opts.triggerSwitchEvent : true;
-        opts.viewScope = opts.viewScope || {};
-        opts.viewScope.viewMode = opts.viewScope.viewMode || "default";
+        // Readers like `revealBlockReference()` change the scope, so the context keeps a copy.
+        const viewScope: ViewScope = {
+            ...opts.viewScope,
+            viewMode: opts.viewScope?.viewMode || "default"
+        };
 
         if (!inputNotePath) {
             return;
@@ -169,7 +196,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return;
         }
 
-        if (this.notePath === resolvedNotePath && utils.areObjectsEqual(this.viewScope, opts.viewScope)) {
+        if (this.notePath === resolvedNotePath && isSameViewScope(this.viewScope, viewScope)) {
             return this;
         }
 
@@ -178,8 +205,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         if (shouldRedirectPinnedNavigation(this.pinned, this.noteId, targetNoteId)) {
             return appContext.tabManager.openContextWithNote(resolvedNotePath, {
                 activate: true,
-                viewScope: opts.viewScope,
-                hoistedNoteId: this.hoistedNoteId
+                viewScope,
+                hoistedNoteId: this.hoistedNoteId,
+                historyEntry: opts.historyEntry
             });
         }
 
@@ -192,7 +220,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         const previousNoteId = this.noteId;
 
         this.notePath = resolvedNotePath;
-        this.viewScope = opts.viewScope;
+        this.viewScope = viewScope;
         ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
 
         // Clear context data only when actually switching to a different note.
@@ -210,7 +238,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             }
         }
 
-        this.saveToRecentNotes(resolvedNotePath);
+        if (!opts.skipRecentNotes) {
+            this.saveToRecentNotes(resolvedNotePath);
+        }
 
         protectedSessionHolder.touchProtectedSessionIfNecessary(this.note);
 
@@ -223,7 +253,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.setHoistedNoteIfNeeded();
 
-        if (utils.isMobile()) {
+        if (utils.isMobile() && !opts.keepScreen) {
             this.triggerCommand("setActiveScreen", { screen: "detail" });
         }
 
@@ -329,6 +359,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         return appContext.tabManager.activeNtxId === this.ntxId;
     }
 
+    /** Whether a command with the given `ntxId` targets this context: `ntxId` is this context's, or is empty while this context is active. */
+    isCommandTarget(ntxId: string | null | undefined) {
+        return ntxId ? ntxId === this.ntxId : this.isActive();
+    }
+
     getPojoState() {
         if (this.hoistedNoteId !== "root") {
             // keeping empty hoisted tab is esp. important for mobile (e.g. opened launcher config)
@@ -344,7 +379,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             notePath: this.notePath,
             hoistedNoteId: this.hoistedNoteId,
             active: this.isActive(),
-            viewScope: this.viewScope,
+            viewScope: this.viewScope && getNavigationTarget(this.viewScope),
             pinned: this.pinned,
             lastActiveNtxId: this.lastActiveNtxId
         };
@@ -361,8 +396,10 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         this.hoistedNoteId = noteIdToHoist;
 
+        // The hoisted note replaces one outside it without being opened on purpose, so a phone
+        // showing the tree keeps showing it.
         if (!this.notePathArray?.includes(noteIdToHoist)) {
-            await this.setNote(noteIdToHoist);
+            await this.setNote(noteIdToHoist, { keepScreen: true });
         }
 
         await this.triggerEvent("hoistedNoteChanged", {
@@ -373,7 +410,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
     /** @returns {Promise<boolean>} */
     async isReadOnly() {
-        if (this?.viewScope?.readOnlyTemporarilyDisabled) {
+        if (this?.viewScope?.readOnlyTemporarilyDisabled && this.note?.isContentWritable !== false) {
             return false;
         }
 
@@ -391,7 +428,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
-        if (options.is("databaseReadonly")) {
+        if (options.is("databaseReadonly") || !this.note.isContentWritable) {
             return true;
         }
 
@@ -441,15 +478,25 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             const noteRow = loadResults.getEntityRow("notes", this.noteId);
 
             if (noteRow.isDeleted) {
-                this.noteId = null;
-                this.notePath = null;
-
-                this.triggerEvent("noteSwitched", {
-                    noteContext: this,
-                    notePath: this.notePath
-                });
+                this.clearRemovedNote();
             }
         }
+    }
+
+    frocaReloadedEvent() {
+        if (this.noteId && !(this.noteId in froca.notes)) {
+            this.clearRemovedNote();
+        }
+    }
+
+    private clearRemovedNote() {
+        this.noteId = null;
+        this.notePath = null;
+
+        this.triggerEvent("noteSwitched", {
+            noteContext: this,
+            notePath: this.notePath
+        });
     }
 
     hasNoteList() {
@@ -638,7 +685,13 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     }
 }
 
-export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, notePath: string, viewScope?: ViewScope) {
+/**
+ * Opens `notePath` in the note context that the target of `evt` is in, or in the active one
+ * without such a target.
+ */
+export function openInCurrentNoteContext(
+    evt: Pick<Event, "target"> | null, notePath: string, viewScope?: ViewScope
+) {
     const ntxId = $(evt?.target as Element)
         .closest("[data-ntx-id]")
         .attr("data-ntx-id");
@@ -657,6 +710,20 @@ export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | J
     } else {
         appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
+}
+
+/**
+ * Whether navigating with `requested` shows what `current` already shows. Ignores the
+ * `VIEW_STATE_KEYS` and the keys a reader such as `consumeBookmark()` set to `undefined`.
+ */
+function isSameViewScope(current: ViewScope | undefined, requested: ViewScope) {
+    return utils.areObjectsEqual(
+        getNavigationTarget(current ?? {}), getNavigationTarget(requested));
+}
+
+function getNavigationTarget(viewScope: ViewScope) {
+    return Object.fromEntries(Object.entries(viewScope).filter(([ key, value ]) =>
+        value !== undefined && !VIEW_STATE_KEYS.includes(key)));
 }
 
 export default NoteContext;

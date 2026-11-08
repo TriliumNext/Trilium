@@ -33,10 +33,11 @@ export function useSearchResultDetails(
     const [ refreshToken, setRefreshToken ] = useState(0);
 
     const noteId = note?.noteId;
+    const noteType = note?.type;
     const pageKey = pageNoteIds.join(",");
 
     useEffect(() => {
-        if (!noteId || pageNoteIds.length === 0) {
+        if (!noteId || noteType !== "search" || pageNoteIds.length === 0) {
             // Nothing to fetch: drop any stale details and mark the newest issued fetch as this one
             // so a still-pending older response can't land later.
             seqRef.current++;
@@ -59,7 +60,7 @@ export function useSearchResultDetails(
                 setLoading(false);
             });
         // pageKey stands in for the pageNoteIds array identity; refreshToken forces a re-execution refetch.
-    }, [ noteId, pageKey, refreshToken ]);
+    }, [ noteId, noteType, pageKey, refreshToken ]);
 
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
         if (eventNtxId === ntxId) {

@@ -1,23 +1,21 @@
-import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup } from "@triliumnext/ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, ModelElement,
+    SortTargetKind
+} from "@triliumnext/ckeditor5";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const h = vi.hoisted(() => {
-    const tabManager = {
-        activeNote: null as { type: string } | null,
-        activeContext: null as { getTextEditor: () => Promise<unknown> } | null,
-        getActiveContextNote: () => tabManager.activeNote,
-        getActiveContext: () => tabManager.activeContext
-    };
-    return { tabManager };
-});
-
-vi.mock("../components/app_context.js", () => ({ default: { tabManager: h.tabManager } }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
 
+import { setEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuCommandItem, MenuItem } from "./context_menu.js";
-import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
-
-const { tabManager } = h;
+import {
+    buildAiActionsMenuItem, buildAiAssistantMenuItem, buildSortSelectionMenuItem,
+    getTextEditorAtSelection
+} from "./text_editor_context_menu.js";
 
 const GROUPS: AiQuickActionGroup[] = [
     {
@@ -56,7 +54,7 @@ function fakeEditor({
     isEnabled = true,
     hasPlugin = true
 }: {
-    domRoot: Node | null;
+    domRoot: HTMLElement;
     groups?: AiQuickActionGroup[];
     menuFooter?: AiQuickActionFooter[];
     hasContext?: boolean;
@@ -65,16 +63,55 @@ function fakeEditor({
     hasPlugin?: boolean;
 }) {
     // The live lists are the plugin's, which the editor config only seeded.
-    const ui = { hasContext, isStreaming, quickActions: groups, menuFooter, runQuickAction: vi.fn() };
+    const ui = {
+        hasContext, isStreaming, quickActions: groups, menuFooter, runQuickAction: vi.fn(),
+        isOpen: false, hide: vi.fn()
+    };
     const editor = {
         editing: { view: { getDomRoot: () => domRoot } },
         plugins: { has: () => hasPlugin, get: () => ui },
         commands: { get: () => ({ isEnabled }) },
         execute: vi.fn()
     };
-    tabManager.activeNote = { type: "text" };
-    tabManager.activeContext = { getTextEditor: () => Promise.resolve(editor) };
+    makeNoteEditorRoot(domRoot, editor, "note1");
     return { editor, ui };
+}
+
+/**
+ * An editable root of `editor`, as CKEditor renders it, in a text editor that holds the content
+ * of `noteId`.
+ */
+function noteEditorRoot(editor: object, noteId?: string) {
+    return makeNoteEditorRoot(document.createElement("div"), editor, noteId);
+}
+
+/** Turns `element` into an editable root of `editor`, which holds the content of `noteId`. */
+function makeNoteEditorRoot(element: HTMLElement, editor: object, noteId?: string) {
+    element.classList.add("ck-editor__editable");
+    Object.assign(element, { ckeditorInstance: editor });
+    if (noteId) {
+        setEditorNoteId(editor, noteId);
+    }
+    return element;
+}
+
+/** Wraps `content` in the `data-cke-ignore-events` wrapper of an embed. */
+function embedWrapper(content: HTMLElement) {
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-cke-ignore-events", "true");
+    wrapper.appendChild(content);
+    return wrapper;
+}
+
+/** The content of a code editor with one line of `text`, as CodeMirror renders it. */
+function codeContent(text: string) {
+    const content = document.createElement("div");
+    content.className = "cm-content";
+    content.setAttribute("contenteditable", "true");
+    const line = content.appendChild(document.createElement("div"));
+    line.className = "cm-line";
+    line.textContent = text;
+    return content;
 }
 
 /** Points `window.getSelection()` at `anchorNode`. */
@@ -93,34 +130,66 @@ function commandItems(items: MenuItem<string>[]) {
 describe("getTextEditorAtSelection", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
-        tabManager.activeNote = null;
-        tabManager.activeContext = null;
     });
 
-    it("returns the editor only when the selection is inside its DOM root", async () => {
-        const root = document.createElement("div");
-        const inside = document.createTextNode("hello");
-        root.appendChild(inside);
+    it("finds the editor of the note holding the selection, wherever it is", async () => {
+        for (const holder of [ "note-split", "modal popup-editor-dialog" ]) {
+            const container = document.createElement("div");
+            container.className = holder;
+            const editor = {};
+            const root = container.appendChild(noteEditorRoot(editor, "note1"));
+            const inside = root.appendChild(document.createTextNode("hello"));
 
-        const { editor } = fakeEditor({ domRoot: root });
-        setSelection(inside);
-        expect(await getTextEditorAtSelection()).toBe(editor);
+            setSelection(inside);
+            expect(await getTextEditorAtSelection(), holder).toBe(editor);
+        }
 
-        // Same editor, but the click landed in a dialog rather than in the note.
         setSelection(document.createTextNode("elsewhere"));
         expect(await getTextEditorAtSelection()).toBeNull();
+        setSelection(null);
+        expect(await getTextEditorAtSelection()).toBeNull();
     });
 
-    it("returns null for a non-text note, and swallows a failing editor lookup", async () => {
-        setSelection(document.createTextNode("hello"));
+    it("returns the editor of an included note that is edited inside the note", async () => {
+        const editor = {};
+        const root = noteEditorRoot(editor, "note1");
+        const nestedEditor = {};
+        const nestedRoot = noteEditorRoot(nestedEditor, "note2");
+        const caption = document.createElement("div");
+        caption.className = "ck-editor__editable ck-editor__nested-editable";
+        root.append(embedWrapper(nestedRoot), caption);
+        const nestedText = nestedRoot.appendChild(document.createTextNode("inside"));
+        const nestedCaption = nestedRoot.appendChild(caption.cloneNode());
 
-        tabManager.activeNote = { type: "code" };
-        tabManager.activeContext = { getTextEditor: () => Promise.reject(new Error("timed out")) };
-        expect(await getTextEditorAtSelection()).toBeNull();
+        setSelection(nestedText);
+        expect(await getTextEditorAtSelection()).toBe(nestedEditor);
+        setSelection(nestedCaption);
+        expect(await getTextEditorAtSelection()).toBe(nestedEditor);
+        // The editable caption of a widget belongs to the editor around it.
+        setSelection(caption.appendChild(document.createTextNode("caption")));
+        expect(await getTextEditorAtSelection()).toBe(editor);
+    });
 
-        tabManager.activeNote = { type: "text" };
-        vi.spyOn(console, "error").mockImplementation(() => {});
+    it("leaves out an editor that holds no note, such as the attribute editor", async () => {
+        const root = noteEditorRoot({});
+        setSelection(root.appendChild(document.createTextNode("#label")));
+
         expect(await getTextEditorAtSelection()).toBeNull();
+    });
+
+    it("leaves out the editor around the content of an embed, such as a code editor", async () => {
+        const root = noteEditorRoot({}, "note1");
+        const nestedRoot = noteEditorRoot({}, "note2");
+        root.append(embedWrapper(codeContent("const a = 1;")), embedWrapper(nestedRoot));
+        nestedRoot.appendChild(embedWrapper(codeContent("const b = 2;")));
+
+        for (const text of [ "const a = 1;", "const b = 2;" ]) {
+            const line = [ ...root.querySelectorAll(".cm-line") ]
+                .find((element) => element.textContent === text);
+            expect(line, text).toBeDefined();
+            setSelection(line?.firstChild ?? null);
+            expect(await getTextEditorAtSelection(), text).toBeNull();
+        }
     });
 });
 
@@ -144,7 +213,7 @@ describe("buildAiActionsMenuItem", () => {
         build();
         const item = await buildAiActionsMenuItem() as MenuCommandItem<string>;
 
-        expect(item.title).toBe("ai_assistant.title");
+        expect([ item.title, item.uiIcon ]).toEqual([ "ai_assistant.title", "bx bx-bot" ]);
         expect(titles(item.items ?? [])).toEqual([
             "ai_assistant.action_ask",
             "--- separator ---",
@@ -194,14 +263,18 @@ describe("buildAiActionsMenuItem", () => {
 
     // The rows the menu itself ends with — what a run answers to, the model it speaks to — reached
     // through a submenu when one holds others.
-    it("closes the whole menu with its footer rows", async () => {
+    it("closes the whole menu with its footer rows, headed as the toolbar heads them", async () => {
         const run = vi.fn();
         build({
             hasContext: false,
             menuFooter: [{
                 label: "Model: Sonnet 5",
                 iconClass: "bx bx-chip",
-                children: [{ label: "Sonnet 5", iconClass: "bx bx-check", run }]
+                children: [
+                    { label: "Sonnet 5", iconClass: "bx bx-check", heading: "Anthropic", run },
+                    { label: "Opus 5", iconClass: "bx bx-empty", run: vi.fn() },
+                    { label: "GPT-5", iconClass: "bx bx-empty", heading: "OpenAI", run: vi.fn() }
+                ]
             }]
         });
         const item = await buildAiActionsMenuItem() as MenuCommandItem<string>;
@@ -210,6 +283,12 @@ describe("buildAiActionsMenuItem", () => {
 
         const picker = commandItems(item.items ?? []).find((i) => i.title === "Model: Sonnet 5");
         expect([picker?.enabled, picker?.uiIcon]).toEqual([true, "bx bx-chip"]);
+        expect(titles(picker?.items ?? [])).toEqual([
+            "--- header ---", "Sonnet 5", "Opus 5", "--- header ---", "GPT-5"
+        ]);
+        expect(picker?.items?.filter((row) => "kind" in row)).toEqual([
+            { kind: "header", title: "Anthropic" }, { kind: "header", title: "OpenAI" }
+        ]);
 
         const [model] = commandItems(picker?.items ?? []);
         expect([model.title, model.uiIcon]).toEqual(["Sonnet 5", "bx bx-check"]);
@@ -250,5 +329,139 @@ describe("buildAiActionsMenuItem", () => {
 
         build({ hasPlugin: false });
         expect(await buildAiActionsMenuItem()).toBeNull();
+    });
+});
+
+describe("buildAiAssistantMenuItem", () => {
+    const blocks = [ "first", "last" ] as unknown as ModelElement[];
+    const blocksRange = { start: { before: "first" }, end: { after: "last" } };
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /**
+     * An editor whose `blocks` have content or not, and whose assistant reports the opposite for
+     * the selection. `log` records the selected ranges and what the rows run.
+     */
+    function blocksEditor(hasContent: boolean) {
+        const log: unknown[] = [];
+        const { editor, ui } = fakeEditor({
+            domRoot: document.createElement("div"),
+            hasContext: !hasContent
+        });
+        const model = {
+            document: { version: 0 },
+            createPositionBefore: (block: string) => ({ before: block }),
+            createPositionAfter: (block: string) => ({ after: block }),
+            createRange: (start: object, end: object) => ({ start, end }),
+            hasContent: vi.fn(() => hasContent),
+            change: (callback: (writer: object) => void) => callback({
+                setSelection: (range: object) => log.push(range)
+            })
+        };
+        editor.execute.mockImplementation((name: string) => log.push(name));
+        ui.runQuickAction.mockImplementation((action: AiQuickAction) => log.push(action.id));
+        ui.hide.mockImplementation(() => {
+            ui.isOpen = false;
+            log.push("hide");
+        });
+        const blocksEditor = Object.assign(editor, { model }) as unknown as CKTextEditor;
+        const item = buildAiAssistantMenuItem(blocksEditor, "cke cke-trilium-ai", blocks);
+        return { item: item as MenuCommandItem<string>, model, log, ui };
+    }
+
+    it("selects the blocks before a row runs, unless they changed since the menu opened", () => {
+        const { item, model, log } = blocksEditor(true);
+        const [ ask, fixTypos ] = commandItems(item.items ?? []);
+
+        expect([ item.uiIcon, ask.title, fixTypos.title ])
+            .toEqual([ "cke cke-trilium-ai", "ai_assistant.action_ask", "Fix typos" ]);
+        ask.handler?.(ask, null as never);
+        fixTypos.handler?.(fixTypos, null as never);
+        expect(log).toEqual([ blocksRange, "aiAssistant", blocksRange, "fixTypos" ]);
+
+        log.length = 0;
+        model.document.version += 1;
+        ask.handler?.(ask, null as never);
+        expect(log).toEqual([ "aiAssistant" ]);
+    });
+
+    it("closes an open assistant before a row selects the blocks, so it starts on them", () => {
+        const { item, log, ui } = blocksEditor(true);
+        const [ ask, fixTypos ] = commandItems(item.items ?? []);
+
+        ui.isOpen = true;
+        ask.handler?.(ask, null as never);
+        ui.isOpen = true;
+        fixTypos.handler?.(fixTypos, null as never);
+        expect(log)
+            .toEqual([ "hide", blocksRange, "aiAssistant", "hide", blocksRange, "fixTypos" ]);
+    });
+
+    it("enables the quick actions that need content by the content of the blocks", () => {
+        const isFixTyposEnabled = (hasContent: boolean) => {
+            const { item, model } = blocksEditor(hasContent);
+            expect(model.hasContent).toHaveBeenCalledWith(blocksRange);
+            return commandItems(item.items ?? []).find((row) => row.title === "Fix typos")?.enabled;
+        };
+
+        expect([ isFixTyposEnabled(true), isFixTyposEnabled(false) ]).toEqual([ true, false ]);
+    });
+});
+
+describe("buildSortSelectionMenuItem", () => {
+    beforeEach(() => experimentalState.enabled.add("sortSelection"));
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** An editor whose sort commands are enabled for `kind`, over `blockCount` selected blocks. */
+    function sortEditor(kind: SortTargetKind | null = "blocks", blockCount = 2, isEnabled = true) {
+        const editor = {
+            commands: { get: () => ({ isEnabled, value: kind }) },
+            model: {
+                document: {
+                    selection: { getSelectedBlocks: () => Array.from({ length: blockCount }) }
+                }
+            },
+            editing: { view: { focus: vi.fn() } },
+            execute: vi.fn()
+        };
+        return editor as typeof editor & CKTextEditor;
+    }
+
+    it("names the submenu after what it sorts, and sorts either way", () => {
+        const titlesByKind = ([ "blocks", "listItems", "rows" ] as const).map((kind) =>
+            (buildSortSelectionMenuItem(sortEditor(kind)) as MenuCommandItem<string>).title);
+        expect(titlesByKind).toEqual([
+            "sort_selection.sort_blocks",
+            "sort_selection.sort_list_items",
+            "sort_selection.sort_rows"
+        ]);
+
+        const editor = sortEditor();
+        const item = buildSortSelectionMenuItem(editor) as MenuCommandItem<string>;
+        const rows = commandItems(item.items ?? []);
+        expect(rows.map((row) => row.title))
+            .toEqual([ "sort_selection.ascending", "sort_selection.descending" ]);
+
+        rows[1].handler?.(rows[1], null as never);
+        expect(editor.execute).toHaveBeenCalledWith("triliumSortSelectionDescending");
+        expect(editor.editing.view.focus).toHaveBeenCalled();
+        rows[0].handler?.(rows[0], null as never);
+        expect(editor.execute).toHaveBeenLastCalledWith("triliumSortSelectionAscending");
+
+        expect(buildSortSelectionMenuItem(sortEditor("listItems"), { isRowsExcluded: true }))
+            .toMatchObject({ title: "sort_selection.sort_list_items" });
+    });
+
+    it("is absent for one block, nothing to sort, excluded rows, no editor or feature", () => {
+        expect(buildSortSelectionMenuItem(sortEditor("blocks", 1))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor(null))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor("rows", 2, false))).toBeNull();
+        expect(buildSortSelectionMenuItem(sortEditor("rows"), { isRowsExcluded: true })).toBeNull();
+        expect(buildSortSelectionMenuItem(null)).toBeNull();
+
+        experimentalState.enabled.clear();
+        expect(buildSortSelectionMenuItem(sortEditor())).toBeNull();
     });
 });

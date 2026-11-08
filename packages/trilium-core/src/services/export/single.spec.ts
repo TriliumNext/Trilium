@@ -8,6 +8,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import type { ExportFormat } from "../../meta.js";
 import TaskContext from "../task_context.js";
 import { buildNote } from "../../test/becca_easy_mocking.js";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../virtual_notes.js";
 import singleExportService, { mapByNoteType } from "./single.js";
 
 describe("Note type mappings", () => {
@@ -81,8 +82,20 @@ describe("Note type mappings", () => {
         expect(result.payload).toBe(content);
     });
 
+    it("exports mind map notes as their JSON content with a .json extension", () => {
+        const content = JSON.stringify({ nodeData: { id: "root", topic: "Root", children: [] } });
+        const note = buildNote({ type: "mindMap", mime: "application/json", title: "Mind map" });
+        for (const format of [ "html", "markdown" ] as ExportFormat[]) {
+            expect(mapByNoteType(note, content, format)).toMatchObject({
+                payload: content,
+                extension: "json",
+                mime: "application/json"
+            });
+        }
+    });
+
     it("falls back to a raw .dat dump for note types without a dedicated mapping", () => {
-        // book/webView/mindMap/… aren't handled explicitly; rather than a zero-byte `.undefined`, they
+        // book/webView/… aren't handled explicitly; rather than a zero-byte `.undefined`, they
         // export their raw content with a generic extension (mirrors the zip export's `dat` fallback).
         const note = buildNote({ type: "book", mime: "", title: "My book" });
         expect(mapByNoteType(note, "raw contents", "html")).toMatchObject({
@@ -254,24 +267,56 @@ describe("exportSingleNote", () => {
         return { result: singleExportService.exportSingleNote(taskContext, branch, format as ExportFormat, res), res };
     }
 
-    it("writes the mapped payload and download headers for a supported note", () => {
+    it("writes the mapped payload and download headers for a supported note", async () => {
         const note = buildNote({ type: "code", mime: "text/x-markdown", title: "script" });
         vi.spyOn(note, "getContent").mockReturnValue("# hi");
 
-        const { res } = exportNote(note, "html");
+        const { result, res } = exportNote(note, "html");
+        await result;
 
         expect(res.setHeader).toHaveBeenCalledWith("Content-Disposition", expect.stringContaining("script.md"));
         expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "text/x-markdown; charset=UTF-8");
         expect(res.send).toHaveBeenCalledWith("# hi");
     });
 
-    it("throws a ValidationError for note types and formats it cannot export", () => {
+    it("inlines the pictures and files of a virtual note, which exist only behind its provider", async () => {
+        registerVirtualNoteProvider({
+            namespace: "_vsingle",
+            parentNoteId: "_hidden",
+            getSubtree: () => [],
+            getAssets: () => [
+                { id: "a1", url: "assets/v1/vsingle/pic.png", title: "pic.png", mime: "image/png", getContent: async () => new Uint8Array([ 1, 2, 3 ]) },
+                { id: "a2", url: "assets/v1/vsingle/data.dat", title: "data.dat", mime: "application/octet-stream", getContent: async () => new Uint8Array([ 4, 5 ]) },
+                { id: "a3", url: "assets/v1/vsingle/gone.png", title: "gone.png", mime: "image/png", getContent: async () => null }
+            ]
+        });
+
+        try {
+            const note = buildNote({
+                id: "_vsinglePage", type: "text", title: "Page",
+                content: `<img src="assets/v1/vsingle/pic.png"><a href="assets/v1/vsingle/data.dat">data</a><img src="assets/v1/vsingle/gone.png">`
+            });
+            note.isVirtual = true;
+
+            const { result, res } = exportNote(note, "html");
+            await result;
+
+            const payload = String(vi.mocked(res.send).mock.calls[0][0]);
+            expect(payload).toContain(`src="data:image/png;base64,AQID"`);
+            expect(payload).toContain(`href="data:application/octet-stream;base64,BAU=" download="data.dat"`);
+            expect(payload).toContain(`src="assets/v1/vsingle/gone.png"`);
+        } finally {
+            unregisterVirtualNoteProvider("_vsingle");
+        }
+    });
+
+    it("throws a ValidationError for note types and formats it cannot export", async () => {
         // A returned [status, body] tuple used to be dropped on the floor by the route, leaving the
         // request unanswered; throwing an HttpError is what actually reaches the client.
         for (const type of ["image", "file"] as const) {
             const note = buildNote({ type, title: "Binary" });
 
-            expect(() => exportNote(note, "html")).toThrow(
+            await expect(exportNote(note, "html").result).rejects.toThrow(
                 expect.objectContaining({
                     name: "ValidationError",
                     statusCode: 400,
@@ -280,7 +325,7 @@ describe("exportSingleNote", () => {
             );
         }
 
-        expect(() => exportNote(buildNote({ type: "text", title: "Texty" }), "pdf")).toThrow(
+        await expect(exportNote(buildNote({ type: "text", title: "Texty" }), "pdf").result).rejects.toThrow(
             expect.objectContaining({ name: "ValidationError", statusCode: 400, message: "Unrecognized format 'pdf'" })
         );
     });

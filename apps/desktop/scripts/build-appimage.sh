@@ -46,6 +46,9 @@ mkdir -p "$APPDIR"
 
 # Copy the packaged app contents into the AppDir
 cp -a "$PACKAGED_DIR"/. "$APPDIR/"
+# `cp -a` carries the packaged dir's 0700 mode onto the AppDir, and appimagetool refuses an
+# AppDir that other users cannot read.
+chmod -R a+rX "$APPDIR"
 
 # Create the AppRun entry point
 cat > "$APPDIR/AppRun" << 'APPRUN_EOF'
@@ -60,7 +63,6 @@ cat > "$APPDIR/$EXECUTABLE_NAME.desktop" << DESKTOP_EOF
 [Desktop Entry]
 Name=$PRODUCT_NAME
 Comment=Build your personal knowledge base with Trilium Notes
-GenericName=Note Taking Application
 Keywords=Trillium;
 Exec=$EXECUTABLE_NAME %U
 Icon=$EXECUTABLE_NAME

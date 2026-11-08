@@ -34,6 +34,10 @@ export default class CompositeMessagingProvider implements MessagingProvider {
         this.ws.attachToHttpServer(httpServer, sessionParser);
     }
 
+    disconnectAllClients(reason: string): void {
+        this.ws.disconnectAllClients(reason);
+    }
+
     setClientMessageHandler(handler: ClientMessageHandler): void {
         this.ipc.setClientMessageHandler((id, message) => handler(`${IPC_PREFIX}${id}`, message));
         this.ws.setClientMessageHandler((id, message) => handler(`${WS_PREFIX}${id}`, message));

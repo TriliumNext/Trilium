@@ -23,6 +23,11 @@ interface BuiltinLabelCommon {
      */
     isDangerous?: boolean;
     /**
+     * Whether the label can be switched off by a `disabled:` prefix, keeping its value, although it
+     * is not dangerous. Gives it a `disabled:*` member of {@link LabelNames}, as a dangerous one has.
+     */
+    canBeDisabled?: boolean;
+    /**
      * Whether the *value* may contain user data, even though the *name* is system-defined. The name of
      * such an attribute is safe to keep in an anonymized database dump, its value is not — see
      * `anonymization.ts`, which preserves builtin attributes wholesale except for these.
@@ -72,11 +77,19 @@ export interface BuiltinRelation {
     type: "relation";
     name: string;
     isDangerous?: boolean;
+    /**
+     * Whether the relation can be switched off by a `disabled:` prefix, keeping its target, although
+     * it is not dangerous. Gives it a `disabled:*` member of {@link RelationNames}, as a dangerous
+     * one has.
+     */
+    canBeDisabled?: boolean;
 }
 
 const BUILTIN_ATTRIBUTES = [
     // Note tree & organisation
     { type: "label", name: "inbox", valueType: "boolean" },
+    // Marks a note created by the "Record meeting" launcher, which holds a meeting transcript.
+    { type: "label", name: "meetingRecording", valueType: "boolean" },
     { type: "label", name: "disableVersioning", valueType: "boolean" },
     { type: "label", name: "versioningLimit", valueType: "number" },
     { type: "label", name: "calendarRoot", valueType: "boolean" },
@@ -103,7 +116,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "customRequestHandler", valueType: "text", isDangerous: true },
     { type: "label", name: "customResourceProvider", valueType: "text", isDangerous: true },
     { type: "label", name: "widget", valueType: "boolean", isDangerous: true },
-    { type: "label", name: "similarNotesWidgetDisabled", valueType: "boolean" },
     { type: "label", name: "workspace", valueType: "boolean" },
     { type: "label", name: "workspaceIconClass", valueType: "text" },
     { type: "label", name: "workspaceTabBackgroundColor", valueType: "color" },
@@ -130,14 +142,19 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "yearNote", valueType: "text", hasUserValue: true },
     { type: "label", name: "pageSize", valueType: "number" },
     { type: "label", name: "viewType", valueType: "select", selectOptions: [
-        "list", "grid", "calendar", "table", "geoMap", "board", "presentation", "dashboard"
+        "list", "searchPreview", "grid", "calendar", "table", "geoMap", "board", "presentation", "dashboard"
     ] },
     { type: "label", name: "mapRootNoteId", valueType: "text" },
     { type: "label", name: "mapExcludeRelation", valueType: "text" },
     { type: "label", name: "mapIncludeRelation", valueType: "text" },
     // Keeps a note out of the note map -- unless the map is rooted at it, which journals rely on.
     { type: "label", name: "excludeFromNoteMap", valueType: "boolean" },
+    { type: "label", name: "excludeFromLlm", valueType: "boolean" },
     { type: "label", name: "bookmarkFolder", valueType: "boolean" },
+    // Where a click on the note's launch bar button opens it. Without the label, in the current tab.
+    { type: "label", name: "bookmarkOpenMode", valueType: "select", selectOptions: [
+        "currentTab", "newTab", "newSplit", "newWindow", "quickEdit"
+    ] },
     { type: "label", name: "sorted", valueType: "boolean" },
     { type: "label", name: "sortDirection", valueType: "select", selectOptions: [ "asc", "desc" ] },
     { type: "label", name: "sortFoldersFirst", valueType: "boolean" },
@@ -180,6 +197,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "displayRelations", valueType: "text" },
     { type: "label", name: "hideRelations", valueType: "text" },
     { type: "label", name: "titleTemplate", valueType: "text", isDangerous: true },
+    // Set on a template: the default title of a note created from it, as `#titleTemplate` is for children.
+    { type: "label", name: "template:titleTemplate", valueType: "text", isDangerous: true },
     { type: "label", name: "template", valueType: "boolean" },
     { type: "label", name: "snippet", valueType: "boolean" },
     { type: "label", name: "snippetDescription", valueType: "text", hasUserValue: true },
@@ -187,8 +206,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "textSnippetDescription", valueType: "text", hasUserValue: true },
     // Offers the note's content as an instruction in the text editor's AI assistant menu.
     { type: "label", name: "aiQuickAction", valueType: "boolean" },
-    // Forces the table of contents open or shut; without the label the heading count decides.
-    { type: "label", name: "toc", valueType: "select", selectOptions: [ "show", "hide" ] },
     { type: "label", name: "color", valueType: "color" },
     { type: "label", name: "keepCurrentHoisting", valueType: "boolean" },
     { type: "label", name: "executeButton", valueType: "boolean" },
@@ -196,9 +213,10 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "executeTitle", valueType: "text", hasUserValue: true },
     { type: "label", name: "newNotesOnTop", valueType: "boolean" },
     { type: "label", name: "clipperInbox", valueType: "boolean" },
-    // Stamped by the web clipper on what it saves, recording which of its actions produced the note.
+    // Stamped by the web clipper and the PWA share target on what they save, recording which
+    // action produced the note.
     { type: "label", name: "clipType", valueType: "select", selectOptions: [
-        "clippings", "page", "note", "tabs"
+        "clippings", "page", "note", "tabs", "file", "share"
     ] },
     { type: "label", name: "sentFromSender", valueType: "boolean" },
     { type: "label", name: "hideChildrenOverview", valueType: "boolean" },
@@ -207,13 +225,17 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "mediaNotesPlayMode", valueType: "select", selectOptions: [ "loop", "next" ] },
     { type: "label", name: "collection", valueType: "boolean" },
     { type: "label", name: "webViewSrc", valueType: "url", isDangerous: true },
-    { type: "label", name: "hideHighlightWidget", valueType: "boolean" },
     { type: "label", name: "iconPack", valueType: "text", isDangerous: true },
     { type: "label", name: "docName", valueType: "text", isDangerous: true },
     { type: "label", name: "docUrl", valueType: "url", isDangerous: true },
     { type: "label", name: "language", valueType: "text", hasUserValue: true },
     { type: "label", name: "originalFileName", valueType: "text", hasUserValue: true },
     { type: "label", name: "pageUrl", valueType: "url", hasUserValue: true },
+    // Metadata the web clipper saves with a page; shown in the "Web clip" badge's details.
+    { type: "label", name: "pageDescription", valueType: "text", hasUserValue: true },
+    { type: "label", name: "pageAuthor", valueType: "text", hasUserValue: true },
+    { type: "label", name: "publishedDate", valueType: "date", hasUserValue: true },
+    { type: "label", name: "modifiedDate", valueType: "date", hasUserValue: true },
     { type: "label", name: "command", valueType: "text", hasUserValue: true },
     // Which half of the split editor a code-like note opens on; without it the read-only state decides.
     { type: "label", name: "displayMode", valueType: "select", hasUserValue: true, selectOptions: [
@@ -241,7 +263,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "builtinWidget", valueType: "select", selectOptions: [
         "calendar", "spacer", "bookmarks", "protectedSession", "syncStatus", "backInHistoryButton",
         "forwardInHistoryButton", "todayInJournal", "quickSearch", "mobileTabSwitcher", "sidebarChat",
-        "colorSchemeSwitcher"
+        "colorSchemeSwitcher", "recordMeeting"
     ] },
     // Dangerous together with `~script` below: it makes the launcher run its own content instead, so
     // neutralising only the relation would leave this as a way around it.
@@ -269,6 +291,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "maxNestingDepth", valueType: "number", hasUserValue: true },
     { type: "label", name: "includeArchived", valueType: "boolean", hasUserValue: true },
     { type: "label", name: "board:showInbox", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "board:hideAddColumn", valueType: "boolean", hasUserValue: true },
     // Carried by a card that stands in for another note: opening it navigates there instead.
     { type: "relation", name: "board:cardRedirectTo" },
     // The previous name of the relation above. Still read, so existing boards keep redirecting.
@@ -286,9 +309,11 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "calendar:initialDate", valueType: "date", hasUserValue: true },
     { type: "label", name: "calendar:hideWeekends", valueType: "boolean", hasUserValue: true },
     { type: "label", name: "calendar:weekNumbers", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "calendar:hideRoutineEvents", valueType: "boolean", hasUserValue: true },
     { type: "label", name: "calendar:slotDuration", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:slotLabelInterval", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:title", valueType: "text", hasUserValue: true },
+    { type: "label", name: "calendar:titleTemplate", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:displayedAttributes", valueType: "text", hasUserValue: true },
     // Each names the label an event reads a given field from, overriding the default listed after it.
     { type: "label", name: "calendar:startDate", valueType: "text", hasUserValue: true },
@@ -305,11 +330,19 @@ const BUILTIN_ATTRIBUTES = [
     // A shape drawn onto a geo map: a kind, a colon, then a `lat,lng` per vertex (see the
     // client's geomap/shapes.ts).
     { type: "label", name: "geoShape", valueType: "text", hasUserValue: true },
+    // The counterparts of `geolocation` and `geoShape` on a map drawn over an image (`~map:image`):
+    // `x,y` in the map's coordinates, which are the image's own pixels unless the map names others.
+    { type: "label", name: "mapPosition", valueType: "text", hasUserValue: true },
+    { type: "label", name: "mapShape", valueType: "text", hasUserValue: true },
+    // The coordinates of an image map's top-left and bottom-right corners, as `x,y x,y`.
+    { type: "label", name: "map:imageBounds", valueType: "text", hasUserValue: true },
     // Which note map a note map note draws; anything but `tree` is read as `link`.
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
         "link", "tree"
     ] },
-    { type: "label", name: "map:style", valueType: "text", hasUserValue: true },
+    // A built-in style's name, or the URL of a raster tileset. A tileset is switched off rather than
+    // removed when the map goes back to a built-in style, so its URL is kept for switching back.
+    { type: "label", name: "map:style", valueType: "text", hasUserValue: true, canBeDisabled: true },
     // Says of a style Trilium knows nothing about that it is a dark one, which only the style itself
     // can tell. The styles offered in the collection properties declare it for themselves.
     { type: "label", name: "map:darkStyle", valueType: "boolean", hasUserValue: true },
@@ -354,6 +387,9 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "runOnChildNoteCreation", isDangerous: true },
     { type: "relation", name: "runOnAttributeCreation", isDangerous: true },
     { type: "relation", name: "runOnAttributeChange", isDangerous: true },
+    // The image a geo map draws in place of a world map. Switched off rather than removed when the
+    // map goes back to a world map, so the image is kept for switching back.
+    { type: "relation", name: "map:image", canBeDisabled: true },
     { type: "relation", name: "template" },
     // Set on a template: where a note created from it goes when no parent is picked explicitly.
     { type: "relation", name: "template:newNoteDefaultParent" },
@@ -395,10 +431,11 @@ type RelationEntry = Extract<BuiltinAttributeEntry, { type: "relation" }>;
 
 /**
  * The `disabled:`-prefixed forms of the dangerous entries in `T`, which is how a dangerous attribute is
- * neutralised without losing its value. Derived rather than enumerated, so marking an attribute
- * dangerous is enough to make its disabled form known to the type system.
+ * neutralised without losing its value, and of the ones that opt in with `canBeDisabled`. Derived
+ * rather than enumerated, so either flag makes the disabled form known to the type system.
  */
-type DisabledForms<T extends { name: string }> = `disabled:${Extract<T, { isDangerous: true }>["name"]}`;
+type DisabledForms<T extends { name: string }> =
+    `disabled:${Extract<T, { isDangerous: true } | { canBeDisabled: true }>["name"]}`;
 
 /**
  * What each label type is read as in TypeScript. Written as a mapped type over {@link LabelType} so a

@@ -27,6 +27,8 @@ export interface ClientOpts {
      * address that has already been vetted, rather than on whatever DNS answers at connect time.
      */
     lookup?: unknown;
+    /** Chromium HTTP cache mode, read by `electron.net` and ignored by the node clients. */
+    cache?: "default" | "no-store";
 }
 
 type RequestEvent = "error" | "response" | "abort";
@@ -116,6 +118,9 @@ export default class NodeRequestProvider implements RequestProvider {
 
                 if (opts.auth) {
                     headers["trilium-cred"] = Buffer.from(`dummy:${opts.auth.password}`).toString("base64");
+                    if (opts.auth.totpToken) {
+                        headers["trilium-totp"] = opts.auth.totpToken;
+                    }
                 }
 
                 const request = resolvedClient.request({
@@ -129,7 +134,9 @@ export default class NodeRequestProvider implements RequestProvider {
                     path: parsedTargetUrl.path,
                     timeout: opts.timeout, // works only for node.js client
                     headers,
-                    agent: proxyAgent
+                    agent: proxyAgent,
+                    // Chromium caches a 301 indefinitely, so a cached redirect would outlive a fixed sync host.
+                    cache: "no-store"
                 });
 
                 request.on("error", (err) => reject(generateError(opts, err)));
@@ -203,9 +210,11 @@ export default class NodeRequestProvider implements RequestProvider {
      * a server can see is not one the author of a note is entitled to reach through it.
      */
     async fetchResource(resourceUrl: string, opts: FetchResourceOpts): Promise<FetchedResource> {
-        const response = await safeFetch(resourceUrl, { headers: opts.headers });
+        const response = await safeFetch(resourceUrl, {
+            method: opts.method, headers: opts.headers
+        });
 
-        return await readCappedResponse(response, opts.maxBytes);
+        return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
     }
 
     /**

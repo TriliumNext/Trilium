@@ -486,7 +486,7 @@ describe("commands and events", () => {
         expect(triggerCommand).toHaveBeenCalledWith("addTextToActiveEditor", { text: "hello" });
 
         api.refreshIncludedNote("incl1");
-        expect(triggerEvent).toHaveBeenCalledWith("refreshIncludedNote", { noteId: "incl1" });
+        expect(triggerEvent).toHaveBeenCalledWith("refreshEmbeddedNote", { noteId: "incl1" });
     });
 
     it("getActiveNoteDetailWidget resolves through the executeInActiveNoteDetailWidget command callback", async () => {

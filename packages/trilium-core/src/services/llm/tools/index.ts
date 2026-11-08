@@ -14,6 +14,7 @@ export { ToolRegistry } from "./tool_registry.js";
 
 import { attachmentTools } from "./attachment_tools.js";
 import { attributeTools } from "./attribute_tools.js";
+import { helpTools } from "./help_tools.js";
 import { hierarchyTools } from "./hierarchy_tools.js";
 import { iconTools } from "./icon_tools.js";
 import { noteTools } from "./note_tools.js";
@@ -33,6 +34,7 @@ import type { ToolRegistry } from "./tool_registry.js";
  */
 export const allToolRegistries: ToolRegistry[] = [
     noteTools,
+    helpTools,
     attributeTools,
     attachmentTools,
     hierarchyTools,
@@ -94,4 +96,33 @@ export function resolveToolRegistries(): Promise<void> {
         }
     })();
     return inFlightResolve;
+}
+
+/** The web search tools that run in place of a model's built-in search. */
+const WEB_TOOLS = new Set([ "web_search", "read_web_page" ]);
+
+/**
+ * What a tool's calls touch, which decides when they wait for approval: only what ships with Trilium
+ * (`"app_content"`), the web, which the chat's web search switch already allows (`"web"`), the
+ * user's data without changing it (`"read"`), or the user's data to change it (`"change"`).
+ */
+export type ToolKind = "app_content" | "web" | "read" | "change";
+
+/**
+ * The {@link ToolKind} of a tool, from its registry definition or as one of the web search
+ * tools. A tool none of them names, such as one a future integration adds, counts as a change.
+ */
+export function toolKind(toolName: string): ToolKind {
+    if (WEB_TOOLS.has(toolName)) {
+        return "web";
+    }
+    for (const registry of allToolRegistries) {
+        for (const [ name, definition ] of registry) {
+            if (name === toolName) {
+                if (definition.mutates) return "change";
+                return definition.readsUserData === false ? "app_content" : "read";
+            }
+        }
+    }
+    return "change";
 }

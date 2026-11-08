@@ -24,6 +24,8 @@ export default class SnippetListItemButtonView extends ButtonView {
         this.definition = definition;
 
         this.set({
+            // Drawn by `SnippetTextPartView` instead, and read by `ToolbarGroupMenu`.
+            label: definition.title,
             withText: true,
             class: "ck-template-button",
             role: "option"

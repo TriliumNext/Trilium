@@ -179,12 +179,10 @@ function useIconPackFont(note: FNote): IconPackFont | null {
  *
  * The bytes are fetched here, from the host document, rather than being referenced by their API URL
  * from the preview's `@font-face`: the preview lives in a `src`-less iframe, whose `about:blank`
- * document is *not* controlled by a service worker and carries none of the host's request
- * interceptors. In standalone that means such a request never reaches the SQLite worker — it goes
- * to the real network, where the SPA fallback answers a font request with `index.html`, and the
- * browser reports "Failed to decode downloaded font". The same holds on iOS/Capacitor, whose
- * fetch/stylesheet interceptors are likewise installed on the host document only. A `blob:` URL
- * needs no such routing, so it works on every platform.
+ * document is *not* controlled by a service worker. In standalone that means such a request never
+ * reaches the SQLite worker — it goes to the real network, where the SPA fallback answers a font
+ * request with `index.html`, and the browser reports "Failed to decode downloaded font". A `blob:`
+ * URL needs no such routing, so it works on every platform.
  */
 export async function loadIconPackFont(note: FNote): Promise<IconPackFont | null> {
     const attachments = await note.getAttachmentsByRole("file");

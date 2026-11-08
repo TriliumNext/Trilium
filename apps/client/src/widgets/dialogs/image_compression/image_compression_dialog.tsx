@@ -146,8 +146,7 @@ function ImageCompressionDialog({ target, onFinished }: {
         <Modal
             className="image-compression-dialog"
             title={action}
-            size="sm"
-            minWidth={COMPRESSION_DIALOG_MIN_WIDTH}
+            size="md"
             show={shown}
             onHidden={() => void runPendingCompression()}
             footer={<>
@@ -197,13 +196,6 @@ function ImageCompressionDialog({ target, onFinished }: {
         </Modal>
     );
 }
-
-/**
- * The width the dialog starts at, narrow on purpose: a few settings read top to bottom rather than
- * scanned across. A floor rather than a size — row titles never wrap, so a long translation widens
- * the dialog instead of folding onto a second line (see the sections' stylesheet).
- */
-const COMPRESSION_DIALOG_MIN_WIDTH = "420px";
 
 /**
  * Longer than the default couple of seconds: this reports on something that ran unattended and has

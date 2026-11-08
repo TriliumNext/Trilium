@@ -158,7 +158,9 @@ function getChanged(req: Request) {
     }
 
     let lastEntityChangeId = parseInt(req.query.lastEntityChangeId);
+    const requestedEntityChangeId = lastEntityChangeId;
     const clientInstanceId = req.query.instanceId;
+    const logMarkerId = typeof req.query.logMarkerId === "string" ? req.query.logMarkerId : "?";
 
     // Optional per-client limit: blob rows whose content exceeds this many bytes are served with
     // empty content (a stub). Only clients that opt in (currently mobile) send it; the entity_change
@@ -227,10 +229,6 @@ function getChanged(req: Request) {
         }
     }
 
-    if (entityChangeRecords.length > 0) {
-        getLog().info(`Returning ${entityChangeRecords.length} entity changes in ${Date.now() - startTime}ms`);
-    }
-
     // `outstandingPullCount` is a progress estimate returned on every pull request. Counting with
     // only `isSynced` + `id` is an index-only range scan on IDX_entity_changes_isSynced_id; adding
     // an `instanceId != ?` filter (instanceId is not in the index) forces a table lookup per row,
@@ -249,6 +247,12 @@ function getChanged(req: Request) {
         [lastEntityChangeId]
     );
 
+    if (entityChangeRecords.length > 0) {
+        getLog().info(`Sync ${logMarkerId}: returning ${entityChangeRecords.length} entity changes `
+            + `after entity change ${requestedEntityChangeId} (~${estimatedResponseBytes} bytes, `
+            + `${outstandingPullCount} outstanding) in ${Date.now() - startTime}ms`);
+    }
+
     return {
         entityChanges: entityChangeRecords,
         lastEntityChangeId,
@@ -259,7 +263,7 @@ function getChanged(req: Request) {
 const partialRequests: Record<
     string,
     {
-        createdAt: number;
+        lastPageAt: number;
         payload: string;
     }
 > = {};
@@ -332,23 +336,25 @@ function update(req: Request) {
 
         if (pageIndex === 0) {
             partialRequests[requestId] = {
-                createdAt: Date.now(),
+                lastPageAt: Date.now(),
                 payload: ""
             };
         }
 
-        if (!partialRequests[requestId]) {
+        const partialRequest = partialRequests[requestId];
+        if (!partialRequest) {
             throw new Error(`Partial request ${requestId}, page ${pageIndex + 1} of ${pageCount} of pages does not have expected record.`);
         }
 
-        partialRequests[requestId].payload += req.body;
+        partialRequest.lastPageAt = Date.now();
+        partialRequest.payload += req.body;
 
         getLog().info(`Receiving a partial request ${requestId}, page ${pageIndex + 1} out of ${pageCount} pages.`);
 
         if (pageIndex !== pageCount - 1) {
             return;
         }
-        body = JSON.parse(partialRequests[requestId].payload);
+        body = JSON.parse(partialRequest.payload);
         delete partialRequests[requestId];
     }
 
@@ -357,17 +363,19 @@ function update(req: Request) {
     getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
 }
 
-/* v8 ignore start -- module-level timer, not invoked in tests */
-setInterval(() => {
+/** Drops paged pushes that received no page for 20 minutes, which their client has abandoned. */
+export function cleanUpPartialRequests() {
     for (const key in partialRequests) {
-        if (Date.now() - partialRequests[key].createdAt > 20 * 60 * 1000) {
+        if (Date.now() - partialRequests[key].lastPageAt > 20 * 60 * 1000) {
             getLog().info(`Cleaning up unfinished partial requests for ${key}`);
 
             delete partialRequests[key];
         }
     }
-}, 60 * 1000);
-/* v8 ignore stop */
+}
+
+/* v8 ignore next -- module-level timer, not invoked in tests */
+setInterval(cleanUpPartialRequests, 60 * 1000);
 
 function syncFinished() {
     // after the first sync finishes, the application is ready to be used

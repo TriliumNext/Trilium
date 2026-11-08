@@ -113,7 +113,6 @@
         "quick_start": "Sélectionnez un format de package approprié, en fonction de votre distribution :",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",

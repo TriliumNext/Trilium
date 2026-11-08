@@ -4,7 +4,7 @@ import type TaskContext from "../task_context.js";
 import { extname } from "../utils/path.js";
 import type { ZipSource } from "../zip_provider.js";
 import anytypeImportService from "./anytype/importer.js";
-import type { File } from "./common.js";
+import { type File, loadUploadedBytes } from "./common.js";
 import enexImportService from "./enex.js";
 import keepImportService from "./keep/importer.js";
 import notionImportService from "./notion/importer.js";
@@ -32,8 +32,8 @@ export interface ImportOptions {
  * importer identically. The caller owns the surrounding CLS setup (`disableEntityEvents`,
  * `ignoreEntityChangeIds`) and the `becca_loader.load()` afterwards.
  *
- * A `.zip` is read from `file.path` in place (streamed per entry) when present, falling back to
- * `file.buffer` for the browser/WASM upload that has no temp file.
+ * A `.zip` is read in place from `file.path` or `file.blob` when present, falling back to
+ * `file.buffer`.
  */
 export default async function importFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
     const imported = await routeToImporter(taskContext, file, parentNote, options, format);
@@ -55,12 +55,13 @@ export default async function importFile(taskContext: TaskContext<"importNotes">
 async function routeToImporter(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, options: ImportOptions, format?: string): Promise<BNote | (string | number)[] | null> {
     const extension = extname(file.originalname).toLowerCase();
 
-    // Every zip-reading importer (generic + the tagged providers) reads the archive straight from the temp
-    // file (server disk storage / native pick) so a multi-GB zip is streamed per entry — never held in one
-    // buffer, and free of fs.readFile's ~2 GiB ceiling. Falls back to the buffer when there's no path (the
-    // browser/WASM upload). The `typeof file.buffer !== "string"` guards below ensure the no-path fallback
-    // is real bytes, not a string body.
-    const zipSource: ZipSource = file.path ? { path: file.path } : file.buffer as Uint8Array;
+    // Every zip-reading importer reads the archive in place, from the temp file on the server or the
+    // picked `Blob` in the browser, so a multi-GB zip is read one entry at a time. The buffer is the
+    // fallback for an upload that has neither. The `typeof file.buffer !== "string"` guards below ensure
+    // that fallback is real bytes, not a string body.
+    const zipSource: ZipSource = file.path ? { path: file.path }
+        : file.blob ? { blob: file.blob }
+        : file.buffer as Uint8Array;
 
     if (format === "notion" && (file.path || typeof file.buffer !== "string")) {
         // An explicit format always wins over extension sniffing: a Notion export is just a `.zip`,
@@ -88,7 +89,10 @@ async function routeToImporter(taskContext: TaskContext<"importNotes">, file: Fi
             });
         }
         return await zipImportService.importZip(taskContext, zipSource, parentNote);
-    } else if (extension === ".opml" && options.explodeArchives) {
+    }
+
+    await loadUploadedBytes(file);
+    if (extension === ".opml" && options.explodeArchives) {
         return await opmlImportService.importOpml(taskContext, file.buffer, parentNote);
     } else if (extension === ".enex" && options.explodeArchives) {
         return await enexImportService.importEnex(taskContext, file, parentNote);

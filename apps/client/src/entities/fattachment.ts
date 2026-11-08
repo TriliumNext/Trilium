@@ -27,9 +27,6 @@ class FAttachment {
     private dateModified!: string;
     utcDateModified!: string;
     utcDateScheduledForErasureSince!: string;
-    /**
-     * optionally added to the entity
-     */
     contentLength!: number;
 
     constructor(froca: Froca, row: FAttachmentRow) {

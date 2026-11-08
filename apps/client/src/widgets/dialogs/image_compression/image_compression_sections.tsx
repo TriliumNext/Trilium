@@ -6,9 +6,10 @@ import clsx from "clsx";
 import { t } from "../../../services/i18n";
 import { CardSection } from "../../react/Card";
 import ContextualHelp from "../../react/ContextualHelp";
+import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
-import SegmentedChoice from "../../react/SegmentedChoice";
 import Slider from "../../react/Slider";
 import {
     type ImageCompressionToolOptions,
@@ -127,7 +128,6 @@ export function JpegHandlingSection(props: ImageCompressionSectionProps) {
             <HandlingChoice
                 {...props}
                 title={t("space_usage.compress_jpeg_handling")}
-                help={t("space_usage.compress_jpeg_handling_help")}
                 values={IMAGE_JPEG_HANDLINGS}
                 currentValue={options.jpegHandling}
                 description={props.descriptions?.jpegHandling}
@@ -156,7 +156,6 @@ export function PngHandlingSection(props: ImageCompressionSectionProps) {
             <HandlingChoice
                 {...props}
                 title={t("space_usage.compress_png_handling")}
-                help={t("space_usage.compress_png_handling_help")}
                 values={IMAGE_PNG_HANDLINGS}
                 currentValue={options.pngHandling}
                 description={props.descriptions?.pngHandling}
@@ -250,29 +249,39 @@ function SectionLabel({ title, help, description }: { title: string; help?: stri
     );
 }
 
-/** The title, help and buttons every format choice is made of. */
-function HandlingChoice<T extends string>({ title, help, description, values, currentValue, labelKey, onChoose, disabled }: {
+/** The title and the menu every format choice is made of, each entry saying what it does. */
+function HandlingChoice<T extends string>({ title, description, values, currentValue, labelKey, onChoose, disabled }: {
     title: string;
-    help: string;
     description?: string;
     values: readonly T[];
     currentValue: T;
-    /** Prefix of the translation key naming each choice, completed with the value itself. */
+    /** Prefix of the translation keys naming and describing each choice, completed with the value. */
     labelKey: string;
     onChoose: (value: T) => void;
 } & ImageCompressionSectionProps) {
     return (
         <>
-            <SectionLabel title={title} help={help} description={description} />
-            <SegmentedChoice
+            <SectionLabel title={title} description={description} />
+            <Dropdown
                 className="image-compression-section-choice"
-                // A disabled group highlights nothing rather than showing a choice it will not take.
-                currentValue={disabled ? "" : currentValue}
-                options={values.map((value) => ({ value, label: t(`space_usage.${labelKey}_${value}`) }))}
-                onChange={(value) => !disabled && onChoose(value)}
-                // Three named choices are wider than a phone: the PNG row's ran 74px past its card.
-                collapseOnMobile
-            />
+                dropdownContainerClassName="image-compression-choice-menu"
+                text={t(`space_usage.${labelKey}_${currentValue}`)}
+                disabled={disabled}
+                placement="bottom-end"
+                mobileBottomSheet
+            >
+                {values.map((value) => (
+                    <FormListItem
+                        key={value}
+                        checkable
+                        checked={value === currentValue}
+                        description={t(`space_usage.${labelKey}_${value}_description`)}
+                        onClick={() => onChoose(value)}
+                    >
+                        {t(`space_usage.${labelKey}_${value}`)}
+                    </FormListItem>
+                ))}
+            </Dropdown>
         </>
     );
 }

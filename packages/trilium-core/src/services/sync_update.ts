@@ -1,5 +1,6 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 
+import blobService from "./blob.js";
 import entityChangesService from "./entity_changes.js";
 import { getLog } from "./log.js";
 import { getSql } from "./sql/index.js";
@@ -7,6 +8,7 @@ import ws from "./ws.js";
 import { default as eventService } from "./events.js";
 import entity_constructor from "../becca/entity_constructor.js";
 import { decodeBase64, decodeBase64Into } from "./utils/binary.js";
+import dateUtils from "./utils/date.js";
 
 interface UpdateContext {
     alreadyErased: number;
@@ -74,9 +76,17 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
     }
 }
 
-function updateNormalEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undefined, instanceId: string, updateContext: UpdateContext) {
+function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow | undefined, instanceId: string, updateContext: UpdateContext) {
+    // A change dated later than now was written while a clock ran ahead, so its real age is
+    // unknown: an incoming one is stored as now, and a local one loses the conflict.
+    const now = dateUtils.utcNowDateTime();
+    const remoteEC = incomingEC.utcDateChanged && incomingEC.utcDateChanged > now
+        ? { ...incomingEC, utcDateChanged: now }
+        : incomingEC;
     const localEC = getSql().getRow<EntityChange | undefined>(/*sql*/`SELECT * FROM entity_changes WHERE entityName = ? AND entityId = ?`, [remoteEC.entityName, remoteEC.entityId]);
-    const localECIsOlderOrSameAsRemote = localEC && localEC.utcDateChanged && remoteEC.utcDateChanged && localEC.utcDateChanged <= remoteEC.utcDateChanged;
+    const localECIsFromTheFuture = !!localEC?.utcDateChanged && localEC.utcDateChanged > now;
+    const localECIsOlderOrSameAsRemote = localEC && (localECIsFromTheFuture
+        || (localEC.utcDateChanged && remoteEC.utcDateChanged && localEC.utcDateChanged <= remoteEC.utcDateChanged));
 
     if (!localEC || localECIsOlderOrSameAsRemote) {
         if (remoteEC.isErased) {
@@ -108,11 +118,40 @@ function updateNormalEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow |
     } else if ((localEC.hash !== remoteEC.hash || localEC.isErased !== remoteEC.isErased) && !localECIsOlderOrSameAsRemote) {
         // the change on our side is newer than on the other side, so the other side should update
         entityChangesService.putEntityChangeForOtherInstances(localEC);
+        requeueOwnBlobIfRemoteLacksIt(remoteEC, remoteEntityRow);
 
         return false;
     }
 
     return false;
+}
+
+const BLOB_OWNING_ENTITIES = new Set(["notes", "attachments", "revisions"]);
+
+/**
+ * Sends the local blob along with a local row that won a conflict. The remote side can have erased
+ * that blob in `deleteBlobIfNotUsed()` when its own row moved to another blob, and the blob's own
+ * entity change was pushed long ago, so without this the winning row arrives pointing at nothing.
+ * A sync stub is never sent: its empty content would replace the full copy the remote holds.
+ */
+function requeueOwnBlobIfRemoteLacksIt(remoteEC: EntityChange, remoteEntityRow: EntityRow | undefined) {
+    if (!BLOB_OWNING_ENTITIES.has(remoteEC.entityName)) {
+        return;
+    }
+
+    const primaryKeyName = entity_constructor.getEntityFromEntityName(remoteEC.entityName).primaryKeyName;
+    const localBlob = getSql().getRowOrNull<{ blobId: string; contentLength: number }>(
+        /*sql*/`SELECT blobs.blobId, LENGTH(blobs.content) AS contentLength
+                FROM ${remoteEC.entityName} JOIN blobs USING (blobId)
+                WHERE ${remoteEC.entityName}.${primaryKeyName} = ?`,
+        [remoteEC.entityId]
+    );
+
+    if (localBlob
+        && localBlob.blobId !== remoteEntityRow?.blobId
+        && !blobService.isSyncStub(localBlob.blobId, localBlob.contentLength)) {
+        entityChangesService.putBlobEntityChange(localBlob.blobId);
+    }
 }
 
 function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {

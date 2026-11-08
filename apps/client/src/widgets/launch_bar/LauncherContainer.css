@@ -1,0 +1,3 @@
+#launcher-container .launcher-slot {
+    display: contents;
+}

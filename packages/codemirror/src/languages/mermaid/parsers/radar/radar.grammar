@@ -1,0 +1,59 @@
+// Follows the Langium grammar of Mermaid's radar diagram (`@mermaid-js/parser`). Newlines are
+// skipped: Mermaid needs them only between statements, and `title` text ends at the line's end.
+@top RadarDiagram { DiagramName ":"? statement* }
+
+statement { Title | Axes | Curves | options }
+
+Title { kw<"title"> TitleText? }
+
+Axes { kw<"axis"> Axis ("," Axis)* }
+
+Axis { Name Label? }
+
+Curves { kw<"curve"> Curve ("," Curve)* }
+
+Curve { Name Label? "{" entries "}" }
+
+entries { Number ("," Number)* | Entry ("," Entry)* }
+
+Entry { AxisRef ":"? Number }
+
+Label { "[" String "]" }
+
+options { Option ("," Option)* }
+
+Option {
+  kw<"showLegend"> Boolean |
+  kw<"ticks"> Number |
+  kw<"max"> Number |
+  kw<"min"> Number |
+  kw<"graticule"> Graticule
+}
+
+Boolean { @specialize<identifier, "true"> | @specialize<identifier, "false"> }
+
+Graticule { @specialize<identifier, "circle"> | @specialize<identifier, "polygon"> }
+
+DiagramName { @specialize<identifier, "radar-beta"> }
+
+Name { identifier }
+
+AxisRef { identifier }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { (@asciiLetter | "_") ($[a-zA-Z0-9_\-]* $[a-zA-Z0-9_])? }
+  Number { ("0" | $[1-9] @digit*) | @digit+ "." @digit+ }
+  String { '"' (!["\\\n] | "\\" _)* '"' | "'" (!['\\\n] | "\\" _)* "'" }
+  LineComment { "%%" ![\n]* }
+  ":" "," "[" "]" "{" "}"
+  @precedence { Number }
+}
+
+@external propSource radarHighlighting from "./highlight.js"

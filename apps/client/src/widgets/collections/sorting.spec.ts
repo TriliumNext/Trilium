@@ -76,6 +76,18 @@ describe("sortItems", () => {
             .toEqual([ "C", "B", "A", "D" ]);
     });
 
+    /** Items defining the field in different ways hold values of different kinds. */
+    it("compares a conflicting field as text, whatever type it names", () => {
+        const items = build([
+            { title: "A", "#field": "Urgent" },
+            { title: "B", "#field": "10" },
+            { title: "C", "#field": "Low" }
+        ]);
+
+        expect(titles(sort(items, "attr:field", false, "select", [ "Low", "Urgent" ], true)))
+            .toEqual([ "B", "C", "A" ]);
+    });
+
     it("sorts dates, date-times and times by the instant they name", () => {
         const dates = build([
             { title: "A", "#field": "2026-02-01" },
@@ -259,7 +271,7 @@ function build(drafts: ItemDraft[]) {
 
 function sort(
     items: Item[], key: SortKey, isDescending = false, fieldType?: FieldType,
-    selectOptions?: string[]
+    selectOptions?: string[], isConflicting = false
 ) {
     const dates = new Map(items.map(({ note, createdAt }) => [ note.noteId, createdAt ]));
     const definitions = new Map<string, PromotedAttribute>();
@@ -277,6 +289,8 @@ function sort(
             labelType: isRelation ? undefined : fieldType,
             selectOptions,
             isOwned: true,
+            isDefinedByItems: false,
+            isConflicting,
             isInheritable: true
         });
     }

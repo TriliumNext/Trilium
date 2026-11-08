@@ -120,6 +120,17 @@ export type EventLabelName = "startDate" | "endDate" | "startTime" | "endTime" |
 export const EVENT_LABELS: EventLabelName[] = [ "startDate", "endDate", "startTime", "endTime", "recurrence" ];
 
 /**
+ * The label names the calendar draws events by: the stock ones, and the custom names `note` sets
+ * through `#calendar:startDate` and its siblings.
+ */
+export function drawnEventLabels(note: FNote): string[] {
+    const customNames = EVENT_LABELS
+        .map((name) => note.getLabelValue(`calendar:${name}`))
+        .filter((name): name is string => !!name);
+    return [ ...EVENT_LABELS, ...customNames ];
+}
+
+/**
  * Allows the user to customize the attribute from which to obtain a particular value. For example, if `customLabelNameAttribute` is `calendar:startDate`
  * and `defaultLabelName` is `startDate` and the note at hand has `#calendar:startDate=myStartDate #myStartDate=2025-02-26` then the value returned will
  * be `2025-02-26`. If there is no custom attribute value, then the value of the default attribute is returned instead (e.g. `#startDate`).
@@ -166,6 +177,34 @@ export function isValidDuration(str: string | null | undefined): str is string {
     if (totalSeconds === null) return false;
 
     return totalSeconds >= MIN_DURATION_SECONDS && totalSeconds <= MAX_DURATION_SECONDS;
+}
+
+/**
+ * How long a timed event lasts in minutes, in wall-clock time, or `null` for an all-day event or
+ * one missing its end time. An end before the start runs into the next day, as `buildEvent()`
+ * draws it.
+ */
+export function getTimedDurationMinutes({ startDate, endDate, startTime, endTime }: {
+    startDate: string;
+    endDate?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+}): number | null {
+    if (!startTime || !endTime) return null;
+
+    const days = endDate && endDate > startDate ? (dayNumber(endDate) - dayNumber(startDate)) : 0;
+    const minutes = days * 24 * 60 + minuteOfDay(endTime) - minuteOfDay(startTime);
+    return minutes < 0 ? minutes + 24 * 60 : minutes;
+}
+
+function dayNumber(isoDate: string) {
+    const [ year, month, day ] = isoDate.split("-").map(Number);
+    return Date.UTC(year, month - 1, day) / (24 * 60 * 60 * 1000);
+}
+
+function minuteOfDay(time: string) {
+    const [ hours, minutes ] = time.split(":").map(Number);
+    return hours * 60 + minutes;
 }
 
 // Source: https://stackoverflow.com/a/30465299/4898894

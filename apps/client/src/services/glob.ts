@@ -4,6 +4,7 @@ import server from "./server.js";
 import ws from "./ws.js";
 import froca from "./froca.js";
 import linkService from "./link.js";
+import { handleSystemBack } from "./system_back.js";
 
 function setupGlobs() {
     window.glob.isDesktop = utils.isDesktop;
@@ -12,61 +13,27 @@ function setupGlobs() {
     window.glob.getComponentByEl = (el) => appContext.getComponentByEl(el);
     window.glob.getHeaders = server.getHeaders;
     window.glob.getReferenceLinkTitle = (href) => linkService.getReferenceLinkTitle(href);
-    window.glob.getReferenceLinkTitleSync = (href) => linkService.getReferenceLinkTitleSync(href);
+    window.glob.getReferenceLinkTitleSync = (href, storedTitle) =>
+        linkService.getReferenceLinkTitleSync(href, storedTitle);
 
-    // required for ESLint plugin and CKEditor
+    // required for ESLint plugin
     window.glob.getActiveContextNote = () => appContext.tabManager.getActiveContextNote();
     window.glob.appContext = appContext; // for debugging
     window.glob.froca = froca;
     window.glob.treeCache = froca; // compatibility for CKEditor builds for a while
+    window.__triliumHandleBack = handleSystemBack;
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-        const string = String(msg).toLowerCase();
-
-        let errorObjectString = "";
-        try {
-            errorObjectString = JSON.stringify(error);
-        } catch (e: any) {
-            errorObjectString = e.toString();
-        }
-        let message = "Uncaught error: ";
-
-        if (string.includes("script error")) {
-            message += "No details available";
-        } else {
-            message += [`Message: ${msg}`, `URL: ${url}`, `Line: ${lineNo}`, `Column: ${columnNo}`, `Error object: ${errorObjectString}`, `Stack: ${error && error.stack}`].join(", ");
-        }
-
-        ws.logError(message);
+        ws.logError(formatUncaughtError(String(msg), error, `${url}:${lineNo}:${columnNo}`));
 
         return false;
     };
 
     window.addEventListener("unhandledrejection", (e) => {
-        const string = e?.reason?.message?.toLowerCase();
-
-        let message = "Uncaught error: ";
-        let errorObjectString;
-
-        try {
-            errorObjectString = JSON.stringify(e.reason)
-        } catch (error: any) {
-            errorObjectString = error.toString();
-        }
-
-        if (string?.includes("script error")) {
-            message += "No details available";
-        } else {
-            message += [
-                `Message: ${e.reason.message}`,
-                `Line: ${e.reason.lineNumber}`,
-                `Column: ${e.reason.columnNumber}`,
-                `Error object: ${errorObjectString}`,
-                `Stack: ${e.reason && e.reason.stack}`
-            ].join(", ");
-        }
-
-        ws.logError(message);
+        const reason: unknown = e?.reason;
+        const message = (reason as { message?: unknown } | null)?.message;
+        ws.logError(formatUncaughtError(
+            typeof message === "string" ? message : String(reason), reason));
 
         return false;
     });
@@ -92,6 +59,70 @@ export async function requireCss(url: string, prependAssetPath = true) {
 
         $("head").append($('<link rel="stylesheet" type="text/css" />').attr("href", url));
     }
+}
+
+/**
+ * The log entry of an uncaught error: the message, the error's other properties as JSON, then its
+ * stack, or `location` when it has none.
+ */
+function formatUncaughtError(message: string, error: unknown, location?: string) {
+    if (message.toLowerCase().includes("script error")) {
+        return "Uncaught error: No details available";
+    }
+
+    const lines = [ `Uncaught error: ${message}` ];
+    const details = serializeDetails(error);
+    if (details) {
+        lines.push(`Details: ${details}`);
+    }
+
+    const stack = stackWithoutHeader(error);
+    if (stack) {
+        lines.push(stack);
+    } else if (location) {
+        lines.push(`at ${location}`);
+    }
+
+    return lines.join("\n");
+}
+
+/**
+ * The JSON of an error's properties other than the `name`, `message` and `stack` the log entry
+ * already shows, or `undefined` when it has none. A `CKEditorError` carries the editor object that
+ * threw as its `context`, which would serialize the whole document, so it is left out.
+ */
+function serializeDetails(error: unknown) {
+    if (typeof error !== "object" || error === null) {
+        return undefined;
+    }
+
+    try {
+        const json = JSON.stringify(error, function (this: unknown, key, value) {
+            if (this === error && [ "name", "message", "stack" ].includes(key)) {
+                return undefined;
+            }
+            return key === "context" && isCKEditorError(this) ? undefined : value;
+        });
+        return json === "{}" ? undefined : json;
+    } catch (e) {
+        return String(e);
+    }
+}
+
+/** The stack of an error, without the `Name: message` line V8 starts it with. */
+function stackWithoutHeader(error: unknown) {
+    const { name, message, stack } = (error ?? {}) as { name?: unknown; message?: unknown; stack?: unknown };
+    if (typeof stack !== "string") {
+        return undefined;
+    }
+
+    const header = `${name}: ${message}`;
+    return (stack.startsWith(header) ? stack.slice(header.length) : stack).replace(/^\n+/, "");
+}
+
+function isCKEditorError(value: unknown) {
+    const is = (value as { is?: unknown } | null)?.is;
+    return typeof is === "function" && is.call(value, "CKEditorError") === true;
 }
 
 export default {

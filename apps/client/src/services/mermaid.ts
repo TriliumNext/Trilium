@@ -1,26 +1,28 @@
+import { getMermaidConfig as getSharedMermaidConfig, parseMermaidTheme } from "@triliumnext/commons";
 import type { MermaidConfig } from "mermaid";
 
 export function getMermaidConfig(): MermaidConfig {
     const documentStyle = window.getComputedStyle(document.documentElement);
-    const mermaidTheme = documentStyle.getPropertyValue("--mermaid-theme") as "default";
+    return getSharedMermaidConfig(parseMermaidTheme(documentStyle.getPropertyValue("--mermaid-theme")));
+}
 
-    return {
-        theme: mermaidTheme.trim() as "default",
-        // Mermaid 12 made ELK the default layout and `neo` the default look. Both are pinned to the
-        // pre-12 values so diagrams already stored in notes keep rendering as they were written;
-        // front matter still overrides either one per diagram.
-        layout: "dagre",
-        look: "classic",
-        securityLevel: "antiscript",
-        flowchart: { useMaxWidth: false },
-        sequence: { useMaxWidth: false },
-        gantt: { useMaxWidth: false },
-        class: { useMaxWidth: false },
-        state: { useMaxWidth: false },
-        pie: { useMaxWidth: true },
-        journey: { useMaxWidth: false },
-        gitGraph: { useMaxWidth: false }
-    };
+let renderId = 0;
+
+/** Renders the Mermaid `source` to an SVG string, or `""` for empty source. Throws on bad syntax. */
+export async function renderMermaidSvg(source: string) {
+    if (!source.trim()) {
+        return "";
+    }
+
+    const mermaid = (await import("mermaid")).default;
+    mermaid.initialize({
+        startOnLoad: false,
+        ...(getMermaidConfig() as any),
+    });
+
+    renderId++;
+    const { svg } = await mermaid.render(`mermaid-graph-${renderId}`, source);
+    return postprocessMermaidSvg(svg);
 }
 
 /**

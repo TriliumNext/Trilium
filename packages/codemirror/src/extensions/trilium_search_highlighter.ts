@@ -57,6 +57,8 @@ const OPERATOR = /\*=\*|~=|~\*|!=|>=|<=|%=|\*=|=\*|[=><]|[+\-](?=\d)/y;
 const BRACKET = /[()]/y;
 const NUMBER = /\d+(?:\.\d+)?/y;
 const WORD = /[^\s#~().,=<>*!%+\-'"`]+/y;
+// Matches text that ends at the start of a word, or after grouping `(`s that open one.
+const WORD_START = /(?:^|\s)\(*$/;
 
 /** Splits a search query into the tokens worth colouring, skipping over everything else. */
 export function tokenizeSearchQuery(text: string): SearchToken[] {
@@ -64,6 +66,8 @@ export function tokenizeSearchQuery(text: string): SearchToken[] {
     let pos = 0;
     // Set by `note` and by a relation, both of which a dotted property path can follow.
     let inPath = false;
+    // Set by the first attribute or `note.`, which end the full-text part as they do in `lex()`.
+    let fulltextEnded = false;
 
     const match = (pattern: RegExp) => {
         pattern.lastIndex = pos;
@@ -100,16 +104,24 @@ export function tokenizeSearchQuery(text: string): SearchToken[] {
         }
 
         const attribute = match(ATTRIBUTE);
+        if (attribute && !fulltextEnded && !WORD_START.test(text.slice(0, pos))) {
+            // Inside a full-text word, `#` and `~` are text: `c#`, `towers#book`.
+            pos++;
+            continue;
+        }
+
         if (attribute) {
             const isLabel = attribute[1] === "#";
             take(isLabel ? "label" : "relation", ATTRIBUTE);
             inPath = !isLabel;
+            fulltextEnded = true;
             continue;
         }
 
         if (match(NOTE_PREFIX)) {
             take("property", NOTE_PREFIX);
             inPath = true;
+            fulltextEnded = true;
             continue;
         }
 
@@ -171,7 +183,7 @@ const NEGATION_MARK = Decoration.mark({ class: "cm-search-negation" });
  * The fallbacks below are what the legacy themes — which don't define those variables — render
  * with, so they are mid-tones that hold up on a light and a dark background alike.
  */
-const searchHighlightTheme = EditorView.baseTheme({
+export const searchHighlightTheme = EditorView.baseTheme({
     ".cm-search-label": { color: "var(--search-label-color, #539bf5)" },
     ".cm-search-relation": { color: "var(--search-relation-color, #8957e5)" },
     ".cm-search-negation": { color: "var(--search-negation-color, #e5534b)" },
@@ -200,22 +212,30 @@ export const triliumSearchHighlighter: Extension = [ searchHighlightField, searc
 
 function buildSearchDecorations(state: EditorState): DecorationSet {
     const builder = new RangeSetBuilder<Decoration>();
-    const text = state.doc.toString();
+    decorateSearchQuery(builder, state.doc.toString());
+    return builder.finish();
+}
 
+/**
+ * Adds the marks of the search query `text`, which starts at `offset` in the document, to
+ * `builder`. The marks need {@link searchHighlightTheme} for their colors.
+ */
+export function decorateSearchQuery(
+    builder: RangeSetBuilder<Decoration>, text: string, offset = 0
+) {
     for (const token of tokenizeSearchQuery(text)) {
-        const negation = token.from + 1;
+        const from = offset + token.from;
+        const to = offset + token.to;
 
-        if (ATTRIBUTE_KINDS.has(token.kind) && text[negation] === "!") {
-            builder.add(token.from, negation, MARKS[token.kind]);
-            builder.add(negation, negation + 1, NEGATION_MARK);
-            builder.add(negation + 1, token.to, MARKS[token.kind]);
+        if (ATTRIBUTE_KINDS.has(token.kind) && text[token.from + 1] === "!") {
+            builder.add(from, from + 1, MARKS[token.kind]);
+            builder.add(from + 1, from + 2, NEGATION_MARK);
+            builder.add(from + 2, to, MARKS[token.kind]);
             continue;
         }
 
-        builder.add(token.from, token.to, MARKS[token.kind]);
+        builder.add(from, to, MARKS[token.kind]);
     }
-
-    return builder.finish();
 }
 
 /** The tokens spelled with a marker, which is the only place a `!` can negate. */

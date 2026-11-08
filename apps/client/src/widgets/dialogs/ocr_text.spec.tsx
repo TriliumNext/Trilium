@@ -10,6 +10,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import { renderInto } from "../../test/render";
+import server from "../../services/server";
+import toast from "../../services/toast";
 import { ParentComponent } from "../react/react_utils";
 import OcrTextDialog from "./ocr_text";
 
@@ -17,6 +19,9 @@ const mocks = vi.hoisted(() => ({ standalone: false }));
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../../components/app_context", () => ({ default: { triggerCommand: vi.fn() } }));
+vi.mock("../../services/toast", () => ({
+    default: { showMessage: vi.fn(), showPersistent: vi.fn() }
+}));
 // Answer the dialog's own request and nothing else: the modal's shortcut hints go through the same
 // service, and handing them this payload instead of the list they expect throws inside their fetch.
 vi.mock("../../services/server", () => ({
@@ -54,6 +59,17 @@ async function open() {
     });
 }
 
+/** Clicks "Process now" and lets the request and the toast it leads to settle. */
+async function processNow(result: object) {
+    vi.mocked(server.post).mockResolvedValue({ success: true, result, minConfidence: 0 });
+    const button = [ ...document.querySelectorAll(".ocr-text-modal .modal-footer button") ]
+        .find((b) => b.textContent?.trim() === "ocr.process_now");
+    expect(button).toBeDefined();
+    await act(async () => {
+        button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+}
+
 function footerButtons(): string[] {
     return [ ...document.querySelectorAll(".ocr-text-modal .modal-footer button") ]
         .map((button) => button.textContent?.trim() ?? "");
@@ -63,6 +79,7 @@ describe("OcrTextDialog", () => {
     beforeEach(() => {
         mocks.standalone = false;
         document.body.innerHTML = "";
+        vi.clearAllMocks();
     });
 
     it("shows the text, and offers to extract it again where an engine can", async () => {
@@ -81,5 +98,25 @@ describe("OcrTextDialog", () => {
         expect(footerButtons()).not.toContain("ocr.process_now");
         // Copying is not extraction, and stays.
         expect(footerButtons()).toContain("info.copy_to_clipboard");
+    });
+
+    it("says no text was recognized when a PDF yields none", async () => {
+        await open();
+        await processNow({ text: "", confidence: 0, extractedAt: "", processingType: "pdf" });
+
+        expect(toast.showMessage).toHaveBeenCalledWith(
+            "ocr.no_text_recognized", expect.any(Number), expect.any(String));
+        expect(toast.showPersistent).not.toHaveBeenCalled();
+    });
+
+    it("warns about the pages OCR failed on", async () => {
+        await open();
+        await processNow({
+            text: "page two", confidence: 0.8, extractedAt: "", processingType: "pdf", failedPageCount: 1
+        });
+
+        expect(toast.showPersistent).toHaveBeenCalledWith(
+            expect.objectContaining({ message: "ocr.pages_failed" }));
+        expect(toast.showMessage).not.toHaveBeenCalled();
     });
 });

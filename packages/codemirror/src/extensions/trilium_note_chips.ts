@@ -1,3 +1,4 @@
+import { syntaxTree } from "@codemirror/language";
 import { type EditorState, type Extension, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate, WidgetType } from "@codemirror/view";
 
@@ -15,6 +16,26 @@ export interface NoteChip {
  */
 export type NoteChipResolver = (noteId: string) => NoteChip | Promise<NoteChip | null> | null;
 
+/** A note id found in the text, and the range its chip is drawn over. */
+export interface NoteIdRange {
+    from: number;
+    to: number;
+    noteId: string;
+}
+
+/** Finds the note ids in the document between `from` and `to`, left to right. */
+export type NoteIdFinder = (state: EditorState, from: number, to: number) => NoteIdRange[];
+
+export interface NoteChipOptions {
+    /** Where the note ids stand. Defaults to the value of a search query's `noteId` comparison. */
+    find?: NoteIdFinder;
+    /**
+     * Shows the text behind a chip while the selection touches it, so the caret goes into it as into
+     * any text. Without it, each chip is atomic.
+     */
+    revealAtSelection?: boolean;
+}
+
 /**
  * Draws the note ids in a search query as chips carrying the note's icon and title.
  *
@@ -24,18 +45,21 @@ export type NoteChipResolver = (noteId: string) => NoteChip | Promise<NoteChip |
  *
  * Each chip is atomic, so the caret steps over it and a backspace beside it takes the whole id
  * rather than a character of it. To point a clause at another note, delete the chip and mention
- * one again.
+ * one again. With `revealAtSelection`, as for a Markdown note's `[[noteId]]` links found by
+ * {@link findWikilinkNoteIds}, the text shows instead while the selection touches it.
+ *
+ * Only the visible part of the document is read, so a long one costs no more than a screenful.
  *
  * The decorations live in a view plugin rather than a {@link StateField}, unlike
  * `triliumSearchHighlighter`: a note that has to be fetched arrives after the update that asked
  * for it, and the plugin holds the view it dispatches the answer to.
  */
-export function triliumNoteChips(resolve: NoteChipResolver): Extension {
+export function triliumNoteChips(resolve: NoteChipResolver, { find = findSearchNoteIds, revealAtSelection = false }: NoteChipOptions = {}): Extension {
     const plugin = ViewPlugin.define(
-        (view) => new NoteChipsPlugin(view, resolve),
+        (view) => new NoteChipsPlugin(view, resolve, find, revealAtSelection),
         {
             decorations: (value) => value.decorations,
-            provide: (plugin) => EditorView.atomicRanges.of(
+            provide: revealAtSelection ? undefined : (plugin) => EditorView.atomicRanges.of(
                 (view) => view.plugin(plugin)?.decorations ?? Decoration.none
             )
         }
@@ -53,28 +77,42 @@ class NoteChipsPlugin {
     private readonly resolved = new Map<string, NoteChip | null>();
     private readonly pending = new Set<string>();
 
-    constructor(private readonly view: EditorView, private readonly resolve: NoteChipResolver) {
-        this.decorations = this.build(view.state);
+    constructor(
+        private readonly view: EditorView,
+        private readonly resolve: NoteChipResolver,
+        private readonly find: NoteIdFinder,
+        private readonly revealAtSelection: boolean
+    ) {
+        this.decorations = this.build();
     }
 
     update(update: ViewUpdate) {
         const arrived = update.transactions.some(
             (tr) => tr.effects.some((effect) => effect.is(noteChipResolved))
         );
+        // A finder that reads the syntax tree sees more of it as the parser catches up.
+        const parsed = syntaxTree(update.startState) !== syntaxTree(update.state);
+        const revealed = this.revealAtSelection && update.selectionSet;
 
-        if (update.docChanged || arrived) {
-            this.decorations = this.build(update.state);
+        if (update.docChanged || update.viewportChanged || arrived || parsed || revealed) {
+            this.decorations = this.build();
         }
     }
 
-    private build(state: EditorState): DecorationSet {
+    private build(): DecorationSet {
+        const { state } = this.view;
         const builder = new RangeSetBuilder<Decoration>();
 
-        for (const { from, to, noteId } of findNoteIds(state.doc.toString())) {
-            const chip = this.chipFor(noteId);
+        for (const visible of this.view.visibleRanges) {
+            for (const { from, to, noteId } of this.find(state, visible.from, visible.to)) {
+                if (this.revealAtSelection && state.selection.ranges.some((range) => range.from <= to && range.to >= from)) {
+                    continue;
+                }
 
-            if (chip) {
-                builder.add(from, to, Decoration.replace({ widget: new NoteChipWidget(noteId, chip) }));
+                const chip = this.chipFor(noteId);
+                if (chip) {
+                    builder.add(from, to, Decoration.replace({ widget: new NoteChipWidget(noteId, chip) }));
+                }
             }
         }
 
@@ -94,7 +132,7 @@ class NoteChipsPlugin {
 
         const answer = this.resolve(noteId);
         if (!(answer instanceof Promise)) {
-            this.resolved.set(noteId, answer);
+            this.resolved.set(noteId, answer ?? null);
             return answer;
         }
 
@@ -103,7 +141,8 @@ class NoteChipsPlugin {
             .catch(() => null)
             .then((chip) => {
                 this.pending.delete(noteId);
-                this.resolved.set(noteId, chip);
+                // `undefined` would read as never asked, and the dispatch below would ask again.
+                this.resolved.set(noteId, chip ?? null);
                 // Outside the update that asked for it, so dispatching here is safe.
                 this.view.dispatch({ effects: noteChipResolved.of() });
             });
@@ -146,14 +185,41 @@ class NoteChipWidget extends WidgetType {
  */
 const NOTE_ID_COMPARISON = /(\.noteId\s*(?:!?=|\*=\*|=\*|\*=)\s*["'`]?)([A-Za-z0-9_]+)/g;
 
-/** The ranges holding a note id, left to right, as `RangeSetBuilder` needs them. */
-function findNoteIds(text: string) {
-    const found: { from: number; to: number; noteId: string }[] = [];
+/** The values of a search query's `noteId` comparisons, left to right, as `RangeSetBuilder` needs them. */
+function findSearchNoteIds(state: EditorState, from: number, to: number) {
+    const found: NoteIdRange[] = [];
 
-    for (const match of text.matchAll(NOTE_ID_COMPARISON)) {
-        const from = match.index + match[1].length;
+    for (const match of state.sliceDoc(from, to).matchAll(NOTE_ID_COMPARISON)) {
+        const start = from + match.index + match[1].length;
 
-        found.push({ from, to: from + match[2].length, noteId: match[2] });
+        found.push({ from: start, to: start + match[2].length, noteId: match[2] });
+    }
+
+    return found;
+}
+
+/** A Markdown note link, `[[noteId]]`, as Trilium writes one. */
+const WIKILINK = /\[\[([A-Za-z0-9_]+)\]\]/g;
+
+/**
+ * The `[[noteId]]` links of a Markdown note, each drawn whole, brackets included. A link in a code
+ * block or a code span is code, so it is left as text.
+ */
+export function findWikilinkNoteIds(state: EditorState, from: number, to: number) {
+    const found: NoteIdRange[] = [];
+    const tree = syntaxTree(state);
+
+    for (const match of state.sliceDoc(from, to).matchAll(WIKILINK)) {
+        const start = from + match.index;
+        const innermost = tree.resolveInner(start, 1);
+        let inCode = false;
+        for (let node: typeof innermost | null = innermost; node && !inCode; node = node.parent) {
+            inCode = node.name.includes("Code");
+        }
+
+        if (!inCode) {
+            found.push({ from: start, to: start + match[0].length, noteId: match[1] });
+        }
     }
 
     return found;

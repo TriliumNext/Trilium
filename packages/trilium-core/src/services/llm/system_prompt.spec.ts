@@ -10,6 +10,7 @@ vi.mock("../../services/task_states.js", async (importOriginal) => {
     return { ...actual, getTaskStates: getTaskStatesMock };
 });
 
+import markdownImport from "../import/markdown.js";
 import { buildSystemPrompt } from "./system_prompt.js";
 
 describe("buildSystemPrompt", () => {
@@ -38,17 +39,32 @@ describe("buildSystemPrompt", () => {
         expect(prompt).not.toContain("do not have access to web search");
     });
 
+    it("tells a model with tools that a declined call is the user's decision, not an error to work around", () => {
+        for (const config of [ { enableNoteTools: true }, { enableWebSearch: true } ]) {
+            const prompt = buildSystemPrompt([], config) ?? "";
+            expect(prompt).toContain("declines a tool call");
+            expect(prompt).toContain("through another tool or the file system");
+        }
+        expect(buildSystemPrompt([], {})).not.toContain("declines a tool call");
+    });
+
+    it("tells a model with note tools to read a linked note by the ID in its link", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true })).toContain("#root/<noteId>");
+        expect(buildSystemPrompt([], { enableWebSearch: true })).not.toContain("#root/<noteId>");
+    });
+
     it("emits the context-note-only notice when a context note is set but note tools are off", () => {
         const prompt = buildSystemPrompt([], { contextNoteId: "ctx" }) ?? "";
         expect(prompt).toContain("cannot search or access other notes");
         expect(prompt).toContain("do not have access to web search");
     });
 
-    it("points the user at the toggle that turns a missing capability on", () => {
+    it("points the user at the place in the Tools menu that turns a missing capability on", () => {
         const prompt = buildSystemPrompt([], {}) ?? "";
-        // The toggles' own icons, as ChatInputBar draws them, for the model to show the user.
-        expect(prompt).toContain(`<span class="tn-icon bx bx-globe"></span> "Web search" toggle`);
-        expect(prompt).toContain(`<span class="tn-icon bx bx-note"></span> "Note access" toggle`);
+        // The menu's own icon, as ChatToolsDropdown draws it, for the model to show the user.
+        const menu = `<span class="tn-icon bx bx-shield-quarter"></span> "Tools" menu`;
+        expect(prompt).toContain(`turn it on by choosing a search source under "Web search" in the ${menu}`);
+        expect(prompt).toContain(`turn it on with the "Note access" switch in the ${menu}`);
         expect(prompt).not.toContain("model name dropdown");
     });
 
@@ -61,6 +77,24 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("Collapsible blocks");
         expect(prompt).toContain("Keyboard keys");
         expect(prompt).toContain(`<span class="tn-icon bx bx-cog"></span>`);
+    });
+
+    it("teaches content tabs with an example that imports as a tabs block", () => {
+        const example = "=== \"Windows\"\n\n    Run `setup.exe`.\n\n=== \"Linux\"\n\n    Run `./setup.sh`.";
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("Content tabs");
+        expect(prompt).toContain(example);
+
+        const html = markdownImport.renderToHtml(example, "Title");
+        expect(html.match(/class="trilium-tabs"/g)).toHaveLength(1);
+        expect(html).toContain(`<p class="trilium-tab-title">Windows</p>`);
+        expect(html).toContain(`<p class="trilium-tab-title">Linux</p>`);
+    });
+
+    it("asks to keep the indentation of content tabs only when the model can edit notes", () => {
+        const hint = "keep each `===` line and the four-space indentation of its content";
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain(hint);
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain(hint);
     });
 
     it("names the icon search tool in the icon hint only when the tool is there", () => {

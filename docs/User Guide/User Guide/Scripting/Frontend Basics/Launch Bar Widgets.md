@@ -19,5 +19,5 @@ Unlike <a class="reference-link" href="Custom%20Widgets.md">Custom Widgets</a>,
 
 Custom launch bar widgets are also supported on the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>. To do so:
 
-1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → _Advanced_ → _Show Hidden Subtree_.
+1.  Go to <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Global%20menu.md">Global menu</a> → _Advanced_ → _Hidden notes_.
 2.  Look for _Mobile Launch Bar_ and follow the same creation mechanism as in the previous section.

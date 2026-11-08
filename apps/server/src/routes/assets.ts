@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import type serveStatic from "serve-static";
 
+import { getHelpAssetDir } from "../in_app_help_provider.js";
 import { assetUrlFragment } from "../services/asset_path.js";
 import auth from "../services/auth.js";
 import port from "../services/port.js";
@@ -32,6 +33,8 @@ async function register(app: express.Application) {
         max: 100 // limit each IP to 100 requests per windowMs
     });
 
+    const clientFonts = express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS);
+    app.use(`/share/assets/fonts/`, clientFonts);
     if (process.env.NODE_ENV === "development") {
         const { createServer: createViteServer } = await import("vite");
         const clientDir = path.join(srcRoot, "../client");
@@ -63,8 +66,10 @@ async function register(app: express.Application) {
             cacheDir: path.join(clientDir, "../..", ".cache", `vite-${port}`)
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
-            if (req.url.startsWith("/images/") || req.url.startsWith("/doc_notes/")) {
-                // Images and doc notes are served as static assets from the server.
+            if (req.url.startsWith("/images/") || req.url.startsWith("/help/")) {
+                // Images and the in-app help's assets are served as static assets from the server.
+                // Anything not listed here is handed to Vite, which answers unknown paths with
+                // index.html — a 200 that looks fine until you read the body.
                 next();
                 return;
             }
@@ -80,6 +85,11 @@ async function register(app: express.Application) {
             vite.middlewares(req, res, next);
         });
         app.use(`/node_modules/@excalidraw/excalidraw/dist/prod`, persistentCacheStatic(path.join(srcRoot, "../../node_modules/@excalidraw/excalidraw/dist/prod")));
+        // The client's Vite config answers the share theme's entries from source.
+        app.get(SHARE_THEME_ENTRIES.map((file) => `/share/assets/${file}`), (req, res, next) => {
+            req.url = `/${assetUrlFragment}${req.path}`;
+            vite.middlewares(req, res, next);
+        });
     } else {
         const publicDir = path.join(resourceDir, "public");
         if (!existsSync(publicDir)) {
@@ -100,12 +110,15 @@ async function register(app: express.Application) {
         app.use(`/${assetUrlFragment}/fonts`, persistentCacheStatic(path.join(publicDir, "fonts")));
         app.use(`/${assetUrlFragment}/translations/`, persistentCacheStatic(path.join(publicDir, "translations")));
         app.use(`/node_modules/`, persistentCacheStatic(path.join(publicDir, "node_modules")));
+        app.use(`/share/assets/`, express.static(getShareThemeAssetDir(), STATIC_OPTIONS));
+        app.use(`/share/assets/`, express.static(path.join(publicDir, "assets"), STATIC_OPTIONS));
     }
-    app.use(`/share/assets/fonts/`, express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS));
-    app.use(`/share/assets/`, express.static(getShareThemeAssetDir(), STATIC_OPTIONS));
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
-    app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
+    // Images and attachments of the in-app help. They are not committed under the server's assets
+    // — the User Guide owns them — so in a source checkout they are served straight out of docs/,
+    // while a packaged build copies them in (see scripts/build.ts).
+    app.use(`/${assetUrlFragment}/help`, persistentCacheStatic(getHelpAssetDir()));
     // `vX` is a version-independent alias so custom themes and scripts can reference built-in assets
     // without naming a version they would have to bump on every upgrade. It serves the same files as
     // the versioned routes above, but without `maxAge`: the URL no longer changes between releases,
@@ -115,13 +128,23 @@ async function register(app: express.Application) {
     app.use(`/assets/vX/images`, express.static(path.join(resourceDir, "assets", "images"), STATIC_OPTIONS));
 }
 
+/** The fixed files of the share theme that every shared page loads. */
+const SHARE_THEME_ENTRIES = [ "scripts.js", "tree.js", "scripts.css" ];
+
+/**
+ * Where the client build writes the share theme, beside its own chunks: `src/` of the client's
+ * build output.
+ */
 export function getShareThemeAssetDir() {
+    return path.join(getClientBuildDir(), "src");
+}
+
+/** The client's build output: `public/` in a packaged app, `apps/client/dist` in development. */
+export function getClientBuildDir() {
     if (process.env.NODE_ENV === "development") {
-        const srcRoot = path.join(__dirname, "..", "..");
-        return path.join(srcRoot, "../../packages/share-theme/dist");
+        return path.join(getClientDir(), "..", "dist");
     }
-    const resourceDir = getResourceDir();
-    return path.join(resourceDir, "share-theme/assets");
+    return getClientDir();
 }
 
 export function getPdfjsAssetDir() {

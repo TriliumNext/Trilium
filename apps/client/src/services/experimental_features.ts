@@ -1,6 +1,4 @@
-import { t } from "./i18n";
 import options from "./options";
-import { isMobile } from "./utils";
 
 export interface ExperimentalFeature {
     id: string;
@@ -8,16 +6,25 @@ export interface ExperimentalFeature {
     description: string;
 }
 
+// Not translated: experimental features are temporary.
 export const experimentalFeatures = [
     {
-        id: "new-layout",
-        name: t("experimental_features.new_layout_name"),
-        description: t("experimental_features.new_layout_description"),
+        id: "llm",
+        name: "AI / LLM Chat",
+        description: "Enable the AI chat sidebar and LLM chat notes powered by large language "
+            + "models."
     },
     {
-        id: "llm",
-        name: t("experimental_features.llm_name"),
-        description: t("experimental_features.llm_description"),
+        id: "extendedCodeBlocks",
+        name: "Extended code blocks",
+        description: "A faster code block with a more advanced syntax highlighting engine and "
+            + "code folding."
+    },
+    {
+        id: "sortSelection",
+        name: "Sort selection in text editor",
+        description: "Sort the selected paragraphs, list items or table rows of a text note from "
+            + "the formatting toolbar, the block handle and the context menu."
     }
 ] as const satisfies ExperimentalFeature[];
 
@@ -31,10 +38,6 @@ export function getAvailableExperimentalFeatures() {
 let enabledFeatures: Set<ExperimentalFeatureId> | null = null;
 
 export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): boolean {
-    if (featureId === "new-layout") {
-        return (isMobile() || options.is("newLayout"));
-    }
-
     if (featureId === "llm") {
         return options.is("aiEnabled");
     }
@@ -44,23 +47,10 @@ export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): 
 
 export function getEnabledExperimentalFeatureIds() {
     const values = [ ...getEnabledFeatures().values() ];
-    if (isMobile() || options.is("newLayout")) {
-        values.push("new-layout");
-    }
     if (options.is("aiEnabled")) {
         values.push("llm");
     }
     return values;
-}
-
-export async function toggleExperimentalFeature(featureId: ExperimentalFeatureId, enable: boolean) {
-    const features = new Set(getEnabledFeatures());
-    if (enable) {
-        features.add(featureId);
-    } else {
-        features.delete(featureId);
-    }
-    await options.save("experimentalFeatures", JSON.stringify(Array.from(features)));
 }
 
 function getEnabledFeatures() {
@@ -72,7 +62,6 @@ function getEnabledFeatures() {
             console.warn("Failed to parse experimental features from options:", e);
         }
         enabledFeatures = new Set(features);
-        enabledFeatures.delete("new-layout"); // handled separately.
         enabledFeatures.delete("llm"); // handled separately, via the aiEnabled option.
     }
     return enabledFeatures;

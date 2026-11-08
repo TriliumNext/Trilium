@@ -2,14 +2,12 @@ import "./SelectableCard.css";
 
 import type { ComponentChildren } from "preact";
 
-import MaskedIcon from "./MaskedIcon";
+import Icon from "./Icon";
 
 export interface SelectableCardProps {
     title: ComponentChildren;
     description?: ComponentChildren;
-    /** URL of an SVG rendered monochrome via a CSS mask (e.g. an imported `*.svg?url`). Provide either this or {@link icon}. */
-    iconUrl?: string;
-    /** Boxicons class (e.g. `"bx bx-import"`) shown in place of {@link iconUrl}. */
+    /** The icon class, such as `"bx bx-import"` or a brand mark's `"tn-brand tn-brand-notion"`. */
     icon?: string;
     selected: boolean;
     onSelect: () => void;
@@ -28,12 +26,10 @@ export interface SelectableCardProps {
  * state. Used by the import and export dialogs to pick a provider/format. Lay several out together with
  * {@link SelectableCardGrid}.
  */
-export default function SelectableCard({ title, description, iconUrl, icon, selected, onSelect, disabled, className }: SelectableCardProps) {
+export default function SelectableCard({ title, description, icon, selected, onSelect, disabled, className }: SelectableCardProps) {
     return (
         <button type="button" className={`selectable-card ${selected ? "selected" : ""} ${className ?? ""}`} onClick={onSelect} disabled={disabled}>
-            {iconUrl
-                ? <MaskedIcon url={iconUrl} />
-                : icon ? <span className={`selectable-card-bxicon ${icon}`} /> : null}
+            {icon && <Icon icon={icon} className="selectable-card-icon" />}
             <span className="selectable-card-text">
                 <span className="selectable-card-name">{title}</span>
                 {description && <span className="selectable-card-description">{description}</span>}

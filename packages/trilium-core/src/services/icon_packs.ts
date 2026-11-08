@@ -4,6 +4,7 @@ import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
+import brandsManifest from "./icon_pack_brands.json" with { type: "json" };
 import textEditorManifest from "./icon_pack_text_editor.json" with { type: "json" };
 import { getLog } from "./log";
 import search from "./search/services/search";
@@ -30,6 +31,7 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
  * inline `<style>` element that `generateCss()` output is served in.
  */
 const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
+const MAX_LOGGED_SKIPPED_KEYS = 10;
 
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {
     "font/ttf": "ttf",
@@ -90,6 +92,18 @@ export function getIconPacks() {
             icon: "cke cke-pilcrow",
             builtin: true,
             internal: true
+        },
+        {
+            // The marks of the AI providers and import sources, built by `apps/icon-pack-builder`.
+            prefix: "tn-brand",
+            manifest: brandsManifest,
+            manifestNoteId: "brand-icons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "brand-icons",
+            title: "Brand Icons",
+            icon: "tn-brand tn-brand-openai",
+            builtin: true,
+            internal: true
         }
     ];
 
@@ -106,7 +120,7 @@ export function getIconPacks() {
             if (!iconPack) return false;
 
             if (usedPrefixes.has(iconPack.prefix)) {
-                getLog().info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
+                getLog().warn(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
                 return false;
             }
             usedPrefixes.add(iconPack.prefix);
@@ -223,14 +237,21 @@ export function generateIconTransformCss(): string {
 export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
     try {
         const iconDeclarations: string[] = [];
+        const skippedKeys: string[] = [];
         for (const [ key, mapping ] of Object.entries(manifest.icons)) {
             if (!CSS_CLASS_NAME_PATTERN.test(key)) {
-                getLog().error(`Skipping icon '${key}' of icon pack '${prefix}': keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
+                skippedKeys.push(key);
                 continue;
             }
 
             const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
             iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
+        }
+
+        if (skippedKeys.length) {
+            const examples = skippedKeys.slice(0, MAX_LOGGED_SKIPPED_KEYS).map((key) => `'${key}'`).join(", ");
+            const rest = skippedKeys.length > MAX_LOGGED_SKIPPED_KEYS ? ", …" : "";
+            getLog().warn(`Skipping ${skippedKeys.length} icons of icon pack '${prefix}' (${examples}${rest}): keys allow only letters, digits, dashes, underscores and non-ASCII characters.`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;

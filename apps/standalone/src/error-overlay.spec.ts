@@ -9,6 +9,7 @@ async function freshOverlay(): Promise<typeof import("./error-overlay.js")> {
 
 beforeEach(() => {
     document.body.innerHTML = "";
+    sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -73,5 +74,42 @@ describe("showErrorOverlay", () => {
         expect(reload).toHaveBeenCalled();
 
         Object.defineProperty(window, "location", { value: original, configurable: true });
+    });
+
+    it("reloads once instead of showing a chunk that failed to download", async () => {
+        const reload = vi.fn();
+        const original = window.location;
+        Object.defineProperty(window, "location", {
+            value: { ...original, reload },
+            configurable: true
+        });
+
+        try {
+            document.body.innerHTML = `<div id="splash"></div>`;
+            let { showErrorOverlay } = await freshOverlay();
+            showErrorOverlay("Trilium couldn't start", "Importing a module script failed.");
+            expect(reload).toHaveBeenCalledTimes(1);
+            expect(document.getElementById("trilium-error-overlay")).toBeNull();
+            expect(document.getElementById("splash")).not.toBeNull();
+
+            // The page after the reload fails the same way: the overlay shows rather than a loop.
+            ({ showErrorOverlay } = await freshOverlay());
+            showErrorOverlay("Trilium couldn't start", "Importing a module script failed.");
+            expect(reload).toHaveBeenCalledTimes(1);
+            expect(document.getElementById("trilium-error-overlay")?.textContent)
+                .toContain("Importing a module script failed.");
+        } finally {
+            Object.defineProperty(window, "location", { value: original, configurable: true });
+        }
+    });
+
+    it("recognizes each engine's module load failure and nothing else", async () => {
+        const { isModuleLoadFailure } = await freshOverlay();
+        expect(isModuleLoadFailure("Importing a module script failed.")).toBe(true);
+        expect(isModuleLoadFailure("Failed to fetch dynamically imported module: https://x/a.js"))
+            .toBe(true);
+        expect(isModuleLoadFailure("error loading dynamically imported module: https://x/a.js"))
+            .toBe(true);
+        expect(isModuleLoadFailure("SQLITE_CORRUPT: database disk image is malformed")).toBe(false);
     });
 });

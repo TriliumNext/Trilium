@@ -66,14 +66,14 @@ export default function ImportDialog() {
                 <CardSection>
                     <SelectableCardGrid>
                         {serviceProviders.map((p) => (
-                            <SelectableCard key={p.id} iconUrl={p.iconUrl} icon={p.icon} title={p.name} description={p.description} selected={p.id === providerId} onSelect={() => setProviderId(p.id)} />
+                            <SelectableCard key={p.id} icon={p.icon} title={p.name} description={p.description} selected={p.id === providerId} onSelect={() => setProviderId(p.id)} />
                         ))}
                     </SelectableCardGrid>
 
                     {localProviders.length > 0 && (
                         <div className="import-provider-local">
                             {localProviders.map((p) => (
-                                <SelectableCard key={p.id} iconUrl={p.iconUrl} icon={p.icon} title={p.name} description={p.description} selected={p.id === providerId} onSelect={() => setProviderId(p.id)} />
+                                <SelectableCard key={p.id} icon={p.icon} title={p.name} description={p.description} selected={p.id === providerId} onSelect={() => setProviderId(p.id)} />
                             ))}
                         </div>
                     )}

@@ -12,29 +12,41 @@
         "get_started": "開始使用",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Trilium Notes 桌面應用程式的螢幕截圖"
+        "screenshot_alt": "Trilium Notes 桌面應用程式的螢幕截圖",
+        "tagline_license": "採用 AGPL-3.0 授權",
+        "tagline_no_account": "無需註冊帳號",
+        "tagline_cross_platform": "可離線使用"
     },
     "organization_benefits": {
-        "title": "組織",
+        "title": "依您的方式組織筆記",
         "note_structure_title": "筆記結構",
         "note_structure_description": "筆記可依層級排列。由於每則筆記皆可包含子筆記，故無需使用資料夾。單一筆記可在層級結構中的多個位置添加。",
         "attributes_title": "筆記標籤及關聯",
         "attributes_description": "運用筆記間的關聯或添加標籤以利分類。使用提升屬性輸入結構化資訊，此類資訊可用於表格與看板中。",
         "hoisting_title": "工作區及聚焦",
-        "hoisting_description": "輕鬆將個人筆記與工作筆記分開管理，只需將它們歸類至特定工作區，該工作區會聚焦顯示筆記樹中的特定筆記群組。"
+        "hoisting_description": "輕鬆將個人筆記與工作筆記分開管理，只需將它們歸類至特定工作區，該工作區會聚焦顯示筆記樹中的特定筆記群組。",
+        "screenshot_alt": "Trilium 中的階層式筆記樹"
     },
     "productivity_benefits": {
-        "title": "生產力及安全性",
+        "title": "日常實用功能",
         "revisions_title": "筆記歷史版本",
         "revisions_content": "筆記會定期在背景自動儲存，您可透過版本記錄功能檢視修改歷程或撤銷意外變更。版本記錄亦可依需求手動建立。",
         "sync_title": "同步",
         "sync_content": "使用自託管或雲端實例，輕鬆在多台裝置間同步筆記，並透過 PWA 從手機存取。",
         "protected_notes_title": "受保護的筆記",
         "protected_notes_content": "透過加密筆記並將其鎖定在密碼保護的工作階段中，以保護敏感的個人資訊。",
-        "search_title": "強大的搜尋功能",
-        "search_content": "或在筆記內搜尋文字，並透過篩選父筆記或層級深度來縮小搜尋範圍。",
+        "search_title": "搜尋與快速導航",
+        "search_content": "透過模糊匹配，可根據標題跳轉至任何筆記或指令；或對您的筆記進行全文搜尋，甚至可透過 OCR 技術搜尋圖片和 PDF 檔案中的文字。",
         "web_clipper_title": "網頁剪取器",
-        "web_clipper_content": "使用網頁剪取器瀏覽器擴充功能，直接擷取網頁（或截圖）並將其置入 Trilium。"
+        "web_clipper_content": "使用網頁剪取器瀏覽器擴充功能，直接擷取網頁（或截圖）並將其置入 Trilium。",
+        "auth_title": "安全登入",
+        "auth_content": "使用多因素驗證（TOTP）來保護您的伺服器登入安全，或透過 OpenID Connect 經由您的身分識別供應商進行登入。",
+        "templates_title": "範本",
+        "templates_content": "定義具有預設結構、屬性及內容的可重複使用筆記範本，然後只需一鍵即可根據這些範本建立新的筆記。",
+        "share_title": "在網路上分享筆記",
+        "share_content": "如果您擁有伺服器，即可將筆記中的任何子樹發佈為公開的唯讀網站，任何人無需註冊帳號即可瀏覽。",
+        "api_title": "REST API",
+        "api_content": "透過 Trilium 內建的 REST API，您可以透過 HTTP 以程式化方式讀取、建立及更新筆記，非常適合用於自動化作業與第三方整合。"
     },
     "note_types": {
         "text_title": "文字筆記",
@@ -49,7 +61,18 @@
         "mermaid_description": "使用 Mermaid 語法繪製流程圖、類別圖與序列圖、甘特圖等多種圖表。",
         "mindmap_title": "心智圖",
         "mindmap_description": "以視覺方式整理思緒，或進行腦力激盪。",
-        "title": "多種方式呈現您的資訊"
+        "title": "適用於各類內容的筆記類型",
+        "subtitle": "並非所有內容都能完美地濃縮在一段文字中。Trilium 提供多種筆記類型，從富文本和程式碼到試算表、圖表和心智圖，讓您能以最適合每項想法的形式記錄下來，並在整個樹狀結構中自由地將它們混合運用。",
+        "others_label": "還有更多",
+        "notemap_title": "筆記地圖",
+        "relationmap_title": "關聯圖",
+        "savedsearch_title": "已儲存的搜尋",
+        "rendernote_title": "渲染筆記",
+        "webview_title": "網頁檢視",
+        "markdown_description": "偏好純文字嗎？直接以 Markdown 格式撰寫筆記，既能保持筆記的可攜性與版本管理便利性，同時還能透過並排預覽功能，完整呈現表格、程式碼區塊及豐富格式。",
+        "markdown_title": "Markdown",
+        "spreadsheet_title": "試算表",
+        "spreadsheet_description": "一款功能齊全的試算表軟體，專為表格資料設計，具備公式、條件格式、資料驗證、排序及篩選等功能。可匯入及匯出 Excel (.xlsx) 與 CSV 檔案。"
     },
     "collections": {
         "calendar_title": "日曆",
@@ -60,16 +83,19 @@
         "board_description": "將您的任務或專案狀態整理成看板，輕鬆建立新項目與欄位，並透過在看板上拖曳即可簡單變更狀態。",
         "geomap_title": "地理地圖",
         "geomap_description": "使用可自訂的標記，直接在地圖上規劃您的假期行程或標記感興趣的地點。顯示已記錄的GPX軌跡，以便追蹤行程路線。",
-        "title": "集合",
+        "title": "從每個角度檢視您的筆記",
         "presentation_title": "簡報",
-        "presentation_description": "將資訊整理成投影片，並以全螢幕模式及流暢的轉場效果呈現。投影片亦可匯出為 PDF 格式，方便分享。"
+        "presentation_description": "將資訊整理成投影片，並以全螢幕模式及流暢的轉場效果呈現。投影片亦可匯出為 PDF 格式，方便分享。",
+        "subtitle": "「集合」能為一組筆記提供專為特定用途設計的檢視方式。您可以將同一組筆記以日曆、表格、看板、互動式地圖等形式呈現，並可根據需求隨時切換佈局。",
+        "dashboard_title": "儀表板",
+        "dashboard_description": "將您的筆記以可拖曳、可調整大小的方塊形式排列在網格上。筆記將轉變為即時小工具，讓您能一目了然地查看內容；非常適合建立個人首頁或專案概覽，將所有內容匯集於一處。"
     },
     "faq": {
         "title": "常見問題",
         "mobile_question": "是否有行動應用程式？",
         "mobile_answer": "目前尚無官方行動應用程式。不過，若您擁有伺服器實例，可透過網頁瀏覽器存取，甚至能將其安裝為進程式網路應用程式（PWA）。至於 Android系統，則有款名為 TriliumDroid 的非官方應用程式，其功能與桌面端客戶端相同，甚至支援離線運作。",
         "database_question": "資料儲存在哪裡？",
-        "database_answer": "所有筆記都將儲存於應用程式資料夾內的 SQLite 資料庫中。Trilium 採用資料庫而非純文字檔案的考量，在於效能表現，以及某些功能（例如複製筆記——在樹狀結構中多處出現相同筆記）若以純文字檔案實現將困難得多。若需尋找應用程式資料夾位置，請直接開啟「關於」視窗即可。",
+        "database_answer": "您的所有筆記都會儲存於應用程式資料夾中的 SQLite 資料庫中。Trilium 採用資料庫而非純文字檔案，原因有二：一是為了提升效能；二是某些功能（例如將同一則筆記放置在樹狀結構中的多個位置）若不採用資料庫，將難以實現。若要查找應用程式資料夾，只需開啟「關於」視窗即可。",
         "server_question": "使用 Trilium 是否需要伺服器？",
         "server_answer": "不，伺服器允許透過網頁瀏覽器存取，並在您擁有多台裝置時管理同步作業。若無多台裝置同步需求，只需下載桌面應用程式並啟動即可。",
         "scaling_question": "應用程式在筆記數量龐大時表現如何？",
@@ -77,11 +103,18 @@
         "network_share_question": "我能否透過網路磁碟機共享我的資料庫？",
         "network_share_answer": "不，通常不建議透過網路磁碟機共享 SQLite 資料庫。雖然有時可能運作正常，但由於網路環境中檔案鎖定機制不完善，資料庫仍存在損毀的風險。",
         "security_question": "我的資料如何受到保護？",
-        "security_answer": "預設情況下，筆記不會進行加密，可直接從資料庫讀取。一旦將筆記標記為加密狀態，系統便會使用 AES-128-CBC 演算法對該筆記進行加密。"
+        "security_answer": "預設情況下，筆記不會進行加密，可直接從資料庫讀取。一旦將筆記標記為加密狀態，系統便會使用 AES-128-CBC 演算法對該筆記進行加密。",
+        "free_question": "Trilium 是免費的嗎？",
+        "free_answer": "是的，完全沒錯。Trilium 採用 AGPL-3.0 授權，是免費且開源的軟體，沒有付費方案、帳戶或功能付費限制。您可以自由使用、自行架設，並依個人喜好進行修改。",
+        "cloud_question": "有託管版或雲端版嗎？",
+        "cloud_answer": "目前還沒有官方版本，不過這是我們未來希望提供的服務。現階段 Trilium 採用自架設模式：您可以執行桌面應用程式，或自行架設伺服器。如果您不希望自行管理伺服器，第三方供應商（例如 <0>PikaPods</0>）提供 Trilium 的託管服務。",
+        "collaboration_question": "可以多人共同編輯同一份筆記嗎？",
+        "collaboration_answer": "Trilium 設計為單一使用者應用程式。您可以將自己的筆記同步至所有裝置，並將唯讀筆記發佈至網路供他人瀏覽，但不支援多人同時對同一份筆記進行即時編輯。",
+        "more_questions": "還有疑問嗎？<0>向社群提問</0>"
     },
     "final_cta": {
-        "title": "準備好開始使用 Trilium Notes 了嗎？",
-        "description": "運用強大功能與完整隱私保護，建立您的個人知識庫。",
+        "title": "開始構建您的知識庫",
+        "description": "透過一款開源應用程式整理所有內容：階層式筆記、強大的搜尋功能，並可同步至您所掌控的伺服器。",
         "get_started": "開始使用"
     },
     "components": {
@@ -144,16 +177,16 @@
         "quick_start": "請根據您的發行版選擇適當的套件格式：",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "免安裝版 (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
-        "download_appimage": ".AppImage"
+        "download_appimage": ".AppImage",
+        "download_flathub": "Flathub"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS 適用於 Intel",
         "title_arm64": "macOS 適用於 Apple Silicon",
-        "description_x64": "適用於搭載 Intel 處理器的 Mac，並運行 macOS Monterey 或更新版本。",
+        "description_x64": "適用於搭載 Intel 處理器的 Mac，並運行 macOS Ventura 或更新版本。",
         "description_arm64": "適用於搭載 Apple Silicon 的 Mac，例如配備 M1 和 M2 晶片的機型。",
         "quick_start": "透過 Homebrew 安裝：",
         "download_dmg": "下載安裝程式 (.dmg)",
@@ -182,7 +215,8 @@
         "get-started": "開始使用",
         "documentation": "文件",
         "support-us": "支持我們",
-        "resources": "資源"
+        "resources": "資源",
+        "language": "語言"
     },
     "resources": {
         "title": "資源",
@@ -190,5 +224,64 @@
         "icon_packs_intro": "使用圖示包以擴充筆記的可用圖示選擇。有關圖示包的詳細資訊，請參閱<DocumentationLink>官方文件</DocumentationLink>。",
         "download": "下載",
         "website": "網站"
+    },
+    "section_nav": {
+        "aria_label": "跳至該節",
+        "organization": "整理",
+        "productivity": "功能",
+        "note_types": "筆記類型",
+        "import": "匯入與匯出",
+        "collections": "合集",
+        "scripting": "腳本",
+        "ai_integration": "AI",
+        "faq": "常見問題"
+    },
+    "import": {
+        "title": "您的筆記永遠不受平台限制",
+        "subtitle": "您的筆記完全由您自由管理。您可以隨時將筆記從其他應用程式匯入，以開放格式匯出，或將其轉為精緻的文件。",
+        "pillar_import_title": "匯入",
+        "pillar_import_description": "將其他應用程式的筆記完整保留其結構後匯入，或匯入標準的 Markdown、HTML 及 OPML 檔案。",
+        "pillar_export_title": "匯出",
+        "pillar_export_description": "隨時都能將任何筆記或整個樹狀結構以開放且便於攜帶的格式匯出：",
+        "pillar_export_markdown": "Markdown 用於可攜式純文字",
+        "pillar_export_html": "HTML 打包好的獨立頁面",
+        "pillar_export_opml": "OPML 用於大綱結構",
+        "pillar_pdf_title": "列印為 PDF",
+        "pillar_pdf_description": "將您的筆記轉為精緻、宛如書籍般的 PDF 檔案：",
+        "pillar_pdf_single": "單篇筆記",
+        "pillar_pdf_subtree": "完整的子樹，保持原有順序",
+        "pillar_pdf_ready": "已準備好列印或分享",
+        "sources_label": "直接匯入自",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "AI，依您所願",
+        "subtitle": "此為選用功能，完全由您自行決定。AI 功能採「主動啟用」機制，預設為停用狀態：除非您啟用該功能並連接您自己的服務供應商，否則您的筆記絕不會被傳送至任何地方。",
+        "screenshot_alt": "Trilium AI 聊天機器人會透過內建工具，代您建立筆記",
+        "chat_title": "與您的筆記對話",
+        "chat_description": "透過內建的聊天功能提問並進行腦力激盪，該功能可參考您自身筆記中的內容。",
+        "tools_title": "能與您的筆記協同運作的 AI",
+        "tools_description": "讓助理透過一組內建工具，代您搜尋、建立及更新筆記。",
+        "providers_title": "您的服務供應商，您的金鑰",
+        "providers_description": "使用您自己的 API 金鑰將 OpenAI、Anthropic 或 Google 進行連線，或將 Trilium 指向您自行託管且與 OpenAI 相容的模型。透過 MCP 將您的筆記對外部助理開放存取。",
+        "learn_more": "了解更多"
+    },
+    "scripting": {
+        "title": "凡是您能想像到的，皆能利用腳本實現",
+        "subtitle": "Trilium 不僅僅是個儲存筆記的地方，它還具備可程式設計的功能。您可以編寫在應用程式內或伺服器上執行的 JavaScript 程式碼、建立專屬介面，並自動化您的工作流程——從一行代碼的微調到完整的客製化應用程式，皆可實現。",
+        "screenshot_alt": "一個 Trilium 渲染筆記，展示了一個透過腳本建構的互動式指針式時鐘",
+        "widgets_title": "自訂小工具",
+        "widgets_description": "使用前端 JavaScript 將您自訂的按鈕、面板和啟動器小工具新增至 Trilium 的介面中。",
+        "backend_title": "後端腳本與事件",
+        "backend_description": "可依排程執行伺服器端腳本，或於發生特定事件（例如建立或修改筆記）時觸發執行。",
+        "render_title": "渲染筆記",
+        "render_description": "建立可直接在筆記內顯示的互動式儀表板和迷你應用程式，例如圖中所示的時鐘。",
+        "api_title": "腳本 API",
+        "api_description": "一套針對筆記、分支、屬性及搜尋功能所設計的類型化 API，可供前端與後端腳本使用。"
     }
 }

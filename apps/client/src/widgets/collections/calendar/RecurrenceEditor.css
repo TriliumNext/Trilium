@@ -1,17 +1,16 @@
-/* Carried by the in-place wrapper and by the portaled one alike (see portalToBody in Dropdown.tsx),
+/* Carried by the toggle's wrapper and by the popup's portal alike (see `portalClassName` in Dropdown.tsx),
    so the button is styled here and the menu there under the one class. */
 .calendar-recurrence-dropdown {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
 
-    /* The button stands where a select would, so it takes the row as a select does, and says its
-       value from the leading edge with the arrow at the other end. */
+    /* As wide as the rule it names, like the date and time inputs; a long rule shrinks to the row
+       and is cut off with an ellipsis. */
     > .select-button {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         text-align: start;
     }
 

@@ -22,7 +22,6 @@
         "sync-from-desktop": "ربط تطبيق سطح المكتب",
         "init-in-progress": "جارٍ تهيئة المستند",
         "create-new-document-title": "جارٍ تجهيز قاعدة المعرفة الخاصة بك",
-        "sync-failed": "فشل المزامنة: {{message}}",
         "your-ip-addresses": "عناوين هذا الجهاز",
         "button-finish-setup": "إنهاء الإعداد",
         "sync-step-syncing": "جارٍ مزامنة البيانات",

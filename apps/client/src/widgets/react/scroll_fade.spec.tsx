@@ -3,7 +3,7 @@ import { useRef, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ScrollFadeOptions, useScrollFade } from "./scroll_fade";
+import { ScrollFade, ScrollFadeOptions, useScrollFade } from "./scroll_fade";
 
 describe("useScrollFade", () => {
     let container: HTMLElement | undefined;
@@ -52,57 +52,30 @@ describe("useScrollFade", () => {
         }
     });
 
-    it("fades the end alone while the content is scrolled to the start", () => {
+    it("names the faded edges in its classes as the content scrolls", () => {
         const scroller = setup();
-
         expect(scroller.className).toContain("scroll-fade-end");
         expect(scroller.className).not.toContain("scroll-fade-start");
-    });
-
-    it("fades both ends once the content is scrolled between them", () => {
-        const scroller = setup();
 
         scrollTo(scroller, 400);
-
         expect(scroller.className).toContain("scroll-fade-start");
         expect(scroller.className).toContain("scroll-fade-end");
-    });
-
-    it("fades the start alone once the content is scrolled to the end", () => {
-        const scroller = setup();
 
         scrollTo(scroller, 800);
-
         expect(scroller.className).toContain("scroll-fade-start");
         expect(scroller.className).not.toContain("scroll-fade-end");
     });
 
-    it("fades neither end while the content fits", () => {
-        const scroller = setup({ contentSize: 150 });
+    it("reports the overflow and measures on request", () => {
+        let fade: ScrollFade | undefined;
+        setup({ onRender: (result) => { fade = result; } });
+        expect(fade?.overflow).toBe(800);
 
-        expect(scroller.className).not.toContain("scroll-fade-start");
-        expect(scroller.className).not.toContain("scroll-fade-end");
+        content = 600;
+        act(() => { fade?.measure(); });
+        expect(fade?.overflow).toBe(400);
     });
 
-    /**
-     * A fade reaching 20px into a container that scrolls 2px covers ten times what it hides, and
-     * reads as content below that scrolling never reaches.
-     */
-    it("leaves both ends alone while there is less to scroll than the fade reaches", () => {
-        const scroller = setup({ contentSize: 218 });
-
-        expect(scroller.className).not.toContain("scroll-fade-end");
-
-        // Past the fade's own reach, so the fade now stands for something.
-        content = 222;
-        act(() => {
-            scroller.dispatchEvent(new Event("scroll"));
-            vi.advanceTimersByTime(20);
-        });
-        expect(scroller.className).toContain("scroll-fade-end");
-    });
-
-    /** A line of text cut off by a character still has to read as cut off. */
     it("fades a smaller overflow for a caller that asks for one", () => {
         const scroller = setup({ contentSize: 205, options: { minOverflow: 1 } });
 
@@ -164,9 +137,10 @@ describe("useScrollFade", () => {
             .toContain("scroll-fade-end");
     });
 
-    function setup({ contentSize, options }: {
+    function setup({ contentSize, options, onRender }: {
         contentSize?: number,
-        options?: ScrollFadeOptions
+        options?: ScrollFadeOptions,
+        onRender?: (fade: ScrollFade) => void
     } = {}) {
         if (contentSize !== undefined) content = contentSize;
 
@@ -176,8 +150,9 @@ describe("useScrollFade", () => {
 
         function Harness() {
             const ref = useRef<HTMLDivElement>(null);
-            const { className, style } = useScrollFade(ref, options);
-            return <div ref={ref} className={className} style={style} />;
+            const fade = useScrollFade(ref, options);
+            onRender?.(fade);
+            return <div ref={ref} className={fade.className} style={fade.style} />;
         }
 
         act(() => { render(<Harness />, mountPoint); });

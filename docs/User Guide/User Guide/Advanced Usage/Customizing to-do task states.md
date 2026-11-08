@@ -1,5 +1,5 @@
 # Customizing to-do task states
-Trilium features customizable to-do list task states. To customize them, go to **"Options"** → **"Text Notes"** → **"Related Settings"** → **"Custom checkbox states for to-do lists"**. Alternatively, right-click a checkbox in an editable text note and click the pencil icon.
+Trilium features customizable to-do list task states. To customize them, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Related settings_ → _Custom checkbox states for to-do lists_. Alternatively, right-click a checkbox in an editable text note and click the pencil icon; on the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the pencil icon is in the row of the _List ›_ button of a to-do list.
 
 > [!WARNING]
 > Changes take effect only after restarting the application.
@@ -12,14 +12,14 @@ Click the plus icon next to Task States in the left-side pane, then define the t
 
 Selecting any state other than "None" and "Done" (which cannot be modified) from the side pane reveals the following editable fields:
 
-*   **Icon** (required): The symbol shown inside the checkbox. You can pick an icon just as you would for any regular note, including from custom icon packs.
-*   **Title** (required): The name of the task state shown in the UI. For example: "Doing", "Postponed".
-*   **Identifier** (required): A short name for the state, using only letters, digits, "`-`" and "`_`". It is stored as metadata in the note's markup and used to identify the task state. Two task states cannot share the same identifier.  
+*   _Icon_ (required): The symbol shown inside the checkbox. You can pick an icon just as you would for any regular note, including from custom icon packs.
+*   _Title_ (required): The name of the task state shown in the UI. For example: "Doing", "Postponed".
+*   _Identifier_ (required): A short name for the state, using only letters, digits, "`-`" and "`_`". It is stored as metadata in the note's markup and used to identify the task state. Two task states cannot share the same identifier.  
     Prefix the identifiers of your custom task states with an underscore "`_`" or a hyphen "`-`" to avoid clashes with task states that may be introduced in future versions of Trilium.
-*   **Markdown symbol**: A single character used to represent the state in Markdown syntax. For example, "`#`" creates a task state that can be applied in Markdown using " `- [#]` ". Make sure no other task state uses the same symbol.
-*   **Counts as completed**: If checked, the task is treated as completed.
-*   **Color**: The color of the checkbox. Its lightness and saturation are adjusted automatically to match the current color scheme or theme.
-*   **Hidden from toolbar**: The state is not listed in the UI. This is useful when you want existing notes to keep rendering the state correctly but no longer need to apply it yourself.
+*   _Markdown symbol_: A single character used to represent the state in Markdown syntax. For example, "`#`" creates a task state that can be applied in Markdown using " `- [#]` ". Make sure no other task state uses the same symbol.
+*   _Counts as completed_: If checked, the task is treated as completed.
+*   _Color_: The color of the checkbox. Its lightness and saturation are adjusted automatically to match the current color scheme or theme.
+*   _Hidden from toolbar_: The state is not listed in the UI. This is useful when you want existing notes to keep rendering the state correctly but no longer need to apply it yourself.
 
 > [!NOTE]
 > The task definition details are validated at startup. If errors are found, a toast provides the details and the affected task definition is ignored.

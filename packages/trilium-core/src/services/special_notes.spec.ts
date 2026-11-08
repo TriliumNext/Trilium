@@ -6,8 +6,6 @@ import attributeService from "./attributes.js";
 import { getContext } from "./context.js";
 import hoistedNoteService from "./hoisted_note.js";
 import noteService from "./notes.js";
-import SearchContext from "./search/search_context.js";
-import searchService from "./search/services/search.js";
 import specialNotes from "./special_notes.js";
 import { unwrapStringOrBuffer } from "./utils/binary.js";
 
@@ -504,29 +502,6 @@ describe("special_notes (core, real DB)", () => {
 
             it("respects the limit argument", () => {
                 expect(specialNotes.getRecentLlmChats(1).length).toBeLessThanOrEqual(1);
-            });
-        });
-
-        describe("getOrCreateLlmChat", () => {
-            it("returns an existing chat when one exists", () => {
-                getContext().init(() => specialNotes.createLlmChat());
-                expect(specialNotes.getOrCreateLlmChat().type).toBe("llmChat");
-            });
-
-            it("creates a new chat when none exist", () => {
-                getContext().init(() => {
-                    for (const chat of searchService.searchNotes(
-                        "note.type = llmChat",
-                        new SearchContext({ ancestorNoteId: "_llmChat" })
-                    )) {
-                        chat.deleteNote();
-                    }
-                });
-                expect(specialNotes.getMostRecentLlmChat()).toBeNull();
-
-                const created = getContext().init(() => specialNotes.getOrCreateLlmChat());
-                expect(created.type).toBe("llmChat");
-                expect(specialNotes.getMostRecentLlmChat()).not.toBeNull();
             });
         });
 

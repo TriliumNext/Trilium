@@ -13,13 +13,13 @@ Once a shape is drawn, it cannot be moved or modified. To do so, simply remove t
 
 ### Drawing a path or an area
 
-1.  Press the _Draw a path on the map_ or _Draw an area on the map_ button. The button stays held down while the tool is armed, and a notification describes what to do.
+1.  Press the _Draw a path on the map_ (<span class="tn-icon bx bx-vector"></span>) or _Draw an area on the map_ (<span class="tn-icon bx bx-shape-polygon"></span>) button. The button stays held down while the tool is armed, and a notification describes what to do.
 2.  Click on the map once for each point. The shape is previewed as it grows.
 3.  Finish it by pressing <kbd>Enter</kbd>. A path can also be finished by clicking its last point again, and an area by clicking the corner it started from. A path needs at least two points and an area at least three.
 
 ### Drawing a rectangle or a circle
 
-1.  Press the _Draw a rectangle on the map_ or _Draw a circle on the map_ button.
+1.  Press the _Draw a rectangle on the map_ (<span class="tn-icon bx bx-shape-square"></span>) or _Draw a circle on the map_ (<span class="tn-icon bx bx-shape-circle"></span>) button.
 2.  Click once to set the first corner, or the center of the circle. Click a second time at the opposite corner, or at the distance the circle should reach.
 3.  Instead of two clicks you can drag from one to the other. This also works on mobile and other touch-based apps.
 

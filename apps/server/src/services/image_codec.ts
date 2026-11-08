@@ -117,7 +117,9 @@ export function planFromBytes(
     // to an image should not cost more than doing it. Dimensions the header does not give up — past
     // the end of a prefix, or behind metadata — leave this open, and the decode settles it.
     const declared = inspectImage(bytes);
-    const declaredEdge = Math.max(declared.width ?? 0, declared.height ?? 0);
+    const declaredEdge = request.widthOnly
+        ? declared.width ?? 0
+        : Math.max(declared.width ?? 0, declared.height ?? 0);
     const mayNeedResize = request.resize && (declaredEdge === 0 || declaredEdge > request.maxWidthHeight);
 
     if (!mayNeedResize && !worthReencoding) {
@@ -378,7 +380,8 @@ export async function compressImageBytes(
     const start = Date.now();
     const image = await decodeImage(buffer, budgetMb);
     const { width, height } = image.bitmap;
-    const needsResize = request.resize && Math.max(width, height) > request.maxWidthHeight;
+    const needsResize = request.resize
+        && (request.widthOnly ? width : Math.max(width, height)) > request.maxWidthHeight;
 
     // Only consulted where it changes the answer. JPEG has no alpha channel, so a transparent
     // image cannot be converted — it is optimized instead, that being the best still available
@@ -399,7 +402,7 @@ export async function compressImageBytes(
     }
 
     if (needsResize) {
-        if (width >= height) {
+        if (request.widthOnly || width >= height) {
             image.resize({ w: request.maxWidthHeight });
         } else {
             image.resize({ h: request.maxWidthHeight });

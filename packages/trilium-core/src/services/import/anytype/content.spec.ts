@@ -486,6 +486,12 @@ describe("inline formulas", () => {
         expect(renderInlineText("Costs $5 today", [])).toBe("Costs $5 today");
         expect(renderInlineText("$$e=mc^2$", [])).toBe("$$e=mc^2$");
     });
+
+    it("leaves dollar amounts as literal text next to a formula", () => {
+        expect(renderInlineText("It costs $15, parts cost $6 and $4", [])).toBe("It costs $15, parts cost $6 and $4");
+        expect(renderInlineText("$4,000 grows by $FV=PV$", []))
+            .toBe('$4,000 grows by <span class="math-tex">\\( FV=PV \\)</span>');
+    });
 });
 
 describe("inline mentions", () => {

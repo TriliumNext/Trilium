@@ -26,8 +26,8 @@ export default class Becca {
     branches!: Record<string, BBranch>;
     childParentToBranch!: Record<string, BBranch>;
     attributes!: Record<string, BAttribute>;
-    /** Points from attribute type-name to list of attributes */
-    attributeIndex!: Record<string, BAttribute[]>;
+    /** Points from attribute type-name to its attributes, in insertion order. */
+    attributeIndex!: Record<string, Set<BAttribute>>;
     options!: Record<string, BOption>;
     etapiTokens!: Record<string, BEtapiToken>;
 
@@ -77,7 +77,7 @@ export default class Becca {
         }
 
         const key = `${type}-${name}`;
-        return Object.hasOwn(this.attributeIndex, key) ? this.attributeIndex[key] : [];
+        return Object.hasOwn(this.attributeIndex, key) ? Array.from(this.attributeIndex[key]) : [];
     }
 
     findAttributesWithPrefix(type: string, name: string): BAttribute[] {
@@ -86,7 +86,7 @@ export default class Becca {
 
         for (const idx in this.attributeIndex) {
             if (idx.startsWith(key)) {
-                resArr.push(this.attributeIndex[idx]);
+                resArr.push(Array.from(this.attributeIndex[idx]));
             }
         }
 

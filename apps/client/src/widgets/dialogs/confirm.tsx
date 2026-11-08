@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "preact/hooks";
 import FormCheckbox from "../react/FormCheckbox";
 import { useTriliumEvent } from "../react/hooks";
 import { isValidElement, type VNode } from "preact";
-import { RawHtmlBlock } from "../react/RawHtml";
+import { SanitizedHtml } from "../react/RawHtml";
 
 interface ConfirmDialogProps {
     title?: string;
@@ -91,7 +91,7 @@ export default function ConfirmDialog() {
         >
             {isValidElement(opts?.message)
             ? opts?.message
-            : <RawHtmlBlock html={opts?.message} />
+            : <SanitizedHtml html={opts?.message} />
             }
 
             {opts?.checkboxLabel && (

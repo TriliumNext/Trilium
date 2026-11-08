@@ -1,12 +1,9 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-const findOnPathMock = vi.hoisted(() => vi.fn<(binary: string) => Promise<string | undefined>>());
-vi.mock("./binary_lookup.js", () => ({ findOnPath: findOnPathMock }));
-
-const { buildHookCommand, decideAntigravityToolCall, resetCurlCache, resolveCurlPath, writeAntigravityHooks } = await import("./antigravity_hook.js");
+const { decideAntigravityToolCall, writeAntigravityHooks } = await import("./antigravity_hook.js");
 
 const ROOT = path.join(os.tmpdir(), "trilium-antigravity-hook-spec");
 const HOME = path.join(ROOT, "home");
@@ -81,31 +78,5 @@ describe("writeAntigravityHooks", () => {
                 PreToolUse: [ { matcher: ".*", hooks: [ { type: "command", command: "\"/usr/bin/curl\" --fail", timeout: 10 } ] } ]
             }
         });
-    });
-});
-
-describe("buildHookCommand", () => {
-    it("posts the tool call to Trilium and fails on anything but a decision", () => {
-        expect(buildHookCommand("C:\\Windows\\System32\\curl.exe", "http://127.0.0.1:5000/hook-abc"))
-            .toBe("\"C:\\Windows\\System32\\curl.exe\" --silent --show-error --fail --noproxy 127.0.0.1 --max-time 8 --data-binary @- http://127.0.0.1:5000/hook-abc");
-        expect(() => buildHookCommand("/opt/\"odd\"/curl", "http://127.0.0.1:5000/hook-abc")).toThrow(/quote/);
-    });
-});
-
-describe("resolveCurlPath", () => {
-    beforeEach(() => {
-        resetCurlCache();
-        findOnPathMock.mockReset();
-    });
-
-    it("finds curl once, and explains what to install when it is missing", async () => {
-        findOnPathMock.mockResolvedValueOnce(undefined);
-        await expect(resolveCurlPath()).rejects.toThrow(/Google Antigravity needs curl.*Install curl/s);
-
-        findOnPathMock.mockResolvedValue("/usr/bin/curl");
-        await expect(resolveCurlPath()).resolves.toBe("/usr/bin/curl");
-        await expect(resolveCurlPath()).resolves.toBe("/usr/bin/curl");
-        expect(findOnPathMock).toHaveBeenCalledTimes(2);
-        expect(findOnPathMock).toHaveBeenCalledWith("curl");
     });
 });

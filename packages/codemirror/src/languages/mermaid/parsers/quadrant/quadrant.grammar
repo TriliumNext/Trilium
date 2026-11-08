@@ -1,0 +1,47 @@
+// See https://mermaid.js.org/syntax/quadrantChart.html
+@top QuadrantDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName newlines* (
+    () |
+    subDocument newlines* |
+    subDocument (newlines+ subDocument)+ newlines*
+  )
+}
+
+subDocument {
+  LineComment |
+  Keyword Text |
+  Point
+}
+
+Point {
+  Label ":" "[" Number "," Number "]"
+}
+
+Text { axisText }
+Label { labelText }
+
+DiagramName { kw<"quadrantChart"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens keywordTokens from "./tokens.js" { Keyword }
+@external tokens labelTokens from "./tokens.js" { labelText }
+@external tokens axisTextTokens from "./tokens.js" { axisText }
+
+@tokens {
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { @asciiLetter+ }
+  Number { @digit+ ("." @digit+)? }
+
+  @precedence { newlines, spaces }
+}
+
+@external propSource quadrantHighlighting from "./highlight.js"

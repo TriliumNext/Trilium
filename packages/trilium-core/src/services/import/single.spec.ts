@@ -1,3 +1,4 @@
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import ExcelJS from "exceljs";
 import fs from "fs";
@@ -95,6 +96,14 @@ describe("processNoteContent", () => {
         const content = importedNote.getContent().toString();
         expect(content).toContain(`data-trilium-collapsed="true"`);
         expect(content).toContain("Child");
+    });
+
+    it("safe import preserves the block ids of a text note", async () => {
+        const html = `<p data-trilium-block-id="p1">Text</p>`;
+        const { importedNote } = await testImport(
+            "blocks.html", "text/html", Buffer.from(html), { safeImport: true });
+
+        expect(importedNote.getContent().toString()).toContain(html);
     });
 
     it("supports code note with UTF-16", async () => {
@@ -347,12 +356,19 @@ describe("importAttachment", () => {
             await getContext().init(async () => {
                 single.importAttachment(taskContext, { originalname: "Shot.png", mimetype: "image/png", buffer: imageBuffer }, rootNote);
                 single.importAttachment(taskContext, { originalname: "notes.unknownext", mimetype: "application/x-custom", buffer: Buffer.from("data") }, rootNote);
+                single.importAttachment(taskContext, {
+                    originalname: "Imported.excalidraw",
+                    mimetype: "application/octet-stream",
+                    buffer: Buffer.from("{}")
+                }, rootNote);
             });
 
             expect(saveImageToAttachment).toHaveBeenCalledWith("root", imageBuffer, "Shot.png", true);
 
             const attachment = rootNote.getAttachments().find((a) => a.title === "notes.unknownext");
             expect(attachment).toMatchObject({ mime: "application/x-custom", role: "file" });
+            const drawing = rootNote.getAttachments().find((a) => a.title === "Imported.excalidraw");
+            expect(drawing).toMatchObject({ mime: CANVAS_ATTACHMENT_MIME, role: "file" });
         } finally {
             saveImageToAttachment.mockRestore();
         }

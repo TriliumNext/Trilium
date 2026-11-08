@@ -1,12 +1,10 @@
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+![GitHub 贊助者](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay
+贊助者](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Docker 拉取次數](https://img.shields.io/docker/pulls/triliumnext/trilium) ![GitHub
+下載次數（所有資源、所有發行版）](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+[![翻譯狀態](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -19,12 +17,12 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式，專注於建立大型個人知識庫。
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+在尋找「Trillium Notes」嗎？該專案的標準拼寫是「Trilium Notes」，只含一個 `l`。
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -161,22 +159,18 @@ TriliumDroid 時，建議停用伺服器安裝版本的自動更新功能（詳�
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+若您想要一款功能齊全的原生 Android 應用程式，不妨試試 [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium)。它能在您的手機上運行完整的 Trilium
+實例，支援完全離線使用，並可與您的伺服器同步。
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+若您想要一款原生 iOS 應用程式，可以使用
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249)——這是專為您自行架設的
+Trilium / TriliumNext
+伺服器所設計的開源客戶端。它讓您能夠瀏覽和整理筆記樹、在伺服器上搜尋筆記、閱讀及編輯所有類型的筆記（文字、程式碼、心智圖、試算表、地理圖、畫布等），並確保筆記在離線時仍可存取與編輯。若您有興趣參與貢獻，請參閱此
+[儲存庫](https://github.com/StephenArg/Trinote)；若您有任何回饋或建議想討論，歡迎加入此
+[Discord](https://discord.com/invite/ghjJG56EUS) 伺服器。
 
 ### 伺服器
 
@@ -278,24 +272,26 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Thomas Frei](https://github.com/thfrei) 對 Canvas 原始作品的貢獻。
 * [antoniotejada](https://github.com/nriver) 為原始語法高亮小工具的貢獻。
 * [Tabler Icons](https://tabler.io/icons) 用於系統匣圖示。
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
-        OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+*   匯入對話方塊中的應用程式圖示來源為：
+    *   適用於 OneNote、Google Keep 及 Evernote 的 [Material Design
+        圖示](https://pictogrammers.com/library/mdi/)。
+    *   適用於 Notion、Obsidian 的 [Font Awesome](https://fontawesome.com/)。
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) 適用於 Anytype。
+*  LLM 服務提供者的圖示取自 [Lobe Icons](https://lobehub.com/icons)。
 
 若無其背後的技術支撐，Trilium 便無法開發完成：
 
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) —— 文字筆記背後所採用的視覺化編輯器。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支援大量語言的程式碼編輯器。
+* [Mermaid](https://github.com/mermaid-js/mermaid) — 用於渲染 Mermaid
+  筆記中的圖表；其解析器是這些圖表語法高亮顯示的基礎。
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  —— Mermaid 語法高亮顯示的基礎。
 * [Excalidraw](https://github.com/excalidraw/excalidraw) —— 畫布筆記中使用的無限白板。
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供心智圖功能。
 * [Leaflet](https://github.com/Leaflet/Leaflet) —— 用於渲染地理地圖。
 * [Tabulator](https://github.com/olifolkerd/tabulator) —— 用於集合中的互動式表格。
 * [FancyTree](https://github.com/mar10/fancytree) —— 功能非常豐富的樹狀元件，無可匹敵。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) ——
-  視覺連線函式庫。用於[關聯圖](https://docs.triliumnotes.org/user-guide/note-types/relation-map)與[連結圖](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 支援我們
 

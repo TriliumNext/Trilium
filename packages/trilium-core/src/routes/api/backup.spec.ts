@@ -11,8 +11,8 @@ import { CoreApiTester } from "../../test/api_tester";
  * backup service on both runtimes. The two filesystem-touching service calls
  * are stubbed because the underlying platform I/O cannot run against the
  * ephemeral in-memory fixture: on node, better-sqlite3's `.backup()` rejects
- * with `SQLITE_NOTADB` against the in-memory DB; on standalone (happy-dom)
- * there is no OPFS. So `backupNow` and `getBackupContent` are isolated — the
+ * with `SQLITE_NOTADB` against the in-memory DB; on standalone there is no
+ * OPFS. So `backupNow` and `getBackupContent` are isolated — the
  * route's own logic (mapping, filename extraction, headers) is what we assert.
  */
 let api: CoreApiTester;

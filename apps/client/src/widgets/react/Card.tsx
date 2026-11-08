@@ -1,13 +1,16 @@
 import "./Card.css";
 import { cloneElement, ComponentChildren, createContext, isValidElement } from "preact";
-import { JSX, HTMLAttributes } from "preact";
+import { JSX, HTMLAttributes, type RefObject } from "preact";
 import { useCallback, useContext, useLayoutEffect, useRef, useState } from "preact/hooks";
 import clsx from "clsx";
 
+import type { MenuItem } from "../../menus/context_menu";
+import Button from "./Button";
 import {
     type FilterRole, FilterPassthrough, filterRoleClass, useFilterMatch, useIsFiltering
 } from "./filter";
 import { useUniqueName } from "./hooks";
+import Icon from "./Icon";
 
 // #region Card Frame
 
@@ -79,7 +82,7 @@ export function Card(props: {children: ComponentChildren} & CardProps) {
             {props.heading}
             {props.actions && <span className="tn-card-heading-actions">{props.actions}</span>}
         </h5>}
-        {props.description && <p className="tn-card-description">{props.description}</p>}
+        {props.description && <div className="tn-card-description">{props.description}</div>}
         <div className="tn-card-body">
             <FilterPassthrough when={matched}>{props.children}</FilterPassthrough>
         </div>
@@ -171,6 +174,8 @@ export function CardSection(props: {children: ComponentChildren} & CardSectionPr
 export interface OptionCardSectionProps extends CardSectionProps {
     label: ComponentChildren;
     description?: ComponentChildren;
+    /** A validation message shown after the control, styled by `.form-field-error`. */
+    error?: ComponentChildren;
     /**
      * Binds the label to the control, so that clicking the text operates it. Only a single element
      * child can be bound, which covers the usual case of one toggle or one input per option.
@@ -181,6 +186,11 @@ export interface OptionCardSectionProps extends CardSectionProps {
      * whole width — a URL, a path, anything read as well as typed.
      */
     stacked?: boolean;
+    /**
+     * Keeps the control beside the label on a narrow card too, for a control known to fit there,
+     * such as a segmented choice between two short words. The opposite of {@link stacked}.
+     */
+    inline?: boolean;
     /** The controls the option is operated with, placed on the trailing edge. */
     children?: ComponentChildren;
     /**
@@ -202,7 +212,7 @@ export interface OptionCardSectionProps extends CardSectionProps {
  */
 export function OptionCardSection(props: OptionCardSectionProps) {
     const {
-        label, description, name, stacked, children, className, subSections,
+        label, description, error, name, stacked, inline, children, className, subSections,
         filterExtraKeywords, ...rest
     } = props;
     const matched = useFilterMatch(label, description, filterExtraKeywords);
@@ -226,7 +236,7 @@ export function OptionCardSection(props: OptionCardSectionProps) {
     return <CardSection elementRef={keepRow}
                         className={clsx("tn-card-option", className, {
                             "tn-card-option-stacked": stacked,
-                            "tn-card-option-wide": wide
+                            "tn-card-option-wide": wide && !inline
                         })}
                         // Kept for its details rather than itself, which is what a companion is.
                         filterRole={filtering ? (matched ? "match" : "companion") : undefined}
@@ -243,6 +253,7 @@ export function OptionCardSection(props: OptionCardSectionProps) {
         </label>
 
         {bound ? cloneElement(children, { id }) : children}
+        {error && <small className="form-field-error" role="alert">{error}</small>}
     </CardSection>;
 }
 
@@ -264,6 +275,185 @@ function holdsSmallControl(element: HTMLElement) {
     }
 
     return false;
+}
+
+// #endregion
+
+// #region Choice Card Section
+
+export interface ChoiceCardSectionProps {
+    isChecked: boolean;
+    onCheck: () => void;
+    /** An icon class, `bx` prefix included, shown before the label. */
+    icon?: string;
+    className?: string;
+    children: ComponentChildren;
+    /** The choices nested under this one, as more `ChoiceCardSection`s. */
+    subSections?: JSX.Element[];
+    /** Whether `subSections` are shown. Defaults to `true`. */
+    isExpanded?: boolean;
+    /**
+     * Adds an expander before the icon, which calls this with the new `isExpanded`. Pass it to
+     * every choice of a tree: a choice without `subSections` keeps the space of its hidden
+     * expander, so the labels line up.
+     */
+    onExpandedChange?: (isExpanded: boolean) => void;
+}
+
+/**
+ * One segment of a card that lists exclusive choices. A click, Enter or Space checks it, and the
+ * checked segment shows a check mark.
+ */
+export function ChoiceCardSection({
+    isChecked, onCheck, icon, className, children, subSections, isExpanded = true,
+    onExpandedChange
+}: ChoiceCardSectionProps) {
+    const parentContext = useContext(CardSectionContext);
+    const nestingLevel = parentContext ? parentContext.nestingLevel + 1 : 0;
+    const style = { "--tn-card-section-nesting-level": nestingLevel || null };
+    const isExpandable = !!subSections?.length;
+
+    return <>
+        <section
+            className={clsx(
+                "tn-card-section tn-card-highlight-on-hover tn-card-choice", className,
+                { "tn-card-section-nested": nestingLevel > 0 }
+            )}
+            style={style}
+            role="radio"
+            aria-checked={isChecked}
+            aria-expanded={onExpandedChange && isExpandable ? isExpanded : undefined}
+            tabIndex={0}
+            onClick={onCheck}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onCheck();
+                    return;
+                }
+
+                // As in a tree, the arrow that the expander points to expands the choice.
+                const isArrow = event.key === "ArrowRight" || event.key === "ArrowLeft";
+                const shouldExpand = (event.key === "ArrowRight") !== !!glob.isRtl;
+                if (onExpandedChange && isExpandable && isArrow && shouldExpand !== isExpanded) {
+                    event.preventDefault();
+                    onExpandedChange(shouldExpand);
+                }
+            }}
+        >
+            {onExpandedChange && (
+                <Icon
+                    icon={isExpanded ? "bx bx-chevron-down" : "bx bx-chevron-right"}
+                    className={clsx("tn-card-choice-expander", {
+                        "tn-card-choice-expander-empty": !isExpandable
+                    })}
+                    onClick={isExpandable ? (event) => {
+                        // Expanding does not check the choice.
+                        event.stopPropagation();
+                        onExpandedChange(!isExpanded);
+                    } : undefined}
+                />
+            )}
+            {icon && <Icon icon={icon} className="tn-card-choice-icon" />}
+            <span className="tn-card-choice-label">{children}</span>
+            {isChecked && <Icon icon="bx bx-check" className="tn-card-choice-check" />}
+        </section>
+
+        {isExpandable && isExpanded && (
+            <CardSectionContext.Provider value={{ nestingLevel }}>
+                {subSections}
+            </CardSectionContext.Provider>
+        )}
+    </>;
+}
+
+// #endregion
+
+// #region Item Creation Row
+
+interface ItemCreationRowButtonBase {
+    label: string;
+    /** An icon class, `bx` prefix included. */
+    icon?: string;
+    /** Turns the button off, for a caller that cannot make an entry yet. */
+    disabled?: boolean;
+    /** The button's `name` attribute, which tests find it by. */
+    name?: string;
+}
+
+/**
+ * One button of an {@link ItemCreationRow}: one that creates the entry on a press, or one that
+ * opens a context menu of the entries it can create.
+ */
+export type ItemCreationRowButton = ItemCreationRowButtonBase & (
+    | { onClick: (event: MouseEvent) => void; menu?: undefined }
+    | { menu: MenuItem<string>[]; onClick?: undefined }
+);
+
+interface ItemCreationRowProps {
+    buttons: ItemCreationRowButton[];
+    elementRef?: RefObject<HTMLElement | null>;
+    onKeyDown?: (event: KeyboardEvent) => void;
+}
+
+/**
+ * The buttons that create an entry, as the last section of a card. Each is painted as a segment of
+ * the card rather than as a button, so the row reads as the foot of the list above it.
+ */
+export function ItemCreationRow({ buttons, elementRef, onKeyDown }: ItemCreationRowProps) {
+    // The position of the button whose menu is open.
+    const [ openMenuIndex, setOpenMenuIndex ] = useState<number>();
+
+    return (
+        // Transparent: each button paints itself, and the gaps show the card through.
+        <section ref={elementRef} className="tn-card-section tn-card-adders" onKeyDown={onKeyDown}>
+            {buttons.map((button, index) => {
+                const { menu } = button;
+                return (
+                    <Button
+                        // The position in the row: two buttons can share a label.
+                        key={index}
+                        name={button.name}
+                        // Not a command button: the theme gives those a background, a shadow and a
+                        // minimum width, none of which suit a segment.
+                        kind="lowProfile"
+                        className="tn-card-adder"
+                        text={<>
+                            {button.icon && <Icon icon={button.icon} />}
+                            <span>{button.label}</span>
+                        </>}
+                        disabled={button.disabled}
+                        aria-haspopup={menu ? "menu" : undefined}
+                        aria-expanded={menu ? openMenuIndex === index : undefined}
+                        onClick={menu
+                            ? (event) => void openItemCreationMenu(event.currentTarget, menu, {
+                                onShow: () => setOpenMenuIndex(index),
+                                onHide: () => setOpenMenuIndex(undefined)
+                            })
+                            : button.onClick}
+                    />
+                );
+            })}
+        </section>
+    );
+}
+
+/**
+ * Opens `items` as a context menu centered below `button`, or above it where there is no room
+ * below. The press that put the menu away opens nothing.
+ */
+async function openItemCreationMenu(
+    button: HTMLButtonElement,
+    items: MenuItem<string>[],
+    { onShow, onHide }: { onShow: () => void; onHide: () => void }
+) {
+    // Loaded on demand: the login and setup pages show cards but no menus.
+    const { default: contextMenu } = await import("../../menus/context_menu");
+    if (contextMenu.dismissedByLastPress) return;
+
+    await contextMenu.show({
+        anchor: button, centered: true, items, selectMenuItemHandler: () => {}, onShow, onHide
+    });
 }
 
 // #endregion

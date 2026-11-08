@@ -1,0 +1,94 @@
+# Git
+
+gitGraph
+
+==>
+
+GitDiagram(DiagramName)
+
+# Direction
+
+gitGraph LR:
+
+==>
+
+GitDiagram(DiagramName,Direction)
+
+# Single commit
+
+gitGraph
+   commit
+
+==>
+
+GitDiagram(DiagramName,Commit(CommitKeyword))
+
+# Commit with options
+
+gitGraph
+   commit id: "Normal" tag: "v1.0.0"
+
+==>
+
+GitDiagram(DiagramName,Commit(CommitKeyword,Option(OptionKey,String),Option(OptionKey,String)))
+
+# Commit with type value
+
+gitGraph
+   commit type: HIGHLIGHT
+
+==>
+
+GitDiagram(DiagramName,Commit(CommitKeyword,Option(OptionKey,Value)))
+
+# Branch and checkout
+
+gitGraph
+   branch develop
+   checkout develop
+
+==>
+
+GitDiagram(DiagramName,Branch(BranchKeyword,BranchName),Checkout(CheckoutKeyword,BranchName))
+
+# Merge
+
+gitGraph
+   merge develop
+
+==>
+
+GitDiagram(DiagramName,Merge(MergeKeyword,BranchName))
+
+# Cherry-pick
+
+gitGraph
+   cherry-pick id: "abc"
+
+==>
+
+GitDiagram(DiagramName,CherryPick(CherryPickKeyword,Option(OptionKey,String)))
+
+# Full flow with comment
+
+gitGraph
+   %% start
+   commit
+   branch develop
+   checkout develop
+   commit id: "x"
+   checkout main
+   merge develop
+
+==>
+
+GitDiagram(DiagramName,LineComment,Commit(CommitKeyword),Branch(BranchKeyword,BranchName),Checkout(CheckoutKeyword,BranchName),Commit(CommitKeyword,Option(OptionKey,String)),Checkout(CheckoutKeyword,BranchName),Merge(MergeKeyword,BranchName))
+
+# Order option
+
+gitGraph
+   branch develop order: 2
+
+==>
+
+GitDiagram(DiagramName,Branch(BranchKeyword,BranchName,Option(OptionKey,Number)))

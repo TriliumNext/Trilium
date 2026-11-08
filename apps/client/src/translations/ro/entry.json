@@ -36,7 +36,6 @@
         "sync-from-desktop-step5": "Clic pe butonul „Testează sincronizarea” pentru a verifica dacă conexiunea a fost făcută cu succes.",
         "sync-from-desktop-waiting": "Așteptare pentru conexiune...",
         "advanced-options": "Opțiuni avansate",
-        "sync-failed": "Sincronizare eșuată: {{message}}",
         "server-host": "Adresa serverului Trilium",
         "server-host-placeholder": "https://<hostname>:<port>",
         "server-password": "Parolă",

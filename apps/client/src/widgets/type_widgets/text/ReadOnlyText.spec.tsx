@@ -28,10 +28,43 @@ import NoteContext from "../../../components/note_context";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import ReadOnlyText from "./ReadOnlyText";
+import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string) => key
+}));
+
+const {
+    watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed, loadUnknownEmbed,
+    loadMediaEmbed
+} = vi.hoisted(() => {
+    const stop = vi.fn();
+    return {
+        watchContentEmbeds: vi.fn(() => stop),
+        stopWatchingEmbeds: stop,
+        loadEmbeddedNote: vi.fn(async () => {}),
+        loadInlineEmbed: vi.fn(async () => {}),
+        loadUnknownEmbed: vi.fn(async () => {}),
+        loadMediaEmbed: vi.fn(async () => {})
+    };
+});
+vi.mock("./utils", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./utils")>(),
+    watchContentEmbeds,
+    loadEmbeddedNote,
+    loadInlineEmbed,
+    loadUnknownEmbed,
+    loadMediaEmbed
+}));
+
+const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
+const applyStickyTableHeaders = vi.hoisted(() => vi.fn(() => disposeStickyTableHeaders));
+vi.mock("@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js", () => ({
+    applyStickyTableHeaders
+}));
 
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
@@ -102,9 +135,10 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
     let cleanupContainer: HTMLElement | undefined;
 
     afterEach(() => {
-        if (cleanupContainer) {
-            render(null, cleanupContainer);
-            cleanupContainer.remove();
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
             cleanupContainer = undefined;
         }
     });
@@ -154,6 +188,40 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         expect(harness.contentLoadStates).not.toContain("loading");
     });
 
+    it("shows a change saved elsewhere once its tab shows, having loaded it at once", async () => {
+        const resizeCallbacks: (() => void)[] = [];
+        const { ResizeObserver } = globalThis;
+        globalThis.ResizeObserver = class {
+            constructor(callback: () => void) {
+                resizeCallbacks.push(callback);
+            }
+            observe() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+        try {
+            const harness = setupHarness({ isVisible: true });
+            cleanupContainer = harness.container;
+            await harness.mount();
+            harness.contentLoadStates.length = 0;
+
+            // A tab in the background, hidden as `SplitNoteContainer` hides one.
+            harness.container.style.display = "none";
+            harness.getBlobSpy.mockResolvedValue({ content: "<p>changed</p>" } as never);
+            await harness.fireContentChange("ReactWrappedWidget-remote");
+            expect(harness.getBlobSpy).toHaveBeenCalledTimes(2);
+            expect(harness.container.textContent).toContain("hello");
+
+            harness.container.style.display = "";
+            await act(async () => {
+                for (const callback of resizeCallbacks) callback();
+            });
+            expect(harness.container.textContent).toContain("changed");
+            expect(harness.contentLoadStates).toEqual([ "loaded" ]);
+        } finally {
+            globalThis.ResizeObserver = ResizeObserver;
+        }
+    });
+
     it("catches up on skipped own-component changes when displayed again, but only then", async () => {
         const harness = setupHarness({ isVisible: false });
         cleanupContainer = harness.container;
@@ -181,9 +249,10 @@ describe("ReadOnlyText ?bookmark= handling", () => {
     let cleanupContainer: HTMLElement | undefined;
 
     afterEach(() => {
-        if (cleanupContainer) {
-            render(null, cleanupContainer);
-            cleanupContainer.remove();
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
             cleanupContainer = undefined;
         }
     });
@@ -236,6 +305,119 @@ describe("ReadOnlyText ?bookmark= handling", () => {
     });
 });
 
+describe("ReadOnlyText ?block= handling", () => {
+    let cleanupContainer: HTMLElement | undefined;
+
+    afterEach(() => {
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
+            cleanupContainer = undefined;
+        }
+    });
+
+    async function mountWithBlock(block: string | undefined, isVisible = true) {
+        const scrollBy = vi.fn();
+        Element.prototype.scrollBy = scrollBy;
+        const note = buildNote({
+            title: "Blocks",
+            type: "text",
+            content: "<p data-trilium-block-id=\"b1\">One</p>"
+                + "<p data-trilium-block-id=\"b2\">Two</p>"
+        });
+        const parent = new Component();
+        const noteContext = new NoteContext("block-ntx");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { block };
+
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        cleanupContainer = container;
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <ReadOnlyText
+                        note={note}
+                        noteContext={noteContext}
+                        ntxId={noteContext.ntxId}
+                        parentComponent={parent}
+                        viewScope={noteContext.viewScope}
+                        isVisible={isVisible}
+                    />
+                </ParentComponent.Provider>,
+                container
+            );
+        });
+        const isBlockKept = noteContext.viewScope?.block === block;
+        await act(async () => {});
+
+        return { parent, noteContext, container, scrollBy, isBlockKept };
+    }
+
+    function isFlashed(container: HTMLElement, block: string) {
+        const element = container.querySelector(`[data-trilium-block-id='${block}']`);
+        return element?.classList.contains("block-reference-flash");
+    }
+
+    it("reveals the referenced block once the content renders", async () => {
+        const { noteContext, container, scrollBy, isBlockKept } = await mountWithBlock("b2");
+
+        expect(isBlockKept).toBe(true);
+        expect(noteContext.viewScope?.block).toBeUndefined();
+        expect(scrollBy).toHaveBeenCalledOnce();
+        expect([ isFlashed(container, "b1"), isFlashed(container, "b2") ]).toEqual([ false, true ]);
+    });
+
+    it("reveals a block of the open note when a link to it is followed", async () => {
+        const { parent, noteContext, container, scrollBy } = await mountWithBlock("b2");
+        const otherContext = new NoteContext("other-ntx");
+        otherContext.noteId = noteContext.noteId;
+
+        noteContext.viewScope = { block: "b1" };
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext: otherContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBe("b1");
+
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBeUndefined();
+        expect(scrollBy).toHaveBeenCalledTimes(2);
+        expect(isFlashed(container, "b1")).toBe(true);
+    });
+
+    it("labels a link to a block of its note by the text of the block", async () => {
+        const harness = setupHarness({ isVisible: true });
+        cleanupContainer = harness.container;
+        const content = "<p data-trilium-block-id=\"b1\">Opening words</p>"
+            + `<p><a class="reference-link" href="#root/${harness.note.noteId}?block=b1">x</a></p>`;
+        harness.note.getBlob = async () => ({ content }) as never;
+
+        await harness.mount();
+
+        const link = harness.container.querySelector("a.reference-link");
+        expect(link).not.toBeNull();
+        await vi.waitFor(() => expect(link?.textContent).toBe("Opening words"));
+    });
+
+    it("leaves a link to a block of its note to the editor while hidden", async () => {
+        const { parent, noteContext, container, scrollBy } = await mountWithBlock(
+            undefined,
+            false
+        );
+        expect(container.querySelector("[data-trilium-block-id='b1']")).not.toBeNull();
+
+        noteContext.viewScope = { block: "b1" };
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBe("b1");
+        expect(scrollBy).not.toHaveBeenCalled();
+    });
+});
+
 /**
  * The direction is resolved from the note's `#language` label and handed to the content
  * element as `dir`, which is what the RTL rules in the content stylesheets key off (they
@@ -247,9 +429,10 @@ describe("ReadOnlyText text direction", () => {
     let cleanupContainer: HTMLElement | undefined;
 
     afterEach(() => {
-        if (cleanupContainer) {
-            render(null, cleanupContainer);
-            cleanupContainer.remove();
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
             cleanupContainer = undefined;
         }
     });
@@ -268,5 +451,368 @@ describe("ReadOnlyText text direction", () => {
     it("marks the content left-to-right otherwise", async () => {
         expect((await mountWithLanguage("en"))?.getAttribute("dir")).toBe("ltr");
         expect((await mountWithLanguage(undefined))?.getAttribute("dir")).toBe("ltr");
+    });
+});
+
+describe("ReadOnlyText embedded notes", () => {
+    it("watches its content for embed boxes until it unmounts", async () => {
+        watchContentEmbeds.mockClear();
+        stopWatchingEmbeds.mockClear();
+        const harness = setupHarness({ isVisible: true });
+
+        await harness.mount();
+
+        const content = harness.container.querySelector(".note-detail-readonly-text-content");
+        expect(content).not.toBeNull();
+        expect(watchContentEmbeds.mock.calls).toEqual([ [ content ] ]);
+        expect(stopWatchingEmbeds).not.toHaveBeenCalled();
+
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+        expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
+    });
+
+    it("loads an embed with the blocks it shows, and the note around it", async () => {
+        loadEmbeddedNote.mockClear();
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<figure class=\"include-note\" data-note-id=\"src1\""
+                + " data-block=\"b1:b2\"></figure>"
+        }) as never;
+
+        await harness.mount();
+
+        expect(loadEmbeddedNote).toHaveBeenCalledWith("src1", expect.anything(), undefined, {
+            block: "b1:b2", seenNoteIds: new Set([ harness.note.noteId ]), isNested: false
+        });
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText embeds of an unknown kind", () => {
+    it("shows an error box instead of the content, which no other pass renders", async () => {
+        for (const mock of [ loadUnknownEmbed, loadEmbeddedNote, loadInlineEmbed ]) {
+            mock.mockClear();
+        }
+        const container = document.createElement("div");
+        document.body.append(container);
+        const html = `<section data-trilium-embed="note-card" data-note-id="n1"`
+            + ` data-box-size="small"><pre><code class="language-mermaid">graph TD;</code></pre>`
+            + `</section>`;
+
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+
+        const box = container.querySelector("section.include-note.unknown-content-embed");
+        expect(box).toBeInstanceOf(HTMLElement);
+        expect(box?.childElementCount).toBe(0);
+        expect(loadUnknownEmbed.mock.calls).toEqual([ [ box, "resizable" ] ]);
+        expect(loadEmbeddedNote).not.toHaveBeenCalled();
+        expect(loadInlineEmbed).not.toHaveBeenCalled();
+        await act(async () => render(null, container));
+        container.remove();
+    });
+});
+
+describe("ReadOnlyText Mermaid diagrams", () => {
+    const html = `<pre data-box-size="small" data-display-mode="source" data-hide-title="true"`
+        + ` data-trilium-block-id="b1" data-code-wrap-lines="true" data-code-line-numbers="false"`
+        + ` data-position="wrap-right"`
+        + ` style="--include-note-height:12em;">`
+        + `<code class="language-mermaid">graph TD;</code></pre>`
+        + `<pre><code class="language-mermaid" data-trilium-display-mode="split"`
+        + ` data-trilium-block-id="b2">graph LR;</code></pre>`
+        + `<pre><code class="language-javascript">let a;</code></pre>`;
+
+    afterEach(() => {
+        vi.stubGlobal("glob", { ...glob, device: "desktop" });
+    });
+
+    async function mountContent(isChanging?: boolean) {
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={html} isChanging={isChanging} />, container));
+        return {
+            container,
+            async unmount() {
+                await act(async () => render(null, container));
+                container.remove();
+            }
+        };
+    }
+
+    it("shows each diagram in the embed box of the editor, read-only", async () => {
+        loadInlineEmbed.mockClear();
+        const { container, unmount } = await mountContent();
+
+        expect(loadInlineEmbed).toHaveBeenCalledTimes(2);
+        const embeds = loadInlineEmbed.mock.calls.map((call: unknown[]) => {
+            const [ source, $el, boxSize, options ] = call as [
+                { language: string; getSource(): string; isReadOnly(): boolean },
+                JQuery<HTMLElement>, string, object
+            ];
+            const figure = $el[0];
+            return {
+                language: source.language,
+                source: source.getSource(),
+                isReadOnly: source.isReadOnly(),
+                boxSize,
+                options,
+                isInPage: figure.isConnected && figure.matches("figure.include-note"),
+                data: { ...figure.dataset },
+                height: figure.style.getPropertyValue("--include-note-height")
+            };
+        });
+        expect(embeds).toEqual([
+            {
+                language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "resizable",
+                options: { isFocused: false, isNested: false }, isInPage: true,
+                data: {
+                    boxSize: "resizable", displayMode: "source", hideTitle: "true",
+                    language: "mermaid",
+                    triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false",
+                    position: "wrap-right"
+                },
+                height: "12em"
+            },
+            {
+                language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "resizable",
+                options: { isFocused: false, isNested: false }, isInPage: true,
+                data: {
+                    boxSize: "resizable", hideTitle: "true", language: "mermaid",
+                    triliumBlockId: "b2"
+                },
+                height: ""
+            }
+        ]);
+        expect(container.querySelector("code.language-javascript")).not.toBeNull();
+        expect(container.querySelector(".rendered-mermaid-diagram")).toBeNull();
+        await unmount();
+    });
+
+    it("draws the diagrams in place while the content changes, and when printing", async () => {
+        loadInlineEmbed.mockClear();
+        const changing = await mountContent(true);
+        expect(changing.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await changing.unmount();
+
+        vi.stubGlobal("glob", { ...glob, device: "print" });
+        const printed = await mountContent();
+        expect(printed.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await printed.unmount();
+        expect(loadInlineEmbed).not.toHaveBeenCalled();
+    });
+});
+
+describe("ReadOnlyText videos", () => {
+    const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const html = `<section class="link-embed" style="--include-note-width:30em;"`
+        + ` data-url="${url}" data-embed-type="youtube" data-title="A video"`
+        + ` data-aspect-ratio="9/16" data-box-size="medium" data-position="wrap-left"`
+        + ` data-trilium-block-id="b1">`
+        + `&nbsp;</section>`
+        + `<figure class="captioned-content-embed">`
+        + `<section class="link-embed" data-url="${url}" data-embed-type="youtube"></section>`
+        + `<figcaption>A caption</figcaption></figure>`
+        + `<section class="link-embed" data-url="https://example.com/"`
+        + ` data-embed-type="opengraph" data-title="A card"></section>`;
+
+    afterEach(() => {
+        vi.stubGlobal("glob", { ...glob, device: "desktop" });
+    });
+
+    async function mountContent(content = html) {
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={content} />, container));
+        return {
+            container,
+            async unmount() {
+                await act(async () => render(null, container));
+                container.remove();
+            }
+        };
+    }
+
+    it("shows each video in the box of the editor, with no menu, and a card in place", async () => {
+        loadMediaEmbed.mockClear();
+        const { container, unmount } = await mountContent();
+
+        const videos = loadMediaEmbed.mock.calls.map((call: unknown[]) => {
+            const [ preview, figure ] = call as [ { url: string; title: string }, HTMLElement ];
+            return {
+                url: preview.url,
+                title: preview.title,
+                isMenuless: call.length === 2,
+                isInPage: figure.isConnected,
+                className: figure.className,
+                data: { ...figure.dataset },
+                width: figure.style.getPropertyValue("--include-note-width"),
+                shape: figure.style.getPropertyValue("--video-aspect-ratio"),
+                caption: figure.querySelector(":scope > figcaption")?.textContent ?? null
+            };
+        });
+        const box = {
+            url, isMenuless: true, isInPage: true, className: "include-note media-embed video-embed"
+        };
+        expect(videos).toEqual([
+            {
+                ...box, title: "A video", width: "30em", shape: "0.5625", caption: null,
+                data: { boxSize: "resizable", position: "wrap-left", triliumBlockId: "b1" }
+            },
+            {
+                ...box, title: null, width: "", shape: "", caption: "A caption",
+                data: { boxSize: "full", hideTitle: "true" }
+            }
+        ]);
+        expect(container.querySelector(".captioned-content-embed")).toBeNull();
+        expect(container.querySelector("section.link-embed > a.link-embed-card")).not.toBeNull();
+        await unmount();
+    });
+
+    it("boxes an audio file saved Small at Compact, and a video file in its shape", async () => {
+        loadMediaEmbed.mockClear();
+        const { unmount } = await mountContent(`<section class="link-embed"`
+            + ` data-url="https://example.com/a.mp3" data-embed-type="audio" data-box-size="small">`
+            + `</section><section class="link-embed" data-url="https://example.com/a.mp4"`
+            + ` data-embed-type="video" data-aspect-ratio="4/3" data-box-size="medium"></section>`);
+
+        expect(loadMediaEmbed.mock.calls.map((call: unknown[]) => {
+            const figure = call[1] as HTMLElement;
+            return [ figure.className, figure.dataset.boxSize,
+                figure.style.getPropertyValue("--video-aspect-ratio") ];
+        })).toEqual([
+            [ "include-note media-embed audio-embed", "compact", "" ],
+            [ "include-note media-embed video-embed", "resizable", String(4 / 3) ]
+        ]);
+        await unmount();
+    });
+
+    it("draws the videos in place when printing", async () => {
+        loadMediaEmbed.mockClear();
+        vi.stubGlobal("glob", { ...glob, device: "print" });
+        const { container, unmount } = await mountContent();
+
+        expect(loadMediaEmbed).not.toHaveBeenCalled();
+        expect(container.querySelectorAll("section.link-embed > .link-embed-video"))
+            .toHaveLength(2);
+        await unmount();
+    });
+});
+
+describe("ReadOnlyText extended code blocks", () => {
+    it("shows each extended code block in the embed box of the editor, and no other", async () => {
+        loadInlineEmbed.mockClear();
+        const html = `<pre class="extended-code-block" data-box-size="medium"`
+            + ` data-hide-title="true" data-code-tab-width="2" data-code-indent-with-tabs="false">`
+            + `<code class="language-text-x-python">pass</code></pre>`
+            + `<pre class="extended-code-block"><code data-trilium-block-id="b1">x</code></pre>`
+            + `<pre><code class="language-text-x-python">plain</code></pre>`;
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+
+        const embeds = loadInlineEmbed.mock.calls.map((call: unknown[]) => {
+            const [ source, $el, boxSize ] = call as [
+                { language: string; getSource(): string }, JQuery<HTMLElement>, string
+            ];
+            const figure = $el[0];
+            return {
+                language: source.language,
+                source: source.getSource(),
+                boxSize,
+                className: figure.className,
+                data: { ...figure.dataset }
+            };
+        });
+        expect(embeds).toEqual([
+            {
+                language: "text-x-python", source: "pass", boxSize: "resizable",
+                className: "include-note extended-code-block",
+                data: {
+                    boxSize: "resizable", hideTitle: "true", language: "text-x-python",
+                    codeTabWidth: "2", codeIndentWithTabs: "false"
+                }
+            },
+            {
+                language: "text-plain", source: "x", boxSize: "full",
+                className: "include-note extended-code-block",
+                data: {
+                    boxSize: "full", hideTitle: "true", language: "text-plain",
+                    triliumBlockId: "b1"
+                }
+            }
+        ]);
+        expect(container.querySelector("pre > code.language-text-x-python")?.textContent)
+            .toBe("plain");
+        await act(async () => render(null, container));
+        container.remove();
+    });
+});
+
+describe("ReadOnlyText lists", () => {
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<ul><li><p style=\"text-align:right;\">a</p></li><li>b</li></ul>"
+        }) as never;
+
+        await harness.mount();
+
+        expect([ ...harness.container.querySelectorAll("li") ].map((item) => item.className))
+            .toEqual([ "trilium-list-item-aligned-right", "" ]);
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText tables", () => {
+    it("sizes its tables for scrolling and keeps their header rows in view", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<figure class=\"table\" style=\"width:150%;\"><table></table></figure>"
+        }) as never;
+
+        await harness.mount();
+
+        const figure = harness.container.querySelector<HTMLElement>("figure.table");
+        expect(figure?.style.getPropertyValue("--table-width"))
+            .toBe("calc(var(--table-reference-width, 100%) * 150 / 100)");
+        expect(applyStickyTableHeaders).toHaveBeenCalledWith(figure?.parentElement);
+
+        disposeStickyTableHeaders.mockClear();
+        await act(async () => render(null, harness.container));
+        expect(disposeStickyTableHeaders).toHaveBeenCalledTimes(1);
+        harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText tabs", () => {
+    it("shows each tab title with text as a scrollable label", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<div class=\"trilium-tabs\"><section class=\"trilium-tab\">"
+                + "<p class=\"trilium-tab-title\">First <b>tab</b></p>"
+                + "<div class=\"trilium-tab-panel\"><p>One</p></div></section>"
+                + "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">&nbsp;</p>"
+                + "<div class=\"trilium-tab-panel\"><p>Two</p></div></section>"
+                + "</div>"
+        }) as never;
+
+        await harness.mount();
+
+        const titles = harness.container.querySelectorAll<HTMLElement>(".trilium-tab-title");
+        const [ first, second ] = titles;
+        const label = first.querySelector(":scope > .scrollable-label");
+        expect(label?.innerHTML).toBe("<span>First <b>tab</b></span>");
+        expect(second.childNodes.length).toBe(0);
+
+        second.click();
+        label?.querySelector("b")?.click();
+        expect(first.classList.contains("trilium-tab-title--active")).toBe(true);
+        expect(second.classList.contains("trilium-tab-title--active")).toBe(false);
+
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
     });
 });

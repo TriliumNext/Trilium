@@ -7,6 +7,7 @@ import FBranch from "../entities/fbranch.js";
 import type { EntityChange } from "../server_types.js";
 import froca from "./froca.js";
 import frocaUpdater from "./froca_updater.js";
+import { getNoteImageSourceToLoad } from "./image_urls.js";
 import type LoadResults from "./load_results.js";
 import noteAttributeCache from "./note_attribute_cache.js";
 import options from "./options.js";
@@ -68,13 +69,13 @@ describe("froca_updater - note changes", () => {
         expect(triggerSpy).not.toHaveBeenCalled();
     });
 
-    it("triggers a full reload when an in-froca note is erased", async () => {
+    it("drops an erased in-froca note without reloading the frontend", async () => {
         const note = buildNote({ title: "Erasable" });
         await process([ec({ entityName: "notes", entityId: note.noteId, isErased: true })]);
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
-        // event still fires because addNote populated the load results
-        expect(triggerSpy).toHaveBeenCalledTimes(1);
-        expect(note.noteId in froca.notes).toBe(true); // not deleted, early return
+        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(note.noteId in froca.notes).toBe(false);
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getNoteIds()).toContain(note.noteId);
     });
 
     it("deletes the note from froca when marked deleted", async () => {
@@ -157,11 +158,20 @@ describe("froca_updater - note changes", () => {
 });
 
 describe("froca_updater - branch changes", () => {
-    it("triggers a full reload when an in-froca branch is erased", async () => {
+    it("unlinks an erased in-froca branch and reports it as deleted", async () => {
         const parent = buildNote({ title: "P", children: [{ title: "C" }] });
-        const branchId = `${parent.noteId}_${parent.children[0]}`;
-        await process([ec({ entityName: "branches", entityId: branchId, isErased: true })]);
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        const childId = parent.children[0];
+        const branchId = `${parent.noteId}_${childId}`;
+        await process([ec({ entityName: "branches", entityId: branchId, componentId: "comp-e", isErased: true })]);
+
+        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(branchId in froca.branches).toBe(false);
+        expect(parent.children.includes(childId)).toBe(false);
+        expect(froca.notes[childId]?.parents.includes(parent.noteId)).toBe(false);
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getBranchRows()).toEqual([
+            expect.objectContaining({ branchId, noteId: childId, parentNoteId: parent.noteId, isDeleted: true })
+        ]);
     });
 
     it("removes a deleted branch and unlinks parent/child", async () => {
@@ -185,6 +195,28 @@ describe("froca_updater - branch changes", () => {
         // branch change => attribute-related => invalidate cache + event
         expect(invalidateSpy).toHaveBeenCalled();
         expect(triggerSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports a deleted branch that froca already dropped while its notes are loaded", async () => {
+        // `froca.addResp()` replaces a refreshed note's parent branches, so a subtree load can
+        // remove the branch before the WebSocket update that deletes it arrives (#7288).
+        const parent = buildNote({ title: "Main", children: [{ title: "Moved" }] });
+        const childId = parent.children[0];
+        const branchId = `${parent.noteId}_${childId}`;
+        delete froca.branches[branchId];
+
+        await process([ec({
+            entityName: "branches",
+            entityId: branchId,
+            componentId: "comp-b",
+            entity: { branchId, noteId: childId, parentNoteId: parent.noteId, isDeleted: true } as any
+        })]);
+
+        expect(triggerSpy).toHaveBeenCalledTimes(1);
+        const { loadResults } = triggerSpy.mock.calls[0][1] as { loadResults: LoadResults };
+        expect(loadResults.getBranchRows()).toEqual([
+            expect.objectContaining({ branchId, noteId: childId, parentNoteId: parent.noteId, isDeleted: true })
+        ]);
     });
 
     it("returns early for a deleted branch that is not loaded", async () => {
@@ -351,11 +383,18 @@ describe("froca_updater - revisions / options / etapi_tokens", () => {
 });
 
 describe("froca_updater - attribute changes", () => {
-    it("triggers a full reload when an in-froca attribute is erased", async () => {
+    it("unlinks an erased in-froca attribute and reports it as deleted", async () => {
         const note = buildNote({ title: "AttrNote", "#color": "red" });
         const attrId = note.attributes[0];
-        await process([ec({ entityName: "attributes", entityId: attrId, isErased: true })]);
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
+        await process([ec({ entityName: "attributes", entityId: attrId, componentId: "comp-e", isErased: true })]);
+
+        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(attrId in froca.attributes).toBe(false);
+        expect(note.attributes.includes(attrId)).toBe(false);
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getAttributeRows()).toEqual([
+            expect.objectContaining({ attributeId: attrId, noteId: note.noteId, name: "color", isDeleted: true })
+        ]);
     });
 
     it("removes a deleted relation attribute and unlinks source + target", async () => {
@@ -491,10 +530,8 @@ describe("froca_updater - attribute changes", () => {
         const note = buildNote({ title: "ErasedAttrHost", "~inherit": "target-loaded" });
         const attrId = note.attributes[0];
         await process([ec({ entityName: "attributes", entityId: attrId, isErased: true, entity: undefined })]);
-        // The attribute IS in froca via buildNote and is erased => the early reloadFrontendApp()
-        // path is taken (this is the code path actually hit by this fixture).
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
-        // And because the ancestor scan sees entity === undefined it must NOT reload the target note.
+        expect(reloadSpy).not.toHaveBeenCalled();
+        // A removed relation needs no target, so the scan must not load "target-loaded".
         expect(reloadNotesSpy).not.toHaveBeenCalled();
     });
 
@@ -512,7 +549,7 @@ describe("froca_updater - attribute changes", () => {
 });
 
 describe("froca_updater - attachment changes", () => {
-    it("triggers a full reload when an in-froca attachment is erased", async () => {
+    it("removes an erased in-froca attachment and reports it as deleted", async () => {
         const note = buildNote({ title: "AttHost" });
         const att = new FAttachment(froca, {
             attachmentId: "att-erase",
@@ -526,9 +563,17 @@ describe("froca_updater - attachment changes", () => {
             contentLength: 0
         });
         froca.attachments[att.attachmentId] = att;
+        note.attachments = [att];
 
         await process([ec({ entityName: "attachments", entityId: att.attachmentId, isErased: true })]);
-        expect(reloadSpy).toHaveBeenCalledTimes(1);
+
+        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(att.attachmentId in froca.attachments).toBe(false);
+        expect(note.attachments).toEqual([]);
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getAttachmentRows()).toEqual([
+            expect.objectContaining({ attachmentId: "att-erase", ownerId: note.noteId, isDeleted: true })
+        ]);
     });
 
     it("removes a deleted attachment from its owner note", async () => {
@@ -581,6 +626,8 @@ describe("froca_updater - attachment changes", () => {
             contentLength: 0
         });
         froca.attachments[att.attachmentId] = att;
+        froca.blobPromises["attachments-att-upd"] = Promise.resolve(null);
+        froca.blobPromises["attachments-other"] = Promise.resolve(null);
 
         await process([ec({
             entityName: "attachments",
@@ -598,6 +645,9 @@ describe("froca_updater - attachment changes", () => {
             } as any
         })]);
         expect(froca.attachments["att-upd"].title).toBe("new");
+        // The next read of its content fetches it again.
+        expect("attachments-att-upd" in froca.blobPromises).toBe(false);
+        expect("attachments-other" in froca.blobPromises).toBe(true);
     });
 
     it("creates a new attachment on its owner note when not previously loaded", async () => {
@@ -770,5 +820,50 @@ describe("froca_updater - missing-note ancestor reload", () => {
             } as any
         })]);
         expect(reloadNotesSpy).toHaveBeenCalledWith(["totally-absent-parent"]);
+    });
+});
+
+describe("froca_updater - note images", () => {
+    it("gives a note's image a new URL once the note or an attachment changes", async () => {
+        const canvas = buildNote({ title: "Canvas", type: "canvas" });
+        const src = `api/images/${canvas.noteId}/Canvas`;
+        const before = getNoteImageSourceToLoad(src);
+
+        await process([ ec({
+            entityName: "attachments",
+            entityId: "canvas-export",
+            entity: {
+                attachmentId: "canvas-export",
+                ownerId: canvas.noteId,
+                role: "image",
+                mime: "image/svg+xml",
+                title: "canvas-export.svg"
+            } as any
+        }) ]);
+        const afterAttachment = getNoteImageSourceToLoad(src);
+        expect(afterAttachment).not.toBe(before);
+
+        await process([ ec({
+            entityName: "notes",
+            entityId: canvas.noteId,
+            entity: {
+                noteId: canvas.noteId, title: "Canvas", type: "canvas", blobId: canvas.blobId
+            } as any
+        }) ]);
+        expect(getNoteImageSourceToLoad(src)).not.toBe(afterAttachment);
+    });
+
+    it("gives a new URL to the image of a note that froca has not loaded", async () => {
+        const src = "api/images/notInFroca/Picture";
+        const before = getNoteImageSourceToLoad(src);
+
+        await process([ ec({
+            entityName: "notes",
+            entityId: "notInFroca",
+            entity: { noteId: "notInFroca", title: "Picture", type: "image" } as any
+        }) ]);
+
+        expect(triggerSpy).not.toHaveBeenCalled();
+        expect(getNoteImageSourceToLoad(src)).not.toBe(before);
     });
 });

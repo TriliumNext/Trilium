@@ -15,6 +15,16 @@
     --link-preview-card-title-color: var(--link-color);
     --link-preview-card-description-text-color: var(--muted-text-color);
     --link-preview-card-url-text-color: var(--muted-text-color);
+
+    --link-preview-audio-background-color: var(--card-background-color);
+    --link-preview-audio-hover-background-color: var(--card-background-hover-color);
+    --link-preview-audio-play-color: #fff;
+    --link-preview-audio-play-background-color: var(--link-color);
+    --link-preview-video-player-background-color: #000;
+
+    --link-preview-video-file-play-color: #fff;
+    --link-preview-video-file-play-background-color: rgba(0, 0, 0, 0.6);
+    --link-preview-video-file-play-hover-background-color: rgba(0, 0, 0, 0.85);
 }
 
 /* ---------- Inline mention (favicon + title) ---------- */
@@ -32,7 +42,7 @@
     /* In the editor the mention is a widget, not a live link, so suppress the pointer.
        In read mode (no .ck-widget) the anchor keeps its cursor: pointer below. */
     &.ck-widget a {
-        cursor: default !important;
+        cursor: default;
     }
 }
 
@@ -110,35 +120,84 @@ body.light-theme .link-embed-favicon-light {
     --ck-color-focus-border: var(--link-color);
 }
 
-.link-embed-preview-wrapper {
-    display: block;
+.ck-widget.link-embed > .ck-widget__selection-handle {
+    margin-inline-start: var(--_link-embed-top-border-radius, 8px);
 }
 
-.link-embed-preview-wrapper:has(> .link-embed-video) {
-    display: flex;
-    justify-content: center;
-    background: black;
-    border-radius: 8px;
+.link-embed-preview-wrapper {
+    display: block;
 }
 
 /* ---------- Video embed (YouTube iframe) ---------- */
 
 .link-embed-video {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     position: relative;
+    margin-inline: auto;
     width: 100%;
+    max-width: calc(var(--link-preview-video-max-height) * var(--video-aspect-ratio, 16 / 9));
     overflow: hidden;
+
+    & > iframe,
+    & > .link-embed-video-facade {
+        grid-area: 1 / 1;
+    }
 }
 
-.link-embed-preview-wrapper > .link-embed-video {
-    padding: 8px;
-    background: var(--main-background-color);
+.include-note.video-embed {
+    --_link-embed-top-border-radius: var(--_include-note-content-top-radius);
+    --_link-embed-bottom-border-radius: var(--_include-note-content-bottom-radius);
+
+    &[data-box-size="full"] {
+        max-width: min(100%, var(--link-preview-video-max-height)
+            * var(--video-aspect-ratio, 16 / 9));
+    }
+
+    .include-note-content.type-mediaEmbed {
+        padding: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .link-embed-video {
+        max-width: none;
+    }
+
+    .include-note-content.type-mediaEmbed > .rendered-content > .rendered-media > :is(
+        .media-proxy, .video-preview-wrapper:not(:fullscreen)
+    ) {
+        border-radius: var(--_link-embed-top-border-radius) var(--_link-embed-top-border-radius)
+                       var(--_link-embed-bottom-border-radius)
+                       var(--_link-embed-bottom-border-radius);
+        height: auto;
+        aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+        overflow: hidden;
+
+        > .video-preview {
+            max-height: none;
+        }
+    }
+
+    .include-note-content.type-mediaEmbed > .rendered-content > .rendered-media > .no-items {
+        height: auto;
+        aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+    }
+}
+
+.include-note.audio-embed .include-note-content.type-mediaEmbed .rendered-media {
+    min-height: 0;
+}
+
+figure.include-note:where(.video-embed[data-box-size="full"]) {
+    margin-inline: auto;
 }
 
 .link-embed-video iframe {
     width: 100%;
     height: 100%;
-    max-height: var(--link-preview-video-max-height);
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     border: none;
     display: block;
 }
@@ -153,15 +212,18 @@ body.light-theme .link-embed-favicon-light {
     display: block;
     width: 100%;
     height: 100%;
-    max-height: var(--link-preview-video-max-height);
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
     padding: 0;
     border: none;
     background: #000;
     cursor: pointer;
     overflow: hidden;
 
-    &:hover .link-embed-video-thumbnail {
+    &.link-embed-video-facade-loading {
+        cursor: progress;
+    }
+
+    &:hover .link-embed-video-thumbnail-lowres {
         filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.65);
     }
 }
@@ -169,8 +231,11 @@ body.light-theme .link-embed-favicon-light {
 .link-embed-video-facade .link-embed-video-thumbnail {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
+}
+
+.link-embed-video-facade .link-embed-video-thumbnail-lowres {
     filter: blur(var(--link-preview-video-facade-blur-radius)) brightness(0.5);
 }
 
@@ -203,6 +268,94 @@ body.light-theme .link-embed-favicon-light {
     background: #f00;
 }
 
+/* Matches the `MediaProxy` button. Two classes outrank the icon pack's `.bx`. */
+.link-embed-video-facade .link-embed-video-file-play {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    color: var(--link-preview-video-file-play-color);
+    background: var(--link-preview-video-file-play-background-color);
+    font-size: calc(56px * 0.65);
+}
+
+.link-embed-video-facade:hover .link-embed-video-file-play,
+.link-embed-video-facade:focus-visible .link-embed-video-file-play {
+    background: var(--link-preview-video-file-play-hover-background-color);
+}
+
+.link-embed-video-facade:active .link-embed-video-file-play::before {
+    transform: scale(0.85);
+}
+
+.link-embed-video-player {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: var(--video-aspect-ratio, 16 / 9);
+    background: var(--link-preview-video-player-background-color);
+}
+
+/* ---------- Audio file facade and player ---------- */
+
+.link-embed-audio-facade {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5em 0.75em;
+    background: var(--link-preview-audio-background-color);
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--link-preview-audio-hover-background-color);
+    }
+}
+
+.link-embed-audio-play {
+    position: relative;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--link-preview-audio-play-background-color);
+}
+
+.link-embed-audio-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent var(--link-preview-audio-play-color);
+    transform: translateX(1px);
+}
+
+.link-embed-audio-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.link-embed-audio-player {
+    display: block;
+    width: 100%;
+}
+
 /* ---------- Card embed (Notion-style) ---------- */
 
 :root a.link-embed-card {
@@ -215,8 +368,7 @@ body.light-theme .link-embed-favicon-light {
     background: var(--link-preview-card-background-color);
 }
 
-.link-embed-preview-wrapper .link-embed-card-image-wrapper,
-.link-embed-preview-wrapper .link-embed-card-content {
+.link-embed-preview-wrapper a.link-embed-card {
     cursor: default;
 }
 
@@ -234,10 +386,6 @@ body.light-theme .link-embed-favicon-light {
     & .link-embed-card-image {
         filter: var(--link-preview-card-image-hover-filter);
     }
-}
-
-a.link-embed-card::after {
-    display: none !important;
 }
 
 /* Cards in a series share flush edges; only the outer corners stay rounded. A card that

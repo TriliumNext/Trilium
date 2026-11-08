@@ -1,4 +1,5 @@
 import { getLog, options as optionService, utils as coreUtils } from "@triliumnext/core";
+import { execFile } from "child_process";
 import electron from "electron";
 import fs from "fs";
 import os from "os";
@@ -26,7 +27,9 @@ export function applyLaunchOnStartup() {
         const enabled = optionService.getOptionBool("launchOnStartup");
         const hidden = enabled && optionService.getOptionBool("hideOnAutoStart");
 
-        if (process.platform === "linux") {
+        if (process.platform === "linux" && process.env.FLATPAK_ID) {
+            applyFlatpakAutostart(enabled, hidden);
+        } else if (process.platform === "linux") {
             applyLinuxAutostart(enabled, hidden);
         } else {
             // macOS + Windows: handled natively by Electron. `args` is the Windows
@@ -61,6 +64,26 @@ export function wasLaunchedHidden(): boolean {
  */
 export function setupAutoLaunch() {
     electron.ipcMain.on("reapply-launch-on-startup", applyLaunchOnStartup);
+}
+
+/**
+ * A Flatpak cannot write the host's autostart directory, and its executable path only exists
+ * inside the sandbox, so the Background portal writes the entry, with a `flatpak run` command.
+ */
+function applyFlatpakAutostart(enabled: boolean, hidden: boolean) {
+    const commandline = hidden ? `['trilium', '${START_HIDDEN_FLAG}']` : "['trilium']";
+    const options = `{'autostart': <${enabled}>, 'commandline': <${commandline}>}`;
+    execFile("gdbus", [
+        "call", "--session",
+        "--dest", "org.freedesktop.portal.Desktop",
+        "--object-path", "/org/freedesktop/portal/desktop",
+        "--method", "org.freedesktop.portal.Background.RequestBackground",
+        "", options
+    ], (error) => {
+        if (error) {
+            getLog().error(`Failed to request autostart from the Background portal: ${error.message}`);
+        }
+    });
 }
 
 function applyLinuxAutostart(enabled: boolean, hidden: boolean) {

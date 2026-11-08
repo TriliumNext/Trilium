@@ -18,6 +18,8 @@ type SessionParser = (req: IncomingMessage, params: {}, cb: () => void) => void;
  */
 export interface HttpAttachableMessagingProvider extends MessagingProvider {
     attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler): void;
+    /** Asks every client connected over the TCP listener to reload, then closes its connection. */
+    disconnectAllClients(reason: string): void;
 }
 
 export function isHttpAttachableMessagingProvider(provider: MessagingProvider): provider is HttpAttachableMessagingProvider {
@@ -121,6 +123,21 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
                     client.send(jsonStr);
                 }
             });
+        }
+    }
+
+    /**
+     * Asks every client to reload, then closes its connection. `verifyClient` checks the session
+     * only when a connection opens, so a revoked session keeps receiving messages until then.
+     */
+    disconnectAllClients(reason: string): void {
+        const jsonStr = JSON.stringify({ type: "reload-frontend", reason } satisfies WebSocketMessage);
+
+        for (const client of this.webSocketServer?.clients ?? []) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(jsonStr);
+            }
+            client.close();
         }
     }
 

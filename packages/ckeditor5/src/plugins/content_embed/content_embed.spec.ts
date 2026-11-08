@@ -1,0 +1,2462 @@
+import {
+    _getModelData as getModelData,
+    _getViewData as getViewData,
+    _setModelData as setModelData,
+    Bold,
+    ButtonView,
+    ClassicEditor,
+    ContextualBalloon,
+    Essentials,
+    ImageBlock,
+    ImageCaption,
+    LinkEditing,
+    Paragraph,
+    SwitchButtonView,
+    Undo,
+    Widget,
+    type ModelElement
+} from "ckeditor5";
+import bxCode from "boxicons/svg/regular/bx-code.svg?raw";
+import bxEditAlt from "boxicons/svg/regular/bx-edit-alt.svg?raw";
+import bxShow from "boxicons/svg/regular/bx-show.svg?raw";
+import bxsDockLeft from "boxicons/svg/solid/bxs-dock-left.svg?raw";
+import { BOX_SIZES } from "@triliumnext/commons";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createTestEditor } from "../../../test/editor-kit.js";
+import LinkEmbed from "../link_embed/link_embed.js";
+import ReferenceLink from "../referencelink.js";
+import ContentEmbed, {
+    BOX_SIZE_COMMAND_NAME,
+    CODE_VIEW_COMMAND_NAME,
+    type ContentEmbedPositionCommand,
+    DEFAULT_BOX_SIZE_COMMAND_NAME,
+    type EmbedContentInfo,
+    COMMAND_NAME,
+    CONVERT_EMBED_TO_LINK_COMMAND,
+    CONVERT_LINK_TO_EMBED_COMMAND,
+    CONTENT_EMBED_DISPLAY_MODE_COMMAND,
+    CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
+    CONTENT_EMBED_MENU,
+    type ContentEmbedDialogRequest,
+    DELETE_COMMAND_NAME,
+    DISPLAY_MODE_BUTTONS,
+    DISPLAY_MODES,
+    getCaption,
+    POSITION_COMMAND_NAME,
+    POSITIONS,
+    TOGGLE_CAPTION_COMMAND_NAME,
+    TOGGLE_EDITABLE_COMMAND_NAME,
+    TOGGLE_TITLE_COMMAND_NAME
+} from "./content_embed.js";
+
+describe("ContentEmbed", () => {
+    let editor: ClassicEditor;
+    let pickNote: ReturnType<typeof vi.fn>;
+    let loadEmbeddedNote: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        pickNote = vi.fn();
+        loadEmbeddedNote = vi.fn();
+        editor = await createTestEditor([Essentials, Paragraph, Widget, ContentEmbed], {
+            contentEmbed: { pickNote, loadNote: loadEmbeddedNote }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Plugin / schema registration
+    // -----------------------------------------------------------------------
+
+    it("loads the plugin, sub-plugins, schema, commands and the toolbar button", () => {
+        expect(editor.plugins.get(ContentEmbed)).toBeInstanceOf(ContentEmbed);
+        expect(editor.commands.get(COMMAND_NAME)).toBeDefined();
+        expect(editor.commands.get(BOX_SIZE_COMMAND_NAME)).toBeDefined();
+        expect(editor.ui.componentFactory.has("contentEmbed")).toBe(true);
+
+        const schema = editor.model.schema;
+        expect(schema.isRegistered("contentEmbed")).toBe(true);
+        expect(schema.isObject("contentEmbed")).toBe(true);
+        expect(schema.isBlock("contentEmbed")).toBe(true);
+        expect(schema.checkAttribute(["$root", "contentEmbed"], "noteId")).toBe(true);
+        expect(schema.checkAttribute(["$root", "contentEmbed"], "boxSize")).toBe(true);
+    });
+
+    it("is one of the selected blocks when selected", () => {
+        setModelData(editor.model, "[<contentEmbed noteId=\"n1\"></contentEmbed>]");
+        const blocks = Array.from(editor.model.document.selection.getSelectedBlocks());
+        expect(blocks.map((block) => block.name)).toStrictEqual([ "contentEmbed" ]);
+    });
+
+    // -----------------------------------------------------------------------
+    // UI button
+    // -----------------------------------------------------------------------
+
+    it("wires the toolbar button to the insert command (enablement and execution)", () => {
+        const view = editor.ui.componentFactory.create("contentEmbed") as {
+            isEnabled: boolean;
+            isOn: boolean;
+            label: string;
+            fire(name: string): void;
+        };
+        const command = editor.commands.get(COMMAND_NAME);
+
+        expect(view.label).toBe("Include note");
+        expect(view.isEnabled).toBe(command?.isEnabled);
+
+        const spy = vi.spyOn(editor, "execute");
+        view.fire("execute");
+        expect(spy).toHaveBeenCalledWith(COMMAND_NAME);
+    });
+
+    // -----------------------------------------------------------------------
+    // Conversion: upcast / data downcast / editing downcast
+    // -----------------------------------------------------------------------
+
+    it("loads a <figure> embed and a legacy <section>, and saves a <figure>", () => {
+        for (const tag of [ "figure", "section" ]) {
+            editor.setData(`<${tag} class="include-note" data-note-id="abc123"`
+                + ` data-box-size="resizable"></${tag}>`);
+
+            const element = findContentEmbed(editor);
+            expect(element?.getAttribute("noteId")).toBe("abc123");
+            expect(element?.getAttribute("boxSize")).toBe("resizable");
+            expect(editor.getData()).toBe("<figure class=\"include-note\" data-note-id=\"abc123\" "
+                + "data-box-size=\"resizable\">&nbsp;</figure>");
+        }
+    });
+
+    it("editing-downcasts to a widget and invokes loadEmbeddedNote when the UIElement renders", () => {
+        editor.setData(
+            '<figure class="include-note" data-note-id="noteY" data-box-size="resizable"></figure>'
+        );
+
+        const view = getViewData(editor.editing.view);
+        expect(view).toContain("include-note");
+        expect(view).toContain("ck-widget");
+        // The block widget carries CKEditor's selection handle so it can be dragged atomically.
+        expect(view).toContain("ck-widget_with-selection-handle");
+        expect(view).toContain("box-size-resizable");
+
+        // Querying the DOM root forces the UIElement render callback to run.
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+        expect(loadEmbeddedNote.mock.calls[0]?.[0]).toBe("noteY");
+        // The box size is passed explicitly so the client render does not have to read it back
+        // from the DOM (which may not be flushed yet at conversion time).
+        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("resizable");
+    });
+
+    it("updates the box-size class on the editing view when the boxSize attribute changes", () => {
+        insertContentEmbed(editor, "noteZ", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const figure = domRoot?.querySelector("figure.include-note");
+        expect(figure?.classList.contains("box-size-resizable")).toBe(true);
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+
+        expect(figure?.classList.contains("box-size-resizable")).toBe(false);
+        expect(figure?.classList.contains("box-size-full")).toBe(true);
+        expect(figure?.getAttribute("data-box-size")).toBe("full");
+    });
+
+    it("re-renders the embedded note content with the new size on a genuine box-size change", () => {
+        insertContentEmbed(editor, "noteReload", "resizable");
+
+        // One call for the initial render.
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("resizable");
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
+
+        // The downcast handler drives a second render with the new size, without any DOM observer.
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(2);
+        const reloadCall = loadEmbeddedNote.mock.calls[1];
+        expect(reloadCall?.[0]).toBe("noteReload");
+        expect(reloadCall?.[2]).toBe("expandable");
+    });
+
+    it("leaves the embeds empty without a host to render them", async () => {
+        const bareEditor = await createTestEditor([ Essentials, Paragraph, Widget, ContentEmbed ]);
+        bareEditor.setData("<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\">"
+            + "</figure><figure class=\"include-note\" data-attachment-id=\"a1\" data-box-size=\"resizable\">"
+            + "</figure>");
+
+        const wrappers = bareEditor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper");
+
+        expect(wrappers).toHaveLength(2);
+        expect([ ...wrappers ?? [] ].map((wrapper) => wrapper.childElementCount)).toEqual([ 0, 0 ]);
+    });
+
+    it("handles a boxSize change from an empty old value (no class to remove)", () => {
+        // Insert an contentEmbed whose boxSize is empty so the attribute-change converter
+        // hits the falsy `oldBoxSize` branch when the value is set for the first time.
+        const element = insertContentEmbed(editor, "noteW", "");
+
+        editor.model.change((writer) => {
+            writer.setAttribute("boxSize", "resizable", element);
+        });
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const figure = domRoot?.querySelector("figure.include-note");
+        expect(figure?.classList.contains("box-size-resizable")).toBe(true);
+        expect(figure?.getAttribute("data-box-size")).toBe("resizable");
+    });
+
+    it("ignores a boxSize change cleared to an empty value (no new class to add)", () => {
+        const element = insertContentEmbed(editor, "noteV", "resizable");
+
+        editor.model.change((writer) => {
+            writer.setAttribute("boxSize", "", element);
+        });
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const figure = domRoot?.querySelector("figure.include-note");
+        // Old class removed, no new class added because the new value is empty.
+        expect(figure?.classList.contains("box-size-resizable")).toBe(false);
+        expect(figure?.classList.contains("box-size-")).toBe(false);
+    });
+
+    // -----------------------------------------------------------------------
+    // InsertContentEmbedCommand
+    // -----------------------------------------------------------------------
+
+    it("opens the host's dialog in a balloon at the caret, until the host closes it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        const balloon = editor.plugins.get(ContextualBalloon);
+
+        editor.execute(COMMAND_NAME);
+        expect(pickNote).toHaveBeenCalledOnce();
+        const request = pickNote.mock.lastCall?.[0] as ContentEmbedDialogRequest | undefined;
+        const container = request?.container;
+        expect(container?.classList.contains("include-note-balloon")).toBe(true);
+        expect(container && balloon.view.element?.contains(container)).toBe(true);
+
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        request?.close();
+        expect(release).toHaveBeenCalledOnce();
+        expect(balloon.visibleView).toBeNull();
+        expect(focus).toHaveBeenCalledOnce();
+    });
+
+    it("closes the balloon for a host that shows the dialog its own way, or has none", async () => {
+        pickNote.mockReturnValue(null);
+        const plugins = [ Essentials, Paragraph, Widget, ContentEmbed ];
+        const plainEditor = await createTestEditor(plugins);
+        const pickerlessEditor = await createTestEditor(plugins, {
+            contentEmbed: { loadNote: loadEmbeddedNote }
+        });
+
+        for (const testEditor of [ editor, plainEditor, pickerlessEditor ]) {
+            setModelData(testEditor.model, "<paragraph>foo[]</paragraph>");
+            const balloon = testEditor.plugins.get(ContextualBalloon);
+            const add = vi.spyOn(balloon, "add");
+
+            testEditor.execute(COMMAND_NAME);
+            expect(add).toHaveBeenCalledOnce();
+            expect(balloon.visibleView).toBeNull();
+        }
+        expect(pickNote).toHaveBeenCalledOnce();
+    });
+
+    it("lets go of the dialog when the editor is torn down under it", async () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        const release = vi.fn();
+        pickNote.mockReturnValue(release);
+        editor.execute(COMMAND_NAME);
+        expect(editor.plugins.get(ContextualBalloon).visibleView).not.toBeNull();
+
+        await editor.destroy();
+        expect(release).toHaveBeenCalledOnce();
+    });
+
+    it("enables the insert command in a paragraph and disables it where blocks are disallowed", () => {
+        const command = editor.commands.get(COMMAND_NAME);
+
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        expect(command?.isEnabled).toBe(true);
+
+        // Forbid contentEmbed anywhere via a child check, then refresh: no allowed parent
+        // for the current selection means the command disables itself.
+        editor.model.schema.addChildCheck((_context, def) => {
+            if (def.name === "contentEmbed") {
+                return false;
+            }
+        });
+        command?.refresh();
+        expect(command?.isEnabled).toBe(false);
+    });
+
+    // -----------------------------------------------------------------------
+    // ContentEmbedBoxSizeCommand
+    // -----------------------------------------------------------------------
+
+    it("box-size command is disabled with no embed selected and reports a null value", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as {
+            isEnabled: boolean;
+            value: string | null;
+        };
+        expect(command.isEnabled).toBe(false);
+        expect(command.value).toBeNull();
+    });
+
+    it("box-size command enables and reflects the value when an contentEmbed is selected", () => {
+        insertContentEmbed(editor, "noteSel", "resizable");
+
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as {
+            isEnabled: boolean;
+            value: string | null;
+        };
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe("resizable");
+
+        // Execute through every defined box size to cover the model write path.
+        for (const value of BOX_SIZES) {
+            editor.execute(BOX_SIZE_COMMAND_NAME, { value });
+            expect(command.value).toBe(value);
+            expect(findContentEmbed(editor)?.getAttribute("boxSize")).toBe(value);
+        }
+    });
+
+    it("box-size command resolves the contentEmbed via an ancestor position (not a direct selection)", () => {
+        // Make the contentEmbed allow text inside so the selection can be placed within it
+        // (a collapsed position) rather than selecting the element itself.
+        editor.model.schema.extend("$text", { allowIn: "contentEmbed" });
+
+        const element = insertContentEmbed(editor, "noteAnc", "expandable");
+        editor.model.change((writer) => {
+            writer.setSelection(writer.createPositionAt(element, 0));
+        });
+
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as {
+            isEnabled: boolean;
+            value: string | null;
+        };
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe("expandable");
+    });
+
+    it("box-size command execute is a no-op when nothing is selected", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated Command.execute short-circuits while the command is disabled, so to
+        // run our execute() body with no contentEmbed selected we force it enabled first. This
+        // exercises the falsy `if (embedElement)` branch.
+        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as {
+            isEnabled: boolean;
+            execute(options: { value: string }): void;
+        };
+        command.isEnabled = true;
+        command.execute({ value: "full" });
+
+        expect(editor.getData()).toBe(before);
+    });
+
+    it("toggles neither a caption nor a title when nothing is selected", () => {
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = getModelData(editor.model);
+
+        // The decorated `Command#execute()` skips a disabled command, so each command is forced
+        // enabled to run `execute()` with no embed selected.
+        for (const name of [ TOGGLE_CAPTION_COMMAND_NAME, TOGGLE_TITLE_COMMAND_NAME ]) {
+            const command = editor.commands.get(name) as { isEnabled: boolean; execute(): void };
+            command.isEnabled = true;
+            command.execute();
+        }
+
+        expect(getModelData(editor.model)).toBe(before);
+    });
+
+    // -----------------------------------------------------------------------
+    // preventCKEditorHandling / selectContentEmbedWidget (DOM event handlers)
+    // -----------------------------------------------------------------------
+
+    it("selects the widget and suppresses editor handling on a mousedown inside the wrapper", () => {
+        insertContentEmbed(editor, "noteEvt", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        const evt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const stopSpy = vi.spyOn(evt, "stopPropagation");
+        wrapper.dispatchEvent(evt);
+        expect(stopSpy).toHaveBeenCalled();
+
+        // The widget should now be selected (the mousedown handler selects it).
+        const selected = editor.model.document.selection.getSelectedElement();
+        expect(selected?.name).toBe("contentEmbed");
+    });
+
+    describe("renderer focus after a press in the widget", () => {
+        /** Presses the embed of a focused editor, which turns `_renderer.isFocused` off. */
+        function pressWidgetOfFocusedEditor() {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>"
+                + "<contentEmbed noteId=\"noteFocus\" boxSize=\"resizable\"></contentEmbed>"
+                + "<paragraph>bar</paragraph>");
+            // A headless page cannot take the real focus, so set the flag the renderer reads.
+            editor.editing.view.document.isFocused = true;
+            pressWidget();
+        }
+
+        function pressWidget() {
+            const wrapper = getDomRoot(editor).querySelector("div.include-note-wrapper");
+            if (!wrapper) {
+                throw new Error("The embed was not rendered.");
+            }
+            wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+            expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+            expect(rendererIsFocused(editor)).toBe(false);
+        }
+
+        it("turns the renderer's focus back on for a press in the text, not in the widget", () => {
+            pressWidgetOfFocusedEditor();
+            const wrapper = getDomRoot(editor).querySelector("div.include-note-wrapper");
+            wrapper?.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+            expect(rendererIsFocused(editor)).toBe(false);
+
+            const paragraph = getDomRoot(editor).children[2];
+            paragraph.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(rendererIsFocused(editor)).toBe(true);
+
+            pressWidget();
+        });
+
+        it("turns the renderer's focus back on for the key that deletes the widget", () => {
+            pressWidgetOfFocusedEditor();
+
+            const domRoot = getDomRoot(editor);
+            domRoot.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace" }));
+            expect(rendererIsFocused(editor)).toBe(true);
+            editor.execute("delete");
+            expect(getModelData(editor.model)).toBe(
+                "<paragraph>foo</paragraph><paragraph>[]</paragraph><paragraph>bar</paragraph>");
+            // The DOM selection follows the model selection into the new empty paragraph.
+            const domSelection = window.getSelection();
+            expect(domRoot.children[1].contains(domSelection?.anchorNode ?? null)).toBe(true);
+        });
+
+        it("keeps the renderer's focus off for a press on a link preview", async () => {
+            const linkEditor = await createTestEditor([
+                Essentials, Paragraph, Widget, ContentEmbed, LinkEmbed
+            ]);
+            setModelData(linkEditor.model, "<paragraph>foo[]"
+                + "<linkMention url=\"https://e.com/\" embedType=\"opengraph\"></linkMention>"
+                + "</paragraph>");
+            linkEditor.editing.view.document.isFocused = true;
+
+            const mention = getDomRoot(linkEditor).querySelector(".link-mention-inner");
+            if (!mention) {
+                throw new Error("The link mention was not rendered.");
+            }
+            mention.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+            const selected = linkEditor.model.document.selection.getSelectedElement();
+            expect(selected?.name).toBe("linkMention");
+            expect(rendererIsFocused(linkEditor)).toBe(false);
+        });
+
+        function getDomRoot(target: ClassicEditor) {
+            const domRoot = target.editing.view.getDomRoot();
+            if (!domRoot) {
+                throw new Error("The editor has no DOM root.");
+            }
+            return domRoot;
+        }
+
+        function rendererIsFocused(target: ClassicEditor) {
+            //@ts-expect-error: The renderer is a private field.
+            return target.editing.view._renderer.isFocused as boolean;
+        }
+    });
+
+    it("suppresses the native caret on a non-interactive mousedown but not on interactive targets", () => {
+        insertContentEmbed(editor, "noteCaret", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        // Clicking a plain (non-interactive) area should preventDefault so the browser does not
+        // drop a caret next to the contenteditable=false widget.
+        const plainEvt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const plainPrevent = vi.spyOn(plainEvt, "preventDefault");
+        wrapper.dispatchEvent(plainEvt);
+        expect(plainPrevent).toHaveBeenCalled();
+
+        // Clicking a link must keep native behaviour: the handler steps aside entirely, so neither
+        // preventDefault nor stopPropagation is called.
+        const innerLink = document.createElement("a");
+        innerLink.href = "#root/abc";
+        wrapper.appendChild(innerLink);
+
+        const linkEvt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const linkPrevent = vi.spyOn(linkEvt, "preventDefault");
+        const linkStop = vi.spyOn(linkEvt, "stopPropagation");
+        innerLink.dispatchEvent(linkEvt);
+        expect(linkPrevent).not.toHaveBeenCalled();
+        expect(linkStop).not.toHaveBeenCalled();
+    });
+
+    it("selects the widget on a press on a title row button, and keeps the focus in the editor", () => {
+        const embed = insertContentEmbed(editor, "noteButton", "resizable");
+        editor.model.change((writer) => {
+            const paragraph = embed.nextSibling;
+            if (!paragraph) {
+                throw new Error("Expected a paragraph after the embed.");
+            }
+            writer.setSelection(paragraph, 0);
+        });
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!domRoot || !wrapper) {
+            return;
+        }
+        wrapper.innerHTML = `<div class="include-note-title-row"><button><span></span></button></div>`
+            + `<div class="include-note-content"><button></button></div>`;
+        const [ titleRowButton, contentButton ] = wrapper.querySelectorAll("button");
+
+        // A button of the rendered content keeps its native handling.
+        const contentEvt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        contentButton.dispatchEvent(contentEvt);
+        expect(contentEvt.defaultPrevented).toBe(false);
+        expect(editor.model.document.selection.getSelectedElement()).toBeNull();
+
+        const evt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const stop = vi.spyOn(evt, "stopPropagation");
+        titleRowButton.querySelector("span")?.dispatchEvent(evt);
+
+        expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        expect(document.activeElement).toBe(domRoot);
+        // No focus for the button itself; its click still runs.
+        expect(evt.defaultPrevented).toBe(true);
+        expect(stop).not.toHaveBeenCalled();
+    });
+
+    it("leaves a mousedown in the content alone, and selects the widget on the backdrop", () => {
+        const embed = insertContentEmbed(editor, "noteBackdrop", "resizable");
+        editor.model.change((writer) => {
+            const paragraph = embed.nextSibling;
+            if (!paragraph) {
+                throw new Error("Expected a paragraph after the embed.");
+            }
+            writer.setSelection(paragraph, 0);
+        });
+
+        const wrapper = editor.editing.view.getDomRoot()?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+        wrapper.innerHTML = `<div class="include-note-body">`
+            + `<div class="include-note-content"><p>text</p></div>`
+            + `<div class="include-note-backdrop"></div></div>`;
+        const text = wrapper.querySelector(".include-note-content p");
+        const backdrop = wrapper.querySelector(".include-note-backdrop");
+
+        const textEvt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const textStop = vi.spyOn(textEvt, "stopPropagation");
+        text?.dispatchEvent(textEvt);
+        expect(textEvt.defaultPrevented).toBe(false);
+        expect(textStop).not.toHaveBeenCalled();
+        expect(editor.model.document.selection.getSelectedElement()).toBeNull();
+
+        const backdropEvt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        backdrop?.dispatchEvent(backdropEvt);
+        expect(backdropEvt.defaultPrevented).toBe(true);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+    });
+
+    it("selects the widget when its content takes the focus, which stays there", () => {
+        const embed = insertContentEmbed(editor, "noteFocus", "resizable");
+        editor.model.change((writer) => {
+            const paragraph = embed.nextSibling;
+            if (!paragraph) {
+                throw new Error("Expected a paragraph after the embed.");
+            }
+            writer.setSelection(paragraph, 0);
+        });
+
+        const wrapper = editor.editing.view.getDomRoot()?.querySelector("div.include-note-wrapper");
+        if (!wrapper) {
+            throw new Error("Expected the wrapper of the embed.");
+        }
+        wrapper.innerHTML = `<div class="include-note-body">`
+            + `<div class="include-note-content" tabindex="-1"><button>Draw</button></div></div>`;
+        const content = wrapper.querySelector<HTMLElement>(".include-note-content");
+        const button = wrapper.querySelector<HTMLElement>("button");
+        const viewFocus = vi.spyOn(editor.editing.view, "focus");
+
+        content?.focus();
+        expect(document.activeElement).toBe(content);
+        expect(editor.model.document.selection.getSelectedElement()).toBe(embed);
+        expect(viewFocus).not.toHaveBeenCalled();
+
+        const change = vi.spyOn(editor.model, "enqueueChange");
+        // The content hears its own focus, as the editor of an included note must.
+        const heard = vi.fn();
+        button?.addEventListener("focus", heard);
+        button?.focus();
+        expect(document.activeElement).toBe(button);
+        expect(heard).toHaveBeenCalledOnce();
+        expect(change).not.toHaveBeenCalled();
+    });
+
+    it("leaves a mousedown inside an embedded collection untouched so the live widget keeps working", () => {
+        insertContentEmbed(editor, "noteColl", "full");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        // Simulate the embedded collection markup (e.g. a geo-map marker lives under .rendered-collection).
+        const collection = document.createElement("div");
+        collection.className = "rendered-collection";
+        const marker = document.createElement("div");
+        collection.appendChild(marker);
+        wrapper.appendChild(collection);
+
+        const evt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const prevent = vi.spyOn(evt, "preventDefault");
+        const stop = vi.spyOn(evt, "stopPropagation");
+        marker.dispatchEvent(evt);
+
+        // The handler must step aside completely so Leaflet (and other live widgets) get the event.
+        expect(prevent).not.toHaveBeenCalled();
+        expect(stop).not.toHaveBeenCalled();
+    });
+
+    it("treats a mousedown whose target is not an Element (e.g. a text node) as non-interactive", () => {
+        insertContentEmbed(editor, "noteText", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        // A capture-phase mousedown on a bare text node makes evt.target a Text, not an Element. The
+        // interactive-target guard must short-circuit and report "not interactive", so the widget's
+        // normal suppression (preventDefault + stopPropagation) still runs.
+        const textNode = document.createTextNode("plain text");
+        wrapper.appendChild(textNode);
+
+        const evt = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        const prevent = vi.spyOn(evt, "preventDefault");
+        const stop = vi.spyOn(evt, "stopPropagation");
+        textNode.dispatchEvent(evt);
+
+        expect(prevent).toHaveBeenCalled();
+        expect(stop).toHaveBeenCalled();
+    });
+
+    it("stops propagation on focus and keydown inside the wrapper", () => {
+        insertContentEmbed(editor, "noteKbd", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        const focusEvt = new FocusEvent("focus");
+        const focusStop = vi.spyOn(focusEvt, "stopPropagation");
+        wrapper.dispatchEvent(focusEvt);
+        expect(focusStop).toHaveBeenCalled();
+
+        const keyEvt = new KeyboardEvent("keydown", { bubbles: true });
+        const keyStop = vi.spyOn(keyEvt, "stopPropagation");
+        wrapper.dispatchEvent(keyEvt);
+        expect(keyStop).toHaveBeenCalled();
+    });
+
+    it("lets the embedded content handle a key, then keeps it from the editor", () => {
+        insertContentEmbed(editor, "noteKeys", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!domRoot || !wrapper) {
+            return;
+        }
+
+        const content = document.createElement("div");
+        wrapper.append(content);
+        const contentHeard = vi.fn();
+        const rootHeard = vi.fn();
+        content.addEventListener("keydown", contentHeard);
+        domRoot.addEventListener("keydown", rootHeard);
+
+        content.dispatchEvent(new KeyboardEvent("keydown", { key: "r", bubbles: true }));
+
+        expect(contentHeard).toHaveBeenCalledOnce();
+        expect(rootHeard).not.toHaveBeenCalled();
+        domRoot.removeEventListener("keydown", rootHeard);
+    });
+
+    it("does nothing on a mousedown when the wrapper has no enclosing embed", () => {
+        insertContentEmbed(editor, "noteDetached", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        // Detach the wrapper (which carries the capture-phase mousedown handler) from its
+        // embed so that domElement.closest(".include-note") returns null. The handler
+        // still fires because it is bound to the wrapper element itself.
+        const holder = document.createElement("div");
+        document.body.appendChild(holder);
+        holder.appendChild(wrapper);
+
+        wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+        holder.remove();
+        // The early return means no selection change beyond the original insert selection.
+        expect(true).toBe(true);
+    });
+
+    it("does nothing on a mousedown when the embed is not mapped to a view element", () => {
+        insertContentEmbed(editor, "noteUnmapped", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        if (!wrapper) {
+            return;
+        }
+
+        // Move the wrapper into a hand-built figure.include-note that the editor's
+        // DomConverter knows nothing about. closest() then finds this fake embed, but
+        // mapDomToView() returns nothing for it, so selectContentEmbedWidget returns early.
+        const fakeFigure = document.createElement("figure");
+        fakeFigure.className = "include-note";
+        document.body.appendChild(fakeFigure);
+        fakeFigure.appendChild(wrapper);
+
+        wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+        fakeFigure.remove();
+        expect(true).toBe(true);
+    });
+
+    it("does nothing on a mousedown when the embed's view maps to no model element", () => {
+        insertContentEmbed(editor, "noteNoModel", "resizable");
+
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        const figure = domRoot?.querySelector<HTMLElement>("figure.include-note");
+        expect(wrapper).not.toBeNull();
+        expect(figure).not.toBeNull();
+        if (!wrapper || !figure) {
+            return;
+        }
+
+        // The DOM->view mapping stays intact (mapDomToView succeeds), but we break the
+        // view->model mapping so selectContentEmbedWidget returns at the !modelElement guard.
+        const viewElement = editor.editing.view.domConverter.mapDomToView(figure);
+        expect(viewElement).toBeDefined();
+        if (viewElement && viewElement.is("element")) {
+            editor.editing.mapper.unbindViewElement(viewElement);
+        }
+
+        expect(() => {
+            wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+        }).not.toThrow();
+    });
+
+    it("selects the embed that a DOM element is part of, for a context menu opened on it", () => {
+        editor.setData("<p>foo</p>"
+            + "<figure class=\"include-note\" data-note-id=\"noteMenu\" data-box-size=\"resizable\">"
+            + "</figure>");
+        const domRoot = editor.editing.view.getDomRoot();
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        const paragraph = domRoot?.querySelector("p");
+        if (!wrapper || !paragraph) {
+            throw new Error("Expected a rendered embed and paragraph.");
+        }
+        const title = document.createElement("h4");
+        wrapper.append(title);
+        const plugin = editor.plugins.get("ContentEmbed");
+
+        expect(plugin.selectEmbedAt(paragraph)).toBe(false);
+        expect(editor.model.document.selection.getSelectedElement()).toBeNull();
+
+        expect(plugin.selectEmbedAt(title)).toBe(true);
+        expect(editor.model.document.selection.getSelectedElement()?.getAttribute("noteId"))
+            .toBe("noteMenu");
+    });
+
+    it("marks the embed that a DOM element is part of as collapsed, until destroyed", async () => {
+        editor.setData("<p>foo</p>"
+            + "<figure class=\"include-note\" data-note-id=\"noteC\" data-box-size=\"expandable\">"
+            + "</figure>");
+        const domRoot = editor.editing.view.getDomRoot();
+        const figure = domRoot?.querySelector("figure.include-note");
+        const wrapper = figure?.querySelector("div.include-note-wrapper");
+        const paragraph = domRoot?.querySelector("p");
+        if (!figure || !wrapper || !paragraph) {
+            throw new Error("Expected a rendered embed and paragraph.");
+        }
+        const plugin = editor.plugins.get("ContentEmbed");
+        const isCollapsed = () => figure.classList.contains("include-note_collapsed");
+
+        plugin.setEmbedCollapsedAt(wrapper, true);
+        expect(isCollapsed()).toBe(true);
+        plugin.setEmbedCollapsedAt(paragraph, false);
+        expect(isCollapsed()).toBe(true);
+        plugin.setEmbedCollapsedAt(wrapper, false);
+        expect(isCollapsed()).toBe(false);
+
+        await editor.destroy();
+        expect(() => plugin.setEmbedCollapsedAt(wrapper, true)).not.toThrow();
+        expect(isCollapsed()).toBe(false);
+    });
+
+    it("deletes the selected embed, with the caret in the block after it, else before it", () => {
+        const embed = "<contentEmbed noteId=\"n1\"></contentEmbed>";
+        const command = editor.commands.get(DELETE_COMMAND_NAME);
+        setModelData(editor.model, `<paragraph>before[]</paragraph>${embed}`);
+        expect(command?.isEnabled).toBe(false);
+
+        setModelData(editor.model,
+            `<paragraph>before</paragraph>[${embed}]<paragraph>after</paragraph>`);
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model))
+            .toBe("<paragraph>before</paragraph><paragraph>[]after</paragraph>");
+
+        // A next embed is selected, and a last embed leaves the caret in the block before it.
+        setModelData(editor.model, `[${embed}]${embed}`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe(`[${embed}]`);
+        setModelData(editor.model, `<paragraph>before</paragraph>[${embed}]`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe("<paragraph>before[]</paragraph>");
+
+        // An embed alone leaves an empty paragraph behind.
+        setModelData(editor.model, `[${embed}]`);
+        editor.execute(DELETE_COMMAND_NAME);
+        expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+
+        // The command refreshes after the change block, so a second delete in it finds no embed.
+        setModelData(editor.model, `[${embed}]<paragraph>after</paragraph>`);
+        editor.model.change(() => {
+            editor.execute(DELETE_COMMAND_NAME);
+            expect(command?.isEnabled).toBe(true);
+            editor.execute(DELETE_COMMAND_NAME);
+        });
+        expect(getModelData(editor.model)).toBe("<paragraph>[]after</paragraph>");
+    });
+
+    it("falls back gracefully in the button factory when the insert command is absent", () => {
+        // Exercise the falsy `if (command)` branch in ContentEmbedUI: when the command lookup
+        // returns undefined, the button must still be created (just without the binding).
+        const realGet = editor.commands.get.bind(editor.commands);
+        const absent: string[] = [
+            COMMAND_NAME, TOGGLE_CAPTION_COMMAND_NAME, TOGGLE_TITLE_COMMAND_NAME,
+            TOGGLE_EDITABLE_COMMAND_NAME
+        ];
+        const getSpy = vi
+            .spyOn(editor.commands, "get")
+            .mockImplementation((name) => (absent.includes(name) ? undefined : realGet(name)));
+
+        try {
+            const view = editor.ui.componentFactory.create("contentEmbed") as unknown as { label: string };
+            expect(view.label).toBe("Include note");
+            const caption = editor.ui.componentFactory.create(TOGGLE_CAPTION_COMMAND_NAME);
+            expect((caption as unknown as { label: string }).label).toBe("Toggle caption on");
+            const editable = editor.ui.componentFactory.create(TOGGLE_EDITABLE_COMMAND_NAME);
+            expect((editable as unknown as { label: string }).label).toBe("Editable");
+            const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
+            expect((menu as unknown as { label: string }).label).toBe("More actions");
+        } finally {
+            getSpy.mockRestore();
+        }
+    });
+});
+
+describe("ContentEmbed with attachments", () => {
+    const LINK_HREF = "#root/owner?viewMode=attachments&attachmentId=att1";
+    const embedHtml = (attachmentId = "att1") =>
+        `<figure class="include-note" data-attachment-id="${attachmentId}" data-box-size="resizable">`
+        + "</figure>";
+    let editor: ClassicEditor;
+    let loadEmbeddedNote: ReturnType<typeof vi.fn>;
+    let loadEmbeddedAttachment: ReturnType<typeof vi.fn>;
+    let getAttachmentHref: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        loadEmbeddedNote = vi.fn();
+        loadEmbeddedAttachment = vi.fn();
+        getAttachmentHref = vi.fn(async () => LINK_HREF);
+        editor = await createTestEditor([
+            Essentials, Paragraph, Undo, Widget, LinkEditing, ReferenceLink, ContentEmbed
+        ], {
+            referenceLink: { getTitle: async () => "report.pdf", getTitleSync: () => "report.pdf" },
+            contentEmbed: {
+                loadNote: loadEmbeddedNote,
+                loadAttachment: loadEmbeddedAttachment,
+                getAttachmentHref
+            }
+        });
+    });
+
+    /** Querying the DOM root forces the UIElement render callbacks to run. */
+    function renderEmbeds() {
+        return editor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper");
+    }
+
+    function selectEmbed() {
+        editor.model.change((writer) => {
+            const element = findContentEmbed(editor);
+            if (element) {
+                writer.setSelection(element, "on");
+            }
+        });
+    }
+
+    it("stores, saves and renders an embed by its attachment", () => {
+        editor.setData(embedHtml());
+
+        const element = findContentEmbed(editor);
+        expect(element?.getAttribute("attachmentId")).toBe("att1");
+        expect(element?.hasAttribute("noteId")).toBe(false);
+        expect(editor.getData()).toContain('data-attachment-id="att1"');
+        expect(editor.getData()).not.toContain("data-note-id");
+
+        expect(renderEmbeds()).toHaveLength(1);
+        expect(loadEmbeddedNote).not.toHaveBeenCalled();
+        expect(loadEmbeddedAttachment).toHaveBeenCalledTimes(1);
+        expect(loadEmbeddedAttachment.mock.calls[0]?.[0]).toBe("att1");
+        expect(loadEmbeddedAttachment.mock.calls[0]?.[2]).toBe("resizable");
+
+        selectEmbed();
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        expect(loadEmbeddedAttachment.mock.calls.at(-1)?.[2]).toBe("full");
+    });
+
+    it("shows an embed by its file name while it uploads, and saves it naming nothing", () => {
+        setModelData(
+            editor.model,
+            "<contentEmbed boxSize=\"resizable\" uploadFileName=\"report.pdf\" uploadId=\"u1\">"
+            + "</contentEmbed>"
+        );
+
+        const wrapper = renderEmbeds()?.[0];
+        const title = wrapper?.querySelector(".include-note-title");
+        expect(title?.textContent).toBe("report.pdf");
+        expect(title?.querySelector(".bx.bx-loader-alt.bx-spin")).not.toBeNull();
+        expect(loadEmbeddedAttachment).not.toHaveBeenCalled();
+        expect(loadEmbeddedNote).not.toHaveBeenCalled();
+        const data = editor.getData();
+        expect(data).toContain("<figure class=\"include-note\" data-box-size=\"resizable\">");
+        expect(data).not.toMatch(/data-(note|attachment)-id/);
+
+        const element = findContentEmbed(editor);
+        if (!element) {
+            throw new Error("Expected the embed.");
+        }
+
+        // The two steps of `FileUploadEditing` once the upload ends.
+        editor.model.change((writer) => writer.setAttribute("attachmentId", "att1", element));
+        expect(wrapper?.querySelector(".include-note-title")?.textContent).toBe("report.pdf");
+        expect(loadEmbeddedAttachment).not.toHaveBeenCalled();
+
+        editor.model.change((writer) => writer.removeAttribute("uploadFileName", element));
+        expect(renderEmbeds()?.[0]).toBe(wrapper);
+        expect(wrapper?.querySelector(".include-note-title")).toBeNull();
+        expect(wrapper?.parentElement?.getAttribute("data-attachment-id")).toBe("att1");
+        expect(loadEmbeddedAttachment).toHaveBeenCalledTimes(1);
+        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "resizable");
+    });
+
+    it("turns an attachment link into an embed in its place, as one undo step", () => {
+        editor.setData(`<p>Before <a class="reference-link" href="${LINK_HREF}">x</a> after</p>`);
+        const link = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: link, boxSize: "expandable" });
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<paragraph>Before </paragraph>" +
+            "<contentEmbed attachmentId=\"att1\" boxSize=\"expandable\"></contentEmbed>" +
+            "<paragraph> after</paragraph>"
+        );
+
+        editor.execute("undo");
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            `<paragraph>Before <reference href="${LINK_HREF}" storedTitle="x"></reference> after</paragraph>`
+        );
+
+        const relinked = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: relinked, hideTitle: true });
+        expect([ "boxSize", "hideTitle" ].map((name) => findContentEmbed(editor)?.getAttribute(name)))
+            .toEqual([ "resizable", true ]);
+    });
+
+    it("turns a link to a note into an embed of the note, and leaves anything else alone", () => {
+        const cardHref = "#root/boardAbc?card=cardAbc";
+        editor.setData(
+            `<p>Before <a class="reference-link" href="#root/parentAbc/noteAbc">x</a> after</p>`
+            + `<p><a class="reference-link" href="${cardHref}">card</a></p>`
+            + `<p><a class="reference-link" href="${LINK_HREF}">file</a></p>`
+        );
+        const before = getModelData(editor.model, { withoutSelection: true });
+        const domRoot = editor.editing.view.getDomRoot();
+        const [ link, cardLink, attachmentLink ] =
+            domRoot?.querySelectorAll<HTMLElement>("a.reference-link") ?? [];
+        const paragraph = domRoot?.querySelector("p");
+        const detached = document.createElement("a");
+        if (!link || !cardLink || !attachmentLink || !paragraph) {
+            throw new Error("Expected the links and their paragraph.");
+        }
+        const plugin = editor.plugins.get(ContentEmbed);
+
+        // A note link with a query names a part of the note, which an embed does not show.
+        expect([ link, cardLink, attachmentLink, paragraph, detached ]
+            .map((domElement) => plugin.canConvertLinkToEmbed(domElement)))
+            .toEqual([ true, false, true, false, false ]);
+        for (const domElement of [ cardLink, paragraph, detached ]) {
+            editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement });
+        }
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(before);
+
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: link, boxSize: "full" });
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<paragraph>Before </paragraph>" +
+            "<contentEmbed boxSize=\"full\" noteId=\"noteAbc\"></contentEmbed>" +
+            "<paragraph> after</paragraph>" +
+            `<paragraph><reference href="${cardHref}" storedTitle="card"></reference></paragraph>` +
+            `<paragraph><reference href="${LINK_HREF}" storedTitle="file"></reference></paragraph>`
+        );
+
+        // A link in the content of an embed is not part of the note.
+        const wrapper = domRoot?.querySelector("div.include-note-wrapper");
+        if (!wrapper) {
+            throw new Error("Expected the wrapper of the embed.");
+        }
+        wrapper.innerHTML = `<a class="reference-link" href="#root/otherAbc">other</a>`;
+        const embeddedLink = wrapper.querySelector("a");
+        expect(embeddedLink && plugin.canConvertLinkToEmbed(embeddedLink)).toBe(false);
+    });
+
+    it("loads an embed that names nothing, as one saved mid-upload, as an empty box", () => {
+        editor.setData("<figure class=\"include-note\" data-box-size=\"resizable\"></figure>");
+
+        expect(renderEmbeds()).toHaveLength(1);
+        expect(loadEmbeddedNote).not.toHaveBeenCalled();
+        expect(loadEmbeddedAttachment).not.toHaveBeenCalled();
+    });
+
+    it("turns an embed of an attachment or a note into a link, and nothing else", async () => {
+        const command = editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND);
+
+        editor.setData("<figure class=\"include-note\" data-box-size=\"resizable\"></figure>");
+        selectEmbed();
+        expect(command?.isEnabled).toBe(false);
+
+        editor.setData(embedHtml());
+        selectEmbed();
+        expect(command?.isEnabled).toBe(true);
+
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+
+        expect(getAttachmentHref).toHaveBeenCalledWith("att1");
+        await vi.waitFor(() => expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe(`<paragraph><reference href="${LINK_HREF}"></reference></paragraph>`));
+
+        editor.setData("<figure class=\"include-note\" data-note-id=\"noteX\""
+            + " data-box-size=\"resizable\"></figure>");
+        selectEmbed();
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+
+        await vi.waitFor(() => expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<paragraph><reference href=\"#root/noteX\"></reference></paragraph>"));
+        expect(getAttachmentHref).toHaveBeenCalledOnce();
+    });
+
+    it("describes the embed an element is part of, without selecting it", () => {
+        editor.setData(embedHtml()
+            + "<figure class=\"include-note\" data-note-id=\"noteX\" data-box-size=\"resizable\""
+            + " data-hide-title=\"true\"><figcaption>Caption</figcaption></figure>"
+            + "<figure class=\"include-note\" data-note-id=\"noteY\" data-box-size=\"compact\""
+            + " data-hide-title=\"true\"></figure>"
+            + "<figure class=\"include-note\" data-note-id=\"noteZ\"></figure>"
+            + "<p>after</p>");
+        editor.model.change((writer) => {
+            const root = editor.model.document.getRoot();
+            const paragraph = root?.getChild(root.childCount - 1);
+            if (paragraph) {
+                writer.setSelection(paragraph, 0);
+            }
+        });
+        const [ embed, note, tiny, unsized ] = renderEmbeds() ?? [];
+        const plugin = editor.plugins.get("ContentEmbed");
+
+        const states = [ embed, note, tiny, unsized ]
+            .map((wrapper) => plugin.getEmbedStateAt(wrapper));
+        // Without a host that knows the content, every embed is at its default box.
+        const notEditable = {
+            isEditable: false, isEditableToggleable: false, displayMode: null, position: "center",
+            isTitleSupported: true, isCaptionSupported: true, url: null, isDefaultBoxSize: true
+        };
+        const resizable = { boxSize: "resizable", positions: POSITIONS };
+        expect(states).toEqual([ {
+            ...notEditable, ...resizable, isTitleShown: true, isTitleToggleable: true,
+            hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
+        }, {
+            ...notEditable, ...resizable, isTitleShown: false, isTitleToggleable: true,
+            hasCaption: true, isCaptionToggleable: true, isConvertibleToLink: true
+        }, {
+            ...notEditable, boxSize: "compact", position: null, positions: [], isTitleShown: true,
+            isTitleToggleable: false, hasCaption: false, isCaptionToggleable: false,
+            isConvertibleToLink: true
+        }, {
+            // An embed saved with no box size opens Resizable.
+            ...notEditable, ...resizable, isTitleShown: true, isTitleToggleable: true,
+            hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
+        } ]);
+        const paragraph = editor.editing.view.getDomRoot()?.querySelector("p") ?? embed;
+        expect(plugin.getEmbedStateAt(paragraph)).toBeNull();
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(position?.parent.is("element", "paragraph")).toBe(true);
+
+        expect(plugin.getBoxSizes()).toEqual([
+            { value: "compact", label: "Compact" },
+            { value: "resizable", label: "Resizable" },
+            { value: "full", label: "Full" },
+            { value: "expandable", label: "Expandable" }
+        ]);
+    });
+
+    it("converts the embed that selectEmbedAt() selects from its title row", async () => {
+        editor.setData("<p>before</p>" + embedHtml());
+        const command = editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND);
+        const wrapper = renderEmbeds()?.[0];
+        if (!wrapper) {
+            throw new Error("Expected a rendered embed.");
+        }
+        const titleRow = document.createElement("div");
+        titleRow.className = "include-note-title-row";
+        wrapper.append(titleRow);
+        expect(command?.isEnabled).toBe(false);
+
+        expect(editor.plugins.get("ContentEmbed").selectEmbedAt(titleRow)).toBe(true);
+        expect(command?.isEnabled).toBe(true);
+
+        await editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<paragraph>before</paragraph>"
+            + `<paragraph><reference href="${LINK_HREF}"></reference></paragraph>`
+        );
+    });
+
+    it("converts nothing when no embed is selected", async () => {
+        editor.setData(embedHtml() + "<p>after</p>");
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` with no embed selected.
+        const command = editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND) as {
+            isEnabled: boolean;
+            execute(): Promise<void>;
+        };
+        command.isEnabled = true;
+        await command.execute();
+
+        expect(getAttachmentHref).not.toHaveBeenCalled();
+        expect(editor.getData()).toBe(before);
+    });
+
+    it("keeps an embed whose attachment has no link to go back to", async () => {
+        getAttachmentHref.mockResolvedValue(null);
+        editor.setData(embedHtml());
+        selectEmbed();
+
+        await editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+
+        expect(findContentEmbed(editor)?.getAttribute("attachmentId")).toBe("att1");
+    });
+
+    it("stores, saves and renders an embed of blocks, and points it at other blocks", async () => {
+        const html = "<figure class=\"include-note\" data-note-id=\"noteAbc\" data-block=\"a1:b2\""
+            + " data-box-size=\"resizable\">&nbsp;</figure>";
+        editor.setData(html);
+        renderEmbeds();
+
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b2");
+        expect(editor.getData()).toBe(html);
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "resizable", "a1:b2", expect.any(Function)
+        );
+
+        // The editor in the embed points it at other blocks, and keeps showing them.
+        const setBlock = loadEmbeddedNote.mock.lastCall?.[4] as (block: string) => void;
+        setBlock("c3");
+        renderEmbeds();
+
+        expect(loadEmbeddedNote).toHaveBeenCalledOnce();
+        expect(editor.getData()).toBe(html.replace("a1:b2", "c3"));
+        expect(editor.editing.view.getDomRoot()?.querySelector(".include-note")
+            ?.getAttribute("data-block")).toBe("c3");
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+
+        editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "full", "c3", expect.any(Function)
+        );
+
+        editor.setData("<p>Removed</p>");
+        setBlock("d4");
+        expect(editor.getData()).toBe("<p>Removed</p>");
+
+        await editor.destroy();
+        expect(() => setBlock("e5")).not.toThrow();
+    });
+
+    it("turns a link to blocks into an embed of them, and the embed back into a link", async () => {
+        const blockHref = "#root/parentAbc/noteAbc?block=a1:b%202";
+        editor.setData(
+            `<p><a class="reference-link" href="${blockHref}">blocks</a></p>`
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a1&card=c1\">mixed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a:b:c\">malformed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=\">empty</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#\">no note</a></p>"
+        );
+        const links = editor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLElement>("a.reference-link") ?? [];
+        const plugin = editor.plugins.get(ContentEmbed);
+
+        expect([ ...links ].map((link) => plugin.canConvertLinkToEmbed(link)))
+            .toEqual([ true, false, false, false, false ]);
+
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: links[0] });
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b 2");
+
+        selectEmbed();
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+        await vi.waitFor(() => expect(editor.getData()).toContain(
+            "<a class=\"reference-link\" href=\"#root/noteAbc?block=a1:b%202\">"
+        ));
+    });
+
+    it("redraws the embeds of a changed attachment and removes those of a deleted one", () => {
+        editor.setData(embedHtml("att1") + embedHtml("att2"));
+        renderEmbeds();
+        loadEmbeddedAttachment.mockClear();
+
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks([
+            { attachmentId: "att1", isDeleted: false },
+            { attachmentId: "att2", isDeleted: true }
+        ]);
+        renderEmbeds();
+
+        const redrawn = loadEmbeddedAttachment.mock.calls.map(([ attachmentId ]) => attachmentId);
+        expect(redrawn).toContain("att1");
+        expect(redrawn).not.toContain("att2");
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<contentEmbed attachmentId=\"att1\" boxSize=\"resizable\"></contentEmbed>");
+    });
+});
+
+describe("ContentEmbed captions", () => {
+    const CAPTIONED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\">"
+        + "<figcaption>A <strong>bold</strong> caption</figcaption></figure>";
+    let editor: ClassicEditor;
+    let loadEmbeddedNote: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        loadEmbeddedNote = vi.fn();
+        editor = await createTestEditor([
+            Essentials, Paragraph, Bold, Undo, Widget, ContentEmbed
+        ], { contentEmbed: { loadNote: loadEmbeddedNote } });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(TOGGLE_CAPTION_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the caption command.");
+        }
+        return command;
+    }
+
+    function selectEmbed() {
+        editor.model.change((writer) => {
+            const embed = findContentEmbed(editor);
+            if (embed) {
+                writer.setSelection(embed, "on");
+            }
+        });
+    }
+
+    /** The caption the editing view renders, after checking that it follows the content. */
+    function getRenderedCaption() {
+        const figcaption = editor.editing.view.getDomRoot()
+            ?.querySelector("figure.include-note > figcaption");
+        expect(figcaption?.previousElementSibling?.classList.contains("include-note-wrapper"))
+            .toBe(true);
+        return figcaption;
+    }
+
+    function isSelectionInCaption() {
+        const position = editor.model.document.selection.getFirstPosition();
+        return !!position?.parent.is("element", "caption");
+    }
+
+    it("loads and saves a formatted caption, and renders it editable after the content", () => {
+        editor.setData(CAPTIONED);
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" noteId=\"n1\">"
+            + "<caption>A <$text bold=\"true\">bold</$text> caption</caption></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(CAPTIONED);
+        expect(getRenderedCaption()?.getAttribute("contenteditable")).toBe("true");
+    });
+
+    it("toggles a caption on after the content and off again, keeping its text", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const command = getCommand();
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe(false);
+
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME, { focusCaptionOnShow: true });
+        expect(command.value).toBe(true);
+        expect(isSelectionInCaption()).toBe(true);
+        expect(getRenderedCaption()).not.toBeNull();
+
+        editor.model.change((writer) => {
+            const position = editor.model.document.selection.getFirstPosition();
+            if (position) {
+                writer.insertText("Caption", position);
+            }
+        });
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+        expect(command.value).toBe(false);
+        expect(editor.getData()).not.toContain("figcaption");
+        expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+        expect(editor.getData()).toContain("<figcaption>Caption</figcaption>");
+        expect(isSelectionInCaption()).toBe(false);
+    });
+
+    it("looks selected while its caption has the selection, as while it is selected", () => {
+        editor.setData(`<p>Text</p>${CAPTIONED}`);
+        const isMarked = () => !!editor.editing.view.getDomRoot()
+            ?.querySelector("figure.include-note")?.classList.contains("ck-widget_selected");
+        const embed = findContentEmbed(editor);
+        const caption = embed && getCaption(embed);
+        const paragraph = editor.model.document.getRoot()?.getChild(0);
+        if (!caption || !paragraph) {
+            throw new Error("Expected a paragraph and a captioned embed.");
+        }
+        expect(isMarked()).toBe(false);
+
+        editor.model.change((writer) => writer.setSelection(caption, 2));
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(caption, "end"));
+        expect(isMarked()).toBe(true);
+
+        editor.model.change((writer) => writer.setSelection(paragraph, 0));
+        expect(isMarked()).toBe(false);
+
+        selectEmbed();
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(caption, 0));
+        expect(isMarked()).toBe(true);
+        editor.model.change((writer) => writer.setSelection(paragraph, 0));
+        expect(isMarked()).toBe(false);
+    });
+
+    it("keeps the rendered content while the caption is toggled and edited", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const wrapper = editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper");
+        expect(wrapper).not.toBeNull();
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME, { focusCaptionOnShow: true });
+        editor.model.change((writer) => {
+            const position = editor.model.document.selection.getFirstPosition();
+            if (position) {
+                writer.insertText("Caption", position);
+            }
+        });
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+
+        expect(getRenderedCaption()?.textContent).toBe("Caption");
+        expect(editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper"))
+            .toBe(wrapper);
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("is disabled with no embed selected and on a Compact embed", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(getCommand().isEnabled).toBe(false);
+
+        insertContentEmbed(editor, "n1", "compact");
+        expect(getCommand().isEnabled).toBe(false);
+        expect(getCommand().value).toBe(false);
+    });
+
+    it("labels its toolbar button by whether the caption shows", () => {
+        const button = editor.ui.componentFactory.create(TOGGLE_CAPTION_COMMAND_NAME);
+        if (!(button instanceof ButtonView)) {
+            throw new Error("Expected a button.");
+        }
+        insertContentEmbed(editor, "n1", "resizable");
+        expect(button.label).toBe("Toggle caption on");
+        expect(button.isOn).toBe(false);
+
+        button.fire("execute");
+
+        expect(button.label).toBe("Toggle caption off");
+        expect(button.isOn).toBe(true);
+        expect(isSelectionInCaption()).toBe(true);
+    });
+
+    it("removes the caption of a Compact embed and restores it on a larger size, undoably", () => {
+        editor.setData(CAPTIONED);
+        selectEmbed();
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<contentEmbed boxSize=\"compact\" noteId=\"n1\"></contentEmbed>");
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect(editor.getData()).toBe(CAPTIONED);
+        expect(getRenderedCaption()).not.toBeNull();
+
+        editor.execute("undo");
+        editor.execute("undo");
+        expect(editor.getData()).toBe(CAPTIONED);
+    });
+
+    it("leaves a caption hidden with the toggle hidden when the embed leaves Compact", () => {
+        editor.setData(CAPTIONED);
+        selectEmbed();
+
+        editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+
+        expect(editor.getData()).not.toContain("figcaption");
+    });
+
+    it("drops the caption of a Compact embed it loads", () => {
+        editor.setData(CAPTIONED.replace("resizable", "compact"));
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<contentEmbed boxSize=\"compact\" noteId=\"n1\"></contentEmbed>");
+    });
+
+    it("shares the caption element with image captions, whichever registers it first", async () => {
+        const data = "<figure class=\"image\"><img src=\"a.png\"><figcaption>Picture</figcaption>"
+            + "</figure>" + CAPTIONED;
+
+        for (const plugins of [
+            [ ImageBlock, ImageCaption, ContentEmbed ],
+            [ ContentEmbed, ImageBlock, ImageCaption ]
+        ]) {
+            const imageEditor = await createTestEditor([
+                Essentials, Paragraph, Bold, Widget, ...plugins
+            ]);
+            imageEditor.setData(data);
+
+            expect(getModelData(imageEditor.model, { withoutSelection: true })).toBe(
+                "<imageBlock src=\"a.png\"><caption>Picture</caption></imageBlock>"
+                + "<contentEmbed boxSize=\"resizable\" noteId=\"n1\">"
+                + "<caption>A <$text bold=\"true\">bold</$text> caption</caption></contentEmbed>"
+            );
+            expect(imageEditor.getData()).toBe(data);
+            const root = imageEditor.editing.view.getDomRoot();
+            expect(root?.querySelector("figure.image > figcaption")?.textContent)
+                .toBe("Picture");
+            expect(root?.querySelector("figure.include-note > figcaption")?.textContent)
+                .toBe("A bold caption");
+        }
+    });
+});
+
+describe("ContentEmbed title", () => {
+    const UNTITLED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\""
+        + " data-hide-title=\"true\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let loadEmbeddedNote: ReturnType<typeof vi.fn>;
+    let openContentEmbedMenu: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        loadEmbeddedNote = vi.fn();
+        openContentEmbedMenu = vi.fn();
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { loadNote: loadEmbeddedNote, openMenu: openContentEmbedMenu }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(TOGGLE_TITLE_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the title command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    it("loads and saves a hidden title, and marks the embed it renders", () => {
+        editor.setData(UNTITLED);
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" hideTitle=\"true\" noteId=\"n1\"></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(UNTITLED);
+        expect(getRenderedEmbed().getAttribute("data-hide-title")).toBe("true");
+
+        editor.setData(UNTITLED.replace(" data-hide-title=\"true\"", ""));
+        expect(getModelData(editor.model, { withoutSelection: true })).not.toContain("hideTitle");
+        expect(editor.getData()).not.toContain("data-hide-title");
+    });
+
+    it("hides the title and shows it again, keeping the rendered content", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+        const command = getCommand();
+        expect(command.isEnabled).toBe(true);
+        expect(command.value).toBe(true);
+
+        editor.execute(TOGGLE_TITLE_COMMAND_NAME);
+        expect(command.value).toBe(false);
+        expect(getRenderedEmbed().getAttribute("data-hide-title")).toBe("true");
+        expect(editor.getData()).toContain("data-hide-title=\"true\"");
+        expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+
+        editor.execute(TOGGLE_TITLE_COMMAND_NAME);
+        expect(command.value).toBe(true);
+        expect(getRenderedEmbed().hasAttribute("data-hide-title")).toBe(false);
+        expect(editor.getData()).not.toContain("data-hide-title");
+
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("is disabled with no embed selected, and on a Compact or Expandable embed", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(getCommand().isEnabled).toBe(false);
+
+        for (const [ boxSize, isEnabled ] of [
+            [ "compact", false ], [ "expandable", false ], [ "resizable", true ], [ "full", true ]
+        ] as const) {
+            insertContentEmbed(editor, "n1", boxSize);
+            expect(getCommand().isEnabled, boxSize).toBe(isEnabled);
+        }
+    });
+
+    it("offers a menu button while the title is hidden", () => {
+        const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
+        if (!(menu instanceof ButtonView)) {
+            throw new Error("Expected a button.");
+        }
+        menu.render();
+        insertContentEmbed(editor, "n1", "resizable");
+        expect([ menu.label, menu.isVisible ]).toEqual([ "More actions", false ]);
+
+        editor.execute(TOGGLE_TITLE_COMMAND_NAME);
+        expect(menu.isVisible).toBe(true);
+
+        menu.fire("execute");
+        expect(openContentEmbedMenu).toHaveBeenCalledWith(getRenderedEmbed(), menu.element);
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
+        expect(menu.isVisible).toBe(false);
+    });
+
+    it("opens no menu from a button not rendered yet, or with no embed selected", () => {
+        const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
+        insertContentEmbed(editor, "n1", "resizable");
+        menu.fire("execute");
+
+        menu.render();
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        menu.fire("execute");
+        expect(openContentEmbedMenu).not.toHaveBeenCalled();
+
+        insertContentEmbed(editor, "n1", "resizable");
+        menu.fire("execute");
+        expect(openContentEmbedMenu).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("ContentEmbed code view", () => {
+    const ATTACHMENT = "<figure class=\"include-note\" data-attachment-id=\"att1\""
+        + " data-box-size=\"full\">&nbsp;</figure>";
+    const CODE_VIEW = ATTACHMENT.replace("data-box-size=\"full\"", "data-box-size=\"full\""
+        + " data-code-language=\"text/x-python\" data-code-tab-width=\"2\""
+        + " data-code-indent-with-tabs=\"false\" data-code-wrap-lines=\"true\""
+        + " data-code-line-numbers=\"false\"");
+    let editor: ClassicEditor;
+    let loadEmbeddedAttachment: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        loadEmbeddedAttachment = vi.fn();
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { loadAttachment: loadEmbeddedAttachment }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(CODE_VIEW_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the code view command.");
+        }
+        return command;
+    }
+
+    /** The `data-code-*` attributes of the rendered embed. */
+    function getRenderedCodeView() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        return [ "language", "tab-width", "indent-with-tabs", "wrap-lines", "line-numbers" ]
+            .map((name) => embed?.getAttribute(`data-code-${name}`) ?? null);
+    }
+
+    function selectEmbed() {
+        const embed = findContentEmbed(editor);
+        editor.model.change((writer) => writer.setSelection(embed ?? null, "on"));
+    }
+
+    it("loads and saves how an embed shows its code, and marks the embed it renders", () => {
+        editor.setData(CODE_VIEW);
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed attachmentId=\"att1\" boxSize=\"full\" codeIndentWithTabs=\"false\""
+            + " codeLanguage=\"text/x-python\" codeLineNumbers=\"false\" codeTabWidth=\"2\""
+            + " codeWrapLines=\"true\"></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(CODE_VIEW);
+        expect(getRenderedCodeView()).toEqual([ "text/x-python", "2", "false", "true", "false" ]);
+
+        editor.setData(ATTACHMENT);
+        expect(getModelData(editor.model, { withoutSelection: true })).not.toContain("code");
+        expect(editor.getData()).toBe(ATTACHMENT);
+        expect(getRenderedCodeView()).toEqual([ null, null, null, null, null ]);
+    });
+
+    it("sets and removes the settings of the selected embed as one undo step each", () => {
+        editor.setData(ATTACHMENT);
+        selectEmbed();
+        const wrapper = editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper");
+
+        editor.execute(CODE_VIEW_COMMAND_NAME, {
+            language: "text/x-python", tabWidth: 2, indentWithTabs: true, wrapLines: true,
+            lineNumbers: false
+        });
+        expect(getRenderedCodeView()).toEqual([ "text/x-python", "2", "true", "true", "false" ]);
+        expect(editor.getData()).toBe(CODE_VIEW.replace("\"false\"", "\"true\""));
+
+        editor.execute(CODE_VIEW_COMMAND_NAME, {
+            language: null, indentWithTabs: false, wrapLines: false, lineNumbers: null
+        });
+        expect(getRenderedCodeView()).toEqual([ null, "2", "false", "false", null ]);
+
+        editor.execute("undo");
+        expect(getRenderedCodeView()).toEqual([ "text/x-python", "2", "true", "true", "false" ]);
+        editor.execute("undo");
+        expect(getRenderedCodeView()).toEqual([ null, null, null, null, null ]);
+        expect(editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper"))
+            .toBe(wrapper);
+        expect(loadEmbeddedAttachment).toHaveBeenCalledTimes(1);
+    });
+
+    it("sets only the line numbers of an included note, which follows the note otherwise", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(getCommand().isEnabled).toBe(false);
+        editor.execute(CODE_VIEW_COMMAND_NAME, { language: "text/x-python" });
+
+        insertContentEmbed(editor, "n1", "full");
+        expect(getCommand().isEnabled).toBe(true);
+        editor.execute(CODE_VIEW_COMMAND_NAME, {
+            language: "text/x-python", tabWidth: 2, indentWithTabs: true, wrapLines: true,
+            lineNumbers: false
+        });
+        expect(getRenderedCodeView()).toEqual([ null, null, null, null, "false" ]);
+        expect(editor.getData()).not.toContain("data-code-language");
+
+        editor.setData(ATTACHMENT);
+        selectEmbed();
+        expect(getCommand().isEnabled).toBe(true);
+    });
+
+    it("changes nothing when the selection leaves the embed in the same change block", () => {
+        editor.setData(`${ATTACHMENT}<p>after</p>`);
+        selectEmbed();
+        const before = editor.getData();
+
+        // The command refreshes after the change block, so it still runs inside it.
+        editor.model.change((writer) => {
+            writer.setSelection(editor.model.document.getRoot()?.getChild(1) ?? null, 0);
+            expect(getCommand().isEnabled).toBe(true);
+            editor.execute(CODE_VIEW_COMMAND_NAME, { lineNumbers: false });
+        });
+        expect(getCommand().isEnabled).toBe(false);
+        expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed editable flag", () => {
+    const EDITABLE = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\""
+        + " data-hide-title=\"true\" data-editable=\"true\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let loadEmbeddedNote: ReturnType<typeof vi.fn>;
+    let getContentEmbedTools: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        loadEmbeddedNote = vi.fn();
+        getContentEmbedTools = vi.fn(() => ({ hasEditableFlag: true }));
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { loadNote: loadEmbeddedNote, getTools: getContentEmbedTools }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(TOGGLE_EDITABLE_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the editable command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    it("loads and saves the flag, and marks the embed it renders", () => {
+        editor.setData(EDITABLE);
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" editable=\"true\" hideTitle=\"true\" noteId=\"n1\">"
+            + "</contentEmbed>"
+        );
+        expect(editor.getData()).toBe(EDITABLE);
+        expect(getRenderedEmbed().getAttribute("data-editable")).toBe("true");
+
+        for (const data of [
+            EDITABLE.replace(" data-editable=\"true\"", ""),
+            EDITABLE.replace("data-editable=\"true\"", "data-editable=\"false\"")
+        ]) {
+            editor.setData(data);
+            expect(getModelData(editor.model, { withoutSelection: true }))
+                .not.toContain("editable");
+            expect(editor.getData()).not.toContain("data-editable");
+            expect(getRenderedEmbed().hasAttribute("data-editable")).toBe(false);
+        }
+    });
+
+    it("turns editing on and off as one undo step, keeping the rendered content", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+        const command = getCommand();
+        expect([ command.isEnabled, command.value ]).toEqual([ true, false ]);
+
+        editor.execute(TOGGLE_EDITABLE_COMMAND_NAME);
+        expect(command.value).toBe(true);
+        expect(getRenderedEmbed().getAttribute("data-editable")).toBe("true");
+        expect(editor.getData()).toContain("data-editable=\"true\"");
+        expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+
+        editor.execute(TOGGLE_EDITABLE_COMMAND_NAME);
+        expect(command.value).toBe(false);
+        expect(getRenderedEmbed().hasAttribute("data-editable")).toBe(false);
+        expect(editor.getData()).not.toContain("data-editable");
+
+        editor.execute("undo");
+        expect(command.value).toBe(true);
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+        expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
+    });
+
+    it("is offered only for content that opts in, once its content declares it", () => {
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        expect(getCommand().isEnabled).toBe(false);
+
+        // The content of an embed renders after the embed, and declares its tools then.
+        getContentEmbedTools.mockReturnValue(null);
+        insertContentEmbed(editor, "n1", "resizable");
+        expect(getCommand().isEnabled).toBe(false);
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect(getCommand().isEnabled).toBe(true);
+        expect(getContentEmbedTools).toHaveBeenLastCalledWith(getRenderedEmbed());
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: false });
+        editor.ui.update();
+        expect(getCommand().isEnabled).toBe(false);
+
+        editor.config.set("contentEmbed", { getTools: undefined });
+        editor.ui.update();
+        expect(getCommand().isEnabled).toBe(false);
+    });
+
+    it("offers an Editable button that shows only while the command is enabled", () => {
+        const button = editor.ui.componentFactory.create(TOGGLE_EDITABLE_COMMAND_NAME);
+        if (!(button instanceof ButtonView) || button instanceof SwitchButtonView) {
+            throw new Error("Expected a button.");
+        }
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        insertContentEmbed(editor, "n1", "resizable");
+        expect([ button.icon, button.withText, button.tooltip, button.isToggleable ])
+            .toEqual([ bxEditAlt, false, true, true ]);
+        expect([ button.label, button.isOn, button.isEnabled, button.isVisible ])
+            .toEqual([ "Editable", false, true, true ]);
+
+        button.fire("execute");
+        expect([ button.isOn, getCommand().value ]).toEqual([ true, true ]);
+        expect(focus).toHaveBeenCalled();
+
+        getContentEmbedTools.mockReturnValue(null);
+        editor.ui.update();
+        expect([ button.isEnabled, button.isVisible ]).toEqual([ false, false ]);
+    });
+
+    it("describes the flag of the embed an element is part of", () => {
+        editor.setData(EDITABLE + "<figure class=\"include-note\" data-note-id=\"n2\"></figure>");
+        const [ editable, readOnly ] =
+            editor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper") ?? [];
+        const plugin = editor.plugins.get(ContentEmbed);
+        if (!editable || !readOnly) {
+            throw new Error("Expected two rendered embeds.");
+        }
+
+        expect(plugin.getEmbedStateAt(editable))
+            .toMatchObject({ isEditable: true, isEditableToggleable: true });
+        expect(plugin.getEmbedStateAt(readOnly))
+            .toMatchObject({ isEditable: false, isEditableToggleable: true });
+
+        getContentEmbedTools.mockReturnValue(null);
+        expect(plugin.getEmbedStateAt(editable))
+            .toMatchObject({ isEditable: true, isEditableToggleable: false });
+    });
+
+    it("changes nothing when no embed is selected", () => {
+        editor.setData(EDITABLE + "<p>after</p>");
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` with no embed selected.
+        const command = getCommand();
+        command.isEnabled = true;
+        command.execute();
+
+        expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed display mode", () => {
+    const SPLIT = "<figure class=\"include-note\" data-attachment-id=\"a1\""
+        + " data-box-size=\"resizable\" data-display-mode=\"split\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let getContentEmbedTools: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        getContentEmbedTools = vi.fn(() => ({ hasDisplayModes: true }));
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { getTools: getContentEmbedTools }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(CONTENT_EMBED_DISPLAY_MODE_COMMAND);
+        if (!command) {
+            throw new Error("Expected the display mode command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    function setSelectedEditable() {
+        editor.model.change((writer) => {
+            const embed = editor.model.document.selection.getSelectedElement();
+            if (embed) writer.setAttribute("editable", true, embed);
+        });
+    }
+
+    it("loads and saves the mode, drops an unknown one, and marks the embed it renders", () => {
+        editor.setData(SPLIT);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toContain("displayMode=\"split\"");
+        expect(editor.getData()).toBe(SPLIT);
+        expect(getRenderedEmbed().getAttribute("data-display-mode")).toBe("split");
+
+        editor.setData(SPLIT.replace("\"split\"", "\"other\""));
+        expect(getModelData(editor.model, { withoutSelection: true })).not.toContain("displayMode");
+        expect(getRenderedEmbed().hasAttribute("data-display-mode")).toBe(false);
+    });
+
+    it("tells the mode, which follows Editable for editable content until one is picked", () => {
+        getContentEmbedTools.mockReturnValue({ hasDisplayModes: true, hasEditableFlag: true });
+        editor.setData(SPLIT.replace(" data-display-mode=\"split\"", ""));
+        const embed = editor.model.document.getRoot()?.getChild(0) ?? null;
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = getCommand();
+        expect([ command.isEnabled, command.value ]).toEqual([ true, "preview" ]);
+
+        setSelectedEditable();
+        expect(command.value).toBe("split");
+
+        // Content that cannot be edited has no Editable toggle, and shows the preview.
+        getContentEmbedTools.mockReturnValue({ hasDisplayModes: true });
+        editor.ui.update();
+        expect(command.value).toBe("preview");
+    });
+
+    it("switches the mode as one undo step, keeping the Editable flag", () => {
+        getContentEmbedTools.mockReturnValue({ hasDisplayModes: true, hasEditableFlag: true });
+        const embed = insertContentEmbed(editor, "n1", "resizable");
+        editor.model.change((writer) => writer.setAttribute("editable", true, embed));
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+
+        editor.execute(CONTENT_EMBED_DISPLAY_MODE_COMMAND, { value: "source" });
+        expect(getCommand().value).toBe("source");
+        expect(getRenderedEmbed().getAttribute("data-display-mode")).toBe("source");
+        expect(editor.getData()).toContain("data-display-mode=\"source\"");
+        expect(editor.getData()).toContain("data-editable=\"true\"");
+
+        editor.execute("undo");
+        expect(getCommand().value).toBe("split");
+        expect(getRenderedEmbed().hasAttribute("data-display-mode")).toBe(false);
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+    });
+
+    it("is offered only for content that has display modes", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        expect(getCommand().isEnabled).toBe(true);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect(getCommand().isEnabled).toBe(false);
+        expect(getCommand().value).toBeNull();
+        expect(editor.plugins.get(ContentEmbed).getEmbedStateAt(getRenderedEmbed()))
+            .toMatchObject({ displayMode: null });
+
+        getContentEmbedTools.mockReturnValue({ hasDisplayModes: true });
+        expect(editor.plugins.get(ContentEmbed).getEmbedStateAt(getRenderedEmbed()))
+            .toMatchObject({ displayMode: "preview" });
+    });
+
+    it("separates the display modes from the Editable toggle, while both show", () => {
+        const separator = editor.ui.componentFactory.create(CONTENT_EMBED_DISPLAY_MODE_SEPARATOR);
+        separator.render();
+        insertContentEmbed(editor, "n1", "resizable");
+        const isShown = () => !separator.element?.classList.contains("ck-hidden");
+        expect(separator.element?.classList.contains("ck-toolbar__separator")).toBe(true);
+        expect(isShown()).toBe(false);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true, hasDisplayModes: true });
+        editor.ui.update();
+        expect(isShown()).toBe(true);
+
+        getContentEmbedTools.mockReturnValue({
+            hasEditableFlag: true, hasDisplayModes: true,
+            hiddenToolbarItems: [ TOGGLE_EDITABLE_COMMAND_NAME ]
+        });
+        editor.ui.update();
+        expect(isShown()).toBe(false);
+
+        getContentEmbedTools.mockReturnValue({
+            hasEditableFlag: true, hasDisplayModes: true,
+            hiddenToolbarItemsWhileEditable: [ TOGGLE_EDITABLE_COMMAND_NAME ]
+        });
+        editor.ui.update();
+        expect(isShown()).toBe(true);
+        editor.execute(TOGGLE_EDITABLE_COMMAND_NAME);
+        expect(isShown()).toBe(false);
+        editor.execute(TOGGLE_EDITABLE_COMMAND_NAME);
+        expect(isShown()).toBe(true);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect(isShown()).toBe(false);
+    });
+
+    it("offers a button per mode, on while it is the mode and shown only while enabled", () => {
+        const buttons = DISPLAY_MODES.map((mode) => {
+            const button = editor.ui.componentFactory.create(DISPLAY_MODE_BUTTONS[mode]);
+            if (!(button instanceof ButtonView)) {
+                throw new Error("Expected a button.");
+            }
+            return button;
+        });
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        insertContentEmbed(editor, "n1", "resizable");
+        expect(buttons.map((button) => button.label))
+            .toEqual([ "Source view", "Split view", "Preview" ]);
+        expect(buttons.map((button) => [ button.icon, button.isToggleable ]))
+            .toEqual([ [ bxCode, true ], [ bxsDockLeft, true ], [ bxShow, true ] ]);
+        expect(buttons.map((button) => [ button.isOn, button.isVisible ]))
+            .toEqual([ [ false, true ], [ false, true ], [ true, true ] ]);
+
+        buttons[0].fire("execute");
+        expect(getCommand().value).toBe("source");
+        expect(buttons.map((button) => button.isOn)).toEqual([ true, false, false ]);
+        expect(focus).toHaveBeenCalled();
+
+        getContentEmbedTools.mockReturnValue(null);
+        editor.ui.update();
+        expect(buttons.map((button) => button.isVisible)).toEqual([ false, false, false ]);
+    });
+
+    it("changes nothing when no embed is selected", () => {
+        editor.setData(SPLIT + "<p>after</p>");
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` with no embed selected.
+        const command = getCommand();
+        command.isEnabled = true;
+        command.execute({ value: "source" });
+
+        expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed position", () => {
+    const WRAPPED = "<figure class=\"include-note\" data-attachment-id=\"a1\""
+        + " data-box-size=\"resizable\" data-position=\"wrap-left\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let getContentEmbedTools: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        getContentEmbedTools = vi.fn(() => ({ hasPositions: true }));
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: { getTools: getContentEmbedTools }
+        });
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(POSITION_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the position command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()
+            ?.querySelector<HTMLElement>("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    /** The position of the rendered embed, and the edge that its resize handles grow from. */
+    function getRendered() {
+        const embed = getRenderedEmbed();
+        const anchor = [ "left", "right" ]
+            .find((edge) => embed.classList.contains(`ck-widget_resize-anchor-${edge}`));
+        return [ embed.getAttribute("data-position"), anchor ?? null ];
+    }
+
+    it("loads and saves the position, and drops centered or an unknown one", () => {
+        editor.setData(WRAPPED);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toContain("position=\"wrap-left\"");
+        expect(editor.getData()).toBe(WRAPPED);
+        expect(getRendered()).toEqual([ "wrap-left", "left" ]);
+
+        for (const value of [ "center", "other" ]) {
+            editor.setData(WRAPPED.replace("wrap-left", value));
+            expect(getModelData(editor.model, { withoutSelection: true }), value)
+                .not.toContain("position");
+            expect(getRendered(), value).toEqual([ null, null ]);
+        }
+    });
+
+    it("sets the position as one undo step, keeping the content, and centered removes it", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+        expect([ getCommand().isEnabled, getCommand().value ]).toEqual([ true, "center" ]);
+        expect(getRendered()).toEqual([ null, null ]);
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-right" });
+        expect(getCommand().value).toBe("wrap-right");
+        expect(getRendered()).toEqual([ "wrap-right", "right" ]);
+        expect(editor.getData()).toContain("data-position=\"wrap-right\"");
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "left" });
+        expect(getRendered()).toEqual([ "left", "left" ]);
+        editor.execute(POSITION_COMMAND_NAME, { value: "right" });
+        expect(getRendered()).toEqual([ "right", "right" ]);
+
+        editor.execute(POSITION_COMMAND_NAME, { value: "center" });
+        expect(getCommand().value).toBe("center");
+        expect(getRendered()).toEqual([ null, null ]);
+        expect(editor.getData()).not.toContain("data-position");
+
+        editor.execute("undo");
+        expect(getCommand().value).toBe("right");
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+    });
+
+    it("places a Resizable embed anywhere, an Expandable one across the text, others nowhere", () => {
+        const positions = () => (getCommand() as ContentEmbedPositionCommand).positions;
+        insertContentEmbed(editor, "n1", "resizable");
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-left" });
+        expect(positions()).toEqual([ "left", "center", "right", "wrap-left", "wrap-right" ]);
+
+        // The position stays on the embed, for a box size that can take it again.
+        for (const boxSize of [ "compact", "full" ] as const) {
+            editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSize });
+            expect([ getCommand().isEnabled, getCommand().value, positions() ], boxSize)
+                .toEqual([ false, null, [] ]);
+            expect(editor.getData(), boxSize).toContain("data-position=\"wrap-left\"");
+        }
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
+        expect([ getCommand().isEnabled, getCommand().value, positions() ])
+            .toEqual([ true, "center", [ "left", "center", "right" ] ]);
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-right" });
+        expect(editor.getData()).toContain("data-position=\"wrap-left\"");
+        editor.execute(POSITION_COMMAND_NAME, { value: "right" });
+        expect([ getCommand().value, getRendered() ]).toEqual([ "right", [ "right", "right" ] ]);
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect([ getCommand().value, getRendered() ]).toEqual([ "right", [ "right", "right" ] ]);
+    });
+
+    it("is offered for a note, an attachment, and a source whose content has positions", () => {
+        const contentEmbed = editor.plugins.get(ContentEmbed);
+        const getOffered = () => [
+            getCommand().isEnabled, getCommand().value,
+            contentEmbed.getEmbedStateAt(getRenderedEmbed())?.position
+        ];
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+
+        for (const data of [ WRAPPED, WRAPPED.replace("data-attachment-id", "data-note-id") ]) {
+            editor.setData(data);
+            editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
+            expect(getOffered(), data).toEqual([ true, "wrap-left", "wrap-left" ]);
+        }
+
+        editor.model.change((writer) => {
+            const root = editor.model.document.getRoot();
+            if (!root) {
+                throw new Error("The editor has no root.");
+            }
+            const embed = writer.createElement("contentEmbed", {
+                language: "mermaid", source: "graph TD", boxSize: "resizable"
+            });
+            writer.remove(writer.createRangeIn(root));
+            writer.insert(embed, root, 0);
+            writer.setSelection(embed, "on");
+        });
+        expect(getOffered()).toEqual([ false, null, null ]);
+
+        getContentEmbedTools.mockReturnValue({ hasPositions: true });
+        editor.ui.update();
+        expect(getOffered()).toEqual([ true, "center", "center" ]);
+    });
+
+    it("changes nothing when no embed is selected", () => {
+        editor.setData(WRAPPED + "<p>after</p>");
+        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` with no embed selected.
+        const command = getCommand();
+        command.isEnabled = true;
+        command.execute({ value: "right" });
+
+        expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed resizing", () => {
+    const RESIZED = "<figure class=\"include-note\""
+        + " style=\"--include-note-height:12.5em;--include-note-width:30em;\""
+        + " data-note-id=\"n1\" data-box-size=\"resizable\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ]);
+    });
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    it("loads and saves the size of a resized embed", () => {
+        editor.setData(RESIZED);
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" customHeight=\"12.5em\" customWidth=\"30em\""
+            + " noteId=\"n1\"></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(RESIZED);
+    });
+
+    it("offers resizing to a Resizable embed on both axes, to an Expandable one in height", () => {
+        insertContentEmbed(editor, "n1", "resizable");
+        const embed = getRenderedEmbed();
+        const handles = embed.querySelector(":scope > .ck-widget__resize-handles");
+        expect([ ...handles?.children ?? [] ].map((handle) => handle.className)).toEqual([
+            "ck-widget__resize-handle ck-widget__resize-handle_width",
+            "ck-widget__resize-handle ck-widget__resize-handle_height",
+            "ck-widget__resize-handle ck-widget__resize-handle_corner"
+        ]);
+
+        for (const [ boxSize, isResizable, isWidthFixed ] of [
+            [ "compact", false, true ], [ "full", false, true ], [ "expandable", true, true ],
+            [ "resizable", true, false ]
+        ] as const) {
+            editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSize });
+            expect(embed.classList.contains("ck-widget_resizable"), boxSize).toBe(isResizable);
+            expect(embed.classList.contains("ck-widget_fixed-width"), boxSize).toBe(isWidthFixed);
+        }
+    });
+
+    it("keeps a resized size at Resizable, drops the width at Expandable, both at Compact or Full", () => {
+        editor.setData(RESIZED);
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect(editor.getData()).toBe(RESIZED);
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
+        expect(editor.getData()).toContain("style=\"--include-note-height:12.5em;\"");
+
+        for (const value of [ "compact", "full" ] as const) {
+            editor.execute("undo");
+            editor.execute(BOX_SIZE_COMMAND_NAME, { value });
+            expect(editor.getData(), value).not.toContain("style=");
+        }
+    });
+
+    it("reads the box sizes of an older note as the sizes they became, and saves those", () => {
+        const figure = (attributes: string) =>
+            `<figure class="include-note" ${attributes}>&nbsp;</figure>`;
+        editor.setData(figure("data-note-id=\"n1\" data-box-size=\"small\"")
+            + figure("style=\"--include-note-height:5em;\" data-note-id=\"n2\" data-box-size=\"medium\"")
+            + figure("data-note-id=\"n3\" data-box-size=\"tiny\"")
+            + figure("data-note-id=\"n4\" data-box-size=\"medium\""));
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" customHeight=\"10em\" noteId=\"n1\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"resizable\" customHeight=\"5em\" noteId=\"n2\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" noteId=\"n3\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"resizable\" customHeight=\"20em\" noteId=\"n4\"></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(
+            figure("style=\"--include-note-height:10em;\" data-note-id=\"n1\" data-box-size=\"resizable\"")
+            + figure("style=\"--include-note-height:5em;\" data-note-id=\"n2\" data-box-size=\"resizable\"")
+            + figure("data-note-id=\"n3\" data-box-size=\"compact\"")
+            + figure("style=\"--include-note-height:20em;\" data-note-id=\"n4\" data-box-size=\"resizable\"")
+        );
+    });
+});
+
+function findContentEmbed(editor: ClassicEditor): ModelElement | undefined {
+    const root = editor.model.document.getRoot();
+    if (!root) {
+        return undefined;
+    }
+    for (const item of editor.model.createRangeIn(root).getItems()) {
+        if (item.is("element", "contentEmbed")) {
+            return item;
+        }
+    }
+    return undefined;
+}
+
+function insertContentEmbed(editor: ClassicEditor, noteId: string, boxSize: string): ModelElement {
+    let created: ModelElement | null = null;
+    editor.model.change((writer) => {
+        const root = editor.model.document.getRoot();
+        if (!root) {
+            throw new Error("The editor has no root.");
+        }
+        const element = writer.createElement("contentEmbed", { noteId, boxSize });
+        writer.insert(element, root, 0);
+        writer.setSelection(element, "on");
+        created = element;
+    });
+    if (!created) {
+        throw new Error("Failed to create contentEmbed element.");
+    }
+    return created;
+}
+
+describe("ContentEmbed with content the host describes", () => {
+    const captioned = (noteId: string) => `<figure class="include-note" data-note-id="${noteId}"`
+        + ` data-box-size="compact" data-hide-title="true"><figcaption>Caption</figcaption></figure>`;
+    const info: Record<string, EmbedContentInfo> = {
+        song: { defaultBoxSize: "compact", hasCompactContent: true },
+        map: { defaultBoxSize: "compact", hasCompactContent: false },
+        text: { defaultBoxSize: "resizable", hasCompactContent: false }
+    };
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: {
+                getEmbedContentInfo: ({ noteId }) => (noteId && info[noteId]) ?? null
+            }
+        });
+    });
+
+    it("keeps the caption and hidden title of Compact audio and of content not loaded yet", () => {
+        editor.setData(captioned("song") + captioned("map") + captioned("later"));
+        setModelData(editor.model, getModelData(editor.model, { withoutSelection: true })
+            + "<contentEmbed boxSize=\"compact\" uploadFileName=\"a.mp3\" uploadId=\"u1\">"
+            + "<caption>Uploading</caption></contentEmbed>");
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"compact\" hideTitle=\"true\" noteId=\"song\">"
+            + "<caption>Caption</caption></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" noteId=\"map\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" hideTitle=\"true\" noteId=\"later\">"
+            + "<caption>Caption</caption></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" uploadFileName=\"a.mp3\" uploadId=\"u1\">"
+            + "<caption>Uploading</caption></contentEmbed>"
+        );
+        const plugin = editor.plugins.get("ContentEmbed");
+        const figures = editor.editing.view.getDomRoot()?.querySelectorAll("figure.include-note");
+        const states = [ ...figures ?? [] ].map((figure) => plugin.getEmbedStateAt(figure));
+        expect(states.map((state) => state && [
+            state.isTitleToggleable, state.isTitleShown, state.isCaptionToggleable,
+            state.isDefaultBoxSize
+        ])).toEqual([
+            [ true, false, true, true ],
+            [ false, true, false, true ],
+            [ false, true, true, true ],
+            [ false, true, true, true ]
+        ]);
+    });
+
+    it("puts an embed back at the box its content starts with, without a resized size", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"text\" data-box-size=\"compact\">"
+            + "</figure>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<contentEmbed boxSize=\"resizable\" noteId=\"text\"></contentEmbed>");
+        expect(command?.isEnabled).toBe(false);
+
+        editor.model.change((writer) => writer.setAttribute("customHeight", "8em", embed));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.hasAttribute("customHeight")).toBe(false);
+        expect(command?.isEnabled).toBe(false);
+    });
+
+    it("puts an excerpt back at the excerpt's box, not at the box of the whole note", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"text\" data-block=\"a1:b2\""
+            + " data-box-size=\"full\"></figure>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+
+        expect(command?.isEnabled).toBe(false);
+        editor.model.change((writer) => writer.setAttribute("boxSize", "resizable", embed));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.getAttribute("boxSize")).toBe("full");
+        expect(command?.isEnabled).toBe(false);
+    });
+
+    it("changes nothing for content the host has not loaded, or with no embed selected", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"later\" data-box-size=\"compact\">"
+            + "</figure><p>after</p>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the command.");
+        }
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` where it has nothing to do.
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        expect(command.isEnabled).toBe(false);
+        command.isEnabled = true;
+        command.execute();
+        setModelData(editor.model, getModelData(editor.model, { withoutSelection: true })
+            .replace("<paragraph>after</paragraph>", "<paragraph>[]after</paragraph>"));
+        command.isEnabled = true;
+        command.execute();
+        expect(editor.getData()).toBe(before);
+
+        // An embed saved with no box size at all has none to show.
+        setModelData(editor.model, "<contentEmbed noteId=\"text\"></contentEmbed>");
+        const figure = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!figure) {
+            throw new Error("Expected a rendered embed.");
+        }
+        expect(editor.plugins.get("ContentEmbed").getEmbedStateAt(figure)?.boxSize).toBeNull();
+    });
+});

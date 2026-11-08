@@ -6,9 +6,9 @@ import $ from "jquery";
 import { render } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Modal as BootstrapModal } from "bootstrap";
+import { Modal as BootstrapModal, Tooltip } from "bootstrap";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -16,6 +16,7 @@ import contextMenu from "../../../menus/context_menu";
 import dialog from "../../../services/dialog";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import ws from "../../../services/ws";
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
 import attributes from "../../../services/attributes";
@@ -25,13 +26,15 @@ import LoadResults from "../../../services/load_results";
 import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
+import { highlightedTexts } from "../../../test/highlights";
 import { ParentComponent } from "../../react/react_utils";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
-import { RAIL_EXIT_MS } from "./card_toolbar";
+import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import { DEFAULT_COLUMN_ICON } from "./columns";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -58,13 +61,12 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
     isMobile: () => layout.onMobile
 }));
 
-vi.mock("../../../services/note_types", () => ({
+vi.mock("../../../services/note_types", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/note_types")>()),
     getNoteTypeOptions: vi.fn(async () => {
         templateReads++;
         return NOTE_TYPE_OPTIONS;
     }),
-    resolveNoteTypeOptions: (ids: string[], available: { id: string }[]) =>
-        ids.flatMap(id => available.filter(option => option.id === id)),
     noteTypeOptionGroupTitle: (group: string) => `group:${group}`,
     default: {}
 }));
@@ -162,7 +164,7 @@ const saved: BoardViewData[] = [];
  * config it was handed, so the `viewConfig` prop only changes identity if the caller passed a new
  * object. That is exactly the condition the board's refresh effect depends on.
  */
-function Harness({ note, noteIds, initialConfig }: { note: ReturnType<typeof buildNote>, noteIds: string[], initialConfig: BoardViewData }) {
+function Harness({ note, noteIds, initialConfig, isReadOnly }: { note: ReturnType<typeof buildNote>, noteIds: string[], initialConfig: BoardViewData, isReadOnly?: boolean }) {
     const [ state, setState ] = useState<{ config: BoardViewData }>({ config: initialConfig });
     const saveConfig = useCallback((config: BoardViewData) => {
         saved.push(config);
@@ -185,6 +187,7 @@ function Harness({ note, noteIds, initialConfig }: { note: ReturnType<typeof bui
             saveConfig={saveConfig}
             media="screen"
             onReady={() => {}}
+            isReadOnly={isReadOnly}
         />
     );
 }
@@ -240,6 +243,9 @@ function columnTitles(container: HTMLElement) {
     return [ ...container.querySelectorAll(".board-column h3 .title") ].map(el => el.textContent);
 }
 
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
+
 describe("Collapsed board columns", () => {
     let container: HTMLElement | undefined;
 
@@ -254,11 +260,12 @@ describe("Collapsed board columns", () => {
     });
 
     /** A board whose first column is stored collapsed and holds two cards. */
-    async function setup({ keepCollapsed = false } = {}) {
+    async function setup({ keepCollapsed = false, hideAddColumn = false } = {}) {
         const note = buildNote({
             title: "Board",
             "#collection": "",
             "#viewType": "board",
+            ...(hideAddColumn ? { "#board:hideAddColumn": "true" } : {}),
             children: [
                 { id: "card1", title: "First", "#status": "To Do" },
                 { id: "card2", title: "Second", "#status": "To Do" },
@@ -680,8 +687,8 @@ describe("Collapsed board columns", () => {
 
         // Archived notes are not shown, so the entry is not ticked, and pressing it asks for them.
         // The inbox column is turned on in the properties dialog rather than here.
-        expect("trailingIcon" in entry("bx bx-archive") && entry("bx bx-archive").trailingIcon)
-            .toBeUndefined();
+        expect("checked" in entry("bx bx-archive") && entry("bx bx-archive").checked)
+            .toBe(false);
         entry("bx bx-archive").handler?.(entry("bx bx-archive"), {} as never);
         expect(archived).toHaveBeenCalledWith(true);
 
@@ -696,6 +703,40 @@ describe("Collapsed board columns", () => {
         show.mockRestore();
         archived.mockRestore();
     });
+
+    it("leaves out the add-column button when hidden, and still opens its editor from the menu",
+        async () => {
+            const { mountPoint } = await setup({ hideAddColumn: true });
+            const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+            expect(mountPoint.querySelector(".board-view-container")).not.toBeNull();
+            expect(mountPoint.querySelector(".board-add-column")).toBeNull();
+
+            mountPoint.querySelector(".board-view-container")
+                ?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+            const items = show.mock.calls.at(-1)?.[0].items ?? [];
+            const addColumn = items.find(item =>
+                item && "uiIcon" in item && item.uiIcon === "bx bx-columns");
+            if (!addColumn || !("handler" in addColumn)) {
+                throw new Error("expected an add-column entry");
+            }
+
+            await act(async () => {
+                addColumn.handler?.(addColumn, {} as never);
+                await flush();
+            });
+            const editor = mountPoint.querySelector<HTMLInputElement>(".board-add-column input");
+            if (!editor) throw new Error("expected the add-column editor to be open");
+
+            await act(async () => {
+                editor.dispatchEvent(new FocusEvent("blur"));
+                editor.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+                await flush();
+            });
+            expect(mountPoint.querySelector(".board-add-column")).toBeNull();
+
+            show.mockRestore();
+        });
 
     /** A column and a card answer for their own presses, and the board does not speak over them. */
     it("leaves a press inside a column to the column", async () => {
@@ -1105,6 +1146,18 @@ describe("Board column creation", () => {
         expect(saved.at(-1)?.columns?.map(c => c.value)).toEqual([ "To Do", "Done", "In Progress" ]);
         expect(columnTitles(container)).toEqual([ "To Do", "Done", "In Progress" ]);
     });
+
+    it("sets every collapsed title upright once a column is named in CJK", async () => {
+        const { container } = await setup();
+        const board = container.querySelector<HTMLElement>(".board-view-container");
+        if (!board) throw new Error("expected the board container");
+        expect(board.classList.contains("cjk-titles")).toBe(false);
+
+        await addColumn(container, "English 中文 あい");
+
+        expect(columnTitles(container)).toContain("English 中文 あい");
+        expect(board.classList.contains("cjk-titles")).toBe(true);
+    });
 });
 
 describe("Board column rename", () => {
@@ -1370,6 +1423,15 @@ describe("Board column rename", () => {
         expect(saved.at(-1)?.columns?.[0]).toEqual({ value: "To Do", collapsed: true });
         // The title editor is left to F2 and to the menu.
         expect(first.querySelector("h3 input")).toBeNull();
+    });
+
+    it("hints at the double click and Space on an open column's heading", async () => {
+        const { container } = await setup();
+        const heading = container.querySelector(".board-column h3");
+        expect(heading).not.toBeNull();
+
+        // `useStaticTooltip` installs one only where there is a title to show.
+        expect(heading && Tooltip.getInstance(heading)).not.toBeNull();
     });
 
     /** The tooltip is set on the element, which is where `useStaticTooltip` reads it back from. */
@@ -1891,6 +1953,7 @@ describe("Board column rename", () => {
             .querySelector<HTMLTextAreaElement>(".board-new-item.inserting textarea");
         if (!field) throw new Error("expected the field for a new card to be open");
         field.value = "Made";
+        field.dispatchEvent(new Event("input", { bubbles: true }));
         await act(async () => {
             field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
             await flush();
@@ -1929,7 +1992,7 @@ describe("Board column rename", () => {
             await flush();
         });
 
-        return slot?.querySelector(".card-template-pill button")?.textContent ?? "";
+        return slot?.querySelector(".template-pill button")?.textContent ?? "";
     }
 
     /**
@@ -2158,7 +2221,7 @@ describe("Board column rename", () => {
 
         const field = column.querySelector<HTMLElement>(".board-new-item.inserting");
         expect(field?.querySelector(".title-editor-icon button")).toBeTruthy();
-        expect(field?.querySelector(".card-template-pill button")?.textContent).toContain("Text");
+        expect(field?.querySelector(".template-pill button")?.textContent).toContain("Text");
         expect(field?.querySelector("textarea")?.placeholder).toBeTruthy();
 
         // Escape takes it down again, having made nothing.
@@ -2490,7 +2553,7 @@ describe("Board column rename", () => {
         });
 
         const editor = slot?.querySelector<HTMLTextAreaElement>("textarea");
-        const pill = slot?.querySelector<HTMLElement>(".card-template-pill button");
+        const pill = slot?.querySelector<HTMLElement>(".template-pill button");
         if (!editor || !pill) throw new Error("expected the editor and its template pill");
 
         // The first the board offers, until something else is picked.
@@ -2498,19 +2561,19 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
         // The menu is portalled to the page, and the boards this file rendered before left theirs
         // behind, so it is the last one that belongs to the board under test.
-        const menu = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
+        const menu = [ ...document.querySelectorAll<HTMLElement>(".template-pill") ].at(-1);
         const items = [ ...(menu?.querySelectorAll<HTMLElement>(".dropdown-item") ?? []) ];
         expect(items.map(item => item.textContent?.trim())).toEqual([
             "Text", "Markdown", "Canvas", "Spreadsheet", "board_view.more-templates"
         ]);
         // The one a card would be made from is ticked, rather than standing out by its background.
-        expect(items.map(item => !!item.querySelector(".card-template-current")))
+        expect(items.map(item => !!item.querySelector(".menu-trailing-icon")))
             .toEqual([ true, false, false, false, false ]);
         expect(items.some(item => item.classList.contains("active"))).toBe(false);
 
@@ -2525,12 +2588,12 @@ describe("Board column rename", () => {
         // Picking closes the menu, as any dropdown item click does; open it again to read the tick.
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
-        const reopened = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
+        const reopened = [ ...document.querySelectorAll<HTMLElement>(".template-pill") ].at(-1);
         expect([ ...(reopened?.querySelectorAll(".dropdown-item") ?? []) ]
-            .map(item => !!item.querySelector(".card-template-current")))
+            .map(item => !!item.querySelector(".menu-trailing-icon")))
             .toEqual([ false, false, true, false, false ]);
 
         await type(editor, "Drawn");
@@ -2541,7 +2604,7 @@ describe("Board column rename", () => {
 
         expect(created).toHaveBeenCalledWith("Doing", "Drawn", "bottom", undefined,
             expect.objectContaining({ id: "type:canvas:application/json" }));
-        expect(slot?.querySelector(".card-template-pill button")?.textContent).toContain("Canvas");
+        expect(slot?.querySelector(".template-pill button")?.textContent).toContain("Canvas");
     });
 
     /**
@@ -2563,13 +2626,13 @@ describe("Board column rename", () => {
         });
 
         const editor = slot?.querySelector<HTMLTextAreaElement>("textarea");
-        const pill = slot?.querySelector<HTMLElement>(".card-template-pill button");
+        const pill = slot?.querySelector<HTMLElement>(".template-pill button");
         if (!editor || !pill) throw new Error("expected the editor and its pill");
         await type(editor, "Still here");
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             editor.dispatchEvent(new FocusEvent("blur"));
             editor.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
             await flush();
@@ -2581,7 +2644,7 @@ describe("Board column rename", () => {
 
         // Once the menu is done with, the field has the focus again.
         await act(async () => {
-            $(pill.closest(".dropdown") as HTMLElement).trigger("hide.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button[aria-expanded=true]").trigger("click");
             await flush();
         });
         expect(document.activeElement).toBe(editor);
@@ -2754,15 +2817,15 @@ describe("Board column rename", () => {
             await flush();
         });
 
-        const pill = slot?.querySelector<HTMLElement>(".card-template-pill button");
+        const pill = slot?.querySelector<HTMLElement>(".template-pill button");
         if (!pill) throw new Error("expected the template pill");
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
-        const menus = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ];
+        const menus = [ ...document.querySelectorAll<HTMLElement>(".template-pill") ];
         const more = [ ...(menus.at(-1)?.querySelectorAll<HTMLElement>(".dropdown-item") ?? []) ]
             .find(item => item.textContent?.includes("more-templates"));
         if (!more) throw new Error("expected a way to the dialog");
@@ -2785,7 +2848,7 @@ describe("Board column rename", () => {
             .map(element => element.textContent);
         expect(named).toEqual([ "Text", "Markdown", "Canvas", "Spreadsheet" ]);
         expect(templates?.querySelectorAll(".tn-sortable-grip").length).toBe(4);
-        expect(templates?.querySelectorAll(".tn-sortable-adder").length).toBe(2);
+        expect(templates?.querySelectorAll(".tn-card-adder").length).toBe(2);
 
         // And the attributes the cards show, which the same dialog arranges.
         expect(dialog?.querySelector(".promoted-attributes-card")).toBeTruthy();
@@ -2863,18 +2926,18 @@ describe("Board column rename", () => {
 
     /** Picks one of the templates the pill offers, by where it stands in its menu. */
     async function pickTemplate(slot: HTMLElement | null | undefined, index: number) {
-        const pill = slot?.querySelector<HTMLElement>(".card-template-pill button");
+        const pill = slot?.querySelector<HTMLElement>(".template-pill button");
         if (!pill) throw new Error("expected the template pill");
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
         // The menu is portalled to the page, and the boards rendered before left theirs behind, so
         // the last one is the board under test.
-        const menu = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
+        const menu = [ ...document.querySelectorAll<HTMLElement>(".template-pill") ].at(-1);
         const items = [ ...(menu?.querySelectorAll<HTMLElement>(".dropdown-item") ?? []) ];
         await act(async () => {
             items[index].click();
@@ -3816,7 +3879,7 @@ describe("Board filtering", () => {
         // The matches arrive in score order; the board must keep branch order regardless.
         const note = await setup({ matched: [ "filtered3", "filtered1" ] });
 
-        expect(searchInSubtree).toHaveBeenCalledWith("#urgent", note.noteId);
+        expect(searchInSubtree).toHaveBeenCalledWith("#urgent", note.noteId, false);
         expect(cardTitles(0)).toEqual([ "First", "Third" ]);
         expect(cardTitles(1)).toEqual([]);
         expect(container.querySelectorAll(".board-column")).toHaveLength(2);
@@ -3919,8 +3982,8 @@ describe("Board filtering", () => {
             tokens: [ { token: "First", type: "plain" } ]
         });
 
-        const marks = [ ...container.querySelectorAll(".board-note .title .ck-find-result") ];
-        expect(marks.map(el => el.textContent)).toEqual([ "First" ]);
+        const titles = [ ...container.querySelectorAll(".board-note .title") ];
+        expect(titles.flatMap((title) => highlightedTexts("search-match", title))).toEqual([ "First" ]);
     });
 
     /**
@@ -4473,6 +4536,109 @@ describe("Switchable board grouping", () => {
         expect(columnTitles(mountPoint)).toEqual([ "Low", "High" ]);
         expect(columnIcons(mountPoint)).toEqual([ "bx bx-down-arrow", DEFAULT_COLUMN_ICON ]);
     });
+
+    /**
+     * `adoptLegacyColumns()` reads a config with `columns` and no `*ViewColumns` key as one written
+     * before the grouping could be switched. Deleting the last keyed list must not leave that shape.
+     */
+    it("keeps the default grouping's columns off a deleted grouping it was opened on", async () => {
+        delete noteAttributeCache.attributes["deleteBoard"];
+        const note = buildNote({
+            id: "deleteBoard",
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            "#board:groupBy": "priority",
+            "#label:priority(inheritable)": "promoted,alias=Priority,single,select,options=High;Low",
+            children: [
+                { title: "First", "#status": "To Do", "#priority": "High" },
+                { title: "Second", "#status": "Done", "#priority": "Low" }
+            ]
+        });
+        const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
+        // Every refresh asks the api this, which is where the test takes hold of it.
+        let api: BoardApi | undefined;
+        const hasStoredSince = BoardApi.prototype.hasStoredSince;
+        vi.spyOn(BoardApi.prototype, "hasStoredSince").mockImplementation(
+            function (this: BoardApi, config) {
+                api = this;
+                return hasStoredSince.call(this, config);
+            });
+
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+        const host = new Component();
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={host}>
+                    <Harness
+                        note={note}
+                        noteIds={[ ...note.getChildNoteIds() ]}
+                        initialConfig={CONFIG}
+                    />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+        await act(async () => { await flush(); });
+        expect(columnTitles(mountPoint)).toEqual([ "High", "Low" ]);
+        setLabel.mockClear();
+
+        // What `PromotedAttributesCard` deletes: the definition and every card's value. The
+        // deletion reaches froca once `ws.waitForMaxKnownEntityChangeId()` is awaited, or only
+        // after the request has returned where nothing waits for it.
+        const deleted = Object.values(froca.attributes).filter(attribute =>
+            attribute.name === "label:priority" || attribute.name === "priority");
+        let deletionArrived = false;
+        async function applyDeletion() {
+            if (deletionArrived) {
+                return;
+            }
+            deletionArrived = true;
+            for (const attribute of deleted) {
+                delete froca.attributes[attribute.attributeId];
+                for (const owner of [ note, ...note.getChildNoteIds().map(id => froca.notes[id]) ]) {
+                    owner.attributes = owner.attributes
+                        .filter(attributeId => attributeId !== attribute.attributeId);
+                    noteAttributeCache.attributes[owner.noteId] = noteAttributeCache
+                        .attributes[owner.noteId]?.filter(cached => cached !== attribute) ?? [];
+                }
+            }
+            const results = new LoadResults(deleted.map(attribute => ({
+                entityName: "attributes",
+                entityId: attribute.attributeId,
+                entity: {
+                    attributeId: attribute.attributeId, noteId: attribute.noteId, type: "label",
+                    name: attribute.name, isDeleted: true
+                }
+            }) as never));
+            for (const attribute of deleted) {
+                results.addAttribute(attribute.attributeId, "other");
+            }
+            await host.handleEvent("entitiesReloaded", { loadResults: results });
+        }
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockImplementation(applyDeletion);
+
+        await act(async () => {
+            await api?.deleteGrouping("priority", async () => {});
+            await flush();
+        });
+        await act(async () => {
+            await applyDeletion();
+            await flush();
+        });
+        await act(async () => { await flush(); });
+        await act(async () => { await flush(); });
+
+        expect(api).toBeDefined();
+        expect(saved.at(-1)?.priorityViewColumns ?? []).toEqual([]);
+        expect(saved.at(-1)?.columns).toEqual(CONFIG.columns);
+        expect(setLabel).not.toHaveBeenCalledWith(
+            "deleteBoard", "label:priority", expect.anything(), expect.anything());
+        vi.restoreAllMocks();
+    });
 });
 
 describe("Board properties from the note menu", () => {
@@ -4507,13 +4673,13 @@ describe("Board properties from the note menu", () => {
         expect(isOpen()).toBe(false);
 
         await act(async () => {
-            await host.handleEvent("showBoardProperties", { ntxId: "ntx-2" });
+            await host.handleEvent("showCollectionProperties", { ntxId: "ntx-2" });
             await flush();
         });
         expect(isOpen()).toBe(false);
 
         await act(async () => {
-            await host.handleEvent("showBoardProperties", { ntxId: "ntx-1" });
+            await host.handleEvent("showCollectionProperties", { ntxId: "ntx-1" });
             await flush();
         });
         expect(isOpen()).toBe(true);
@@ -4530,11 +4696,11 @@ describe("Board properties from the note menu", () => {
         const options = cog?.closest(".dropdown");
         if (!options) throw new Error("expected a settings menu on the collection bar");
         await act(async () => {
-            $(options as HTMLElement).trigger("show.bs.dropdown");
+            $(options as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
-        const entry = [ ...options.querySelectorAll<HTMLElement>(".dropdown-item") ].at(-1);
+        const entry = [ ...document.querySelectorAll<HTMLElement>(".tn-popup .dropdown-item") ].at(-1);
         if (!entry) throw new Error("expected an entry in the settings menu");
         expect(entry.textContent).toContain("board_view.properties");
         expect(entry.previousElementSibling?.className).toContain("dropdown-divider");
@@ -5224,7 +5390,7 @@ describe("Selection mode on mobile", () => {
     });
 
     /** A collection note, so the header the mode is switched on from is drawn. */
-    async function setup() {
+    async function setup(labels: Record<string, string> = {}) {
         disposeShownModals();
 
         const note = buildNote({
@@ -5232,6 +5398,7 @@ describe("Selection mode on mobile", () => {
             type: "book",
             "#collection": "",
             "#viewType": "board",
+            ...labels,
             children: [
                 { id: "pick1", title: "First", "#status": "To Do" },
                 { id: "pick2", title: "Second", "#status": "To Do" },
@@ -5308,6 +5475,16 @@ describe("Selection mode on mobile", () => {
         await act(async () => { headerButton("bx-x").click(); });
         expect(bar()).toBeNull();
         expect(board()?.classList.contains("selecting")).toBe(false);
+    });
+
+    it("offers no way to delete what is picked out of a read-only board", async () => {
+        await setup({ "#readOnly": "" });
+        await startSelecting();
+        await tap("pick1");
+
+        expect(selected()).toEqual([ "pick1" ]);
+        expect(railButton("bx-dots-vertical-rounded")).toBeTruthy();
+        expect(container.querySelector(".board-card-toolbar button.bx-trash")).toBeNull();
     });
 
     it("is left out off mobile", async () => {
@@ -5535,6 +5712,13 @@ describe("Column toolbar on mobile", () => {
         expect(toolbar()).toBeNull();
     });
 
+    /** Neither gesture the hint names is there on a touch screen, where the rail collapses. */
+    it("leaves the collapse hint off the heading", async () => {
+        await setup();
+
+        expect(Tooltip.getInstance(heading(0))).toBeNull();
+    });
+
     it("collapses and opens the column, offering only the open on a strip", async () => {
         await setup();
         await act(async () => { heading(0).focus(); });
@@ -5582,5 +5766,184 @@ describe("Column toolbar on mobile", () => {
         expect(toolbar()).toBeNull();
 
         show.mockRestore();
+    });
+});
+
+describe("BoardView, read-only", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        saved.length = 0;
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    /** `forced` makes the board read-only through `isReadOnly`, as a slide does, instead of `#readOnly`. */
+    async function setup(host = new Component(), { forced = false } = {}) {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            ...(forced ? {} : { "#readOnly": "" }),
+            children: [
+                { id: "roCard1", title: "First", "#status": "To Do" },
+                { id: "roCard2", title: "Second", "#status": "Done" }
+            ]
+        });
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={host}>
+                    <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} isReadOnly={forced || undefined} />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+        return mountPoint;
+    }
+
+    /** The titles of the entries of the menu last shown. */
+    const menuTitles = (show: { mock: { calls: unknown[][] } }) =>
+        ((show.mock.calls.at(-1)?.[0] as { items: { title?: string }[] } | undefined)?.items ?? [])
+            .map((item) => item.title);
+
+    it("is read-only through `isReadOnly` even when its note can be edited", async () => {
+        const board = await setup(new Component(), { forced: true });
+        expect(board.querySelector(".board-note")).not.toBeNull();
+        expect(board.querySelector(".board-new-item")).toBeNull();
+        expect(board.querySelector(".board-add-column")).toBeNull();
+        expect(board.querySelector(".board-note .edit-icon")).toBeNull();
+    });
+
+    it("offers no way to add a card or a column, nor to rename either", async () => {
+        vi.mocked(getNoteTypeOptions).mockClear();
+        const board = await setup();
+        // What a card can be made from is read for making one, which a read-only board never does.
+        expect(getNoteTypeOptions).not.toHaveBeenCalled();
+        const column = board.querySelector<HTMLElement>(".board-column");
+        const card = board.querySelector<HTMLElement>(".board-note");
+        expect(column === null || card === null).toBe(false);
+
+        expect(board.querySelector(".board-new-item")).toBeNull();
+        expect(board.querySelector(".board-add-column")).toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon.static")).not.toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon button")).toBeNull();
+        expect(board.querySelector(".board-note .edit-icon")).toBeNull();
+
+        await act(async () => {
+            if (column) startEditingTitle(column);
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "F2", bubbles: true }));
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await flush();
+        });
+        expect(board.querySelector(".board-column h3.editing")).toBeNull();
+        expect(board.querySelectorAll(".board-note.editing, .board-new-item").length).toBe(0);
+    });
+
+    it("offers as hints only the keys that change nothing", async () => {
+        const host = new Component();
+        await setup(host);
+
+        const sections = collectShortcutHints(host);
+        expect(sections.map((section) => section.titleKey)).toEqual([
+            "board_view.hints.navigation",
+            "board_view.hints.selection"
+        ]);
+        expect(sections.flatMap((section) => section.hints.map((hint) => hint.labelKey))).toEqual([
+            "board_view.hints.navigate_items",
+            "board_view.hints.navigate_columns",
+            "board_view.hints.first_last_item",
+            "board_view.hints.open_item",
+            "board_view.hints.toggle_column",
+            "board_view.hints.toggle_selection",
+            "board_view.hints.extend_selection",
+            "board_view.hints.select_column",
+            "board_view.hints.clear_selection"
+        ]);
+    });
+
+    it("changes nothing from the keyboard or from a note dropped from the tree", async () => {
+        const board = await setup();
+        // Opening the board records its columns, which is not the reader's doing.
+        saved.length = 0;
+        const writes = [
+            ...([
+                "removeFromBoard", "confirmAndRemoveColumn", "insertColumn", "moveToColumnEnd",
+                "reorderColumn", "changeColumn"
+            ] as const).map((name) => vi.spyOn(BoardApi.prototype, name)),
+            ...([ "deleteNotes", "moveAfterBranch" ] as const)
+                .map((name) => vi.spyOn(branches, name).mockResolvedValue(undefined as never))
+        ];
+        const card = board.querySelector<HTMLElement>(".board-note");
+        const header = board.querySelector<HTMLElement>(".board-column h3");
+        const column = board.querySelector<HTMLElement>(".board-column");
+        expect([ card, header, column ]).not.toContain(null);
+
+        const presses: [ HTMLElement | null, KeyboardEventInit ][] = [
+            [ card, { key: "Delete" } ],
+            [ card, { key: "Delete", shiftKey: true } ],
+            [ card, { key: "ArrowRight", ctrlKey: true } ],
+            [ card, { key: "ArrowDown", ctrlKey: true } ],
+            [ header, { key: "Enter", ctrlKey: true } ],
+            [ header, { key: "ArrowRight", ctrlKey: true } ],
+            [ header, { key: "Delete" } ]
+        ];
+        for (const [ target, init ] of presses) {
+            await act(async () => {
+                target?.focus();
+                target?.dispatchEvent(
+                    new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true }));
+                await flush();
+            });
+        }
+
+        const dragged = JSON.stringify(
+            [ { noteId: "roCard2", branchId: "roBranch", title: "Second" } ]);
+        for (const type of [ "dragover", "drop" ]) {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "dataTransfer", {
+                value: { types: [ TREE_CLIPBOARD_TYPE ], getData: () => dragged }
+            });
+            await act(async () => {
+                column?.dispatchEvent(event);
+                await flush();
+            });
+        }
+
+        expect({
+            saved,
+            called: writes
+                .filter((write) => write.mock.calls.length)
+                .map((write) => write.getMockName())
+        }).toEqual({ saved: [], called: [] });
+    });
+
+    it("keeps only the entries that change nothing in the menus, and shows none for the board", async () => {
+        const board = await setup();
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+        await withTabManager(async () => {
+            board.querySelector(".board-note")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        });
+        const cardMenu = menuTitles(show);
+        expect(cardMenu).toContain("board_view.copy-reference");
+        expect(cardMenu).not.toContain("board_view.edit-title");
+        expect(cardMenu).not.toContain("link_context_menu.open_note_in_popup");
+        expect(cardMenu).not.toContain("board_view.delete-note");
+
+        board.querySelector(".board-column h3")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(menuTitles(show)).toEqual([ "board_view.copy-reference" ]);
+
+        const calls = show.mock.calls.length;
+        board.querySelector(".board-view-container")
+            ?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(show.mock.calls.length).toBe(calls);
     });
 });

@@ -124,7 +124,7 @@ export async function renderEquation(
 			previewUid,
 			previewClassName,
 			el => {
-				/* v8 ignore next -- defensive: this arm is already gated on window.katex being defined */
+				/* v8 ignore else -- defensive: this arm runs only when window.katex is defined */
 				if ( katex ) {
 					katex.render( equation, el, {
 						throwOnError: false,
@@ -182,16 +182,21 @@ export function getBalloonPositionData( editor: Editor ): {
 } {
 	const view = editor.editing.view;
 	const defaultPositions = BalloonPanelView.defaultPositions;
+	// CKEditor takes the first position that fits, so the form opens below the equation when it can.
+	const positions = [
+		defaultPositions.southArrowNorth,
+		defaultPositions.southArrowNorthWest,
+		defaultPositions.southArrowNorthEast,
+		defaultPositions.northArrowSouth,
+		defaultPositions.northArrowSouthWest,
+		defaultPositions.northArrowSouthEast
+	];
 
 	const selectedElement = view.document.selection.getSelectedElement();
 	if ( selectedElement ) {
 		return {
 			target: view.domConverter.viewToDom( selectedElement ),
-			positions: [
-				defaultPositions.southArrowNorth,
-				defaultPositions.southArrowNorthWest,
-				defaultPositions.southArrowNorthEast
-			]
+			positions
 		};
 	} else {
 		const viewDocument = view.document;
@@ -207,11 +212,7 @@ export function getBalloonPositionData( editor: Editor ): {
 			target: view.domConverter.viewRangeToDom(
 				firstRange
 			),
-			positions: [
-				defaultPositions.southArrowNorth,
-				defaultPositions.southArrowNorthWest,
-				defaultPositions.southArrowNorthEast
-			]
+			positions
 		};
 	}
 }

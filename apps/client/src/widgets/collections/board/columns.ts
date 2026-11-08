@@ -1,4 +1,6 @@
-import { DEFAULT_BOARD_GROUP_BY, type DefinitionObject } from "@triliumnext/commons";
+import {
+    buildNoteTypeId, DEFAULT_BOARD_GROUP_BY, type DefinitionObject
+} from "@triliumnext/commons";
 
 import type FAttribute from "../../../entities/fattribute";
 import type FNote from "../../../entities/fnote";
@@ -19,6 +21,14 @@ export const DEFAULT_COLUMN_ICON = "bx bx-circle";
 
 /** What a card is drawn with until an icon is picked for it, which is what a text note carries. */
 export const DEFAULT_CARD_ICON = "bx bx-note";
+
+/** What a board offers to make its cards from until the reader picks for it. */
+export const DEFAULT_CARD_TEMPLATES = [
+    buildNoteTypeId("text", "text/html"),
+    buildNoteTypeId("code", "text/x-markdown"),
+    buildNoteTypeId("canvas", "application/json"),
+    buildNoteTypeId("spreadsheet", "application/json")
+];
 
 /**
  * The value identifying the inbox column: the empty string, which is what a card with no

@@ -8,7 +8,6 @@ import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
 import { useTriliumOptionBool } from "../../react/hooks.js";
 import OptionsRow, { OptionsRowWithToggle } from "../../type_widgets/options/components/OptionsRow.js";
-import iconUrl from "./icons/evernote.svg?url";
 import type { ImportProvider, ImportProviderPanelProps } from "./types.js";
 
 function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderPanelProps) {
@@ -73,7 +72,7 @@ const provider: ImportProvider = {
     id: "evernote",
     helpPage: "syuSEKf2rUGr",
     name: t("evernote_import.name"),
-    iconUrl,
+    icon: "tn-brand tn-brand-evernote",
     description: t("evernote_import.description"),
     Panel: EvernotePanel
 };

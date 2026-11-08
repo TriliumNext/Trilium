@@ -26,7 +26,10 @@ vi.mock("../../../menus/link_context_menu", () => ({
 // i18next is never initialised under test, so `t` echoes the key it is given. The promise is what
 // the command registry awaits as `PromotedAttributesCard` is pulled in for the attribute icons.
 vi.mock("../../../services/i18n", () => ({
-    t: (key: string) => key,
+    // Interpolates `column` unescaped, as i18next does in the client, so a spec sees what the menu
+    // receives.
+    t: (key: string, options?: { column?: string }) =>
+        (options?.column === undefined ? key : `${key}: ${options.column}`),
     translationsInitializedPromise: Promise.resolve()
 }));
 
@@ -185,14 +188,14 @@ describe("Board column context menu", () => {
             return found;
         };
 
-        // The check sits after the title, the entry keeping its own icon ahead of it.
+        // Checked, which the menu shows after the title, as the entry has an icon of its own.
         const unchecked = entryOf(false);
-        expect("trailingIcon" in unchecked && unchecked.trailingIcon).toBeUndefined();
+        expect("checked" in unchecked && unchecked.checked).toBe(false);
         unchecked.handler?.(unchecked, {} as never);
         expect(onKeepCollapsed).toHaveBeenLastCalledWith(true);
 
         const checked = entryOf(true);
-        expect("trailingIcon" in checked && checked.trailingIcon).toBe("bx bx-check");
+        expect("checked" in checked && checked.checked).toBe(true);
         checked.handler?.(checked, {} as never);
         expect(onKeepCollapsed).toHaveBeenLastCalledWith(false);
 
@@ -264,14 +267,14 @@ describe("Board column context menu", () => {
             return found;
         };
 
-        // The check sits after the title, the entry keeping its own icon ahead of it.
+        // Checked, which the menu shows after the title, as the entry has an icon of its own.
         const unchecked = entryOf(false);
-        expect("trailingIcon" in unchecked && unchecked.trailingIcon).toBeUndefined();
+        expect("checked" in unchecked && unchecked.checked).toBe(false);
         unchecked.handler?.(unchecked, {} as never);
         expect(api.setInboxNested).toHaveBeenLastCalledWith(true);
 
         const checked = entryOf(true);
-        expect("trailingIcon" in checked && checked.trailingIcon).toBe("bx bx-check");
+        expect("checked" in checked && checked.checked).toBe(true);
         checked.handler?.(checked, {} as never);
         expect(api.setInboxNested).toHaveBeenLastCalledWith(false);
     });
@@ -350,28 +353,25 @@ describe("Board column context menu", () => {
         expect(places(2)).toEqual([ 0, 1 ]);
     });
 
-    it("boxes the column names it offers to move past, as the status list does", () => {
+    it("boxes and escapes the column names it offers to move past", () => {
         const api = {
+            getColumnTitle: (name: string) => name,
             getColumnIcon: () => DEFAULT_COLUMN_ICON,
             getColumnColorClass: () => "",
             isColumnArchived: () => false
         } as unknown as BoardApi;
 
-        const menu = openMenu(api, { columns: [ "To Do", "Doing", "Done" ], index: 2 });
+        const columns = [ "<img src=x onerror=alert(1)>", "Doing", "Done" ];
+        const menu = openMenu(api, { columns, index: 2 });
         const entry = menu.find(item =>
             item && "uiIcon" in item && item.uiIcon === "bx bx-horizontal-left");
         if (!entry || !("items" in entry)) throw new Error("expected a move-column entry");
 
         // The head of the board carries no name, so only the ones naming a column are boxed.
-        const after = (entry.items ?? []).slice(1);
-        expect(after).toHaveLength(1);
-
-        // i18next is never initialised under test, so what it interpolates comes back undefined;
-        // the box around it is what this is about.
-        for (const item of after) {
-            expect(item && "title" in item ? item.title : "")
-                .toMatch(/^<span class="tn-menu-name">.*<\/span>$/);
-        }
+        const titles = (entry.items ?? []).slice(1)
+            .map(item => (item && "title" in item ? item.title : ""));
+        expect(titles).toEqual([ '<span class="tn-menu-name">board_view.move-column-after: '
+            + "&lt;img src&#x3D;x onerror&#x3D;alert(1)&gt;</span>" ]);
     });
 
     it("offers both sides to put a new column on", () => {
@@ -955,9 +955,9 @@ describe("Board item context menu", () => {
             '<span class="tn-menu-name">To Do</span>',
             '<span class="tn-menu-name">Done</span>'
         ]);
-        // The tick goes at the trailing edge, leaving each column's own icon where it stands.
-        expect(columns.map(item => item && "trailingIcon" in item ? item.trailingIcon : undefined))
-            .toEqual([ "bx bx-check", undefined ]);
+        // Ticked, which the menu shows after the title, as each column has an icon of its own.
+        expect(columns.map(item => item && "checked" in item ? item.checked : undefined))
+            .toEqual([ true, false ]);
         // And the one the card is under carries the class the stylesheet weights it by.
         expect(columns.map(item => item && "className" in item ? item.className : undefined))
             .toEqual([ "board-current-column", undefined ]);
@@ -1128,8 +1128,8 @@ describe("Board item context menu", () => {
             } as unknown as BoardApi;
 
             expect(marksOf(openSelectionMenu(together, notes)))
-                .toEqual([ undefined, "bx bx-check" ]);
-            expect(marksOf(openSelectionMenu(apart, notes))).toEqual([ undefined, undefined ]);
+                .toEqual([ false, true ]);
+            expect(marksOf(openSelectionMenu(apart, notes))).toEqual([ false, false ]);
         });
 
         it("files every card under the column picked", async () => {
@@ -1192,7 +1192,7 @@ describe("Board item context menu", () => {
 
         function marksOf(items: MenuItem<unknown>[]) {
             return columnEntries(items)
-                .map(item => item && "trailingIcon" in item ? item.trailingIcon : undefined);
+                .map(item => item && "checked" in item ? item.checked : undefined);
         }
 
         function titlesOf(items: MenuItem<unknown>[]) {

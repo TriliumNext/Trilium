@@ -9,8 +9,9 @@ import type { PromotedAttribute } from "../promoted_attributes";
 import type { SortContext, SortKey } from "../sorting";
 import { INBOX_COLUMN } from "./columns";
 import {
-    affectsSortOrder, applyCardMoves, type ColumnMap, type ColumnSort, filterColumnMap,
-    getBoardData, resolveColumnSorts, resolveSortWatch, sortColumnMap, unfilteredCardIndex
+    affectsCardDefinitions, affectsSortOrder, applyCardMoves, type ColumnMap, type ColumnSort,
+    definitionSources, filterColumnMap, getBoardData, resolveColumnSorts, resolveSortWatch,
+    sortColumnMap, unfilteredCardIndex
 } from "./data";
 
 describe("applyCardMoves", () => {
@@ -196,6 +197,32 @@ describe("Board data", () => {
         expect(titles("To Do")).toEqual([ "Card" ]);
         // The one with no value is collected; the template is not.
         expect(titles("")).toEqual([ "Unassigned" ]);
+    });
+
+    it("collects cards only as deep as #maxNestingDepth says", async () => {
+        const board = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            children: [
+                { title: "Child", "#status": "To Do", children: [
+                    { title: "Grandchild", "#status": "To Do", children: [
+                        { title: "Great-grandchild", "#status": "To Do" }
+                    ] }
+                ] }
+            ]
+        });
+
+        async function titlesAt(maxDepth: number | undefined) {
+            const data = await getBoardData(
+                board, "status", {}, false, [], new Map(), false, maxDepth);
+            return (data.byColumn.get("To Do") ?? []).map((item) => item.note.title).sort();
+        }
+
+        expect(await titlesAt(0)).toEqual([ "Child" ]);
+        expect(await titlesAt(1)).toEqual([ "Child", "Grandchild" ]);
+        expect(await titlesAt(undefined)).toEqual([ "Child", "Grandchild", "Great-grandchild" ]);
+        expect(await titlesAt(-1)).toEqual([ "Child", "Grandchild", "Great-grandchild" ]);
     });
 
     /**
@@ -659,6 +686,8 @@ function definitions(name: string, type: "label" | "relation") {
         drawnByCollection: false,
         definitionValue: "",
         isOwned: true,
+        isDefinedByItems: false,
+        isConflicting: false,
         isInheritable: true
     } ] ]);
 }
@@ -763,13 +792,51 @@ function noteIdsOf(map: ColumnMap, column: string) {
 }
 
 /** Builds the `LoadResults` a websocket message would produce. See `refresh_reason.spec.ts`. */
+describe("affectsCardDefinitions", () => {
+    /**
+     * A card under `area`, taking attributes from `template`, which sits under `library`. The
+     * attributes that reach the card are the ones `attributes.isAffecting()` reports.
+     */
+    function sources() {
+        buildNote({ id: "cdLibrary", title: "Library", children: [
+            { id: "cdTemplate", title: "Template" }
+        ] });
+        buildNote({ id: "cdArea", title: "Area", children: [
+            { id: "cdCard", title: "Card", "~template": "cdTemplate" }
+        ] });
+        buildNote({ id: "cdElsewhere", title: "Elsewhere" });
+        return definitionSources([ froca.notes["cdCard"] ]);
+    }
+
+    const affects = (name: string, noteId: string, isInheritable = false) => affectsCardDefinitions(
+        changes({ attributes: [ [ name, noteId, isInheritable ] ] }), sources());
+
+    it("answers for a definition on the card or on a note it takes attributes from", () => {
+        expect(affects("label:priority", "cdCard")).toBe(true);
+        expect(affects("relation:owner", "cdTemplate")).toBe(true);
+        expect(affects("template", "cdCard")).toBe(true);
+        expect(affects("inherit", "cdTemplate")).toBe(true);
+    });
+
+    it("answers for a definition above them only when it is inheritable", () => {
+        expect(affects("label:priority", "cdArea")).toBe(false);
+        expect(affects("label:priority", "cdArea", true)).toBe(true);
+        expect(affects("label:priority", "cdLibrary", true)).toBe(true);
+    });
+
+    it("leaves out other notes and attributes that are no definition", () => {
+        expect(affects("label:priority", "cdElsewhere", true)).toBe(false);
+        expect(affects("color", "cdCard")).toBe(false);
+    });
+});
+
 function changes({ notes = [], attributes = [] }: {
     notes?: string[];
-    /** `[ name, noteId ]` pairs. */
-    attributes?: [ string, string ][];
+    /** `[ name, noteId, isInheritable ]` tuples. */
+    attributes?: [ string, string, boolean? ][];
 }) {
-    const entityChanges = attributes.map(([ name, noteId ], index) => entityChange(
-        `attr${index}`, { attributeId: `attr${index}`, name, noteId }));
+    const entityChanges = attributes.map(([ name, noteId, isInheritable = false ], index) =>
+        entityChange(`attr${index}`, { attributeId: `attr${index}`, name, noteId, isInheritable }));
 
     const results = new LoadResults(entityChanges);
     for (const noteId of notes) {

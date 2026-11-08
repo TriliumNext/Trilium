@@ -1,5 +1,6 @@
 "use strict";
 
+import { ValidationError } from "../../errors.js";
 import protectedSessionService from "../../services/protected_session.js";
 import dateUtils from "../../services/utils/date";
 import becca from "../becca.js";
@@ -103,8 +104,6 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
         return this._getContent();
     }
 
-    /**
-     * @throws Error in case of invalid JSON */
     getJsonContent(): {} | null {
         const content = this.getContent();
 
@@ -184,6 +183,10 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     }
 
     override beforeSaving() {
+        if (this.becca.notes[this.noteId]?.isVirtual) {
+            throw new ValidationError(`Cannot save a revision of note '${this.noteId}': virtual notes have no revisions.`);
+        }
+
         super.beforeSaving();
 
         this.utcDateModified = dateUtils.utcNowDateTime();

@@ -1,7 +1,8 @@
 /**
- * Where a media player is being rendered. A pane of its own — the note detail, or an attachment opened in
- * full detail — is `standalone`; a note included in a text note or embedded in a canvas is `embedded`; a
- * lightweight preview such as a collection tile or an attachment list is `preview`.
+ * Where a media player or an image viewer is being rendered. A pane of its own — the note detail,
+ * or an attachment opened in full detail — is `standalone`; a note included in a text note or
+ * embedded in a canvas is `embedded`; a lightweight preview such as a collection tile or an
+ * attachment list is `preview`.
  */
 export type MediaEnvironment = "standalone" | "embedded" | "preview";
 
@@ -48,6 +49,15 @@ export function usesCompactControls(environment: MediaEnvironment): boolean {
  */
 export function showsViewportControls(environment: MediaEnvironment): boolean {
     return environment !== "preview";
+}
+
+/**
+ * Whether the content is inside a document that scrolls, such as a text note. A wheel or a
+ * one-finger drag must keep scrolling that document, so an image viewer zooms on the wheel only
+ * once focused and pans only once zoomed in.
+ */
+export function isInScrollingDocument(environment: MediaEnvironment): boolean {
+    return environment !== "standalone";
 }
 
 /**

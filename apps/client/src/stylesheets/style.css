@@ -1,4 +1,8 @@
 @import "./boxicons-compat.css";
+@import "./adaptive-colors.css";
+@import "./menus.css";
+@import "./buttons.css";
+@import "./zen.css";
 
 @font-face {
     font-family: Montserrat;
@@ -18,16 +22,10 @@
 }
 
 :root {
-    --admonition-note-accent-color: #69c7ff;
-    --admonition-tip-accent-color: #40c025;
-    --admonition-important-accent-color: #9839f7;
-    --admonition-caution-accent-color: #ff2e2e;
-    --admonition-warning-accent-color: #e2aa03;
     --bs-body-font-family: var(--main-font-family) !important;
     --bs-body-font-weight: var(--main-font-weight) !important;
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;
-    --ck-mention-list-max-height: 500px;
     --tn-modal-max-height: 90svh;
 
     --tree-item-light-theme-max-color-lightness: 50;
@@ -64,15 +62,30 @@ body#trilium-app.backdrop-effects-disabled *::after {
 }
 
 :root {
-    --submenu-opening-delay: 300ms;
+    --submenu-opening-delay: 250ms;
+    --modal-control-button-size: 22px;
     --launcher-pane-size: 53px;
     --bs-body-color: var(--main-text-color);
+    /* What a menu, the sidebar or a dialog dims the page behind it with in the phone layout. */
+    --mobile-backdrop-color: rgba(0, 0, 0, 0.5);
+    --mobile-modal-backdrop-color: var(--mobile-backdrop-color);
 }
 
 html {
     /* this fixes FF filter vs. position fixed bug: https://github.com/zadam/trilium/issues/233 */
     height: 100vh;
+    /* Chrome on Android sizes `vh` without its toolbar, which leaves the page that much to scroll. */
+    height: 100dvh;
     overscroll-behavior: none;
+}
+
+/* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
+   the first rotation (WebKit bug 301108); the large viewport is the screen's height from the start.
+   `bootstrap()` sets the class only when the page runs under the status bar. */
+html.ios-web-app,
+html.ios-web-app body,
+html.ios-web-app #root-widget {
+    height: 100lvh !important;
 }
 
 body {
@@ -126,6 +139,8 @@ body.mobile.context-menu-shown * {
 
 body.mobile #root-widget {
     padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+    padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+    padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
 }
 
 body.mobile #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
@@ -152,14 +167,8 @@ body.desktop {
         }
     }
 
-    &.experimental-feature-new-layout #root-widget.horizontal-layout {
+    #root-widget.horizontal-layout {
         >.status-bar {
-            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
-        }
-    }
-
-    &:not(.experimental-feature-new-layout) #root-widget.horizontal-layout {
-        #horizontal-main-container {
             padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }
@@ -216,10 +225,18 @@ textarea,
     color: var(--muted-text-color);
 }
 
-.form-group.disabled,
-.form-checkbox.disabled {
+.form-field-error {
+    color: var(--dropdown-item-icon-destructive-color);
+    font-size: 0.7em;
+}
+
+.form-group.disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+.form-checkbox.disabled {
+    opacity: 0.5;
 }
 
 .form-group {
@@ -232,9 +249,150 @@ label.tn-checkbox + label.tn-checkbox {
     margin-inline-start: 12px;
 }
 
-label.tn-radio input[type="radio"],
-label.tn-checkbox input[type="checkbox"] {
-    margin-inline-end: .5em;
+/* Check boxes and radio buttons */
+
+@supports selector(label:has(*)) {
+    /* Check box & radio button commons */
+
+    /* The parent label */
+    label.tn-radio,
+    label.tn-checkbox {
+        --box-size: 1em;
+        --box-label-gap: 0.5em;
+
+        position: relative;
+        padding-inline-start: calc(var(--box-size) + var(--box-label-gap)) !important;
+        user-select: none;
+    }
+
+    /* The original input */
+    label.tn-radio > input[type="radio"],
+    label.tn-checkbox > input[type="checkbox"] {
+        position: absolute;
+        top: 0;
+        inset-inline-start: 0;
+        width: var(--box-size);
+        height: 100%;
+        margin: unset;
+        opacity: 0 !important;
+    }
+
+    label.tn-radio::before,
+    label.tn-radio::after,
+    label.tn-checkbox::before,
+    label.tn-checkbox::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        inset-inline-start: 0;
+        translate: 0 -50%;
+        width: var(--box-size);
+        height: var(--box-size);
+    }
+
+    label.tn-radio:has(> input[type="radio"]:focus-visible)::before,
+    label.tn-checkbox:has(> input[type="checkbox"]:focus-visible)::before {
+        outline: 2px solid var(--input-focus-outline-color);
+    }
+
+    /* Check boxes */
+
+    /* The check box background */
+    label.tn-checkbox::before {
+        border-radius: 3px;
+        background: var(--radio-checkbox-background);
+    }
+
+    label.tn-checkbox:has(> input[type="checkbox"]:not(:disabled)):hover:before {
+        background: var(--radio-checkbox-hover-background);
+    }
+
+    @keyframes checkbox-checked {
+        from {
+            transform: scale(2);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+
+    /* The tick mark */
+    label.tn-checkbox::after {
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3ctitle%3echeck-bold%3c/title%3e%3cpath d='M9%2c20.42L2.79%2c14.21L5.62%2c11.38L9%2c14.77L18.88%2c4.88L21.71%2c7.71L9%2c20.42Z' /%3e%3c/svg%3e");
+        mask-position: center center;
+        mask-size: 0.95em;
+        background-color: var(--radio-checkbox-indicator-color);
+        transform: scale(0);
+        opacity: 0;
+        transition:
+            transform 300ms ease-out,
+            opacity 300ms linear;
+    }
+
+    label.tn-checkbox:has(> input[type="checkbox"]:checked)::after {
+        opacity: 1;
+        transform: scale(1);
+        transition: opacity 100ms ease-in-out;
+        animation: checkbox-checked 150ms ease-out;
+    }
+
+    /* The mixed state of a box whose items are partly checked, such as a select-all box. */
+    label.tn-checkbox:has(> input[type="checkbox"]:indeterminate)::after {
+        mask-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M4 10.5h16v3H4z' /%3e%3c/svg%3e");
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Radio buttons */
+
+    label.tn-radio::before,
+    label.tn-radio::after {
+        border-radius: 50%;
+    }
+
+    /* The outer circle */
+    label.tn-radio::before {
+        background: var(--radio-checkbox-background);
+    }
+
+    label.tn-radio:has(> input[type="radio"]:not(:disabled)):hover::before {
+        background: var(--radio-checkbox-hover-background);
+    }
+
+    @keyframes radio-checked {
+        from {
+            transform: scale(1.5);
+        }
+        to {
+            transform: scale(0.5);
+        }
+    }
+
+    /* The inner circle */
+    label.tn-radio::after {
+        background: var(--radio-checkbox-indicator-color);
+        transform: scale(0);
+        opacity: 0;
+        transition:
+            opacity 300ms linear,
+            transform 300ms ease-in;
+    }
+
+    label.tn-radio:has(> input[type="radio"]:checked)::after {
+        transform: scale(0.5);
+        opacity: 1;
+        transition: opacity 150ms linear;
+        animation: radio-checked 200ms ease-out;
+    }
+
+    /* Disabled check boxes and radio buttons */
+
+    label.tn-radio:has(> input[type="radio"]:disabled)::before,
+    label.tn-radio:has(> input[type="radio"]:disabled)::after,
+    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::before,
+    label.tn-checkbox:has(> input[type="checkbox"]:disabled)::after {
+        opacity: 0.5;
+    }
 }
 
 #left-pane input,
@@ -294,7 +452,7 @@ samp {
  * content and not what anyone is asking for. Inheritance is what makes `.cm-editor` enough to cover
  * CodeMirror's internals.
  */
-body.monospace-ligatures-disabled :is(code, kbd, pre, samp, .cm-editor, .ck-mermaid__editing-view) {
+body.monospace-ligatures-disabled :is(code, kbd, pre, samp, .cm-editor) {
     font-variant-ligatures: none;
 }
 
@@ -318,11 +476,6 @@ button.close:hover {
     color: var(--hover-item-text-color);
 }
 
-button.custom-title-bar-button {
-    background: transparent;
-    border: unset;
-}
-
 .modal-content {
     background-color: var(--modal-background-color) !important;
 }
@@ -341,43 +494,6 @@ button.custom-title-bar-button {
     overflow-y: auto;
     /* prevent horizontal scrollbar */
     overflow-x: hidden;
-}
-
-.icon-action {
-    border: 1px solid transparent;
-    padding: 5px;
-    width: 37px;
-    height: 35px;
-    cursor: pointer;
-    font-size: 1.5em;
-    color: var(--button-text-color);
-    background: var(--button-background-color);
-    border-radius: var(--button-border-radius);
-}
-
-.icon-action-always-border {
-    border-color: var(--button-border-color);
-}
-
-.icon-action:hover:not(.disabled) {
-    text-decoration: none;
-    border-color: var(--button-border-color);
-}
-
-/* An action that takes something away, marked as such the way destructive menu items are. */
-.icon-action.destructive-action-icon {
-    color: var(--dropdown-item-icon-destructive-color);
-}
-
-.icon-action.disabled {
-    color: var(--muted-text-color) !important;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.icon-action.btn {
-    padding: 0 8px;
-    min-width: unset !important;
 }
 
 .ui-widget-content a:not(.ui-tabs-anchor) {
@@ -413,6 +529,31 @@ div.ui-tooltip {
     display: block;
 }
 
+/* The search terms `useImperativeSearchHighlighlighting()` finds in titles, cards and previews. */
+[data-highlight-root]::highlight(search-match),
+[data-highlight-root] *::highlight(search-match) {
+    color: var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+    text-decoration: underline;
+}
+
+/* The highlights of `FindInHtml`, in the colors CKEditor gives .ck-find-result and
+   .ck-find-result_selected in an editable text note. */
+[data-highlight-root]::highlight(find-result),
+[data-highlight-root] *::highlight(find-result) {
+    background-color: var(--ck-color-highlight-background);
+    color: var(--ck-color-text);
+}
+
+[data-highlight-root]::highlight(find-result-selected),
+[data-highlight-root] *::highlight(find-result-selected) {
+    background-color: var(--ck-color-find-result-selected);
+}
+
+[data-highlight-root]::highlight(find-result-secondary),
+[data-highlight-root] *::highlight(find-result-secondary) {
+    background-color: color-mix(in srgb, var(--ck-color-find-result-background, #66ff99) 40%, transparent);
+}
+
 /* Allow to use <kbd> elements inside the title to define shortcut hints. */
 .ui-menu kbd,
 button kbd {
@@ -431,192 +572,6 @@ button kbd {
     display: none;
 }
 
-.dropdown-divider {
-    border-color: var(--dropdown-border-color);
-}
-
-@keyframes dropdown-menu-opening {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.dropdown-menu,
-.tabulator-popup-container,
-:root .excalidraw .popover {
-    color: var(--menu-text-color) !important;
-    font-size: inherit;
-    background: var(--menu-background-color) !important;
-    user-select: none;
-    -webkit-user-select: none;
-    --bs-dropdown-zindex: 999;
-    --bs-dropdown-link-active-bg: var(--active-item-background-color) !important;
-}
-
-/* A portaled menu (the Dropdown's `portalToBody`) stacks in the root context, so it has to clear a
-   modal (1055) and a stacked quick-edit popup (1100), and stay under the prompts (2000) it can
-   summon. */
-body > .tn-dropdown-portal > .dropdown-menu {
-    --bs-dropdown-zindex: 1200;
-}
-
-/* Under the menu above, which is what it is drawn for; stated beside it so the two stay in step.
-   Dressed as a dialog's backdrop, a menu that dims the page being the same thing to the reader. */
-body > .tn-dropdown-portal > .tn-dropdown-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1199;
-    background-color: var(--modal-backdrop-color);
-    opacity: var(--bs-backdrop-opacity, 0.5);
-}
-
-body.desktop .dropdown-menu,
-body.desktop .tabulator-popup-container,
-:root .excalidraw .dropdown-menu .dropdown-menu-container,
-:root .excalidraw .popover {
-    border: 1px solid var(--dropdown-border-color);
-    column-rule: 1px solid var(--dropdown-border-color);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    animation: dropdown-menu-opening 100ms ease-in;
-}
-
-@supports (animation-fill-mode: forwards) {
-    /* Delay the opening of submenus */
-    body.desktop:not(.motion-disabled) .dropdown-submenu .dropdown-menu {
-        opacity: 0;
-        animation-fill-mode: forwards;
-        animation-delay: var(--submenu-opening-delay);
-    }
-}
-
-.dropdown-menu.static {
-    box-shadow: unset;
-    backdrop-filter: unset !important;
-}
-
-.dropend .dropdown-toggle::after {
-    margin-inline-start: 0.5em;
-    color: var(--muted-text-color);
-}
-
-.dropdown-menu .disabled {
-    color: #888 !important;
-    pointer-events: none;
-}
-
-.dropdown-menu .disabled .contextual-help {
-    pointer-events: all;
-    margin-inline-start: 8px;
-    font-size: 0.75rem;
-    color: var(--contextual-help-icon-color);
-    cursor: help;
-    opacity: 0.75;
-}
-
-.dropdown-menu .disabled .contextual-help:hover {
-    opacity: 1;
-}
-
-.dropdown-item:hover:not(.disabled, .active, .dropdown-container-item),
-.tabulator-menu-item:hover,
-:root .excalidraw .context-menu .context-menu-item:hover {
-    color: var(--hover-item-text-color) !important;
-    background-color: var(--hover-item-background-color) !important;
-    border-color: var(--hover-item-border-color) !important;
-    cursor: pointer;
-}
-
-.dropdown-container-item,
-.dropdown-item.dropdown-container-item:hover,
-.dropdown-container-item:active {
-    background: transparent;
-    cursor: default;
-}
-
-.dropdown-menu a:not(.selected) .check {
-    visibility: hidden;
-}
-
-.dropdown-menu:not(#context-menu-container) .dropdown-item,
-body.desktop .dropdown-menu .dropdown-toggle,
-body #context-menu-container .dropdown-item > span,
-body.mobile .dropdown .dropdown-submenu > span {
-    display: flex;
-    align-items: center;
-}
-
-
-body.mobile .dropdown .dropdown-submenu {
-    flex-wrap: wrap;
-
-    & > span {
-        flex-grow: 1;
-    }
-}
-
-.dropdown-item span.keyboard-shortcut,
-.dropdown-item span.menu-trailing-icon,
-.dropdown-item *:not(.keyboard-shortcut) > kbd {
-    flex-grow: 1;
-    text-align: end;
-    padding-inline-start: 12px;
-}
-
-.dropdown-menu kbd {
-    color: var(--muted-text-color);
-    border: none;
-    background-color: transparent;
-    box-shadow: none;
-    padding-bottom: 0;
-    padding: 0;
-}
-
-.dropdown-item,
-.dropdown-header,
-:root .excalidraw .context-menu .context-menu-item:hover {
-    color: var(--menu-text-color) !important;
-    border: 1px solid transparent !important;
-}
-
-/*  This is a workaround for Firefox not supporting break-before / break-after: avoid on columns.
- *  It usually wraps a menu item followed by a separator / header and another menu item. */
-.dropdown-no-break {
-    break-inside: avoid;
-}
-
-.dropdown-item.disabled,
-.dropdown-item.disabled kbd {
-    color: #aaa !important;
-}
-
-.dropdown-item.active,
-.dropdown-item:focus {
-    color: var(--active-item-text-color);
-    background-color: var(--active-item-background-color);
-    border-color: var(--active-item-border-color);
-    outline: none;
-}
-
-.dropdown-item .destructive-action-icon {
-    color: var(--dropdown-item-icon-destructive-color);
-}
-
-.dropdown-item .tn-icon.use-note-color {
-    --menu-item-icon-color: var(--custom-color);
-    color: var(--custom-color, inherit);
-}
-
-.dropdown-item > span:not([class]) {
-    width: 100%;
-}
-
-.dropdown-menu .note-color-picker {
-    padding: 4px 12px 8px 12px;
-}
-
 .cm-editor {
     height: 100%;
     outline: none !important;
@@ -626,6 +581,11 @@ body.mobile .dropdown .dropdown-submenu {
 
 .cm-scroller {
     font-family: var(--monospace-font-family) !important;
+}
+
+:root pre.code-preview > .code-preview-content {
+    font-family: var(--monospace-font-family);
+    font-size: var(--monospace-font-size);
 }
 
 .cm-editor .cm-placeholder {
@@ -638,10 +598,100 @@ body.mobile .dropdown .dropdown-submenu {
 /* Firefox draws the caret against the spacer CodeMirror puts before the placeholder widget,
    short (https://bugzilla.mozilla.org/show_bug.cgi?id=904846). The spacer must stay in layout:
    CodeMirror measures a position next to a widget from its rect, and a hidden one reads as
-   zeros, which hides the completion popup as off-screen. */
+   zeros, which places a completion list at the caret off-screen. */
 @supports (-moz-appearance: none) {
     .cm-editor .cm-widgetBuffer:has(+ .cm-placeholder) {
         vertical-align: baseline;
+    }
+}
+
+/* `getTooltipHost()` renders CodeMirror tooltips here, outside the clipping `.cm-editor`.
+   Must stay above dialogs (1101) and below the context menu (2500). */
+.cm-tooltip-host {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+    font-size: var(--monospace-font-size);
+}
+
+/* CodeMirror's hover and lint tooltips in the app's tooltip style: a code note renders them in
+   `.cm-tooltip-host`, the search field (`search_field_editor.css`) inside its own editor. */
+:is(.cm-tooltip-host, .search-string-editor .cm-editor) {
+    .cm-tooltip:is(.cm-tooltip-hover, .cm-tooltip-lint) {
+        --cm-tooltip-background: var(--tooltip-background-color, transparent);
+
+        max-width: 500px;
+        padding: 0;
+        border: 0;
+        border-radius: var(--tooltip-border-radius, 5px);
+        background:
+            linear-gradient(var(--cm-tooltip-background), var(--cm-tooltip-background)),
+            var(--main-background-color);
+        color: var(--tooltip-foreground-color, var(--main-text-color));
+        box-shadow: var(--tooltip-box-shadow, 0 5px 10px rgba(0, 0, 0, 0.2));
+        font-family: var(--main-font-family);
+        font-size: var(--tooltip-font-size, 0.9em);
+        line-height: 1.5;
+        overflow: hidden;
+    }
+
+    .cm-diagnostic {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5em;
+        margin: 0;
+        padding: var(--tooltip-padding, 4px 8px);
+        padding-inline-start: 16px;
+        border: 0;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 6px;
+            inset-inline-start: 6px;
+            width: 3px;
+            border-radius: 3px;
+            background: var(--cm-diagnostic-color, transparent);
+        }
+    }
+
+    .cm-diagnostic-error {
+        --cm-diagnostic-color: var(--admonition-caution-accent-color);
+    }
+
+    .cm-diagnostic-warning {
+        --cm-diagnostic-color: var(--admonition-warning-accent-color);
+    }
+
+    .cm-diagnostic-info {
+        --cm-diagnostic-color: var(--admonition-note-accent-color);
+    }
+
+    .cm-diagnosticAction {
+        margin: 0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, currentColor 15%, transparent);
+        color: inherit;
+
+        &:hover {
+            background: color-mix(in srgb, currentColor 25%, transparent);
+        }
+    }
+
+    .cm-ts-hover {
+        padding: var(--tooltip-padding, 4px 8px);
+    }
+
+    .cm-ts-hover-signature {
+        font-family: var(--monospace-font-family);
+    }
+
+    .cm-tooltip-section:not(:first-child) {
+        border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
     }
 }
 
@@ -706,9 +756,9 @@ button.btn-sm {
 }
 
 .ck.ck-button.ck-block-toolbar-button {
-    transform: translateX(7px);
+    transform: translateX(10px);
+    --ck-color-button-default-background: transparent;
     color: var(--muted-text-color);
-    background-color: var(--main-background-color);
     /* Making this narrower because https://github.com/zadam/trilium/issues/502 (problem only in smaller font sizes) */
     min-width: 0;
     padding: 0;
@@ -718,7 +768,7 @@ button.btn-sm {
 }
 
 body[dir=rtl] .ck.ck-block-toolbar-button {
-    transform: translateX(-7px);
+    transform: translateX(-10px);
 }
 
 pre:not(.hljs) {
@@ -751,67 +801,19 @@ pre > button.copy-button {
     padding-inline-end: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
 }
 
-pre > button.copy-button:hover {
+pre > button.copy-button:hover,
+.code-embed-content > button.copy-button:hover {
     color: inherit !important;
     opacity: 1;
 }
 
-pre > button.copy-button:active {
+pre > button.copy-button:active,
+.code-embed-content > button.copy-button:active {
     background-color: unset !important;
 }
 
 .pointer {
     cursor: pointer;
-}
-
-.show-recent-notes-button,
-.input-clearer-button,
-.go-to-selected-note-button {
-    padding-top: 8px;
-}
-
-.show-recent-notes-button,
-.full-text-search-button {
-    cursor: pointer;
-    font-size: 1.3em;
-    padding-inline-start: 5px;
-    padding-inline-end: 5px;
-}
-
-.input-clearer-button {
-    cursor: pointer;
-    font-size: 1.3em;
-    background: inherit !important;
-    padding-inline-start: 5px;
-    padding-inline-end: 5px;
-}
-
-.open-external-link-button {
-    cursor: pointer;
-    font-size: 1.3em;
-    padding-inline-start: 5px;
-    padding-inline-end: 5px;
-    padding-top: 8px;
-}
-
-.go-to-selected-note-button {
-    cursor: pointer;
-    font-size: 1.3em;
-    padding-inline-start: 4px;
-    padding-inline-end: 3px;
-}
-
-.go-to-selected-note-button.disabled,
-.go-to-selected-note-button.disabled:hover {
-    cursor: inherit;
-    color: var(--button-disabled-text-color) !important;
-    background-color: var(--button-disabled-background-color) !important;
-    text-decoration: none;
-}
-
-.note-autocomplete-input {
-    /* this is for seamless integration of "input clearer" button */
-    border-inline-end: 0;
 }
 
 table.promoted-attributes-in-tooltip {
@@ -821,27 +823,6 @@ table.promoted-attributes-in-tooltip {
 table.promoted-attributes-in-tooltip td,
 table.promoted-attributes-in-tooltip th {
     padding: 10px;
-}
-
-.tooltip {
-    font-size: var(--main-font-size) !important;
-    /* Above every layer the app opens over the page: a tooltip is appended to `<body>`, so it
-       competes with a dialog in the root stacking context rather than painting inside it, and any
-       lower layer leaves it unreadable behind the very dialog it was asked for. Bootstrap's modal
-       sits at 1055, the dialogs the app lifts itself at up to 3000, the context menu at 2500.
-
-       This layer used to be chained to CKEditor's own — `calc(var(--ck-z-panel) - 1)` — which
-       `ckeditor-theme.css` raised to 10000 for exactly this reason, landing tooltips at 9999.
-       Upstream renamed the variable (`--ck-z-modal` → `--ck-z-panel`) and the override went dead
-       with the old name, dropping tooltips to 999 — under every dialog. Nothing showed it because
-       the math form's rescue rule named a bare `[role="tooltip"]`, lifting every tooltip in the app
-       to 3000; keeping that rule to MathLive's own UI is what finally uncovered it. Stated here in
-       full, and no longer read from a variable another package owns. */
-    z-index: 9999 !important;
-}
-
-.tooltip.tooltip-top {
-    z-index: 32767 !important;
 }
 
 /* Note tooltips are appended to <body> and are frequently triggered from inside a dialog (a link,
@@ -955,18 +936,6 @@ table.promoted-attributes-in-tooltip th {
     display: none;
 }
 
-.tooltip-inner {
-    padding: 15px;
-    background-color: var(--tooltip-background-color) !important;
-    border: 1px solid var(--main-border-color);
-    border-radius: 5px;
-    text-align: start;
-    color: var(--main-text-color) !important;
-    max-width: 500px;
-    white-space: pre-line;
-    box-shadow: 10px 10px 93px -25px #aaaaaa;
-}
-
 .tooltip-inner p:last-of-type {
     margin-bottom: 0;
 }
@@ -1022,91 +991,6 @@ table.promoted-attributes-in-tooltip th {
 
 .tooltip-inner figure.image-style-side {
     float: inline-end;
-}
-
-.tooltip.show {
-    opacity: 1;
-}
-
-.algolia-autocomplete {
-    width: calc(100% - 30px);
-    z-index: 2000 !important;
-}
-
-.algolia-autocomplete-container .aa-dropdown-menu {
-    position: inherit !important;
-    overflow: auto;
-}
-
-.algolia-autocomplete .aa-input,
-.algolia-autocomplete .aa-hint {
-    width: 100%;
-}
-
-.algolia-autocomplete .aa-dropdown-menu {
-    width: 100%;
-    background-color: var(--main-background-color);
-    border: 1px solid var(--main-border-color);
-    border-top: none;
-    z-index: 2000 !important;
-    max-height: 500px;
-    overflow: auto;
-    padding: 0;
-    margin: 0;
-}
-
-.aa-dropdown-menu .aa-suggestion {
-    cursor: pointer;
-    padding: 6px 16px;
-    margin: 0;
-}
-
-.aa-dropdown-menu .aa-suggestion .icon {
-    display: inline-block;
-    line-height: inherit;
-    vertical-align: top;
-}
-
-.aa-dropdown-menu .aa-suggestion .text {
-    display: inline-block;
-    width: calc(100% - 20px);
-    padding-inline-start: 4px;
-}
-
-.aa-dropdown-menu .aa-suggestion .search-result-title {
-    display: block;
-}
-
-.aa-dropdown-menu .aa-suggestion .search-result-attributes {
-    display: block;
-    font-size: 0.8em;
-    color: var(--muted-text-color);
-    opacity: 0.6;
-    line-height: 1;
-    word-wrap: break-word;
-}
-
-.aa-dropdown-menu .aa-suggestion p {
-    padding: 0;
-    margin: 0;
-}
-
-.aa-dropdown-menu .aa-suggestion.aa-cursor {
-    color: var(--active-item-text-color);
-    background-color: var(--active-item-background-color);
-}
-
-.help-button,
-.custom-title-bar-button {
-    float: inline-end;
-    background: none;
-    font-weight: 900;
-    border: 0;
-    cursor: pointer;
-}
-
-.help-button {
-    color: orange;
 }
 
 /* this is because bootstrap (?) sets code color to red for some reason */
@@ -1194,13 +1078,9 @@ div[data-notify="container"] {
     position: absolute;
     display: block;
 
-    margin: var(--ck-spacing-large) 0;
+    margin: var(--ck-spacing-large, var(--ck-spacing-lg)) 0;
 
     color: var(--muted-text-color);
-}
-
-.ck-editor__editable .ck-mermaid__editing-view {
-    font-family: var(--monospace-font-family);
 }
 
 svg.ck-icon.note-icon {
@@ -1215,8 +1095,29 @@ svg.ck-icon.note-icon {
     --ck-content-line-height: var(--bs-body-line-height);
 }
 
+/*
+ * Table colors in text notes. `ckeditor5-content.css` hardcodes a light grey border, which glares
+ * on a dark background. The default border mixes the text color into transparency, which matches
+ * that grey on a light theme. A color set through the table or cell properties is inline and still
+ * wins.
+ */
+:where(:root) {
+    --text-note-table-border-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+    --text-note-table-header-background: var(--accented-background-color);
+}
+
+:root .ck-content .table table:not(.layout-table) {
+    border-color: var(--text-note-table-border-color);
+
+    & > :is(thead, tbody, tfoot) > tr > :is(td, th) {
+        border-color: var(--text-note-table-border-color);
+    }
+}
+
 :root .ck-content .table table:not(.layout-table) th {
-    background-color: var(--accented-background-color);
+    /* The active header cell keeps its background. */
+    --ck-color-table-focused-cell-background: var(--text-note-table-header-background);
+    background-color: var(--text-note-table-header-background);
 }
 
 .ck-content .image > figcaption {
@@ -1228,54 +1129,13 @@ svg.ck-icon.note-icon {
     margin: 0 !important;
 }
 
-.ck-content a:hover {
+/* `:where(:not(.excalidraw *))` leaves out the menus of an embedded canvas drawing. */
+.ck-content a:hover:where(:not(.excalidraw *)) {
     text-decoration: underline;
 }
 
 .ck-content .footnote-section {
     border: 1px solid #c4c4c4;
-    border-radius: 2px;
-    counter-reset: footnote-counter;
-    margin: 1em 0;
-    padding: 10px;
-}
-
-.ck-content .footnote-item {
-    counter-increment: footnote-counter;
-    display: flex;
-    list-style: none;
-    margin-inline-start: 0.5em;
-}
-
-.ck-content .footnote-item > * {
-    vertical-align: text-top;
-}
-
-.ck-content .footnote-back-link {
-    margin-inline-end: 0.1em;
-    position: relative;
-    top: -0.2em;
-}
-
-.ck-content .footnotes .footnote-back-link > sup {
-    margin-inline-end: 0;
-}
-
-.ck-content .footnote-item:before {
-    content: counter(footnote-counter) ". ";
-    display: inline-block;
-    min-width: fit-content;
-    position: relative;
-    inset-inline-end: 0.2em;
-    text-align: end;
-}
-
-.ck-content .footnote-content {
-    border-radius: 2px;
-    display: inline-block;
-    flex-grow: 1;
-    padding: 0 0.3em;
-    width: 95%;
 }
 
 .ck-content .ck-content-widget.footnote-section .ck-content-widget__type-around__button_after {
@@ -1297,13 +1157,6 @@ svg.ck-icon.note-icon {
     padding: 2px;
 }
 
-a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href^="https://"]:not(.no-arrow):after
-{
-    font-size: smaller;
-    content: "\2197";
-    vertical-align: top;
-}
-
 .card {
     color: inherit !important;
     border-color: var(--main-border-color) !important;
@@ -1313,10 +1166,82 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     padding: 0.5rem 1rem 0.5rem 1rem !important; /* make modal header padding slightly smaller */
 }
 
-.modal-header .help-button,
-.modal-header .custom-title-bar-button {
-    padding: 6px;
-    margin: 0 12px;
+/* Modal and toast control buttons (close and help) */
+
+.modal .modal-header .btn-close,
+.modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button,
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-inline-start: 8px;
+    border: 0;
+    border-radius: 50%;
+    padding: 0;
+    width: var(--modal-control-button-size);
+    height: var(--modal-control-button-size);
+    background: var(--modal-control-button-background);
+    font-size: var(--modal-control-button-size);
+    line-height: normal;
+    font-weight: normal;
+    color: var(--modal-control-button-color);
+    opacity: 1;
+    cursor: default;
+}
+
+.modal .modal-header .btn-close,
+#toast-container .toast .toast-header .btn-close,
+#toast-container .toast .toast-close .btn-close {
+    --modal-control-button-hover-background: var(--modal-close-button-hover-background);
+}
+
+.modal .modal-header .btn-close::after,
+#toast-container .toast .toast-header .btn-close::after,
+#toast-container .toast .toast-close .btn-close::after {
+    content: "\ec8d";
+    font-family: boxicons;
+}
+
+.modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button {
+    margin-inline-end: 0;
+    font-size: calc(var(--modal-control-button-size) * .70);
+    font-family: unset;
+    font-weight: bold;
+}
+
+.modal .modal-header .btn-close:hover,
+.modal .modal-header .help-button:hover,
+.modal .modal-header .custom-title-bar-button:hover,
+#toast-container .toast .toast-header .btn-close:hover,
+#toast-container .toast .toast-close .btn-close:hover {
+    background: var(--modal-control-button-hover-background);
+    color: var(--modal-control-button-hover-color);
+}
+
+.modal .modal-header .btn-close:active,
+.modal .modal-header .help-button:active,
+.modal .modal-header .custom-title-bar-button:active,
+#toast-container .toast .toast-header .btn-close:active,
+#toast-container .toast .toast-close .btn-close:active {
+    transform: scale(.85);
+}
+
+.modal .modal-header .btn-close:focus,
+.modal .modal-header .help-button:focus,
+#toast-container .toast .toast-header .btn-close:focus,
+#toast-container .toast .toast-close .btn-close:focus {
+    box-shadow: none !important;
+}
+
+.modal .modal-header .btn-close:focus-visible,
+.modal .modal-header .help-button:focus-visible,
+#toast-container .toast .toast-header .btn-close:focus-visible,
+#toast-container .toast .toast-close .btn-close:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
 }
 
 .modal-content-with-sidebar {
@@ -1397,27 +1322,6 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     width: auto;
 }
 
-.ck-mentions .ck-button {
-    font-size: var(--detail-font-size) !important;
-    padding: 5px;
-}
-
-.ck-mentions .ck-button b {
-    font-size: var(--detail-font-size) !important;
-}
-
-.ck-mentions {
-    --ck-color-list-button-on-background: var(--active-item-background-color);
-    --ck-color-list-button-on-background-focus: var(--ck-color-list-button-on-background);
-    --ck-color-list-button-on-text: var(--active-item-text-color);
-}
-
-.ck-mentions .ck-button b {
-    font-weight: bold !important;
-    color: inherit !important;
-    vertical-align: baseline !important;
-}
-
 .side-checkbox {
     display: flex;
     align-items: end;
@@ -1432,12 +1336,73 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 }
 
 .include-note {
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border: 1px solid var(--card-border-color, var(--main-border-color));
+    --ck-color-focus-border: var(--link-color);
+
+    margin: 0 0 10px;
+    border-radius: var(--_include-note-top-border-radius, 8px)
+                   var(--_include-note-top-border-radius, 8px)
+                   var(--_include-note-bottom-border-radius, 8px)
+                   var(--_include-note-bottom-border-radius, 8px);
     background-color: var(--card-background-color, var(--accented-background-color));
     display: flex; /* see https://github.com/zadam/trilium/issues/1590 */
+    flex-direction: column;
     transition: background-color 200ms ease-out;
+}
+
+.include-note > .ck-widget__selection-handle {
+    margin-inline-start: var(--_include-note-top-border-radius, 8px);
+}
+
+/* On the wrapper: the editor gives the caption a border of its own for the focus ring. */
+.include-note-wrapper:has(+ figcaption) {
+    border-bottom: 2px solid var(--main-background-color);
+}
+
+figure.captioned-content-embed {
+    margin: 0;
+}
+
+:is(.include-note, .captioned-content-embed) > figcaption {
+    padding: 6px 1rem;
+    font-size: .8em;
+    text-align: center;
+}
+
+/* Includes in a series share flush edges, as link previews and collapsible blocks do. */
+.include-note:not([data-position^="wrap-"]) + .include-note:not([data-position^="wrap-"]) {
+    --_include-note-top-border-radius: 0px;
+}
+
+.include-note:not([data-position^="wrap-"]):has(+ .include-note:not([data-position^="wrap-"])) {
+    --_include-note-bottom-border-radius: 0px;
+    margin-bottom: 3px;
+}
+
+.include-note {
+    /* The corners of the embed box that its content touches, as lengths for `calc()`. */
+    --_include-note-content-top-radius: 0px;
+    --_include-note-content-bottom-radius: var(--_include-note-bottom-border-radius, 8px);
+    /* The frame around content that fills the box. Below a title and above a caption, the 2px
+       border between them and the content is the frame on that side. */
+    --_include-note-content-inset: 2px;
+    --_include-note-content-top-inset: 0px;
+    --_include-note-content-bottom-inset: var(--_include-note-content-inset);
+    --_include-note-framed-top-radius:
+        max(0px, var(--_include-note-content-top-radius) - var(--_include-note-content-top-inset));
+    --_include-note-framed-bottom-radius: max(0px,
+        var(--_include-note-content-bottom-radius) - var(--_include-note-content-bottom-inset));
+    /* What the frame takes from `.include-note-box-height`, set by content that draws it. */
+    --_include-note-frame-height: 0px;
+
+    &[data-hide-title="true"]:not([data-box-size="expandable"]) {
+        --_include-note-content-top-radius: var(--_include-note-top-border-radius, 8px);
+        --_include-note-content-top-inset: var(--_include-note-content-inset);
+    }
+
+    &:has(> figcaption) {
+        --_include-note-content-bottom-radius: 0px;
+        --_include-note-content-bottom-inset: 0px;
+    }
 }
 
 /* CKEditor counts only non-UIElements as content (see `hasContent` in the
@@ -1449,71 +1414,234 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     content: "" !important;
 }
 
-/* Using data- attribute to support both CKEditor and readonly view */
-.include-note[data-box-size="small"] .include-note-content {
-    max-height: 10em;
+/* Using data- attribute to support both CKEditor and readonly view. Each rule reaches the content
+   of its own box only, and `:where()` keeps it as specific as the rules of the content types that
+   override it in their own stylesheets. */
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
+    max-height: var(--include-note-height, 20em);
     overflow: auto;
 }
 
-/* PDFs and web views render in an (absolutely positioned) iframe, so they need an explicit
-   height per box size instead of an intrinsic, content-driven one. */
-.include-note[data-box-size="small"] .include-note-content.type-pdf,
-.include-note[data-box-size="small"] .include-note-content.type-webView {
-    height: 10em;
+.include-note .include-note {
+    --include-note-height: initial;
+    --include-note-width: initial;
 }
 
-/* The small box has room for the compact audio player's visualizer band (which carries a floor of its own) or
-   for its controls row and the file footer below it — not for all three. Drop the band, and release the floor
-   so the box shrinks to what is left instead of overflowing onto the Download / Open buttons. */
-.include-note[data-box-size="small"] .include-note-content.type-audio .audio-preview-visualization-wrapper {
-    display: none;
+/* PDFs and web views render in an iframe that fills its box, so they need an explicit height per
+   box size instead of an intrinsic, content-driven one. */
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
+    height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="small"] .include-note-content.type-audio .rendered-media {
+/* Compact audio is the row of controls alone, which has padding of its own. */
+.include-note[data-box-size="compact"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-audio, .type-mediaEmbed) {
+    padding: 0;
+
+    .audio-preview-visualization-wrapper {
+        display: none;
+    }
+
+    .rendered-media {
+        min-height: 0;
+    }
+}
+
+/* The visualizer band gives way first in a box too short for it, down to nothing. */
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio > .rendered-content,
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio .rendered-media {
+    height: 100%;
     min-height: 0;
 }
 
-.include-note[data-box-size="medium"] .include-note-content {
-    max-height: 20em;
-    overflow: auto;
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio
+    .audio-preview-wrapper.media-compact {
+    .audio-preview-visualization-wrapper {
+        flex: 1 1 8rem;
+        min-height: 0;
+    }
+
+    .media-preview-controls {
+        flex-shrink: 0;
+    }
 }
 
-.include-note[data-box-size="medium"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="medium"] .include-note-content.type-webView .rendered-content {
-    height: 20em;
-}
-
-.include-note[data-box-size="full"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="full"] .include-note-content.type-webView .rendered-content {
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
     height: 50em; /* an iframe can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-webView .rendered-content {
-    height: 20em;
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content.type-webView .rendered-content {
+    height: var(--include-note-height, 20em);
 }
 
 /* Full-height collection views (table, board, calendar, geo map, presentation) render their own
    scroll region with no intrinsic height, so — like PDFs and web views — they need an explicit
    height per box size. The inner widget fills it via its existing height:100% chain. List/grid
    collections are content-driven and keep the generic max-height above. */
-.include-note[data-box-size="small"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="small"] .include-note-content.type-search:has(.note-list-widget.full-height) {
-    height: 10em;
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
+    height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="medium"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="medium"] .include-note-content.type-search:has(.note-list-widget.full-height) {
-    height: 20em;
-}
-
-.include-note[data-box-size="full"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="full"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: 50em; /* a full-height view can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="expandable"] .include-note-content.type-search:has(.note-list-widget.full-height) {
-    height: 20em;
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
+    height: var(--include-note-height, 20em);
+}
+
+/* Pictures, diagrams and players fit the box height, where text scrolls in it. */
+.include-note {
+    --include-note-media-max-height: initial;
+}
+
+.include-note[data-box-size="resizable"] {
+    --include-note-media-max-height: var(--include-note-height, 20em);
+}
+
+.include-note[data-box-size="expandable"] {
+    --include-note-media-max-height: var(--include-note-height);
+}
+
+/* Media takes a resized height inside the border and padding, as with the edge-to-edge types. */
+.include-note[data-box-size] .include-note-content:is(
+    .type-image, .type-canvas, .type-canvasDrawing, .type-mermaidDiagram, .type-mindMap,
+    .type-spreadsheet, .type-mermaid,
+    .type-video
+) {
+    box-sizing: content-box;
+    max-height: none;
+}
+
+.include-note {
+    --_include-note-box-height: var(--include-note-height, 20em);
+}
+
+.include-note[data-box-size="full"] {
+    --_include-note-box-height: 50em;
+}
+
+.include-note-box-height {
+    height: calc(var(--_include-note-box-height, var(--include-note-height, 20em))
+        - var(--_include-note-frame-height, 0px));
+}
+
+.include-note-content:fullscreen .include-note-box-height {
+    height: 100%;
+}
+
+/* Compact and Full fit their content: only these box sizes take a resized height. */
+.include-note:is([data-box-size="resizable"], [data-box-size="expandable"]) {
+    margin-inline: auto;
+    max-width: 100%;
+
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
+        height: var(--include-note-height, auto);
+        overflow: auto;
+    }
+}
+
+.include-note[data-box-size="resizable"] {
+    width: var(--include-note-width, auto);
+}
+
+.include-note[data-box-size="expandable"].include-note_collapsed > .ck-widget__resize-handles {
+    display: none;
+}
+
+.link-embed:where([data-embed-type="youtube"]) {
+    margin-inline: auto;
+    max-width: 100%;
+    width: var(--include-note-width, auto);
+}
+
+.include-note,
+.link-embed:where([data-embed-type="youtube"]) {
+    clear: both;
+}
+
+.include-note[data-box-size="resizable"],
+.link-embed:where([data-embed-type="youtube"])[data-box-size="resizable"] {
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        --_include-note-wrap-gap: clamp(0px, 100% - var(--include-note-width, 100%),
+            var(--ck-content-image-style-spacing, 1.5em));
+
+        clear: none;
+        max-width: 100%;
+        width: var(--include-note-width, 100%);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_include-note-wrap-gap);
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-left: var(--_include-note-wrap-gap);
+    }
+}
+
+/* An Expandable embed takes the full width: its position aligns the content inside the box. */
+.include-note[data-box-size="expandable"][data-position="left"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
+    text-align: left;
+}
+
+.include-note[data-box-size="expandable"][data-position="right"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
+    text-align: right;
+}
+
+body.mobile :is(.include-note, .link-embed)[data-position] {
+    --ck-resize-corner-radius: var(--_include-note-bottom-border-radius, 8px);
+
+    float: none;
+    clear: both;
+    margin-inline: 0;
+    width: auto;
+
+    > .ck-widget__resize-handles > :is(
+        .ck-widget__resize-handle_width, .ck-widget__resize-handle_corner
+    ) {
+        display: none;
+    }
+}
+
+.include-note-content:not(:fullscreen) :is(
+    .rendered-content > img, .rendered-content > svg, .image-viewer-content > img,
+    .video-preview-wrapper:not(:fullscreen) > .video-preview
+) {
+    max-height: var(--include-note-media-max-height, none);
 }
 
 .include-note-wrapper {
@@ -1523,18 +1651,16 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     min-width: 0;
 }
 
-/* Header: the standalone title (non-expandable) and the title row (expandable)
-   both act as the card header, mirroring the grid/list note-book-card header. */
+/* The header: the title row, or the bare title of an embed whose upload is under way. */
 .include-note-wrapper > .include-note-title,
 .include-note-title-row {
     display: flex;
     align-items: center;
     gap: 8px;
     margin: 0;
-    padding: .5rem 1rem;
+    padding: .75rem 1rem;
     font-size: 1em;
     font-weight: 500;
-    border-bottom: 1px solid var(--card-border-color, var(--main-border-color));
 }
 
 /* createLink wraps the icon and anchor in a single <span>; lay it out as a flex
@@ -1563,50 +1689,302 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     text-decoration: none;
 }
 
-/* Expandable include note styles */
-.include-note-title-row {
+.include-note[data-box-size="expandable"] > .include-note-wrapper > .include-note-title-row {
+    border-start-start-radius: var(--_include-note-top-border-radius, 8px);
+    border-start-end-radius: var(--_include-note-top-border-radius, 8px);
+
+    &:hover {
+        background: var(--card-background-hover-color);
+    }
+}
+
+.include-note[data-box-size="expandable"]:not(.ck-widget)
+    > .include-note-wrapper > .include-note-title-row {
     cursor: pointer;
+}
+
+.include-note[data-box-size="expandable"]:not(:has(> figcaption))
+    > .include-note-wrapper:has(> .include-note-body > .include-note-content[hidden])
+    > .include-note-title-row {
+    border-end-start-radius: var(--_include-note-bottom-border-radius, 8px);
+    border-end-end-radius: var(--_include-note-bottom-border-radius, 8px);
 }
 
 /* The title inside the expandable row defers its header styling to the row. */
 .include-note-title-row .include-note-title {
+    display: flex;
+    align-items: center;
     margin: 0;
     padding: 0;
     border-bottom: none;
+    width: max-content;
     font-weight: inherit;
     font-size: inherit;
-    min-width: 0;
+}
+
+.include-note-title-row > .include-note-title-label {
     flex-grow: 1;
 }
 
-.include-note-toggle {
-    background: none;
-    border: none;
-    padding: 2px;
-    cursor: pointer;
-    font-size: 1.2em;
-    color: var(--muted-text-color);
-    transition: transform 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.include-note-title-row > .icon-action {
     flex-shrink: 0;
 }
 
-.include-note-toggle:hover {
-    color: var(--main-link-color);
+.include-note-title-row > .include-note-display-modes {
+    flex-shrink: 0;
+}
+
+/* Outranks `:root div.btn-group .icon-action`, so the group is as tall as the other buttons. */
+:root .include-note-title-row > .include-note-display-modes .icon-action {
+    --icon-button-size: 24px;
+}
+
+/* Browsers drop a click on a disabled button, which then toggles no expandable embed. */
+.include-note-title-row > .icon-action.disabled {
+    pointer-events: auto;
+}
+
+.include-note-title-row > .include-note-badges:empty {
+    display: none;
+}
+
+.include-note-badges > .excerpt-badge {
+    order: 1;
+}
+
+.include-note-toggle {
+    --icon-button-hover-background: transparent;
+
+    transition: transform 0.2s ease;
 }
 
 .include-note-toggle.expanded {
     transform: rotate(90deg);
 }
 
+/* The selector must outrank the `display` that the icon pack sets on its own class. */
+.include-note-title-row > .include-note-icon {
+    --size: calc(1em + 12px);
+
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    margin-inline-end: 4px;
+    border-radius: 50%;
+    width: var(--size);
+    height: var(--size);
+    background: var(--note-list-view-large-icon-background, var(--main-background-color));
+    font-size: 1.2em;
+    color: var(--note-list-view-large-icon-color, var(--muted-text-color));
+}
+
+/* The glyph and its circle differ by a whole, even number of pixels. */
+@supports (width: round(1px, 1px)) {
+    .include-note-title-row > .include-note-icon {
+        font-size: round(1.2em, 1px);
+    }
+}
+
+.include-note-heading {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+
+    /* The note path from createLink() goes above the title. */
+    .include-note-title > span {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 0;
+    }
+
+    small {
+        font-size: .7em;
+        font-weight: 500;
+        line-height: 1;
+        letter-spacing: .5pt;
+        opacity: .5;
+    }
+
+    .include-note-description {
+        margin-top: 4px;
+    }
+}
+
+.include-note-body {
+    position: relative;
+}
+
 .include-note-content {
+    /* Keeps the z-indexes inside the content, such as those of map panes, under the backdrop. */
+    isolation: isolate;
+    border-top: 2px solid var(--main-background-color);
     padding: .75rem 1rem;
 }
 
-.include-note-content > .rendered-content > *:last-child {
+/* Keeps the z-indexes of the content, such as those of a drawing's canvases, under the controls
+   of the embed, such as "Exit fullscreen". */
+.include-note-content > .rendered-content {
+    isolation: isolate;
+}
+
+/* Outranks the margin that the editor themes give the last block, so that a text embed and its
+   editor end alike. */
+.include-note-content > .rendered-content > *:last-child,
+:root .include-note-content > .rendered-content .ck-content > :last-child {
     margin-bottom: 0;
+}
+
+/* Outranks the margin, shadow and corners that the themes give `.ck-content pre`, the first two
+   with `!important`. */
+:root .include-note-content pre.code-embed-editor,
+:root .include-note-content.type-code pre {
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0;
+}
+
+.include-note-content pre.code-embed-editor {
+    padding: 0;
+}
+
+pre.code-embed-editor.read-only,
+pre.code-embed-editor > .cm-editor:not(.cm-focused) {
+    .cm-activeLine {
+        background-color: transparent;
+    }
+
+    .cm-activeLineGutter {
+        background-color: transparent;
+        color: inherit;
+        font-weight: inherit;
+    }
+}
+
+.include-note-content.type-code {
+    padding: var(--_include-note-content-top-inset) var(--_include-note-content-inset)
+             var(--_include-note-content-bottom-inset);
+}
+
+:root .include-note-content.type-code pre {
+    border-radius: var(--_include-note-framed-top-radius) var(--_include-note-framed-top-radius)
+                   var(--_include-note-framed-bottom-radius)
+                   var(--_include-note-framed-bottom-radius);
+
+    &.code-embed-editor {
+        overflow: hidden;
+    }
+}
+
+:root .include-note-content.type-extendedCodeBlock pre.code-embed-editor {
+    border-radius: var(--_include-note-content-top-radius) var(--_include-note-content-top-radius)
+                   var(--_include-note-content-bottom-radius)
+                   var(--_include-note-content-bottom-radius);
+    overflow: hidden;
+
+    .cm-gutters {
+        padding-inline: 4px;
+    }
+
+    /* `.cm-line` adds 6px before each line. */
+    .cm-content {
+        padding-block: var(--padding-size, 1em);
+        padding-inline-start: calc(var(--padding-size, 1em) - 6px);
+    }
+
+    .cm-editor[data-theme-name="vs-code-light"] {
+        background-color: #f6f6f6;
+    }
+
+    .cm-editor[data-theme-name="vs-code-dark"] {
+        background-color: #1c1b1b;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock {
+    display: flex;
+    flex-direction: column;
+
+    > .rendered-content,
+    > .rendered-content > .source-embed,
+    .code-embed-content,
+    pre.code-embed-editor,
+    .cm-editor {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+}
+
+.include-note-content.type-extendedCodeBlock .code-embed-content {
+    --_copy-button-size: 37px;
+    --_copy-button-inset: .35em;
+
+    position: relative;
+
+    > button.copy-button {
+        position: absolute;
+        top: var(--_copy-button-inset);
+        inset-inline-end: var(--_copy-button-inset);
+    }
+
+    &:has(> button.copy-button) .cm-content {
+        padding-inline-end: calc(var(--_copy-button-size) + var(--_copy-button-inset) * 2);
+    }
+}
+
+/* Takes the wheel and the touch gestures for the page until the content has the focus. */
+.include-note-backdrop {
+    position: absolute;
+    inset: 0;
+}
+
+.include-note-content:focus {
+    outline: none;
+}
+
+/* Chrome selects nothing in a non-editable widget that inherits `user-select: none` from `body`. */
+.include-note-content .ck-content {
+    user-select: text;
+}
+
+.include-note.ck-widget_selected {
+    --_include-note-active-outline-color: var(--ck-color-focus-border);
+}
+
+/* The focus is in the content of the embed. */
+.include-note:has(> .include-note-wrapper > .include-note-body.active) {
+    /* The editor can be blurred, where CKEditor colors its selected widgets with these. */
+    --ck-color-widget-blurred-border: var(--ck-color-focus-border);
+    --ck-color-widget-type-around-button-blurred-editable: var(--ck-color-focus-border);
+
+    outline: var(--ck-widget-outline-thickness, 3px) solid
+             var(--_include-note-active-outline-color, var(--input-focus-outline-color));
+}
+
+/* Hides what a larger box size drew, until the Compact row replaces it. */
+.include-note[data-box-size="compact"] > .include-note-wrapper
+    > .include-note-body:not(.compact-content) {
+    display: none;
+}
+
+.include-note[data-box-size="compact"] > .include-note-wrapper > .include-note-title-row {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.include-note[data-hide-title="true"]:not([data-box-size="expandable"]) {
+    > .include-note-wrapper > :is(.include-note-title-row:not(.title-only), .include-note-title) {
+        display: none;
+    }
+
+    > .include-note-wrapper > .include-note-body > .include-note-content:not(:fullscreen) {
+        border-top: none;
+        border-radius: var(--_include-note-top-border-radius, 8px)
+                       var(--_include-note-top-border-radius, 8px) 0 0;
+    }
 }
 
 /* Media that renders edge-to-edge (iframes, images, video, full-height collection views) shouldn't
@@ -1615,14 +1993,53 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 .include-note-content.type-image,
 .include-note-content.type-video,
 .include-note-content.type-canvas,
+.include-note-content.type-canvasDrawing,
+.include-note-content.type-mermaidDiagram,
+.include-note-content.type-extendedCodeBlock,
 .include-note-content.type-webView,
 .include-note-content.type-book:has(.note-list-widget.full-height),
 .include-note-content.type-search:has(.note-list-widget.full-height) {
+    box-sizing: content-box;
     padding: 0;
 }
 
-.include-note[data-box-size="expandable"] .include-note-content {
-    padding-top: 0;
+.include-note-content:fullscreen {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--main-background-color);
+}
+
+/* Scrolls in place of the fullscreen box, so that the exit button stays put. */
+.include-note-content:fullscreen > .rendered-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.include-note-content:fullscreen > .rendered-content > .source-embed {
+    height: 100%;
+}
+
+.include-note-content.type-text:fullscreen > .rendered-content:not(.full-content-width) > * {
+    max-width: var(--preferred-max-content-width);
+    margin-inline: auto;
+}
+
+.include-note-content:not(:fullscreen) > .include-note-fullscreen-controls {
+    display: none;
+}
+
+.include-note-exit-fullscreen {
+    --overlay-group-inset-top:
+        calc(var(--safe-area-inset-top, env(safe-area-inset-top)) + var(--overlay-group-inset));
+    --overlay-group-inset-end:
+        calc(var(--safe-area-inset-right, env(safe-area-inset-right)) + var(--overlay-group-inset));
+    /* Above the 10 of `.note-detail-error-card` in SplitEditor.css. */
+    z-index: 11;
+}
+
+.include-note-exit-fullscreen > button {
+    gap: 8px;
 }
 
 .alert {
@@ -1657,120 +2074,24 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     display: none;
 }
 
-#context-menu-cover.show {
-    position: fixed;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
-    z-index: 2500;
-    background: rgba(0, 0, 0, 0.1);
+/* Keeps the style and layout of hidden tabs, so showing one again needs no full relayout. */
+@supports (content-visibility: hidden) {
+    #center-pane > .split-note-container-widget > .note-split.hidden-ext {
+        display: flex !important;
+        flex: 0 0 100% !important;
+        margin-inline: -100% 0;
+        content-visibility: hidden;
+        clip-path: inset(50%);
+        animation: none;
+    }
 }
 
-#context-menu-container {
-    max-height: 100vh;
-    /* !!! Cannot set overflow: auto, submenus will break !!! */
-}
-
-body.mobile #context-menu-container.mobile-bottom-menu {
-    position: fixed !important;
-    inset-inline-start: 0 !important;
-    inset-inline-end: 0 !important;
-    bottom: 0 !important;
-    top: unset !important;
-    max-height: var(--tn-modal-max-height);
-    overflow: auto !important;
-    user-select: none;
-    -webkit-user-select: none;
-    padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
-}
-
-body.mobile .dropdown-menu {
-    position: fixed !important;
-    z-index: 3000 !important;
-}
-
-body.mobile .dropdown-submenu > .dropdown-menu {
-    position: static !important;
-    border: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    top: unset !important;
-    margin-top: 0 !important;
-    width: 100%;
-    max-height: none;
-}
-
-#context-menu-container,
-#context-menu-container .dropdown-menu,
-.tabulator-popup-container {
-    padding: 3px 0;
-    z-index: 2000;
-}
-
-#context-menu-container .dropdown-item,
-.tabulator-menu .tabulator-menu-item {
-    padding: 0 7px 0 10px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-/* What stands between a menu item's icon and its title. */
-.dropdown-item .tn-menu-gap {
-    flex: none;
-    width: 0.5em;
-}
-
-/* A name the user wrote, boxed by `menuName()`: clipped rather than widening the menu. */
-.dropdown-item .tn-menu-name {
-    display: block;
-    max-width: 300px;
+.caret-stop {
+    position: absolute;
+    width: 0;
+    height: 0;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
-    display: block;
-}
-
-.dropdown-submenu {
-    position: relative;
-}
-
-.dropdown-submenu > .dropdown-menu {
-    top: 0;
-    inset-inline-start: calc(100% - 2px); /* -2px, otherwise there's a small gap between menu and submenu where the hover can disappear */
-    margin-top: -10px;
-}
-
-/* to make submenu scrollable https://github.com/zadam/trilium/issues/3136 */
-.dropdown-submenu > .dropdown-menu:not(:has(.dropdown-submenu)) {
-    max-height: 600px;
-    overflow: auto;
-}
-
-/* Flipped upward (added by ContextMenu.repositionSubmenu) when the submenu would overflow the bottom of the viewport. */
-.dropdown-submenu > .dropdown-menu.submenu-flip-up {
-    top: auto;
-    bottom: 0;
-    margin-top: 0;
-    margin-bottom: -10px;
-}
-
-body.desktop .dropdown-submenu > .dropdown-menu {
-    min-width: max-content;
-    max-width: 300px;
-}
-
-/* Opened on the other side (`submenu-flip-start` added by ContextMenu.repositionSubmenu) when the
-   submenu would overflow the side it opens on. */
-.dropdown-submenu.dropstart > .dropdown-menu,
-.dropdown-submenu > .dropdown-menu.submenu-flip-start,
-body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
-    inset-inline-start: auto;
-    inset-inline-end: calc(100% - 2px);
+    user-select: text;
 }
 
 .right-dropdown-widget {
@@ -1805,20 +2126,96 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     transform: rotate(-90deg);
 }
 
+/*
+ * WebKit scrollbars
+ */
+
+:root {
+    --scrollbar-thickness: 10px;
+    --scrollbar-thumb-thickness: 3px;
+    --scrollbar-thumb-hover-thickness: 6px;
+    --scrollbar-start-end-gap: 8px;
+}
+
+/* Scrollbar's body */
+
 @supports (-webkit-box-reflect: below) {
     ::-webkit-scrollbar {
         width: 12px;
     }
 }
 
-::-webkit-scrollbar-thumb {
-    border-radius: 5px;
-    border: 1px solid var(--scrollbar-border-color);
+::-webkit-scrollbar-track {
     background-color: var(--scrollbar-background-color);
 }
 
-::-webkit-scrollbar-button {
-    display: none;
+::-webkit-scrollbar:vertical {
+    width: var(--scrollbar-thickness) !important;
+}
+
+::-webkit-scrollbar:horizontal {
+    height: var(--scrollbar-thickness) !important;
+}
+
+/* Scrollbar's thumb */
+
+::-webkit-scrollbar-thumb {
+    --s-thumb-thickness: var(--scrollbar-thumb-thickness);
+    --s-thumb-color: var(--scrollbar-thumb-color);
+
+    --s-gradient-angle: 90deg;
+    --s-gradient-p1: calc((var(--scrollbar-thickness) - var(--s-thumb-thickness)) / 2);
+    --s-gradient-p2: calc(var(--s-gradient-p1) + var(--s-thumb-thickness));
+
+    border: none !important;
+    background: linear-gradient(var(--s-gradient-angle),
+                                transparent, transparent var(--s-gradient-p1),
+                                var(--s-thumb-color) 0px, var(--s-thumb-color) var(--s-gradient-p2),
+                                transparent 0) !important;
+
+    border-radius: calc(var(--scrollbar-thickness) / 2) !important;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+    --s-gradient-angle: 0deg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    --s-thumb-thickness: var(--scrollbar-thumb-hover-thickness);
+    --s-thumb-color: var(--scrollbar-thumb-hover-color);
+}
+
+/* Scrollbar's increment/decrement buttons (repurposed as a scrollbar start/end gap).
+ * This gap is useful also to avoid breaking the rounded corners of a container when a
+ * custom scrollbar background color is used. */
+
+::-webkit-scrollbar-button:vertical {
+    height: var(--scrollbar-start-end-gap);
+}
+
+::-webkit-scrollbar-button:horizontal {
+    width: var(--scrollbar-start-end-gap);
+}
+
+/*
+ * Firefox scrollbars
+ *
+ * Unsupported features: --scrollbar-thumb-thickness, --scrollbar-thumb-hover-thickness,
+ *                       --scrollbar-start-end-gap, --scrollbar-thumb-hover-color.
+ */
+
+:root {
+    scrollbar-color: var(--scrollbar-thumb-color) transparent;
+    scrollbar-width: var(--scrollbar-thickness);
+}
+
+@supports (-webkit-box-reflect: below) {
+    /* Prevent the scrollbar-color and scrollbar-width properties to override the custom styles
+     * defined using ::-webkit-scrollbar. */
+    :root {
+        scrollbar-color: unset;
+        scrollbar-width: unset;
+    }
 }
 
 ::-webkit-scrollbar-corner {
@@ -1861,52 +2258,17 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     display: none !important;
 }
 
-.ck.ck-mentions > .ck-list__item {
-    max-width: 700px;
-}
+/* Snippet form */
 
-.ck.ck-mentions > .ck-list__item .ck-button {
-    /* wrap text for very long note path title */
-    white-space: normal !important;
-}
-
-/*
- * A note suggestion is an icon beside a note path. Laid out as a row so the two are centred against
- * each other: left inline, the icon aligns on the text baseline, and `vertical-align: middle` only
- * gets it as far as the x-height — about a pixel below where the capitals it sits beside read as
- * centred. The icon carries its own font, so no baseline rule can line the two up in general.
- */
-.ck.ck-mentions .ck-button.note-mention-suggestion {
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    text-align: start;
-}
-
-/* Its own box, so the row centres the glyph itself rather than the line box around it. */
-.ck.ck-mentions .ck-button.note-mention-suggestion > .bx {
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-/* Slash commands */
-
-.ck.ck-slash-command-button {
-    padding: 0.5em 1em !important;
-}
-
-.ck.ck-slash-command-button__text-part,
 .ck.ck-template-form__text-part {
     margin-inline-start: 0.5em;
     line-height: 1.2em !important;
 }
 
-.ck.ck-slash-command-button__text-part > span,
 .ck.ck-template-form__text-part > span {
     line-height: inherit !important;
 }
 
-.ck.ck-slash-command-button__text-part .ck.ck-slash-command-button__description,
 .ck.ck-template-form__text-part .ck-template-form__description {
     display: block;
     opacity: 0.8;
@@ -1970,13 +2332,22 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
 #launcher-pane .launcher-button {
     font-size: 150%;
+    /* Matches the `line-height: 1` boxicons gives an icon-only launcher, so an icon in a child
+       span, as in a dropdown launcher, centers the same way. */
+    line-height: 1;
     display: inline-block;
-    padding: 13px 13px;
+    padding: 0;
     cursor: pointer;
     border: none;
     color: var(--launcher-pane-text-color);
     background-color: transparent;
     flex-shrink: 0;
+}
+
+#launcher-pane div.launcher-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #launcher-pane.vertical .launcher-button {
@@ -2011,10 +2382,12 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 @media (max-width: 991px) {
-    body.mobile #launcher-pane .dropdown.global-menu > .dropdown-menu.show,
-    body.mobile #launcher-container .dropdown > .dropdown-menu.show,
+    /* The launcher bar's menus stand in the page's body, in a wrapper with their dropdown's class,
+       outside the bar whose `--launcher-pane-size` the theme sets, so its horizontal size is read
+       where the theme defines it. */
+    body.mobile .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu.show,
     body.mobile .dropdown-menu.mobile-bottom-menu.show {
-        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-horiz-size, var(--launcher-pane-size)));
         position: fixed !important;
         bottom: var(--dropdown-bottom) !important;
         top: unset !important;
@@ -2025,7 +2398,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
     }
 
-    body.mobile #launcher-container .dropdown > .dropdown-menu.show {
+    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.show {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -2035,41 +2408,58 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         padding-bottom: calc(max(var(--menu-padding-size), var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))) !important;
     }
 
-    #mobile-sidebar-container {
-        position: fixed;
-        top: 0;
-        inset-inline-start: 0;
-        inset-inline-end: 0;
-        bottom: 0;
-        z-index: 1000;
-        transition: background-color 250ms ease-in-out;
-        visibility: hidden;
-        background: rgba(0, 0, 0, 0.4);
-    }
-
-    #mobile-sidebar-container.show {
-        visibility: visible;
+    #mobile-rest-container {
+        overflow: clip;
+        position: relative;
     }
 
     #mobile-rest-container > #mobile-sidebar-wrapper {
         position: absolute;
         top: 0;
         inset-inline-start: 0;
-        height: 100dvh;
-        width: 85vw;
-        padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
-        transform: translateX(-100%);
+        height: 100%;
+        width: 100%;
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);
-        z-index: 2000;
-    }
 
-    body[dir="rtl"] #mobile-rest-container > #mobile-sidebar-wrapper {
-        transform: translateX(100%);
+        &:not(.show, .dragging) {
+            visibility: hidden;
+            transition: transform 250ms ease-in-out, visibility 0s 250ms;
+        }
     }
 
     #detail-container {
+        position: relative;
         width: 100%;
+        background: var(--main-background-color);
+        transition: transform 250ms ease-in-out;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: 0;
+            inset-inline-end: 100%;
+            width: 24px;
+            background: linear-gradient(to left, rgba(0, 0, 0, 0.12), transparent);
+            pointer-events: none;
+            transition: opacity 250ms ease-in-out;
+        }
+    }
+
+    body.mobile-sidebar-open #detail-container::before {
+        opacity: 0;
+    }
+
+    #mobile-rest-container.instant-screen-change {
+        > #mobile-sidebar-wrapper,
+        > #detail-container,
+        > #detail-container::before {
+            transition: none !important;
+        }
+    }
+
+    body[dir="rtl"] #detail-container::before {
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
     }
 
     .note-split.empty-note {
@@ -2080,16 +2470,22 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         margin: 15px;
     }
 
-    #mobile-sidebar-container.show #mobile-sidebar-wrapper {
-        transform: translateX(0);
-    }
-
     body.mobile #launcher-container {
         justify-content: space-evenly;
     }
 
     body.mobile .modal.show {
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: var(--mobile-modal-backdrop-color);
+    }
+
+    body.mobile .modal-backdrop {
+        background-color: transparent !important;
+    }
+
+    body.mobile > .tn-dropdown-portal > .tn-dropdown-backdrop,
+    body.mobile .tn-popover-backdrop {
+        background-color: var(--mobile-backdrop-color);
+        opacity: 1;
     }
 
     body.mobile .modal-dialog {
@@ -2127,6 +2523,11 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
     }
 
+    body.mobile .modal:not(.options-dialog) .modal-content {
+        padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+        padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
+    }
+
     body.mobile .modal-footer {
         padding-top: 12px;
         padding-bottom: calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
@@ -2138,29 +2539,6 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
     body.mobile .options-section-card table {
         word-break: break-all;
-    }
-
-    body.mobile .jump-to-note-dialog {
-        .modal-header {
-            padding-bottom: 0.75rem !important;
-        }
-
-        .modal-content {
-            padding-bottom: 0 !important;
-        }
-
-        .modal-body {
-            overflow-y: auto;
-        }
-
-        .aa-dropdown-menu {
-            max-height: unset;
-            overflow: auto;
-        }
-
-        .aa-suggestion {
-            padding-inline: 0;
-        }
     }
 
     body.mobile .modal-dialog .dropdown-menu {
@@ -2182,9 +2560,31 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         background-color: var(--launcher-pane-background-color);
     }
 
+    /* `column-reverse` puts `#mobile-bottom-bar` at the top, so the panes clear the navigation bar
+       instead. The open keyboard covers the navigation bar, as in phone mode. */
+    body.mobile #mobile-bottom-bar {
+        padding-bottom: 0;
+    }
+
+    body.mobile #root-widget:not(.virtual-keyboard-opened) {
+        #mobile-rest-container > #mobile-sidebar-wrapper,
+        #detail-container {
+            padding-bottom: var(--mobile-bottom-offset);
+        }
+    }
+
     #mobile-sidebar-wrapper {
+        --navigator-backdrop: var(--left-pane-background-color);
         transform: none !important;
-        background-color: var(--left-pane-background-color) !important;
+        background-color: var(--navigator-backdrop) !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden {
+        display: none !important;
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper.left-pane-hidden ~ #detail-container {
+        width: 100%;
     }
 
     #mobile-rest-container {
@@ -2215,10 +2615,6 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
 #launcher-pane .right-dropdown-widget {
     position: static;
-}
-
-#right-pane {
-    overflow: auto;
 }
 
 #right-pane .card {
@@ -2291,6 +2687,11 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     --max-content-width: unset;
 }
 
+body.mobile {
+    /* The full width of a text note table, read by `TriliumTableScroll` and `table_scroll.css`. */
+    --table-reference-width: var(--preferred-max-content-width);
+}
+
 button.close:hover {
     text-shadow: none;
     color: currentColor;
@@ -2300,23 +2701,13 @@ button.close:hover {
     display: none;
 }
 
-.reference-link .tn-icon {
-    /* A line can wrap after an inline-block. An inline box that does not wrap and ends with a
-       word joiner keeps the icon on the line of the first title character. */
-    display: inline;
-    position: relative;
-    top: 1px;
-    margin-inline-end: 3px;
-    white-space: nowrap;
-}
-
-.reference-link .tn-icon::before {
-    /* An inline-block glyph does not take the underline of the link. */
+.reference-link small {
     display: inline-block;
 }
 
-.reference-link .tn-icon::after {
-    content: "\2060";
+:root a.reference-link.reference-link-missing,
+.ck-content a.reference-link > span.reference-link-missing {
+    color: var(--bs-danger);
 }
 
 /* The board column a reference points at. `--custom-color` is set by the theme on
@@ -2347,10 +2738,6 @@ button.close:hover {
 
 textarea {
     cursor: auto;
-}
-
-.ck-powered-by-balloon {
-    display: none !important;
 }
 
 .attachment-actions-toolbar {
@@ -2399,13 +2786,21 @@ body.electron.platform-darwin #tab-row-left-spacer {
 }
 
 /*
- * Keep the tab bar clear of the Window Controls Overlay. On Windows the controls are always on
- * the right, but on Linux their side follows the desktop's decoration layout (GNOME's
- * `button-layout`), so reserve space on whichever side(s) Chromium actually took.
+ * Keep the tab bar clear of the Window Controls Overlay. Its side follows the UI direction on
+ * Windows and the desktop's decoration layout (GNOME's `button-layout`) on Linux, so reserve space
+ * on whichever side(s) Chromium actually took. `titlebar-area-*` are physical coordinates, so the
+ * padding is physical too; logical padding swaps sides in a right-to-left locale.
  */
 body.electron:not(.platform-darwin) .tab-row-container {
-    padding-inline-start: env(titlebar-area-x, 0px);
-    padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+    padding-left: env(titlebar-area-x, 0px);
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+}
+
+@media (display-mode: window-controls-overlay) {
+    body:not(.electron) .tab-row-container {
+        padding-left: env(titlebar-area-x, 0px);
+        padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+    }
 }
 
 .tab-row-container .toggle-button {
@@ -2431,248 +2826,6 @@ body.electron:not(.platform-darwin) .tab-row-container {
     border-color: var(--hover-item-border-color);
     background: var(--hover-item-background-color);
     color: var(--hover-item-text-color);
-}
-
-.note-split.type-geoMap .floating-buttons-children {
-    background: var(--main-background-color);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    border-radius: 4px;
-}
-
-body.zen {
-    --tab-bar-height: 0;
-}
-
-body.zen .gutter,
-body.zen #launcher-container,
-body.zen #launcher-pane,
-body.zen #left-pane,
-body.zen #right-pane,
-body.zen .right-pane-peek-button,
-body.zen #mobile-sidebar-wrapper,
-body.zen .tab-row-container,
-body.zen .tab-row-widget,
-body.zen .shared-info-widget,
-body.zen .ribbon-container:not(:has(.classic-toolbar-widget)),
-body.zen .ribbon-container:has(.classic-toolbar-widget) .ribbon-top-row,
-body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget)),
-body.zen .title-row .icon-action,
-body.zen .note-badges > *:not(.read-only-badge),
-body.zen .ribbon-button-container,
-body.zen .inline-title,
-body.zen .promoted-attributes-widget,
-body.zen .floating-buttons-children > *:not(.bx-edit-alt),
-body.zen .action-button,
-body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
-body.zen .note-split:not(.type-book) .note-list-widget {
-    display: none !important;
-}
-
-body.experimental-feature-new-layout.zen #vertical-main-container {
-    /* Remove the placeholder for the right pane peek button */
-    --right-pane-peek-button-gutter: 0 !important;
-}
-
-body.zen .split-note-container-widget > .gutter {
-    display: unset !important;
-}
-
-body.zen #launcher-pane {
-    position: absolute !important;
-    top: 0 !important;
-    inset-inline-end: 0 !important;
-    width: 64px !important;
-    height: 64px !important;
-    background: transparent !important;
-    border: 0 !important;
-}
-
-body.zen .title-row {
-    height: unset !important;
-    -webkit-app-region: drag;
-    padding-inline-start: env(titlebar-area-x);
-    padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
-    border-bottom: none !important;
-}
-
-body.zen .floating-buttons {
-    top: -10px;
-}
-
-body.zen .floating-buttons-children {
-    inset-inline-end: 0;
-}
-
-body.zen .floating-buttons-children .button-widget {
-    width: var(--zen-button-size);
-    height: var(--zen-button-size);
-    padding: 0;
-}
-
-body.zen .note-title-widget,
-body.zen .note-title-widget input {
-    font-size: 1rem !important;
-}
-
-body.zen #detail-container {
-    width: 100%;
-}
-
-body.zen .note-split:not(.full-content-width) .scrolling-container {
-    display: flex;
-    flex-direction: column;
-    scroll-behavior: unset !important;
-}
-
-body.zen .note-split:not(.full-content-width) .note-detail {
-    margin: auto;
-    padding-bottom: 25vh;
-    max-width: var(--max-content-width);
-    width: 100%;
-}
-
-body.zen .note-split:not(.full-content-width) .scroll-padding-widget {
-    display: none;
-}
-
-body.zen .note-split.type-text {
-    position: relative;
-    font-size: 1.15em;
-}
-
-body.zen:not(.backdrop-effects-disabled) .note-split.type-text .title-row {
-    --start-color: var(--main-background-color);
-
-    position: absolute;
-    width: 100%;
-    background: linear-gradient(var(--start-color) 30%, transparent 100%);
-    z-index: 1000;
-}
-
-@supports (background: color-mix(in srgb, white, transparent)) {
-    body.zen .note-split.type-text .title-row {
-        --start-color: color-mix(in srgb, var(--main-background-color), transparent 10%);
-    }
-}
-
-body.zen .note-split.type-text .scrolling-container {
-    --padding-bottom: 130px; /* Should be enough to avoid caret being hidden by the formatting toolbar */
-
-    /* (Usually) keeps the caret above the fixed toolbar */
-    scroll-padding-bottom: var(--padding-bottom);
-}
-
-body.zen:not(.backdrop-effects-disabled) .note-split.type-text .scrolling-container {
-    --padding-top: 50px; /* Should be enough to cover the title row */
-
-    padding-top: var(--padding-top);
-    scroll-padding-top: var(--padding-top);
-}
-
-/* Fixed formatting toolbar */
-
-body.zen:not(.experimental-feature-new-layout) {
-    .note-split .ribbon-container {
-        position: fixed;
-        left: 0;
-        bottom: 20px;
-        width: 100%;
-        z-index: 1000;
-        opacity: 0; /* Hidden unless the current note split is focused */
-        pointer-events: none;
-        transition: opacity 100ms linear;
-    }
-
-    .note-split:focus-within .ribbon-container {
-        opacity: 1; /* Show when the note split is focused */
-    }
-
-    .note-split .ribbon-container .ribbon-body {
-        border: 0;
-    }
-
-    .note-split .ribbon-container .classic-toolbar-widget {
-        margin: auto;
-        width: fit-content;
-        box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
-        border-radius: 8px;
-        border: 1px solid var(--main-border-color);
-        padding: 4px;
-        background: var(--menu-background-color);
-    }
-
-    .note-split .ribbon-container .classic-toolbar-widget:not(:has(> .ck-toolbar)) {
-        /* Hide the toolbar wrapper if the toolbar is missing */
-        display: none;
-    }
-
-    .note-split:focus-within .ribbon-container .classic-toolbar-widget {
-        pointer-events: all;
-    }
-
-    @media (max-width: 1300px) {
-        .note-split .ribbon-container .classic-toolbar-widget {
-            /* Set the toolbar to full with */
-            width: 100%;
-        }
-
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
-            /* Force toolbar items overflow dropdowns open upwards */
-            top: auto;
-            bottom: 100%;
-        }
-    }
-}
-
-body.zen.experimental-feature-new-layout {
-    .status-bar {
-        display: none;
-    }
-
-    .classic-toolbar-widget {
-        position: fixed;
-        left: 50%;
-        bottom: 20px;
-        z-index: 1000;
-        opacity: 0; /* Hidden unless the current note split is focused */
-        pointer-events: none;
-        transition: opacity 100ms linear;
-        width: fit-content;
-        box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
-        border-radius: 8px;
-        border: 1px solid var(--main-border-color);
-        padding: 4px;
-        background: var(--menu-background-color) !important;
-        transform: translateX(-50%);
-        backdrop-filter: blur(6px);
-    }
-
-    #root-widget:has(.note-split.type-text:focus-within) .classic-toolbar-widget,
-    .classic-toolbar-widget:focus-within {
-        opacity: 1; /* Show when the note split is focused */
-        pointer-events: all;
-    }
-
-    @media (max-width: 1300px) {
-        .classic-toolbar-widget {
-            /* Set the toolbar to full with */
-            width: 100%;
-        }
-
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
-            /* Force toolbar items overflow dropdowns open upwards */
-            top: auto;
-            bottom: 100%;
-        }
-    }
 }
 
 /* Content renderer */
@@ -2834,78 +2987,20 @@ footer.webview-footer button {
     100% { opacity: 0.3; }
 }
 
-/* Right Pane Tab Styles */
-#right-pane-tab-container {
-    display: flex;
-    gap: 10px;
+/* Reset on every item, so the nested items of a checked item are not struck through. */
+.ck-content ul.todo-list li {
+    --todo-description-decoration: none;
+    --todo-description-opacity: 1;
 }
 
-.right-pane-tab {
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: background-color 0.2s ease;
+.ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) {
+    --todo-description-decoration: line-through;
+    --todo-description-opacity: 0.6;
 }
-
-.right-pane-tab:hover {
-    background-color: var(--hover-item-background-color);
-}
-
-.right-pane-tab.active {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.right-pane-tab .tab-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.right-pane-tab .tab-title .tn-icon {
-    font-size: 1.1em;
-}
-
-.admonition {
-    --accent-color: var(--card-border-color);
-    background: color-mix(in srgb, var(--accent-color) 15%, transparent);
-    border: 1px solid var(--accent-color);
-    border-radius: 0.5em;
-    padding: 1em;
-    margin: 1.25em 0;
-    position: relative;
-    padding-inline-start: 2.5em;
-    overflow: hidden;
-}
-
-.admonition p:last-child {
-    margin-bottom: 0;
-}
-
-.admonition::before {
-    color: var(--accent-color);
-    font-family: boxicons !important;
-    position: absolute;
-    top: 1em;
-    inset-inline-start: 1em;
-}
-
-.admonition.note { --accent-color: var(--admonition-note-accent-color); }
-.admonition.tip { --accent-color: var(--admonition-tip-accent-color); }
-.admonition.important { --accent-color: var(--admonition-important-accent-color); }
-.admonition.caution { --accent-color: var(--admonition-caution-accent-color); }
-.admonition.warning { --accent-color: var(--admonition-warning-accent-color); }
-
-.admonition.note::before { content: "\eb21"; }
-.admonition.tip::before { content: "\ea0d"; }
-.admonition.important::before { content: "\ea7c"; }
-.admonition.caution::before { content: "\eac7"; }
-.admonition.warning::before { content: "\eac5"; }
 
 .ck-content ul.todo-list li span.todo-list__label__description {
+    text-decoration: var(--todo-description-decoration);
+    opacity: var(--todo-description-opacity);
     transition: opacity 200ms ease;
 }
 
@@ -2924,11 +3019,6 @@ footer.webview-footer button {
 .ck-editor__editable.ck-content ul.todo-list li span.todo-list__label__description:has(> br[data-cke-filler="true"]) {
     display: inline-block;
     min-width: 1px;
-}
-
-.ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) > span.todo-list__label span.todo-list__label__description {
-    text-decoration: line-through;
-    opacity: 0.6;
 }
 
 .chat-options-container {
@@ -3033,14 +3123,15 @@ footer.webview-footer button {
     text-decoration: line-through;
 }
 
+/* Content that sizes itself from its container while rendering (a Mermaid gantt chart) needs a
+   real width: A4 minus the 2cm `@page` margins that `print.tsx` sets for the browser. */
 iframe.print-iframe {
     position: absolute;
     top: 0;
-    left: -600px;
-    right: -600px;
-    bottom: 0;
-    width: 0;
+    left: -10000px;
+    width: 170mm;
     height: 0;
+    border: 0;
 }
 
 .excalidraw.theme--dark canvas {
@@ -3049,7 +3140,7 @@ iframe.print-iframe {
 
 /* Scrolling container */
 
-.note-split:not(.type-text.view-mode-normal) > .scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+.note-split > .scrolling-container:is(.detail-full-height, .list-full-height) {
     display: flex;
     flex-direction: column;
 }
@@ -3062,9 +3153,16 @@ iframe.print-iframe {
     overflow: hidden;
 }
 
+/* Fills what the content above leaves, but never less than half the container, so content taller
+   than the container pushes the collection below it instead of squeezing it to nothing. */
+.scrolling-container > .note-list-widget.full-height {
+    flex: 1 0 0;
+    min-height: 50%;
+}
+
 /* A full-height note fills the container instead of scrolling it, so the padding that lets
    flowing content scroll past its end would only take height away from the note. */
-.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+.scrolling-container.detail-full-height > .scroll-padding-widget {
     display: none;
 }
 
@@ -3137,17 +3235,6 @@ iframe.print-iframe {
  * TASK STATES
  */
 
-:where(:root) {
-    --task-checkbox-without-state-background: #d5d5d5;
-    --task-checkbox-with-state-background: orange;
-    --task-checkbox-done-color: green;
-    --task-checkbox-unknown-state-color: orange;
-    --task-checkbox-glyph-color: white;
-
-    --task-checkbox-border-radius: 4px;
-    --task-checkbox-glyph-ratio: .8;
-}
-
 :root .tn-task-checkbox {
     --_checkbox-size: 18px;
 
@@ -3182,235 +3269,6 @@ iframe.print-iframe {
    so no spacing is added. */
 .tn-task-tooltip-state {
     margin-bottom: 8px;
-}
-
-/* Prevent variables from bleeding into nested items */
-.ck-content .todo-list .todo-list {
-    --task-state-glyph: initial;
-    --task-state-glyph-font-family: initial;
-    --task-state-color: initial;
-    --task-state-adjusted-color: initial;
-    --task-state-hue: initial;
-    --_task-checkbox-background: initial;
-}
-
-/* All tasks with a state */
-:where(.ck-content .todo-list li[data-trilium-task-state]:not([data-trilium-task-state="none"])),
-.tn-task-checkbox:not([data-trilium-task-state="none"]) {
-    --_task-checkbox-background: var(--task-state-adjusted-color, var(--task-state-color, var(--task-checkbox-with-state-background)));
-}
-
-/* Default checked state */
-:where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)),
-.tn-task-checkbox[data-trilium-task-state="done"] {
-    --task-state-glyph: "";
-    --task-state-glyph-font-family: boxicons;
-    --task-state-hue: var(--task-checkbox-done-hue);
-    --_task-checkbox-background: var(--task-checkbox-done-color);
-}
-
-/* The read-only view renders a real <label>, which Bootstrap's reboot makes
-   inline-block — an empty label (its checkbox is absolutely positioned below)
-   then produces a full-height line of its own, pushing the item text onto the
-   next line. Restore the plain inline display so the empty label collapses. */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label {
-    display: inline;
-}
-
-:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"] {
-    --_checkbox-size: var(--ck-content-todo-list-checkmark-size);
-
-    /* Take the checkbox out of the inline flow in every variant and centre it
-       geometrically on the first text line (the li is the positioned ancestor,
-       `li p` has no margin, and CKEditor's own `left/right: -25px` still places
-       it in the gutter). Centering via `vertical-align: middle` depends on font
-       metrics and differs from the absolutely-positioned `_without-description`
-       variant — this makes both variants share one deterministic geometry. */
-    position: absolute;
-    top: calc((1lh - var(--_checkbox-size)) / 2);
-    inset-inline-start: -25px;
-    inset-inline-end: auto;
-    /* `1lh` must resolve against the text's line height, not the UA form-control
-       font, and the UA's 3px checkbox margins would offset the absolute position.
-       (Bootstrap's reboot happens to do both, but don't depend on it.) */
-    margin: 0;
-    font: inherit;
-}
-
-/* CKEditor middle-aligns the inline description span, while a real-<p> description
-   (the `_without-description` variant) sits on the plain baseline — so the text
-   position depended on which variant rendered. Align both on the baseline. */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label .todo-list__label__description {
-    vertical-align: baseline;
-}
-
-/* Checkbox */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"],
-.tn-task-checkbox {
-    /* Checkbox body */
-    &::before {
-        all: unset;
-
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: var(--task-checkbox-border-radius);
-        background: var(--_task-checkbox-background, var(--task-checkbox-without-state-background));
-    }
-
-    /* Checkbox tick */
-    &::after {
-        all: unset;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        inset: 0;
-        content: var(--task-state-glyph);
-        font-family: var(--task-state-glyph-font-family, inherit);
-        /* Em box == checkbox box: the flex centering has zero leftover
-           space to round, so nothing can snap asymmetrically. */
-        font-size: var(--_checkbox-size);
-        line-height: 1;
-        color: var(--task-checkbox-glyph-color);
-        /* The shrink is geometric, not typographic — scale() doesn't snap
-           to the device-pixel grid, so the glyph stays centred at any zoom. */
-        transform: scale(var(--task-checkbox-glyph-ratio));
-    }
-
-    &:disabled {
-        opacity: 1;
-    }
-}
-
-/*
- * Collapsible blocks
- */
-
- /*
- * Shared styles for collapsible blocks (rendered as native HTML <details>/<summary>).
- * Used in both the editor and the read-only/published view via .ck-content.
- */
-
-.ck-content details.trilium-collapsible {
-    --collapsible-block-background: var(--card-background-color);
-    --collapsible-block-summary-background: var(--card-background-color);
-    --collapsible-block-summary-delimiter-color: var(--main-background-color);
-
-    --_border-radius: 8px;
-    --_block-padding: .75rem;
-    --_inline-padding: 1rem;
-    --_margin-between-collapsibles: 3px;
-    --_content-indent: 2rem;
-    --_arrow-gap: 2rem;
-
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    margin: 1em 0;
-    border-radius: var(--_border-radius);
-    background: var(--collapsible-block-background);
-    padding: var(--_block-padding) var(--_inline-padding) var(--_block-padding) var(--_content-indent);
-
-    &:not(& + &):has(+ details.trilium-collapsible) {
-        /* First collapsibile from the series */
-        margin-bottom: var(--_margin-between-collapsibles);
-        border-end-start-radius: 0;
-        border-end-end-radius: 0;
-    }
-
-    & + &:has(+ details.trilium-collapsible) {
-        /* Middle collapsibile blocks from the series */
-        margin-bottom: var(--_margin-between-collapsibles);
-        margin-top: 0;
-        border-radius: 0;
-    }
-
-    & + &:not(:has(+ details.trilium-collapsible)) {
-        /* The last collapsibile from the series */
-        margin-top: 0;
-        border-start-start-radius: 0;
-        border-start-end-radius: 0;
-    }
-
-    > summary {
-        position: relative;
-        left: calc(0px - var(--_content-indent ) / 2);
-        width: calc(100% + var(--_content-indent));
-        padding-left: var(--_arrow-gap);
-        cursor: pointer;
-        font-weight: 500;
-        outline: none;
-        list-style: none; /* native marker replaced by the custom arrow below */
-
-        &::-webkit-details-marker {
-            display: none;
-        }
-
-        &::after {
-            display: block;
-            content: "";
-            z-index: -1;
-            position: absolute;
-            top: calc(0px - (var(--_block-padding) + 1px));
-            left: calc(0px - var(--_content-indent ) / 2);
-            width: calc(100% + var(--_inline-padding) * 2 + 1px);
-            height: calc(100% + var(--_block-padding) * 2 + 1px);
-            background: var(--collapsible-block-summary-background);
-        }
-
-        &:hover::after {
-            background: var(--card-background-hover-color);
-        }
-    }
-
-    &[open] > summary {
-        margin-bottom: calc(var(--_block-padding) * 2);
-
-        &::after {
-            border-bottom: 2px solid var(--collapsible-block-summary-delimiter-color);
-        }
-    }
-
-    >*:last-child:not(summary) {
-        margin-bottom: 0;
-    }
-}
-
-/*
- * Custom arrow, shared by every view. In the editor it is a real <span> (inserted by the
- * editing downcast) because it needs click and keyboard handlers; elsewhere that span
- * doesn't exist — the arrow is deliberately not part of the saved HTML — so the data view
- * (read-only text notes, markdown preview) draws it on the summary instead and lets the
- * native <details> toggle do the work. Both share the geometry and the glyph below.
- */
-.ck-content details.trilium-collapsible > summary > .trilium-collapsible-arrow,
-.ck-content:not(.ck-editor__editable) details.trilium-collapsible > summary::before {
-    position: absolute;
-    left: 0;
-    top: -0.05em;
-    width: 1lh;
-    height: 1lh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: boxicons;
-    cursor: pointer;
-    user-select: none;
-    /* Scaled rather than sized with font-size, so the box keeps the summary's line metrics
-     * and the arrow stays centred on the first line of the title. */
-    transform: scale(1.3);
-    transition: transform 0.15s ease;
-}
-
-.ck-content details.trilium-collapsible > summary > .trilium-collapsible-arrow::before,
-.ck-content:not(.ck-editor__editable) details.trilium-collapsible > summary::before {
-    content: "\ea50";
-}
-
-.ck-content details.trilium-collapsible[open] > summary > .trilium-collapsible-arrow,
-.ck-content:not(.ck-editor__editable) details.trilium-collapsible[open] > summary::before {
-    transform: scale(1.3) rotate(90deg);
 }
 
 /*

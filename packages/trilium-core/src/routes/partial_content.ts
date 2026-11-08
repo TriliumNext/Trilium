@@ -10,6 +10,12 @@ export interface RangedContent {
     mimeType: string;
     /** A stable content identifier (a blobId is a content hash), sent as the ETag so a dropped stream can be resumed. */
     etag?: string;
+    /**
+     * The most bytes a `bytes=N-` range is answered with. A media element asks for the rest of
+     * the file that way and then requests the next range itself, so a cap bounds every response
+     * without breaking playback. Ranges with an explicit end are served as asked.
+     */
+    maxOpenRangeLength?: number;
 }
 
 /** A byte range with both ends inclusive — the form the HTTP `Range` header speaks in. */
@@ -28,7 +34,7 @@ export interface ByteRange {
  * Express and the standalone browser router both implement, so one handler serves the server,
  * desktop and standalone (WASM) variants alike.
  */
-export function serveContentWithRanges(req: Request, res: Response, { content, fileName, mimeType, etag }: RangedContent) {
+export function serveContentWithRanges(req: Request, res: Response, { content, fileName, mimeType, etag, maxOpenRangeLength }: RangedContent) {
     const bytes = wrapStringOrBuffer(content);
     const totalSize = bytes.byteLength;
 
@@ -45,7 +51,7 @@ export function serveContentWithRanges(req: Request, res: Response, { content, f
 
     let range: ByteRange | null;
     try {
-        range = parseRangeHeader(rangeHeader, totalSize);
+        range = parseRangeHeader(rangeHeader, totalSize, maxOpenRangeLength);
     } catch {
         res.setHeader("Content-Range", `bytes */${totalSize}`);
         return res.status(416).send(`Invalid value for Range: ${rangeHeader}`);
@@ -74,7 +80,7 @@ const RANGE_PATTERN = /^bytes=(\d*)-(\d*)$/;
  * A header that cannot be parsed is ignored rather than rejected (RFC 9110 §14.2), so an odd client
  * still gets its content; only a well-formed range that falls outside the content is unsatisfiable.
  */
-function parseRangeHeader(rangeHeader: string | undefined, totalSize: number): ByteRange | null {
+function parseRangeHeader(rangeHeader: string | undefined, totalSize: number, maxOpenRangeLength = Infinity): ByteRange | null {
     const match = rangeHeader ? RANGE_PATTERN.exec(rangeHeader.trim()) : null;
     if (!match || totalSize === 0) {
         return null;
@@ -93,8 +99,12 @@ function parseRangeHeader(rangeHeader: string | undefined, totalSize: number): B
     }
 
     const start = Number(startValue);
-    // `bytes=500-` runs to the end, and an end past it is clamped rather than refused.
-    const end = endValue === "" ? totalSize - 1 : Math.min(Number(endValue), totalSize - 1);
+    // `bytes=500-` runs to the end (or to `maxOpenRangeLength`), and an end past it is clamped
+    // rather than refused.
+    const end = Math.min(
+        endValue === "" ? start + maxOpenRangeLength - 1 : Number(endValue),
+        totalSize - 1
+    );
 
     if (start > end || start >= totalSize) {
         throw new UnsatisfiableRangeError();

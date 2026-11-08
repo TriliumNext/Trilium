@@ -3,32 +3,39 @@ import {
     BlockQuote,
     BookmarkUI,
     type ClassicEditor,
-    ContextualBalloon,
     type Editor,
     Essentials,
     _getModelData as getModelData,
     Heading,
+    HorizontalLine,
     Image,
     ImageUpload,
     keyCodes,
+    List,
     MentionEditing,
     Paragraph,
-    _setModelData as setModelData
+    _setModelData as setModelData,
+    Table
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import { installGlobMock } from "../../../test/globals-test-kit.js";
-import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
+import { COMMAND_NAME as CHILD_NOTE_COMMAND } from "../child_note.js";
+import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TIME_PRESETS } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
+import {
+    INSERT_EXTENDED_CODE_BLOCK_COMMAND
+} from "../content_embed/extended_code_block.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
+import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
+import { COMMAND_NAME as INSERT_MEDIA_COMMAND } from "../insert_media.js";
 import TriliumSlashCommands, {
     buildDefaultSlashCommands,
     buildTriliumSlashCommands,
@@ -38,10 +45,44 @@ import TriliumSlashCommands, {
     type SlashCommandDefinition
 } from "./slash_commands.js";
 import TriliumMentionUI from "./trilium_mention_ui.js";
-import type { TriliumMentionFeed } from "./types.js";
+import type { MentionHostedFeed, MentionHostedList } from "./types.js";
 
 /** Longer than the mention UI's 100 ms feed debounce. */
 const AFTER_DEBOUNCE = 160;
+
+/** The query the stub list last showed the palette for, or `null` while it is hidden. */
+let shownQuery: string | null = null;
+
+/**
+ * A host's list for `slashCommand.list`, as the client's behaves for these tests: it lists the
+ * palette's entries for the query as it is shown, and takes the first on Enter.
+ */
+function createStubList(editor: Editor): MentionHostedList {
+    let commit: ((item: { id: string; definition: SlashCommandDefinition }) => void) | null = null;
+    let entries: SlashCommandDefinition[] = [];
+
+    return {
+        show(state) {
+            shownQuery = state.query;
+            commit = state.commit;
+            entries = editor.plugins.get(TriliumSlashCommands).search(state.query);
+        },
+        hide() {
+            shownQuery = null;
+            commit = null;
+            entries = [];
+        },
+        handleKeyDown(event) {
+            const [ first ] = entries;
+            if (event.key !== "Enter" || !commit || !first) {
+                return false;
+            }
+            commit({ id: first.id, definition: first });
+            return true;
+        },
+        element: null
+    };
+}
 
 const HEADING_OPTIONS = [
     { model: "paragraph", title: "Paragraph" },
@@ -91,31 +132,23 @@ describe("TriliumSlashCommands", () => {
     async function createEditor(slashCommand: SlashCommandConfig = {}) {
         editor = await createTestEditor(
             [ Essentials, Paragraph, Heading, BlockQuote, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
-            { heading: { options: HEADING_OPTIONS }, slashCommand }
+            { heading: { options: HEADING_OPTIONS }, slashCommand: { list: createStubList, ...slashCommand } }
         );
         setModelData(editor.model, "<paragraph>[]</paragraph>");
     }
 
     /** The `/` feed the plugin registered, as the mention UI sees it. */
-    function slashFeed(): TriliumMentionFeed {
-        const feeds = (editor.config.get("mention.feeds") ?? []) as TriliumMentionFeed[];
-        const feed = feeds.find((candidate) => candidate.marker === "/");
-
-        if (!feed) {
-            throw new Error("the plugin did not register a `/` feed");
-        }
-
-        return feed;
+    function slashFeed(): MentionHostedFeed | undefined {
+        return editor.config.get("mention.hostedFeeds")?.find((candidate) => candidate.marker === "/");
     }
 
-    async function queryPalette(query: string) {
-        const feed = slashFeed().feed;
+    /** The ids of the palette's entries for `query`, as its list shows them. */
+    function paletteIds(query: string) {
+        return editor.plugins.get(TriliumSlashCommands).search(query).map((definition) => definition.id);
+    }
 
-        if (typeof feed !== "function") {
-            throw new Error("the `/` feed should be a callback");
-        }
-
-        return await feed.call(editor, query);
+    function paletteTitles(query: string) {
+        return editor.plugins.get(TriliumSlashCommands).search(query).map((definition) => definition.title);
     }
 
     function type(text: string) {
@@ -124,9 +157,10 @@ describe("TriliumSlashCommands", () => {
         });
     }
 
-    function pressKey(keyCode: number) {
+    function pressEnter() {
         editor.editing.view.document.fire("keydown", {
-            keyCode,
+            keyCode: keyCodes.enter,
+            domEvent: new KeyboardEvent("keydown", { key: "Enter" }),
             preventDefault: () => {},
             stopPropagation: () => {},
             domTarget: editor.editing.view.getDomRoot()
@@ -138,21 +172,26 @@ describe("TriliumSlashCommands", () => {
     }
 
     beforeEach(async () => {
+        shownQuery = null;
         await createEditor();
     });
 
-    it("registers itself and a `/` feed that opens on the bare marker", () => {
+    it("registers itself and a `/` feed that opens on the bare marker, in the host's list", async () => {
         expect(TriliumSlashCommands.pluginName).toBe("TriliumSlashCommands");
         expect(editor.plugins.get(TriliumSlashCommands)).toBeInstanceOf(TriliumSlashCommands);
-        expect(slashFeed().minimumCharacters).toBe(0);
+        expect(slashFeed()?.minimumCharacters).toBe(0);
+        expect(slashFeed()?.list).toBe(createStubList);
+
+        type("/quo");
+        await settle();
+        expect(shownQuery).toBe("quo");
     });
 
-    it("shows the palette unbounded by default, since the query only ever narrows it", async () => {
-        // Premium defaulted to `Infinity`; a cap would hide entries no query could then reach.
-        expect(slashFeed().dropdownLimit).toBe(Infinity);
-
-        await createEditor({ dropdownLimit: 3 });
-        expect(slashFeed().dropdownLimit).toBe(3);
+    it("registers no feed for a host that gives it no list", async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, MentionEditing, TriliumMentionUI, TriliumSlashCommands ]);
+        expect(slashFeed()).toBeUndefined();
+        // The catalog is still there to be searched.
+        expect(paletteIds("")).not.toEqual([]);
     });
 
     describe("catalog", () => {
@@ -193,13 +232,13 @@ describe("TriliumSlashCommands", () => {
 
             // ...and of the command-backed ones, only the one whose plugin is actually loaded
             // survives the catalog.
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
-            expect(ids).toContain("/blockQuote");
-            expect(ids).not.toContain("/codeBlock");
-            expect(ids.filter((id) => id.startsWith("/heading"))).toEqual([]);
+            const ids = paletteIds("");
+            expect(ids).toContain("blockQuote");
+            expect(ids).not.toContain("codeBlock");
+            expect(ids.filter((id) => id.startsWith("heading"))).toEqual([]);
 
             // Trilium's own execute-only entries have no command to gate them, so they stay.
-            expect(ids).toContain("/align-left");
+            expect(ids).toContain("align-left");
         });
 
         it("uses a generic icon for a heading level outside h1-h6", async () => {
@@ -212,21 +251,21 @@ describe("TriliumSlashCommands", () => {
         });
 
         it("hides entries whose command no plugin registered", async () => {
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
+            const ids = paletteIds("");
 
             // BlockQuote is loaded in this editor; CodeBlock and Table are not.
-            expect(ids).toContain("/blockQuote");
-            expect(ids).not.toContain("/codeBlock");
-            expect(ids).not.toContain("/insertTable");
+            expect(ids).toContain("blockQuote");
+            expect(ids).not.toContain("codeBlock");
+            expect(ids).not.toContain("insertTable");
         });
 
         it("drops entries named by removeCommands", async () => {
             await createEditor({ removeCommands: [ "blockQuote", "heading3" ] });
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
+            const ids = paletteIds("");
 
-            expect(ids).not.toContain("/blockQuote");
-            expect(ids).not.toContain("/heading3");
-            expect(ids).toContain("/heading2");
+            expect(ids).not.toContain("blockQuote");
+            expect(ids).not.toContain("heading3");
+            expect(ids).toContain("heading2");
         });
 
         it("hides an entry whose command is registered but disabled for the current selection", async () => {
@@ -236,15 +275,15 @@ describe("TriliumSlashCommands", () => {
                 throw new Error("the editor should register the blockQuote command");
             }
 
-            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).toContain("/blockQuote");
+            expect(paletteIds("")).toContain("blockQuote");
 
             // Committing an entry first deletes the `/query`, so an entry whose command would no-op
             // costs the user their input and returns nothing.
             blockQuote.forceDisabled("spec");
-            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).not.toContain("/blockQuote");
+            expect(paletteIds("")).not.toContain("blockQuote");
 
             blockQuote.clearForceDisabled("spec");
-            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).toContain("/blockQuote");
+            expect(paletteIds("")).toContain("blockQuote");
         });
 
         it("honours an entry's own isEnabled predicate, which is the only gate an execute-only entry has", () => {
@@ -258,15 +297,39 @@ describe("TriliumSlashCommands", () => {
             expect(isSlashCommandEnabled(editor, definition)).toBe(true);
         });
 
+        it("marks each entry by whether it inserts, wraps or transforms content", () => {
+            const entries = [ ...buildDefaultSlashCommands(editor), ...buildTriliumSlashCommands(editor) ];
+            const flagged = (flag: "willInsert" | "willWrap" | "willTransform") =>
+                entries.filter((definition) => definition[flag]).map((definition) => definition.id);
+
+            expect(flagged("willWrap")).toEqual([
+                "heading2", "heading3", "blockQuote", "codeBlock",
+                "bulletedList", "numberedList", "todoList",
+                "note", "tip", "important", "caution", "warning",
+                "collapsible", "tabs", "multicolumn-layout-2", "multicolumn-layout-3",
+                "multicolumn-layout-4"
+            ]);
+            expect(flagged("willTransform")).toEqual([
+                "paragraph", "indent", "outdent",
+                "align-left", "align-center", "align-right", "align-justify", "ai-assistant"
+            ]);
+            expect(flagged("willInsert")).toEqual(expect.arrayContaining([
+                "insertTable", "ai-assistant", "collapsible", "tabs", "multicolumn-layout-2"
+            ]));
+            expect(entries.filter((definition) =>
+                !definition.willInsert && !definition.willWrap && !definition.willTransform
+            )).toEqual([]);
+        });
+
         it("orders the catalog as CKEditor's own entries, then Trilium's, then the snippets", async () => {
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
+            const ids = paletteIds("");
 
             // The heading entries lead the defaults; Trilium's own group follows them. Only
             // execute-only entries are compared, since anything naming a command whose plugin this
             // editor does not load is filtered out before ordering matters.
-            expect(ids[0]).toBe("/paragraph");
-            expect(ids.indexOf("/blockQuote")).toBeLessThan(ids.indexOf("/align-left"));
-            expect(ids.indexOf("/align-left")).toBeLessThan(ids.indexOf("/anchor"));
+            expect(ids[0]).toBe("paragraph");
+            expect(ids.indexOf("blockQuote")).toBeLessThan(ids.indexOf("align-left"));
+            expect(ids.indexOf("align-left")).toBeLessThan(ids.indexOf("anchor"));
         });
     });
 
@@ -282,21 +345,11 @@ describe("TriliumSlashCommands", () => {
             return definition;
         }
 
-        function filesOf(...files: File[]): FileList {
-            const transfer = new DataTransfer();
-
-            for (const file of files) {
-                transfer.items.add(file);
-            }
-
-            return transfer.files;
-        }
-
         it("is offered only where an `uploadImage` command is registered", async () => {
             // The entry runs a file picker rather than naming the command, so `commandName` cannot
             // gate it and `isEnabled` has to.
             expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(false);
-            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).not.toContain("/uploadImage");
+            expect(paletteIds("")).not.toContain("uploadImage");
 
             editor = await createTestEditor(
                 [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ]
@@ -304,7 +357,7 @@ describe("TriliumSlashCommands", () => {
             setModelData(editor.model, "<paragraph>[]</paragraph>");
 
             expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(true);
-            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).toContain("/uploadImage");
+            expect(paletteIds("")).toContain("uploadImage");
         });
 
         it("uploads only the picked files whose type `image.upload.types` allows", async () => {
@@ -386,7 +439,7 @@ describe("TriliumSlashCommands", () => {
         async function createSnippetEditor(definitions: SnippetDefinition[] = SNIPPETS) {
             editor = await createTestEditor(
                 [ Essentials, Paragraph, Heading, BlockQuote, MentionEditing, TriliumMentionUI, TriliumSlashCommands, TriliumSnippets ],
-                { heading: { options: HEADING_OPTIONS }, toolbar: [], slashCommand: {}, snippets: { definitions } }
+                { heading: { options: HEADING_OPTIONS }, toolbar: [], slashCommand: { list: createStubList }, snippets: { definitions } }
             );
             setModelData(editor.model, "<paragraph>[]</paragraph>");
         }
@@ -394,19 +447,21 @@ describe("TriliumSlashCommands", () => {
         it("lists each snippet after the built-ins, found by its title or the generic aliases", async () => {
             await createSnippetEditor();
 
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
-            expect(ids.slice(-2)).toEqual([ "/snippet-0", "/snippet-1" ]);
+            const ids = paletteIds("");
+            expect(ids.slice(-2)).toEqual([ "snippet-0", "snippet-1" ]);
+            const snippets = editor.plugins.get(TriliumSlashCommands).search("").slice(-2);
+            expect(snippets.map((definition) => definition.willInsert)).toEqual([ true, true ]);
 
-            expect((await queryPalette("greet")).map((item) => (item as { text: string }).text)).toEqual([ "Greeting" ]);
+            expect(paletteTitles("greet")).toEqual([ "Greeting" ]);
 
-            const byAlias = (await queryPalette("snippet")).map((item) => (item as { text: string }).text);
+            const byAlias = paletteTitles("snippet");
             expect(byAlias).toContain("Greeting");
             expect(byAlias).toContain("Signature");
         });
 
         it("offers no snippet entries in an editor without the snippets plugin", async () => {
-            const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
-            expect(ids.some((id) => id.startsWith("/snippet-"))).toBe(false);
+            const ids = paletteIds("");
+            expect(ids.some((id) => id.startsWith("snippet-"))).toBe(false);
         });
 
         it("inserts the snippet content on commit, for string and callback data alike", async () => {
@@ -414,18 +469,18 @@ describe("TriliumSlashCommands", () => {
 
             type("/greeting");
             await settle();
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             let data = getModelData(editor.model, { withoutSelection: true });
             expect(data).toContain("Hello there");
-            expect(data).not.toContain("/greeting");
+            expect(data).not.toContain("greeting");
 
             // A fresh empty paragraph: right after the inserted content the slash would be
             // mid-word, and a mid-word `/` deliberately never opens the palette.
             setModelData(editor.model, "<paragraph>[]</paragraph>");
             type("/signature");
             await settle();
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             data = getModelData(editor.model, { withoutSelection: true });
             expect(data).toContain("Sincerely, spec");
@@ -436,7 +491,7 @@ describe("TriliumSlashCommands", () => {
 
             editor.plugins.get(TriliumSnippets).updateDefinitions([ { title: "Renamed", data: "<p>x</p>" } ]);
 
-            const titles = (await queryPalette("")).map((item) => (item as { text: string }).text);
+            const titles = paletteTitles("");
             expect(titles).toContain("Renamed");
             expect(titles).not.toContain("Greeting");
         });
@@ -450,7 +505,7 @@ describe("TriliumSlashCommands", () => {
             }
 
             insertTemplate.forceDisabled("spec");
-            expect((await queryPalette("")).map((item) => (item as { text: string }).text)).not.toContain("Greeting");
+            expect(paletteTitles("")).not.toContain("Greeting");
         });
     });
 
@@ -459,11 +514,11 @@ describe("TriliumSlashCommands", () => {
             type("/quo");
             await settle();
 
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             const data = getModelData(editor.model, { withoutSelection: true });
             expect(data).toContain("<blockQuote>");
-            expect(data).not.toContain("/quo");
+            expect(data).not.toContain("quo");
         });
 
         // The alignment entries are execute-only — they run `alignment` with an argument rather than
@@ -472,7 +527,8 @@ describe("TriliumSlashCommands", () => {
             // Alignment has to be loaded for its command to exist; the entry itself names no
             // command, so it is the `execute` callback that reaches it.
             editor = await createTestEditor(
-                [ Essentials, Paragraph, Alignment, MentionEditing, TriliumMentionUI, TriliumSlashCommands ]
+                [ Essentials, Paragraph, Alignment, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
+                { slashCommand: { list: createStubList } }
             );
             setModelData(editor.model, "<paragraph>[]</paragraph>");
             const execute = vi.spyOn(editor, "execute");
@@ -480,7 +536,7 @@ describe("TriliumSlashCommands", () => {
             // One word, since the `/` marker pattern stops at a space.
             type("/Justify");
             await settle();
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             expect(execute).toHaveBeenCalledWith("alignment", { value: "justify" });
         });
@@ -490,9 +546,27 @@ describe("TriliumSlashCommands", () => {
             await settle();
 
             // "Heading 2" is the first configured level, so it is the pre-selected suggestion.
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             expect(getModelData(editor.model, { withoutSelection: true })).toContain("<heading2>");
+        });
+
+        it("runs an entry picked outside the palette, unless it does not apply there", () => {
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const blockQuote = palette.search("quote")
+                .find((definition) => definition.id === "blockQuote");
+            if (!blockQuote) {
+                throw new Error("the palette should offer the block quote entry");
+            }
+
+            editor.commands.get("blockQuote")?.forceDisabled("spec");
+            palette.run(blockQuote);
+            expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+
+            editor.commands.get("blockQuote")?.clearForceDisabled("spec");
+            palette.run(blockQuote);
+            expect(getModelData(editor.model))
+                .toBe("<blockQuote><paragraph>[]</paragraph></blockQuote>");
         });
 
         it("keeps the trigger text when the selected command goes disabled before Enter", async () => {
@@ -509,79 +583,101 @@ describe("TriliumSlashCommands", () => {
             }
 
             blockQuote.forceDisabled("spec");
-            pressKey(keyCodes.enter);
+            pressEnter();
 
             const data = getModelData(editor.model, { withoutSelection: true });
             expect(data).not.toContain("<blockQuote>");
-            expect(data).toContain("/quo");
+            expect(data).toContain("quo");
         });
     });
 
-    describe("row rendering", () => {
-        function render(query: string, index = 0) {
-            const items = matchSlashCommands(buildDefaultSlashCommands(editor), query);
-            const renderer = slashFeed().itemRenderer;
+    describe("inserting beside a block", () => {
+        const WITH_LINE_SELECTED = "<paragraph>a</paragraph>[<horizontalLine></horizontalLine>]";
 
-            if (!renderer) {
-                throw new Error("the `/` feed should provide an itemRenderer");
+        beforeEach(async () => {
+            editor = await createTestEditor([
+                Essentials, Paragraph, Heading, BlockQuote, HorizontalLine, List, Table,
+                MentionEditing, TriliumMentionUI, TriliumSlashCommands
+            ], { heading: { options: HEADING_OPTIONS }, slashCommand: { list: createStubList } });
+        });
+
+        /** The palette's entry `id`, wherever the selection is. */
+        function entry(id: string) {
+            const definition = editor.plugins.get(TriliumSlashCommands).listAll()
+                .find((candidate) => candidate.id === id);
+            if (!definition) {
+                throw new Error(`the palette should have the ${id} entry`);
             }
-
-            return renderer({ id: `/${items[index].id}`, text: items[index].title, definition: items[index] } as never) as HTMLElement;
+            return definition;
         }
 
-        it("renders the icon, title and description with premium's class names, so the theme still applies", () => {
-            const row = render("block quote");
+        /** The element at `path` from the root. */
+        function elementAt(...path: number[]) {
+            const node = editor.model.document.getRoot()?.getNodeByPath(path);
+            if (!node?.is("element")) {
+                throw new Error(`the root should have an element at ${path.join(",")}`);
+            }
+            return node;
+        }
 
-            expect(row.classList.contains("ck-slash-command-button")).toBe(true);
-            // Without this the base button styles hide the label, leaving a title-less row.
-            expect(row.classList.contains("ck-button_with-text")).toBe(true);
-            expect(row.querySelector(".ck-icon")?.innerHTML).toContain("<svg");
-            // Opts into core's `fill: currentColor` rule; without it the glyphs stay black on dark themes.
-            expect(row.querySelector(".ck-icon")?.classList.contains("ck-icon_inherit-color")).toBe(true);
-            expect(row.querySelector(".ck-button__label")?.textContent).toBe("Block quote");
-            expect(row.querySelector(".ck-slash-command-button__description")?.textContent).toBeTruthy();
+        it("lists the entries disabled at the selection, but none without a command", () => {
+            setModelData(editor.model, "<paragraph>[]a</paragraph>");
+            editor.commands.get("blockQuote")?.forceDisabled("spec");
+            const ids = editor.plugins.get(TriliumSlashCommands).listAll()
+                .map((definition) => definition.id);
+
+            expect(paletteIds("")).not.toContain("blockQuote");
+            expect(ids).toEqual(expect.arrayContaining([ "blockQuote", "math" ]));
+            expect(ids).not.toContain("codeBlock");
         });
 
-        it("omits the description element for an entry that has none", () => {
-            const renderer = slashFeed().itemRenderer;
+        it("runs an entry in a new paragraph before or after a block, undone in one step", () => {
+            setModelData(editor.model, WITH_LINE_SELECTED);
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const scroll = vi.spyOn(editor.editing.view, "scrollToTheSelection");
 
-            if (!renderer) {
-                throw new Error("the `/` feed should provide an itemRenderer");
-            }
+            palette.runBeside(entry("heading2"), elementAt(1), "after");
+            expect(getModelData(editor.model)).toBe(
+                "<paragraph>a</paragraph><horizontalLine></horizontalLine><heading2>[]</heading2>");
+            expect(scroll).toHaveBeenCalledOnce();
 
-            const definition: SlashCommandDefinition = { id: "bare", title: "Bare", icon: "<svg/>" };
-            const row = renderer({ id: "/bare", text: "Bare", definition } as never) as HTMLElement;
+            editor.execute("undo");
+            expect(getModelData(editor.model, { withoutSelection: true }))
+                .toBe("<paragraph>a</paragraph><horizontalLine></horizontalLine>");
 
-            expect(row.querySelector(".ck-slash-command-button__description")).toBeNull();
+            palette.runBeside(entry("blockQuote"), elementAt(0), "before");
+            expect(getModelData(editor.model))
+                .toBe("<blockQuote><paragraph>[]</paragraph></blockQuote><paragraph>a</paragraph>"
+                    + "<horizontalLine></horizontalLine>");
         });
 
-        it("renders a font-icon chip from iconClass, with and without a colour class", () => {
-            const renderer = slashFeed().itemRenderer;
+        it("inserts nothing beside a list item, or where the schema allows no paragraph", () => {
+            const data = "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">"
+                + "[]a</paragraph><table><tableRow><tableCell><paragraph>b</paragraph></tableCell>"
+                + "</tableRow></table>";
+            setModelData(editor.model, data);
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const listItem = elementAt(0);
+            const cell = elementAt(1, 0, 0);
 
-            if (!renderer) {
-                throw new Error("the `/` feed should provide an itemRenderer");
-            }
+            expect(palette.canInsertBeside(listItem, "before")).toBe(false);
+            expect(palette.canInsertBeside(cell, "after")).toBe(false);
+            expect(palette.canInsertBeside(elementAt(1), "after")).toBe(true);
+            palette.runBeside(entry("heading2"), listItem, "after");
+            palette.runBeside(entry("heading2"), cell, "after");
+            expect(getModelData(editor.model)).toBe(data);
+        });
 
-            const coloured: SlashCommandDefinition = {
-                id: "snippet-0", title: "Greeting", iconClass: "tn-icon bx bx-note", iconColorClass: "use-note-color"
-            };
-            const colourless: SlashCommandDefinition = { id: "snippet-1", title: "Plain", iconClass: "bx bx-cube" };
+        it("runs nothing where the model allows no edit", () => {
+            setModelData(editor.model, "<paragraph>[]a</paragraph>");
+            editor.model.on("canEditAt", (evt) => {
+                evt.return = false;
+                evt.stop();
+            }, { priority: "highest" });
 
-            for (const definition of [ coloured, colourless ]) {
-                const row = renderer({ id: `/${definition.id}`, text: definition.title, definition } as never) as HTMLElement;
-                const chip = row.querySelector(".ck-icon");
-
-                expect(chip?.classList.contains("ck-slash-command-button__note-icon")).toBe(true);
-                expect(chip?.querySelector("svg")).toBeNull();
-            }
-
-            const colouredRow = renderer({ id: "/snippet-0", text: "Greeting", definition: coloured } as never) as HTMLElement;
-            // The glyph classes go on an inner span, not the chip: the chip's box is sized in em of
-            // its own font-size, so carrying the enlarged glyph font itself would inflate the row.
-            const glyph = colouredRow.querySelector(".ck-icon > span");
-            for (const cls of [ "tn-icon", "bx", "bx-note", "use-note-color" ]) {
-                expect(glyph?.classList.contains(cls)).toBe(true);
-            }
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            palette.runBeside(entry("heading2"), elementAt(0), "after");
+            expect(getModelData(editor.model)).toBe("<paragraph>[]a</paragraph>");
         });
     });
 
@@ -589,8 +685,7 @@ describe("TriliumSlashCommands", () => {
         type("and/or");
         await settle();
 
-        const balloon = editor.plugins.get(ContextualBalloon);
-        expect(balloon.visibleView?.element?.classList.contains("ck-mentions") ?? false).toBe(false);
+        expect(shownQuery).toBeNull();
     });
 });
 
@@ -631,15 +726,25 @@ describe("buildTriliumSlashCommands", () => {
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
-        [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
-        [ "include-note", "Include note", INCLUDE_NOTE_COMMAND ],
+        [ "web-link", "Link to a web page", INTERNAL_LINK_COMMAND ],
+        [ "web-link-icon", "Link to a web page (with icon)", INTERNAL_LINK_COMMAND ],
+        [ "web-link-card", "Link to a web page (as a card)", INTERNAL_LINK_COMMAND ],
+        [ "note-link", "Link to a note (internal link)", INTERNAL_LINK_COMMAND ],
+        [ "anchor-link", "Link to a heading or anchor", INTERNAL_LINK_COMMAND ],
+        [ "media-embed", "Audio/video embed", INSERT_MEDIA_COMMAND ],
+        [ "attach-file", "Attach file as a link", "fileUpload" ],
+        [ "attach-and-embed-file", "Attach and embed file", "fileUpload" ],
+        [ "drawing-canvas", "Drawing canvas", "fileUpload" ],
+        [ "child-note", "Create a new child note", CHILD_NOTE_COMMAND ],
+        [ "content-embed", "Include note", CONTENT_EMBED_COMMAND ],
         [ "page-break", "Page break", "pageBreak" ],
         [ "markdown-import", "Markdown import", MARKDOWN_IMPORT_COMMAND ],
         [ "icon", "Icon", INSERT_ICON_COMMAND ],
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
-        [ "mermaid", "Mermaid diagram", INSERT_MERMAID_COMMAND ]
+        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ],
+        [ "extended-code-block", "Extended code block", INSERT_EXTENDED_CODE_BLOCK_COMMAND ]
     ])("defines %s, running its command with an icon and a description", (id, title, commandName) => {
         const entry = definition(id);
 
@@ -648,6 +753,86 @@ describe("buildTriliumSlashCommands", () => {
         expect(entry.description).toBeTruthy();
         expect(entry.icon).toContain("<svg");
     });
+
+    it.each([
+        [ "attach-file", {} ],
+        [ "attach-and-embed-file", { asEmbed: true } ]
+    ])("%s attaches every file picked, of any type, and returns the focus", (id, options) => {
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+        definition(id).execute?.(editor);
+
+        expect(click).toHaveBeenCalledOnce();
+        const input = click.mock.instances[0] as HTMLInputElement;
+        expect(input.type).toBe("file");
+        expect(input.accept).toBe("");
+        expect(input.multiple).toBe(true);
+        expect(input.isConnected).toBe(true);
+
+        const pdf = new File([ "" ], "a.pdf", { type: "application/pdf" });
+        const png = new File([ "" ], "b.png", { type: "image/png" });
+        input.files = filesOf(pdf, png);
+        input.dispatchEvent(new Event("change"));
+
+        expect(execute).toHaveBeenCalledWith("fileUpload", { file: [ pdf, png ], ...options });
+        expect(focus).toHaveBeenCalled();
+        expect(input.isConnected).toBe(false);
+        click.mockRestore();
+    });
+
+    it("inserts a drawing canvas as its button does, and returns the focus", () => {
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+
+        definition("drawing-canvas").execute?.(editor);
+
+        expect(execute).toHaveBeenCalledExactlyOnceWith("fileUpload", {
+            file: [ expect.objectContaining({
+                name: "Canvas.excalidraw", type: "application/vnd.excalidraw+json"
+            }) ],
+            asEmbed: true,
+            boxSize: "resizable",
+            hideTitle: true,
+            editable: true,
+            quiet: true,
+            focusEmbed: true
+        });
+        expect(focus).toHaveBeenCalled();
+    });
+
+    it("inserts an extended code block as its button does, and returns the focus", () => {
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+
+        definition("extended-code-block").execute?.(editor);
+
+        expect(execute).toHaveBeenCalledExactlyOnceWith(INSERT_EXTENDED_CODE_BLOCK_COMMAND);
+        expect(focus).toHaveBeenCalled();
+    });
+
+    it.each([ "attach-and-embed-file", "drawing-canvas" ])(
+        "offers %s only where both a file and an embed can go",
+        (id) => {
+            const fileUpload = { isEnabled: true };
+            const contentEmbed = { isEnabled: true };
+            const { fake } = makeFakeEditor({
+                fileUpload, [CONTENT_EMBED_COMMAND]: contentEmbed
+            });
+            const isEnabled = definition(id).isEnabled;
+            expect(isEnabled?.(fake)).toBe(true);
+
+            contentEmbed.isEnabled = false;
+            expect(isEnabled?.(fake)).toBe(false);
+
+            contentEmbed.isEnabled = true;
+            fileUpload.isEnabled = false;
+            expect(isEnabled?.(fake)).toBe(false);
+
+            expect(isEnabled?.(makeFakeEditor().fake)).toBe(false);
+        }
+    );
 
     it.each([
         [ "align-left", "left" ],
@@ -671,8 +856,7 @@ describe("buildTriliumSlashCommands", () => {
 
         beforeEach(async () => {
             formatDateTime = vi.fn((_date: Date, format?: string) => format ?? "2026-09-25 10:30");
-            installGlobMock({ getComponentByEl: () => ({ formatDateTime }) });
-            editor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ]);
+            editor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ], { formatDateTime });
         });
 
         function dateTimeEntries() {
@@ -686,6 +870,7 @@ describe("buildTriliumSlashCommands", () => {
             expect(entry.description).toBe("2026-09-25 10:30");
             expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
             expect(entry.icon).toContain("<svg");
+            expect(entry.willInsert).toBe(true);
         });
 
         it("offers each preset titled with its output, inserting in that format", () => {
@@ -698,6 +883,7 @@ describe("buildTriliumSlashCommands", () => {
 
             for (const [ index, entry ] of presets.entries()) {
                 expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
+                expect(entry.willInsert).toBe(true);
                 entry.execute?.(fake);
                 expect(executeSpy).toHaveBeenLastCalledWith(INSERT_DATE_TIME_COMMAND, { format: DATE_TIME_PRESETS[index].format });
             }
@@ -756,6 +942,79 @@ describe("buildTriliumSlashCommands", () => {
         }
     });
 
+    it("defines one multicolumn entry per column count, each inserting equal columns", () => {
+        const { fake, executeSpy } = makeFakeEditor();
+
+        const layouts = [ [ 2, "1-1" ], [ 3, "1-1-1" ], [ 4, "1-1-1-1" ] ] as const;
+        for (const [ count, value ] of layouts) {
+            const entry = definition(`multicolumn-layout-${count}`);
+            expect(entry.title).toBe(`${count} columns layout`);
+            expect(entry.description)
+                .toBe(`Arrange content in ${count} equal columns side by side.`);
+            expect(entry.commandName).toBe("multicolumnLayout");
+            expect(entry.icon).toBe(createLayoutFigure(value, BUTTON_ICON_SIZE));
+
+            entry.execute?.(fake);
+            expect(executeSpy).toHaveBeenLastCalledWith("multicolumnLayout", { value });
+        }
+    });
+
+    it("finds the multicolumn entries by the feature's name, fewest columns first", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+        const layouts = (query: string) => matchSlashCommands(definitions, query)
+            .map((entry) => entry.id)
+            .filter((id) => id.startsWith("multicolumn"));
+
+        const all = [ "multicolumn-layout-2", "multicolumn-layout-3", "multicolumn-layout-4" ];
+
+        for (const query of [ "multicolumn", "columns", "layout", "side by side" ]) {
+            expect(layouts(query)).toEqual(all);
+        }
+        expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
+    });
+
+    it("lists the link entries first for /link, and finds each by the words people type", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+        const ids = (query: string) => matchSlashCommands(definitions, query)
+            .map((entry) => entry.id);
+        const webLinks = [ "web-link", "web-link-icon", "web-link-card" ];
+
+        expect(ids("link").slice(0, 5)).toEqual([ ...webLinks, "note-link", "anchor-link" ]);
+        for (const query of [ "url", "website", "hyperlink", "external link" ]) {
+            expect(ids(query)).toEqual(expect.arrayContaining(webLinks));
+        }
+        expect(ids("link preview")).toEqual([ "web-link-icon", "web-link-card" ]);
+        expect(ids("card")[0]).toBe("web-link-card");
+        for (const query of [ "internal link", "trilium link", "reference link" ]) {
+            expect(ids(query)[0]).toBe("note-link");
+        }
+        for (const query of [ "heading", "anchor", "section" ]) {
+            expect(ids(query)).toContain("anchor-link");
+        }
+    });
+
+    it("lists the media entry first for the words people type for a video or an audio file", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        for (const query of [ "youtube", "video", "audio", "media" ]) {
+            expect(matchSlashCommands(definitions, query)[0]?.id).toBe("media-embed");
+        }
+    });
+
+    it.each([
+        [ "web-link", { target: "url", display: "textLink" } ],
+        [ "web-link-icon", { target: "url", display: "iconAndTextLink" } ],
+        [ "web-link-card", { target: "url", display: "cardLink" } ],
+        [ "note-link", { target: "note" } ],
+        [ "anchor-link", { target: "anchor" } ]
+    ])("%s opens the link dialog on its page, displaying the link as picked", (id, options) => {
+        const { fake, executeSpy } = makeFakeEditor();
+
+        definition(id).execute?.(fake);
+
+        expect(executeSpy).toHaveBeenCalledExactlyOnceWith(INTERNAL_LINK_COMMAND, options);
+    });
+
     it("opens the math balloon rather than running a command", () => {
         const { fake, pluginInstances } = makeFakeEditor();
         const showUI = vi.fn();
@@ -768,18 +1027,21 @@ describe("buildTriliumSlashCommands", () => {
 
     // The balloon needs the view and mapper settled, which they are not until the slash command has
     // finished its own DOM and selection cleanup.
-    it("defers the anchor form to the next tick", async () => {
+    it.each([
+        [ "anchor", BookmarkUI, "_showFormView" ],
+        [ "icon", InlineIconUI, "showPicker" ]
+    ] as const)("defers the %s entry's balloon to the next tick", (id, plugin, method) => {
         vi.useFakeTimers();
         try {
             const { fake, pluginInstances } = makeFakeEditor();
-            const showFormView = vi.fn();
-            pluginInstances.set(BookmarkUI, { _showFormView: showFormView });
+            const show = vi.fn();
+            pluginInstances.set(plugin, { [method]: show });
 
-            definition("anchor").execute?.(fake);
-            expect(showFormView).not.toHaveBeenCalled();
+            definition(id).execute?.(fake);
+            expect(show).not.toHaveBeenCalled();
 
             vi.runAllTimers();
-            expect(showFormView).toHaveBeenCalledOnce();
+            expect(show).toHaveBeenCalledOnce();
         } finally {
             vi.useRealTimers();
         }
@@ -788,15 +1050,18 @@ describe("buildTriliumSlashCommands", () => {
     // The samples come from `mermaid.samples`, which the editor already carries for the Mermaid UI —
     // it was passed to the builder separately back when the host built these definitions.
     it("builds one entry per Mermaid sample, inserting that sample's source", () => {
-        const { fake, executeSpy } = makeFakeEditor();
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
         const sample = definition("mermaid-sample-0");
 
         expect(sample.title).toBe("Mermaid diagram: Flowchart");
         expect(sample.description).toBe("Insert a \"Flowchart\" Mermaid diagram template");
         expect(sample.aliases).toContain("Flowchart");
+        expect(sample.willInsert).toBe(true);
 
-        sample.execute?.(fake);
-        expect(executeSpy).toHaveBeenCalledWith(INSERT_MERMAID_COMMAND, { source: "graph TD;" });
+        sample.execute?.(editor);
+        expect(execute).toHaveBeenCalledWith(
+            INSERT_INLINE_EMBED_COMMAND, { language: "mermaid", source: "graph TD;" }
+        );
     });
 
     it("carries no sample entries when the editor configures none", async () => {
@@ -864,6 +1129,7 @@ describe("buildTriliumSlashCommands", () => {
                 { id: "ai-makeShorter", title: "AI: Make shorter", description: "Applies to the current paragraph." },
                 { id: "ai-german", title: "AI: Translate to German", description: "Applies to the current paragraph." }
             ]);
+            expect(aiEntries().map((entry) => entry.willTransform)).toEqual([ true, true, true ]);
         });
 
         it("answers to /ai through the prefix, and to its group's name through an alias", () => {
@@ -922,3 +1188,14 @@ describe("buildTriliumSlashCommands", () => {
         expect(definition("page-break").title).toBe("Întrerupere de pagină");
     });
 });
+
+/** Builds the `FileList` a file input holds after the user picks `files`. */
+function filesOf(...files: File[]): FileList {
+    const transfer = new DataTransfer();
+
+    for (const file of files) {
+        transfer.items.add(file);
+    }
+
+    return transfer.files;
+}

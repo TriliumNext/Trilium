@@ -10,7 +10,7 @@ import type { SAttachmentRow } from "./rows.js";
 import type SNote from "./snote.js";
 
 class SAttachment extends AbstractShacaEntity {
-    private attachmentId: string;
+    attachmentId: string;
     ownerId: string;
     title: string;
     role: string;

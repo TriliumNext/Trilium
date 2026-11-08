@@ -189,16 +189,6 @@ describe("date_notes", () => {
         expect(result).toBe(note);
     });
 
-    it("getOrCreateLlmChat resolves the note", async () => {
-        const note = buildNote({ title: "Persistent chat" });
-        server.get = vi.fn(async () => ({ noteId: note.noteId })) as typeof server.get;
-
-        const result = await dateNotes.getOrCreateLlmChat();
-
-        expect(server.get).toHaveBeenCalledWith("special-notes/get-or-create-llm-chat");
-        expect(result).toBe(note);
-    });
-
     it("getRecentLlmChats uses the default limit and returns the list", async () => {
         const chats = [{ noteId: "a", title: "A", dateModified: "2025-05-29" }];
         server.get = vi.fn(async () => chats) as typeof server.get;

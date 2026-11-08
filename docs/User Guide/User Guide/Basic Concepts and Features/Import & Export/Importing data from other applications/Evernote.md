@@ -32,7 +32,7 @@ The first step is to export the data from Evernote:
 Once you have your ENEX files, do the following to import them in Trilium:
 
 1.  In the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click and select _Import into note_.
-2.  In the _Import from_ section, select _Evernote_.
+2.  In the _Import from_ section, select <span class="tn-icon tn-brand tn-brand-evernote"></span> _Evernote_.
 3.  During the import, you will see "Import in progress" message. If the import is successful, the message will change to “Import finished successfully” and then disappear.
 4.  We recommend you to check the imported notes and their attachments to verify that you haven’t lost any data.
 

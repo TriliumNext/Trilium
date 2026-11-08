@@ -1,5 +1,7 @@
 import { ClassicEditor, Essentials, FindAndReplace, Paragraph, _getModelData as getModelData } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createTestEditor } from "../../../test/editor-kit.js";
+import FindReveal from "../find_reveal.js";
 import CollapsibleEditing from "./collapsible_editing.js";
 import { TRANSIENT_OPEN_ATTRIBUTE } from "./constants.js";
 
@@ -146,5 +148,46 @@ describe("collapsible find-in-note reveal", () => {
         expect(detailsDom().open).toBe(true);
         expect(isTransient()).toBe(false);
         expect(editor.getData()).toContain("open");
+    });
+
+    it("skips a revealed block deleted before the reveal moves on, and closes the rest", () => {
+        editor.setData(
+            "<details><summary>Outer</summary>" +
+                "<details><summary>Inner</summary><p>embed</p></details>" +
+            "</details>"
+        );
+        const outer = model.document.getRoot()?.getChild(0);
+        const inner = outer?.is("element") ? outer.getChild(1) : null;
+        const body = inner?.is("element") ? inner.getChild(1) : null;
+        if (!inner || !body) throw new Error("Expected a nested block with a body.");
+        const findReveal = editor.plugins.get(FindReveal);
+        findReveal.show(model.createPositionAt(body, 0));
+        expect(isTransient(0)).toBe(true);
+
+        model.change((writer) => writer.remove(inner));
+
+        expect(() => findReveal.show(null)).not.toThrow();
+        expect(detailsDom(0).open).toBe(false);
+        expect(isTransient(0)).toBe(false);
+    });
+
+    it("opens the blocks around a position that FindReveal shows, as for an embed", async () => {
+        const revealEditor = await createTestEditor([
+            Essentials, Paragraph, FindAndReplace, FindReveal, CollapsibleEditing
+        ]);
+        revealEditor.setData(twoSiblings);
+        const details = revealEditor.model.document.getRoot()?.getChild(1);
+        const body = details?.is("element") ? details.getChild(1) : null;
+        if (!body) throw new Error("Expected the second block to have a body.");
+        const openStates = () => [ ...revealEditor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLDetailsElement>("details.trilium-collapsible") ?? [] ]
+            .map((block) => block.open);
+
+        revealEditor.plugins.get(FindReveal).show(revealEditor.model.createPositionAt(body, 0));
+        expect(openStates()).toEqual([ false, true ]);
+
+        revealEditor.plugins.get(FindReveal).show(null);
+        expect(openStates()).toEqual([ false, false ]);
+        expect(revealEditor.getData()).not.toContain("open");
     });
 });

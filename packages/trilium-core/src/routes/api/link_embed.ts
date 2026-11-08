@@ -1,27 +1,47 @@
 import {
     extractYouTubeVideoId,
+    getMediaFileTitle,
     type ImageAttachmentRole,
     type LinkEmbedMetadata,
     linkPreviewImageName,
-    safeHostname
+    safeHostname,
+    toAspectRatio
 } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 import { parse } from "node-html-parser";
 
 import { ValidationError } from "../../errors.js";
-import { trimIcoToSmallestEntry } from "../../services/ico.js";
+import { pngInsideIco, trimIcoToSmallestEntry } from "../../services/ico.js";
 import imageService from "../../services/image.js";
 import { storePictureBytes } from "../../services/image_download.js";
 import { type InspectedImage, inspectImage, UNKNOWN_FORMAT } from "../../services/image_inspect.js";
 import { getImageProvider } from "../../services/image_provider.js";
 import { getLog } from "../../services/log.js";
+import {
+    isProbedContentType, MEDIA_PROBE_LENGTH, type ProbedMedia, probeMedia
+} from "../../services/media_probe.js";
 import { findPageDescription } from "../../services/page_description.js";
 import request, { type FetchedResource, validateFetchableUrl } from "../../services/request.js";
-import { decodeUtf8 } from "../../services/utils/binary.js";
+import { decodeBase64, decodeUtf8 } from "../../services/utils/binary.js";
 
 const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB
+/** The `User-Agent` of the requests to the address of a link preview. */
+const USER_AGENT = "TriliumNotes/1.0 (Link Preview; +https://triliumnotes.org/)";
+/** The largest thumbnail of a video file that the client may store, base64. */
+const MAX_MEDIA_THUMBNAIL_BASE64_SIZE = 2 * 1024 * 1024; // 2MB
 /** An oEmbed answer is a handful of fields; anything approaching this is not one. */
 const MAX_OEMBED_SIZE = 64 * 1024; // 64KB
+/** Largest YouTube thumbnail kept. A larger one is skipped for the next size down. */
+const MAX_VIDEO_THUMBNAIL_SIZE = 300 * 1024; // 300KB
+/**
+ * YouTube's thumbnail sizes, largest first, with the longest edge each must have. YouTube returns
+ * 404 and a 120x90 placeholder for a size the video does not have.
+ */
+const YOUTUBE_THUMBNAIL_SIZES = [
+    { name: "maxresdefault", minEdge: 1280 },
+    { name: "sddefault", minEdge: 640 },
+    { name: "hqdefault", minEdge: 0 }
+] as const;
 
 /**
  * How much of a favicon to fetch.
@@ -47,7 +67,7 @@ const MAX_FAVICON_SIZE = 64 * 1024; // 64KB
  */
 const FAVICON_TARGET_EDGE = 48;
 
-/** Longest edge of the preview image kept in the note; larger images are scaled down to fit. */
+/** Longest edge of a web page's cover image kept in the note; larger ones are scaled to fit. */
 const IMAGE_MAX_DIMENSION = 256;
 /** Quality used when re-encoding an opaque preview image to JPEG. */
 const IMAGE_JPEG_QUALITY = 75;
@@ -200,12 +220,20 @@ async function downloadFavicon(faviconUrl: string): Promise<DownloadedPicture | 
         return undefined;
     }
 
-    // An icon directory gives up the sizes nothing will look at; anything else is kept as it came.
-    const bytes = trimIcoToSmallestEntry(downloaded.bytes, FAVICON_TARGET_EDGE) ?? downloaded.bytes;
+    return asFavicon(downloaded.bytes);
+}
 
-    // The ceiling is on what is kept, not on what arrived: a file that is one large picture has
-    // nothing to give up, and is the case this refuses.
-    return bytes.byteLength <= MAX_FAVICON_SIZE ? asPicture(bytes) : undefined;
+/**
+ * Keeps the part of a favicon a preview draws: the smallest entry of an icon directory, as a plain
+ * PNG when that entry is one, and any other picture as it is. Returns undefined if the bytes are
+ * not a picture or what is kept is too large.
+ */
+function asFavicon(bytes: Uint8Array): DownloadedPicture | undefined {
+    const trimmed = trimIcoToSmallestEntry(bytes, FAVICON_TARGET_EDGE) ?? bytes;
+    const kept = pngInsideIco(trimmed) ?? trimmed;
+
+    // The limit applies to what is kept, so an icon directory with one large entry is refused.
+    return kept.byteLength <= MAX_FAVICON_SIZE ? asPicture(kept) : undefined;
 }
 
 /**
@@ -475,77 +503,150 @@ function rankFavicon(rel: string, href: string, type: string | undefined, sizes:
 }
 
 /**
- * Fetches YouTube metadata via the public oEmbed endpoint.
- * This works reliably unlike scraping youtube.com (which blocks bots).
+ * Fetches YouTube metadata via the public oEmbed endpoint, with the site's favicon and the video's
+ * thumbnail. oEmbed works reliably, unlike scraping youtube.com (which blocks bots).
  */
 async function fetchYouTubeMetadata(url: string, videoId: string): Promise<FetchedPreview> {
-    const metadata: LinkEmbedMetadata = {
-        url,
-        siteName: "YouTube",
-        embedType: "youtube"
+    const [ details, favicon, image ] = await Promise.all([
+        fetchYouTubeDetails(videoId),
+        downloadFavicon("https://www.youtube.com/favicon.ico"),
+        downloadYouTubeThumbnail(videoId)
+    ]);
+
+    return {
+        metadata: {
+            url,
+            siteName: "YouTube",
+            embedType: "youtube",
+            ...(details ?? { title: "YouTube Video" })
+        },
+        favicon,
+        image
     };
+}
 
-    const favicon = await downloadFavicon("https://www.youtube.com/favicon.ico");
-
-    let thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-
+/**
+ * The video's title, channel name and shape from oEmbed, or `undefined` when oEmbed fails.
+ * oEmbed reads the `/shorts/` address of the video, which reports the shape of the video itself:
+ * the watch address of a Short reports the 16:9 player of the watch page.
+ */
+async function fetchYouTubeDetails(
+    videoId: string
+): Promise<Pick<LinkEmbedMetadata, "title" | "description" | "aspectRatio"> | undefined> {
     try {
-        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+        const videoUrl = `https://www.youtube.com/shorts/${videoId}`;
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}`
+            + "&format=json";
         const response = await request.fetchResource(oembedUrl, { maxBytes: MAX_OEMBED_SIZE });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = JSON.parse(asText(response));
-        if (data.title) metadata.title = data.title;
-        if (data.author_name) metadata.description = data.author_name;
-        if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
+        return {
+            title: data.title || undefined,
+            description: data.author_name || undefined,
+            aspectRatio: toAspectRatio(data.width, data.height)
+        };
     } catch {
-        metadata.title = "YouTube Video";
+        return undefined;
     }
-
-    // The thumbnail is stored like any other preview image: it is what Card display mode shows, and
-    // hotlinking it would tell YouTube every time the note is opened.
-    return { metadata, favicon, image: await downloadPreviewImage(thumbnailUrl) };
 }
 
-async function fetchOpenGraphData(url: string) {
-    const response = await request.fetchResource(url, {
-        maxBytes: MAX_RESPONSE_SIZE,
-        headers: {
-            "User-Agent": "TriliumNotes/1.0 (Link Preview; +https://triliumnotes.org/)",
-            "Accept": "text/html"
-        }
-    });
+/**
+ * Downloads the largest thumbnail YouTube has for the video, at most 1280x720. The JPEG is stored
+ * as served, so no decoder is needed and every runtime keeps the same picture.
+ */
+async function downloadYouTubeThumbnail(videoId: string): Promise<DownloadedPicture | undefined> {
+    for (const { name, minEdge } of YOUTUBE_THUMBNAIL_SIZES) {
+        const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/${name}.jpg`;
+        const downloaded = await downloadBinary(
+            thumbnailUrl, MAX_VIDEO_THUMBNAIL_SIZE, "image/jpeg");
+        if (!downloaded) continue;
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const inspected = inspectImage(downloaded.bytes);
+        if (inspected.format === UNKNOWN_FORMAT) continue;
+        if (minEdge && !isAtLeast(inspected, minEdge)) continue;
 
-    const { contentType } = response;
-    if (!contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
-        throw new Error(`Unexpected Content-Type: ${contentType}`);
+        return { bytes: downloaded.bytes };
     }
 
-    const document = parse(asText(response));
+    return undefined;
+}
 
-    const getMeta = (property: string): string | undefined => {
-        const ogEl = document.querySelector(`meta[property="${property}"]`);
-        if (ogEl) return ogEl.getAttribute("content") || undefined;
-
-        const nameEl = document.querySelector(`meta[name="${property}"]`);
-        if (nameEl) return nameEl.getAttribute("content") || undefined;
-
-        return undefined;
-    };
-
+async function fetchOpenGraphData(document: ReturnType<typeof parse>, url: string) {
     const favicon = await resolveFavicon(document, url);
 
-    const imageUrl = toAbsoluteUrl(getMeta("og:image"), url);
+    const imageUrl = toAbsoluteUrl(getMeta(document, "og:image"), url);
     // A site with no og:image (or one that fails to download) still usually has a large home-screen
     // icon, which makes a far better card than an empty placeholder.
     const image = (imageUrl ? await downloadPreviewImage(imageUrl) : undefined)
         ?? await resolveIconAsImage(document, url);
 
+    return { ...readPageText(document), image, favicon };
+}
+
+/** A web page, parsed, or what an audio or video file is. */
+type FetchedPage =
+    | { document: ReturnType<typeof parse>; media?: undefined }
+    | { media: ProbedMedia; document?: undefined };
+
+/**
+ * Fetches the web page at `url` and parses it, or reads the header of the audio or video file at
+ * `url`, which is all of it that is fetched. Throws for a failed request or anything else.
+ */
+async function fetchPage(url: string): Promise<FetchedPage> {
+    const response = await request.fetchResource(url, {
+        maxBytes: MAX_RESPONSE_SIZE,
+        headers: {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
+        },
+        prefixLength: (contentType) =>
+            isProbedContentType(contentType) ? MEDIA_PROBE_LENGTH : undefined
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const { contentType } = response;
+    if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
+        return { document: parse(asText(response)) };
+    }
+
+    const media = isProbedContentType(contentType)
+        ? probeMedia(response.bytes, contentType)
+        : null;
+    if (!media) {
+        throw new Error(`Unexpected Content-Type: ${contentType}`);
+    }
+    return { media };
+}
+
+/** The metadata of a preview that plays the media file at `url`, which `media` describes. */
+function getMediaMetadata(url: string, media: ProbedMedia): LinkEmbedMetadata {
     return {
-        title: getMeta("og:title") || document.querySelector("title")?.textContent?.trim() || undefined,
+        url,
+        embedType: media.type,
+        title: getMediaFileTitle(url),
+        aspectRatio: media.aspectRatio
+    };
+}
+
+/** The `content` of the `<meta>` tag of `property`, written as `property=` or `name=`. */
+function getMeta(document: ReturnType<typeof parse>, property: string): string | undefined {
+    const ogEl = document.querySelector(`meta[property="${property}"]`);
+    if (ogEl) return ogEl.getAttribute("content") || undefined;
+
+    const nameEl = document.querySelector(`meta[name="${property}"]`);
+    if (nameEl) return nameEl.getAttribute("content") || undefined;
+
+    return undefined;
+}
+
+/** The title, description and site name that the page `document` gives itself. */
+function readPageText(document: ReturnType<typeof parse>) {
+    return {
+        title: getMeta(document, "og:title")
+            || document.querySelector("title")?.textContent?.trim() || undefined,
         // A Twitter card's description before the generic one: both of the first two are written to
         // be read on a card, which is what this is, whereas `name="description"` is written for a
         // search result and is often keyword-stuffed or cut off mid-sentence. Sites that ship only
@@ -555,11 +656,10 @@ async function fetchOpenGraphData(url: string) {
         // ...and the page's own opening sentence where it publishes no description at all, which a
         // Wikipedia article does not. See findPageDescription: only ever reached when the site has
         // said nothing, a description written for the purpose being what it wants shown.
-        description: getMeta("og:description") || getMeta("twitter:description") || getMeta("description")
+        description: getMeta(document, "og:description")
+            || getMeta(document, "twitter:description") || getMeta(document, "description")
             || findPageDescription(document),
-        siteName: getMeta("og:site_name") || undefined,
-        image,
-        favicon
+        siteName: getMeta(document, "og:site_name") || undefined
     };
 }
 
@@ -586,11 +686,15 @@ async function getMetadata(req: Request) {
     // A YouTube link stays resolved even when oEmbed is unreachable: the player embeds from the
     // video ID alone, so the preview is worth showing with or without the title and channel.
     if (videoId) {
-        return await storePictures(noteIdParam, url, await fetchYouTubeMetadata(url, videoId));
+        return await resolveYouTubePreview(noteIdParam, url, videoId);
     }
 
     try {
-        const ogData = await fetchOpenGraphData(url);
+        const page = await fetchPage(url);
+        if (page.media) {
+            return getMediaMetadata(url, page.media);
+        }
+        const ogData = await fetchOpenGraphData(page.document, url);
 
         // A page that answered but names itself nowhere (no og:title, no <title>) leaves us with
         // the hostname we already had, which is no better than a failed fetch. Nothing is stored
@@ -618,8 +722,117 @@ async function getMetadata(req: Request) {
 }
 
 /**
+ * The title and description of the web page at the `url` of the body, for the link editor to fill
+ * its fields with. Unlike `getMetadata`, it downloads no pictures, so it needs no note to store
+ * them on and stores nothing.
+ *
+ * `unresolved` where the page could not be read or has no title, and also for an address that
+ * cannot be fetched, which the editor then leaves alone without showing an error.
+ */
+async function getPageDetails(req: Request): Promise<LinkEmbedMetadata> {
+    const urlParam = req.body?.url;
+    if (!urlParam || typeof urlParam !== "string") {
+        throw new ValidationError("'url' is required");
+    }
+
+    const unresolved: LinkEmbedMetadata = {
+        url: urlParam, embedType: "opengraph", unresolved: true
+    };
+    try {
+        const url = validateFetchableUrl(urlParam).toString();
+        const videoId = extractYouTubeVideoId(url);
+        if (videoId) {
+            const details = await fetchYouTubeDetails(videoId);
+            return details?.title
+                ? { url, siteName: "YouTube", embedType: "youtube", ...details }
+                : unresolved;
+        }
+
+        const page = await fetchPage(url);
+        if (page.media) {
+            return getMediaMetadata(url, page.media);
+        }
+        const text = readPageText(page.document);
+        return text.title ? { url, embedType: "opengraph", ...text } : unresolved;
+    } catch (e: unknown) {
+        getLog().info(`Failed to fetch link details: ${e}`);
+        return unresolved;
+    }
+}
+
+/**
+ * The HTTP status that the host of the `url` of the body answers, as `status`, which a player
+ * shows when the file at `url` does not play. It asks with a HEAD, since the mobile app's transport
+ * downloads the whole body of a GET whose `Range` the host ignores, and again with a GET when the
+ * HEAD answers an error. No `status` for an address that cannot be fetched or reached.
+ */
+async function getHttpStatus(req: Request): Promise<{ status?: number }> {
+    const urlParam = req.body?.url;
+    if (!urlParam || typeof urlParam !== "string") {
+        throw new ValidationError("'url' is required");
+    }
+
+    try {
+        const url = validateFetchableUrl(urlParam).toString();
+        const fetchStatus = async (method: "GET" | "HEAD") => (await request.fetchResource(url, {
+            method,
+            maxBytes: 0,
+            headers: { "User-Agent": USER_AGENT },
+            prefixLength: () => 0
+        })).status;
+        const status = await fetchStatus("HEAD");
+        // Some hosts refuse a HEAD that a GET passes, such as for an address signed for GET alone.
+        return { status: status >= 400 ? await fetchStatus("GET") : status };
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Stores the picture `image` of the body, base64, as the thumbnail of the video at `url` in the
+ * note `noteId`, and returns its URL as `image`. The client captures the picture from a frame of
+ * the video, which only it can decode.
+ */
+async function storeMediaThumbnail(req: Request) {
+    const { noteId, url, image } = req.body ?? {};
+    if (typeof noteId !== "string" || !noteId) {
+        throw new ValidationError("'noteId' is required");
+    }
+    if (typeof url !== "string" || !url) {
+        throw new ValidationError("'url' is required");
+    }
+    if (typeof image !== "string" || !image || image.length > MAX_MEDIA_THUMBNAIL_BASE64_SIZE) {
+        throw new ValidationError("'image' is required, as base64 of at most 2MB");
+    }
+
+    const validatedUrl = validateFetchableUrl(url).toString();
+    const stored = await storePicture(
+        noteId, asPicture(decodeBase64(image)), "coverImage", linkPreviewImageName(validatedUrl));
+    if (!stored) {
+        throw new ValidationError("'image' is not a picture");
+    }
+    return { image: stored };
+}
+
+/**
+ * The metadata of a preview for a YouTube video, with its thumbnail and favicon stored as attachments
+ * of the note `noteId`.
+ */
+export async function resolveYouTubePreview(noteId: string, url: string, videoId: string) {
+    return await storePictures(noteId, url, await fetchYouTubeMetadata(url, videoId));
+}
+
+/**
+ * Stores a favicon the caller already holds as an attachment of the note `noteId`, named after the
+ * site of `pageUrl`, and returns its URL. Returns undefined if the bytes are not a usable favicon.
+ */
+export async function storeFavicon(noteId: string, pageUrl: string, bytes: Uint8Array) {
+    return await storePicture(noteId, asFavicon(bytes), "favicon", safeHostname(pageUrl));
+}
+
+/**
  * The degraded result for a URL whose page told us nothing: everything the caller gets back is
- * derived from the URL itself. Flagged so the caller can keep a plain link instead of rendering a
+ * derived from the URL itself. Flagged so the caller can keep a text link instead of rendering a
  * preview that would show less than the link did.
  */
 function unresolvedMetadata(url: URL): LinkEmbedMetadata {
@@ -631,4 +844,4 @@ function unresolvedMetadata(url: URL): LinkEmbedMetadata {
     };
 }
 
-export default { getMetadata };
+export default { getMetadata, getPageDetails, getHttpStatus, storeMediaThumbnail };

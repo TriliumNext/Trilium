@@ -25,9 +25,11 @@ In practice, Trilium makes no direct distinction of whether an attribute is a sy
 
 ## Viewing the list of attributes
 
-Both the labels and relations for the current note are displayed in the _Owned Attributes_ section of the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>, where they can be viewed and edited. Inherited attributes are displayed in the _Inherited Attributes_ section of the ribbon, where they can only be viewed.
+Both the labels and relations for the current note are displayed in:
 
-In the list of attributes, labels are prefixed with the `#` character whereas relations are prefixed with the `~` character.
+*   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Attributes%20tab.md">Attributes tab</a> with a grid-like view.
+*   A more advanced option, in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> → <span class="tn-icon bx bx-list-check"></span> (_Attributes_) where the attributes are displayed in a textual way, making it easy to copy them around or make batch modifications.
+    *   In the list of attributes, labels are prefixed with the `#` character whereas relations are prefixed with the `~` character.
 
 ## Attribute Definitions and Promoted Attributes
 

@@ -1,5 +1,3 @@
-import "../../theme/slash_commands.css";
-
 import {
     IconAlignCenter,
     IconAlignJustify,
@@ -15,9 +13,11 @@ import {
     IconHeading6,
     IconHorizontalLine,
     IconIndent,
+    IconLink,
     IconNumberedList,
     IconOutdent,
     IconPageBreak,
+    IconPaperClip,
     IconParagraph,
     IconQuote,
     IconTable,
@@ -26,35 +26,56 @@ import {
 } from "@ckeditor/ckeditor5-icons";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
+import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";
 import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
+import bxGlobe from "boxicons/svg/regular/bx-globe.svg?raw";
+import bxHash from "boxicons/svg/regular/bx-hash.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
+import bxMoviePlay from "boxicons/svg/regular/bx-movie-play.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
+import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
 import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
-import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
+import bxSubdirectoryRight from "boxicons/svg/regular/bx-subdirectory-right.svg?raw";
+import {
+    BookmarkUI, type Editor, type MentionFeedObjectItem, type ModelElement, Plugin
+} from "ckeditor5";
 
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
 import dateTimeIcon from "../../icons/date-time.svg?raw";
 import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
+import linkPreviewIcon from "../../icons/link-preview.svg?raw";
 import importMarkdownIcon from "../../icons/markdown-mark.svg?raw";
 import mathIcon from "../../icons/math.svg?raw";
 import noteIcon from "../../icons/note.svg?raw";
+import tabsIcon from "../../icons/tabs.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
-import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
+import { COMMAND_NAME as CHILD_NOTE_COMMAND } from "../child_note.js";
+import { COMMAND_NAME as CONTENT_EMBED_COMMAND } from "../content_embed/content_embed.js";
+import {
+    INSERT_EXTENDED_CODE_BLOCK_COMMAND, insertExtendedCodeBlock
+} from "../content_embed/extended_code_block.js";
+import { insertDrawingCanvas } from "../file_upload/file_upload_ui.js";
 import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
 import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, getDateTimeFormatOptions } from "../insert_date_time.js";
-import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
+import {
+    COMMAND_NAME as INTERNAL_LINK_COMMAND, type InternalLinkDialogOptions
+} from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
-import type { MermaidSample } from "../mermaid/mermaid_ui.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
+import { insertMermaidDiagram, type MermaidSample } from "../mermaid/mermaid_ui.js";
+import { getDefaultRatios, MAX_COLUMNS, MIN_COLUMNS } from "../multicolumn/constants.js";
+import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import SnippetsEditing from "../snippets/snippetsediting.js";
-import { registerMentionFeed } from "./register_feed.js";
+import { COMMAND_NAME as INSERT_MEDIA_COMMAND } from "../insert_media.js";
+import { registerHostedMentionFeed } from "./register_feed.js";
+import type { MentionHostedList } from "./types.js";
 
 export const SLASH_MARKER = "/";
 
@@ -78,6 +99,15 @@ export interface SlashCommandDefinition {
     iconClass?: string;
     /** Optional colour class applied alongside {@link iconClass} (from the note's `#color` label). */
     iconColorClass?: string;
+    /** Whether the entry inserts a block or inline content. */
+    willInsert?: boolean;
+    /**
+     * Whether the entry turns the selected blocks into its block or wraps them in it, such as a
+     * heading or a block quote.
+     */
+    willWrap?: boolean;
+    /** Whether the entry changes the current block, such as its indentation or alignment. */
+    willTransform?: boolean;
     /** The editor command to run. Entries naming a command that is not loaded are hidden. */
     commandName?: string;
     /** Runs instead of `commandName`, for entries that need arguments or open a UI. */
@@ -92,12 +122,19 @@ export interface SlashCommandDefinition {
 
 export interface SlashCommandConfig {
     removeCommands?: string[];
-    /** How many entries the palette shows at once. Unlimited by default, as premium's was. */
-    dropdownLimit?: number;
+    /**
+     * The host's list of the palette, which lists {@link TriliumSlashCommands.search} for the query
+     * and commits the entry picked as a {@link SlashCommandItem}. Without it there is no palette.
+     */
+    list?: ( editor: Editor ) => MentionHostedList;
 }
 
+/** What a palette's list commits for the entry picked. */
+export type SlashCommandItem = MentionFeedObjectItem & { definition: SlashCommandDefinition };
+
 /**
- * The `/` command palette, hosted on {@link TriliumMentionUI}.
+ * The `/` command palette: its catalog, its matcher and what an entry runs, for the list the host
+ * draws in `slashCommand.list`, which {@link TriliumMentionUI} runs as a hosted feed.
  *
  * This replaces premium `SlashCommand`, which was the only remaining plugin forcing the `Mention`
  * façade — and therefore upstream's `MentionUI` — into the text editor alongside ours. Two mention
@@ -106,8 +143,7 @@ export interface SlashCommandConfig {
  * next keystroke.
  *
  * CKEditor built the premium plugin on `Mention` themselves, so hosting `/` on a mention feed is
- * not a workaround but the same architecture. What is reimplemented here is the palette: the
- * catalog, the matcher and the row rendering.
+ * not a workaround but the same architecture.
  */
 export default class TriliumSlashCommands extends Plugin {
 
@@ -118,28 +154,82 @@ export default class TriliumSlashCommands extends Plugin {
     constructor(editor: Editor) {
         super(editor);
 
-        registerMentionFeed(editor, {
+        const list = editor.config.get("slashCommand.list");
+        if (!list) {
+            return;
+        }
+
+        registerHostedMentionFeed(editor, {
             marker: SLASH_MARKER,
             // A bare `/` opens the full palette, as the premium plugin did.
             minimumCharacters: 0,
-            // Premium defaulted this to `Infinity` and let the panel scroll. Capping it would hide
-            // entries the user cannot then reach, since the query only narrows the list.
-            dropdownLimit: (editor.config.get("slashCommand.dropdownLimit") as number | undefined) ?? Infinity,
-            feed: (query: string) => matchSlashCommands(this._catalog(), query).map(toFeedItem),
-            itemRenderer: (item) => renderRow(item as SlashCommandItem),
+            list,
             // The catalog gates on `isEnabled` at query time, but an entry can go stale while the
-            // panel is open; re-check here so a no-op commit never costs the user their `/query`.
+            // list is open; re-check here so a no-op commit never costs the user their `/query`.
             canCommit: (editorInstance, item) => isSlashCommandEnabled(editorInstance, (item as SlashCommandItem).definition),
             commit: (editorInstance, item) => runSlashCommand(editorInstance, (item as SlashCommandItem).definition)
         });
     }
 
+    /** The entries for what was typed after the `/`, best match first. */
+    search(query: string): SlashCommandDefinition[] {
+        return matchSlashCommands(this._catalog(), query);
+    }
+
+    /** Runs `definition` at the selection, unless it does not apply there. */
+    run(definition: SlashCommandDefinition) {
+        if (isSlashCommandEnabled(this.editor, definition)) {
+            runSlashCommand(this.editor, definition);
+        }
+    }
+
+    /**
+     * Every entry the editor has the command for, including those that do not apply to the
+     * selection, in catalog order.
+     */
+    listAll(): SlashCommandDefinition[] {
+        return this._catalog(isSlashCommandAvailable);
+    }
+
+    /**
+     * Whether {@link runBeside} can insert a paragraph on `side` of `block`: never beside a list
+     * item, and only where the schema allows a paragraph.
+     */
+    canInsertBeside(block: ModelElement, side: "before" | "after"): boolean {
+        const { model } = this.editor;
+        return !block.hasAttribute("listItemId")
+            && model.schema.checkChild(model.createPositionAt(block, side), "paragraph");
+    }
+
+    /**
+     * Runs `definition` in a paragraph inserted on `side` of `block`, as one undo step with the
+     * insertion, if {@link canInsertBeside} allows it.
+     */
+    runBeside(definition: SlashCommandDefinition, block: ModelElement, side: "before" | "after") {
+        const { editor } = this;
+        const { model } = editor;
+        if (!this.canInsertBeside(block, side)) {
+            return;
+        }
+
+        const batch = model.change((writer) =>
+            editor.execute("insertParagraph", { position: model.createPositionAt(block, side) })
+                ? writer.batch
+                : null);
+        if (batch) {
+            // Commands refresh once a change block ends, so the entry runs in a block of its own,
+            // in the same batch.
+            model.enqueueChange(batch, () => this.run(definition));
+            editor.editing.view.scrollToTheSelection();
+        }
+    }
+
     /**
      * The definitions available in *this* editor right now: the palette CKEditor's own features
      * contribute, Trilium's own entries, and one per text snippet — minus anything `removeCommands`
-     * names and anything that does not apply to the current selection.
+     * names and anything `applies` rejects, by default what does not apply to the selection.
      */
-    private _catalog(): SlashCommandDefinition[] {
+    private _catalog(applies = isSlashCommandEnabled): SlashCommandDefinition[] {
         const editor = this.editor;
         const config = (editor.config.get("slashCommand") ?? {}) as SlashCommandConfig;
         const removed = new Set(config.removeCommands ?? []);
@@ -150,7 +240,7 @@ export default class TriliumSlashCommands extends Plugin {
             ...buildSnippetSlashCommands(editor)
         ]
             .filter((definition) => !removed.has(definition.id))
-            .filter((definition) => isSlashCommandEnabled(editor, definition));
+            .filter((definition) => applies(editor, definition));
     }
 }
 
@@ -184,11 +274,16 @@ export function isSlashCommandEnabled(editor: Editor, definition: SlashCommandDe
     return editor.commands.get(definition.commandName)?.isEnabled ?? false;
 }
 
-type SlashCommandItem = MentionFeedObjectItem & { definition: SlashCommandDefinition };
+/**
+ * Whether the editor has what `definition` runs, wherever the selection is. An entry's own
+ * `isEnabled` still decides for it.
+ */
+function isSlashCommandAvailable(editor: Editor, definition: SlashCommandDefinition): boolean {
+    if (definition.isEnabled) {
+        return definition.isEnabled(editor);
+    }
 
-function toFeedItem(definition: SlashCommandDefinition): SlashCommandItem {
-    // Upstream requires a feed item's `id` to start with the marker.
-    return { id: `${SLASH_MARKER}${definition.id}`, text: definition.title, definition };
+    return !definition.commandName || editor.commands.get(definition.commandName) !== undefined;
 }
 
 function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
@@ -197,7 +292,7 @@ function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
         return;
     }
 
-    /* v8 ignore next 3 -- `_catalog()` drops every definition that has neither `execute` nor a registered `commandName`, so one or the other is always present here */
+    /* v8 ignore else -- only catalog entries run, and each sets `execute` or `commandName` */
     if (definition.commandName) {
         editor.execute(definition.commandName);
     }
@@ -264,6 +359,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Quote a passage from another source."),
             aliases: [ "quote", "citation" ],
             icon: IconQuote,
+            willWrap: true,
             commandName: "blockQuote"
         },
         {
@@ -272,6 +368,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert a block of preformatted code."),
             aliases: [ "snippet", "pre" ],
             icon: IconCodeBlock,
+            willWrap: true,
             commandName: "codeBlock"
         },
         {
@@ -280,6 +377,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert a table."),
             aliases: [ "grid" ],
             icon: IconTable,
+            willInsert: true,
             commandName: "insertTable"
         },
         {
@@ -288,6 +386,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert a horizontal rule."),
             aliases: [ "divider", "separator", "rule" ],
             icon: IconHorizontalLine,
+            willInsert: true,
             commandName: "horizontalLine"
         },
         {
@@ -295,6 +394,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             title: t("Indent"),
             description: t("Increase the indentation of the current block."),
             icon: IconIndent,
+            willTransform: true,
             commandName: "indent"
         },
         {
@@ -302,6 +402,7 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             title: t("Outdent"),
             description: t("Decrease the indentation of the current block."),
             icon: IconOutdent,
+            willTransform: true,
             commandName: "outdent"
         },
         buildImageUploadCommand(editor)
@@ -325,13 +426,36 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
         ...buildListSlashCommands(editor),
         ...buildAlignmentSlashCommands(editor),
         ...buildAdmonitionSlashCommands(editor),
+        {
+            id: "drawing-canvas",
+            title: t("Drawing canvas"),
+            description: t("Insert a canvas to draw on."),
+            aliases: [ "excalidraw", "sketch", "whiteboard" ],
+            icon: bxPen,
+            willInsert: true,
+            commandName: "fileUpload",
+            isEnabled: canEmbedFiles,
+            execute: insertDrawingCanvas
+        },
         ...buildMermaidSlashCommands(editor),
+        {
+            id: "extended-code-block",
+            title: t("Extended code block"),
+            description: t("Insert a code block that is edited as a code note."),
+            aliases: [ "code", "codemirror", "pre" ],
+            icon: bxCodeBlock,
+            willInsert: true,
+            commandName: INSERT_EXTENDED_CODE_BLOCK_COMMAND,
+            execute: insertExtendedCodeBlock
+        },
         {
             id: "ai-assistant",
             title: t("AI assistant"),
             description: t("Ask AI to rewrite the selection or generate new content."),
             aliases: [ "ask ai", "assistant" ],
             icon: aiIcon,
+            willInsert: true,
+            willTransform: true,
             commandName: "aiAssistant"
         },
         {
@@ -343,23 +467,66 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
                 "summary", "disclosure", "hide"
             ],
             icon: collapsibleIcon,
+            willInsert: true,
+            willWrap: true,
             commandName: "collapsible"
         },
+        {
+            id: "tabs",
+            title: t("Tabs"),
+            description: t("Insert titled tabs that show one panel at a time."),
+            aliases: [ "tab", "tabbed", "tab group", "panels", "variants" ],
+            icon: tabsIcon,
+            willInsert: true,
+            willWrap: true,
+            commandName: "tabs"
+        },
+        ...buildMulticolumnSlashCommands(editor),
         {
             id: "footnote",
             title: t("Footnote"),
             description: t("Create a new footnote and reference it here"),
             icon: insertFootnoteIcon,
+            willInsert: true,
             commandName: "InsertFootnote"
         },
         ...buildDateTimeSlashCommands(editor),
+        ...buildLinkSlashCommands(editor),
         {
-            id: "internal-link",
-            title: t("Internal link"),
-            description: t("Insert a link to another Trilium note"),
-            aliases: [ "internal link", "trilium link", "reference link" ],
-            icon: internalLinkIcon,
-            commandName: INTERNAL_LINK_COMMAND
+            id: "media-embed",
+            title: t("Audio/video embed"),
+            description: t("Embed a YouTube video, or an audio or video file from its address"),
+            aliases: [ "youtube", "video", "audio", "media", "embed" ],
+            icon: bxMoviePlay,
+            willInsert: true,
+            commandName: INSERT_MEDIA_COMMAND
+        },
+        {
+            id: "attach-file",
+            title: t("Attach file as a link"),
+            description: t("Upload files as attachments and insert links."),
+            aliases: [ "attachment", "upload" ],
+            icon: IconPaperClip,
+            willInsert: true,
+            commandName: "fileUpload",
+            execute: (target: Editor) => pickFiles("", (files) => {
+                target.execute("fileUpload", { file: files });
+                target.editing.view.focus();
+            })
+        },
+        {
+            id: "attach-and-embed-file",
+            title: t("Attach and embed file"),
+            description: t("Upload files as attachments and insert embeds."),
+            aliases: [ "attachment", "upload", "embed" ],
+            icon: IconPaperClip,
+            willInsert: true,
+            commandName: "fileUpload",
+            isEnabled: canEmbedFiles,
+            execute: (target: Editor) => pickFiles("", (files) => {
+                target.execute("fileUpload", { file: files, asEmbed: true });
+                target.editing.view.focus();
+            })
         },
         {
             id: "math",
@@ -367,20 +534,32 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert a math equation"),
             aliases: [ "latex", "equation" ],
             icon: mathIcon,
+            willInsert: true,
             execute: (target: Editor) => target.plugins.get(MathUI)._showUI()
         },
         {
-            id: "include-note",
+            id: "child-note",
+            title: t("Create a new child note"),
+            description: t("Create a new child note and insert a link to it"),
+            aliases: [ "new note", "subnote", "sub-note", "page" ],
+            icon: bxSubdirectoryRight,
+            willInsert: true,
+            commandName: CHILD_NOTE_COMMAND
+        },
+        {
+            id: "content-embed",
             title: t("Include note"),
             description: t("Display the content of another note in this note"),
             icon: noteIcon,
-            commandName: INCLUDE_NOTE_COMMAND
+            willInsert: true,
+            commandName: CONTENT_EMBED_COMMAND
         },
         {
             id: "page-break",
             title: t("Page break"),
             description: t("Insert a page break (for printing)"),
             icon: IconPageBreak,
+            willInsert: true,
             commandName: "pageBreak"
         },
         {
@@ -388,6 +567,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             title: t("Markdown import"),
             description: t("Import Markdown from the clipboard"),
             icon: importMarkdownIcon,
+            willInsert: true,
             commandName: MARKDOWN_IMPORT_COMMAND
         },
         {
@@ -396,6 +576,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert an icon from an installed icon pack"),
             aliases: [ "symbol", "glyph" ],
             icon: bxSticker,
+            willInsert: true,
             commandName: INSERT_ICON_COMMAND,
             // Deferred for the reason the anchor entry below is: the picker opens in a balloon
             // placed at the caret, and the palette has not finished putting the selection back
@@ -410,6 +591,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Insert an anchor for internal linking"),
             aliases: [ "bookmark" ],
             icon: bxBookmark,
+            willInsert: true,
             execute: (target: Editor) => {
                 // Defer to the next event loop tick so the slash command fully finishes its
                 // DOM/selection cleanup; _showFormView needs the view and mapper to be in a settled
@@ -456,6 +638,7 @@ function buildAiQuickActionSlashCommands(editor: Editor): SlashCommandDefinition
             description: t("Applies to the current paragraph."),
             aliases: [ group.label ],
             icon: aiIcon,
+            willTransform: true,
             isEnabled: (target: Editor) => target.commands.get("aiAssistant")?.isEnabled ?? false,
             execute: (target: Editor) => target.plugins.get("AiAssistantUI").runQuickAction(action)
         }))
@@ -474,6 +657,7 @@ function buildListSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Bulleted list"),
             description: t("Create a bulleted list"),
             icon: IconBulletedList,
+            willWrap: true,
             commandName: "bulletedList"
         },
         {
@@ -481,6 +665,7 @@ function buildListSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Numbered list"),
             description: t("Create a numbered list"),
             icon: IconNumberedList,
+            willWrap: true,
             commandName: "numberedList"
         },
         {
@@ -489,6 +674,7 @@ function buildListSlashCommands(editor: Editor): SlashCommandDefinition[] {
             description: t("Create a to-do list"),
             aliases: [ "todo", "task", "checklist", "checkbox" ],
             icon: IconTodoList,
+            willWrap: true,
             commandName: "todoList"
         }
     ];
@@ -498,15 +684,15 @@ function buildMermaidSlashCommands(editor: Editor): SlashCommandDefinition[] {
     const t = editor.locale.t;
     const samples = (editor.config.get("mermaid.samples") ?? []) as MermaidSample[];
 
-    // The blank diagram. Replaces CKEditor's built-in `insertMermaidCommand` slash command (removed
-    // via `removeCommands`), which uses a generic icon.
     const blank: SlashCommandDefinition = {
         id: "mermaid",
         title: t("Mermaid diagram"),
         description: t("Insert an empty Mermaid diagram"),
         aliases: [ "mermaid", "diagram", "flowchart" ],
         icon: bxNetworkChart,
-        commandName: INSERT_MERMAID_COMMAND
+        willInsert: true,
+        commandName: INSERT_INLINE_EMBED_COMMAND,
+        execute: insertMermaidDiagram
     };
 
     const templates = samples.map((sample, index) => ({
@@ -517,8 +703,9 @@ function buildMermaidSlashCommands(editor: Editor): SlashCommandDefinition[] {
         description: t("Insert a \"%0\" Mermaid diagram template", sample.name),
         aliases: [ "mermaid", "diagram", sample.name ],
         icon: bxNetworkChart,
-        // Inserts a mermaid block pre-filled with the sample source (see insertMermaidCommand).
-        execute: (target: Editor) => target.execute(INSERT_MERMAID_COMMAND, { source: sample.content })
+        willInsert: true,
+        commandName: INSERT_INLINE_EMBED_COMMAND,
+        execute: (target: Editor) => insertMermaidDiagram(target, sample.content)
     }));
 
     return [ blank, ...templates ];
@@ -544,6 +731,7 @@ function buildDateTimeSlashCommands(editor: Editor): SlashCommandDefinition[] {
         description: defaultOption.preview,
         aliases,
         icon: dateTimeIcon,
+        willInsert: true,
         commandName: INSERT_DATE_TIME_COMMAND
     };
 
@@ -552,12 +740,86 @@ function buildDateTimeSlashCommands(editor: Editor): SlashCommandDefinition[] {
         title: kind === "time" ? t("Insert time: %0", preview) : t("Insert date/time: %0", preview),
         aliases,
         icon: dateTimeIcon,
+        willInsert: true,
         // `commandName` supplies the enabled state; `execute` passes the format along.
         commandName: INSERT_DATE_TIME_COMMAND,
         execute: (target: Editor) => target.execute(INSERT_DATE_TIME_COMMAND, { format })
     }));
 
     return [ defaultEntry, ...presetEntries ];
+}
+
+/**
+ * The entries that open the link dialog: one per page of the dialog, and one per way a web link is
+ * displayed. `commandName` supplies the enabled state; `execute` passes the page and display along.
+ */
+function buildLinkSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    const t = editor.locale.t;
+    const webLinkAliases = [ "url", "website", "hyperlink", "external link" ];
+
+    return [
+        {
+            id: "web-link",
+            title: t("Link to a web page"),
+            description: t("Create a link to a web page or other internet resource"),
+            aliases: webLinkAliases,
+            icon: IconLink,
+            willInsert: true,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "textLink" })
+        },
+        {
+            id: "web-link-icon",
+            title: t("Link to a web page (with icon)"),
+            description: t(
+                "Create a link to a web page or other internet resource, displayed with an icon"
+            ),
+            aliases: [ ...webLinkAliases, "link preview", "favicon" ],
+            icon: bxGlobe,
+            willInsert: true,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "iconAndTextLink" })
+        },
+        {
+            id: "web-link-card",
+            title: t("Link to a web page (as a card)"),
+            description: t(
+                "Create a link to a web page or other internet resource, displayed as a card"
+            ),
+            aliases: [ ...webLinkAliases, "link preview", "card" ],
+            icon: linkPreviewIcon,
+            willInsert: true,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "url", display: "cardLink" })
+        },
+        {
+            id: "note-link",
+            title: t("Link to a note (internal link)"),
+            description: t("Create a link to another Trilium note"),
+            aliases: [ "internal link", "trilium link", "reference link" ],
+            icon: internalLinkIcon,
+            willInsert: true,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "note" })
+        },
+        {
+            id: "anchor-link",
+            title: t("Link to a heading or anchor"),
+            description: t("Create a link to a heading or anchor belonging to the current note"),
+            aliases: [ "heading", "anchor", "section" ],
+            icon: bxHash,
+            willInsert: true,
+            commandName: INTERNAL_LINK_COMMAND,
+            execute: openLinkDialog({ target: "anchor" })
+        }
+    ];
+}
+
+/** The `execute` of an entry that opens the link dialog with `options`. */
+function openLinkDialog(options: InternalLinkDialogOptions) {
+    return (editor: Editor) => {
+        editor.execute(INTERNAL_LINK_COMMAND, options);
+    };
 }
 
 function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
@@ -569,6 +831,7 @@ function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Align left"),
             description: t("Align text to the left"),
             icon: IconAlignLeft,
+            willTransform: true,
             execute: (target: Editor) => target.execute("alignment", { value: "left" })
         },
         {
@@ -576,6 +839,7 @@ function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Align center"),
             description: t("Align text to the center"),
             icon: IconAlignCenter,
+            willTransform: true,
             execute: (target: Editor) => target.execute("alignment", { value: "center" })
         },
         {
@@ -583,6 +847,7 @@ function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Align right"),
             description: t("Align text to the right"),
             icon: IconAlignRight,
+            willTransform: true,
             execute: (target: Editor) => target.execute("alignment", { value: "right" })
         },
         {
@@ -590,6 +855,7 @@ function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
             title: t("Justify"),
             description: t("Justify text alignment"),
             icon: IconAlignJustify,
+            willTransform: true,
             execute: (target: Editor) => target.execute("alignment", { value: "justify" })
         }
     ];
@@ -610,9 +876,32 @@ function buildAdmonitionSlashCommands(editor: Editor): SlashCommandDefinition[] 
         title: getAdmonitionTitle(t, type),
         description: t("Insert a new admonition"),
         icon: icons[type],
+        willWrap: true,
         execute: (target: Editor) => target.execute("admonition", { forceValue: type }),
         aliases: [ "box" ]
     }));
+}
+
+/** One entry per column count, inserting that many equal columns, with the layout as its icon. */
+function buildMulticolumnSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    const t = editor.locale.t;
+
+    return Array.from({ length: MAX_COLUMNS - MIN_COLUMNS + 1 }, (_, index) => {
+        const count = MIN_COLUMNS + index;
+        const value = getDefaultRatios(count);
+        return {
+            id: `multicolumn-layout-${count}`,
+            title: t("%0 columns layout", count),
+            description: t("Arrange content in %0 equal columns side by side.", count),
+            aliases: [ "multicolumn", "columns", "column", "layout", "side by side" ],
+            icon: createLayoutFigure(value, BUTTON_ICON_SIZE),
+            willInsert: true,
+            willWrap: true,
+            // `commandName` supplies the enabled state; `execute` passes the column weights along.
+            commandName: "multicolumnLayout",
+            execute: (target: Editor) => target.execute("multicolumnLayout", { value })
+        };
+    });
 }
 
 /**
@@ -634,6 +923,7 @@ function buildSnippetSlashCommands(editor: Editor): SlashCommandDefinition[] {
         aliases: [ "snippet", "template" ],
         iconClass: snippet.iconClass,
         iconColorClass: snippet.iconColorClass,
+        willInsert: true,
         // Gates the entry on `insertTemplate` (read-only mode disables it); `execute` still wins at
         // commit time, since the command needs the snippet's content as its argument.
         commandName: "insertTemplate",
@@ -665,6 +955,7 @@ function buildHeadingSlashCommands(editor: Editor): SlashCommandDefinition[] {
                 description: t("Turn the current block into a paragraph."),
                 aliases: [ "text", "body" ],
                 icon: IconParagraph,
+                willTransform: true,
                 commandName: "paragraph"
             };
         }
@@ -675,6 +966,7 @@ function buildHeadingSlashCommands(editor: Editor): SlashCommandDefinition[] {
             description: editor.locale.t("Turn the current block into a heading."),
             aliases: [ "title", option.model.replace("heading", "h") ],
             icon: icons[option.model] ?? IconHeading2,
+            willWrap: true,
             // `heading` takes the level as an argument, so it cannot use `commandName`.
             execute: (target: Editor) => target.execute("heading", { value: option.model })
         };
@@ -690,36 +982,56 @@ function buildImageUploadCommand(editor: Editor): SlashCommandDefinition {
         description: t("Upload an image from your device."),
         aliases: [ "picture", "photo" ],
         icon: IconImage,
+        willInsert: true,
         // The entry opens a file picker instead of naming `uploadImage`, so `commandName` cannot
         // gate it; without this it would be offered in an editor that has no `ImageUpload`.
         isEnabled: (target) => target.commands.get("uploadImage")?.isEnabled ?? false,
         execute(target) {
             const imageTypes = target.config.get("image.upload.types") ?? [];
             const imageTypesRegExp = createImageTypeRegExp(imageTypes);
-            const input = document.createElement("input");
+            const accept = imageTypes.map((type) => `image/${type}`).join(",");
 
-            input.type = "file";
-            input.accept = imageTypes.map((type) => `image/${type}`).join(",");
-            input.multiple = true;
-            input.style.display = "none";
-
-            input.addEventListener("change", () => {
-                /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
-                const imagesToUpload = Array.from(input.files ?? [])
-                    .filter((file) => imageTypesRegExp.test(file.type));
+            pickFiles(accept, (files) => {
+                const imagesToUpload = files.filter((file) => imageTypesRegExp.test(file.type));
 
                 if (imagesToUpload.length) {
                     target.execute("uploadImage", { file: imagesToUpload });
                     target.editing.view.focus();
                 }
-
-                input.remove();
-            }, { once: true });
-
-            document.body.appendChild(input);
-            input.click();
+            });
         }
     };
+}
+
+/** Whether files can be embedded at the selection: wherever "Include note" can insert an embed. */
+function canEmbedFiles(target: Editor) {
+    return !!target.commands.get("fileUpload")?.isEnabled
+        && !!target.commands.get(CONTENT_EMBED_COMMAND)?.isEnabled;
+}
+
+/**
+ * Opens the browser's file picker and passes the picked files to `onPick`.
+ *
+ * @param accept the `accept` attribute of the file input, empty for any type.
+ */
+function pickFiles(accept: string, onPick: (files: File[]) => void) {
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = accept;
+    input.multiple = true;
+    input.style.display = "none";
+
+    input.addEventListener("change", () => {
+        onPick(Array.from(
+            /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
+            input.files ?? []
+        ));
+        input.remove();
+    }, { once: true });
+
+    document.body.appendChild(input);
+    input.click();
 }
 
 // Source: https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-image/src/imageupload/utils.ts
@@ -728,62 +1040,4 @@ function createImageTypeRegExp(types: string[]): RegExp {
     const regExpSafeNames = types.map((type) => type.replace("+", "\\+"));
 
     return new RegExp(`^image\\/(${regExpSafeNames.join("|")})$`);
-}
-
-/**
- * Renders one palette row: icon, title and description. The class names match premium's, so the
- * overrides Trilium already carries in `style.css` and the Next theme keep applying unchanged.
- */
-function renderRow(item: SlashCommandItem): HTMLElement {
-    const { definition } = item;
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.tabIndex = -1;
-    // `ck-button_with-text` is load-bearing, not cosmetic: the base button styles hide
-    // `.ck-button__label` outright without it, which leaves the row showing its description and no
-    // title at all.
-    button.classList.add("ck", "ck-button", "ck-button_with-text", "ck-slash-command-button");
-
-    const icon = document.createElement("span");
-    icon.classList.add("ck", "ck-icon");
-
-    if (definition.iconClass) {
-        // A snippet note's font icon: the same chip, painted by icon-font classes instead of SVG.
-        // The glyph lives on an inner span: core sizes the chip box in em against the chip's own
-    // font-size, so enlarging the glyph's font on the chip itself would inflate the chip too.
-        icon.classList.add("ck-slash-command-button__note-icon");
-        const glyph = document.createElement("span");
-        for (const classList of [ definition.iconClass, definition.iconColorClass ]) {
-            if (classList) {
-                glyph.classList.add(...classList.split(/\s+/).filter(Boolean));
-            }
-        }
-        icon.append(glyph);
-    } else if (definition.icon) {
-        // `ck-icon_inherit-color` opts into core's `*:not([fill]) { fill: currentColor }` rule, as
-        // `IconView` does — without it the glyphs keep SVG's default black fill on dark themes.
-        icon.classList.add("ck-icon_inherit-color");
-        icon.innerHTML = definition.icon;
-    }
-
-    button.append(icon);
-
-    const textPart = document.createElement("span");
-    textPart.classList.add("ck", "ck-slash-command-button__text-part");
-
-    const label = document.createElement("span");
-    label.classList.add("ck", "ck-button__label");
-    label.textContent = definition.title;
-    textPart.append(label);
-
-    if (definition.description) {
-        const description = document.createElement("span");
-        description.classList.add("ck", "ck-slash-command-button__description");
-        description.textContent = definition.description;
-        textPart.append(description);
-    }
-
-    button.append(textPart);
-    return button;
 }

@@ -101,7 +101,7 @@ Each `items` / `blockToolbar` entry is one of:
 "bold"                                    // a component-factory name (string)
 "|"                                       // a visual separator
 { label: "Insert", icon, items: [         // a grouped dropdown (nestable)
-	"link", "internallink", "includeNote", "|", "collapsible", "math", "mermaid"
+	"link", "internallink", "contentEmbed", "|", "collapsible", "math", "mermaid"
 ] }
 ```
 
@@ -113,6 +113,28 @@ alone makes it available but invisible. (`AttributeEditor`'s minimal toolbar isn
 > A **widget contextual toolbar** — buttons that appear when a widget is *selected* — is different:
 > it's registered inside the plugin via `WidgetToolbarRepository`, **not** listed in `toolbar.ts`.
 > See `widgets.md`.
+
+## Link toolbars and the ⋮ menu
+
+The toolbar that shows on a link holds only the few most important actions for that link, such as
+open, copy and edit. Every other command goes in its ⋮ _More actions_ menu, which also repeats every
+command of the toolbar, so the menu, which a right-click on the link opens too, reaches them all.
+A new action on a link therefore always goes in the menu, and on the toolbar as well only when it
+is one of those few.
+
+- The toolbars: `LINK_TOOLBAR` in `link_menu.ts` for a link in the text, which the client passes
+  as `link.toolbar`, the `linkEmbed` widget toolbar in `link_embed/link_embed_toolbar.ts` for a
+  link preview, and the `referenceLink` widget toolbar in `note_link_toolbar.ts`.
+- The menu: the `linkMenu` item of `LinkMenu` (`link_menu.ts`). `describeWebLinkMenu()` lists the
+  entries for a link to a web page. For a link to a note, `describeNoteLinkMenu()` adds what the
+  host returns from `LinkMenuHost.describeNoteLink()`, which is `getLinkToolbarEntries()` in
+  `apps/client/src/menus/link_context_menu.ts`.
+- `link_menu.spec.ts` ("beside the toolbar of a link") fails when a toolbar shows an action that
+  the menu lacks. A new toolbar item whose menu entry has another label goes in its `MENU_LABELS`.
+- A video, a link preview shown as Embed, follows the same rule with the toolbar and menu of an
+  embed: the `videoEmbed` widget toolbar in `content_embed/content_embed_toolbar.ts`, and
+  `getVideoItems()` in `link_context_menu.ts`, which the client draws and tests on its own. Its
+  entries take the labels and the groups of the link preview's menu.
 
 ## Component catalog
 
@@ -271,7 +293,7 @@ and exposes a `focus()` method. Add `tabindex: '-1'` and the `ck` class to UI ro
 
 ### Custom DOM inside a balloon needs `ck-reset_all-excluded`
 
-CKEditor wraps every floating UI root — balloons, mention panels, dropdown panels — in
+CKEditor wraps every floating UI root — balloons, dropdown panels — in
 `.ck.ck-reset_all`. Its companion rule
 
 ```css
@@ -288,11 +310,10 @@ The symptom reads as a missing stylesheet rather than a cascade conflict: the el
 classes and keeps every property the reset does **not** name (`display`, `border-radius`, `gap`),
 so only some of its styling disappears.
 
-**Fix:** put `ck-reset_all-excluded` on the outermost custom element — a mention feed
-`itemRenderer` root, a custom `View`'s element, anything wrapped in `MentionDomWrapperView`. The
-`:not()` covers the whole subtree, so one class exempts everything inside it. Do **not**
-out-specify the reset instead: winning a specificity war means restating the borrowed component's
-internals, which then drift from it.
+**Fix:** put `ck-reset_all-excluded` on the outermost custom element — a custom `View`'s element,
+or raw DOM a view wraps. The `:not()` covers the whole subtree, so one class exempts everything
+inside it. Do **not** out-specify the reset instead: winning a specificity war means restating the
+borrowed component's internals, which then drift from it.
 
 Diagnosing this from the sources is a trap — load `ckeditor5.css` *first* in a static test page
 and the client rules win, so the bug does not reproduce. Inspect `getComputedStyle` in the real

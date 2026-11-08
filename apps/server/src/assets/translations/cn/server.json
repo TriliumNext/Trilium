@@ -38,8 +38,6 @@
     "attributes-labels-and-relations": "属性（标签和关系）",
     "add-new-label": "创建新标签",
     "create-new-relation": "创建新关系",
-    "ribbon-tabs": "功能区标签页",
-    "toggle-link-map": "切换链接地图",
     "other": "其他",
     "toggle-right-pane": "切换右侧面板的显示，包括目录和高亮",
     "open-note-externally": "以默认应用打开笔记文件",
@@ -52,8 +50,6 @@
     "copy-without-formatting": "无格式复制选定文本",
     "force-save-revision": "强制创建/保存当前笔记的新修订版本",
     "show-help": "显示帮助",
-    "toggle-book-properties": "切换书籍属性",
-    "toggle-classic-editor-toolbar": "为编辑器切换格式标签页的固定工具栏",
     "show-cheatsheet": "显示快捷键指南",
     "toggle-zen-mode": "启用/禁用禅模式（为专注编辑而精简界面）",
     "quick-search": "激活快速搜索栏",
@@ -77,7 +73,12 @@
     "focus-split-right": "将焦点移动到当前活动窗口右侧的分屏上",
     "split-view": "分屏视图",
     "move-split-left": "将活动分屏与其左侧的分屏交换，这样音符会移动，焦点会跟随它",
-    "move-split-right": "将活动分屏与右侧的分屏交换，这样笔记会移动，焦点也会跟随它"
+    "move-split-right": "将活动分屏与右侧的分屏交换，这样笔记会移动，焦点也会跟随它",
+    "note-panels": "笔记面板",
+    "show-note-map": "在右侧边栏中显示笔记图谱",
+    "focus-collection-properties": "将焦点移到集合的视图类型选择器",
+    "focus-formatting-toolbar": "在固定格式工具栏与编辑器之间移动焦点",
+    "peek-left-pane": "以浮在内容上方的临时面板速览笔记树"
   },
   "login": {
     "title": "登录",
@@ -216,7 +217,10 @@
     "color-scheme-switcher-title": "配色方案切换",
     "content-manager-title": "扩展管理",
     "database-title": "数据库",
-    "space-usage-title": "空间占用"
+    "space-usage-title": "空间占用",
+    "record-meeting-title": "转录会议",
+    "transcription-title": "转录",
+    "resources-title": "已下载的资源"
   },
   "notes": {
     "new-note": "新建笔记",
@@ -226,18 +230,25 @@
   },
   "backend_log": {
     "log-does-not-exist": "后端日志文件 '{{ fileName }}' 暂不存在。",
-    "reading-log-failed": "读取后端日志文件 '{{ fileName }}' 失败。"
+    "reading-log-failed": "读取后端日志文件 '{{ fileName }}' 失败。",
+    "log-file-unavailable": "无法打开日志文件，因此仅显示保留在内存中的最新条目。Trilium 会持续尝试打开该文件，并在成功后将这些条目写入其中。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "此笔记类型无法显示。",
-    "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。"
+    "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。",
+    "broken-block-reference": "引用已损坏",
+    "play-video": "播放视频",
+    "content-not-available": "此内容不可用。",
+    "untitled-block": "块",
+    "play-audio": "播放音频"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
     "unable-to-export-message": "当前笔记无法被导出为 PDF。",
     "unable-to-export-title": "无法导出为 PDF",
     "unable-to-save-message": "所选文件不能被写入。重试或选择另一个目的地。",
-    "unable-to-print": "无法打印笔记"
+    "unable-to-print": "无法打印笔记",
+    "render-timeout": "笔记未能在 {{seconds}} 秒内完成渲染。"
   },
   "tray": {
     "tooltip": "TriliumNext 笔记",
@@ -330,18 +341,6 @@
     "edit-read-only-note": "编辑只读笔记",
     "add-new-label": "添加新标签",
     "add-new-relation": "添加新关系",
-    "toggle-ribbon-tab-classic-editor": "切换功能区标签：经典编辑器",
-    "toggle-ribbon-tab-basic-properties": "切换功能区标签：基本属性",
-    "toggle-ribbon-tab-book-properties": "切换功能区标签：书籍属性",
-    "toggle-ribbon-tab-file-properties": "切换功能区标签：文件属性",
-    "toggle-ribbon-tab-image-properties": "切换功能区标签：图片属性",
-    "toggle-ribbon-tab-owned-attributes": "切换功能区标签：自有属性",
-    "toggle-ribbon-tab-inherited-attributes": "切换功能区标签：继承属性",
-    "toggle-ribbon-tab-promoted-attributes": "切换功能区标签：提升属性",
-    "toggle-ribbon-tab-note-map": "切换功能区标签：笔记地图",
-    "toggle-ribbon-tab-note-info": "切换功能区标签：笔记信息",
-    "toggle-ribbon-tab-note-paths": "切换功能区标签：笔记路径",
-    "toggle-ribbon-tab-similar-notes": "切换功能区标签：相似笔记",
     "toggle-right-pane": "切换右侧面板",
     "print-active-note": "打印当前笔记",
     "export-active-note-as-pdf": "导出当前笔记为 PDF",
@@ -355,7 +354,7 @@
     "find-in-text": "在文本中查找",
     "toggle-left-pane": "切换左侧面板",
     "toggle-full-screen": "切换全屏模式",
-    "save-named-revision": "保存已命名的修订",
+    "save-named-revision": "保存修订并命名",
     "toggle-archived-notes": "显示/隐藏已归档笔记",
     "show-deleted-notes": "显示已删除的笔记",
     "peek-right-pane": "快速查看右侧面板",
@@ -366,7 +365,21 @@
     "move-split-left": "向左拆分移动",
     "move-split-right": "向右拆分移动",
     "focus-split-left": "将焦点分割到左侧",
-    "focus-split-right": "将焦点分割到右侧"
+    "focus-split-right": "将焦点分割到右侧",
+    "duplicate-note": "创建笔记副本（不含子笔记）",
+    "focus-formatting-toolbar": "聚焦格式工具栏",
+    "show-basic-properties": "显示基本属性",
+    "focus-collection-properties": "聚焦集合属性",
+    "focus-file-actions": "聚焦文件操作",
+    "toggle-promoted-attributes": "切换提升属性",
+    "toggle-inherited-attributes": "切换继承属性",
+    "focus-image-actions": "聚焦图片操作",
+    "toggle-owned-attributes": "切换自有属性",
+    "show-note-map": "显示笔记图谱",
+    "show-note-info": "显示笔记信息",
+    "show-note-paths": "显示笔记路径",
+    "toggle-similar-notes": "切换相似笔记",
+    "peek-left-pane": "速览笔记树面板"
   },
   "share_theme": {
     "site-theme": "网站主题",
@@ -379,7 +392,22 @@
     "toggle-navigation": "切换导航",
     "toggle-toc": "切换目录",
     "logo-alt": "Logo",
-    "login": "登录"
+    "login": "登录",
+    "tab-title": "标签页标题",
+    "appearance": "外观",
+    "theme-light": "浅色",
+    "theme-dark": "深色",
+    "theme-system": "跟随系统",
+    "theme-current": "外观：{{- theme}}",
+    "subpages-of": "{{- title}} 的子页面",
+    "heading-link": "链接到此章节",
+    "previous": "上一页",
+    "next": "下一页",
+    "page-navigation": "上一页和下一页",
+    "hidden-subpages_other": "{{count}} 个已从树中隐藏的子页面",
+    "previous-tabs": "滚动到前面的标签页",
+    "next-tabs": "滚动到后面的标签页",
+    "copy-code": "复制代码"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文本片段",
@@ -407,7 +435,6 @@
     "presentation_slide": "演示幻灯片",
     "presentation_slide_first": "第一张幻灯片",
     "presentation_slide_second": "第二张幻灯片",
-    "background": "背景",
     "markdown-snippet": "Markdown 片段",
     "code-snippet": "代码片段",
     "dashboard": "仪表板",
@@ -424,7 +451,8 @@
       "cannot-compare-with": "无法与“{{- token}}”进行比较。要搜索字面值，请使用引号：“{{- token}}”",
       "misplaced-expression": "位置错误或不完整的表达式“{{- token}}”",
       "fulltext-after-expression": "“{{- token}}”不是有效表达式。要搜索文本，请将其放在属性筛选器之前（例如，“{{- token}} #label”而不是“#label {{- token}}”）。",
-      "unrecognized-expression": "无法识别的表达式“{{- token}}”"
+      "unrecognized-expression": "无法识别的表达式“{{- token}}”",
+      "regex-not-allowed": "正则表达式运算符「%=」在此处不可用。"
     }
   },
   "password": {
@@ -540,5 +568,45 @@
     "detail": "系统会先提供当前知识库的备份。只有当你选择创建新知识库、恢复备份或从其他设备同步时，才会删除任何内容。\n\n如果是脚本或陌生笔记提示你执行此操作，请不要继续。",
     "cancel": "取消",
     "confirm": "重启并从头开始"
+  },
+  "transcription": {
+    "already-recording": "已有会议正在转录。",
+    "note-not-found": "会议笔记已不存在。",
+    "start-failed": "无法开始转录：{{- message}}",
+    "stopped-unexpectedly": "转录意外停止了。此前已转录的内容会保留。",
+    "save-locked": "受保护会话锁定期间无法保存转录文本。转录功能会将其保留，只要你进入受保护会话，且 Trilium 保持打开，就会保存它。",
+    "save-failed": "无法保存转录文本：{{- message}} 转录功能会将其保留，并在下一句时重试。",
+    "capture-lost": "由于无法再采集音频，转录已停止。此前已转录的内容会保留。",
+    "attachment-title": "转录文本",
+    "model-not-downloaded": "语音识别模型尚未下载。请从启动栏开始一次录制即可下载它。",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3（高精度）",
+    "recognizer-description": "NVIDIA 的语音识别模型，支持 25 种欧洲语言。识别完全在本设备上进行，录音不会离开本设备。",
+    "vad-title": "Silero VAD",
+    "vad-description": "用于检测音频中的语音，从而只转录包含语音的部分。",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "用于区分说话人，让你能在转录文本中看出每句话是谁说的。"
+  },
+  "resources": {
+    "unknown": "没有名为 {{id}} 的资源。",
+    "http-error": "下载 {{name}} 失败，HTTP 状态码 {{status}}。",
+    "size-mismatch": "{{name}} 的大小与预期不符。",
+    "hash-mismatch": "{{name}} 与预期的校验和不符，已被丢弃。",
+    "delete-while-downloading": "{{- title}} 正在下载中。请先取消下载，再删除它。",
+    "not-foreign": "{{- name}} 不是资源文件夹中未使用的条目。",
+    "stalled": "下载 {{name}} 已停止：{{seconds}} 秒内没有收到任何数据。请检查网络连接，然后重试。"
+  },
+  "share_target": {
+    "default-title": "分享内容",
+    "nothing-to-share": "没有可分享的内容：未收到任何文本、链接或文件。",
+    "rejected": "分享被拒绝：{{- reason}}",
+    "other-page": "只有系统分享菜单才能向此地址发送内容。"
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium 以 Flatpak 方式运行，因此无法启动安装在自身沙箱之外的程序，例如 {{- cli}}。要使用 {{- cli}}：\n\n1. 在本机安装它，并在终端中登录。\n2. 在终端中运行以下命令，允许 Trilium 启动自身沙箱之外的程序\n\n{{- grantCommand}}\n\n3. 重启 Trilium。\n\n这样 Trilium 就能获得与 Flatpak 之外的安装相同的计算机访问权限。要收回权限，请运行：\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "选择用于打开该文件的应用程序。",
+    "applications_filter": "应用程序"
   }
 }

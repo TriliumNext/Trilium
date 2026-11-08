@@ -1,6 +1,6 @@
 import "./Render.css";
 
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -11,9 +11,10 @@ import toast from "../../services/toast";
 import Button, { SplitButton } from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import { FormListItem } from "../react/FormList";
-import { useNoteRelation, useTriliumEvent } from "../react/hooks";
+import { useEffectiveReadOnly, useNoteRelation, useTriliumEvent } from "../react/hooks";
+import NoItems from "../react/NoItems";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import { refToJQuerySelector } from "../react/react_utils";
+import { disposeReactWidget, ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import RenderErrorCard from "../react/RenderErrorCard";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
@@ -31,16 +32,22 @@ const HTML_SAMPLE = /*html*/`\
 `;
 
 export default function Render(props: TypeWidgetProps) {
-    const { note } = props;
+    const { note, noteContext } = props;
     const [ renderNote ] = useNoteRelation(note, "renderNote");
     const [ disabledRenderNote ] = useNoteRelation(note, "disabled:renderNote");
+    // A read-only note, such as a shared one, is not offered the setup that would change it.
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
 
     if (disabledRenderNote) {
-        return <DisabledRender {...props} />;
+        return isReadOnly
+            ? <NoItems icon="bx bx-extension" text={t("render.disabled_read_only")} />
+            : <DisabledRender {...props} />;
     }
 
     if (!renderNote) {
-        return <SetupRenderContent {...props} />;
+        return isReadOnly
+            ? <NoItems icon="bx bx-extension" text={t("render.nothing_to_display")} />
+            : <SetupRenderContent {...props} />;
     }
 
     return <RenderContent {...props} />;
@@ -48,19 +55,34 @@ export default function Render(props: TypeWidgetProps) {
 
 function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
+    const renderController = useRef<AbortController | null>(null);
     const [ error, setError ] = useState<{ error: unknown; noteId?: string } | null>(null);
+    const parentComponent = useContext(ParentComponent);
 
     function refresh() {
-        if (!contentRef) return;
+        if (!contentRef.current) return;
+        renderController.current?.abort();
+        const controller = new AbortController();
+        renderController.current = controller;
         setError(null);
-        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }));
+        void render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }), {
+            parentComponent: parentComponent ?? undefined,
+            signal: controller.signal
+        });
     }
 
-    useEffect(refresh, [ note ]);
+    useEffect(() => {
+        refresh();
+        const container = contentRef.current;
+        return () => {
+            renderController.current?.abort();
+            if (container) disposeReactWidget(container);
+        };
+    }, [ note ]);
 
     // Keyboard shortcut.
-    useTriliumEvent("renderActiveNote", () => {
-        if (!noteContext?.isActive()) return;
+    useTriliumEvent("renderActiveNote", ({ ntxId: eventNtxId }) => {
+        if (!noteContext?.isCommandTarget(eventNtxId)) return;
         refresh();
     });
 

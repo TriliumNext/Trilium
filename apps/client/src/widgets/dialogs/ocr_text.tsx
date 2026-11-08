@@ -87,12 +87,11 @@ function TextRepresentationModal({ textUrl, processUrl, onHidden }: TextRepresen
                 const result = response.result;
                 const minConfidence = response.minConfidence ?? 0;
 
-                // Check if this is an image-based PDF (no text extracted)
-                if (result && !result.text && result.processingType === 'pdf') {
+                if (result?.failedPageCount) {
                     toast.showPersistent({
-                        id: `ocr-pdf-unsupported-${randomString(8)}`,
-                        icon: "bx bx-info-circle",
-                        message: t("ocr.image_based_pdf_not_supported"),
+                        id: `ocr-pages-failed-${randomString(8)}`,
+                        icon: "bx bx-error",
+                        message: t("ocr.pages_failed", { count: result.failedPageCount }),
                         timeout: 15000
                     });
                 // Check if text was filtered due to low confidence
@@ -117,6 +116,8 @@ function TextRepresentationModal({ textUrl, processUrl, onHidden }: TextRepresen
                             }
                         }]
                     });
+                } else if (result && !result.text) {
+                    toast.showMessage(t("ocr.no_text_recognized"), 5000, "bx bx-info-circle");
                 } else {
                     toast.showMessage(t("ocr.processing_complete"));
                 }

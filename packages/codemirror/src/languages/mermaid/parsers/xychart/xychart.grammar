@@ -1,0 +1,69 @@
+// See this link for entire XY Chart syntax in Mermaid:
+// https://mermaid.js.org/syntax/xyChart.html
+@top XYChartDiagram {
+  document
+}
+
+@skip { spaces | LineComment }
+
+document {
+  DiagramName Orientation? (newlines | clause)*
+}
+
+clause {
+  TitleClause |
+  XAxisClause |
+  YAxisClause |
+  BarClause |
+  LineClause
+}
+
+TitleClause { Title item+ }
+XAxisClause { XAxis item+ }
+YAxisClause { YAxis item+ }
+BarClause { Bar item+ }
+LineClause { Line item+ }
+
+item {
+  String | Number | Arrow | List | Word
+}
+
+List {
+  "[" listItem ("," listItem)* "]"
+}
+
+listItem {
+  item+
+}
+
+Word { identifier }
+
+Orientation {
+  @specialize<identifier, "horizontal"> | @specialize<identifier, "vertical">
+}
+
+DiagramName { kw<"xychart-beta"> | kw<"xychart"> }
+
+Title { kw<"title"> }
+XAxis { kw<"x-axis"> }
+YAxis { kw<"y-axis"> }
+Bar { kw<"bar"> }
+Line { kw<"line"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@tokens {
+  identifier { @asciiLetter (@asciiLetter | @digit | "-")* }
+  String { '"' !["]* '"' }
+  Number { "-"? @digit+ ("." @digit+)? }
+  Arrow { "-->" }
+  spaces { $[ \t\r]+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+
+  "[" "]" ","
+
+  @precedence { Arrow, Number, identifier }
+}
+
+@external propSource xychartHighlighting from "./highlight.js"

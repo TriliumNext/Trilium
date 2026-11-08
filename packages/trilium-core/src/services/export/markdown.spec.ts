@@ -1,4 +1,4 @@
-import { trimIndentation } from "@triliumnext/commons";
+import { HIGHLIGHT_BACKGROUND, HIGHLIGHT_STYLE, trimIndentation } from "@triliumnext/commons";
 import { describe, expect,it } from "vitest";
 
 import markdownExportService, { DEFAULT_ADMONITION_TYPE } from "./markdown.js";
@@ -13,7 +13,18 @@ describe("Markdown export", () => {
             "language-application-javascript-env-backend": "javascript",
             "language-text-x-asm-mips": "mips",
             "language-text-jsx": "jsx",
-            "language-text-html": "html"
+            "language-text-html": "html",
+            "language-text-plain": "plaintext",
+            "language-text-x-csrc": "c",
+            "language-text-x-c-src": "cpp",
+            "language-text-x-rustsrc": "rust",
+            "language-text-typescript-jsx": "tsx",
+            "language-text-x-toml": "toml",
+            "language-text-x-scala": "scala",
+            "language-text-jinja2": "jinja",
+            "language-text-x-literate-haskell": "literate-haskell",
+            "language-text-x-mysql": "mysql",
+            "language-text-x-mssql": "tsql"
         };
 
         for (const [ input, output ] of Object.entries(conversionTable)) {
@@ -116,13 +127,12 @@ describe("Markdown export", () => {
 
         // The fallback anchor is generated from the data attributes, so its href and title must be
         // HTML-escaped or a title like `A & B <x>` would break the exported markup. This escaping is
-        // done deterministically with escape-html, so it holds under both test environments.
+        // done deterministically with `escapeHtml()`, so it holds under both test environments.
         expect(exported).toContain('<a href="https://e.com/?a=1&amp;b=2">A &amp; B &lt;x&gt;</a>');
 
         // The section wrapper and its data attributes survive so the preview re-imports losslessly.
-        // The escaping of `<`/`>` inside data-title is left to turndown's serializer, which differs by
-        // environment (server/node uses domino and escapes them; standalone/happy-dom uses the browser
-        // serializer and leaves them raw). It is not asserted because both forms decode to the same value.
+        // The escaping of `<`/`>` inside data-title is left to Turnish's serializer and is not asserted,
+        // since the escaped and raw forms decode to the same value.
         expect(exported).toContain('<section class="link-embed" data-url="https://e.com/?a=1&amp;b=2" data-embed-type="opengraph"');
     });
 
@@ -499,6 +509,17 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("indents a nested list to the content column of its item, however wide the number", () => {
+        const html = /*html*/`<ol start="9"><li>Ninth<ol><li>A</li></ol></li><li>Tenth<ol><li>B</li><li>C</li></ol></li></ol>`;
+        const expected = trimIndentation`\
+            9.  Ninth
+                1.  A
+            10.  Tenth
+                 1.  B
+                 2.  C`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
     it("converts inline math expressions into proper Markdown syntax", () => {
         const html = /*html*/String.raw`<span class="math-tex">\(H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\)</span></span>`;
         const expected = String.raw`$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$`;
@@ -509,6 +530,11 @@ describe("Markdown export", () => {
         const html = /*html*/String.raw`<span class="math-tex">\[H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\]</span></span>`;
         const expected = String.raw`$$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$$`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("trims the spaces inside inline math delimiters, so the import reads it back as math", () => {
+        const html = /*html*/String.raw`<p>Area: <span class="math-tex">\( \pi r^2 \)</span></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`Area: $\pi r^2$`);
     });
 
     it("keeps a math expression without delimiters verbatim", () => {
@@ -548,6 +574,27 @@ describe("Markdown export", () => {
         const html = /*html*/`<section class="include-note" data-note-id="i4A5g9iOg9I0" data-box-size="full"> </section>`;
         const expected = /*markdown*/`<section class="include-note" data-note-id="i4A5g9iOg9I0" data-box-size="full">&nbsp;</section>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("preserves an include note figure, with or without its caption", () => {
+        const start = `<figure class="include-note" data-note-id="i4A5g9iOg9I0"`
+            + ` data-box-size="full">`;
+        const blank = `${start}&nbsp;</figure>`;
+        const captioned = `${start}<figcaption>A <strong>caption</strong></figcaption></figure>`;
+
+        expect(markdownExportService.toMarkdown(blank)).toBe(blank);
+        expect(markdownExportService.toMarkdown(`<p>Before</p>${captioned}<p>After</p>`))
+            .toBe(`Before\n\n${captioned}\n\nAfter`);
+    });
+
+    it("preserves a video saved with its caption, with the fallback link of the video", () => {
+        const url = "https://www.youtube.com/watch?v=abc";
+        const section = `<section class="link-embed" data-url="${url}" data-embed-type="youtube">`;
+        const figure = (content: string) => `<figure class="captioned-content-embed">${section}`
+            + `${content}</section><figcaption>A <strong>caption</strong></figcaption></figure>`;
+
+        expect(markdownExportService.toMarkdown(`<p>Before</p>${figure("")}<p>After</p>`))
+            .toBe(`Before\n\n${figure(`<a href="${url}">${url}</a>`)}\n\nAfter`);
     });
 
     it("exports todo lists properly", () => {
@@ -647,6 +694,36 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    // The clipboard's "copy as markdown" never reimports, so it accepts the phantom header the
+    // note export refuses: a copied subset of body cells still comes out as a markdown table.
+    it("renders a headerless table under a blank header with headerlessTables: emptyHeader", () => {
+        const html = trimIndentation/*html*/`\
+            <figure class="table">
+                <table>
+                    <tbody>
+                        <tr><td>a1</td><td>b1</td></tr>
+                        <tr><td>a2</td><td>b2</td></tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = "|  |  |\n| --- | --- |\n| a1 | b1 |\n| a2 | b2 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
+        // The mode is per call, not sticky converter state.
+        expect(markdownExportService.toMarkdown(html)).toContain("<table>");
+    });
+
+    it("keeps a real heading row as the header under headerlessTables: emptyHeader", () => {
+        const html = "<table><thead><tr><th>h1</th><th>h2</th></tr></thead>"
+            + "<tbody><tr><td>a1</td><td>b1</td></tr></tbody></table>";
+        const expected = "| h1 | h2 |\n| --- | --- |\n| a1 | b1 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
+    });
+
     // Admonitions are block content, and GFM table cells can only hold inline
     // content. Flattening the admonition into a cell produces unrenderable
     // `> [!NOTE]<br>...` noise, so a table containing one is kept as raw HTML to
@@ -718,6 +795,26 @@ describe("Markdown export", () => {
         const expected = trimIndentation`\
             *   \\<note\\> is note.`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("keeps bookmarks as HTML anchors, so links to them still resolve after an import", () => {
+        const html = `<h3><a id="schema-note"></a><code>Note</code></h3>`
+            + `<p>See <a href="#schema-note">the note</a>.<a id="end"></a></p>`
+            + `<p><a id="say-&quot;hi&quot;"></a>Quoted</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+            ### <a id="schema-note"></a>\`Note\`
+
+            See [the note](#schema-note).<a id="end"></a>
+
+            <a id="say-&quot;hi&quot;"></a>Quoted`);
+    });
+
+    it("drops the block ids of a text note, which Markdown has no syntax for", () => {
+        const html = `<h2 data-trilium-block-id="h1">Title</h2>`
+            + `<p data-trilium-block-id="p1">Text</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe("## Title\n\nText");
     });
 
     it("drops data-trilium-collapsed but keeps the collapsed item's children as bullets", () => {
@@ -806,6 +903,17 @@ describe("Markdown export", () => {
                 .toBe("A ==highlight== here.");
         });
 
+        it("renders the palette yellow as ==text==, ignoring its theme-adaptive variable", () => {
+            const yellow = `<span style="background-color:${HIGHLIGHT_BACKGROUND};">a</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${yellow}</p>`)).toBe("==a==");
+            const withVariable = `<span style="${HIGHLIGHT_STYLE}">b</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${withVariable}</p>`)).toBe("==b==");
+
+            // Another colour keeps its colour and its variable.
+            const red = `<span style="background-color:#e64d4d;--tn-background:#e64d4d;">c</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${red}</p>`)).toBe(red);
+        });
+
         it("keeps any other colour as inline HTML rather than repainting it yellow", () => {
             // A different background colour...
             expect(markdownExportService.toMarkdown(
@@ -887,4 +995,143 @@ describe("Markdown export", () => {
         });
     });
 
+    describe("tabs blocks", () => {
+        const tab = (title: string, panel: string) =>
+            `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p><div class="trilium-tab-panel">${panel}</div></section>`;
+        const tabs = (...items: string[]) => `<div class="trilium-tabs">${items.join("")}</div>`;
+
+        it("exports each tab as a MkDocs tabbed section with its panel indented four spaces", () => {
+            const html = tabs(
+                tab("Windows", "<p>Run the <strong>installer</strong>.</p><pre><code class=\"language-text-x-sh\">setup.exe</code></pre>"),
+                tab("Say \"hi\"", "<ul><li>One</li><li>Two</li></ul>")
+            );
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                === "Windows"
+
+                    Run the **installer**.
+
+                    \`\`\`sh
+                    setup.exe
+                    \`\`\`
+
+                === "Say "hi""
+
+                    *   One
+                    *   Two`);
+        });
+
+        it("indents nested tabs once more and starts a block that follows another one with ===!", () => {
+            const html = tabs(tab("Outer", tabs(tab("Inner", "<p>x</p>")))) + tabs(tab("Next", "<p>y</p>"));
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                === "Outer"
+
+                    === "Inner"
+
+                        x
+
+                ===! "Next"
+
+                    y`);
+        });
+
+        it("drops the tab alignment, which MkDocs content tabs cannot express", () => {
+            const html = "<div class=\"trilium-tabs\" data-trilium-tab-alignment=\"bottom\">" +
+                `${tab("Windows", "<p>a</p>")}</div>`;
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                === "Windows"
+
+                    a`);
+        });
+
+        it("exports the icons and formatting of a tab title as inline Markdown", () => {
+            const html = tabs(
+                tab(`<span class="tn-icon bx bxl-chrome"></span>&nbsp;Chrome`, "<p>a</p>"),
+                tab("<strong>Bold</strong> and <code>code</code>", "<p>b</p>")
+            );
+            const markdown = markdownExportService.toMarkdown(html);
+
+            expect(markdown).not.toContain("");
+            expect(markdown).toBe(trimIndentation`\
+                === "<span class="tn-icon bx bxl-chrome"></span>${"\u00A0"}Chrome"
+
+                    a
+
+                === "**Bold** and \`code\`"
+
+                    b`);
+        });
+    });
+
+    describe("multicolumn layouts", () => {
+        const column = (content: string) =>
+            `<div class="trilium-multicolumn-column">${content}</div>`;
+        const layout = (ratios: string, ...columns: string[]) =>
+            `<div class="trilium-multicolumn-layout" data-trilium-column-ratios="${ratios}">` +
+            `${columns.map(column).join("")}</div>`;
+
+        it("writes each column as Markdown between the HTML tags of the layout", () => {
+            const html = `<p>Before</p>${layout("1-3",
+                "<p>First <strong>column</strong></p><ul><li>One</li></ul>",
+                "<h2>Second</h2><p>Text</p>"
+            )}<p>After</p>`;
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                Before
+
+                <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-3">
+                <div class="trilium-multicolumn-column">
+
+                First **column**
+
+                *   One
+
+                </div>
+                <div class="trilium-multicolumn-column">
+
+                ## Second
+
+                Text
+
+                </div>
+                </div>
+
+                After`);
+        });
+
+        it("keeps a nested layout and the empty columns that Turndown would drop", () => {
+            const html = layout("1-1",
+                layout("1-2-1", "<p>Inner</p>", "<p>&nbsp;</p>", "<p>&nbsp;</p>"),
+                "<p>Outer</p>"
+            ) + layout("3-1", "<p>&nbsp;</p>", "<p>&nbsp;</p>");
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">
+                <div class="trilium-multicolumn-column">
+
+                <div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-2-1">
+                <div class="trilium-multicolumn-column">
+
+                Inner
+
+                </div>
+                <div class="trilium-multicolumn-column">
+                </div>
+                <div class="trilium-multicolumn-column">
+                </div>
+                </div>
+
+                </div>
+                <div class="trilium-multicolumn-column">
+
+                Outer
+
+                </div>
+                </div>
+
+                <div class="trilium-multicolumn-layout" data-trilium-column-ratios="3-1">
+                <div class="trilium-multicolumn-column">
+                </div>
+                <div class="trilium-multicolumn-column">
+                </div>
+                </div>`);
+        });
+    });
 });

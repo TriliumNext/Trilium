@@ -46,8 +46,10 @@ function useNodeMenu(mind: MindElixirInstance, requestArrow: (request: ArrowRequ
             });
         };
 
-        mind.bus.addListener("showContextMenu", show);
-        return () => mind.bus.removeListener("showContextMenu", show);
+        const { bus } = mind;
+        bus.addListener("showContextMenu", show);
+        // `MindElixirInstance.destroy()` clears `bus` before this cleanup runs.
+        return () => bus.removeListener("showContextMenu", show);
     }, [ mind, requestArrow ]);
 }
 

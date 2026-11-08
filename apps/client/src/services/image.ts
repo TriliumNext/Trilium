@@ -1,6 +1,7 @@
 import { imageExtensionForMime } from "@triliumnext/commons";
 
 import { t } from "./i18n.js";
+import { stripNoteImageVersion } from "./image_urls.js";
 import open, { getUrlForDownload } from "./open.js";
 import toastService, { showError } from "./toast.js";
 import utils from "./utils.js";
@@ -254,7 +255,10 @@ export function embedReferenceImageAsDataUrl(src: string): string | null {
 /** Find a fully-loaded `<img>` currently in the document whose raw `src` attribute matches. */
 function findLoadedImage(src: string): HTMLImageElement | null {
     for (const image of document.querySelectorAll("img")) {
-        if (image.getAttribute("src") === src && image.complete && image.naturalWidth > 0) {
+        const imageSrc = image.getAttribute("src");
+        const isSameImage = !!imageSrc
+            && stripNoteImageVersion(imageSrc) === stripNoteImageVersion(src);
+        if (isSameImage && image.complete && image.naturalWidth > 0) {
             return image;
         }
     }

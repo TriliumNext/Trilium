@@ -30,6 +30,8 @@ finish-args:
   - --filesystem=xdg-videos:ro
   # Tray icon.
   - --talk-name=org.kde.StatusNotifierWatcher
+  # Keyring (Secret Service), where safeStorage keeps the backup passphrase.
+  - --talk-name=org.freedesktop.secrets
 
 modules:
   - name: trilium

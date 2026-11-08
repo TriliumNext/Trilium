@@ -15,6 +15,6 @@ describe("etapi/app-info", () => {
         const response = await supertest(app)
             .get("/etapi/app-info")
             .expect(200);
-        expect(response.body.clipperProtocolVersion).toBe("1.0");
+        expect(response.body.clipperProtocolVersion).toBe("1.1");
     });
 });

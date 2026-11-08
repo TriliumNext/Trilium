@@ -74,6 +74,21 @@ describe("ValuesInput", () => {
         expect(onCommit).toHaveBeenCalledWith([ "two" ]);
     });
 
+    it("links the chips of a url, email or phone field, and only those", async () => {
+        await mount({ labelType: "url", values: [ "https://a.test/", "javascript:alert(1)" ], onCommit: vi.fn() });
+        expect([ ...container.querySelectorAll(".tn-chip a") ].map((a) => a.getAttribute("href")))
+            .toEqual([ "https://a.test/", "about:blank" ]);
+
+        await mount({ labelType: "email", values: [ "a@b.test" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("mailto:a@b.test");
+
+        await mount({ labelType: "phone", values: [ "+15550100" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("tel:+15550100");
+
+        await mount({ labelType: "text", values: [ "https://a.test/" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")).toBeNull();
+    });
+
     it("takes what was typed on Enter and empties the box, refusing a second of the same", async () => {
         const onCommit = vi.fn();
         const input = await mount({ labelType: "text", values: [ "one" ], onCommit });
@@ -90,6 +105,27 @@ describe("ValuesInput", () => {
         await press(input, "Enter");
         expect(onCommit).not.toHaveBeenCalled();
         expect(input?.value).toBe("");
+    });
+
+    it("takes a repeated value when duplicates are allowed, and drops only the chip pressed", async () => {
+        const onCommit = vi.fn();
+        const input = await mount({
+            labelType: "number", values: [ "5", "7" ], onCommit, allowDuplicates: true
+        });
+
+        await typeInto(input, "5");
+        await press(input, "Enter");
+        expect(onCommit).toHaveBeenCalledWith([ "5", "7", "5" ]);
+
+        // Removing one of two equal values leaves the other.
+        onCommit.mockClear();
+        await mount({
+            labelType: "number", values: [ "5", "7", "5" ], onCommit, allowDuplicates: true
+        });
+        const chips = [ ...container.querySelectorAll(".tn-chip") ];
+        expect(chips.map((chip) => chip.textContent?.trim())).toEqual([ "5", "7", "5" ]);
+        await act(async () => chips[2]?.querySelector<HTMLElement>(".tn-chip-remove")?.click());
+        expect(onCommit).toHaveBeenCalledWith([ "5", "7" ]);
     });
 
     it("asks for a date rather than taking it as the field reports one", async () => {

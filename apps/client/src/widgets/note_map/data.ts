@@ -1,5 +1,5 @@
 import { NoteMapLink, NoteMapPostResponse } from "@triliumnext/commons";
-import server from "../../services/server";
+import froca from "../../services/froca";
 import { LinkObject, NodeObject } from "force-graph";
 
 type MapType = "tree" | "link";
@@ -48,9 +48,7 @@ export interface NotesAndRelationsData {
  *                          one note; the full-size maps keep the subtree their users expect of them.
  */
 export async function loadNotesAndRelations(mapRootNoteId: string, excludeRelations: string[], includeRelations: string[], mapType: MapType, hideUnlinkedNotes = false): Promise<NotesAndRelationsData> {
-    const resp = await server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, {
-        excludeRelations, includeRelations
-    });
+    const resp = await froca.getNoteMap(mapRootNoteId, mapType, { excludeRelations, includeRelations });
 
     const noteIdToSizeMap = calculateNodeSizes(resp, mapType);
     const links = getGroupedLinks(resp.links);

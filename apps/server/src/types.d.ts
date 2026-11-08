@@ -19,11 +19,6 @@ declare module "@triliumnext/share-theme/*.ejs" {
     export default content;
 }
 
-declare module "@triliumnext/share-theme/styles.css" {
-    const content: string;
-    export default content;
-}
-
 declare module "archiver" {
     import { Transform } from "stream";
     import { ZlibOptions } from "zlib";

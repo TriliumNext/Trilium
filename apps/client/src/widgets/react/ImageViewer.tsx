@@ -7,6 +7,9 @@ import { t } from "../../services/i18n";
 import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
 import { isMobile } from "../../services/utils";
 import ShortcutHintButton from "../shortcut_hints/shortcut_hint_button";
+import {
+    isInScrollingDocument, type MediaEnvironment, usesCompactControls
+} from "../type_widgets/file/media_environment";
 import ContentErrorMessage from "./ContentErrorMessage";
 import { useContextualShortcutHints } from "./hooks";
 import OverlayControlGroup, { ZoomControls } from "./OverlayControlGroup";
@@ -20,6 +23,10 @@ interface ImageViewerProps {
     alt?: string;
     minScale?: number;
     maxScale?: number;
+    /** The shortcut hints to offer; defaults to zoom, pan and navigation between a folder's images. */
+    shortcutHints?: ShortcutHintDefinition;
+    /** Where it is mounted: `standalone` (default) in a pane of its own, `embedded` in a note. */
+    environment?: MediaEnvironment;
 }
 
 /** Beyond this multiple of the image's native resolution, switch to crisp (non-smoothed) rendering. */
@@ -56,7 +63,11 @@ export function evaluateImageZoom(scale: number, img: { naturalWidth: number; cl
  * Interactive image viewer: the image is fit to the viewport on load, then the user can zoom
  * (wheel/pinch/buttons/keyboard) and pan (drag/keyboard). Double-clicking resets to the fitted view.
  */
-export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.5, maxScale = 50 }: ImageViewerProps) {
+export default function ImageViewer({
+    src, imgClassName, alt = "", minScale = 0.5, maxScale = 50, shortcutHints = IMAGE_VIEWER_HINTS,
+    environment = "standalone"
+}: ImageViewerProps) {
+    const isInDocument = isInScrollingDocument(environment);
     const [ pannable, setPannable ] = useState(false);
     const [ panning, setPanning ] = useState(false);
     const [ largeZoom, setLargeZoom ] = useState(false);
@@ -118,8 +129,8 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
     }, [ src ]);
 
     useZoomPanKeyboard(zoom.ref, rootEl);
-    useZoomPanWheel(zoom.ref, rootEl);
-    useContextualShortcutHints(IMAGE_VIEWER_HINTS);
+    useZoomPanWheel(zoom.ref, rootEl, isInDocument);
+    useContextualShortcutHints(shortcutHints);
 
     const wrapperClass = [
         "image-viewer-viewport",
@@ -145,6 +156,7 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
                 centerOnInit
                 centerZoomedOut
                 wheel={zoom.wheel}
+                panning={{ disabled: isInDocument && !pannable }}
                 autoAlignment={{ disabled: true }}
                 doubleClick={{ mode: "reset" }}
                 onTransform={zoom.onTransform}
@@ -165,7 +177,7 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
                 <ContentErrorMessage message={t("image_viewer.loading_error")} />
             )}
 
-            {!isMobile() && loaded && (
+            {!usesCompactControls(environment) && !isMobile() && loaded && (
                 <ShortcutHintButton />
             )}
 

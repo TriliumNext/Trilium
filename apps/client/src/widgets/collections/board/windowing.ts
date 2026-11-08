@@ -183,7 +183,7 @@ export function sameWindow(a: ColumnWindow, b: ColumnWindow) {
  * @param enabled whether to window this column at all.
  */
 export function useColumnWindow(
-    areaRef: RefObject<HTMLElement>,
+    areaRef: RefObject<HTMLElement | null>,
     noteIds: readonly string[],
     enabled: boolean
 ) {
@@ -229,12 +229,21 @@ export function useColumnWindow(
 
         read();
         area.addEventListener("scroll", read, { passive: true });
-        const resize = new ResizeObserver(read);
+        // A resize is read on the next frame. Drawing inside the observer's pass mounts cards
+        // whose first resize the browser can no longer deliver, which it reports as an error.
+        let frame: number | undefined;
+        const resize = new ResizeObserver(() => {
+            frame ??= requestAnimationFrame(() => {
+                frame = undefined;
+                read();
+            });
+        });
         resize.observe(area);
 
         return () => {
             area.removeEventListener("scroll", read);
             resize.disconnect();
+            if (frame !== undefined) cancelAnimationFrame(frame);
         };
     }, [ areaRef, enabled ]);
 

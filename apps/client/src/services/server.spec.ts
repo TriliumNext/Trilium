@@ -235,26 +235,14 @@ describe("ajax error handling", () => {
         expect(toastMock.showError).toHaveBeenCalledWith("Bad input");
     });
 
-    it("shows a reverse-proxy-blocked toast for encoded-character 400s", async () => {
+    it("reports a plain 400 on a URL with encoded characters as an unknown error", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
-            // string response (not an object) -> falls through to the else branch
             opts.error({ status: 400, responseText: "plain error" });
         };
-        await expect(server.get("notes/foo%23bar")).rejects.toBeDefined();
-        expect(toastMock.showPersistent).toHaveBeenCalledWith(
-            expect.objectContaining({ id: "reverse-proxy-blocked" })
-        );
+        await expect(server.get("quick-search?searchString=%23book%2Fa")).rejects.toBeDefined();
+        expect(toastMock.showPersistent).not.toHaveBeenCalled();
+        expect(toastMock.showErrorTitleAndMessage).toHaveBeenCalled();
         expect((window as any).logError).toHaveBeenCalled();
-    });
-
-    it("shows a reverse-proxy-blocked toast for %2F-encoded 400s", async () => {
-        (window as any).$.ajax = (opts: AjaxOptions) => {
-            opts.error({ status: 400, responseText: "plain error" });
-        };
-        await expect(server.get("notes/foo%2Fbar")).rejects.toBeDefined();
-        expect(toastMock.showPersistent).toHaveBeenCalledWith(
-            expect.objectContaining({ id: "reverse-proxy-blocked" })
-        );
     });
 
     it("falls back to the '-' placeholder when the message is an empty string", async () => {
@@ -612,5 +600,89 @@ describe("localFetch transport", () => {
         localFetch.mockRejectedValue(new Error("Worker error: boom"));
 
         await expect(server.get("url")).rejects.toThrow("Worker error: boom");
+    });
+});
+
+describe("uploadForm", () => {
+    const file = new File([ "zip" ], "notes.zip", { type: "application/zip" });
+    const options = {
+        method: "POST",
+        headers: { "x-csrf-token": "tok", "trilium-hoisted-note-id": null },
+        fields: { taskId: "t1" },
+        file,
+        timeoutMs: 1000
+    };
+
+    afterEach(() => {
+        delete (window as any).standaloneApi;
+    });
+
+    it("hands the File to the worker on a tab that owns it, and parses a JSON reply", async () => {
+        const localUpload = vi.fn(async () => new Response(JSON.stringify({ noteId: "n1" }), {
+            headers: { "content-type": "application/json" }
+        }));
+        (window as any).standaloneApi = { localFetch: vi.fn(), localUpload };
+        (window as any).$.ajax = () => {
+            throw new Error("$.ajax was used even though a tab owns the worker");
+        };
+
+        expect(await server.uploadForm("notes/root/notes-import", options)).toEqual({ noteId: "n1" });
+        expect(localUpload).toHaveBeenCalledWith("/api/notes/root/notes-import", {
+            method: "POST",
+            headers: { "x-csrf-token": "tok" },
+            fields: { taskId: "t1" },
+            file
+        });
+    });
+
+    it("answers an empty JSON reply with null and any other reply with its text", async () => {
+        const reply = (response: Response) => {
+            (window as any).standaloneApi = { localUpload: vi.fn(async () => response) };
+            return server.uploadForm("notes/root/notes-import", options);
+        };
+
+        expect(await reply(new Response("", { headers: { "content-type": "application/json" } }))).toBeNull();
+        expect(await reply(new Response("<p>done</p>", { headers: { "content-type": "text/html" } }))).toBe("<p>done</p>");
+        expect(await reply(new Response(new Blob([ "plain" ])))).toBe("plain");
+    });
+
+    it("rejects with the status and text of an error reply, the fields a jqXHR carries", async () => {
+        (window as any).standaloneApi = {
+            localUpload: vi.fn(async () => new Response("Import failed", { status: 500 }))
+        };
+
+        await expect(server.uploadForm("notes/root/notes-import", options))
+            .rejects.toEqual({ status: 500, responseText: "Import failed" });
+    });
+
+    it("rejects when the worker does not answer in time", async () => {
+        vi.useFakeTimers();
+        try {
+            (window as any).standaloneApi = { localUpload: vi.fn(() => new Promise(() => {})) };
+            const pending = expect(server.uploadForm("notes/root/notes-import", options)).rejects.toThrow("Timed out after 1000ms");
+            await vi.advanceTimersByTimeAsync(1000);
+            await pending;
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("sends a multipart XHR elsewhere, with the file under `upload`", async () => {
+        const ajaxSpy = vi.fn(async () => ({ ok: true }));
+        (window as any).$.ajax = ajaxSpy;
+
+        expect(await server.uploadForm("notes/root/notes-import", { ...options, dataType: "json" })).toEqual({ ok: true });
+        const opts = (ajaxSpy.mock.calls[0] as unknown[])[0] as any;
+        expect(opts).toMatchObject({
+            url: "/api/notes/root/notes-import",
+            type: "POST",
+            dataType: "json",
+            timeout: 1000,
+            headers: { "x-csrf-token": "tok" },
+            contentType: false,
+            processData: false
+        });
+        expect((opts.data as FormData).get("upload")).toBeInstanceOf(File);
+        expect((opts.data as FormData).get("taskId")).toBe("t1");
     });
 });

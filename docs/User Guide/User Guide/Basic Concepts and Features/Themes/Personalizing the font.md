@@ -19,7 +19,7 @@ The list of fonts contains the following items:
     *   _System default_ which uses a combination of fonts that works best for the [desktop app](../../Installation%20%26%20Setup/Desktop%20Installation.md). For example on Windows it will use _Segoe UI_.
     *   Generic font selections for fonts with serifs (e.g. _Times New Roman_\-like), no serifs and monospace.
 *   **Web fonts** which appear on the <a class="reference-link" href="../../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>, which is a predefined list of fonts and grouped into Sans-serif, serif, monospace and handwriting. The fonts that are not supported by your system (i.e. not installed) are not displayed.
-*   **System fonts** which appear on the <a class="reference-link" href="../../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>. Unlike the server fonts which are predefined, the system fonts are listed from your operating system.
+*   **System fonts** which appear on the <a class="reference-link" href="../../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>. Unlike the server fonts which are predefined, the system fonts are listed from your operating system. A few installed fonts (such as the bitmap versions of _GNU Unifont_) cannot display any text; such a font appears blank in the list, and selecting it shows an error instead of applying it.
 *   **Custom fonts**, allowing any font to be used provided it's imported into Trilium. See the section below for more information.
 
 Font changes take effect after a reload; the section offers a _Reload to apply changes_ button once something has been changed.

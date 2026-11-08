@@ -19,6 +19,12 @@ export type MapLayer = ({
     attribution: string;
     /** The deepest zoom the server draws tiles for, past which the last one is stretched instead. */
     maxZoom?: number;
+} | {
+    /** One picture in place of a world map (see `imageSpace`). */
+    type: "image";
+    url: string;
+    /** Where the picture's corners stand: top-left, top-right, bottom-right, bottom-left. */
+    corners: [[number, number], [number, number], [number, number], [number, number]];
 }) & {
     // Common properties
     name: string;
@@ -83,6 +89,11 @@ export const MAP_LAYERS: Record<string, MapLayer> = {
 };
 
 export const DEFAULT_MAP_LAYER_NAME: keyof typeof MAP_LAYERS = "versatile-colorful-eclipse";
+
+/** Whether a `#map:style` value is the URL of a raster tileset rather than a built-in style's name. */
+export function isTileUrl(style: string | null | undefined): style is string {
+    return !!style && /^https?:\/\//i.test(style);
+}
 
 /**
  * One of the styles VersaTiles publishes, labelled in English.

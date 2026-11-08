@@ -49,7 +49,9 @@ export function sendMessageToAllClients(message: WebSocketMessage): void {
  * recursively log API log output, and "sync-failed" repeats on every failed
  * sync attempt.
  */
-const UNLOGGED_MESSAGE_TYPES = new Set<WebSocketMessage["type"]>(["frontend-update", "ping", "sync-failed", "api-log-messages"]);
+const UNLOGGED_MESSAGE_TYPES = new Set<WebSocketMessage["type"]>([
+    "frontend-update", "ping", "sync-failed", "api-log-messages", "resource-download"
+]);
 
 /**
  * Whether a broadcast message should be logged by the messaging provider,

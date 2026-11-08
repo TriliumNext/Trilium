@@ -23,7 +23,6 @@ class RightPanelWidget extends NoteContextAwareWidget {
     private $title!: JQuery<HTMLElement>;
     private $buttons!: JQuery<HTMLElement>;
 
-    /** Title to show in the panel. */
     get widgetTitle() {
         return "Untitled widget";
     }
@@ -76,12 +75,6 @@ class RightPanelWidget extends NoteContextAwareWidget {
         }
     }
 
-    /**
-     * Method used for rendering the body of the widget (via existing this.$body)
-     *
-     * Your class should override this method.
-     * @returns {Promise|undefined} if widget needs async operation to initialize, it can return a Promise
-     */
     doRenderBody(): Promise<void> | void {}
 }
 

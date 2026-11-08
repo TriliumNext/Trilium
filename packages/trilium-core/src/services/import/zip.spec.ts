@@ -12,7 +12,9 @@ import BNote from "../../becca/entities/bnote.js";
 import noteService from "../notes.js";
 import TaskContext from "../task_context.js";
 import sql_init from "../sql_init.js";
-import { isLocalPreviewImageSrc, trimIndentation } from "@triliumnext/commons";
+import {
+    CANVAS_ATTACHMENT_MIME, isLocalPreviewImageSrc, trimIndentation
+} from "@triliumnext/commons";
 import { getContext } from "../context.js";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -223,6 +225,77 @@ describe("processNoteContent", () => {
         expect(picture.attachmentId).not.toBe("mapPicture1");
         expect(content).toContain(`api/attachments/${picture.attachmentId}/image/photo.png`);
         expect(content).not.toContain("mapPicture1");
+    });
+
+    it("points an imported embed at its attachment as it was recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "embedNote1",
+                title: "Report",
+                type: "text",
+                mime: "text/html",
+                dataFileName: "Report.html",
+                attachments: [{
+                    attachmentId: "embeddedPdf1",
+                    title: "report.pdf",
+                    role: "file",
+                    mime: "application/pdf",
+                    position: 10,
+                    dataFileName: "Report_report.pdf"
+                }]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Report.html": `<section class="include-note" data-attachment-id="embeddedPdf1">`
+                + "</section>",
+            "Report_report.pdf": Buffer.from("%PDF-1.4")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ pdf ] = importedNote.getAttachments();
+        const content = importedNote.getContent() as string;
+
+        expect(pdf.attachmentId).not.toBe("embeddedPdf1");
+        expect(content).toContain(`data-attachment-id="${pdf.attachmentId}"`);
+        expect(content).not.toContain("embeddedPdf1");
+    });
+
+    it("titles the picture of an imported drawing after the new ID of the drawing", async () => {
+        const attachment = (attachmentId: string, title: string, role: string, mime: string) =>
+            ({ attachmentId, title, role, mime, dataFileName: `Sketch_${title}` });
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "drawingNote1",
+                title: "Sketch",
+                type: "text",
+                mime: "text/html",
+                dataFileName: "Sketch.html",
+                attachments: [
+                    attachment("drawing1", "Canvas.excalidraw", "file", CANVAS_ATTACHMENT_MIME),
+                    attachment("picture1", "drawing1.svg", "image", "image/svg+xml")
+                ]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Sketch.html": `<section class="include-note" data-attachment-id="drawing1"></section>`,
+            "Sketch_Canvas.excalidraw": "{}",
+            "Sketch_drawing1.svg": "<svg></svg>"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const drawing = importedNote.getAttachmentByTitle("Canvas.excalidraw");
+
+        expect(drawing?.attachmentId).not.toBe("drawing1");
+        expect(importedNote.getAttachments().map(({ title }) => title).sort())
+            .toEqual([ "Canvas.excalidraw", `${drawing?.attachmentId}.svg` ].sort());
     });
 
     it("restores an embedded mermaid diagram as a note reference, not as a raw attachment", async () => {

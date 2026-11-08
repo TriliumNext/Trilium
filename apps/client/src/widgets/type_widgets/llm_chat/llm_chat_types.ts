@@ -1,4 +1,11 @@
-import type { LlmCitation, LlmErrorDetails, LlmReasoningEffort, LlmUsage } from "@triliumnext/commons";
+import {
+    isToolErrorResult,
+    type LlmCitation,
+    type LlmErrorDetails,
+    type LlmPermissionMode,
+    type LlmReasoningEffort,
+    type LlmUsage
+} from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -13,11 +20,22 @@ export interface ToolCall {
     inputStreaming?: string;
     result?: string;
     isError?: boolean;
+    /** `pending` while the call waits for the user to allow it, `declined` once they denied it. */
+    approval?: "pending" | "declined";
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */
 export interface TextBlock {
     type: "text";
+    content: string;
+}
+
+/**
+ * A stretch of the model's reasoning, kept in stream order among the reply's other blocks.
+ * It is shown in the timeline but never sent back to the model.
+ */
+export interface ThinkingBlock {
+    type: "thinking";
     content: string;
 }
 
@@ -71,7 +89,7 @@ export interface TextFileBlock {
 }
 
 /** An ordered content block in a chat message. */
-export type ContentBlock = TextBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
+export type ContentBlock = TextBlock | ThinkingBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
 
 /**
  * Extract the plain text from message content (works for both legacy string and block formats).
@@ -99,6 +117,24 @@ export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]
 /**
  * Extract tool calls from message content blocks.
  */
+/**
+ * Whether a tool call failed: flagged so by the provider, or answered with the `{ error }` a note tool
+ * returns. The result covers chats saved while a provider did not pass the flag on. A call the user
+ * denied never ran, so it did not fail.
+ */
+export function isFailedToolCall(toolCall: ToolCall): boolean {
+    return toolCall.approval !== "declined"
+        && (!!toolCall.isError || isToolErrorResult(toolCall.result));
+}
+
+/** The `llm.tools.*` key that names a tool call: `set_attribute` in add mode reads as "Add attribute". */
+export function toolCallLabelKey(toolCall: ToolCall): string {
+    const name = toolCall.toolName === "set_attribute" && toolCall.input.mode === "add"
+        ? "add_attribute"
+        : toolCall.toolName;
+    return `llm.tools.${name}`;
+}
+
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
     if (Array.isArray(message.content)) {
         return message.content
@@ -138,7 +174,10 @@ export interface StoredMessage {
     content: string | ContentBlock[];
     createdAt: string;
     citations?: LlmCitation[];
-    /** Message type for special rendering. Defaults to "message" if omitted. */
+    /**
+     * Message type for special rendering. Defaults to "message" if omitted. `"thinking"` appears
+     * only in chats saved before reasoning moved into {@link ThinkingBlock}s.
+     */
     type?: MessageType;
     /**
      * For `type: "error"` messages, the failed provider call's context (HTTP status, URL,
@@ -176,4 +215,8 @@ export interface LlmChatContent {
     enableExtendedThinking?: boolean;
     /** The effort chosen for a model with levels; absent means the model's default. */
     reasoningEffort?: LlmReasoningEffort;
+    /** The tools the user allowed for this chat, whose calls run without asking. */
+    allowedTools?: string[];
+    /** Which tool calls of the chat wait for the user; absent means the mode picked last. */
+    permissionMode?: LlmPermissionMode;
 }

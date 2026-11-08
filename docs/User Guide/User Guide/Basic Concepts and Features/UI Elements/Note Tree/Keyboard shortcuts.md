@@ -25,6 +25,7 @@ The <a class="reference-link" href="../Note%20Tree.md">Note Tree</a> comes wit
 *   <kbd>Ctrl</kbd> + <kbd><span>←</span></kbd> - move note up in the note tree.
 *   <kbd>Ctrl</kbd>+<kbd><span>→</span></kbd> - move note down in the note tree.
 *   <kbd>Del</kbd> - deletes note and optionally its subtree (asked in the dialog).
+*   <kbd>Alt</kbd>+<kbd>S</kbd> - sorts the child notes of the note (see <a class="reference-link" href="../../Notes/Sorting%20Notes.md">Sorting Notes</a>).
 
 ## Multiple selection
 

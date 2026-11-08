@@ -13,8 +13,8 @@ import type { HighlightAnchor } from "./llm_chat_types.js";
 
 /** Only text inside rendered markdown counts as highlightable prose. */
 const PROSE_CONTAINER_SELECTOR = ".llm-chat-markdown";
-/** Non-prose subtrees skipped within the markdown: code, math (async KaTeX), diagrams. */
-const NON_PROSE_SELECTOR = "pre, code, .math-tex, .katex, .ck-math-tex, .mermaid, svg";
+/** Non-prose subtrees skipped within the markdown: code, math (async KaTeX), diagrams, thoughts. */
+const NON_PROSE_SELECTOR = "pre, code, .math-tex, .katex, .ck-math-tex, .mermaid, svg, .llm-chat-thinking";
 /** How much surrounding prose to store as disambiguating context on each side of a highlight. */
 const CONTEXT_LENGTH = 24;
 

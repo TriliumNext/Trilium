@@ -1,4 +1,4 @@
-import type { LlmModelInfo } from "@triliumnext/commons";
+import type { LlmModelInfo, LlmProviderKind } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,10 +7,19 @@ const mocks = vi.hoisted(() => ({
     onSave: vi.fn(),
     onHidden: vi.fn(),
     /** The Antigravity download found for the device running Trilium. */
-    antigravityDownload: {} as { version?: string; url?: string }
+    antigravityDownload: {} as { version?: string; url?: string },
+    standalone: false
 }));
 
 vi.mock("./antigravity_download", () => ({ useAntigravityDownload: () => mocks.antigravityDownload }));
+
+// `isStandalone` is a const in the target, read here through a getter so a case can flip it.
+vi.mock("../../../../services/utils", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../../services/utils")>()),
+    get isStandalone() {
+        return mocks.standalone;
+    }
+}));
 
 /** Messages whose text a case depends on; every other key renders as itself. */
 const MESSAGES = vi.hoisted<Record<string, string>>(() => ({
@@ -79,9 +88,10 @@ afterEach(() => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
     mocks.antigravityDownload = {};
+    mocks.standalone = false;
 });
 
-function open(existingProvider?: LlmProviderConfig) {
+function open(existingProvider?: LlmProviderConfig, kind?: LlmProviderKind) {
     act(() => {
         render(null, host);
         render(
@@ -90,6 +100,7 @@ function open(existingProvider?: LlmProviderConfig) {
                 onHidden={mocks.onHidden}
                 onSave={mocks.onSave}
                 existingProvider={existingProvider}
+                kind={kind}
             />,
             host
         );
@@ -259,6 +270,52 @@ describe("what gets saved", () => {
         expect(saved.apiKey).toBe("sk-new");
         // The stored selection is carried through rather than reset by reopening the editor.
         expect(saved.selectedModels).toEqual(existing.selectedModels);
+    });
+
+    it("offers search services for a search provider, and saves one at the connection step", () => {
+        open(undefined, "search");
+        expect(providerCard("OpenAI")).toBeUndefined();
+        act(() => providerCard("SearXNG")?.click());
+        expect(textBoxes()[0]?.value).toBe("http://localhost:8888");
+        act(() => void nextButton()?.click());
+
+        expect(document.querySelector(".model-selection-stub")).toBeNull();
+        const [ saved ] = mocks.onSave.mock.calls[0] as [ LlmProviderConfig ];
+        expect(saved).toMatchObject({ provider: "searxng", name: "SearXNG", kind: "search", baseURL: "http://localhost:8888" });
+        expect(saved).not.toHaveProperty("selectedModels");
+    });
+
+    it("explains a search API's endpoint override without pointing at model runtimes", () => {
+        open(undefined, "search");
+        act(() => providerCard("Brave Search")?.click());
+
+        const step = document.querySelector(".wizard-step")?.textContent;
+        expect(step).toContain("llm.search_base_url_description");
+        expect(step).not.toContain("llm.base_url_description");
+    });
+
+    it("disables, with the reason, the search services that refuse requests from a web page in the browser version", () => {
+        const cards = () => Object.fromEntries([ "Brave Search", "Tavily", "Exa", "Serper", "Perplexity", "SearXNG" ]
+            .map((name) => [ name, providerCard(name) ]));
+        open(undefined, "search");
+        expect(Object.values(cards()).every((card) => card && !(card as HTMLButtonElement).disabled)).toBe(true);
+
+        mocks.standalone = true;
+        open(undefined, "search");
+        const disabled = Object.entries(cards())
+            .filter(([ , card ]) => (card as HTMLButtonElement | undefined)?.disabled)
+            .map(([ name ]) => name);
+        expect(disabled).toEqual([ "Brave Search", "Exa", "Perplexity" ]);
+        expect(providerCard("Exa")?.textContent).toContain("llm.search_provider_unavailable_standalone");
+    });
+
+    it("keeps the kind of the search provider being edited", () => {
+        open({ id: "brave_1", name: "Brave Search", provider: "brave", kind: "search", apiKey: "old" });
+        type(textBoxes()[0], "new");
+        act(() => void nextButton()?.click());
+
+        const [ saved ] = mocks.onSave.mock.calls[0] as [ LlmProviderConfig ];
+        expect(saved).toMatchObject({ id: "brave_1", kind: "search", apiKey: "new" });
     });
 
     it("puts the dialog away once it has saved", () => {

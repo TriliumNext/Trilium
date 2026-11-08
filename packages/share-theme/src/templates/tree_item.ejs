@@ -1,36 +1,21 @@
-<%
-const linkClass = `type-${note.type}` + (activeNote.noteId === note.noteId ? " active" : "");
-const externalHref = note.getLabelValue("shareExternalLink")?.trim()
-    || note.getLabelValue("shareExternal")?.trim();
-const isExternalLink = !!externalHref;
-let linkHref;
-
-if (isExternalLink) {
-    linkHref = sanitizeUrl(externalHref);
-} else if (note.shareId) {
-    linkHref = `./${note.shareId}`;
-}
-%>
-
-    <% if (note.noteId !== subRoot.note.noteId) { %>
-    <a class="<%= linkClass %>" href="<%= linkHref %>"<% if (isExternalLink) { %> target="_blank" rel="noopener noreferrer"<% } %>>
-        <% if (note.hasVisibleChildren()) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg></button><% } %>
-        <span><i class="<%= note.getIcon(iconPackSupportedPrefixes) %>"></i> <%= note.title %></span>
-    </a>
-<% } %>
-
-
-<% if (note.hasVisibleChildren()) { %>
 <ul>
-    <% note.getVisibleChildNotes().forEach(function (childNote) { %>
-    <%
-        const hasChildren = childNote.hasVisibleChildren();
-        const isAncestorOfActive = ancestors.some(p => p === childNote.noteId);
-        const expandedClass = childNote.noteId === activeNote.noteId || isAncestorOfActive ? " expanded" : "";
-    %>
-        <li class="<% if (hasChildren) { %>submenu-<% } %>item<%= expandedClass %>">
-            <%- include('tree_item', {note: childNote, subRoot: subRoot}) %>
+    <% for (const item of items) { %>
+        <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>" data-note-id="<%= item.noteId %>">
+            <div class="tree-item-row<%= item.isActive ? " active" : "" %>">
+                <% if (item.children.length) { %><button type="button" class="collapse-button" aria-expanded="<%= item.isExpanded %>" aria-label="<%= t("share_theme.subpages-of", { title: item.title }) %>"><span class="tn-icon bx bx-chevron-down" aria-hidden="true"></span></button><% } %>
+                <a class="type-<%= item.type %> no-arrow<%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
+                    <span class="tn-icon <%= item.icon %>" aria-hidden="true"></span><span class="tree-item-title"><%= item.title %></span>
+                </a>
+                <% if (item.hiddenChildCount) { %><span class="tree-item-hidden-count" title="<%= t("share_theme.hidden-subpages", { count: item.hiddenChildCount }) %>"><%= item.hiddenChildCount %></span><% } %>
+            </div>
+            <% if (item.isActive && headings.length > 1) { %>
+                <nav class="tree-toc" aria-label="<%= t("share_theme.on-this-page") %>">
+                    <%- include("tree_toc", { entries: toc }) %>
+                </nav>
+            <% } %>
+            <% if (item.children.length) { %>
+                <%- include("tree_item", { items: item.children }) %>
+            <% } %>
         </li>
-    <% }) %>
+    <% } %>
 </ul>
-<% } %>

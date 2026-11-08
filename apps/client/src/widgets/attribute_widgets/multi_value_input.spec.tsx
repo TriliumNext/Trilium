@@ -45,6 +45,25 @@ describe("MultiValueInput", () => {
         }
     });
 
+    it("takes a free-form value a second time", async () => {
+        // Two payments of the same amount are two values, not one.
+        const onCommit = vi.fn();
+        await mount({ labelType: "number", values: [ "50" ], onCommit });
+
+        const input = container.querySelector("input");
+        await act(async () => {
+            if (input) {
+                input.value = "50";
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+        await act(async () => {
+            input?.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        });
+        expect(onCommit).toHaveBeenCalledWith([ "50", "50" ]);
+    });
+
     it("shows each value as its type reads it, rather than as the text it is stored as", async () => {
         // `#3d5a80` names nothing to the eye, so a colour is its swatch even while being edited.
         await mount({ labelType: "color", values: [ "#3d5a80" ] });

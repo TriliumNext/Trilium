@@ -42,7 +42,7 @@ const FORMS = [
 
 /**
  * The point `query` names, as `[lng, lat]` — the order the map holds a position in (see
- * `parseLocation` in Markers) — or `null` for anything that does not name one.
+ * `parseLocation` in space.ts) — or `null` for anything that does not name one.
  *
  * A pair that stands off the Earth is not a point: `1234, 5678` is a pair of numbers a reader is
  * looking for rather than somewhere to be flown to.

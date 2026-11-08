@@ -1,0 +1,142 @@
+# Block
+
+block-beta
+
+==>
+
+BlockDiagram(DiagramName)
+
+# Columns and Nodes
+
+block-beta
+  columns 3
+  a b c
+
+==>
+
+BlockDiagram(DiagramName,Columns(ColumnsKeyword,Number),Node(NodeId),Node(NodeId),Node(NodeId))
+
+# Node Shape
+
+block-beta
+columns 1
+db(("DB"))
+
+==>
+
+BlockDiagram(DiagramName,Columns(ColumnsKeyword,Number),Node(NodeId,Shape))
+
+# Node Labels and Spans
+
+block-beta
+  columns 3
+  a["A label"] b:2 c:2
+
+==>
+
+BlockDiagram(DiagramName,Columns(ColumnsKeyword,Number),Node(NodeId,Shape),Node(NodeId,Number),Node(NodeId,Number))
+
+# Arrow
+
+block-beta
+  a --> b
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId),Arrow,Node(NodeId))
+
+# Labeled Arrow
+
+block-beta
+  a -- "x" --> b
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId),Arrow,EdgeLabel(String),Arrow,Node(NodeId))
+
+# Space
+
+block-beta
+  a space b
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId),Space(SpaceKeyword),Node(NodeId))
+
+# Space with count
+
+block-beta
+  columns 3
+  a space:2 b
+
+==>
+
+BlockDiagram(DiagramName,Columns(ColumnsKeyword,Number),Node(NodeId),Space(SpaceKeyword,Number),Node(NodeId))
+
+# Block Group
+
+block-beta
+  columns 3
+  block:group1:2
+    columns 2
+    h i j k
+  end
+  g
+
+==>
+
+BlockDiagram(DiagramName,Columns(ColumnsKeyword,Number),BlockGroup(BlockKeyword,NodeId,Number,Columns(ColumnsKeyword,Number),Node(NodeId),Node(NodeId),Node(NodeId),Node(NodeId),EndKeyword),Node(NodeId))
+
+# Block Arrow Shape
+
+block-beta
+  blockArrowId<["Label"]>(right)
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId,Shape))
+
+# LineComment
+
+block-beta %% comment
+  a
+
+==>
+
+BlockDiagram(DiagramName,LineComment,Node(NodeId))
+
+# Unknown diagram name
+
+Block2
+
+==>
+
+BlockDiagram(⚠,Node(NodeId))
+
+# Arrow between nodes without shapes
+
+block-beta
+  a <--> b
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId),Arrow,Node(NodeId))
+
+# Arrow directly after a shape
+
+block-beta
+  a["A"]<-->b["B"]
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId,Shape),Arrow,Node(NodeId,Shape))
+
+# Unclosed shape
+
+block-beta
+  a["A"
+
+
+==>
+
+BlockDiagram(DiagramName,Node(NodeId,Shape))

@@ -32,9 +32,14 @@ body.desktop .print-preview-dialog .modal-content-with-sidebar {
         width: 100%;
     }
 
-    .print-preview-pane iframe {
+    .print-preview-pane iframe,
+    .print-preview-pane > .no-items {
         position: absolute;
         inset: 0;
+    }
+
+    .print-preview-pane > .no-items {
+        height: auto;
     }
 
     .print-preview-loading-overlay {
@@ -44,11 +49,14 @@ body.desktop .print-preview-dialog .modal-content-with-sidebar {
         align-items: center;
         justify-content: center;
         z-index: 1;
-        background-color: var(--modal-bg-color, rgba(255, 255, 255, 0.8));
 
         .bx-loader-circle {
             font-size: 2rem;
         }
+    }
+
+    .print-preview-pane:has(iframe, .no-items) > .print-preview-loading-overlay {
+        background-color: color-mix(in srgb, var(--modal-background-color) 70%, transparent);
     }
 
     .margin-editor {

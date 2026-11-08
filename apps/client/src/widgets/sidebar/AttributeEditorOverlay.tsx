@@ -9,7 +9,7 @@ import { useGrowsUpwards } from "../react/grows_upwards";
 
 interface AttributeEditorOverlayProps {
     /** The host's own ref to the overlay element, through which it reaches the fields within. */
-    overlayRef: RefObject<HTMLSpanElement>;
+    overlayRef: RefObject<HTMLSpanElement | null>;
     /** Names the host's kind of overlay, for the styles of its own it adds to the shell's. */
     className?: string;
     children: ComponentChildren;
@@ -49,7 +49,7 @@ export default function AttributeEditorOverlay({ overlayRef, className, children
             // is appended to the body, and creating a note from it opens the note type chooser — the
             // same company the detail popup keeps itself open over.
             if (e.relatedTarget instanceof Element
-                && e.relatedTarget.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .algolia-autocomplete, .modal, .modal-backdrop`)) {
+                && e.relatedTarget.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .note-autocomplete-menu, .modal, .modal-backdrop`)) {
                 return;
             }
 

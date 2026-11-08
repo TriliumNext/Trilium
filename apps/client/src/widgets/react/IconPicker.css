@@ -16,14 +16,20 @@
 }
 
 /*
- * Tall enough to pick from, and never taller than the screen. The menu is placed by Popper, which
- * keeps it in view by moving it, and can only do that while it is smaller than the view; a grid of
- * a fixed height hung off a button near an edge is what runs past one. The subtraction leaves room
- * for the search row above the grid, the menu's own padding, and the button it hangs from.
+ * Tall enough to pick from, and never taller than the screen. Floating UI keeps the panel in view by
+ * shifting it, which works only while the panel is smaller than the viewport. The subtraction
+ * leaves room for the search row above the grid, the panel's padding, and the toggle.
  */
 .icon-picker .icon-list {
+    --scroll-fade-top: 20px;
+    /* Added to the width set in IconPicker.tsx, so the inset cells do not overflow sideways. */
+    --icon-list-inset: 6px;
     height: clamp(12rem, 100vh - 8rem, 500px);
     overflow: auto;
+}
+
+.icon-picker .icon-list > [role="grid"] {
+    padding-bottom: var(--scroll-fade-top);
 }
 
 .icon-picker .icon-list span {
@@ -32,14 +38,18 @@
     cursor: pointer;
     border: 1px solid transparent;
     font-size: 180%;
+    /* Keeps the first row clear of the `.scroll-edge-fade` mask while the grid is at the top. */
+    top: var(--scroll-fade-top);
+    /* The cells carry an inline `left`, so a margin is what moves them off the edge. */
+    margin-inline-start: var(--icon-list-inset);
 }
 
 .icon-picker .icon-list span:hover {
-    border: 1px solid var(--main-border-color);
+    border: 1px solid var(--hover-item-border-color);
 }
 
 .icon-picker.compact .filter-row {
-    padding: 6px;
+    padding: 6px 6px 0;
     gap: 0.5em;
     font-size: 0.85em;
 }
@@ -50,6 +60,10 @@
 }
 
 /* The glyph, its padding and its border have to stay inside `COMPACT_ICON_SIZE` in IconPicker.tsx. */
+.icon-picker.compact .icon-list {
+    --scroll-fade-top: 12px;
+}
+
 .icon-picker.compact .icon-list span {
     padding: 6px;
     font-size: 24px;

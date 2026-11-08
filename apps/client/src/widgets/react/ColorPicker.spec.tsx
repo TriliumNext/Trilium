@@ -2,8 +2,7 @@ import { ComponentChild } from "preact";
 import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// `isMobile()` is read at render time inside CustomColorCell; mock the module so both the
-// desktop (no handler) and mobile (stopPropagation) branches can be exercised.
+// Mocked so a spec can check that a behavior holds on the desktop and on a phone alike.
 const isMobileMock = vi.fn(() => false);
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/utils")>()),
@@ -194,9 +193,9 @@ describe("ColorPicker", () => {
             // Two rapid changes within the debounce interval collapse into a single report.
             await act(async () => {
                 input.value = "#aabbcc";
-                input.dispatchEvent(new Event("change", { bubbles: true }));
+                input.dispatchEvent(new Event("input", { bubbles: true }));
                 input.value = "#ddeeff";
-                input.dispatchEvent(new Event("change", { bubbles: true }));
+                input.dispatchEvent(new Event("input", { bubbles: true }));
             });
             expect(onChange).not.toHaveBeenCalled();
 
@@ -218,7 +217,7 @@ describe("ColorPicker", () => {
 
             await act(async () => {
                 input.value = "#aabbcc";
-                input.dispatchEvent(new Event("change", { bubbles: true }));
+                input.dispatchEvent(new Event("input", { bubbles: true }));
             });
             await act(async () => { vi.advanceTimersByTime(250); });
             onChange.mockClear();
@@ -238,7 +237,7 @@ describe("ColorPicker", () => {
         }
     });
 
-    it("stops click propagation on the custom cell only on mobile", () => {
+    it("stops click propagation on the custom cell on every platform", () => {
         isMobileMock.mockReturnValue(true);
         const mobileContainer = renderInto(<ColorPicker currentValue={null} onChange={vi.fn()} />);
         const mobileWrapper = mobileContainer.querySelector(".custom-color-cell")?.parentElement;
@@ -253,7 +252,8 @@ describe("ColorPicker", () => {
         const desktopEvent = new MouseEvent("click", { bubbles: true, cancelable: true });
         const desktopStop = vi.spyOn(desktopEvent, "stopPropagation");
         desktopWrapper?.dispatchEvent(desktopEvent);
-        expect(desktopStop).not.toHaveBeenCalled();
+        // A menu the click reached would close, and take the input and its picked color with it.
+        expect(desktopStop).toHaveBeenCalled();
     });
 
     it("derives a contrasting foreground for light and dark custom colours", () => {
@@ -270,5 +270,73 @@ describe("ColorPicker", () => {
         const none = renderInto(<ColorPicker currentValue={null} onChange={vi.fn()} />);
         const noneWrapper = none.querySelector(".custom-color-cell")?.parentElement;
         expect(noneWrapper?.getAttribute("style")).toContain("inherit");
+    });
+
+    describe("keyboard", () => {
+        function key(name: string) {
+            const event = new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true });
+            (document.activeElement ?? document.body).dispatchEvent(event);
+            return event;
+        }
+
+        it("is a list of options, entered at the selected one", async () => {
+            const container = await renderColorPicker(<ColorPicker currentValue="#4de64d" onChange={vi.fn()} />);
+
+            expect(container.querySelector(".color-picker")?.getAttribute("role")).toBe("listbox");
+            const all = cells(container);
+            expect(all.every((cell) => cell.getAttribute("role") === "option")).toBe(true);
+            // One way in: the selected cell, which the listbox and a menu row focus first.
+            expect(all.filter((cell) => cell.tabIndex === 0)).toEqual([ presetCells(container)[4] ]);
+            expect(all.map((cell) => cell.getAttribute("aria-selected"))).toEqual(
+                all.map((cell) => String(cell === presetCells(container)[4])));
+            // The native input behind the custom cell is no stop of its own.
+            expect(container.querySelector<HTMLInputElement>("input[type=color]")?.tabIndex).toBe(-1);
+
+            // With nothing selected, the list is entered at its first cell.
+            const indeterminate = await renderColorPicker(<ColorPicker currentValue="#4de64d" indeterminate onChange={vi.fn()} />);
+            expect(cells(indeterminate).filter((cell) => cell.tabIndex === 0)).toEqual([ resetCell(indeterminate) ]);
+            // A disabled picker cannot be entered at all.
+            const disabled = await renderColorPicker(<ColorPicker currentValue={null} disabled onChange={vi.fn()} />);
+            expect(cells(disabled).filter((cell) => cell.tabIndex === 0)).toEqual([]);
+        });
+
+        it("moves focus with the arrows and the ends without picking, and picks on Enter or Space", async () => {
+            const onChange = vi.fn();
+            const container = await renderColorPicker(<ColorPicker currentValue={null} onChange={onChange} />);
+            const all = cells(container);
+            all[0]?.focus();
+
+            key("ArrowRight");
+            expect(document.activeElement).toBe(all[1]);
+            key("ArrowLeft");
+            key("ArrowLeft");
+            // It stops at either end.
+            expect(document.activeElement).toBe(all[0]);
+            key("End");
+            expect(document.activeElement).toBe(customCell(container));
+            key("Home");
+            expect(document.activeElement).toBe(all[0]);
+            // Only moved, nothing picked.
+            expect(onChange).not.toHaveBeenCalled();
+
+            key("ArrowRight");
+            expect(key("Enter").defaultPrevented).toBe(true);
+            expect(onChange).toHaveBeenLastCalledWith(DEFAULT_COLOR_PALETTE[0]);
+            key("ArrowRight");
+            key(" ");
+            expect(onChange).toHaveBeenLastCalledWith(DEFAULT_COLOR_PALETTE[1]);
+        });
+
+        it("opens the native picker from the custom cell on Enter, as a click does", async () => {
+            const container = await renderColorPicker(<ColorPicker currentValue={null} onChange={vi.fn()} />);
+            const input = container.querySelector<HTMLInputElement>("input[type=color]");
+            // Recorded rather than run: the input's click bubbles back to its cell, which a browser
+            // leaves alone while that click is in progress and happy-dom does not.
+            const opened = vi.spyOn(input as HTMLInputElement, "click").mockImplementation(() => {});
+
+            customCell(container)?.focus();
+            key("Enter");
+            expect(opened).toHaveBeenCalledTimes(1);
+        });
     });
 });

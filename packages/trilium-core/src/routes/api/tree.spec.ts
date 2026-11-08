@@ -1,6 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import { load } from "../../becca/becca_loader";
+import { getContext } from "../../services/context";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -51,6 +54,30 @@ describe("Tree API (core)", () => {
         });
         expect(res.status).toBe(200);
         expect(res.body.notes.some((n) => n.noteId === "root")).toBe(true);
+    });
+
+    it("marks a note whose content cannot be saved, and only that note", async () => {
+        registerVirtualNoteProvider({
+            namespace: "_vtree",
+            parentNoteId: "_hidden",
+            getSubtree: () => [{ id: "_vtreePage", title: "Page", type: "text" }],
+            getContent: () => "<p>shipped</p>"
+        });
+        getContext().init(() => load());
+
+        try {
+            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean }[] }>("/api/tree/load", {
+                body: { noteIds: [ "root", "_vtreePage" ] }
+            });
+            const byId = new Map(res.body.notes.map((note) => [ note.noteId, note ]));
+            expect(byId.get("_vtreePage")?.isContentWritable).toBe(false);
+            const root = byId.get("root");
+            expect(root).toBeTruthy();
+            expect(Object.hasOwn(root ?? {}, "isContentWritable")).toBe(false);
+        } finally {
+            unregisterVirtualNoteProvider("_vtree");
+            getContext().init(() => load());
+        }
     });
 
     describe("edge cases", () => {

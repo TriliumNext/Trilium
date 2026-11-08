@@ -1,8 +1,9 @@
 import { BlobRow, getNoteIcon, NoteType } from "@triliumnext/commons";
 import { decodeUtf8 } from "../../../services/utils/binary.js";
-import escape from "escape-html";
 
-import { isStringNote } from "../../../services/utils/index.js";
+import becca from "../../../becca/becca.js";
+
+import { escapeHtml, isStringNote } from "../../../services/utils/index.js";
 import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
 import type { SNoteRow } from "./rows.js";
@@ -29,7 +30,6 @@ class SNote extends AbstractShacaEntity {
     children: SNote[];
     ownedAttributes: SAttribute[];
     private __attributeCache: SAttribute[] | null;
-    private __inheritableAttributeCache: SAttribute[] | null;
     targetRelations: SAttribute[];
     attachments: SAttachment[];
 
@@ -50,7 +50,6 @@ class SNote extends AbstractShacaEntity {
         this.ownedAttributes = [];
 
         this.__attributeCache = null;
-        this.__inheritableAttributeCache = null;
 
         this.targetRelations = [];
         this.attachments = [];
@@ -87,7 +86,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     hasChildren() {
-        return this.children && this.children.length > 0;
+        return this.children.length > 0;
     }
 
     hasVisibleChildren() {
@@ -181,14 +180,6 @@ class SNote extends AbstractShacaEntity {
                     this.__attributeCache.push(attr);
                 }
             }
-
-            this.__inheritableAttributeCache = [];
-
-            for (const attr of this.__attributeCache) {
-                if (attr.isInheritable) {
-                    this.__inheritableAttributeCache.push(attr);
-                }
-            }
         }
 
         return this.__attributeCache;
@@ -199,11 +190,7 @@ class SNote extends AbstractShacaEntity {
             return [];
         }
 
-        if (!this.__inheritableAttributeCache) {
-            this.__getAttributes(path); // will refresh also this.__inheritableAttributeCache
-        }
-
-        return this.__inheritableAttributeCache || [];
+        return this.__getAttributes(path).filter((attr) => attr.isInheritable);
     }
 
     /**
@@ -496,13 +483,14 @@ class SNote extends AbstractShacaEntity {
             return "";
         }
 
-        const sharedAlias = this.getOwnedLabelValue("shareAlias");
-
-        return sharedAlias || this.noteId;
+        // Of notes sharing an alias, `/share/<alias>` opens one; the others link by their ID.
+        const sharedAlias = this.getOwnedLabelValue("shareAlias")?.trim();
+        const ownsAlias = sharedAlias && this.shaca.aliasToNote[sharedAlias] === this;
+        return ownsAlias ? sharedAlias : this.noteId;
     }
 
     get escapedTitle() {
-        return escape(this.title);
+        return escapeHtml(this.title);
     }
 
     get encodedTitle() {
@@ -523,23 +511,22 @@ class SNote extends AbstractShacaEntity {
                 .map((attr) => attr.getPojo()),
             attachments: this.getAttachments().map((attachment) => attachment.getPojo()),
             parentNoteIds: this.parents.map((parentNote) => parentNote.noteId),
-            childNoteIds: this.children.map((child) => child.noteId)
+            childNoteIds: this.getVisibleChildNotes().map((child) => child.noteId)
         };
     }
 
     getIcon(filterByPrefix: string[] = []) {
-        const iconClassLabels = this.getLabels("iconClass").filter(label => {
-            if (filterByPrefix.length === 0) {
-                return true;
-            }
-            return filterByPrefix.some(prefix => label.value.startsWith(prefix));
-        });
+        const isAvailable = (iconClass: string) =>
+            filterByPrefix.length === 0 || filterByPrefix.some((prefix) => iconClass.startsWith(prefix));
+        const templateIconClass = this.getBuiltInTemplateLabelValue("iconClass");
+        const iconClass = this.getLabels("iconClass").map((label) => label.value).find(isAvailable)
+            ?? (templateIconClass && isAvailable(templateIconClass) ? templateIconClass : undefined);
         const icon = getNoteIcon({
             noteId: this.noteId,
             type: this.type,
             mime: this.mime,
             workspaceIconClass: undefined,
-            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            iconClass,
             isFolder: this.isFolder.bind(this),
             getLabelValue: this.getLabelValue.bind(this)
         });
@@ -549,6 +536,23 @@ class SNote extends AbstractShacaEntity {
 
     isFolder() {
         return this.getChildBranches().length > 0;
+    }
+
+    /**
+     * Returns the value of the label on the first built-in template (`_template_*`) the note names
+     * with `~template` that has one, or `null`. Shaca holds only shared notes, so the label the app
+     * reads from such a template, such as a collection's icon, is read from becca.
+     */
+    getBuiltInTemplateLabelValue(name: string): string | null {
+        for (const relation of this.getOwnedRelations("template")) {
+            const value = relation.value.startsWith("_template_")
+                ? becca.getNote(relation.value)?.getLabelValue(name)
+                : null;
+            if (value !== null && value !== undefined) {
+                return value;
+            }
+        }
+        return null;
     }
 }
 

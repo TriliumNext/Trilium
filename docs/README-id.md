@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes adalah aplikasi pencatatan hierarkis lintas platform yang gratis
@@ -363,6 +364,10 @@ Trilium tidak akan mungkin ada tanpa teknologi yang mendukungnya:
   catatan teks.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor kode dengan
   dukungan untuk banyak bahasa.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - papan tulis tak
   terbatas yang digunakan dalam catatan Canvas.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - menyediakan
@@ -372,11 +377,6 @@ Trilium tidak akan mungkin ada tanpa teknologi yang mendukungnya:
   yang digunakan dalam koleksi.
 * [FancyTree](https://github.com/mar10/fancytree) - library tree kaya fitur
   tanpa pesaing nyata.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - library konektivitas visual.
-  Digunakan dalam [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) dan
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Dukungan
 

@@ -28,6 +28,8 @@ The Flathub version runs in a sandbox and keeps its [data directory](Data%20dire
 
 If `~/.var/app/org.triliumnotes.Trilium/data/trilium-data` already exists because the Flatpak version was started before, remove or rename it first.
 
+The sandbox also hides the command-line tools that the [subscription-based AI providers](../AI/Providers/Subscription-based%20providers.md) run (Claude Code, GitHub Copilot, OpenAI Codex, Google Antigravity); that page describes the permission that lets the Flatpak start them.
+
 ## Startup Scripts
 
 Trilium offers various startup scripts to customize your experience:

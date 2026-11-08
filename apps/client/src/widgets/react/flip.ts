@@ -57,7 +57,7 @@ export interface FlipOptions {
  * `offsetParent` reports a different number for the same place.
  */
 export function useFlip(
-    ref: RefObject<HTMLElement>,
+    ref: RefObject<HTMLElement | null>,
     { selector, axis = "vertical", grow, disabled, paused }: FlipOptions
 ) {
     // Written after every commit, so it holds where the children stood at the previous one.
@@ -66,7 +66,7 @@ export function useFlip(
     const drawn = useRef(false);
     /** Whether a growth is running, during which the children below it are already moving. */
     const settling = useRef(false);
-    const settled = useRef<number>();
+    const settled = useRef<number | undefined>(undefined);
 
     const read = useCallback(() => {
         const places = new Map<Element, Place>();

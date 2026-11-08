@@ -156,7 +156,6 @@ export default class FindInLinkWidgets extends Plugin {
     private _unwrapMatches(element: ViewElement) {
         for (const span of this._matchSpans.get(element) ?? []) {
             const parent = span.parentNode;
-            /* v8 ignore next -- Spans are unwrapped once, while still in the widget's DOM. */
             if (!parent) {
                 continue;
             }
@@ -219,6 +218,11 @@ export default class FindInLinkWidgets extends Plugin {
         state.highlightedResult = state.results.first;
     }
 
+    /** Whether the replace commands replace `result`, which a match in a link widget is not. */
+    canReplace(result: FindResultType): boolean {
+        return !isWidgetResult(result as MarkedFindResult);
+    }
+
 }
 
 /** Reports every match as a character range, as `findByTextCallback()` does. */
@@ -274,3 +278,9 @@ function isWidgetResult(value: MarkedFindResult): boolean {
 }
 
 const SEARCHABLE_WIDGETS = new Set([ "reference", "linkMention", "linkEmbed" ]);
+
+declare module "ckeditor5" {
+    interface PluginsMap {
+        [FindInLinkWidgets.pluginName]: FindInLinkWidgets;
+    }
+}

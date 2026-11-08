@@ -1,0 +1,148 @@
+@top RequirementDiagram {
+  document
+}
+
+@skip { spaces | LineComment }
+
+@skip {} {
+  UnquotedString { unquotedString }
+
+  QuotedString {
+    '"' (stringContent)* '"'
+  }
+}
+
+document {
+  DiagramName newlines? |
+  DiagramName newlines ((subDiagram | RelationshipLine ) newlines?)+
+}
+
+subDiagram {
+  SubDiagramType Name "{" newlines "}" |
+  SubDiagramType Name "{" newlines subDiagramLine+ "}"
+}
+
+Name {
+  UnquotedString | QuotedString
+}
+
+subDiagramLine {
+  (
+    idLine |
+    textLine |
+    riskLine |
+    verifyMethodLine |
+    typeLine |
+    docRefLine
+  ) newlines?
+}
+
+idLine {
+  ID ":" IDNumber
+}
+
+textLine {
+  Text ":" textContent
+}
+
+riskLine {
+  Risk ":" RiskType
+}
+
+verifyMethodLine {
+  VerifyMethod ":" VerifyMethodType
+}
+
+typeLine {
+  Type ":" textContent
+}
+
+docRefLine {
+  DocRef ":" textContent
+}
+
+textContent {
+  UnquotedString | QuotedString
+}
+
+RelationshipLine {
+  relationshipStart Hyphen RelationshipType ForwardArrow Name |
+  relationshipStart BackArrow RelationshipType Hyphen Name
+}
+
+relationshipStart {
+  RelationshipStart | QuotedString
+}
+
+DiagramName { diagramKw<"requirementDiagram"> }
+
+SubDiagramType {
+  diagramKw<"requirement"> | diagramKw<"Requirement"> |
+  diagramKw<"functionalRequirement"> | diagramKw<"FunctionalRequirement"> |
+  diagramKw<"performanceRequirement"> | diagramKw<"PerformanceRequirement"> |
+  diagramKw<"interfaceRequirement"> | diagramKw<"InterfaceRequirement"> |
+  diagramKw<"physicalRequirement"> | diagramKw<"PhysicalRequirement"> |
+  diagramKw<"designConstraint"> | diagramKw<"DesignConstraint"> |
+  diagramKw<"element"> | diagramKw<"Element">
+}
+
+ID { propKw<"id"> | propKw<"Id"> | propKw<"ID">  }
+
+Text { propKw<"text"> | propKw<"Text"> }
+
+Risk { propKw<"risk"> | propKw<"Risk"> }
+
+VerifyMethod { propKw<"verifymethod"> | propKw<"verifyMethod"> | propKw<"VerifyMethod"> }
+
+Type { propKw<"type"> | propKw<"Type"> }
+
+DocRef { propKw<"docRef"> | propKw<"DocRef"> }
+
+RiskType {
+  kw<"low"> | kw<"Low"> |
+  kw<"medium"> | kw<"Medium"> |
+  kw<"high"> | kw<"High">
+}
+
+VerifyMethodType {
+  kw<"analysis"> | kw<"Analysis"> |
+  kw<"demonstration"> | kw<"Demonstration"> |
+  kw<"inspection"> | kw<"Inspection"> |
+  kw<"test"> | kw<"Test">
+}
+
+RelationshipType {
+  kw<"contains"> | kw<"Contains"> |
+  kw<"copies"> | kw<"Copies"> |
+  kw<"derives"> | kw<"Derives"> |
+  kw<"satisfies"> | kw<"Satisfies"> |
+  kw<"verifies"> | kw<"Verifies"> |
+  kw<"refines"> | kw<"Refines"> |
+  kw<"traces"> | kw<"Traces">
+}
+
+diagramKw<term> { @specialize<word, term> }
+propKw<term> { @specialize[@name=PropKeyword]<word, term> }
+kw<term> { @specialize[@name=Keyword]<word, term> }
+
+@external tokens relationshipStart from "./tokens.js" { RelationshipStart }
+
+@tokens {
+  word { @asciiLetter+ }
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  unquotedString { word ($[ \t]* ![ \t\r\n\{\<\>\-\=])* }
+  IDNumber { @digit+ ("." @digit+)* }
+  stringContent { !["]+ }
+  ForwardArrow { "->"}
+  BackArrow { "<-"}
+  Hyphen { "-" }
+  "{" "}" ":"
+
+  @precedence { newlines, spaces }
+  @precedence { ForwardArrow, Hyphen }
+  @precedence { BackArrow, Hyphen }
+}
+
+@external propSource requirementHighlighting from "./highlight.js"

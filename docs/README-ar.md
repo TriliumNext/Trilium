@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 تريليوم هو برنامج مجاني مفتوح المصدر، يمكن استخدامه في أكثر من جهاز بنفس الوقت،
@@ -360,6 +361,10 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   الملاحظات النصية.
 * محرر [CodeMirror](https://github.com/codemirror/CodeMirror): - محرر أكواد يدعم
   عدداً هائلاً من اللغات.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * برنامج [Excalidraw](https://github.com/excalidraw/excalidraw): - السبورة
   البيضاء اللانهائية المستخدمة في ملاحظات Canvas.
 * برنامج [Mind Elixir](https://github.com/SSShooter/mind-elixir-core): - يوفر
@@ -370,11 +375,6 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   التفاعلية المستخدمة في المجموعات.
 * مكتبة [FancyTree](https://github.com/mar10/fancytree): - مكتبة "شجرية" غنية
   بالميزات ولا يوجد لها منافس حقيقي.
-* مكتبة [jsPlumb](https://github.com/jsplumb/jsplumb): - مكتبة للربط المرئي،
-  تُستخدم في [خرائط
-  العلاقات](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  و[خرائط
-  الروابط](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 الدعم
 

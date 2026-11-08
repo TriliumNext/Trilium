@@ -5,7 +5,7 @@ import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { GridStack } from "gridstack";
 import { RefObject, TargetedMouseEvent } from "preact";
-import { MutableRef, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
@@ -13,7 +13,7 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
-import { useCollectionTreeDrag, useElementSize, useNoteLabelBoolean, useSpacedUpdate } from "../../react/hooks";
+import { useCollectionTreeDrag, useEffectiveReadOnly, useElementSize, useNoteContext, useNoteLabelBoolean, useSpacedUpdate } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
 import { ViewModeProps } from "../interface";
@@ -33,6 +33,8 @@ const SINGLE_COLUMN_BREAKPOINT = 768;
 
 export default function DashboardView({ note, noteIds, viewConfig, saveConfig, highlightedTokens, showTextRepresentation }: ViewModeProps<DashboardViewConfig>) {
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
+    const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const containerRef = useRef<HTMLDivElement>(null);
     // The grid only spans its content height, so drops land on the taller scroll container instead.
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -40,8 +42,8 @@ export default function DashboardView({ note, noteIds, viewConfig, saveConfig, h
 
     const notes = useDashboardNotes(noteIds);
     const isCollapsed = useIsCollapsed(containerRef);
-    const dropPositionsRef = useNoteTreeDropToDashboard(note, includeArchived, scrollContainerRef, containerRef, gridRef);
-    useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, gridRef, dropPositionsRef, isCollapsed });
+    const dropPositionsRef = useNoteTreeDropToDashboard(note, includeArchived, isReadOnly, scrollContainerRef, containerRef, gridRef);
+    useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, gridRef, dropPositionsRef, isStatic: isCollapsed || isReadOnly });
 
     return (
         <div className="dashboard-view">
@@ -55,6 +57,7 @@ export default function DashboardView({ note, noteIds, viewConfig, saveConfig, h
                             parentNote={note}
                             highlightedTokens={highlightedTokens}
                             includeArchived={includeArchived}
+                            isReadOnly={isReadOnly}
                             showTextRepresentation={showTextRepresentation}
                         />
                     ))}
@@ -84,7 +87,7 @@ function useDashboardNotes(noteIds: string[]) {
 
 /** Whether the dashboard is narrow enough to collapse to a single column, where dragging and
  *  resizing are disabled (the derived single-column layout isn't persisted). */
-function useIsCollapsed(containerRef: RefObject<HTMLElement>) {
+function useIsCollapsed(containerRef: RefObject<HTMLElement | null>) {
     const containerSize = useElementSize(containerRef);
     return (containerSize?.width ?? Number.POSITIVE_INFINITY) < SINGLE_COLUMN_BREAKPOINT;
 }
@@ -97,8 +100,8 @@ function useDashboardLayoutPersistence({ note, viewConfig, saveConfig, gridRef, 
     note: FNote;
     viewConfig: DashboardViewConfig | undefined;
     saveConfig: (config: DashboardViewConfig) => void;
-    gridRef: MutableRef<GridStack | null>;
-    containerRef: RefObject<HTMLDivElement>;
+    gridRef: RefObject<GridStack | null>;
+    containerRef: RefObject<HTMLDivElement | null>;
 }) {
     // Gridstack becomes the source of truth for geometry after init; capture the saved layout once
     // since the viewConfig prop changes identity after every save.
@@ -179,15 +182,16 @@ function useDashboardLayoutPersistence({ note, viewConfig, saveConfig, gridRef, 
 /** Owns the gridstack instance and keeps it reconciled with the Preact-rendered widgets: Preact owns
  *  the element lifecycle (keyed by noteId), gridstack owns the geometry. Saving and restoring the
  *  geometry is delegated to {@link useDashboardLayoutPersistence}. */
-function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, gridRef, dropPositionsRef, isCollapsed }: {
+function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, gridRef, dropPositionsRef, isStatic }: {
     note: FNote;
     notes: FNote[];
     viewConfig: DashboardViewConfig | undefined;
     saveConfig: (config: DashboardViewConfig) => void;
-    containerRef: RefObject<HTMLDivElement>;
-    gridRef: MutableRef<GridStack | null>;
-    dropPositionsRef: MutableRef<WidgetLayouts>;
-    isCollapsed: boolean;
+    containerRef: RefObject<HTMLDivElement | null>;
+    gridRef: RefObject<GridStack | null>;
+    dropPositionsRef: RefObject<WidgetLayouts>;
+    /** Whether the widgets can be neither dragged nor resized: on a single column or a read-only dashboard. */
+    isStatic: boolean;
 }) {
     const { persistLayout, savedWidgetsRef } = useDashboardLayoutPersistence({ note, viewConfig, saveConfig, gridRef, containerRef });
 
@@ -200,7 +204,8 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
             column: GRID_COLUMNS,
             cellHeight: CELL_HEIGHT,
             margin: GRID_MARGIN,
-            float: true,
+            mode: "float",
+            staticGrid: isStatic,
             handle: ".dashboard-widget-header",
             columnOpts: {
                 // Collapse to a vertical stack when the dashboard itself gets narrow,
@@ -222,8 +227,8 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
     }, [ note ]);
 
     useEffect(() => {
-        gridRef.current?.setStatic(isCollapsed);
-    }, [ isCollapsed ]);
+        gridRef.current?.setStatic(isStatic);
+    }, [ isStatic ]);
 
     // Reconcile the rendered children with the gridstack engine.
     useLayoutEffect(() => {
@@ -274,11 +279,11 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
  *  the dashboard and the first one is positioned under the cursor. Returns a ref holding the drop
  *  positions of the freshly cloned notes, which the reconcile effect consumes (once) when it
  *  promotes them to grid widgets — kept out of savedWidgetsRef so persistLayout still saves them. */
-function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, dropAreaRef: RefObject<HTMLDivElement>, gridContainerRef: RefObject<HTMLDivElement>, gridRef: RefObject<GridStack | null>) {
+function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, isReadOnly: boolean, dropAreaRef: RefObject<HTMLDivElement | null>, gridContainerRef: RefObject<HTMLDivElement | null>, gridRef: RefObject<GridStack | null>) {
     const dropPositionsRef = useRef<WidgetLayouts>({});
 
     useCollectionTreeDrag(dropAreaRef, {
-        dragEnabled: true,
+        dragEnabled: !isReadOnly,
         includeArchived,
         async callback(treeData, e) {
             const grid = gridRef.current;
@@ -316,10 +321,11 @@ interface DashboardWidgetProps {
     parentNote: FNote;
     highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
+    isReadOnly: boolean;
     showTextRepresentation?: boolean;
 }
 
-function DashboardWidget({ note, parentNote, highlightedTokens, includeArchived, showTextRepresentation }: DashboardWidgetProps) {
+function DashboardWidget({ note, parentNote, highlightedTokens, includeArchived, isReadOnly, showTextRepresentation }: DashboardWidgetProps) {
     const notePath = getNotePath(parentNote, note);
     // Bumping the key remounts NoteContent, which re-runs the render — meaningful for render notes
     // (re-runs the script) and web views (reloads the embedded page).
@@ -348,6 +354,7 @@ function DashboardWidget({ note, parentNote, highlightedTokens, includeArchived,
                             const branchId = note.parentToBranch[parentNote.noteId];
                             if (!branchId) return;
                             openWidgetContextMenu(notePath, branchId, e, {
+                                isReadOnly,
                                 onRefresh: canRefresh ? () => setRefreshKey((key) => key + 1) : undefined
                             });
                         }} />

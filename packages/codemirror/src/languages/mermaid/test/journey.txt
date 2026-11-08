@@ -1,0 +1,120 @@
+# Journey
+
+journey
+
+==>
+
+JourneyDiagram(DiagramName)
+
+# Title and Title Text
+
+journey
+  title My working day
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text)
+
+# Section and Section Text
+
+journey
+  title My working day
+  section Go to work
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text)
+
+# Task with Score
+
+journey
+  title My working day
+  section Go to work
+    Make tea: 5
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score))
+
+# Task with Score and Actor
+
+journey
+  title My working day
+  section Go to work
+    Make tea: 5: Me
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score,Actor))
+
+# Task with Score and Multiple Actors
+
+journey
+  title My working day
+  section Go to work
+    Make tea: 5: Me, Cat
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score,Actor,Actor))
+
+# Multiple Tasks
+
+journey
+  title My working day
+  section Go to work
+    Make tea: 5: Me, Cat
+    Go upstairs: 3
+    Do work: 1: Me, Cat
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score,Actor,Actor),Task(TaskName,Score),Task(TaskName,Score,Actor,Actor))
+
+# Multiple Sections
+
+journey
+title My working day
+section Go to work
+  Make tea: 5: Me
+  Go upstairs: 3: Me
+  Do work: 1: Me, Cat
+section Go home
+  Go downstairs: 5: Me
+  Sit down: 5: Me
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score,Actor),Task(TaskName,Score,Actor),Task(TaskName,Score,Actor,Actor),Keyword,Text,Task(TaskName,Score,Actor),Task(TaskName,Score,Actor))
+
+# New title after Sections
+
+journey
+title My working day
+section Go to work
+  Make tea: 5: Me
+  Go upstairs: 3: Me
+  Do work: 1: Me, Cat
+section Go home
+  Go downstairs: 5: Me
+  Sit down: section: Me
+title New title
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,Keyword,Text,Task(TaskName,Score,Actor),Task(TaskName,Score,Actor),Task(TaskName,Score,Actor,Actor),Keyword,Text,Task(TaskName,Score,Actor),Task(TaskName,Score,Actor),Keyword,Text)
+
+# Line Comments
+
+journey
+title My working day
+%% A comment
+section Go to work
+%% Another comment
+  Make tea: 5: Me
+  Go upstairs: 3: Me
+  Do work: 1: Me, Cat
+
+==>
+
+JourneyDiagram(DiagramName,Keyword,Text,LineComment,Keyword,Text,LineComment,Task(TaskName,Score,Actor),Task(TaskName,Score,Actor),Task(TaskName,Score,Actor,Actor))

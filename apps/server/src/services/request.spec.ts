@@ -112,6 +112,12 @@ const { state, fakeHttp, fakeHttps, makeResponse, HttpProxyAgent, HttpsProxyAgen
         };
     });
 
+const safeFetch = vi.hoisted(() => vi.fn());
+
+vi.mock("./safe_fetch.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./safe_fetch.js")>(),
+    safeFetch
+}));
 vi.mock("http", () => fakeHttp);
 vi.mock("https", () => fakeHttps);
 vi.mock("http-proxy-agent", () => ({ HttpProxyAgent }));
@@ -173,6 +179,7 @@ describe("NodeRequestProvider.exec", () => {
         expect(sent.host).toBe("sync.example.com");
         expect(sent.port).toBe("8080");
         expect(sent.headers["Content-Type"]).toBe("application/json");
+        expect(sent.cache).toBe("no-store");
     });
 
     it("selects the https client based on the URL scheme", async () => {
@@ -207,7 +214,7 @@ describe("NodeRequestProvider.exec", () => {
                 method: "POST",
                 body: { a: 1 },
                 cookieJar,
-                auth: { password: "secret" },
+                auth: { password: "secret", totpToken: "123456" },
                 paging: { pageCount: 3, pageIndex: 1, requestId: "req-1" }
             })
         );
@@ -218,6 +225,7 @@ describe("NodeRequestProvider.exec", () => {
         expect(sent.headers["Cookie"]).toBe("sid=1");
         // auth header is base64 of dummy:secret
         expect(sent.headers["trilium-cred"]).toBe(Buffer.from("dummy:secret").toString("base64"));
+        expect(sent.headers["trilium-totp"]).toBe("123456");
         // body object serialized
         expect(state.requests[0].endPayload).toBe(JSON.stringify({ a: 1 }));
         // response set-cookie stored back into the jar
@@ -637,5 +645,19 @@ describe("NodeRequestProvider.getImage", () => {
 
         expect(() => response.emitError(new Error("net::ERR_CONNECTION_RESET"))).not.toThrow();
         await expect(promise).rejects.toThrow(/ERR_CONNECTION_RESET/);
+    });
+});
+
+describe("NodeRequestProvider.fetchResource", () => {
+    it("asks with the method and headers it is given", async () => {
+        const url = "https://example.com/clip.mp4";
+        const headers = { "User-Agent": "TriliumNotes" };
+        safeFetch.mockResolvedValue(new Response(null));
+
+        await new NodeRequestProvider().fetchResource(url, {
+            method: "HEAD", maxBytes: 0, headers
+        });
+
+        expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, { method: "HEAD", headers });
     });
 });

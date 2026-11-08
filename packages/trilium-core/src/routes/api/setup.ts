@@ -183,11 +183,12 @@ async function setupNewDocument(req: Request) {
  */
 function setupSyncFromServer(req: Request): Promise<SetupSyncFromServerResponse> {
     const { syncServerHost, syncProxy, password, syncMaxBlobContentSize } = req.body;
+    const totpToken = typeof req.body.totpToken === "string" ? req.body.totpToken : "";
 
     const maxBlobContentSize = Number.isFinite(syncMaxBlobContentSize) && syncMaxBlobContentSize > 0 ? syncMaxBlobContentSize : 0;
 
     return withSetupLock("sync-from-server", () =>
-        setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password, maxBlobContentSize));
+        setupService.setupSyncFromSyncServer(syncServerHost, syncProxy, password, totpToken, maxBlobContentSize));
 }
 
 /**

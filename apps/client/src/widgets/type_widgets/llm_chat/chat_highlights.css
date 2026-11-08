@@ -1,6 +1,9 @@
 /* Painted over user-created highlight ranges via the CSS Custom Highlight API (see chat_highlights.ts).
-   The name matches the single registry entry ("chat-highlight"), so only chat highlight ranges use it. */
-::highlight(chat-highlight) {
+   The name matches the single registry entry ("chat-highlight"), so only chat highlight ranges use it.
+   Scoped to the message content, where every range lives: a document-wide ::highlight() rule
+   crashes Chrome's renderer on some text notes (#12021). */
+.llm-chat-message-content::highlight(chat-highlight),
+.llm-chat-message-content *::highlight(chat-highlight) {
     background-color: var(--chat-highlight-background-color, #ffe066);
     color: var(--chat-highlight-text-color, #1a1a1a);
 }

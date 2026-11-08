@@ -18,7 +18,10 @@ type Handlers = ReturnType<typeof useCanvasNoteDrop>;
 
 let handlers: Handlers | undefined;
 
-function Probe({ apiRef, isReadOnly }: { apiRef: RefObject<ExcalidrawImperativeAPI>; isReadOnly: boolean }) {
+function Probe({ apiRef, isReadOnly }: {
+    apiRef: RefObject<ExcalidrawImperativeAPI | null>;
+    isReadOnly: boolean;
+}) {
     handlers = useCanvasNoteDrop(apiRef, isReadOnly);
     return null;
 }
@@ -49,8 +52,11 @@ describe("useCanvasNoteDrop", () => {
         container.remove();
     });
 
-    async function mountHook(isReadOnly: boolean, apiRef?: RefObject<ExcalidrawImperativeAPI>) {
-        const ref = apiRef ?? ({ current: api } as RefObject<ExcalidrawImperativeAPI>);
+    async function mountHook(
+        isReadOnly: boolean,
+        apiRef?: RefObject<ExcalidrawImperativeAPI | null>
+    ) {
+        const ref = apiRef ?? ({ current: api } as RefObject<ExcalidrawImperativeAPI | null>);
         await act(async () => {
             render(<Probe apiRef={ref} isReadOnly={isReadOnly} />, container);
         });
@@ -126,7 +132,7 @@ describe("useCanvasNoteDrop", () => {
         });
 
         it("does nothing when the Excalidraw API is not ready", async () => {
-            await mountHook(false, { current: null } as RefObject<ExcalidrawImperativeAPI>);
+            await mountHook(false, { current: null } as RefObject<ExcalidrawImperativeAPI | null>);
             const e = dragEvent({ payload: JSON.stringify([{ noteId: "aaa" }]) });
             handlers?.onDropCapture(e as never);
             expect(e.preventDefault).not.toHaveBeenCalled();

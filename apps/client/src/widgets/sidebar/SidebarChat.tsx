@@ -1,8 +1,8 @@
 import "./SidebarChat.css";
 
 import type { SaveLlmChatResponse } from "@triliumnext/commons";
-import type { Dropdown as BootstrapDropdown } from "bootstrap";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { createPortal } from "preact";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context.js";
 import dateNoteService, { type RecentLlmChat } from "../../services/date_notes.js";
@@ -13,7 +13,7 @@ import { randomString } from "../../services/utils.js";
 import ws from "../../services/ws.js";
 import { formatDateTime } from "../../utils/formatters";
 import ActionButton from "../react/ActionButton.js";
-import Dropdown from "../react/Dropdown.js";
+import Dropdown, { type DropdownHandle } from "../react/Dropdown.js";
 import { FormDropdownDivider, FormListItem } from "../react/FormList.js";
 import { useActiveNoteContext, useNote, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../react/hooks.js";
 import { useChatContextMenu } from "../type_widgets/llm_chat/chat_context_menu.js";
@@ -23,7 +23,7 @@ import ChatMessageList from "../type_widgets/llm_chat/ChatMessageList.js";
 import ChatReadOnlyNotice from "../type_widgets/llm_chat/ChatReadOnlyNotice.js";
 import type { LlmChatContent } from "../type_widgets/llm_chat/llm_chat_types.js";
 import { useLlmChat } from "../type_widgets/llm_chat/useLlmChat.js";
-import RightPanelWidget from "./RightPanelWidget.js";
+import RightPanelWidget, { TabHeaderSlot } from "./RightPanelWidget.js";
 
 /**
  * Sidebar chat widget that appears in the right panel.
@@ -38,7 +38,8 @@ import RightPanelWidget from "./RightPanelWidget.js";
 export default function SidebarChat() {
     const [chatNoteId, setChatNoteId] = useState<string | null>(null);
     const [recentChats, setRecentChats] = useState<RecentLlmChat[]>([]);
-    const historyDropdownRef = useRef<BootstrapDropdown | null>(null);
+    const historyDropdownRef = useRef<DropdownHandle | null>(null);
+    const headerSlot = useContext(TabHeaderSlot);
 
     // Get the current active note context
     const { noteId: activeNoteId, note: activeNote } = useActiveNoteContext();
@@ -150,7 +151,7 @@ export default function SidebarChat() {
         let noteId = chatNoteId;
         if (!noteId) {
             try {
-                const note = await dateNoteService.getOrCreateLlmChat();
+                const note = await dateNoteService.createLlmChat();
                 if (note) {
                     setChatNoteId(note.noteId);
                     noteId = note.noteId;
@@ -293,6 +294,96 @@ export default function SidebarChat() {
         }
     }, [chatNoteId, chatNote]);
 
+    const newChatButton = (
+        <ActionButton
+            icon="bx bx-plus"
+            text={t("sidebar_chat.new_chat")}
+            onClick={handleNewChat}
+        />
+    );
+    const historyItems = (
+        <>
+            {recentChats.length === 0 ? (
+                <FormListItem disabled>
+                    {t("sidebar_chat.no_chats")}
+                </FormListItem>
+            ) : (
+                recentChats.map(chatItem => (
+                    <FormListItem
+                        key={chatItem.noteId}
+                        icon="bx bx-message-square-dots"
+                        className={`sidebar-chat-history-item ${chatItem.noteId === chatNoteId ? "active" : ""}`}
+                        onClick={() => handleSelectChat(chatItem.noteId)}
+                    >
+                        <div className="sidebar-chat-history-item-content">
+                            {chatItem.noteId === chatNoteId
+                                ? <strong>{chatItem.title}</strong>
+                                : <span>{chatItem.title}</span>}
+                            <span className="sidebar-chat-history-date">
+                                {formatDateTime(new Date(chatItem.dateModified), "short", "short")}
+                            </span>
+                        </div>
+                        <ActionButton
+                            icon="bx bx-trash"
+                            text={t("sidebar_chat.delete_chat")}
+                            className="sidebar-chat-history-delete"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDeleteChat(chatItem.noteId);
+                            }}
+                        />
+                    </FormListItem>
+                ))
+            )}
+            <FormDropdownDivider />
+            <FormListItem
+                icon="bx bx-folder-open"
+                onClick={handleViewAllChats}
+            >
+                {t("sidebar_chat.view_all_chats")}
+            </FormListItem>
+        </>
+    );
+    const historyProps = {
+        title: t("sidebar_chat.history"),
+        dropdownRef: historyDropdownRef,
+        onShown: loadRecentChats,
+        mobileBottomSheet: true
+    };
+    const moreActions = (
+        <Dropdown
+            text=""
+            buttonClassName="bx bx-dots-vertical-rounded"
+            title={t("sidebar_chat.more_actions")}
+            iconAction
+            hideToggleArrow
+            mobileBottomSheet
+        >
+            <FormListItem
+                icon="bx bx-save"
+                onClick={() => void handleSaveChat()}
+                disabled={chat.messages.length === 0}
+            >
+                {t("sidebar_chat.save_chat")}
+            </FormListItem>
+            <FormListItem
+                icon="bx bx-edit-alt"
+                onClick={() => void handleRenameChat()}
+                disabled={!chatNoteId}
+            >
+                {t("sidebar_chat.rename")}
+            </FormListItem>
+            <FormDropdownDivider />
+            <FormListItem
+                icon="bx bx-trash"
+                onClick={() => { if (chatNoteId) void handleDeleteChat(chatNoteId); }}
+                disabled={!chatNoteId}
+            >
+                {t("sidebar_chat.delete")}
+            </FormListItem>
+        </Dropdown>
+    );
+
     return (
         <RightPanelWidget
             id="sidebar-chat"
@@ -302,104 +393,26 @@ export default function SidebarChat() {
             // highlight / scroll listeners are wired in this (always-mounted) component, so unmounting the
             // body on collapse would orphan them and they wouldn't re-attach on expand.
             keepMounted
-            buttons={
+            buttons={!headerSlot && (
                 <>
-                    <ActionButton
-                        icon="bx bx-plus"
-                        text={t("sidebar_chat.new_chat")}
-                        onClick={handleNewChat}
-                    />
-                    <Dropdown
-                        text=""
-                        buttonClassName="bx bx-history"
-                        title={t("sidebar_chat.history")}
-                        iconAction
-                        hideToggleArrow
-                        dropdownContainerClassName="tn-dropdown-menu-scrollable"
-                        dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
-                        // In peek mode #right-pane has a backdrop-filter, which becomes the containing
-                        // block for the fixed-positioned menu and offsets it — portal to body to escape it.
-                        portalToBody
-                        dropdownRef={historyDropdownRef}
-                        onShown={loadRecentChats}
-                    >
-                        {recentChats.length === 0 ? (
-                            <FormListItem disabled>
-                                {t("sidebar_chat.no_chats")}
-                            </FormListItem>
-                        ) : (
-                            recentChats.map(chatItem => (
-                                <FormListItem
-                                    key={chatItem.noteId}
-                                    icon="bx bx-message-square-dots"
-                                    className={`sidebar-chat-history-item ${chatItem.noteId === chatNoteId ? "active" : ""}`}
-                                    onClick={() => handleSelectChat(chatItem.noteId)}
-                                >
-                                    <div className="sidebar-chat-history-item-content">
-                                        {chatItem.noteId === chatNoteId
-                                            ? <strong>{chatItem.title}</strong>
-                                            : <span>{chatItem.title}</span>}
-                                        <span className="sidebar-chat-history-date">
-                                            {formatDateTime(new Date(chatItem.dateModified), "short", "short")}
-                                        </span>
-                                    </div>
-                                    <ActionButton
-                                        icon="bx bx-trash"
-                                        text={t("sidebar_chat.delete_chat")}
-                                        className="sidebar-chat-history-delete"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            void handleDeleteChat(chatItem.noteId);
-                                        }}
-                                    />
-                                </FormListItem>
-                            ))
-                        )}
-                        <FormDropdownDivider />
-                        <FormListItem
-                            icon="bx bx-folder-open"
-                            onClick={handleViewAllChats}
-                        >
-                            {t("sidebar_chat.view_all_chats")}
-                        </FormListItem>
+                    {newChatButton}
+                    <Dropdown text="" buttonClassName="bx bx-history" iconAction hideToggleArrow {...historyProps}>
+                        {historyItems}
                     </Dropdown>
-                    <Dropdown
-                        text=""
-                        buttonClassName="bx bx-dots-vertical-rounded"
-                        title={t("sidebar_chat.more_actions")}
-                        iconAction
-                        hideToggleArrow
-                        dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
-                        // See the history dropdown above: portal to body so peek mode's backdrop-filter
-                        // containing block doesn't offset the fixed menu.
-                        portalToBody
-                    >
-                        <FormListItem
-                            icon="bx bx-save"
-                            onClick={() => void handleSaveChat()}
-                            disabled={chat.messages.length === 0}
-                        >
-                            {t("sidebar_chat.save_chat")}
-                        </FormListItem>
-                        <FormListItem
-                            icon="bx bx-edit-alt"
-                            onClick={() => void handleRenameChat()}
-                            disabled={!chatNoteId}
-                        >
-                            {t("sidebar_chat.rename")}
-                        </FormListItem>
-                        <FormDropdownDivider />
-                        <FormListItem
-                            icon="bx bx-trash"
-                            onClick={() => { if (chatNoteId) void handleDeleteChat(chatNoteId); }}
-                            disabled={!chatNoteId}
-                        >
-                            {t("sidebar_chat.delete")}
-                        </FormListItem>
-                    </Dropdown>
+                    {moreActions}
                 </>
-            }
+            )}
         >
+            {/* In a host header, the conversation's title opens the history. */}
+            {headerSlot && createPortal((
+                <>
+                    {newChatButton}
+                    <Dropdown text={<span className="sidebar-chat-title">{chatTitle}</span>} className="sidebar-chat-title-dropdown" noSelectButtonStyle {...historyProps}>
+                        {historyItems}
+                    </Dropdown>
+                    {moreActions}
+                </>
+            ), headerSlot)}
             <div className="sidebar-chat-container">
                 <ChatMessageList
                     chat={chat}
@@ -414,7 +427,7 @@ export default function SidebarChat() {
                         activeNoteId={activeNoteId ?? undefined}
                         activeNoteTitle={activeNote?.title}
                         onSubmit={handleSubmit}
-                        inSidebar
+                        onPermissionsChange={() => spacedUpdate.scheduleUpdate()}
                     />
                 )}
             </div>

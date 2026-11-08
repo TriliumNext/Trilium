@@ -1,0 +1,34 @@
+# Railroad
+
+railroad-beta
+
+==>
+
+RailroadDiagram(DiagramName)
+
+# Trilium's sample
+
+railroad-beta
+title Expression Grammar
+
+expression = sequence(
+    nonterminal("term"),
+    zeroOrMore(sequence(
+        choice(terminal("+"), terminal("-")),
+        nonterminal("term")
+    ))
+);
+
+==>
+
+RailroadDiagram(DiagramName,Title(Keyword,TitleText),Rule(RuleName,"=",Call(Function,"(",Call(Function,"(",String,")"),",",Call(Function,"(",Call(Function,"(",Call(Function,"(",Call(Function,"(",String,")"),",",Call(Function,"(",String,")"),")"),",",Call(Function,"(",String,")"),")"),")"),")"),";"))
+
+# Every function
+
+railroad-beta
+  a = sequence(optional(terminal('-')), oneOrMore(nonterminal("b")), zeroOrMore(special("c"))); %% a comment
+  b = choice("x", "y");
+
+==>
+
+RailroadDiagram(DiagramName,Rule(RuleName,"=",Call(Function,"(",Call(Function,"(",Call(Function,"(",String,")"),")"),",",Call(Function,"(",Call(Function,"(",String,")"),")"),",",Call(Function,"(",Call(Function,"(",String,")"),")"),")"),";"),LineComment,Rule(RuleName,"=",Call(Function,"(",String,",",String,")"),";"))

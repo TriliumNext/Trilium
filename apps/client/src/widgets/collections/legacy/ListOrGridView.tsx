@@ -2,19 +2,22 @@ import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import attribute_renderer from "../../../services/attribute_renderer";
 import content_renderer from "../../../services/content_renderer";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
+import { isShare } from "../../../services/utils";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
+import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { Pager, usePagination, PaginationContext } from "../Pagination";
+import ListExpandControls from "./ListExpandControls";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
 import { JSX } from "preact/jsx-runtime";
 import { clsx } from "clsx";
@@ -77,7 +80,8 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens, 
     const searchResultsLayout = (noteType === "search") || !!listOptions?.searchResultsLayout;
     const expandDepth = listOptions?.expandDepth ?? labelExpandDepth;
 
-    return <NoteList note={note} viewMode="list-view" noteIds={noteIds} pagination={pagination}>
+    return <NoteList note={note} viewMode="list-view" noteIds={noteIds} pagination={pagination}
+        rightChildren={!isShare ? <ListExpandControls note={note} /> : undefined}>
         <Card heading={listOptions?.title} className={clsx("nested-note-list", {"search-results": searchResultsLayout})}>
             {pageNotes?.map(childNote => (
                 <ListNoteCard
@@ -123,6 +127,7 @@ interface NoteListProps {
     viewMode: "list-view" | "grid-view",
     noteIds: string[],
     pagination: PaginationContext,
+    rightChildren?: ComponentChildren;
     children: ComponentChildren
 }
 
@@ -134,6 +139,7 @@ function NoteList(props: NoteListProps) {
         <CollectionProperties
             note={props.note}
             centerChildren={<Pager className="note-list-top-pager" {...props.pagination} />}
+            rightChildren={props.rightChildren}
         />
 
         {props.noteIds.length > 0 && <div className="note-list-wrapper">
@@ -273,7 +279,7 @@ function GridNoteCard(props: GridNoteCardProps) {
     );
 }
 
-function NoteAttributes({ note }: { note: FNote }) {
+export function NoteAttributes({ note }: { note: FNote }) {
     const ref = useRef<HTMLSpanElement>(null);
     useEffect(() => {
         attribute_renderer.renderNormalAttributes(note).then(({$renderedAttributes}) => {
@@ -297,6 +303,7 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
+    const parentComponent = useContext(ParentComponent);
 
     const [ready, setReady] = useState(false);
     const [noteType, setNoteType] = useState<string>("none");
@@ -324,11 +331,12 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
         content_renderer.getRenderedContent(note, {
             trim,
             noChildrenList,
-            // The note list is a lightweight preview: don't render included notes at all.
-            noIncludedNotes: true,
+            // The note list is a lightweight preview: don't render embedded notes at all.
+            noContentEmbeds: true,
             includeArchivedNotes,
             showTextRepresentation,
-            interactive
+            interactive,
+            parentComponent: parentComponent ?? undefined
         })
             .then(({ $renderedContent, type }) => {
                 if (cancelled || !contentRef.current) {

@@ -177,34 +177,6 @@ describe("dialog service", () => {
 
             expect(document.activeElement).toBe(input);
         });
-
-        it("closes the autocomplete dropdown on hide", async () => {
-            const $dialog = makeDialog();
-            await openDialog($dialog, false);
-
-            // `"autocomplete" in $autocompleteEl` is true for a jQuery object only if the
-            // autocomplete plugin is registered. Register a stub on the jQuery prototype so
-            // the branch is taken and the plugin is invoked.
-            const autocomplete = vi.fn();
-            ($.fn as any).autocomplete = autocomplete;
-
-            $dialog.trigger("hidden.bs.modal");
-
-            expect(autocomplete).toHaveBeenCalledWith("close");
-
-            delete ($.fn as any).autocomplete;
-        });
-
-        it("skips closing autocomplete when the plugin is not registered", async () => {
-            const $dialog = makeDialog();
-            await openDialog($dialog, false);
-
-            // Ensure no autocomplete plugin is present so the `in` check is false.
-            delete ($.fn as any).autocomplete;
-
-            // Should not throw.
-            expect(() => $dialog.trigger("hidden.bs.modal")).not.toThrow();
-        });
     });
 
     describe("lifting a dialog above what is already open", () => {
@@ -296,16 +268,39 @@ describe("dialog service", () => {
             expect(backdrop.style.zIndex).toBe("2009");
         });
 
-        it("leaves a dialog that already declares a layer above what is open where it is", async () => {
+        /**
+         * The confirmation asked from inside the Options dialog: it declares 2000, above the 1055
+         * the Options dialog stands on, so it is not lifted. Its backdrop still has to come up
+         * with it, or Bootstrap's 1050 leaves the dim under the Options dialog and the settings
+         * stand undimmed beside the question.
+         */
+        it("keeps a dialog declaring a layer above what is open there, and dims what is open", async () => {
             const open = document.createElement("div");
             open.className = "modal show";
             open.style.zIndex = "1055";
             document.body.appendChild(open);
 
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop";
+            document.body.appendChild(backdrop);
+
             const $dialog = makeDialog().appendTo(document.body);
             await openDialog($dialog, false, undefined, 2000);
 
             expect($dialog[0].style.zIndex).toBe("2000");
+            expect(backdrop.style.zIndex).toBe("1999");
+        });
+
+        it("leaves the backdrop on Bootstrap's layer when nothing else is open", async () => {
+            const backdrop = document.createElement("div");
+            backdrop.className = "modal-backdrop";
+            document.body.appendChild(backdrop);
+
+            const $dialog = makeDialog().appendTo(document.body);
+            await openDialog($dialog, false, undefined, 2000);
+
+            expect($dialog[0].style.zIndex).toBe("2000");
+            expect(backdrop.style.zIndex).toBe("");
         });
 
         it("treats popups without a numeric z-index as layer 0 and excludes the dialog itself from the scan", async () => {

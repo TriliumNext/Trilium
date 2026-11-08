@@ -1,0 +1,47 @@
+// See https://mermaid.js.org/syntax/timeline.html
+@top TimelineDiagram {
+  document
+}
+
+@skip { spaces }
+
+document {
+  DiagramName newlines* (
+    () |
+    subDocument newlines* |
+    subDocument (newlines+ subDocument)+ newlines*
+  )
+}
+
+subDocument {
+  LineComment |
+  Keyword Text |
+  Entry
+}
+
+Entry {
+  Period (":" Event)*
+}
+
+Text { keywordText }
+Period { periodEventText }
+Event { periodEventText }
+
+DiagramName { kw<"timeline"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens keywordTokens from "./tokens.js" { Keyword }
+@external tokens periodEventTokens from "./tokens.js" { periodEventText }
+@external tokens keywordTextTokens from "./tokens.js" { keywordText }
+
+@tokens {
+  spaces { @whitespace+ }
+  newlines { $[\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { @asciiLetter+ }
+
+  @precedence { newlines, spaces }
+}
+
+@external propSource timelineHighlighting from "./highlight.js"

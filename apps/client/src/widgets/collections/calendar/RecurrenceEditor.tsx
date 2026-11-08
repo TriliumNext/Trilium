@@ -6,10 +6,11 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import LabelValueInput from "../../attribute_widgets/label_value_input";
-import Dropdown from "../../react/Dropdown";
+import { DropdownPanel } from "../../react/Dropdown";
+import FormCheckbox from "../../react/FormCheckbox";
 import FormSelect from "../../react/FormSelect";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import { useUniqueName } from "../../react/hooks";
+import { useNoteLabel, useUniqueName } from "../../react/hooks";
 import SegmentedChoice from "../../react/SegmentedChoice";
 import { EventField, EventFieldControls, EventFieldList } from "./EventField";
 import { useEventLabel } from "./hooks";
@@ -29,8 +30,8 @@ import {
  * Edits how the event repeats, through the note's `#recurrence` label — or whatever label a
  * `#calendar:recurrence` renaming points at instead (see useEventLabel) — structured fields for
  * the everyday rules, the raw RRULE string for one saying more than they can (see recurrence.ts
- * for where that line runs). Rendered as {@link EventField} rows, so it stands in the event
- * popover's field column beside the start and end dates when those grow editors of their own.
+ * for where that line runs). Renders a dropdown whose button names the rule; the rule's fields open
+ * inside it.
  */
 export default function RecurrenceEditor({ note }: { note: FNote }) {
     const [ storedValue, setStoredValue ] = useEventLabel(note, "recurrence");
@@ -58,21 +59,19 @@ export default function RecurrenceEditor({ note }: { note: FNote }) {
     // — a rule is several choices, and the menu going down after the first would make it three
     // trips. Portaled to the body because the popover clips what overflows it (see EventPopover.css).
     return (
-        <EventField name={t("calendar.recurrence.repeats")}>
-            <Dropdown
-                className="calendar-recurrence-dropdown"
-                text={modelTitle(model)}
-                noDropdownListStyle
-                portalToBody
-                dropdownOptions={{ autoClose: "outside" }}
-            >
-                <EventFieldList>
-                    <FrequencyField model={model} commit={commit} />
-                    {model.kind === "simple" && <SimpleRuleFields rule={model.rule} commit={commit} />}
-                    {model.kind === "custom" && <CustomRuleField value={model.value} commit={commit} />}
-                </EventFieldList>
-            </Dropdown>
-        </EventField>
+        <DropdownPanel
+            className="calendar-recurrence-dropdown"
+            text={modelTitle(model)}
+            title={t("calendar.recurrence.repeats")}
+            autoClose="outside"
+        >
+            <EventFieldList>
+                <FrequencyField model={model} commit={commit} />
+                {model.kind === "simple" && <SimpleRuleFields rule={model.rule} commit={commit} />}
+                {model.kind === "simple" && model.rule.frequency === "YEARLY" && <YearCountField note={note} />}
+                {model.kind === "custom" && <CustomRuleField value={model.value} commit={commit} />}
+            </EventFieldList>
+        </DropdownPanel>
     );
 }
 
@@ -293,6 +292,32 @@ function EndsField({ ends, onChange }: {
                 )}
             </EventFieldControls>
         </EventField>
+    );
+}
+
+/** The `#calendar:titleTemplate` the year count writes: the title, then the whole years since `#startDate`. */
+export const YEAR_COUNT_TEMPLATE = "${title} (${years})";
+
+/**
+ * Shows the years since `#startDate` on each occurrence of a yearly event by writing
+ * {@link YEAR_COUNT_TEMPLATE}. Locked when another template applies, the note's own or an inherited
+ * one, so the checkbox never overwrites a template or fails to remove one.
+ */
+function YearCountField({ note }: { note: FNote }) {
+    const [ template, setTemplate ] = useNoteLabel(note, "calendar:titleTemplate");
+    const ownsCount = note.getOwnedLabelValue("calendar:titleTemplate") === YEAR_COUNT_TEMPLATE;
+    const locked = !!template && !ownsCount;
+
+    return (
+        <div className="calendar-recurrence-years">
+            <FormCheckbox
+                label={t("calendar.recurrence.count_years")}
+                hint={locked ? t("calendar.recurrence.count_years_locked") : undefined}
+                currentValue={template === YEAR_COUNT_TEMPLATE}
+                disabled={locked}
+                onChange={(checked) => setTemplate(checked ? YEAR_COUNT_TEMPLATE : null)}
+            />
+        </div>
     );
 }
 

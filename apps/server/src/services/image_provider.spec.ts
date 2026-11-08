@@ -250,6 +250,22 @@ describe('serverImageProvider.processImage', () => {
         expect(result.buffer.byteLength).toBeLessThan(tallPng.byteLength);
     });
 
+    it('holds only the width of an image shrunk by width, however tall it is', async () => {
+        const sizeOf = async (shrink: boolean | 'width') => {
+            const { bitmap } = await Jimp.read(Buffer.from(
+                (await serverImageProvider.processImage(tallPng, 'tall.png', shrink)).buffer));
+            return [ bitmap.width, bitmap.height ];
+        };
+        setOptions({ imageMaxWidthHeight: '100' });
+        expect(await sizeOf(true)).toEqual([ 33, 100 ]);
+        expect(await sizeOf('width')).toEqual([ 100, 300 ]);
+
+        // 200x600 is within a bound of 300 by width, and a PNG kept as it is has nothing else to gain.
+        setOptions({ imageMaxWidthHeight: '300', imagePngHandling: 'keep' });
+        expect((await serverImageProvider.processImage(tallPng, 'tall.png', 'width')).buffer).toBe(tallPng);
+        expect(await sizeOf(true)).toEqual([ 100, 300 ]);
+    });
+
     it('keeps the original buffer when shrinking does not reduce the size', async () => {
         setOptions({ imageMaxWidthHeight: '2000' });
 

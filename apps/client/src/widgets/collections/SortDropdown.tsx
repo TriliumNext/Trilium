@@ -27,9 +27,6 @@ export default function SortDropdown({
                 {sortMenuTitle({ orderBy, attributes, noneTitle, defaultTitle })}
             </>}
             mobileBottomSheet
-            // The card the dropdown stands in is a backdrop root, which would otherwise flatten the
-            // menu's blur into a tint.
-            portalToBody
         >
             {orders.map(renderEntry)}
             <FormDropdownDivider />

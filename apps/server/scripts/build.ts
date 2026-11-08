@@ -9,31 +9,19 @@ async function main() {
     // Its own call so it lands beside the bundle rather than under a `services/` path: the pool
     // looks for it next to whatever is running, and desktop builds it the same way.
     await build.buildBackend([ "src/services/image_worker.ts" ]);
+    await build.buildTesseractWorker("src/services/ocr/tesseract_worker.ts");
 
     // Copy assets
-    build.copy("src/assets", "assets/");
+    build.copyServerAssets();
     // The healthcheck docker runs; the Dockerfiles point at it inside the image.
     build.copy("docker_healthcheck.sh", "docker_healthcheck.sh");
-    // schema.sql lives in trilium-core but is loaded at server startup. The
-    // bundled main.mjs can't `require.resolve("@triliumnext/core/...")` in
-    // Docker (no workspace symlinks in the image), so we copy the file
-    // alongside the server's own assets and read it via RESOURCE_DIR at
-    // runtime. See main.ts.
-    build.copy("/packages/trilium-core/src/assets/schema.sql", "assets/schema.sql");
-    // Same story for the LLM skill sheets: core owns them, the server reads them
-    // from RESOURCE_DIR at runtime. See core_assets.ts.
-    build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
-    // PDFium rasterizes scanned PDF pages for OCR. Its own loader resolves the wasm relative to
-    // `import.meta.url`, which in a split bundle is a hash-named file under chunks/, so the bytes
-    // are handed to it explicitly from here instead. See pdf_renderer.ts.
-    build.copy("/node_modules/@hyzyla/pdfium/dist/pdfium.wasm", "assets/pdfium.wasm");
-    build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/", "dist");
-    build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies
     build.copyNodeModules([ "better-sqlite3" ]);
     build.trimBetterSqlite3();
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
+    build.copy("/packages/ckeditor5/src/theme/content_colors.css", "ckeditor5-content-colors.css");
+    build.copy("/packages/ckeditor5/src/theme/multicolumn.css", "ckeditor5-multicolumn.css");
 
     build.buildFrontend();
 }

@@ -3,14 +3,16 @@
  */
 
 import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
 import markdownImport from "../../../services/import/markdown.js";
-import noteService from "../../../services/notes.js";
+import noteTypesService from "../../../services/note_types.js";
+import noteService, { saveLinks } from "../../../services/notes.js";
 import searchService from "../../../services/search/services/search.js";
 import SearchContext from "../../../services/search/search_context.js";
 import TaskContext from "../../../services/task_context.js";
 import { z } from "zod";
 
-import { applyTextEdits, getContentPreview, getNoteContentForLlm, getNoteMeta, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm,TOOL_LIMITS } from "./helpers.js";
+import { applyTextEdits, getContentPreview, getLlmNote, getLlmParentNotes, getNoteContentForLlm, getNoteMeta, getSvgImageError, isExcludedFromLlm, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 export const noteTools = defineTools({
@@ -39,12 +41,12 @@ export const noteTools = defineTools({
                 includeArchivedNotes,
                 ancestorNoteId
             });
-            const results = searchService.findResultsWithQuery(query, searchContext);
+            const results = searchService.findResultsWithQuery(query, searchContext)
+                .filter((sr) => becca.notes[sr.noteId] && !isExcludedFromLlm(becca.notes[sr.noteId]));
 
             const notes = results.slice(0, limit).map(sr => {
                 const note = becca.notes[sr.noteId];
-                if (!note) return null;
-                const parentNote = note.getParentNotes()[0];
+                const parentNote = getLlmParentNotes(note).at(0);
                 return {
                     noteId: note.noteId,
                     title: note.getTitleOrProtected(),
@@ -52,7 +54,7 @@ export const noteTools = defineTools({
                     parentTitle: parentNote?.getTitleOrProtected() ?? null,
                     contentPreview: getContentPreview(note)
                 };
-            }).filter(Boolean);
+            });
 
             return {
                 totalResults: results.length,
@@ -67,7 +69,7 @@ export const noteTools = defineTools({
             noteId: z.string().describe("The ID of the note to retrieve")
         }),
         execute: ({ noteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -82,7 +84,7 @@ export const noteTools = defineTools({
             noteId: z.string().describe("The ID of the note to read")
         }),
         execute: ({ noteId }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -98,14 +100,22 @@ export const noteTools = defineTools({
     },
 
     set_note_content: {
-        description: "Replace the ENTIRE content of a note. Only use this for a full rewrite or for rich-text ('text') notes. For small or localized changes to a non-text note, prefer edit_note_content — resending the whole note wastes tokens. For text notes, provide Markdown content. Returns the resulting content; do not call get_note_content afterwards to verify.",
+        description: [
+            "Replace the ENTIRE content of a note. Only use this for a full rewrite or for rich-text ('text') notes.",
+            "For small or localized changes to a non-text note, prefer edit_note_content — resending the whole note wastes tokens.",
+            "For text notes, provide Markdown content.",
+            "To change a note's type (e.g. text to code) or a code note's language, pass type and/or mime (same values as create_note) along with the content rewritten for the new type — for text to code, only the code itself.",
+            "Returns the resulting content; do not call get_note_content afterwards to verify."
+        ].join(" "),
         inputSchema: z.object({
             noteId: z.string().describe("The ID of the note to update"),
-            content: z.string().describe("The new content for the note (Markdown for text notes, plain text for code notes)")
+            content: z.string().describe("The new content for the note (Markdown for text notes, plain text for code notes)"),
+            type: z.enum(LLM_NOTE_TYPES).optional().describe("New note type. Omit to keep the current type."),
+            mime: z.string().optional().describe("New MIME type, REQUIRED when changing a note to code (e.g. 'text/x-python'). Omit to keep a code note's current mime.")
         }),
         mutates: true,
-        execute: ({ noteId, content }) => {
-            const note = becca.getNote(noteId);
+        execute: ({ noteId, content, type, mime }) => {
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -116,12 +126,36 @@ export const noteTools = defineTools({
                 return { error: `Cannot update content for note type: ${note.type}` };
             }
 
+            const newType = type ?? note.type;
+            const typeChanged = newType !== note.type;
+            let newMime = mime ?? note.mime;
+            if (typeChanged && !mime) {
+                newMime = newType === "image" ? SVG_MIME
+                    : newType === "code" ? ""
+                        : noteTypesService.getDefaultMimeForNoteType(newType);
+            }
+            if (!newMime) {
+                return { error: "mime is required when changing a note to code" };
+            }
+            const svgError = newType === "image" ? getSvgImageError(newMime, content) : undefined;
+            if (svgError) {
+                return { error: svgError };
+            }
+            const mimeChanged = newMime !== note.mime;
+
             note.saveRevision({ source: "llm" });
+            if (typeChanged || mimeChanged) {
+                note.type = newType;
+                note.mime = newMime;
+                note.save();
+            }
             setNoteContentFromLlm(note, content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
                 title: note.getTitleOrProtected(),
+                ...(typeChanged || mimeChanged ? { type: note.type, mime: note.mime } : {}),
                 content: getNoteContentForLlm(note)
             };
         }
@@ -134,8 +168,9 @@ export const noteTools = defineTools({
             content: z.string().describe("The content to append (Markdown for text notes, plain text for code notes)")
         }),
         mutates: true,
+        additive: true,
         execute: ({ noteId, content }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -144,6 +179,9 @@ export const noteTools = defineTools({
             }
             if (!note.hasStringContent()) {
                 return { error: `Cannot update content for note type: ${note.type}` };
+            }
+            if (note.type === "image") {
+                return { error: "Cannot append to an SVG image; use edit_note_content or set_note_content instead." };
             }
 
             const existingContent = note.getContent();
@@ -161,6 +199,7 @@ export const noteTools = defineTools({
 
             note.saveRevision({ source: "llm" });
             note.setContent(newContent);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -195,7 +234,7 @@ export const noteTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, edits }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -218,9 +257,14 @@ export const noteTools = defineTools({
             if (!result.ok) {
                 return { error: result.error };
             }
+            const svgError = note.type === "image" ? getSvgImageError(note.mime, result.content) : undefined;
+            if (svgError) {
+                return { error: svgError };
+            }
 
             note.saveRevision({ source: "llm" });
             note.setContent(result.content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -244,6 +288,7 @@ export const noteTools = defineTools({
             "- 'relationMap': visual map of note relations (JSON content)",
             "- 'search': saved search (content is the search query)",
             "- 'mindMap': mind map (JSON content)",
+            "- 'image': an SVG drawing (content is complete SVG source, mime 'image/svg+xml'; no other image formats). For flowcharts, sequence, class or state diagrams prefer 'mermaid'.",
             "Common mime values for code notes:",
             "'text/javascript' (plain JavaScript, not executed as a Trilium script),",
             "'application/javascript;env=frontend' (JavaScript, Trilium frontend script),",
@@ -254,17 +299,25 @@ export const noteTools = defineTools({
         inputSchema: z.object({
             parentNoteId: z.string().describe("The ID of the parent note. Use 'root' for top-level notes."),
             title: z.string().describe("The title of the new note"),
-            content: z.string().describe("The content of the note (Markdown for text notes, plain text for code notes, empty string for render notes)"),
-            type: z.enum(["text", "code", "render", "book", "mermaid", "canvas", "webView", "relationMap", "search", "mindMap"]).describe("The type of note to create."),
+            content: z.string().describe("The content of the note (Markdown for text notes, plain text for code notes, SVG source for image notes, empty string for render notes)"),
+            type: z.enum(LLM_NOTE_TYPES).describe("The type of note to create."),
             mime: z.string().optional().describe("MIME type, REQUIRED for code notes (e.g. 'application/javascript;env=backend', 'text/jsx'). Ignored for other types.")
         }),
         mutates: true,
+        additive: true,
         execute: ({ parentNoteId, title, content, type, mime }) => {
             if (type === "code" && !mime) {
                 return { error: "mime is required when creating code notes" };
             }
+            if (type === "image") {
+                mime ??= SVG_MIME;
+                const svgError = getSvgImageError(mime, content);
+                if (svgError) {
+                    return { error: svgError };
+                }
+            }
 
-            const parentNote = becca.getNote(parentNoteId);
+            const parentNote = getLlmNote(parentNoteId);
             if (!parentNote) {
                 return { error: "Parent note not found" };
             }
@@ -284,6 +337,7 @@ export const noteTools = defineTools({
                     type,
                     ...(mime ? { mime } : {})
                 });
+                scanWrittenContent(note);
 
                 return {
                     success: true,
@@ -306,7 +360,7 @@ export const noteTools = defineTools({
         }),
         mutates: true,
         execute: ({ noteId, newTitle }) => {
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
@@ -319,13 +373,15 @@ export const noteTools = defineTools({
                 return { error: "Title cannot be empty" };
             }
 
+            const oldTitle = note.title;
             note.title = trimmedTitle;
             note.save();
 
             return {
                 success: true,
                 noteId: note.noteId,
-                title: note.getTitleOrProtected()
+                title: note.getTitleOrProtected(),
+                oldTitle
             };
         }
     },
@@ -341,12 +397,15 @@ export const noteTools = defineTools({
                 return { error: "Cannot delete system notes" };
             }
 
-            const note = becca.getNote(noteId);
+            const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
             }
             if (note.isProtected) {
                 return { error: "Note is protected and cannot be deleted" };
+            }
+            if (note.getSubtree().notes.some(isExcludedFromLlm)) {
+                return { error: "Note contains notes excluded from the assistant and cannot be deleted" };
             }
 
             const title = note.getTitleOrProtected();
@@ -361,3 +420,12 @@ export const noteTools = defineTools({
         }
     }
 });
+
+/** Records the `internalLink` relations of what a tool wrote, as `updateNoteData()` does for the editor. */
+function scanWrittenContent(note: BNote) {
+    const content = note.getContent();
+    const { forceFrontendReload, content: newContent } = saveLinks(note, content);
+    if (newContent !== content) {
+        note.setContent(newContent, { forceFrontendReload });
+    }
+}

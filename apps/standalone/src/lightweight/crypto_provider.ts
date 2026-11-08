@@ -1,11 +1,10 @@
+import { cbc } from "@noble/ciphers/aes.js";
+import { hmac } from "@noble/hashes/hmac.js";
+import { md5, sha1 } from "@noble/hashes/legacy.js";
+import { scryptAsync } from "@noble/hashes/scrypt.js";
+import { sha256, sha512 } from "@noble/hashes/sha2.js";
 import type { Cipher, CryptoProvider, ScryptOptions } from "@triliumnext/core";
 import { binary_utils } from "@triliumnext/core";
-import { sha1 } from "js-sha1";
-import { sha256 } from "js-sha256";
-import { sha512 } from "js-sha512";
-import { md5 } from "js-md5";
-import { scrypt } from "scrypt-js";
-import aesjs from "aes-js";
 
 const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -15,44 +14,28 @@ const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 declare const __TRILIUM_FORCE_B64_FALLBACK__: boolean;
 const FORCE_B64_FALLBACK = typeof __TRILIUM_FORCE_B64_FALLBACK__ !== "undefined" && __TRILIUM_FORCE_B64_FALLBACK__;
 
+const HASHES = { md5, sha1, sha512 };
+
 /**
- * Crypto provider for browser environments using pure JavaScript crypto libraries.
- * Uses aes-js for synchronous AES encryption (matching Node.js behavior).
+ * Crypto provider for browser environments, on the synchronous pure-JS hashes and ciphers of
+ * `@noble/hashes` and `@noble/ciphers`. WebCrypto cannot back it: core calls `createHash()` and
+ * `Cipher` synchronously.
  */
 export default class BrowserCryptoProvider implements CryptoProvider {
 
     createHash(algorithm: "md5" | "sha1" | "sha512", content: string | Uint8Array): Uint8Array {
-        // Hash the raw bytes. Binary content must NOT be routed through unwrapStringOrBuffer
-        // (UTF-8 decoding): it is lossy for non-UTF-8 bytes (invalid sequences become U+FFFD),
-        // which produced digests diverging from the Node.js provider — e.g. protected binary
-        // notes encrypted on server/desktop failed their integrity digest here and decrypted
-        // to empty. For strings this is equivalent to before (the js-* libs UTF-8 encode
-        // string inputs internally).
-        const data = binary_utils.wrapStringOrBuffer(content);
-
-        let hexHash: string;
-        if (algorithm === "md5") {
-            hexHash = md5(data);
-        } else if (algorithm === "sha1") {
-            hexHash = sha1(data);
-        } else {
-            hexHash = sha512(data);
-        }
-
-        // Convert hex string to Uint8Array
-        const bytes = new Uint8Array(hexHash.length / 2);
-        for (let i = 0; i < hexHash.length; i += 2) {
-            bytes[i / 2] = parseInt(hexHash.substr(i, 2), 16);
-        }
-        return bytes;
+        // Binary content is hashed as is: a UTF-8 decode (`unwrapStringOrBuffer`) replaces invalid
+        // sequences with U+FFFD, and the digests of protected binary notes then differ from the
+        // Node.js provider's.
+        return HASHES[algorithm](binary_utils.wrapStringOrBuffer(content));
     }
 
-    createCipheriv(algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher {
-        return new AesJsCipher(algorithm, key, iv, "encrypt");
+    createCipheriv(_algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher {
+        return new AesCbcCipher(key, iv, "encrypt");
     }
 
-    createDecipheriv(algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher {
-        return new AesJsCipher(algorithm, key, iv, "decrypt");
+    createDecipheriv(_algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher {
+        return new AesCbcCipher(key, iv, "decrypt");
     }
 
     randomBytes(size: number): Uint8Array {
@@ -74,13 +57,7 @@ export default class BrowserCryptoProvider implements CryptoProvider {
         // Same byte-vs-string rationale as createHash above: never UTF-8-decode binary inputs.
         const secretBytes = binary_utils.wrapStringOrBuffer(secret);
         const valueBytes = binary_utils.wrapStringOrBuffer(value);
-        // sha256.hmac returns hex, convert to base64 to match Node's behavior
-        const hexHash = sha256.hmac(secretBytes, valueBytes);
-        const bytes = new Uint8Array(hexHash.length / 2);
-        for (let i = 0; i < hexHash.length; i += 2) {
-            bytes[i / 2] = parseInt(hexHash.substr(i, 2), 16);
-        }
-        return btoa(String.fromCharCode(...bytes));
+        return this.base64Encode(hmac(sha256, secretBytes, valueBytes));
     }
 
     async scrypt(
@@ -93,7 +70,7 @@ export default class BrowserCryptoProvider implements CryptoProvider {
         const passwordBytes = binary_utils.wrapStringOrBuffer(password);
         const saltBytes = binary_utils.wrapStringOrBuffer(salt);
 
-        return scrypt(passwordBytes, saltBytes, N, r, p, keyLength);
+        return scryptAsync(passwordBytes, saltBytes, { N, r, p, dkLen: keyLength });
     }
 
     constantTimeCompare(a: Uint8Array, b: Uint8Array): boolean {
@@ -219,34 +196,24 @@ interface NativeBase64Constructor {
 }
 
 /**
- * A synchronous cipher implementation using aes-js.
- * Matches Node.js crypto behavior with update() and final() methods.
+ * AES-128-CBC with PKCS#7 padding behind Node's `update()`/`final()` interface. It buffers what
+ * `update()` receives and does the whole operation in `final()`.
  */
-class AesJsCipher implements Cipher {
+class AesCbcCipher implements Cipher {
     private chunks: Uint8Array[] = [];
-    private key: Uint8Array;
-    private iv: Uint8Array;
-    private mode: "encrypt" | "decrypt";
     private finalized = false;
 
     constructor(
-        _algorithm: "aes-128-cbc",
-        key: Uint8Array,
-        iv: Uint8Array,
-        mode: "encrypt" | "decrypt"
-    ) {
-        this.key = key;
-        this.iv = iv;
-        this.mode = mode;
-    }
+        private readonly key: Uint8Array,
+        private readonly iv: Uint8Array,
+        private readonly mode: "encrypt" | "decrypt"
+    ) {}
 
     update(data: Uint8Array): Uint8Array {
         if (this.finalized) {
             throw new Error("Cipher has already been finalized");
         }
-        // Buffer the data - we process everything in final() to match streaming behavior
         this.chunks.push(data);
-        // Return empty array since aes-js CBC doesn't support true streaming
         return new Uint8Array(0);
     }
 
@@ -266,32 +233,21 @@ class AesJsCipher implements Cipher {
         }
 
         if (this.mode === "encrypt") {
-            // PKCS7 padding for encryption
-            const blockSize = 16;
-            const paddingLength = blockSize - (data.length % blockSize);
-            const paddedData = new Uint8Array(data.length + paddingLength);
-            paddedData.set(data);
-            paddedData.fill(paddingLength, data.length);
-
-            const aesCbc = new aesjs.ModeOfOperation.cbc(
-                Array.from(this.key),
-                Array.from(this.iv)
-            );
-            return new Uint8Array(aesCbc.encrypt(paddedData));
-        } else {
-            // Decryption
-            const aesCbc = new aesjs.ModeOfOperation.cbc(
-                Array.from(this.key),
-                Array.from(this.iv)
-            );
-            const decrypted = new Uint8Array(aesCbc.decrypt(data));
-
-            // Remove PKCS7 padding
-            const paddingLength = decrypted[decrypted.length - 1];
-            if (paddingLength > 0 && paddingLength <= 16) {
-                return decrypted.slice(0, decrypted.length - paddingLength);
-            }
-            return decrypted;
+            return cbc(this.key, this.iv).encrypt(data);
         }
+
+        // node:crypto's message, which `data_encryption.decrypt()` recognizes (zadam/trilium#510).
+        if (data.length === 0 || data.length % 16 !== 0) {
+            throw new Error("wrong final block length");
+        }
+
+        // The padding is stripped by hand because `cbc()` throws on invalid padding, which most
+        // wrong keys leave. `data_encryption.decrypt()` detects those through its digest instead.
+        const decrypted = cbc(this.key, this.iv, { disablePadding: true }).decrypt(data);
+        const paddingLength = decrypted[decrypted.length - 1];
+        if (paddingLength > 0 && paddingLength <= 16) {
+            return decrypted.slice(0, decrypted.length - paddingLength);
+        }
+        return decrypted;
     }
 }

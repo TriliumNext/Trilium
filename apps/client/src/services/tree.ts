@@ -3,6 +3,8 @@ import utils from "./utils.js";
 import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
 import appContext from "../components/app_context.js";
+import type FNote from "../entities/fnote.js";
+import { t } from "./i18n.js";
 
 export const NOTE_PATH_TITLE_SEPARATOR = " › ";
 
@@ -255,7 +257,11 @@ async function getNotePathTitle(notePath: string) {
     return titlePath.join(NOTE_PATH_TITLE_SEPARATOR);
 }
 
-async function getNoteTitleWithPathAsSuffix(notePath: string) {
+/**
+ * @param ownedTitle the title of something the note owns, such as an attachment. When set, it is
+ *        shown as the title and the whole of `notePath` becomes the suffix.
+ */
+async function getNoteTitleWithPathAsSuffix(notePath: string, ownedTitle?: string) {
     utils.assertArguments(notePath);
 
     const titleComponents = await getNotePathTitleComponents(notePath);
@@ -265,8 +271,10 @@ async function getNoteTitleWithPathAsSuffix(notePath: string) {
         return "";
     }
 
-    const title = titleComponents[titleComponents.length - 1];
-    const path = titleComponents.slice(0, titleComponents.length - 1);
+    const title = ownedTitle ?? titleComponents[titleComponents.length - 1];
+    const path = ownedTitle
+        ? titleComponents
+        : titleComponents.slice(0, titleComponents.length - 1);
 
     const $titleWithPath = $('<span class="note-title-with-path">').append($('<span class="note-title">').text(title));
 
@@ -299,6 +307,15 @@ function isNotePathInHiddenSubtree(notePath: string) {
     return notePath?.includes("root/_hidden");
 }
 
+/** Names the other parents of a clone, given its real parents from `FNote.getRealParentNotes()`. */
+function getCloneIndicatorTooltip(realParents: FNote[]) {
+    if (realParents.length === 2) {
+        return t("note_tree.clone-indicator-tooltip-single", { parent: realParents[1].title });
+    }
+    const parents = realParents.map((p) => p.title).join(", ");
+    return t("note_tree.clone-indicator-tooltip", { count: realParents.length, parents });
+}
+
 export default {
     resolveNotePath,
     resolveNotePathToSegments,
@@ -312,5 +329,6 @@ export default {
     getNotePathTitle,
     getNoteTitleWithPathAsSuffix,
     isNotePathInHiddenSubtree,
-    formatNotePath
+    formatNotePath,
+    getCloneIndicatorTooltip
 };

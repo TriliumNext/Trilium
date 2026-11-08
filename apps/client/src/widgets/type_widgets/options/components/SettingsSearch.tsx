@@ -14,7 +14,7 @@ interface SettingsSearchProps {
     onFocus?(): void;
     /** What the field looks through, where that is something other than the settings. */
     placeholder?: string;
-    inputRef?: RefObject<HTMLInputElement>;
+    inputRef?: RefObject<HTMLInputElement | null>;
 }
 
 /**

@@ -20,6 +20,7 @@ import Button from "./widgets/react/Button";
 import { Card, CardSection, OptionCardSection } from "./widgets/react/Card";
 import FormRadioGroup from "./widgets/react/FormRadioGroup";
 import Icon from "./widgets/react/Icon";
+import ProgressBar from "./widgets/react/ProgressBar";
 import SetupPage from "./widgets/react/SetupPage";
 import SlidePages from "./widgets/react/SlidePages";
 
@@ -303,7 +304,7 @@ export function ExistingDataBackingUp() {
 
                 {fraction !== null && (
                     <div class="existing-data-progress-bar">
-                        <progress value={fraction} max={1} />
+                        <ProgressBar value={fraction} max={1} />
                         <span>{Math.floor(fraction * 100)}%</span>
                     </div>
                 )}

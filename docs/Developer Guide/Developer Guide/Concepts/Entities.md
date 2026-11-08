@@ -82,7 +82,7 @@ BasicWidget
 ├── NoteContextAwareWidget (responds to note changes)
 │   ├── RightPanelWidget (displayed in right sidebar)
 │   └── Type-specific widgets
-├── Container widgets (tabs, ribbons, etc.)
+├── Container widgets (tabs, panels, etc.)
 └── Specialized widgets (search, calendar, etc.)
 ```
 

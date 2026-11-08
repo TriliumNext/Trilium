@@ -1,0 +1,145 @@
+// The mermaid "dispatcher" grammar detects the diagram type from the first
+// meaningful line and emits a single node for it. The main mermaidLanguage then
+// uses parseMixed to hand that node's range to the matching sub-diagram parser.
+// In the diagrams whose Mermaid parser stores accTitle and accDescr, those lines
+// are nodes of this grammar, and the diagram's parser covers the text around them.
+@top MermaidDiagram {
+  FrontMatter? (preDiagramLine | Directive | LineComment)* (
+    PieDiagram |
+    MindmapDiagram |
+    FlowchartDiagram |
+    SequenceDiagram |
+    JourneyDiagram |
+    RequirementDiagram |
+    GanttDiagram |
+    TimelineDiagram |
+    QuadrantDiagram |
+    RadarDiagram |
+    TreemapDiagram |
+    TreeViewDiagram |
+    WardleyDiagram |
+    CynefinDiagram |
+    EventModelingDiagram |
+    RailroadDiagram |
+    RailroadEbnfDiagram |
+    RailroadAbnfDiagram |
+    RailroadPegDiagram |
+    IshikawaDiagram |
+    VennDiagram |
+    UsecaseDiagram |
+    AgentflowDiagram |
+    SankeyDiagram |
+    XYChartDiagram |
+    PacketDiagram |
+    KanbanDiagram |
+    BlockDiagram |
+    ArchitectureDiagram |
+    ClassDiagram |
+    StateDiagram |
+    ERDiagram |
+    GitDiagram |
+    C4Diagram
+  )
+}
+
+PieDiagram { pieText accessible* }
+FlowchartDiagram { flowchartText accessible* }
+SequenceDiagram { sequenceText accessible* }
+JourneyDiagram { journeyText accessible* }
+RequirementDiagram { requirementText accessible* }
+GanttDiagram { ganttText accessible* }
+QuadrantDiagram { quadrantText accessible* }
+RadarDiagram { radarText accessible* }
+TreemapDiagram { treemapText accessible* }
+TreeViewDiagram { treeViewText accessible* }
+WardleyDiagram { wardleyText accessible* }
+CynefinDiagram { cynefinText accessible* }
+RailroadDiagram { railroadText accessible* }
+RailroadEbnfDiagram { railroadEbnfText accessible* }
+RailroadAbnfDiagram { railroadAbnfText accessible* }
+RailroadPegDiagram { railroadPegText accessible* }
+UsecaseDiagram { usecaseText accessible* }
+AgentflowDiagram { agentflowText accessible* }
+XYChartDiagram { xyChartText accessible* }
+PacketDiagram { packetText accessible* }
+ArchitectureDiagram { architectureText accessible* }
+ClassDiagram { classText accessible* }
+StateDiagram { stateText accessible* }
+ERDiagram { erText accessible* }
+GitDiagram { gitText accessible* }
+C4Diagram { c4Text accessible* }
+
+accessible { AccTitle | AccDescr | diagramRest }
+
+AccTitle { accTitleKeyword ":" AccText? }
+
+AccDescr { accDescrKeyword (":" AccText? | "{" accBlockText? "}") }
+
+// Mermaid reads front matter only at the very start of the document. index.ts parses
+// FrontMatterContent with the YAML parser.
+@skip {} {
+  FrontMatter { frontMatterStart FrontMatterContent? frontMatterEnd }
+}
+
+@skip { space }
+
+@tokens {
+  space { $[ \t\r]+ }
+  ":" "{" "}"
+}
+
+@external tokens frontMatter from "./tokens.js" {
+  frontMatterStart[@name=DashLine],
+  FrontMatterContent,
+  frontMatterEnd[@name=DashLine]
+}
+
+@external tokens diagramText from "./tokens.js" {
+  preDiagramLine,
+  Directive,
+  LineComment,
+  pieText,
+  MindmapDiagram,
+  flowchartText,
+  sequenceText,
+  journeyText,
+  requirementText,
+  ganttText,
+  TimelineDiagram,
+  quadrantText,
+  radarText,
+  treemapText,
+  treeViewText,
+  wardleyText,
+  cynefinText,
+  EventModelingDiagram,
+  railroadText,
+  railroadEbnfText,
+  railroadAbnfText,
+  railroadPegText,
+  IshikawaDiagram,
+  VennDiagram,
+  usecaseText,
+  agentflowText,
+  SankeyDiagram,
+  xyChartText,
+  packetText,
+  KanbanDiagram,
+  BlockDiagram,
+  architectureText,
+  classText,
+  stateText,
+  erText,
+  gitText,
+  c4Text
+}
+
+@external tokens accessibility from "./tokens.js" {
+  accTitleKeyword[@name=Keyword],
+  accDescrKeyword[@name=Keyword],
+  AccText,
+  accBlockText[@name=AccText],
+  diagramRest
+}
+
+@external propSource mermaidHighlighting from "./highlight.js"

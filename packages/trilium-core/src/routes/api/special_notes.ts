@@ -121,10 +121,6 @@ function getMostRecentLlmChat() {
     return chat || null;
 }
 
-function getOrCreateLlmChat() {
-    return specialNotesService.getOrCreateLlmChat();
-}
-
 function getRecentLlmChats(req: Request) {
     const limit = parseInt(req.query.limit as string) || 10;
     return specialNotesService.getRecentLlmChats(limit);
@@ -153,7 +149,6 @@ export default {
     createOrUpdateScriptLauncherFromApi,
     createLlmChat,
     getMostRecentLlmChat,
-    getOrCreateLlmChat,
     getRecentLlmChats,
     saveLlmChat
 };

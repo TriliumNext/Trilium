@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle, initThemeChangeNotifier, onEffectiveThemeStyleChange } from "./theme.js";
+import {
+    applyTheme, buildThemeStylesheetRefs, getConfiguredThemeStylesheets, getEffectiveThemeStyle, getThemeStyle,
+    initThemeChangeNotifier, onEffectiveThemeStyleChange, updateColorSchemeClasses
+} from "./theme.js";
 
 // theme.ts lazily imports the app context to emit `themeChanged`; mock it so the tests capture the emission
 // without pulling the whole app graph into happy-dom.
@@ -45,6 +48,9 @@ afterEach(async () => {
     win.matchMedia = originalMatchMedia;
     win.glob = originalGlob;
     Reflect.deleteProperty(document, "hidden");
+    for (const lock of document.head.querySelectorAll("meta[name='darkreader-lock']")) {
+        lock.remove();
+    }
     triggerEvent.mockClear();
     vi.restoreAllMocks();
 });
@@ -386,7 +392,43 @@ describe("initThemeChangeNotifier", () => {
         await new Promise((resolve) => setTimeout(resolve));
         expect(triggerEvent).not.toHaveBeenCalled();
     });
+
+    it("adds the Dark Reader lock only while the effective style is dark", () => {
+        setTheme("next-dark");
+        installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(1);
+
+        setTheme("next");
+        const mql = installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(0);
+
+        mql.matches = true;
+        mql.listener?.();
+        expect(darkReaderLocks()).toHaveLength(1);
+
+        mql.matches = false;
+        mql.listener?.();
+        expect(darkReaderLocks()).toHaveLength(0);
+    });
+
+    it("locks Dark Reader for a dark custom theme once its stylesheet reports the style", () => {
+        setTheme("my-theme");
+        installMatchMedia(false);
+        initThemeChangeNotifier();
+        expect(darkReaderLocks()).toHaveLength(0);
+
+        stubComputedStyle({ "--theme-style": "dark" });
+        updateColorSchemeClasses();
+        expect(darkReaderLocks()).toHaveLength(1);
+        expect(document.body.classList.contains("dark-theme")).toBe(true);
+    });
 });
+
+function darkReaderLocks() {
+    return document.head.querySelectorAll("meta[name='darkreader-lock']");
+}
 
 function themeStylesheetHrefs() {
     return Array.from(document.head.querySelectorAll<HTMLLinkElement>("link[data-theme-stylesheet]"))

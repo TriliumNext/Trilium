@@ -167,6 +167,14 @@ const fakeNativeImage = {
 
 class FakeClipboardItem {
     constructor(readonly items: Record<string, unknown>) {}
+
+    get types() {
+        return Object.keys(this.items);
+    }
+
+    getType(type: string) {
+        return Promise.resolve(this.items[type]);
+    }
 }
 
 const fakeApp = {
@@ -183,7 +191,11 @@ const electronSurface = {
     shell: fakeShell,
     globalShortcut: fakeGlobalShortcut,
     nativeImage: fakeNativeImage,
-    clipboard: { write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()), readText: vi.fn(() => Promise.resolve("")) },
+    clipboard: {
+        write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()),
+        readText: vi.fn(() => Promise.resolve("")),
+        read: vi.fn((): Promise<FakeClipboardItem[]> => Promise.resolve([]))
+    },
     ClipboardItem: FakeClipboardItem,
     nativeTheme: { themeSource: "system" },
     BrowserWindow: fakeBrowserWindowClass,
@@ -205,8 +217,9 @@ vi.mock("electron", () => ({
     globalShortcut: fakeGlobalShortcut
 }));
 
-vi.mock("electron-window-state", () => ({
-    default: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
+// Window state persistence has its own suite (window_state.spec.ts).
+vi.mock("./window_state", () => ({
+    createWindowStateKeeper: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
 }));
 
 // setupWindowing() installs the WebContents security policy; that behaviour has
@@ -514,6 +527,18 @@ describe("window service", () => {
             await windowService.createSetupWindow();
             const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
             expect(opts.vibrancy).toBe("under-window");
+        });
+
+        it("draws the window controls over the page on every platform", async () => {
+            for (const platform of [ "isLinux", "isWindows", "isMac" ] as const) {
+                state.isLinux = state.isWindows = state.isMac = false;
+                state[platform] = true;
+                await windowService.createSetupWindow();
+                const opts = state.windows[state.windows.length - 1].opts as Record<string, unknown>;
+                expect(opts.titleBarStyle).toBe(platform === "isMac" ? "hiddenInset" : "hidden");
+                expect(opts.titleBarOverlay).toBe(true);
+                expect(opts.frame).toBeUndefined();
+            }
         });
 
         it("names the window for what it is: getting started, or starting over", async () => {
@@ -853,10 +878,13 @@ describe("window service", () => {
             expect(extraWindowOptions?.webPreferences?.nodeIntegration).toBe(false);
         });
 
-        it("reload-all-windows reloads every window", () => {
+        it("reload-all-windows reloads every app window and leaves other pages alone", () => {
             const win = state.windows[state.windows.length - 1];
+            const capture = new FakeBrowserWindow();
+            capture.webContents.getURL.mockReturnValue("file:///tmp/trilium-transcription.html");
             fireOn("reload-all-windows", makeEvent());
             expect(win.reload).toHaveBeenCalled();
+            expect(capture.reload).not.toHaveBeenCalled();
         });
 
         it("restart-app relaunches and exits", () => {
@@ -885,6 +913,21 @@ describe("window service", () => {
             state.nativeImageThrow = true;
             await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("failed"));
+        });
+
+        it("read-clipboard-text and read-clipboard-html return the clipboard flavors", async () => {
+            const html = new Blob(["<b>html</b>"], { type: "text/html" });
+            const text = new Blob(["text"], { type: "text/plain" });
+            electronSurface.clipboard.readText.mockReturnValueOnce(Promise.resolve("text"));
+            electronSurface.clipboard.read
+                .mockResolvedValueOnce([
+                    new FakeClipboardItem({ "text/plain": text, "text/html": html })
+                ])
+                .mockResolvedValueOnce([new FakeClipboardItem({ "text/plain": text })]);
+
+            expect(await fireHandle("read-clipboard-text", makeEvent())).toBe("text");
+            expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("<b>html</b>");
+            expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("");
         });
 
         it("show-window shows the resolved window (and tolerates null)", () => {

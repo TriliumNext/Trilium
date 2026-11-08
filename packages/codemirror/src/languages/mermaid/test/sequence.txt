@@ -1,0 +1,409 @@
+# Sequence
+
+sequenceDiagram
+
+==>
+
+SequenceDiagram(DiagramName)
+
+# NodeText and MessageText
+
+sequenceDiagram
+  Alice->>John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Extra Spacing between NodeText and Arrow
+
+sequenceDiagram
+Al ice     -) John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Line Break between NodeText and Arrow
+
+sequenceDiagram
+Alice ->> 
+John: Hello John, how are you?
+John ->> 
+Alice: Great!
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Participant
+
+sequenceDiagram
+participant Alice
+participant Bob
+Alice->>Bob: Hi Bob
+Bob->>Alice: Hi Alice
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,Participant,NodeText,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Actor
+
+sequenceDiagram
+actor Alice
+actor Bob
+Alice->>Bob: Hi Bob
+Bob->>Alice: Hi Alice
+
+==>
+
+SequenceDiagram(DiagramName,Actor,NodeText,Actor,NodeText,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Alias
+
+sequenceDiagram
+participant A as Alice
+participant J as John
+A->>J: Hello John, how are you?
+J->>A: Great!
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,As,NodeText,Participant,NodeText,As,NodeText,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Actor Creation and Destruction
+
+sequenceDiagram
+Alice->>Bob: Hello Bob, how are you ?
+Bob->>Alice: Fine, thank you. And you?
+create participant Carl
+Alice->>Carl: Hi Carl!
+create actor D as Donald
+Carl->>D: Hi!
+destroy Carl
+Alice-xCarl: We are too many
+destroy Bob
+Bob->>Alice: I agree
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,Create,Participant,NodeText,NodeText,Arrow,NodeText,MessageText1,Create,Actor,NodeText,As,NodeText,NodeText,Arrow,NodeText,MessageText1,Destroy,NodeText,NodeText,Arrow,NodeText,MessageText1,Destroy,NodeText,NodeText,Arrow,NodeText,MessageText1)
+
+# Grouping / Box
+
+sequenceDiagram
+box Purple Alice & John
+participant A
+participant J
+end
+box Another Group
+participant B
+participant C
+end
+A->>J: Hello John, how are you?
+J->>A: Great!
+A->>B: Hello Bob, how is Charly ?
+B->>C: Hello Charly, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,Keyword,MessageText2,Participant,NodeText,Participant,NodeText,End,Keyword,MessageText2,Participant,NodeText,Participant,NodeText,End,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (->)
+
+sequenceDiagram
+  Alice->John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (-->)
+
+sequenceDiagram
+  Alice-->John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (->>)
+
+sequenceDiagram
+  Alice->>John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (-->>)
+
+sequenceDiagram
+  Alice-->>John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (-x)
+
+sequenceDiagram
+  Alice-xJohn: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (--x)
+
+sequenceDiagram
+  Alice--xJohn: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (-))
+
+sequenceDiagram
+  Alice-)John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Arrow (--))
+
+sequenceDiagram
+  Alice--)John: Hello John, how are you?
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1)
+
+# Activations
+
+sequenceDiagram
+Alice->>John: Hello John, how are you?
+activate John
+John-->>Alice: Great!
+deactivate John
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,Activate,NodeText,NodeText,Arrow,NodeText,MessageText1,Deactivate,NodeText)
+
+# Activations with Arrow Suffix
+
+sequenceDiagram
+Alice->>+John: Hello John, how are you?
+John-->>-Alice: Great!
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1)
+
+# Note and Position
+
+sequenceDiagram
+participant John
+Note right of John: Text in note
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,Note,Position,NodeText,MessageText1)
+
+# Note and Position with multiple Nodes
+
+sequenceDiagram
+Alice->John: Hello John, how are you?
+Note over Alice,John: A typical interaction
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,Note,Position,NodeText,NodeText,MessageText1)
+
+# Loop
+
+sequenceDiagram
+Alice->John: Hello John, how are you?
+loop Every minute
+    John-->Alice: Great!
+end
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End)
+
+# Alt, Else, Opt
+
+sequenceDiagram
+Alice->>Bob: Hello Bob, how are you?
+alt is sick
+    Bob->>Alice: Not so good :(
+else is well
+    Bob->>Alice: Feeling fresh like a daisy
+end
+opt Extra response
+    Bob->>Alice: Thanks for asking
+end
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End)
+
+# Parallel (par, and)
+
+sequenceDiagram
+par Alice to Bob
+    Alice->>Bob: Hello guys!
+and Alice to John
+    Alice->>John: Hello guys!
+end
+Bob-->>Alice: Hi Alice!
+John-->>Alice: Hi Alice!
+
+==>
+
+SequenceDiagram(DiagramName,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Nested Parallel (par, and)
+
+sequenceDiagram
+par Alice to Bob
+    Alice->>Bob: Go help John
+and Alice to John
+    Alice->>John: I want this done today
+    par John to Charlie
+        John->>Charlie: Can we do this today?
+    and John to Diana
+        John->>Diana: Can you help us today?
+    end
+end
+
+==>
+
+SequenceDiagram(DiagramName,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End,End)
+
+# Critical Region
+
+sequenceDiagram
+critical Establish a connection to the DB
+    Service-->DB: connect
+end
+
+==>
+
+SequenceDiagram(DiagramName,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End)
+
+# Critical Region with Options
+
+sequenceDiagram
+critical Establish a connection to the DB
+    Service-->DB: connect
+option Network timeout
+    Service-->Service: Log error
+option Credentials rejected
+    Service-->Service: Log different error
+end
+
+==>
+
+SequenceDiagram(DiagramName,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End)
+
+# Break
+
+sequenceDiagram
+Consumer-->API: Book something
+API-->BookingService: Start booking process
+break when the booking process fails
+    API-->Consumer: show failure
+end
+API-->BillingService: Start billing process
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End,NodeText,Arrow,NodeText,MessageText1)
+
+# Background Highlighting (rect)
+
+sequenceDiagram
+participant Alice
+participant John
+
+rect rgb(191, 223, 255)
+note right of Alice: Alice calls John.
+Alice->>+John: Hello John, how are you?
+rect rgb(200, 150, 255)
+Alice->>+John: John, can you hear me?
+John-->>-Alice: Hi Alice, I can hear you!
+end
+John-->>-Alice: I feel great!
+end
+Alice ->>+ John: Did you want to go to the game tonight?
+John -->>- Alice: Yeah! See you there.
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,Participant,NodeText,Keyword,MessageText2,Note,Position,NodeText,MessageText1,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,End,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,End,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1,NodeText,Arrow,ArrowSuffix,NodeText,MessageText1)
+
+# LineComment
+
+sequenceDiagram
+Alice->>John: Hello John, how are you?
+%% this is a comment
+John-->>Alice: Great!
+
+==>
+
+SequenceDiagram(DiagramName,NodeText,Arrow,NodeText,MessageText1,LineComment,NodeText,Arrow,NodeText,MessageText1)
+
+# Sequence Numbers (autonumber)
+
+sequenceDiagram
+autonumber
+Alice->>John: Hello John, how are you?
+loop Healthcheck
+    John->>John: Fight against hypochondria
+end
+Note right of John: Rational thoughts!
+John-->>Alice: Great!
+John->>Bob: How about you?
+Bob-->>John: Jolly good!
+
+==>
+
+SequenceDiagram(DiagramName,Autonumber,NodeText,Arrow,NodeText,MessageText1,Keyword,MessageText2,NodeText,Arrow,NodeText,MessageText1,End,Note,Position,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Actor Menus (link)
+
+sequenceDiagram
+participant Alice
+participant John
+link Alice: Dashboard @ https://dashboard.contoso.com/alice
+link Alice: Wiki @ https://wiki.contoso.com/alice
+link John: Dashboard @ https://dashboard.contoso.com/john
+link John: Wiki @ https://wiki.contoso.com/john
+Alice->>John: Hello John, how are you?
+John-->>Alice: Great!
+Alice-)John: See you later!
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,Participant,NodeText,Link,NodeText,MessageText1,Link,NodeText,MessageText1,Link,NodeText,MessageText1,Link,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)
+
+# Actor Menus (links)
+
+sequenceDiagram
+participant Alice
+participant John
+links Alice: {"Dashboard": "https://dashboard.contoso.com/alice", "Wiki": "https://wiki.contoso.com/alice"}
+links John: {"Dashboard": "https://dashboard.contoso.com/john", "Wiki": "https://wiki.contoso.com/john"}
+Alice->>John: Hello John, how are you?
+John-->>Alice: Great!
+Alice-)John: See you later!
+
+==>
+
+SequenceDiagram(DiagramName,Participant,NodeText,Participant,NodeText,Link,NodeText,MessageText1,Link,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1,NodeText,Arrow,NodeText,MessageText1)

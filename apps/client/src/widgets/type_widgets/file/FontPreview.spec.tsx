@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // i18next is never initialized under test, so t() is rendered deterministic instead: the key with
@@ -54,7 +55,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    render(null, container);
+    act(() => render(null, container));
     container.remove();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
@@ -128,7 +129,7 @@ describe("FontPreview", () => {
         await waitForSpecimen();
         expect(registeredFonts.size).toBe(1);
 
-        render(null, container);
+        act(() => render(null, container));
         expect(registeredFonts.size).toBe(0);
     });
 
@@ -168,7 +169,7 @@ describe("FontPreview", () => {
         // The label alone says the font is offered — the picker names it by the note's title, so
         // there is no family to keep in step with a rename.
         isOffered = true;
-        render(null, container);
+        act(() => render(null, container));
         mount();
         await waitForSpecimen();
 

@@ -127,9 +127,10 @@ export interface AiDiffResult {
 
 /**
  * Renders an inline HTML diff between two HTML fragments, returning HTML in which insertions and
- * deletions are marked with `<ins>`/`<del>` elements (the `htmldiff-js` output convention, the
- * same mechanism Trilium's revision dialog uses). Returning an {@link AiDiffResult} instead of a
- * bare string lets the renderer also say how much of the response it could not align.
+ * deletions are marked with `<ins>`/`<del>` elements (the output convention of the client's
+ * `diffHtml()`, the same mechanism Trilium's revision dialog uses). Returning an
+ * {@link AiDiffResult} instead of a bare string lets the renderer also say how much of the
+ * response it could not align.
  */
 export type AiDiffFunction = (oldHtml: string, newHtml: string) => string | AiDiffResult;
 

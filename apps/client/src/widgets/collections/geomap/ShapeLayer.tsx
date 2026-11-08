@@ -6,7 +6,7 @@ import { trackHitLayers } from "./GpxTrack";
 import { useHoverName } from "./hover_name";
 import { MapStyleLoaded, ParentMap } from "./map";
 import { MARKER_LAYER } from "./Markers";
-import { circleRing, closeRing, type GeoShape, serializeGeoShape } from "./shapes";
+import { closeRing, type GeoShape, serializeGeoShape, shapeRing } from "./shapes";
 
 /**
  * The prefixes a shape's layer ids start with. Every shape adds layers of its own, so
@@ -70,7 +70,7 @@ export function ShapeLayer({ noteId, shape, color }: ShapeLayerProps) {
                                 // or the ring walked out of a circle's centre and radius.
                                 : { type: "Polygon", coordinates: [ closeRing(
                                     shape.type === "circle"
-                                        ? circleRing(shape.center, shape.radiusMeters)
+                                        ? shapeRing(shape)
                                         : shape.coordinates
                                 ) ] }
                         }

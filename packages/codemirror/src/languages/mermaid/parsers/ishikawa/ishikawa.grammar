@@ -1,0 +1,18 @@
+// Follows Mermaid's Ishikawa (fishbone) diagram, whose parser reads one node per line: the first
+// is the effect, and indentation sets the rest apart into categories and the causes under them.
+@top IshikawaDiagram { DiagramName (Effect (Category | Cause)*)? }
+
+DiagramName { "ishikawa-beta" | "ishikawa" }
+
+@context trackLevels from "./tokens.js"
+
+@skip { space | LineComment }
+
+@external tokens lines from "./tokens.js" { Effect, Category, Cause }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  LineComment { "%%" ![\n]* }
+}
+
+@external propSource ishikawaHighlighting from "./highlight.js"

@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes je open-source, cross-platform aplikace pro hierarchiální psaní
@@ -360,6 +361,10 @@ Trilium by nebyl možný bez technologií, které za ním stojí:
   text notes.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - editor kódu s
   podporou obrovského množství jazyků.
+* [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
+  Mermaid notes; its parsers are the model for their syntax highlighting.
+* [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
+  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - nekonečná bílá tabule
   používaná v poznámkách typu Canvas.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - poskytuje
@@ -370,11 +375,6 @@ Trilium by nebyl možný bez technologií, které za ním stojí:
   tabulku používanou v kolekcích.
 * [FancyTree](https://github.com/mar10/fancytree) - bohatá knihovna pro stromové
   struktury bez skutečné konkurence.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - knihovna pro vizuální
-  propojení. Používá se v [mapách
-  vazeb](https://docs.triliumnotes.org/user-guide/note-types/relation-map) a
-  [mapách
-  odkazů](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Podpora
 

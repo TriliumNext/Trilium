@@ -43,17 +43,17 @@ env $ENV node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs record 
 
 # 2. Join with the metafile: eager vs lazy totals, per package, biggest eager chunks:
 node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs startup \
-    --meta <meta.json> --loaded /tmp/loaded.txt
+    --meta apps/server/dist/meta/main.json --loaded /tmp/loaded.txt
 
 # 3. Explain WHY a package is eager (shortest static import chain from the entry;
 #    --from <input> traces from a module that is itself dynamically imported):
 node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs why \
-    --meta <meta.json> iconv-lite undici
+    --meta apps/server/dist/meta/main.json iconv-lite undici
 node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs why \
-    --meta <meta.json> --from apps/server/src/www.ts highlight.js
+    --meta apps/server/dist/meta/main.json --from apps/server/src/www.ts highlight.js
 
 # 4. Whole-bundle composition, no boot needed:
-node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs packages --meta <meta.json>
+node .claude/skills/analyzing-backend-bundle/analyze-bundle.mjs packages --meta apps/server/dist/meta/main.json
 
 # 5. After adding any lazy seam — catches the CJS interop break described below:
 node .claude/skills/analyzing-backend-bundle/check-dynamic-imports.mjs apps/server/dist
@@ -77,11 +77,10 @@ imports `electron`), but `packages` and `why` work on its metafile directly.
 
 ## Getting the metafile
 
-`buildBackend()` writes `dist/meta.json`, and **the last call in the app's build script
-wins** — after `pnpm server:build` it describes `image_worker.cjs`, not main. To get the
-main bundle's metafile, temporarily leave only the `main.ts` `buildBackend` call in
-`apps/server/scripts/build.ts`, run the build, and save `dist/meta.json` elsewhere before
-restoring. (Making buildBackend write per-entry metafiles is the real fix if this grates.)
+`buildBackend()` writes one metafile per entry point, named after it, under `dist/meta/`:
+the main bundle's is `dist/meta/main.json`, and the workers sit beside it
+(`image_worker.json`, and on desktop `preload.json`, `transcription_worker.json`,
+`tesseract_worker.json`).
 
 ## Interpreting the results
 

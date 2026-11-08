@@ -1,5 +1,3 @@
-import "autocomplete.js/index_jquery.js";
-
 import type { ElectronWindowApi } from "@triliumnext/commons";
 
 import appContext, { type CommandNames } from "./components/app_context.js";
@@ -10,7 +8,6 @@ import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
-import noteAutocompleteService from "./services/note_autocomplete.js";
 import noteTooltipService from "./services/note_tooltip.js";
 import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
@@ -47,14 +44,13 @@ export const ready = bundleService.getWidgetBundlesByParent().then(async (widget
 });
 
 glob.setupGlobs();
+initFullScreenDetection();
 
 if (utils.isElectron()) {
     initOnElectron();
 }
 
 noteTooltipService.setupGlobalTooltip();
-
-noteAutocompleteService.init();
 
 setupClipboardImageEmbed();
 
@@ -75,7 +71,6 @@ function initOnElectron() {
     win.onOpenInSameTab(async (noteId) => appContext.tabManager.openInSameTab(noteId));
 
     syncNativeWindowWithTheme();
-    initFullScreenDetection(win);
     initDevToolsDockDetection(win);
 
     // With an "auto" theme the effective colors of background effects and the native title bar
@@ -101,9 +96,23 @@ function reportFullRenderStartupMetric() {
     });
 }
 
-function initFullScreenDetection(win: ElectronWindowApi) {
-    win.onEnterFullScreen(() => document.body.classList.add("full-screen"));
-    win.onLeaveFullScreen(() => document.body.classList.remove("full-screen"));
+/** Sets `full-screen` on the body while the window, or the page in a browser, is full screen. */
+function initFullScreenDetection() {
+    const setFullScreen = (isFullScreen: boolean) => {
+        document.body.classList.toggle("full-screen", isFullScreen);
+    };
+
+    const win = window.electronApi?.window;
+    if (win) {
+        setFullScreen(win.isFullScreen());
+        win.onEnterFullScreen(() => setFullScreen(true));
+        win.onLeaveFullScreen(() => setFullScreen(false));
+        return;
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+        setFullScreen(document.fullscreenElement === document.documentElement);
+    });
 }
 
 /**

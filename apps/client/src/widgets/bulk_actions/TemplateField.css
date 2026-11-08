@@ -1,0 +1,15 @@
+.template-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+}
+
+.template-field-preview {
+    overflow: hidden;
+    color: var(--muted-text-color);
+    font-size: 0.85em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

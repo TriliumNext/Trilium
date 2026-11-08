@@ -65,7 +65,7 @@
         "subtitle": "Не все можно уместить в один абзац. Trilium предлагает различные типы заметок: от форматированного текста и кода до электронных таблиц, диаграмм и ментальных карт. Вы можете фиксировать каждую идею в наиболее подходящей для нее форме и свободно комбинировать их в своем древовидном списке.",
         "others_label": "А также",
         "notemap_title": "Карта заметок",
-        "relationmap_title": "Карта связей",
+        "relationmap_title": "Карта отношений",
         "savedsearch_title": "Сохраненные поиски",
         "rendernote_title": "Заметка для рендера",
         "webview_title": "Просмотр веб-страниц",
@@ -193,10 +193,10 @@
         "quick_start": "Выберите подходящий формат пакета в зависимости от вашего дистрибутива:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
-        "download_appimage": ".AppImage"
+        "download_appimage": ".AppImage",
+        "download_flathub": "Flathub"
     },
     "download_helper_server_linux": {
         "title": "Свой сервер на Linux",

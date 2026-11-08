@@ -43,8 +43,6 @@ const regexMatchCallback = (
     // Get the text node containing the cursor's position, or the one ending at it.
     const surroundingText = selectionStart && (selectionStart.textNode || selectionStart.getShiftedBy(-1).textNode);
 
-    /* v8 ignore next 3 -- defensive: the matcher only runs off typed text, so the selection
-       anchor always sits in or right after a text node */
     if (!selectionStart || !surroundingText) {
         return noMatch;
     }

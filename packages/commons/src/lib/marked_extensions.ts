@@ -1,17 +1,6 @@
 import type { Token, TokenizerAndRendererExtension } from "marked";
 
-/**
- * Escapes HTML special characters to prevent XSS attacks.
- * Used for both attribute values and text content.
- */
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
+import { escapeHtml } from "./utils.js";
 
 export interface WikiLinkOptions {
     /** Format the href for the link. Defaults to `/${noteId}` */
@@ -101,7 +90,7 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
 }
 
 /**
- * Background colour for highlights: CKEditor's stock palette yellow (`==…==` carries no colour
+ * Background colour for highlights: the text editor's palette Yellow (`==…==` carries no colour
  * of its own). Matches the `<span style="background-color:…">` markup CKEditor's Font
  * Background Color feature emits, so a highlight rendered into a text note round-trips as an
  * editable highlight. Deliberately not `<mark>`, which General HTML Support does keep but
@@ -112,7 +101,11 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
  * `==…==` and which have to keep their colour as inline HTML, so the two directions must agree
  * on the exact value.
  */
-export const HIGHLIGHT_BACKGROUND = "hsl(60, 75%, 60%)";
+export const HIGHLIGHT_BACKGROUND = "#e5e64d";
+
+/** The style of a highlight as the text editor saves it, with the theme-adaptive variable. */
+export const HIGHLIGHT_STYLE =
+    `background-color:${HIGHLIGHT_BACKGROUND};--tn-background:${HIGHLIGHT_BACKGROUND};`;
 
 /**
  * Creates an extension for highlights: `==text==` → a background-coloured `<span>`.
@@ -146,7 +139,8 @@ export function createHighlightExtension(): TokenizerAndRendererExtension {
         },
 
         renderer(token) {
-            return `<span style="background-color:${HIGHLIGHT_BACKGROUND};">${this.parser.parseInline(token.tokens as Token[])}</span>`;
+            const content = this.parser.parseInline(token.tokens as Token[]);
+            return `<span style="${HIGHLIGHT_STYLE}">${content}</span>`;
         }
     };
 }
@@ -223,6 +217,67 @@ export function createLiteralTildeExtension(): TokenizerAndRendererExtension {
         }
     };
 }
+
+/**
+ * Creates the extensions for the content tabs of `pymdownx.tabbed` (Material for MkDocs), which
+ * render consecutive tabs as one `<div class="trilium-tabs">` in the text editor's markup.
+ */
+export function createTabsExtensions(): TokenizerAndRendererExtension[] {
+    return [
+        {
+            name: "tabs",
+            level: "block",
+
+            start(src: string) {
+                return /^===!? +"/m.exec(src)?.index;
+            },
+
+            tokenizer(src) {
+                const tabs: Token[] = [];
+                let raw = "";
+                let rest = src;
+                for (;;) {
+                    const match = TAB.exec(rest);
+                    if (!match || (match[1] && tabs.length)) {
+                        break;
+                    }
+                    const content = match[3].replace(/^(?: {4}|\t)/gm, "");
+                    tabs.push({
+                        type: "tab",
+                        raw: match[0],
+                        titleTokens: this.lexer.inlineTokens(match[2]),
+                        tokens: this.lexer.blockTokens(content, [])
+                    });
+                    raw += match[0];
+                    rest = rest.slice(match[0].length);
+                }
+
+                if (tabs.length) {
+                    return { type: "tabs", raw, tokens: tabs };
+                }
+            },
+
+            renderer(token) {
+                return `<div class="trilium-tabs">${this.parser.parse(token.tokens as Token[])}</div>`;
+            }
+        },
+        {
+            name: "tab",
+            renderer(token) {
+                const title = this.parser.parseInline(token.titleTokens as Token[]) || "&nbsp;";
+                const panel = this.parser.parse(token.tokens as Token[]).trim() || "<p>&nbsp;</p>";
+                return `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
+                    `<div class="trilium-tab-panel">${panel}</div></section>`;
+            }
+        }
+    ];
+}
+
+/**
+ * One tab: the `=== "Title"` line (`===! "Title"` starts a new block; the title runs to the last
+ * quote), then its panel, the following lines that are blank or indented by four spaces or a tab.
+ */
+const TAB = /^===(!)? +"(.*)" *(?:\n|$)((?:[ \t]*\n|(?: {4}|\t).*(?:\n|$))*)/;
 
 /** Pre-configured wiki-link extension for server-side (uses /noteId format) */
 export const wikiLinkExtension = createWikiLinkExtension();

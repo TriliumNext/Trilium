@@ -1,0 +1,47 @@
+:where(:root) {
+    --block-reference-flash-color: rgb(255 200 0 / 40%);
+}
+
+.block-reference-flash {
+    /* The duration matches FLASH_DURATION_MS in block_reference_read_only.ts. */
+    animation: block-reference-flash 1.5s ease-out;
+}
+
+@keyframes block-reference-flash {
+    from,
+    30% {
+        box-shadow:
+            0 0 0 4px var(--block-reference-flash-color),
+            inset 0 0 0 100vmax var(--block-reference-flash-color);
+    }
+
+    to {
+        box-shadow: 0 0 0 4px transparent, inset 0 0 0 100vmax transparent;
+    }
+}
+
+.block-reference-highlight {
+    box-shadow:
+        0 0 0 4px var(--block-reference-flash-color),
+        inset 0 0 0 100vmax var(--block-reference-flash-color);
+}
+
+/* A tab is `display: contents` (tabs.css), so its title and panel paint the effect instead. */
+.trilium-tab.block-reference-flash > :is(.trilium-tab-title, .trilium-tab-panel) {
+    animation: block-reference-flash-tab 1.5s ease-out;
+}
+
+.trilium-tab.block-reference-highlight > :is(.trilium-tab-title, .trilium-tab-panel) {
+    box-shadow: inset 0 0 0 100vmax var(--block-reference-flash-color);
+}
+
+@keyframes block-reference-flash-tab {
+    from,
+    30% {
+        box-shadow: inset 0 0 0 100vmax var(--block-reference-flash-color);
+    }
+
+    to {
+        box-shadow: inset 0 0 0 100vmax transparent;
+    }
+}

@@ -1,6 +1,7 @@
 import { Direction } from "@univerjs/core";
 import type { FUniver } from "@univerjs/presets";
-import { type MutableRef, useEffect } from "preact/hooks";
+import type { RefObject } from "preact";
+import { useEffect } from "preact/hooks";
 
 // Univer's plain arrow-key navigation (the "sheet.command.move-selection" command) is
 // cyclic: pressing Up on the first row wraps the selection to the last row, Down on the
@@ -55,7 +56,7 @@ export function isOutOfBoundsMove(direction: NavigationDirection, bounds: Select
  * before-command event and aborts the move command when the selection already sits against
  * the boundary in the travel direction.
  */
-export default function useClampEdgeNavigation(apiRef: MutableRef<FUniver | undefined>) {
+export default function useClampEdgeNavigation(apiRef: RefObject<FUniver | undefined>) {
     useEffect(() => {
         const univerAPI = apiRef.current;
         if (!univerAPI) return;

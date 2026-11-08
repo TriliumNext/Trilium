@@ -253,7 +253,9 @@ export async function getBoardData(
     definitionOptions: string[] = [],
     pendingRenames: ReadonlyMap<string, string | undefined> = new Map(),
     /** Whether the board keeps an inbox, which decides whether unassigned notes are collected. */
-    inboxEnabled = false
+    inboxEnabled = false,
+    /** How many levels below its children the board collects cards from, unlimited if absent. */
+    maxDepth?: number
 ) {
     const byColumn: ColumnMap = new Map();
     const storedColumns = readColumns(persistedData, groupByColumn) ?? [];
@@ -274,7 +276,7 @@ export async function getBoardData(
     // First, scan all notes to find what columns actually exist
     await recursiveGroupBy(
         parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived,
-        new Set<string>(), inbox, 0);
+        new Set<string>(), inbox, 0, maxDepth);
 
     const discoveredValues = [ ...byColumn.keys() ];
     const columns = resolveBoardColumns(
@@ -357,10 +359,12 @@ function regroupRenamedCards(
 /**
  * @param inbox where unassigned notes are collected, absent if the board has no inbox.
  * @param depth how deep below the board the branches are, the board's own children being 0.
+ * @param maxDepth the deepest `depth` collected, unlimited if absent or negative.
  */
 async function recursiveGroupBy(
     branches: FBranch[], byColumn: ColumnMap, groupByColumn: string, includeArchived: boolean,
-    seenNoteIds: Set<string>, inbox: { nested: boolean } | undefined, depth: number
+    seenNoteIds: Set<string>, inbox: { nested: boolean } | undefined, depth: number,
+    maxDepth: number | undefined
 ) {
     for (const branch of branches) {
         const note = await branch.getNote();
@@ -370,10 +374,11 @@ async function recursiveGroupBy(
         // properties is filed under it, and the inbox would otherwise collect it as one.
         const isTemplate = note.hasLabel("template");
 
-        if (note.type !== "search" && note.hasChildren()) {
+        const canDescend = maxDepth === undefined || maxDepth < 0 || depth < maxDepth;
+        if (canDescend && note.type !== "search" && note.hasChildren()) {
             await recursiveGroupBy(
                 note.getChildBranches(), byColumn, groupByColumn, includeArchived,
-                seenNoteIds, inbox, depth + 1);
+                seenNoteIds, inbox, depth + 1, maxDepth);
         }
 
         // A note with no value goes to the inbox, if the board has one and reaches this deep.
@@ -394,4 +399,72 @@ async function recursiveGroupBy(
         });
         seenNoteIds.add(note.noteId);
     }
+}
+
+/**
+ * The notes whose attributes can reach a card, split the way `attributes.isAffecting()` checks
+ * them: `own` holds each card and its `~template` and `~inherit` targets, and `ancestors` also
+ * holds every note above those, following templates, which only an inheritable attribute reaches
+ * from.
+ */
+export interface DefinitionSources {
+    own: Set<string>;
+    ancestors: Set<string>;
+}
+
+/** Collects the {@link DefinitionSources} of `cards`, visiting each note once. */
+export function definitionSources(cards: Iterable<FNote>): DefinitionSources {
+    const own = new Set<string>();
+    const ancestors = new Set<string>();
+    const pending: FNote[] = [];
+
+    for (const card of cards) {
+        own.add(card.noteId);
+        pending.push(card);
+        for (const source of card.getNotesToInheritAttributesFrom()) {
+            if (source) {
+                own.add(source.noteId);
+            }
+        }
+    }
+
+    for (let note = pending.pop(); note; note = pending.pop()) {
+        if (ancestors.has(note.noteId)) {
+            continue;
+        }
+        ancestors.add(note.noteId);
+        pending.push(...note.getNotesToInheritAttributesFrom().filter(Boolean),
+            ...note.getParentNotes());
+    }
+
+    return { own, ancestors };
+}
+
+/**
+ * Whether a change can alter the definitions that reach a card: a definition, or a `~template` or
+ * `~inherit` relation, on a note in `sources`. Equivalent to `attributes.isAffecting()` against
+ * every card, at the cost of one lookup per changed attribute.
+ */
+export function affectsCardDefinitions(loadResults: LoadResults, sources: DefinitionSources) {
+    return loadResults.getAttributeRows().some((attr) => isDefinitionSource(attr.name)
+        && !!attr.noteId
+        && (sources.own.has(attr.noteId)
+            || (!!attr.isInheritable && sources.ancestors.has(attr.noteId))));
+}
+
+/** Returns whether an attribute with this name can change a note's `getAttributeDefinitions()`. */
+function isDefinitionSource(name: string | undefined) {
+    return !!name && (name.startsWith("label:") || name.startsWith("relation:")
+        || name === "template" || name === "inherit");
+}
+
+/** Returns the note of every card in `byColumn`, once per note. */
+export function cardNotes(byColumn: ColumnMap | undefined): Set<FNote> {
+    const notes = new Set<FNote>();
+    for (const items of byColumn?.values() ?? []) {
+        for (const { note } of items) {
+            notes.add(note);
+        }
+    }
+    return notes;
 }

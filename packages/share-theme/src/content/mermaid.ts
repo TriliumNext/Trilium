@@ -1,0 +1,114 @@
+import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
+import type { Mermaid } from "mermaid";
+
+/**
+ * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes. A code
+ * block or a note's saved image stays in place until Mermaid has drawn its diagram.
+ */
+export default async function setupMermaid() {
+    const diagrams = findDiagrams();
+    if (diagrams.length === 0) {
+        return;
+    }
+
+    const mermaid = await loadMermaid();
+
+    let theme = readMermaidTheme();
+    let rendering = renderDiagrams(mermaid, diagrams, theme);
+
+    // The theme switch toggles a class on <html>, which changes `--mermaid-theme`.
+    new MutationObserver(() => {
+        const newTheme = readMermaidTheme();
+        if (newTheme === theme) {
+            return;
+        }
+
+        theme = newTheme;
+        rendering = rendering.then(() => renderDiagrams(mermaid, diagrams, newTheme));
+    }).observe(document.documentElement, { attributes: true, attributeFilter: [ "class" ] });
+
+    await rendering;
+}
+
+interface Diagram {
+    /** The element the first drawing replaces. */
+    placeholder: Element;
+    /** The element the drawings go into. */
+    element: HTMLElement;
+    source: string;
+    /** The block ID of a code block, which its drawing keeps for links to the block. */
+    blockId?: string;
+}
+
+/** The diagrams on the page, each with the element its drawing replaces. */
+function findDiagrams() {
+    const placeholders: Omit<Diagram, "element">[] = [];
+
+    for (const block of document.querySelectorAll<HTMLElement>("#content pre")) {
+        const code = block.querySelector<HTMLElement>(":scope > code.language-mermaid");
+        if (code) {
+            placeholders.push({
+                placeholder: block,
+                source: code.textContent,
+                // A code block keeps its block ID on `<code>`, a Mermaid embed on `<pre>`.
+                blockId: block.dataset.triliumBlockId ?? code.dataset.triliumBlockId
+            });
+        }
+    }
+
+    for (const note of document.querySelectorAll<HTMLElement>("#content .mermaid-note")) {
+        const image = note.querySelector(":scope > .mermaid-note-image");
+        const source = note.querySelector(".mermaid-note-source");
+        if (image && source) {
+            placeholders.push({ placeholder: image, source: source.textContent });
+        }
+    }
+
+    return placeholders.map((placeholder): Diagram => {
+        const element = document.createElement("div");
+        element.classList.add("mermaid");
+        if (placeholder.blockId) {
+            element.dataset.triliumBlockId = placeholder.blockId;
+        }
+        return { ...placeholder, element };
+    });
+}
+
+let renderCount = 0;
+
+/**
+ * Draws every diagram from its source. A diagram Mermaid cannot draw keeps what the page showed
+ * for it before: its placeholder, or its drawing in the previous theme.
+ */
+async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: MermaidTheme) {
+    for (const { placeholder, element, source } of diagrams) {
+        try {
+            element.innerHTML = await drawMermaid(mermaid, source, theme);
+        } catch (error) {
+            console.error(error);
+            continue;
+        }
+
+        if (placeholder.isConnected) {
+            placeholder.replaceWith(element);
+        }
+    }
+}
+
+/** Loads Mermaid, which only a page with a diagram needs. */
+export async function loadMermaid() {
+    const { default: mermaid } = await import("mermaid");
+    return mermaid;
+}
+
+/** Returns the SVG of the diagram `source` describes, drawn in `theme`. */
+export async function drawMermaid(mermaid: Mermaid, source: string, theme: MermaidTheme) {
+    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
+    const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
+    return svg;
+}
+
+/** The Mermaid theme of the page's current theme, which the theme switch changes. */
+export function readMermaidTheme() {
+    return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
+}

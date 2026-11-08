@@ -1,29 +1,34 @@
 import "./NoteTitleActions.css";
 
+import { EditedNotesResponse } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
 import { PromotedAttributesContent, usePromotedAttributeData } from "../PromotedAttributes";
 import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsible";
 import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import { NewNoteLink } from "../react/NoteLink";
-import { useEditedNotes } from "../ribbon/EditedNotesTab";
-import SearchDefinitionTab from "../ribbon/SearchDefinitionTab";
+import SearchDefinition from "../search/SearchDefinition";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
+import PinnedAttachments from "./PinnedAttachments";
 
 export default function NoteTitleActions() {
     const { note, ntxId, componentId, noteContext, viewScope } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
+    const isDefaultView = !viewScope?.viewMode || viewScope.viewMode === "default";
 
     return (
         <div className="title-actions">
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
+            {isDefaultView && note && <PinnedAttachments note={note} />}
             <EditedNotes />
-            {(!viewScope?.viewMode || viewScope.viewMode === "default") && <NoteTypeSwitcher note={note} />}
+            {isDefaultView && <NoteTypeSwitcher note={note} />}
         </div>
     );
 }
@@ -34,7 +39,7 @@ function SearchProperties({ note, ntxId }: { note: FNote | null | undefined, ntx
             title={t("search_definition.search_parameters")}
             initiallyExpanded={note.isInHiddenSubtree()} // not saved searches
         >
-            <SearchDefinitionTab note={note} ntxId={ntxId} hidden={false} />
+            <SearchDefinition note={note} ntxId={ntxId} />
         </Collapsible>
     );
 }
@@ -55,7 +60,10 @@ function PromotedAttributes({ note, componentId, noteContext }: {
     }, [ note, noteContext ]);
 
     // Keyboard shortcut.
-    useTriliumEvent("toggleRibbonTabPromotedAttributes", () => setExpanded(!expanded));
+    useTriliumEvent("toggleRibbonTabPromotedAttributes", ({ ntxId }) => {
+        if (!noteContext || ntxId !== noteContext.ntxId) return;
+        setExpanded(!expanded);
+    });
 
     if (!cells?.length) return false;
     return (note && (
@@ -99,5 +107,20 @@ function EditedNotesContent({ note }: { note: FNote }) {
         )) : (
             <div className="no-edited-notes-found">{t("edited_notes.no_edited_notes_found")}</div>
         )));
+}
+
+function useEditedNotes(note: FNote) {
+    const [ editedNotes, setEditedNotes ] = useState<EditedNotesResponse>();
+
+    useEffect(() => {
+        server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async editedNotes => {
+            editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);
+            const noteIds = editedNotes.flatMap((n) => n.noteId);
+            await froca.getNotes(noteIds, true); // preload all at once
+            setEditedNotes(editedNotes);
+        });
+    }, [ note ]);
+
+    return editedNotes;
 }
 //#endregion

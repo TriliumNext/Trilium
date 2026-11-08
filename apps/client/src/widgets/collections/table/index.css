@@ -6,6 +6,10 @@
     display: flex;
     flex-direction: column;
 
+    > .collection-properties {
+        border-bottom: 0;
+    }
+
     .tabulator-tableholder {
         height: unset !important;
     }
@@ -15,12 +19,19 @@
     height: 100%;
 }
 
-.search-result-widget-content .table-view {
-    position: absolute;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
+/* Under a note's own content the table grows with its rows, so that only the note scrolls; a book
+   has no content above it, and keeps a bounded table that scrolls by itself. */
+.note-split:not(.type-book) > .scrolling-container > .note-list-widget.full-height:has(> .note-list-widget-content > .table-view) {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+
+    .note-list-widget-content,
+    .table-view,
+    .table-view-container {
+        height: auto;
+    }
 }
 
 .tabulator-cell .autocomplete {

@@ -153,25 +153,37 @@ const qualityReading = () => document.body.querySelector(".image-compression-sec
 const toggles = () => Array.from(document.body.querySelectorAll<HTMLInputElement>(".switch-toggle"));
 const hasHelp = (row: HTMLElement) => !!row.querySelector(".tn-card-option-title .contextual-help-icon");
 
-/** The buttons of one format's choice, the groups being in the order the card lists them. */
-const choiceButtons = (group: number) =>
-    Array.from(document.body.querySelectorAll<HTMLElement>(".image-compression-section-choice"))
-        .map((element) => Array.from(element.querySelectorAll<HTMLButtonElement>("button")))[group] ?? [];
+/** The menu toggle of each format's choice, in the order the card lists them. */
+const choiceToggles = () =>
+    Array.from(document.body.querySelectorAll<HTMLButtonElement>(".dropdown.image-compression-section-choice > button"));
 
 /** How many choice groups precede the PNG one, which is last and so counts from the end. */
-const pngGroup = () => document.body.querySelectorAll(".image-compression-section-choice").length - 1;
+const pngGroup = () => choiceToggles().length - 1;
 
-const chosenOf = (group: number) =>
-    choiceButtons(group).find((button) => button.classList.contains("active"))?.textContent?.trim();
+const chosenOf = (group: number) => choiceToggles()[group]?.textContent?.trim();
 const chosenJpeg = () => chosenOf(0);
 const chosenPng = () => chosenOf(pngGroup());
 
+/** The rows of the open choice menu. */
+const choiceEntries = () =>
+    Array.from(document.body.querySelectorAll<HTMLElement>(".image-compression-choice-menu li.dropdown-item"));
+
+/** Opens one format's menu and runs its entry at `index`. */
+async function chooseIn(group: number, index: number) {
+    await click(choiceToggles()[group]);
+    const entry = choiceEntries()[index];
+    expect(entry).toBeDefined();
+    await act(async () => {
+        entry?.click();
+    });
+}
+
 async function chooseJpeg(handling: "keep" | "compress") {
-    await click(choiceButtons(0)[[ "keep", "compress" ].indexOf(handling)]);
+    await chooseIn(0, [ "keep", "compress" ].indexOf(handling));
 }
 
 async function choosePng(handling: "keep" | "optimize" | "jpeg") {
-    await click(choiceButtons(pngGroup())[[ "keep", "optimize", "jpeg" ].indexOf(handling)]);
+    await chooseIn(pngGroup(), [ "keep", "optimize", "jpeg" ].indexOf(handling));
 }
 const buttons = () => Array.from(document.body.querySelectorAll<HTMLButtonElement>(".footer-stub button"));
 const cancelButton = () => buttons()[0];
@@ -286,10 +298,20 @@ describe("showImageCompressionDialog", () => {
             .toEqual([ "toggle", "number", "choice", "slider", "choice", "toggle" ]);
         expect(rows().map(isNested)).toEqual([ false, true, false, true, false, false ]);
 
-        // Every choice and switch carries a consequence its label cannot — what is left untouched,
-        // a permanent loss of quality, a reach past the note the run was invoked on — so each
-        // explains itself beside its title. The two figures say all there is to say already.
-        expect(rows().map(hasHelp)).toEqual([ true, false, true, false, true, true ]);
+        // Switches explain themselves beside their title; a choice explains each entry in its menu.
+        expect(rows().map(hasHelp)).toEqual([ true, false, false, false, false, true ]);
+    });
+
+    it("describes every entry of a format's menu and marks the current one", async () => {
+        await openDialog();
+
+        await click(choiceToggles()[pngGroup()]);
+        expect(choiceEntries().map((entry) => entry.querySelector(".description")?.textContent)).toEqual([
+            "space_usage.compress_png_keep_description",
+            "space_usage.compress_png_optimize_description",
+            "space_usage.compress_png_jpeg_description"
+        ]);
+        expect(choiceEntries().map((entry) => entry.getAttribute("aria-checked"))).toEqual([ "false", "true", "false" ]);
     });
 
     it("puts the reach of the run in a card of its own, apart from how it compresses", async () => {

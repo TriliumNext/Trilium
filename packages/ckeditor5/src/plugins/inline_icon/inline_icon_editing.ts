@@ -215,5 +215,5 @@ function isTransform(className: string): className is IconTransform {
 }
 
 function readClasses(icon: ModelElement) {
-    return String(icon.getAttribute(ICON_CLASS) ?? "").split(/\s+/).filter(Boolean);
+    return (icon.getAttribute(ICON_CLASS) as string).split(/\s+/).filter(Boolean);
 }

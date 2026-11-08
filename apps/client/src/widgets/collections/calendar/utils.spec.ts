@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AttributeRow, BranchRow } from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
-import { formatDateToLocalISO, formatTimeToLocalISO, getMonthsInDateRange, isAttributeChangeAffecting, isBranchChangeAffecting, offsetDate, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
+import { formatDateToLocalISO, formatTimeToLocalISO, getMonthsInDateRange, getTimedDurationMinutes, isAttributeChangeAffecting, isBranchChangeAffecting, offsetDate, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 /**
  * A moment built in the machine's own zone, which is what the calendar hands these functions: a
@@ -205,5 +205,26 @@ describe("isBranchChangeAffecting", () => {
     it("keeps quiet for a note filed somewhere else entirely, and for no filing at all", () => {
         expect(isBranchChangeAffecting([ filed("elsewhere") ], "journal", [ "year", "month" ])).toBe(false);
         expect(isBranchChangeAffecting([], "journal", [ "year" ])).toBe(false);
+    });
+});
+
+describe("getTimedDurationMinutes", () => {
+    it("measures a timed event within its day", () => {
+        expect(getTimedDurationMinutes({ startDate: "2026-06-05", startTime: "09:00", endTime: "10:30" })).toBe(90);
+        expect(getTimedDurationMinutes({ startDate: "2026-06-05", startTime: "09:00", endTime: "09:00" })).toBe(0);
+    });
+
+    it("runs an end before the start into the next day, as the calendar draws it", () => {
+        expect(getTimedDurationMinutes({ startDate: "2026-06-05", startTime: "11:00", endTime: "10:00" })).toBe(23 * 60);
+    });
+
+    it("counts the days of a timed event that spans several", () => {
+        expect(getTimedDurationMinutes({ startDate: "2026-03-28", endDate: "2026-03-30", startTime: "22:00", endTime: "01:00" }))
+            .toBe(27 * 60);
+    });
+
+    it("has no duration without both times", () => {
+        expect(getTimedDurationMinutes({ startDate: "2026-06-05" })).toBeNull();
+        expect(getTimedDurationMinutes({ startDate: "2026-06-05", startTime: "09:00" })).toBeNull();
     });
 });

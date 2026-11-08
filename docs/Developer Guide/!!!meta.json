@@ -969,6 +969,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "713MoR6LVq8o",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "a0mkxxB4Uvbf",
+                                "713MoR6LVq8o"
+                            ],
+                            "title": "Docker Hub maintenance",
+                            "notePosition": 30,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "docker-hub",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-brush",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Docker Hub maintenance.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "aGlhNBEA9wwo",
                             "notePath": [
                                 "jdjRLhLV3TtI",
@@ -976,7 +1010,7 @@
                                 "aGlhNBEA9wwo"
                             ],
                             "title": "Build information",
-                            "notePosition": 30,
+                            "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1010,7 +1044,7 @@
                                 "fI16A7NrT713"
                             ],
                             "title": "Live reload (HMR)",
-                            "notePosition": 40,
+                            "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1037,7 +1071,7 @@
                                 "PXzm2t3sCdsP"
                             ],
                             "title": "Build deliveries locally",
-                            "notePosition": 50,
+                            "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1071,7 +1105,7 @@
                                 "4nwtTJyjNDKd"
                             ],
                             "title": "Releasing a new version",
-                            "notePosition": 70,
+                            "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

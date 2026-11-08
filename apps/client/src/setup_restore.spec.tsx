@@ -458,7 +458,7 @@ describe("uploading a backup", () => {
             .toContain("setup.restore-upload-reconnecting");
         expect(container.querySelector(".restore-upload-speed")).toBeFalsy();
         // Still on the upload rather than thrown back to the picker: waiting is not failing.
-        expect(container.querySelector("progress")).toBeTruthy();
+        expect(container.querySelector("[role=progressbar]")).toBeTruthy();
 
         report({ sentBytes: 2048, totalBytes: 4096, fraction: 0.5, bytesPerSecond: 512, reconnecting: false });
         await flushEffects();
@@ -588,8 +588,8 @@ describe("following the restore", () => {
         restore = { stage: "staging", fraction: 0.42 };
         await nextPoll();
 
-        const bar = container.querySelector<HTMLProgressElement>(".restore-current-step progress");
-        expect(bar?.value).toBe(0.42);
+        const bar = container.querySelector(".restore-current-step [role=progressbar]");
+        expect(bar?.getAttribute("aria-valuenow")).toBe("0.42");
         expect(container.querySelector(".restore-stage-progress")?.textContent).toContain("42%");
     });
 
@@ -598,14 +598,14 @@ describe("following the restore", () => {
 
         restore = { stage: "staging", fraction: 0.9 };
         await nextPoll();
-        expect(container.querySelector(".restore-current-step progress")).toBeTruthy();
+        expect(container.querySelector(".restore-current-step [role=progressbar]")).toBeTruthy();
 
         // Checking a database reads it from end to end with nothing to report along the way; the
         // previous step's bar must not be left sitting under it.
         restore = { stage: "validating" };
         await nextPoll();
 
-        expect(container.querySelector(".restore-current-step progress")).toBeFalsy();
+        expect(container.querySelector(".restore-current-step [role=progressbar]")).toBeFalsy();
     });
 
     it("finishes setup once the restore is done", async () => {

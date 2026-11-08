@@ -33,6 +33,10 @@ export interface CalendarArgs {
     onDateClicked(date: string, e: TargetedMouseEvent<HTMLAnchorElement>): void;
     onWeekClicked?: (week: string, e: TargetedMouseEvent<HTMLAnchorElement>) => void;
     weekNotes: string[];
+    /** Whether days that have a day note are marked, which reads each shown month's day notes. */
+    markDayNotes?: boolean;
+    /** The day that takes focus in the grid. When set, every other day is left out of the tab order. */
+    focusDate?: Dayjs;
 }
 
 export default function Calendar(args: CalendarArgs) {
@@ -81,6 +85,7 @@ function PreviousMonthDays({ date, info: { dates, weekNumbers, weekYears }, week
     const [ dateNotesForPrevMonth, setDateNotesForPrevMonth ] = useState<DateNotesForMonth>();
 
     useEffect(() => {
+        if (args.markDayNotes === false) return;
         server.get<DateNotesForMonth>(`special-notes/notes-for-month/${prevMonth}`).then(setDateNotesForPrevMonth);
     }, [ date ]);
 
@@ -101,6 +106,7 @@ function CurrentMonthDays({ date, weekSettings, ...args }: { date: Dayjs, weekSe
     const { firstDayOfWeek, firstWeekOfYear, minDaysInFirstWeek } = weekSettings;
 
     useEffect(() => {
+        if (args.markDayNotes === false) return;
         server.get<DateNotesForMonth>(`special-notes/notes-for-month/${curMonthString}`).then(setDateNotesForCurMonth);
     }, [ date ]);
 
@@ -122,6 +128,7 @@ function NextMonthDays({ date, dates, ...args }: { date: Dayjs, dates: Dayjs[] }
     const [ dateNotesForNextMonth, setDateNotesForNextMonth ] = useState<DateNotesForMonth>();
 
     useEffect(() => {
+        if (args.markDayNotes === false) return;
         server.get<DateNotesForMonth>(`special-notes/notes-for-month/${nextMonth}`).then(setDateNotesForNextMonth);
     }, [ date ]);
 
@@ -130,7 +137,7 @@ function NextMonthDays({ date, dates, ...args }: { date: Dayjs, dates: Dayjs[] }
     ));
 }
 
-function CalendarDay({ date, dateNotesForMonth, className, activeDate, todaysDate, onDateClicked }: { date: Dayjs, dateNotesForMonth?: DateNotesForMonth, className?: string } & CalendarArgs) {
+function CalendarDay({ date, dateNotesForMonth, className, activeDate, todaysDate, focusDate, onDateClicked }: { date: Dayjs, dateNotesForMonth?: DateNotesForMonth, className?: string } & CalendarArgs) {
     const dateString = date.local().format('YYYY-MM-DD');
     const dateNoteId = dateNotesForMonth?.[dateString];
     return (
@@ -142,6 +149,7 @@ function CalendarDay({ date, dateNotesForMonth, className, activeDate, todaysDat
             )}
             data-calendar-date={date.local().format("YYYY-MM-DD")}
             data-href={dateNoteId && `#root/${dateNoteId}`}
+            tabIndex={focusDate ? (date.isSame(focusDate, "day") ? 0 : -1) : undefined}
             onClick={(e) => onDateClicked(dateString, e)}
         >
             <span>

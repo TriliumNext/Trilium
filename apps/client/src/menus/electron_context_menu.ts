@@ -16,19 +16,22 @@ function setupContextMenu() {
     const api = eApi.contextMenu;
 
     api.onContextMenu(async (params) => {
+        // The IPC params contain only window coordinates, so `document.elementFromPoint()` finds
+        // the element under the pointer. Dividing by the zoom factor converts them to CSS pixels.
+        const zoomLevel = zoomService.getCurrentZoom();
+
         const items = await buildNoteContextMenuItems({
             linkURL: params.linkURL,
             linkText: params.linkText,
             isMedia: params.mediaType !== "none",
             isEditable: params.isEditable,
-            selectionText: params.selectionText
+            selectionText: params.selectionText,
+            element: document.elementFromPoint(params.x / zoomLevel, params.y / zoomLevel)
         }, electronHost(eApi, params));
 
         if (items.length === 0) {
             return;
         }
-
-        const zoomLevel = zoomService.getCurrentZoom();
 
         contextMenu.show({
             x: params.x / zoomLevel,
@@ -57,7 +60,14 @@ function electronHost(eApi: ElectronApi, params: ElectronContextMenuParams): Con
         paste: {
             enabled: editFlags.canPaste,
             run: () => api.webContentsAction("paste"),
-            runAsPlainText: () => api.webContentsAction("pasteAndMatchStyle")
+            runAsPlainText: () => api.webContentsAction("pasteAndMatchStyle"),
+            read: async () => {
+                const [html, text] = await Promise.all([
+                    eApi.clipboard.readHTML(),
+                    eApi.clipboard.readText()
+                ]);
+                return { html, text };
+            }
         },
         canCut: editFlags.canCut,
         cut: () => api.webContentsAction("cut"),

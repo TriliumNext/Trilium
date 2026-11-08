@@ -1,8 +1,10 @@
 import { _setModelData as setModelData, ClassicEditor, FindAndReplace, FindAndReplaceEditing, keyCodes, List, Paragraph, TodoList, Typing, Undo, type ModelElement } from "ckeditor5";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../test/editor-kit.js";
 import CollapsibleListItems, { LIST_COLLAPSED_ATTRIBUTE, ToggleListCollapseCommand } from "./collapsible_list_items.js";
+import FindReveal from "./find_reveal.js";
+import Footnotes from "./footnotes/footnotes.js";
 
 // Lists are flat in the model: sibling blocks related by listIndent/listItemId.
 const LIST_FIXTURE =
@@ -495,6 +497,27 @@ describe("CollapsibleListItems", () => {
         expect(getBlock(editor, 0).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
     });
 
+    it("ignores a press beside a footnote, whose <li> is in no list", async () => {
+        const footnoteEditor = await createTestEditor([
+            CollapsibleListItems, List, Paragraph, Footnotes
+        ]);
+        setModelData(footnoteEditor.model, LIST_FIXTURE);
+        footnoteEditor.execute("InsertFootnote");
+        const footnote = footnoteEditor.editing.view.getDomRoot()
+            ?.querySelector<HTMLElement>("li.footnote-item");
+        if (!footnote) {
+            throw new Error("Expected the item of the inserted footnote.");
+        }
+        const passedOn = vi.fn();
+        footnoteEditor.editing.view.document.on("mousedown", passedOn, { priority: "lowest" });
+
+        // The number of a footnote reaches past the left edge of its <li>.
+        mouseDownAt(footnote, -1);
+
+        expect(passedOn).toHaveBeenCalledOnce();
+        expect(getBlock(footnoteEditor, 0).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+    });
+
     it("treats a click past the right edge as a gutter click in RTL", () => {
         const domRoot = editor.editing.view.getDomRoot();
         if (domRoot) {
@@ -536,16 +559,15 @@ describe("CollapsibleListItems", () => {
         expect(getBlock(editor, 0).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
     });
 
-    it("ignores list attribute changes whose target is not a list block", () => {
-        // A listIndent change on the trailing range covers the postfixer branch where the
-        // changed range's nodeAfter is not a resolvable list element.
-        expect(() => editor.model.change((writer) => {
-            const last = getBlock(editor, 4); // "Outside of the list" paragraph
-            writer.setAttribute("listIndent", 0, last);
-            writer.removeAttribute("listIndent", last);
-        })).not.toThrow();
+    it("leaves the collapsed items alone when a block leaves the list", () => {
+        editor.execute("toggleListCollapse");
 
-        expect(getBlock(editor, 0).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+        // Outdenting an item at indent 0 takes it out of the list.
+        setSelectionIn(editor, 3);
+        editor.execute("outdentList");
+
+        expect(getBlock(editor, 3).hasAttribute("listItemId")).toBe(false);
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
     });
 
     it("does nothing when execute runs on a leaf list item", () => {
@@ -639,6 +661,45 @@ describe("CollapsibleListItems", () => {
 
             expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
             expect(getComputedStyle(nested).display).toBe("none");
+        });
+
+        it("forgets a revealed item that leaves the list before the search clears", async () => {
+            const findEditor = await createCollapsedFindEditor();
+            const state = findEditor.plugins.get(FindAndReplaceEditing).state;
+            findEditor.execute("find", "child");
+
+            // Outdenting the revealed parent takes it out of the list.
+            setSelectionIn(findEditor, 0);
+            findEditor.execute("outdentList");
+            expect(getBlock(findEditor, 0).hasAttribute("listItemId")).toBe(false);
+            expect(() => state?.clear(findEditor.model)).not.toThrow();
+
+            // Undo expands the parent, as its children return under it.
+            findEditor.execute("undo");
+            findEditor.execute("toggleListCollapse");
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+            findEditor.execute("find", "child");
+            const { li, nested } = collapsedItem(findEditor);
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+            expect(getComputedStyle(nested).display).not.toBe("none");
+        });
+
+        it("reveals a collapsed item around a position that FindReveal shows", async () => {
+            const findEditor = await createTestEditor([
+                CollapsibleListItems, List, TodoList, Paragraph, Typing, Undo, FindAndReplace,
+                FindReveal
+            ]);
+            setModelData(findEditor.model, LIST_FIXTURE);
+            findEditor.execute("toggleListCollapse");
+            const { li } = collapsedItem(findEditor);
+            const findReveal = findEditor.plugins.get(FindReveal);
+
+            findReveal.show(findEditor.model.createPositionAt(getBlock(findEditor, 1), 0));
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+
+            findReveal.show(null);
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
         });
 
         it("does not permanently expand when the search closes with the highlight inside the item", async () => {

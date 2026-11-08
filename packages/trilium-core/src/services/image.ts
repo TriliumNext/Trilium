@@ -3,13 +3,13 @@
  * Uses ImageProvider for platform-specific processing (compression, format detection).
  */
 
-import { type ImageAttachmentRole, imageMimeForExtension, isDeduplicatedAttachmentRole } from "@triliumnext/commons";
+import { type ImageAttachmentRole, isDeduplicatedAttachmentRole } from "@triliumnext/commons";
 import sanitizeFilename from "sanitize-filename";
 
 import becca from "../becca/becca.js";
 import { getContext } from "./context.js";
 import { getLog } from "./log.js";
-import { getImageProvider } from "./image_provider.js";
+import { getImageProvider, type ImageShrink } from "./image_provider.js";
 import noteService from "./notes.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
@@ -109,7 +109,7 @@ function updateImage(noteId: string, uploadBuffer: Uint8Array, originalName: str
     trackWrite(getImageProvider().processImage(uploadBuffer, originalName, true).then(({ buffer, format }) => {
         getContext().init(() => {
             getSql().transactional(() => {
-                note.mime = imageMimeForExtension(format.ext);
+                note.mime = format.mime;
                 note.save();
                 note.setContent(buffer);
             });
@@ -151,7 +151,7 @@ function saveImage(
     trackWrite(getImageProvider().processImage(uploadBuffer, originalName, shrinkImageSwitch).then(({ buffer, format }) => {
         getContext().init(() => {
             getSql().transactional(() => {
-                note.mime = imageMimeForExtension(format.ext);
+                note.mime = format.mime;
 
                 if (!originalName.includes(".")) {
                     originalName += `.${format.ext}`;
@@ -176,12 +176,14 @@ function saveImageToAttachment(
     noteId: string,
     uploadBuffer: Uint8Array,
     originalName: string,
-    shrinkImageSwitch?: boolean,
+    shrinkImageSwitch?: ImageShrink,
     trimFilename = false,
     /** Which kind of picture this is; see {@link IMAGE_ATTACHMENT_ROLES}. */
     role: ImageAttachmentRole = "image"
 ): { attachmentId: string | undefined; title: string } {
-    getLog().info(`Saving image '${originalName}' as attachment into note '${noteId}'`);
+    // The title of a deduplicated role is made from a URL, which stays out of the log.
+    const logName = isDeduplicatedAttachmentRole(role) ? role : `'${originalName}'`;
+    getLog().info(`Saving image ${logName} as attachment into note '${noteId}'`);
 
     // A deduplicated role's title is what identifies the picture, so it is never collapsed: every
     // hostname past the limit would otherwise share one icon.
@@ -200,7 +202,8 @@ function saveImageToAttachment(
         // Handed back untouched rather than rewritten with the same bytes: it already holds them,
         // and its content is what a blob is keyed by. Any erasure it was scheduled for is cleared
         // by checkImageAttachments on the save that follows, which owns that state.
-        getLog().info(`Reusing attachment '${reusable.attachmentId}' of note '${noteId}' for '${fileName}'`);
+        getLog().info(
+            `Reusing attachment '${reusable.attachmentId}' of note '${noteId}' for ${logName}`);
 
         return { attachmentId: reusable.attachmentId, title: reusable.title };
     }
@@ -234,7 +237,7 @@ function saveImageToAttachment(
 
     // Process image asynchronously
     const attachmentId = attachment.attachmentId;
-    trackWrite(getImageProvider().processImage(uploadBuffer, originalName, !!shrinkImageSwitch).then(({ buffer, format }) => {
+    trackWrite(getImageProvider().processImage(uploadBuffer, originalName, shrinkImageSwitch ?? false).then(({ buffer, format }) => {
         getContext().init(() => {
             getSql().transactional(() => {
                 if (!attachmentId) {
@@ -251,7 +254,7 @@ function saveImageToAttachment(
                     return;
                 }
 
-                savedAttachment.mime = imageMimeForExtension(format.ext);
+                savedAttachment.mime = format.mime;
 
                 if (!originalName.includes(".")) {
                     originalName += `.${format.ext}`;

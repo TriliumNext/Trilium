@@ -1,0 +1,50 @@
+.resources-list {
+    .resources-item,
+    .resources-total {
+        gap: 12px;
+    }
+
+    .resources-icon {
+        align-self: flex-start;
+        font-size: 1.6em;
+        color: var(--muted-text-color);
+    }
+
+    .resources-status {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        align-items: flex-end;
+        text-align: end;
+    }
+
+    .resources-foreign {
+        .resources-icon,
+        .tn-card-option-label,
+        .resources-status {
+            opacity: 0.6;
+        }
+    }
+
+    .resources-actions {
+        --resources-actions-gap: 12px;
+
+        display: flex;
+        flex-shrink: 0;
+        justify-content: flex-end;
+        gap: var(--resources-actions-gap);
+        width: calc(2 * var(--icon-button-size, 37px) + var(--resources-actions-gap));
+    }
+
+    .resources-size {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .resources-total {
+        .tn-card-option-title,
+        .resources-size {
+            font-weight: 600;
+        }
+    }
+}

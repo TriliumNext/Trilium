@@ -1,5 +1,5 @@
 # Weight Tracker
-![](Weight%20Tracker_image.png)
+![](Weight%20Tracker_image.jpg)
 
 The `Weight Tracker` is a [Script API](../../Scripting/Script%20API.md) showcase present in the [demo notes](../Database.md).
 

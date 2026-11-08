@@ -13,7 +13,7 @@ vi.mock("fs", () => ({ existsSync: existsSyncMock }));
 
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: vi.fn(), error: vi.fn() }) }));
 
-const { needsShell, resetCopilotBinaryCache, resolveCopilotBinaryPath } = await import("./copilot_binary.js");
+const { resetCopilotBinaryCache, resolveCopilotBinaryPath } = await import("./copilot_binary.js");
 const { resetLoginShellPathCache } = await import("./binary_lookup.js");
 
 describe("resolveCopilotBinaryPath", () => {
@@ -211,16 +211,6 @@ describe("resolveCopilotBinaryPath", () => {
 
             await expect(resolveCopilotBinaryPath()).rejects.toThrow(/GitHub Copilot CLI not found/);
             expect(execFileMock).not.toHaveBeenCalled();
-        });
-    });
-
-    describe("needsShell", () => {
-        it("is true only for .cmd/.bat shims", () => {
-            expect(needsShell("C:\\npm\\copilot.cmd")).toBe(true);
-            expect(needsShell("C:\\npm\\copilot.bat")).toBe(true);
-            expect(needsShell("C:\\npm\\copilot.CMD")).toBe(true);
-            expect(needsShell("/usr/bin/copilot")).toBe(false);
-            expect(needsShell("C:\\npm\\copilot.exe")).toBe(false);
         });
     });
 });

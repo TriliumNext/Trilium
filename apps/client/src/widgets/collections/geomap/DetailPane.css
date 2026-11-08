@@ -23,7 +23,7 @@
        are not equally free, so each is taken off by its own name rather than one of them twice. */
     max-width: calc(100% - var(--geo-map-inset-start) - var(--geo-map-inset-end));
 
-    /* Grown over the map (see the maximize in MarkerDetails). Only the width gives: the pane
+    /* Grown over the map (see the maximize in `EmbeddedNoteSurface`). Only the width gives: the pane
        already stands the height of the map. What the map places around the pane is suppressed
        while it is grown rather than recomputed — see `maximized` in DetailPane.tsx. */
     &.maximized {
@@ -31,44 +31,6 @@
     }
     /* Clear of MapLibre's own control corners, which sit at 2 (see MapToolbar.css). */
     z-index: 3;
-}
-
-/*
- * A marker of no colour of its own wears none.
- *
- * The pane stands inside the map's note split, which carries the map note's colour, so the icon
- * would otherwise be dressed in a hue belonging to another note entirely — the very thing the
- * marker's own class overrides where it has one (see the `.geo-detail-pane.with-hue` rules in
- * theme-next-{light,dark}.css). `initial` rather than `unset`: these are inherited properties, so
- * unsetting them would let the split's values through again; made invalid, each `var()` falls back
- * to the plain icon colour it names.
- */
-.geo-map-container .geo-detail-pane:not(.with-hue) {
-    --note-icon-custom-color: initial;
-    --note-icon-custom-background-color: initial;
-    --note-icon-hover-custom-background-color: initial;
-}
-
-/*
- * The app's own title row heads the pane (see TitleRow), so a note is renamed from a marker the way
- * it is renamed anywhere else. It brings no placing of its own, the shared panel giving that only to
- * its own heading, so the padding and the rule under it are handed over here.
- */
-.geo-map-container .geo-detail-pane .tn-overlay-panel-header > .title-row {
-    box-sizing: content-box;
-    padding-block: 9px;
-    padding-inline-start: 9px;
-    /* Clear of the maximize and close buttons laid over the end of the row (see OverlayPanel.css). */
-    padding-inline-end: 64px;
-    border-bottom: 1px solid var(--main-border-color);
-}
-
-/*
- * The pane's one body: the row of actions, then the note itself — the note's own widgets laid out
- * by the shared class (see EmbeddedNotePane.css), which also brings the column they stand in.
- */
-.geo-map-container .geo-detail-pane .geo-detail-pane-body {
-    padding-top: 0;
 }
 
 /*
@@ -97,20 +59,4 @@
         background: var(--hover-item-background-color);
         color: var(--main-text-color);
     }
-}
-
-.modal.geo-detail-sheet .modal-dialog {
-    max-height: var(--tn-modal-max-height);
-    height: 100%;
-}
-
-.modal.geo-detail-sheet .modal-content {
-    overflow: hidden;
-}
-
-.modal.geo-detail-sheet .modal-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: auto;
 }

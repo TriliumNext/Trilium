@@ -37,7 +37,6 @@
         "sync-from-desktop-warning": "Assurez-vous que les deux appareils sont sur le même réseau.",
         "sync-from-desktop-waiting": "En attente de connexion…",
         "advanced-options": "Options avancées",
-        "sync-failed": "Échec de la synchronisation : {{message}}",
         "server-host": "Adresse du serveur Trilium",
         "server-host-placeholder": "https://<hostname>:<port>",
         "server-password": "Mot de passe",

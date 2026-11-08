@@ -1,3 +1,5 @@
+import { getTimedDurationMinutes } from "./utils";
+
 /**
  * An event still being decided on: the range the reader dragged out, standing for a note that does
  * not exist yet. Nothing is created until the draft is committed (see GhostPopover), so a ghost
@@ -8,6 +10,67 @@ export interface EventDraft {
     endDate?: string | null;
     startTime?: string | null;
     endTime?: string | null;
+}
+
+/** The hours an event gets when it stops being all-day, for the user to edit. */
+const DEFAULT_START_TIME = "09:00";
+const DEFAULT_END_TIME = "10:00";
+
+/**
+ * Switches an event between all-day and timed. Keeps the dates, and keeps an existing end time when
+ * adding a time.
+ */
+export function withAllDay(draft: EventDraft, allDay: boolean): EventDraft {
+    if (allDay) {
+        return { ...draft, startTime: null, endTime: null };
+    }
+
+    return { ...draft, startTime: DEFAULT_START_TIME, endTime: draft.endTime ?? DEFAULT_END_TIME };
+}
+
+/**
+ * Sets the end date to the day `buildEvent()` draws the event ending on. An end date equal to the
+ * start date becomes `null`.
+ */
+export function normalizeEventDates(event: EventDraft): EventDraft {
+    const { startDate, startTime, endTime } = event;
+    let endDate = event.endDate || null;
+
+    if (startTime && endTime) {
+        // ISO dates and 24-hour times compare correctly as strings.
+        if (`${endDate ?? startDate}T${endTime}` < `${startDate}T${startTime}`) {
+            endDate = endTime < startTime ? addDays(startDate, 1) : startDate;
+        }
+    } else if (endDate && endDate < startDate) {
+        endDate = null;
+    }
+
+    if (endDate === startDate) {
+        endDate = null;
+    }
+
+    return endDate === (event.endDate || null) ? event : { ...event, endDate };
+}
+
+/** Moves an event to a new start date or start time and shifts the end by the same amount. */
+export function withStart(event: EventDraft, start: { startDate?: string; startTime?: string }): EventDraft {
+    const current = normalizeEventDates(event);
+    const next = { ...current, ...start };
+    const duration = getTimedDurationMinutes(current);
+
+    if (duration !== null && next.startTime) {
+        const [ hours, minutes ] = next.startTime.split(":").map(Number);
+        const endMinute = hours * 60 + minutes + duration;
+        const endOfDay = endMinute % (24 * 60);
+        const endDay = Math.floor(endMinute / (24 * 60));
+        // A missing end date stays `undefined` rather than becoming `null`.
+        next.endDate = endDay > 0 ? addDays(next.startDate, endDay) : (current.endDate ? null : current.endDate);
+        next.endTime = `${pad(Math.floor(endOfDay / 60))}:${pad(endOfDay % 60)}`;
+    } else if (current.endDate) {
+        next.endDate = addDays(current.endDate, daysBetween(current.startDate, next.startDate));
+    }
+
+    return normalizeEventDates(next);
 }
 
 /** A point in viewport coordinates — where a click or a drag's end fell, anchoring a popover
@@ -37,10 +100,8 @@ export type CalendarSelection =
  * length of a week — or a range dragged across one — is drawn as a piece as wide as the grid, and
  * the far edge of that is nowhere near the press that opened the popover: the card lands at the
  * other end of the month, which is how a popover comes to appear over the note tree. Where the grid
- * is as wide as the window, it lands nowhere at all — neither side has the room for a card, and
- * Popper keeps a popover within the viewport only along the axis it was placed on (the vertical
- * one, for a card standing to the left or the right; see Popover), so the card is put outside the
- * screen entirely and only its shadow is ever seen.
+ * is as wide as the window, neither side has room for the card, so `Popover` shifts it into the
+ * viewport on top of the event.
  *
  * So a piece wider than the card that stands beside it is narrowed to the press within it: the
  * popover appears where the eye already is, with the grid's own room on either side of it. Where
@@ -67,3 +128,18 @@ export function narrowAnchorRect(rect: DOMRect, point: AnchorPoint | null): DOMR
  *  a window that narrow fills it, and the card is then placed by the viewport whatever anchor it is
  *  handed. */
 const MAX_ANCHOR_WIDTH = 480;
+
+/** Adds days to an ISO date, counted in calendar days so a daylight saving change cannot shift it. */
+function addDays(isoDate: string, days: number) {
+    const [ year, month, day ] = isoDate.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day + days));
+    return date.toISOString().slice(0, 10);
+}
+
+function daysBetween(from: string, to: string) {
+    return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / (24 * 60 * 60 * 1000);
+}
+
+function pad(value: number) {
+    return String(value).padStart(2, "0");
+}

@@ -1,12 +1,15 @@
-import { type Completion, type CompletionContext, type CompletionSource } from "@codemirror/autocomplete";
-import type { EditorView } from "@codemirror/view";
-import type VanillaCodeMirror from "@triliumnext/codemirror";
+import type {
+    HostedCompletionApply
+} from "@triliumnext/codemirror/src/extensions/hosted_completion";
+import { isMarkdownMime } from "@triliumnext/commons";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
+import { logError } from "../../../services/ws.js";
 import { useTriliumEvent } from "../../react/hooks";
+import type { CommandEntry } from "../../react/NoteAutocomplete";
 
 /** Matches a `/command` token at the start of a line or after whitespace. Shared by every editor. */
 export const SLASH_COMMAND_REGEX = /(?:^|(?<=\s))\/[\w:-]*/;
@@ -22,13 +25,16 @@ export interface CodeSnippet {
  * Loads the code snippets (notes carrying `#snippet`) accepted by `matches`, pre-fetching their
  * content and optional `#snippetDescription` so callers can insert them synchronously. The `matches`
  * predicate selects which snippets are relevant to a given editor (e.g. `note.isMarkdown()` for the
- * Markdown editor, or a MIME comparison for a code editor).
+ * Markdown editor, or a MIME comparison for a code editor). `changes` are the reloaded entities
+ * that called for the load, which a search started before them can miss.
  */
-export async function getCodeSnippets(matches: (note: FNote) => boolean): Promise<CodeSnippet[]> {
+export async function getCodeSnippets(
+    matches: (note: FNote) => boolean, changes?: LoadResults
+): Promise<CodeSnippet[]> {
     try {
         // The `search` route includes archived notes, so drop archived ones; also skip protected
         // snippets whose content isn't available (no active protected session) — they can't be inserted.
-        const notes = (await search.searchForNotes("#snippet"))
+        const notes = (await searchSnippetNotes(changes))
             .filter((note) => matches(note) && !note.isArchived && note.isContentAvailable());
 
         return await Promise.all(notes.map(async (note) => ({
@@ -38,10 +44,28 @@ export async function getCodeSnippets(matches: (note: FNote) => boolean): Promis
             content: (await note.getContent()) ?? ""
         })));
     } catch (e) {
-        logError("Error while building code snippets: ", e);
+        logError(`Error while building code snippets: ${e}`);
         return [];
     }
 }
+
+/**
+ * The `#snippet` notes. Editors that load them at the same time share one search, unless the
+ * search started before `changes`.
+ */
+function searchSnippetNotes(changes?: LoadResults) {
+    if (pendingSearch && (!changes || pendingSearch.changes === changes)) {
+        return pendingSearch.notes;
+    }
+
+    const notes = search.searchForNotes("#snippet").finally(() => {
+        if (pendingSearch?.notes === notes) pendingSearch = null;
+    });
+    pendingSearch = { notes, changes };
+    return notes;
+}
+
+let pendingSearch: { notes: Promise<FNote[]>; changes?: LoadResults } | null = null;
 
 /**
  * Whether the reloaded entities could change the snippet list — a snippet was created, deleted,
@@ -63,105 +87,71 @@ export function isCodeSnippetChange(loadResults: LoadResults, knownNoteIds: Set<
 }
 
 /**
- * Builds the `/snippet:<title> - <description>` CodeMirror completions; applying one replaces the
- * typed `/snippet:…` token with the snippet's content and moves the caret to its end.
+ * Whether the snippet note `candidate` can be inserted into content of `mime`: a code note of the
+ * same language, of any Markdown MIME type for Markdown, or of plain text.
  */
-export function buildSnippetCompletions(snippets: CodeSnippet[]): Completion[] {
-    return snippets.map((snippet) => ({
-        label: snippet.description
-            ? `/snippet:${snippet.title} - ${snippet.description}`
-            : `/snippet:${snippet.title}`,
-        apply(view: EditorView, _completion: Completion, from: number, to: number) {
+export function isSnippetFor(candidate: FNote, mime: string) {
+    if (candidate.type !== "code") return false;
+    if (candidate.mime === "text/plain") return true;
+    return isMarkdownMime(mime) ? candidate.isMarkdown() : candidate.mime === mime;
+}
+
+/**
+ * A snippet as an entry of a `/` list, found by its title or by `snippet:<title>`. Picking it puts
+ * the snippet's content in place of the typed `/command` and moves the caret to its end.
+ */
+export function snippetCommand(snippet: CodeSnippet): SnippetCommand {
+    const name = `snippet:${snippet.title}`;
+
+    return {
+        id: name,
+        title: snippet.title,
+        description: snippet.description,
+        aliases: [ name, "snippet", "template" ],
+        icon: "bx bx-code-curly",
+        apply(view, from, to) {
             view.dispatch({
                 changes: { from, to, insert: snippet.content },
                 selection: { anchor: from + snippet.content.length }
             });
         }
-    }));
+    };
 }
 
+export type SnippetCommand = CommandEntry & { apply: HostedCompletionApply };
+
 /**
- * Loads the snippets accepted by `matches` into a ref and keeps it fresh: reloaded on mount, when
- * `reloadKey` changes (e.g. the editor note's MIME), and when relevant entities change. Held in a
- * ref so consumers (a slash menu) read the latest list when invoked, without re-registering anything.
- * When `enabled` is false the ref stays empty and nothing is loaded.
+ * Loads the snippets for content of `mime` into a ref and keeps it fresh: reloaded on mount, when
+ * `mime` changes, and when relevant entities change. Held in a ref so a `/` list reads the latest
+ * list when it opens, without registering anything again. Nothing loads while `isEnabled` is false.
  */
-export function useCodeSnippets(matches: (note: FNote) => boolean, reloadKey: string, enabled = true) {
+export function useCodeSnippets(mime: string, isEnabled = true) {
     const snippetsRef = useRef<CodeSnippet[]>([]);
     // Monotonic id so a slow fetch that resolves after a newer reload is discarded (avoids stale data).
     const reloadCountRef = useRef(0);
-    // Keep the latest predicate without making it a dependency (it's a fresh closure each render);
-    // `reloadKey` is the stable trigger for filter changes.
-    const matchesRef = useRef(matches);
-    useEffect(() => { matchesRef.current = matches; });
 
-    const reload = useCallback(() => {
-        if (!enabled) {
+    const reload = useCallback((changes?: LoadResults) => {
+        const reloadId = ++reloadCountRef.current;
+        if (!isEnabled) {
             snippetsRef.current = [];
             return;
         }
-        const reloadId = ++reloadCountRef.current;
-        void getCodeSnippets((note) => matchesRef.current(note)).then((snippets) => {
+        void getCodeSnippets((note) => isSnippetFor(note, mime), changes).then((snippets) => {
             if (reloadId === reloadCountRef.current) {
                 snippetsRef.current = snippets;
             }
         });
-    }, [enabled]);
+    }, [isEnabled, mime]);
 
-    useEffect(() => { reload(); }, [reload, reloadKey]);
+    useEffect(() => { reload(); }, [reload]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (!enabled) return;
+        if (!isEnabled) return;
         const knownNoteIds = new Set(snippetsRef.current.map((snippet) => snippet.noteId));
         if (isCodeSnippetChange(loadResults, knownNoteIds)) {
-            reload();
+            reload(loadResults);
         }
     });
 
     return snippetsRef;
-}
-
-/**
- * Registers a `/snippet:<name>` slash command on a CodeMirror code editor, listing the snippets
- * accepted by `matches` (e.g. those whose MIME equals the editor note's). Inserting one drops its
- * content at the cursor. No-op when `enabled` is false (e.g. the Markdown editor, which builds its
- * own combined slash-command menu instead).
- */
-export function useSnippetSlashCommands(editorView: VanillaCodeMirror | null, matches: (note: FNote) => boolean, reloadKey: string, enabled: boolean, currentNoteId: string) {
-    const snippetsRef = useCodeSnippets(matches, reloadKey, enabled);
-    // The note being edited, kept in a ref so the once-registered completion source always excludes
-    // the current snippet from its own menu — even when the editor is reused for a different note.
-    const currentNoteIdRef = useRef(currentNoteId);
-    useEffect(() => { currentNoteIdRef.current = currentNoteId; });
-
-    useEffect(() => {
-        if (!editorView) return;
-        if (!enabled) {
-            editorView.setCompletionSource("snippets", null);
-            return;
-        }
-
-        // Contribute the snippet `/snippet:` source to the editor's shared
-        // autocompletion. Registering a source (rather than a whole
-        // autocompletion) lets it co-exist with other sources — e.g. the
-        // TypeScript language service on backend/frontend script notes.
-        const source: CompletionSource = (context: CompletionContext) => {
-            const match = context.matchBefore(SLASH_COMMAND_REGEX);
-            if (!match) return null;
-            const options = buildSnippetCompletions(
-                snippetsRef.current.filter((snippet) => snippet.noteId !== currentNoteIdRef.current)
-            );
-            // No matching snippets (e.g. none for this MIME, or only the current note) → no source,
-            // so an empty completion popup never appears when the user types "/".
-            return options.length ? { from: match.from, options } : null;
-        };
-
-        // `setCompletionSource` types its argument via the codemirror package's own copy of
-        // @codemirror/autocomplete. Under TypeScript project references that is a distinct type
-        // identity from the client's copy, even though it is the same package at runtime, so bridge
-        // the two here. (CodeMirror requires a single physical @codemirror/state, which holds.)
-        type CmCompletionSource = Parameters<VanillaCodeMirror["setCompletionSource"]>[1];
-        editorView.setCompletionSource("snippets", source as unknown as CmCompletionSource);
-        return () => editorView.setCompletionSource("snippets", null);
-    }, [editorView, enabled]);
 }

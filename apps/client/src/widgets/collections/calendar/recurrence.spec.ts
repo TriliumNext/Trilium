@@ -1,7 +1,7 @@
 import * as rruleLib from "rrule";
 import { describe, expect, it } from "vitest";
 
-import { parseRecurrence, serializeRecurrence, SimpleRecurrence } from "./recurrence";
+import { occurrencesPerWeek, parseRecurrence, serializeRecurrence, SimpleRecurrence } from "./recurrence";
 
 describe("parseRecurrence", () => {
     it("reads no label as no repetition", () => {
@@ -70,6 +70,30 @@ describe("parseRecurrence", () => {
     });
 });
 
+describe("occurrencesPerWeek", () => {
+    it("counts the days a week a rule falls on", () => {
+        expect(occurrencesPerWeek(undefined)).toBe(0);
+        expect(occurrencesPerWeek("RRULE:FREQ=DAILY")).toBe(7);
+        expect(occurrencesPerWeek("FREQ=DAILY;INTERVAL=2")).toBe(3.5);
+        expect(occurrencesPerWeek("RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR")).toBe(5);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20261231T235959")).toBe(5);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR")).toBe(3);
+        expect(occurrencesPerWeek("rrule:freq=weekly")).toBe(1);
+        expect(occurrencesPerWeek("RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,TU,WE,TH,FR,SA,SU")).toBe(3.5);
+        expect(occurrencesPerWeek("RRULE:FREQ=HOURLY;INTERVAL=8")).toBe(Infinity);
+        expect(occurrencesPerWeek("RRULE:FREQ=MONTHLY;BYMONTHDAY=1")).toBe(0);
+        expect(occurrencesPerWeek("RRULE:FREQ=YEARLY")).toBe(0);
+    });
+
+    it("sums the RRULE lines of a rule set and skips the others", () => {
+        expect(occurrencesPerWeek([
+            "RRULE:FREQ=WEEKLY;BYDAY=MO,WE",
+            "RRULE:FREQ=WEEKLY;BYDAY=FR,SA",
+            "EXDATE:20261012T090000"
+        ].join("\n"))).toBe(4);
+    });
+});
+
 describe("serializeRecurrence", () => {
     it("writes nothing for no repetition or an emptied custom rule", () => {
         expect(serializeRecurrence({ kind: "none" })).toBeNull();
@@ -93,7 +117,7 @@ describe("serializeRecurrence", () => {
         expect(serialize({ frequency: "WEEKLY", weekdays: [ "FR", "MO" ] }))
             .toBe("RRULE:FREQ=WEEKLY;BYDAY=MO,FR");
         expect(serialize({ frequency: "DAILY", ends: { type: "until", date: "2026-06-05" } }))
-            .toBe("RRULE:FREQ=DAILY;UNTIL=20260605T235959Z");
+            .toBe("RRULE:FREQ=DAILY;UNTIL=20260605T235959");
     });
 
     it("holds an 'until' whose date has not been picked yet as never ending", () => {

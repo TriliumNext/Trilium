@@ -1,0 +1,45 @@
+// Follows the lexer of Mermaid's use case diagram (a Chevrotain parser) token for token, without
+// its statement structure: highlighting rests on the tokens, and unquoted labels read as names.
+@top UsecaseDiagram { DiagramName item* }
+
+item {
+  Keyword | Direction | Boolean | Name | Number | Color | String | MarkdownString | Stereotype |
+  Arrow | Symbol | "(" | ")" | "[" | "]" | "{" | "}" | "@{" | ":::" | ":" | ","
+}
+
+Keyword {
+  kw<"actor"> | kw<"systemBoundary"> | kw<"end"> | kw<"direction"> | kw<"note"> | kw<"for"> |
+  kw<"json"> | kw<"classDef"> | kw<"class"> | kw<"style"> | kw<"include"> | kw<"extend">
+}
+
+Direction { kw<"TD"> | kw<"TB"> | kw<"BT"> | kw<"LR"> | kw<"RL"> }
+
+Boolean { kw<"true"> | kw<"false"> }
+
+DiagramName { kw<"usecase-beta"> }
+
+kw<term> { @specialize<Name, term> }
+
+@skip { space | LineComment }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  word { $[A-Za-z0-9_]+ }
+  Name { $[A-Za-z_] word? ("-" word)* | "--" $[A-Za-z_] $[A-Za-z0-9_\-]* }
+  Number { (@digit+ ("." @digit+)? | "." @digit+) $[A-Za-z]* }
+  Color { "#" $[0-9A-Fa-f]+ }
+  String { '"' !["\n]* '"' | "'" !['\n]* "'" }
+  MarkdownString { '"`' (![`] | "`" !["])* '`"' }
+  Stereotype { "<<" ![>\n]* ">>" }
+  Arrow {
+    "--|>" | "..>" | "-" "-"+ ">" | "<-" "-"+ | "--o" | "o--" | "--x" | "x--" | "-" "-"+
+  }
+  LineComment { "%%" ![\n]* }
+  Symbol { ![ \t\r\n] }
+  @precedence {
+    MarkdownString, String, Stereotype, LineComment, Arrow, Name, Number, Color, "@{", ":::",
+    "(", ")", "[", "]", "{", "}", ":", ",", Symbol
+  }
+}
+
+@external propSource usecaseHighlighting from "./highlight.js"

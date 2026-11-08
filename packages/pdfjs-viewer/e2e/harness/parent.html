@@ -4,7 +4,7 @@
 <body style="margin:0">
 <!-- Stub of the Trilium client: hosts the viewer in an iframe and speaks the
      postMessage protocol of apps/client/src/widgets/type_widgets/file/Pdf.tsx. -->
-<iframe id="viewer" src="web/viewer.html?v=e2e&file=/sample.pdf&locale=en&sidebar=1&editable=1&toolbar=1"
+<iframe id="viewer" src="web/viewer.html?v=e2e&file=/sample.pdf&locale=en&sidebar=1&editable=1&toolbar=1&noteId=note1&ntxId=ntx1"
         style="width:1200px;height:850px;border:none"></iframe>
 <script>
     window.harness = {
@@ -16,8 +16,6 @@
 
     const iframe = document.getElementById("viewer");
     iframe.addEventListener("load", () => {
-        iframe.contentWindow.TRILIUM_NOTE_ID = "note1";
-        iframe.contentWindow.TRILIUM_NTX_ID = "ntx1";
         iframe.contentWindow.TRILIUM_VIEW_HISTORY_STORE = {};
     });
 

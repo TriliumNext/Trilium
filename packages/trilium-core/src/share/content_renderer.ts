@@ -1,11 +1,27 @@
-import { extractYouTubeVideoId, isHttpUrl, safeLinkPreviewHref, safeLinkPreviewImageSrc } from "@triliumnext/commons";
+import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
+import {
+    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
+    getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
+    getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
+    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
+    normalizeMimeTypeForCKEditor, readDrawingFrame, readLinkPreviewData, readMediaEmbedBox,
+    renderLinkEmbedBoxHtml,
+    renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
+    SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
+    shouldSyntaxHighlight, sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
+} from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
-import { highlightAuto } from "@triliumnext/highlightjs";
+import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
+import {
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
+    type NavigationItem, type PageHeading, type ShareNote
+} from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
-import escapeHtml from "escape-html";
 import { t } from "i18next";
-import { HTMLElement, Options, parse, TextNode } from "node-html-parser";
+import { HTMLElement, type Node as ParsedNode, Options, parse, TextNode } from "node-html-parser";
 
 import becca from "../becca/becca.js";
 import type BAttachment from "../becca/entities/battachment.js";
@@ -17,7 +33,9 @@ import { getLog } from "../services/log.js";
 import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as task_states from "../services/task_states.js";
+import { decodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
+import { buildFrocaPayload, buildFrocaRows } from "./froca_payload.js";
 import { getShareProvider } from "./share_provider.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
@@ -30,20 +48,7 @@ import shareRoot from "./share_root.js";
  */
 export const assetUrlFragment = `assets/v${appInfo.appVersion}`;
 
-/**
- * Maximum number of lines a code block may have before server-side syntax highlighting is skipped.
- * Mirrors the editor's per-block cutoff (HIGHLIGHT_MAX_BLOCK_COUNT in the ckeditor5 syntax
- * highlighting plugin); beyond it `highlightAuto` is too slow and would block the event loop on
- * large shared/included code notes (#9717).
- */
-const HIGHLIGHT_MAX_LINE_COUNT = 500;
-
-/**
- * Maximum number of characters a code block may have before server-side syntax highlighting is
- * skipped. The line-count cutoff alone does not protect against a single very long line (e.g.
- * minified code), so a separate character ceiling guards `highlightAuto`'s size-driven cost.
- */
-const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
+const PLAIN_TEXT_LANGUAGE = normalizeMimeTypeForCKEditor("text/plain");
 
 /**
  * The base a web view's rooted source is resolved against, to tell a path that stays on this site
@@ -61,31 +66,35 @@ export interface Result {
     content: string | Uint8Array | undefined;
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
+    /**
+     * Set to `true` if the content takes the page's full height, such as a PDF, a web view or an
+     * app view, below a title row like the app's and without the subpages, the date and the links
+     * to the neighboring pages.
+     */
+    isFullHeight?: boolean;
+    /**
+     * Set to `true` if the content is shown with the app's own view, such as a map or the viewer of
+     * an image. An app view also takes the page's full height.
+     */
+    isAppView?: boolean;
 }
 
 interface Subroot {
-    note?: SNote | BNote;
+    note: SNote | BNote;
     branch?: SBranch | BBranch
 }
 
 type GetNoteFunction = (id: string) => SNote | BNote | null;
 
-function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
-    if (!note || note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
-        // share root itself is not shared
-        return {};
+function getSharedSubTreeRoot(note: SNote): Subroot {
+    if (note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        // The share root is the site of its own page, the share index.
+        return { note };
     }
 
     // every path leads to share root, but which one to choose?
     // for the sake of simplicity, URLs are not note paths
     const parentBranch = note.getParentBranches()[0];
-
-    if (note instanceof BNote) {
-        return {
-            note,
-            branch: parentBranch
-        };
-    }
 
     if (parentBranch.parentNoteId === shareRoot.SHARE_ROOT_NOTE_ID) {
         return {
@@ -97,7 +106,19 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     return getSharedSubTreeRoot(parentBranch.getParentNote());
 }
 
-export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: iconPackService.ProcessedIconPack[]) {
+export function renderNoteForExport(
+    note: BNote,
+    parentBranch: BBranch,
+    basePath: string,
+    ancestors: string[],
+    iconPacks: iconPackService.ProcessedIconPack[],
+    getLink?: ExportHosting["getLink"]
+) {
+    // An exported JavaScript note stays a script.
+    if (note.mime.startsWith("application/javascript")) {
+        return note.isProtected ? `console.log("Protected note cannot be exported.");` : note.getContent();
+    }
+
     const subRoot: Subroot = {
         branch: parentBranch,
         note: parentBranch.getNote()
@@ -105,6 +126,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
 
     // Determine JS to load.
     const jsToLoad: string[] = [
+        `${basePath}assets/tree.js`,
         `${basePath}assets/scripts.js`
     ];
     for (const jsRelation of note.getRelations("shareJs")) {
@@ -114,44 +136,25 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
     return renderNoteContentInternal(note, {
         subRoot,
         rootNoteId: parentBranch.noteId,
-        cssToLoad: [
-            `${basePath}assets/styles.css`,
-            `${basePath}assets/scripts.css`,
-        ],
+        cssToLoad: [ `${basePath}assets/scripts.css` ],
         jsToLoad,
         logoUrl: `${basePath}icon-color.svg`,
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
         isStatic: true,
-        iconPackCss: [
-            ...iconPacks.map(p => iconPackService.generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`)),
-            iconPackService.generateIconTransformCss(),
-            task_states.generateTaskStateCss()
-        ]
-            .filter(Boolean)
-            .join("\n\n"),
-        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
+        exportHosting: getLink && { basePath, getLink },
+        ...getIconPackArgs(iconPacks, (p) => `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`)
     });
 }
 
-export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclude) {
+export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) {
     const subRoot = getSharedSubTreeRoot(note);
 
-    const ancestors: string[] = [];
-    let notePointer = note;
-    while (notePointer.parents[0]?.noteId !== subRoot.note?.noteId) {
-        const pointerParent = notePointer.parents[0];
-        if (!pointerParent) {
-            break;
-        }
-        ancestors.push(pointerParent.noteId);
-        notePointer = pointerParent;
-    }
+    const ancestors = getSiteAncestorIds(note, subRoot.note);
 
     // Determine CSS to load.
     const cssToLoad: string[] = [];
     if (!note.isLabelTruthy("shareOmitDefaultCss")) {
-        cssToLoad.push(`assets/styles.css`);
         cssToLoad.push(`assets/scripts.css`);
     }
     for (const cssRelation of note.getRelations("shareCss")) {
@@ -159,7 +162,9 @@ export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclu
     }
 
     // Determine JS to load.
+    // `page.ejs` makes the first one, which restores the tree, block the page's first paint.
     const jsToLoad: string[] = [
+        "assets/tree.js",
         "assets/scripts.js"
     ];
     for (const jsRelation of note.getRelations("shareJs")) {
@@ -167,7 +172,8 @@ export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclu
     }
 
     const customLogoId = note.getRelation("shareLogo")?.value;
-    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+    const logoImageUrl = customLogoId ? `api/images/${customLogoId}/image.png` : null;
+    const logoUrl = logoImageUrl ?? `../${assetUrlFragment}/images/icon-color.svg`;
     const iconPacks = iconPackService.getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
@@ -176,22 +182,58 @@ export function renderNoteContent(note: SNote, canAccessInclude?: CanAccessInclu
         cssToLoad,
         jsToLoad,
         logoUrl,
+        logoImageUrl,
         ancestors,
         isStatic: false,
-        canAccessInclude,
+        canAccessEmbed,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
+        ...getIconPackArgs(iconPacks, (p) => p.builtin
+            ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+            : `api/attachments/${p.fontAttachmentId}/download`)
+    });
+}
+
+/**
+ * Returns the render arguments of the icon packs `iconPacks`, whose fonts `getFontUrl` locates: their
+ * CSS, their prefixes and their fonts.
+ */
+function getIconPackArgs(
+    iconPacks: iconPackService.ProcessedIconPack[],
+    getFontUrl: (iconPack: iconPackService.ProcessedIconPack) => string
+) {
+    const fonts = iconPacks.map((iconPack) => ({ iconPack, url: getFontUrl(iconPack) }));
+    return {
         iconPackCss: [
-            ...iconPacks.map(p => iconPackService.generateCss(p, p.builtin
-                ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/${p.fontAttachmentId}/download`
-            )),
+            ...fonts.map(({ iconPack, url }) => iconPackService.generateCss(iconPack, url)),
             iconPackService.generateIconTransformCss(),
             task_states.generateTaskStateCss()
         ]
             .filter(Boolean)
             .join("\n\n"),
-        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
-    });
+        iconPackSupportedPrefixes: iconPacks.map((iconPack) => iconPack.prefix),
+        iconPackFonts: fonts.map(({ iconPack, url }) => ({
+            prefix: iconPack.prefix,
+            href: url,
+            type: iconPack.fontMime
+        }))
+    };
+}
+
+/**
+ * Returns the fonts of `fonts` to preload: Boxicons, which the theme's own controls use, and every
+ * pack one of `iconClasses` (the icons of the page's logo, tree and subpages) belongs to. A pack
+ * only the content uses loads when the content is laid out, as without a preload, since Chrome
+ * warns about a preload the page does not use.
+ */
+function getFontPreloads(fonts: IconPackFont[], iconClasses: string[]) {
+    const usedPrefixes = new Set([ "bx", ...iconClasses.flatMap((classes) => classes.split(/\s+/)) ]);
+    return fonts
+        .filter((font) => usedPrefixes.has(font.prefix))
+        .map(({ href, type }) => ({ href, type }));
+}
+
+function getNavigationIcons(items: NavigationItem[]): string[] {
+    return items.flatMap((item) => [ item.icon, ...getNavigationIcons(item.children) ]);
 }
 
 interface RenderArgs {
@@ -200,30 +242,55 @@ interface RenderArgs {
     cssToLoad: string[];
     jsToLoad: string[];
     logoUrl: string;
+    /** The `~shareLogo` image; without it, the default template shows the site's note icon. */
+    logoImageUrl?: string | null;
     ancestors: string[];
     isStatic: boolean;
-    canAccessInclude?: CanAccessInclude;
+    canAccessEmbed?: CanAccessEmbed;
+    /** How the page of the static export hosts app views. */
+    exportHosting?: ExportHosting;
     faviconUrl: string;
     iconPackCss: string;
     iconPackSupportedPrefixes: string[];
+    /** The font of each icon pack, which the page preloads when its own icons use the pack. */
+    iconPackFonts: IconPackFont[];
+}
+
+interface IconPackFont {
+    prefix: string;
+    href: string;
+    /** The font's media type. */
+    type: string;
 }
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
-    // When rendering static share, non-protected JavaScript notes should be rendered as-is.
-    if (renderArgs.isStatic && note.mime.startsWith("application/javascript")) {
-        if (note.isProtected) {
-            return `console.log("Protected note cannot be exported.");`;
-        }
-
-        return note.getContent() ?? "";
-    }
-
-    // Static export preserves full include-note nesting; the live share view renders only the first level.
-    const { header, content, isEmpty } = getContent(note, {
-        expandNestedIncludes: renderArgs.isStatic,
-        canAccessInclude: renderArgs.canAccessInclude
+    // Static export preserves full embed nesting; the live share view renders only the first level.
+    const { header, content, isEmpty, isAppView, isFullHeight } = getContent(note, {
+        expandNestedEmbeds: renderArgs.isStatic,
+        canAccessEmbed: renderArgs.canAccessEmbed,
+        exportHosting: renderArgs.exportHosting
     });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
+    const siteRoot = renderArgs.subRoot.note;
+    const displayLanguage = options.getOptionOrNull("locale") || "en";
+    const logo = getSiteLogo(siteRoot, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        image: renderArgs.logoImageUrl ?? null,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+    });
+    const navigation = getNavigationTree(siteRoot, note, renderArgs.ancestors, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+        isSubtreeHidden
+    });
+    const childLinks = isFullHeight ? [] : getChildLinks(note, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+        getText: (child) => getExcerptSource(child as SNote | BNote),
+        // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
+        canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
+    });
+    const titleIcon = isFullHeight ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
     const opts = {
         note,
         header,
@@ -236,6 +303,27 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         isDev: utils.isDev(),
         utils,
         sanitizeUrl: sanitize.sanitizeUrl,
+        head: getPageHead(note, siteRoot),
+        snippets: getHtmlSnippets(note),
+        logo,
+        prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot, isSubtreeHidden),
+        navigation,
+        childLinks,
+        childLinksLayout: getChildLinksLayout(note, getViewType(note)),
+        contentClasses: getContentClasses(note, isEmpty, { isAppView, isFullHeight }),
+        language: getPageLanguages(note, {
+            displayLanguage,
+            defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
+        }),
+        lastUpdated: isFullHeight ? null : getLastUpdated(note, displayLanguage),
+        showTitle: true,
+        titleIcon,
+        fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
+            logo.icon,
+            ...(titleIcon ? [ titleIcon ] : []),
+            ...getNavigationIcons(navigation),
+            ...childLinks.flatMap((child) => [ child.icon, ...child.children.map((grandchild) => grandchild.icon) ])
+        ]),
         ...renderArgs,
     };
 
@@ -273,11 +361,79 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         }
     }
 
-    // Render with the default view otherwise.
-    return ejs.render(readShareTemplate("page"), opts, {
-        includer: (path) => ({ template: readShareTemplate(path) })
-    });
+    // Render with the default view otherwise. Custom templates get `content` without the heading
+    // anchors and image attributes, which templates derived from an earlier `page.ejs` add
+    // themselves.
+    const { content: pageContent, headings } = typeof content === "string"
+        ? preparePageContent(content, {
+            imageAlt: t("share_theme.image_alt"),
+            headingLinkLabel: t("share_theme.heading-link")
+        })
+        : { content, headings: [] };
+    const pageOpts = {
+        ...opts,
+        content: pageContent,
+        headings,
+        toc: getTableOfContents(headings),
+        isPageInNavigation: hasActiveItem(navigation)
+    };
+    return renderShareTemplate("page", pageOpts);
 }
+
+/**
+ * Prepares the content of a share page for the default template. A heading without an ID gets one
+ * made from its text that is unique on the page. Every heading gets a link to its ID labeled
+ * `headingLinkLabel`; the headings are returned in document order. An image without `alt` gets
+ * `imageAlt`, and one without `loading` loads lazily. HTML without headings or images comes back as
+ * it is.
+ */
+export function preparePageContent(
+    html: string,
+    options: { imageAlt: string; headingLinkLabel: string }
+) {
+    if (!/<(h[1-6]|img)[\s>]/i.test(html)) {
+        return { content: html, headings: [] as PageHeading[] };
+    }
+
+    const document = parse(html, { comment: true });
+    for (const image of document.querySelectorAll("img")) {
+        if (!image.hasAttribute("alt")) {
+            image.setAttribute("alt", options.imageAlt);
+        }
+        if (!image.hasAttribute("loading")) {
+            image.setAttribute("loading", "lazy");
+        }
+    }
+
+    const elements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    const unnamed = elements.filter((element) => !element.id);
+    const slugs = utils.slugifyHeadings(unnamed.map((element) => element.innerHTML),
+        document.querySelectorAll("[id]").map((element) => element.id));
+    let slugIndex = 0;
+    const headings = elements.map((element) => {
+        const slug = element.id || slugs[slugIndex++];
+        const text = element.text.replace(/\s+/g, " ").trim();
+        const html = sanitize.sanitizeHtmlCustom(element.innerHTML, HEADING_FORMATTING)
+            .replace(/\s+/g, " ").trim();
+        const href = `#${encodeURIComponent(slug)}`;
+        const heading = { level: Number(element.tagName.slice(1)), text, html, slug, href };
+        element.setAttribute("id", slug);
+        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="${href}"`
+            + ` aria-label="${utils.escapeHtml(options.headingLinkLabel)}">`
+            + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`);
+        return heading;
+    });
+    return { content: document.toString(), headings };
+}
+
+/**
+ * The inline formatting a table of contents entry keeps, without attributes. Any other element
+ * gives up its tag but keeps its text, a link included, since the entry is a link itself.
+ */
+const HEADING_FORMATTING = {
+    allowedTags: [ "b", "code", "em", "i", "kbd", "mark", "s", "strong", "sub", "sup", "u" ],
+    allowedAttributes: {}
+};
 
 /**
  * Returns the share theme's EJS template of that name, such as `page` or `404`. The platform
@@ -288,6 +444,30 @@ export function readShareTemplate(name: string) {
 }
 
 /**
+ * Renders the share theme's EJS template of that name with `data`. Each template text compiles
+ * once, so a template edited in development compiles again. The templates' `include()` resolves
+ * to the `include` passed in `data`, which the template's `with (locals)` block finds before EJS's
+ * own: EJS compiles an included template again on every call, and its `filename` cache needs
+ * `fs.existsSync`, which the browser build of EJS lacks.
+ */
+export function renderShareTemplate(name: string, data: ejs.Data): string {
+    const template = readShareTemplate(name);
+    let render = compiledShareTemplates.get(template);
+    if (!render) {
+        render = ejs.compile(template);
+        compiledShareTemplates.set(template, render);
+    }
+
+    return render({
+        ...data,
+        include: (path: string, includeData?: ejs.Data) =>
+            renderShareTemplate(path, { ...data, ...includeData })
+    });
+}
+
+const compiledShareTemplates = new Map<string, ejs.TemplateFunction>();
+
+/**
  * Returns the prefix the share theme resolves built-in assets against. The share pages live one
  * path segment deeper than the app, so outside dev the prefix climbs back out of `/share/`.
  */
@@ -296,27 +476,73 @@ function getShareAssetPath() {
 }
 
 /**
- * Decides whether the caller is allowed to read a note that an include pulls in. The share routes
- * pass their `shareCredentials` check here so that an include cannot hand out a note the same
+ * Returns the text of the paragraphs of a text note, separated by blank lines, which the excerpt
+ * of its entry in its parent's list of subpages starts from, or `null` for a note of another type
+ * or a protected one. Only the start of the note is parsed, enough for any excerpt.
+ */
+function getExcerptSource(note: SNote | BNote) {
+    if (note.type !== "text" || note.isProtected) {
+        return null;
+    }
+
+    const content = note.getContent();
+    if (typeof content !== "string") {
+        return null;
+    }
+
+    return parse(content.slice(0, EXCERPT_SOURCE_LENGTH)).querySelectorAll("p")
+        .map((paragraph) => paragraph.text)
+        .join("\n\n");
+}
+
+/** How much of a text note's HTML {@link getExcerptSource} parses. */
+const EXCERPT_SOURCE_LENGTH = 10_000;
+
+/**
+ * Decides whether the caller is allowed to read a note that an embed pulls in. The share routes
+ * pass their `shareCredentials` check here so that an embed cannot hand out a note the same
  * caller would be refused on a direct request. Omitted by the static export, whose caller is the
  * already-authenticated instance owner.
  */
-export type CanAccessInclude = (note: SNote) => boolean;
+export type CanAccessEmbed = (note: SNote) => boolean;
+
+/** How a page of the static export hosts app views, which link to the export's own pages. */
+export interface ExportHosting {
+    /** The path of the export's root from the page, such as `../`. */
+    basePath: string;
+    /** The URL of a note's page relative to the page, or `null` for a note left out. */
+    getLink(noteId: string): string | null;
+}
 
 export interface ShareRenderOptions {
     /**
-     * Keep expanding include-note sections recursively at every depth. Used for static export, which
+     * Keep expanding embeds recursively at every depth. Used for static export, which
      * preserves full nesting. When false (the default for the on-screen share view), only the first
-     * level of inclusion is rendered and deeper include-note sections are replaced with a reference
+     * level of embedding is rendered and deeper embeds are replaced with a reference
      * link.
      */
-    expandNestedIncludes?: boolean;
-    /** Internal: render this note's own include-note sections as reference links instead of expanding. */
-    includesAsReferenceLinks?: boolean;
-    /** Internal: note IDs already rendered on the current include path, used as a recursion cycle guard. */
+    expandNestedEmbeds?: boolean;
+    /** Internal: render this note's own embeds as reference links instead of expanding. */
+    embedsAsReferenceLinks?: boolean;
+    /** Internal: note IDs already rendered on the current embed path, used as a recursion cycle guard. */
     seenNoteIds?: Set<string>;
-    /** See {@link CanAccessInclude}. When omitted, every included note is expanded. */
-    canAccessInclude?: CanAccessInclude;
+    /** See {@link CanAccessEmbed}. When omitted, every embedded note is expanded. */
+    canAccessEmbed?: CanAccessEmbed;
+    /**
+     * How a page of the static export hosts app views. Without it, a note of becca keeps the
+     * content rendered here.
+     */
+    exportHosting?: ExportHosting;
+    /**
+     * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
+     * out, and a missing block renders as a broken reference.
+     */
+    block?: string;
+    /**
+     * Whether a code note numbers its lines, as its embed's `data-code-line-numbers` sets, over
+     * the option.
+     */
+    hasCodeLineNumbers?: boolean;
 }
 
 export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}) {
@@ -339,19 +565,31 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "code" && note.mime === "text/x-markdown") {
         renderMarkdown(result, note);
     } else if (note.type === "code") {
-        renderCode(result);
+        renderCode(result, note.mime, note, options.hasCodeLineNumbers);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
-    } else if (["image", "canvas", "mindMap"].includes(note.type)) {
+        hostNoteView(result, note, options);
+    } else if ([ "image", "canvas", "mindMap" ].includes(note.type)) {
         renderImage(result, note);
+        hostNoteView(result, note, options);
     } else if (note.type === "file") {
         renderFile(note, result);
+    } else if (note.type === "book" && canHostAppView(note, options)
+        && SHARE_HOSTED_VIEW_TYPES.includes(getViewType(note) ?? "")) {
+        renderCollectionView(result, note, options);
     } else if (note.type === "book") {
+        // A collection shows its child notes. What its content still holds from a type it was
+        // switched from is never written into the page, which prints it as HTML.
         result.isEmpty = true;
+        result.content = "";
     } else if (note.type === "webView") {
         renderWebView(note, result);
+    } else if ([ "noteMap", "relationMap", "render" ].includes(note.type)) {
+        result.content = "";
+        hostNoteView(result, note, options);
     } else if (note.type === "spreadsheet") {
         renderSpreadsheet(result);
+        hostNoteView(result, note, options);
     } else {
         result.content = `<p>${t("content_renderer.note-cannot-be-displayed")}</p>`;
     }
@@ -365,11 +603,10 @@ function renderIndex(result: Result) {
     const rootNote = shaca.getNote(shareRoot.SHARE_ROOT_NOTE_ID);
 
     for (const childNote of rootNote.getChildNotes()) {
-        const isExternalLink = childNote.hasLabel("shareExternalLink");
-        const rawHref = childNote.getLabelValue("shareExternalLink") ?? "";
-        const href = escapeHtml(isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${childNote.shareId}`);
-        const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
-        result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
+        const link = getShareLink(childNote, sanitize.sanitizeUrl);
+        const target = link.isExternal ? ` target="_blank" rel="noopener noreferrer"` : "";
+        result.content += `<li><a class="${childNote.type}" href="${utils.escapeHtml(link.href)}"${target}>`
+            + `${childNote.escapedTitle}</a></li>`;
     }
 
     result.content += "</ul>";
@@ -381,139 +618,47 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         blockTextElements: {}
     };
     const document = parse(result.content || "", parseOpts);
+    if (options.block !== undefined && !sliceToBlockReference(document, options.block)) {
+        const message = utils.escapeHtml(t("content_renderer.broken-block-reference"));
+        result.content = `<p class="block-reference-broken">${message}</p>`;
+        return;
+    }
 
-    // One of a preview's pictures, or what stands in for it. Every picture on a shared page makes
-    // the same decision, so it is made once: safeLinkPreviewImageSrc() keeps the placeholder for
-    // anything but an inline image or an attachment of this instance, because an <img> fires on
-    // load — a remote URL here would have every visitor to the shared page announce itself to a
-    // third party without so much as a click.
-    const renderPicture = (
-        src: string | undefined | null,
-        { className, placeholder, size }: { className: string; placeholder: string; size?: number }
-    ) => {
-        const safeSrc = safeLinkPreviewImageSrc(src);
+    // The content of an embed of an unknown kind needs the renderer of its kind.
+    for (const embedEl of document.querySelectorAll(`section[${CONTENT_EMBED_KIND_ATTRIBUTE}]`)) {
+        replaceWithUnavailable(embedEl, parseOpts);
+    }
 
-        if (!safeSrc) {
-            return placeholder;
-        }
-
-        const sizeAttrs = size ? ` width="${size}" height="${size}"` : "";
-
-        return `<img class="${className}" src="${escapeHtml(safeSrc)}" alt="" loading="lazy"${sizeAttrs}>`;
+    // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
+    // them. The share theme adds the click-to-play behavior of a video.
+    const previewOptions = {
+        playVideoLabel: t("content_renderer.play-video"),
+        playAudioLabel: t("content_renderer.play-audio")
     };
-
-    // The site's favicon — shown by both the inline mention and the card's URL line, from the one
-    // `data-favicon` the element already carries. A site whose icon could not be had shows nothing
-    // in its place: unlike a card's missing cover there is no hole to fill, and anything stood there
-    // instead was read as a mark of its own rather than as an absent icon.
-    const renderFavicon = (favicon: string | undefined | null) => renderPicture(favicon, {
-        className: "link-embed-mention-favicon",
-        size: 16,
-        placeholder: ""
-    });
-
-    // Process link mentions (inline) — metadata is stored in data attributes.
     for (const mentionEl of document.querySelectorAll("span.link-mention")) {
-        const url = mentionEl.getAttribute("data-url");
-        if (!url) continue;
-        const title = mentionEl.getAttribute("data-title") || safeHostnameForShare(url);
-        // escapeHtml() makes the value safe to *place* in the attribute; it says nothing about the
-        // scheme. `data-*` survives the save-time sanitizer untouched, so a stored
-        // `data-url="javascript:…"` would otherwise become a live link on a public page.
-        mentionEl.innerHTML = `<a class="link-embed-mention" href="${escapeHtml(safeLinkPreviewHref(url))}" target="_blank" rel="noopener noreferrer">` +
-            renderFavicon(mentionEl.getAttribute("data-favicon")) +
-            `<span class="link-embed-mention-title">${escapeHtml(title)}</span></a>`;
+        const data = readLinkPreviewData((name) => mentionEl.getAttribute(name));
+        if (data) {
+            mentionEl.innerHTML = renderLinkMentionHtml(data, previewOptions);
+        }
     }
 
-    // Process link embeds (block) — metadata is stored in data attributes.
     for (const embedEl of document.querySelectorAll("section.link-embed")) {
-        const url = embedEl.getAttribute("data-url");
-        const embedType = embedEl.getAttribute("data-embed-type");
-        if (!url) continue;
-
-        if (embedType === "youtube") {
-            const videoId = extractYouTubeVideoId(url);
-            if (videoId) {
-                // Click-to-play: the shared page shows the thumbnail stored in the note and only
-                // loads YouTube's player once a visitor asks for it, so simply reading the page does
-                // not hand every visitor's IP to Google. The swap is done by the share theme's
-                // video_facade script, which reads data-video-id.
-                // No placeholder: the play button carries the facade on its own.
-                const thumbnailHtml = renderPicture(embedEl.getAttribute("data-image"), {
-                    className: "link-embed-video-thumbnail",
-                    placeholder: ""
-                });
-                embedEl.innerHTML = `<div class="link-embed-video">`
-                    + `<button type="button" class="link-embed-video-facade" data-video-id="${escapeHtml(videoId)}" aria-label="Play video" title="Play video">`
-                    + thumbnailHtml
-                    + `<span class="link-embed-video-play" aria-hidden="true"></span>`
-                    + `</button></div>`;
+        const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
+        if (data) {
+            embedEl.innerHTML = renderLinkEmbedBoxHtml(
+                data, (name) => embedEl.getAttribute(name), previewOptions);
+            const player = getLinkPreviewPlayer(data);
+            if (player) {
+                setMediaBox(embedEl, player, getVideoAspectRatio(data));
+                moveBoxToCaptionedFigure(embedEl);
             }
-        } else {
-            const title = embedEl.getAttribute("data-title") || safeHostnameForShare(url);
-            const description = embedEl.getAttribute("data-description");
-            const siteName = embedEl.getAttribute("data-site-name") || safeHostnameForShare(url);
-
-            // The wrapper is there either way: it is what gives the card's left column its size, so
-            // a card without a picture keeps the same shape as one with it.
-            const imageHtml = `<div class="link-embed-card-image-wrapper">`
-                + renderPicture(embedEl.getAttribute("data-image"), {
-                    className: "link-embed-card-image",
-                    placeholder: `<div class="link-embed-card-image-placeholder">&#128279;</div>`
-                })
-                + `</div>`;
-            const descHtml = description ? `<div class="link-embed-card-description">${escapeHtml(description)}</div>` : "";
-            const urlHtml = `<div class="link-embed-card-url">`
-                + renderFavicon(embedEl.getAttribute("data-favicon"))
-                + `<span>${escapeHtml(siteName)}</span></div>`;
-
-            embedEl.innerHTML = `<a class="link-embed-card" href="${escapeHtml(safeLinkPreviewHref(url))}" target="_blank" rel="noopener noreferrer">` +
-                imageHtml +
-                `<div class="link-embed-card-content"><div class="link-embed-card-title">${escapeHtml(title)}</div>${descHtml}${urlHtml}</div></a>`;
         }
     }
 
-    // Process include notes. The share view renders only the first level of inclusion; static export
-    // (expandNestedIncludes) keeps expanding recursively. seenNoteIds tracks the current ancestor
+    // Process embeds. The share view renders only the first level of embedding; static export
+    // (expandNestedEmbeds) keeps expanding recursively. seenNoteIds tracks the current ancestor
     // path (cloned per descent below) so the recursive path can break cycles without treating a note
-    // included in two sibling sub-trees as circular.
-    const seenNoteIds = new Set(options.seenNoteIds);
-    seenNoteIds.add(note.noteId);
-    for (const includeNoteEl of document.querySelectorAll("section.include-note")) {
-        const noteId = includeNoteEl.getAttribute("data-note-id");
-        if (!noteId) continue;
-
-        const includedNote = shaca.getNote(noteId);
-        if (!includedNote) continue;
-
-        // An include must not disclose what a direct request for the same note would refuse: a note
-        // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
-        // title is withheld too, since an included note need not appear in the visible share tree.
-        if (options.canAccessInclude && !options.canAccessInclude(includedNote)) {
-            includeNoteEl.replaceWith(...parse(`<p class="include-note-forbidden">${escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
-            continue;
-        }
-
-        // Deeper-than-first-level includes (and any cycle in the recursive path) degrade to a
-        // reference link that the link-processing passes below resolve to the shared note.
-        if (options.includesAsReferenceLinks || seenNoteIds.has(noteId)) {
-            includeNoteEl.replaceWith(...parse(`<a class="reference-link" href="#root/${escapeHtml(noteId)}">${escapeHtml(includedNote.title)}</a>`, parseOpts).childNodes);
-            continue;
-        }
-
-        const includedResult = getContent(includedNote, options.expandNestedIncludes
-            ? { expandNestedIncludes: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude }
-            : { includesAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds), canAccessInclude: options.canAccessInclude });
-        if (typeof includedResult.content !== "string") continue;
-
-        const includedDocument = parse(includedResult.content, parseOpts).childNodes;
-        if (includedDocument) {
-            includeNoteEl.replaceWith(...includedDocument);
-        }
-    }
-
-    result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
-
+    // embedded in two sibling sub-trees as circular.
     const getNote: GetNoteFunction = note instanceof BNote
         ? (noteId: string) => becca.getNote(noteId)
         : (noteId: string) => shaca.getNote(noteId);
@@ -521,13 +666,83 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         ? (attachmentId: string) => becca.getAttachment(attachmentId)
         : (attachmentId: string) => shaca.getAttachment(attachmentId);
 
+    const embedContext = {
+        seenNoteIds: new Set(options.seenNoteIds).add(getEmbedKey(note.noteId, options.block)),
+        embedsAsReferenceLinks: options.embedsAsReferenceLinks,
+        expandNestedEmbeds: options.expandNestedEmbeds
+    };
+    // The links of an embedded note, which `getContent()` processed with that note as their host.
+    const embeddedLinks = new Set<HTMLElement>();
+    for (const embedEl of document.querySelectorAll(".include-note")) {
+        normalizeEmbedBox(embedEl);
+        const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
+        if (!embed) continue;
+
+        if (embed.kind === "attachment") {
+            const attachment = getAttachment(embed.attachmentId);
+            if (!attachment) {
+                replaceWithUnavailable(embedEl, parseOpts);
+            } else if (isEmbedShownAsLink(embed, getEmbedContentType(attachment))) {
+                const link = renderAttachmentLink(embed.attachmentId, attachment);
+                embedEl.replaceWith(...parse(link, parseOpts).childNodes);
+            } else {
+                const html = renderAttachmentEmbed(embed.attachmentId, attachment, getNote);
+                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes);
+            }
+            continue;
+        }
+
+        const embeddedNote = shaca.getNote(embed.noteId);
+        if (!embeddedNote) {
+            replaceWithUnavailable(embedEl, parseOpts);
+            continue;
+        }
+
+        // An embed must not disclose what a direct request for the same note would refuse: a note
+        // carrying `shareCredentials` the caller has not presented becomes a placeholder, and its
+        // title is withheld too, since an embedded note need not appear in the visible share tree.
+        if (options.canAccessEmbed && !options.canAccessEmbed(embeddedNote)) {
+            embedEl.replaceWith(...parse(`<p class="include-note-forbidden">${utils.escapeHtml(t("content_renderer.included-note-requires-credentials"))}</p>`, parseOpts).childNodes);
+            continue;
+        }
+
+        // The link-processing passes below resolve the reference link to the shared note.
+        if (isEmbedShownAsLink(embed, getEmbedContentType(embeddedNote))) {
+            const href = utils.escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
+            const title = utils.escapeHtml(embeddedNote.title);
+            const link = `<a class="reference-link" href="${href}">${title}</a>`;
+            embedEl.replaceWith(...parse(link, parseOpts).childNodes);
+            continue;
+        }
+
+        const lineNumbers = embedEl.getAttribute("data-code-line-numbers");
+        const embeddedResult = getContent(embeddedNote, {
+            ...getNestedEmbedOptions(embedContext, embed.block),
+            canAccessEmbed: options.canAccessEmbed,
+            hasCodeLineNumbers: lineNumbers == null ? undefined : lineNumbers !== "false"
+        });
+        if (typeof embeddedResult.content !== "string") continue;
+
+        const embeddedContent = parse(embeddedResult.content, parseOpts);
+        for (const linkEl of embeddedContent.querySelectorAll("a")) {
+            embeddedLinks.add(linkEl);
+        }
+        replaceEmbedContent(embedEl, embeddedContent.childNodes);
+    }
+
+    result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
+
     if (!result.isEmpty) {
         // Process attachment links.
         for (const linkEl of document.querySelectorAll("a")) {
+            if (embeddedLinks.has(linkEl)) {
+                continue;
+            }
+
             const href = linkEl.getAttribute("href");
 
-            // Preserve footnotes.
-            if (href?.startsWith("#fn")) {
+            // Preserve in-page anchors (footnotes, bookmarks): a link to a note starts with `#root`.
+            if (href?.startsWith("#") && !href.startsWith("#root")) {
                 continue;
             }
 
@@ -536,34 +751,156 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             }
 
             if (linkEl.classList.contains("reference-link")) {
-                cleanUpReferenceLinks(linkEl, href ?? "", getNote);
+                cleanUpReferenceLinks(linkEl, href ?? "", getNote, {
+                    noteId: note.noteId, content: document
+                });
             }
         }
 
         // Apply syntax highlight.
         for (const codeEl of document.querySelectorAll("pre code")) {
-            if (codeEl.classList.contains("language-mermaid") && note.type === "text") {
+            if (codeEl.classList.contains("language-mermaid")) {
                 // Mermaid is handled on client-side, we don't want to break it by adding syntax highlighting.
                 continue;
             }
-
-            // codeEl.text recursively traverses the node's subtree, so read it once.
-            const codeText = codeEl.text;
-            if (!shouldSyntaxHighlight(codeText)) {
+            // An embedded code note is already highlighted by `renderCode()`.
+            if (codeEl.classList.contains("code-preview-content")) {
                 continue;
             }
 
-            const highlightResult = highlightAuto(codeText);
-            codeEl.innerHTML = highlightResult.value;
-            codeEl.classList.add("hljs");
+            highlightCodeBlock(codeEl);
         }
 
-        result.content = document.innerHTML ?? "";
+        result.content = document.innerHTML;
 
         if (note.hasLabel("shareIndex")) {
             renderIndex(result);
         }
     }
+}
+
+/** Puts `content` in an embed, followed by the embed's caption, as the app does. */
+function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
+    const caption = embedEl.childNodes.find((child) =>
+        child instanceof HTMLElement && child.tagName === "FIGCAPTION");
+    embedEl.set_content(caption ? [ ...content, caption ] : content);
+}
+
+/**
+ * Replaces an embed that cannot show its content with a message that tells nothing about it: the
+ * page is public, and a note that is not shared counts as missing. The block ID stays, for links
+ * to the block.
+ */
+function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options>) {
+    const message = utils.escapeHtml(t("content_renderer.content-not-available"));
+    const blockId = embedEl.getAttribute(BLOCK_ID_ATTRIBUTE);
+    const blockAttribute = blockId
+        ? ` ${BLOCK_ID_ATTRIBUTE}="${utils.escapeHtml(blockId)}"`
+        : "";
+    const html = `<div class="include-note-unavailable"${blockAttribute}>${message}</div>`;
+    embedEl.replaceWith(...parse(html, parseOpts).childNodes);
+}
+
+/**
+ * Writes the box size and the shape of a video, or the box size of an audio file, on its section,
+ * which the share theme sizes it by, as `applyMediaEmbeds()` does for the app's read-only view. An
+ * older YouTube video is Full.
+ */
+function setMediaBox(section: HTMLElement, player: LinkPreviewPlayer, aspectRatio: number | null) {
+    const { boxSize } = readMediaEmbedBox((name) => section.getAttribute(name), player);
+    section.setAttribute("data-box-size", boxSize);
+    if (aspectRatio) {
+        const style = section.getAttribute("style")?.replace(/;\s*$/, "");
+        const shape = `${VIDEO_ASPECT_RATIO_PROPERTY}:${aspectRatio}`;
+        section.setAttribute("style", style ? `${style};${shape}` : shape);
+    }
+}
+
+/** The attributes that size and place the box of an embed. */
+const EMBED_BOX_ATTRIBUTES = [ "style", "data-box-size", "data-position" ];
+
+/**
+ * Moves the box of `element`, an embed saved with a caption, onto the
+ * `<figure class="captioned-content-embed">` that holds both, which the share theme then places
+ * and sizes as it does the embed.
+ */
+function moveBoxToCaptionedFigure(element: HTMLElement) {
+    const figure = element.parentNode;
+    if (!figure?.classList.contains(CAPTIONED_CONTENT_EMBED_CLASS)) {
+        return;
+    }
+
+    for (const name of EMBED_BOX_ATTRIBUTES) {
+        const value = element.getAttribute(name);
+        if (value !== undefined) {
+            figure.setAttribute(name, value);
+            element.removeAttribute(name);
+        }
+    }
+}
+
+/**
+ * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
+ * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
+ * anything else, or a drawing without a picture, as the attachment link that
+ * `handleAttachmentLink` then resolves.
+ */
+function renderAttachmentEmbed(
+    attachmentId: string,
+    attachment: BAttachment | SAttachment,
+    getNote: GetNoteFunction
+) {
+    const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
+    const image = isDrawing
+        ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
+        : attachment;
+    if (!image?.attachmentId || !isImageAttachmentRole(image.role)) {
+        return renderAttachmentLink(attachmentId, attachment);
+    }
+
+    const src = `api/attachments/${image.attachmentId}/image/${encodeURIComponent(image.title)}`;
+    const alt = utils.escapeHtml(attachment.title);
+    const naturalWidth = isDrawing ? getDrawingNaturalWidth(attachment) : null;
+    if (naturalWidth === null) {
+        return `<img src="${src}" alt="${alt}">`;
+    }
+    const style = `--canvas-drawing-natural-width:${naturalWidth}px`;
+    return `<div class="canvas-drawing-box" style="${style}">`
+        + `<img class="canvas-drawing-picture" src="${src}" alt="${alt}"></div>`;
+}
+
+/**
+ * The width on screen of the frame of the canvas drawing in `attachment`, in pixels, which its
+ * picture shows. `null` for a drawing saved without a frame, whose picture shows all of it.
+ */
+function getDrawingNaturalWidth(attachment: BAttachment | SAttachment) {
+    try {
+        const content = decodeUtf8(attachment.getContent() ?? "");
+        const frame = readDrawingFrame((JSON.parse(content) as { frame?: unknown }).frame);
+        return frame ? Math.round(frame.width * frame.scale * 100) / 100 : null;
+    } catch (e) {
+        const { attachmentId } = attachment;
+        getLog().error(`Cannot read the frame of the canvas drawing '${attachmentId}': ${e}`);
+        return null;
+    }
+}
+
+/**
+ * The kind of content that decides the box of an embed of `entity`: `audio` for an audio file,
+ * otherwise the type of a note or `file` for an attachment.
+ */
+function getEmbedContentType(entity: SNote | BNote | BAttachment | SAttachment): string {
+    const isFile = "type" in entity ? entity.type === "file" : entity.role === "file";
+    if (isFile && entity.mime?.startsWith("audio/")) {
+        return "audio";
+    }
+    return ("type" in entity ? entity.type : undefined) ?? "file";
+}
+
+/** The reference link to an attachment, which `handleAttachmentLink` then resolves. */
+function renderAttachmentLink(attachmentId: string, attachment: BAttachment | SAttachment) {
+    const href = utils.escapeHtml(getAttachmentEmbedHref(attachment.ownerId, attachmentId));
+    return `<a class="reference-link" href="${href}">${utils.escapeHtml(attachment.title)}</a>`;
 }
 
 function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
@@ -587,13 +924,13 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const noteId = getNoteIdFromLink(href);
         const linkedNote = getNote(noteId);
         if (linkedNote) {
-            const isExternalLink = linkedNote.hasLabel("shareExternalLink");
-            const rawHref = linkedNote.getLabelValue("shareExternalLink") ?? "";
-            const href = isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${linkedNote.shareId}`;
-            if (href) {
-                linkEl.setAttribute("href", href);
-            }
-            if (isExternalLink) {
+            const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
+            // A link to blocks keeps them, which the page of the note scrolls to and flashes.
+            const block = new URLSearchParams(href.split("?")[1]).get("block");
+            linkEl.setAttribute("href", block && !link.isExternal
+                ? `${link.href}?block=${encodeBlockParameter(block)}`
+                : link.href);
+            if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
             }
@@ -611,7 +948,15 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
  * @param linkEl the <a> element to process.
  * @param href the `href` stored in the note; `handleAttachmentLink()` rewrites the attribute.
  */
-function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNoteFunction) {
+/** The note whose `content` holds a reference link. */
+interface ReferenceLinkHost {
+    noteId: string;
+    content: HTMLElement;
+}
+
+function cleanUpReferenceLinks(
+    linkEl: HTMLElement, href: string, getNote: GetNoteFunction, host?: ReferenceLinkHost
+) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
 
     // Handle attachment reference links
@@ -624,7 +969,7 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
     let noteId = "";
     if (linkEl.hasAttribute("href")) {
-        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : (href.split("/").at(-1) ?? "");
+        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : href.slice(href.lastIndexOf("/") + 1);
     }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
@@ -633,8 +978,38 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     } else if (note.isProtected) {
         linkEl.innerHTML = "[protected]";
     } else {
-        linkEl.innerHTML = `<span><span class="${escapeHtml(note.getIcon())}"></span>${utils.escapeHtml(note.title)}</span>`;
+        // A link to a heading of the note it is in shows the text of the heading, as in the app.
+        const heading = host && note.noteId === host.noteId
+            ? getLinkedHeadingText(host.content, href)
+            : null;
+        const icon = `<span class="${utils.escapeHtml(note.getIcon())}"></span>`;
+        linkEl.innerHTML = heading !== null
+            ? `<span>${utils.escapeHtml(heading)}</span>`
+            : `<span>${icon}${utils.escapeHtml(note.title)}</span>`;
     }
+}
+
+/**
+ * The text of the heading in `content` whose block `href` links to, or `null`. The labels of the
+ * block references in the heading are left out, and a heading without text reads as "Block", as
+ * in the app.
+ */
+function getLinkedHeadingText(content: HTMLElement, href: string) {
+    const block = new URLSearchParams(href.split("?")[1]).get("block");
+    if (!block) {
+        return null;
+    }
+
+    const { start, end } = resolveBlockReference<HTMLElement>(content, block);
+    if (!start || start !== end || !/^H[1-6]$/.test(start.tagName)) {
+        return null;
+    }
+
+    const heading = start.clone() as HTMLElement;
+    for (const link of heading.querySelectorAll(`a.reference-link[href*="block="]`)) {
+        link.remove();
+    }
+    return heading.textContent.replace(/\s+/g, " ").trim() || t("content_renderer.untitled-block");
 }
 
 /** Returns the ID of the note a link such as `#root/abc/def?viewMode=source` points to. */
@@ -664,75 +1039,267 @@ function renderMarkdown(result: Result, note: SNote | BNote) {
     const document = parse(html, parseOpts);
     for (const codeEl of document.querySelectorAll("pre code")) {
         if (codeEl.classList.contains("language-mermaid")
-            || codeEl.classList.contains("language-text-x-trilium-auto")) {
+            || codeEl.classList.contains(`language-${MIME_TYPE_AUTO}`)) {
             continue;
         }
 
-        // codeEl.text recursively traverses the node's subtree, so read it once.
-        const codeText = codeEl.text;
-        if (!shouldSyntaxHighlight(codeText)) {
-            continue;
-        }
-
-        const highlightResult = highlightAuto(codeText);
-        codeEl.innerHTML = highlightResult.value;
-        codeEl.classList.add("hljs");
+        highlightCodeBlock(codeEl);
     }
 
     result.content = document.innerHTML;
 }
 
 /**
- * Whether a code block is small enough to syntax-highlight server-side. Highlighting (especially
- * `highlightAuto`, which probes every registered language) scales with content size and would block
- * the single Node event loop on very large code, so blocks beyond {@link HIGHLIGHT_MAX_LINE_COUNT}
- * lines or {@link HIGHLIGHT_MAX_CHAR_COUNT} characters are left unhighlighted.
+ * Highlights a `<pre><code>` block in place, in the language its `language-*` class names. A block
+ * without one, or set to auto-detect, goes through `highlightAuto`. Plain text and a language that
+ * {@link ensureShareHighlighting} did not register stay unhighlighted.
  */
-export function shouldSyntaxHighlight(code: string) {
-    if (code.length > HIGHLIGHT_MAX_CHAR_COUNT) {
-        return false;
+function highlightCodeBlock(codeEl: HTMLElement) {
+    const language = [ ...codeEl.classList.values() ]
+        .find((className) => className.startsWith("language-"))
+        ?.slice("language-".length) ?? MIME_TYPE_AUTO;
+    const isAuto = language === MIME_TYPE_AUTO;
+    if (language === PLAIN_TEXT_LANGUAGE || (!isAuto && !getLanguage(language))) {
+        return;
     }
 
-    let lineCount = 1;
-    let index = -1;
-    while ((index = code.indexOf("\n", index + 1)) !== -1) {
-        if (++lineCount > HIGHLIGHT_MAX_LINE_COUNT) {
-            return false;
-        }
+    // codeEl.text recursively traverses the node's subtree, so read it once.
+    const codeText = codeEl.text;
+    if (!shouldSyntaxHighlight(codeText)) {
+        return;
     }
-    return true;
+
+    const highlightResult = isAuto ? highlightAuto(codeText) : highlight(codeText, { language });
+    if (highlightResult) {
+        codeEl.innerHTML = highlightResult.value;
+        codeEl.classList.add("hljs");
+    }
+}
+
+type CodePreviewModule = typeof import("@triliumnext/codemirror/src/code_preview.js");
+
+let registeredMimeTypesOption: string | null = null;
+let pendingRegistration: Promise<void> | null = null;
+/**
+ * The renderer of code notes, the share themes and the enabled MIME types, once
+ * `ensureShareHighlighting()` loads them.
+ */
+let codePreviews: {
+    module: CodePreviewModule;
+    themes: PreviewThemeSlot[];
+    enabledMimes: Set<string>;
+} | null = null;
+
+/**
+ * Registers the highlight.js languages enabled in the `codeNotesMimeTypes` option and unregisters
+ * the disabled ones, so `highlightAuto` considers only the enabled ones. Loads the CodeMirror
+ * languages of the same MIME types for the code notes. The renderer is synchronous, so callers
+ * await this before rendering a share page or a share-theme export.
+ */
+export function ensureShareHighlighting(): Promise<void> {
+    const optionValue = options.getOptionOrNull("codeNotesMimeTypes");
+    if (pendingRegistration && optionValue === registeredMimeTypesOption) {
+        return pendingRegistration;
+    }
+
+    registeredMimeTypesOption = optionValue;
+    pendingRegistration = Promise.resolve()
+        .then(async () => {
+            const enabledMimes = optionValue ? JSON.parse(optionValue) : null;
+            const mimeTypes = resolveEnabledMimeTypes(enabledMimes);
+            await Promise.all([ syncMimeTypes(mimeTypes), loadCodePreviews(mimeTypes) ]);
+        })
+        .catch((e: unknown) => {
+            getLog().error(`Unable to register the languages for syntax highlighting: ${e}`);
+            pendingRegistration = null;
+        });
+    return pendingRegistration;
+}
+
+/** Loads the renderer of code notes, its themes and its languages for the enabled `mimeTypes`. */
+async function loadCodePreviews(mimeTypes: MimeType[]) {
+    const module = await import("@triliumnext/codemirror/src/code_preview.js");
+    const enabledMimes = mimeTypes.filter(({ enabled }) => enabled).map(({ mime }) => mime);
+    const [ themes ] = await Promise.all([
+        Promise.all(SHARE_CODE_PREVIEW_THEMES.map(async ({ id, key }) => ({
+            theme: await module.loadPreviewTheme(id), key
+        }))),
+        Promise.all(enabledMimes.map((mime) => module.loadPreviewLanguage(mime)))
+    ]);
+    codePreviews = { module, themes, enabledMimes: new Set(enabledMimes) };
 }
 
 /**
- * Renders a code note.
+ * Renders a code note as CodeMirror shows it, once `ensureShareHighlighting()` has loaded the
+ * renderer. Until then the code is escaped in a `<pre><code>`.
+ *
+ * @param note the note whose `#wrapLines` label sets the line wrapping, over the option.
+ * @param hasLineNumbers whether the lines are numbered, over the option.
  */
-export function renderCode(result: Result) {
+export function renderCode(
+    result: Result, mime?: string, note?: SNote | BNote, hasLineNumbers?: boolean
+) {
     if (typeof result.content !== "string" || !result.content?.trim()) {
         result.isEmpty = true;
+    } else if (codePreviews) {
+        const { module, themes, enabledMimes } = codePreviews;
+        const language = mime && enabledMimes.has(mime) && shouldSyntaxHighlight(result.content)
+            ? module.getLoadedPreviewLanguage(mime) ?? null
+            : null;
+        result.content = module.renderCodePreview(result.content, {
+            themes, language, isWrapped: isLineWrapped(note),
+            hasLineNumbers: hasLineNumbers
+                ?? options.getOptionOrNull("codeLineNumbersEnabled") !== "false"
+        });
     } else {
         // Escape the raw code so that any `<`/`>` it contains are not later re-parsed as HTML.
-        // When such a code note is included into a shared text note, renderText re-parses the
+        // When such a code note is embedded into a shared text note, renderText re-parses the
         // resulting HTML; with unescaped angle brackets (e.g. generics, comparisons, JSX) a large
         // code note would explode into a pathological node-html-parser tree and hang the event
-        // loop (#9717). The <code> wrapper additionally lets renderText apply syntax highlighting,
-        // bounded by shouldSyntaxHighlight().
-        result.content = `<pre><code>${escapeHtml(result.content)}</code></pre>`;
+        // loop (#9717). The <code> wrapper and its `language-*` class additionally let renderText
+        // apply syntax highlighting, bounded by shouldSyntaxHighlight().
+        const languageClass = mime
+            ? ` class="language-${utils.escapeHtml(normalizeMimeTypeForCKEditor(mime))}"`
+            : "";
+        result.content = `<pre><code${languageClass}>${utils.escapeHtml(result.content)}</code></pre>`;
     }
 }
 
+function isLineWrapped(note: SNote | BNote | undefined) {
+    const label = note?.getLabelValue("wrapLines");
+    return label == null
+        ? options.getOptionOrNull("codeLineWrapEnabled") !== "false"
+        : label !== "false";
+}
+
+/**
+ * Renders a Mermaid note as the image the app saved, which the share theme's script replaces with
+ * a diagram drawn from `.mermaid-note-source` in the page's light or dark theme.
+ */
 function renderMermaid(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") {
         return;
     }
 
     result.content = `
-<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
+<div class="mermaid-note">
+<img class="mermaid-note-image" src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
 <hr>
 <details>
     <summary>Chart source</summary>
-    <pre>${escapeHtml(result.content)}</pre>
-</details>`;
+    <pre class="mermaid-note-source">${utils.escapeHtml(result.content)}</pre>
+</details>
+</div>`;
 }
+
+/**
+ * The view type of a collection: its own `#viewType`, else the one of a built-in template such as
+ * `_template_calendar`, which lives in the hidden subtree and so is never in shaca. A becca note,
+ * as the static export renders, reads its templates itself.
+ */
+function getViewType(note: SNote | BNote) {
+    if (note instanceof BNote) {
+        return note.getLabelValue("viewType");
+    }
+    return note.getLabelValue("viewType") || note.getBuiltInTemplateLabelValue("viewType");
+}
+
+/**
+ * Returns whether the note keeps its children out of the tree with `#subtreeHidden`, which a board
+ * has from its built-in template. Shaca holds only shared notes, so becca answers for the template.
+ */
+function isSubtreeHidden(note: ShareNote) {
+    const shared = note as SNote | BNote;
+    if (shared instanceof BNote || shared.hasLabel("subtreeHidden")) {
+        return shared.isLabelTruthy("subtreeHidden");
+    }
+
+    const value = shared.getBuiltInTemplateLabelValue("subtreeHidden");
+    return value !== null && value !== "false";
+}
+
+/**
+ * Renders a collection the share theme shows with the app's own view, through its note list: an
+ * element to mount it into, beside the notes and the display options it starts from.
+ */
+function renderCollectionView(result: Result, note: SNote | BNote, options: ShareRenderOptions) {
+    result.content = "";
+    hostInAppView(result, note, "share-collection", options);
+}
+
+/**
+ * Has the share theme show a shared note, or a note of the static export, with the app's own widget
+ * for its type, keeping the content rendered here for a visitor without scripts. Binary content and
+ * an empty note keep the content alone.
+ */
+function hostNoteView(result: Result, note: SNote | BNote, options: ShareRenderOptions) {
+    if (canHostAppView(note, options) && typeof result.content === "string" && !result.isEmpty
+        && SHARE_HOSTED_NOTE_TYPES.includes(note.type)) {
+        hostInAppView(result, note, "share-note-view", options);
+    }
+}
+
+/** Whether `note` can have an app view: a shared note, or a note of the static export. */
+function canHostAppView(note: SNote | BNote, options: ShareRenderOptions) {
+    return !(note instanceof BNote) || !!options.exportHosting;
+}
+
+/**
+ * Wraps the content in a `container` the share theme's script mounts an app view into, beside the
+ * notes and the display options the view starts from. The content stays for a visitor without
+ * scripts until the view replaces it.
+ */
+function hostInAppView(
+    result: Result,
+    note: SNote | BNote,
+    container: string,
+    renderOptions: ShareRenderOptions
+) {
+    const { exportHosting } = renderOptions;
+    const payload = {
+        ...(note instanceof BNote
+            ? buildExportRows(note, exportHosting)
+            : buildFrocaPayload(note, renderOptions.canAccessEmbed)),
+        options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
+        // The app's assets, such as its translations: the export's `assets/`, else those of the
+        // app from a page directly below `/share/`.
+        assetPath: exportHosting
+            ? `${exportHosting.basePath}assets`
+            : `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
+        // The note the app would show the note below, such as the root of a note map note's map.
+        parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null,
+        // On a page of the export, the views read their notes from the files under `data/`.
+        exportBasePath: exportHosting?.basePath
+    };
+    const json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    result.isAppView = true;
+    result.isFullHeight = true;
+    const content = String(result.content);
+    result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
+        + `<script type="application/json" class="share-froca">${json}</script>`;
+}
+
+/**
+ * The rows of a note of the static export, of the notes the export holds, each linked to its page
+ * in the export.
+ */
+function buildExportRows(note: BNote, exportHosting: ExportHosting | undefined) {
+    const getLink = (linked: BNote) => exportHosting?.getLink(linked.noteId) ?? null;
+    // `canAccess` admits only the notes with a link, so `getLink` is never asked for another.
+    return buildFrocaRows([ note ], (candidate) => getLink(candidate) !== null,
+        (candidate) => String(getLink(candidate)));
+}
+
+/**
+ * The options the app's views read to draw a note as the app does, which a shared page receives. Only
+ * display options: the rest of the options can hold secrets, such as API keys.
+ */
+const SHARED_OPTIONS = [
+    "locale", "formattingLocale", "firstDayOfWeek",
+    "codeNoteTheme", "codeNoteThemeLight", "codeNoteThemeDark", "codeNoteThemeMatchesApp",
+    "codeLineWrapEnabled", "codeLineNumbersEnabled", "codeNoteTabWidth",
+    "codeNoteIndentWithTabs", "splitEditorOrientation"
+] as const;
 
 function renderImage(result: Result, note: SNote | BNote) {
     result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;
@@ -741,6 +1308,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.isFullHeight = true;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
@@ -777,6 +1345,7 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+    result.isFullHeight = true;
 }
 
 /**
@@ -810,10 +1379,6 @@ function isFramableSource(url: string): boolean {
     }
 }
 
-
-function safeHostnameForShare(url: string): string {
-    try { return new URL(url).hostname; } catch { return url; }
-}
 
 export default {
     getContent

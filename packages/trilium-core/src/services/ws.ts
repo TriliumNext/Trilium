@@ -214,6 +214,14 @@ function reloadFrontend(reason: string) {
     sendMessageToAllClients({ type: "reload-frontend", reason });
 }
 
+/**
+ * Has the clients reload their froca cache in place, for a change made outside the entity layer
+ * that emits no entity changes for the frontend to apply.
+ */
+function reloadFroca(reason: string) {
+    sendMessageToAllClients({ type: "reload-froca", reason });
+}
+
 function setLastSyncedPush(entityChangeId: number) {
     lastSyncedPush = entityChangeId;
 }
@@ -228,5 +236,6 @@ export default {
     syncHashCheckFailed,
     sendTransactionEntityChangesToAllClients,
     setLastSyncedPush,
-    reloadFrontend
+    reloadFrontend,
+    reloadFroca
 };

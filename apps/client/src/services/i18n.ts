@@ -6,7 +6,10 @@ import { initReactI18next } from "react-i18next";
 /**
  * A deferred promise that resolves when translations are initialized.
  */
-export const translationsInitializedPromise = $.Deferred();
+let resolveTranslationsInitialized = () => {};
+export const translationsInitializedPromise = new Promise<void>((resolve) => {
+    resolveTranslationsInitialized = resolve;
+});
 
 /** Every string in the app proper: 200-300 KB depending on the language. */
 const APP_NAMESPACE = "translation";
@@ -39,11 +42,16 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
         backend: {
             loadPath: `${window.glob.assetPath}/translations/{{lng}}/{{ns}}.json`
         },
+        // Interpolated values are not HTML-escaped: the client renders translated strings as text, where
+        // escaping shows `&#x2F;` and `&#39;` to the reader. A string headed for a sink that takes HTML
+        // escapes its own values: `Menu` titles and `highlightedNotePathTitle` callers use
+        // `escapeHtml()`, and the confirm and info dialogs render through `SanitizedHtml`.
+        interpolation: { escapeValue: false },
         returnEmptyString: false
     });
 
     await setDayjsLocale(locale);
-    translationsInitializedPromise.resolve();
+    resolveTranslationsInitialized();
 }
 
 /**
@@ -59,7 +67,23 @@ export function getAvailableLocales(): Locale[] {
     if (!window.glob.isDev) return LOCALES;
 
     const englishNames = new Intl.DisplayNames([ "en" ], { type: "language" });
-    return LOCALES.map((locale) => ({ ...locale, name: withEnglishName(locale, englishNames) }));
+    return LOCALES.map((locale) => {
+        const englishName = getEnglishAnnotation(locale, englishNames);
+        return { ...locale, name: englishName ? `${locale.name} (${englishName})` : locale.name };
+    });
+}
+
+/**
+ * The English name a development build shows after the native name of `locale`, or `null` in
+ * production and where the English name would repeat the native one.
+ *
+ * @param englishNames a formatter to reuse, for a caller naming a whole list of locales at once.
+ */
+export function getEnglishAnnotation(locale: Locale, englishNames?: Intl.DisplayNames) {
+    if (!window.glob.isDev) return null;
+
+    const englishName = getEnglishName(locale.id, englishNames);
+    return englishName && englishName !== locale.name ? englishName : null;
 }
 
 /**
@@ -75,12 +99,4 @@ export function getLocaleById(localeId: string | null | undefined) {
 
 export const t = i18next.t;
 export const getCurrentLanguage = () => i18next.language;
-
-/** `Deutsch (German)`, or the native name alone where an English equivalent would add nothing. */
-function withEnglishName(locale: Locale, englishNames: Intl.DisplayNames): string {
-    const englishName = getEnglishName(locale.id, englishNames);
-    return englishName && englishName !== locale.name
-        ? `${locale.name} (${englishName})`
-        : locale.name;
-}
 

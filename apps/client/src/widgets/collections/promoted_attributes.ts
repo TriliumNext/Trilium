@@ -1,7 +1,7 @@
 import type { BulkAction } from "@triliumnext/commons";
 
+import type FAttribute from "../../entities/fattribute";
 import type FNote from "../../entities/fnote";
-import { executeBulkActions } from "../../services/bulk_action";
 import { t } from "../../services/i18n";
 
 /** How one promoted attribute is shown, as a collection's view config stores it. */
@@ -43,6 +43,17 @@ export interface PromotedAttribute {
     /** Whether the note that defines it is the collection itself rather than an ancestor. */
     isOwned: boolean;
     /**
+     * Whether only the items define it, through a template or another parent, and the collection
+     * note does not. `PromotedAttributesCard` shows no edit or delete button for it.
+     */
+    isDefinedByItems: boolean;
+    /**
+     * Whether an item defines it with another type or other select options than the listed
+     * definition. Sorting then compares its values as text, and `buildAttributeMenuItems()` leaves
+     * it out.
+     */
+    isConflicting: boolean;
+    /**
      * Whether the definition passes to the notes below. Always true for a resolved attribute, and
      * held so that the editor is handed the definition as it stands.
      */
@@ -52,33 +63,61 @@ export interface PromotedAttribute {
 /**
  * The attributes a collection can show on its items, in the order the reader put them.
  *
- * The stored settings lead, in their own order, and anything the note has gained since is appended
- * and shown: an attribute nobody has arranged is one the reader has yet to see. What the settings
- * name but the note no longer defines is left out, so writing the result back prunes the config.
+ * The stored settings lead, in their own order, and anything the note has gained since is appended,
+ * shown unless `unarrangedHidden` is set: an attribute nobody has arranged is one the reader has yet
+ * to see. Attributes listed in the settings but no longer defined by the note are left out, so
+ * writing the result back prunes the config.
  *
  * Read from `getAttributeDefinitions()` rather than from the promoted ones: a definition that is
  * not promoted is still drawn on an item, only without an alias, and a note carrying
  * `#hidePromotedAttributes` (which a board is usually given) reports no promoted ones at all.
  *
- * Only the inheritable definitions are listed. One that is not describes the collection note alone
- * and never reaches the items, so there is nothing about it for the reader to arrange.
+ * Only the inheritable definitions of `note` are listed, because a non-inheritable one applies to
+ * the collection note alone.
+ *
+ * The definitions of `items` are appended after those of `note`, inheritable or not, because
+ * `UserAttributesDisplay` shows every definition an item has.
  */
 export function resolvePromotedAttributes(
     note: FNote | null | undefined,
     settings: PromotedAttributeSetting[] | undefined,
     /** Names the collection draws itself, such as the label a board groups by. */
-    drawnByCollection: string[] = []
+    drawnByCollection: string[] = [],
+    /** The notes the collection shows, such as the cards of a board. */
+    items: Iterable<FNote> = [],
+    { unarrangedHidden = false }: {
+        /**
+         * Hides what the settings have never named, for a collection whose items have little room,
+         * such as a calendar's events. Otherwise it is shown.
+         */
+        unarrangedHidden?: boolean;
+    } = {}
 ): PromotedAttribute[] {
     const defined = new Map<string, PromotedAttribute>();
 
-    for (const definition of note?.getAttributeDefinitions() ?? []) {
-        const [ type, name ] = definition.name.split(":", 2);
-        if ((type !== "label" && type !== "relation") || !name || defined.has(name)
-                || !definition.isInheritable) {
-            continue;
+    const add = (definition: FAttribute, isDefinedByItems: boolean) => {
+        const firstColon = definition.name.indexOf(":");
+        const type = firstColon >= 0 ? definition.name.substring(0, firstColon) : definition.name;
+        const name = firstColon >= 0 ? definition.name.substring(firstColon + 1) : "";
+        if ((type !== "label" && type !== "relation") || !name
+                || (!isDefinedByItems && !definition.isInheritable)) {
+            return;
         }
 
         const parsed = definition.getDefinition();
+        const existing = defined.get(name);
+        if (existing) {
+            // An item inheriting the collection's definition reads the same one back; only an item
+            // that defines the name itself, or through a template, can differ.
+            if (isDefinedByItems
+                    && (existing.type !== type
+                        || (existing.labelType ?? "text") !== (parsed?.labelType ?? "text")
+                        || !sameOptions(existing.selectOptions, parsed?.selectOptions))) {
+                existing.isConflicting = true;
+            }
+            return;
+        }
+
         defined.set(name, {
             name,
             definitionName: definition.name,
@@ -91,8 +130,20 @@ export function resolvePromotedAttributes(
             drawnByCollection: drawnByCollection.includes(name),
             definitionValue: definition.value,
             isOwned: definition.noteId === note?.noteId,
+            isDefinedByItems,
+            isConflicting: false,
             isInheritable: definition.isInheritable
         });
+    };
+
+    for (const definition of note?.getAttributeDefinitions() ?? []) {
+        add(definition, false);
+    }
+
+    for (const item of items) {
+        for (const definition of item.getAttributeDefinitions()) {
+            add(definition, true);
+        }
     }
 
     const ordered: PromotedAttribute[] = [];
@@ -106,11 +157,19 @@ export function resolvePromotedAttributes(
 
     for (const attribute of defined.values()) {
         if (!ordered.includes(attribute)) {
+            attribute.hidden = unarrangedHidden;
             ordered.push(attribute);
         }
     }
 
     return ordered;
+}
+
+/** Returns whether two select definitions offer the same options in the same order. */
+function sameOptions(a: string[] | undefined, b: string[] | undefined) {
+    const left = a ?? [];
+    const right = b ?? [];
+    return left.length === right.length && left.every((option, index) => option === right[index]);
 }
 
 /**
@@ -139,13 +198,14 @@ export function storedPromotedAttributes(attributes: PromotedAttribute[]): Promo
  * Renames an attribute on the collection and everything under it, so the values follow the
  * definition they were written against.
  */
-export function renameAttributeInSubtree(
+export async function renameAttributeInSubtree(
     parentNoteId: string, type: "label" | "relation", oldName: string, newName: string
 ) {
     const action: BulkAction = type === "label"
         ? { name: "renameLabel", oldLabelName: oldName, newLabelName: newName }
         : { name: "renameRelation", oldRelationName: oldName, newRelationName: newName };
 
+    const { executeBulkActions } = await import("../../services/bulk_action");
     return executeBulkActions([ parentNoteId ], [ action ], { includeDescendants: true });
 }
 
@@ -153,13 +213,14 @@ export function renameAttributeInSubtree(
  * Deletes an attribute from the collection and everything under it. Silent: the attribute leaving
  * the list and the items reports it, and a toast over the dialog reads as something else.
  */
-export function deleteAttributeInSubtree(
+export async function deleteAttributeInSubtree(
     parentNoteId: string, type: "label" | "relation", name: string
 ) {
     const action: BulkAction = type === "label"
         ? { name: "deleteLabel", labelName: name }
         : { name: "deleteRelation", relationName: name };
 
+    const { executeBulkActions } = await import("../../services/bulk_action");
     return executeBulkActions(
         [ parentNoteId ], [ action ], { includeDescendants: true, silent: true });
 }

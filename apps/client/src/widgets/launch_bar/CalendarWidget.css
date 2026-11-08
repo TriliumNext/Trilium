@@ -10,7 +10,7 @@
 
 .calendar-dropdown-widget {
     margin: 0 auto;
-    width: 100%;
+    width: 400px;
 }
 
 .calendar-dropdown-widget .calendar-btn {
@@ -184,9 +184,4 @@
 
 .calendar-dropdown-widget .form-control {
     padding: 0;
-}
-
-.calendar-dropdown-widget .calendar-month-selector .dropdown-menu {
-    left: 50%;
-    transform: translateX(-50%);
 }

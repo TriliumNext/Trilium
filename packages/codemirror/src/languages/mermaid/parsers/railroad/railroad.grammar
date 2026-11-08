@@ -1,0 +1,38 @@
+// Follows the Langium grammar of Mermaid's railroad diagram (`@mermaid-js/parser`), which builds
+// each rule from calls such as `sequence(…)` and `terminal("…")`.
+@top RailroadDiagram { DiagramName Title* Rule* }
+
+Rule { RuleName "=" expression ";" }
+
+expression { Call | String }
+
+Call { Function "(" expression ("," expression)* ")" }
+
+Function {
+  fn<"sequence"> | fn<"choice"> | fn<"optional"> | fn<"oneOrMore"> | fn<"zeroOrMore"> |
+  fn<"terminal"> | fn<"nonterminal"> | fn<"special">
+}
+
+Title { kw<"title"> TitleText? }
+
+RuleName { identifier }
+
+DiagramName { @specialize<identifier, "railroad-beta"> }
+
+kw<term> { @specialize[@name=Keyword]<identifier, term> }
+
+fn<term> { @specialize<identifier, term> }
+
+@skip { space | LineComment }
+
+@external tokens titleText from "./tokens.js" { TitleText }
+
+@tokens {
+  space { $[ \t\r\n]+ }
+  identifier { $[A-Za-z_] $[a-zA-Z0-9_\-]* }
+  String { '"' (!["\\\n] | "\\" _)* '"' | "'" (!['\\\n] | "\\" _)* "'" }
+  LineComment { "%%" ![\n]* }
+  "=" ";" "(" ")" ","
+}
+
+@external propSource railroadHighlighting from "./highlight.js"

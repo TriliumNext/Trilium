@@ -6,12 +6,15 @@
  * Deliberately dependency-free and transport-only: protocol semantics
  * (initialize, session/new, session/prompt, permission policy) live in the
  * provider. The client handles framing, request/response correlation,
- * agent→client requests, and subprocess lifecycle.
+ * agent→client requests, and the agent's lifecycle, whether it runs as a
+ * subprocess or as a Node script in a worker thread.
  */
 
 import { getLog } from "@triliumnext/core";
 import { type ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { createInterface } from "readline";
+import type { Readable, Writable } from "stream";
+import { Worker } from "worker_threads";
 
 /** How long a disposed agent has to exit on its own before it is killed. */
 const DISPOSE_GRACE_MS = 5_000;
@@ -68,6 +71,18 @@ export interface AcpClientOptions {
     onExit?: (error: Error) => void;
 }
 
+/** Where the agent runs: a subprocess, or a script in a worker thread of this process. */
+interface AgentHost {
+    stdin: Writable;
+    stdout: Readable;
+    stderr: Readable;
+    /** Called when the agent cannot start, or its worker throws. */
+    onError(listener: (err: Error) => void): void;
+    /** Called when the agent ends, with how it ended (`SIGTERM`, `code 1`). */
+    onExit(listener: (how: string) => void): void;
+    kill(): void;
+}
+
 export class AcpClient {
     private nextId = 1;
     private readonly pending = new Map<number, { resolve: (msg: JsonRpcMessage) => void; reject: (err: Error) => void }>();
@@ -76,7 +91,7 @@ export class AcpClient {
     private exited = false;
 
     private constructor(
-        private readonly proc: ChildProcessWithoutNullStreams,
+        private readonly proc: AgentHost,
         private readonly options: AcpClientOptions
     ) {
         const rl = createInterface({ input: proc.stdout });
@@ -96,17 +111,23 @@ export class AcpClient {
         // left to report.
         proc.stdin.on("error", () => {});
 
-        proc.on("error", err => this.die(new Error(`Failed to start the ACP agent: ${err.message}`)));
-        proc.on("exit", (code, sig) => {
+        proc.onError(err => this.die(new Error(`Failed to start the ACP agent: ${err.message}`)));
+        proc.onExit(how => {
             this.exited = true;
             // A deliberate dispose() ends the subprocess — that exit is expected
             // and must not surface as an error for in-flight (cancelled) requests.
             if (!this.disposed) {
-                this.die(new Error(`The ACP agent exited unexpectedly (${sig ?? `code ${code}`}).`));
+                this.die(new Error(`The ACP agent exited unexpectedly (${how}).`));
             }
         });
     }
 
+    /**
+     * Run the agent as a subprocess. Outside Windows it leads its own process
+     * group, so a Ctrl+C in the server's terminal does not reach it: the server
+     * ends it through {@link dispose} or {@link killLiveAgents}, which kill the
+     * whole group, including the processes the agent started.
+     */
     static start(binary: string, options: AcpClientOptions): AcpClient {
         const proc = spawn(
             options.shell ? `"${binary}"` : binary,
@@ -114,11 +135,49 @@ export class AcpClient {
             {
                 cwd: options.cwd,
                 shell: options.shell ?? false,
+                detached: process.platform !== "win32",
                 stdio: ["pipe", "pipe", "pipe"],
                 env: options.env ? { ...process.env, ...options.env } : process.env
             }
         );
-        return new AcpClient(proc, options);
+        trackLiveAgent(proc);
+        return new AcpClient({
+            stdin: proc.stdin,
+            stdout: proc.stdout,
+            stderr: proc.stderr,
+            onError: listener => proc.on("error", listener),
+            onExit: listener => proc.on("exit", (code, sig) => listener(sig ?? `code ${code}`)),
+            kill: () => killProcessTree(proc)
+        }, options);
+    }
+
+    /**
+     * Run an agent that ships as a Node script in a worker thread of this
+     * process, speaking ACP over the worker's stdio. It needs no Node binary on
+     * the host, which a packaged desktop build cannot provide: its `RunAsNode`
+     * fuse is off. The worker shares this process's working directory, so
+     * `cwd` and `shell` do not apply.
+     */
+    static startWorker(script: string, options: AcpClientOptions): AcpClient {
+        const worker = new Worker(script, {
+            argv: options.args ?? [],
+            env: { ...process.env, ...options.env },
+            stdin: true,
+            stdout: true,
+            stderr: true
+        });
+        const stdin = worker.stdin;
+        if (!stdin) {
+            throw new Error("The ACP agent's worker has no stdin.");
+        }
+        return new AcpClient({
+            stdin,
+            stdout: worker.stdout,
+            stderr: worker.stderr,
+            onError: listener => worker.on("error", listener),
+            onExit: listener => worker.on("exit", code => listener(`code ${code}`)),
+            kill: () => void worker.terminate()
+        }, options);
     }
 
     /** Send a request and await its response result (rejects with {@link AcpError} on error responses). */
@@ -166,8 +225,8 @@ export class AcpClient {
     /**
      * Reject anything still in flight and end the subprocess: close its stdin so
      * it can exit on its own, and kill it only if it is still running after
-     * {@link DISPOSE_GRACE_MS}. `agy_acp_server` writes a crash report to stderr
-     * when it is killed, and stderr goes to the log.
+     * {@link DISPOSE_GRACE_MS}. The kill is a SIGKILL, because an agent that is
+     * still running after the grace period might not act on a SIGTERM.
      */
     dispose(): void {
         if (this.disposed) {
@@ -178,25 +237,10 @@ export class AcpClient {
         this.proc.stdin.end();
         const killTimer = setTimeout(() => {
             if (!this.exited) {
-                this.kill();
+                this.proc.kill();
             }
         }, DISPOSE_GRACE_MS);
         killTimer.unref();
-    }
-
-    /**
-     * End the agent and every process it started. On Windows `proc.kill()`
-     * ends only the spawned process, while the agent can run in a child of it:
-     * the PyInstaller build of `agy_acp_server` starts its server that way, and
-     * a `.cmd` shim runs the CLI under `cmd.exe`. `taskkill /T` ends the tree.
-     */
-    private kill(): void {
-        if (process.platform === "win32" && this.proc.pid !== undefined) {
-            const taskkill = spawn("taskkill", [ "/pid", String(this.proc.pid), "/T", "/F" ], { stdio: "ignore", windowsHide: true });
-            taskkill.on("error", err => getLog().error(`Failed to end the ACP agent's process tree: ${err.message}`));
-            return;
-        }
-        this.proc.kill();
     }
 
     private send(message: JsonRpcMessage): void {
@@ -273,5 +317,50 @@ export class AcpClient {
             entry.reject(error);
         }
         this.pending.clear();
+    }
+}
+
+/** Subprocess agents that have not exited yet, killed by {@link killLiveAgents} when the server exits. */
+const liveAgents = new Set<ChildProcessWithoutNullStreams>();
+
+function trackLiveAgent(proc: ChildProcessWithoutNullStreams): void {
+    if (!process.listeners("exit").includes(killLiveAgents)) {
+        process.on("exit", killLiveAgents);
+    }
+    liveAgents.add(proc);
+    proc.on("exit", () => liveAgents.delete(proc));
+}
+
+/**
+ * Kill every subprocess agent that is still running. The server's `exit`
+ * handler calls it, so an agent cannot outlive the server.
+ */
+export function killLiveAgents(): void {
+    for (const proc of liveAgents) {
+        killProcessTree(proc);
+    }
+}
+
+/**
+ * End the agent and every process it started. On Windows `proc.kill()`
+ * ends only the spawned process, while the agent can run in a child of it:
+ * the PyInstaller build of `agy_acp_server` starts its server that way, and
+ * a `.cmd` shim runs the CLI under `cmd.exe`. `taskkill /T` ends the tree.
+ * Elsewhere the agent leads its own process group, and the negative PID
+ * signals the whole group.
+ */
+function killProcessTree(proc: ChildProcessWithoutNullStreams): void {
+    if (proc.pid === undefined) {
+        return;
+    }
+    if (process.platform === "win32") {
+        const taskkill = spawn("taskkill", [ "/pid", String(proc.pid), "/T", "/F" ], { stdio: "ignore", windowsHide: true });
+        taskkill.on("error", err => getLog().error(`Failed to end the ACP agent's process tree: ${err.message}`));
+        return;
+    }
+    try {
+        process.kill(-proc.pid, "SIGKILL");
+    } catch {
+        // ESRCH: the group exited between the check and the signal.
     }
 }

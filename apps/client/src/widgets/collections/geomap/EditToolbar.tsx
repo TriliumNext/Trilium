@@ -1,5 +1,3 @@
-import "./EditToolbar.css";
-
 import { useContext } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -15,8 +13,9 @@ interface EditToolbarProps {
     /** Arms the map for a note to be placed, or stands it down again — the visible counterpart of
      *  the Escape the instruction toast offers (see index.tsx). */
     onTogglePlacement: () => void;
-    /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). */
-    onAddGpxTrack: () => void;
+    /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). Absent on
+     *  an image map, which has no ground for a track to run over. */
+    onAddGpxTrack?: () => void;
 }
 
 /**
@@ -51,17 +50,16 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, on
                 title={placing ? t("geo-map.create-child-note-cancel") : t("geo-map.create-child-note-title")}
                 icon="bx-pin"
                 text={placing ? t("geo-map.add-marker-cancel") : t("geo-map.add-marker")}
-                className="geo-add-marker-button"
                 active={placing}
                 disabled={isReadOnly}
                 onClick={onTogglePlacement}
             />
-            <OverlayControlButton
+            {onAddGpxTrack && <OverlayControlButton
                 title={t("geo-map.add-gpx-track")}
                 icon="bx-trip"
                 disabled={isReadOnly}
                 onClick={onAddGpxTrack}
-            />
+            />}
         </OverlayControlGroup>
     );
 }

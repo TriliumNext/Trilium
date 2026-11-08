@@ -163,6 +163,10 @@ function sortValueOf(note: FNote, key: SortKey, context: SortContext): SortValue
 }
 
 function labelValueOf(value: string, definition: PromotedAttribute | undefined): SortValue {
+    if (definition?.isConflicting) {
+        return value;
+    }
+
     switch (definition?.labelType) {
         case "number":
             // `Number` rather than `parseFloat`, which would read "1-2" as 1 and sort it among

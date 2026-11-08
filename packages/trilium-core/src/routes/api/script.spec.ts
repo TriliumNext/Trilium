@@ -1,9 +1,12 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import becca from "../../becca/becca";
 import attributeService from "../../services/attributes";
 import config from "../../services/config";
+import { getLog } from "../../services/log";
 import { getPlatform } from "../../services/platform";
 import scriptService from "../../services/script";
+import { getSql } from "../../services/sql/index";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
 
@@ -115,6 +118,38 @@ describe("Script API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.executionResult).toBe(123);
             expect(spy).toHaveBeenCalledOnce();
+        });
+
+        it("rolls back what a failing script wrote, and answers the failure in parts", async () => {
+            const noteId = await createCodeNote("return 0;");
+            const before = getSql().getValue<string>("SELECT title FROM notes WHERE noteId = ?", [noteId]);
+            vi.spyOn(scriptService, "executeNote").mockImplementation(() => {
+                const note = becca.getNoteOrThrow(noteId);
+                note.title = "written by the script";
+                note.save();
+                throw new Error("boom");
+            });
+            const logError = vi.spyOn(getLog(), "error");
+
+            const res = await api.post<{ message: string; noteId: string }>(`/api/script/run/${noteId}`);
+
+            expect(res.status).toBe(500);
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe(before);
+            expect(logError).toHaveBeenCalledWith(expect.stringContaining("boom"));
+            expect(res.body).toEqual({ message: "boom", noteId });
+        });
+
+        it("answers a disabled backend as a failure of the note", async () => {
+            const noteId = await createCodeNote("return 0;");
+            config.Security.backendScriptingEnabled = false;
+            try {
+                const res = await api.post<{ message: string; noteId: string }>(`/api/script/run/${noteId}`);
+                expect(res.status).toBe(500);
+                expect(res.body.noteId).toBe(noteId);
+                expect(res.body.message).toContain("backendScriptingEnabled");
+            } finally {
+                config.Security.backendScriptingEnabled = true;
+            }
         });
     });
 
