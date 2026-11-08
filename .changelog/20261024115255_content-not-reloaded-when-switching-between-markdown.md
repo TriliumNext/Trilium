@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Markdown
 closes: [11894]
 credits: [drakeo338]
 ---

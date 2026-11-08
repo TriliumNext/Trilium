@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Board
 closes: [11825]
 credits: [hippi345]
 ---

@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Interface
 closes: [12190]
 ---
 

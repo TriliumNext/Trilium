@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Text editor
 closes: [12351]
 credits: [adoriandoran]
 ---

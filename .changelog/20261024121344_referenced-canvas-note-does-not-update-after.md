@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Drawing canvases
 closes: [12056]
 ---
 

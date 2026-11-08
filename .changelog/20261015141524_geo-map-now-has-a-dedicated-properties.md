@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Collections
 closes: [11928]
 ---
 

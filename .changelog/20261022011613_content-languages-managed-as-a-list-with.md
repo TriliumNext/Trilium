@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Settings
 closes: [12189]
 credits: [adoriandoran]
 ---

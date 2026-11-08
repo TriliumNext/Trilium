@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Tabs
 closes: [11630]
 credits: [scottcampbelldata]
 ---

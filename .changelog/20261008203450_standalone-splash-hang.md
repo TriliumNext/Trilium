@@ -1,5 +1,6 @@
 ---
 type: fix
+area: General
 closes: [11963]
 ---
 

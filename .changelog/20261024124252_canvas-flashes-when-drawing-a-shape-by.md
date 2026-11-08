@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Drawing canvases
 closes: [9484]
 credits: [6801318d8d]
 ---

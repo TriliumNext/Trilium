@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Server and sync
 closes: [8209, 8272, 5650]
 ---
 

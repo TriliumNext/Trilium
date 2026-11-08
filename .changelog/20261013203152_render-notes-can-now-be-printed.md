@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Scripting
 closes: [12057]
 ---
 

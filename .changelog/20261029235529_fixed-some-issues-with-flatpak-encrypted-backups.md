@@ -1,6 +1,6 @@
 ---
 type: improvement
-area: Fixed some issues with Flatpak
+area: Flatpak
 ---
 
 Encrypted backups are now supported.

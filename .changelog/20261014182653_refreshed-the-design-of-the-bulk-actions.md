@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Search
 closes: [12086, 12104]
 ---
 

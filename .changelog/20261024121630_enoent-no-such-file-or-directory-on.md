@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Desktop
 closes: [9748]
 ---
 

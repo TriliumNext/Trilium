@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Server and sync
 closes: [12217]
 credits: [adoriandoran]
 ---

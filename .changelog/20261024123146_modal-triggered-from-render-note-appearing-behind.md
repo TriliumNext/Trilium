@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Render notes
 closes: [11847]
 credits: [tollenceld]
 ---

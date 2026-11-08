@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: General
 closes: [8372]
 credits: [bdolgov, eliandoran]
 ---

@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Quick edit
 closes: [12175]
 ---
 

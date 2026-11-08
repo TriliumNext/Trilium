@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Interface
 closes: [12400]
 ---
 

@@ -1,8 +1,8 @@
 ---
 type: improvement
-area: ETAPI
+area: Import and export
 closes: [4649]
 credits: [junkerderprovinz]
 ---
 
-Support `application/zip` for imports
+ETAPI imports accept `application/zip`

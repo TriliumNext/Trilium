@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Markdown
 closes: [12228]
 ---
 
