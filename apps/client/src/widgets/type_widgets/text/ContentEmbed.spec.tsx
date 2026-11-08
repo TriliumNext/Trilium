@@ -39,7 +39,7 @@ vi.mock("../../../services/shortcuts", async (importOriginal) => ({
     removeIndividualBinding
 }));
 
-import { HtmlFindTarget } from "../../find_in_html";
+import MergedFind from "../../merged_find";
 import {
     getEmbedFindTarget, registerContentEmbedTools, revealContentEmbed
 } from "./content_embed_tools";
@@ -334,7 +334,7 @@ describe("ContentEmbed", () => {
         container.classList.add("include-note");
         renderBox({ boxSize: "expandable" });
         const target = getEmbedFindTarget(container);
-        expect(target).toBeInstanceOf(HtmlFindTarget);
+        expect(target).toBeInstanceOf(MergedFind);
         expect(await target?.find("body", { matchCase: false, wholeWord: false })).toBe(1);
         target?.close(null);
 
@@ -356,6 +356,36 @@ describe("ContentEmbed", () => {
         act(() => render(null, container));
         renderBox({ contentType: "book" });
         expect(getEmbedFindTarget(container)).toBeNull();
+    });
+
+    it("lets the find search the boxes in its text, and shows a collapsed one", async () => {
+        container.classList.add("include-note");
+        const { content } = renderBox({
+            content: element(`<div class="rendered-content"><p>needle outside</p>`
+                + `<figure class="include-note"><div class="include-note-wrapper"></div>`
+                + `</figure></div>`)
+        });
+        const wrapper = content.querySelector<HTMLElement>(".include-note-wrapper");
+        if (!wrapper) throw new Error("Expected the wrapper of the nested box.");
+        act(() => render(
+            <ContentEmbed
+                boxSize="expandable"
+                title={element(`<span><a href="#root/noteB">Note B</a></span>`)}
+                content={element(`<div class="rendered-content"><p>needle inside</p></div>`)}
+                contentType="text"
+                notePath="noteB"
+            />, wrapper));
+        onTestFinished(() => act(() => render(null, wrapper)));
+        const nestedBox = wrapper.querySelector<HTMLElement>(".include-note-content");
+        expect(nestedBox?.hidden).toBe(true);
+
+        const target = getEmbedFindTarget(container);
+        expect(await target?.find("needle", { matchCase: false, wholeWord: false })).toBe(2);
+        act(() => target?.highlight(1));
+        expect(nestedBox?.hidden).toBe(false);
+        act(() => target?.highlight(0));
+        expect(nestedBox?.hidden).toBe(true);
+        target?.close(null);
     });
 
     it("toggles an expandable box on a click on its title row, but its buttons and link", () => {

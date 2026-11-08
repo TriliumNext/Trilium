@@ -177,6 +177,17 @@ describe("HtmlNoteFindTarget", () => {
         expect(await target.find("", OPTIONS)).toBe(0);
     });
 
+    it("searches the content of a box around the boxes nested in it", async () => {
+        const { embed: outer } = mount();
+        const box = outer.querySelector<HTMLElement>(".include-note-content");
+        if (!box) throw new Error("The embed has no content box.");
+        box.innerHTML = CONTENT;
+        const target = new HtmlNoteFindTarget(box);
+
+        expect(await target.find("needle", OPTIONS)).toBe(3);
+        expect(target.getEmbeds()).toEqual([ box.querySelector(".include-note") ]);
+    });
+
     it("leaves the matches of an embed to the target of its content", async () => {
         const { content, embed } = mount();
         const box = embed.querySelector<HTMLElement>(".include-note-content");

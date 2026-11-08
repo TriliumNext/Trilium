@@ -16,7 +16,8 @@ import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
-import { HtmlFindTarget } from "../../find_in_html";
+import { HtmlNoteFindTarget } from "../../find_in_html";
+import MergedFind from "../../merged_find";
 import ScrollableLabel from "../../react/ScrollableLabel";
 import {
     DISPLAY_MODE_OPTIONS, type DisplayMode, resolveDisplayMode
@@ -111,7 +112,7 @@ export default function ContentEmbed({
     // While an editor in the content is open, the target of the editor searches instead.
     useEffect(() => {
         if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return;
-        return registerEmbedFindTarget(content, new HtmlFindTarget(content));
+        return registerEmbedFindTarget(content, new MergedFind(new HtmlNoteFindTarget(content)));
     }, [ content, contentType ]);
 
     // The stylesheet hides the corner resize handle of an embed that the text editor marks.

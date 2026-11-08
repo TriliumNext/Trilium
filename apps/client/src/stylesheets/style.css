@@ -1414,21 +1414,32 @@ figure.captioned-content-embed {
     content: "" !important;
 }
 
-/* Using data- attribute to support both CKEditor and readonly view */
-.include-note[data-box-size="resizable"] .include-note-content {
+/* Using data- attribute to support both CKEditor and readonly view. Each rule reaches the content
+   of its own box only, and `:where()` keeps it as specific as the rules of the content types that
+   override it in their own stylesheets. */
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
     max-height: var(--include-note-height, 20em);
     overflow: auto;
 }
 
+.include-note .include-note {
+    --include-note-height: initial;
+    --include-note-width: initial;
+}
+
 /* PDFs and web views render in an iframe that fills its box, so they need an explicit height per
    box size instead of an intrinsic, content-driven one. */
-.include-note[data-box-size="resizable"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="resizable"] .include-note-content.type-webView .rendered-content {
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
     height: var(--include-note-height, 20em);
 }
 
 /* Compact audio is the row of controls alone, which has padding of its own. */
-.include-note[data-box-size="compact"] .include-note-content:is(.type-audio, .type-mediaEmbed) {
+.include-note[data-box-size="compact"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-audio, .type-mediaEmbed) {
     padding: 0;
 
     .audio-preview-visualization-wrapper {
@@ -1441,13 +1452,16 @@ figure.captioned-content-embed {
 }
 
 /* The visualizer band gives way first in a box too short for it, down to nothing. */
-.include-note[data-box-size="resizable"] .include-note-content.type-audio > .rendered-content,
-.include-note[data-box-size="resizable"] .include-note-content.type-audio .rendered-media {
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio > .rendered-content,
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio .rendered-media {
     height: 100%;
     min-height: 0;
 }
 
-.include-note[data-box-size="resizable"] .include-note-content.type-audio
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio
     .audio-preview-wrapper.media-compact {
     .audio-preview-visualization-wrapper {
         flex: 1 1 8rem;
@@ -1459,12 +1473,15 @@ figure.captioned-content-embed {
     }
 }
 
-.include-note[data-box-size="full"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="full"] .include-note-content.type-webView .rendered-content {
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
     height: 50em; /* an iframe can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-webView .rendered-content {
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content.type-webView .rendered-content {
     height: var(--include-note-height, 20em);
 }
 
@@ -1473,23 +1490,28 @@ figure.captioned-content-embed {
    height per box size. The inner widget fills it via its existing height:100% chain. List/grid
    collections are content-driven and keep the generic max-height above. */
 .include-note[data-box-size="resizable"]
-    .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="resizable"]
-    .include-note-content.type-search:has(.note-list-widget.full-height) {
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="full"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="full"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: 50em; /* a full-height view can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="expandable"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: var(--include-note-height, 20em);
 }
 
 /* Pictures, diagrams and players fit the box height, where text scrolls in it. */
+.include-note {
+    --include-note-media-max-height: initial;
+}
+
 .include-note[data-box-size="resizable"] {
     --include-note-media-max-height: var(--include-note-height, 20em);
 }
@@ -1508,12 +1530,17 @@ figure.captioned-content-embed {
     max-height: none;
 }
 
-.include-note-box-height {
-    height: calc(var(--include-note-height, 20em) - var(--_include-note-frame-height, 0px));
+.include-note {
+    --_include-note-box-height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="full"] .include-note-box-height {
-    height: calc(50em - var(--_include-note-frame-height, 0px));
+.include-note[data-box-size="full"] {
+    --_include-note-box-height: 50em;
+}
+
+.include-note-box-height {
+    height: calc(var(--_include-note-box-height, var(--include-note-height, 20em))
+        - var(--_include-note-frame-height, 0px));
 }
 
 .include-note-content:fullscreen .include-note-box-height {
@@ -1525,7 +1552,7 @@ figure.captioned-content-embed {
     margin-inline: auto;
     max-width: 100%;
 
-    .include-note-content {
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
         height: var(--include-note-height, auto);
         overflow: auto;
     }
@@ -1584,12 +1611,14 @@ figure.captioned-content-embed {
 
 /* An Expandable embed takes the full width: its position aligns the content inside the box. */
 .include-note[data-box-size="expandable"][data-position="left"]
-    .include-note-content > .rendered-content {
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
     text-align: left;
 }
 
 .include-note[data-box-size="expandable"][data-position="right"]
-    .include-note-content > .rendered-content {
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
     text-align: right;
 }
 

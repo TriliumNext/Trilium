@@ -434,8 +434,9 @@ without one is skipped, and nothing reports it.
   the content is hidden, not only on unmount: `CodeEmbedEditor` registers only while `isShown` and
   calls `cleanSearch()` as it goes, so a Markdown embed in Preview searches its preview.
 - **Reuse an engine** before writing one:
-  - `HtmlFindTarget` (`find_in_html.ts`) over rendered HTML. `ContentEmbed` registers one on the
-    preview of each type in `SEARCHABLE_CONTENT_TYPES`.
+  - `HtmlFindTarget` (`find_in_html.ts`) over rendered HTML. `ContentEmbed` registers
+    `MergedFind(new HtmlNoteFindTarget(content))` on the preview of each type in
+    `SEARCHABLE_CONTENT_TYPES`, so the boxes nested in a preview search, and open, themselves.
   - `CodeMirrorFindTarget` (`find_in_code.ts`) over a CodeMirror view.
   - `MergedFind(new TextEditorFindTarget(editor))` (`find_in_text.ts`) over a text editor and its
     own embeds, as `useEditorFindTarget()` in `TextEmbedEditor.tsx` registers it.
