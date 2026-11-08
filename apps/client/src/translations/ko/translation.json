@@ -3011,7 +3011,9 @@
   "note_tooltip": {
     "note-has-been-deleted": "노트는 삭제되었습니다.",
     "quick-edit": "빠른 편집",
-    "attachment-info": "첨부 파일 • {{size}}"
+    "attachment-info": "첨부 파일 • {{size}}",
+    "jump-to-block": "블록으로 이동",
+    "jump-to-heading": "제목으로 이동"
   },
   "geo-map": {
     "create-child-note-title": "새 하위 노트를 만들어 맵에 추가",
@@ -4478,7 +4480,11 @@
       "display-as": "표시 형식",
       "caption-for-the-audio": "오디오 설명",
       "audio-video-embed": "오디오/동영상 삽입",
-      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "주소를 사용하여 YouTube 동영상 또는 오디오·동영상 파일 삽입"
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "주소를 사용하여 YouTube 동영상 또는 오디오·동영상 파일 삽입",
+      "add-new-tab": "새 탭 추가",
+      "copy-reference-to-this-tab": "이 탭의 참조 복사",
+      "delete-tab": "탭 삭제",
+      "delete-all-tabs": "모든 탭 삭제"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4789,7 +4795,8 @@
     "edit_excerpt": "발췌 편집",
     "copy_other": "이 {{count}}개 블록의 참조 복사",
     "copy_tab": "이 탭의 링크 복사",
-    "copy_share_link_other": "이 {{count}}개 블록의 공개 링크 복사"
+    "copy_share_link": "공개 링크 복사",
+    "copy_reference": "참조 복사"
   },
   "record_meeting": {
     "note_title": "회의 {{date}}",
@@ -4976,12 +4983,55 @@
   },
   "canvas": {
     "thin_stroke": "얇은 펜 선",
-    "thin_stroke_description": "손글씨에 적합하도록 펜 선을 더 얇게 그립니다. 이미 그린 선의 두께는 유지됩니다."
+    "thin_stroke_description": "손글씨에 적합하도록 펜 선을 더 얇게 그립니다. 이미 그린 선의 두께는 유지됩니다.",
+    "no_tool": "도구 없음",
+    "zoom": "확대/축소",
+    "zoom_to_fit": "화면에 맞춤"
   },
   "youtube_video": {
     "title": "미디어 삽입",
     "button_insert": "미디어 삽입",
     "not_a_video": "올바른 웹 주소가 아닙니다.",
     "insert_failed": "미디어를 삽입할 수 없습니다. YouTube 동영상이나 오디오 또는 동영상 파일의 주소인지, 연결 상태는 정상인지 확인한 후 다시 시도하세요."
+  },
+  "block_handle_menu": {
+    "insert_above": "위에 삽입",
+    "insert_below": "아래에 삽입",
+    "insert_item_above": "위에 항목 삽입",
+    "insert_item_below": "아래에 항목 삽입",
+    "insert_child_item": "하위 항목 삽입",
+    "cut": "잘라내기",
+    "copy": "복사",
+    "delete": "삭제",
+    "types": {
+      "paragraph": "문단",
+      "heading": "제목 {{level}}",
+      "list_item": "목록 항목",
+      "todo_item": "할 일 항목",
+      "block_quote": "인용 블록",
+      "code_block": "코드 블록",
+      "table": "표",
+      "image": "이미지",
+      "horizontal_line": "가로줄",
+      "page_break": "페이지 나누기",
+      "admonition": "알림 블록",
+      "collapsible": "접이식 블록",
+      "tabs": "탭",
+      "columns": "다단 레이아웃",
+      "math": "수식",
+      "footnotes": "각주",
+      "footnote": "각주",
+      "included_note": "포함된 노트",
+      "excerpt": "발췌 블록",
+      "attachment": "첨부 파일",
+      "drawing": "그리기 캔버스",
+      "mermaid": "Mermaid 다이어그램",
+      "video": "동영상",
+      "audio": "오디오",
+      "link_preview": "링크 미리보기",
+      "embed": "임베드",
+      "block": "블록"
+    },
+    "block_count_other": "블록 {{count}}개"
   }
 }
