@@ -2,6 +2,7 @@
 type: fix
 area: Search
 closes: [8491]
+notable: true
 ---
 
-[The search feature for protected notes is malfunctioning for synced notes](https://github.com/TriliumNext/Trilium/issues/8491)
+Searching protected notes failed on synced instances.

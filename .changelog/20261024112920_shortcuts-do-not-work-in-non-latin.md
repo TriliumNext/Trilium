@@ -2,6 +2,7 @@
 type: fix
 area: Interface
 closes: [11846]
+notable: true
 ---
 
-[Shortcuts do not work in non-Latin keyboard layouts (Russian, Greek)](https://github.com/TriliumNext/Trilium/issues/11846)
+Keyboard shortcuts did not work on non-Latin layouts (Russian, Greek).
