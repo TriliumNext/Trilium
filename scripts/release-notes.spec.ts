@@ -8,7 +8,7 @@ import {
     parseDisplayLocales, parseNumstat, parseProtocolVersions, parsePullRequestNumber,
     type PullRequest, rankContributors, renderReleaseNote, renderSection, splitExplanations,
     stripAreaPrefix, unreleasedNotice,
-    renderHighlights,
+    renderHighlights, lintOverview,
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -233,8 +233,9 @@ describe("parseChangelogEntry", () => {
             "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\nnotable: yes\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
             "unknown key `scope`; expected type, title, area, closes, credits or notable",
-            "`type` must be one of note, tip, important, warning, highlight, compatibility, "
-                + "breaking, mobile, fix, improvement, documentation, i18n, technical, security, "
+            "`type` must be one of note, tip, important, warning, overview, highlight, "
+                + "compatibility, breaking, mobile, fix, improvement, documentation, i18n, "
+                + "technical, security, "
                 + "not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
@@ -251,6 +252,21 @@ describe("parseChangelogEntry", () => {
 describe("lintChangelogEntry", () => {
     const entry: ChangelogEntry = { file: "a.md", date: 0, section: "Bugfixes", area: "Search",
         closes: [], credits: [], notable: false, text: "x", details: [] };
+
+    it("keeps the overview bare and alone, and requires one for a release", () => {
+        const overview = { ...entry, section: "Overview" as const, area: undefined };
+        expect(lintChangelogEntry(overview)).toEqual([]);
+        expect(lintChangelogEntry({ ...overview, area: "Search" }))
+            .toEqual([
+                "`area` has no effect in the overview, which is written above the sections" ]);
+        expect(lintOverview([ entry ])).toEqual([]);
+        expect(lintOverview([ entry ], { release: true }))
+            .toEqual([ "no overview entry; a release opens with one (`type: overview`, see "
+                + ".changelog/README.md)" ]);
+        expect(lintOverview([ overview, entry ], { release: true })).toEqual([]);
+        expect(lintOverview([ overview, { ...overview, file: "b.md" } ]))
+            .toEqual([ "2 overview entries; a release has one: a.md, b.md" ]);
+    });
 
     it("requires a title on highlights and rejects it elsewhere", () => {
         const highlight = { ...entry, section: "Key highlights" as const, area: undefined };
@@ -477,6 +493,20 @@ describe("markdownToHtml", () => {
 });
 
 describe("renderReleaseNote", () => {
+    it("writes the overview after the notices and before the first section", () => {
+        const template = "# Release Template\n> [!NOTE]\n\n## 💡 Key highlights\n\n1.  \\[…\\]\n";
+        expect(renderReleaseNote(template, "v1.0.0", [
+            { section: "Overview", date: 1, text: "This release is about X.",
+                details: [ "It also does Y." ], credits: [] },
+            { section: "Tip", date: 1, text: "On Flathub", details: [], credits: [] }
+        ])).toBe([
+            "# v1.0.0", "> [!NOTE]", "",
+            "> [!TIP]", "> On Flathub", "",
+            "This release is about X.", "", "It also does Y.", "",
+            "## 💡 Key highlights", "", "1.  \\[…\\]", ""
+        ].join("\n"));
+    });
+
     it("fills matching sections, whatever their case, and keeps the others' placeholders", () => {
         const template = [
             "# Release Template",

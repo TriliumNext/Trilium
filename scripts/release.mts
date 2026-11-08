@@ -94,7 +94,8 @@ async function main() {
         }
 
         heading("Changelog entries");
-        runReadOnly("node", [ "--experimental-strip-types", "scripts/release-notes.mts", "lint" ]);
+        runReadOnly("node",
+            [ "--experimental-strip-types", "scripts/release-notes.mts", "lint", "--release" ]);
 
         heading("Version");
         const version = await askVersion(rl);

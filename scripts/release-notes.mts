@@ -138,6 +138,7 @@ export const ENTRY_TYPES = {
     tip: "Tip",
     important: "Important",
     warning: "Warning",
+    overview: "Overview",
     highlight: "Key highlights",
     compatibility: "Compatibility",
     breaking: "Breaking changes",
@@ -156,7 +157,8 @@ export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
 /** Sections that fold each area into a `<details>` block; `notable` keeps an entry out of it. */
 const COLLAPSIBLE_SECTIONS = new Set<Section>(Object.values(ENTRY_TYPES)
-    .filter((section) => section !== "Key highlights" && !ADMONITIONS.has(section)));
+    .filter((section) => ![ "Overview", "Key highlights" ].includes(section)
+        && !ADMONITIONS.has(section)));
 /** Sections listed with bullets; the others are numbered. Key highlights are headings instead. */
 const BULLETED_SECTIONS =
     new Set<Section>([ "Compatibility", "Breaking changes", "Documentation" ]);
@@ -262,6 +264,12 @@ export function main(
             + "pass --force to overwrite it or --stdout to print instead.");
     }
 
+    const { entries, invalid } = readChangelogEntries();
+    const missingOverview = unreleased ? [] : lintOverview(entries, { release: true });
+    if (missingOverview.length > 0 && !stdout) {
+        throw new Error(missingOverview[0]);
+    }
+
     const base = from
         ?? git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", "HEAD").trim();
     const commits = parseCommits(
@@ -280,8 +288,6 @@ export function main(
     const closings = collectClosings(commits, pullRequests, authors);
     const issues = github.fetchIssues(closings.map((closing) => closing.issue));
     const languages = collectNewLanguages(base, commits, issues, github);
-    const { entries, invalid } = readChangelogEntries();
-
     const collected =
         collectItems({ closings, issues, languages, entries, pullRequests, repository });
     const explanations = splitExplanations(collected, findVersionBumps(base, github));
@@ -323,6 +329,9 @@ export function main(
     }
     for (const { file, errors } of invalid) {
         console.error(`  left out ${file}:\n    ${errors.join("\n    ")}`);
+    }
+    for (const message of missingOverview) {
+        console.error(`  ${message}`);
     }
 
     if (unlisted) {
@@ -671,13 +680,19 @@ export function renderReleaseNote(template: string, version: string, items: Note
     const admonitions = items
         .filter((item) => ADMONITIONS.has(item.section))
         .sort((a, b) => a.date - b.date);
+    const overview = items
+        .filter((item) => item.section === "Overview")
+        .sort((a, b) => a.date - b.date);
     const output: string[] = [];
     let inPreamble = false;
     for (let index = 0; index < lines.length; index++) {
         const line = lines[index];
-        if (line.startsWith("## ") && admonitions.length > 0) {
+        if (line.startsWith("## ") && admonitions.length + overview.length > 0) {
             output.push(...admonitions.flatMap((item) => [ ...renderAdmonition(item), "" ]));
+            output.push(...overview.flatMap((item) => [ item.text,
+                ...item.details.length > 0 ? [ "" ] : [], ...item.details, "" ]));
             admonitions.length = 0;
+            overview.length = 0;
         }
 
         const heading = /^## \S+\s+(.*)$/.exec(line)?.[1].trim().toLowerCase();
@@ -1144,6 +1159,9 @@ export function lintChangelogEntry(entry: ChangelogEntry): string[] {
     if (entry.title && entry.section !== "Key highlights") {
         return [ `\`title\` has no effect in ${entry.section}, which lists every entry` ];
     }
+    if (entry.area && entry.section === "Overview") {
+        return [ "`area` has no effect in the overview, which is written above the sections" ];
+    }
 
     const known = AREAS.join(", ");
     if (!entry.area) {
@@ -1181,8 +1199,26 @@ function editDistance(a: string, b: string) {
  * annotations when run in GitHub Actions. With `jsonPath`, also writes them there as
  * `{ file, message }` records. Fails when there is one.
  */
-function lintChangelogEntries(jsonPath?: string) {
+/**
+ * Checks the one entry a release writes as a whole: the overview. Several are an error at any
+ * time; none is an error when `release` is set, which the release CLI does before it builds a
+ * note. A pull request lint leaves the overview to the maintainer.
+ */
+export function lintOverview(entries: ChangelogEntry[], { release = false } = {}) {
+    const overviews = entries.filter((entry) => entry.section === "Overview");
+    if (overviews.length > 1) {
+        return [ `${overviews.length} overview entries; a release has one: `
+            + overviews.map((entry) => entry.file.split(/[\\/]/).at(-1)).join(", ") ];
+    }
+    return overviews.length === 0 && release
+        ? [ "no overview entry; a release opens with one (`type: overview`, see "
+            + ".changelog/README.md)" ]
+        : [];
+}
+
+function lintChangelogEntries(jsonPath?: string, { release = false } = {}) {
     const problems: { file: string; message: string }[] = [];
+    const entries: ChangelogEntry[] = [];
     for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {
         if (!existsSync(dir)) {
             continue;
@@ -1195,7 +1231,13 @@ function lintChangelogEntries(jsonPath?: string) {
             for (const message of [ ...errors, ...entry ? lintChangelogEntry(entry) : [] ]) {
                 problems.push({ file: relative, message });
             }
+            if (entry) {
+                entries.push(entry);
+            }
         }
+    }
+    for (const message of lintOverview(entries, { release })) {
+        problems.push({ file: ".changelog", message });
     }
 
     for (const { file, message } of problems) {
@@ -1593,7 +1635,8 @@ if (process.argv[1] === SCRIPT_PATH) {
             createChangelogEntry(args[1] ?? "");
         } else if (args[0] === "lint") {
             const jsonIndex = args.indexOf("--json");
-            lintChangelogEntries(jsonIndex >= 0 ? args[jsonIndex + 1] : undefined);
+            lintChangelogEntries(jsonIndex >= 0 ? args[jsonIndex + 1] : undefined,
+                { release: args.includes("--release") });
         } else if (args[0] === "consume" && args[1] && /^v\d/.test(args[1])) {
             consumeChangelogEntries(args[1]);
         } else if (args[0] === "unreleased") {
@@ -1612,7 +1655,7 @@ if (process.argv[1] === SCRIPT_PATH) {
                 "           [--stdout] [--force] [--unlisted]",
                 "       release-notes.mts unreleased [--from <tag>]",
                 "       release-notes.mts consume <version>",
-                "       release-notes.mts lint [--json <file>]",
+                "       release-notes.mts lint [--json <file>] [--release]",
                 "       release-notes.mts new <slug>"
             ].join("\n"));
         } else {
