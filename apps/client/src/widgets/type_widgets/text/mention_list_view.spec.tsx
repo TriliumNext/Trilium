@@ -237,18 +237,21 @@ describe("createSlashCommandList", () => {
 });
 
 describe("openSlashCommandMenu", () => {
-    it("lists the palette's entries below the handle, filterable, and runs the one picked", () => {
+    it("lists the entries that insert or wrap below the handle, and runs the one picked", () => {
         onTestFinished(() => {
             vi.restoreAllMocks();
         });
         const definitions: SlashCommandDefinition[] = [
             {
                 id: "table", title: "Table", description: "Insert a table.", aliases: [ "grid" ],
-                icon: "<svg></svg>"
+                icon: "<svg></svg>", willInsert: true
             },
+            { id: "heading2", title: "Heading 2", icon: "<svg></svg>", willWrap: true },
+            { id: "align-left", title: "Align left", icon: "<svg></svg>", willTransform: true },
+            { id: "custom", title: "Custom", icon: "<svg></svg>" },
             {
                 id: "snippet-0", title: "<b>Hi</b>", iconClass: "tn-icon bx bx-note",
-                iconColorClass: "use-note-color"
+                iconColorClass: "use-note-color", willInsert: true
             }
         ];
         const palette = { search: vi.fn(() => definitions), run: vi.fn() };
@@ -271,12 +274,15 @@ describe("openSlashCommandMenu", () => {
             title: "Table", description: "Insert a table.", keywords: [ "grid" ],
             uiIcon: "bx bx-empty", uiIconSvg: "<svg></svg>", handler: expect.any(Function)
         }, {
+            title: "Heading 2", uiIcon: "bx bx-empty", uiIconSvg: "<svg></svg>",
+            handler: expect.any(Function)
+        }, {
             title: "&lt;b&gt;Hi&lt;&#x2F;b&gt;", uiIcon: "tn-icon bx bx-note",
             iconColorClass: "use-note-color", handler: expect.any(Function)
         } ]);
-        const greeting = options.items[1] as MenuCommandItem<never>;
+        const greeting = options.items[2] as MenuCommandItem<never>;
         greeting.handler?.(greeting, new MouseEvent("click"));
-        expect(palette.run).toHaveBeenCalledExactlyOnceWith(definitions[1]);
+        expect(palette.run).toHaveBeenCalledExactlyOnceWith(definitions[4]);
 
         const container = document.createElement("div");
         options.onShow?.(container);

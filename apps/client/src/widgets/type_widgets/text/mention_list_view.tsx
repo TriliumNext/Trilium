@@ -100,8 +100,9 @@ export function createSlashCommandList(editor: HostEditor): MentionHostedList {
 }
 
 /**
- * Opens the `/` palette's entries as a menu below `handle`, with a filter at its top, for the
- * editor config's `blockDragHandle.openInsertMenu`, and calls `onClose` once the menu is closed.
+ * Opens the `/` palette's entries that insert or wrap content as a menu below `handle`, with a
+ * filter at its top, for the editor config's `blockDragHandle.openInsertMenu`, and calls `onClose`
+ * once the menu is closed.
  */
 export function openSlashCommandMenu(editor: HostEditor, handle: HTMLElement, onClose: () => void) {
     // A click on the handle of the open menu only closes the menu.
@@ -114,7 +115,9 @@ export function openSlashCommandMenu(editor: HostEditor, handle: HTMLElement, on
     const editorFocus = keepEditorFocused(editor);
     void contextMenu.show({
         anchor: handle,
-        items: palette.search("").map((definition) => toMenuItem(palette, definition)),
+        items: palette.search("")
+            .filter((definition) => definition.willInsert || definition.willWrap)
+            .map((definition) => toMenuItem(palette, definition)),
         filterable: true,
         focusFilter: true,
         className: "slash-command-menu",

@@ -294,6 +294,30 @@ describe("TriliumSlashCommands", () => {
             expect(isSlashCommandEnabled(editor, definition)).toBe(true);
         });
 
+        it("marks each entry by whether it inserts, wraps or transforms content", () => {
+            const entries = [ ...buildDefaultSlashCommands(editor), ...buildTriliumSlashCommands(editor) ];
+            const flagged = (flag: "willInsert" | "willWrap" | "willTransform") =>
+                entries.filter((definition) => definition[flag]).map((definition) => definition.id);
+
+            expect(flagged("willWrap")).toEqual([
+                "heading2", "heading3", "blockQuote", "codeBlock",
+                "bulletedList", "numberedList", "todoList",
+                "note", "tip", "important", "caution", "warning",
+                "collapsible", "tabs", "multicolumn-layout-2", "multicolumn-layout-3",
+                "multicolumn-layout-4"
+            ]);
+            expect(flagged("willTransform")).toEqual([
+                "paragraph", "indent", "outdent",
+                "align-left", "align-center", "align-right", "align-justify", "ai-assistant"
+            ]);
+            expect(flagged("willInsert")).toEqual(expect.arrayContaining([
+                "insertTable", "ai-assistant", "collapsible", "tabs", "multicolumn-layout-2"
+            ]));
+            expect(entries.filter((definition) =>
+                !definition.willInsert && !definition.willWrap && !definition.willTransform
+            )).toEqual([]);
+        });
+
         it("orders the catalog as CKEditor's own entries, then Trilium's, then the snippets", async () => {
             const ids = paletteIds("");
 
@@ -422,6 +446,8 @@ describe("TriliumSlashCommands", () => {
 
             const ids = paletteIds("");
             expect(ids.slice(-2)).toEqual([ "snippet-0", "snippet-1" ]);
+            const snippets = editor.plugins.get(TriliumSlashCommands).search("").slice(-2);
+            expect(snippets.map((definition) => definition.willInsert)).toEqual([ true, true ]);
 
             expect(paletteTitles("greet")).toEqual([ "Greeting" ]);
 
@@ -751,6 +777,7 @@ describe("buildTriliumSlashCommands", () => {
             expect(entry.description).toBe("2026-09-25 10:30");
             expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
             expect(entry.icon).toContain("<svg");
+            expect(entry.willInsert).toBe(true);
         });
 
         it("offers each preset titled with its output, inserting in that format", () => {
@@ -763,6 +790,7 @@ describe("buildTriliumSlashCommands", () => {
 
             for (const [ index, entry ] of presets.entries()) {
                 expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
+                expect(entry.willInsert).toBe(true);
                 entry.execute?.(fake);
                 expect(executeSpy).toHaveBeenLastCalledWith(INSERT_DATE_TIME_COMMAND, { format: DATE_TIME_PRESETS[index].format });
             }
@@ -935,6 +963,7 @@ describe("buildTriliumSlashCommands", () => {
         expect(sample.title).toBe("Mermaid diagram: Flowchart");
         expect(sample.description).toBe("Insert a \"Flowchart\" Mermaid diagram template");
         expect(sample.aliases).toContain("Flowchart");
+        expect(sample.willInsert).toBe(true);
 
         sample.execute?.(editor);
         expect(execute).toHaveBeenCalledWith(
@@ -1007,6 +1036,7 @@ describe("buildTriliumSlashCommands", () => {
                 { id: "ai-makeShorter", title: "AI: Make shorter", description: "Applies to the current paragraph." },
                 { id: "ai-german", title: "AI: Translate to German", description: "Applies to the current paragraph." }
             ]);
+            expect(aiEntries().map((entry) => entry.willTransform)).toEqual([ true, true, true ]);
         });
 
         it("answers to /ai through the prefix, and to its group's name through an alias", () => {
