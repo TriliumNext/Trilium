@@ -73,8 +73,11 @@ async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string)
     return true;
 }
 
-/** Moves the movable branches under the note of `newParentBranchId`. Returns whether the move went through. */
-async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string) {
+/**
+ * Moves the movable branches under the note of `newParentBranchId`. Returns whether the move went through.
+ * When the active note is moved, it follows to `newParentNotePath`, the parent's path as the user picked it.
+ */
+async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string, newParentNotePath?: string) {
     const newParentBranch = froca.getBranch(newParentBranchId);
     if (!newParentBranch) {
         return false;
@@ -85,6 +88,8 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
         return false;
     }
 
+    const activeContext = appContext.tabManager.getActiveContext();
+    let movesActiveNote = false;
     const movableBranchIds: string[] = [];
     for (const branchIdToMove of filterRootNote(branchIdsToMove)) {
         const branchToMove = froca.getBranch(branchIdToMove);
@@ -94,6 +99,7 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
         }
 
         movableBranchIds.push(branchIdToMove);
+        movesActiveNote ||= branchToMove.noteId === activeContext?.noteId && branchToMove.parentNoteId === activeContext.parentNoteId;
     }
 
     if (movableBranchIds.length === 0) {
@@ -104,8 +110,14 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
 
     if (!resp.success) {
         toastService.showError(resp.message);
+        return false;
     }
-    return resp.success;
+
+    if (activeContext && movesActiveNote && newParentNotePath) {
+        await ws.waitForMaxKnownEntityChangeId();
+        await activeContext.setNote(`${newParentNotePath}/${activeContext.noteId}`, { viewScope: activeContext.viewScope });
+    }
+    return true;
 }
 
 /**

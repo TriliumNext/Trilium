@@ -210,6 +210,30 @@ describe("moveToParentNote", () => {
         await expect(branches.moveToParentNote(["regularBranch2"], "destParent2")).resolves.toBe(false);
         expect(toastService.showError).toHaveBeenCalledWith("boom");
     });
+
+    it("takes the active note along to the parent path the user picked", async () => {
+        for (const id of [ "inbox", "elsewhere", "june30" ]) {
+            buildNote({ id, title: id });
+        }
+        makeBranch("june30InDay", "june30", "day");
+        const moved = buildNote({ title: "Moved" });
+        makeBranch("movedFromInbox", moved.noteId, "inbox");
+        makeBranch("movedClone", moved.noteId, "elsewhere");
+
+        const setNote = vi.fn(async () => undefined);
+        appContext.tabManager = {
+            getActiveContext: () => ({ noteId: moved.noteId, parentNoteId: "inbox", viewScope: { viewMode: "source" }, setNote })
+        } as any;
+
+        await expect(branches.moveToParentNote([ "movedFromInbox" ], "june30InDay", undefined, "root/day/june30"))
+            .resolves.toBe(true);
+        expect(setNote).toHaveBeenCalledWith(`root/day/june30/${moved.noteId}`, { viewScope: { viewMode: "source" } });
+
+        // Moving another clone of the active note leaves the tab where it is.
+        setNote.mockClear();
+        await branches.moveToParentNote([ "movedClone" ], "june30InDay", undefined, "root/day/june30");
+        expect(setNote).not.toHaveBeenCalled();
+    });
 });
 
 describe("deleteNotes", () => {
