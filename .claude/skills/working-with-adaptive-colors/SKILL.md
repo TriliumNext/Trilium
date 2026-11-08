@@ -212,14 +212,14 @@ It prints the shade of each color per role and scheme, then four checks per sche
 lowest pair: palette text on the page (4.5), the theme's text on each highlight (4.5), table borders
 on the page (3) and any palette text on any highlight (4.5).
 
-Baseline on 2026-11-07, app page:
+Baseline on 2026-11-08, app page, after the light text maximum moved from 40 to 45:
 
 | Check | Light (`#ffffff`) | Dark (`#242424`) |
 | --- | --- | --- |
-| Text on the page | 5.97 | 7.23 |
+| Text on the page | 5.01 | 7.23 |
 | Theme text on a highlight | 15.78 | 5.60 |
 | Table border on the page | 3.06 | 3.09 |
-| Any text on any highlight | 4.49 | 4.19 |
+| Any text on any highlight | 3.77 | 4.19 |
 
 The last row misses 4.5 for the extreme pairs (turquoise on red in light, red on turquoise in
 dark). Browsers clip an out-of-gamut color channel by channel, which moves its lightness, so a
