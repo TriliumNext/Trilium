@@ -3,7 +3,7 @@ import './math.js';
 
 import katex from 'katex';
 import {
-	ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph, View,
+	ClassicEditor, ContextualBalloon, Essentials, HorizontalLine, keyCodes, Paragraph, View,
 	_getModelData as getModelData, _setModelData as setModelData
 } from 'ckeditor5';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,7 @@ describe( 'MathUI interactions', () => {
 		// callback is handed the target element directly and never creates one.
 		( window as unknown as { katex: typeof katex } ).katex = katex;
 
-		editor = await createTestEditor( [ Essentials, Paragraph, Math ], {
+		editor = await createTestEditor( [ Essentials, Paragraph, HorizontalLine, Math ], {
 			math: { engine: 'katex' }
 		} as never );
 
@@ -198,6 +198,37 @@ describe( 'MathUI interactions', () => {
 			expect( getModelData( editor.model, { withoutSelection: true } ) ).toBe(
 				`<paragraph><${ INLINE } display="false" equation="y^2" type="script"></${ INLINE }></paragraph>` +
 					'<paragraph>bar</paragraph>'
+			);
+		} );
+
+		it( 'stays editable and saves its equation after an object is selected', () => {
+			setModelData(
+				editor.model,
+				`<paragraph>[<${ INLINE } equation="x" type="script" display="false">` +
+					`</${ INLINE }>]</paragraph><horizontalLine></horizontalLine>`
+			);
+			ui._showUI();
+			formView().mathInputView.value = 'y^2';
+
+			editor.model.change( writer => {
+				writer.setSelection( editor.model.document.getRoot()?.getChild( 1 ) ?? null, 'on' );
+			} );
+			expect( editor.commands.get( 'math' )?.isEnabled ).toBe( false );
+			expect( [
+				formView().mathInputView.isReadOnly,
+				formView().saveButtonView.isEnabled,
+				formView().displayButtonView.isEnabled
+			] ).toEqual( [ false, true, true ] );
+			formView().keystrokes.press( {
+				keyCode: keyCodes.enter,
+				shiftKey: false,
+				preventDefault: vi.fn(),
+				stopPropagation: vi.fn()
+			} as never );
+
+			expect( getModelData( editor.model, { withoutSelection: true } ) ).toBe(
+				`<paragraph><${ INLINE } display="false" equation="y^2" type="script">` +
+					`</${ INLINE }></paragraph><horizontalLine></horizontalLine>`
 			);
 		} );
 	} );

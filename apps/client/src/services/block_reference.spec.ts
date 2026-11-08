@@ -52,7 +52,6 @@ vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
 vi.mock("./clipboard_ext.js", () => ({ copyHtml, copyHtmlWithToast, copyTextWithToast }));
 vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
 vi.mock("./content_renderer.js", () => ({
-    EXCERPT_BOX_SIZE: "full",
     getEmbedBoxSize: () => "medium"
 }));
 

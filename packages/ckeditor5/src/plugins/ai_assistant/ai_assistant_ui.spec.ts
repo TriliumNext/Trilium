@@ -1062,6 +1062,21 @@ describe("AiAssistantUI toolbar entry", () => {
             expect(requests[1]).toEqual({ query: "Fix all mistakes.", context: "bar", surroundings: NO_SURROUNDINGS, history: [] });
         });
 
+        it("is open until hide(), which ends the conversation and changes no model", async () => {
+            const fixTypos = await open();
+            const ui = editor.plugins.get(AiAssistantUI);
+            const { version } = editor.model.document;
+
+            expect(ui.isOpen).toBe(true);
+            ui.hide();
+            expect([ ui.isOpen, editor.model.document.version ]).toEqual([ false, version ]);
+
+            setModelData(editor.model, "<paragraph>[bar]</paragraph>");
+            fixTypos.fire("execute");
+            await vi.waitFor(() => expect(requests).toHaveLength(2));
+            expect(requests[1]).toMatchObject({ context: "bar", history: [] });
+        });
+
         it("records the delivered HTML for a host that reports no source", async () => {
             const stub = createStreamStub("<p>done</p>");
             const htmlEditor = await createEditor(QUICK_ACTIONS, stub.stream);

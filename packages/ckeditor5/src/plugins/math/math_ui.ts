@@ -102,25 +102,35 @@ export default class MathUI extends Plugin {
 		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );
 		formView.displayButtonView.bind( 'isOn' ).to( mathCommand, 'display' );
 
-		// Form elements should be read-only when corresponding commands are disabled.
-		formView.mathInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', ( value: boolean ) => !value );
+		// The open form edits the equation in `_formRange`, wherever the selection moves, so it
+		// is disabled only when the editor is read-only.
+		const isEditable = ( isCommandEnabled: boolean ) =>
+			isCommandEnabled || ( this._formRange !== null && !editor.isReadOnly );
+		formView.mathInputView.bind( 'isReadOnly' ).to(
+			mathCommand,
+			'isEnabled',
+			( isCommandEnabled: boolean ) => !isEditable( isCommandEnabled )
+		);
 		formView.saveButtonView.bind( 'isEnabled' ).to(
 			mathCommand,
 			'isEnabled',
 			formView.mathInputView,
 			'value',
-			( commandEnabled, equation ) => {
+			( isCommandEnabled, equation ) => {
 				const normalizedEquation = ( equation ?? '' ).trim();
-				return commandEnabled && normalizedEquation.length > 0;
+				return isEditable( isCommandEnabled ) && normalizedEquation.length > 0;
 			}
 		);
-		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled' );
+		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled', isEditable );
 
 		// Listen to submit button click
 		this.listenTo( formView, 'submit', () => {
 			editor.model.change( writer => {
 				if ( this._formRange ) {
 					writer.setSelection( this._formRange );
+					// `execute()` skips a disabled command, and the command refreshes on its own
+					// only once this change ends.
+					mathCommand.refresh();
 				}
 				editor.execute(
 					'math', formView.equation, formView.displayButtonView.isOn,

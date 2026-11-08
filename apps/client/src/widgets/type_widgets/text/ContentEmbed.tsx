@@ -253,7 +253,7 @@ export function CompactContentEmbed({
     const openMenu = getNoteMenu(notePath, viewScope);
     return (
         <div
-            className="include-note-title-row"
+            className="include-note-title-row title-only"
             onContextMenu={(e) => openMenuOnRightClick(e, openMenu)}
         >
             <Icon className="include-note-icon" icon={icon} />

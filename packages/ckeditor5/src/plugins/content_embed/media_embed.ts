@@ -72,9 +72,14 @@ export default class ContentEmbedMedia extends Plugin {
         this.editor.model.schema.extend("contentEmbed", { allowAttributes: PREVIEW_FIELDS });
     }
 
-    /** Has the host render the player of `embed` into `wrapper`. */
-    load(embed: ModelElement, wrapper: HTMLElement) {
-        this.editor.config.get("contentEmbed")?.loadMedia?.(getMediaPreview(embed), wrapper);
+    /** Has the host render the player of `embed` into `wrapper`, in a box of `boxSize`. */
+    load(
+        embed: ModelElement,
+        wrapper: HTMLElement,
+        boxSize = embed.getAttribute("boxSize") as string | undefined
+    ) {
+        this.editor.config.get("contentEmbed")?.loadMedia?.(
+            getMediaPreview(embed), wrapper, boxSize);
     }
 
     /**

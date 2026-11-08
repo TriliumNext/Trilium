@@ -1,4 +1,6 @@
-import { BOX_SIZES, CONTENT_EMBED_KIND_ATTRIBUTE, readBoxSize } from "@triliumnext/commons";
+import {
+    BOX_SIZES, CONTENT_EMBED_KIND_ATTRIBUTE, EMBED_HEIGHT_PROPERTY, readBoxSize
+} from "@triliumnext/commons";
 import {
     CKEditorError,
     type Editor,
@@ -62,7 +64,8 @@ export default class UnknownContentEmbed extends Plugin {
             view: (modelElement, { writer }) => {
                 const attributes = getEmbedAttributes(modelElement);
                 const saved = attributes["data-box-size"];
-                const boxSize = saved && readBoxSize(saved, BOX_SIZES, "resizable").boxSize;
+                const box = saved ? readBoxSize(saved, BOX_SIZES, "resizable") : null;
+                const boxSize = box?.boxSize;
                 const wrapper = writer.createUIElement("div", {
                     "class": "include-note-wrapper",
                     "data-cke-ignore-events": true
@@ -74,7 +77,8 @@ export default class UnknownContentEmbed extends Plugin {
                 const section = writer.createContainerElement("section", {
                     class: "include-note unknown-content-embed",
                     [CONTENT_EMBED_KIND_ATTRIBUTE]: attributes[CONTENT_EMBED_KIND_ATTRIBUTE],
-                    ...(boxSize ? { "data-box-size": boxSize } : {})
+                    ...(boxSize ? { "data-box-size": boxSize } : {}),
+                    ...(box?.height ? { style: `${EMBED_HEIGHT_PROPERTY}:${box.height}` } : {})
                 }, [ wrapper ]);
                 return toWidget(section, writer, {
                     label: editor.t("unknown embed widget"),

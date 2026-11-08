@@ -44,7 +44,6 @@ vi.mock("../services/experimental_features", () => ({
 }));
 
 vi.mock("../services/content_renderer", () => ({
-    EXCERPT_BOX_SIZE: "full",
     getEmbedBoxDefaults: mocks.getEmbedBoxDefaults
 }));
 

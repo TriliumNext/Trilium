@@ -42,6 +42,9 @@ export type BoxSize = typeof BOX_SIZES[number];
  */
 export const INLINE_BOX_SIZES: readonly BoxSize[] = [ "resizable", "full" ];
 
+/** The box size a new embed of blocks of a note, an excerpt, starts with. */
+export const EXCERPT_BOX_SIZE: BoxSize = "full";
+
 /** The CSS custom property that saves the height an embed was resized to, in `em`. */
 export const EMBED_HEIGHT_PROPERTY = "--include-note-height";
 

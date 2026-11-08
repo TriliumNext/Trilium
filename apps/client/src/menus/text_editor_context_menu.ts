@@ -25,8 +25,8 @@ export async function buildAiActionsMenuItem(): Promise<MenuItem<CommandNames> |
  * `AiAssistantUI`, grouped and separated as in the toolbar's dropdown. Without quick actions, it is
  * a row that opens the assistant. The enabled state of the rows is read once, when the menu opens.
  *
- * With `blocks`, _Ask AI…_ and the quick actions select the blocks before they run, and the quick
- * actions that need content are enabled when the blocks have some.
+ * With `blocks`, _Ask AI…_ and the quick actions close an open assistant and select the blocks
+ * before they run, and the quick actions that need content are enabled when the blocks have some.
  *
  * Returns `null` without `editor`, while no LLM provider is configured, and while a run streams.
  */
@@ -85,7 +85,7 @@ export function buildAiAssistantMenuItem(
 
 /**
  * The range from the first to the last of `blocks` in `editor`, as the target of the AI assistant
- * rows, or `null` without blocks. `select()` selects the range.
+ * rows, or `null` without blocks. `select()` closes an open assistant and selects the range.
  */
 function getBlocksTarget(editor: CKTextEditor, blocks: readonly ModelElement[]) {
     const first = blocks.at(0);
@@ -103,6 +103,11 @@ function getBlocksTarget(editor: CKTextEditor, blocks: readonly ModelElement[]) 
     return {
         hasContent: model.hasContent(range),
         select() {
+            // An open assistant keeps the passage it opened on, so a run there ignores the range.
+            const ui = editor.plugins.get("AiAssistantUI");
+            if (ui.isOpen) {
+                ui.hide();
+            }
             // A change while the menu is up leaves `range` pointing at other content, so the run
             // takes the selection as it is.
             if (model.document.version === version) {

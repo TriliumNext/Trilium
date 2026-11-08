@@ -39,9 +39,9 @@ import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
 	BOX_SIZES, type BoxSize, CAPTIONED_CONTENT_EMBED_CLASS, EMBED_HEIGHT_PROPERTY,
-	encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS, getLinkPreviewPlayer, getMediaEmbedBoxSizes,
-	getMediaEmbedClasses, INLINE_BOX_SIZES, type LinkPreviewData, normalizeMimeTypeForCKEditor,
-	parseBlockRange, readBoxSize
+	encodeBlockParameter, EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS, getLinkPreviewPlayer,
+	getMediaEmbedBoxSizes, getMediaEmbedClasses, INLINE_BOX_SIZES, type LinkPreviewData,
+	normalizeMimeTypeForCKEditor, parseBlockRange, readBoxSize
 } from '@triliumnext/commons';
 import HostedBalloon from '../../hosted_balloon.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
@@ -1591,6 +1591,9 @@ function getDefaultEmbedBox(
 	if ( isInlineSourceEmbed( embed ) ) {
 		return { boxSize: isExtendedCodeBlock( editor, embed ) ? 'full' : 'resizable', width: null };
 	}
+	if ( embed.hasAttribute( 'block' ) ) {
+		return { boxSize: EXCERPT_BOX_SIZE, width: null };
+	}
 
 	const info = getEmbedContentInfo( editor, embed );
 	return info ? { boxSize: info.defaultBoxSize, width: null } : null;
@@ -2026,7 +2029,7 @@ function loadEmbeddedContent(
 		return;
 	}
 	if ( isMediaEmbed( element ) ) {
-		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper );
+		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper, boxSize );
 		return;
 	}
 
@@ -2342,8 +2345,8 @@ export interface ContentEmbedHost {
 	sanitizeHtml( html: string ): string;
 	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
 	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
-	/** Fills `wrapper` with the player of the media of a link preview. */
-	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement ): void;
+	/** Fills `wrapper` with the player of the media of a link preview, in a box of `boxSize`. */
+	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement, boxSize: string | undefined ): void;
 	/**
 	 * Captures the picture of a frame of the video file of a link preview and stores it as the
 	 * thumbnail of the preview, resolving to its URL and the shape of the video, or to `null`

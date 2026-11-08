@@ -176,7 +176,7 @@ describe("ContentEmbedMedia", () => {
             embedType: "youtube",
             title: "A video",
             image: THUMBNAIL
-        }, figure.querySelector(":scope > .include-note-wrapper"));
+        }, figure.querySelector(":scope > .include-note-wrapper"), "full");
     });
 
     it("is selected, and keeps the editor focused, after a click in its player", async () => {
@@ -293,13 +293,14 @@ describe("ContentEmbedMedia", () => {
             .toEqual([ "compact", false, 0 ]);
         expect(editor.commands.get(TOGGLE_TITLE_COMMAND_NAME)?.isEnabled).toBe(false);
         expect(editor.commands.get(TOGGLE_CAPTION_COMMAND_NAME)?.isEnabled).toBe(false);
-        expect(loadMedia).toHaveBeenCalledTimes(2);
+        expect(loadMedia.mock.calls.map((call) => call[2])).toEqual([ "full", "compact" ]);
         expect(editor.getData()).toBe(`<p>Text</p><section class="link-embed" ${PREVIEW_ATTRIBUTES}`
             + ` data-box-size="compact">&nbsp;</section>`);
 
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
         expect(getBlock(1).childCount).toBe(1);
-        expect(loadMedia).toHaveBeenCalledTimes(3);
+        expect(loadMedia.mock.calls.map((call) => call[2]))
+            .toEqual([ "full", "compact", "resizable" ]);
     });
 
     it("keeps its player, and the video playing, when it changes size", () => {
@@ -511,7 +512,7 @@ describe("ContentEmbedMedia", () => {
         expect(embed.getAttribute(SIZE_ATTRIBUTES.width)).toBe("26.7em");
         expect(getFigure().style.getPropertyValue("--video-aspect-ratio")).toBe(String(4 / 3));
         expect(loadMedia).toHaveBeenCalledExactlyOnceWith(
-            expect.objectContaining({ image: THUMBNAIL }), expect.any(HTMLElement));
+            expect.objectContaining({ image: THUMBNAIL }), expect.any(HTMLElement), "resizable");
 
         editor.execute("undo");
         expect(editor.getData()).toBe("<p>Text</p>");

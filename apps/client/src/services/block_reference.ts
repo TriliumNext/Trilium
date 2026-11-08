@@ -5,8 +5,9 @@ import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
 import {
-    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, formatBlockRange,
-    MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange, resolveBlockReference
+    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, EXCERPT_BOX_SIZE,
+    formatBlockRange, MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange,
+    resolveBlockReference
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -681,7 +682,7 @@ function getPasteMenuItems(
 async function pasteBlockReference(
     editor: CKTextEditor,
     clipboard: ClipboardAccess,
-    toHtml: (reference: ClipboardBlockReference) => string | Promise<string>
+    toHtml: (reference: ClipboardBlockReference) => string
 ) {
     const target = editor.capturePasteTarget();
     try {
@@ -696,7 +697,7 @@ async function pasteBlockReference(
             return;
         }
 
-        target.paste(await toHtml(reference), reference.href);
+        target.paste(toHtml(reference), reference.href);
     } catch (error) {
         console.warn("Failed to paste a block reference:", error);
     } finally {
@@ -713,10 +714,7 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
 }
 
 /** The HTML of an embed of the referenced blocks. */
-async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
-    // Imported on demand: `content_renderer` imports `content_renderer_text`, which imports this
-    // module.
-    const { EXCERPT_BOX_SIZE } = await import("./content_renderer.js");
+function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
     const embed = document.createElement("figure");
     embed.className = "include-note";
     embed.dataset.noteId = noteId;

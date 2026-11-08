@@ -63,7 +63,10 @@ function fakeEditor({
     hasPlugin?: boolean;
 }) {
     // The live lists are the plugin's, which the editor config only seeded.
-    const ui = { hasContext, isStreaming, quickActions: groups, menuFooter, runQuickAction: vi.fn() };
+    const ui = {
+        hasContext, isStreaming, quickActions: groups, menuFooter, runQuickAction: vi.fn(),
+        isOpen: false, hide: vi.fn()
+    };
     const editor = {
         editing: { view: { getDomRoot: () => domRoot } },
         plugins: { has: () => hasPlugin, get: () => ui },
@@ -359,9 +362,13 @@ describe("buildAiAssistantMenuItem", () => {
         };
         editor.execute.mockImplementation((name: string) => log.push(name));
         ui.runQuickAction.mockImplementation((action: AiQuickAction) => log.push(action.id));
+        ui.hide.mockImplementation(() => {
+            ui.isOpen = false;
+            log.push("hide");
+        });
         const blocksEditor = Object.assign(editor, { model }) as unknown as CKTextEditor;
         const item = buildAiAssistantMenuItem(blocksEditor, "cke cke-trilium-ai", blocks);
-        return { item: item as MenuCommandItem<string>, model, log };
+        return { item: item as MenuCommandItem<string>, model, log, ui };
     }
 
     it("selects the blocks before a row runs, unless they changed since the menu opened", () => {
@@ -378,6 +385,18 @@ describe("buildAiAssistantMenuItem", () => {
         model.document.version += 1;
         ask.handler?.(ask, null as never);
         expect(log).toEqual([ "aiAssistant" ]);
+    });
+
+    it("closes an open assistant before a row selects the blocks, so it starts on them", () => {
+        const { item, log, ui } = blocksEditor(true);
+        const [ ask, fixTypos ] = commandItems(item.items ?? []);
+
+        ui.isOpen = true;
+        ask.handler?.(ask, null as never);
+        ui.isOpen = true;
+        fixTypos.handler?.(fixTypos, null as never);
+        expect(log)
+            .toEqual([ "hide", blocksRange, "aiAssistant", "hide", blocksRange, "fixTypos" ]);
     });
 
     it("enables the quick actions that need content by the content of the blocks", () => {

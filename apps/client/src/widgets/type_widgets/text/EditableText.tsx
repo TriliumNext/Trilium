@@ -250,8 +250,8 @@ export default function EditableText({
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
         },
-        loadMedia(preview, wrapper) {
-            void loadMediaEmbed(preview, wrapper, { hasMenu: true });
+        loadMedia(preview, wrapper, boxSize) {
+            void loadMediaEmbed(preview, wrapper, { boxSize, hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;

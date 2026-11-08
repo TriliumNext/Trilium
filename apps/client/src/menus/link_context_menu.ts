@@ -3,7 +3,7 @@ import "./link_context_menu.css";
 import type {
     CKTextEditor, ContentEmbedState, PositionValue, ToolbarGroupMenuItem
 } from "@triliumnext/ckeditor5";
-import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
+import { EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
@@ -646,7 +646,7 @@ async function getConvertToEmbedItem(
     }
 
     // Imported on demand: `content_renderer` imports `link`, which imports this module.
-    const [ entity, { EXCERPT_BOX_SIZE, getEmbedBoxDefaults } ] = await Promise.all([
+    const [ entity, { getEmbedBoxDefaults } ] = await Promise.all([
         getLinkedEntity(),
         import("../services/content_renderer.js")
     ]);

@@ -129,6 +129,28 @@ describe("content_renderer", () => {
             expect(content).toContain(`href="api/attachments/tinyPic1/download"`);
         });
 
+        it("keeps a Compact audio file as an embed, where other Compact content is a link", () => {
+            buildShareNotes([
+                { id: "songNote1", title: "Song", type: "file", mime: "audio/mpeg", content: "" }
+            ]);
+            const embed = (attribute: string) =>
+                `<figure class="include-note" ${attribute} data-box-size="compact"></figure>`;
+            const note = buildShareNote({
+                content: embed(`data-note-id="songNote1"`) + embed(`data-attachment-id="songAtt1"`)
+                    + embed(`data-attachment-id="pdfAtt1"`),
+                attachments: [
+                    { id: "songAtt1", role: "file", mime: "audio/mpeg", title: "song.mp3" },
+                    { id: "pdfAtt1", role: "file", mime: "application/pdf", title: "report.pdf" }
+                ]
+            });
+
+            const content = String(getContent(note).content);
+            expect(parse(content).querySelectorAll("figure.include-note").map((figure) =>
+                figure.getAttribute("data-note-id") ?? figure.getAttribute("data-attachment-id")))
+                .toEqual([ "songNote1", "songAtt1" ]);
+            expect(content).toContain(`href="api/attachments/pdfAtt1/download"`);
+        });
+
         it("renders only the first level of nested embeds on the share view (nested embed becomes a reference link)", () => {
             buildShareNote({ id: "nestC2", title: "Note C", content: "<p>C body</p>" });
             buildShareNote({
@@ -806,6 +828,43 @@ describe("content_renderer", () => {
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);
             expect(content).toContain("report.pdf");
             expect(content).not.toContain("embedGone");
+        });
+
+        it("shows all of a drawing whose frame cannot be read, and logs it", () => {
+            const drawing = (id: string) => [
+                { id, role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw" },
+                { id: `${id}Picture`, role: "image", mime: "image/svg+xml", title: `${id}.svg` }
+            ];
+            const ids = [ "brokenDraw1", "emptyDraw1" ];
+            const note = buildShareNote({
+                content: ids.map((id) =>
+                    `<section class="include-note" data-attachment-id="${id}">&nbsp;</section>`)
+                    .join(""),
+                attachments: ids.flatMap(drawing)
+            });
+            const setDrawingContent = (id: string, content: string | undefined) => {
+                const attachment = shaca.getAttachment(id);
+                if (!attachment) throw new Error(`No attachment ${id}`);
+                attachment.getContent = () => content;
+            };
+            setDrawingContent("brokenDraw1", "{ not JSON");
+            setDrawingContent("emptyDraw1", undefined);
+            const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            try {
+                const content = getContent(note).content as string;
+
+                expect(content).not.toContain("canvas-drawing-box");
+                for (const id of ids) {
+                    expect(content)
+                        .toContain(`<img src="api/attachments/${id}Picture/image/${id}.svg"`);
+                }
+                expect(logError.mock.calls.map(([ message ]) => String(message).split(":")[0]))
+                    .toEqual(ids.map((id) =>
+                        `Cannot read the frame of the canvas drawing '${id}'`));
+            } finally {
+                vi.restoreAllMocks();
+            }
         });
 
         describe("Reference links", () => {

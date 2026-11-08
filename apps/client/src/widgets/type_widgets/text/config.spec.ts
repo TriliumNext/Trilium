@@ -601,7 +601,7 @@ describe("CK config - tables", () => {
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
         host?.flushInline?.();
         host?.loadUnknown?.(wrapper, "small");
-        host?.loadMedia?.(video, wrapper);
+        host?.loadMedia?.(video, wrapper, "compact");
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -611,7 +611,7 @@ describe("CK config - tables", () => {
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
         expect(first.flushInline).toHaveBeenCalledOnce();
         expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
-        expect(first.loadMedia).toHaveBeenCalledWith(video, wrapper);
+        expect(first.loadMedia).toHaveBeenCalledWith(video, wrapper, "compact");
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");

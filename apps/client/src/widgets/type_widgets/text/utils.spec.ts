@@ -504,6 +504,33 @@ describe("loadMediaEmbed", () => {
         expect(lastMount().props.title?.querySelector(".bx-music")).not.toBeNull();
     });
 
+    it("sizes the box by the box size it is given, over the one in the page", async () => {
+        const mounts = vi.mocked(content_renderer.mountInteractiveWidget);
+        const hasPlayer = () => mounts.mock.calls
+            .some(([ vnode ]) => (vnode as VNode).type === MediaPreviewStub);
+        const video = { url: "https://example.com/media/clip.mp4", embedType: "video" } as const;
+        const figure = inPage(document.createElement("figure"));
+        figure.className = "include-note";
+        figure.dataset.boxSize = "compact";
+        const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
+        figure.append(wrapper);
+
+        await loadMediaEmbed(video, wrapper, { boxSize: "resizable" });
+        expect(hasPlayer()).toBe(true);
+
+        mounts.mockClear();
+        figure.dataset.boxSize = "resizable";
+        await loadMediaEmbed(video, wrapper, { boxSize: "compact" });
+        expect(hasPlayer()).toBe(false);
+
+        const detached = document.createElement("div");
+        detached.className = "include-note-wrapper";
+        await loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" }, detached,
+            { boxSize: "compact" });
+        expect([ hasPlayer(), lastMount().props.boxSize ]).toEqual([ true, "compact" ]);
+    });
+
     it("drops a load that a later one into the same box overtook", async () => {
         const wrapper = createWrapper();
         const first = loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" },

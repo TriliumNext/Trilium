@@ -72,10 +72,6 @@
     }
 }
 
-/*
- * Puts the icon beside the first line of the title, also in the block handle's menus of the `/`
- * commands: the row aligns to the top, and the icon centers its glyph in a box one line tall.
- */
 :is(.note-autocomplete-menu, .slash-command-menu) .dropdown-item > span:not([class]) {
     --note-suggestion-line: 1lh;
     align-items: flex-start;

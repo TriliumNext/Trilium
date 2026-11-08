@@ -1942,7 +1942,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 }
 
 .include-note[data-hide-title="true"]:not([data-box-size="expandable"]) {
-    > .include-note-wrapper > :is(.include-note-title-row, .include-note-title) {
+    > .include-note-wrapper > :is(.include-note-title-row:not(.title-only), .include-note-title) {
         display: none;
     }
 

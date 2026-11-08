@@ -620,6 +620,16 @@ export default class AiAssistantUI extends Plugin {
         this._open(false);
     }
 
+    /** Whether the assistant dialog is open. */
+    public get isOpen(): boolean {
+        return this.editor.plugins.get(Dialog).id === DIALOG_ID;
+    }
+
+    /** Closes the assistant, which drops its conversation and a response not applied yet. */
+    public hide(): void {
+        this._hide();
+    }
+
     /**
      * Opens the assistant and runs a preset instruction against the caret's surroundings. Both
      * entry points to the quick actions — the toolbar menu and the `/` palette — come in this way.

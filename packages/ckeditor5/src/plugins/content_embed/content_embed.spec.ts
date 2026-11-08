@@ -2408,6 +2408,24 @@ describe("ContentEmbed with content the host describes", () => {
         expect(command?.isEnabled).toBe(false);
     });
 
+    it("puts an excerpt back at the excerpt's box, not at the box of the whole note", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"text\" data-block=\"a1:b2\""
+            + " data-box-size=\"full\"></figure>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+
+        expect(command?.isEnabled).toBe(false);
+        editor.model.change((writer) => writer.setAttribute("boxSize", "resizable", embed));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.getAttribute("boxSize")).toBe("full");
+        expect(command?.isEnabled).toBe(false);
+    });
+
     it("changes nothing for content the host has not loaded, or with no embed selected", () => {
         editor.setData("<figure class=\"include-note\" data-note-id=\"later\" data-box-size=\"compact\">"
             + "</figure><p>after</p>");

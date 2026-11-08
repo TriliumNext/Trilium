@@ -933,6 +933,9 @@ describe("CompactContentEmbed", () => {
             "include-note-icon", "include-note-heading",
             "include-note-action", "include-note-action", "include-note-menu"
         ]);
+        // A hidden title does not hide the row of a box that shows nothing else.
+        expect(container.querySelector(".include-note-title-row")?.classList.contains("title-only"))
+            .toBe(true);
         expect(container.querySelector(".include-note-content")).toBeNull();
         expect(container.querySelector(".include-note-icon")?.className).toContain("bx-file");
         expect([

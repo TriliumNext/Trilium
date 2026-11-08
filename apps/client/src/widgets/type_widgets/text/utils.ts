@@ -260,16 +260,24 @@ export async function loadUnknownEmbed(el: HTMLElement, boxSize: string | undefi
 /** The latest load of a media embed into each wrapper, which an earlier one that ends later yields to. */
 const mediaEmbedLoads = new WeakMap<HTMLElement, object>();
 
+interface MediaEmbedOptions {
+    /** The box size of the embed. The editor passes it before `data-box-size` is in the DOM. */
+    boxSize?: string;
+    hasMenu?: boolean;
+}
+
 /**
  * Fills an embed box with the player of the media of a link preview, which loads on a click, under
  * a title that links to the media: the YouTube player, or the media player of Trilium for a video
  * or an audio file. The title row opens the menu of the embed while `hasMenu`, as in the editor.
  */
 export async function loadMediaEmbed(
-    preview: LinkPreviewData, el: HTMLElement, { hasMenu = false }: { hasMenu?: boolean } = {}
+    preview: LinkPreviewData,
+    el: HTMLElement,
+    { boxSize: givenBoxSize, hasMenu = false }: MediaEmbedOptions = {}
 ) {
     const player = getLinkPreviewPlayer(preview);
-    const boxSize = getEmbedBoxSize(el);
+    const boxSize = givenBoxSize ?? getEmbedBoxSize(el);
     const isAudio = player?.type === "audio";
     const isTitleRow = boxSize === "compact" && !isAudio;
     const wrapper = getWrapper(el, !isTitleRow);
