@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
-    "@ckeditor/ckeditor5-icons": "49.0.1",
+    "@ckeditor/ckeditor5-icons": "49.1.0",
     "boxicons": "2.1.4",
-    "ckeditor5": "49.0.1",
+    "ckeditor5": "49.1.0",
     "mathlive": "0.111.4"
   },
   "peerDependencies": {
