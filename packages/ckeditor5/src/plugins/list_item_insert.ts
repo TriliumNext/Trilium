@@ -71,9 +71,13 @@ export class InsertListItemCommand extends Command {
         if (this.position === "below") {
             position = model.createPositionAfter(nested.at(-1) ?? lastItemBlock);
         } else if (this.position === "child") {
-            position = model.createPositionAfter(lastItemBlock);
+            // The first nested list can follow any block of the item, not only the last one.
+            source = itemBlocks.map((itemBlock) => getNestedListBlocks(itemBlock).at(0))
+                .find(Boolean);
+            position = source
+                ? model.createPositionBefore(source)
+                : model.createPositionAfter(lastItemBlock);
             listIndent += 1;
-            source = nested.at(0);
         }
 
         model.change((writer) => {

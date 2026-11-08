@@ -39,6 +39,11 @@ describe("ListItemInsert", () => {
             editor.execute(command);
             expect(getModelData(editor.model)).toBe(expected.join(""));
         }
+
+        setModelData(editor.model, [ A, B, A2.replace("A2", "A2[]"), C ].join(""));
+        editor.execute("triliumInsertChildListItem");
+        expect(getModelData(editor.model))
+            .toBe([ A, item("new", 1, "numbered", "[]"), B, A2, C ].join(""));
     });
 
     it("gives a first nested item the type of its item, and leaves a new to-do unchecked", () => {
