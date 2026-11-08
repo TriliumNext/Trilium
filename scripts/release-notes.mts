@@ -465,8 +465,10 @@ export function collectItems(sources: ItemSources): NoteItem[] {
 
     const closingsByIssue = new Map(closings.map((closing) => [ closing.issue, closing ]));
     for (const entry of entries) {
-        const links = entry.closes.map((number) =>
-            ({ number, url: `https://github.com/${repository}/issues/${number}` }));
+        const links = entry.closes.map((number) => {
+            const kind = pullRequests?.has(number) ? "pull" : "issues";
+            return { number, url: `https://github.com/${repository}/${kind}/${number}` };
+        });
         const unlinked = links.filter(({ number }) =>
             !new RegExp(`/(?:issues|pull)/${number}(?!\\d)`).test(entry.text));
         let text = entry.text;

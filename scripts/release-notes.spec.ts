@@ -242,7 +242,8 @@ describe("collectItems", () => {
                 [ "Bugfixes", `[New wording](${url(3)})`, "fixer" ],
                 [ "Bugfixes", `Two issues ([#6](${url(6)}), [#8](${url(8)}))`, "thanked" ],
                 [ "Bugfixes", "[Linked](https://y)", "" ],
-                [ "Bugfixes", `[Partly](${url(9)}) linked ([#20](${url(20)}))`, "" ],
+                [ "Bugfixes", `[Partly](${url(9)}) linked ([#20](https://github.com/o/r/pull/20))`,
+                    "" ],
                 [ "Bugfixes", "[Crash on \\*save\\*](https://x/1)", "" ]
             ]);
     });
