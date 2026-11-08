@@ -28,6 +28,7 @@ import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import type { SavedData } from "../../react/hooks";
 import type { EmbedHostHistory } from "../text/embed_history";
+import type { DrawingView } from "./drawing_view";
 import { CANVAS_EXPORT_TITLE } from "./image_attachments";
 import useCanvasPersistence, {
     roundStroke, saveDrawingPicture, useCanvasDrawingPersistence
@@ -1199,6 +1200,29 @@ describe("useCanvasDrawingPersistence", () => {
         await mount(emptyDrawing, undefined, { onSceneShown: empty });
         change();
         expect(empty).toHaveBeenCalledOnce();
+    });
+
+    it("saves the view that getSavedView gives in place of the shown one", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const { attachment } = buildAttachment({ elements: loaded });
+        const editor = buildEditor();
+        let savedView: DrawingView | null = null;
+        await mount(attachment, editor, { getSavedView: () => savedView });
+        change();
+        sceneElements = loaded;
+        change();
+
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        savedView = { zoom: { value: 3 }, scrollX: -5, scrollY: -7 } as DrawingView;
+        change();
+        const [ getContent ] = editor.scheduleSave.mock.calls[0];
+        expect(JSON.parse(getContent()).appState)
+            .toEqual(expect.objectContaining({ zoom: { value: 3 }, scrollX: -5, scrollY: -7 }));
+
+        // The save reads the view as it runs.
+        savedView = null;
+        expect(JSON.parse(getContent()).appState)
+            .toEqual(expect.objectContaining({ zoom: { value: 1 }, scrollX: 1, scrollY: 2 }));
     });
 
     it("saves nothing without an editor", async () => {

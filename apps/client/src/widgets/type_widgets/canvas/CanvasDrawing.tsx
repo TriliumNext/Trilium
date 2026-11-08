@@ -28,7 +28,9 @@ import CanvasEmbedTools, { CanvasTools, isNoTool, NO_TOOL } from "./CanvasEmbedT
 import {
     attachExcalidraw, DrawingFindTarget, type DrawingMatch, DrawingMatches, getSceneTransform
 } from "./drawing_find";
-import { type DrawingView, getBoundedView, getCenteredView, getFittedView } from "./drawing_view";
+import {
+    type DrawingView, getBoundedView, getDrawingView, getFittedView, getZoomToFitView
+} from "./drawing_view";
 import {
     exportDrawingPicture, loadDrawingFiles, parseContent, useCanvasDrawingPersistence
 } from "./persistence";
@@ -50,7 +52,8 @@ type DrawingMode = "editor" | "picture";
 export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps) {
     const rootRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
-    // The view shown last, which the picture and Excalidraw take over from each other.
+    // The view of the box, which the picture and Excalidraw take over from each other. Fullscreen
+    // shows a view of its own, and the box shows this one again after.
     const viewRef = useRef<DrawingView | null>(null);
     const colorScheme = useColorScheme();
     const [ tools ] = useState(() => new CanvasTools(rootRef));
@@ -65,7 +68,7 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     // Stays until the other mode draws, so that switching shows no empty box.
     const [ drawnMode, setDrawnMode ] = useState<DrawingMode | null>(null);
     const isToolbarOverPanel = useIsToolbarOverPanel(rootRef);
-    const isRecentering = useRecenteringOnFullscreen(rootRef, apiRef);
+    const isRecentering = useFullscreenView(rootRef, apiRef, viewRef);
     useSidePanels(rootRef, isEditing);
     usePropertiesSheet(rootRef, isEditing && isMobile());
     useTopLayerContextMenu(rootRef, apiRef);
@@ -145,6 +148,8 @@ function LiveDrawing({
         // A touch over the drawing scrolls the note until a tool is picked.
         initialTool: isMobile() ? NO_TOOL : undefined,
         rootRef,
+        // A save made in fullscreen keeps the view of the box.
+        getSavedView: () => isInFullscreen(rootRef.current) ? viewRef.current : null,
         onSceneShown: () => {
             isShownRef.current = true;
             frameRef.current = requestAnimationFrame(onDrawn);
@@ -174,9 +179,8 @@ function LiveDrawing({
                     persistence.onChange?.(elements, appState, files);
                     // `CanvasDrawing.css` leaves the touch over the drawing to the note.
                     rootRef.current?.toggleAttribute("data-no-tool", isNoTool(appState.activeTool));
-                    if (isShownRef.current) {
-                        const { zoom, scrollX, scrollY } = appState;
-                        viewRef.current = { zoom, scrollX, scrollY };
+                    if (isShownRef.current && !isInFullscreen(rootRef.current)) {
+                        viewRef.current = getDrawingView(appState);
                     }
                 }
             }}
@@ -211,8 +215,8 @@ interface DrawingPictureProps {
 
 /**
  * The drawing as a picture, at the view of `viewRef`, else at the saved view, else fit in the box.
- * It renders again after each save, once `rootRef` is shown, and centers the drawing once
- * fullscreen changes its size, as Excalidraw does.
+ * It renders again after each save, once `rootRef` is shown. Fullscreen shows the whole drawing,
+ * and the box shows its view again after.
  */
 function DrawingPicture({
     attachment, editor, colorScheme, rootRef, viewRef, find, onDrawn
@@ -257,24 +261,28 @@ function DrawingPicture({
         };
     }, [ attachment, editor, colorScheme, revision ]);
 
-    const recenter = () => {
-        const box = layerRef.current?.getBoundingClientRect();
-        const view = viewRef.current;
-        if (!scene || !box || !view) return;
-
-        viewRef.current = getCenteredView(scene.elements, view, box.width, box.height) ?? view;
+    const place = (view: DrawingView) => {
+        viewRef.current = view;
         setPlacements((count) => count + 1);
     };
-    useContentEmbedEvent(rootRef, "enterFullscreen", recenter);
-    useContentEmbedEvent(rootRef, "leaveFullscreen", recenter);
+    const boxViewRef = useRef<DrawingView | null>(null);
+    useContentEmbedEvent(rootRef, "fullscreenChangeStart", () => {
+        if (isInFullscreen(rootRef.current)) {
+            boxViewRef.current = viewRef.current;
+        } else if (boxViewRef.current) {
+            place(boxViewRef.current);
+        }
+    });
+    useContentEmbedEvent(rootRef, "enterFullscreen", () => {
+        const box = layerRef.current?.getBoundingClientRect();
+        const fitted = scene && box && getZoomToFitView(scene.elements, box.width, box.height);
+        if (fitted) place(fitted);
+    });
 
     useLayoutEffect(() => find.attach({
         getElements: () => sceneRef.current?.elements ?? [],
         getView: () => viewRef.current,
-        setView: (view) => {
-            viewRef.current = view;
-            setPlacements((count) => count + 1);
-        },
+        setView: place,
         showMatches: (matches, current) => setShownMatches({ matches, current })
     }), [ find, viewRef ]);
 
@@ -475,33 +483,55 @@ export function CanvasDrawingDetail({ attachment, note, noteContext }: CanvasDra
 }
 
 /**
- * Centers the drawing once fullscreen changed its size, which moves the view off center. Returns
- * whether the drawing is hidden for it: from the start of the change until it is drawn centered.
+ * Gives fullscreen a view of its own: the whole drawing at first, then the view it was left at.
+ * `viewRef`, the view of the box, shows again as fullscreen ends. Returns whether the drawing is
+ * hidden for the change of view: from the start of the switch until the new view is drawn.
  */
-function useRecenteringOnFullscreen(
+function useFullscreenView(
     rootRef: RefObject<HTMLElement | null>,
-    apiRef: RefObject<ExcalidrawImperativeAPI | null>
+    apiRef: RefObject<ExcalidrawImperativeAPI | null>,
+    viewRef: RefObject<DrawingView | null>
 ) {
     const [ isRecentering, setIsRecentering ] = useState(false);
+    const fullscreenViewRef = useRef<DrawingView | null>(null);
     const frameRef = useRef(0);
 
     useContentEmbedEvent(rootRef, "fullscreenChangeStart", () => {
         cancelAnimationFrame(frameRef.current);
         setIsRecentering(true);
+        const api = apiRef.current;
+        // On leave, the box view is restored before Excalidraw resizes to the box.
+        if (api && viewRef.current && !isInFullscreen(rootRef.current)) {
+            fullscreenViewRef.current = getDrawingView(api.getAppState());
+            api.updateScene({ appState: viewRef.current });
+        }
     });
 
-    const recenter = () => {
-        apiRef.current?.scrollToContent();
-        // Excalidraw draws the centered view on the next frame.
+    const show = () => {
+        // Excalidraw draws the new view on the next frame.
         frameRef.current = requestAnimationFrame(() => {
             frameRef.current = requestAnimationFrame(() => setIsRecentering(false));
         });
     };
-    useContentEmbedEvent(rootRef, "enterFullscreen", recenter);
-    useContentEmbedEvent(rootRef, "leaveFullscreen", recenter);
+    useContentEmbedEvent(rootRef, "enterFullscreen", () => {
+        const api = apiRef.current;
+        const size = rootRef.current?.getBoundingClientRect();
+        if (api && size) {
+            const view = fullscreenViewRef.current
+                ?? getZoomToFitView(api.getSceneElements(), size.width, size.height);
+            if (view) api.updateScene({ appState: view });
+        }
+        show();
+    });
+    useContentEmbedEvent(rootRef, "leaveFullscreen", show);
     useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
     return isRecentering;
+}
+
+/** Whether `element` is in the content box that is shown fullscreen. */
+function isInFullscreen(element: Element | null) {
+    return !!element && !!document.fullscreenElement?.contains(element);
 }
 
 /**
@@ -550,7 +580,7 @@ export function useNoteScrollingWheel(rootRef: RefObject<HTMLElement | null>) {
 
         // Runs before Excalidraw's own listener on its container, which prevents the scroll.
         const onWheel = (event: WheelEvent) => {
-            if (!document.fullscreenElement?.contains(root)) {
+            if (!isInFullscreen(root)) {
                 event.stopPropagation();
             }
         };
@@ -635,7 +665,7 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
         const update = () => {
             // `ContentEmbed` marks the body active while the drawing has the focus.
             const isShown = embedBody.classList.contains("active")
-                && !document.fullscreenElement?.contains(root);
+                && !isInFullscreen(root);
             const layout = isShown ? getSideLayout(root, viewport, balloon) : null;
             const takenSides = new Set<Side>();
             for (const { selector, hasDrawingHeight } of SIDE_PANELS) {
@@ -956,7 +986,7 @@ export function usePropertiesSheet(rootRef: RefObject<HTMLElement | null>, isEna
             // `ContentEmbed` marks the body active while the drawing has the focus.
             const isShown = !!island?.querySelector(`:scope > .${PROPERTIES_PANEL_CLASS}`)
                 && embedBody.classList.contains("active")
-                && !document.fullscreenElement?.contains(root);
+                && !isInFullscreen(root);
             const position = isShown ? getSheetPosition(root, viewport, toolbar) : null;
             if (island) {
                 placeSheet(island, position);

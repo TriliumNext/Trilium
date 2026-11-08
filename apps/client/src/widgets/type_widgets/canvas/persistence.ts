@@ -423,6 +423,8 @@ interface DrawingPersistenceOptions {
      * save made elsewhere shows once it is shown.
      */
     rootRef?: RefObject<HTMLElement | null>;
+    /** The view to save in place of the shown one, or `null` for the shown one. */
+    getSavedView?: () => DrawingView | null;
 }
 
 /**
@@ -434,8 +436,9 @@ export function useCanvasDrawingPersistence(
     editor: ContentEditor | undefined,
     apiRef: RefObject<ExcalidrawImperativeAPI | null>,
     theme: AppState["theme"],
-    { initialView, initialTool, onSceneShown, rootRef }: DrawingPersistenceOptions = {}
+    options: DrawingPersistenceOptions = {}
 ): Partial<ExcalidrawProps> {
+    const { initialView, initialTool, onSceneShown, rootRef, getSavedView } = options;
     const currentSceneVersion = useRef(0);
     /** The saved part of the app state, read from the editor at the first change. */
     const appStateToCompare = useRef<ImportantAppState | null>(null);
@@ -632,7 +635,7 @@ export function useCanvasDrawingPersistence(
             editor.scheduleSave(
                 () => serializeDrawing({
                     elements: api.getSceneElements(),
-                    appState: api.getAppState(),
+                    appState: { ...api.getAppState(), ...getSavedView?.() },
                     files: api.getFiles()
                 }, referencedFileIds.current),
                 (content) => scheduleDrawingPicture(attachment, content, api.getFiles())

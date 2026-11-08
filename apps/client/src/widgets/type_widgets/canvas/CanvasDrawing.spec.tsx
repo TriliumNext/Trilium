@@ -68,7 +68,7 @@ const SELECTION_TOOL = {
 const canvasEditorProps = vi.fn();
 const persistenceArgs = vi.fn();
 const canvasApi = {
-    scrollToContent: vi.fn(),
+    getSceneElements: () => [],
     getAppState: () => ({ activeTool: SELECTION_TOOL })
 };
 
@@ -85,6 +85,7 @@ interface PersistenceOptions {
     initialView?: unknown;
     initialTool?: unknown;
     onSceneShown?: () => void;
+    getSavedView?: () => unknown;
 }
 
 /** Renders Excalidraw's focusable container after a render, as once its language loads. */
@@ -1023,24 +1024,42 @@ describe("CanvasDrawing", () => {
             ?.style.left).toBe("600px"));
     });
 
-    it("centers the picture once fullscreen changes its size, as Excalidraw does", async () => {
+    it("shows the whole picture in fullscreen, and its view again after", async () => {
         sceneContent = JSON.stringify({
             elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
             appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }
         });
         await mount(null);
-        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
-        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("120px"));
+        const getPlacement = () => {
+            const svg = box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+            return [ svg?.style.left, svg?.style.top, svg?.style.width ];
+        };
+        await vi.waitFor(() => expect(getPlacement()).toEqual([ "120px", "100px", "400px" ]));
         vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
             .mockReturnValue({ width: 400, height: 200 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            Reflect.deleteProperty(document, "fullscreenElement");
+        });
 
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
         await act(async () => {
             box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
         });
+        // Zoomed to fit the 400 × 200 screen, up to 100%: the shapes centered at zoom 1.
+        expect(getPlacement()).toEqual([ "100px", "50px", "200px" ]);
 
-        // The center of the shapes, (150, 80), in the middle of the 400 × 200 box at zoom 2.
-        expect([ getSvg()?.style.left, getSvg()?.style.top ]).toEqual([ "0px", "0px" ]);
-        vi.restoreAllMocks();
+        Reflect.deleteProperty(document, "fullscreenElement");
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        await act(async () => {
+            box.dispatchEvent(new Event("leaveFullscreen", { bubbles: true }));
+        });
+        expect(getPlacement()).toEqual([ "120px", "100px", "400px" ]);
     });
 
     it("finds its text, moving the picture to a match out of view and back", async () => {
@@ -1132,41 +1151,92 @@ describe("CanvasDrawing", () => {
         expect(listener).not.toHaveBeenCalled();
     });
 
-    it("centers the drawing after a change of fullscreen, hidden until then", async () => {
+    it("shows the whole drawing in fullscreen, and the view of the box again after", async () => {
         await mount();
         const root = box.querySelector(".canvas-drawing-editor");
         const isHidden = () => !!root?.classList.contains("recentering");
-        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
-        if (!apiRef) {
-            throw new Error("Expected the API reference of the editor.");
+        const props = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        const { apiRef, persistence } = props;
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        if (!apiRef || !persistence?.onChange) {
+            throw new Error("Expected the API reference and the change handler of the editor.");
         }
-        apiRef.current = canvasApi;
-        canvasApi.scrollToContent.mockClear();
+        const updateScene = vi.fn();
+        let appState = { activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
+        apiRef.current = {
+            ...canvasApi,
+            updateScene,
+            registerAction: vi.fn(),
+            onChange: vi.fn(() => () => {}),
+            getAppState: () => appState,
+            getSceneElements: () => [ { x: 50, y: 30, width: 200, height: 100 } ]
+        };
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
         const other = document.createElement("div");
         document.body.append(other);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            Reflect.deleteProperty(document, "fullscreenElement");
+            apiRef.current = null;
+            other.remove();
+        });
+        const boxView = { zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
+        // Excalidraw shows the drawing at the view of the box.
+        options.onSceneShown?.();
+        persistence.onChange([], appState, {});
+        expect(options.getSavedView?.()).toBeNull();
 
-        for (const name of [ "enterFullscreen", "leaveFullscreen" ]) {
-            await act(async () => {
-                other.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
-            });
-            expect(isHidden()).toBe(false);
-            await act(async () => {
-                box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
-            });
-            expect(isHidden()).toBe(true);
+        await act(async () => {
+            other.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(isHidden()).toBe(false);
 
-            await act(async () => {
-                box.dispatchEvent(new Event(name, { bubbles: true }));
-                other.dispatchEvent(new Event(name, { bubbles: true }));
-            });
-            // Shown again once Excalidraw drew the centered view, on the next frame.
-            expect(isHidden()).toBe(true);
-            await vi.waitFor(() => expect(isHidden()).toBe(false));
-        }
-        expect(canvasApi.scrollToContent).toHaveBeenCalledTimes(2);
-        expect(canvasApi.scrollToContent).toHaveBeenCalledWith();
-        apiRef.current = null;
-        other.remove();
+        // Hidden from the start of the switch until the frame after the new view is drawn.
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(isHidden()).toBe(true);
+        // Excalidraw keeps its view at the size of the screen, which is not the view of the box.
+        appState = { ...appState, scrollX: 300, scrollY: 100 };
+        persistence.onChange([], appState, {});
+        expect(options.getSavedView?.()).toEqual(boxView);
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        // Zoomed to fit the 800 × 400 screen, up to 100%: the shapes centered at zoom 1.
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 1 }, scrollX: 250, scrollY: 120 }
+        });
+        expect(isHidden()).toBe(true);
+        await vi.waitFor(() => expect(isHidden()).toBe(false));
+
+        // The view that the user zooms and pans to in fullscreen is kept for fullscreen alone.
+        appState = { ...appState, zoom: { value: 3 }, scrollX: -5, scrollY: -7 };
+        persistence.onChange([], appState, {});
+        expect(options.getSavedView?.()).toEqual(boxView);
+        Reflect.deleteProperty(document, "fullscreenElement");
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(updateScene).toHaveBeenLastCalledWith({ appState: boxView });
+        expect(isHidden()).toBe(true);
+        expect(options.getSavedView?.()).toBeNull();
+        await act(async () => {
+            box.dispatchEvent(new Event("leaveFullscreen", { bubbles: true }));
+        });
+        await vi.waitFor(() => expect(isHidden()).toBe(false));
+
+        // Fullscreen opens again at the view it was left at.
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(updateScene).toHaveBeenLastCalledWith({
+            appState: { zoom: { value: 3 }, scrollX: -5, scrollY: -7 }
+        });
     });
 
     it("leaves the drawing to the note while no tool is active", async () => {

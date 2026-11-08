@@ -10,6 +10,11 @@ export const ZOOM_STEP = 0.1;
 
 export type DrawingView = Pick<AppState, "zoom" | "scrollX" | "scrollY">;
 
+/** The view of `appState`: its zoom and scroll. */
+export function getDrawingView({ zoom, scrollX, scrollY }: DrawingView): DrawingView {
+    return { zoom, scrollX, scrollY };
+}
+
 /** The width that panels cover at the left and the right edge of a drawing. */
 export interface CoveredSides {
     left: number;
