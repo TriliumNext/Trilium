@@ -224,6 +224,21 @@ describe("FileUploadEditing", () => {
         expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
     });
 
+    it("completes an upload while the user types on after its placeholder", async () => {
+        const controls = installUploadAdapter(editor);
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+
+        editor.execute("fileUpload", { file: [ new File(["content"], "x.txt") ] });
+        // "bar" joins the space after the placeholder, so its insert starts inside a text node.
+        editor.execute("insertText", { text: "bar" });
+        await waitFor(() => controls.uploadCalled());
+        controls.resolveUpload({ default: "#root/abc" });
+        await waitFor(() => !getModelData(editor.model).includes("uploadId"));
+
+        expect(getModelData(editor.model))
+            .toBe("<paragraph>foo<reference href=\"#root/abc\"></reference> bar[]</paragraph>");
+    });
+
     it("announces each upload and settles `done` whatever the outcome", async () => {
         const controls = installUploadAdapter(editor);
         vi.spyOn(editor.plugins.get(Notification), "showWarning").mockImplementation(() => {});

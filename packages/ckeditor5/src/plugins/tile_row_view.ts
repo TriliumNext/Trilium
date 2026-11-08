@@ -52,7 +52,7 @@ export default class TileRowView extends View {
         for (const tile of this.tiles) {
             this.focusTracker.add(tile);
         }
-        /* v8 ignore next -- super.render() has just built this view's element */
+        /* v8 ignore else -- super.render() has just built this view's element */
         if (this.element) {
             this.keystrokes.listenTo(this.element);
         }

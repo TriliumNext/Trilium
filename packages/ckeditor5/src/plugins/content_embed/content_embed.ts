@@ -476,6 +476,7 @@ class ContentEmbedUI extends Plugin {
 				} );
 
 				// Shown only for content that has display modes.
+				/* v8 ignore else -- `ContentEmbedEditing` adds the command before any button */
 				if ( command ) {
 					buttonView.bind( 'isOn' ).to( command, 'value', value => value === mode );
 					buttonView.bind( 'isEnabled' ).to( command );
@@ -924,7 +925,7 @@ class ContentEmbedEditing extends Plugin {
 			} );
 			const converted = api.convertItem( element, data.modelCursor );
 			const modelRange = converted.modelRange;
-			/* v8 ignore next 3 -- the default element converter gives every element a range */
+			// `PictureEditing` converts a `<picture>` in an image into that image, with no range.
 			if ( !modelRange ) {
 				return;
 			}
@@ -1164,7 +1165,6 @@ export class SetContentEmbedCodeViewCommand extends Command {
 		language, tabWidth, indentWithTabs, wrapLines, lineNumbers
 	}: ContentEmbedCodeView ) {
 		const embed = getSelectedContentEmbed( this.editor );
-		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
 		if ( !embed ) {
 			return;
 		}
@@ -1364,7 +1364,6 @@ export class DeleteContentEmbedCommand extends Command {
 
 	override execute() {
 		const embed = getSelectedContentEmbed( this.editor );
-		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
 		if ( !embed ) {
 			return;
 		}

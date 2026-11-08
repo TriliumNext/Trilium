@@ -3,7 +3,7 @@ import './math.js';
 
 import katex from 'katex';
 import {
-	ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph,
+	ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph, View,
 	_getModelData as getModelData, _setModelData as setModelData
 } from 'ckeditor5';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -52,6 +52,14 @@ describe( 'MathUI interactions', () => {
 		return view;
 	}
 
+	function mathView() {
+		const view = formView().mathView;
+		if ( !view ) {
+			throw new Error( 'The form view has no preview.' );
+		}
+		return view;
+	}
+
 	describe( 'the Enter keystroke on the form', () => {
 		it( 'submits the equation', () => {
 			setModelData( editor.model, '<paragraph>f[o]o</paragraph>' );
@@ -59,14 +67,16 @@ describe( 'MathUI interactions', () => {
 			formView().mathInputView.value = 'x^2';
 
 			const executeSpy = vi.spyOn( editor, 'execute' );
+			const preventDefault = vi.fn();
 			formView().keystrokes.press( {
 				keyCode: keyCodes.enter,
 				shiftKey: false,
-				preventDefault: vi.fn(),
+				preventDefault,
 				stopPropagation: vi.fn()
 			} as never );
 
 			expect( executeSpy.mock.lastCall?.slice( 0, 2 ) ).toMatchObject( [ 'math', 'x^2' ] );
+			expect( preventDefault ).toHaveBeenCalled();
 		} );
 
 		it( 'leaves Shift+Enter alone so it can insert a newline', () => {
@@ -209,6 +219,24 @@ describe( 'MathUI interactions', () => {
 			editor.editing.view.document.fire( 'click' );
 
 			expect( showSpy ).not.toHaveBeenCalled();
+		} );
+	} );
+
+	describe( 'opening behind another balloon stack', () => {
+		it( 'fills the form and its preview once the stack comes up', () => {
+			const equation = `<${ INLINE } equation="x^2"></${ INLINE }>`;
+			setModelData( editor.model, `<paragraph>[${ equation }]</paragraph>` );
+			const balloon = editor.plugins.get( ContextualBalloon );
+			balloon.add( { view: new View(), stackId: 'custom' } );
+			const updateMath = vi.spyOn( mathView(), 'updateMath' );
+
+			// _addFormView() fills the form while its stack is hidden; showStack() then renders it.
+			ui._showUI();
+
+			expect( balloon.visibleView ).toBe( formView() );
+			expect( formView().mathInputView.latexTextAreaView.element.value ).toBe( 'x^2' );
+			expect( previewElement()?.querySelector( '.katex' ) ).toBeInstanceOf( HTMLElement );
+			expect( updateMath ).toHaveBeenCalledOnce();
 		} );
 	} );
 

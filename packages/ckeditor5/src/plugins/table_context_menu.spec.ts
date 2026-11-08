@@ -39,6 +39,17 @@ describe("TableContextMenu", () => {
         }
     });
 
+    it("inserts nothing when run in the change block that moves the selection out", () => {
+        const content = `${modelTable([["11", "12"]])}<paragraph>foo</paragraph>`;
+        for (const name of INSERT_COMMANDS) {
+            setModelData(editor.model, content.replace("11", "1[]1"));
+
+            executeLeavingTable(editor, name);
+
+            expect(getModelData(editor.model), name).toBe(content.replace("foo", "[]foo"));
+        }
+    });
+
     describe("insert rows", () => {
         it("inserts one row above or below the caret row", () => {
             setModelData(editor.model, modelTable([["1[]1", "12"], ["21", "22"]]));
@@ -193,6 +204,15 @@ describe("TableContextMenu", () => {
             editor.execute("triliumDeleteTable");
             editor.execute("undo");
             expect(tableData(editor)).toBe(modelTable([["11", "12"]]));
+        });
+
+        it("does nothing when run in the change block that moves the selection out", () => {
+            const content = `${modelTable([["11", "12"]])}<paragraph>foo</paragraph>`;
+            setModelData(editor.model, content.replace("11", "1[]1"));
+
+            executeLeavingTable(editor, "triliumDeleteTable");
+
+            expect(getModelData(editor.model)).toBe(content.replace("foo", "[]foo"));
         });
     });
 
@@ -386,6 +406,15 @@ describe("TableContextMenu", () => {
             editor.execute(COMMAND);
 
             expect(getModelData(editor.model)).toBe(outer(withEveryCellSelected(inner)));
+        });
+
+        it("does nothing when run in the change block that moves the selection out", () => {
+            const content = `${modelTable([["11", "12"]])}<paragraph>foo</paragraph>`;
+            setModelData(editor.model, content.replace("11", "1[]1"));
+
+            executeLeavingTable(editor, COMMAND);
+
+            expect(getModelData(editor.model)).toBe(content.replace("foo", "[]foo"));
         });
     });
 
@@ -582,6 +611,21 @@ function selectCells(editor: ClassicEditor, anchor: [number, number], target: [n
 
 function selectionCells(editor: ClassicEditor): ModelElement[] {
     return editor.plugins.get(TableUtils).getSelectionAffectedTableCells(editor.model.document.selection);
+}
+
+/**
+ * Runs `command` in the change block that moves the selection into the paragraph after the table,
+ * where the command still has the `isEnabled` of the selection in the table.
+ */
+function executeLeavingTable(editor: ClassicEditor, command: string) {
+    const paragraph = editor.model.document.getRoot()?.getChild(1);
+    if (!paragraph?.is("element", "paragraph")) {
+        throw new Error("No paragraph follows the table.");
+    }
+    editor.model.change((writer) => {
+        writer.setSelection(paragraph, 0);
+        editor.execute(command);
+    });
 }
 
 /** A widget whose raw view element holds a rendered table, like an included note's preview. */

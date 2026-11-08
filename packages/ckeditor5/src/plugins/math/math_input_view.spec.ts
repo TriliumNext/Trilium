@@ -357,6 +357,32 @@ describe( 'MathInputView', () => {
 		expect( mathFieldClass().locale ).toBe( 'en' );
 	} );
 
+	it( 'leaves the language of MathLive alone when destroyed before MathLive loads', async () => {
+		await renderAndWait();
+		const mathFieldClass = customElements.get( 'math-field' ) as unknown as { locale: string };
+		view.element?.remove();
+		view.destroy();
+		const whenDefined = vi.spyOn( customElements, 'whenDefined' );
+
+		view = new MathInputView( new Locale( { uiLanguage: 'de' } ) );
+		view.render();
+		view.destroy();
+		await vi.waitFor( () => expect( whenDefined ).toHaveBeenCalled() );
+		await whenDefined.mock.results[ 0 ]?.value;
+
+		expect( mathFieldClass.locale ).toBe( 'en' );
+	} );
+
+	it( 'turns off the keypress sounds of MathLive', async () => {
+		await renderAndWait();
+		const { soundsDirectory, plonkSound } = customElements.get( 'math-field' ) as unknown as {
+			soundsDirectory: string | null;
+			plonkSound: string | null;
+		};
+
+		expect( [ soundsDirectory, plonkSound ] ).toEqual( [ null, null ] );
+	} );
+
 	describe( 'in every UI language', () => {
 		const localeIds = LOCALES
 			.filter( locale => !locale.contentOnly )

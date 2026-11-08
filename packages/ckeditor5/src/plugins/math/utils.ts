@@ -124,7 +124,7 @@ export async function renderEquation(
 			previewUid,
 			previewClassName,
 			el => {
-				/* v8 ignore next -- defensive: this arm is already gated on window.katex being defined */
+				/* v8 ignore else -- defensive: this arm runs only when window.katex is defined */
 				if ( katex ) {
 					katex.render( equation, el, {
 						throwOnError: false,

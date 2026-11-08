@@ -210,7 +210,9 @@ async function putTranslationsWithinReach(locale: DISPLAYABLE_LOCALE_IDS): Promi
     // A catalog may answer which plural form to take with a boolean where two forms are all there
     // are, which is the same answer CKEditor reads through `Number()` when it takes one itself.
     const pluralForm = arrived.getPluralForm;
-    add(mapping.languageCode, arrived.dictionary, pluralForm ? (count) => Number(pluralForm(count)) : undefined);
+    add(mapping.languageCode, arrived.dictionary, pluralForm
+        ? (count) => Number(pluralForm(count))
+        : /* v8 ignore next -- every CKEditor catalog defines getPluralForm */ undefined);
 
     return { language: mapping.languageCode };
 }

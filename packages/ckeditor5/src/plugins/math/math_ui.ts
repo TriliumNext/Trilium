@@ -145,7 +145,7 @@ export default class MathUI extends Plugin {
 
 		// Allow pressing Enter to submit changes, and use Shift+Enter to insert a new line
 		formView.keystrokes.set( 'enter', ( data, cancel ) => {
-			/* v8 ignore next -- Shift+Enter is a distinct keystroke that never routes to the
+			/* v8 ignore else -- Shift+Enter is a distinct keystroke that never routes to the
 			   'enter' handler, so shiftKey is always false by the time this runs */
 			if ( !data.shiftKey ) {
 				formView.fire( 'submit' );
@@ -326,19 +326,20 @@ export default class MathUI extends Plugin {
 		} );
 
 		// Close on click outside of balloon panel element.
-		/* v8 ignore start -- defensive: init() builds the form view before wiring interactions */
+		/* v8 ignore else -- defensive: init() builds the form view before wiring interactions */
 		if ( this.formView ) {
 			clickOutsideHandler( {
 				emitter: this.formView,
 				activator: () => !!this._isFormInPanel && !this._isFormChanged,
-				/* v8 ignore next -- defensive: the balloon view is rendered by the time init() runs */
-				contextElements: this._balloon.view.element ? [ this._balloon.view.element ] : [],
+				contextElements: this._balloon.view.element ?
+					[ this._balloon.view.element ] :
+					/* v8 ignore next -- the `view` getter renders the balloon panel it creates */
+					[],
 				callback: () => { this._hideUI(); }
 			} );
 		} else {
 			throw new Error( 'missing form view' );
 		}
-		/* v8 ignore stop */
 	}
 
 	private get _isUIVisible() {

@@ -7,6 +7,7 @@ import {
     Essentials,
     Paragraph,
     Table,
+    TableCaption,
     TableColumnResize,
     TableProperties
 } from "ckeditor5";
@@ -120,6 +121,23 @@ describe("TableColumnBar", () => {
             await expect.poll(() => barView(editor).isVisible).toBe(false);
         });
 
+        it("hides the bar for a table without rows", async () => {
+            const captioned = await createTestEditor([...PLUGINS, TableCaption]);
+            setEditableWidth(captioned, 400);
+            // A table with only a caption upcasts without rows.
+            captioned.setData("<table><caption>Plan</caption></table><p>x</p>");
+            const table = firstTable(captioned);
+            expect(table.childCount).toBe(1);
+            captioned.model.change((writer) => writer.setSelection(table, "on"));
+            captioned.editing.view.focus();
+            await expect.poll(() => captioned.ui.focusTracker.isFocused).toBe(true);
+
+            touch();
+            await frames();
+            expect(barView(captioned).isVisible).toBe(false);
+            expect(captioned.ui.viewportOffset.bottom ?? 0).toBe(0);
+        });
+
         it("stays shown when a mouse presses the bar, and opens no context menu", async () => {
             await showBar(editor, modelTable([["a[]", "b"]]));
 
@@ -152,7 +170,7 @@ describe("TableColumnBar", () => {
             expect(barView(editor).isVisible).toBe(false);
 
             editorElement.style.marginLeft = "";
-            window.dispatchEvent(new Event("resize"));
+            window.visualViewport?.dispatchEvent(new Event("resize"));
             await expect.poll(() => barView(editor).isVisible).toBe(true);
         });
     });
@@ -568,6 +586,31 @@ describe("TableColumnBar", () => {
             expect(domFigure(editor).querySelector("colgroup")).toBeNull();
         });
 
+        it("ignores a divider on a table deleted before the bar updates", async () => {
+            const data = modelTable([["a[]", "b"]], 'tableWidth="80%"') +
+                "<paragraph>x</paragraph>";
+            await showBar(editor, data);
+            const errors = collectErrors();
+            const execute = vi.spyOn(editor, "execute");
+            const table = firstTable(editor);
+
+            const { x, y } = press(dividers(editor)[0]);
+            moveTo(x + 40, y);
+            editor.model.change((writer) => writer.remove(table));
+            release();
+            expect(table.getAttribute("tableWidth")).toBe("80%");
+            expect(getTableColumnsWidths(table)).toEqual([]);
+
+            await showBar(editor, data);
+            const divider = dividers(editor)[0];
+            editor.model.change((writer) => writer.remove(firstTable(editor)));
+            const start = press(divider);
+            moveTo(start.x + 40, start.y);
+            release();
+            expect(execute).not.toHaveBeenCalled();
+            expect(errors).toEqual([]);
+        });
+
         it("scrolls the table near the ends of its visible part", async () => {
             await showBar(editor, modelTable([["a[]", "b", "c"]], 'tableWidth="200%"'));
             const figure = domFigure(editor);
@@ -888,4 +931,13 @@ function resizedTable(rows: CellSpec[][], widths: string[], attributes: string) 
     const columns = widths.map((width) => `<tableColumn columnWidth="${width}"></tableColumn>`);
     return modelTable(rows, attributes)
         .replace(/<\/table>$/, `<tableColumnGroup>${columns.join("")}</tableColumnGroup></table>`);
+}
+
+/** Collects the errors that reach `window` until the test finishes. */
+function collectErrors() {
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => errors.push(event.error ?? event.message);
+    window.addEventListener("error", onError);
+    onTestFinished(() => window.removeEventListener("error", onError));
+    return errors;
 }

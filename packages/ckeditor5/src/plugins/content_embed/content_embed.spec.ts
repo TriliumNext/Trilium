@@ -857,6 +857,15 @@ describe("ContentEmbed", () => {
         setModelData(editor.model, `[${embed}]`);
         editor.execute(DELETE_COMMAND_NAME);
         expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+
+        // The command refreshes after the change block, so a second delete in it finds no embed.
+        setModelData(editor.model, `[${embed}]<paragraph>after</paragraph>`);
+        editor.model.change(() => {
+            editor.execute(DELETE_COMMAND_NAME);
+            expect(command?.isEnabled).toBe(true);
+            editor.execute(DELETE_COMMAND_NAME);
+        });
+        expect(getModelData(editor.model)).toBe("<paragraph>[]after</paragraph>");
     });
 
     it("falls back gracefully in the button factory when the insert command is absent", () => {
@@ -1699,6 +1708,21 @@ describe("ContentEmbed code view", () => {
         editor.setData(ATTACHMENT);
         selectEmbed();
         expect(getCommand().isEnabled).toBe(true);
+    });
+
+    it("changes nothing when the selection leaves the embed in the same change block", () => {
+        editor.setData(`${ATTACHMENT}<p>after</p>`);
+        selectEmbed();
+        const before = editor.getData();
+
+        // The command refreshes after the change block, so it still runs inside it.
+        editor.model.change((writer) => {
+            writer.setSelection(editor.model.document.getRoot()?.getChild(1) ?? null, 0);
+            expect(getCommand().isEnabled).toBe(true);
+            editor.execute(CODE_VIEW_COMMAND_NAME, { lineNumbers: false });
+        });
+        expect(getCommand().isEnabled).toBe(false);
+        expect(editor.getData()).toBe(before);
     });
 });
 

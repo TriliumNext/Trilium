@@ -95,6 +95,32 @@ describe("tabs commands", () => {
         expect(titles(inner)).toEqual(["B1", "B2"]);
     });
 
+    it("does nothing when run in a change block that moved the selection out of the block", () => {
+        setModelData(editor.model,
+            block(modelTab("A", "a"), modelTab("B", "[b]")) + "<paragraph>Outside</paragraph>");
+        const before = getModelData(editor.model, { withoutSelection: true });
+        const calls: Array<[string, object]> = [
+            ["insertTab", {}],
+            ["removeTab", {}],
+            ["deleteTabs", {}],
+            ["moveToTab", { target: "next" }],
+            ["moveTab", { target: "next" }],
+            ["assignTabReference", {}]
+        ];
+        for (const [name] of calls) {
+            expect(editor.commands.get(name)?.isEnabled, name).toBe(true);
+        }
+
+        // Commands refresh when the change block ends, so each one still reads as enabled here.
+        const results = editor.model.change(writer => {
+            writer.setSelection(editor.model.document.getRoot()?.getChild(1) as ModelElement, 0);
+            return calls.map(([name, options]) => editor.execute(name, options));
+        });
+
+        expect(results).toEqual([undefined, undefined, undefined, undefined, undefined, null]);
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(before);
+    });
+
     it("deletes the innermost block holding the selection, leaving a paragraph", () => {
         editor.setData(
             `<div class="trilium-tabs">${tab("A")}<section class="trilium-tab">` +

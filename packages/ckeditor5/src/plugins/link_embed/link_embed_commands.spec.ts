@@ -780,20 +780,4 @@ describe("LinkEmbed commands", () => {
 
         expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(url);
     });
-
-    it("does nothing when executed without a selected link widget or a native link", () => {
-        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
-        const before = editor.getData();
-
-        // The command is disabled with no widget selected, and CKEditor's Command
-        // swallows execute() while disabled. Force it enabled so the override body
-        // runs and we exercise the early return for "no selected link widget".
-        const command = editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND);
-        if (command) {
-            command.isEnabled = true;
-        }
-        command?.execute({ value: "embedLink" });
-
-        expect(editor.getData()).toBe(before);
-    });
 });

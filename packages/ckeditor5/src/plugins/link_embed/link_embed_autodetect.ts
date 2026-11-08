@@ -183,7 +183,6 @@ export default class AutoLinkToMention extends Plugin {
     private _caretLeftBlock(blockEl: any): boolean {
         const position = this.editor.model.document.selection.getFirstPosition();
 
-        /* v8 ignore next -- the document selection always has a position */
         return position?.parent !== blockEl;
     }
 

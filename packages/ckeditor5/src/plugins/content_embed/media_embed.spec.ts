@@ -1,4 +1,7 @@
-import { type ClassicEditor, Essentials, getLabel, Paragraph, Undo, Widget } from "ckeditor5";
+import {
+    _getModelData as getModelData, type ClassicEditor, Essentials, getLabel, ImageBlock, Paragraph,
+    PictureEditing, Undo, Widget
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -336,6 +339,18 @@ describe("ContentEmbedMedia", () => {
         expect(getBlock(1).name).toBe("paragraph");
         expect(editor.getData()).toBe(`<section class="link-embed" ${PREVIEW_ATTRIBUTES}`
             + ` data-box-size="full" data-hide-title="true">&nbsp;</section><p>Text</p>`);
+    });
+
+    it("drops a figure around the picture of an image, with its caption", async () => {
+        const imageEditor = await createTestEditor([
+            Essentials, Paragraph, ImageBlock, PictureEditing, ContentEmbed
+        ]);
+        imageEditor.setData(`<figure class="image"><figure class="captioned-content-embed">`
+            + `<picture><img src="a.png"></picture><figcaption>A caption</figcaption>`
+            + `</figure></figure>`);
+
+        expect(getModelData(imageEditor.model, { withoutSelection: true }))
+            .toBe("<imageBlock src=\"a.png\"></imageBlock>");
     });
 
     it("is resized in width at Medium, which a box size sets to its own width", () => {

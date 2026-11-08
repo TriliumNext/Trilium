@@ -292,7 +292,7 @@ function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
         return;
     }
 
-    /* v8 ignore next 3 -- `_catalog()` drops every definition that has neither `execute` nor a registered `commandName`, so one or the other is always present here */
+    /* v8 ignore else -- only catalog entries run, and each sets `execute` or `commandName` */
     if (definition.commandName) {
         editor.execute(definition.commandName);
     }
@@ -1023,8 +1023,10 @@ function pickFiles(accept: string, onPick: (files: File[]) => void) {
     input.style.display = "none";
 
     input.addEventListener("change", () => {
-        /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
-        onPick(Array.from(input.files ?? []));
+        onPick(Array.from(
+            /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
+            input.files ?? []
+        ));
         input.remove();
     }, { once: true });
 

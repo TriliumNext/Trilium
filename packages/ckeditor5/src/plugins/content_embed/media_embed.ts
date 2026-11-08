@@ -83,7 +83,6 @@ export default class ContentEmbedMedia extends Plugin {
      */
     private reloadThumbnail(embed: ModelElement, api: DowncastConversionApi) {
         const viewElement = api.mapper.toViewElement(embed);
-        /* v8 ignore next -- converted after the embed itself, so always mapped */
         const dom = viewElement && this.editor.editing.view.domConverter.mapViewToDom(viewElement);
         const wrapper = dom?.querySelector<HTMLElement>(":scope > .include-note-wrapper");
         const isPlaying = [ ...wrapper?.querySelectorAll("video, audio") ?? [] ]

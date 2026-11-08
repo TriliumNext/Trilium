@@ -67,6 +67,21 @@ describe("onEnterInSummary", () => {
         );
     });
 
+    it("leaves Enter to the editor when the selection starts above the title", () => {
+        setModelData(model,
+            "<paragraph>be[fore</paragraph>" +
+            "<details><summary>Ti]tle</summary><paragraph>body</paragraph></details>"
+        );
+
+        fireEnter();
+
+        // The default Enter deletes the selection and puts the caret at the start of the title.
+        expect(getModelData(model)).toBe(
+            "<paragraph>be</paragraph>" +
+            "<details><summary>[]tle</summary><paragraph>body</paragraph></details>"
+        );
+    });
+
     it("at the end of a title (collapsed) parks the caret in the existing empty paragraph after the details instead of stacking a second one", () => {
         setModelData(model,
             "<details><summary>Title[]</summary><paragraph>body</paragraph></details>" +

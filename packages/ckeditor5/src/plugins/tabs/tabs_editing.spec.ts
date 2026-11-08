@@ -85,6 +85,26 @@ describe("TabsEditing", () => {
         expect(activeTabs()).toEqual([ "Linux" ]);
     });
 
+    it("shows a tab that the live find matches in the change that adds it", () => {
+        const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+        const windowsTitle = (tabs.getChild(0) as ModelElement).getChild(0) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windowsTitle, 0));
+        editor.execute("insertTab");
+        const find = editor.plugins.get(FindAndReplaceEditing);
+        find.find("Tab 2");
+        editor.execute("undo");
+        expect(find.state?.results.length).toBe(0);
+        expect(activeTitles()).toEqual(["Windows"]);
+
+        // Redo adds the tab back and leaves the caret in the first title.
+        editor.execute("redo");
+
+        const added = tabs.getChild(1) as ModelElement;
+        expect(find.state?.highlightedResult?.marker?.getStart().parent).toBe(added.getChild(0));
+        expect(activeTitles()).toEqual(["Tab 2"]);
+        expect(getModelData(editor.model)).toContain("<tabTitle>[]Windows</tabTitle>");
+    });
+
     it("leaves Enter outside a title to the editor, and attribute changes to the post-fixer", () => {
         const panel = linux().getChild(1) as ModelElement;
         editor.model.change(writer => writer.setSelection(panel.getChild(0) as ModelElement, "end"));

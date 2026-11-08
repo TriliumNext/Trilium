@@ -268,7 +268,7 @@ export class ChangeLinkDisplayCommand extends Command {
         const model = this.editor.model;
         const position = model.document.selection.getFirstPosition();
         const href = model.document.selection.getAttribute('linkHref');
-        /* v8 ignore next -- refresh() disables the command unless the selection carries a linkHref */
+        /* v8 ignore if -- refresh() disables the command unless the selection carries a linkHref */
         if (typeof href !== 'string' || !position) return;
         // The link already is one.
         if (targetMode === 'textLink') return;
