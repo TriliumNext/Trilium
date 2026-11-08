@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { categorize, collectClosings, type Commit, escapeMarkdown, findNewLanguages, type Issue,
+import { categorize, cleanTitle, collectClosings, type Commit, escapeMarkdown, findNewLanguages, type Issue,
     isShippedSeparately, languageName, parseClosingReferences, parseCommits, parseDisplayLocales, parseNumstat,
     parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote } from "./release-notes.mjs";
 
@@ -187,6 +187,20 @@ describe("renderReleaseNote", () => {
             "1.  \\[…\\]",
             ""
         ].join("\n"));
+    });
+});
+
+describe("cleanTitle", () => {
+    it("removes issue template markers and keeps area prefixes", () => {
+        expect(cleanTitle("(Bug report) Importing large ZIP-Files hangs")).toBe("Importing large ZIP-Files hangs");
+        expect(cleanTitle("[Bug]: \"...\" menu state remains stale")).toBe("\"...\" menu state remains stale");
+        expect(cleanTitle("[Feature Request] Support share_target")).toBe("Support share_target");
+        expect(cleanTitle("(Feature request) save clip with prompt")).toBe("Save clip with prompt");
+        expect(cleanTitle("Feature request: dark mode")).toBe("Dark mode");
+        expect(cleanTitle("[FR] Tabs")).toBe("Tabs");
+        expect(cleanTitle("Search: commas in quotes")).toBe("Search: commas in quotes");
+        expect(cleanTitle("Bugs in the tree")).toBe("Bugs in the tree");
+        expect(cleanTitle("any markdown text")).toBe("any markdown text");
     });
 });
 

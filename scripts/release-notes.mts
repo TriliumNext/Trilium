@@ -366,7 +366,7 @@ export function renderReleaseNote(template: string, version: string, closings: C
             continue;
         }
 
-        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(issue.title)}](${issue.url})`,
+        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(cleanTitle(issue.title))}](${issue.url})`,
             closing.contributors);
     }
 
@@ -388,6 +388,16 @@ export function renderReleaseNote(template: string, version: string, closings: C
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
+}
+
+/**
+ * Removes the marker an issue template puts before a title (`(Bug report)`, `[Feature Request]:`)
+ * and capitalizes what follows it.
+ */
+export function cleanTitle(title: string) {
+    const marker = /^\s*(?:[[(]\s*(?:bug|feature|fr)(?:\s+(?:report|request))?\s*[\])]|(?:bug|feature)(?:\s+(?:report|request))?(?=\s*:))\s*:?\s*/i;
+    const stripped = title.replace(marker, "");
+    return stripped === title || stripped.length === 0 ? title : stripped[0].toUpperCase() + stripped.slice(1);
 }
 
 /** Escapes an issue title so it renders as text inside a link label. */
