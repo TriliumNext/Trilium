@@ -2,7 +2,10 @@
 import './math.js';
 
 import katex from 'katex';
-import { ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph, _setModelData as setModelData } from 'ckeditor5';
+import {
+	ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph,
+	_getModelData as getModelData, _setModelData as setModelData
+} from 'ckeditor5';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestEditor } from '../../../test/editor-kit.js';
@@ -111,6 +114,81 @@ describe( 'MathUI interactions', () => {
 			// The command holds a value, so cancelling routes to _removeFormView — which has to
 			// cope with the form not being in the balloon at all.
 			expect( () => formView().fire( 'cancel' ) ).not.toThrow();
+		} );
+	} );
+
+	describe( 'an edited form', () => {
+		const esc = {
+			keyCode: keyCodes.esc,
+			preventDefault: vi.fn(),
+			stopPropagation: vi.fn()
+		} as never;
+
+		function isFormShown() {
+			return editor.plugins.get( ContextualBalloon ).visibleView === formView();
+		}
+
+		it( 'ignores a click outside and Esc until it is saved or canceled', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().mathInputView.value = 'x^2';
+
+			document.body.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
+			formView().keystrokes.press( esc );
+			editor.keystrokes.press( esc );
+
+			expect( isFormShown() ).toBe( true );
+			expect( formView().equation ).toBe( 'x^2' );
+
+			formView().fire( 'cancel' );
+			expect( isFormShown() ).toBe( false );
+		} );
+
+		it( 'counts a flipped display switch as an edit', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().displayButtonView.fire( 'execute' );
+
+			document.body.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
+
+			expect( isFormShown() ).toBe( true );
+		} );
+
+		it( 'closes without focusing the editor when other content loads', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().mathInputView.value = 'x^2';
+			const focusSpy = vi.spyOn( editor.editing.view, 'focus' );
+
+			editor.setData( '<p>bar</p>' );
+
+			expect( isFormShown() ).toBe( false );
+			expect( focusSpy ).not.toHaveBeenCalled();
+
+			ui._showUI();
+			expect( isFormShown() ).toBe( true );
+			expect( formView().equation ).toBe( '' );
+		} );
+
+		it( 'saves the equation it was opened for after the selection moves', () => {
+			setModelData(
+				editor.model,
+				`<paragraph>[<${ INLINE } equation="x" type="script" display="false"></${ INLINE }>]</paragraph>` +
+					'<paragraph>bar</paragraph>'
+			);
+			ui._showUI();
+			formView().mathInputView.value = 'y^2';
+
+			editor.model.change( writer => {
+				writer.setSelection( editor.model.document.getRoot()?.getChild( 1 ) ?? null, 'end' );
+			} );
+			expect( formView().equation ).toBe( 'y^2' );
+			formView().fire( 'submit' );
+
+			expect( getModelData( editor.model, { withoutSelection: true } ) ).toBe(
+				`<paragraph><${ INLINE } display="false" equation="y^2" type="script"></${ INLINE }></paragraph>` +
+					'<paragraph>bar</paragraph>'
+			);
 		} );
 	} );
 
