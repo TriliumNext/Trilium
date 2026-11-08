@@ -25,6 +25,12 @@ It asserts all 9 package.jsons match, that the metainfo `<release>` is the versi
 
 ## The recipe (order is load-bearing)
 
+`pnpm chore:release` (`scripts/release.mts`) runs this whole table interactively — lint, version
+suggestion, note draft + `!!!meta.json` registration, consume + commit, bump + commit, pre-flight,
+tag, push, then merging the tag into `stable` from a detached temporary worktree. Each step skips
+what is already done, so rerun it after a failure; `--dry-run` prints instead of mutating. Prefer it
+to the manual steps; they stay documented for debugging and hotfixes.
+
 | # | Step | Command / file | Gotcha |
 |---|------|----------------|--------|
 | 1 | Write release notes | `pnpm chore:release-notes v<X.Y.Z> --unlisted` drafts `docs/Release Notes/Release Notes/v<X.Y.Z>.md` from closed issues, new languages and `.changelog/` entries; edit it by hand from there | filename = tag incl. `v`; publish hard-fails without it (`release.yml:155`); rerunning needs `--force` and overwrites hand edits |

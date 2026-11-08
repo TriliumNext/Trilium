@@ -804,7 +804,7 @@ function findVersionBumps(base: string, github: GitHub): VersionBumps {
 }
 
 /** The versions at a revision; a file that does not exist there yields no version. */
-function readProtocolVersions(ref: string): ProtocolVersions {
+export function readProtocolVersions(ref: string): ProtocolVersions {
     const show = (path: string) => {
         try {
             return git("show", `${ref}:${path}`);
@@ -976,7 +976,7 @@ function escapeHtml(text: string) {
  * Reads the changelog entries of `.changelog/` and `.changelog/pre-release/`, oldest first. Files
  * whose name does not start with a timestamp (`README.md`) are not entries.
  */
-function readChangelogEntries() {
+export function readChangelogEntries() {
     const entries: ChangelogEntry[] = [];
     const invalid: { file: string; errors: string[] }[] = [];
     for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {

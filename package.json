@@ -37,6 +37,7 @@
     "changelog:lint": "node --experimental-strip-types ./scripts/release-notes.mts lint",
     "changelog:new": "node --experimental-strip-types ./scripts/release-notes.mts new",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
+    "chore:release": "node --experimental-strip-types ./scripts/release.mts",
     "chore:release-notes": "node --experimental-strip-types ./scripts/release-notes.mts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
