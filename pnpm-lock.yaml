@@ -202,7 +202,7 @@ importers:
         version: 1.8.0
       '@fullcalendar/rrule':
         specifier: 7.1.4
-        version: 7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.6)
+        version: 7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -283,7 +283,7 @@ importers:
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
         specifier: 7.1.4
-        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       gridstack:
         specifier: 14.1.0
         version: 14.1.0
@@ -339,8 +339,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
       terra-draw:
         specifier: 1.39.0
         version: 1.39.0
@@ -885,7 +885,7 @@ importers:
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
         specifier: 7.1.4
-        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       i18next:
         specifier: 26.7.1
         version: 26.7.1(typescript@6.0.3)
@@ -932,8 +932,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.4
@@ -10614,14 +10614,14 @@ packages:
     resolution: {integrity: sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==}
     engines: {node: '>=6.0.0'}
 
-  temporal-polyfill@1.0.6:
-    resolution: {integrity: sha512-tYyEry1HLGUDbm2356W3iYD0OZdo7rlP7h98Zr/EnjqLZQwTAfcBDUvJnJbfA15v/vQad57hJZScG5O0W2oKEA==}
+  temporal-polyfill@1.0.8:
+    resolution: {integrity: sha512-RCCGa0GddT099XG49ijdD0tDf86L8vfuZun1+JyJiO4Y2NP9PACQsG0OnvNPXwVLisdvhr/zqL2nhKQmXXx08A==}
 
   temporal-spec@1.0.1:
     resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
 
-  temporal-utils@1.0.3:
-    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+  temporal-utils@1.0.4:
+    resolution: {integrity: sha512-4mAcgbWlaxe+gn23gk8g0iHxCVGVOhKzSCfF5HM3lfvH8BdT+/pBmH/R/E4CrIse+koUgs8ThkPzCLnui6Fi8w==}
 
   terminal-size@4.0.1:
     resolution: {integrity: sha512-avMLDQpUI9I5XFrklECw1ZEUPJhqzcwSWsyyI8blhRLT+8N1jLJWLWWYQpB2q2xthq8xDvjZPISVh53T/+CLYQ==}
@@ -13736,21 +13736,21 @@ snapshots:
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6)':
+  '@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8)':
     dependencies:
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/core@7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)':
+  '@fullcalendar/core@7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      temporal-polyfill: 1.0.6
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/rrule@7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.6)':
+  '@fullcalendar/rrule@7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       rrule: 2.8.1
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
   '@gerrit0/mini-shiki@3.23.0':
     dependencies:
@@ -19354,12 +19354,12 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.7.1
 
-  fullcalendar@7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6):
+  fullcalendar@7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8):
     dependencies:
-      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       preact: 11.1.1(preact-render-to-string@6.8.2)
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -22968,14 +22968,14 @@ snapshots:
       rimraf: 2.6.3
     optional: true
 
-  temporal-polyfill@1.0.6:
+  temporal-polyfill@1.0.8:
     dependencies:
       temporal-spec: 1.0.1
-      temporal-utils: 1.0.3
+      temporal-utils: 1.0.4
 
   temporal-spec@1.0.1: {}
 
-  temporal-utils@1.0.3: {}
+  temporal-utils@1.0.4: {}
 
   terminal-size@4.0.1: {}
 

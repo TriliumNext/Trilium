@@ -53,7 +53,7 @@
     "react-zoom-pan-pinch": "4.2.0",
     "reveal.js": "6.0.2",
     "tabulator-tables": "6.7.1",
-    "temporal-polyfill": "1.0.6"
+    "temporal-polyfill": "1.0.8"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.4",
