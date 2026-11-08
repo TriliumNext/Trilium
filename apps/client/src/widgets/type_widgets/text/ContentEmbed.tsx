@@ -233,8 +233,13 @@ export default function ContentEmbed({
                         onClick={(e) => {
                             const content = contentRef.current;
                             if (!content) return;
-                            getFocusTargetAt(content, e.clientX, e.clientY)
-                                .focus({ preventScroll: true });
+                            const target = getFocusTargetAt(content, e.clientX, e.clientY);
+                            target.focus({ preventScroll: true });
+                            // A button acts on the click that activates the box; a link only
+                            // takes the focus.
+                            if (target instanceof HTMLButtonElement) {
+                                target.click();
+                            }
                         }}
                     />
                 )}

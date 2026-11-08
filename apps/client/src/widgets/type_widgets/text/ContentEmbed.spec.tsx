@@ -778,14 +778,16 @@ describe("ContentEmbed", () => {
     });
 
     it("keeps its content behind a backdrop until a click on it focuses what is under it", async () => {
-        const content = element(
-            `<div class="rendered-content"><p>body</p><div tabindex="0"><img></div></div>`
-        );
+        const content = element(`<div class="rendered-content"><p>body</p>`
+            + `<div tabindex="0"><img></div><button><span class="bx"></span></button>`
+            + `<a href="#root/noteB">link</a></div>`);
         renderBox({ content });
         const box = contentBox();
         const text = content.querySelector("p");
         const viewer = content.querySelector<HTMLElement>("[tabindex]");
         const image = content.querySelector("img");
+        const button = content.querySelector("button");
+        const link = content.querySelector("a");
         const isActive = () => box.parentElement?.classList.contains("active");
         const backdrop = () => container.querySelector<HTMLElement>(
             ".include-note-body > .include-note-content + .include-note-backdrop"
@@ -794,7 +796,14 @@ describe("ContentEmbed", () => {
         expect(firstBackdrop).not.toBeNull();
         expect(box.tabIndex).toBe(-1);
         expect(isActive()).toBe(false);
-        if (!firstBackdrop || !text || !viewer || !image) return;
+        if (!firstBackdrop || !text || !viewer || !image || !button || !link) return;
+        const clicked: Element[] = [];
+        for (const target of [ viewer, button, link ]) {
+            target.addEventListener("click", (e) => {
+                e.preventDefault();
+                clicked.push(target);
+            });
+        }
 
         // What takes the focus under the pointer gets it, as it would from a click on it.
         const elementsFromPoint = stubElementsFromPoint([ firstBackdrop, image, viewer, box ]);
@@ -817,6 +826,25 @@ describe("ContentEmbed", () => {
         click(secondBackdrop);
         expect(document.activeElement).toBe(box);
         expect(isActive()).toBe(true);
+
+        // A button, such as the menu of an embed in the content, acts on the same click; a link
+        // and other content only take the focus.
+        const clickThrough = async (hit: Element[]) => {
+            act(() => {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            });
+            await vi.waitFor(() => expect(backdrop()).not.toBeNull());
+            const shown = backdrop();
+            if (!shown) throw new Error("Expected the backdrop.");
+            stubElementsFromPoint([ shown, ...hit, box ]);
+            click(shown);
+        };
+        await clickThrough([ button.firstElementChild ?? button, button ]);
+        expect(document.activeElement).toBe(button);
+        expect(clicked).toEqual([ button ]);
+        await clickThrough([ link ]);
+        expect(document.activeElement).toBe(link);
+        expect(clicked).toEqual([ button ]);
     });
 
     it("leaves an extended code block and a video uncovered, to take the first click", () => {

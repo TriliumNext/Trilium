@@ -37,7 +37,10 @@ box writes on its content as `type-<contentType>`. Every list below keys on it.
 
 **The box** (`apps/client/src/widgets/type_widgets/text/ContentEmbed.tsx`):
 - `SEARCHABLE_CONTENT_TYPES`: Search in note searches the preview with an `HtmlFindTarget`.
-- `DIRECT_CONTENT_TYPES`: no backdrop; the first click goes to the content.
+- `DIRECT_CONTENT_TYPES`: no backdrop; the first click goes to the content. Other types keep
+  the backdrop until the content has the focus: a click on it focuses what is under the pointer
+  and also clicks it when it is a `<button>` (the ⋮ of an embed inside an included note), never a
+  link.
 - `OWN_FULLSCREEN_CONTENT_TYPES`: no fullscreen button on the box.
 - `MENU_CONTENT_TYPES`: a right click on the content opens the ⋮ menu.
 
