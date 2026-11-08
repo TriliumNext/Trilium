@@ -13,14 +13,28 @@
  * Internationalization, credited to the translators whose commits added lines to its catalogues,
  * or to the reporter of the issue its commit closes when no translator has a GitHub account.
  *
+ * Every other change reaches the note through a changelog entry: a Markdown file in `.changelog/`
+ * whose frontmatter names its section and area, the issues it closes and the people to credit
+ * (see `.changelog/README.md`). An entry that closes an issue replaces that issue's generated
+ * entry, so the wording is the entry's own.
+ *
  * The previous release defaults to the newest `v*` tag reachable from `HEAD`, so a hotfix
  * tagged on the `stable` branch is skipped. GitHub data comes from the `gh` CLI. Usage:
  *
- *   pnpm chore:release-notes v0.107.0 [--from v0.106.0] [--stdout] [--force]
+ *   pnpm chore:release-notes v0.107.0 [--from v0.106.0] [--stdout] [--force] [--unlisted]
+ *   pnpm chore:release-notes consume v0.107.0
+ *   pnpm changelog:new <slug>
+ *
+ * `--unlisted` reports the fixes and features that neither close an issue nor come with an entry,
+ * leaving out fixes that only change code written since the previous release. `consume` runs in
+ * the release commit, once the note is final: it deletes the entries, or moves them to
+ * `.changelog/pre-release/` for an rc or beta version, so that the final release lists them again.
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+    existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,12 +51,32 @@ const LANGUAGE_NAMES: Record<string, string> = { fa: "Persian (Farsi)" };
 const SEPARATELY_SHIPPED_LABELS = new Set([ "web-clipper" ]);
 const SEPARATELY_SHIPPED_AREAS = /^(?:web-)?clipper\b/;
 const GRAPHQL_BATCH_SIZE = 50;
+const CHANGELOG_DIR = join(ROOT, ".changelog");
+const PRE_RELEASE_DIR = join(CHANGELOG_DIR, "pre-release");
+const ENTRY_FILE_NAME = /^(\d{14})_[\w.-]+\.md$/;
+/** Changes in these areas never reach a user, so `--unlisted` does not ask for an entry. */
+const INTERNAL_AREAS =
+    /^(?:deps|ci|build|release|skills|edit-docs|e2e|test|dev|nix|website|(?:web-)?clipper)\b/;
 
-export type Section = "Mobile improvements" | "Bugfixes" | "Improvements" | "Documentation"
-    | "Internationalization" | "Technical updates";
+/** The changelog entry `type` values, each naming the release note section it goes to. */
+export const ENTRY_TYPES = {
+    highlight: "Key highlights",
+    breaking: "Breaking changes",
+    mobile: "Mobile improvements",
+    fix: "Bugfixes",
+    improvement: "Improvements",
+    documentation: "Documentation",
+    i18n: "Internationalization",
+    technical: "Technical updates",
+    security: "Security improvements"
+} as const;
+
+export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 
 export interface Commit {
     hash: string;
+    /** The commit time, in seconds since the epoch. */
+    date: number;
     subject: string;
     body: string;
 }
@@ -77,9 +111,37 @@ export interface NewLanguage {
 /** An issue the release closes, with the changes that close it, oldest first. */
 export interface Closing {
     issue: number;
+    /** The time of the first commit that closes it, in seconds since the epoch. */
+    date: number;
     /** Subjects of the commits or pull requests that close it, used to pick the section. */
     subjects: string[];
     contributors: string[];
+}
+
+/** A file in `.changelog/`, describing one change the way the release note lists it. */
+export interface ChangelogEntry {
+    file: string;
+    /** The time in the file name, in seconds since the epoch. */
+    date: number;
+    section: Section;
+    area?: string;
+    closes: number[];
+    credits: string[];
+    /** The first paragraph, which becomes the list item. */
+    text: string;
+    /** The lines after it, nested under the list item. */
+    details: string[];
+}
+
+/** One list item of the release note, before areas are grouped and items numbered. */
+export interface NoteItem {
+    section: Section;
+    area?: string;
+    /** Orders the items of a section, in seconds since the epoch. */
+    date: number;
+    text: string;
+    details: string[];
+    credits: string[];
 }
 
 interface Options {
@@ -87,17 +149,21 @@ interface Options {
     from?: string;
     stdout: boolean;
     force: boolean;
+    unlisted: boolean;
     repository: string;
 }
 
-export function main({ version, from, stdout, force, repository }: Options) {
+export function main({ version, from, stdout, force, unlisted, repository }: Options) {
     const outputPath = join(NOTES_DIR, `${version}.md`);
     if (!stdout && !force && existsSync(outputPath)) {
-        throw new Error(`${outputPath} already exists; pass --force to overwrite it or --stdout to print instead.`);
+        throw new Error(`${outputPath} already exists; `
+            + "pass --force to overwrite it or --stdout to print instead.");
     }
 
-    const base = from ?? git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", "HEAD").trim();
-    const commits = parseCommits(git("log", "--reverse", "--format=%H%x1f%s%x1f%b%x1e", `${base}..HEAD`));
+    const base = from
+        ?? git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", "HEAD").trim();
+    const commits = parseCommits(
+        git("log", "--reverse", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", `${base}..HEAD`));
     const github = new GitHub(repository);
 
     const pullRequests = github.fetchPullRequests(commits.flatMap((commit) => {
@@ -112,13 +178,16 @@ export function main({ version, from, stdout, force, repository }: Options) {
     const closings = collectClosings(commits, pullRequests, authors);
     const issues = github.fetchIssues(closings.map((closing) => closing.issue));
     const languages = collectNewLanguages(base, commits, issues, github);
+    const { entries, invalid } = readChangelogEntries();
 
-    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, closings, issues, languages);
+    const items = collectItems({ closings, issues, languages, entries, repository });
+    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, items);
     if (stdout) {
         process.stdout.write(note);
     } else {
         writeFileSync(outputPath, note);
-        console.error(`Wrote ${outputPath} from ${commits.length} commits since ${base}.`);
+        console.error(`Wrote ${outputPath} from ${commits.length} commits `
+            + `and ${entries.length} changelog entries since ${base}.`);
     }
 
     for (const closing of closings) {
@@ -129,9 +198,22 @@ export function main({ version, from, stdout, force, repository }: Options) {
             console.error(`  #${closing.issue} is still open: ${issue.title}`);
         }
     }
+    for (const { file, errors } of invalid) {
+        console.error(`  left out ${file}:\n    ${errors.join("\n    ")}`);
+    }
+
+    if (unlisted) {
+        const changes = findUnlistedChanges(base, commits);
+        console.error(`\n${changes.length} fixes and features close no issue `
+            + "and come with no changelog entry:");
+        for (const commit of changes) {
+            console.error(`  ${commit.hash.slice(0, 10)} ${commit.subject}`);
+        }
+    }
 }
 
-function collectNewLanguages(base: string, commits: Commit[], issues: Map<number, Issue>, github: GitHub) {
+function collectNewLanguages(base: string, commits: Commit[], issues: Map<number, Issue>,
+    github: GitHub) {
     const versions = git("log", "--reverse", "--format=%H", `${base}..HEAD`, "--", LOCALES_PATH)
         .split("\n")
         .filter((hash) => hash.length > 0)
@@ -139,9 +221,10 @@ function collectNewLanguages(base: string, commits: Commit[], issues: Map<number
 
     const languages: NewLanguage[] = [];
     for (const { id, hash } of findNewLanguages(git("show", `${base}:${LOCALES_PATH}`), versions)) {
-        const additions = parseNumstat(git("log", "--numstat", "--format=%x1e%H", `${base}..HEAD`, "--",
-            ...CATALOGUE_DIRS.map((dir) => `${dir}/${id}/`)));
-        const translators = rankContributors(additions, github.fetchCommitAuthors([ ...additions.keys() ]));
+        const additions = parseNumstat(git("log", "--numstat", "--format=%x1e%H", `${base}..HEAD`,
+            "--", ...CATALOGUE_DIRS.map((dir) => `${dir}/${id}/`)));
+        const translators = rankContributors(additions,
+            github.fetchCommitAuthors([ ...additions.keys() ]));
 
         const commit = commits.find((it) => it.hash === hash);
         const closed = commit ? parseClosingReferences(`${commit.subject}\n${commit.body}`) : [];
@@ -150,7 +233,8 @@ function collectNewLanguages(base: string, commits: Commit[], issues: Map<number
             return author && isCredited(author) ? [ author ] : [];
         });
 
-        languages.push({ id, hash, contributors: translators.length > 0 ? translators : reporters, issues: closed });
+        const contributors = translators.length > 0 ? translators : reporters;
+        languages.push({ id, hash, contributors, issues: closed });
     }
     return languages;
 }
@@ -228,20 +312,21 @@ export function languageName(id: string) {
         return LANGUAGE_NAMES[id];
     }
     try {
-        return new Intl.DisplayNames([ "en" ], { type: "language" }).of(LOCALE_TAGS[id] ?? id.replaceAll("_", "-")) ?? id;
+        const tag = LOCALE_TAGS[id] ?? id.replaceAll("_", "-");
+        return new Intl.DisplayNames([ "en" ], { type: "language" }).of(tag) ?? id;
     } catch {
         return id;
     }
 }
 
-/** Reads `git log` output in the `%H%x1f%s%x1f%b%x1e` format. */
+/** Reads `git log` output in the `%H%x1f%ct%x1f%s%x1f%b%x1e` format. */
 export function parseCommits(output: string): Commit[] {
     return output.split("\x1e")
         .map((record) => record.replace(/^\n/, ""))
         .filter((record) => record.length > 0)
         .map((record) => {
-            const [ hash, subject, body = "" ] = record.split("\x1f");
-            return { hash, subject, body: body.trim() };
+            const [ hash, date, subject, body = "" ] = record.split("\x1f");
+            return { hash, date: Number(date), subject, body: body.trim() };
         });
 }
 
@@ -251,7 +336,8 @@ export function parseCommits(output: string): Commit[] {
  */
 export function parseClosingReferences(message: string): number[] {
     const numbers: number[] = [];
-    for (const match of message.matchAll(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b:?\s+#(\d+)/gi)) {
+    const keyword = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b:?\s+#(\d+)/gi;
+    for (const match of message.matchAll(keyword)) {
         numbers.push(Number(match[1]));
     }
     return numbers;
@@ -271,10 +357,10 @@ export function collectClosings(commits: Commit[], pullRequests: Map<number, Pul
     commitAuthors: Map<string, string>): Closing[] {
     const closings = new Map<number, Closing>();
 
-    function add(issue: number, subject: string, contributor: string | undefined) {
+    function add(issue: number, date: number, subject: string, contributor: string | undefined) {
         let closing = closings.get(issue);
         if (!closing) {
-            closing = { issue, subjects: [], contributors: [] };
+            closing = { issue, date, subjects: [], contributors: [] };
             closings.set(issue, closing);
         }
         if (!closing.subjects.includes(subject)) {
@@ -291,10 +377,10 @@ export function collectClosings(commits: Commit[], pullRequests: Map<number, Pul
         const contributor = pullRequest?.author ?? commitAuthors.get(commit.hash);
 
         for (const issue of parseClosingReferences(`${commit.subject}\n${commit.body}`)) {
-            add(issue, pullRequest?.title ?? commit.subject, contributor);
+            add(issue, commit.date, pullRequest?.title ?? commit.subject, contributor);
         }
         for (const issue of pullRequest?.closes ?? []) {
-            add(issue, pullRequest?.title ?? commit.subject, contributor);
+            add(issue, commit.date, pullRequest?.title ?? commit.subject, contributor);
         }
     }
 
@@ -334,7 +420,8 @@ export function categorize(subjects: string[], issueType: string | undefined): S
  */
 export function isShippedSeparately(subjects: string[], labels: string[]) {
     return labels.some((label) => SEPARATELY_SHIPPED_LABELS.has(label))
-        || subjects.every((subject) => SEPARATELY_SHIPPED_AREAS.test(parseConventionalSubject(subject)?.area ?? ""));
+        || subjects.every((subject) =>
+            SEPARATELY_SHIPPED_AREAS.test(parseConventionalSubject(subject)?.area ?? ""));
 }
 
 function parseConventionalSubject(subject: string) {
@@ -342,28 +429,53 @@ function parseConventionalSubject(subject: string) {
     return match ? { type: match[1], area: match[2] ?? "" } : undefined;
 }
 
+interface ItemSources {
+    closings: Closing[];
+    issues: Map<number, Issue>;
+    languages: NewLanguage[];
+    entries: ChangelogEntry[];
+    repository: string;
+}
+
 /**
- * Fills `Release Template.md` with one numbered entry per closed issue. Sections that receive
- * no entry keep the template's placeholder. Issues GitHub does not know and issues of separately
- * shipped products are left out, and so are nightly-only issues and the issues a new language
- * closes.
+ * Turns everything the release lists into note items: the new languages, the changelog entries
+ * and the closed issues that no entry or language covers. Issues GitHub does not know, issues of
+ * separately shipped products and nightly-only issues are left out.
  */
-export function renderReleaseNote(template: string, version: string, closings: Closing[],
-    issues: Map<number, Issue>, languages: NewLanguage[] = []): string {
-    const entries = new Map<string, string[]>();
-    function add(section: Section, entry: string, contributors: string[]) {
-        const credit = contributors.length > 0 ? ` by ${contributors.map((login) => `@${login}`).join(" & ")}` : "";
-        entries.set(section, [ ...entries.get(section) ?? [], `${entry}${credit}` ]);
-    }
-
+export function collectItems(sources: ItemSources): NoteItem[] {
+    const { closings, issues, languages, entries, repository } = sources;
+    const items: NoteItem[] = [];
     for (const language of languages) {
-        add("Internationalization", languageName(language.id), language.contributors);
+        items.push({ section: "Internationalization", date: 0, text: languageName(language.id),
+            details: [], credits: language.contributors });
     }
 
-    const languageIssues = new Set(languages.flatMap((language) => language.issues));
+    const closingsByIssue = new Map(closings.map((closing) => [ closing.issue, closing ]));
+    for (const entry of entries) {
+        const links = entry.closes.map((number) =>
+            ({ number, url: `https://github.com/${repository}/issues/${number}` }));
+        let text = entry.text;
+        if (links.length === 1 && !/\]\(/.test(text)) {
+            text = `[${text}](${links[0].url})`;
+        } else if (links.length > 0 && !/\]\(/.test(text)) {
+            text = `${text} (${links.map(({ number, url }) => `[#${number}](${url})`).join(", ")})`;
+        }
+
+        const inferredCredits = [ ...new Set(entry.closes.flatMap((number) =>
+            closingsByIssue.get(number)?.contributors ?? [])) ];
+        items.push({ section: entry.section, area: entry.area, date: entry.date, text,
+            details: entry.details,
+            credits: entry.credits.length > 0 ? entry.credits : inferredCredits });
+    }
+
+    const covered = new Set([
+        ...languages.flatMap((language) => language.issues),
+        ...entries.flatMap((entry) => entry.closes)
+    ]);
     for (const closing of closings) {
         const issue = issues.get(closing.issue);
-        if (!issue || isShippedSeparately(closing.subjects, issue.labels) || languageIssues.has(closing.issue)) {
+        if (!issue || covered.has(closing.issue)
+            || isShippedSeparately(closing.subjects, issue.labels)) {
             continue;
         }
 
@@ -372,28 +484,352 @@ export function renderReleaseNote(template: string, version: string, closings: C
             continue;
         }
 
-        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(title)}](${issue.url})`,
-            closing.contributors);
+        items.push({ section: categorize(closing.subjects, issue.issueType), date: closing.date,
+            text: `[${escapeMarkdown(title)}](${issue.url})`, details: [],
+            credits: closing.contributors });
     }
 
+    return items;
+}
+
+/**
+ * Fills `Release Template.md` with the items, oldest first in each section. Sections that receive
+ * no item keep the template's placeholder.
+ */
+export function renderReleaseNote(template: string, version: string, items: NoteItem[]): string {
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
     const output: string[] = [];
     for (let index = 0; index < lines.length; index++) {
         output.push(lines[index]);
-        const heading = /^## \S+\s+(.*)$/.exec(lines[index]);
-        const sectionEntries = heading ? entries.get(heading[1].trim()) : undefined;
-        if (!sectionEntries) {
+        const heading = /^## \S+\s+(.*)$/.exec(lines[index])?.[1].trim().toLowerCase();
+        const sectionItems = items.filter((item) => item.section.toLowerCase() === heading);
+        if (sectionItems.length === 0) {
             continue;
         }
 
-        // Replace the section's placeholder list with the entries.
+        // Replace the section's placeholder list with the items.
         while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
             index++;
         }
-        output.push("", ...sectionEntries.map((entry, position) => `${position + 1}.  ${entry}`), "");
+        output.push("", ...renderSection(sectionItems), "");
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
+}
+
+/**
+ * Numbers a section's items, nesting the items of an area that has several under one item named
+ * after it, and prefixing a lone item with its area.
+ */
+export function renderSection(items: NoteItem[]): string[] {
+    const sorted = [ ...items ].sort((a, b) => a.date - b.date);
+    const groups: { area?: string; items: NoteItem[] }[] = [];
+    for (const item of sorted) {
+        const group = item.area ? groups.find((it) => it.area === item.area) : undefined;
+        if (group) {
+            group.items.push(item);
+        } else {
+            groups.push({ area: item.area, items: [ item ] });
+        }
+    }
+
+    const lines: string[] = [];
+    for (const [ index, group ] of groups.entries()) {
+        const marker = `${index + 1}.  `;
+        if (group.items.length === 1) {
+            const [ item ] = group.items;
+            const text = group.area ? `${group.area}: ${item.text}` : item.text;
+            lines.push(...renderItem(marker, text, item, " ".repeat(4)));
+            continue;
+        }
+
+        lines.push(`${marker}${group.area}`);
+        for (const [ position, item ] of group.items.entries()) {
+            lines.push(...renderItem(`    ${position + 1}.  `, item.text, item, " ".repeat(8)));
+        }
+    }
+    return lines;
+}
+
+function renderItem(marker: string, text: string, item: NoteItem, indent: string) {
+    const credit = item.credits.length > 0
+        ? ` by ${item.credits.map((login) => `@${login}`).join(" & ")}` : "";
+    return [
+        `${marker}${text}${credit}`,
+        ...item.details.map((line) => (line ? `${indent}${line}` : ""))
+    ];
+}
+
+/**
+ * Reads the changelog entries of `.changelog/` and `.changelog/pre-release/`, oldest first. Files
+ * whose name does not start with a timestamp (`README.md`) are not entries.
+ */
+function readChangelogEntries() {
+    const entries: ChangelogEntry[] = [];
+    const invalid: { file: string; errors: string[] }[] = [];
+    for (const dir of [ PRE_RELEASE_DIR, CHANGELOG_DIR ]) {
+        if (!existsSync(dir)) {
+            continue;
+        }
+        for (const name of readdirSync(dir).filter((it) => ENTRY_FILE_NAME.test(it)).sort()) {
+            const file = join(dir, name);
+            const { entry, errors } = parseChangelogEntry(file, readFileSync(file, "utf-8"));
+            if (entry) {
+                entries.push(entry);
+            } else {
+                invalid.push({ file, errors });
+            }
+        }
+    }
+    return { entries, invalid };
+}
+
+/**
+ * Parses a changelog entry: frontmatter in a small subset of YAML (`key: value`, `key: [a, b]` or a
+ * `- item` list, `#` comments), then the text. Returns the problems instead when it is not valid.
+ */
+export function parseChangelogEntry(file: string, source: string):
+    { entry?: ChangelogEntry; errors: string[] } {
+    const errors: string[] = [];
+    const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(source);
+    const name = file.split(/[\\/]/).at(-1) ?? file;
+    const timestamp = ENTRY_FILE_NAME.exec(name)?.[1];
+    if (!match || !timestamp) {
+        return {
+            errors: [ "expected a `YYYYMMDDHHMMSS_<slug>.md` file starting with `---` frontmatter" ]
+        };
+    }
+
+    const fields = new Map<string, string[]>();
+    let current: string[] | undefined;
+    for (const rawLine of match[1].split(/\r?\n/)) {
+        const line = rawLine.replace(/\s+#\s.*$/, "").trimEnd();
+        if (line.trim() === "" || line.trim().startsWith("#")) {
+            continue;
+        }
+
+        const item = /^\s+-\s*(.*)$/.exec(line);
+        if (item) {
+            if (!current) {
+                errors.push(`list item outside a key: ${line.trim()}`);
+            } else if (item[1]) {
+                current.push(unquote(item[1]));
+            }
+            continue;
+        }
+
+        const field = /^([A-Za-z]+):\s*(.*)$/.exec(line);
+        if (!field) {
+            errors.push(`unreadable line: ${line.trim()}`);
+            continue;
+        }
+        const [ , key, value ] = field;
+        const inline = /^\[(.*)\]$/.exec(value);
+        if (inline) {
+            current = inline[1].split(",").map((it) => unquote(it.trim())).filter(Boolean);
+        } else {
+            current = value ? [ unquote(value) ] : [];
+        }
+        fields.set(key, current);
+    }
+
+    for (const key of fields.keys()) {
+        if (![ "type", "area", "closes", "credits" ].includes(key)) {
+            errors.push(`unknown key \`${key}\`; expected type, area, closes or credits`);
+        }
+    }
+
+    const type = fields.get("type")?.[0];
+    const section = type ? ENTRY_TYPES[type as keyof typeof ENTRY_TYPES] : undefined;
+    if (!section) {
+        const found = type ? `, not \`${type}\`` : "";
+        errors.push(`\`type\` must be one of ${Object.keys(ENTRY_TYPES).join(", ")}${found}`);
+    }
+
+    const closes: number[] = [];
+    const issueUrl = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(?:issues|pull)\/(\d+)$/;
+    for (const reference of fields.get("closes") ?? []) {
+        const number = /^#?(\d+)$/.exec(reference) ?? issueUrl.exec(reference);
+        if (number) {
+            closes.push(Number(number[1]));
+        } else {
+            errors.push(`\`closes\` takes issue numbers or URLs, not \`${reference}\``);
+        }
+    }
+
+    const credits: string[] = [];
+    for (const credit of fields.get("credits") ?? []) {
+        const login = credit.replace(/^@/, "");
+        if (/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(login)) {
+            credits.push(login);
+        } else {
+            errors.push(`\`credits\` takes GitHub usernames, not \`${credit}\``);
+        }
+    }
+
+    const [ text, ...details ] = match[2].trim().split(/\r?\n/);
+    if (!text) {
+        errors.push("the entry has no text after the frontmatter");
+    }
+
+    if (errors.length > 0 || !section || !text) {
+        return { errors };
+    }
+
+    const [ year, month, day, hour, minute, second ] =
+        (timestamp.match(/^\d{4}|\d\d/g) ?? []).map(Number);
+    const date = Date.UTC(year, month - 1, day, hour, minute, second) / 1000;
+    return {
+        entry: { file, date, section, area: fields.get("area")?.[0], closes, credits,
+            text: text.trim(), details: trimBlankLines(details.map((line) => line.trimEnd())) },
+        errors
+    };
+}
+
+function unquote(value: string) {
+    return /^(["']).*\1$/.test(value) ? value.slice(1, -1) : value;
+}
+
+function trimBlankLines(lines: string[]) {
+    let start = 0;
+    let end = lines.length;
+    while (start < end && lines[start] === "") start++;
+    while (end > start && lines[end - 1] === "") end--;
+    return lines.slice(start, end);
+}
+
+/**
+ * Deletes the entries a release note has listed, or keeps them in `.changelog/pre-release/` for a
+ * pre-release. Invalid entries stay where they are, so the next run reports them again.
+ */
+function consumeChangelogEntries(version: string) {
+    const { entries, invalid } = readChangelogEntries();
+    if (invalid.length > 0) {
+        console.error(`Keeping ${invalid.length} invalid entries: `
+            + invalid.map(({ file }) => file).join(", "));
+    }
+
+    const isPreRelease = version.includes("-");
+    for (const { file } of entries) {
+        if (!isPreRelease) {
+            unlinkSync(file);
+        } else if (dirname(file) !== PRE_RELEASE_DIR) {
+            mkdirSync(PRE_RELEASE_DIR, { recursive: true });
+            renameSync(file, join(PRE_RELEASE_DIR, file.split(/[\\/]/).at(-1) ?? file));
+        }
+    }
+    console.error(`${isPreRelease ? "Moved" : "Deleted"} ${entries.length} changelog entries.`);
+}
+
+/** Writes a changelog entry to fill in, named after the current time and the slug. */
+function createChangelogEntry(slug: string) {
+    if (!/^[\w.-]+$/.test(slug)) {
+        throw new Error("Usage: pnpm changelog:new <slug>, "
+            + "with a slug of letters, digits, `-`, `_` or `.`.");
+    }
+
+    const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+    const file = join(CHANGELOG_DIR, `${timestamp}_${slug}.md`);
+    mkdirSync(CHANGELOG_DIR, { recursive: true });
+    writeFileSync(file, [
+        "---",
+        `# ${Object.keys(ENTRY_TYPES).join(" | ")}`,
+        "type: fix",
+        "# Optional: groups entries under one item, such as LLM, Search or Table collection.",
+        "area:",
+        "# Optional: issue numbers. Their generated entries give way to this one.",
+        "closes: []",
+        "# Optional: GitHub usernames to thank. Defaults to whoever fixed the closed issues.",
+        "credits: []",
+        "---",
+        "",
+        "What changed, the way a user notices it.",
+        ""
+    ].join("\n"));
+    console.log(file);
+}
+
+/**
+ * Returns the fixes, features and performance changes since `base` that a user might notice but
+ * the note does not list: they close no issue, their area is not an internal one, no changelog
+ * entry arrives with them (in the same commit on `main` or the same merged branch), and, for a
+ * fix, they change code that `base` already had.
+ */
+function findUnlistedChanges(base: string, commits: Commit[]) {
+    const inRange = new Set(commits.map((commit) => commit.hash));
+    const byHash = new Map(commits.map((commit) => [ commit.hash, commit ]));
+    const unlisted: Commit[] = [];
+
+    const firstParentLog =
+        git("log", "--first-parent", "--reverse", "--format=%H %P", `${base}..HEAD`);
+    for (const line of firstParentLog.split("\n")) {
+        const [ hash, firstParent, ...otherParents ] = line.split(" ");
+        if (!hash || !firstParent) {
+            continue;
+        }
+
+        const added =
+            git("diff", "--name-only", "--diff-filter=A", firstParent, hash, "--", ".changelog/");
+        if (added.split("\n").some((path) => ENTRY_FILE_NAME.test(path.split("/").at(-1) ?? ""))) {
+            continue;
+        }
+
+        const unit = otherParents.length > 0
+            ? git("rev-list", "--no-merges", "--reverse", `${firstParent}..${hash}`).split("\n")
+                .filter(Boolean)
+            : [ hash ];
+        for (const commitHash of unit) {
+            const commit = byHash.get(commitHash);
+            const parsed = commit ? parseConventionalSubject(commit.subject) : undefined;
+            if (!commit || !parsed || ![ "fix", "feat", "perf" ].includes(parsed.type)
+                || INTERNAL_AREAS.test(parsed.area)
+                || parseClosingReferences(`${commit.subject}\n${commit.body}`).length > 0) {
+                continue;
+            }
+            if (parsed.type === "fix" && !changesShippedCode(commit.hash, inRange)) {
+                continue;
+            }
+            unlisted.push(commit);
+        }
+    }
+    return unlisted;
+}
+
+/**
+ * Tells whether a commit changes a line that existed before the release, judged by `git blame` on
+ * its parent: a line last changed by a commit outside `inRange` already shipped. A pure insertion
+ * is judged by the line it follows.
+ */
+function changesShippedCode(hash: string, inRange: Set<string>) {
+    const diff = git("diff", "-U0", "--no-color", `${hash}^`, hash, "--", ".",
+        ":!**/translations/**", ":!**/*.spec.ts", ":!**/*.spec.tsx", ":!docs/**",
+        ":!pnpm-lock.yaml", ":!.changelog/**");
+    let file: string | undefined;
+    for (const line of diff.split("\n")) {
+        if (line.startsWith("--- ")) {
+            file = line === "--- /dev/null" ? undefined : line.slice("--- a/".length);
+            continue;
+        }
+
+        const hunk = /^@@ -(\d+)(?:,(\d+))? /.exec(line);
+        if (!hunk || !file) {
+            continue;
+        }
+        const start = Math.max(Number(hunk[1]), 1);
+        const count = Math.max(hunk[2] === undefined ? 1 : Number(hunk[2]), 1);
+        let blame: string;
+        try {
+            blame = git("blame", "--porcelain", "-L", `${start},+${count}`, `${hash}^`, "--", file);
+        } catch {
+            continue;
+        }
+        for (const [ , blamed ] of blame.matchAll(/^([0-9a-f]{40}) \d+ \d+/gm)) {
+            if (!inRange.has(blamed)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 /**
@@ -401,9 +837,12 @@ export function renderReleaseNote(template: string, version: string, closings: C
  * and capitalizes what follows it.
  */
 export function cleanTitle(title: string) {
-    const marker = /^\s*(?:[[(]\s*(?:bug|feature|fr)(?:\s+(?:report|request))?\s*[\])]|(?:bug|feature)(?:\s+(?:report|request))?(?=\s*:))\s*:?\s*/i;
+    const kind = String.raw`(?:bug|feature|fr)(?:\s+(?:report|request))?`;
+    const marker =
+        new RegExp(String.raw`^\s*(?:[[(]\s*${kind}\s*[\])]|${kind}(?=\s*:))\s*:?\s*`, "i");
     const stripped = title.replace(marker, "");
-    return stripped === title || stripped.length === 0 ? title : stripped[0].toUpperCase() + stripped.slice(1);
+    return stripped === title || stripped.length === 0
+        ? title : stripped[0].toUpperCase() + stripped.slice(1);
 }
 
 /**
@@ -435,13 +874,14 @@ class GitHub {
             number title author { login }
             closingIssuesReferences(first: 25) { nodes { number repository { nameWithOwner } } }
         }`);
+        const repository = `${this.owner}/${this.name}`;
         for (const node of nodes) {
             result.set(node.number, {
                 number: node.number,
                 title: node.title,
                 author: node.author?.login,
                 closes: node.closingIssuesReferences.nodes
-                    .filter((issue: any) => issue.repository.nameWithOwner === `${this.owner}/${this.name}`)
+                    .filter((issue: any) => issue.repository.nameWithOwner === repository)
                     .map((issue: any) => issue.number)
             });
         }
@@ -466,9 +906,13 @@ class GitHub {
         const result = new Map<number, Issue>();
         const nodes = this.query(numbers, (number) => `issueOrPullRequest(number: ${number}) {
             ... on Issue {
-                number title url state author { login } issueType { name } labels(first: 25) { nodes { name } }
+                number title url state author { login } issueType { name }
+                labels(first: 25) { nodes { name } }
             }
-            ... on PullRequest { number title url state author { login } labels(first: 25) { nodes { name } } }
+            ... on PullRequest {
+                number title url state author { login }
+                labels(first: 25) { nodes { name } }
+            }
         }`);
         for (const node of nodes) {
             result.set(node.number, {
@@ -491,48 +935,70 @@ class GitHub {
         for (let start = 0; start < unique.length; start += GRAPHQL_BATCH_SIZE) {
             const batch = unique.slice(start, start + GRAPHQL_BATCH_SIZE);
             const fields = batch.map((key, index) => `n${index}: ${field(key)}`).join("\n");
-            const query = `{ repository(owner: "${this.owner}", name: "${this.name}") { ${fields} } }`;
+            const query =
+                `{ repository(owner: "${this.owner}", name: "${this.name}") { ${fields} } }`;
             // A number that resolves to nothing makes GitHub report an error next to the data,
             // which `gh` turns into a non-zero exit, so the output is read either way.
             let output: string;
             try {
-                output = execFileSync("gh", [ "api", "graphql", "-f", `query=${query}` ],
-                    { encoding: "utf-8", stdio: [ "ignore", "pipe", "ignore" ], maxBuffer: 64 * 1024 * 1024 });
+                output = execFileSync("gh", [ "api", "graphql", "-f", `query=${query}` ], {
+                    encoding: "utf-8",
+                    stdio: [ "ignore", "pipe", "ignore" ],
+                    maxBuffer: 64 * 1024 * 1024
+                });
             } catch (err: any) {
                 output = err.stdout ?? "";
             }
             const repository = JSON.parse(output || "{}").data?.repository;
             if (!repository) {
-                throw new Error(`GitHub query failed for ${batch.join(", ")}; is \`gh\` logged in?`);
+                throw new Error(
+                    `GitHub query failed for ${batch.join(", ")}; is \`gh\` logged in?`);
             }
-            nodes.push(...Object.values(repository).filter((node: any) => node && Object.keys(node).length > 0));
+            nodes.push(...Object.values(repository)
+                .filter((node: any) => node && Object.keys(node).length > 0));
         }
         return nodes;
     }
 }
 
 function git(...args: string[]) {
-    return execFileSync("git", args, { cwd: ROOT, encoding: "utf-8", maxBuffer: 256 * 1024 * 1024 });
+    return execFileSync("git", args, {
+        cwd: ROOT,
+        encoding: "utf-8",
+        stdio: [ "ignore", "pipe", "pipe" ],
+        maxBuffer: 256 * 1024 * 1024
+    });
 }
 
 // Only when run as a script — the pure helpers above are imported by the spec.
 if (process.argv[1] === SCRIPT_PATH) {
     const args = process.argv.slice(2);
-    const version = args.find((arg) => !arg.startsWith("--") && args[args.indexOf(arg) - 1] !== "--from");
+    const version = args.find((arg, index) =>
+        !arg.startsWith("--") && args[index - 1] !== "--from");
     const fromIndex = args.indexOf("--from");
-    if (!version || !/^v\d/.test(version)) {
-        console.error("Usage: release-notes.mts <version, e.g. v0.107.0> [--from <tag>] [--stdout] [--force]");
-        process.exit(1);
-    }
 
     try {
-        main({
-            version,
-            from: fromIndex >= 0 ? args[fromIndex + 1] : undefined,
-            stdout: args.includes("--stdout"),
-            force: args.includes("--force"),
-            repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
-        });
+        if (args[0] === "new") {
+            createChangelogEntry(args[1] ?? "");
+        } else if (args[0] === "consume" && args[1] && /^v\d/.test(args[1])) {
+            consumeChangelogEntries(args[1]);
+        } else if (!version || !/^v\d/.test(version)) {
+            throw new Error([
+                "Usage: release-notes.mts <version, e.g. v0.107.0> [--from <tag>]",
+                "           [--stdout] [--force] [--unlisted]",
+                "       release-notes.mts consume <version>",
+                "       release-notes.mts new <slug>"
+            ].join("\n"));
+        } else {
+            main({
+                version,
+                from: fromIndex >= 0 ? args[fromIndex + 1] : undefined,
+                stdout: args.includes("--stdout"),
+                force: args.includes("--force"),
+                unlisted: args.includes("--unlisted"),
+                repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
+            });
+        }
     } catch (err) {
         console.error(err instanceof Error ? err.message : err);
         process.exit(1);

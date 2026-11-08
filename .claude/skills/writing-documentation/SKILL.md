@@ -52,10 +52,12 @@ Two traps `CLAUDE.md` names still apply: verify **where a control actually mount
 component, not by inference; and a widened **capability gate** (a note type added to a list a widget
 switches on) surfaces panels the change never mentioned — grep the gate's readers.
 
-Do **not** write release notes on a branch: the maintainer writes `docs/Release Notes/Release
-Notes/v<x>.md` from the merged commits at release time. Make the commit subject carry the bullet
-("Area: what changed", issue keyword). The one per-version page a feature branch does touch is a
-`Scripting/Breaking changes/v<next>.0 <title>` page for a scripting API break.
+Do **not** write release notes on a branch: the maintainer generates `docs/Release Notes/Release
+Notes/v<x>.md` at release time (`pnpm chore:release-notes`). What a change contributes is a
+changelog entry in `.changelog/` (`pnpm changelog:new <slug>`, format in `.changelog/README.md`),
+written as the user sees the change, plus the issue keyword in the commit subject. The one
+per-version page a feature branch does touch is a `Scripting/Breaking changes/v<next>.0 <title>`
+page for a scripting API break.
 
 ## Editing a page by hand
 

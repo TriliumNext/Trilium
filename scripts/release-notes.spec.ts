@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
 
-import { categorize, cleanTitle, collectClosings, type Commit, escapeMarkdown, findNewLanguages, type Issue,
-    isNightlyOnly, isShippedSeparately, languageName, parseClosingReferences, parseCommits, parseDisplayLocales,
-    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors,
-    renderReleaseNote } from "./release-notes.mjs";
+import {
+    categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
+    escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
+    type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits, parseDisplayLocales,
+    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote,
+    renderSection
+} from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
     it("reads closing keywords and ignores bare references", () => {
-        expect(parseClosingReferences("fix(tabs): reset edit mode (closes #12477)")).toEqual([ 12477 ]);
-        expect(parseClosingReferences("fix(text): selectable includes (regression of #5264, closes #12285)"))
+        expect(parseClosingReferences("fix(tabs): reset edit mode (closes #12477)"))
+            .toEqual([ 12477 ]);
+        expect(parseClosingReferences(
+            "fix(text): selectable includes (regression of #5264, closes #12285)"))
             .toEqual([ 12285 ]);
-        expect(parseClosingReferences("fix(client): avoid warnings (Closes #12439) (#12440)")).toEqual([ 12439 ]);
-        expect(parseClosingReferences("fix #12253\n\nFixes #11825.\nResolves: #1")).toEqual([ 12253, 11825, 1 ]);
+        expect(parseClosingReferences("fix(client): avoid warnings (Closes #12439) (#12440)"))
+            .toEqual([ 12439 ]);
+        expect(parseClosingReferences("fix #12253\n\nFixes #11825.\nResolves: #1"))
+            .toEqual([ 12253, 11825, 1 ]);
         expect(parseClosingReferences("fix(search): keep paths (#10021)")).toEqual([]);
         expect(parseClosingReferences("closes TriliumNext/Docs#3, prefixes #4")).toEqual([]);
     });
@@ -21,15 +28,18 @@ describe("parsePullRequestNumber", () => {
     it("reads merge and squash subjects", () => {
         expect(parsePullRequestNumber("Merge pull request #12535 from user/branch")).toBe(12535);
         expect(parsePullRequestNumber("fix(fonts): keep Monospace size (#12479)")).toBe(12479);
-        expect(parsePullRequestNumber("fix(tabs): reset edit mode (closes #12477)")).toBeUndefined();
+        expect(parsePullRequestNumber("fix(tabs): reset edit mode (closes #12477)"))
+            .toBeUndefined();
     });
 });
 
 describe("parseCommits", () => {
     it("splits records with multi-line bodies", () => {
-        expect(parseCommits("a\x1ffix: one\x1fFixes #1\n\nmore\n\x1e\nb\x1ffeat: two\x1f\x1e\n")).toEqual([
-            { hash: "a", subject: "fix: one", body: "Fixes #1\n\nmore" },
-            { hash: "b", subject: "feat: two", body: "" }
+        const output = "a\x1f100\x1ffix: one\x1fFixes #1\n\nmore\n\x1e"
+            + "\nb\x1f200\x1ffeat: two\x1f\x1e\n";
+        expect(parseCommits(output)).toEqual([
+            { hash: "a", date: 100, subject: "fix: one", body: "Fixes #1\n\nmore" },
+            { hash: "b", date: 200, subject: "feat: two", body: "" }
         ]);
     });
 });
@@ -37,21 +47,26 @@ describe("parseCommits", () => {
 describe("collectClosings", () => {
     it("merges commit and pull request references per issue and credits contributors", () => {
         const commits: Commit[] = [
-            { hash: "1", subject: "fix(sync): keep edits (closes #10)", body: "" },
-            { hash: "2", subject: "fix(sync): keep edits (closes #10) (#20)", body: "" },
-            { hash: "3", subject: "Merge pull request #30 from user/branch", body: "Fix tables" },
-            { hash: "4", subject: "feat(tree): menu (closes #40)", body: "" }
+            { hash: "1", date: 1, subject: "fix(sync): keep edits (closes #10)", body: "" },
+            { hash: "2", date: 2, subject: "fix(sync): keep edits (closes #10) (#20)", body: "" },
+            { hash: "3", date: 3, subject: "Merge pull request #30 from user/branch",
+                body: "Fix tables" },
+            { hash: "4", date: 4, subject: "feat(tree): menu (closes #40)", body: "" }
         ];
         const pullRequests = new Map<number, PullRequest>([
-            [ 20, { number: 20, title: "fix(sync): keep edits", author: "contributor", closes: [ 10 ] } ],
+            [ 20, { number: 20, title: "fix(sync): keep edits", author: "contributor",
+                closes: [ 10 ] } ],
             [ 30, { number: 30, title: "Fix tables", author: "renovate[bot]", closes: [ 31 ] } ]
         ]);
         const authors = new Map([ [ "1", "eliandoran" ], [ "4", "other" ] ]);
 
         expect(collectClosings(commits, pullRequests, authors)).toEqual([
-            { issue: 10, subjects: [ "fix(sync): keep edits (closes #10)", "fix(sync): keep edits" ], contributors: [ "contributor" ] },
-            { issue: 31, subjects: [ "Fix tables" ], contributors: [] },
-            { issue: 40, subjects: [ "feat(tree): menu (closes #40)" ], contributors: [ "other" ] }
+            { issue: 10, date: 1,
+                subjects: [ "fix(sync): keep edits (closes #10)", "fix(sync): keep edits" ],
+                contributors: [ "contributor" ] },
+            { issue: 31, date: 3, subjects: [ "Fix tables" ], contributors: [] },
+            { issue: 40, date: 4, subjects: [ "feat(tree): menu (closes #40)" ],
+                contributors: [ "other" ] }
         ]);
     });
 });
@@ -65,7 +80,8 @@ describe("categorize", () => {
         expect(categorize([ "feat(i18n): x" ], undefined)).toBe("Internationalization");
         expect(categorize([ "docs(user): x" ], undefined)).toBe("Documentation");
         expect(categorize([ "chore(deps): x" ], undefined)).toBe("Technical updates");
-        expect(categorize([ "close #1", "Merge pull request #2", "fix: x" ], "Feature")).toBe("Bugfixes");
+        expect(categorize([ "close #1", "Merge pull request #2", "fix: x" ], "Feature"))
+            .toBe("Bugfixes");
         expect(categorize([ "close #1" ], "Feature")).toBe("Improvements");
         expect(categorize([ "close #1" ], undefined)).toBe("Bugfixes");
     });
@@ -73,7 +89,8 @@ describe("categorize", () => {
 
 describe("isShippedSeparately", () => {
     it("recognizes web clipper issues by label or by the area of every closing change", () => {
-        expect(isShippedSeparately([ "Keep indentation (closes #1442)" ], [ "web-clipper" ])).toBe(true);
+        expect(isShippedSeparately([ "Keep indentation (closes #1442)" ], [ "web-clipper" ]))
+            .toBe(true);
         expect(isShippedSeparately([ "feat(clipper): a", "fix(web-clipper): b" ], [])).toBe(true);
         expect(isShippedSeparately([ "feat(clipper): a", "fix(server): b" ], [])).toBe(false);
         expect(isShippedSeparately([ "feat(text): a" ], [ "ckeditor" ])).toBe(false);
@@ -114,8 +131,12 @@ describe("new languages", () => {
     });
 
     it("credits translators by the lines they added", () => {
-        const additions = parseNumstat("\x1ea\n\n10\t2\tvi/translation.json\n5\t0\tvi/server.json\n"
-            + "\x1eb\n\n30\t0\tvi/translation.json\n\x1ec\n\n-\t-\tvi/image.png\n\x1ed\n\n100\t0\tvi/translation.json\n");
+        const additions = parseNumstat([
+            "\x1ea\n\n10\t2\tvi/translation.json\n5\t0\tvi/server.json\n",
+            "\x1eb\n\n30\t0\tvi/translation.json\n",
+            "\x1ec\n\n-\t-\tvi/image.png\n",
+            "\x1ed\n\n100\t0\tvi/translation.json\n"
+        ].join(""));
         expect(additions).toEqual(new Map([ [ "a", 15 ], [ "b", 30 ], [ "c", 0 ], [ "d", 100 ] ]));
         expect(rankContributors(additions, new Map([
             [ "a", "translator" ], [ "b", "other" ], [ "c", "silent" ], [ "d", "weblate" ]
@@ -128,21 +149,126 @@ describe("new languages", () => {
         expect(languageName("cn")).toBe("Chinese (China)");
         expect(languageName("pt_br")).toBe("Brazilian Portuguese");
     });
+});
 
-    it("lists them under Internationalization in place of the issues they close", () => {
-        const template = "# T\n\n## 🌍 Internationalization\n\n1.  \\[…\\]\n\n## 🐞 Bugfixes\n\n1.  \\[…\\]";
-        const issues = new Map<number, Issue>([
-            [ 1, { number: 1, title: "Add Persian", url: "https://x/1", state: "CLOSED", labels: [] } ]
+describe("parseChangelogEntry", () => {
+    const file = ".changelog/20261108143000_backlinks.md";
+
+    it("reads the frontmatter and splits the text from its details", () => {
+        expect(parseChangelogEntry(file, [
+            "---",
+            "# fix | improvement",
+            "type: fix",
+            "area: Search  # groups the entry",
+            "closes:",
+            "  - 12",
+            "  - https://github.com/TriliumNext/Trilium/issues/34",
+            "credits: [ \"@someone\", other ]",
+            "---",
+            "",
+            "Several links in one paragraph showed up twice in the backlinks.",
+            "    * A detail.",
+            ""
+        ].join("\n"))).toEqual({
+            entry: {
+                file,
+                date: Date.UTC(2026, 10, 8, 14, 30, 0) / 1000,
+                section: "Bugfixes",
+                area: "Search",
+                closes: [ 12, 34 ],
+                credits: [ "someone", "other" ],
+                text: "Several links in one paragraph showed up twice in the backlinks.",
+                details: [ "    * A detail." ]
+            },
+            errors: []
+        });
+    });
+
+    it("reports every problem instead of guessing", () => {
+        const source = "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\n---\n";
+        expect(parseChangelogEntry(file, source).errors).toEqual([
+            "unknown key `scope`; expected type, area, closes or credits",
+            "`type` must be one of highlight, breaking, mobile, fix, improvement, documentation, "
+                + "i18n, technical, security, not `bugfix`",
+            "`closes` takes issue numbers or URLs, not `abc`",
+            "`credits` takes GitHub usernames, not `a_b`",
+            "the entry has no text after the frontmatter"
         ]);
+        expect(parseChangelogEntry(".changelog/notes.md", "---\ntype: fix\n---\nText").errors)
+            .toHaveLength(1);
+        expect(parseChangelogEntry(file, "type: fix\nText").errors).toHaveLength(1);
+    });
+});
 
-        expect(renderReleaseNote(template, "v1", [ { issue: 1, subjects: [ "feat(i18n): x" ], contributors: [] } ],
-            issues, [ { id: "fa", hash: "a", contributors: [ "reporter" ], issues: [ 1 ] } ]))
-            .toBe("# v1\n\n## 🌍 Internationalization\n\n1.  Persian (Farsi) by @reporter\n\n## 🐞 Bugfixes\n\n1.  \\[…\\]\n");
+describe("collectItems", () => {
+    const issue = (number: number, title: string, labels: string[] = []): [ number, Issue ] =>
+        [ number, { number, title, url: `https://x/${number}`, state: "CLOSED", labels } ];
+    const issues = new Map<number, Issue>([
+        issue(1, "(Bug report) Crash on *save*"),
+        issue(2, "Add Persian"),
+        issue(3, "Old wording"),
+        issue(4, "Clipper", [ "web-clipper" ]),
+        issue(5, "[Bug]: Nightly: crash"),
+        issue(6, "Second")
+    ]);
+    const closings = [ 1, 2, 3, 4, 5, 6, 7 ].map((number) => ({ issue: number, date: number * 10,
+        subjects: [ "fix: x" ], contributors: number === 3 ? [ "fixer" ] : [] }));
+    const entry: ChangelogEntry = { file: "a.md", date: 15, section: "Bugfixes", closes: [ 3 ],
+        credits: [], text: "New wording", details: [] };
+    const url = (number: number) => `https://github.com/o/r/issues/${number}`;
+
+    it("lets languages and entries replace the issues they close", () => {
+        const items = collectItems({
+            closings,
+            issues,
+            languages: [ { id: "fa", hash: "a", contributors: [ "reporter" ], issues: [ 2 ] } ],
+            entries: [
+                entry,
+                { ...entry, file: "b.md", date: 25, closes: [ 6, 8 ], credits: [ "thanked" ],
+                    text: "Two issues" },
+                { ...entry, file: "c.md", date: 35, closes: [], area: "Search",
+                    text: "[Linked](https://y)" }
+            ],
+            repository: "o/r"
+        });
+
+        expect(items.map(({ section, text, credits }) => [ section, text, credits.join() ]))
+            .toEqual([
+                [ "Internationalization", "Persian (Farsi)", "reporter" ],
+                [ "Bugfixes", `[New wording](${url(3)})`, "fixer" ],
+                [ "Bugfixes", `Two issues ([#6](${url(6)}), [#8](${url(8)}))`, "thanked" ],
+                [ "Bugfixes", "[Linked](https://y)", "" ],
+                [ "Bugfixes", "[Crash on \\*save\\*](https://x/1)", "" ]
+            ]);
+    });
+});
+
+describe("renderSection", () => {
+    const item = (text: string, date: number, area?: string, details: string[] = []): NoteItem =>
+        ({ section: "Bugfixes", area, date, text, details,
+            credits: date === 1 ? [ "a", "b" ] : [] });
+
+    it("orders items by date and nests the areas that have several", () => {
+        expect(renderSection([
+            item("Third", 3, "Search"),
+            item("First", 1),
+            item("Second", 2, "LLM", [ "* A detail.", "", "More." ]),
+            item("Fourth", 4, "Search")
+        ])).toEqual([
+            "1.  First by @a & @b",
+            "2.  LLM: Second",
+            "    * A detail.",
+            "",
+            "    More.",
+            "3.  Search",
+            "    1.  Third",
+            "    2.  Fourth"
+        ]);
     });
 });
 
 describe("renderReleaseNote", () => {
-    it("fills the matching sections and keeps the placeholders of the others", () => {
+    it("fills matching sections, whatever their case, and keeps the others' placeholders", () => {
         const template = [
             "# Release Template",
             "> [!NOTE]",
@@ -155,24 +281,16 @@ describe("renderReleaseNote", () => {
             "",
             "1.  \\[…\\]",
             "",
-            "## ✨ Improvements",
+            "## 🔒️ Security Improvements",
             "",
             "1.  \\[…\\]"
         ].join("\n");
-        const issues = new Map<number, Issue>([
-            [ 1, { number: 1, title: "Crash on *save*", url: "https://x/1", state: "CLOSED", labels: [] } ],
-            [ 2, { number: 2, title: "Wrong [size]", url: "https://x/2", state: "CLOSED", labels: [] } ],
-            [ 4, { number: 4, title: "Clipper", url: "https://x/4", state: "CLOSED", labels: [ "web-clipper" ] } ],
-            [ 5, { number: 5, title: "[Bug]: Nightly: crash", url: "https://x/5", state: "CLOSED", labels: [] } ]
-        ]);
 
         expect(renderReleaseNote(template, "v1.0.0", [
-            { issue: 1, subjects: [ "fix: a" ], contributors: [ "a", "b" ] },
-            { issue: 2, subjects: [ "fix: b" ], contributors: [] },
-            { issue: 3, subjects: [ "fix: c" ], contributors: [] },
-            { issue: 4, subjects: [ "fix: d" ], contributors: [] },
-            { issue: 5, subjects: [ "fix: e" ], contributors: [] }
-        ], issues)).toBe([
+            { section: "Bugfixes", date: 2, text: "Later", details: [], credits: [] },
+            { section: "Bugfixes", date: 1, text: "Earlier", details: [], credits: [] },
+            { section: "Security improvements", date: 1, text: "Safer", details: [], credits: [] }
+        ])).toBe([
             "# v1.0.0",
             "> [!NOTE]",
             "",
@@ -182,12 +300,12 @@ describe("renderReleaseNote", () => {
             "",
             "## 🐞 Bugfixes",
             "",
-            "1.  [Crash on \\*save\\*](https://x/1) by @a & @b",
-            "2.  [Wrong \\[size\\]](https://x/2)",
+            "1.  Earlier",
+            "2.  Later",
             "",
-            "## ✨ Improvements",
+            "## 🔒️ Security Improvements",
             "",
-            "1.  \\[…\\]",
+            "1.  Safer",
             ""
         ].join("\n"));
     });
@@ -195,8 +313,10 @@ describe("renderReleaseNote", () => {
 
 describe("cleanTitle", () => {
     it("removes issue template markers and keeps area prefixes", () => {
-        expect(cleanTitle("(Bug report) Importing large ZIP-Files hangs")).toBe("Importing large ZIP-Files hangs");
-        expect(cleanTitle("[Bug]: \"...\" menu state remains stale")).toBe("\"...\" menu state remains stale");
+        expect(cleanTitle("(Bug report) Importing large ZIP-Files hangs"))
+            .toBe("Importing large ZIP-Files hangs");
+        expect(cleanTitle("[Bug]: \"...\" menu state remains stale"))
+            .toBe("\"...\" menu state remains stale");
         expect(cleanTitle("[Feature Request] Support share_target")).toBe("Support share_target");
         expect(cleanTitle("(Feature request) save clip with prompt")).toBe("Save clip with prompt");
         expect(cleanTitle("Feature request: dark mode")).toBe("Dark mode");
@@ -219,6 +339,7 @@ describe("isNightlyOnly", () => {
 
 describe("escapeMarkdown", () => {
     it("escapes what would break a link label or turn into markup", () => {
-        expect(escapeMarkdown("safe_fetch [bug] *x* <style> `code`")).toBe("safe\\_fetch \\[bug\\] \\*x\\* &lt;style> `code`");
+        expect(escapeMarkdown("safe_fetch [bug] *x* <style> `code`"))
+            .toBe("safe\\_fetch \\[bug\\] \\*x\\* &lt;style> `code`");
     });
 });

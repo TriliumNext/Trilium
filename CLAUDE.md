@@ -253,7 +253,8 @@ follow-up. Before reporting the work done: `node .claude/skills/writing-document
 --diff` (plus `impact "<feature name>"` for names the diff cannot know) lists the pages that mention the
 changed UI strings and the help pages wired from the touched components; read every hit and edit what
 describes an affordance that changed; a feature no page covers gets a page (`docs.mjs new`). Then
-`docs.mjs sync` and `docs.mjs check`. Release notes are the maintainer's at release time — not on a branch.
+`docs.mjs sync` and `docs.mjs check`. The release note itself is the maintainer's at release time; what a
+change contributes to it is a changelog entry (below).
 
 Two traps this catches:
 
@@ -263,6 +264,17 @@ Two traps this catches:
 - **A capability gate has a blast radius.** Widening one (a note type added to a list a widget switches
   on) can surface panels, bars and menu entries the change never mentioned. Grep the gate's other readers
   and say what else now appears.
+
+### A user-facing change gets a changelog entry
+
+The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
+feature that reaches users adds its entry in the same commit**: `pnpm changelog:new <slug>`, then fill in
+`type`, the optional `area`/`closes`/`credits`, and one line describing what the user sees — the outcome,
+not the mechanism. Format and the skip list: `.changelog/README.md`. Skip it for internal changes, for a
+fix to something introduced since the last release, and for a fix whose closed issue's title already
+reads as the entry (closed issues are listed without one). `closes:` only links: the issue is still
+closed by `(closes #N)` in the commit subject. `pnpm chore:release-notes <version> --unlisted` lists the
+fixes and features that slipped through without one.
 
 ## Recipes
 
