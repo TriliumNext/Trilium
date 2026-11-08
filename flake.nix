@@ -45,12 +45,12 @@
         # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
         # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
         # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
-        pinnedElectronVersion = "45.2.2";
+        pinnedElectronVersion = "45.2.3";
         pinnedElectronHashes = {
-          x86_64-linux = "b5d3e7e5a80faeb194e741f85c667951490ba8052b655566d47dacb20f9868f9";
-          aarch64-linux = "ebecf43f3c348fd589bf3bfa5643842deb0993da94ce5604255799ac9d4512d1";
-          aarch64-darwin = "f9d9a3419cb9514a209fb95470f520b7e557c6262849bde81ca91d7a7435772e";
-          headers = "1wmgh2sk28306sygnhg9z4qw3kyq8km0rgdkxkvb3fkpc8rqflpf";
+          x86_64-linux = "a87fe741f6d121285117e574da6c9a2e65210d410123bbc04713b099add0263b";
+          aarch64-linux = "397c060fd9da99ab72b78787d65545b432fcadf13ef6c96658e4f525692aae0f";
+          aarch64-darwin = "4d7c429064087a47b855d9bd06c76ead4819b7f02b385de232d4a5c37ecef55f";
+          headers = "0jpkayhvf7779fch0z85cwkpkx0x6vddbixlx6cch3xfj2xfvkqx";
         };
         mkElectronBin = pkgs.callPackage (
           pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
