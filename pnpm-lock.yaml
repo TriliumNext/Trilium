@@ -1496,8 +1496,8 @@ importers:
         specifier: 21.0.4
         version: 21.0.4
       turndown:
-        specifier: 7.2.4
-        version: 7.2.4
+        specifier: 7.2.5
+        version: 7.2.5
       turnish:
         specifier: 1.13.0
         version: 1.13.0
@@ -10807,8 +10807,8 @@ packages:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
-  turndown@7.2.4:
-    resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
+  turndown@7.2.5:
+    resolution: {integrity: sha512-EKZvCCFHh8sWttpAMs10U6niZFJ2cpz8LkCPlylxoG4JcHF50J7EHnnBW3AY1qXtUMu7kDjCp7dnggB1sIbqEQ==}
     engines: {node: '>=18', npm: '>=9'}
 
   turnish@1.13.0:
@@ -18206,7 +18206,7 @@ snapshots:
     optionalDependencies:
       linkedom: 0.18.13
       temml: 0.13.5
-      turndown: 7.2.4
+      turndown: 7.2.5
     transitivePeerDependencies:
       - canvas
 
@@ -23160,7 +23160,7 @@ snapshots:
 
   tunnel@0.0.6: {}
 
-  turndown@7.2.4:
+  turndown@7.2.5:
     dependencies:
       '@mixmark-io/domino': 2.2.0
 

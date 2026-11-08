@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "happy-dom": "21.0.4",
-    "turndown": "7.2.4",
+    "turndown": "7.2.5",
     "turnish": "1.13.0",
     "vitest": "5.1.0"
   }
