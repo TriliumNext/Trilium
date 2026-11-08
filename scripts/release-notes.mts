@@ -345,7 +345,8 @@ function parseConventionalSubject(subject: string) {
 /**
  * Fills `Release Template.md` with one numbered entry per closed issue. Sections that receive
  * no entry keep the template's placeholder. Issues GitHub does not know and issues of separately
- * shipped products are left out, and so are the issues a new language closes.
+ * shipped products are left out, and so are nightly-only issues and the issues a new language
+ * closes.
  */
 export function renderReleaseNote(template: string, version: string, closings: Closing[],
     issues: Map<number, Issue>, languages: NewLanguage[] = []): string {
@@ -366,7 +367,12 @@ export function renderReleaseNote(template: string, version: string, closings: C
             continue;
         }
 
-        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(cleanTitle(issue.title))}](${issue.url})`,
+        const title = cleanTitle(issue.title);
+        if (isNightlyOnly(title)) {
+            continue;
+        }
+
+        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(title)}](${issue.url})`,
             closing.contributors);
     }
 
@@ -398,6 +404,14 @@ export function cleanTitle(title: string) {
     const marker = /^\s*(?:[[(]\s*(?:bug|feature|fr)(?:\s+(?:report|request))?\s*[\])]|(?:bug|feature)(?:\s+(?:report|request))?(?=\s*:))\s*:?\s*/i;
     const stripped = title.replace(marker, "");
     return stripped === title || stripped.length === 0 ? title : stripped[0].toUpperCase() + stripped.slice(1);
+}
+
+/**
+ * Tells whether a title reports a problem seen only in a nightly build (`Nightly: …`,
+ * `[Nightly Android] …`), which no stable release shipped.
+ */
+export function isNightlyOnly(title: string) {
+    return /^\s*[[(]?\s*nightly\b/i.test(title);
 }
 
 /** Escapes an issue title so it renders as text inside a link label. */

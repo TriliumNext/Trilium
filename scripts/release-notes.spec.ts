@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { categorize, cleanTitle, collectClosings, type Commit, escapeMarkdown, findNewLanguages, type Issue,
-    isShippedSeparately, languageName, parseClosingReferences, parseCommits, parseDisplayLocales, parseNumstat,
-    parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote } from "./release-notes.mjs";
+    isNightlyOnly, isShippedSeparately, languageName, parseClosingReferences, parseCommits, parseDisplayLocales,
+    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors,
+    renderReleaseNote } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
     it("reads closing keywords and ignores bare references", () => {
@@ -161,14 +162,16 @@ describe("renderReleaseNote", () => {
         const issues = new Map<number, Issue>([
             [ 1, { number: 1, title: "Crash on *save*", url: "https://x/1", state: "CLOSED", labels: [] } ],
             [ 2, { number: 2, title: "Wrong [size]", url: "https://x/2", state: "CLOSED", labels: [] } ],
-            [ 4, { number: 4, title: "Clipper", url: "https://x/4", state: "CLOSED", labels: [ "web-clipper" ] } ]
+            [ 4, { number: 4, title: "Clipper", url: "https://x/4", state: "CLOSED", labels: [ "web-clipper" ] } ],
+            [ 5, { number: 5, title: "[Bug]: Nightly: crash", url: "https://x/5", state: "CLOSED", labels: [] } ]
         ]);
 
         expect(renderReleaseNote(template, "v1.0.0", [
             { issue: 1, subjects: [ "fix: a" ], contributors: [ "a", "b" ] },
             { issue: 2, subjects: [ "fix: b" ], contributors: [] },
             { issue: 3, subjects: [ "fix: c" ], contributors: [] },
-            { issue: 4, subjects: [ "fix: d" ], contributors: [] }
+            { issue: 4, subjects: [ "fix: d" ], contributors: [] },
+            { issue: 5, subjects: [ "fix: e" ], contributors: [] }
         ], issues)).toBe([
             "# v1.0.0",
             "> [!NOTE]",
@@ -201,6 +204,16 @@ describe("cleanTitle", () => {
         expect(cleanTitle("Search: commas in quotes")).toBe("Search: commas in quotes");
         expect(cleanTitle("Bugs in the tree")).toBe("Bugs in the tree");
         expect(cleanTitle("any markdown text")).toBe("any markdown text");
+    });
+});
+
+describe("isNightlyOnly", () => {
+    it("recognizes titles that name a nightly build first", () => {
+        expect(isNightlyOnly("Nightly: drag handle persists")).toBe(true);
+        expect(isNightlyOnly("Nightly Android: custom theme not used")).toBe(true);
+        expect(isNightlyOnly("[Nightly] Crash on start")).toBe(true);
+        expect(isNightlyOnly("Nightlywood theme crashes")).toBe(false);
+        expect(isNightlyOnly("Crash in the nightly build")).toBe(false);
     });
 });
 
