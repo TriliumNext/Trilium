@@ -380,6 +380,32 @@ describe("the configured providers", () => {
     });
 });
 
+describe("the MCP read-only toggle", () => {
+    it("is shown when MCP is enabled", () => {
+        open();
+
+        const toggle = host.querySelector<HTMLInputElement>("input.switch-toggle[id^='mcp-read-only-']");
+        expect(toggle).not.toBeNull();
+        expect(toggle?.disabled).toBe(false);
+    });
+
+    it("is hidden when MCP is disabled", () => {
+        mocks.stored = { aiEnabled: "true", mcpEnabled: "false" };
+        open();
+
+        const toggle = host.querySelector<HTMLInputElement>("input.switch-toggle[id^='mcp-read-only-']");
+        expect(toggle).toBeNull();
+    });
+
+    it("is hidden when in standalone", () => {
+        mocks.standalone = true;
+        open();
+
+        const toggle = host.querySelector<HTMLInputElement>("input.switch-toggle[id^='mcp-read-only-']");
+        expect(toggle).toBeNull();
+    });
+});
+
 describe("MCP client configuration samples", () => {
     it("emits a config clients can paste verbatim", () => {
         const parsed = JSON.parse(buildMcpClientConfig(URL, TOKEN));

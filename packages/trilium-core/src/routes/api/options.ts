@@ -164,6 +164,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "llmPermissionMode",
     "aiAssistantModel",
     "mcpEnabled",
+    "mcpReadOnly",
     // OCR options
     "ocrAutoProcessImages",
     "ocrMinConfidence"
