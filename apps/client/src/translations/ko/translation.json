@@ -4789,8 +4789,7 @@
     "edit_excerpt": "발췌 편집",
     "copy_other": "이 {{count}}개 블록의 참조 복사",
     "copy_tab": "이 탭의 링크 복사",
-    "copy_share_link_other": "이 {{count}}개 블록의 공개 링크 복사",
-    "delete_other": "블록 {{count}}개 삭제"
+    "copy_share_link_other": "이 {{count}}개 블록의 공개 링크 복사"
   },
   "record_meeting": {
     "note_title": "회의 {{date}}",

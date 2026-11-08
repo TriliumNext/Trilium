@@ -4934,10 +4934,7 @@
     "copy_tab": "Copiar el enlace a esta pestaña",
     "copy_share_link_one": "Copiar el enlace público a este bloque",
     "copy_share_link_many": "Copiar el enlace público a estos {{count}} bloques",
-    "copy_share_link_other": "Copiar el enlace público a estos {{count}} bloques",
-    "delete_one": "Eliminar bloque",
-    "delete_many": "Eliminar {{count}} bloques",
-    "delete_other": "Eliminar {{count}} bloques"
+    "copy_share_link_other": "Copiar el enlace público a estos {{count}} bloques"
   },
   "split_button": {
     "more_actions": "Más acciones"

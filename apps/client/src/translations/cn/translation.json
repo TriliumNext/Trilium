@@ -4805,8 +4805,7 @@
     "excerpt_description": "你目前看到的只是该笔记的一个片段。按 {{icon}} 按钮即可在新标签页中打开整条笔记。",
     "edit_excerpt": "编辑摘录",
     "copy_tab": "复制此标签页的链接",
-    "copy_share_link_other": "复制指向这 {{count}} 个块的公开链接",
-    "delete_other": "删除 {{count}} 个块"
+    "copy_share_link_other": "复制指向这 {{count}} 个块的公开链接"
   },
   "record_meeting": {
     "note_title": "会议 {{date}}",

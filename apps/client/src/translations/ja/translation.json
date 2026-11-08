@@ -4793,8 +4793,7 @@
     "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
     "edit_excerpt": "抜粋を編集",
     "copy_tab": "このタブへのリンクをコピー",
-    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー",
-    "delete_other": "{{count}} 個のブロックを削除"
+    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー"
   },
   "record_meeting": {
     "note_title": "ミーティング {{date}}",

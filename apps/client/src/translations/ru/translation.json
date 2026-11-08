@@ -4969,10 +4969,7 @@
     "edit_excerpt": "Редактировать отрывок",
     "copy_share_link_one": "Копировать публичную ссылку на {{count}} блок",
     "copy_share_link_few": "Копировать публичную ссылку на {{count}} блока",
-    "copy_share_link_many": "Копировать публичную ссылку на {{count}} блоков",
-    "delete_one": "Удалить {{count}} блок",
-    "delete_few": "Удалить {{count}} блока",
-    "delete_many": "Удалить {{count}} блоков"
+    "copy_share_link_many": "Копировать публичную ссылку на {{count}} блоков"
   },
   "record_meeting": {
     "note_title": "Встреча {{date}}",
