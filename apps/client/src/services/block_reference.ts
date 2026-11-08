@@ -11,7 +11,9 @@ import {
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu, { type ContextMenuOptions, type MenuItem } from "../menus/context_menu.js";
+import contextMenu, {
+    type ContextMenuOptions, type MenuHeader, type MenuItem
+} from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import {
     buildInsertMenuItems, buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
@@ -21,6 +23,7 @@ import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
 import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { byBlockType } from "./in_app_help.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
 import { getNoteShareLink } from "./share_link.js";
 import toast from "./toast.js";
@@ -58,6 +61,8 @@ export interface BlockHandleMenuActions {
     sortItem?: MenuItem<CommandNames> | null;
     /** Deletes the selected blocks, shown last, after a separator. */
     deleteBlocks?: () => void;
+    /** Opens an in-app help page, by its ID without `_help_`, from the button of the heading. */
+    openHelpPage?: (helpPage: string) => void;
 }
 
 /** The note a text editor is open on, which the references it copies point to. */
@@ -68,6 +73,11 @@ export interface ReferenceSource {
     getNotePath(): string | null | undefined;
     /** Saves the note now, so that a copied link resolves at once. */
     save(): unknown;
+    /**
+     * Opens an in-app help page, by its ID without `_help_`, where the note context of the editor
+     * can show it.
+     */
+    openHelpPage?: (helpPage: string) => void;
 }
 
 type CopyReference = (editor: CKTextEditor, notePath: string, noteTitle: string) => unknown;
@@ -100,7 +110,8 @@ export function buildReferenceConfig(
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
                         : undefined,
                     sortItem: buildSortSelectionMenuItem(editor),
-                    deleteBlocks: getDeleteBlocksAction(editor)
+                    deleteBlocks: getDeleteBlocksAction(editor),
+                    openHelpPage: source.openHelpPage
                 }, editor, onClose);
             },
             copyReference: () => void copy(copyBlockReference)
@@ -120,7 +131,9 @@ export function buildReferenceConfig(
 export function openBlockHandleMenu(
     origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
-    { insertItems, copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
+    {
+        insertItems, copyReference, copyShareLink, sortItem, deleteBlocks, openHelpPage
+    }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
 ) {
@@ -130,7 +143,7 @@ export function openBlockHandleMenu(
         return;
     }
 
-    const items: MenuItem<CommandNames>[] = [ { kind: "header", title: getBlocksTitle(blocks) } ];
+    const items: MenuItem<CommandNames>[] = [ getBlocksHeader(blocks, openHelpPage) ];
     if (insertItems?.length) {
         items.push(...insertItems, { kind: "separator" });
     }
@@ -348,23 +361,43 @@ export function revealHighlightedBlocks(container: HTMLElement) {
     container.scrollTop += top - viewportTop - margin;
 }
 
-/** The type of the only block of `blocks`, such as _Table_, else their number. */
-function getBlocksTitle(blocks: readonly ModelElement[]) {
+/**
+ * The heading of the menu for `blocks`: the type of the only block, such as _Table_, with a button
+ * that opens the help page of the type through `openHelpPage`, else the number of blocks.
+ */
+function getBlocksHeader(
+    blocks: readonly ModelElement[],
+    openHelpPage: ((helpPage: string) => void) | undefined
+): MenuHeader {
     const block = blocks.length === 1 ? blocks[0] : undefined;
     if (!block) {
-        return t("block_reference.block_count", { count: blocks.length });
+        const title = t("block_reference.block_count", { count: blocks.length });
+        return { kind: "header", title };
     }
 
-    const level = /^heading(\d)$/.exec(block.name)?.[1];
-    if (level) {
-        return t("block_reference.types.heading", { level });
+    const type = getBlockType(block);
+    const header: MenuHeader = {
+        kind: "header",
+        title: type === "heading"
+            ? t("block_reference.types.heading", { level: block.name.slice("heading".length) })
+            : t(`block_reference.types.${type}`)
+    };
+    const helpPage = byBlockType[type];
+    if (helpPage && openHelpPage) {
+        header.actions = [ {
+            icon: "bx bx-help-circle",
+            caption: t("open-help-page"),
+            callback: () => openHelpPage(helpPage)
+        } ];
     }
-
-    return t(`block_reference.types.${getBlockType(block)}`);
+    return header;
 }
 
-/** The key of the type of `block` under `block_reference.types`. */
-function getBlockType(block: ModelElement) {
+/** The type of `block`. */
+function getBlockType(block: ModelElement): BlockType {
+    if (/^heading\d$/.test(block.name)) {
+        return "heading";
+    }
     if (block.name === "paragraph" && block.hasAttribute("listItemId")) {
         return block.getAttribute("listType") === "todo" ? "todo_item" : "list_item";
     }
@@ -375,8 +408,8 @@ function getBlockType(block: ModelElement) {
     return BLOCK_TYPES[block.name] ?? "block";
 }
 
-/** The key of the type of the content embed `embed` under `block_reference.types`. */
-function getEmbedType(embed: ModelElement) {
+/** The type of the content embed `embed`. */
+function getEmbedType(embed: ModelElement): BlockType {
     if (embed.hasAttribute("url")) {
         return embed.getAttribute("embedType") === "audio" ? "audio" : "video";
     }
@@ -399,8 +432,8 @@ function getEmbedType(embed: ModelElement) {
     }
 }
 
-/** The key under `block_reference.types` of each element that names a single type of block. */
-const BLOCK_TYPES: Record<string, string> = {
+/** The type of block of each element that names a single type. */
+const BLOCK_TYPES: Record<string, BlockType> = {
     paragraph: "paragraph",
     blockQuote: "block_quote",
     codeBlock: "code_block",
@@ -419,6 +452,13 @@ const BLOCK_TYPES: Record<string, string> = {
     linkEmbed: "link_preview",
     unknownContentEmbed: "embed"
 };
+
+/** A type of block, by its key under `block_reference.types`. */
+export type BlockType = "paragraph" | "heading" | "list_item" | "todo_item" | "block_quote"
+    | "code_block" | "table" | "image" | "horizontal_line" | "page_break" | "admonition"
+    | "collapsible" | "tabs" | "columns" | "math" | "footnotes" | "footnote" | "included_note"
+    | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio" | "link_preview"
+    | "embed" | "block";
 
 /** The commands of the insert items for a list item or a table cell. */
 type InsertCommandName = "triliumInsertListItemAbove" | "triliumInsertListItemBelow"

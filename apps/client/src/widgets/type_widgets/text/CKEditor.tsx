@@ -13,6 +13,7 @@ import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
 import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { InsertMediaBalloon } from "../../dialogs/insert_media";
+import { openHelpPageFor } from "../../react/HelpButton";
 import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
@@ -390,7 +391,8 @@ export default function CKEditor({
                     getEditor: () => editorRef.current,
                     getNote: () => noteRef.current,
                     getNotePath: () => noteLocationRef.current?.notePath,
-                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
+                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow"),
+                    openHelpPage: (helpPage) => openHelpPageFor(helpPage, ntxId)
                 },
                 getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
                 showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null,

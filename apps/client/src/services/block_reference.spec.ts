@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import type { MenuCommandItem, MenuItem } from "../menus/context_menu.js";
+import type { MenuCommandItem, MenuHeader, MenuItem } from "../menus/context_menu.js";
 import {
+    type BlockHandleMenuActions,
     buildBlockReferenceMenuItems, buildReferenceConfig, consumeBlockReference, copyBlockReference,
     copyBlockShareLink, copyTabReference, getClipboardBlockReference, highlightBlockReference,
     openBlockHandleMenu, revealHighlightedBlocks
@@ -379,6 +380,33 @@ describe("openBlockHandleMenu", () => {
             "attachment", "attachment", "block"
         ].map((type) => `block_reference.types.${type}`));
     });
+
+    it("gives the heading of a single block a button that opens the help page of its type", () => {
+        const openHelpPage = vi.fn();
+        const getHeader = (blocks: ModelElement[], actions: BlockHandleMenuActions = {
+            copyReference: vi.fn(), openHelpPage
+        }) => {
+            openBlockHandleMenu(new MouseEvent("contextmenu"), blocks, actions);
+            return showMenu.mock.lastCall?.[0].items[0] as MenuHeader;
+        };
+        const runHelp = (header: MenuHeader) =>
+            header.actions?.[0]?.callback(new MouseEvent("click"));
+
+        const table = getHeader([ buildBlock("table") ]);
+        expect(table.actions).toEqual([ {
+            icon: "bx bx-help-circle", caption: "open-help-page", callback: expect.any(Function)
+        } ]);
+        runHelp(table);
+        runHelp(getHeader([ buildBlock("heading2") ]));
+        expect(openHelpPage.mock.calls).toEqual([ [ "NdowYOC1GFKS" ], [ "Gr6xFaF6ioJ5" ] ]);
+
+        expect(getHeader([ buildBlock("paragraph") ])).not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("htmlDivParagraph") ])).not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("table"), buildBlock("table") ]))
+            .not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("table") ], { copyReference: vi.fn() }))
+            .not.toHaveProperty("actions");
+    });
 });
 
 describe("buildReferenceConfig", () => {
@@ -394,13 +422,15 @@ describe("buildReferenceConfig", () => {
             ? { startId: "t1", endId: "t1", count: 1 }
             : { startId: "s1", endId: "s1", count: 1 }) as never);
         const save = vi.fn();
+        const openHelpPage = vi.fn();
         const config = buildReferenceConfig({
             getEditor: () => editor,
             getNote: () => note,
             getNotePath: () => notePath,
-            save
+            save,
+            openHelpPage
         });
-        return { config, editor, save };
+        return { config, editor, save, openHelpPage };
     }
 
     it("copies references to the blocks and the tab of the note, then saves it", async () => {
@@ -422,7 +452,7 @@ describe("buildReferenceConfig", () => {
     });
 
     it("opens the block handle menu, which copies references or deletes the blocks", async () => {
-        const { config, editor, save } = buildSource();
+        const { config, editor, save, openHelpPage } = buildSource();
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
 
@@ -457,6 +487,11 @@ describe("buildReferenceConfig", () => {
         expect(editor.commands.get).toHaveBeenCalledWith("deleteBlocks");
         expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks");
         expect(editor.editing.view.focus).toHaveBeenCalledOnce();
+
+        config.blockReference?.openHandleMenu?.(event, [ buildBlock("table") ], vi.fn());
+        const header = showMenu.mock.lastCall?.[0].items[0] as MenuHeader;
+        header.actions?.[0]?.callback(new MouseEvent("click"));
+        expect(openHelpPage).toHaveBeenCalledWith("NdowYOC1GFKS");
     });
 
     /** Opens the block handle menu of `blocks` while only the commands in `enabled` are enabled. */
