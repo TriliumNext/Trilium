@@ -9,6 +9,10 @@
  * the closing change's commit type selects. The web clipper ships on its own, so its issues
  * are left out.
  *
+ * A locale that became a display language since the previous release gets an entry under
+ * Internationalization, credited to the translators whose commits added lines to its catalogues,
+ * or to the reporter of the issue its commit closes when no translator has a GitHub account.
+ *
  * The previous release defaults to the newest `v*` tag reachable from `HEAD`, so a hotfix
  * tagged on the `stable` branch is skipped. GitHub data comes from the `gh` CLI. Usage:
  *
@@ -25,7 +29,11 @@ const ROOT = resolve(dirname(SCRIPT_PATH), "..");
 const NOTES_DIR = join(ROOT, "docs", "Release Notes", "Release Notes");
 const TEMPLATE_PATH = join(NOTES_DIR, "Release Template.md");
 const DEFAULT_REPOSITORY = "TriliumNext/Trilium";
-const UNCREDITED = new Set([ "eliandoran", "claude", "renovate" ]);
+const UNCREDITED = new Set([ "eliandoran", "claude", "renovate", "weblate" ]);
+const LOCALES_PATH = "packages/commons/src/lib/i18n.ts";
+const CATALOGUE_DIRS = [ "apps/client/src/translations", "apps/server/src/assets/translations" ];
+const LOCALE_TAGS: Record<string, string> = { cn: "zh-CN", tw: "zh-TW" };
+const LANGUAGE_NAMES: Record<string, string> = { fa: "Persian (Farsi)" };
 const SEPARATELY_SHIPPED_LABELS = new Set([ "web-clipper" ]);
 const SEPARATELY_SHIPPED_AREAS = /^(?:web-)?clipper\b/;
 const GRAPHQL_BATCH_SIZE = 50;
@@ -53,6 +61,17 @@ export interface Issue {
     state: string;
     issueType?: string;
     labels: string[];
+    author?: string;
+}
+
+/** A locale that became a display language in the release. */
+export interface NewLanguage {
+    id: string;
+    /** The commit that made it a display language. */
+    hash: string;
+    contributors: string[];
+    /** The issues that commit closes, listed under the language instead of on their own. */
+    issues: number[];
 }
 
 /** An issue the release closes, with the changes that close it, oldest first. */
@@ -92,8 +111,9 @@ export function main({ version, from, stdout, force, repository }: Options) {
 
     const closings = collectClosings(commits, pullRequests, authors);
     const issues = github.fetchIssues(closings.map((closing) => closing.issue));
+    const languages = collectNewLanguages(base, commits, issues, github);
 
-    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, closings, issues);
+    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, closings, issues, languages);
     if (stdout) {
         process.stdout.write(note);
     } else {
@@ -108,6 +128,109 @@ export function main({ version, from, stdout, force, repository }: Options) {
         } else if (issue.state === "OPEN") {
             console.error(`  #${closing.issue} is still open: ${issue.title}`);
         }
+    }
+}
+
+function collectNewLanguages(base: string, commits: Commit[], issues: Map<number, Issue>, github: GitHub) {
+    const versions = git("log", "--reverse", "--format=%H", `${base}..HEAD`, "--", LOCALES_PATH)
+        .split("\n")
+        .filter((hash) => hash.length > 0)
+        .map((hash) => ({ hash, source: git("show", `${hash}:${LOCALES_PATH}`) }));
+
+    const languages: NewLanguage[] = [];
+    for (const { id, hash } of findNewLanguages(git("show", `${base}:${LOCALES_PATH}`), versions)) {
+        const additions = parseNumstat(git("log", "--numstat", "--format=%x1e%H", `${base}..HEAD`, "--",
+            ...CATALOGUE_DIRS.map((dir) => `${dir}/${id}/`)));
+        const translators = rankContributors(additions, github.fetchCommitAuthors([ ...additions.keys() ]));
+
+        const commit = commits.find((it) => it.hash === hash);
+        const closed = commit ? parseClosingReferences(`${commit.subject}\n${commit.body}`) : [];
+        const reporters = closed.flatMap((number) => {
+            const author = issues.get(number)?.author;
+            return author && isCredited(author) ? [ author ] : [];
+        });
+
+        languages.push({ id, hash, contributors: translators.length > 0 ? translators : reporters, issues: closed });
+    }
+    return languages;
+}
+
+/** Returns the ids of the display languages in a version of `i18n.ts`, in their listed order. */
+export function parseDisplayLocales(source: string): string[] {
+    const ids: string[] = [];
+    for (const [ entry ] of source.matchAll(/\{[^{}]*\bid:\s*"[^"]+"[^{}]*\}/g)) {
+        const id = /\bid:\s*"([^"]+)"/.exec(entry)?.[1];
+        if (id && !/\b(?:contentOnly|devOnly):\s*true\b/.test(entry)) {
+            ids.push(id);
+        }
+    }
+    return ids;
+}
+
+/**
+ * Returns the locales that are display languages after the last version but not in the base one,
+ * each with the commit (from `versions`, oldest first) that made it one.
+ */
+export function findNewLanguages(baseSource: string, versions: { hash: string; source: string }[]) {
+    const base = new Set(parseDisplayLocales(baseSource));
+    const introducedBy = new Map<string, string>();
+    let previous = base;
+    for (const { hash, source } of versions) {
+        const current = new Set(parseDisplayLocales(source));
+        for (const id of current) {
+            if (!previous.has(id) && !base.has(id)) {
+                introducedBy.set(id, hash);
+            }
+        }
+        for (const id of previous) {
+            if (!current.has(id)) {
+                introducedBy.delete(id);
+            }
+        }
+        previous = current;
+    }
+    return [ ...introducedBy ].map(([ id, hash ]) => ({ id, hash }));
+}
+
+/** Reads `git log --numstat --format=%x1e%H` output into the lines each commit adds. */
+export function parseNumstat(output: string) {
+    const additions = new Map<string, number>();
+    for (const record of output.split("\x1e")) {
+        const [ hash, ...files ] = record.trim().split("\n");
+        if (!hash) {
+            continue;
+        }
+        let added = 0;
+        for (const file of files) {
+            const count = Number(file.split("\t")[0]);
+            added += Number.isFinite(count) ? count : 0;
+        }
+        additions.set(hash, added);
+    }
+    return additions;
+}
+
+/** Sums the lines added per GitHub login and returns the credited logins, most lines first. */
+export function rankContributors(additions: Map<string, number>, logins: Map<string, string>) {
+    const totals = new Map<string, number>();
+    for (const [ hash, added ] of additions) {
+        const login = logins.get(hash);
+        if (login && isCredited(login) && added > 0) {
+            totals.set(login, (totals.get(login) ?? 0) + added);
+        }
+    }
+    return [ ...totals ].sort((a, b) => b[1] - a[1]).map(([ login ]) => login);
+}
+
+/** Names a locale in English, the way the release note lists it. */
+export function languageName(id: string) {
+    if (LANGUAGE_NAMES[id]) {
+        return LANGUAGE_NAMES[id];
+    }
+    try {
+        return new Intl.DisplayNames([ "en" ], { type: "language" }).of(LOCALE_TAGS[id] ?? id.replaceAll("_", "-")) ?? id;
+    } catch {
+        return id;
     }
 }
 
@@ -222,21 +345,29 @@ function parseConventionalSubject(subject: string) {
 /**
  * Fills `Release Template.md` with one numbered entry per closed issue. Sections that receive
  * no entry keep the template's placeholder. Issues GitHub does not know and issues of separately
- * shipped products are left out.
+ * shipped products are left out, and so are the issues a new language closes.
  */
 export function renderReleaseNote(template: string, version: string, closings: Closing[],
-    issues: Map<number, Issue>): string {
+    issues: Map<number, Issue>, languages: NewLanguage[] = []): string {
     const entries = new Map<string, string[]>();
+    function add(section: Section, entry: string, contributors: string[]) {
+        const credit = contributors.length > 0 ? ` by ${contributors.map((login) => `@${login}`).join(" & ")}` : "";
+        entries.set(section, [ ...entries.get(section) ?? [], `${entry}${credit}` ]);
+    }
+
+    for (const language of languages) {
+        add("Internationalization", languageName(language.id), language.contributors);
+    }
+
+    const languageIssues = new Set(languages.flatMap((language) => language.issues));
     for (const closing of closings) {
         const issue = issues.get(closing.issue);
-        if (!issue || isShippedSeparately(closing.subjects, issue.labels)) {
+        if (!issue || isShippedSeparately(closing.subjects, issue.labels) || languageIssues.has(closing.issue)) {
             continue;
         }
 
-        const section = categorize(closing.subjects, issue.issueType);
-        const credit = closing.contributors.length > 0
-            ? ` by ${closing.contributors.map((login) => `@${login}`).join(" & ")}` : "";
-        entries.set(section, [ ...entries.get(section) ?? [], `[${escapeMarkdown(issue.title)}](${issue.url})${credit}` ]);
+        add(categorize(closing.subjects, issue.issueType), `[${escapeMarkdown(issue.title)}](${issue.url})`,
+            closing.contributors);
     }
 
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
@@ -310,8 +441,10 @@ class GitHub {
     fetchIssues(numbers: number[]) {
         const result = new Map<number, Issue>();
         const nodes = this.query(numbers, (number) => `issueOrPullRequest(number: ${number}) {
-            ... on Issue { number title url state issueType { name } labels(first: 25) { nodes { name } } }
-            ... on PullRequest { number title url state labels(first: 25) { nodes { name } } }
+            ... on Issue {
+                number title url state author { login } issueType { name } labels(first: 25) { nodes { name } }
+            }
+            ... on PullRequest { number title url state author { login } labels(first: 25) { nodes { name } } }
         }`);
         for (const node of nodes) {
             result.set(node.number, {
@@ -320,7 +453,8 @@ class GitHub {
                 url: node.url,
                 state: node.state,
                 issueType: node.issueType?.name,
-                labels: node.labels.nodes.map((label: any) => label.name)
+                labels: node.labels.nodes.map((label: any) => label.name),
+                author: node.author?.login
             });
         }
         return result;

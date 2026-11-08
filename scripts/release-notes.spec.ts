@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { categorize, collectClosings, type Commit, escapeMarkdown, type Issue, isShippedSeparately,
-    parseClosingReferences, parseCommits, parsePullRequestNumber, type PullRequest,
-    renderReleaseNote } from "./release-notes.mjs";
+import { categorize, collectClosings, type Commit, escapeMarkdown, findNewLanguages, type Issue,
+    isShippedSeparately, languageName, parseClosingReferences, parseCommits, parseDisplayLocales, parseNumstat,
+    parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
     it("reads closing keywords and ignores bare references", () => {
@@ -76,6 +76,67 @@ describe("isShippedSeparately", () => {
         expect(isShippedSeparately([ "feat(clipper): a", "fix(web-clipper): b" ], [])).toBe(true);
         expect(isShippedSeparately([ "feat(clipper): a", "fix(server): b" ], [])).toBe(false);
         expect(isShippedSeparately([ "feat(text): a" ], [ "ckeditor" ])).toBe(false);
+    });
+});
+
+describe("new languages", () => {
+    const base = `
+        { id: "cs", name: "Čeština", electronLocale: "cs" },
+        { id: "en", name: "English", electronLocale: "en" },
+        {
+            id: "en_rtl",
+            rtl: true,
+            devOnly: true
+        },
+        { // Persian
+            id: "fa",
+            rtl: true,
+            contentOnly: true
+        },`;
+
+    it("lists display languages, skipping content-only and dev-only ones", () => {
+        expect(parseDisplayLocales(base)).toEqual([ "cs", "en" ]);
+    });
+
+    it("finds the commit that made each locale a display language", () => {
+        const withVietnamese = `${base}\n{ id: "vi", name: "Tiếng Việt" },`;
+        const withPersian = withVietnamese.replace("contentOnly: true", "electronLocale: \"fa\"");
+        const withDanish = `${withPersian}\n{ id: "da", name: "Dansk" },\n{ id: "xx", name: "X" },`;
+        const withoutX = withDanish.replace(`{ id: "xx", name: "X" },`, "");
+
+        expect(findNewLanguages(base, [
+            { hash: "a", source: withVietnamese },
+            { hash: "b", source: withPersian },
+            { hash: "c", source: withDanish },
+            { hash: "d", source: withoutX }
+        ])).toEqual([ { id: "vi", hash: "a" }, { id: "fa", hash: "b" }, { id: "da", hash: "c" } ]);
+    });
+
+    it("credits translators by the lines they added", () => {
+        const additions = parseNumstat("\x1ea\n\n10\t2\tvi/translation.json\n5\t0\tvi/server.json\n"
+            + "\x1eb\n\n30\t0\tvi/translation.json\n\x1ec\n\n-\t-\tvi/image.png\n\x1ed\n\n100\t0\tvi/translation.json\n");
+        expect(additions).toEqual(new Map([ [ "a", 15 ], [ "b", 30 ], [ "c", 0 ], [ "d", 100 ] ]));
+        expect(rankContributors(additions, new Map([
+            [ "a", "translator" ], [ "b", "other" ], [ "c", "silent" ], [ "d", "weblate" ]
+        ]))).toEqual([ "other", "translator" ]);
+    });
+
+    it("names languages in English", () => {
+        expect(languageName("vi")).toBe("Vietnamese");
+        expect(languageName("fa")).toBe("Persian (Farsi)");
+        expect(languageName("cn")).toBe("Chinese (China)");
+        expect(languageName("pt_br")).toBe("Brazilian Portuguese");
+    });
+
+    it("lists them under Internationalization in place of the issues they close", () => {
+        const template = "# T\n\n## 🌍 Internationalization\n\n1.  \\[…\\]\n\n## 🐞 Bugfixes\n\n1.  \\[…\\]";
+        const issues = new Map<number, Issue>([
+            [ 1, { number: 1, title: "Add Persian", url: "https://x/1", state: "CLOSED", labels: [] } ]
+        ]);
+
+        expect(renderReleaseNote(template, "v1", [ { issue: 1, subjects: [ "feat(i18n): x" ], contributors: [] } ],
+            issues, [ { id: "fa", hash: "a", contributors: [ "reporter" ], issues: [ 1 ] } ]))
+            .toBe("# v1\n\n## 🌍 Internationalization\n\n1.  Persian (Farsi) by @reporter\n\n## 🐞 Bugfixes\n\n1.  \\[…\\]\n");
     });
 });
 
