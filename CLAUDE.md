@@ -269,7 +269,8 @@ Two traps this catches:
 
 The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
 feature that reaches users adds its entry in the same commit**: `pnpm changelog:new <slug>`, then fill in
-`type`, the optional `area`/`closes`/`credits`, and one line describing what the user sees — the outcome,
+`type`, `area` (required for a fix or an improvement, checked by `pnpm changelog:lint`), the optional
+`closes`/`credits`, and one line describing what the user sees — the outcome,
 not the mechanism. Format and the skip list: `.changelog/README.md`. Skip it for internal changes, for a
 fix to something introduced since the last release, and for a fix whose closed issue's title already
 reads as the entry (closed issues are listed without one). `closes:` only links: the issue is still

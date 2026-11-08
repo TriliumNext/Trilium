@@ -34,6 +34,7 @@
     "electron:build": "pnpm desktop:build",
     "electron:start": "pnpm desktop:start",
     "electron:start-prod": "pnpm desktop:start-prod",
+    "changelog:lint": "node --experimental-strip-types ./scripts/release-notes.mts lint",
     "changelog:new": "node --experimental-strip-types ./scripts/release-notes.mts new",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
     "chore:release-notes": "node --experimental-strip-types ./scripts/release-notes.mts",

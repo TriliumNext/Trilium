@@ -1,6 +1,6 @@
 ---
 type: improvement
-area: Server and sync
+area: Server
 ---
 
 The server-side logs are colored.

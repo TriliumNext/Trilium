@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Board
 closes: [12064]
 credits: [Rowee13]
 ---

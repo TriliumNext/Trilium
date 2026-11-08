@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Markdown
 closes: [5682]
 credits: [SulimanAbdulrazzaq]
 ---

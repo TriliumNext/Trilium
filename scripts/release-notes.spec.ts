@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
-    escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
-    lintChangelogEntry, markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
-    parseCommits, parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest,
-    rankContributors, renderReleaseNote, renderSection, stripAreaPrefix, unreleasedNotice
+    AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings,
+    collectItems, type Commit, escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly,
+    isShippedSeparately, languageName, lintChangelogEntry, markdownToHtml, needsEntry,
+    type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits, parseDisplayLocales,
+    parseNumstat, parsePullRequestNumber, type PullRequest, rankContributors, renderReleaseNote,
+    renderSection, stripAreaPrefix, unreleasedNotice
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {

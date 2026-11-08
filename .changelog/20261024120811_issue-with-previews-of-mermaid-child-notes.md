@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Mermaid
 closes: [11736]
 ---
 

@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Sync
 closes: [12173]
 ---
 

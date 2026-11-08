@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Search
 closes: [8491]
 ---
 

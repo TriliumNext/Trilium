@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Share
 closes: [10588, 8791]
 credits: [jayhormes]
 ---

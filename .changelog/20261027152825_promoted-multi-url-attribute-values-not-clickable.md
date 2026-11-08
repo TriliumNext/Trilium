@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Attributes
 closes: [12312]
 credits: [kleutzinger]
 ---

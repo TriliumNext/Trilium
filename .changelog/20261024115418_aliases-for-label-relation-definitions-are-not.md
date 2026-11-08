@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Attributes
 closes: [6853]
 credits: [maphew]
 ---

@@ -25,6 +25,7 @@
  *   pnpm chore:release-notes unreleased [--from v0.106.0]
  *   pnpm chore:release-notes consume v0.107.0
  *   pnpm changelog:new <slug>
+ *   pnpm changelog:lint
  *
  * `--unlisted` reports the fixes and features that neither close an issue nor come with an entry,
  * leaving out fixes that only change code written since the previous release. `unreleased` prints
@@ -1076,9 +1077,11 @@ function consumeChangelogEntries(version: string) {
 }
 
 /** Writes a changelog entry to fill in, named after the current time and the slug. */
-function wrap(text: string, width: number) {
+/** Joins the items with commas into lines of at most `width` characters. */
+function wrap(items: string[], width: number) {
     const lines: string[] = [];
-    for (const word of text.split(" ")) {
+    for (const [ index, item ] of items.entries()) {
+        const word = index < items.length - 1 ? `${item},` : item;
         const last = lines.at(-1);
         if (last !== undefined && last.length + word.length < width) {
             lines[lines.length - 1] = `${last} ${word}`;
@@ -1103,7 +1106,7 @@ function createChangelogEntry(slug: string) {
         `# ${Object.keys(ENTRY_TYPES).join(" | ")}`,
         "type: fix",
         "# Required for fix and improvement: the group the entry goes to, one of",
-        ...wrap(AREAS.join(", "), 98).map((line) => `# ${line}`),
+        ...wrap(AREAS, 96).map((line) => `# ${line}`),
         "area:",
         "# Optional: issue numbers. Their generated entries give way to this one.",
         "closes: []",

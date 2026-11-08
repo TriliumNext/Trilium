@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Text editor
 closes: [1719]
 ---
 

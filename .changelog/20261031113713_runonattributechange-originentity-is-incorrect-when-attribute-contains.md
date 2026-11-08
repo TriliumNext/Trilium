@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Attributes
 closes: [12382]
 ---
 

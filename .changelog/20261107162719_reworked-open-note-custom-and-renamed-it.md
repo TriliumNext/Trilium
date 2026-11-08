@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Desktop
 closes: [7258, 12418]
 ---
 

@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Text editor
 closes: [11977]
 credits: [SwastikTripathi]
 ---
