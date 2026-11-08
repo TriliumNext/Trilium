@@ -1,11 +1,15 @@
-import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials,
+    Paragraph, Table
+} from "ckeditor5";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
 import BlockDragHandle from "./block_drag_handle.js";
 import CollapsibleEditing from "./collapsible_editing.js";
 
 const INDICATOR_CLASS = "test-drop-indicator";
+const CELL_INDICATOR_CLASS = "test-cell-drop-indicator";
 
 describe("BlockDragHandle", () => {
     let editor: ClassicEditor;
@@ -48,6 +52,11 @@ describe("BlockDragHandle", () => {
         getEditorElement(editor).style.cssText = "width: 600px; position: absolute; top: 0; left: 0;";
         root = editor.editing.view.getDomRoot() as HTMLElement;
         handle = new BlockDragHandle({ editor, indicatorClass: INDICATOR_CLASS });
+    });
+
+    // Ends a drag a test leaves open, so its document listeners do not reach the next test.
+    afterEach(() => {
+        handle.cancel();
     });
 
     describe("click vs drag", () => {
@@ -180,6 +189,48 @@ describe("BlockDragHandle", () => {
 
             expect(getModelData(editor.model, { withoutSelection: true })).toBe(
                 "<paragraph>two</paragraph><paragraph>one</paragraph>"
+            );
+        });
+
+        it("hides the drop indicator when its root leaves the document mid-drag", async () => {
+            const cellEditor = await createTestEditor([
+                Essentials, Paragraph, Table, CollapsibleEditing
+            ]);
+            setModelData(
+                cellEditor.model,
+                "<paragraph>before</paragraph>" +
+                "<table><tableRow><tableCell>" +
+                "<paragraph>one[]</paragraph><paragraph>two</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+            const table = cellEditor.model.document.getRoot()?.getChild(1);
+            const dragged = cellEditor.model.document.selection.getFirstPosition()?.parent;
+            // A drag that starts in a table cell has the cell's nested editable as its root.
+            const cell = cellEditor.editing.view.getDomRoot()?.querySelector("td");
+            const second = cell?.querySelectorAll("p")[1];
+            if (!table || !dragged || !(cell instanceof HTMLElement)
+                || !(second instanceof HTMLElement)) {
+                throw new Error("Expected two rendered paragraphs in a table cell.");
+            }
+            const cellHandle = new BlockDragHandle({
+                editor: cellEditor, indicatorClass: CELL_INDICATOR_CLASS
+            });
+            const target = second.getBoundingClientRect();
+
+            cellHandle.start(0, 0, dragged, cell);
+            mouse("mousemove", target.left + 5, target.top + 2);
+            const bar = document.querySelector<HTMLElement>(`.${CELL_INDICATOR_CLASS}`);
+            expect(bar?.style.display).toBe("block");
+
+            cellEditor.model.change((writer) => writer.remove(table));
+            // Outside the window, where `elementFromPoint()` finds nothing.
+            mouse("mousemove", -500, -500);
+            expect(bar?.style.display).toBe("none");
+
+            mouse("mouseup", -500, -500);
+            expect(bar?.isConnected).toBe(false);
+            expect(getModelData(cellEditor.model, { withoutSelection: true })).toBe(
+                "<paragraph>before</paragraph>"
             );
         });
     });

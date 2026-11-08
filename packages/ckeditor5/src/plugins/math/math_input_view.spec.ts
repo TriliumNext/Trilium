@@ -311,7 +311,7 @@ describe( 'MathInputView', () => {
 		expect( tooltip.positionArea ).toBe( 'bottom' );
 	} );
 
-	it( 'resizes the math field within the limits of the LaTeX textarea', async () => {
+	it( 'sizes the math field like the LaTeX textarea and stretches it to its container', async () => {
 		const mathfield = await renderAndWait();
 		const form = document.createElement( 'div' );
 		form.className = 'ck ck-math-form';
@@ -320,20 +320,23 @@ describe( 'MathInputView', () => {
 		const container = view.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement;
 		form.style.setProperty( '--ck-input-width', '18em' );
 		const limits = ( element: Element ) => {
-			const { resize, maxWidth, minHeight, maxHeight } = getComputedStyle( element );
-			return [ resize, maxWidth, minHeight, maxHeight ];
+			const { resize, flexBasis, maxWidth, minHeight } = getComputedStyle( element );
+			return [ resize, flexBasis, maxWidth, minHeight ];
 		};
 
 		expect( limits( container ) ).toEqual( limits( textarea() ) );
-		expect( limits( container ) ).toEqual( [ 'both', '100%', '60px', '120px' ] );
+		expect( limits( container ) ).toEqual( [ 'none', '60px', '100%', 'min-content' ] );
 		// CKEditor's `.ck-input` sets the textarea's min-width to `--ck-input-width` at its font size.
 		expect( parseFloat( getComputedStyle( container ).minWidth ) )
 			.toBeCloseTo( 18 * parseFloat( getComputedStyle( textarea() ).fontSize ) );
 
-		container.style.height = '200px';
-		const { paddingTop, paddingBottom } = getComputedStyle( container );
-		expect( mathfield.getBoundingClientRect().height )
-			.toBeCloseTo( container.clientHeight - parseFloat( paddingTop ) - parseFloat( paddingBottom ) );
+		container.style.flexBasis = '200px';
+		const style = getComputedStyle( container );
+		const insets = [ style.paddingTop, style.paddingBottom, style.borderTopWidth, style.borderBottomWidth ];
+		expect( mathfield.getBoundingClientRect().height ).toBeCloseTo(
+			container.getBoundingClientRect().height -
+				insets.reduce( ( sum, inset ) => sum + parseFloat( inset ), 0 )
+		);
 		form.remove();
 	} );
 
@@ -352,6 +355,32 @@ describe( 'MathInputView', () => {
 
 		await renderAndWait();
 		expect( mathFieldClass().locale ).toBe( 'en' );
+	} );
+
+	it( 'leaves the language of MathLive alone when destroyed before MathLive loads', async () => {
+		await renderAndWait();
+		const mathFieldClass = customElements.get( 'math-field' ) as unknown as { locale: string };
+		view.element?.remove();
+		view.destroy();
+		const whenDefined = vi.spyOn( customElements, 'whenDefined' );
+
+		view = new MathInputView( new Locale( { uiLanguage: 'de' } ) );
+		view.render();
+		view.destroy();
+		await vi.waitFor( () => expect( whenDefined ).toHaveBeenCalled() );
+		await whenDefined.mock.results[ 0 ]?.value;
+
+		expect( mathFieldClass.locale ).toBe( 'en' );
+	} );
+
+	it( 'turns off the keypress sounds of MathLive', async () => {
+		await renderAndWait();
+		const { soundsDirectory, plonkSound } = customElements.get( 'math-field' ) as unknown as {
+			soundsDirectory: string | null;
+			plonkSound: string | null;
+		};
+
+		expect( [ soundsDirectory, plonkSound ] ).toEqual( [ null, null ] );
 	} );
 
 	describe( 'in every UI language', () => {

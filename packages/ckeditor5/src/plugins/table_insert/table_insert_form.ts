@@ -205,13 +205,13 @@ export default class TableInsertFormView extends View {
             this.insertButtonView
         ]) {
             this.focusables.add(view);
-            /* v8 ignore next -- a child view rendered as part of this template has an element */
+            /* v8 ignore else -- a child view rendered as part of this template has an element */
             if (view.element) {
                 this.focusTracker.add(view.element);
             }
         }
 
-        /* v8 ignore next -- super.render() has just built this view's element */
+        /* v8 ignore else -- super.render() has just built this view's element */
         if (this.element) {
             this.keystrokes.listenTo(this.element);
         }
@@ -420,7 +420,6 @@ export class TableSizeFieldView extends View {
         this.errorText = null;
         // `value` reaches the DOM only when it changes, so an edited input is written directly.
         this.inputView.value = text;
-        /* v8 ignore next -- the form renders its fields before it can be shown */
         if (this.inputView.element) {
             this.inputView.element.value = text;
         }

@@ -156,7 +156,6 @@ export default class FindInLinkWidgets extends Plugin {
     private _unwrapMatches(element: ViewElement) {
         for (const span of this._matchSpans.get(element) ?? []) {
             const parent = span.parentNode;
-            /* v8 ignore next -- Spans are unwrapped once, while still in the widget's DOM. */
             if (!parent) {
                 continue;
             }

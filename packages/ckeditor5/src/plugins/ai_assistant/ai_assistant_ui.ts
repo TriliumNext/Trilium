@@ -262,7 +262,7 @@ export default class AiAssistantUI extends Plugin {
         const command = this.editor.commands.get("aiAssistant");
         const dropdownView = createDropdown(locale);
         dropdownView.buttonView.set({ label: locale.t("AI assistant"), icon: aiIcon, tooltip: true });
-        /* v8 ignore next -- AiAssistantEditing always registers the command (it is required by this plugin) */
+        /* v8 ignore else -- AiAssistantEditing, a required plugin, registers the command */
         if (command) {
             dropdownView.bind("isEnabled").to(command, "isEnabled", this, "isStreaming", isAvailable);
         }
@@ -341,7 +341,7 @@ export default class AiAssistantUI extends Plugin {
             keystroke: AI_ASSISTANT_KEYSTROKE,
             tooltip: true
         });
-        /* v8 ignore next -- AiAssistantEditing always registers the command (it is required by this plugin) */
+        /* v8 ignore else -- AiAssistantEditing, a required plugin, registers the command */
         if (command) {
             buttonView.bind("isEnabled").to(command, "isEnabled", this, "isStreaming", isAvailable);
         }
@@ -370,7 +370,7 @@ export default class AiAssistantUI extends Plugin {
         });
         // A dropdown passes `isEnabled` down to its button, so this covers both halves of the
         // split button.
-        /* v8 ignore next -- AiAssistantEditing always registers the command (it is required by this plugin) */
+        /* v8 ignore else -- AiAssistantEditing, a required plugin, registers the command */
         if (command) {
             dropdownView.bind("isEnabled").to(command, "isEnabled", this, "isStreaming", isAvailable);
         }
@@ -397,7 +397,6 @@ export default class AiAssistantUI extends Plugin {
          */
         const discardMenu = () => {
             const previous = dropdownView.menuView;
-            /* v8 ignore next 3 -- only the first draw finds no menu, and it is not a redraw */
             if (!previous) {
                 return;
             }
@@ -405,7 +404,7 @@ export default class AiAssistantUI extends Plugin {
                 dropdownView.focusTracker.remove(menu);
             }
             dropdownView.focusTracker.remove(previous);
-            /* v8 ignore next -- a menu that was opened is always in the panel it was opened from */
+            /* v8 ignore else -- a menu that was opened is always in the panel it was opened from */
             if (dropdownView.panelView.children.has(previous)) {
                 dropdownView.panelView.children.remove(previous);
             }
@@ -447,7 +446,6 @@ export default class AiAssistantUI extends Plugin {
             // button half of the split does. Ruled off from them, since it is a way in rather than an
             // instruction.
             definition.push({ id: ASK_ID, label: locale.t("Ask AI…") });
-            /* v8 ignore next -- with no groups there is no menu at all: the entry is a plain button */
             if (groups.length) {
                 separatorAt.push(definition.length);
             }
@@ -492,8 +490,12 @@ export default class AiAssistantUI extends Plugin {
         // open (through its own `change:isOpen` listener, registered at `highest` priority — so it
         // has already run by the time this one does). There are no buttons to bind before that.
         const decorateMenu = () => {
-            /* v8 ignore next -- the menu is built before this runs, as the comment above says */
-            for (const button of dropdownView.menuView?.buttons ?? []) {
+            const menuView = dropdownView.menuView;
+            /* v8 ignore if -- the menu is built before this runs, as the comment above says */
+            if (!menuView) {
+                return;
+            }
+            for (const button of menuView.buttons) {
                 if (button.id === ASK_ID) {
                     // A prompt is typed against whatever is there, selection or not, so this row
                     // is never gated the way an instruction about content is.
@@ -515,15 +517,16 @@ export default class AiAssistantUI extends Plugin {
                 }
                 addIcon(button, action?.iconClass);
             }
-            /* v8 ignore next -- as above: no menu, no decoration pass */
-            for (const menu of dropdownView.menuView?.menus ?? []) {
+            for (const menu of menuView.menus) {
                 const footer = footersById.get(menu.id);
                 if (footer) {
                     // A footer submenu holds settings, not instructions, so nothing about it turns
                     // on there being content to work on.
                     addIcon(menu.buttonView, footer.iconClass);
+                    /* v8 ignore next -- defineFooter() sets headingsIn for each footer submenu */
+                    const headings = headingsIn.get(menu.id) ?? [];
                     // Back to front, as at the top level: each insertion shifts what follows it.
-                    for (const { index, label } of [...(headingsIn.get(menu.id) ?? [])].reverse()) {
+                    for (const { index, label } of [...headings].reverse()) {
                         menu.listView.items.add(new ListHeaderView(locale, label), index);
                     }
                     continue;
@@ -547,7 +550,7 @@ export default class AiAssistantUI extends Plugin {
             // Back to front: each insertion shifts everything after it, and the recorded indices
             // are into the list as the definition built it.
             for (const index of [...separatorAt].reverse()) {
-                dropdownView.menuView?.items.add(new ListSeparatorView(locale), index);
+                menuView.items.add(new ListSeparatorView(locale), index);
             }
         };
 
@@ -597,7 +600,7 @@ export default class AiAssistantUI extends Plugin {
             }
 
             const action = actionsById.get(id);
-            /* v8 ignore next -- every button in the menu was built from an action in this map */
+            /* v8 ignore else -- every button in the menu was built from an action in this map */
             if (action) {
                 this.runQuickAction(action);
             }
@@ -615,6 +618,16 @@ export default class AiAssistantUI extends Plugin {
     /** Opens the assistant on the current selection. Invoked by the `aiAssistant` command. */
     public show(): void {
         this._open(false);
+    }
+
+    /** Whether the assistant dialog is open. */
+    public get isOpen(): boolean {
+        return this.editor.plugins.get(Dialog).id === DIALOG_ID;
+    }
+
+    /** Closes the assistant, which drops its conversation and a response not applied yet. */
+    public hide(): void {
+        this._hide();
     }
 
     /**
@@ -665,7 +678,7 @@ export default class AiAssistantUI extends Plugin {
         this._cumulativeSource = "";
         this._updateHasContext();
 
-        /* v8 ignore next -- the document selection always has at least one range */
+        /* v8 ignore else -- the document selection always has at least one range */
         if (range) {
             model.change((writer) => {
                 writer.addMarker(AI_TARGET_MARKER, { range, usingOperation: false, affectsData: false });
@@ -696,7 +709,7 @@ export default class AiAssistantUI extends Plugin {
      */
     private _setTitle(title: string): void {
         const view = this.editor.plugins.get(Dialog).view;
-        /* v8 ignore next -- every call site has just established that the dialog is open */
+        // An empty title leaves the dialog without a header.
         if (!view?.headerView) {
             return;
         }
@@ -748,7 +761,6 @@ export default class AiAssistantUI extends Plugin {
         const editor = this.editor;
         const stream = editor.config.get("aiAssistant")?.stream;
         const form = this._getForm();
-        /* v8 ignore next -- the command is disabled without a stream, and the form blocks submits while streaming */
         if (!stream || this.isStreaming) {
             return;
         }
@@ -923,7 +935,8 @@ export default class AiAssistantUI extends Plugin {
 
         for (const span of preview.querySelectorAll<HTMLElement>("span.math-tex")) {
             /* v8 ignore next -- defensive fallback: textContent on an element is always a string */
-            const { equation, display } = extractDelimiters(span.textContent ?? "");
+            const source = span.textContent ?? "";
+            const { equation, display } = extractDelimiters(source);
             void renderEquation(
                 equation, span, math.engine, math.lazyLoad, display,
                 // Not a preview in the Math feature's sense: that is the balloon's live rendering
@@ -1025,8 +1038,6 @@ export default class AiAssistantUI extends Plugin {
                 if (block && !block.is("rootElement")) {
                     model.insertContent(modelFragment, writer.createPositionAfter(block));
                 } else {
-                    /* v8 ignore next -- a target ending in the root is already past a block, and
-                       lands in the same place either way */
                     model.insertContent(modelFragment, target.end);
                 }
             }
@@ -1038,7 +1049,7 @@ export default class AiAssistantUI extends Plugin {
     private _getTargetRange(): ModelRange | null {
         const model = this.editor.model;
         const marker = model.markers.has(AI_TARGET_MARKER) ? model.markers.get(AI_TARGET_MARKER) : null;
-        return marker?.getRange() ?? model.document.selection.getFirstRange() ?? null;
+        return marker?.getRange() ?? model.document.selection.getFirstRange();
     }
 
     /** Closes the assistant. The teardown itself rides on the dialog's `onHide`. */
@@ -1046,7 +1057,7 @@ export default class AiAssistantUI extends Plugin {
         const dialog = this.editor.plugins.get(Dialog);
         // Only our own: `hide()` closes whatever dialog is open, and another feature's must not be
         // collateral damage.
-        /* v8 ignore next -- another feature taking the dialog over already tore this one down */
+        /* v8 ignore else -- another feature taking the dialog over already tore this one down */
         if (dialog.id === DIALOG_ID) {
             dialog.hide();
         }
@@ -1163,8 +1174,9 @@ export default class AiAssistantUI extends Plugin {
         }
 
         const block = selection.getFirstPosition()?.parent;
-        /* v8 ignore next -- a collapsed selection always sits inside an element */
-        return block?.is("element") ? model.createRangeIn(block) : range;
+        return block?.is("element")
+            ? model.createRangeIn(block)
+            : /* v8 ignore next -- a collapsed selection always sits inside an element */ range;
     }
 }
 

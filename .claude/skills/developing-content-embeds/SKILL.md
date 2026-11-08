@@ -38,8 +38,8 @@ A kind of embed is not finished until it renders everywhere a text note shows:
 | Surface | Entry point | What the embed gets |
 |---|---|---|
 | Editable text | the host's `contentEmbed.load*()` → `text/utils.ts` → the `ContentEmbed` box | the component, editable while Editable is on |
-| Read-only content (a read-only note, AI chat, tool results) | `ReadOnlyText`: `applyContentEmbeds()`, `applySourceEmbeds()`, `applyMediaEmbeds()`, `applyUnknownEmbeds()` | the same box and component, read-only |
-| Print, included notes in previews | `postProcessRichContent()` → `renderContentEmbeds()` → `getRenderedContent()` without `interactive` | a static rendering, finished when the call returns |
+| Read-only content (a read-only note, AI chat, tool results, the content of a box) | `prepareEmbedBoxes()` (`text/embed_boxes.ts`) | the same box and component, read-only |
+| Print, tooltips, list previews | `postProcessRichContent()` → `renderContentEmbeds()` → `getRenderedContent()` without `interactive` | a static rendering, finished when the call returns |
 | Share pages and the static HTML export | core `share/content_renderer.ts` (the `.include-note` pass, `renderAttachmentEmbed()`, `setMediaBox()`) and the share theme's scripts and CSS | static HTML, built on the server |
 
 _Read-only paths_ below has the details. When a share page cannot render the content, it offers a
@@ -141,7 +141,7 @@ widgets inside the selection.
   The shape is the link preview field `aspectRatio` (`data-aspect-ratio="9/16"`), which the
   server reads from oEmbed for the video's `/shorts/` address (the watch address of a Short
   answers 16:9). `getVideoAspectRatio()` validates it; every box that draws a player (the
-  editing figure, `applyMediaEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
+  editing figure, `prepareMediaEmbeds()`, `renderLinkEmbedHtml()`, the share renderer's
   `setMediaBox()`) writes it as `--video-aspect-ratio`, which the player's `aspect-ratio` and the
   70vh cap of Full read. Only Full is capped; Medium keeps its saved width. `setMediaBox()` also
   writes `data-box-size` on the shared section, Full for a video saved before box sizes. A
@@ -163,7 +163,7 @@ widgets inside the selection.
   `ContentEmbed.tsx`), with the `.include-note` as the origin's target: `getMenuEmbed()` reads the
   embed only from the title row or the embed element itself. A loaded YouTube frame keeps its
   right clicks; its facade does not.
-  `ReadOnlyText`'s `applyMediaEmbeds()` swaps the section for the same box.
+  `prepareEmbedBoxes()` swaps the section for the same box in read-only content.
   The box has no backdrop (`DIRECT_CONTENT_TYPES`), so one click plays and selects. The
   facade takes the focus on click and `playVideo()` hands it to the player once loaded:
   Chromium blurs the editor when a focused element is removed. A click into a frame fires no
@@ -208,11 +208,12 @@ widgets inside the selection.
 
   Read-only views never show the fallback either: `emptyUnknownEmbeds()`
   (`content_renderer_text.ts`) empties each section into an `.include-note` box, keeping only
-  the kind, `data-box-size` and the block ID. `ReadOnlyText` then mounts the same error box
-  (`loadUnknownEmbed()`), and `postProcessRichContent()` leaves the box empty, as it leaves a
-  missing note's. Share pages replace the section, and an include of a missing or unshared note
-  or attachment, with `<div class="include-note-unavailable">` and a generic message
-  (`replaceWithUnavailable()` in core's `share/content_renderer.ts`), as the page is public.
+  the kind, `data-box-size` and the block ID. `prepareEmbedBoxes()` then mounts the same error
+  box (`loadUnknownEmbed()`), in read-only content and in the content of a box, and a static
+  rendering leaves the box empty, as it leaves a missing note's. Share pages replace the
+  section, and an include of a missing or unshared note or attachment, with
+  `<div class="include-note-unavailable">` and a generic message (`replaceWithUnavailable()`
+  in core's `share/content_renderer.ts`), as the page is public.
 
   The version that adds a kind registers its converter above `high`. If that converter needs the
   section's children, narrow `ENVELOPE` in `unknown_embed.ts` to leave the kind out: the raw
@@ -234,7 +235,7 @@ A change to a storage form reaches every reader, most of them outside the client
   `services/notes.ts`, `BAttachment.convertToNote()` (rewrites it to `data-note-id`), zip import
   (`getNewAttachmentId()`), the share renderer (`renderAttachmentEmbed()`), the editor's
   `ReferenceLinkEditing#updateAttachmentLinks()`, and the client's `loadEmbeddedAttachment()`,
-  `applyContentEmbeds()` and `content_renderer_text.ts`. A section with neither ID is an upload in
+  `prepareEmbedBoxes()` and `content_renderer_text.ts`. A section with neither ID is an upload in
   progress, which every reader tolerates.
 - **`data-note-id`**: `findIncludeNoteLinks()` turns it into the `includeNoteLink` relation, for
   text notes only. Its pattern needs `class` before `data-note-id`, the order the data downcast
@@ -258,8 +259,10 @@ A change to a storage form reaches every reader, most of them outside the client
    `insertInlineEmbed` and `extended_code_block.ts` `insertExtendedCodeBlock`.
    `deleteContentEmbed` serves any kind: `getDeleteAndConvertGroup()` in
    `apps/client/src/menus/link_context_menu.ts` ends the ⋮ menu of a note, an attachment, a video
-   and an extended code block with it, followed by _Convert to link_ and an attachment's own delete
-   and convert actions. Other inline sources (Mermaid) do not offer it.
+   and an extended code block with it as _Delete block_, with a neutral icon, so it reads apart
+   from an attachment's red _Delete attachment..._ that follows it. _Convert to link_ and the
+   attachment's _Convert attachment into note..._ come last. Other inline sources (Mermaid) do not
+   offer it.
    `content_embed_toolbar.ts` lists the toolbar items; `content_embed_tools.ts` turns the
    content's tools into buttons; `content_embed_box_size_dropdown.ts` and
    `content_embed_position_dropdown.ts` are the size and position menus; `content_embed_caret.ts`
@@ -431,8 +434,9 @@ without one is skipped, and nothing reports it.
   the content is hidden, not only on unmount: `CodeEmbedEditor` registers only while `isShown` and
   calls `cleanSearch()` as it goes, so a Markdown embed in Preview searches its preview.
 - **Reuse an engine** before writing one:
-  - `HtmlFindTarget` (`find_in_html.ts`) over rendered HTML. `ContentEmbed` registers one on the
-    preview of each type in `SEARCHABLE_CONTENT_TYPES`.
+  - `HtmlFindTarget` (`find_in_html.ts`) over rendered HTML. `ContentEmbed` registers
+    `MergedFind(new HtmlNoteFindTarget(content))` on the preview of each type in
+    `SEARCHABLE_CONTENT_TYPES`, so the boxes nested in a preview search, and open, themselves.
   - `CodeMirrorFindTarget` (`find_in_code.ts`) over a CodeMirror view.
   - `MergedFind(new TextEditorFindTarget(editor))` (`find_in_text.ts`) over a text editor and its
     own embeds, as `useEditorFindTarget()` in `TextEmbedEditor.tsx` registers it.
@@ -489,6 +493,14 @@ any other block. An editor takes part by opting in; without it, the caret steps 
   cleanup of other kinds, and `snapshotAndDispose()` serves callers that keep only the HTML.
   `ContentEmbed` disposes and removes its `content` element as it unmounts, so the element is
   never reused.
+- **A preview holds live boxes.** The content of a box renders before it joins the page, and
+  the boxes in it mount there (`isNested`, which skips the left-the-page check of
+  `mountEmbedBox()`), so `postProcessRichContent()` fills them after its other passes, which
+  would otherwise reach into them. `EmbedPreview` disposes of the element it shows once it shows
+  another or unmounts, `useEmbedPreview()` disposes of a render that is late, and
+  `EditableEmbedContent` hides the preview while the editor shows rather than unmounting it, as
+  a remount would show the disposed boxes. A key shown before renders again, as its preview
+  is disposed.
 - **Tiny never renders its target.** The box shows only the title (`TinyContentEmbed`), and
   `resolveContentEmbed()` (commons `content_embeds.ts`) makes it a link on print and share pages.
   A new render path checks `data-box-size="tiny"` before calling `getRenderedContent()`.
@@ -553,7 +565,7 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
    (`MermaidDiagram.css`), which `.include-note-box-height` subtracts.
 4. An insert command: `INSERT_INLINE_EMBED_COMMAND` with `{ language, source }` (see
    `mermaid_ui.ts` and `slash_commands.ts`). New embeds are editable, untitled and Medium.
-5. The other three surfaces. `applySourceEmbeds()` in `ReadOnlyText.tsx` picks up any language of
+5. The other three surfaces. `prepareSourceEmbeds()` in `text/embed_boxes.ts` picks up any language of
    `SOURCE_EMBED_TYPES`, but print, the Markdown preview, share pages and Markdown import match
    `language-mermaid` by name and show a new language as a plain code block: give each a branch
    (_A new source language_ in [references/checklists.md](references/checklists.md)).
@@ -583,7 +595,8 @@ An included text note is edited in place by a real `EditableText` (`TextEmbed.ts
 
 | Where | Path | What an embed gets |
 |---|---|---|
-| Read-only note, AI chat replies, tool results | `ReadOnlyTextContent` (`text/ReadOnlyText.tsx`) | `applyContentEmbeds()` → `loadEmbedded*()`; `applySourceEmbeds()` → `loadInlineEmbed()` (`text/utils.ts`) with a fixed read-only source. Same box and component as the editor. |
+| Read-only note, AI chat replies, tool results | `ReadOnlyTextContent` (`text/ReadOnlyText.tsx`) → `prepareEmbedBoxes()` (`text/embed_boxes.ts`) | `loadEmbedded*()`, and `loadInlineEmbed()` (`text/utils.ts`) with a fixed read-only source. Same box and component as the editor. |
+| The content of an embed box (an included text or Markdown note, a Markdown file) | `loadEmbedded*()` renders it with `embedBoxes` → `postProcessRichContent()` → `prepareEmbedBoxes(…, isNested)` | The same read-only boxes, at every depth. An embed of a note or attachment in `seenNoteIds` (the notes shown around it, and the host note) becomes a reference link, which ends a cycle. A Markdown preview passes `isChanging` and draws its diagrams in place. |
 | Markdown note preview, a chat reply while streaming | `ReadOnlyTextContent` with `isChanging` | Diagrams drawn in place (`rewriteMermaidDiagramsInContainer()` + `applyInlineMermaid()`), which keep the last drawing while the next renders; a box would remount on every update. |
 | Print (`glob.device === "print"`), included notes, previews | `postProcessRichContent()` in `services/content_renderer_text.ts` | Drawn in place; printing snapshots before a box would draw. |
 | Share pages | core `share/content_renderer.ts`, share theme `content/mermaid.ts` | Static: an image attachment or the drawing's saved picture as `<img>`, any other attachment as a download link; included notes through the share page's renderer of their type; Mermaid drawn over its code block; media through `setMediaBox()`. No box. |

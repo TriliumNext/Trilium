@@ -1,3 +1,5 @@
+import "./PdfViewer.css";
+
 import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
@@ -54,7 +56,6 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
         <iframe
             ref={iframeRef}
             class="pdf-preview"
-            style={{width: "100%", height: "100%"}}
             src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=0&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}${noteId ? getAddressParams(noteId, ntxId) : ""}`}
             onLoad={() => {
                 injectStyles();

@@ -472,7 +472,7 @@ describe("ReadOnlyText embedded notes", () => {
         expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
     });
 
-    it("loads an embed with the blocks it shows", async () => {
+    it("loads an embed with the blocks it shows, and the note around it", async () => {
         loadEmbeddedNote.mockClear();
         const harness = setupHarness({ isVisible: true });
         harness.note.getBlob = async () => ({
@@ -482,8 +482,9 @@ describe("ReadOnlyText embedded notes", () => {
 
         await harness.mount();
 
-        expect(loadEmbeddedNote)
-            .toHaveBeenCalledWith("src1", expect.anything(), undefined, { block: "b1:b2" });
+        expect(loadEmbeddedNote).toHaveBeenCalledWith("src1", expect.anything(), undefined, {
+            block: "b1:b2", seenNoteIds: new Set([ harness.note.noteId ]), isNested: false
+        });
         await act(async () => render(null, harness.container));
         harness.container.remove();
     });
@@ -505,7 +506,7 @@ describe("ReadOnlyText embeds of an unknown kind", () => {
         const box = container.querySelector("section.include-note.unknown-content-embed");
         expect(box).toBeInstanceOf(HTMLElement);
         expect(box?.childElementCount).toBe(0);
-        expect(loadUnknownEmbed.mock.calls).toEqual([ [ box, "small" ] ]);
+        expect(loadUnknownEmbed.mock.calls).toEqual([ [ box, "resizable" ] ]);
         expect(loadEmbeddedNote).not.toHaveBeenCalled();
         expect(loadInlineEmbed).not.toHaveBeenCalled();
         await act(async () => render(null, container));
@@ -564,20 +565,22 @@ describe("ReadOnlyText Mermaid diagrams", () => {
         });
         expect(embeds).toEqual([
             {
-                language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "small",
-                options: { isFocused: false }, isInPage: true,
+                language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "resizable",
+                options: { isFocused: false, isNested: false }, isInPage: true,
                 data: {
-                    boxSize: "small", displayMode: "source", hideTitle: "true", language: "mermaid",
+                    boxSize: "resizable", displayMode: "source", hideTitle: "true",
+                    language: "mermaid",
                     triliumBlockId: "b1", codeWrapLines: "true", codeLineNumbers: "false",
                     position: "wrap-right"
                 },
                 height: "12em"
             },
             {
-                language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "medium",
-                options: { isFocused: false }, isInPage: true,
+                language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "resizable",
+                options: { isFocused: false, isNested: false }, isInPage: true,
                 data: {
-                    boxSize: "medium", hideTitle: "true", language: "mermaid", triliumBlockId: "b2"
+                    boxSize: "resizable", hideTitle: "true", language: "mermaid",
+                    triliumBlockId: "b2"
                 },
                 height: ""
             }
@@ -655,7 +658,7 @@ describe("ReadOnlyText videos", () => {
         expect(videos).toEqual([
             {
                 ...box, title: "A video", width: "30em", shape: "0.5625", caption: null,
-                data: { boxSize: "medium", position: "wrap-left", triliumBlockId: "b1" }
+                data: { boxSize: "resizable", position: "wrap-left", triliumBlockId: "b1" }
             },
             {
                 ...box, title: null, width: "", shape: "", caption: "A caption",
@@ -667,7 +670,7 @@ describe("ReadOnlyText videos", () => {
         await unmount();
     });
 
-    it("boxes an audio file at Small, and a video file in the shape of its video", async () => {
+    it("boxes an audio file saved Small at Compact, and a video file in its shape", async () => {
         loadMediaEmbed.mockClear();
         const { unmount } = await mountContent(`<section class="link-embed"`
             + ` data-url="https://example.com/a.mp3" data-embed-type="audio" data-box-size="small">`
@@ -679,8 +682,8 @@ describe("ReadOnlyText videos", () => {
             return [ figure.className, figure.dataset.boxSize,
                 figure.style.getPropertyValue("--video-aspect-ratio") ];
         })).toEqual([
-            [ "include-note media-embed audio-embed", "small", "" ],
-            [ "include-note media-embed video-embed", "medium", String(4 / 3) ]
+            [ "include-note media-embed audio-embed", "compact", "" ],
+            [ "include-note media-embed video-embed", "resizable", String(4 / 3) ]
         ]);
         await unmount();
     });
@@ -724,10 +727,10 @@ describe("ReadOnlyText extended code blocks", () => {
         });
         expect(embeds).toEqual([
             {
-                language: "text-x-python", source: "pass", boxSize: "medium",
+                language: "text-x-python", source: "pass", boxSize: "resizable",
                 className: "include-note extended-code-block",
                 data: {
-                    boxSize: "medium", hideTitle: "true", language: "text-x-python",
+                    boxSize: "resizable", hideTitle: "true", language: "text-x-python",
                     codeTabWidth: "2", codeIndentWithTabs: "false"
                 }
             },

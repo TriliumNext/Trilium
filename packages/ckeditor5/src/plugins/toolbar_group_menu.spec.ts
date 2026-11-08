@@ -35,8 +35,13 @@ class SearchedListView extends ListView {
     }
 }
 
-/** A toolbar item that is neither a button nor a dropdown, focusable as a toolbar wants. */
+/** A view that is neither a button nor a dropdown, focusable as a toolbar wants. */
 class PlainItemView extends View {
+    constructor(locale: Locale) {
+        super(locale);
+        this.setTemplate({ tag: "span", attributes: { class: ["ck"] } });
+    }
+
     focus() {}
 }
 
@@ -136,9 +141,7 @@ class SampleDropdown extends Plugin {
 
         // Neither a button nor a dropdown: a toolbar item the menu has no row to draw for.
         this.editor.ui.componentFactory.add("plainView", (locale: Locale) => {
-            const view = new PlainItemView(locale);
-            view.setTemplate({ tag: "span", attributes: { class: ["ck"] } });
-            return view;
+            return new PlainItemView(locale);
         });
 
         // A dropdown whose button carries an icon and no label.
@@ -226,6 +229,31 @@ class SampleDropdown extends Plugin {
         this.editor.ui.componentFactory.add("listless", (locale: Locale) => {
             const dropdown = createDropdown(locale);
             dropdown.buttonView.set({ label: "Listless", icon: "<svg />" });
+            openListAsMenu(dropdown);
+            return dropdown;
+        });
+
+        // A list built by hand, like the attach menu, with one row that has no button.
+        this.editor.ui.componentFactory.add("handBuilt", (locale: Locale) => {
+            const dropdown = createDropdown(locale);
+            dropdown.buttonView.set({ label: "Hand built", icon: "<svg />" });
+
+            const button = new ButtonView(locale);
+            button.set({ label: "Row", withText: true });
+            const listView = dropdown.listView = new ListView(locale);
+            for (const view of [button, new PlainItemView(locale)]) {
+                const item = new ListItemView(locale);
+                item.children.add(view);
+                listView.items.add(item);
+            }
+            dropdown.panelView.children.add(listView);
+
+            return dropdown;
+        });
+
+        // Like `fontSizeMenu`: the `alignment` dropdown, which contains a toolbar, not a list.
+        this.editor.ui.componentFactory.add("alignmentMenu", () => {
+            const dropdown = this.editor.ui.componentFactory.create("alignment") as DropdownView;
             openListAsMenu(dropdown);
             return dropdown;
         });
@@ -499,19 +527,22 @@ describe("ToolbarGroupMenu", () => {
                     ...MENU_GROUP,
                     items: [
                         "plainView", "|", "bold", "-", "panelOnly", "|", "italic", "oddList",
-                        "iconOnly", "|", "plainView"
+                        "iconOnly", "handBuilt", "|", "plainView"
                     ]
                 }]
             }
         });
 
         groupDropdown(getToolbar(editor), "Insert").isOpen = true;
-        expect(labels(last().items)).toStrictEqual(["Bold", "—", "Italic", "Odd list", ""]);
+        expect(labels(last().items))
+            .toStrictEqual(["Bold", "—", "Italic", "Odd list", "", "Hand built"]);
         // A list's group is a heading over its rows, and an unlabeled button or dropdown is named "".
         const odd = entry(last().items, "Odd list").children ?? [];
         expect(labels(odd)).toStrictEqual(["First", "—", "", "Grouped", "Inside"]);
         expect(odd[3]?.kind).toBe("heading");
         expect(labels(entry(last().items, "").children ?? [])).toStrictEqual(["Row"]);
+        // A row without a button has no entry.
+        expect(labels(entry(last().items, "Hand built").children ?? [])).toStrictEqual(["Row"]);
     });
 
     it("reads a list inside a search panel, and draws an empty list as a disabled entry", async () => {
@@ -674,6 +705,32 @@ describe("ToolbarGroupMenu", () => {
         groupDropdown(getToolbar(editor), "Rows").buttonView.fire("open");
         expect(entry(last().items, "Header row")).toMatchObject({ isSwitch: true, isOn: true });
         expect(entry(last().items, "Insert row").isSwitch).toBeUndefined();
+    });
+
+    it("opens a dropdown holding a toolbar as a menu of the toolbar's buttons", async () => {
+        const { Alignment } = await import("ckeditor5");
+        const { host, config, last } = createHost();
+        const editor = await createTestEditor([...PLUGINS, Alignment], {
+            ...config,
+            toolbar: { items: ["alignmentMenu"] }
+        });
+
+        const dropdown = groupDropdown(getToolbar(editor), "Text alignment");
+        dropdown.buttonView.fire("open");
+        expect(dropdown.isOpen).toBe(false);
+        expect(host.show).toHaveBeenCalledTimes(1);
+        expect(labels(last().items))
+            .toStrictEqual(["Align left", "Align right", "Align center", "Justify"]);
+        expect(entry(last().items, "Align left").isOn).toBe(true);
+
+        entry(last().items, "Align center").run?.();
+        expect(host.hide).toHaveBeenCalled();
+        expect(editor.commands.get("alignment")?.value).toBe("center");
+
+        // The toolbar, built on the first open, is read again on the next.
+        dropdown.buttonView.fire("open");
+        expect(entry(last().items, "Align center").isOn).toBe(true);
+        expect(entry(last().items, "Align left").isOn).toBe(false);
     });
 
     it("opens the entries a dropdown handed to openListAsMenu describes, read on each open", async () => {

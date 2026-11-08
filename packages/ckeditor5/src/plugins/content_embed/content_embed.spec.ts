@@ -20,6 +20,7 @@ import bxCode from "boxicons/svg/regular/bx-code.svg?raw";
 import bxEditAlt from "boxicons/svg/regular/bx-edit-alt.svg?raw";
 import bxShow from "boxicons/svg/regular/bx-show.svg?raw";
 import bxsDockLeft from "boxicons/svg/solid/bxs-dock-left.svg?raw";
+import { BOX_SIZES } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -27,8 +28,10 @@ import LinkEmbed from "../link_embed/link_embed.js";
 import ReferenceLink from "../referencelink.js";
 import ContentEmbed, {
     BOX_SIZE_COMMAND_NAME,
-    BOX_SIZES,
     CODE_VIEW_COMMAND_NAME,
+    type ContentEmbedPositionCommand,
+    DEFAULT_BOX_SIZE_COMMAND_NAME,
+    type EmbedContentInfo,
     COMMAND_NAME,
     CONVERT_EMBED_TO_LINK_COMMAND,
     CONVERT_LINK_TO_EMBED_COMMAND,
@@ -41,6 +44,7 @@ import ContentEmbed, {
     DISPLAY_MODES,
     getCaption,
     POSITION_COMMAND_NAME,
+    POSITIONS,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -111,19 +115,19 @@ describe("ContentEmbed", () => {
     it("loads a <figure> embed and a legacy <section>, and saves a <figure>", () => {
         for (const tag of [ "figure", "section" ]) {
             editor.setData(`<${tag} class="include-note" data-note-id="abc123"`
-                + ` data-box-size="medium"></${tag}>`);
+                + ` data-box-size="resizable"></${tag}>`);
 
             const element = findContentEmbed(editor);
             expect(element?.getAttribute("noteId")).toBe("abc123");
-            expect(element?.getAttribute("boxSize")).toBe("medium");
+            expect(element?.getAttribute("boxSize")).toBe("resizable");
             expect(editor.getData()).toBe("<figure class=\"include-note\" data-note-id=\"abc123\" "
-                + "data-box-size=\"medium\">&nbsp;</figure>");
+                + "data-box-size=\"resizable\">&nbsp;</figure>");
         }
     });
 
     it("editing-downcasts to a widget and invokes loadEmbeddedNote when the UIElement renders", () => {
         editor.setData(
-            '<figure class="include-note" data-note-id="noteY" data-box-size="small"></figure>'
+            '<figure class="include-note" data-note-id="noteY" data-box-size="resizable"></figure>'
         );
 
         const view = getViewData(editor.editing.view);
@@ -131,7 +135,7 @@ describe("ContentEmbed", () => {
         expect(view).toContain("ck-widget");
         // The block widget carries CKEditor's selection handle so it can be dragged atomically.
         expect(view).toContain("ck-widget_with-selection-handle");
-        expect(view).toContain("box-size-small");
+        expect(view).toContain("box-size-resizable");
 
         // Querying the DOM root forces the UIElement render callback to run.
         const domRoot = editor.editing.view.getDomRoot();
@@ -142,29 +146,29 @@ describe("ContentEmbed", () => {
         expect(loadEmbeddedNote.mock.calls[0]?.[0]).toBe("noteY");
         // The box size is passed explicitly so the client render does not have to read it back
         // from the DOM (which may not be flushed yet at conversion time).
-        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("small");
+        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("resizable");
     });
 
     it("updates the box-size class on the editing view when the boxSize attribute changes", () => {
-        insertContentEmbed(editor, "noteZ", "small");
+        insertContentEmbed(editor, "noteZ", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const figure = domRoot?.querySelector("figure.include-note");
-        expect(figure?.classList.contains("box-size-small")).toBe(true);
+        expect(figure?.classList.contains("box-size-resizable")).toBe(true);
 
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
 
-        expect(figure?.classList.contains("box-size-small")).toBe(false);
+        expect(figure?.classList.contains("box-size-resizable")).toBe(false);
         expect(figure?.classList.contains("box-size-full")).toBe(true);
         expect(figure?.getAttribute("data-box-size")).toBe("full");
     });
 
     it("re-renders the embedded note content with the new size on a genuine box-size change", () => {
-        insertContentEmbed(editor, "noteReload", "small");
+        insertContentEmbed(editor, "noteReload", "resizable");
 
         // One call for the initial render.
         expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
-        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("small");
+        expect(loadEmbeddedNote.mock.calls[0]?.[2]).toBe("resizable");
 
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
 
@@ -177,8 +181,8 @@ describe("ContentEmbed", () => {
 
     it("leaves the embeds empty without a host to render them", async () => {
         const bareEditor = await createTestEditor([ Essentials, Paragraph, Widget, ContentEmbed ]);
-        bareEditor.setData("<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"small\">"
-            + "</figure><figure class=\"include-note\" data-attachment-id=\"a1\" data-box-size=\"small\">"
+        bareEditor.setData("<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\">"
+            + "</figure><figure class=\"include-note\" data-attachment-id=\"a1\" data-box-size=\"resizable\">"
             + "</figure>");
 
         const wrappers = bareEditor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper");
@@ -193,17 +197,17 @@ describe("ContentEmbed", () => {
         const element = insertContentEmbed(editor, "noteW", "");
 
         editor.model.change((writer) => {
-            writer.setAttribute("boxSize", "medium", element);
+            writer.setAttribute("boxSize", "resizable", element);
         });
 
         const domRoot = editor.editing.view.getDomRoot();
         const figure = domRoot?.querySelector("figure.include-note");
-        expect(figure?.classList.contains("box-size-medium")).toBe(true);
-        expect(figure?.getAttribute("data-box-size")).toBe("medium");
+        expect(figure?.classList.contains("box-size-resizable")).toBe(true);
+        expect(figure?.getAttribute("data-box-size")).toBe("resizable");
     });
 
     it("ignores a boxSize change cleared to an empty value (no new class to add)", () => {
-        const element = insertContentEmbed(editor, "noteV", "small");
+        const element = insertContentEmbed(editor, "noteV", "resizable");
 
         editor.model.change((writer) => {
             writer.setAttribute("boxSize", "", element);
@@ -212,7 +216,7 @@ describe("ContentEmbed", () => {
         const domRoot = editor.editing.view.getDomRoot();
         const figure = domRoot?.querySelector("figure.include-note");
         // Old class removed, no new class added because the new value is empty.
-        expect(figure?.classList.contains("box-size-small")).toBe(false);
+        expect(figure?.classList.contains("box-size-resizable")).toBe(false);
         expect(figure?.classList.contains("box-size-")).toBe(false);
     });
 
@@ -304,14 +308,14 @@ describe("ContentEmbed", () => {
     });
 
     it("box-size command enables and reflects the value when an contentEmbed is selected", () => {
-        insertContentEmbed(editor, "noteSel", "medium");
+        insertContentEmbed(editor, "noteSel", "resizable");
 
         const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as {
             isEnabled: boolean;
             value: string | null;
         };
         expect(command.isEnabled).toBe(true);
-        expect(command.value).toBe("medium");
+        expect(command.value).toBe("resizable");
 
         // Execute through every defined box size to cover the model write path.
         for (const value of BOX_SIZES) {
@@ -376,7 +380,7 @@ describe("ContentEmbed", () => {
     // -----------------------------------------------------------------------
 
     it("selects the widget and suppresses editor handling on a mousedown inside the wrapper", () => {
-        insertContentEmbed(editor, "noteEvt", "small");
+        insertContentEmbed(editor, "noteEvt", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -399,7 +403,7 @@ describe("ContentEmbed", () => {
         /** Presses the embed of a focused editor, which turns `_renderer.isFocused` off. */
         function pressWidgetOfFocusedEditor() {
             setModelData(editor.model, "<paragraph>foo[]</paragraph>"
-                + "<contentEmbed noteId=\"noteFocus\" boxSize=\"small\"></contentEmbed>"
+                + "<contentEmbed noteId=\"noteFocus\" boxSize=\"resizable\"></contentEmbed>"
                 + "<paragraph>bar</paragraph>");
             // A headless page cannot take the real focus, so set the flag the renderer reads.
             editor.editing.view.document.isFocused = true;
@@ -478,7 +482,7 @@ describe("ContentEmbed", () => {
     });
 
     it("suppresses the native caret on a non-interactive mousedown but not on interactive targets", () => {
-        insertContentEmbed(editor, "noteCaret", "small");
+        insertContentEmbed(editor, "noteCaret", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -509,7 +513,7 @@ describe("ContentEmbed", () => {
     });
 
     it("selects the widget on a press on a title row button, and keeps the focus in the editor", () => {
-        const embed = insertContentEmbed(editor, "noteButton", "small");
+        const embed = insertContentEmbed(editor, "noteButton", "resizable");
         editor.model.change((writer) => {
             const paragraph = embed.nextSibling;
             if (!paragraph) {
@@ -546,7 +550,7 @@ describe("ContentEmbed", () => {
     });
 
     it("leaves a mousedown in the content alone, and selects the widget on the backdrop", () => {
-        const embed = insertContentEmbed(editor, "noteBackdrop", "small");
+        const embed = insertContentEmbed(editor, "noteBackdrop", "resizable");
         editor.model.change((writer) => {
             const paragraph = embed.nextSibling;
             if (!paragraph) {
@@ -580,7 +584,7 @@ describe("ContentEmbed", () => {
     });
 
     it("selects the widget when its content takes the focus, which stays there", () => {
-        const embed = insertContentEmbed(editor, "noteFocus", "small");
+        const embed = insertContentEmbed(editor, "noteFocus", "resizable");
         editor.model.change((writer) => {
             const paragraph = embed.nextSibling;
             if (!paragraph) {
@@ -642,7 +646,7 @@ describe("ContentEmbed", () => {
     });
 
     it("treats a mousedown whose target is not an Element (e.g. a text node) as non-interactive", () => {
-        insertContentEmbed(editor, "noteText", "small");
+        insertContentEmbed(editor, "noteText", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -667,7 +671,7 @@ describe("ContentEmbed", () => {
     });
 
     it("stops propagation on focus and keydown inside the wrapper", () => {
-        insertContentEmbed(editor, "noteKbd", "small");
+        insertContentEmbed(editor, "noteKbd", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -688,7 +692,7 @@ describe("ContentEmbed", () => {
     });
 
     it("lets the embedded content handle a key, then keeps it from the editor", () => {
-        insertContentEmbed(editor, "noteKeys", "small");
+        insertContentEmbed(editor, "noteKeys", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -712,7 +716,7 @@ describe("ContentEmbed", () => {
     });
 
     it("does nothing on a mousedown when the wrapper has no enclosing embed", () => {
-        insertContentEmbed(editor, "noteDetached", "small");
+        insertContentEmbed(editor, "noteDetached", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -736,7 +740,7 @@ describe("ContentEmbed", () => {
     });
 
     it("does nothing on a mousedown when the embed is not mapped to a view element", () => {
-        insertContentEmbed(editor, "noteUnmapped", "small");
+        insertContentEmbed(editor, "noteUnmapped", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -760,7 +764,7 @@ describe("ContentEmbed", () => {
     });
 
     it("does nothing on a mousedown when the embed's view maps to no model element", () => {
-        insertContentEmbed(editor, "noteNoModel", "small");
+        insertContentEmbed(editor, "noteNoModel", "resizable");
 
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -786,7 +790,7 @@ describe("ContentEmbed", () => {
 
     it("selects the embed that a DOM element is part of, for a context menu opened on it", () => {
         editor.setData("<p>foo</p>"
-            + "<figure class=\"include-note\" data-note-id=\"noteMenu\" data-box-size=\"small\">"
+            + "<figure class=\"include-note\" data-note-id=\"noteMenu\" data-box-size=\"resizable\">"
             + "</figure>");
         const domRoot = editor.editing.view.getDomRoot();
         const wrapper = domRoot?.querySelector("div.include-note-wrapper");
@@ -857,6 +861,15 @@ describe("ContentEmbed", () => {
         setModelData(editor.model, `[${embed}]`);
         editor.execute(DELETE_COMMAND_NAME);
         expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+
+        // The command refreshes after the change block, so a second delete in it finds no embed.
+        setModelData(editor.model, `[${embed}]<paragraph>after</paragraph>`);
+        editor.model.change(() => {
+            editor.execute(DELETE_COMMAND_NAME);
+            expect(command?.isEnabled).toBe(true);
+            editor.execute(DELETE_COMMAND_NAME);
+        });
+        expect(getModelData(editor.model)).toBe("<paragraph>[]after</paragraph>");
     });
 
     it("falls back gracefully in the button factory when the insert command is absent", () => {
@@ -889,7 +902,7 @@ describe("ContentEmbed", () => {
 describe("ContentEmbed with attachments", () => {
     const LINK_HREF = "#root/owner?viewMode=attachments&attachmentId=att1";
     const embedHtml = (attachmentId = "att1") =>
-        `<figure class="include-note" data-attachment-id="${attachmentId}" data-box-size="small">`
+        `<figure class="include-note" data-attachment-id="${attachmentId}" data-box-size="resizable">`
         + "</figure>";
     let editor: ClassicEditor;
     let loadEmbeddedNote: ReturnType<typeof vi.fn>;
@@ -939,7 +952,7 @@ describe("ContentEmbed with attachments", () => {
         expect(loadEmbeddedNote).not.toHaveBeenCalled();
         expect(loadEmbeddedAttachment).toHaveBeenCalledTimes(1);
         expect(loadEmbeddedAttachment.mock.calls[0]?.[0]).toBe("att1");
-        expect(loadEmbeddedAttachment.mock.calls[0]?.[2]).toBe("small");
+        expect(loadEmbeddedAttachment.mock.calls[0]?.[2]).toBe("resizable");
 
         selectEmbed();
         editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
@@ -949,7 +962,7 @@ describe("ContentEmbed with attachments", () => {
     it("shows an embed by its file name while it uploads, and saves it naming nothing", () => {
         setModelData(
             editor.model,
-            "<contentEmbed boxSize=\"small\" uploadFileName=\"report.pdf\" uploadId=\"u1\">"
+            "<contentEmbed boxSize=\"resizable\" uploadFileName=\"report.pdf\" uploadId=\"u1\">"
             + "</contentEmbed>"
         );
 
@@ -960,7 +973,7 @@ describe("ContentEmbed with attachments", () => {
         expect(loadEmbeddedAttachment).not.toHaveBeenCalled();
         expect(loadEmbeddedNote).not.toHaveBeenCalled();
         const data = editor.getData();
-        expect(data).toContain("<figure class=\"include-note\" data-box-size=\"small\">");
+        expect(data).toContain("<figure class=\"include-note\" data-box-size=\"resizable\">");
         expect(data).not.toMatch(/data-(note|attachment)-id/);
 
         const element = findContentEmbed(editor);
@@ -978,7 +991,7 @@ describe("ContentEmbed with attachments", () => {
         expect(wrapper?.querySelector(".include-note-title")).toBeNull();
         expect(wrapper?.parentElement?.getAttribute("data-attachment-id")).toBe("att1");
         expect(loadEmbeddedAttachment).toHaveBeenCalledTimes(1);
-        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "small");
+        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "resizable");
     });
 
     it("turns an attachment link into an embed in its place, as one undo step", () => {
@@ -999,8 +1012,9 @@ describe("ContentEmbed with attachments", () => {
         );
 
         const relinked = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
-        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: relinked });
-        expect(findContentEmbed(editor)?.getAttribute("boxSize")).toBe("medium");
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: relinked, hideTitle: true });
+        expect([ "boxSize", "hideTitle" ].map((name) => findContentEmbed(editor)?.getAttribute(name)))
+            .toEqual([ "resizable", true ]);
     });
 
     it("turns a link to a note into an embed of the note, and leaves anything else alone", () => {
@@ -1050,7 +1064,7 @@ describe("ContentEmbed with attachments", () => {
     });
 
     it("loads an embed that names nothing, as one saved mid-upload, as an empty box", () => {
-        editor.setData("<figure class=\"include-note\" data-box-size=\"small\"></figure>");
+        editor.setData("<figure class=\"include-note\" data-box-size=\"resizable\"></figure>");
 
         expect(renderEmbeds()).toHaveLength(1);
         expect(loadEmbeddedNote).not.toHaveBeenCalled();
@@ -1060,7 +1074,7 @@ describe("ContentEmbed with attachments", () => {
     it("turns an embed of an attachment or a note into a link, and nothing else", async () => {
         const command = editor.commands.get(CONVERT_EMBED_TO_LINK_COMMAND);
 
-        editor.setData("<figure class=\"include-note\" data-box-size=\"small\"></figure>");
+        editor.setData("<figure class=\"include-note\" data-box-size=\"resizable\"></figure>");
         selectEmbed();
         expect(command?.isEnabled).toBe(false);
 
@@ -1075,7 +1089,7 @@ describe("ContentEmbed with attachments", () => {
             .toBe(`<paragraph><reference href="${LINK_HREF}"></reference></paragraph>`));
 
         editor.setData("<figure class=\"include-note\" data-note-id=\"noteX\""
-            + " data-box-size=\"small\"></figure>");
+            + " data-box-size=\"resizable\"></figure>");
         selectEmbed();
         expect(command?.isEnabled).toBe(true);
         editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
@@ -1087,9 +1101,9 @@ describe("ContentEmbed with attachments", () => {
 
     it("describes the embed an element is part of, without selecting it", () => {
         editor.setData(embedHtml()
-            + "<figure class=\"include-note\" data-note-id=\"noteX\" data-box-size=\"medium\""
+            + "<figure class=\"include-note\" data-note-id=\"noteX\" data-box-size=\"resizable\""
             + " data-hide-title=\"true\"><figcaption>Caption</figcaption></figure>"
-            + "<figure class=\"include-note\" data-note-id=\"noteY\" data-box-size=\"tiny\""
+            + "<figure class=\"include-note\" data-note-id=\"noteY\" data-box-size=\"compact\""
             + " data-hide-title=\"true\"></figure>"
             + "<figure class=\"include-note\" data-note-id=\"noteZ\"></figure>"
             + "<p>after</p>");
@@ -1105,21 +1119,25 @@ describe("ContentEmbed with attachments", () => {
 
         const states = [ embed, note, tiny, unsized ]
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
+        // Without a host that knows the content, every embed is at its default box.
         const notEditable = {
             isEditable: false, isEditableToggleable: false, displayMode: null, position: "center",
-            isTitleSupported: true, isCaptionSupported: true, url: null
+            isTitleSupported: true, isCaptionSupported: true, url: null, isDefaultBoxSize: true
         };
+        const resizable = { boxSize: "resizable", positions: POSITIONS };
         expect(states).toEqual([ {
-            ...notEditable, boxSize: "small", isTitleShown: true, isTitleToggleable: true,
+            ...notEditable, ...resizable, isTitleShown: true, isTitleToggleable: true,
             hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
         }, {
-            ...notEditable, boxSize: "medium", isTitleShown: false, isTitleToggleable: true,
+            ...notEditable, ...resizable, isTitleShown: false, isTitleToggleable: true,
             hasCaption: true, isCaptionToggleable: true, isConvertibleToLink: true
         }, {
-            ...notEditable, boxSize: "tiny", isTitleShown: true, isTitleToggleable: false,
-            hasCaption: false, isCaptionToggleable: false, isConvertibleToLink: true
+            ...notEditable, boxSize: "compact", position: null, positions: [], isTitleShown: true,
+            isTitleToggleable: false, hasCaption: false, isCaptionToggleable: false,
+            isConvertibleToLink: true
         }, {
-            ...notEditable, boxSize: null, isTitleShown: true, isTitleToggleable: true,
+            // An embed saved with no box size opens Resizable.
+            ...notEditable, ...resizable, isTitleShown: true, isTitleToggleable: true,
             hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
         } ]);
         const paragraph = editor.editing.view.getDomRoot()?.querySelector("p") ?? embed;
@@ -1128,9 +1146,8 @@ describe("ContentEmbed with attachments", () => {
         expect(position?.parent.is("element", "paragraph")).toBe(true);
 
         expect(plugin.getBoxSizes()).toEqual([
-            { value: "tiny", label: "Tiny" },
-            { value: "small", label: "Small" },
-            { value: "medium", label: "Medium" },
+            { value: "compact", label: "Compact" },
+            { value: "resizable", label: "Resizable" },
             { value: "full", label: "Full" },
             { value: "expandable", label: "Expandable" }
         ]);
@@ -1188,14 +1205,14 @@ describe("ContentEmbed with attachments", () => {
 
     it("stores, saves and renders an embed of blocks, and points it at other blocks", async () => {
         const html = "<figure class=\"include-note\" data-note-id=\"noteAbc\" data-block=\"a1:b2\""
-            + " data-box-size=\"small\">&nbsp;</figure>";
+            + " data-box-size=\"resizable\">&nbsp;</figure>";
         editor.setData(html);
         renderEmbeds();
 
         expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b2");
         expect(editor.getData()).toBe(html);
         expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
-            "noteAbc", expect.anything(), "small", "a1:b2", expect.any(Function)
+            "noteAbc", expect.anything(), "resizable", "a1:b2", expect.any(Function)
         );
 
         // The editor in the embed points it at other blocks, and keeps showing them.
@@ -1210,9 +1227,9 @@ describe("ContentEmbed with attachments", () => {
         expect(editor.commands.get("undo")?.isEnabled).toBe(false);
 
         editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "full" });
         expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
-            "noteAbc", expect.anything(), "medium", "c3", expect.any(Function)
+            "noteAbc", expect.anything(), "full", "c3", expect.any(Function)
         );
 
         editor.setData("<p>Removed</p>");
@@ -1264,12 +1281,12 @@ describe("ContentEmbed with attachments", () => {
         expect(redrawn).toContain("att1");
         expect(redrawn).not.toContain("att2");
         expect(getModelData(editor.model, { withoutSelection: true }))
-            .toBe("<contentEmbed attachmentId=\"att1\" boxSize=\"small\"></contentEmbed>");
+            .toBe("<contentEmbed attachmentId=\"att1\" boxSize=\"resizable\"></contentEmbed>");
     });
 });
 
 describe("ContentEmbed captions", () => {
-    const CAPTIONED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"medium\">"
+    const CAPTIONED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\">"
         + "<figcaption>A <strong>bold</strong> caption</figcaption></figure>";
     let editor: ClassicEditor;
     let loadEmbeddedNote: ReturnType<typeof vi.fn>;
@@ -1316,7 +1333,7 @@ describe("ContentEmbed captions", () => {
         editor.setData(CAPTIONED);
 
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            "<contentEmbed boxSize=\"medium\" noteId=\"n1\">"
+            "<contentEmbed boxSize=\"resizable\" noteId=\"n1\">"
             + "<caption>A <$text bold=\"true\">bold</$text> caption</caption></contentEmbed>"
         );
         expect(editor.getData()).toBe(CAPTIONED);
@@ -1324,7 +1341,7 @@ describe("ContentEmbed captions", () => {
     });
 
     it("toggles a caption on after the content and off again, keeping its text", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const command = getCommand();
         expect(command.isEnabled).toBe(true);
         expect(command.value).toBe(false);
@@ -1379,7 +1396,7 @@ describe("ContentEmbed captions", () => {
     });
 
     it("keeps the rendered content while the caption is toggled and edited", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const wrapper = editor.editing.view.getDomRoot()?.querySelector(".include-note-wrapper");
         expect(wrapper).not.toBeNull();
         expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
@@ -1400,11 +1417,11 @@ describe("ContentEmbed captions", () => {
         expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
     });
 
-    it("is disabled with no embed selected and on a Tiny embed", () => {
+    it("is disabled with no embed selected and on a Compact embed", () => {
         setModelData(editor.model, "<paragraph>foo[]</paragraph>");
         expect(getCommand().isEnabled).toBe(false);
 
-        insertContentEmbed(editor, "n1", "tiny");
+        insertContentEmbed(editor, "n1", "compact");
         expect(getCommand().isEnabled).toBe(false);
         expect(getCommand().value).toBe(false);
     });
@@ -1414,7 +1431,7 @@ describe("ContentEmbed captions", () => {
         if (!(button instanceof ButtonView)) {
             throw new Error("Expected a button.");
         }
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect(button.label).toBe("Toggle caption on");
         expect(button.isOn).toBe(false);
 
@@ -1425,16 +1442,16 @@ describe("ContentEmbed captions", () => {
         expect(isSelectionInCaption()).toBe(true);
     });
 
-    it("removes the caption of a Tiny embed and restores it on a larger size, undoably", () => {
+    it("removes the caption of a Compact embed and restores it on a larger size, undoably", () => {
         editor.setData(CAPTIONED);
         selectEmbed();
 
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "tiny" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
         expect(getModelData(editor.model, { withoutSelection: true }))
-            .toBe("<contentEmbed boxSize=\"tiny\" noteId=\"n1\"></contentEmbed>");
+            .toBe("<contentEmbed boxSize=\"compact\" noteId=\"n1\"></contentEmbed>");
 
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "small" });
-        expect(editor.getData()).toBe(CAPTIONED.replace("medium", "small"));
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect(editor.getData()).toBe(CAPTIONED);
         expect(getRenderedCaption()).not.toBeNull();
 
         editor.execute("undo");
@@ -1442,22 +1459,22 @@ describe("ContentEmbed captions", () => {
         expect(editor.getData()).toBe(CAPTIONED);
     });
 
-    it("leaves a caption hidden with the toggle hidden when the embed leaves Tiny", () => {
+    it("leaves a caption hidden with the toggle hidden when the embed leaves Compact", () => {
         editor.setData(CAPTIONED);
         selectEmbed();
 
         editor.execute(TOGGLE_CAPTION_COMMAND_NAME);
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "tiny" });
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
 
         expect(editor.getData()).not.toContain("figcaption");
     });
 
-    it("drops the caption of a Tiny embed it loads", () => {
-        editor.setData(CAPTIONED.replace("medium", "tiny"));
+    it("drops the caption of a Compact embed it loads", () => {
+        editor.setData(CAPTIONED.replace("resizable", "compact"));
 
         expect(getModelData(editor.model, { withoutSelection: true }))
-            .toBe("<contentEmbed boxSize=\"tiny\" noteId=\"n1\"></contentEmbed>");
+            .toBe("<contentEmbed boxSize=\"compact\" noteId=\"n1\"></contentEmbed>");
     });
 
     it("shares the caption element with image captions, whichever registers it first", async () => {
@@ -1475,7 +1492,7 @@ describe("ContentEmbed captions", () => {
 
             expect(getModelData(imageEditor.model, { withoutSelection: true })).toBe(
                 "<imageBlock src=\"a.png\"><caption>Picture</caption></imageBlock>"
-                + "<contentEmbed boxSize=\"medium\" noteId=\"n1\">"
+                + "<contentEmbed boxSize=\"resizable\" noteId=\"n1\">"
                 + "<caption>A <$text bold=\"true\">bold</$text> caption</caption></contentEmbed>"
             );
             expect(imageEditor.getData()).toBe(data);
@@ -1489,7 +1506,7 @@ describe("ContentEmbed captions", () => {
 });
 
 describe("ContentEmbed title", () => {
-    const UNTITLED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"medium\""
+    const UNTITLED = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\""
         + " data-hide-title=\"true\">&nbsp;</figure>";
     let editor: ClassicEditor;
     let loadEmbeddedNote: ReturnType<typeof vi.fn>;
@@ -1523,7 +1540,7 @@ describe("ContentEmbed title", () => {
         editor.setData(UNTITLED);
 
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            "<contentEmbed boxSize=\"medium\" hideTitle=\"true\" noteId=\"n1\"></contentEmbed>"
+            "<contentEmbed boxSize=\"resizable\" hideTitle=\"true\" noteId=\"n1\"></contentEmbed>"
         );
         expect(editor.getData()).toBe(UNTITLED);
         expect(getRenderedEmbed().getAttribute("data-hide-title")).toBe("true");
@@ -1534,7 +1551,7 @@ describe("ContentEmbed title", () => {
     });
 
     it("hides the title and shows it again, keeping the rendered content", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
         const command = getCommand();
         expect(command.isEnabled).toBe(true);
@@ -1555,12 +1572,12 @@ describe("ContentEmbed title", () => {
         expect(loadEmbeddedNote).toHaveBeenCalledTimes(1);
     });
 
-    it("is disabled with no embed selected, and on a Tiny or Expandable embed", () => {
+    it("is disabled with no embed selected, and on a Compact or Expandable embed", () => {
         setModelData(editor.model, "<paragraph>foo[]</paragraph>");
         expect(getCommand().isEnabled).toBe(false);
 
         for (const [ boxSize, isEnabled ] of [
-            [ "tiny", false ], [ "expandable", false ], [ "small", true ], [ "full", true ]
+            [ "compact", false ], [ "expandable", false ], [ "resizable", true ], [ "full", true ]
         ] as const) {
             insertContentEmbed(editor, "n1", boxSize);
             expect(getCommand().isEnabled, boxSize).toBe(isEnabled);
@@ -1573,7 +1590,7 @@ describe("ContentEmbed title", () => {
             throw new Error("Expected a button.");
         }
         menu.render();
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect([ menu.label, menu.isVisible ]).toEqual([ "More actions", false ]);
 
         editor.execute(TOGGLE_TITLE_COMMAND_NAME);
@@ -1582,13 +1599,13 @@ describe("ContentEmbed title", () => {
         menu.fire("execute");
         expect(openContentEmbedMenu).toHaveBeenCalledWith(getRenderedEmbed(), menu.element);
 
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "tiny" });
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "compact" });
         expect(menu.isVisible).toBe(false);
     });
 
     it("opens no menu from a button not rendered yet, or with no embed selected", () => {
         const menu = editor.ui.componentFactory.create(CONTENT_EMBED_MENU);
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         menu.fire("execute");
 
         menu.render();
@@ -1596,7 +1613,7 @@ describe("ContentEmbed title", () => {
         menu.fire("execute");
         expect(openContentEmbedMenu).not.toHaveBeenCalled();
 
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         menu.fire("execute");
         expect(openContentEmbedMenu).toHaveBeenCalledTimes(1);
     });
@@ -1700,10 +1717,25 @@ describe("ContentEmbed code view", () => {
         selectEmbed();
         expect(getCommand().isEnabled).toBe(true);
     });
+
+    it("changes nothing when the selection leaves the embed in the same change block", () => {
+        editor.setData(`${ATTACHMENT}<p>after</p>`);
+        selectEmbed();
+        const before = editor.getData();
+
+        // The command refreshes after the change block, so it still runs inside it.
+        editor.model.change((writer) => {
+            writer.setSelection(editor.model.document.getRoot()?.getChild(1) ?? null, 0);
+            expect(getCommand().isEnabled).toBe(true);
+            editor.execute(CODE_VIEW_COMMAND_NAME, { lineNumbers: false });
+        });
+        expect(getCommand().isEnabled).toBe(false);
+        expect(editor.getData()).toBe(before);
+    });
 });
 
 describe("ContentEmbed editable flag", () => {
-    const EDITABLE = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"medium\""
+    const EDITABLE = "<figure class=\"include-note\" data-note-id=\"n1\" data-box-size=\"resizable\""
         + " data-hide-title=\"true\" data-editable=\"true\">&nbsp;</figure>";
     let editor: ClassicEditor;
     let loadEmbeddedNote: ReturnType<typeof vi.fn>;
@@ -1737,7 +1769,7 @@ describe("ContentEmbed editable flag", () => {
         editor.setData(EDITABLE);
 
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            "<contentEmbed boxSize=\"medium\" editable=\"true\" hideTitle=\"true\" noteId=\"n1\">"
+            "<contentEmbed boxSize=\"resizable\" editable=\"true\" hideTitle=\"true\" noteId=\"n1\">"
             + "</contentEmbed>"
         );
         expect(editor.getData()).toBe(EDITABLE);
@@ -1756,7 +1788,7 @@ describe("ContentEmbed editable flag", () => {
     });
 
     it("turns editing on and off as one undo step, keeping the rendered content", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
         const command = getCommand();
         expect([ command.isEnabled, command.value ]).toEqual([ true, false ]);
@@ -1784,7 +1816,7 @@ describe("ContentEmbed editable flag", () => {
 
         // The content of an embed renders after the embed, and declares its tools then.
         getContentEmbedTools.mockReturnValue(null);
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect(getCommand().isEnabled).toBe(false);
         getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
         editor.ui.update();
@@ -1806,7 +1838,7 @@ describe("ContentEmbed editable flag", () => {
             throw new Error("Expected a button.");
         }
         const focus = vi.spyOn(editor.editing.view, "focus");
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect([ button.icon, button.withText, button.tooltip, button.isToggleable ])
             .toEqual([ bxEditAlt, false, true, true ]);
         expect([ button.label, button.isOn, button.isEnabled, button.isVisible ])
@@ -1857,7 +1889,7 @@ describe("ContentEmbed editable flag", () => {
 
 describe("ContentEmbed display mode", () => {
     const SPLIT = "<figure class=\"include-note\" data-attachment-id=\"a1\""
-        + " data-box-size=\"medium\" data-display-mode=\"split\">&nbsp;</figure>";
+        + " data-box-size=\"resizable\" data-display-mode=\"split\">&nbsp;</figure>";
     let editor: ClassicEditor;
     let getContentEmbedTools: ReturnType<typeof vi.fn>;
 
@@ -1922,7 +1954,7 @@ describe("ContentEmbed display mode", () => {
 
     it("switches the mode as one undo step, keeping the Editable flag", () => {
         getContentEmbedTools.mockReturnValue({ hasDisplayModes: true, hasEditableFlag: true });
-        const embed = insertContentEmbed(editor, "n1", "medium");
+        const embed = insertContentEmbed(editor, "n1", "resizable");
         editor.model.change((writer) => writer.setAttribute("editable", true, embed));
         const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
 
@@ -1939,7 +1971,7 @@ describe("ContentEmbed display mode", () => {
     });
 
     it("is offered only for content that has display modes", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect(getCommand().isEnabled).toBe(true);
 
         getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
@@ -1957,7 +1989,7 @@ describe("ContentEmbed display mode", () => {
     it("separates the display modes from the Editable toggle, while both show", () => {
         const separator = editor.ui.componentFactory.create(CONTENT_EMBED_DISPLAY_MODE_SEPARATOR);
         separator.render();
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const isShown = () => !separator.element?.classList.contains("ck-hidden");
         expect(separator.element?.classList.contains("ck-toolbar__separator")).toBe(true);
         expect(isShown()).toBe(false);
@@ -1998,7 +2030,7 @@ describe("ContentEmbed display mode", () => {
             return button;
         });
         const focus = vi.spyOn(editor.editing.view, "focus");
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         expect(buttons.map((button) => button.label))
             .toEqual([ "Source view", "Split view", "Preview" ]);
         expect(buttons.map((button) => [ button.icon, button.isToggleable ]))
@@ -2033,7 +2065,7 @@ describe("ContentEmbed display mode", () => {
 
 describe("ContentEmbed position", () => {
     const WRAPPED = "<figure class=\"include-note\" data-attachment-id=\"a1\""
-        + " data-box-size=\"medium\" data-position=\"wrap-left\">&nbsp;</figure>";
+        + " data-box-size=\"resizable\" data-position=\"wrap-left\">&nbsp;</figure>";
     let editor: ClassicEditor;
     let getContentEmbedTools: ReturnType<typeof vi.fn>;
 
@@ -2085,7 +2117,7 @@ describe("ContentEmbed position", () => {
     });
 
     it("sets the position as one undo step, keeping the content, and centered removes it", () => {
-        insertContentEmbed(editor, "n1", "medium");
+        insertContentEmbed(editor, "n1", "resizable");
         const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
         expect([ getCommand().isEnabled, getCommand().value ]).toEqual([ true, "center" ]);
         expect(getRendered()).toEqual([ null, null ]);
@@ -2110,16 +2142,30 @@ describe("ContentEmbed position", () => {
         expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
     });
 
-    it("works at every box size, and keeps the position through a change of it", () => {
-        insertContentEmbed(editor, "n1", "medium");
+    it("places a Resizable embed anywhere, an Expandable one across the text, others nowhere", () => {
+        const positions = () => (getCommand() as ContentEmbedPositionCommand).positions;
+        insertContentEmbed(editor, "n1", "resizable");
         editor.execute(POSITION_COMMAND_NAME, { value: "wrap-left" });
+        expect(positions()).toEqual([ "left", "center", "right", "wrap-left", "wrap-right" ]);
 
-        for (const boxSize of BOX_SIZES) {
+        // The position stays on the embed, for a box size that can take it again.
+        for (const boxSize of [ "compact", "full" ] as const) {
             editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSize });
-            expect([ getCommand().isEnabled, getCommand().value ], boxSize)
-                .toEqual([ true, "wrap-left" ]);
-            expect(getRendered(), boxSize).toEqual([ "wrap-left", "left" ]);
+            expect([ getCommand().isEnabled, getCommand().value, positions() ], boxSize)
+                .toEqual([ false, null, [] ]);
+            expect(editor.getData(), boxSize).toContain("data-position=\"wrap-left\"");
         }
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
+        expect([ getCommand().isEnabled, getCommand().value, positions() ])
+            .toEqual([ true, "center", [ "left", "center", "right" ] ]);
+        editor.execute(POSITION_COMMAND_NAME, { value: "wrap-right" });
+        expect(editor.getData()).toContain("data-position=\"wrap-left\"");
+        editor.execute(POSITION_COMMAND_NAME, { value: "right" });
+        expect([ getCommand().value, getRendered() ]).toEqual([ "right", [ "right", "right" ] ]);
+
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect([ getCommand().value, getRendered() ]).toEqual([ "right", [ "right", "right" ] ]);
     });
 
     it("is offered for a note, an attachment, and a source whose content has positions", () => {
@@ -2142,7 +2188,7 @@ describe("ContentEmbed position", () => {
                 throw new Error("The editor has no root.");
             }
             const embed = writer.createElement("contentEmbed", {
-                language: "mermaid", source: "graph TD", boxSize: "medium"
+                language: "mermaid", source: "graph TD", boxSize: "resizable"
             });
             writer.remove(writer.createRangeIn(root));
             writer.insert(embed, root, 0);
@@ -2173,7 +2219,7 @@ describe("ContentEmbed position", () => {
 describe("ContentEmbed resizing", () => {
     const RESIZED = "<figure class=\"include-note\""
         + " style=\"--include-note-height:12.5em;--include-note-width:30em;\""
-        + " data-note-id=\"n1\" data-box-size=\"medium\">&nbsp;</figure>";
+        + " data-note-id=\"n1\" data-box-size=\"resizable\">&nbsp;</figure>";
     let editor: ClassicEditor;
 
     beforeEach(async () => {
@@ -2192,14 +2238,14 @@ describe("ContentEmbed resizing", () => {
         editor.setData(RESIZED);
 
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            "<contentEmbed boxSize=\"medium\" customHeight=\"12.5em\" customWidth=\"30em\""
+            "<contentEmbed boxSize=\"resizable\" customHeight=\"12.5em\" customWidth=\"30em\""
             + " noteId=\"n1\"></contentEmbed>"
         );
         expect(editor.getData()).toBe(RESIZED);
     });
 
-    it("offers resizing to a Small, Medium or Expandable embed, but not to a Tiny or Full one", () => {
-        insertContentEmbed(editor, "n1", "medium");
+    it("offers resizing to a Resizable embed on both axes, to an Expandable one in height", () => {
+        insertContentEmbed(editor, "n1", "resizable");
         const embed = getRenderedEmbed();
         const handles = embed.querySelector(":scope > .ck-widget__resize-handles");
         expect([ ...handles?.children ?? [] ].map((handle) => handle.className)).toEqual([
@@ -2208,16 +2254,17 @@ describe("ContentEmbed resizing", () => {
             "ck-widget__resize-handle ck-widget__resize-handle_corner"
         ]);
 
-        for (const [ boxSize, isResizable ] of [
-            [ "tiny", false ], [ "small", true ], [ "full", false ], [ "expandable", true ],
-            [ "medium", true ]
+        for (const [ boxSize, isResizable, isWidthFixed ] of [
+            [ "compact", false, true ], [ "full", false, true ], [ "expandable", true, true ],
+            [ "resizable", true, false ]
         ] as const) {
             editor.execute(BOX_SIZE_COMMAND_NAME, { value: boxSize });
             expect(embed.classList.contains("ck-widget_resizable"), boxSize).toBe(isResizable);
+            expect(embed.classList.contains("ck-widget_fixed-width"), boxSize).toBe(isWidthFixed);
         }
     });
 
-    it("resets the height on a new box size, and the width too on Tiny or Full", () => {
+    it("keeps a resized size at Resizable, drops the width at Expandable, both at Compact or Full", () => {
         editor.setData(RESIZED);
         const embed = findContentEmbed(editor);
         if (!embed) {
@@ -2225,14 +2272,38 @@ describe("ContentEmbed resizing", () => {
         }
         editor.model.change((writer) => writer.setSelection(embed, "on"));
 
-        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "small" });
-        expect(editor.getData()).toContain("style=\"--include-note-width:30em;\"");
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "resizable" });
+        expect(editor.getData()).toBe(RESIZED);
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "expandable" });
+        expect(editor.getData()).toContain("style=\"--include-note-height:12.5em;\"");
 
-        for (const value of [ "tiny", "full" ] as const) {
+        for (const value of [ "compact", "full" ] as const) {
             editor.execute("undo");
             editor.execute(BOX_SIZE_COMMAND_NAME, { value });
             expect(editor.getData(), value).not.toContain("style=");
         }
+    });
+
+    it("reads the box sizes of an older note as the sizes they became, and saves those", () => {
+        const figure = (attributes: string) =>
+            `<figure class="include-note" ${attributes}>&nbsp;</figure>`;
+        editor.setData(figure("data-note-id=\"n1\" data-box-size=\"small\"")
+            + figure("style=\"--include-note-height:5em;\" data-note-id=\"n2\" data-box-size=\"medium\"")
+            + figure("data-note-id=\"n3\" data-box-size=\"tiny\"")
+            + figure("data-note-id=\"n4\" data-box-size=\"medium\""));
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"resizable\" customHeight=\"10em\" noteId=\"n1\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"resizable\" customHeight=\"5em\" noteId=\"n2\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" noteId=\"n3\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"resizable\" customHeight=\"20em\" noteId=\"n4\"></contentEmbed>"
+        );
+        expect(editor.getData()).toBe(
+            figure("style=\"--include-note-height:10em;\" data-note-id=\"n1\" data-box-size=\"resizable\"")
+            + figure("style=\"--include-note-height:5em;\" data-note-id=\"n2\" data-box-size=\"resizable\"")
+            + figure("data-note-id=\"n3\" data-box-size=\"compact\"")
+            + figure("style=\"--include-note-height:20em;\" data-note-id=\"n4\" data-box-size=\"resizable\"")
+        );
     });
 });
 
@@ -2266,3 +2337,126 @@ function insertContentEmbed(editor: ClassicEditor, noteId: string, boxSize: stri
     }
     return created;
 }
+
+describe("ContentEmbed with content the host describes", () => {
+    const captioned = (noteId: string) => `<figure class="include-note" data-note-id="${noteId}"`
+        + ` data-box-size="compact" data-hide-title="true"><figcaption>Caption</figcaption></figure>`;
+    const info: Record<string, EmbedContentInfo> = {
+        song: { defaultBoxSize: "compact", hasCompactContent: true },
+        map: { defaultBoxSize: "compact", hasCompactContent: false },
+        text: { defaultBoxSize: "resizable", hasCompactContent: false }
+    };
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ], {
+            contentEmbed: {
+                getEmbedContentInfo: ({ noteId }) => (noteId && info[noteId]) ?? null
+            }
+        });
+    });
+
+    it("keeps the caption and hidden title of Compact audio and of content not loaded yet", () => {
+        editor.setData(captioned("song") + captioned("map") + captioned("later"));
+        setModelData(editor.model, getModelData(editor.model, { withoutSelection: true })
+            + "<contentEmbed boxSize=\"compact\" uploadFileName=\"a.mp3\" uploadId=\"u1\">"
+            + "<caption>Uploading</caption></contentEmbed>");
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            "<contentEmbed boxSize=\"compact\" hideTitle=\"true\" noteId=\"song\">"
+            + "<caption>Caption</caption></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" noteId=\"map\"></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" hideTitle=\"true\" noteId=\"later\">"
+            + "<caption>Caption</caption></contentEmbed>"
+            + "<contentEmbed boxSize=\"compact\" uploadFileName=\"a.mp3\" uploadId=\"u1\">"
+            + "<caption>Uploading</caption></contentEmbed>"
+        );
+        const plugin = editor.plugins.get("ContentEmbed");
+        const figures = editor.editing.view.getDomRoot()?.querySelectorAll("figure.include-note");
+        const states = [ ...figures ?? [] ].map((figure) => plugin.getEmbedStateAt(figure));
+        expect(states.map((state) => state && [
+            state.isTitleToggleable, state.isTitleShown, state.isCaptionToggleable,
+            state.isDefaultBoxSize
+        ])).toEqual([
+            [ true, false, true, true ],
+            [ false, true, false, true ],
+            [ false, true, true, true ],
+            [ false, true, true, true ]
+        ]);
+    });
+
+    it("puts an embed back at the box its content starts with, without a resized size", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"text\" data-box-size=\"compact\">"
+            + "</figure>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe("<contentEmbed boxSize=\"resizable\" noteId=\"text\"></contentEmbed>");
+        expect(command?.isEnabled).toBe(false);
+
+        editor.model.change((writer) => writer.setAttribute("customHeight", "8em", embed));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.hasAttribute("customHeight")).toBe(false);
+        expect(command?.isEnabled).toBe(false);
+    });
+
+    it("puts an excerpt back at the excerpt's box, not at the box of the whole note", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"text\" data-block=\"a1:b2\""
+            + " data-box-size=\"full\"></figure>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+
+        expect(command?.isEnabled).toBe(false);
+        editor.model.change((writer) => writer.setAttribute("boxSize", "resizable", embed));
+        expect(command?.isEnabled).toBe(true);
+        editor.execute(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.getAttribute("boxSize")).toBe("full");
+        expect(command?.isEnabled).toBe(false);
+    });
+
+    it("changes nothing for content the host has not loaded, or with no embed selected", () => {
+        editor.setData("<figure class=\"include-note\" data-note-id=\"later\" data-box-size=\"compact\">"
+            + "</figure><p>after</p>");
+        const embed = findContentEmbed(editor);
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        const command = editor.commands.get(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        if (!command) {
+            throw new Error("Expected the command.");
+        }
+        const before = editor.getData();
+
+        // The decorated `Command#execute()` skips a disabled command, so the command is forced
+        // enabled to run `execute()` where it has nothing to do.
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        expect(command.isEnabled).toBe(false);
+        command.isEnabled = true;
+        command.execute();
+        setModelData(editor.model, getModelData(editor.model, { withoutSelection: true })
+            .replace("<paragraph>after</paragraph>", "<paragraph>[]after</paragraph>"));
+        command.isEnabled = true;
+        command.execute();
+        expect(editor.getData()).toBe(before);
+
+        // An embed saved with no box size at all has none to show.
+        setModelData(editor.model, "<contentEmbed noteId=\"text\"></contentEmbed>");
+        const figure = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!figure) {
+            throw new Error("Expected a rendered embed.");
+        }
+        expect(editor.plugins.get("ContentEmbed").getEmbedStateAt(figure)?.boxSize).toBeNull();
+    });
+});

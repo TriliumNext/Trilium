@@ -21,7 +21,7 @@ export type HighlightName = keyof typeof PRIORITIES;
 export const HIGHLIGHT_ROOT_ATTRIBUTE = "data-highlight-root";
 
 export interface MatchOptions {
-    /** Selectors of the elements whose own text is not searched. */
+    /** Selectors of the elements under the root whose subtree is not searched. */
     exclude?: string[];
     /** The maximum number of matches to return. */
     limit?: number;
@@ -150,10 +150,14 @@ function findRanges(root: HTMLElement, options: MatchOptions, getOffsets: (text:
 }
 
 function getTextNodes(root: HTMLElement, excluded: string) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => node.parentElement?.matches(excluded)
-            ? NodeFilter.FILTER_REJECT
-            : NodeFilter.FILTER_ACCEPT
+    // A rejected element skips its subtree. The walker never visits `root` or its ancestors.
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+            if (!(node instanceof Element)) {
+                return NodeFilter.FILTER_ACCEPT;
+            }
+            return node.matches(excluded) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+        }
     });
 
     const nodes: Text[] = [];

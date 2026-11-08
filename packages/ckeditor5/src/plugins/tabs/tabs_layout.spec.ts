@@ -368,6 +368,30 @@ describe("tabs layout styles", () => {
         expect(edited.viewport.firstElementChild?.textContent).toBe("Step 10 of the guide");
     });
 
+    it("skips a title removed before its reveal and reveals the one shown instead", async () => {
+        document.body.classList.add("motion-disabled");
+        onTestFinished(() => document.body.classList.remove("motion-disabled"));
+        const editor = await createTestEditor([Essentials, Paragraph, Tabs]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        editable.style.width = "400px";
+        editor.setData(manyTabsHtml());
+        const { bar, viewport } = barOf(editable);
+        const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+        const lastTab = tabs.getChild(9) as ModelElement;
+        await expect.poll(() => isOverflowing(bar)).toBe(true);
+
+        // The queued change removes the tab before the view renders the change that showed it.
+        editor.model.change(writer => {
+            writer.setSelection(lastTab.getChild(1) as ModelElement, 0);
+            editor.model.enqueueChange(queuedWriter => queuedWriter.remove(lastTab));
+        });
+
+        const lastTitle = viewport.lastElementChild as HTMLElement;
+        expect(lastTitle.textContent).toBe("Step 9 of the guide");
+        expect(lastTitle.classList.contains("trilium-tab-title--active")).toBe(true);
+        expect(isShown(lastTitle, viewport)).toBe(true);
+    });
+
     it("reveals the title of a nested tab that was hidden in saved content", async () => {
         document.body.classList.add("motion-disabled");
         onTestFinished(() => document.body.classList.remove("motion-disabled"));

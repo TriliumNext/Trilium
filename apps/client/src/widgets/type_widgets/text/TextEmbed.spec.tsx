@@ -145,7 +145,7 @@ describe("TextEmbed", () => {
         // The plugins of the editor find their host from its DOM.
         const stub = figure.querySelector<HTMLElement>(".editable-text-stub");
         expect(stub && appContext.getComponentByEl(stub)).toBe(props.parentComponent);
-        expect(figure.querySelector(".editable-embed-preview")).toBeNull();
+        expect(figure.querySelector<HTMLElement>(".editable-embed-preview")?.hidden).toBe(true);
 
         // The title row of the embed shows how the saving of the note goes.
         act(() => props.noteContext?.setContextData("saveState", { state: "error" }));
@@ -161,7 +161,7 @@ describe("TextEmbed", () => {
         expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ props.ntxId ] });
         expect(figure.querySelector(".save-status-badge")).toBeNull();
         expect(figure.querySelector(".editable-text-stub")).toBeNull();
-        expect(figure.querySelector(".editable-embed-preview")).not.toBeNull();
+        expect(figure.querySelector<HTMLElement>(".editable-embed-preview")?.hidden).toBe(false);
     });
 
     it("keeps the preview in place until its editor shows the note", async () => {
@@ -174,7 +174,9 @@ describe("TextEmbed", () => {
         const loading = figure.querySelector(".editable-embed-editor.loading");
         expect(loading).not.toBeNull();
         expect(loading?.querySelector(".editable-text-stub")).not.toBeNull();
-        expect(figure.querySelector(".editable-embed-preview")?.firstChild).toBe(preview);
+        const shownPreview = figure.querySelector<HTMLElement>(".editable-embed-preview");
+        expect(shownPreview?.firstChild).toBe(preview);
+        expect(shownPreview?.hidden).toBe(false);
 
         const { onContentShown } = editorProps.mock.lastCall?.[0] as {
             onContentShown?: () => void;
@@ -183,7 +185,10 @@ describe("TextEmbed", () => {
         act(() => onContentShown?.());
         expect(figure.querySelector(".editable-embed-editor.loading")).toBeNull();
         expect(figure.querySelector(".editable-embed-editor > .text-embed-editor")).not.toBeNull();
-        expect(figure.querySelector(".editable-embed-preview")).toBeNull();
+        // Hidden, not unmounted, so that the embed boxes it shows survive the edit.
+        const hiddenPreview = figure.querySelector<HTMLElement>(".editable-embed-preview");
+        expect(hiddenPreview?.firstChild).toBe(preview);
+        expect(hiddenPreview?.hidden).toBe(true);
     });
 
     it("previews what the editor holds once it closes, before the note saves", async () => {

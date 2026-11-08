@@ -5,14 +5,17 @@ import {
     type ClassicEditor,
     Essentials,
     HorizontalLine,
+    ImageInlineEditing,
     MentionEditing,
     Paragraph,
     Table,
     Widget
 } from "ckeditor5";
+import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, pressKey } from "../../../test/editor-kit.js";
+import { registerTestCleanup } from "../../../test/globals-test-kit.js";
 import TriliumMentionUI from "../mention/trilium_mention_ui.js";
 import type { MentionHostedList } from "../mention/types.js";
 import ContentEmbed from "./content_embed.js";
@@ -26,6 +29,8 @@ const CAPTIONED_EMBED_AT_START = "<contentEmbed boxSize=\"medium\" noteId=\"n1\"
 const AB = "<paragraph>ab</paragraph>";
 const CD = "<paragraph>cd</paragraph>";
 const HR = "<horizontalLine></horizontalLine>";
+const PICTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40'"
+    + " height='40'/%3E";
 const TEXT_PLUGINS = [
     Essentials, Paragraph, Widget, HorizontalLine, ContentEmbed, ContentEmbedCaret
 ];
@@ -76,6 +81,25 @@ describe("ContentEmbedCaret entering an embed", () => {
         setModelData(editor.model, `<paragraph>ab[]</paragraph>${HR}${EMBED}`);
         expect(pressKey(editor, "ArrowDown")).toBe(false);
         expect(enterContentEmbed).not.toHaveBeenCalled();
+    });
+
+    it("enters with Up from a line that ends with an image of no size", async () => {
+        // The stylesheet lays out an inline image as a flex box, which a failed image leaves empty.
+        await loadEditorStylesheet();
+        const imageEditor = await createTestEditor([ ...TEXT_PLUGINS, ImageInlineEditing ], {
+            contentEmbed: { enter: enterContentEmbed }
+        });
+        setModelData(imageEditor.model, `${EMBED}<paragraph>`
+            + `<imageInline src="${PICTURE}"></imageInline>`
+            + "<imageInline alt=\"\" src=\"data:,\"></imageInline>[]</paragraph>");
+        const images = getDomRoot(imageEditor).querySelectorAll("img");
+        await Promise.allSettled(Array.from(images, (image) => image.decode()));
+        const sizes = Array.from(getDomRoot(imageEditor).querySelectorAll(".image-inline"),
+            (wrapper) => [ wrapper.clientWidth, wrapper.clientHeight ]);
+        expect(sizes).toEqual([ [ 40, 40 ], [ 0, 0 ] ]);
+
+        expect(pressKey(imageEditor, "ArrowUp")).toBe(true);
+        expect(enterContentEmbed).toHaveBeenLastCalledWith(getEmbedDom(imageEditor), "end");
     });
 
     it("enters from the fake caret beside a selected embed, and forward from the embed", () => {
@@ -287,6 +311,18 @@ describe("ContentEmbedCaret as the editor of an embed", () => {
         expect(getModelData(editor.model)).toBe(`${AB}<paragraph>cd[]</paragraph>`);
     });
 
+    it("focuses an editor that has no place for the caret, leaving the selection", async () => {
+        // Without paragraphs, the root stays empty.
+        const emptyEditor = await createTestEditor([ Essentials, ContentEmbedCaret ]);
+        const change = vi.spyOn(emptyEditor.model, "change");
+        const scroll = vi.spyOn(emptyEditor.editing.view, "scrollToTheSelection");
+
+        emptyEditor.plugins.get(ContentEmbedCaret).focusAt("start");
+        expect(emptyEditor.editing.view.document.isFocused).toBe(true);
+        expect(scroll).toHaveBeenCalledOnce();
+        expect(change).not.toHaveBeenCalled();
+    });
+
     it("shows the fake caret outside an object at the edge it focuses", () => {
         editor.setData("<hr><p>ab</p><hr>");
         plugin.focusAt("start");
@@ -430,6 +466,19 @@ function pressFocusedKey(editor: ClassicEditor, key: string) {
     const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
     target.dispatchEvent(event);
     return event.defaultPrevented;
+}
+
+/** Loads the editor's stylesheet for the current test, as the app loads it. */
+async function loadEditorStylesheet() {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = editorStylesheetUrl;
+    await new Promise((resolve, reject) => {
+        link.onload = resolve;
+        link.onerror = () => reject(new Error("The editor stylesheet did not load."));
+        document.head.append(link);
+    });
+    registerTestCleanup(() => link.remove());
 }
 
 function setTypeAround(editor: ClassicEditor, side: "before" | "after" | null) {

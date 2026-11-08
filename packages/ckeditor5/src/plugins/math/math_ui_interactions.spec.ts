@@ -2,7 +2,10 @@
 import './math.js';
 
 import katex from 'katex';
-import { ClassicEditor, ContextualBalloon, Essentials, keyCodes, Paragraph, _setModelData as setModelData } from 'ckeditor5';
+import {
+	ClassicEditor, ContextualBalloon, Essentials, HorizontalLine, keyCodes, Paragraph, View,
+	_getModelData as getModelData, _setModelData as setModelData
+} from 'ckeditor5';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestEditor } from '../../../test/editor-kit.js';
@@ -24,7 +27,7 @@ describe( 'MathUI interactions', () => {
 		// callback is handed the target element directly and never creates one.
 		( window as unknown as { katex: typeof katex } ).katex = katex;
 
-		editor = await createTestEditor( [ Essentials, Paragraph, Math ], {
+		editor = await createTestEditor( [ Essentials, Paragraph, HorizontalLine, Math ], {
 			math: { engine: 'katex' }
 		} as never );
 
@@ -49,6 +52,14 @@ describe( 'MathUI interactions', () => {
 		return view;
 	}
 
+	function mathView() {
+		const view = formView().mathView;
+		if ( !view ) {
+			throw new Error( 'The form view has no preview.' );
+		}
+		return view;
+	}
+
 	describe( 'the Enter keystroke on the form', () => {
 		it( 'submits the equation', () => {
 			setModelData( editor.model, '<paragraph>f[o]o</paragraph>' );
@@ -56,14 +67,16 @@ describe( 'MathUI interactions', () => {
 			formView().mathInputView.value = 'x^2';
 
 			const executeSpy = vi.spyOn( editor, 'execute' );
+			const preventDefault = vi.fn();
 			formView().keystrokes.press( {
 				keyCode: keyCodes.enter,
 				shiftKey: false,
-				preventDefault: vi.fn(),
+				preventDefault,
 				stopPropagation: vi.fn()
 			} as never );
 
 			expect( executeSpy.mock.lastCall?.slice( 0, 2 ) ).toMatchObject( [ 'math', 'x^2' ] );
+			expect( preventDefault ).toHaveBeenCalled();
 		} );
 
 		it( 'leaves Shift+Enter alone so it can insert a newline', () => {
@@ -114,6 +127,112 @@ describe( 'MathUI interactions', () => {
 		} );
 	} );
 
+	describe( 'an edited form', () => {
+		const esc = {
+			keyCode: keyCodes.esc,
+			preventDefault: vi.fn(),
+			stopPropagation: vi.fn()
+		} as never;
+
+		function isFormShown() {
+			return editor.plugins.get( ContextualBalloon ).visibleView === formView();
+		}
+
+		it( 'ignores a click outside and Esc until it is saved or canceled', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().mathInputView.value = 'x^2';
+
+			document.body.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
+			formView().keystrokes.press( esc );
+			editor.keystrokes.press( esc );
+
+			expect( isFormShown() ).toBe( true );
+			expect( formView().equation ).toBe( 'x^2' );
+
+			formView().fire( 'cancel' );
+			expect( isFormShown() ).toBe( false );
+		} );
+
+		it( 'counts a flipped display switch as an edit', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().displayButtonView.fire( 'execute' );
+
+			document.body.dispatchEvent( new Event( 'mousedown', { bubbles: true } ) );
+
+			expect( isFormShown() ).toBe( true );
+		} );
+
+		it( 'closes without focusing the editor when other content loads', () => {
+			setModelData( editor.model, '<paragraph>f[]oo</paragraph>' );
+			ui._showUI();
+			formView().mathInputView.value = 'x^2';
+			const focusSpy = vi.spyOn( editor.editing.view, 'focus' );
+
+			editor.setData( '<p>bar</p>' );
+
+			expect( isFormShown() ).toBe( false );
+			expect( focusSpy ).not.toHaveBeenCalled();
+
+			ui._showUI();
+			expect( isFormShown() ).toBe( true );
+			expect( formView().equation ).toBe( '' );
+		} );
+
+		it( 'saves the equation it was opened for after the selection moves', () => {
+			setModelData(
+				editor.model,
+				`<paragraph>[<${ INLINE } equation="x" type="script" display="false"></${ INLINE }>]</paragraph>` +
+					'<paragraph>bar</paragraph>'
+			);
+			ui._showUI();
+			formView().mathInputView.value = 'y^2';
+
+			editor.model.change( writer => {
+				writer.setSelection( editor.model.document.getRoot()?.getChild( 1 ) ?? null, 'end' );
+			} );
+			expect( formView().equation ).toBe( 'y^2' );
+			formView().fire( 'submit' );
+
+			expect( getModelData( editor.model, { withoutSelection: true } ) ).toBe(
+				`<paragraph><${ INLINE } display="false" equation="y^2" type="script"></${ INLINE }></paragraph>` +
+					'<paragraph>bar</paragraph>'
+			);
+		} );
+
+		it( 'stays editable and saves its equation after an object is selected', () => {
+			setModelData(
+				editor.model,
+				`<paragraph>[<${ INLINE } equation="x" type="script" display="false">` +
+					`</${ INLINE }>]</paragraph><horizontalLine></horizontalLine>`
+			);
+			ui._showUI();
+			formView().mathInputView.value = 'y^2';
+
+			editor.model.change( writer => {
+				writer.setSelection( editor.model.document.getRoot()?.getChild( 1 ) ?? null, 'on' );
+			} );
+			expect( editor.commands.get( 'math' )?.isEnabled ).toBe( false );
+			expect( [
+				formView().mathInputView.isReadOnly,
+				formView().saveButtonView.isEnabled,
+				formView().displayButtonView.isEnabled
+			] ).toEqual( [ false, true, true ] );
+			formView().keystrokes.press( {
+				keyCode: keyCodes.enter,
+				shiftKey: false,
+				preventDefault: vi.fn(),
+				stopPropagation: vi.fn()
+			} as never );
+
+			expect( getModelData( editor.model, { withoutSelection: true } ) ).toBe(
+				`<paragraph><${ INLINE } display="false" equation="y^2" type="script">` +
+					`</${ INLINE }></paragraph><horizontalLine></horizontalLine>`
+			);
+		} );
+	} );
+
 	describe( 'clicking an existing equation', () => {
 		it( 'reopens the form', () => {
 			setModelData( editor.model, `<paragraph>[<${ INLINE } equation="x^2" type="script" display="false"></${ INLINE }>]</paragraph>` );
@@ -131,6 +250,24 @@ describe( 'MathUI interactions', () => {
 			editor.editing.view.document.fire( 'click' );
 
 			expect( showSpy ).not.toHaveBeenCalled();
+		} );
+	} );
+
+	describe( 'opening behind another balloon stack', () => {
+		it( 'fills the form and its preview once the stack comes up', () => {
+			const equation = `<${ INLINE } equation="x^2"></${ INLINE }>`;
+			setModelData( editor.model, `<paragraph>[${ equation }]</paragraph>` );
+			const balloon = editor.plugins.get( ContextualBalloon );
+			balloon.add( { view: new View(), stackId: 'custom' } );
+			const updateMath = vi.spyOn( mathView(), 'updateMath' );
+
+			// _addFormView() fills the form while its stack is hidden; showStack() then renders it.
+			ui._showUI();
+
+			expect( balloon.visibleView ).toBe( formView() );
+			expect( formView().mathInputView.latexTextAreaView.element.value ).toBe( 'x^2' );
+			expect( previewElement()?.querySelector( '.katex' ) ).toBeInstanceOf( HTMLElement );
+			expect( updateMath ).toHaveBeenCalledOnce();
 		} );
 	} );
 

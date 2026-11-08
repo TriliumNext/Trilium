@@ -72,7 +72,8 @@ export default class ContainerKeyboard extends Plugin {
     private getInnermostCommands(): ContainerCommands | null {
         const position = this.editor.model.document.selection.getFirstPosition();
         /* v8 ignore next -- the document selection always has a position */
-        for (const ancestor of position?.getAncestors().reverse() ?? []) {
+        const ancestors = position?.getAncestors().reverse() ?? [];
+        for (const ancestor of ancestors) {
             const commands = ancestor.is("element") && this.containers.get(ancestor.name);
             if (commands) {
                 return commands;

@@ -82,7 +82,7 @@ export class ConvertImageToDrawingCommand extends Command {
         const { embed, batch } = model.change((writer) => {
             const embed = writer.createElement("contentEmbed", {
                 attachmentId,
-                boxSize: "medium",
+                boxSize: "resizable",
                 hideTitle: true,
                 editable: true,
                 ...size

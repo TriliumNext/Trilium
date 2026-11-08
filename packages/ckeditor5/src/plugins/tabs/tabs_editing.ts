@@ -362,7 +362,6 @@ export default class TabsEditing extends Plugin {
                 for (const tab of tabs.getChildren() as IterableIterator<ModelElement>) {
                     const view = editing.mapper.toViewElement(tab);
                     const title = editing.mapper.toViewElement(tab.getChild(0) as ModelElement);
-                    /* v8 ignore next 3 -- only a tab outside the document, which no caller passes, has no view */
                     if (!view || !title) {
                         continue;
                     }

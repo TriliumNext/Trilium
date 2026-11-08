@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
     getLinkPreviewPlayer, getLinkPreviewVideoId, getVideoAspectRatio,
-    LINK_EMBED_CARD_IMAGE_PLACEHOLDER, LINK_PREVIEW_DATA_ATTRIBUTES, readLinkPreviewData,
-    readMediaEmbedBox, renderLinkEmbedHtml, renderLinkMentionHtml
+    LINK_EMBED_CARD_IMAGE_PLACEHOLDER, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData,
+    readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedBoxHtml, renderLinkEmbedHtml,
+    renderLinkMentionHtml
 } from "./link_embed_markup.js";
 
 const OPTIONS = { playVideoLabel: "Play \"video\"", playAudioLabel: "Play audio" };
@@ -38,27 +39,51 @@ describe("readLinkPreviewData", () => {
 });
 
 describe("readMediaEmbedBox", () => {
-    it("reads an audio file as Small, the one size of its box", () => {
+    it("reads an audio file as Compact or Resizable, Compact when saved as Small", () => {
         const read = (attributes: Record<string, string>) =>
             readMediaEmbedBox((name) => attributes[name], { type: "audio" });
 
+        expect(read({ "data-box-size": "compact" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "resizable" }))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
         expect(read({ "data-box-size": "small" }))
-            .toEqual({ boxSize: "small", isTitleHidden: false });
-        expect(read({ "data-box-size": "medium" }))
-            .toEqual({ boxSize: "small", isTitleHidden: false });
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "full" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
     });
 
     it("reads the box size and the title, Full and untitled for a video saved before", () => {
         const read = (attributes: Record<string, string>) =>
             readMediaEmbedBox((name) => attributes[name], { type: "youtube", videoId: "id" });
 
+        expect(read({ "data-box-size": "resizable" }))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
         expect(read({ "data-box-size": "medium" }))
-            .toEqual({ boxSize: "medium", isTitleHidden: false });
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
         expect(read({ "data-box-size": "full", "data-hide-title": "true" }))
             .toEqual({ boxSize: "full", isTitleHidden: true });
         expect(read({ "data-box-size": "tiny" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "expandable" }))
             .toEqual({ boxSize: "full", isTitleHidden: false });
         expect(read({})).toEqual({ boxSize: "full", isTitleHidden: true });
+    });
+});
+
+describe("renderLinkEmbedBoxHtml", () => {
+    it("renders a video at Compact as a mention, and anything else as its preview", () => {
+        const options = { playVideoLabel: "Play", playAudioLabel: "Play" };
+        const video = { url: VIDEO_URL, embedType: "youtube", title: "Clip" };
+        const audio = { url: "https://example.com/a.mp3", embedType: "audio", title: "Song" };
+        const render = (data: LinkPreviewData, boxSize: string) =>
+            renderLinkEmbedBoxHtml(data, (name) => (name === "data-box-size" ? boxSize : null), options);
+
+        expect(render(video, "compact")).toBe(renderLinkMentionHtml(video, options));
+        expect(render(video, "resizable")).toBe(renderLinkEmbedHtml(video, options));
+        expect(render(audio, "compact")).toBe(renderLinkEmbedHtml(audio, options));
+        const card = { url: "https://example.com/page", embedType: "opengraph", title: "Page" };
+        expect(render(card, "compact")).toBe(renderLinkEmbedHtml(card, options));
     });
 });
 

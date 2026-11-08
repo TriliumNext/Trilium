@@ -344,13 +344,13 @@ export default class AiAssistantFormView extends View {
         ];
         for (const view of focusables) {
             this._focusables.add(view);
-            /* v8 ignore next -- a child view rendered as part of this template always has an element */
+            /* v8 ignore else -- a child view rendered by this template always has an element */
             if (view.element) {
                 this.focusTracker.add(view.element);
             }
         }
 
-        /* v8 ignore next -- super.render() has just built this view's element */
+        /* v8 ignore else -- super.render() has just built this view's element */
         if (this.element) {
             this.keystrokes.listenTo(this.element);
         }
@@ -642,7 +642,6 @@ class AiPreviewView extends View {
 
     public setContent(html: string): void {
         const element = this.element;
-        /* v8 ignore next -- the preview is only written to after the form has rendered */
         if (!element) {
             return;
         }

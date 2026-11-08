@@ -97,7 +97,7 @@ export default class TableTouchSelection extends Plugin {
         });
         this.domEmitter.listenTo(window, "resize", () => this.scheduleUpdate());
         const viewport = window.visualViewport;
-        /* v8 ignore next 3 -- defensive: supported browsers have a visual viewport */
+        /* v8 ignore else -- defensive: supported browsers have a visual viewport */
         if (viewport) {
             this.domEmitter.listenTo(viewport, "resize", () => this.scheduleUpdate());
         }
@@ -281,8 +281,9 @@ export default class TableTouchSelection extends Plugin {
     private getDomElement(element: ModelElement) {
         const editing = this.editor.editing;
         const viewElement = editing.mapper.toViewElement(element);
-        /* v8 ignore next -- defensive: an element in the model is rendered */
-        return viewElement ? editing.view.domConverter.mapViewToDom(viewElement) : undefined;
+        return viewElement
+            ? editing.view.domConverter.mapViewToDom(viewElement)
+            : /* v8 ignore next -- defensive: an element in the model is rendered */ undefined;
     }
 
     /** Starts to follow a touch that lands close to a handle. A second finger ends the drag. */
@@ -372,7 +373,6 @@ export default class TableTouchSelection extends Plugin {
      */
     private findCellAt(x: number, y: number) {
         const { target, layout } = this;
-        /* v8 ignore next 3 -- defensive: a drag runs while the handles are drawn */
         if (!target || !layout) {
             return null;
         }
@@ -401,7 +401,6 @@ export default class TableTouchSelection extends Plugin {
     /** Scrolls while the handle is close to an edge of the visible area, once per frame. */
     private readonly autoScroll = () => {
         const { gesture, target, layout } = this;
-        /* v8 ignore next 3 -- defensive: the frame is cancelled with the drag */
         if (!gesture || !target || !layout) {
             return;
         }

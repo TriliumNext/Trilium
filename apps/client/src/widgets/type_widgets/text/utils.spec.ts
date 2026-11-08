@@ -22,11 +22,15 @@ vi.mock("../../../services/content_renderer", () => ({
         disposeInteractiveContent: vi.fn(),
         mountInteractiveWidget: vi.fn()
     },
-    CONTENT_RENDERERS: { file: { media: async () => ({ default: MediaPreviewStub }) } }
+    CONTENT_RENDERERS: { file: { media: async () => ({ default: MediaPreviewStub }) } },
+    getEmbedContentInfo: (entity: { mime?: string }) => ({
+        defaultBoxSize: "resizable",
+        hasCompactContent: !!entity.mime?.startsWith("audio/")
+    })
 }));
 vi.mock("./ContentEmbed", () => ({
     default: () => null,
-    TinyContentEmbed: () => null,
+    CompactContentEmbed: () => null,
     ContentEmbedError: () => null,
     getNoteActions: vi.fn()
 }));
@@ -57,8 +61,8 @@ import ContentEmbed, {
     getNoteActions,
     type ContentEmbedAction,
     type ContentEmbedProps,
-    TinyContentEmbed,
-    type TinyContentEmbedProps
+    CompactContentEmbed,
+    type CompactContentEmbedProps
 } from "./ContentEmbed";
 import EmbedHistories from "./embed_history";
 import {
@@ -108,7 +112,7 @@ function lastMount() {
     if (!call) {
         throw new Error("Expected a mounted embed box.");
     }
-    const vnode = call[0] as VNode<ContentEmbedProps & TinyContentEmbedProps>;
+    const vnode = call[0] as VNode<ContentEmbedProps & CompactContentEmbedProps>;
     return { type: vnode.type, props: vnode.props, container: call[1] };
 }
 
@@ -129,10 +133,11 @@ function createWrapper() {
 }
 
 describe("loadEmbeddedNote", () => {
-    it("mounts a box with the note, its own embeds reduced to reference links", async () => {
+    it("mounts a box with the note, whose embeds show in boxes too", async () => {
         const wrapper = createWrapper();
+        const seenNoteIds = new Set([ "host" ]);
 
-        await loadEmbeddedNote("noteY", $(wrapper), "medium");
+        await loadEmbeddedNote("noteY", $(wrapper), "medium", { seenNoteIds });
 
         expect(link.createLink).toHaveBeenCalledWith("noteY", {
             showTooltip: false,
@@ -140,10 +145,14 @@ describe("loadEmbeddedNote", () => {
         });
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(note, {
             interactive: true,
-            embedsAsReferenceLinks: true,
+            embedBoxes: true,
+            seenNoteIds: new Set([ "host" ]),
             mediaEnvironment: "embedded",
             hasDisplayModes: true
         });
+        // The renderer adds the note to the set it is given.
+        expect(vi.mocked(content_renderer.getRenderedContent).mock.lastCall?.[1]?.seenNoteIds)
+            .not.toBe(seenNoteIds);
         const mount = lastMount();
         expect(mount.type).toBe(ContentEmbed);
         expect(mount.container).toBe(wrapper);
@@ -176,12 +185,12 @@ describe("loadEmbeddedNote", () => {
         });
     });
 
-    it("mounts a tiny box with the note's path, without the note or a caption", async () => {
+    it("mounts a Compact box with the note's path, without the note or a caption", async () => {
         const actions = [ action("edit"), action("open") ];
         vi.mocked(getNoteActions).mockReturnValue(actions);
         const figure = inPage(document.createElement("figure"));
         figure.className = "include-note";
-        figure.dataset.boxSize = "tiny";
+        figure.dataset.boxSize = "compact";
         figure.innerHTML = "<figcaption>Caption</figcaption>";
 
         await loadEmbeddedNote("noteY", $(figure));
@@ -193,7 +202,7 @@ describe("loadEmbeddedNote", () => {
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
         expect(getNoteActions).toHaveBeenCalledWith("noteY");
         const mount = lastMount();
-        expect(mount.type).toBe(TinyContentEmbed);
+        expect(mount.type).toBe(CompactContentEmbed);
         expect([ ...figure.childNodes ]).toEqual([ mount.container ]);
         expect(mount.props).toEqual({
             icon: "bx bx-note",
@@ -209,7 +218,7 @@ describe("loadEmbeddedNote of blocks", () => {
         const wrapper = createWrapper();
         const figure = inPage(document.createElement("figure"));
         figure.className = "include-note";
-        figure.dataset.boxSize = "tiny";
+        figure.dataset.boxSize = "compact";
 
         const onBlockChange = vi.fn();
         await loadEmbeddedNote("noteY", $(wrapper), "medium", { block: "b1:b2", onBlockChange });
@@ -223,7 +232,7 @@ describe("loadEmbeddedNote of blocks", () => {
 
         await loadEmbeddedNote("noteY", $(figure), undefined, { block: "b1" });
 
-        expect(lastMount().type).toBe(TinyContentEmbed);
+        expect(lastMount().type).toBe(CompactContentEmbed);
         expect(lastMount().props.viewScope).toEqual({ block: "b1" });
         expect(lastMount().container.classList.contains("excerpt")).toBe(true);
     });
@@ -253,7 +262,11 @@ describe("loadEmbeddedAttachment", () => {
             viewScope: ATTACHMENT_SCOPE
         });
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(attachment, {
-            interactive: true, mediaEnvironment: "embedded", hasDisplayModes: true
+            interactive: true,
+            embedBoxes: true,
+            seenNoteIds: new Set(),
+            mediaEnvironment: "embedded",
+            hasDisplayModes: true
         });
         const mount = lastMount();
         expect(mount.type).toBe(ContentEmbed);
@@ -280,6 +293,8 @@ describe("loadEmbeddedAttachment", () => {
 
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(attachment, {
             interactive: true,
+            embedBoxes: true,
+            seenNoteIds: new Set(),
             mediaEnvironment: "embedded",
             hasDisplayModes: true,
             attachmentEditor,
@@ -357,7 +372,7 @@ describe("loadEmbeddedAttachment", () => {
         vi.mocked(froca.getAttachment).mockResolvedValue(null);
         const wrapper = createWrapper();
 
-        await loadEmbeddedAttachment("att1", $(wrapper), "tiny");
+        await loadEmbeddedAttachment("att1", $(wrapper), "compact");
 
         expect(link.createLink).not.toHaveBeenCalled();
         expect(content_renderer.getRenderedContent).not.toHaveBeenCalled();
@@ -365,19 +380,19 @@ describe("loadEmbeddedAttachment", () => {
         expect(mount.type).toBe(ContentEmbedError);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
-            boxSize: "tiny",
+            boxSize: "compact",
             icon: "bx bx-error-alt",
             text: 'include_note.missing_attachment {"attachmentId":"att1"}'
         });
     });
 
-    it("mounts a tiny box with the size of the attachment, and its file actions", async () => {
+    it("mounts a Compact box with the size of the attachment, and its file actions", async () => {
         const [ openExternally, download ] = [ action("open-externally"), action("download") ];
         vi.mocked(getOpenExternallyAction).mockReturnValue(openExternally);
         vi.mocked(getDownloadAction).mockReturnValue(download);
         const wrapper = createWrapper();
 
-        await loadEmbeddedAttachment("att1", $(wrapper), "tiny");
+        await loadEmbeddedAttachment("att1", $(wrapper), "compact");
 
         expect(link.createLink).toHaveBeenCalledWith("owner", {
             showTooltip: false,
@@ -387,7 +402,7 @@ describe("loadEmbeddedAttachment", () => {
         expect(getOpenExternallyAction).toHaveBeenCalledWith(attachment);
         expect(getDownloadAction).toHaveBeenCalledWith(attachment);
         const mount = lastMount();
-        expect(mount.type).toBe(TinyContentEmbed);
+        expect(mount.type).toBe(CompactContentEmbed);
         expect(mount.container).toBe(wrapper);
         expect(mount.props).toEqual({
             icon: attachmentIcon("file", "application/pdf"),
@@ -500,6 +515,33 @@ describe("loadMediaEmbed", () => {
         expect(lastMount().props.title?.querySelector(".bx-music")).not.toBeNull();
     });
 
+    it("sizes the box by the box size it is given, over the one in the page", async () => {
+        const mounts = vi.mocked(content_renderer.mountInteractiveWidget);
+        const hasPlayer = () => mounts.mock.calls
+            .some(([ vnode ]) => (vnode as VNode).type === MediaPreviewStub);
+        const video = { url: "https://example.com/media/clip.mp4", embedType: "video" } as const;
+        const figure = inPage(document.createElement("figure"));
+        figure.className = "include-note";
+        figure.dataset.boxSize = "compact";
+        const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
+        figure.append(wrapper);
+
+        await loadMediaEmbed(video, wrapper, { boxSize: "resizable" });
+        expect(hasPlayer()).toBe(true);
+
+        mounts.mockClear();
+        figure.dataset.boxSize = "resizable";
+        await loadMediaEmbed(video, wrapper, { boxSize: "compact" });
+        expect(hasPlayer()).toBe(false);
+
+        const detached = document.createElement("div");
+        detached.className = "include-note-wrapper";
+        await loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" }, detached,
+            { boxSize: "compact" });
+        expect([ hasPlayer(), lastMount().props.boxSize ]).toEqual([ true, "compact" ]);
+    });
+
     it("drops a load that a later one into the same box overtook", async () => {
         const wrapper = createWrapper();
         const first = loadMediaEmbed({ url: "https://example.com/a.mp3", embedType: "audio" },
@@ -568,9 +610,9 @@ describe("an embed that leaves the page while it loads", () => {
     it("gets no box, and the content rendered for it is disposed", async () => {
         const loads: [ (wrapper: HTMLElement) => Promise<void>, boolean ][] = [
             [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "medium"), true ],
-            [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "tiny"), false ],
+            [ (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "compact"), false ],
             [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "full"), true ],
-            [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "tiny"), false ]
+            [ (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "compact"), false ]
         ];
 
         for (const [ load, rendersContent ] of loads) {
@@ -587,6 +629,26 @@ describe("an embed that leaves the page while it loads", () => {
             expect(content_renderer.mountInteractiveWidget).not.toHaveBeenCalled();
             expect(vi.mocked(content_renderer.disposeInteractiveContent).mock.calls
                 .map(([ $element ]) => $element[0])).toEqual(rendersContent ? [ content ] : []);
+        }
+    });
+
+    it("gets its box out of the page while nested in content still rendering", async () => {
+        const loads: ((wrapper: HTMLElement) => Promise<void>)[] = [
+            (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "medium", { isNested: true }),
+            (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "compact", { isNested: true }),
+            (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "full", { isNested: true }),
+            (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "compact", { isNested: true })
+        ];
+
+        for (const load of loads) {
+            vi.mocked(content_renderer.mountInteractiveWidget).mockClear();
+            const wrapper = document.createElement("div");
+            wrapper.className = "include-note-wrapper";
+
+            await load(wrapper);
+
+            expect(lastMount().container).toBe(wrapper);
+            expect(content_renderer.disposeInteractiveContent).not.toHaveBeenCalled();
         }
     });
 });
@@ -611,6 +673,30 @@ describe("refreshEmbeddedNote", () => {
         expect(vi.mocked(content_renderer.getRenderedContent).mock.calls
             .map(([ , options ]) => [ options?.block, options?.histories ]))
             .toEqual([ [ undefined, histories ], [ "b1", histories ] ]);
+    });
+
+    it("reloads a box nested in another read-only, knowing the notes around it", async () => {
+        const container = inPage(document.createElement("div"));
+        container.innerHTML = `<figure class="include-note" data-note-id="outer" data-block="b2">`
+            + `<div class="include-note-wrapper">`
+            + `<figure class="include-note" data-attachment-id="att">`
+            + `<div class="include-note-wrapper"><figure class="include-note" data-note-id="noteY">`
+            + `</figure></div></figure></div></figure>`;
+        const histories = new EmbedHistories(() => null);
+        const noteEditor = { canEdit: vi.fn() } as never;
+
+        refreshEmbeddedNote(container, "noteY", {
+            noteEditor, histories, seenNoteIds: new Set([ "host" ])
+        });
+
+        await vi.waitFor(() => {
+            expect(content_renderer.mountInteractiveWidget).toHaveBeenCalledTimes(1);
+        });
+        expect(lastMount().container.parentElement?.dataset.noteId).toBe("noteY");
+        const options = vi.mocked(content_renderer.getRenderedContent).mock.lastCall?.[1];
+        expect(options?.seenNoteIds).toEqual(new Set([ "host", "att", "outer", "outer:b2" ]));
+        expect(options?.noteEditor).toBeUndefined();
+        expect(options?.histories).toBeUndefined();
     });
 });
 

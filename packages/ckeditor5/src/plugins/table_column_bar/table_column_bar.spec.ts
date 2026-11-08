@@ -7,6 +7,7 @@ import {
     Essentials,
     Paragraph,
     Table,
+    TableCaption,
     TableColumnResize,
     TableProperties
 } from "ckeditor5";
@@ -120,6 +121,23 @@ describe("TableColumnBar", () => {
             await expect.poll(() => barView(editor).isVisible).toBe(false);
         });
 
+        it("hides the bar for a table without rows", async () => {
+            const captioned = await createTestEditor([...PLUGINS, TableCaption]);
+            setEditableWidth(captioned, 400);
+            // A table with only a caption upcasts without rows.
+            captioned.setData("<table><caption>Plan</caption></table><p>x</p>");
+            const table = firstTable(captioned);
+            expect(table.childCount).toBe(1);
+            captioned.model.change((writer) => writer.setSelection(table, "on"));
+            captioned.editing.view.focus();
+            await expect.poll(() => captioned.ui.focusTracker.isFocused).toBe(true);
+
+            touch();
+            await frames();
+            expect(barView(captioned).isVisible).toBe(false);
+            expect(captioned.ui.viewportOffset.bottom ?? 0).toBe(0);
+        });
+
         it("stays shown when a mouse presses the bar, and opens no context menu", async () => {
             await showBar(editor, modelTable([["a[]", "b"]]));
 
@@ -152,7 +170,7 @@ describe("TableColumnBar", () => {
             expect(barView(editor).isVisible).toBe(false);
 
             editorElement.style.marginLeft = "";
-            window.dispatchEvent(new Event("resize"));
+            window.visualViewport?.dispatchEvent(new Event("resize"));
             await expect.poll(() => barView(editor).isVisible).toBe(true);
         });
     });
@@ -424,6 +442,29 @@ describe("TableColumnBar", () => {
             await expect.poll(() => resizableColumns(editor)).toEqual([0, 1]);
         });
 
+        it("marks the segments of the columns at the selection as current", async () => {
+            await showBar(editor, modelTable([["a", "b[]", "c"], ["d", "e", "f"]]));
+            expect(currentColumns(editor)).toEqual([1]);
+            const [other, current] = segments(editor).map((segment) => getComputedStyle(segment));
+            expect(current.backgroundColor).not.toBe(other.backgroundColor);
+            expect(current.backgroundImage).not.toBe(other.backgroundImage);
+
+            selectCells(editor, [0, 1], [1, 2]);
+            await expect.poll(() => currentColumns(editor)).toEqual([1, 2]);
+        });
+
+        it("flanks the grip of a resizable divider with arrows", async () => {
+            await showBar(editor, modelTable([["a", "b[]", "c"]], 'tableWidth="80%"'));
+            const [plain, resizable] = dividers(editor);
+
+            expect(shownArrows(plain)).toEqual([]);
+            expect(shownArrows(resizable).map((arrow) => arrow.className)).toEqual([
+                "ck-table-column-bar__arrow bx bxs-left-arrow",
+                "ck-table-column-bar__arrow bx bxs-right-arrow"
+            ]);
+            expect(arrowGaps(resizable).map(Math.round)).toEqual([8, 8]);
+        });
+
         it("keeps pixels for a table sized in pixels", async () => {
             const widths = ["100px", "200px"];
             await showBar(editor, resizedTable([["a", "b[]"]], widths, 'tableWidth="300px"'));
@@ -566,6 +607,31 @@ describe("TableColumnBar", () => {
             release();
             expect(firstTable(editor).getAttribute("tableWidth")).toBe("80%");
             expect(domFigure(editor).querySelector("colgroup")).toBeNull();
+        });
+
+        it("ignores a divider on a table deleted before the bar updates", async () => {
+            const data = modelTable([["a[]", "b"]], 'tableWidth="80%"') +
+                "<paragraph>x</paragraph>";
+            await showBar(editor, data);
+            const errors = collectErrors();
+            const execute = vi.spyOn(editor, "execute");
+            const table = firstTable(editor);
+
+            const { x, y } = press(dividers(editor)[0]);
+            moveTo(x + 40, y);
+            editor.model.change((writer) => writer.remove(table));
+            release();
+            expect(table.getAttribute("tableWidth")).toBe("80%");
+            expect(getTableColumnsWidths(table)).toEqual([]);
+
+            await showBar(editor, data);
+            const divider = dividers(editor)[0];
+            editor.model.change((writer) => writer.remove(firstTable(editor)));
+            const start = press(divider);
+            moveTo(start.x + 40, start.y);
+            release();
+            expect(execute).not.toHaveBeenCalled();
+            expect(errors).toEqual([]);
         });
 
         it("scrolls the table near the ends of its visible part", async () => {
@@ -777,6 +843,31 @@ function resizableColumns(editor: Editor) {
         .map((divider) => Number(divider.dataset.column));
 }
 
+function currentColumns(editor: Editor) {
+    return segments(editor)
+        .filter((segment) => segment.classList.contains("ck-table-column-bar__segment_current"))
+        .map((segment) => Number(segment.dataset.column));
+}
+
+function shownArrows(divider: HTMLElement) {
+    return [...divider.querySelectorAll<HTMLElement>(".ck-table-column-bar__arrow")]
+        .filter((arrow) => arrow.offsetParent !== null);
+}
+
+/** The space between the grip of `divider` and the glyph of each of its shown arrows. */
+function arrowGaps(divider: HTMLElement) {
+    const center = centerOf(divider).x;
+    const halfGrip = parseFloat(getComputedStyle(divider, "::after").width) / 2;
+    return shownArrows(divider).map((arrow) => {
+        const rect = arrow.getBoundingClientRect();
+        // Boxicons draws both arrows 5/24 em in from the side that faces the grip.
+        const inset = parseFloat(getComputedStyle(arrow).fontSize) * 5 / 24;
+        return rect.left > center
+            ? rect.left + inset - (center + halfGrip)
+            : center - halfGrip - (rect.right - inset);
+    });
+}
+
 function edgeElementOf(editor: Editor) {
     const edge = barView(editor).element?.querySelector(".ck-table-column-bar__edge");
     if (!(edge instanceof HTMLElement)) {
@@ -888,4 +979,13 @@ function resizedTable(rows: CellSpec[][], widths: string[], attributes: string) 
     const columns = widths.map((width) => `<tableColumn columnWidth="${width}"></tableColumn>`);
     return modelTable(rows, attributes)
         .replace(/<\/table>$/, `<tableColumnGroup>${columns.join("")}</tableColumnGroup></table>`);
+}
+
+/** Collects the errors that reach `window` until the test finishes. */
+function collectErrors() {
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => errors.push(event.error ?? event.message);
+    window.addEventListener("error", onError);
+    onTestFinished(() => window.removeEventListener("error", onError));
+    return errors;
 }

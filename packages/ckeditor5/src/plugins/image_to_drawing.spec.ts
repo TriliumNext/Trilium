@@ -19,7 +19,7 @@ import ImageToDrawing from "./image_to_drawing.js";
 const SRC = "api/attachments/i1/image/a.png";
 const IMAGE = `<imageBlock src="${SRC}"></imageBlock>`;
 const CAPTIONED_IMAGE = `<imageBlock src="${SRC}"><caption>Sketch</caption></imageBlock>`;
-const EMBED = "<contentEmbed attachmentId=\"d1\" boxSize=\"medium\" editable=\"true\""
+const EMBED = "<contentEmbed attachmentId=\"d1\" boxSize=\"resizable\" editable=\"true\""
     + " hideTitle=\"true\">";
 
 describe("ImageToDrawing", () => {
@@ -54,7 +54,7 @@ describe("ImageToDrawing", () => {
         return (id: string | null) => finish(id);
     }
 
-    it("replaces a block image with an editable, untitled Medium embed in one step", async () => {
+    it("replaces a block image with an editable, untitled Resizable embed in one step", async () => {
         setModelData(editor.model, `<paragraph>a</paragraph>[${CAPTIONED_IMAGE}]`);
 
         await editor.execute("convertImageToDrawing");
@@ -75,7 +75,7 @@ describe("ImageToDrawing", () => {
         const imageOf = (width: number, height: number) =>
             `[<imageBlock src="${SRC}" width="${width}" height="${height}"></imageBlock>]`;
         const embedOf = (width: string, height: string) => "<contentEmbed attachmentId=\"d1\""
-            + ` boxSize="medium" customHeight="${height}" customWidth="${width}" editable="true"`
+            + ` boxSize="resizable" customHeight="${height}" customWidth="${width}" editable="true"`
             + " hideTitle=\"true\"></contentEmbed>";
 
         setModelData(editor.model, imageOf(300, 150));

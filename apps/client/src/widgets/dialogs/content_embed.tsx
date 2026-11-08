@@ -1,11 +1,12 @@
 import "./content_embed.css";
 
+import { BOX_SIZES, type BoxSize, hasCompactContent } from "@triliumnext/commons";
 import clsx from "clsx";
 import type { JSX } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";
-import { getEmbedBoxSize } from "../../services/content_renderer";
+import { getEmbedBoxSize, getEmbedContentInfo } from "../../services/content_renderer";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { Suggestion } from "../../services/note_autocomplete";
@@ -18,7 +19,7 @@ import Modal from "../react/Modal";
 import { suspendModalFocusTraps } from "../react/modal_focustrap";
 import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import SegmentedChoice from "../react/SegmentedChoice";
-import type { BoxSize, CKEditorApi } from "../type_widgets/text/CKEditor";
+import type { CKEditorApi } from "../type_widgets/text/CKEditor";
 
 export interface ContentEmbedOpts {
     editorApi: Pick<CKEditorApi, "addContentEmbed" | "addImage">;
@@ -105,7 +106,7 @@ export function ContentEmbedBalloon({ opts, onClose }: {
 function useContentEmbedForm(opts: ContentEmbedOpts | undefined) {
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
     // The size chosen by hand, otherwise the one that suits the picked note.
-    const [chosenBoxSize, setChosenBoxSize] = useState<OfferedBoxSize | null>(null);
+    const [chosenBoxSize, setChosenBoxSize] = useState<BoxSize | null>(null);
     const note = useNote(suggestion?.notePath ? tree.getNoteIdFromUrl(suggestion.notePath) : null);
     const boxSize = chosenBoxSize ?? getSuitedBoxSize(note);
 
@@ -152,7 +153,7 @@ function useContentEmbedForm(opts: ContentEmbedOpts | undefined) {
                         {asImage ? (
                             <p className="include-note-as-image">{t("include_note.inserted_as_image")}</p>
                         ) : (<>
-                            <SegmentedChoice<OfferedBoxSize>
+                            <SegmentedChoice<BoxSize>
                                 className="include-note-size-choice"
                                 options={BOX_SIZES.map((size) => ({
                                     value: size,
@@ -189,17 +190,13 @@ function useContentEmbedForm(opts: ContentEmbedOpts | undefined) {
 
 const HELP_PAGE_ID = "nBAXQFj20hS1";
 
-const BOX_SIZES = [ "tiny", "medium", "full", "expandable" ] as const satisfies readonly BoxSize[];
-type OfferedBoxSize = typeof BOX_SIZES[number];
-
-/** The size that suits a new include of `note` among `BOX_SIZES`, otherwise `medium`. */
-function getSuitedBoxSize(note: FNote | null | undefined): OfferedBoxSize {
-    const suited = note ? getEmbedBoxSize(note) : "medium";
-    return BOX_SIZES.find((size) => size === suited) ?? "medium";
+/** The size that suits a new include of `note`, Resizable without one. */
+function getSuitedBoxSize(note: FNote | null | undefined): BoxSize {
+    return note ? getEmbedBoxSize(note) : "resizable";
 }
 
 /** A box of the given size on a strip of text, drawn in the text color. */
-function BoxSizeGlyph({ size }: { size: OfferedBoxSize }) {
+function BoxSizeGlyph({ size }: { size: BoxSize }) {
     return (
         <svg viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round">
@@ -208,12 +205,15 @@ function BoxSizeGlyph({ size }: { size: OfferedBoxSize }) {
     );
 }
 
-const BOX_SIZE_SHAPES: Record<OfferedBoxSize, JSX.Element> = {
-    tiny: <>
+const BOX_SIZE_SHAPES: Record<BoxSize, JSX.Element> = {
+    compact: <>
         <rect x="2" y="6" width="20" height="6" rx="1.5" />
         <circle cx="5.5" cy="9" r="0.75" fill="currentColor" />
     </>,
-    medium: <rect x="2" y="1" width="20" height="16" rx="1.5" />,
+    resizable: <>
+        <rect x="2" y="1" width="20" height="16" rx="1.5" />
+        <path d="M14.5 14.5 19 10M17.5 14.5 19 13" stroke-width="1" />
+    </>,
     full: <>
         <path d="M2 18V2.5A1.5 1.5 0 0 1 3.5 1h17A1.5 1.5 0 0 1 22 2.5V18" />
         <path d="M6 6h12M6 10h12M6 14h8" stroke-width="1" />
@@ -234,7 +234,9 @@ async function embedNote(notePath: string, editorApi: Pick<CKEditorApi, "addCont
     if (note && insertsAsImage(note)) {
         editorApi.addImage(noteId);
     } else {
-        editorApi.addContentEmbed(noteId, boxSize);
+        const hideTitle = !!note && boxSize === "compact"
+            && getEmbedContentInfo(note).hasCompactContent;
+        editorApi.addContentEmbed(noteId, boxSize, { hideTitle });
     }
 }
 

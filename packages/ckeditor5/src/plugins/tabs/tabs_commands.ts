@@ -53,7 +53,6 @@ export class InsertTabCommand extends Command {
         const editor = this.editor;
         const model = editor.model;
         const tabs = getSelectedTabs(editor);
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tabs) {
             return;
         }
@@ -85,7 +84,6 @@ export class RemoveTabCommand extends Command {
         const editor = this.editor;
         const tab = getSelectedTab(editor);
         const tabs = tab?.parent;
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tab || !tabs?.is("element", ELEMENTS.tabs)) {
             return;
         }
@@ -119,7 +117,6 @@ export class DeleteTabsCommand extends Command {
 
     public override execute(): void {
         const tabs = getSelectedTabs(this.editor);
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tabs) {
             return;
         }
@@ -147,7 +144,6 @@ export class MoveToTabCommand extends Command {
 
     public override execute({ target }: { target: SiblingTarget }): void {
         const content = getSelectedTabContent(this.editor);
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!content) {
             return;
         }
@@ -179,7 +175,6 @@ export class MoveTabCommand extends Command {
 
     public override execute({ target = this.target }: { target?: SiblingTarget } = {}): void {
         const tab = getSelectedTab(this.editor);
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tab) {
             return;
         }
@@ -203,7 +198,6 @@ export class AssignTabReferenceCommand extends Command {
 
     public override execute(): BlockReferenceTarget | null {
         const tab = getSelectedTab(this.editor);
-        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tab) {
             return null;
         }

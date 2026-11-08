@@ -72,7 +72,6 @@ export default class HostedBalloon {
         this.view = view;
 
         const container = view.element;
-        /* v8 ignore next 4 -- the balloon renders the view as it adds it, so it has an element */
         if (!container) {
             this.hide();
             return;
@@ -95,7 +94,7 @@ export default class HostedBalloon {
             cancelAnimationFrame(this.repositionFrame);
 
             this.repositionFrame = requestAnimationFrame(() => {
-                /* v8 ignore next -- disconnecting the observer cancels the pending frames */
+                /* v8 ignore else -- hide() clears the view and cancels the pending frame */
                 if (this.view) {
                     this.balloon.updatePosition();
                 }
@@ -119,7 +118,7 @@ export default class HostedBalloon {
             return;
         }
 
-        /* v8 ignore next -- a view this balloon still references is one the balloon still has */
+        /* v8 ignore else -- only hide() removes the hosted view from the balloon */
         if (this.balloon.hasView(view)) {
             this.balloon.remove(view);
         }

@@ -382,10 +382,10 @@
     "dialog_title": "Include note",
     "label_note": "Note",
     "box_size": "Box size",
-    "size_tiny": "Tiny",
-    "size_tiny_description": "A single row with the title and the actions.",
-    "size_medium": "Medium",
-    "size_medium_description": "A box of about 30 lines.",
+    "size_compact": "Compact",
+    "size_compact_description": "A single row: the title and the actions, or the controls of an audio file.",
+    "size_resizable": "Resizable",
+    "size_resizable_description": "A box that can be resized to any size.",
     "size_full": "Full",
     "size_full_description": "The whole content.",
     "size_expandable": "Expandable",
@@ -3195,6 +3195,7 @@
     "convert_link_to_note_excerpt": "Convert link to note excerpt",
     "convert_embed_to_link": "Convert to link",
     "include_size": "Size",
+    "include_size_default": "Default",
     "show_title": "Show title",
     "show_caption": "Show caption",
     "editable": "Editable",
@@ -3212,7 +3213,7 @@
     "open_externally": "Open externally",
     "copy_url": "Copy address (URL)",
     "display_as": "Display as",
-    "delete": "Delete",
+    "delete": "Delete block",
     "edit": "Edit..."
   },
   "electron_integration": {
@@ -4628,7 +4629,6 @@
       "markdown-import-from-clipboard": "Markdown import from clipboard",
       "math-editor-unavailable": "Math editor unavailable",
       "math-equation": "Math equation",
-      "medium": "Medium",
       "mermaid-diagram": "Mermaid diagram",
       "mermaid-diagram-0": "Mermaid diagram: %0",
       "missing-definition": "(missing definition)",
@@ -4708,7 +4708,6 @@
       "ascending": "Ascending",
       "descending": "Descending",
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Some rows were sorted together because merged cells tie them to each other",
-      "tiny": "Tiny",
       "more-actions": "More actions",
       "drawing-canvas": "Drawing canvas",
       "editable": "Editable",
@@ -4790,7 +4789,10 @@
       "audio-video-embed": "Audio/video embed",
       "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Embed a YouTube video, or an audio or video file from its address",
       "open-link": "Open link",
-      "display-as": "Display as"
+      "display-as": "Display as",
+      "compact": "Compact",
+      "resizable": "Resizable",
+      "default": "Default"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -5121,6 +5123,7 @@
     "title": "Insert media",
     "button_insert": "Insert media",
     "not_a_video": "This is not a web address.",
-    "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again."
+    "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again.",
+    "description": "Enter the address of the video or audio to embed: a YouTube video, or any audio or video file that can be reached over HTTP or HTTPS."
   }
 }

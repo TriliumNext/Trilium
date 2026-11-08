@@ -92,7 +92,7 @@ export function resolveLinks(html: string, index: NoteIndex): { html: string; in
             }
             continue;
         }
-        img.insertAdjacentHTML("beforebegin", `<section class="include-note" data-note-id="${noteId}" data-box-size="medium">&nbsp;</section>`);
+        img.insertAdjacentHTML("beforebegin", `<section class="include-note" data-note-id="${noteId}" data-box-size="resizable">&nbsp;</section>`);
         img.remove();
         includeLinks.add(noteId);
         changed = true;
