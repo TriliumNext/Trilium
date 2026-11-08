@@ -3,7 +3,10 @@
                                                  var(--ck-color-focus-border));
     --multicolumn-layout-stacked-background: var(--accented-background-color,
                                                  var(--ck-color-base-foreground));
+    --multicolumn-layout-stacked-dark-background: #00000038;
+    --multicolumn-layout-border-color: var(--main-border-color, var(--ck-color-base-border));
     --multicolumn-layout-border-radius: 8px;
+    --multicolumn-layout-border-width: 2px;
 }
 
 .ck-content .trilium-multicolumn-layout {
@@ -65,6 +68,15 @@
             padding-inline: 1rem;
             box-shadow: none;
         }
+
+        body.mobile & {
+            border: var(--multicolumn-layout-border-width) solid
+                    var(--multicolumn-layout-border-color);
+
+            & > .ck-widget__selection-handle {
+                top: calc(0px - var(--multicolumn-layout-border-width));
+            }
+        }
     }
 }
 
@@ -76,5 +88,17 @@
     .ck-content .trilium-multicolumn-layout.ck-widget
         > .trilium-multicolumn-column:nth-child(even of .trilium-multicolumn-column) {
         background: var(--multicolumn-layout-stacked-background);
+
+        body.mobile.dark-theme & {
+            background: var(--multicolumn-layout-stacked-dark-background);
+        }
+    }
+
+    body.mobile .ck-content .trilium-multicolumn-layout.ck-widget
+        > .trilium-multicolumn-column:nth-last-child(1 of .trilium-multicolumn-column) {
+        border-end-start-radius: calc(var(--multicolumn-layout-border-radius)
+                                      - var(--multicolumn-layout-border-width));
+        border-end-end-radius: calc(var(--multicolumn-layout-border-radius)
+                                    - var(--multicolumn-layout-border-width));
     }
 }
