@@ -1142,7 +1142,9 @@
     "search_placeholder": "フォント検索",
     "no_fonts_found": "該当するフォントは見つかりませんでした。",
     "document_preview_heading": "パープルハートの挿し木",
-    "document_preview_body": "節の下で茎を4本切り取り、窓辺の水に挿しておきました。 <strong>9日</strong> 後に最初の根が出てきました。 <em>日当たりの良い</em> 場所では鮮やかな色を保ち、日陰では緑色に褪せます。"
+    "document_preview_body": "節の下で茎を4本切り取り、窓辺の水に挿しておきました。 <strong>9日</strong> 後に最初の根が出てきました。 <em>日当たりの良い</em> 場所では鮮やかな色を保ち、日陰では緑色に褪せます。",
+    "installed-system-fonts": "システムフォント",
+    "family_draws_nothing": "このデバイスでは {{family}} を使用してテキストを表示できないため、フォントは変更されませんでした。"
   },
   "max_content_width": {
     "title": "コンテンツ幅",
