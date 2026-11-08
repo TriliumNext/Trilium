@@ -1,5 +1,5 @@
 ---
-type: highlight
+type: compatibility
 closes: [5790]
 ---
 

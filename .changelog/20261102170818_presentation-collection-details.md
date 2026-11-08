@@ -1,9 +1,10 @@
 ---
-type: highlight
+type: improvement
+area: Collections
 closes: [12356]
 ---
 
-The presentation collection got a refresh
+Presentation collection
 *   Slides keep a 16:9 shape and fit their content as the pane changes.
 *   Web view notes can show their pages as presentation slides.
 *   Board and table collections can fill a slide with their cards or rows.

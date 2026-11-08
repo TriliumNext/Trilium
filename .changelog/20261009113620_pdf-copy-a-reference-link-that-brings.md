@@ -1,5 +1,6 @@
 ---
-type: highlight
+type: improvement
+area: PDF
 closes: [8635]
 ---
 
