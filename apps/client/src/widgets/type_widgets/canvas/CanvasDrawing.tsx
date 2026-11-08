@@ -926,15 +926,7 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
                 }
                 placePanel(panel, position || null);
             }
-            placePickers();
-        };
-        // Radix renders the pickers in the drawing, under the properties panel beside it.
-        const placePickers = () => {
-            const isRaised = !!panels.get(SIDE_PROPERTIES_PANEL_SELECTOR)
-                ?.hasAttribute("data-side-panel");
-            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
-                setTopLayer(picker, isRaised);
-            }
+            placePickers(root);
         };
         // A panel that changes height lays out and paints its contents again, so while the note
         // scrolls, the panels only move.
@@ -985,7 +977,7 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
             if (isChanged) {
                 update();
             } else {
-                placePickers();
+                placePickers(root);
             }
         };
         const mutationObserver = new MutationObserver(watchPanels);
@@ -1007,7 +999,7 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
             for (const panel of panels.values()) {
                 placePanel(panel, null);
             }
-            placePickers();
+            placePickers(root);
         };
     }, [ rootRef, isEnabled ]);
 }
@@ -1125,6 +1117,19 @@ function placePanel(panel: HTMLElement, position: SidePanelPosition | null) {
         }
     }
     setTopLayer(panel, !!position);
+}
+
+/**
+ * Moves the pickers in `root` into the top layer while the properties panel that opens them is
+ * there, beside the drawing or as the sheet, and back into the drawing otherwise. Radix renders
+ * the pickers in the drawing, under that panel.
+ */
+function placePickers(root: HTMLElement) {
+    const isRaised = !!root.querySelector(`${SIDE_PROPERTIES_PANEL_SELECTOR}[data-side-panel], `
+        + `${BOTTOM_ISLAND_SELECTOR}[data-properties-sheet]`);
+    for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+        setTopLayer(picker, isRaised);
+    }
 }
 
 /**
@@ -1247,9 +1252,7 @@ export function usePropertiesSheet(rootRef: RefObject<HTMLElement | null>, isEna
             if (island) {
                 placeSheet(island, position);
             }
-            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
-                setTopLayer(picker, !!position);
-            }
+            placePickers(root);
 
             if (island && position) {
                 const inset = getWindowArea().bottom - island.getBoundingClientRect().top;
@@ -1284,9 +1287,7 @@ export function usePropertiesSheet(rootRef: RefObject<HTMLElement | null>, isEna
             if (island) {
                 placeSheet(island, null);
             }
-            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
-                setTopLayer(picker, false);
-            }
+            placePickers(root);
             if (hasInset) {
                 document.body.style.removeProperty(SHEET_INSET_PROPERTY);
             }

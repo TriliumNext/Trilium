@@ -167,23 +167,26 @@ describe( 'MathUI', () => {
 
 			mathUIFeature._showUI();
 
-			const command = editor.commands.get( 'math' )!;
+			const command = editor.commands.get( 'math' );
+			if ( !command || !formView ) {
+				throw new Error( 'Expected the math command and #mainFormView.' );
+			}
 
 			command.isEnabled = true;
 
-			expect( formView!.mathInputView.isReadOnly ).to.be.false;
-			expect( formView!.saveButtonView.isEnabled ).to.be.false;
-			expect( formView!.cancelButtonView.isEnabled ).to.be.true;
+			expect( formView.mathInputView.isReadOnly ).to.be.false;
+			expect( formView.saveButtonView.isEnabled ).to.be.false;
+			expect( formView.cancelButtonView.isEnabled ).to.be.true;
 
-			formView!.mathInputView.value = 'x^2';
-			expect( formView!.saveButtonView.isEnabled ).to.be.true;
+			formView.mathInputView.value = 'x^2';
+			expect( formView.saveButtonView.isEnabled ).to.be.true;
 
 			editor.enableReadOnlyMode( 'spec' );
 
-			expect( formView!.mathInputView.isReadOnly ).to.be.true;
-			expect( formView!.saveButtonView.isEnabled ).to.be.false;
-			expect( formView!.displayButtonView.isEnabled ).to.be.false;
-			expect( formView!.cancelButtonView.isEnabled ).to.be.true;
+			expect( formView.mathInputView.isReadOnly ).to.be.true;
+			expect( formView.saveButtonView.isEnabled ).to.be.false;
+			expect( formView.displayButtonView.isEnabled ).to.be.false;
+			expect( formView.cancelButtonView.isEnabled ).to.be.true;
 			editor.disableReadOnlyMode( 'spec' );
 		} );
 

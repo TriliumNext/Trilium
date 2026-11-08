@@ -527,6 +527,8 @@ describe("usePropertiesSheet", () => {
     /** A drawing in the phone layout, in a note above the formatting toolbar. */
     function SheetProbe({ isOpen, hasPicker }: SheetProbeProps) {
         const rootRef = useRef<HTMLDivElement>(null);
+        // `CanvasDrawing` runs both hooks on a phone.
+        useSidePanels(rootRef, true);
         usePropertiesSheet(rootRef, true);
         return (
             <div className="note-split">
@@ -666,6 +668,19 @@ describe("usePropertiesSheet", () => {
         expect(getSheet()).not.toBe(false);
         await act(async () => render(null, container));
         expect(getRailInset()).toBe("");
+    });
+
+    it("keeps the pickers above the sheet while the note scrolls and after", async () => {
+        await show({ isOpen: true, hasPicker: true });
+        const picker = element(".picker");
+        await scrollNote();
+        expect(raised).toEqual([ element(".Island"), picker ]);
+
+        await act(async () => {
+            element(".scrolling-container")?.dispatchEvent(new Event("scrollend"));
+        });
+        expect(getSheet()).not.toBe(false);
+        expect(picker?.getAttribute("popover")).toBe("manual");
     });
 });
 
