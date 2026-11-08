@@ -51,7 +51,7 @@ The upstream doc (`docs/Developer Guide/Developer Guide/Building/Releasing a new
 |---|---|---|
 | npm script | `chore:update-version` (`package.json:38`) | `chore:ci-update-nightly-version` (`package.json:34`) |
 | Use for | **releases — manual, this skill** | CI nightlies only |
-| Invoked by | you | `nightly.yml:75`, `main-docker.yml:163` |
+| Invoked by | you | `nightly.yml:75`, `main-docker.yml:178` |
 | Reads root version? | yes (`update-version.ts:28`) | yes, then mutates it |
 | Writes root? | **no** | **yes** (`update-nightly-version.ts:47`) |
 | Files written | **9**: apps server/client/standalone/desktop/edit-docs + packages commons/pdfjs-viewer/trilium-core, + the Flathub metainfo (`update-version.ts:31,35,44`) | **6**: root + apps server/client/standalone/desktop + pdfjs-viewer (`update-nightly-version.ts:50,55`) |
