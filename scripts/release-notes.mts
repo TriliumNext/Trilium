@@ -154,6 +154,9 @@ export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 
 /** Sections rendered as GitHub admonitions above the first heading instead of as a list. */
 const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
+/** Sections that fold each area into a `<details>` block; `notable` keeps an entry out of it. */
+const COLLAPSIBLE_SECTIONS = new Set<Section>(Object.values(ENTRY_TYPES)
+    .filter((section) => section !== "Key highlights" && !ADMONITIONS.has(section)));
 /** Sections listed with bullets; the others are numbered. */
 const BULLETED_SECTIONS =
     new Set<Section>([ "Key highlights", "Compatibility", "Breaking changes", "Documentation" ]);
@@ -212,6 +215,8 @@ export interface ChangelogEntry {
     area?: string;
     closes: number[];
     credits: string[];
+    /** Lists the entry above its section's collapsible blocks instead of inside its area's. */
+    notable: boolean;
     /** The first paragraph, which becomes the list item. */
     text: string;
     /** The lines after it, nested under the list item. */
@@ -229,6 +234,8 @@ export interface NoteItem {
     credits: string[];
     /** The issues and pull requests the item's changelog entry closes, when it has one. */
     closes?: number[];
+    /** Keeps the item out of its area's collapsible block, listed before them. */
+    notable?: boolean;
 }
 
 interface Options {
@@ -618,7 +625,7 @@ export function collectItems(sources: ItemSources): NoteItem[] {
         items.push({ section: entry.section, area: entry.area, date: entry.date, text,
             details: entry.details,
             credits: entry.credits.length > 0 ? entry.credits : inferredCredits,
-            closes: closedBy(entry) });
+            closes: closedBy(entry), notable: entry.notable });
     }
 
     const covered = new Set([
@@ -697,7 +704,7 @@ export function renderReleaseNote(template: string, version: string, items: Note
         const { section } = sectionItems[0];
         output.push("", ...renderSection(sectionItems, {
             bulleted: BULLETED_SECTIONS.has(section),
-            collapsible: section !== "Key highlights"
+            collapsible: COLLAPSIBLE_SECTIONS.has(section)
         }), "");
     }
 
@@ -838,23 +845,26 @@ function renderAdmonition(item: NoteItem) {
  * several go under one item named after it. When `collapsible`, every area goes into a
  * `<details>` block after the list instead, written in HTML as Trilium exports its collapsible
  * blocks with the number of items in their summary, and only the items without an area stay in
- * the list.
+ * the list, after the notable ones, which the list keeps out of their area's block.
  */
 export function renderSection(items: NoteItem[],
     { bulleted = false, collapsible = false } = {}): string[] {
     const sorted = [ ...items ].sort((a, b) => a.date - b.date);
-    const groups: { area?: string; items: NoteItem[] }[] = [];
+    const groups: { area?: string; items: NoteItem[]; notable: boolean }[] = [];
     for (const item of sorted) {
-        const group = item.area ? groups.find((it) => it.area === item.area) : undefined;
+        const notable = collapsible && item.notable === true;
+        const group = item.area && !notable
+            ? groups.find((it) => it.area === item.area && !it.notable) : undefined;
         if (group) {
             group.items.push(item);
         } else {
-            groups.push({ area: item.area, items: [ item ] });
+            groups.push({ area: item.area, items: [ item ], notable });
         }
     }
 
-    const collapsed = collapsible ? groups.filter((group) => group.area) : [];
-    const listed = groups.filter((group) => !collapsed.includes(group));
+    const collapsed = collapsible ? groups.filter((group) => group.area && !group.notable) : [];
+    const listed = groups.filter((group) => !collapsed.includes(group))
+        .sort((a, b) => Number(b.notable) - Number(a.notable));
 
     const lines: string[] = [];
     const markerOf = (index: number) => (bulleted ? "*   " : `${index + 1}.  `);
@@ -1036,8 +1046,8 @@ export function parseChangelogEntry(file: string, source: string):
     }
 
     for (const key of fields.keys()) {
-        if (![ "type", "area", "closes", "credits" ].includes(key)) {
-            errors.push(`unknown key \`${key}\`; expected type, area, closes or credits`);
+        if (![ "type", "area", "closes", "credits", "notable" ].includes(key)) {
+            errors.push(`unknown key \`${key}\`; expected type, area, closes, credits or notable`);
         }
     }
 
@@ -1069,6 +1079,11 @@ export function parseChangelogEntry(file: string, source: string):
         }
     }
 
+    const notableValue = fields.get("notable")?.[0] ?? "false";
+    if (![ "true", "false" ].includes(notableValue)) {
+        errors.push(`\`notable\` is true or false, not \`${notableValue}\``);
+    }
+
     const [ text, ...details ] = match[2].trim().split(/\r?\n/);
     if (!text) {
         errors.push("the entry has no text after the frontmatter");
@@ -1083,6 +1098,7 @@ export function parseChangelogEntry(file: string, source: string):
     const date = Date.UTC(year, month - 1, day, hour, minute, second) / 1000;
     return {
         entry: { file, date, section, area: fields.get("area")?.[0], closes, credits,
+            notable: notableValue === "true",
             text: trimKeepingBreak(text.trimStart()),
             details: trimBlankLines(details.map(trimKeepingBreak)) },
         errors
@@ -1094,6 +1110,10 @@ export function parseChangelogEntry(file: string, source: string):
  * missing from `AREAS`, with the closest known spelling when there is one.
  */
 export function lintChangelogEntry(entry: ChangelogEntry): string[] {
+    if (entry.notable && !COLLAPSIBLE_SECTIONS.has(entry.section)) {
+        return [ `\`notable\` has no effect in ${entry.section}, which lists every entry` ];
+    }
+
     const known = AREAS.join(", ");
     if (!entry.area) {
         return AREA_SECTIONS.has(entry.section)
@@ -1239,6 +1259,10 @@ function createChangelogEntry(slug: string) {
         "closes: []",
         "# Optional: GitHub usernames to thank. Defaults to whoever fixed the closed issues.",
         "credits: []",
+        "# Optional: true lists the entry above the collapsible blocks. For data loss, a lost",
+        "# login or sync, a crash, a regression, a broken platform or locale, a rename or a",
+        "# changed default; never for a new feature, which competes for a highlight instead.",
+        "notable: false",
         "---",
         "",
         "What changed, the way a user notices it.",

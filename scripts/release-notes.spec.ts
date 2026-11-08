@@ -204,6 +204,7 @@ describe("parseChangelogEntry", () => {
             "  - 12",
             "  - https://github.com/TriliumNext/Trilium/issues/34",
             "credits: [ \"@someone\", other ]",
+            "notable: true",
             "---",
             "",
             "Several links in one paragraph showed up twice in the backlinks.  ",
@@ -218,6 +219,7 @@ describe("parseChangelogEntry", () => {
                 area: "Search",
                 closes: [ 12, 34 ],
                 credits: [ "someone", "other" ],
+                notable: true,
                 text: "Several links in one paragraph showed up twice in the backlinks.  ",
                 details: [ "    * A detail." ]
             },
@@ -226,16 +228,19 @@ describe("parseChangelogEntry", () => {
     });
 
     it("reports every problem instead of guessing", () => {
-        const source = "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\n---\n";
+        const source =
+            "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\nnotable: yes\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
-            "unknown key `scope`; expected type, area, closes or credits",
+            "unknown key `scope`; expected type, area, closes, credits or notable",
             "`type` must be one of note, tip, important, warning, highlight, compatibility, "
                 + "breaking, mobile, fix, improvement, documentation, i18n, technical, security, "
                 + "not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
+            "`notable` is true or false, not `yes`",
             "the entry has no text after the frontmatter"
         ]);
+        expect(parseChangelogEntry(file, "---\ntype: fix\n---\nText").entry?.notable).toBe(false);
         expect(parseChangelogEntry(".changelog/notes.md", "---\ntype: fix\n---\nText").errors)
             .toHaveLength(1);
         expect(parseChangelogEntry(file, "type: fix\nText").errors).toHaveLength(1);
@@ -244,7 +249,17 @@ describe("parseChangelogEntry", () => {
 
 describe("lintChangelogEntry", () => {
     const entry: ChangelogEntry = { file: "a.md", date: 0, section: "Bugfixes", area: "Search",
-        closes: [], credits: [], text: "x", details: [] };
+        closes: [], credits: [], notable: false, text: "x", details: [] };
+
+    it("allows notable only where areas fold", () => {
+        expect(lintChangelogEntry({ ...entry, notable: true })).toEqual([]);
+        expect(lintChangelogEntry({ ...entry, section: "Security improvements", notable: true }))
+            .toEqual([]);
+        expect(lintChangelogEntry({ ...entry, section: "Key highlights", notable: true }))
+            .toEqual([ "`notable` has no effect in Key highlights, which lists every entry" ]);
+        expect(lintChangelogEntry({ ...entry, section: "Tip", area: undefined, notable: true }))
+            .toEqual([ "`notable` has no effect in Tip, which lists every entry" ]);
+    });
 
     it("requires a known area on fixes and improvements", () => {
         expect(lintChangelogEntry(entry)).toEqual([]);
@@ -280,7 +295,7 @@ describe("collectItems", () => {
         date: number * 10, subjects: [ number === 1 ? "fix(sync): x" : "fix: x" ],
         contributors: number === 3 || number === 9 ? [ "fixer" ] : [] }));
     const entry: ChangelogEntry = { file: "a.md", date: 15, section: "Bugfixes", closes: [ 3 ],
-        credits: [], text: "New wording", details: [] };
+        credits: [], notable: false, text: "New wording", details: [] };
     const url = (number: number) => `https://github.com/o/r/issues/${number}`;
 
     it("lets languages and entries replace the issues they close", () => {
@@ -343,6 +358,38 @@ describe("renderSection", () => {
         ]);
         expect(renderSection([ item("Third", 3, "Search"), item("Fourth", 4, "Search") ],
             { bulleted: true })).toEqual([ "*   Search", "    *   Third", "    *   Fourth" ]);
+    });
+
+    it("lists notable items first, out of their area's block, and only when folding", () => {
+        const notable = (text: string, date: number, area?: string) =>
+            ({ ...item(text, date, area), notable: true });
+        expect(renderSection([
+            item("Third", 3, "Search"),
+            item("First", 1),
+            notable("Fourth", 4, "Search"),
+            notable("Search: Fifth", 5, "Search"),
+            item("Second", 2, "LLM")
+        ], { collapsible: true })).toEqual([
+            "1.  Search: Fourth",
+            "2.  Search: Fifth",
+            "3.  First by @a & @b",
+            "",
+            "<details>",
+            "    <summary>LLM (1)</summary>",
+            "    <ol>",
+            "        <li>Second</li>",
+            "    </ol>",
+            "</details>",
+            "",
+            "<details>",
+            "    <summary>Search (1)</summary>",
+            "    <ol>",
+            "        <li>Third</li>",
+            "    </ol>",
+            "</details>"
+        ]);
+        expect(renderSection([ notable("Third", 3, "Search"), item("Fourth", 4, "Search") ]))
+            .toEqual([ "1.  Search", "    1.  Third", "    2.  Fourth" ]);
     });
 
     it("folds every area into a collapsible block after the list", () => {
