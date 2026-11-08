@@ -85,7 +85,7 @@ describe("prepareEmbedBoxes", () => {
         })();
 
         const hrefs = [ getNoteEmbedHref("parent", undefined), getNoteEmbedHref("sibling", "b1") ];
-        const escapedHref = attachmentHref.replace("&", "&amp;");
+        const escapedHref = attachmentHref.replaceAll("&", "&amp;");
         expect([ ...container.children ].map((child) => child.outerHTML)).toEqual([
             `<a class="reference-link" href="${hrefs[0]}"><span>Title of ${hrefs[0]}</span></a>`,
             `<a class="reference-link" href="${hrefs[1]}"><span>Title of ${hrefs[1]}</span></a>`,
