@@ -196,9 +196,10 @@ describe("useSidePanels", () => {
     let container: HTMLElement;
     let showPopover: ReturnType<typeof vi.fn>;
 
-    function SidePanelProbe({ isEnabled, hasLibrary }: {
+    function SidePanelProbe({ isEnabled, hasLibrary, hasPicker = false }: {
         isEnabled: boolean;
         hasLibrary: boolean;
+        hasPicker?: boolean;
     }) {
         const rootRef = useRef<HTMLDivElement>(null);
         useSidePanels(rootRef, isEnabled);
@@ -209,6 +210,9 @@ describe("useSidePanels", () => {
                         <div ref={rootRef} className="drawing">
                             {hasLibrary && <div className="Island sidebar default-sidebar" />}
                             <div className="App-menu__left" />
+                            {hasPicker && (
+                                <div className="picker" data-radix-popper-content-wrapper="" />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -462,6 +466,32 @@ describe("useSidePanels", () => {
             render(<SidePanelProbe isEnabled={false} hasLibrary={false} />, container);
         });
         expect(getPlacement(panel)).toBe(false);
+    });
+
+    it("raises the pickers that the panel opens above it, and puts them back with it", async () => {
+        const { viewport, panel } = await mount(300);
+        await act(async () => {
+            render(<SidePanelProbe isEnabled hasLibrary={false} hasPicker />, container);
+            await Promise.resolve();
+        });
+        const picker = container.querySelector<HTMLElement>(".picker");
+        expect(picker?.getAttribute("popover")).toBe("manual");
+        expect(showPopover.mock.contexts).toEqual([ panel, picker ]);
+
+        rects.drawing = { left: 100, top: 200, right: 1100, bottom: 520 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(getPlacement(panel)).toBe(false);
+        expect(picker?.hasAttribute("popover")).toBe(false);
+
+        rects.drawing = { left: 340, top: 200, right: 840, bottom: 520 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(showPopover.mock.contexts).toEqual([ panel, picker, panel, picker ]);
+
+        await act(async () => {
+            render(<SidePanelProbe isEnabled={false} hasLibrary={false} hasPicker />, container);
+        });
+        expect(getPlacement(panel)).toBe(false);
+        expect(picker?.hasAttribute("popover")).toBe(false);
     });
 
     it("keeps the panel in the drawing without the focus or in fullscreen", async () => {

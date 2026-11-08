@@ -873,11 +873,13 @@ const SIDE_PANEL_MIN_HEIGHT_REM = 20;
 /** The time without scroll events after which a scroll ends where `scrollend` does not fire. */
 const SCROLL_END_DELAY_MS = 150;
 
+/** The properties panel of Excalidraw's desktop layout, which opens the pickers. */
+const SIDE_PROPERTIES_PANEL_SELECTOR = ".App-menu__left";
 /** The panels of Excalidraw that go beside the drawing, in the order in which they take a side. */
 const SIDE_PANELS = [
     // The item list of the library fills the height it is given and has none of its own.
     { selector: ".default-sidebar", hasDrawingHeight: true },
-    { selector: ".App-menu__left", hasDrawingHeight: false }
+    { selector: SIDE_PROPERTIES_PANEL_SELECTOR, hasDrawingHeight: false }
 ];
 
 type Side = "left" | "right";
@@ -886,7 +888,7 @@ type Side = "left" | "right";
  * Shows Excalidraw's library and properties panel beside the drawing while the drawing has the
  * focus, in the top layer so that no clip or stacking of the note covers them, and clear of the
  * toolbar of the embed. A panel there has `data-side-panel`, and its position in
- * `--side-panel-*`.
+ * `--side-panel-*`. The pickers that the properties panel opens go into the top layer after it.
  */
 export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled: boolean) {
     useEffect(() => {
@@ -924,6 +926,15 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
                 }
                 placePanel(panel, position || null);
             }
+            placePickers();
+        };
+        // Radix renders the pickers in the drawing, under the properties panel beside it.
+        const placePickers = () => {
+            const isRaised = !!panels.get(SIDE_PROPERTIES_PANEL_SELECTOR)
+                ?.hasAttribute("data-side-panel");
+            for (const picker of root.querySelectorAll<HTMLElement>(PICKER_SELECTOR)) {
+                setTopLayer(picker, isRaised);
+            }
         };
         // A panel that changes height lays out and paints its contents again, so while the note
         // scrolls, the panels only move.
@@ -953,8 +964,8 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
             });
         }
 
-        // The panels mount when they open, and the properties panel takes the height of the
-        // properties of the selection.
+        // The panels and the pickers mount when they open, and the properties panel takes the
+        // height of the properties of the selection.
         const watchPanels = () => {
             let isChanged = false;
             for (const { selector } of SIDE_PANELS) {
@@ -971,7 +982,11 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
                     panels.delete(selector);
                 }
             }
-            if (isChanged) update();
+            if (isChanged) {
+                update();
+            } else {
+                placePickers();
+            }
         };
         const mutationObserver = new MutationObserver(watchPanels);
         mutationObserver.observe(root, { childList: true, subtree: true });
@@ -992,6 +1007,7 @@ export function useSidePanels(rootRef: RefObject<HTMLElement | null>, isEnabled:
             for (const panel of panels.values()) {
                 placePanel(panel, null);
             }
+            placePickers();
         };
     }, [ rootRef, isEnabled ]);
 }

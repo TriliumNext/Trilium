@@ -184,8 +184,8 @@
     color: inherit;
 }
 
-/* The pickers of the properties sheet, in the top layer above it. Resets the user agent style of
-   a popover below the position that Radix sets inline. */
+/* The pickers of the properties panel or sheet, in the top layer above it. Resets the user agent
+   style of a popover below the position that Radix sets inline. */
 :where(.canvas-drawing-editor [data-radix-popper-content-wrapper][popover]) {
     inset: auto;
     margin: 0;

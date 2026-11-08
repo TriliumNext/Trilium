@@ -292,3 +292,11 @@ body[dir=rtl] .excalidraw .exc-stats {
 .excalidraw .picker {
     position: relative;
 }
+
+/* Excalidraw's dark theme sets its own island color on `.excalidraw.theme--dark`, which outranks
+   `:root .excalidraw` by loading later. */
+.excalidraw :is([data-radix-popper-content-wrapper], .sidebar) {
+    --island-bg-color: var(--floating-button-background-color);
+    --popup-bg-color: var(--floating-button-background-color);
+    --sidebar-bg-color: var(--floating-button-background-color);
+}
