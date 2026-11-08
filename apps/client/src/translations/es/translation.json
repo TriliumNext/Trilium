@@ -1454,7 +1454,6 @@
     "monospace_font_short": "Monoespaciada",
     "custom_fonts_description": "Sustituye las fuentes del tema. Una fuente subida a Trilium puede añadirse desde su propia nota.",
     "user-fonts": "Fuentes personalizadas",
-    "proportional-system-fonts": "Fuentes proporcionales",
     "search_placeholder": "Buscar fuentes",
     "no_fonts_found": "Ninguna fuente coincide con lo que está buscando.",
     "document_preview_heading": "Esquejes de tradescantia púrpura",

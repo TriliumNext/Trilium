@@ -1906,7 +1906,6 @@
     "note_detail_font_short": "Documento",
     "monospace_font_short": "Monospazio",
     "user-fonts": "Caratteri personalizzati",
-    "proportional-system-fonts": "Caratteri proporzionali",
     "search_placeholder": "Cerca caratteri",
     "no_fonts_found": "Nessun carattere corrisponde a cosa stai cercando.",
     "custom_fonts_description": "Sostituisce i caratteri del tema. Un carattere caricato su Trilium può essere aggiunto dalla relativa nota.",
