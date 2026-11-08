@@ -1002,8 +1002,10 @@ export async function saveDrawingFrame(
     editor: ContentEditor,
     frame: DrawingFrame
 ) {
-    const content = parseContent(
-        editor.getUnsavedContent() ?? (await attachment.getBlob())?.content ?? "", attachment);
+    const unsaved = editor.getUnsavedContent();
+    const saved = unsaved ?? (await attachment.getBlob())?.content ?? "";
+    // A change scheduled while the blob loads is newer than the blob.
+    const content = parseContent(unsaved ?? editor.getUnsavedContent() ?? saved, attachment);
     const elements = (content.elements ?? []).filter(
         (element): element is NonDeletedExcalidrawElement => !element.isDeleted);
     const files: BinaryFiles = {};

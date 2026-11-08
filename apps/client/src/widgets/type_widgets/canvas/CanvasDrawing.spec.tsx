@@ -1165,6 +1165,45 @@ describe("CanvasDrawing", () => {
         expect(outer?.className).toBe("canvas-drawing-box framed");
     });
 
+    it("saves the frame again once an undo or a reset changes the size of the box", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        await reportFrame(options, { x: 10, y: 20, width: 500, height: 250, scale: 2 });
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+        saveDrawingFrame.mockClear();
+        const setEmbedStyle = (style: string | null) => act(async () => {
+            if (style === null) embed.removeAttribute("style");
+            else embed.setAttribute("style", style);
+            await Promise.resolve();
+        });
+
+        // An undo restores the height of the embed without a drag of its handle.
+        await setEmbedStyle("--include-note-height:20em");
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenCalledExactlyOnceWith(ATTACHMENT, EDITOR, {
+            x: 10, y: 20, width: 400, height: 200, scale: 2
+        });
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+
+        // A double click on the handle removes the size.
+        rect.mockReturnValue({ width: 800, height: 300 } as DOMRect);
+        await setEmbedStyle(null);
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenLastCalledWith(ATTACHMENT, EDITOR, {
+            x: 10, y: 20, width: 400, height: 150, scale: 2
+        });
+        expect(saveDrawingFrame).toHaveBeenCalledTimes(2);
+    });
+
     it("widens the frame to a box size that draws the drawing again", async () => {
         const embed = embedBox();
         measured.size = { width: 1000, height: 500 };

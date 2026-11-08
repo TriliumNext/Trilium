@@ -1521,6 +1521,34 @@ describe("saveDrawingFrame", () => {
             frame
         });
     });
+
+    it("keeps a change scheduled while it reads the saved drawing", async () => {
+        const frame = { x: 1, y: 2, width: 300, height: 150, scale: 2 };
+        let unsaved: string | undefined;
+        let resolveBlob: (blob: { content: string }) => void = () => {};
+        const getBlob = vi.fn(() => new Promise((resolve) => (resolveBlob = resolve)));
+        const attachment = {
+            attachmentId: "a1", ownerId: "owner", getBlob
+        } as unknown as FAttachment;
+        const scheduleSave = vi.fn();
+        const editor = {
+            canEdit: () => true, getUnsavedContent: () => unsaved, scheduleSave, release: vi.fn()
+        } as unknown as ContentEditor;
+
+        const saving = saveDrawingFrame(attachment, editor, frame);
+        unsaved = JSON.stringify({ elements: [ { id: "r2", type: "rectangle", version: 1 } ] });
+        resolveBlob({
+            content: JSON.stringify({ elements: [ { id: "r1", type: "rectangle", version: 1 } ] })
+        });
+        await saving;
+
+        expect(getBlob).toHaveBeenCalledOnce();
+        const [ getContent ] = scheduleSave.mock.calls[0];
+        expect(JSON.parse(getContent())).toMatchObject({
+            elements: [ { id: "r2", type: "rectangle", version: 1 } ],
+            frame
+        });
+    });
 });
 
 describe("saveDrawingPicture", () => {

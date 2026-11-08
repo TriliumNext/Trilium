@@ -1,4 +1,5 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
+import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons";
 import type { RefObject } from "preact";
 import { flushSync } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -390,6 +391,20 @@ export function useContentEmbedResizing(ref: RefObject<HTMLElement | null>) {
         outsideEmbed: false,
         attributes: [ "class" ],
         read: (embed) => embed.classList.contains("ck-widget_resizing")
+    });
+}
+
+/**
+ * The width and the height that the embed that contains `ref` was resized to, as one string that
+ * follows their changes, such as an undo of a resize. `null` until the content is in the embed.
+ */
+export function useContentEmbedSize(ref: RefObject<HTMLElement | null>) {
+    return useEmbedState<string | null>(ref, {
+        initial: null,
+        outsideEmbed: null,
+        attributes: [ "style" ],
+        read: (embed) => [ "--include-note-width", EMBED_HEIGHT_PROPERTY ]
+            .map((name) => embed.style.getPropertyValue(name)).join(" ")
     });
 }
 

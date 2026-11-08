@@ -22,7 +22,7 @@ import {
 import { useAttachmentEditor } from "../text/attachment_saves";
 import {
     isInFullscreen, registerEmbedFindTarget, useContentEmbedAttribute, useContentEmbedEvent,
-    useContentEmbedResizing
+    useContentEmbedResizing, useContentEmbedSize
 } from "../text/content_embed_tools";
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
@@ -185,29 +185,29 @@ interface ReframingOptions {
 
 /**
  * Saves the frame again from the box once the user resized it with its handle, at the view it
- * kept, or changed its box size, which widens the frame around its center. Returns which change
- * is under way, from the change until the frame is taken from the new size of the box.
+ * kept, or changed its box size, which widens the frame around its center. An undo or a reset of
+ * the size counts as a resize with the handle. Returns which change is under way, from the change
+ * until the frame is taken from the new size of the box.
  */
 function useReframing({
     rootRef, apiRef, viewRef, frame, isResizing, attachment, editor, onFrame
 }: ReframingOptions): Reframing {
     const boxSize = useContentEmbedAttribute(rootRef, "data-box-size");
+    const savedSize = useContentEmbedSize(rootRef);
     const [ reframing, setReframing ] = useState<Reframing>(null);
-    const previousRef = useRef<{ isResizing: boolean; boxSize: string } | null>(null);
+    const previousRef = useRef<BoxState | null>(null);
     // A change of the box size draws the content again: the drawing before this one in the embed
     // saw the box size to compare with.
     let previous = previousRef.current;
     if (!previous && boxSize !== null) {
         const embed = rootRef.current?.closest(".include-note");
-        previous = { isResizing, boxSize: (embed && lastBoxes.get(embed)?.boxSize) ?? boxSize };
+        previous = {
+            isResizing, boxSize: (embed && lastBoxes.get(embed)?.boxSize) ?? boxSize, savedSize
+        };
     }
-    if (boxSize !== null) previousRef.current = { isResizing, boxSize };
+    if (boxSize !== null) previousRef.current = { isResizing, boxSize, savedSize };
     // Known in this render already, so that the box keeps its new size until it is measured.
-    const started: Reframing = !previous
-        ? null
-        : previous.isResizing && !isResizing
-            ? "handle"
-            : boxSize !== null && boxSize !== previous.boxSize ? "box-size" : null;
+    const started = getReframing(previous, { isResizing, boxSize, savedSize });
 
     // The record changes once the frame is taken from the box, so that a drawing that the change
     // draws again still sees the change.
@@ -255,6 +255,25 @@ function useReframing({
     }, [ reframing, frame ]);
 
     return started ?? reframing;
+}
+
+/** What `useReframing()` compares between two renders. */
+interface BoxState {
+    isResizing: boolean;
+    boxSize: string | null;
+    /** What `useContentEmbedSize()` reports. */
+    savedSize: string | null;
+}
+
+/** The change of the box from `previous` to `current` that the frame follows, if any. */
+function getReframing(previous: BoxState | null, current: BoxState): Reframing {
+    if (!previous) return null;
+    if (previous.isResizing && !current.isResizing) return "handle";
+    if (current.boxSize !== null && current.boxSize !== previous.boxSize) return "box-size";
+    // An undo, a redo or a reset changes the size without a drag of the handle.
+    const isSizeChanged = previous.savedSize !== null && current.savedSize !== null
+        && current.savedSize !== previous.savedSize;
+    return isSizeChanged && !current.isResizing ? "handle" : null;
 }
 
 /**
