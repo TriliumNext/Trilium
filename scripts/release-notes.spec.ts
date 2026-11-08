@@ -5,7 +5,7 @@ import {
     escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
     markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
     parseCommits, parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest,
-    rankContributors, renderReleaseNote, renderSection, stripAreaPrefix
+    rankContributors, renderReleaseNote, renderSection, stripAreaPrefix, unreleasedNotice
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -227,8 +227,8 @@ describe("parseChangelogEntry", () => {
         const source = "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
             "unknown key `scope`; expected type, area, closes or credits",
-            "`type` must be one of tip, important, warning, highlight, breaking, mobile, fix, "
-                + "improvement, documentation, i18n, technical, security, not `bugfix`",
+            "`type` must be one of note, tip, important, warning, highlight, breaking, mobile, "
+                + "fix, improvement, documentation, i18n, technical, security, not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
             "the entry has no text after the frontmatter"
@@ -332,14 +332,14 @@ describe("renderSection", () => {
             "1.  First by @a & @b",
             "",
             "<details>",
-            "    <summary>LLM</summary>",
+            "    <summary>LLM (1)</summary>",
             "    <ol>",
             "        <li>Second</li>",
             "    </ol>",
             "</details>",
             "",
             "<details>",
-            "    <summary>Search</summary>",
+            "    <summary>Search (2)</summary>",
             "    <ol>",
             "        <li>Third</li>",
             "        <li>Fourth <code>#x</code><ul><li>A detail.</li></ul></li>",
@@ -426,6 +426,49 @@ describe("renderReleaseNote", () => {
             "1.  Safer",
             ""
         ].join("\n"));
+    });
+
+    it("can drop the preamble and the sections without items, keeping the admonitions", () => {
+        const template = [
+            "# Release Template",
+            "> [!NOTE]",
+            "> Star us.",
+            "",
+            "## 💡 Key highlights",
+            "",
+            "1.  \\[…\\]",
+            "",
+            "## 🐞 Bugfixes",
+            "",
+            "1.  \\[…\\]",
+            "",
+            "## ✨ Improvements",
+            "",
+            "1.  \\[…\\]"
+        ].join("\n");
+
+        expect(renderReleaseNote(template, "Changes since v1.0.0", [
+            { section: "Bugfixes", date: 1, text: "Fixed", details: [], credits: [] },
+            { section: "Note", date: 0, text: "Rebuilt nightly", details: [], credits: [] }
+        ], { preamble: false, emptySections: false })).toBe([
+            "# Changes since v1.0.0",
+            "> [!NOTE]",
+            "> Rebuilt nightly",
+            "",
+            "## 🐞 Bugfixes",
+            "",
+            "1.  Fixed",
+            ""
+        ].join("\n"));
+    });
+});
+
+describe("unreleasedNotice", () => {
+    it("names the previous release and the build the list comes from", () => {
+        const notice = unreleasedNotice("v0.107.0", { hash: "abc1234", date: "2026-11-08" });
+        expect(notice.section).toBe("Note");
+        expect(notice.text).toContain("since v0.107.0");
+        expect(notice.text).toContain("`abc1234` of 2026-11-08");
     });
 });
 

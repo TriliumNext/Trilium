@@ -22,12 +22,15 @@
  * tagged on the `stable` branch is skipped. GitHub data comes from the `gh` CLI. Usage:
  *
  *   pnpm chore:release-notes v0.107.0 [--from v0.106.0] [--stdout] [--force] [--unlisted]
+ *   pnpm chore:release-notes unreleased [--from v0.106.0]
  *   pnpm chore:release-notes consume v0.107.0
  *   pnpm changelog:new <slug>
  *
  * `--unlisted` reports the fixes and features that neither close an issue nor come with an entry,
- * leaving out fixes that only change code written since the previous release. `consume` runs in
- * the release commit, once the note is final: it deletes the entries, or moves them to
+ * leaving out fixes that only change code written since the previous release. `unreleased` prints
+ * the same note for the changes since the previous release, without the template's preamble and
+ * empty sections, for the body of the nightly release (`nightly.yml`). `consume` runs in the
+ * release commit, once the note is final: it deletes the entries, or moves them to
  * `.changelog/pre-release/` for an rc or beta version, so that the final release lists them again.
  */
 
@@ -107,6 +110,7 @@ const INTERNAL_AREAS =
 
 /** The changelog entry `type` values, each naming the release note section it goes to. */
 export const ENTRY_TYPES = {
+    note: "Note",
     tip: "Tip",
     important: "Important",
     warning: "Warning",
@@ -124,7 +128,7 @@ export const ENTRY_TYPES = {
 export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
 
 /** Sections rendered as GitHub admonitions above the first heading instead of as a list. */
-const ADMONITIONS = new Set<Section>([ "Tip", "Important", "Warning" ]);
+const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
 /** Sections listed with bullets; the others are numbered. */
 const BULLETED_SECTIONS =
     new Set<Section>([ "Key highlights", "Breaking changes", "Documentation" ]);
@@ -206,10 +210,14 @@ interface Options {
     stdout: boolean;
     force: boolean;
     unlisted: boolean;
+    /** Prints the changes since the previous release as the nightly release body. */
+    unreleased?: boolean;
     repository: string;
 }
 
-export function main({ version, from, stdout, force, unlisted, repository }: Options) {
+export function main(
+    { version, from, stdout, force, unlisted, unreleased = false, repository }: Options
+) {
     const outputPath = join(NOTES_DIR, `${version}.md`);
     if (!stdout && !force && existsSync(outputPath)) {
         throw new Error(`${outputPath} already exists; `
@@ -239,7 +247,13 @@ export function main({ version, from, stdout, force, unlisted, repository }: Opt
     const items = collectItems({ closings, issues, languages, entries, pullRequests, repository });
     const loose = items.filter((item) => !item.area && item.section !== "Key highlights"
         && items.some((other) => other.section === item.section && other.area));
-    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, items);
+    if (unreleased) {
+        const [ hash, date ] = git("log", "-1", "--format=%h %cs", "HEAD").trim().split(" ");
+        items.push(unreleasedNotice(base, { hash, date }));
+    }
+    const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"),
+        unreleased ? `Changes since ${base}` : version, items,
+        { preamble: !unreleased, emptySections: !unreleased });
     if (stdout) {
         process.stdout.write(note);
     } else {
@@ -604,28 +618,48 @@ export function collectItems(sources: ItemSources): NoteItem[] {
 
 /**
  * Fills `Release Template.md` with the items, oldest first in each section. Sections that receive
- * no item keep the template's placeholder.
+ * no item keep the template's placeholder, unless `emptySections` is off, which drops them along
+ * with their placeholder; `preamble` off drops the template's lines between the title and the
+ * first section.
  */
-export function renderReleaseNote(template: string, version: string, items: NoteItem[]): string {
+export function renderReleaseNote(template: string, version: string, items: NoteItem[],
+    { preamble = true, emptySections = true } = {}): string {
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
     const admonitions = items
         .filter((item) => ADMONITIONS.has(item.section))
         .sort((a, b) => a.date - b.date);
     const output: string[] = [];
+    let inPreamble = false;
     for (let index = 0; index < lines.length; index++) {
-        if (lines[index].startsWith("## ") && admonitions.length > 0) {
+        const line = lines[index];
+        if (line.startsWith("## ") && admonitions.length > 0) {
             output.push(...admonitions.flatMap((item) => [ ...renderAdmonition(item), "" ]));
             admonitions.length = 0;
         }
 
-        output.push(lines[index]);
-        const heading = /^## \S+\s+(.*)$/.exec(lines[index])?.[1].trim().toLowerCase();
+        const heading = /^## \S+\s+(.*)$/.exec(line)?.[1].trim().toLowerCase();
+        if (line.startsWith("# ")) {
+            inPreamble = true;
+        } else if (heading !== undefined) {
+            inPreamble = false;
+        } else if (inPreamble && !preamble) {
+            continue;
+        }
+
         const sectionItems = items.filter((item) => item.section.toLowerCase() === heading);
         if (sectionItems.length === 0) {
+            if (heading !== undefined && !emptySections) {
+                while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
+                    index++;
+                }
+            } else {
+                output.push(line);
+            }
             continue;
         }
 
         // Replace the section's placeholder list with the items.
+        output.push(line);
         while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
             index++;
         }
@@ -637,6 +671,19 @@ export function renderReleaseNote(template: string, version: string, items: Note
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
+}
+
+/** The notice above the unreleased changes, naming the build they come from. */
+export function unreleasedNotice(base: string, head: { hash: string; date: string }): NoteItem {
+    return {
+        section: "Note",
+        date: 0,
+        text: `The changes on \`main\` since ${base}, as the next release note will list them. `
+            + "This list is rebuilt with every nightly build; this one comes from commit "
+            + `\`${head.hash}\` of ${head.date}.`,
+        details: [],
+        credits: []
+    };
 }
 
 function renderAdmonition(item: NoteItem) {
@@ -652,7 +699,8 @@ function renderAdmonition(item: NoteItem) {
  * Lists a section's items, prefixing a lone item with its area. The items of an area that has
  * several go under one item named after it. When `collapsible`, every area goes into a
  * `<details>` block after the list instead, written in HTML as Trilium exports its collapsible
- * blocks, and only the items without an area stay in the list.
+ * blocks with the number of items in their summary, and only the items without an area stay in
+ * the list.
  */
 export function renderSection(items: NoteItem[],
     { bulleted = false, collapsible = false } = {}): string[] {
@@ -694,7 +742,7 @@ export function renderSection(items: NoteItem[],
         lines.push(
             ...lines.length > 0 ? [ "" ] : [],
             "<details>",
-            `    <summary>${escapeHtml(group.area ?? "")}</summary>`,
+            `    <summary>${escapeHtml(group.area ?? "")} (${group.items.length})</summary>`,
             `    <${tag}>`,
             ...group.items.map((item) => {
                 const [ text, ...details ] = renderItem("", item.text, item, "");
@@ -1243,10 +1291,21 @@ if (process.argv[1] === SCRIPT_PATH) {
             createChangelogEntry(args[1] ?? "");
         } else if (args[0] === "consume" && args[1] && /^v\d/.test(args[1])) {
             consumeChangelogEntries(args[1]);
+        } else if (args[0] === "unreleased") {
+            main({
+                version: "",
+                from: fromIndex >= 0 ? args[fromIndex + 1] : undefined,
+                stdout: true,
+                force: false,
+                unlisted: false,
+                unreleased: true,
+                repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
+            });
         } else if (!version || !/^v\d/.test(version)) {
             throw new Error([
                 "Usage: release-notes.mts <version, e.g. v0.107.0> [--from <tag>]",
                 "           [--stdout] [--force] [--unlisted]",
+                "       release-notes.mts unreleased [--from <tag>]",
                 "       release-notes.mts consume <version>",
                 "       release-notes.mts new <slug>"
             ].join("\n"));
