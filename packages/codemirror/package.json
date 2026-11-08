@@ -28,7 +28,7 @@
     "@codemirror/search": "6.7.2",
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.15",
-    "@typescript/vfs": "1.6.5",
+    "@typescript/vfs": "1.6.6",
     "typescript": "6.0.3",
     "@fsegurai/codemirror-theme-abcdef": "6.2.7",
     "@fsegurai/codemirror-theme-abyss": "6.2.7",
