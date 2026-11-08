@@ -522,6 +522,24 @@ describe("TriliumSlashCommands", () => {
             expect(getModelData(editor.model, { withoutSelection: true })).toContain("<heading2>");
         });
 
+        it("runs an entry picked outside the palette, unless it does not apply there", () => {
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const blockQuote = palette.search("quote")
+                .find((definition) => definition.id === "blockQuote");
+            if (!blockQuote) {
+                throw new Error("the palette should offer the block quote entry");
+            }
+
+            editor.commands.get("blockQuote")?.forceDisabled("spec");
+            palette.run(blockQuote);
+            expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+
+            editor.commands.get("blockQuote")?.clearForceDisabled("spec");
+            palette.run(blockQuote);
+            expect(getModelData(editor.model))
+                .toBe("<blockQuote><paragraph>[]</paragraph></blockQuote>");
+        });
+
         it("keeps the trigger text when the selected command goes disabled before Enter", async () => {
             type("/quo");
             await settle();

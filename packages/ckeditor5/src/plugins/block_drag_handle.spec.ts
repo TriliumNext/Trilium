@@ -1,13 +1,15 @@
 import {
     _getModelData as getModelData, _setModelData as setModelData, BlockQuote, type ClassicEditor,
-    DragDrop, env, Essentials, Paragraph, Table, TableCaption
+    DragDrop, env, Essentials, IconDragIndicator, IconPlus, Paragraph, Table, TableCaption
 } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import Admonition from "./admonition/admonition.js";
-import BlockDragHandle, { getDraggedBlocks } from "./block_drag_handle.js";
+import BlockDragHandle, {
+    type BlockDragHandleHost, getDraggedBlocks
+} from "./block_drag_handle.js";
 import Collapsible from "./collapsible/collapsible.js";
 
 describe("BlockDragHandle", () => {
@@ -582,6 +584,46 @@ describe("BlockDragHandle", () => {
         const offEditable = { ...margin, clientY: editableRect.bottom + 50 };
         expect(drop(button, startDrag(button), offEditable)).toBe(false);
         expect(editor.getData()).toBe("<p>first</p><p>second</p>");
+    });
+
+    it("is a plus beside a blank paragraph, which opens the insert menu of the host", async () => {
+        const openInsertMenu = vi.fn<BlockDragHandleHost["openInsertMenu"]>();
+        const { editor, button } = await createEditor(
+            "<paragraph>one</paragraph><paragraph>[]</paragraph>",
+            { blockDragHandle: { openInsertMenu } }
+        );
+        const buttonView = editor.plugins.get(BlockDragHandle).buttonView;
+        const getIconScale = () => getComputedStyle(button.querySelector("svg") ?? button).scale;
+        const getIconStroke = () => getComputedStyle(button.querySelector("path") ?? button).stroke;
+        expect(buttonView?.icon).toBe(IconPlus);
+        expect(buttonView?.label).toBe("Insert");
+        expect(getIconScale()).toBe("0.6");
+        expect(getIconStroke()).not.toBe("none");
+        expect(getComputedStyle(button.querySelector("path") ?? button).strokeWidth).toBe("0.8px");
+
+        button.click();
+        expect(openInsertMenu).toHaveBeenCalledOnce();
+        expect(openInsertMenu).toHaveBeenCalledWith(editor, button, expect.any(Function));
+        expect(getTargets(editor)).toEqual([ "p:" ]);
+        openInsertMenu.mock.calls[0][2]();
+        expect(getTargets(editor)).toEqual([]);
+
+        for (const modelData of [
+            "<paragraph>on[]e</paragraph>",
+            "<paragraph>[</paragraph><paragraph>]</paragraph>",
+            "<blockQuote><paragraph>a[]</paragraph></blockQuote>"
+        ]) {
+            setModelData(editor.model, modelData);
+            expect(buttonView?.icon).toBe(IconDragIndicator);
+            expect(buttonView?.label).toBe("Drag to move");
+            expect(getIconScale()).toBe("none");
+            expect(getIconStroke()).toBe("none");
+        }
+        button.click();
+        expect(openInsertMenu).toHaveBeenCalledOnce();
+
+        const { editor: hostless } = await createEditor("<paragraph>[]</paragraph>");
+        expect(hostless.plugins.get(BlockDragHandle).buttonView?.icon).toBe(IconDragIndicator);
     });
 
     it("adds no handle on Android, where the editor cannot drag", async () => {

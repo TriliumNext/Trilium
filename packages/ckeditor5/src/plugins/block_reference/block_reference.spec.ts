@@ -438,8 +438,10 @@ describe("BlockReference", () => {
     describe("block handle menu", () => {
         it("asks the host to open the menu on a right click or a click", async () => {
             const openHandleMenu = vi.fn<BlockReferenceHost["openHandleMenu"]>();
+            const openInsertMenu = vi.fn();
             const editor = await createTestEditor([ ...PLUGINS, BlockDragHandle ], {
-                blockReference: { openHandleMenu }
+                blockReference: { openHandleMenu },
+                blockDragHandle: { openInsertMenu }
             });
             setModelData(editor.model, "<paragraph>[one</paragraph><paragraph>two]</paragraph>");
             const handle = getHandle(editor.plugins.get(BlockDragHandle).buttonView?.element);
@@ -464,6 +466,13 @@ describe("BlockReference", () => {
             editor.enableReadOnlyMode("spec");
             handle.dispatchEvent(new MouseEvent("contextmenu", { cancelable: true }));
             handle.click();
+            expect(openHandleMenu).toHaveBeenCalledTimes(2);
+
+            // A click on the handle of a blank paragraph opens the insert menu instead.
+            editor.disableReadOnlyMode("spec");
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+            handle.click();
+            expect(openInsertMenu).toHaveBeenCalledOnce();
             expect(openHandleMenu).toHaveBeenCalledTimes(2);
         });
 

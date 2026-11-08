@@ -40,7 +40,12 @@ export default class BlockReference extends Plugin {
         });
         // The button of `BlockToolbar` opens the toolbar on a click.
         if (this.editor.plugins.has("BlockDragHandle")) {
-            this.domEmitter.listenTo(handle, "click", () => this.openMenu(handle));
+            const dragHandle = this.editor.plugins.get("BlockDragHandle");
+            this.domEmitter.listenTo(handle, "click", () => {
+                if (!dragHandle.opensInsertMenu) {
+                    this.openMenu(handle);
+                }
+            });
         }
     }
 

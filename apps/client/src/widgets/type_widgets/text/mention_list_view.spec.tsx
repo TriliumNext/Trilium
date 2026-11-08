@@ -1,6 +1,6 @@
 import type { EmojiSuggestion, MentionHostedListState, SlashCommandConfig, SlashCommandDefinition } from "@triliumnext/ckeditor5";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 const { getNoteSuggestions, createNoteFromSuggestion } = vi.hoisted(() => ({
     getNoteSuggestions: vi.fn(async () => [ { notePath: "root/a", noteTitle: "Alpha", highlightedNotePathTitle: "Alpha" } ]),
@@ -20,7 +20,11 @@ const { createChildNote, openChildNote } = vi.hoisted(() => ({
 
 vi.mock("./child_note", () => ({ createChildNote, openChildNote }));
 
-import { createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view";
+import contextMenu, { type MenuCommandItem } from "../../../menus/context_menu";
+import {
+    createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList,
+    openSlashCommandMenu
+} from "./mention_list_view";
 
 describe("createNoteMentionList", () => {
     beforeEach(() => {
@@ -229,6 +233,63 @@ describe("createSlashCommandList", () => {
         await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
         expect(commit).toHaveBeenCalledExactlyOnceWith({ id: "snippet-0", definition: definitions[1] });
         list.destroy?.();
+    });
+});
+
+describe("openSlashCommandMenu", () => {
+    it("lists the palette's entries below the handle, filterable, and runs the one picked", () => {
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        const definitions: SlashCommandDefinition[] = [
+            {
+                id: "table", title: "Table", description: "Insert a table.", aliases: [ "grid" ],
+                icon: "<svg></svg>"
+            },
+            {
+                id: "snippet-0", title: "<b>Hi</b>", iconClass: "tn-icon bx bx-note",
+                iconColorClass: "use-note-color"
+            }
+        ];
+        const palette = { search: vi.fn(() => definitions), run: vi.fn() };
+        const focusTracker = { add: vi.fn(), remove: vi.fn() };
+        const editor = {
+            plugins: { get: () => palette }, ui: { focusTracker }
+        } as unknown as Parameters<NonNullable<SlashCommandConfig["list"]>>[0];
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue();
+        const handle = document.createElement("button");
+        const onClose = vi.fn();
+
+        openSlashCommandMenu(editor, handle, onClose);
+
+        expect(palette.search).toHaveBeenCalledExactlyOnceWith("");
+        const options = show.mock.calls[0][0];
+        expect(options).toMatchObject({
+            anchor: handle, filterable: true, focusFilter: true, className: "slash-command-menu"
+        });
+        expect(options.items).toEqual([ {
+            title: "Table", description: "Insert a table.", keywords: [ "grid" ],
+            uiIcon: "bx bx-empty", uiIconSvg: "<svg></svg>", handler: expect.any(Function)
+        }, {
+            title: "&lt;b&gt;Hi&lt;&#x2F;b&gt;", uiIcon: "tn-icon bx bx-note",
+            iconColorClass: "use-note-color", handler: expect.any(Function)
+        } ]);
+        const greeting = options.items[1] as MenuCommandItem<never>;
+        greeting.handler?.(greeting, new MouseEvent("click"));
+        expect(palette.run).toHaveBeenCalledExactlyOnceWith(definitions[1]);
+
+        const container = document.createElement("div");
+        options.onShow?.(container);
+        expect(focusTracker.add).toHaveBeenCalledWith(container);
+        options.onHide?.();
+        expect(focusTracker.remove).toHaveBeenCalledWith(container);
+        expect(onClose).toHaveBeenCalledOnce();
+
+        // A click on the handle of the open menu only closes the menu.
+        vi.spyOn(contextMenu, "dismissedByLastPress", "get").mockReturnValue(true);
+        openSlashCommandMenu(editor, handle, onClose);
+        expect(show).toHaveBeenCalledOnce();
+        expect(onClose).toHaveBeenCalledTimes(2);
     });
 });
 

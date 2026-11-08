@@ -165,6 +165,13 @@ export default class TriliumSlashCommands extends Plugin {
         return matchSlashCommands(this._catalog(), query);
     }
 
+    /** Runs `definition` at the selection, unless it does not apply there. */
+    run(definition: SlashCommandDefinition) {
+        if (isSlashCommandEnabled(this.editor, definition)) {
+            runSlashCommand(this.editor, definition);
+        }
+    }
+
     /**
      * The definitions available in *this* editor right now: the palette CKEditor's own features
      * contribute, Trilium's own entries, and one per text snippet — minus anything `removeCommands`

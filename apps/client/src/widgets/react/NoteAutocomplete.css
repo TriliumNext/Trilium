@@ -321,15 +321,20 @@
 }
 
 /*
- * The `/` list of the text and Markdown editors, at a width that fits all but the longest
- * descriptions, and given more height than a list usually is: it is long, and the query only
- * narrows it.
+ * The `/` list of the text and Markdown editors, and the menu of the same commands that the block
+ * handle opens, at a width that fits all but the longest descriptions, and given more height than
+ * a list usually is: it is long, and the query only narrows it.
  */
-.note-autocomplete-menu.slash-command-menu {
+.dropdown-menu.slash-command-menu {
     width: 350px;
     max-width: calc(100vw - 10px);
 
-    > .tn-menu-scroll {
+    > :is(.tn-menu-scroll, .tn-menu-filterable) {
         max-height: var(--ck-mention-list-max-height);
+    }
+
+    .dropdown-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }

@@ -1,6 +1,6 @@
 import {
-    BlockButtonView, ClipboardObserver, createElement, DomEmitterMixin, DragDrop, env,
-    findClosestScrollableAncestor, IconDragIndicator, type Model, type ModelElement,
+    BlockButtonView, ClipboardObserver, createElement, DomEmitterMixin, DragDrop, type Editor, env,
+    findClosestScrollableAncestor, IconDragIndicator, IconPlus, type Model, type ModelElement,
     ModelLiveRange, type ModelRange, type ModelSchema, Plugin, Rect, type ViewElement
 } from "ckeditor5";
 
@@ -12,7 +12,8 @@ const TARGET_CLASS = "block-drag-handle-target";
 /**
  * The drag handle of `BlockToolbar` without the toolbar, for the fixed-toolbar editor: a grip
  * beside the block at the selection that drags the selected blocks to another place in the note.
- * The drag follows `DragDropBlockToolbar`, which only works with `BlockToolbar` itself.
+ * The drag follows `DragDropBlockToolbar`, which only works with `BlockToolbar` itself. Beside a
+ * blank paragraph, the handle is a "+" that opens the insert menu of `blockDragHandle` on a click.
  *
  * The handle sits in a container right after the editable, inside whatever scrolls the blocks,
  * so a scroll moves it along with them and needs no work here.
@@ -22,6 +23,9 @@ export default class BlockDragHandle extends Plugin {
     buttonView?: BlockButtonView;
     /** Whether the menu of the handle is open, which keeps the blocks that it drags tinted. */
     declare public isMenuOpen: boolean;
+    /** Whether the handle stands beside a blank paragraph, where a click opens the insert menu. */
+    declare public opensInsertMenu: boolean;
+    private readonly host = this.editor.config.get("blockDragHandle");
     private container?: HTMLElement;
     /** The editable that `container` follows, observed for changes of its size. */
     private domEditable?: HTMLElement;
@@ -46,6 +50,7 @@ export default class BlockDragHandle extends Plugin {
 
     init() {
         this.set("isMenuOpen", false);
+        this.set("opensInsertMenu", false);
         // `DragDrop` is disabled on Android.
         if (env.isAndroid) {
             return;
@@ -53,12 +58,13 @@ export default class BlockDragHandle extends Plugin {
 
         const editor = this.editor;
         const buttonView = new BlockButtonView(editor.locale);
-        buttonView.set({
-            label: editor.t("Drag to move"),
-            icon: IconDragIndicator,
-            tooltip: true,
-            isToggleable: false
-        });
+        buttonView.set({ tooltip: true, isToggleable: false });
+        buttonView.bind("icon").to(this, "opensInsertMenu",
+            (opensInsertMenu) => opensInsertMenu ? IconPlus : IconDragIndicator);
+        buttonView.bind("label").to(this, "opensInsertMenu",
+            (opensInsertMenu) => opensInsertMenu ? editor.t("Insert") : editor.t("Drag to move"));
+        buttonView.bind("class").to(this, "opensInsertMenu",
+            (opensInsertMenu) => opensInsertMenu ? "block-drag-handle--insert" : "");
         buttonView.extendTemplate({
             attributes: { class: "block-drag-handle", draggable: "true" },
             on: {
@@ -75,7 +81,16 @@ export default class BlockDragHandle extends Plugin {
                 })
             }
         });
-        buttonView.on("execute", () => editor.editing.view.focus());
+        buttonView.on("execute", () => {
+            editor.editing.view.focus();
+            const element = buttonView.element;
+            if (this.opensInsertMenu && this.host && element) {
+                this.isMenuOpen = true;
+                this.host.openInsertMenu(editor, element, () => {
+                    this.isMenuOpen = false;
+                });
+            }
+        });
         buttonView.render();
         this.buttonView = buttonView;
 
@@ -158,6 +173,7 @@ export default class BlockDragHandle extends Plugin {
             return;
         }
 
+        this.opensInsertMenu = !!this.host && isInBlankParagraph(this.editor.model);
         const target = this.getTarget();
         const position = target && this.findPosition(buttonView, buttonView.element, target);
         if (!position) {
@@ -452,6 +468,13 @@ export function getDraggedBlocks(model: Model): ModelElement[] {
         : [];
 }
 
+/** Whether the selection is collapsed in an empty paragraph. */
+function isInBlankParagraph(model: Model) {
+    const selection = model.document.selection;
+    const parent = selection.getFirstPosition()?.parent;
+    return selection.isCollapsed && !!parent?.is("element", "paragraph") && parent.isEmpty;
+}
+
 /** The block that the handle drags for `block`: the whole collapsible for its title. */
 function getDraggedBlock(block: ModelElement) {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
@@ -525,7 +548,20 @@ function setDraggedRange(dragDrop: DragDrop, range: ModelRange) {
     state._draggedRange = ModelLiveRange.fromRange(range);
 }
 
+/** What the host of the editor does for the block handle. */
+export interface BlockDragHandleHost {
+    /**
+     * Opens the menu that inserts content at the selection, in the blank paragraph beside the
+     * handle, below `handle`. Calls `onClose` once the menu is closed, or at once if it opens none.
+     */
+    openInsertMenu(editor: Editor, handle: HTMLElement, onClose: () => void): void;
+}
+
 declare module "ckeditor5" {
+    interface EditorConfig {
+        blockDragHandle?: BlockDragHandleHost;
+    }
+
     interface PluginsMap {
         [BlockDragHandle.pluginName]: BlockDragHandle;
     }

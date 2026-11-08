@@ -205,7 +205,7 @@ export async function getTextEditorContaining(
  * while the menu is up.
  */
 export function keepEditorFocused(
-    editor: CKTextEditor
+    editor: { ui: Pick<CKTextEditor["ui"], "focusTracker"> }
 ): Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> {
     let menuContainer: HTMLElement | null = null;
 

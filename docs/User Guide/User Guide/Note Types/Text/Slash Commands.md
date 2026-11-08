@@ -10,6 +10,7 @@ Slash commands is a feature of <a class="reference-link" href="../Text.md">Text
 *   By default, the full list of commands is displayed.
 *   To search, simply start typing: commands are found by their title or by other names they go by (for example `h2` for _Heading 2_).
 *   To trigger the highlighted action, press Enter or Tab.
+*   With the fixed <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, the block handle beside an empty paragraph turns into a <span class="tn-icon cke cke-plus"></span> button. Clicking it opens the same commands as a menu, with a box at its top that finds them by their title, their description or the other names they go by.
 
 ## Integration with other features
 

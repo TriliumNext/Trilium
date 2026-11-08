@@ -2,6 +2,9 @@ import type { EmojiSuggestion, MentionFeedObjectItem, MentionHostedList, Mention
 import clsx from "clsx";
 import type { ComponentChildren } from "preact";
 
+import contextMenu, { type MenuCommandItem } from "../../../menus/context_menu";
+import { keepEditorFocused } from "../../../menus/text_editor_context_menu";
+import { escapeHtml } from "../../../services/utils";
 import { AutocompleteList } from "../../react/FormAutocomplete";
 import { type CommandEntry, CommandMentionList, createHostedList, NoteMentionList } from "../../react/NoteAutocomplete";
 import { type ChildNoteParent, createChildNote, openChildNote } from "./child_note";
@@ -97,6 +100,34 @@ export function createSlashCommandList(editor: HostEditor): MentionHostedList {
 }
 
 /**
+ * Opens the `/` palette's entries as a menu below `handle`, with a filter at its top, for the
+ * editor config's `blockDragHandle.openInsertMenu`, and calls `onClose` once the menu is closed.
+ */
+export function openSlashCommandMenu(editor: HostEditor, handle: HTMLElement, onClose: () => void) {
+    // A click on the handle of the open menu only closes the menu.
+    if (contextMenu.dismissedByLastPress) {
+        onClose();
+        return;
+    }
+
+    const palette = editor.plugins.get("TriliumSlashCommands") as TriliumSlashCommands;
+    const editorFocus = keepEditorFocused(editor);
+    void contextMenu.show({
+        anchor: handle,
+        items: palette.search("").map((definition) => toMenuItem(palette, definition)),
+        filterable: true,
+        focusFilter: true,
+        className: "slash-command-menu",
+        selectMenuItemHandler: () => {},
+        onShow: editorFocus.onShow,
+        onHide: () => {
+            editorFocus.onHide?.();
+            onClose();
+        }
+    });
+}
+
+/**
  * Lists the emoji for the query typed after `:` as the command palette lists its commands, the emoji
  * in place of the icon, for the editor config's `emoji.list`.
  */
@@ -119,6 +150,21 @@ type SlashCommandEntry = CommandEntry & { definition: SlashCommandDefinition };
 /** What the palette commits for an entry, which `TriliumSlashCommands` then runs. */
 function toSlashCommandItem(definition: SlashCommandDefinition): SlashCommandItem {
     return { id: definition.id, definition };
+}
+
+/** A palette entry as a menu row that runs it, drawn as {@link toCommandEntry} draws it. */
+function toMenuItem(
+    palette: TriliumSlashCommands, definition: SlashCommandDefinition
+): MenuCommandItem<never> {
+    return {
+        title: escapeHtml(definition.title),
+        description: definition.description,
+        keywords: definition.aliases,
+        uiIcon: definition.iconClass ?? "bx bx-empty",
+        uiIconSvg: definition.iconClass ? undefined : definition.icon,
+        iconColorClass: definition.iconColorClass,
+        handler: () => palette.run(definition)
+    };
 }
 
 /** A palette entry as a command row: a snippet's font icon in its colour, or the entry's SVG. */

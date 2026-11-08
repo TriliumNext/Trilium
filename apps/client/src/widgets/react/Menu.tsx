@@ -62,6 +62,8 @@ export interface MenuProps<T> extends Pick<PopupProps, "anchor" | "offset" | "co
      * and the first row lowest and active as it opens.
      */
     filterable?: boolean;
+    /** For a {@link filterable} menu: puts the focus in its input as it opens. */
+    focusFilter?: boolean;
     /**
      * For a {@link filterable} menu placed above its anchor: keeps the input at the bottom, but
      * draws the rows in their own order, the first one at the top, as in the note tree.
@@ -102,7 +104,7 @@ interface HeldChange {
     timeout: number;
 }
 
-export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
+export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, focusFilter, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
     const menuRef = useRef<HTMLDivElement | null>(null);
     // The submenus' layers render into the menu element, which rows reach through the context.
     const [ layerHost, setLayerHost ] = useState<HTMLElement | null>(null);
@@ -473,6 +475,7 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
         // A menu already closing, as one whose row ran before it was placed, leaves focus alone.
         if (closed.current || isWanted?.() === false) return;
         menuRef.current?.focus({ preventScroll: true });
+        if (focusFilter) filterInputIn(menuRef.current)?.focus({ preventScroll: true });
         const isLowestFirst = isBottomUp && !keepOrder;
         if (!startAt && !isLowestFirst) return;
         const rowIds = navigableRows(0);
@@ -602,7 +605,8 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
         {matches.map(([ index, { item, title, isName, path } ]) => (
             <FormListItem
                 key={index}
-                icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
+                icon={item.uiIcon ?? "bx bx-empty"} iconSvg={item.uiIconSvg}
+                iconClassName={item.iconColorClass} description={item.description}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
                 className={item.className} closeOnSelect={false}
                 onClick={(e) => onSelect?.(item, e)}
@@ -628,8 +632,8 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     }
 
     const {
-        title, titleIcon, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges,
-        className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
+        title, titleIcon, description, tooltip, uiIcon, uiIconSvg, iconColorClass, checked, enabled,
+        badges, className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
         middleClickHandler, contextMenuHandler
     } = row;
     // Callers pass HTML: titles escaped with `escapeHtml()` or boxed by `menuName()`.
@@ -641,7 +645,8 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     if (items) {
         return (
             <FormDropdownSubmenu
-                icon={uiIcon ?? "bx bx-empty"} title={label} disabled={enabled === false}
+                icon={uiIcon ?? "bx bx-empty"} iconSvg={uiIconSvg} title={label}
+                disabled={enabled === false}
                 className={className} onDropdownToggleClicked={select} split={!!(row.command || row.handler)}
                 filterable={row.filterable}
                 onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
@@ -664,7 +669,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     return (
         <FormListItem
             // An item with neither keeps no slot for an icon, as an all-text menu such as spelling fixes needs.
-            icon={"uiIcon" in row || "checked" in row ? uiIcon : null}
+            icon={"uiIcon" in row || "checked" in row ? uiIcon : null} iconSvg={uiIconSvg}
             iconClassName={iconColorClass} checked={checked} checkable={"checked" in row} disabled={enabled === false}
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
             keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
@@ -781,8 +786,9 @@ interface MenuMatch<T> {
 
 /**
  * The items, at any depth, that run something and match `text`: every word of it is in the
- * item's title or in those of the submenus it stands in. Those whose title starts with the text
- * come first, then those whose title holds it, each group in menu order.
+ * item's title, its description, its keywords or the titles of the submenus it stands in. Those
+ * whose title starts with the text come first, then those whose title holds it, each group in
+ * menu order.
  */
 function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] {
     const query = text.trim().toLowerCase();
@@ -802,7 +808,8 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
             }
             if (item.enabled === false) continue;
             const lowerTitle = title.toLowerCase();
-            const haystack = [ ...path, title ].join(" ").toLowerCase();
+            const haystack = [ ...path, title, item.description ?? "", ...item.keywords ?? [] ]
+                .join(" ").toLowerCase();
             if (!words.every((word) => haystack.includes(word))) continue;
             const rank = lowerTitle.startsWith(query) ? 0 : lowerTitle.includes(query) ? 1 : 2;
             found.push({ item, title, isName: isMenuName(item.title), path, rank });

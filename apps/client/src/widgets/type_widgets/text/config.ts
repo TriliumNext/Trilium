@@ -39,7 +39,9 @@ import diffAiResponse from "./ai_diff.js";
 import { buildChildNoteHost, type ChildNoteParent } from "./child_note.js";
 import { createColorMenuHost } from "./color_menu.js";
 import { buildFontColorConfig, buildTableColorConfig } from "./color_palette.js";
-import { createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view.js";
+import {
+    createEmojiList, createNoteMentionList, createSlashCommandList, openSlashCommandMenu
+} from "./mention_list_view.js";
 import { getShownToolbarIsland } from "./mobile_editor_toolbar.js";
 import { buildQuoteTransformation, resolveQuoteSetting } from "./quotes.js";
 import { buildCustomTransformations, parseCustomReplacements } from "./replacements.js";
@@ -315,6 +317,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             removeCommands: ["bulletedList", "numberedList", ...getDisabledExperimentalCommands()],
             list: createSlashCommandList
         },
+        ...(options.get("textNoteSlashCommandsEnabled") === "true" && {
+            blockDragHandle: { openInsertMenu: openSlashCommandMenu }
+        }),
         snippets: {
             definitions: opts.templates
         },

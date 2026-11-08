@@ -51,6 +51,7 @@ export type { AttachmentUploadHost } from "./plugins/uploadimage.js";
 export type { IconPickerRequest } from "./plugins/inline_icon/inline_icon_ui.js";
 export type { InsertMediaRequest } from "./plugins/insert_media.js";
 export type { BlockReferenceHost } from "./plugins/block_reference/block_reference.js";
+export type { BlockDragHandleHost } from "./plugins/block_drag_handle.js";
 export type { SortTargetKind } from "./plugins/sort_selection/sort_targets.js";
 export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
