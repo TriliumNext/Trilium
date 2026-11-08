@@ -45,6 +45,10 @@ export function applyFontsFromOptions() {
  * by family: `queryLocalFonts()` reports one entry per face, so a family with four weights arrives
  * four times.
  *
+ * No family is drawn here, because drawing a family loads its font file, and loading every installed
+ * one blocks the main thread for seconds where an antivirus scans each file. {@link rendersFamily}
+ * checks the one family the user picks.
+ *
  * Empty wherever the runtime does not answer — the API is Chromium-only, needs a secure context, and
  * rejects while the `local-fonts` permission is denied. Callers fall back to the stock list, which is
  * what every runtime other than the desktop app gets.
@@ -56,21 +60,35 @@ export async function listSystemFonts(): Promise<string[]> {
 
     try {
         const faces = await window.queryLocalFonts();
-        const families = [ ...new Set(faces.map(({ family }) => family)) ].sort((a, b) => a.localeCompare(b));
-        const context = createProbeContext();
-
-        // Every family is kept when there is no canvas to draw on.
-        if (!context) {
-            return families;
-        }
-
-        return families.filter((family) => rendersText(context, family));
+        return [ ...new Set(faces.map(({ family }) => family)) ].sort((a, b) => a.localeCompare(b));
     } catch {
         return [];
     }
 }
 
-/** The character `rendersText()` draws to check that a family paints anything. */
+/**
+ * Whether text set in `family` appears at all, for a family to be checked before it is applied. A
+ * family can resolve, lend its metrics to the layout and still draw nothing — GNU Unifont installs
+ * bitmap faces beside its outline one, and the name matches a bitmap face that the engine measures
+ * but will not rasterize. Applying such a family to the interface would leave it correctly laid out
+ * and invisible, including the settings needed to undo it.
+ *
+ * True where the runtime offers no canvas to draw on.
+ */
+export function rendersFamily(family: string): boolean {
+    const context = createProbeContext();
+    if (!context) {
+        return true;
+    }
+
+    const { width, height } = context.canvas;
+    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
+    context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
+
+    return isAnythingPainted(context.getImageData(0, 0, width, height));
+}
+
+/** The character `rendersFamily()` draws to check that a family paints anything. */
 const PROBE_CHARACTER = "A";
 
 /** Big enough that a light glyph still covers a pixel once it is rasterized. */
@@ -141,31 +159,13 @@ const FALLBACK_FAMILIES = [ "monospace", "serif", "sans-serif" ];
 /** Wide and narrow letters together, so a family carrying its own metrics shifts the advance. */
 const AVAILABILITY_TEXT = "mmmmmmmmmmlli";
 
-/** The surface every family is drawn on, or `null` where the runtime offers no canvas. */
+/** The surface a family is drawn or measured on, or `null` where the runtime offers no canvas. */
 function createProbeContext() {
     const canvas = document.createElement("canvas");
     canvas.width = PROBE_FONT_SIZE * 2;
     canvas.height = PROBE_FONT_SIZE * 2;
 
     return canvas.getContext("2d", { willReadFrequently: true });
-}
-
-/**
- * Whether text set in `family` appears at all. A family can resolve, lend its metrics to the layout
- * and still draw nothing — GNU Unifont installs bitmap faces beside its outline one, and the name
- * matches a bitmap face that the engine measures but will not rasterize. Offering such a family
- * would let the interface be set in a font that leaves it correctly laid out and invisible.
- *
- * One `context` serves every family, and it is cleared before each one is drawn.
- */
-function rendersText(context: CanvasRenderingContext2D, family: string): boolean {
-    const { width, height } = context.canvas;
-
-    context.clearRect(0, 0, width, height);
-    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
-    context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
-
-    return isAnythingPainted(context.getImageData(0, 0, width, height));
 }
 
 /** Whether any pixel was covered, read from the alpha channel — the colour drawn in does not matter. */

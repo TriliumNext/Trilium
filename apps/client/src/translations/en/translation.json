@@ -1958,7 +1958,8 @@
     "search_placeholder": "Search fonts",
     "no_fonts_found": "No font matches what you are looking for.",
     "document_preview_heading": "Purple heart cuttings",
-    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its color in <em>full sun</em> and fades to green in the shade."
+    "document_preview_body": "Snipped 4 stems below a node and stood them in water on the sill; the first roots showed after <strong>9 days</strong>. It holds its color in <em>full sun</em> and fades to green in the shade.",
+    "family_draws_nothing": "{{family}} cannot display text on this device, so the font was not changed."
   },
   "max_content_width": {
     "title": "Content Width",

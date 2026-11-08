@@ -8,8 +8,9 @@ import { Trans } from "react-i18next";
 
 import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
-import { filterAvailableFamilies, listSystemFonts, quoteFamily } from "../../../services/font";
+import { filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "../../../services/font";
 import { t } from "../../../services/i18n";
+import toast from "../../../services/toast";
 import { isElectron, isMobile } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
@@ -582,7 +583,7 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                                 {group.items.map(item => (
                                     <FormListItem
                                         key={item.value}
-                                        onClick={() => setFamily(item.value)}
+                                        onClick={() => chooseFamily(item.value, setFamily)}
                                         checked={family === item.value}
                                         selected={family === item.value}
                                     >
@@ -642,6 +643,21 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
         </Modal>,
         document.body
     );
+}
+
+/**
+ * Sets `value` unless it names a family that draws nothing (see {@link rendersFamily}). The theme
+ * and system entries and the user's own fonts are applied without a check, because none of them is
+ * a family name the canvas can be asked about.
+ */
+function chooseFamily(value: string, setFamily: (family: string) => void) {
+    const isFamilyName = value !== "theme" && value !== "system" && !customFontNoteId(value);
+    if (isFamilyName && !rendersFamily(value)) {
+        toast.showError(t("fonts.family_draws_nothing", { family: value }));
+        return;
+    }
+
+    setFamily(value);
 }
 
 /**

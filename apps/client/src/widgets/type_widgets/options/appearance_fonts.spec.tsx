@@ -12,7 +12,12 @@ const mocks = vi.hoisted(() => ({
     userFonts: [] as { noteId: string; title: string; blobId: string }[],
     systemFonts: [] as string[],
     /** The stock families this device can render, or `null` to let every one of them through. */
-    availableFamilies: null as string[] | null
+    availableFamilies: null as string[] | null,
+    /** The families that resolve but draw nothing. */
+    blankFamilies: [] as string[],
+    /** Every option write, as `[ name, value ]`. */
+    saved: [] as [ string, string ][],
+    showError: vi.fn()
 }));
 
 // Only the desktop app can be asked what fonts the device has.
@@ -43,14 +48,22 @@ vi.mock("../../../services/custom_fonts", () => ({
 vi.mock("../../../services/font", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/font")>()),
     listSystemFonts: async () => mocks.systemFonts,
-    filterAvailableFamilies: (families: string[]) => mocks.availableFamilies ?? families
+    filterAvailableFamilies: (families: string[]) => mocks.availableFamilies ?? families,
+    rendersFamily: (family: string) => !mocks.blankFamilies.includes(family)
+}));
+
+vi.mock("../../../services/toast", () => ({
+    default: { showError: mocks.showError }
 }));
 
 // useNoteTitle names the font a font option points at; the listing above is what the picker lists.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks")>()),
     useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title,
-    useTriliumOption: (name: string) => [ String(mocks.stored[name] ?? ""), vi.fn() ],
+    useTriliumOption: (name: string) => [
+        String(mocks.stored[name] ?? ""),
+        async (value: string) => void mocks.saved.push([ name, value ])
+    ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
 
@@ -65,6 +78,9 @@ beforeEach(() => {
     mocks.userFonts = [];
     mocks.systemFonts = [];
     mocks.availableFamilies = null;
+    mocks.blankFamilies = [];
+    mocks.saved = [];
+    mocks.showError.mockClear();
     Object.defineProperty(document, "fonts", {
         configurable: true,
         value: { add: vi.fn(), delete: vi.fn() }
@@ -230,6 +246,29 @@ describe("the font settings", () => {
             "fonts.sans-serif-system-fonts",
             "fonts.monospace-system-fonts"
         ]);
+    });
+
+    it("refuses an installed family that draws nothing, and sets one that draws", async () => {
+        mocks.stored = { overrideThemeFonts: true };
+        mocks.systemFonts = [ "Inter", "Unifont" ];
+        mocks.blankFamilies = [ "Unifont" ];
+        open();
+        await act(async () => {});
+        await act(async () => (fontRows()[0] as HTMLElement).click());
+
+        // The family is still offered: only choosing it is refused.
+        const items = [ ...document.querySelectorAll<HTMLElement>(".font-picker-list .dropdown-item") ];
+        const item = (family: string) => items.find((candidate) => candidate.textContent?.trim() === family);
+        expect(item("Unifont")).toBeDefined();
+        expect(item("Inter")).toBeDefined();
+
+        await act(async () => item("Unifont")?.click());
+        expect(mocks.saved).toEqual([]);
+        expect(mocks.showError).toHaveBeenCalledTimes(1);
+
+        await act(async () => item("Inter")?.click());
+        expect(mocks.saved).toEqual([ [ "mainFontFamily", "Inter" ] ]);
+        expect(mocks.showError).toHaveBeenCalledTimes(1);
     });
 
     it("narrows the list to the fonts matching what is searched for", async () => {

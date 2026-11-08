@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyFontsFromOptions, createFontStylesheetLink, filterAvailableFamilies, listSystemFonts, quoteFamily } from "./font.js";
+import { applyFontsFromOptions, createFontStylesheetLink, filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "./font.js";
 
 function fontLinkHrefs() {
     return Array.from(document.head.querySelectorAll<HTMLLinkElement>("link[data-font-stylesheet]"))
@@ -88,7 +88,7 @@ describe("font service", () => {
     });
 });
 
-describe("listSystemFonts", () => {
+describe("listSystemFonts and rendersFamily", () => {
     /** One face as `queryLocalFonts()` reports it — a family arrives once per weight and slant. */
     function face(family: string, style: string): FontData {
         return { family, style, fullName: `${family} ${style}`, postscriptName: `${family}-${style}` };
@@ -137,7 +137,6 @@ describe("listSystemFonts", () => {
             face("Adwaita Mono", "Regular"),
             face("Inter", "Italic")
         ]);
-        stubProbeCanvas(() => true);
 
         expect(await listSystemFonts()).toEqual([ "Adwaita Mono", "Inter" ]);
     });
@@ -150,19 +149,25 @@ describe("listSystemFonts", () => {
         expect(await listSystemFonts()).toEqual([]);
     });
 
-    it("leaves out a family the engine measures but will not draw", async () => {
+    it("lists every family without drawing any of them, since drawing loads the font file", async () => {
         vi.stubGlobal("queryLocalFonts", async () => [ face("Inter", "Regular"), face("Unifont", "Regular") ]);
-        stubProbeCanvas((family) => family !== "Unifont");
-
-        // Offering it would let the interface be set in a font that renders nothing at all.
-        expect(await listSystemFonts()).toEqual([ "Inter" ]);
-    });
-
-    it("keeps every family where there is no canvas to judge them on", async () => {
-        vi.stubGlobal("queryLocalFonts", async () => [ face("Inter", "Regular"), face("Unifont", "Regular") ]);
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+        const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext");
 
         expect(await listSystemFonts()).toEqual([ "Inter", "Unifont" ]);
+        expect(getContext).not.toHaveBeenCalled();
+    });
+
+    it("tells a family the engine measures but will not draw from one it draws", () => {
+        stubProbeCanvas((family) => family !== "Unifont");
+
+        expect(rendersFamily("Inter")).toBe(true);
+        expect(rendersFamily("Unifont")).toBe(false);
+    });
+
+    it("accepts every family where there is no canvas to judge it on", () => {
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+
+        expect(rendersFamily("Unifont")).toBe(true);
     });
 });
 
