@@ -35,7 +35,7 @@ A new include gets the size that suits what it shows:
 *   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
 *   _Resizable_ for anything else.
 
-The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. Both end with _Default_, which puts the include back at the size it started with, without a resized width or height; it is unavailable while the include is already there. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
+The _Include note_ dialog selects that size among its _Box size_ buttons once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu. Both have _Default_, which puts the include back at the size it started with, without a resized width or height; it is unavailable while the include is already there. For an included code or Markdown note and an embedded code or Markdown file, the _Box size_ menu is the <span class="tn-icon bx bx-move-vertical"></span> button, whose tooltip names the current size.
 
 ## Resizing
 
