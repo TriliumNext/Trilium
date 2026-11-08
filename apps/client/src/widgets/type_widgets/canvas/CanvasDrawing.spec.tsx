@@ -38,10 +38,10 @@ vi.mock("@excalidraw/excalidraw", () => ({
     getSceneVersion: (elements: readonly { version?: number }[]) =>
         elements.reduce((sum, { version }) => sum + (version ?? 0), 0)
 }));
-// happy-dom lays nothing out: every picture of a drawing has a box of 400 × 200.
+// happy-dom lays nothing out: every element measures `measured`, 400 × 200 unless a test sets it.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../react/hooks")>(),
-    useElementSize: () => ({ width: 400, height: 200 })
+    useElementSize: () => measured.size
 }));
 vi.mock("./Canvas", () => ({ CanvasEditor: MockCanvasEditor }));
 vi.mock("./persistence", () => ({
@@ -51,12 +51,15 @@ vi.mock("./persistence", () => ({
     },
     parseContent: (content: string) => JSON.parse(content),
     loadDrawingFiles: async () => ({ files: {}, referencedFileIds: new Set() }),
-    exportDrawingPicture
+    exportDrawingPicture,
+    saveDrawingFrame
 }));
-const { detailEditor, exportDrawingPicture } = vi.hoisted(() => ({
+const { detailEditor, exportDrawingPicture, measured, saveDrawingFrame } = vi.hoisted(() => ({
     detailEditor: { canEdit: () => true, release: vi.fn() },
     exportDrawingPicture: vi.fn(async (_scene: unknown, _files: unknown, _isDark: boolean) =>
-        document.createElementNS("http://www.w3.org/2000/svg", "svg"))
+        document.createElementNS("http://www.w3.org/2000/svg", "svg")),
+    measured: { size: { width: 400, height: 200 } },
+    saveDrawingFrame: vi.fn()
 }));
 vi.mock("../text/attachment_saves", () => ({
     useAttachmentEditor: () => detailEditor
@@ -84,8 +87,14 @@ interface MockCanvasEditorProps {
 interface PersistenceOptions {
     initialView?: unknown;
     initialTool?: unknown;
+    isFrameBox?: boolean;
+    frame?: unknown;
+    isResizing?: () => boolean;
+    canReframe?: () => boolean;
     onSceneShown?: () => void;
-    getSavedView?: () => unknown;
+    onViewReady?: () => void;
+    onViewChange?: (view: unknown) => void;
+    onFrameChange?: (frame: unknown) => void;
 }
 
 /** Renders Excalidraw's focusable container after a render, as once its language loads. */
@@ -941,16 +950,16 @@ describe("CanvasDrawing", () => {
 
         // Excalidraw stays, read-only, until the picture of the drawing shows at the same view.
         const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
-        // Excalidraw counts as drawn on the frame after it shows the scene.
+        // Excalidraw counts as drawn on the frame after it shows the view of the box.
+        const root = box.querySelector(".canvas-drawing-editor");
+        expect(root?.hasAttribute("data-view-pending")).toBe(true);
         await act(async () => {
             options.onSceneShown?.();
+            options.onViewReady?.();
             await new Promise(requestAnimationFrame);
         });
-        const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
-            .persistence ?? {};
-        onChange?.([], {
-            activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20
-        }, {});
+        expect(root?.hasAttribute("data-view-pending")).toBe(false);
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: 10, scrollY: 20 });
         await setEmbedEditable(embed, false);
         expect(getEditingState().isReadOnly).toBe(true);
         expect(getPicture()).not.toBeNull();
@@ -965,7 +974,10 @@ describe("CanvasDrawing", () => {
         expect(getPicture()).not.toBeNull();
         const reopened = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
         expect(reopened.initialView).toEqual({ zoom: { value: 2 }, scrollX: 10, scrollY: 20 });
-        await act(async () => reopened.onSceneShown?.());
+        await act(async () => {
+            reopened.onSceneShown?.();
+            reopened.onViewReady?.();
+        });
         await vi.waitFor(() => expect(getPicture()).toBeNull());
 
         // An attachment that the note cannot save shows as a picture, with no toggle to offer.
@@ -1022,6 +1034,276 @@ describe("CanvasDrawing", () => {
         await mount(null);
         await vi.waitFor(() => expect(box.querySelector<SVGElement>(".canvas-drawing-view > svg")
             ?.style.left).toBe("600px"));
+
+        // A frame places the picture, over the camera saved beside it.
+        render(null, box);
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        await mount(null);
+        await vi.waitFor(() => expect(box.querySelector<SVGElement>(".canvas-drawing-view > svg")
+            ?.style.left).toBe("120px"));
+    });
+
+    /** Puts `box` in an embed that the user can resize, with the box size `boxSize`. */
+    function embedBox(boxSize = "resizable") {
+        const embed = document.createElement("figure");
+        embed.className = "include-note";
+        embed.setAttribute("data-editable", "true");
+        embed.setAttribute("data-box-size", boxSize);
+        embed.append(box);
+        document.body.append(embed);
+        onTestFinished(() => {
+            embed.remove();
+            measured.size = { width: 400, height: 200 };
+        });
+        return embed;
+    }
+
+    /** Sets or removes the class that marks the embed while the user drags its resize handle. */
+    async function setEmbedResizing(embed: HTMLElement, isResizing: boolean) {
+        await act(async () => {
+            embed.classList.toggle("ck-widget_resizing", isResizing);
+            await Promise.resolve();
+        });
+    }
+
+    /** Waits for the frames in which the box takes its new size and is measured, rendering each. */
+    async function waitForLayout() {
+        for (let i = 0; i < 4; i++) {
+            await new Promise(requestAnimationFrame);
+            await act(async () => {});
+        }
+    }
+
+    /** Reports `frame` to the drawing as its persistence does, and waits for the box to take it. */
+    async function reportFrame(options: PersistenceOptions, frame: object) {
+        await act(async () => {
+            options.onFrameChange?.(frame);
+            await new Promise(requestAnimationFrame);
+        });
+    }
+
+    it("sizes its box from the frame, else from the embed, also during a resize", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        expect(options.isFrameBox).toBe(true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("");
+
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        await reportFrame(options, frame);
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "1000px", "500px", "2" ]);
+        expect(options.canReframe?.()).toBe(true);
+
+        // Narrower than three quarters of the frame, the box crops it: a move leaves the frame.
+        measured.size = { width: 400, height: 200 };
+        await reportFrame(options, { ...frame });
+        expect(options.canReframe?.()).toBe(false);
+
+        // The embed sizes the box while the user drags its resize handle.
+        await setEmbedResizing(embed, true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        expect(options.isResizing?.()).toBe(true);
+    });
+
+    it("saves the frame again once the box is resized by its handle or its box size", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        const updateScene = vi.fn();
+        if (apiRef) apiRef.current = { ...canvasApi, updateScene };
+        const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            if (apiRef) apiRef.current = null;
+        });
+        saveDrawingFrame.mockClear();
+        await reportFrame(options, { x: 10, y: 20, width: 500, height: 250, scale: 2 });
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+
+        // The handle: the box keeps its new size until the frame is taken from it, at its view.
+        await setEmbedResizing(embed, true);
+        await setEmbedResizing(embed, false);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await waitForLayout();
+        const resized = { x: 10, y: 20, width: 400, height: 200, scale: 2 };
+        expect(saveDrawingFrame).toHaveBeenCalledExactlyOnceWith(ATTACHMENT, EDITOR, resized);
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        expect(updateScene).not.toHaveBeenCalled();
+
+        // The box size: the frame widens around its center at its scale, and the view follows.
+        rect.mockReturnValue({ width: 1200, height: 400 } as DOMRect);
+        await act(async () => {
+            embed.setAttribute("data-box-size", "full");
+            await Promise.resolve();
+        });
+        expect(outer?.className).toBe("canvas-drawing-box reframing");
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenLastCalledWith(ATTACHMENT, EDITOR, {
+            x: -90, y: 20, width: 600, height: 200, scale: 2
+        });
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 2 }, scrollX: 90, scrollY: -20 }, captureUpdate: "never"
+        });
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+    });
+
+    it("widens the frame to a box size that draws the drawing again", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        await reportFrame(options, frame);
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+        saveDrawingFrame.mockClear();
+
+        // The box size changes, which the drawing sees, and the embed draws its content again,
+        // in the wider box, before the drawing takes the frame from the box.
+        await act(async () => {
+            embed.setAttribute("data-box-size", "full");
+            await Promise.resolve();
+        });
+        await act(async () => render(null, box));
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 1200, height: 500 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const reopened = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        expect(reopened.initialView).toBeNull();
+
+        // The frame of the drawing before widens to the box, keeping its height.
+        await vi.waitFor(() => expect(saveDrawingFrame).toHaveBeenCalledOnce(), { timeout: 2000 });
+        expect(saveDrawingFrame).toHaveBeenCalledWith(ATTACHMENT, EDITOR, {
+            x: -40, y: 20, width: 600, height: 250, scale: 2
+        });
+        await waitForLayout();
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "1200px", "500px", "2.4" ]);
+        expect(reopened.isResizing?.()).toBe(false);
+    });
+
+    it("shows the picture gray until it is drawn, and fills its box with the frame", async () => {
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        const parent = new Component();
+        onTestFinished(() => {
+            measured.size = { width: 400, height: 200 };
+        });
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CanvasDrawing attachment={ATTACHMENT} />
+                </ParentComponent.Provider>,
+                box
+            );
+        });
+        const layer = box.querySelector(".canvas-drawing-view");
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        expect(layer?.classList.contains("stale")).toBe(true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("120px"));
+        expect(layer?.classList.contains("stale")).toBe(false);
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("400px");
+
+        // A save grays the picture until it is drawn again, here in a narrower box.
+        measured.size = { width: 300, height: 150 };
+        const loadResults = new LoadResults([]);
+        loadResults.addAttachmentRow({ attachmentId: "a1" } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        expect(layer?.classList.contains("stale")).toBe(true);
+        await vi.waitFor(() => expect(layer?.classList.contains("stale")).toBe(false));
+        // The 200 units of the frame fill 300 pixels at zoom 1.5: the picture at (50 + 10) × 1.5.
+        expect([ getSvg()?.style.left, getSvg()?.style.width ]).toEqual([ "90px", "300px" ]);
+    });
+
+    it("sizes its box and places the picture by a frame that another view saved", async () => {
+        const elements = [ { x: 50, y: 30, width: 200, height: 100 } ];
+        sceneContent = JSON.stringify({
+            elements, appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        const parent = new Component();
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CanvasDrawing attachment={ATTACHMENT} />
+                </ParentComponent.Provider>,
+                box
+            );
+        });
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        expect(getSvg()?.style.left).toBe("120px");
+
+        // Another view saves a wider frame: the box takes its size, the picture its place. The
+        // 250 units of the frame fill the 400 pixels of the box at zoom 1.6.
+        sceneContent = JSON.stringify({
+            elements, appState: { zoom: { value: 2 }, scrollX: -30, scrollY: -10 },
+            frame: { x: 30, y: 10, width: 250, height: 100, scale: 2 }
+        });
+        const loadResults = new LoadResults([]);
+        loadResults.addAttachmentRow({ attachmentId: "a1" } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("32px"));
+        await vi.waitFor(() =>
+            expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("500px"));
+        expect(saveDrawingFrame).not.toHaveBeenCalled();
+    });
+
+    it("takes a frame from the view and the box of a drawing that saved none", async () => {
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }
+        });
+        await mount(null);
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "400px", "200px", "2" ]);
     });
 
     it("shows the whole picture in fullscreen, and its view again after", async () => {
@@ -1155,11 +1437,10 @@ describe("CanvasDrawing", () => {
         await mount();
         const root = box.querySelector(".canvas-drawing-editor");
         const isHidden = () => !!root?.classList.contains("recentering");
-        const props = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
-        const { apiRef, persistence } = props;
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
         const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
-        if (!apiRef || !persistence?.onChange) {
-            throw new Error("Expected the API reference and the change handler of the editor.");
+        if (!apiRef) {
+            throw new Error("Expected the API reference of the editor.");
         }
         const updateScene = vi.fn();
         let appState = { activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
@@ -1184,8 +1465,7 @@ describe("CanvasDrawing", () => {
         const boxView = { zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
         // Excalidraw shows the drawing at the view of the box.
         options.onSceneShown?.();
-        persistence.onChange([], appState, {});
-        expect(options.getSavedView?.()).toBeNull();
+        options.onViewChange?.(boxView);
 
         await act(async () => {
             other.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
@@ -1198,31 +1478,24 @@ describe("CanvasDrawing", () => {
             box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
         });
         expect(isHidden()).toBe(true);
-        // Excalidraw keeps its view at the size of the screen, which is not the view of the box.
-        appState = { ...appState, scrollX: 300, scrollY: 100 };
-        persistence.onChange([], appState, {});
-        expect(options.getSavedView?.()).toEqual(boxView);
         await act(async () => {
             box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
         });
         // Zoomed to fit the 800 × 400 screen, up to 100%: the shapes centered at zoom 1.
         expect(updateScene).toHaveBeenCalledExactlyOnceWith({
-            appState: { zoom: { value: 1 }, scrollX: 250, scrollY: 120 }
+            appState: { zoom: { value: 1 }, scrollX: 250, scrollY: 120 }, captureUpdate: "never"
         });
         expect(isHidden()).toBe(true);
         await vi.waitFor(() => expect(isHidden()).toBe(false));
 
         // The view that the user zooms and pans to in fullscreen is kept for fullscreen alone.
         appState = { ...appState, zoom: { value: 3 }, scrollX: -5, scrollY: -7 };
-        persistence.onChange([], appState, {});
-        expect(options.getSavedView?.()).toEqual(boxView);
         Reflect.deleteProperty(document, "fullscreenElement");
         await act(async () => {
             box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
         });
-        expect(updateScene).toHaveBeenLastCalledWith({ appState: boxView });
+        expect(updateScene).toHaveBeenLastCalledWith({ appState: boxView, captureUpdate: "never" });
         expect(isHidden()).toBe(true);
-        expect(options.getSavedView?.()).toBeNull();
         await act(async () => {
             box.dispatchEvent(new Event("leaveFullscreen", { bubbles: true }));
         });
@@ -1235,7 +1508,7 @@ describe("CanvasDrawing", () => {
             box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
         });
         expect(updateScene).toHaveBeenLastCalledWith({
-            appState: { zoom: { value: 3 }, scrollX: -5, scrollY: -7 }
+            appState: { zoom: { value: 3 }, scrollX: -5, scrollY: -7 }, captureUpdate: "never"
         });
     });
 

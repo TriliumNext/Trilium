@@ -3,9 +3,10 @@ import "./CanvasDrawing.css";
 import { exportToSvg, getCommonBounds } from "@excalidraw/excalidraw";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import type { DrawingFrame } from "@triliumnext/commons";
 import clsx from "clsx";
 import type { RefObject } from "preact";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
@@ -19,7 +20,10 @@ import {
     useWhenShown
 } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
-import { registerEmbedFindTarget, useContentEmbedEvent } from "../text/content_embed_tools";
+import {
+    isInFullscreen, registerEmbedFindTarget, useContentEmbedAttribute, useContentEmbedEvent,
+    useContentEmbedResizing
+} from "../text/content_embed_tools";
 import { findTextEditorAround, useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
@@ -29,10 +33,13 @@ import {
     attachExcalidraw, DrawingFindTarget, type DrawingMatch, DrawingMatches, getSceneTransform
 } from "./drawing_find";
 import {
-    type DrawingView, getBoundedView, getDrawingView, getFittedView, getZoomToFitView
+    applyDrawingView, type DrawingView, getBoundedView, getDrawingView, getFittedView, getFrame,
+    getFrameView, getFrameViewAt, getRootElements, getWidenedFrame, getZoomToFitView, isSameFrame,
+    MIN_FRAME_SCALE
 } from "./drawing_view";
 import {
-    exportDrawingPicture, loadDrawingFiles, parseContent, useCanvasDrawingPersistence
+    exportDrawingPicture, loadDrawingFiles, parseContent, saveDrawingFrame,
+    useCanvasDrawingPersistence
 } from "./persistence";
 
 interface CanvasDrawingProps {
@@ -45,16 +52,34 @@ interface CanvasDrawingProps {
 type DrawingMode = "editor" | "picture";
 
 /**
+ * How the box is sized: `framed` by the frame, `include-note-box-height` by the embed while the
+ * frame is unknown or the user resizes the box, `reframing` while the frame widens to a new box
+ * size.
+ */
+type BoxSizing = "framed" | "include-note-box-height" | "reframing";
+
+/**
  * A canvas drawing saved in an attachment. While the Editable toggle of its embed is on, Excalidraw
  * edits it in place inside the note that shows it; otherwise it shows as a picture at the same
- * view.
+ * view. The box shows the frame of the drawing: at its natural size at most, narrowed with the
+ * box down to {@link MIN_FRAME_SCALE} of it, and cropped around its center below that.
  */
 export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps) {
+    const boxRef = useRef<HTMLDivElement>(null);
     const rootRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
     // The view of the box, which the picture and Excalidraw take over from each other. Fullscreen
     // shows a view of its own, and the box shows this one again after.
     const viewRef = useRef<DrawingView | null>(null);
+    const [ frame, setFrame ] = useState<DrawingFrame | null>(null);
+    // A frame reported from a resize observation sizes the box on the next animation frame, out
+    // of the loop in which the observer delivers.
+    const frameRequestRef = useRef(0);
+    const onFrameChange = useCallback((changed: DrawingFrame) => {
+        cancelAnimationFrame(frameRequestRef.current);
+        frameRequestRef.current = requestAnimationFrame(() => setFrame(changed));
+    }, []);
+    useEffect(() => () => cancelAnimationFrame(frameRequestRef.current), []);
     const colorScheme = useColorScheme();
     const [ tools ] = useState(() => new CanvasTools(rootRef));
     const [ find ] = useState(() => new DrawingFindTarget(rootRef));
@@ -69,6 +94,14 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const [ drawnMode, setDrawnMode ] = useState<DrawingMode | null>(null);
     const isToolbarOverPanel = useIsToolbarOverPanel(rootRef);
     const isRecentering = useFullscreenView(rootRef, apiRef, viewRef);
+    const isResizing = useContentEmbedResizing(rootRef);
+    const reframing = useReframing({
+        rootRef, apiRef, viewRef, frame, isResizing, attachment, editor, onFrame: onFrameChange
+    });
+    const isCropped = useCenteredCrop(boxRef, frame);
+    const sizing: BoxSizing = !frame || isResizing || reframing === "handle"
+        ? "include-note-box-height"
+        : reframing === "box-size" ? "reframing" : "framed";
     useSidePanels(rootRef, isEditing);
     usePropertiesSheet(rootRef, isEditing && isMobile());
     useTopLayerContextMenu(rootRef, apiRef);
@@ -80,41 +113,173 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     }, [ find ]);
 
     return (
-        <div
-            ref={rootRef}
-            className={clsx(
-                "canvas-drawing-editor",
-                isToolbarOverPanel && "toolbar-over-panel",
-                isRecentering && "recentering"
-            )}
-        >
-            {(mode === "picture" || drawnMode === "picture") && (
-                <DrawingPicture
-                    attachment={attachment}
-                    editor={editor}
-                    colorScheme={colorScheme}
-                    rootRef={rootRef}
-                    viewRef={viewRef}
-                    find={find}
-                    onDrawn={() => setDrawnMode("picture")}
-                />
-            )}
-            {(mode === "editor" || drawnMode === "editor") && (
-                <LiveDrawing
-                    attachment={attachment}
-                    editor={editor}
-                    colorScheme={colorScheme}
-                    rootRef={rootRef}
-                    apiRef={apiRef}
-                    viewRef={viewRef}
-                    tools={tools}
-                    find={find}
-                    isEditable={isEditing}
-                    onDrawn={() => setDrawnMode("editor")}
-                />
-            )}
+        <div ref={boxRef} className={clsx("canvas-drawing-box", sizing)}>
+            <div
+                ref={rootRef}
+                className={clsx(
+                    "canvas-drawing-editor",
+                    isToolbarOverPanel && "toolbar-over-panel",
+                    isRecentering && "recentering"
+                )}
+                style={frame ? getFrameStyle(frame) : undefined}
+            >
+                {(mode === "picture" || drawnMode === "picture") && (
+                    <DrawingPicture
+                        attachment={attachment}
+                        editor={editor}
+                        colorScheme={colorScheme}
+                        rootRef={rootRef}
+                        viewRef={viewRef}
+                        frame={frame}
+                        isFramed={sizing === "framed"}
+                        find={find}
+                        onFrameChange={onFrameChange}
+                        onDrawn={() => setDrawnMode("picture")}
+                    />
+                )}
+                {(mode === "editor" || drawnMode === "editor") && (
+                    <LiveDrawing
+                        attachment={attachment}
+                        editor={editor}
+                        colorScheme={colorScheme}
+                        rootRef={rootRef}
+                        apiRef={apiRef}
+                        viewRef={viewRef}
+                        frame={frame}
+                        isResizing={isResizing || reframing !== null}
+                        isCropped={isCropped}
+                        tools={tools}
+                        find={find}
+                        isEditable={isEditing}
+                        onFrameChange={onFrameChange}
+                        onDrawn={() => setDrawnMode("editor")}
+                    />
+                )}
+            </div>
         </div>
     );
+}
+
+/** The size of `frame` on screen, which `CanvasDrawing.css` sizes the frame box from. */
+function getFrameStyle(frame: DrawingFrame) {
+    return {
+        "--canvas-drawing-natural-width": `${frame.width * frame.scale}px`,
+        "--canvas-drawing-natural-height": `${frame.height * frame.scale}px`,
+        "--canvas-drawing-frame-ratio": `${frame.width / frame.height}`
+    };
+}
+
+/** How the user is changing the size of the box: with its handle, or with its box size. */
+type Reframing = "handle" | "box-size" | null;
+
+interface ReframingOptions {
+    rootRef: RefObject<HTMLElement | null>;
+    apiRef: RefObject<ExcalidrawImperativeAPI | null>;
+    viewRef: RefObject<DrawingView | null>;
+    frame: DrawingFrame | null;
+    isResizing: boolean;
+    attachment: FAttachment;
+    editor: ContentEditor | undefined;
+    onFrame: (frame: DrawingFrame) => void;
+}
+
+/**
+ * Saves the frame again from the box once the user resized it with its handle, at the view it
+ * kept, or changed its box size, which widens the frame around its center. Returns which change
+ * is under way, from the change until the frame is taken from the new size of the box.
+ */
+function useReframing({
+    rootRef, apiRef, viewRef, frame, isResizing, attachment, editor, onFrame
+}: ReframingOptions): Reframing {
+    const boxSize = useContentEmbedAttribute(rootRef, "data-box-size");
+    const [ reframing, setReframing ] = useState<Reframing>(null);
+    const previousRef = useRef<{ isResizing: boolean; boxSize: string } | null>(null);
+    // A change of the box size draws the content again: the drawing before this one in the embed
+    // saw the box size to compare with.
+    let previous = previousRef.current;
+    if (!previous && boxSize !== null) {
+        const embed = rootRef.current?.closest(".include-note");
+        previous = { isResizing, boxSize: (embed && lastBoxes.get(embed)?.boxSize) ?? boxSize };
+    }
+    if (boxSize !== null) previousRef.current = { isResizing, boxSize };
+    // Known in this render already, so that the box keeps its new size until it is measured.
+    const started: Reframing = !previous
+        ? null
+        : previous.isResizing && !isResizing
+            ? "handle"
+            : boxSize !== null && boxSize !== previous.boxSize ? "box-size" : null;
+
+    // The record changes once the frame is taken from the box, so that a drawing that the change
+    // draws again still sees the change.
+    useEffect(() => {
+        const embed = rootRef.current?.closest(".include-note");
+        if (!embed || boxSize === null) return;
+        const last = lastBoxes.get(embed);
+        if (!frame && last?.frame) onFrame(last.frame);
+        if (!started && !reframing) {
+            lastBoxes.set(embed, { boxSize, frame: frame ?? last?.frame ?? null });
+        }
+    }, [ rootRef, boxSize, frame, started, reframing ]);
+    useEffect(() => {
+        if (started) setReframing(started);
+    }, [ started ]);
+
+    const requestRef = useRef(0);
+    useEffect(() => () => cancelAnimationFrame(requestRef.current), []);
+    useEffect(() => {
+        // Widening to a box size waits for the frame.
+        if (!reframing || (reframing === "box-size" && !frame)) return;
+        // The box has its new size once it is laid out.
+        cancelAnimationFrame(requestRef.current);
+        requestRef.current = requestAnimationFrame(() => {
+            requestRef.current = requestAnimationFrame(() => {
+                setReframing(null);
+                const size = rootRef.current?.getBoundingClientRect();
+                if (!size?.width || !size.height) return;
+
+                let reframed: DrawingFrame;
+                if (reframing === "box-size" && frame) {
+                    reframed = getWidenedFrame(frame, size.width);
+                    viewRef.current = getFrameView(reframed);
+                    const api = apiRef.current;
+                    if (api) applyDrawingView(api, viewRef.current);
+                } else {
+                    const view = viewRef.current;
+                    if (!view) return;
+                    reframed = getFrame(view, size.width, size.height);
+                }
+                onFrame(reframed);
+                if (editor?.canEdit()) void saveDrawingFrame(attachment, editor, reframed);
+            });
+        });
+    }, [ reframing, frame ]);
+
+    return started ?? reframing;
+}
+
+/**
+ * The box size and the frame that the last drawing in each embed saw. A change of the box size
+ * draws the content of the embed again, so the next drawing reads them from here.
+ */
+const lastBoxes = new WeakMap<Element, { boxSize: string; frame: DrawingFrame | null }>();
+
+/**
+ * Whether the box crops the frame, which is wider than the box at the least scale of the frame.
+ * The crop is kept centered as the box changes its size.
+ */
+function useCenteredCrop(boxRef: RefObject<HTMLElement | null>, frame: DrawingFrame | null) {
+    const size = useElementSize(boxRef);
+    const isCropped = !!frame && !!size?.width
+        && frame.width * frame.scale * MIN_FRAME_SCALE > size.width + 0.5;
+
+    useLayoutEffect(() => {
+        const box = boxRef.current;
+        if (box && isCropped) {
+            box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2;
+        }
+    }, [ boxRef, isCropped, size?.width, frame ]);
+
+    return isCropped;
 }
 
 interface LiveDrawingProps {
@@ -125,11 +290,17 @@ interface LiveDrawingProps {
     rootRef: RefObject<HTMLDivElement | null>;
     apiRef: RefObject<ExcalidrawImperativeAPI | null>;
     viewRef: RefObject<DrawingView | null>;
+    frame: DrawingFrame | null;
+    /** Whether the box is being resized, by its handle or by a change of its box size. */
+    isResizing: boolean;
+    /** Whether the box crops the frame, which a move of the view then leaves alone. */
+    isCropped: boolean;
     tools: CanvasTools;
     /** Searches the drawing for "Search in note". */
     find: DrawingFindTarget;
     isEditable: boolean;
-    /** Called on the frame after Excalidraw shows the drawing. */
+    onFrameChange: (frame: DrawingFrame) => void;
+    /** Called on the frame after Excalidraw shows the drawing at the view of the box. */
     onDrawn: () => void;
 }
 
@@ -138,34 +309,49 @@ interface LiveDrawingProps {
  * Its persistence saves what is left to save before Excalidraw unmounts.
  */
 function LiveDrawing({
-    attachment, editor, colorScheme, rootRef, apiRef, viewRef, tools, find, isEditable, onDrawn
+    attachment, editor, colorScheme, rootRef, apiRef, viewRef, frame, isResizing, isCropped, tools,
+    find, isEditable, onFrameChange, onDrawn
 }: LiveDrawingProps) {
-    const isShownRef = useRef(false);
-    const frameRef = useRef(0);
+    const drawRequestRef = useRef(0);
     const stopFindingRef = useRef<(() => void) | null>(null);
+    const boxStateRef = useRef({ isResizing, isCropped });
+    boxStateRef.current = { isResizing, isCropped };
     const persistence = useCanvasDrawingPersistence(attachment, editor, apiRef, colorScheme, {
         initialView: viewRef.current,
         // A touch over the drawing scrolls the note until a tool is picked.
         initialTool: isMobile() ? NO_TOOL : undefined,
         rootRef,
-        // A save made in fullscreen keeps the view of the box.
-        getSavedView: () => isInFullscreen(rootRef.current) ? viewRef.current : null,
+        isFrameBox: true,
+        frame,
+        isResizing: () => boxStateRef.current.isResizing,
+        canReframe: () => !boxStateRef.current.isCropped,
+        onFrameChange,
+        onViewChange: (view) => {
+            viewRef.current = view;
+        },
         onSceneShown: () => {
-            isShownRef.current = true;
-            frameRef.current = requestAnimationFrame(onDrawn);
             const api = apiRef.current;
             if (api) {
                 stopFindingRef.current?.();
                 stopFindingRef.current = attachExcalidraw(find, api, rootRef.current);
             }
+        },
+        onViewReady: () => {
+            rootRef.current?.removeAttribute("data-view-pending");
+            drawRequestRef.current = requestAnimationFrame(onDrawn);
         }
     });
     useNoToolOutsideEditing(rootRef, apiRef, isEditable);
-    useLayoutEffect(() => () => {
-        cancelAnimationFrame(frameRef.current);
-        stopFindingRef.current?.();
-        rootRef.current?.removeAttribute("data-no-tool");
-        apiRef.current = null;
+    useLayoutEffect(() => {
+        // `CanvasDrawing.css` hides Excalidraw until it shows the view of the box.
+        rootRef.current?.setAttribute("data-view-pending", "");
+        return () => {
+            cancelAnimationFrame(drawRequestRef.current);
+            stopFindingRef.current?.();
+            rootRef.current?.removeAttribute("data-no-tool");
+            rootRef.current?.removeAttribute("data-view-pending");
+            apiRef.current = null;
+        };
     }, [ apiRef, rootRef ]);
 
     return (
@@ -179,9 +365,6 @@ function LiveDrawing({
                     persistence.onChange?.(elements, appState, files);
                     // `CanvasDrawing.css` leaves the touch over the drawing to the note.
                     rootRef.current?.toggleAttribute("data-no-tool", isNoTool(appState.activeTool));
-                    if (isShownRef.current && !isInFullscreen(rootRef.current)) {
-                        viewRef.current = getDrawingView(appState);
-                    }
                 }
             }}
             constrainView={getBoundedView}
@@ -207,19 +390,24 @@ interface DrawingPictureProps {
     colorScheme: AppState["theme"];
     rootRef: RefObject<HTMLElement | null>;
     viewRef: RefObject<DrawingView | null>;
+    frame: DrawingFrame | null;
+    /** Whether the box is sized by the frame, which the picture then fills at the box's width. */
+    isFramed: boolean;
     /** Searches the drawing for "Search in note". */
     find: DrawingFindTarget;
+    onFrameChange: (frame: DrawingFrame) => void;
     /** Called on the frame after the picture shows. */
     onDrawn: () => void;
 }
 
 /**
- * The drawing as a picture, at the view of `viewRef`, else at the saved view, else fit in the box.
- * It renders again after each save, once `rootRef` is shown. Fullscreen shows the whole drawing,
- * and the box shows its view again after.
+ * The drawing as a picture, filling the frame box with the frame, or at the view of `viewRef`,
+ * else at the saved view, else fit in the box. It is gray until it is drawn, and drawn again after
+ * each save, once `rootRef` is shown. Fullscreen shows the whole drawing, and the box shows its
+ * view again after.
  */
 function DrawingPicture({
-    attachment, editor, colorScheme, rootRef, viewRef, find, onDrawn
+    attachment, editor, colorScheme, rootRef, viewRef, frame, isFramed, find, onFrameChange, onDrawn
 }: DrawingPictureProps) {
     const layerRef = useRef<HTMLDivElement>(null);
     const matchesRef = useRef<SVGGElement>(null);
@@ -227,15 +415,21 @@ function DrawingPicture({
     const sceneRef = useRef<PictureScene | null>(null);
     const [ shownMatches, setShownMatches ] = useState<ShownMatches>(NO_MATCHES);
     const [ revision, setRevision ] = useState(0);
+    /** Whether the picture shown is older than the drawing, or not drawn yet. */
+    const [ isStale, setIsStale ] = useState(true);
     // Each move of the view places the picture again.
     const [ placements, setPlacements ] = useState(0);
     const renderedKeyRef = useRef<string | null>(null);
+    const placedSizeRef = useRef<{ width: number; height: number } | null>(null);
+    /** The frame of the scene shown last, `undefined` before the first. */
+    const shownFrameRef = useRef<DrawingFrame | null | undefined>(undefined);
     const size = useElementSize(layerRef);
     const whenShown = useWhenShown(rootRef);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const rows = loadResults.getAttachmentRows();
         if (rows.some((row) => row.attachmentId === attachment.attachmentId)) {
+            setIsStale(true);
             whenShown(() => setRevision((count) => count + 1));
         }
     });
@@ -247,12 +441,16 @@ function DrawingPicture({
             const content = editor?.getUnsavedContent()
                 ?? (await attachment.getBlob())?.content ?? "";
             const key = `${colorScheme}\n${content}`;
-            if (key === renderedKeyRef.current) return;
+            if (key === renderedKeyRef.current) {
+                if (isCurrent) setIsStale(false);
+                return;
+            }
 
             const rendered = await renderPictureScene(attachment, content, colorScheme === "dark");
             if (isCurrent) {
                 renderedKeyRef.current = key;
                 setScene(rendered);
+                setIsStale(false);
             }
         });
         return () => {
@@ -295,8 +493,23 @@ function DrawingPicture({
         const layer = layerRef.current;
         if (!layer || !scene || !size?.width || !size.height) return;
 
-        const view = getPictureView(scene, size.width, size.height, viewRef.current);
+        // A frame box of a new size shows the frame at the width of the box, as does a frame
+        // that another view of the drawing saved since the last scene.
+        const placed = placedSizeRef.current;
+        const isResized = placed?.width !== size.width || placed.height !== size.height;
+        placedSizeRef.current = { width: size.width, height: size.height };
+        const savedFrame = getFrameSavedElsewhere(scene, shownFrameRef.current, frame);
+        shownFrameRef.current = scene.frame ?? null;
+        if (savedFrame) onFrameChange(savedFrame);
+        const boxFrame = savedFrame ?? frame;
+        const framed = boxFrame && isFramed && (isResized || savedFrame || !viewRef.current)
+            ? getFrameViewAt(boxFrame, size.width)
+            : null;
+        const view = framed ?? getPictureView(scene, size.width, size.height, viewRef.current);
         viewRef.current = view;
+        if (view && !frame) {
+            onFrameChange(scene.frame ?? getFrame(view, size.width, size.height));
+        }
         if (scene.picture && view) {
             placePicture(scene.picture, view);
         }
@@ -304,15 +517,19 @@ function DrawingPicture({
             matchesRef.current?.setAttribute("transform", getSceneTransform(view));
         }
         layer.replaceChildren(...(scene.picture ? [ scene.picture.svg ] : []));
-        const frame = requestAnimationFrame(onDrawn);
-        return () => cancelAnimationFrame(frame);
-    }, [ scene, size, placements ]);
+        const request = requestAnimationFrame(onDrawn);
+        return () => cancelAnimationFrame(request);
+    }, [ scene, size, placements, frame, isFramed ]);
 
     return (
         <>
             <div
                 ref={layerRef}
-                className={clsx("canvas-drawing-view", colorScheme === "dark" && "theme-dark")}
+                className={clsx(
+                    "canvas-drawing-view",
+                    colorScheme === "dark" && "theme-dark",
+                    isStale && "stale"
+                )}
                 style={scene?.background
                     ? { "--canvas-drawing-view-background": scene.background }
                     : undefined}
@@ -350,6 +567,8 @@ interface PictureScene {
     /** The shapes that are not deleted. */
     elements: ExcalidrawElement[];
     savedView: DrawingView | null;
+    /** The part that the box shows, as the drawing saved it. */
+    frame: DrawingFrame | null;
     /** The background picked for the drawing, or `null` while it shows the note's. */
     background: string | null;
 }
@@ -363,14 +582,15 @@ async function renderPictureScene(
     const scene = parseContent(content, attachment);
     const elements = (scene.elements ?? []).filter((element) => !element.isDeleted);
     const { zoom, scrollX, scrollY, viewBackgroundColor } = scene.appState ?? {};
-    const savedView = zoom && scrollX !== undefined && scrollY !== undefined
+    const savedCamera = zoom && scrollX !== undefined && scrollY !== undefined
         ? { zoom, scrollX, scrollY }
         : null;
+    const savedView = scene.frame ? getFrameView(scene.frame) : savedCamera;
     const background = viewBackgroundColor && viewBackgroundColor !== "transparent"
         ? viewBackgroundColor
         : null;
     if (!elements.length) {
-        return { picture: null, elements, savedView, background };
+        return { picture: null, elements, savedView, frame: scene.frame ?? null, background };
     }
 
     const svg = await exportToSvg({
@@ -388,19 +608,25 @@ async function renderPictureScene(
         picture: { svg, x: maxX - width, y: maxY - height, width, height },
         elements,
         savedView,
+        frame: scene.frame ?? null,
         background
     };
 }
 
 /**
- * The shapes that Excalidraw's export takes the size of: those outside frames, and the frames,
- * which clip what they hold.
+ * The frame of `scene` when another view of the drawing saved it: one that differs from `shown`,
+ * the frame of the scene shown before, and from `frame`, the frame of the box. `null` otherwise,
+ * and before the first scene, when `shown` is `undefined`.
  */
-function getRootElements(elements: readonly ExcalidrawElement[]) {
-    const frameIds = new Set(elements
-        .filter((element) => element.type === "frame" || element.type === "magicframe")
-        .map((element) => element.id));
-    return elements.filter((element) => !element.frameId || !frameIds.has(element.frameId));
+function getFrameSavedElsewhere(
+    scene: PictureScene,
+    shown: DrawingFrame | null | undefined,
+    frame: DrawingFrame | null
+): DrawingFrame | null {
+    const saved = scene.frame ?? null;
+    if (!saved || shown === undefined || !frame) return null;
+    if (shown && isSameFrame(shown, saved)) return null;
+    return isSameFrame(frame, saved) ? null : saved;
 }
 
 /**
@@ -503,7 +729,7 @@ function useFullscreenView(
         // On leave, the box view is restored before Excalidraw resizes to the box.
         if (api && viewRef.current && !isInFullscreen(rootRef.current)) {
             fullscreenViewRef.current = getDrawingView(api.getAppState());
-            api.updateScene({ appState: viewRef.current });
+            applyDrawingView(api, viewRef.current);
         }
     });
 
@@ -519,7 +745,7 @@ function useFullscreenView(
         if (api && size) {
             const view = fullscreenViewRef.current
                 ?? getZoomToFitView(api.getSceneElements(), size.width, size.height);
-            if (view) api.updateScene({ appState: view });
+            if (view) applyDrawingView(api, view);
         }
         show();
     });
@@ -527,11 +753,6 @@ function useFullscreenView(
     useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
     return isRecentering;
-}
-
-/** Whether `element` is in the content box that is shown fullscreen. */
-function isInFullscreen(element: Element | null) {
-    return !!element && !!document.fullscreenElement?.contains(element);
 }
 
 /**

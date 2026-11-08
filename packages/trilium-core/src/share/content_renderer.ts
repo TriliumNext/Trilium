@@ -5,7 +5,8 @@ import {
     getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
     getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
     type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
-    normalizeMimeTypeForCKEditor, readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedBoxHtml,
+    normalizeMimeTypeForCKEditor, readDrawingFrame, readLinkPreviewData, readMediaEmbedBox,
+    renderLinkEmbedBoxHtml,
     renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
     SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
     shouldSyntaxHighlight, sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
@@ -32,6 +33,7 @@ import { getLog } from "../services/log.js";
 import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as task_states from "../services/task_states.js";
+import { decodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { buildFrocaPayload, buildFrocaRows } from "./froca_payload.js";
 import { getShareProvider } from "./share_provider.js";
@@ -839,15 +841,17 @@ function moveBoxToCaptionedFigure(element: HTMLElement) {
 
 /**
  * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
- * its note keeps of it, at the size of the picture, and anything else, or a drawing without a
- * picture, as the attachment link that `handleAttachmentLink` then resolves.
+ * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
+ * anything else, or a drawing without a picture, as the attachment link that
+ * `handleAttachmentLink` then resolves.
  */
 function renderAttachmentEmbed(
     attachmentId: string,
     attachment: BAttachment | SAttachment,
     getNote: GetNoteFunction
 ) {
-    const image = attachment.mime === CANVAS_ATTACHMENT_MIME
+    const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
+    const image = isDrawing
         ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
         : attachment;
     if (!image?.attachmentId || !isImageAttachmentRole(image.role)) {
@@ -855,7 +859,30 @@ function renderAttachmentEmbed(
     }
 
     const src = `api/attachments/${image.attachmentId}/image/${encodeURIComponent(image.title)}`;
-    return `<img src="${src}" alt="${utils.escapeHtml(attachment.title)}">`;
+    const alt = utils.escapeHtml(attachment.title);
+    const naturalWidth = isDrawing ? getDrawingNaturalWidth(attachment) : null;
+    if (naturalWidth === null) {
+        return `<img src="${src}" alt="${alt}">`;
+    }
+    const style = `--canvas-drawing-natural-width:${naturalWidth}px`;
+    return `<div class="canvas-drawing-box" style="${style}">`
+        + `<img class="canvas-drawing-picture" src="${src}" alt="${alt}"></div>`;
+}
+
+/**
+ * The width on screen of the frame of the canvas drawing in `attachment`, in pixels, which its
+ * picture shows. `null` for a drawing saved without a frame, whose picture shows all of it.
+ */
+function getDrawingNaturalWidth(attachment: BAttachment | SAttachment) {
+    try {
+        const content = decodeUtf8(attachment.getContent() ?? "");
+        const frame = readDrawingFrame((JSON.parse(content) as { frame?: unknown }).frame);
+        return frame ? Math.round(frame.width * frame.scale * 100) / 100 : null;
+    } catch (e) {
+        const { attachmentId } = attachment;
+        getLog().error(`Cannot read the frame of the canvas drawing '${attachmentId}': ${e}`);
+        return null;
+    }
 }
 
 /**

@@ -1,5 +1,5 @@
 import {
-    CaptureUpdateAction, exportToSvg, getSceneVersion, restoreElements
+    CaptureUpdateAction, exportToSvg, getCommonBounds, getSceneVersion, restoreElements
 } from "@excalidraw/excalidraw";
 import {
     ExcalidrawElement, ExcalidrawFreeDrawElement, NonDeletedExcalidrawElement
@@ -8,7 +8,9 @@ import {
     AppState, BinaryFileData, BinaryFiles, ExcalidrawImperativeAPI, ExcalidrawInitialDataState,
     ExcalidrawProps, LibraryItem
 } from "@excalidraw/excalidraw/types";
-import { deferred, type DeferredPromise, getDrawingPictureTitle } from "@triliumnext/commons";
+import {
+    deferred, type DeferredPromise, type DrawingFrame, getDrawingPictureTitle, readDrawingFrame
+} from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
@@ -22,10 +24,14 @@ import server from "../../../services/server";
 import {
     SavedData, useEditorSpacedUpdate, useTriliumEvent, useWhenShown
 } from "../../react/hooks";
+import { isInFullscreen } from "../text/content_embed_tools";
 import {
     type DrawingScene, getDrawingHistory, isInteracting, type SavedAppState, showDrawingScene
 } from "./drawing_history";
-import { type DrawingView, getBoundedView, getFittedView } from "./drawing_view";
+import {
+    applyDrawingView, type DrawingView, getBoundedView, getDrawingView, getFittedView, getFrame,
+    getFrameView, getFrameViewAt, getRootElements, isSameFrame, isSameView, takeAppliedView
+} from "./drawing_view";
 import {
     buildNewImageAttachments, CANVAS_EXPORT_TITLE, IMAGE_ROLE, loadImageAttachments, loadImageFiles
 } from "./image_attachments";
@@ -40,13 +46,15 @@ export interface CanvasContent {
     elements: ExcalidrawElement[];
     files: BinaryFileData[];
     appState: Partial<AppState>;
+    /** The part of a drawing that its box shows, as `parseContent()` reads it. */
+    frame?: DrawingFrame | null;
 }
 
 /** Subset of the app state that should be persisted whenever they change. This explicitly excludes transient state like the current selection or zoom level. */
 type ImportantAppState = Pick<AppState, "gridModeEnabled" | "viewBackgroundColor">;
 
 /** The part of a scene that its picture shows. */
-type PictureScene = Pick<DrawingScene, "elements" | "appState">;
+type PictureScene = Pick<DrawingScene, "elements" | "appState" | "frame">;
 
 /** A point of a pen stroke, relative to the stroke. */
 type StrokePoint = ExcalidrawFreeDrawElement["points"][number];
@@ -61,6 +69,8 @@ const NOTE_PICTURE_DELAY = 5000;
  * pages show the picture.
  */
 const DRAWING_PICTURE_DELAY = 30000;
+/** The space around the shapes in the picture of a drawing, in scene units. */
+const PICTURE_PADDING = 5;
 
 export default function useCanvasPersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<ExcalidrawImperativeAPI | null>, theme: AppState["theme"], isReadOnly: boolean): Partial<ExcalidrawProps> {
     const libraryChanged = useRef(false);
@@ -423,8 +433,29 @@ interface DrawingPersistenceOptions {
      * save made elsewhere shows once it is shown.
      */
     rootRef?: RefObject<HTMLElement | null>;
-    /** The view to save in place of the shown one, or `null` for the shown one. */
-    getSavedView?: () => DrawingView | null;
+    /** Called with the view of the box as it changes, outside fullscreen. */
+    onViewChange?: (view: DrawingView) => void;
+    /**
+     * Whether Excalidraw fills the frame box, which shows the frame whole at the width it has, so
+     * that a change of the width changes the zoom.
+     */
+    isFrameBox?: boolean;
+    /** The frame as the box last saved it, which replaces the one read from the drawing. */
+    frame?: DrawingFrame | null;
+    /** Whether the user is resizing the box, which keeps the view as the size changes. */
+    isResizing?: () => boolean;
+    /** Whether a move by the user changes the frame; `false` while the box crops the frame. */
+    canReframe?: () => boolean;
+    /** Called with the frame as it is read, taken from the view, or moved by the user. */
+    onFrameChange?: (frame: DrawingFrame) => void;
+    /** Called once the drawing shows at the view of its box, which has a size, or is empty. */
+    onViewReady?: () => void;
+}
+
+/** The size of the box in pixels. */
+interface BoxSize {
+    width: number;
+    height: number;
 }
 
 /**
@@ -438,7 +469,10 @@ export function useCanvasDrawingPersistence(
     theme: AppState["theme"],
     options: DrawingPersistenceOptions = {}
 ): Partial<ExcalidrawProps> {
-    const { initialView, initialTool, onSceneShown, rootRef, getSavedView } = options;
+    const {
+        initialView, initialTool, onSceneShown, rootRef, onViewChange, isFrameBox, frame,
+        isResizing, canReframe, onFrameChange, onViewReady
+    } = options;
     const currentSceneVersion = useRef(0);
     /** The saved part of the app state, read from the editor at the first change. */
     const appStateToCompare = useRef<ImportantAppState | null>(null);
@@ -449,6 +483,16 @@ export function useCanvasDrawingPersistence(
     /** Whether the loaded scene shows nothing, known once it loads. */
     const isLoadedSceneEmptyRef = useRef(false);
     const isSceneShownRef = useRef(false);
+    /** The view of the box and its size in pixels, which fullscreen leaves alone. */
+    const boxRef = useRef<(BoxSize & { view: DrawingView }) | null>(null);
+    /** The frame that the drawing saves: read from it, else taken from the view and the box. */
+    const frameRef = useRef<DrawingFrame | null>(null);
+    /** The last width that Excalidraw reported. */
+    const boxWidthRef = useRef(0);
+    const isViewReadyRef = useRef(false);
+    useEffect(() => {
+        if (frame) frameRef.current = frame;
+    }, [ frame ]);
 
     const [ initialData ] = useState(async (): Promise<ExcalidrawInitialDataState> => {
         const unsavedContent = editor?.getUnsavedContent();
@@ -463,7 +507,9 @@ export function useCanvasDrawingPersistence(
         currentSceneVersion.current = getSceneVersion(elements);
         initialSceneAppliedRef.current = currentSceneVersion.current === 0;
         isLoadedSceneEmptyRef.current = !elements.some((element) => !element.isDeleted);
-        isFitPendingRef.current = !initialView && !content.appState?.zoom
+        frameRef.current = content.frame ?? null;
+        const savedView = content.frame ? getFrameView(content.frame) : null;
+        isFitPendingRef.current = !initialView && !savedView && !content.appState?.zoom
             && !isLoadedSceneEmptyRef.current;
         // With unsaved changes, their save schedules the picture.
         if (editor?.canEdit() && unsavedContent === undefined && !isLoadedSceneEmptyRef.current) {
@@ -476,8 +522,8 @@ export function useCanvasDrawingPersistence(
             elements,
             // A drawing shows the background of the note unless one is picked for it.
             appState: {
-                viewBackgroundColor: "transparent", ...content.appState, ...initialView, theme,
-                ...(initialTool ? { activeTool: initialTool } : {})
+                viewBackgroundColor: "transparent", ...content.appState, ...savedView,
+                ...initialView, theme, ...(initialTool ? { activeTool: initialTool } : {})
             },
             files: loaded.files
         };
@@ -531,6 +577,7 @@ export function useCanvasDrawingPersistence(
         if (isUserChanging()) return;
 
         const content = parseContent(savedContent, attachment);
+        adoptSavedFrame(api, content.frame ?? null);
         const elements = restoreLoadedElements(content.elements);
         const appState: ImportantAppState = {
             gridModeEnabled: content.appState?.gridModeEnabled ?? false,
@@ -564,6 +611,72 @@ export function useCanvasDrawingPersistence(
         appStateToCompare.current = appState;
     }
 
+    /**
+     * The view that fills the frame box with the frame once its width changed, as the layout
+     * changes it. `null` while the view fits, while the user resizes the box, or in fullscreen.
+     */
+    function getFrameBoxView(state: AppState, size: BoxSize | null) {
+        const current = frameRef.current;
+        if (!isFrameBox || !current || !size || size.width === boxWidthRef.current) return null;
+        boxWidthRef.current = size.width;
+        if (isResizing?.() || isInFullscreen(rootRef?.current ?? null)) return null;
+        const view = getFrameViewAt(current, size.width);
+        return isSameView(view, getDrawingView(state)) ? null : view;
+    }
+
+    /**
+     * Keeps `saved`, the frame that another view of the drawing saved, which the next save here
+     * carries, and shows it in a frame box outside fullscreen, as a move of Trilium's own.
+     */
+    function adoptSavedFrame(api: ExcalidrawImperativeAPI, saved: DrawingFrame | null) {
+        const current = frameRef.current;
+        if (!saved || (current && isSameFrame(saved, current))) return;
+        frameRef.current = saved;
+        onFrameChange?.(saved);
+        const width = boxRef.current?.width;
+        if (!isFrameBox || !width || isInFullscreen(rootRef?.current ?? null)) return;
+        applyDrawingView(api, getFrameViewAt(saved, width));
+    }
+
+    /**
+     * Reports the frame, read from the drawing or taken from `view` in a box of `size`, and the
+     * view as ready, once the drawing shows at it.
+     */
+    function readyFrame(view: DrawingView, size: BoxSize | null) {
+        if (isViewReadyRef.current) return;
+        isViewReadyRef.current = true;
+        if (size && !frameRef.current) {
+            frameRef.current = getFrame(view, size.width, size.height);
+        }
+        if (frameRef.current) onFrameChange?.(frameRef.current);
+        onViewReady?.();
+    }
+
+    /**
+     * Follows the view and the size of the box in `boxRef`, outside fullscreen and once the
+     * pointer is up, and tells whether the user moved the view, which moves the frame unless the
+     * box crops it.
+     */
+    function followBox(api: ExcalidrawImperativeAPI, state: AppState, size: BoxSize | null) {
+        if (isInFullscreen(rootRef?.current ?? null) || state.cursorButton === "down") return false;
+        const view = getDrawingView(state);
+        const isApplied = takeAppliedView(api, view);
+        const box = boxRef.current;
+        const boxSize = size ?? { width: box?.width ?? 0, height: box?.height ?? 0 };
+        if (box && isSameView(box.view, view)) {
+            boxRef.current = { ...box, ...boxSize };
+            return false;
+        }
+        boxRef.current = { view, ...boxSize };
+        onViewChange?.(view);
+        if (!box || isApplied || canReframe?.() === false) return false;
+        if (boxSize.width && boxSize.height) {
+            frameRef.current = getFrame(view, boxSize.width, boxSize.height);
+            onFrameChange?.(frameRef.current);
+        }
+        return true;
+    }
+
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         // While no other Excalidraw of the text note shows the drawing, the saves of `editor` come
         // from this one, which shows them already.
@@ -584,11 +697,14 @@ export function useCanvasDrawingPersistence(
         onChange: (elements, state) => {
             const api = apiRef.current;
             // Excalidraw reports its size only once the drawing is laid out in the note.
+            const size = state.width && state.height
+                ? { width: state.width, height: state.height }
+                : null;
             const fitted = isFitPendingRef.current
                 && getFittedView(elements, state.width, state.height);
             if (fitted) isFitPendingRef.current = false;
-            const view = fitted || getBoundedView(elements, state);
-            if (api && view) api.updateScene({ appState: view });
+            const view = fitted || getBoundedView(elements, state) || getFrameBoxView(state, size);
+            if (api && view) applyDrawingView(api, view);
             if (!api) return;
 
             const sceneVersion = getSceneVersion(api.getSceneElements());
@@ -607,6 +723,10 @@ export function useCanvasDrawingPersistence(
                 && !isInteracting(api.getAppState())) {
                 void loadSavedDrawing();
             }
+            if (isSceneShownRef.current && (size || isLoadedSceneEmptyRef.current)) {
+                readyFrame(view ?? getDrawingView(state), size);
+            }
+            const isViewMoved = isSceneShownRef.current && followBox(api, state, size);
             if (!editor) return;
 
             if (!initialSceneAppliedRef.current) {
@@ -628,15 +748,19 @@ export function useCanvasDrawingPersistence(
             const isAppStateChanged = !!previousAppState
                 && (previousAppState.gridModeEnabled !== appState.gridModeEnabled
                     || previousAppState.viewBackgroundColor !== appState.viewBackgroundColor);
-            if (sceneVersion === currentSceneVersion.current && !isAppStateChanged) return;
+            if (sceneVersion === currentSceneVersion.current && !isAppStateChanged
+                && !isViewMoved) {
+                return;
+            }
 
             currentSceneVersion.current = sceneVersion;
             editor.postponeSave?.();
             editor.scheduleSave(
                 () => serializeDrawing({
                     elements: api.getSceneElements(),
-                    appState: { ...api.getAppState(), ...getSavedView?.() },
-                    files: api.getFiles()
+                    appState: { ...api.getAppState(), ...boxRef.current?.view },
+                    files: api.getFiles(),
+                    frame: frameRef.current
                 }, referencedFileIds.current),
                 (content) => scheduleDrawingPicture(attachment, content, api.getFiles())
             );
@@ -678,8 +802,9 @@ export async function loadDrawingFiles(
 }
 
 /**
- * The picture of the canvas drawing `scene` with the images `files`, as the list of attachments and
- * shared pages show it, or `null` for an empty drawing.
+ * The picture of the canvas drawing `scene` with the images `files`, as the list of attachments,
+ * print and shared pages show it, or `null` for an empty drawing. A drawing saved with a frame
+ * shows the frame, at its size on screen.
  */
 export async function exportDrawingPicture(
     scene: PictureScene,
@@ -691,12 +816,44 @@ export async function exportDrawingPicture(
         return null;
     }
 
-    return exportToSvg({
+    const picture = await exportToSvg({
         elements,
         appState: { ...scene.appState, exportBackground: false, exportWithDarkMode: isDark },
         files,
-        exportPadding: 5
+        exportPadding: PICTURE_PADDING
     });
+    const frame = readDrawingFrame(scene.frame);
+    if (frame) {
+        framePicture(picture, elements, frame);
+    }
+    return picture;
+}
+
+/**
+ * Crops `picture`, the export of `elements`, to `frame`, at the size of the frame on screen. The
+ * shapes outside the frame stay in the picture, outside its view.
+ */
+function framePicture(
+    picture: SVGSVGElement,
+    elements: readonly ExcalidrawElement[],
+    frame: DrawingFrame
+) {
+    const [ , , width, height ] = (picture.getAttribute("viewBox") ?? "").split(" ").map(Number);
+    if (!width || !height) return;
+
+    // The picture ends at the bottom right corner of the shapes, past the names of frames, which
+    // sit above the frames and widen the export at the top.
+    const [ , , maxX, maxY ] = getCommonBounds(getRootElements(elements));
+    const x = frame.x - (maxX + PICTURE_PADDING - width);
+    const y = frame.y - (maxY + PICTURE_PADDING - height);
+    picture.setAttribute("viewBox", `${round(x)} ${round(y)} ${frame.width} ${frame.height}`);
+    picture.setAttribute("width", `${round(frame.width * frame.scale)}`);
+    picture.setAttribute("height", `${round(frame.height * frame.scale)}`);
+}
+
+/** `value` to thousandths, as the frame is saved. */
+function round(value: number) {
+    return Number(value.toFixed(3));
 }
 
 /** The saved content that the latest picture of each canvas drawing comes from, by its ID. */
@@ -828,7 +985,35 @@ async function readDrawing(
     const content = parseContent(
         editor?.getUnsavedContent() ?? (await attachment.getBlob())?.content ?? "", attachment);
     const { files } = await loadDrawingFiles(attachment, content);
-    return { elements: content.elements ?? [], appState: content.appState ?? {}, files };
+    return {
+        elements: content.elements ?? [],
+        appState: content.appState ?? {},
+        files,
+        frame: content.frame ?? null
+    };
+}
+
+/**
+ * Saves `frame` as the part of the drawing in `attachment` that its box shows, with the content
+ * as it is, changes that wait for a save included.
+ */
+export async function saveDrawingFrame(
+    attachment: FAttachment,
+    editor: ContentEditor,
+    frame: DrawingFrame
+) {
+    const content = parseContent(
+        editor.getUnsavedContent() ?? (await attachment.getBlob())?.content ?? "", attachment);
+    const elements = (content.elements ?? []).filter(
+        (element): element is NonDeletedExcalidrawElement => !element.isDeleted);
+    const files: BinaryFiles = {};
+    for (const file of Object.values(content.files ?? {})) {
+        files[file.id] = file;
+    }
+    editor.scheduleSave(
+        () => JSON.stringify(buildSceneContent(elements, content.appState ?? {}, files, frame)),
+        (saved) => scheduleDrawingPicture(attachment, saved, files)
+    );
 }
 
 /**
@@ -842,7 +1027,7 @@ function serializeDrawing(scene: DrawingScene, referencedFileIds: ReadonlySet<st
     for (const fileId of referencedFileIds) {
         delete files[fileId];
     }
-    return JSON.stringify(buildSceneContent(elements, scene.appState, files));
+    return JSON.stringify(buildSceneContent(elements, scene.appState, files, scene.frame));
 }
 
 /**
@@ -874,6 +1059,7 @@ export function parseContent(newContent: string, entity: FNote | FAttachment): C
     if (newContent) {
         try {
             content = JSON.parse(newContent) as CanvasContent;
+            content.frame = readDrawingFrame(content.frame);
         } catch (err) {
             console.error(
                 "Error parsing content. Probably note.type changed. Starting with empty canvas",
@@ -979,24 +1165,30 @@ async function getPicture(owner: FNote, title: string) {
         .find((attachment) => attachment.title === title);
 }
 
-/** The scene as the content of a canvas note or of a canvas drawing stores it. */
+/**
+ * The scene as the content of a canvas note or of a canvas drawing stores it. A drawing with a
+ * `frame` saves the view of the frame, which older versions open at.
+ */
 function buildSceneContent(
     elements: readonly NonDeletedExcalidrawElement[],
     appState: Partial<SavedAppState>,
-    files: Record<string, BinaryFileData>
+    files: Record<string, BinaryFileData>,
+    frame?: DrawingFrame | null
 ) {
+    const view = frame ? getFrameView(frame) : appState;
     return {
         type: "excalidraw",
         version: 2,
         elements: elements.map(roundStroke),
         files,
         appState: {
-            scrollX: appState.scrollX,
-            scrollY: appState.scrollY,
-            zoom: appState.zoom,
+            scrollX: view.scrollX,
+            scrollY: view.scrollY,
+            zoom: view.zoom,
             gridModeEnabled: appState.gridModeEnabled,
             viewBackgroundColor: appState.viewBackgroundColor
-        }
+        },
+        ...(frame ? { frame } : {})
     };
 }
 

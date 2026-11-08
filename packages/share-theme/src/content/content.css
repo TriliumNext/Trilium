@@ -429,6 +429,22 @@ body:not(.math-loaded) .math-tex {
     text-align: center;
 }
 
+/* 0.75 is `MIN_FRAME_SCALE` of the app's `drawing_view.ts`. */
+#content .include-note > .canvas-drawing-box {
+    overflow-x: auto;
+
+    > .canvas-drawing-picture {
+        display: block;
+        margin-inline: auto;
+        width: clamp(
+            calc(var(--canvas-drawing-natural-width) * 0.75),
+            100%,
+            var(--canvas-drawing-natural-width)
+        );
+        max-width: none;
+    }
+}
+
 .ck-content .trilium-tabs {
     --card-background-color: var(--background-secondary);
     --main-text-color: var(--text-primary);

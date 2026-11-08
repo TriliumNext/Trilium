@@ -16,8 +16,12 @@
 .canvas-drawing {
     background-color: var(--canvas-drawing-background-color);
 
+    > .canvas-drawing-box {
+        overflow-x: auto;
+    }
+
     /* Resets the typography inherited from the text note. */
-    > .canvas-drawing-editor {
+    .canvas-drawing-editor {
         position: relative;
         height: 100%;
         font-size: var(--canvas-drawing-font-size);
@@ -31,11 +35,28 @@
             transition: opacity 150ms ease-out;
         }
 
-        /* Hidden while `useFullscreenView()` changes the view for the new size. */
-        &.recentering > .canvas-render {
+        /* Hidden until Excalidraw shows the view of the box, also after fullscreen changes it. */
+        &:is(.recentering, [data-view-pending]) > .canvas-render {
             opacity: 0;
             transition: none;
         }
+    }
+
+    /* The frame at its natural size at most, narrowed with the box down to `MIN_FRAME_SCALE` of
+       `drawing_view.ts`, and wider than the box below that. */
+    > .canvas-drawing-box.framed > .canvas-drawing-editor {
+        width: clamp(
+            calc(var(--canvas-drawing-natural-width) * 0.75),
+            100%,
+            var(--canvas-drawing-natural-width)
+        );
+        height: auto;
+        margin-inline: auto;
+        aspect-ratio: var(--canvas-drawing-frame-ratio);
+    }
+
+    > .canvas-drawing-box.reframing > .canvas-drawing-editor {
+        height: var(--canvas-drawing-natural-height);
     }
 
     /* Resets CKEditor's content style for `hr`, which matches the menu separators. */
@@ -67,6 +88,22 @@
     .dropdown-menu-item__icon > .tn-icon {
         display: block;
         font-size: 1rem;
+    }
+}
+
+.include-note .include-note-body > .include-note-content.type-canvasDrawing {
+    height: auto;
+}
+
+.include-note-content:fullscreen .canvas-drawing {
+    height: 100%;
+
+    > .canvas-drawing-box,
+    > .canvas-drawing-box > .canvas-drawing-editor {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        aspect-ratio: auto;
     }
 }
 
@@ -222,6 +259,16 @@
     > svg {
         position: absolute;
     }
+
+    &.stale {
+        &::before {
+            background-color: var(--accented-background-color);
+        }
+
+        > svg {
+            visibility: hidden;
+        }
+    }
 }
 
 /* The matches of "Search in note" that `DrawingMatches` draws over the picture. */
@@ -239,6 +286,8 @@
 }
 
 .canvas-drawing-picture {
+    display: block;
+    margin-inline: auto;
     max-width: 100%;
     height: auto;
 }

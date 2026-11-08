@@ -750,26 +750,37 @@ describe("content_renderer", () => {
             }
         });
 
-        it("renders a picture or drawing embed as an image, any other embed as a download", () => {
+        it("renders a picture as an image, a drawing as its picture, others as a download", () => {
             const embed = (id: string) =>
                 `<section class="include-note" data-attachment-id="${id}">&nbsp;</section>`;
             const drawing = {
                 role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw"
             };
+            const picture = (id: string) =>
+                ({ id: `${id}Picture`, role: "image", mime: "image/svg+xml", title: `${id}.svg` });
             const note = buildShareNote({
                 content: embed("embedPic1") + embed("embedPdf1") + embed("embedGone")
-                    + embed("embedDraw1") + embed("embedDraw2"),
+                    + embed("embedDraw1") + embed("embedDraw2") + embed("embedDraw3"),
                 attachments: [
                     { id: "embedPic1", role: "image", mime: "image/png", title: "my photo.png" },
                     { id: "embedPdf1", role: "file", mime: "application/pdf", title: "report.pdf" },
                     { id: "embedDraw1", ...drawing },
-                    {
-                        id: "drawPicture", role: "image", mime: "image/svg+xml",
-                        title: "embedDraw1.svg"
-                    },
-                    { id: "embedDraw2", ...drawing }
+                    picture("embedDraw1"),
+                    { id: "embedDraw2", ...drawing },
+                    { id: "embedDraw3", ...drawing },
+                    picture("embedDraw3")
                 ]
             });
+            const setDrawingContent = (id: string, content: object) => {
+                const attachment = shaca.getAttachment(id);
+                if (!attachment) throw new Error(`No attachment ${id}`);
+                attachment.getContent = () => JSON.stringify(content);
+            };
+            // The picture of a drawing saved with a frame shows the frame, 900 pixels wide here.
+            setDrawingContent("embedDraw1", {
+                elements: [], frame: { x: 10, y: 20, width: 600, height: 300, scale: 1.5 }
+            });
+            setDrawingContent("embedDraw3", { elements: [] });
 
             const content = getContent(note).content as string;
 
@@ -778,12 +789,18 @@ describe("content_renderer", () => {
                 + `<img src="${src}" alt="my photo.png"></section>`);
             expect(content).toContain(
                 `<section class="include-note" data-attachment-id="embedDraw1">`
-                + `<img src="api/attachments/drawPicture/image/embedDraw1.svg" `
-                + `alt="Canvas.excalidraw"></section>`);
+                + `<div class="canvas-drawing-box" style="--canvas-drawing-natural-width:900px">`
+                + `<img class="canvas-drawing-picture" `
+                + `src="api/attachments/embedDraw1Picture/image/embedDraw1.svg" `
+                + `alt="Canvas.excalidraw"></div></section>`);
             expect(content).toContain(
                 `<section class="include-note" data-attachment-id="embedDraw2">`
                 + `<a class="reference-link attachment-link role-file" `
                 + `href="api/attachments/embedDraw2/download">`);
+            expect(content).toContain(
+                `<section class="include-note" data-attachment-id="embedDraw3">`
+                + `<img src="api/attachments/embedDraw3Picture/image/embedDraw3.svg" `
+                + `alt="Canvas.excalidraw"></section>`);
             expect(content).toContain(`<section class="include-note" data-attachment-id="embedPdf1">`
                 + `<a class="reference-link attachment-link role-file"`);
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);

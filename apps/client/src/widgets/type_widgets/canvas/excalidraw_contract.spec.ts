@@ -22,12 +22,11 @@ const { MATCH_COLORS } = await import("./drawing_find");
 
 /** The classes of Trilium that `CanvasDrawing.css` selects. Every other class is Excalidraw's. */
 const TRILIUM_CLASSES = new Set([
-    "note-detail", "canvas-drawing", "canvas-drawing-editor", "canvas-render",
-    "canvas-drawing-picture", "canvas-drawing-view", "canvas-drawing-find", "theme-dark",
-    "toolbar-over-panel",
-    "recentering", "include-note",
-    "include-note-body",
-    "include-note-content", "active", "tn-icon"
+    "note-detail", "canvas-drawing", "canvas-drawing-box", "canvas-drawing-editor",
+    "canvas-render", "canvas-drawing-picture", "canvas-drawing-view", "canvas-drawing-find",
+    "theme-dark", "toolbar-over-panel", "recentering", "framed", "reframing", "stale",
+    "include-note", "include-note-body", "include-note-content", "type-canvasDrawing", "active",
+    "tn-icon"
 ]);
 
 /** The classes of Excalidraw that the code of the canvas drawing looks up. */

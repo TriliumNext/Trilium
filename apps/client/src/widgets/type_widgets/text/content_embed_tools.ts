@@ -94,6 +94,11 @@ export interface ContentEmbedToolProvider {
  */
 export type ContentEmbedEvent = "fullscreenChangeStart" | "enterFullscreen" | "leaveFullscreen";
 
+/** Whether `element` is in a content box that is shown fullscreen. */
+export function isInFullscreen(element: Element | null) {
+    return !!element && !!document.fullscreenElement?.contains(element);
+}
+
 /** The editor in an embed, as the caret of the text editor around the embed enters it. */
 export interface EmbedCaretTarget {
     /** Focuses the editor with the caret at `edge` of its content, and returns whether it did. */
@@ -372,6 +377,19 @@ export function useContentEmbedAttribute(
         outsideEmbed: initial,
         attributes: [ name ],
         read: (embed) => embed.getAttribute(name)
+    });
+}
+
+/**
+ * Whether the user is resizing the embed that contains `ref` with its handle: the editor's
+ * `ResizableWidgets` plugin marks the embed `ck-widget_resizing` for the drag.
+ */
+export function useContentEmbedResizing(ref: RefObject<HTMLElement | null>) {
+    return useEmbedState(ref, {
+        initial: false,
+        outsideEmbed: false,
+        attributes: [ "class" ],
+        read: (embed) => embed.classList.contains("ck-widget_resizing")
     });
 }
 
