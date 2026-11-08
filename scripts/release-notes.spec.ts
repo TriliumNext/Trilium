@@ -166,8 +166,9 @@ describe("parseChangelogEntry", () => {
             "credits: [ \"@someone\", other ]",
             "---",
             "",
-            "Several links in one paragraph showed up twice in the backlinks.",
-            "    * A detail.",
+            "Several links in one paragraph showed up twice in the backlinks.  ",
+            "    * A detail. \t",
+            "   ",
             ""
         ].join("\n"))).toEqual({
             entry: {
@@ -177,7 +178,7 @@ describe("parseChangelogEntry", () => {
                 area: "Search",
                 closes: [ 12, 34 ],
                 credits: [ "someone", "other" ],
-                text: "Several links in one paragraph showed up twice in the backlinks.",
+                text: "Several links in one paragraph showed up twice in the backlinks.  ",
                 details: [ "    * A detail." ]
             },
             errors: []
@@ -188,8 +189,8 @@ describe("parseChangelogEntry", () => {
         const source = "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
             "unknown key `scope`; expected type, area, closes or credits",
-            "`type` must be one of highlight, breaking, mobile, fix, improvement, documentation, "
-                + "i18n, technical, security, not `bugfix`",
+            "`type` must be one of tip, important, warning, highlight, breaking, mobile, fix, "
+                + "improvement, documentation, i18n, technical, security, not `bugfix`",
             "`closes` takes issue numbers or URLs, not `abc`",
             "`credits` takes GitHub usernames, not `a_b`",
             "the entry has no text after the frontmatter"
@@ -227,8 +228,11 @@ describe("collectItems", () => {
                 { ...entry, file: "b.md", date: 25, closes: [ 6, 8 ], credits: [ "thanked" ],
                     text: "Two issues" },
                 { ...entry, file: "c.md", date: 35, closes: [], area: "Search",
-                    text: "[Linked](https://y)" }
+                    text: "[Linked](https://y)" },
+                { ...entry, file: "d.md", date: 45, closes: [ 9, 20 ],
+                    text: `[Partly](${url(9)}) linked` }
             ],
+            pullRequests: new Map([ [ 20, { number: 20, title: "x", closes: [ 7 ] } ] ]),
             repository: "o/r"
         });
 
@@ -238,6 +242,7 @@ describe("collectItems", () => {
                 [ "Bugfixes", `[New wording](${url(3)})`, "fixer" ],
                 [ "Bugfixes", `Two issues ([#6](${url(6)}), [#8](${url(8)}))`, "thanked" ],
                 [ "Bugfixes", "[Linked](https://y)", "" ],
+                [ "Bugfixes", `[Partly](${url(9)}) linked ([#20](${url(20)}))`, "" ],
                 [ "Bugfixes", "[Crash on \\*save\\*](https://x/1)", "" ]
             ]);
     });
@@ -264,6 +269,8 @@ describe("renderSection", () => {
             "    1.  Third",
             "    2.  Fourth"
         ]);
+        expect(renderSection([ item("Third", 3, "Search"), item("Fourth", 4, "Search") ], true))
+            .toEqual([ "*   Search", "    *   Third", "    *   Fourth" ]);
     });
 });
 
@@ -274,6 +281,10 @@ describe("renderReleaseNote", () => {
             "> [!NOTE]",
             "",
             "## 💡 Key highlights",
+            "",
+            "1.  \\[…\\]",
+            "",
+            "## 🚨 Breaking changes",
             "",
             "1.  \\[…\\]",
             "",
@@ -289,14 +300,30 @@ describe("renderReleaseNote", () => {
         expect(renderReleaseNote(template, "v1.0.0", [
             { section: "Bugfixes", date: 2, text: "Later", details: [], credits: [] },
             { section: "Bugfixes", date: 1, text: "Earlier", details: [], credits: [] },
-            { section: "Security improvements", date: 1, text: "Safer", details: [], credits: [] }
+            { section: "Security improvements", date: 1, text: "Safer", details: [], credits: [] },
+            { section: "Breaking changes", date: 1, text: "Gone", details: [], credits: [] },
+            { section: "Important", date: 2, text: "Upgrade both", details: [ "", "Or else." ],
+                credits: [] },
+            { section: "Tip", date: 1, text: "On Flathub", details: [], credits: [] }
         ])).toBe([
             "# v1.0.0",
             "> [!NOTE]",
             "",
+            "> [!TIP]",
+            "> On Flathub",
+            "",
+            "> [!IMPORTANT]",
+            "> Upgrade both",
+            ">",
+            "> Or else.",
+            "",
             "## 💡 Key highlights",
             "",
             "1.  \\[…\\]",
+            "",
+            "## 🚨 Breaking changes",
+            "",
+            "*   Gone",
             "",
             "## 🐞 Bugfixes",
             "",

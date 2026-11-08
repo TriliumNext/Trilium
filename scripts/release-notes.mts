@@ -60,6 +60,9 @@ const INTERNAL_AREAS =
 
 /** The changelog entry `type` values, each naming the release note section it goes to. */
 export const ENTRY_TYPES = {
+    tip: "Tip",
+    important: "Important",
+    warning: "Warning",
     highlight: "Key highlights",
     breaking: "Breaking changes",
     mobile: "Mobile improvements",
@@ -72,6 +75,12 @@ export const ENTRY_TYPES = {
 } as const;
 
 export type Section = typeof ENTRY_TYPES[keyof typeof ENTRY_TYPES];
+
+/** Sections rendered as GitHub admonitions above the first heading instead of as a list. */
+const ADMONITIONS = new Set<Section>([ "Tip", "Important", "Warning" ]);
+/** Sections listed with bullets; the others are numbered. */
+const BULLETED_SECTIONS =
+    new Set<Section>([ "Key highlights", "Breaking changes", "Documentation" ]);
 
 export interface Commit {
     hash: string;
@@ -180,7 +189,7 @@ export function main({ version, from, stdout, force, unlisted, repository }: Opt
     const languages = collectNewLanguages(base, commits, issues, github);
     const { entries, invalid } = readChangelogEntries();
 
-    const items = collectItems({ closings, issues, languages, entries, repository });
+    const items = collectItems({ closings, issues, languages, entries, pullRequests, repository });
     const note = renderReleaseNote(readFileSync(TEMPLATE_PATH, "utf-8"), version, items);
     if (stdout) {
         process.stdout.write(note);
@@ -434,6 +443,8 @@ interface ItemSources {
     issues: Map<number, Issue>;
     languages: NewLanguage[];
     entries: ChangelogEntry[];
+    /** Lets an entry that names a pull request cover the issues that pull request closes. */
+    pullRequests?: Map<number, PullRequest>;
     repository: string;
 }
 
@@ -443,7 +454,9 @@ interface ItemSources {
  * separately shipped products and nightly-only issues are left out.
  */
 export function collectItems(sources: ItemSources): NoteItem[] {
-    const { closings, issues, languages, entries, repository } = sources;
+    const { closings, issues, languages, entries, pullRequests, repository } = sources;
+    const closedBy = (entry: ChangelogEntry) => [ ...new Set(entry.closes.flatMap((number) =>
+        [ number, ...pullRequests?.get(number)?.closes ?? [] ])) ];
     const items: NoteItem[] = [];
     for (const language of languages) {
         items.push({ section: "Internationalization", date: 0, text: languageName(language.id),
@@ -454,14 +467,17 @@ export function collectItems(sources: ItemSources): NoteItem[] {
     for (const entry of entries) {
         const links = entry.closes.map((number) =>
             ({ number, url: `https://github.com/${repository}/issues/${number}` }));
+        const unlinked = links.filter(({ number }) =>
+            !new RegExp(`/(?:issues|pull)/${number}(?!\\d)`).test(entry.text));
         let text = entry.text;
         if (links.length === 1 && !/\]\(/.test(text)) {
             text = `[${text}](${links[0].url})`;
-        } else if (links.length > 0 && !/\]\(/.test(text)) {
-            text = `${text} (${links.map(({ number, url }) => `[#${number}](${url})`).join(", ")})`;
+        } else if (unlinked.length > 0) {
+            const references = unlinked.map(({ number, url }) => `[#${number}](${url})`);
+            text = `${text} (${references.join(", ")})`;
         }
 
-        const inferredCredits = [ ...new Set(entry.closes.flatMap((number) =>
+        const inferredCredits = [ ...new Set(closedBy(entry).flatMap((number) =>
             closingsByIssue.get(number)?.contributors ?? [])) ];
         items.push({ section: entry.section, area: entry.area, date: entry.date, text,
             details: entry.details,
@@ -470,7 +486,7 @@ export function collectItems(sources: ItemSources): NoteItem[] {
 
     const covered = new Set([
         ...languages.flatMap((language) => language.issues),
-        ...entries.flatMap((entry) => entry.closes)
+        ...entries.flatMap(closedBy)
     ]);
     for (const closing of closings) {
         const issue = issues.get(closing.issue);
@@ -498,8 +514,16 @@ export function collectItems(sources: ItemSources): NoteItem[] {
  */
 export function renderReleaseNote(template: string, version: string, items: NoteItem[]): string {
     const lines = template.replace(/^# .*$/m, `# ${version}`).split("\n");
+    const admonitions = items
+        .filter((item) => ADMONITIONS.has(item.section))
+        .sort((a, b) => a.date - b.date);
     const output: string[] = [];
     for (let index = 0; index < lines.length; index++) {
+        if (lines[index].startsWith("## ") && admonitions.length > 0) {
+            output.push(...admonitions.flatMap((item) => [ ...renderAdmonition(item), "" ]));
+            admonitions.length = 0;
+        }
+
         output.push(lines[index]);
         const heading = /^## \S+\s+(.*)$/.exec(lines[index])?.[1].trim().toLowerCase();
         const sectionItems = items.filter((item) => item.section.toLowerCase() === heading);
@@ -511,17 +535,27 @@ export function renderReleaseNote(template: string, version: string, items: Note
         while (index + 1 < lines.length && !lines[index + 1].startsWith("## ")) {
             index++;
         }
-        output.push("", ...renderSection(sectionItems), "");
+        const bulleted = BULLETED_SECTIONS.has(sectionItems[0].section);
+        output.push("", ...renderSection(sectionItems, bulleted), "");
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
 }
 
+function renderAdmonition(item: NoteItem) {
+    const [ first, ...rest ] = renderItem("", item.text, item, "");
+    return [
+        `> [!${item.section.toUpperCase()}]`,
+        `> ${first}`,
+        ...rest.map((line) => (line ? `> ${line}` : ">"))
+    ];
+}
+
 /**
- * Numbers a section's items, nesting the items of an area that has several under one item named
+ * Lists a section's items, nesting the items of an area that has several under one item named
  * after it, and prefixing a lone item with its area.
  */
-export function renderSection(items: NoteItem[]): string[] {
+export function renderSection(items: NoteItem[], bulleted = false): string[] {
     const sorted = [ ...items ].sort((a, b) => a.date - b.date);
     const groups: { area?: string; items: NoteItem[] }[] = [];
     for (const item of sorted) {
@@ -534,8 +568,9 @@ export function renderSection(items: NoteItem[]): string[] {
     }
 
     const lines: string[] = [];
+    const markerOf = (index: number) => (bulleted ? "*   " : `${index + 1}.  `);
     for (const [ index, group ] of groups.entries()) {
-        const marker = `${index + 1}.  `;
+        const marker = markerOf(index);
         if (group.items.length === 1) {
             const [ item ] = group.items;
             const text = group.area ? `${group.area}: ${item.text}` : item.text;
@@ -545,7 +580,7 @@ export function renderSection(items: NoteItem[]): string[] {
 
         lines.push(`${marker}${group.area}`);
         for (const [ position, item ] of group.items.entries()) {
-            lines.push(...renderItem(`    ${position + 1}.  `, item.text, item, " ".repeat(8)));
+            lines.push(...renderItem(`    ${markerOf(position)}`, item.text, item, " ".repeat(8)));
         }
     }
     return lines;
@@ -681,9 +716,18 @@ export function parseChangelogEntry(file: string, source: string):
     const date = Date.UTC(year, month - 1, day, hour, minute, second) / 1000;
     return {
         entry: { file, date, section, area: fields.get("area")?.[0], closes, credits,
-            text: text.trim(), details: trimBlankLines(details.map((line) => line.trimEnd())) },
+            text: trimKeepingBreak(text.trimStart()),
+            details: trimBlankLines(details.map(trimKeepingBreak)) },
         errors
     };
+}
+
+/** Trims the end of a line but keeps a Markdown hard break (two trailing spaces). */
+function trimKeepingBreak(line: string) {
+    if (line.trim() === "") {
+        return "";
+    }
+    return line.replace(/\s+$/, (space) => (/^ {2,}$/.test(space) ? "  " : ""));
 }
 
 function unquote(value: string) {
