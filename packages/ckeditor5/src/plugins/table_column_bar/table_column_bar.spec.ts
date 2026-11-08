@@ -442,6 +442,29 @@ describe("TableColumnBar", () => {
             await expect.poll(() => resizableColumns(editor)).toEqual([0, 1]);
         });
 
+        it("marks the segments of the columns at the selection as current", async () => {
+            await showBar(editor, modelTable([["a", "b[]", "c"], ["d", "e", "f"]]));
+            expect(currentColumns(editor)).toEqual([1]);
+            const [other, current] = segments(editor).map((segment) => getComputedStyle(segment));
+            expect(current.backgroundColor).not.toBe(other.backgroundColor);
+            expect(current.backgroundImage).not.toBe(other.backgroundImage);
+
+            selectCells(editor, [0, 1], [1, 2]);
+            await expect.poll(() => currentColumns(editor)).toEqual([1, 2]);
+        });
+
+        it("flanks the grip of a resizable divider with arrows", async () => {
+            await showBar(editor, modelTable([["a", "b[]", "c"]], 'tableWidth="80%"'));
+            const [plain, resizable] = dividers(editor);
+
+            expect(shownArrows(plain)).toEqual([]);
+            expect(shownArrows(resizable).map((arrow) => arrow.className)).toEqual([
+                "ck-table-column-bar__arrow bx bxs-left-arrow",
+                "ck-table-column-bar__arrow bx bxs-right-arrow"
+            ]);
+            expect(arrowGaps(resizable).map(Math.round)).toEqual([8, 8]);
+        });
+
         it("keeps pixels for a table sized in pixels", async () => {
             const widths = ["100px", "200px"];
             await showBar(editor, resizedTable([["a", "b[]"]], widths, 'tableWidth="300px"'));
@@ -818,6 +841,31 @@ function resizableColumns(editor: Editor) {
     return dividers(editor)
         .filter((divider) => divider.classList.contains("ck-table-column-bar__divider_resizable"))
         .map((divider) => Number(divider.dataset.column));
+}
+
+function currentColumns(editor: Editor) {
+    return segments(editor)
+        .filter((segment) => segment.classList.contains("ck-table-column-bar__segment_current"))
+        .map((segment) => Number(segment.dataset.column));
+}
+
+function shownArrows(divider: HTMLElement) {
+    return [...divider.querySelectorAll<HTMLElement>(".ck-table-column-bar__arrow")]
+        .filter((arrow) => arrow.offsetParent !== null);
+}
+
+/** The space between the grip of `divider` and the glyph of each of its shown arrows. */
+function arrowGaps(divider: HTMLElement) {
+    const center = centerOf(divider).x;
+    const halfGrip = parseFloat(getComputedStyle(divider, "::after").width) / 2;
+    return shownArrows(divider).map((arrow) => {
+        const rect = arrow.getBoundingClientRect();
+        // Boxicons draws both arrows 5/24 em in from the side that faces the grip.
+        const inset = parseFloat(getComputedStyle(arrow).fontSize) * 5 / 24;
+        return rect.left > center
+            ? rect.left + inset - (center + halfGrip)
+            : center - halfGrip - (rect.right - inset);
+    });
 }
 
 function edgeElementOf(editor: Editor) {

@@ -228,7 +228,7 @@ export default class TableColumnBar extends Plugin {
     private layOut(target: BarTarget): number | null {
         const view = this.view;
         const area = getBarArea(target.domRoot, this.getToolbarElement(), this.getBottomObstacle());
-        const barTop = area.bottom - view.track.offsetHeight;
+        const barTop = area.bottom - (view.element as HTMLElement).offsetHeight;
         const tableRect = target.domTable.getBoundingClientRect();
         const clip = getClientBox(findScroller(target.domTable, "overflowX"));
         const trackLeft = Math.max(clip.left, area.left);
