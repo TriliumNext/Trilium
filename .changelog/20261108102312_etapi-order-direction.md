@@ -1,7 +1,8 @@
 ---
 type: fix
+area: ETAPI
 closes: [12517]
 credits: [pcbeingused333]
 ---
 
-ETAPI: note search ignored `orderDirection`.
+Note search ignored `orderDirection`.

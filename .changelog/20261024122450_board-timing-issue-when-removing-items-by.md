@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Board
 closes: [11949]
 credits: [irontaek, eliandoran]
 ---

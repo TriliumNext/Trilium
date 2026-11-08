@@ -1,6 +1,6 @@
 ---
 type: fix
-area: Table
+area: Table collection
 closes: [12303]
 credits: [DrakenKor]
 ---

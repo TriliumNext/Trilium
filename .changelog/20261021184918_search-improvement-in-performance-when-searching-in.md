@@ -1,5 +1,6 @@
 ---
 type: improvement
+area: Search
 ---
 
-Search: improvement in performance when searching in a subset of note (ancestor)
+Improvement in performance when searching in a subset of note (ancestor)

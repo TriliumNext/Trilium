@@ -1,7 +1,8 @@
 ---
 type: improvement
+area: ETAPI
 closes: [4649]
 credits: [junkerderprovinz]
 ---
 
-ETAPI: support `application/zip` for imports
+Support `application/zip` for imports

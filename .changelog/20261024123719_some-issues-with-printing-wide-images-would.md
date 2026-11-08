@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Printing
 closes: [9164]
 ---
 

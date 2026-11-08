@@ -1,5 +1,6 @@
 ---
 type: fix
+area: Spreadsheet
 ---
 
-Spreadsheet: Paste from Excel brings in a custom font
+Paste from Excel brings in a custom font
