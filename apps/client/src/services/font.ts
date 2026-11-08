@@ -40,51 +40,77 @@ export function applyFontsFromOptions() {
     newLink.addEventListener("error", () => newLink.remove(), { once: true });
 }
 
-/** An installed font family, and whether it advances every character by the same width. */
-export interface SystemFont {
-    family: string;
-    monospace: boolean;
-}
-
 /**
- * The fonts installed on this device, sorted by family, for the font picker to offer. Deduplicated
+ * The font families installed on this device, sorted, for the font picker to offer. Deduplicated
  * by family: `queryLocalFonts()` reports one entry per face, so a family with four weights arrives
  * four times.
+ *
+ * No family is drawn here, because drawing a family loads its font file, and loading every installed
+ * one blocks the main thread for seconds where an antivirus scans each file. {@link rendersFamily}
+ * checks the one family the user picks.
  *
  * Empty wherever the runtime does not answer — the API is Chromium-only, needs a secure context, and
  * rejects while the `local-fonts` permission is denied. Callers fall back to the stock list, which is
  * what every runtime other than the desktop app gets.
+ *
+ * The device is asked once per session, so a font installed meanwhile is listed after a reload.
  */
-export async function listSystemFonts(): Promise<SystemFont[]> {
+export function listSystemFonts(): Promise<string[]> {
+    systemFamilies ??= querySystemFamilies();
+    return systemFamilies;
+}
+
+/** The answer {@link listSystemFonts} gives for the session, once asked. */
+let systemFamilies: Promise<string[]> | undefined;
+
+async function querySystemFamilies(): Promise<string[]> {
     if (typeof window.queryLocalFonts !== "function") {
         return [];
     }
 
     try {
         const faces = await window.queryLocalFonts();
-        const families = [ ...new Set(faces.map(({ family }) => family)) ].sort((a, b) => a.localeCompare(b));
-        const context = createProbeContext();
-
-        // Nothing to draw on, so nothing is judged and nothing is told apart.
-        if (!context) {
-            return families.map((family) => ({ family, monospace: false }));
-        }
-
-        return families
-            .filter((family) => rendersText(context, family))
-            .map((family) => ({ family, monospace: isMonospace(context, family) }));
+        return [ ...new Set(faces.map(({ family }) => family)) ].sort((a, b) => a.localeCompare(b));
     } catch {
         return [];
     }
 }
 
 /**
- * One Latin and one CJK character, each drawn on its own. A character a family does not cover falls
- * back to one that does and paints, so a character that paints nothing can only be one the family
- * claims and cannot draw. Drawing them together would hide that: the covered one paints, and the
- * count says the family is fine.
+ * Whether text set in `family` appears at all, for a family to be checked before it is applied. A
+ * family can resolve, lend its metrics to the layout and still draw nothing — GNU Unifont installs
+ * bitmap faces beside its outline one, and the name matches a bitmap face that the engine measures
+ * but will not rasterize. Applying such a family to the interface would leave it correctly laid out
+ * and invisible, including the settings needed to undo it.
+ *
+ * Each family is drawn once per session. True where the runtime offers no canvas to draw on, an
+ * answer that is not kept.
  */
-const PROBE_CHARACTERS = [ "A", "日" ];
+export function rendersFamily(family: string): boolean {
+    const known = renderedFamilies.get(family);
+    if (known !== undefined) {
+        return known;
+    }
+
+    const context = createProbeContext();
+    if (!context) {
+        return true;
+    }
+
+    const { width, height } = context.canvas;
+    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
+    context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
+
+    const renders = isAnythingPainted(context.getImageData(0, 0, width, height));
+    renderedFamilies.set(family, renders);
+    return renders;
+}
+
+/** What {@link rendersFamily} found for each family drawn this session. */
+const renderedFamilies = new Map<string, boolean>();
+
+/** The character `rendersFamily()` draws to check that a family paints anything. */
+const PROBE_CHARACTER = "A";
 
 /** Big enough that a light glyph still covers a pixel once it is rasterized. */
 const PROBE_FONT_SIZE = 20;
@@ -95,15 +121,23 @@ const PROBE_FONT_SIZE = 20;
  *
  * Used where the fonts cannot be enumerated outright — that is, everywhere but the desktop app, so
  * the stock list stops offering families the browser would only fall back from.
+ *
+ * Each family is measured once per session, since measuring a family loads its font file.
  */
 export function filterAvailableFamilies(candidates: string[]): string[] {
-    const context = createProbeContext();
-    if (!context) {
-        return candidates;
+    const unmeasured = candidates.filter((family) => !availableFamilies.has(family));
+    const context = unmeasured.length ? createProbeContext() : null;
+    if (context) {
+        for (const family of unmeasured) {
+            availableFamilies.set(family, isAvailable(context, family));
+        }
     }
 
-    return candidates.filter((family) => isAvailable(context, family));
+    return candidates.filter((family) => availableFamilies.get(family) !== false);
 }
+
+/** What {@link filterAvailableFamilies} found for each family measured this session. */
+const availableFamilies = new Map<string, boolean>();
 
 /**
  * A family name as it is named to CSS, whether in a stylesheet, a `style` attribute or a canvas
@@ -154,49 +188,13 @@ const FALLBACK_FAMILIES = [ "monospace", "serif", "sans-serif" ];
 /** Wide and narrow letters together, so a family carrying its own metrics shifts the advance. */
 const AVAILABILITY_TEXT = "mmmmmmmmmmlli";
 
-/** The surface every family is drawn on, or `null` where the runtime offers no canvas. */
+/** The surface a family is drawn or measured on, or `null` where the runtime offers no canvas. */
 function createProbeContext() {
     const canvas = document.createElement("canvas");
     canvas.width = PROBE_FONT_SIZE * 2;
     canvas.height = PROBE_FONT_SIZE * 2;
 
     return canvas.getContext("2d", { willReadFrequently: true });
-}
-
-/**
- * Whether text set in `family` appears at all. A family can resolve, lend its metrics to the layout
- * and still draw nothing — GNU Unifont installs bitmap faces beside its outline one, and the name
- * matches a bitmap face that the engine measures but will not rasterize. Offering such a family
- * would let the interface be set in a font that leaves it correctly laid out and invisible.
- *
- * One `context` serves every family: each character is cleared before the next is drawn, and the
- * font is named again for each.
- */
-function rendersText(context: CanvasRenderingContext2D, family: string): boolean {
-    const { width, height } = context.canvas;
-
-    for (const character of PROBE_CHARACTERS) {
-        context.clearRect(0, 0, width, height);
-        context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
-        context.fillText(character, 0, PROBE_FONT_SIZE * 1.5);
-
-        if (!isAnythingPainted(context.getImageData(0, 0, width, height))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-/**
- * Whether the family advances every character by the same width, compared at the narrowest and the
- * widest Latin letter. It is the one distinction a browser can draw between installed families:
- * nothing reports whether a face is serif or sans, so the picker groups by this alone.
- */
-function isMonospace(context: CanvasRenderingContext2D, family: string): boolean {
-    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
-
-    return context.measureText("i").width === context.measureText("W").width;
 }
 
 /** Whether any pixel was covered, read from the alpha channel — the colour drawn in does not matter. */

@@ -84,4 +84,16 @@ describe("Fonts API", () => {
         expect(body).toContain("--tree-font-family: customFont:not a note id;");
         expect(body).toContain("--detail-font-family: Arial;");
     });
+
+    it("names the generic monospace twice, so the browser keeps the chosen font size", () => {
+        cls.init(() => {
+            optionService.setOption("overrideThemeFonts", "true");
+            optionService.setOption("detailFontFamily", "monospace");
+            optionService.setOption("monospaceFontFamily", "monospace");
+        });
+
+        const { body } = getCss();
+        expect(body).toContain("--detail-font-family: monospace, monospace;");
+        expect(body).toContain("--monospace-font-family: monospace, monospace;");
+    });
 });

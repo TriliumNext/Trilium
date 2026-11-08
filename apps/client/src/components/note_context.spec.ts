@@ -132,6 +132,30 @@ describe("NoteContext view scope", () => {
         await navigate({ bookmark: "intro" });
         expect(noteContext.viewScope).toEqual({ viewMode: "default", bookmark: "intro" });
     });
+
+    it("saves the note a tab shows without the editing state of its view", async () => {
+        buildNote({ id: "root", title: "root", children: [ { id: "edited", title: "Edited" } ] });
+        const noteContext = new NoteContext();
+        await noteContext.setNote("root/edited", {
+            viewScope: { viewMode: "source" }, skipRecentNotes: true, triggerSwitchEvent: false
+        });
+        const { viewScope } = noteContext;
+        if (viewScope) {
+            viewScope.isReadOnly = true;
+            viewScope.readOnlyTemporarilyDisabled = true;
+        }
+
+        const { tabManager } = appContext;
+        appContext.tabManager = { activeNtxId: noteContext.ntxId } as TabManager;
+        try {
+            expect(noteContext.getPojoState()?.viewScope).toEqual({ viewMode: "source" });
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+        expect(noteContext.viewScope).toEqual({
+            viewMode: "source", isReadOnly: true, readOnlyTemporarilyDisabled: true
+        });
+    });
 });
 
 describe("NoteContext on a phone", () => {

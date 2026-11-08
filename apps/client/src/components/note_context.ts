@@ -379,7 +379,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             notePath: this.notePath,
             hoistedNoteId: this.hoistedNoteId,
             active: this.isActive(),
-            viewScope: this.viewScope,
+            viewScope: this.viewScope && getNavigationTarget(this.viewScope),
             pinned: this.pinned,
             lastActiveNtxId: this.lastActiveNtxId
         };

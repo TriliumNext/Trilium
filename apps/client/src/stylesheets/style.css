@@ -1916,6 +1916,11 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     outline: none;
 }
 
+/* Chrome selects nothing in a non-editable widget that inherits `user-select: none` from `body`. */
+.include-note-content .ck-content {
+    user-select: text;
+}
+
 .include-note.ck-widget_selected {
     --_include-note-active-outline-color: var(--ck-color-focus-border);
 }
