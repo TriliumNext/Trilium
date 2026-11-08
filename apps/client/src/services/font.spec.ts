@@ -96,25 +96,21 @@ describe("listSystemFonts", () => {
 
     /**
      * Stands in for the canvas the probe draws on, since happy-dom has none. `paints` decides, per
-     * family and character, whether any pixel ends up covered — in a browser a character the family
-     * does not cover falls back to one that does and paints, so only a character it claims and
-     * cannot rasterize comes back blank.
+     * family, whether any pixel ends up covered.
      */
-    function stubProbeCanvas(paints: (family: string, character: string) => boolean, monospace: (family: string) => boolean = () => false) {
+    function stubProbeCanvas(paints: (family: string) => boolean, monospace: (family: string) => boolean = () => false) {
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => {
-            const drawn = { font: "", character: "" };
+            const drawn = { font: "" };
             const familyOf = () => drawn.font.match(/"(.+)"/)?.[1] ?? "";
 
             return {
                 canvas: { width: 40, height: 40 },
                 clearRect: () => {},
-                fillText: (character: string) => {
-                    drawn.character = character;
-                },
+                fillText: () => {},
                 // A proportional family advances the widest letter further than the narrowest.
                 measureText: (text: string) => ({ width: monospace(familyOf()) || text === "W" ? 10 : 6 }),
                 getImageData: () => {
-                    return { data: new Uint8ClampedArray([ 0, 0, 0, paints(familyOf(), drawn.character) ? 255 : 0 ]) };
+                    return { data: new Uint8ClampedArray([ 0, 0, 0, paints(familyOf()) ? 255 : 0 ]) };
                 },
                 get font() {
                     return drawn.font;
@@ -164,15 +160,6 @@ describe("listSystemFonts", () => {
         stubProbeCanvas((family) => family !== "Unifont");
 
         // Offering it would let the interface be set in a font that renders nothing at all.
-        expect(await listSystemFonts()).toEqual([ { family: "Inter", monospace: false } ]);
-    });
-
-    it("leaves out a family that draws one of the two scripts and not the other", async () => {
-        vi.stubGlobal("queryLocalFonts", async () => [ face("Inter", "Regular"), face("Latin Only", "Regular") ]);
-        // Each character is drawn on its own for this: probed as one string, the Latin one painting
-        // would be enough to pass a family that cannot draw a word of Japanese.
-        stubProbeCanvas((family, character) => !(family === "Latin Only" && character === "日"));
-
         expect(await listSystemFonts()).toEqual([ { family: "Inter", monospace: false } ]);
     });
 

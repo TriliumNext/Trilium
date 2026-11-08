@@ -78,13 +78,8 @@ export async function listSystemFonts(): Promise<SystemFont[]> {
     }
 }
 
-/**
- * One Latin and one CJK character, each drawn on its own. A character a family does not cover falls
- * back to one that does and paints, so a character that paints nothing can only be one the family
- * claims and cannot draw. Drawing them together would hide that: the covered one paints, and the
- * count says the family is fine.
- */
-const PROBE_CHARACTERS = [ "A", "日" ];
+/** The character `rendersText()` draws to check that a family paints anything. */
+const PROBE_CHARACTER = "A";
 
 /** Big enough that a light glyph still covers a pixel once it is rasterized. */
 const PROBE_FONT_SIZE = 20;
@@ -169,23 +164,16 @@ function createProbeContext() {
  * matches a bitmap face that the engine measures but will not rasterize. Offering such a family
  * would let the interface be set in a font that leaves it correctly laid out and invisible.
  *
- * One `context` serves every family: each character is cleared before the next is drawn, and the
- * font is named again for each.
+ * One `context` serves every family, and it is cleared before each one is drawn.
  */
 function rendersText(context: CanvasRenderingContext2D, family: string): boolean {
     const { width, height } = context.canvas;
 
-    for (const character of PROBE_CHARACTERS) {
-        context.clearRect(0, 0, width, height);
-        context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
-        context.fillText(character, 0, PROBE_FONT_SIZE * 1.5);
+    context.clearRect(0, 0, width, height);
+    context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
+    context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
 
-        if (!isAnythingPainted(context.getImageData(0, 0, width, height))) {
-            return false;
-        }
-    }
-
-    return true;
+    return isAnythingPainted(context.getImageData(0, 0, width, height));
 }
 
 /**
