@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyFontsFromOptions, createFontStylesheetLink, filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "./font.js";
+import { applyFontsFromOptions, createFontStylesheetLink, quoteFamily } from "./font.js";
 
 function fontLinkHrefs() {
     return Array.from(document.head.querySelectorAll<HTMLLinkElement>("link[data-font-stylesheet]"))
@@ -88,6 +88,17 @@ describe("font service", () => {
     });
 });
 
+/**
+ * The font service as a new session first loads it. The session caches live in the module, so a
+ * spec that reused one module would read whatever the previous spec left there.
+ */
+async function freshFontModule() {
+    vi.resetModules();
+    return await import("./font.js");
+}
+
+let font: Awaited<ReturnType<typeof freshFontModule>>;
+
 describe("listSystemFonts and rendersFamily", () => {
     /** One face as `queryLocalFonts()` reports it — a family arrives once per weight and slant. */
     function face(family: string, style: string): FontData {
@@ -96,9 +107,11 @@ describe("listSystemFonts and rendersFamily", () => {
 
     /**
      * Stands in for the canvas the probe draws on, since happy-dom has none. `paints` decides, per
-     * family, whether any pixel ends up covered.
+     * family, whether any pixel ends up covered. Returns the `fillText` spy every canvas shares, so
+     * a spec can count the draws.
      */
     function stubProbeCanvas(paints: (family: string) => boolean) {
+        const fillText = vi.fn();
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => {
             const drawn = { font: "" };
             const familyOf = () => drawn.font.match(/"(.+)"/)?.[1] ?? "";
@@ -106,7 +119,7 @@ describe("listSystemFonts and rendersFamily", () => {
             return {
                 canvas: { width: 40, height: 40 },
                 clearRect: () => {},
-                fillText: () => {},
+                fillText,
                 getImageData: () => {
                     return { data: new Uint8ClampedArray([ 0, 0, 0, paints(familyOf()) ? 255 : 0 ]) };
                 },
@@ -118,7 +131,13 @@ describe("listSystemFonts and rendersFamily", () => {
                 }
             };
         }) as never);
+
+        return fillText;
     }
+
+    beforeEach(async () => {
+        font = await freshFontModule();
+    });
 
     afterEach(() => {
         vi.unstubAllGlobals();
@@ -127,7 +146,7 @@ describe("listSystemFonts and rendersFamily", () => {
 
     it("returns nothing where the runtime does not expose the API", async () => {
         expect(window.queryLocalFonts).toBeUndefined();
-        expect(await listSystemFonts()).toEqual([]);
+        expect(await font.listSystemFonts()).toEqual([]);
     });
 
     it("reduces the faces to sorted, deduplicated families", async () => {
@@ -138,7 +157,7 @@ describe("listSystemFonts and rendersFamily", () => {
             face("Inter", "Italic")
         ]);
 
-        expect(await listSystemFonts()).toEqual([ "Adwaita Mono", "Inter" ]);
+        expect(await font.listSystemFonts()).toEqual([ "Adwaita Mono", "Inter" ]);
     });
 
     it("returns nothing when the query is refused, so the picker keeps the stock list", async () => {
@@ -146,28 +165,67 @@ describe("listSystemFonts and rendersFamily", () => {
             throw new DOMException("denied", "NotAllowedError");
         });
 
-        expect(await listSystemFonts()).toEqual([]);
+        expect(await font.listSystemFonts()).toEqual([]);
     });
 
     it("lists every family without drawing any of them, since drawing loads the font file", async () => {
         vi.stubGlobal("queryLocalFonts", async () => [ face("Inter", "Regular"), face("Unifont", "Regular") ]);
         const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext");
 
-        expect(await listSystemFonts()).toEqual([ "Inter", "Unifont" ]);
+        expect(await font.listSystemFonts()).toEqual([ "Inter", "Unifont" ]);
         expect(getContext).not.toHaveBeenCalled();
     });
 
     it("tells a family the engine measures but will not draw from one it draws", () => {
         stubProbeCanvas((family) => family !== "Unifont");
 
-        expect(rendersFamily("Inter")).toBe(true);
-        expect(rendersFamily("Unifont")).toBe(false);
+        expect(font.rendersFamily("Inter")).toBe(true);
+        expect(font.rendersFamily("Unifont")).toBe(false);
     });
 
     it("accepts every family where there is no canvas to judge it on", () => {
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 
-        expect(rendersFamily("Unifont")).toBe(true);
+        expect(font.rendersFamily("Unifont")).toBe(true);
+    });
+
+    it("asks the device once per session, however often and however concurrently it is asked", async () => {
+        const query = vi.fn(async () => [ face("Inter", "Regular") ]);
+        vi.stubGlobal("queryLocalFonts", query);
+
+        const concurrent = await Promise.all([ font.listSystemFonts(), font.listSystemFonts() ]);
+        expect(concurrent).toEqual([ [ "Inter" ], [ "Inter" ] ]);
+        expect(await font.listSystemFonts()).toEqual([ "Inter" ]);
+        expect(query).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps a refused answer for the session rather than asking again", async () => {
+        const query = vi.fn(async () => {
+            throw new DOMException("denied", "NotAllowedError");
+        });
+        vi.stubGlobal("queryLocalFonts", query);
+
+        expect(await font.listSystemFonts()).toEqual([]);
+        expect(await font.listSystemFonts()).toEqual([]);
+        expect(query).toHaveBeenCalledTimes(1);
+    });
+
+    it("draws each family once per session, whatever the answer", () => {
+        const fillText = stubProbeCanvas((family) => family !== "Unifont");
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            expect(font.rendersFamily("Inter")).toBe(true);
+            expect(font.rendersFamily("Unifont")).toBe(false);
+        }
+        expect(fillText).toHaveBeenCalledTimes(2);
+    });
+
+    it("draws again once a canvas is offered, rather than keeping the answer given without one", () => {
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValueOnce(null);
+        expect(font.rendersFamily("Unifont")).toBe(true);
+
+        stubProbeCanvas((family) => family !== "Unifont");
+        expect(font.rendersFamily("Unifont")).toBe(false);
     });
 });
 
@@ -177,36 +235,59 @@ describe("filterAvailableFamilies", () => {
      * device has; anything else falls back, and measures exactly as the generic it fell back to.
      */
     function stubMeasuring(installed: Record<string, number>) {
+        const measured: string[] = [];
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation((() => {
             const generics = { monospace: 100, serif: 110, "sans-serif": 120 };
-            let font = "";
+            let current = "";
 
             return {
                 canvas: { width: 40, height: 40 },
                 measureText: () => {
-                    const family = font.match(/"(.+?)"/)?.[1];
-                    const fallback = font.replace(/^\d+px\s*/, "").split(", ").pop() ?? "";
+                    const family = current.match(/"(.+?)"/)?.[1];
+                    const fallback = current.replace(/^\d+px\s*/, "").split(", ").pop() ?? "";
+                    if (family) measured.push(family);
                     // Without a family named, the width is the generic's own.
                     return { width: family && family in installed ? installed[family] : generics[fallback as keyof typeof generics] };
                 },
                 get font() {
-                    return font;
+                    return current;
                 },
                 set font(value: string) {
-                    font = value;
+                    current = value;
                 }
             };
         }) as never);
+
+        return measured;
     }
+
+    beforeEach(async () => {
+        font = await freshFontModule();
+    });
 
     afterEach(() => {
         vi.restoreAllMocks();
     });
 
+    it("measures each family once per session, whether or not the device has it", () => {
+        const measured = stubMeasuring({ Georgia: 130 });
+
+        expect(font.filterAvailableFamilies([ "Georgia", "Garamond" ])).toEqual([ "Georgia" ]);
+        const firstPass = measured.length;
+        expect(firstPass).toBeGreaterThan(0);
+
+        expect(font.filterAvailableFamilies([ "Garamond", "Georgia" ])).toEqual([ "Georgia" ]);
+        expect(measured).toHaveLength(firstPass);
+
+        // A family not seen before is still measured.
+        font.filterAvailableFamilies([ "Arial" ]);
+        expect(measured.slice(firstPass)).toContain("Arial");
+    });
+
     it("keeps the families the device has and drops the ones it falls back from", () => {
         stubMeasuring({ Georgia: 130, "Comic Sans MS": 140 });
 
-        expect(filterAvailableFamilies([ "Georgia", "Garamond", "Comic Sans MS", "Luminari" ]))
+        expect(font.filterAvailableFamilies([ "Georgia", "Garamond", "Comic Sans MS", "Luminari" ]))
             .toEqual([ "Georgia", "Comic Sans MS" ]);
     });
 
@@ -215,13 +296,13 @@ describe("filterAvailableFamilies", () => {
         // the other two. A single fallback would report it missing.
         stubMeasuring({ Arial: 120 });
 
-        expect(filterAvailableFamilies([ "Arial" ])).toEqual([ "Arial" ]);
+        expect(font.filterAvailableFamilies([ "Arial" ])).toEqual([ "Arial" ]);
     });
 
     it("keeps everything where there is no canvas to measure on", () => {
         vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
 
-        expect(filterAvailableFamilies([ "Garamond", "Luminari" ])).toEqual([ "Garamond", "Luminari" ]);
+        expect(font.filterAvailableFamilies([ "Garamond", "Luminari" ])).toEqual([ "Garamond", "Luminari" ]);
     });
 });
 

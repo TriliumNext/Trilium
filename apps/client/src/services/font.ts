@@ -52,8 +52,18 @@ export function applyFontsFromOptions() {
  * Empty wherever the runtime does not answer — the API is Chromium-only, needs a secure context, and
  * rejects while the `local-fonts` permission is denied. Callers fall back to the stock list, which is
  * what every runtime other than the desktop app gets.
+ *
+ * The device is asked once per session, so a font installed meanwhile is listed after a reload.
  */
-export async function listSystemFonts(): Promise<string[]> {
+export function listSystemFonts(): Promise<string[]> {
+    systemFamilies ??= querySystemFamilies();
+    return systemFamilies;
+}
+
+/** The answer {@link listSystemFonts} gives for the session, once asked. */
+let systemFamilies: Promise<string[]> | undefined;
+
+async function querySystemFamilies(): Promise<string[]> {
     if (typeof window.queryLocalFonts !== "function") {
         return [];
     }
@@ -73,9 +83,15 @@ export async function listSystemFonts(): Promise<string[]> {
  * but will not rasterize. Applying such a family to the interface would leave it correctly laid out
  * and invisible, including the settings needed to undo it.
  *
- * True where the runtime offers no canvas to draw on.
+ * Each family is drawn once per session. True where the runtime offers no canvas to draw on, an
+ * answer that is not kept.
  */
 export function rendersFamily(family: string): boolean {
+    const known = renderedFamilies.get(family);
+    if (known !== undefined) {
+        return known;
+    }
+
     const context = createProbeContext();
     if (!context) {
         return true;
@@ -85,8 +101,13 @@ export function rendersFamily(family: string): boolean {
     context.font = `${PROBE_FONT_SIZE}px ${quoteFamily(family)}`;
     context.fillText(PROBE_CHARACTER, 0, PROBE_FONT_SIZE * 1.5);
 
-    return isAnythingPainted(context.getImageData(0, 0, width, height));
+    const renders = isAnythingPainted(context.getImageData(0, 0, width, height));
+    renderedFamilies.set(family, renders);
+    return renders;
 }
+
+/** What {@link rendersFamily} found for each family drawn this session. */
+const renderedFamilies = new Map<string, boolean>();
 
 /** The character `rendersFamily()` draws to check that a family paints anything. */
 const PROBE_CHARACTER = "A";
@@ -100,15 +121,23 @@ const PROBE_FONT_SIZE = 20;
  *
  * Used where the fonts cannot be enumerated outright — that is, everywhere but the desktop app, so
  * the stock list stops offering families the browser would only fall back from.
+ *
+ * Each family is measured once per session, since measuring a family loads its font file.
  */
 export function filterAvailableFamilies(candidates: string[]): string[] {
-    const context = createProbeContext();
-    if (!context) {
-        return candidates;
+    const unmeasured = candidates.filter((family) => !availableFamilies.has(family));
+    const context = unmeasured.length ? createProbeContext() : null;
+    if (context) {
+        for (const family of unmeasured) {
+            availableFamilies.set(family, isAvailable(context, family));
+        }
     }
 
-    return candidates.filter((family) => isAvailable(context, family));
+    return candidates.filter((family) => availableFamilies.get(family) !== false);
 }
+
+/** What {@link filterAvailableFamilies} found for each family measured this session. */
+const availableFamilies = new Map<string, boolean>();
 
 /**
  * A family name as it is named to CSS, whether in a stylesheet, a `style` attribute or a canvas
