@@ -1,5 +1,6 @@
 ---
 type: fix
+closes: [12043]
 credits: [StephenArg]
 ---
 

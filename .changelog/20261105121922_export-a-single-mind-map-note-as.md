@@ -1,5 +1,6 @@
 ---
 type: improvement
+closes: [12322]
 credits: [SwastikTripathi]
 ---
 

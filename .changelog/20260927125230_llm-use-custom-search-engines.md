@@ -1,6 +1,7 @@
 ---
 type: highlight
 area: LLM
+closes: [11878]
 ---
 
 🔍️ **Use custom search engines**  

@@ -1,6 +1,7 @@
 ---
 type: improvement
 area: Search
+closes: [11627]
 credits: [eliandoran, sxh313]
 ---
 

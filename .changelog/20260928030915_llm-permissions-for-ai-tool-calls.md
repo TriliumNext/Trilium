@@ -1,6 +1,7 @@
 ---
 type: highlight
 area: LLM
+closes: [12116]
 ---
 
 **🛡️ Permissions for AI tool calls**  

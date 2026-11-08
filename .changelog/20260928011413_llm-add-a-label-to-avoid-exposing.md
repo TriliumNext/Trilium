@@ -1,6 +1,7 @@
 ---
 type: improvement
 area: LLM
+closes: [12192]
 credits: [BeatLink]
 ---
 

@@ -1,5 +1,6 @@
 ---
 type: fix
+closes: [11949]
 credits: [irontaek, eliandoran]
 ---
 

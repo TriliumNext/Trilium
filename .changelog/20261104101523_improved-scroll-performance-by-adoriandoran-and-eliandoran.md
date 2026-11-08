@@ -1,5 +1,6 @@
 ---
 type: improvement
+closes: [12334]
 credits: [adoriandoran, eliandoran]
 ---
 

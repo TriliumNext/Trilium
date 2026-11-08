@@ -1,5 +1,6 @@
 ---
 type: highlight
+closes: [12356]
 ---
 
 The presentation collection got a refresh

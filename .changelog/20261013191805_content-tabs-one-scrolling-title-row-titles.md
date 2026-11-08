@@ -1,7 +1,7 @@
 ---
 type: improvement
 area: Text editor
-closes: [12063, 12085, 12120, 12488]
+closes: [12063, 12085, 12120, 12488, 11941]
 credits: [adoriandoran]
 ---
 

@@ -1,6 +1,7 @@
 ---
 type: improvement
 area: LLM
+closes: [12168, 12176]
 credits: [pcbeingused333]
 ---
 
