@@ -263,7 +263,7 @@ function getChanged(req: Request) {
 const partialRequests: Record<
     string,
     {
-        createdAt: number;
+        lastPageAt: number;
         payload: string;
     }
 > = {};
@@ -336,23 +336,25 @@ function update(req: Request) {
 
         if (pageIndex === 0) {
             partialRequests[requestId] = {
-                createdAt: Date.now(),
+                lastPageAt: Date.now(),
                 payload: ""
             };
         }
 
-        if (!partialRequests[requestId]) {
+        const partialRequest = partialRequests[requestId];
+        if (!partialRequest) {
             throw new Error(`Partial request ${requestId}, page ${pageIndex + 1} of ${pageCount} of pages does not have expected record.`);
         }
 
-        partialRequests[requestId].payload += req.body;
+        partialRequest.lastPageAt = Date.now();
+        partialRequest.payload += req.body;
 
         getLog().info(`Receiving a partial request ${requestId}, page ${pageIndex + 1} out of ${pageCount} pages.`);
 
         if (pageIndex !== pageCount - 1) {
             return;
         }
-        body = JSON.parse(partialRequests[requestId].payload);
+        body = JSON.parse(partialRequest.payload);
         delete partialRequests[requestId];
     }
 
@@ -361,17 +363,19 @@ function update(req: Request) {
     getSql().transactional(() => syncUpdateService.updateEntities(entities, instanceId));
 }
 
-/* v8 ignore start -- module-level timer, not invoked in tests */
-setInterval(() => {
+/** Drops paged pushes that received no page for 20 minutes, which their client has abandoned. */
+export function cleanUpPartialRequests() {
     for (const key in partialRequests) {
-        if (Date.now() - partialRequests[key].createdAt > 20 * 60 * 1000) {
+        if (Date.now() - partialRequests[key].lastPageAt > 20 * 60 * 1000) {
             getLog().info(`Cleaning up unfinished partial requests for ${key}`);
 
             delete partialRequests[key];
         }
     }
-}, 60 * 1000);
-/* v8 ignore stop */
+}
+
+/* v8 ignore next -- module-level timer, not invoked in tests */
+setInterval(cleanUpPartialRequests, 60 * 1000);
 
 function syncFinished() {
     // after the first sync finishes, the application is ready to be used
