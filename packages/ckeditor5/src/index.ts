@@ -69,6 +69,7 @@ import "./plugins/block_reference/block_reference.js";
 import "./plugins/child_note.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/content_embed/content_embed_caret.js";
+import "./plugins/delete_blocks.js";
 import "./plugins/find_in_link_widgets.js";
 import "./plugins/find_reveal.js";
 import "./plugins/image_to_drawing.js";

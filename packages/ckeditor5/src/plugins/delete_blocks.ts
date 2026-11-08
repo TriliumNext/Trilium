@@ -1,18 +1,68 @@
 import {
-    Command, first, type ModelElement, type ModelPosition, type ModelRange, Plugin
+    ClipboardPipeline, Command, type Editor, first, type ModelElement, type ModelPosition,
+    type ModelRange, Plugin, ViewDataTransfer
 } from "ckeditor5";
 
 import { getDraggedRange } from "./block_drag_handle.js";
 
-/** Registers the `deleteBlocks` command, which the menu of the block handle runs. */
+/** The clipboard flavors of the blocks that `copyBlocks` serializes. */
+export interface BlocksClipboardData {
+    html: string;
+    text: string;
+}
+
+/**
+ * Registers the `copyBlocks` and `deleteBlocks` commands, which the menu of the block handle runs.
+ */
 export default class DeleteBlocks extends Plugin {
+
+    static get requires() {
+        return [ ClipboardPipeline ] as const;
+    }
 
     static get pluginName() {
         return "DeleteBlocks" as const;
     }
 
     init() {
+        this.editor.commands.add("copyBlocks", new CopyBlocksCommand(this.editor));
         this.editor.commands.add("deleteBlocks", new DeleteBlocksCommand(this.editor));
+    }
+
+}
+
+/**
+ * Returns the HTML and plain text that a copy puts on the clipboard for the blocks that the block
+ * handle drags. The selection and the content stay as they are.
+ */
+export class CopyBlocksCommand extends Command {
+
+    constructor(editor: Editor) {
+        super(editor);
+        this.affectsData = false;
+    }
+
+    override refresh() {
+        this.isEnabled = !!first(this.editor.model.document.selection.getSelectedBlocks());
+    }
+
+    override execute(): BlocksClipboardData {
+        const model = this.editor.model;
+        const { isBackward } = model.document.selection;
+        const ranges = Array.from(model.document.selection.getRanges());
+        // `refresh()` enables the command only with a selected block.
+        const selection = model.createSelection(getDraggedRange(model) as ModelRange);
+        const dataTransfer = new ViewDataTransfer(new DataTransfer());
+        // The step that a native copy runs, so that the `clipboardOutput` listeners apply.
+        this.editor.plugins.get(ClipboardPipeline)
+            ._fireOutputTransformationEvent(dataTransfer, selection, "copy");
+        // `_fireOutputTransformationEvent()` leaves the copied blocks selected.
+        model.change((writer) => writer.setSelection(ranges, { backward: isBackward }));
+
+        return {
+            html: dataTransfer.getData("text/html"),
+            text: dataTransfer.getData("text/plain")
+        };
     }
 
 }
@@ -56,6 +106,7 @@ declare module "ckeditor5" {
     }
 
     interface CommandsMap {
+        copyBlocks: CopyBlocksCommand;
         deleteBlocks: DeleteBlocksCommand;
     }
 }

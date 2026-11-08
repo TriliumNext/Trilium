@@ -19,7 +19,7 @@ import {
     buildInsertMenuItems, buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
-import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
+import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
 import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -53,6 +53,10 @@ export interface BlockReferenceMenuItems {
 export interface BlockHandleMenuActions {
     /** The items that insert blocks, list items or table rows, shown first, before a separator. */
     insertItems?: MenuItem<CommandNames>[];
+    /** Puts the selected blocks on the clipboard and deletes them, first in the copy items. */
+    cutBlocks?: () => void;
+    /** Puts the selected blocks on the clipboard, before the reference items. */
+    copyBlocks?: () => void;
     /** Copies a reference to the selected blocks. */
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
@@ -105,6 +109,7 @@ export function buildReferenceConfig(
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(origin, blocks, {
                     insertItems: buildInsertItems(editor, blocks),
+                    ...getClipboardActions(editor),
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
@@ -132,7 +137,8 @@ export function openBlockHandleMenu(
     origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
     {
-        insertItems, copyReference, copyShareLink, sortItem, deleteBlocks, openHelpPage
+        insertItems, cutBlocks, copyBlocks, copyReference, copyShareLink, sortItem, deleteBlocks,
+        openHelpPage
     }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
@@ -146,6 +152,16 @@ export function openBlockHandleMenu(
     const items: MenuItem<CommandNames>[] = [ getBlocksHeader(blocks, openHelpPage) ];
     if (insertItems?.length) {
         items.push(...insertItems, { kind: "separator" });
+    }
+    if (cutBlocks) {
+        items.push({ title: t("block_handle_menu.cut"), uiIcon: "bx bx-cut", handler: cutBlocks });
+    }
+    if (copyBlocks) {
+        items.push({
+            title: t("block_handle_menu.copy"),
+            uiIcon: "bx bx-copy",
+            handler: copyBlocks
+        });
     }
     items.push({
         title: t("block_reference.copy_reference"),
@@ -164,7 +180,7 @@ export function openBlockHandleMenu(
     }
     if (deleteBlocks) {
         items.push({ kind: "separator" }, {
-            title: t("block_reference.delete"),
+            title: t("block_handle_menu.delete"),
             uiIcon: "bx bx-trash destructive-action-icon",
             handler: deleteBlocks
         });
@@ -371,7 +387,7 @@ function getBlocksHeader(
 ): MenuHeader {
     const block = blocks.length === 1 ? blocks[0] : undefined;
     if (!block) {
-        const title = t("block_reference.block_count", { count: blocks.length });
+        const title = t("block_handle_menu.block_count", { count: blocks.length });
         return { kind: "header", title };
     }
 
@@ -379,8 +395,8 @@ function getBlocksHeader(
     const header: MenuHeader = {
         kind: "header",
         title: type === "heading"
-            ? t("block_reference.types.heading", { level: block.name.slice("heading".length) })
-            : t(`block_reference.types.${type}`)
+            ? t("block_handle_menu.types.heading", { level: block.name.slice("heading".length) })
+            : t(`block_handle_menu.types.${type}`)
     };
     const helpPage = byBlockType[type];
     if (helpPage && openHelpPage) {
@@ -453,7 +469,7 @@ const BLOCK_TYPES: Record<string, BlockType> = {
     unknownContentEmbed: "embed"
 };
 
-/** A type of block, by its key under `block_reference.types`. */
+/** A type of block, by its key under `block_handle_menu.types`. */
 export type BlockType = "paragraph" | "heading" | "list_item" | "todo_item" | "block_quote"
     | "code_block" | "table" | "image" | "horizontal_line" | "page_break" | "admonition"
     | "collapsible" | "tabs" | "columns" | "math" | "footnotes" | "footnote" | "included_note"
@@ -483,18 +499,18 @@ function buildInsertItems(
     const command = (title: string, uiIcon: string, name: InsertCommandName) =>
         getInsertCommandItem(editor, title, uiIcon, name);
     const above = first.hasAttribute("listItemId")
-        ? [ command(t("block_reference.insert_item_above"), "bx bx-arrow-to-top",
+        ? [ command(t("block_handle_menu.insert_item_above"), "bx bx-arrow-to-top",
             "triliumInsertListItemAbove") ]
-        : [ insertBeside?.(t("block_reference.insert_above"), "bx bx-arrow-to-top",
+        : [ insertBeside?.(t("block_handle_menu.insert_above"), "bx bx-arrow-to-top",
             first, "before") ];
     const below = last.hasAttribute("listItemId")
         ? [
-            command(t("block_reference.insert_item_below"), "bx bx-arrow-to-bottom",
+            command(t("block_handle_menu.insert_item_below"), "bx bx-arrow-to-bottom",
                 "triliumInsertListItemBelow"),
-            command(t("block_reference.insert_child_item"), "bx bx-subdirectory-right",
+            command(t("block_handle_menu.insert_child_item"), "bx bx-subdirectory-right",
                 "triliumInsertChildListItem")
         ]
-        : [ insertBeside?.(t("block_reference.insert_below"), "bx bx-arrow-to-bottom",
+        : [ insertBeside?.(t("block_handle_menu.insert_below"), "bx bx-arrow-to-bottom",
             last, "after") ];
     const rows = [
         command(t("table_context_menu.insert_rows_above"), "bx bx-horizontal-left bx-rotate-90",
@@ -549,6 +565,37 @@ function getInsertCommandItem(
             editor.editing.view.focus();
             editor.editing.view.scrollToTheSelection();
         }
+    };
+}
+
+/**
+ * The actions that put the blocks of the handle on the clipboard, as a copy does, each `undefined`
+ * while its command is disabled. Cutting deletes the blocks once the clipboard holds them.
+ */
+function getClipboardActions(
+    editor: CKTextEditor | null | undefined
+): Pick<BlockHandleMenuActions, "cutBlocks" | "copyBlocks"> {
+    if (!editor?.commands.get("copyBlocks")?.isEnabled) {
+        return {};
+    }
+
+    const copy = async () => {
+        const { html, text } = editor.execute("copyBlocks");
+        const isCopied = await copyHtml(html, text);
+        if (!isCopied) {
+            toast.showError(t("clipboard.copy_failed"));
+        }
+        return isCopied;
+    };
+
+    const deleteBlocks = getDeleteBlocksAction(editor);
+    return {
+        cutBlocks: deleteBlocks && (async () => {
+            if (await copy()) {
+                deleteBlocks();
+            }
+        }),
+        copyBlocks: () => void copy()
     };
 }
 
