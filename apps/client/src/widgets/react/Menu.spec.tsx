@@ -124,6 +124,23 @@ describe("Menu with declared rows", () => {
         expect(calls).toEqual([]);
     });
 
+    it("puts an item's submenu classes on the layer of its submenu", async () => {
+        render((
+            <Menu
+                anchor={{ x: 10, y: 10 }} onClose={vi.fn()}
+                items={[
+                    { title: "Insert", submenuClassName: "wide", items: [ { title: "Table" } ] }
+                ]}
+            />
+        ), host);
+        const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+
+        rowTitled("Insert").dispatchEvent(new PointerEvent("pointerenter"));
+        await vi.waitFor(() => expect(menu && layers(menu)).toEqual([ [ "Table" ] ]));
+        expect(menu?.querySelector(":scope > div.dropdown-submenu > .dropdown-menu")?.classList)
+            .toContain("wide");
+    });
+
     it("draws a submenu row's icon and a description under its title", () => {
         render((
             <Menu anchor={{ x: 10, y: 10 }} onClose={vi.fn()}>

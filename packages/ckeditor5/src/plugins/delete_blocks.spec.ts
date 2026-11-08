@@ -1,6 +1,6 @@
 import {
     _getModelData as getModelData, _setModelData as setModelData, BlockQuote, Essentials,
-    Paragraph, Table, TableCaption
+    Paragraph, Table, TableCaption, type ViewDocumentClipboardOutputEvent
 } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
@@ -58,6 +58,23 @@ describe("DeleteBlocks", () => {
         }
     });
 
+    it("deletes the range that a copy returned, wherever the caret is now", async () => {
+        const editor = await createEditor();
+        setModelData(editor.model, "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+            + "<paragraph>three</paragraph>");
+        const { range } = editor.execute("copyBlocks");
+        const root = editor.model.document.getRoot();
+        editor.model.change((writer) => {
+            if (root) {
+                writer.setSelection(writer.createPositionFromPath(root, [ 0, 1 ]));
+            }
+        });
+
+        editor.execute("deleteBlocks", range);
+        expect(getModelData(editor.model))
+            .toBe("<paragraph>one</paragraph><paragraph>[]three</paragraph>");
+    });
+
     it("deletes in one undo step", async () => {
         const editor = await createEditor();
         setModelData(editor.model, "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
@@ -81,6 +98,57 @@ describe("DeleteBlocks", () => {
         expect(command?.isEnabled).toBe(true);
 
         // A caption is in no block.
+        setModelData(editor.model, "<table><tableRow><tableCell><paragraph>cell</paragraph>"
+            + "</tableCell></tableRow><caption>Cap[]tion</caption></table>");
+        expect(command?.isEnabled).toBe(false);
+    });
+});
+
+describe("CopyBlocksCommand", () => {
+    it("serializes the blocks that the handle drags as a copy does, changing nothing", async () => {
+        const editor = await createEditor();
+        const methods: string[] = [];
+        editor.editing.view.document.on<ViewDocumentClipboardOutputEvent>("clipboardOutput",
+            (_evt, data) => methods.push(data.method));
+        const cell = (text: string) => `<tableCell><paragraph>${text}</paragraph></tableCell>`;
+        const cases = [ {
+            before: "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+                + "<paragraph>three</paragraph>",
+            html: "<p>two</p>",
+            text: "two"
+        }, {
+            before: "<paragraph>o[ne</paragraph><paragraph>tw]o</paragraph>"
+                + "<paragraph>three</paragraph>",
+            html: "<p>one</p><p>two</p>",
+            text: "one\n\ntwo"
+        }, {
+            before: `<paragraph>before</paragraph><table><tableRow>[${cell("a")}][${cell("b")}]`
+                + "</tableRow></table>",
+            html: "<table class=\"table\"><tbody><tr><td>a</td><td>b</td></tr></tbody></table>",
+            text: "a\n\nb"
+        } ];
+
+        for (const { before, html, text } of cases) {
+            setModelData(editor.model, before);
+            expect(editor.execute("copyBlocks")).toMatchObject({ html, text });
+            expect(getModelData(editor.model)).toBe(before);
+        }
+        expect(methods).toEqual([ "copy", "copy", "copy" ]);
+
+        setModelData(editor.model, cases[1].before, { lastRangeBackward: true });
+        editor.execute("copyBlocks");
+        expect(editor.model.document.selection.isBackward).toBe(true);
+    });
+
+    it("is enabled with a selected block, also while the editor is read-only", async () => {
+        const editor = await createEditor();
+        const command = editor.commands.get("copyBlocks");
+        setModelData(editor.model, "<paragraph>o[]ne</paragraph>");
+        expect(command?.isEnabled).toBe(true);
+
+        editor.enableReadOnlyMode("spec");
+        expect(command?.isEnabled).toBe(true);
+
         setModelData(editor.model, "<table><tableRow><tableCell><paragraph>cell</paragraph>"
             + "</tableCell></tableRow><caption>Cap[]tion</caption></table>");
         expect(command?.isEnabled).toBe(false);

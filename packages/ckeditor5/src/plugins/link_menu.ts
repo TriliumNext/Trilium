@@ -110,6 +110,7 @@ export default class LinkMenu extends Plugin {
 
         const view = editor.editing.view;
         view.addObserver(ContextMenuObserver);
+        view.addObserver(LinkPreviewContextMenuObserver);
         this.listenTo<ViewDocumentContextMenuEvent>(view.document, "contextmenu", (evt, data) => {
             const { domEvent } = data;
             // Shift+right-click opens the browser's menu, and Ctrl+right-click is left to the host.
@@ -253,9 +254,14 @@ async function describeNoteLinkMenu(
     const { target, actions, afterUnlink } = host
         ? await host.describeNoteLink(href, element, run)
         : { target: [], actions: [], afterUnlink: [] };
+    const inNoteTarget = getInNoteTarget(editor, href);
     const open: ToolbarGroupMenuEntry = {
         kind: "entry", label: getOpenLinkLabel(editor, href),
-        iconClass: "bx bx-right-arrow-circle", isEnabled: true,
+        // A jump within the note has the icon of the jump in the preview of the link.
+        iconClass: inNoteTarget?.block || inNoteTarget?.bookmark
+            ? "bx bx-up-arrow"
+            : "bx bx-right-arrow-circle",
+        isEnabled: true,
         run: run(() => {
             if (!jumpInNote(editor, href)) {
                 host?.openNote(href, element);
@@ -265,7 +271,7 @@ async function describeNoteLinkMenu(
 
     const editLink = describeEditLink(editor, run);
     // The first entry jumps to blocks of the note itself, so no other place to open it is listed.
-    const head = getInNoteTarget(editor, href)?.block
+    const head = inNoteTarget?.block
         ? [ [ open, editLink ] ]
         : [ [ open, ...target ], [ editLink ] ];
     const unlink = describeUnlink(editor, reference ? UNLINK_REFERENCE_COMMAND : "unlink", run);
@@ -351,6 +357,17 @@ function getNoteLinkElement(editor: Editor, reference: ModelElement | null): HTM
     const viewElement = reference && editor.editing.mapper.toViewElement(reference) as ViewElement;
     const element = viewElement ? view.domConverter.mapViewToDom(viewElement) : view.getDomRoot();
     return element as HTMLElement;
+}
+
+/**
+ * Fires `contextmenu` on the view document for a right-click on the drawn content of a link
+ * preview, which `ContextMenuObserver` ignores as widget UI.
+ */
+class LinkPreviewContextMenuObserver extends ContextMenuObserver {
+    override checkShouldIgnoreEventFromTarget(domTarget: Node | null) {
+        // The target of a right-click is an element.
+        return !(domTarget as Element).closest(".link-mention-inner, .link-embed-preview-wrapper");
+    }
 }
 
 declare module "ckeditor5" {

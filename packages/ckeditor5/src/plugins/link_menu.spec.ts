@@ -349,8 +349,8 @@ describe("LinkMenu", () => {
                 if (link) writer.setSelection(link, 1);
             });
 
-            const [ first ] = describeEntries(await open());
-            expect(first).toBe("Jump to anchor");
+            const [ first ] = await open();
+            expect(first).toMatchObject({ label: "Jump to anchor", iconClass: "bx bx-up-arrow" });
             run(await open(), "Jump to anchor");
             expect(openNote).not.toHaveBeenCalled();
         });
@@ -365,9 +365,11 @@ describe("LinkMenu", () => {
                     `<paragraph><$text linkHref="${href}">fo[]o</$text></paragraph>`);
 
                 selectLink(`${NOTE}?block=b1`);
-                expect(describeEntries(await open())).toStrictEqual([
+                const entries = await open();
+                expect(describeEntries(entries)).toStrictEqual([
                     "Jump to block", "Edit link", ...WITH_HOST.slice(3)
                 ]);
+                expect(entries[0]).toMatchObject({ iconClass: "bx bx-up-arrow" });
 
                 selectLink("#root/def?block=b1");
                 expect(describeEntries(await open())).toStrictEqual([ "Open note", ...WITH_HOST ]);
@@ -428,12 +430,21 @@ describe("LinkMenu", () => {
             expect((await rightClick(title)).request).toBeDefined();
             expect(selected()).toBe("reference");
 
-            setModelData(editor.model,
-                `<paragraph>[]a <linkMention url="${URL}" title="T"></linkMention></paragraph>`);
-            const preview = await rightClick(find(editor, ".link-mention"));
-            expect(preview.isTaken).toBe(true);
-            expect(selected()).toBe("linkMention");
-            expect(describeEntries(preview.request?.items ?? [])[0]).toBe("Open link");
+            // The drawn content of a link preview is widget UI, whose events the view ignores.
+            for (const [ data, selector, name ] of [
+                [ `<paragraph>[]a <linkMention url="${URL}" title="T"></linkMention></paragraph>`,
+                    ".link-mention-inner", "linkMention" ],
+                [ `<paragraph>[]a</paragraph><linkEmbed url="${URL}" embedType="opengraph"`
+                    + " title=\"T\"></linkEmbed>", ".link-embed-preview-wrapper", "linkEmbed" ]
+            ]) {
+                setModelData(editor.model, data);
+                const content = find(editor, selector);
+                expect(content?.matches("[data-cke-ignore-events]"), name).toBe(true);
+                const preview = await rightClick(content);
+                expect(preview.isTaken, name).toBe(true);
+                expect(selected()).toBe(name);
+                expect(describeEntries(preview.request?.items ?? [])[0]).toBe("Open link");
+            }
         });
 
         it("leaves the browser's menu to a right-click it has no menu of a link for", async () => {

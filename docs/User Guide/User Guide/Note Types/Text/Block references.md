@@ -4,15 +4,14 @@ Block references are [links](Links.md) to a block of a text note, such as a para
 ## Copying a reference
 
 1.  Place the cursor in the block to reference. To reference several consecutive blocks, select them.
-2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>). Alternatively, right-click the text and open the _Copy_ submenu.
-3.  Select _Copy reference to this block_, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
-4.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+2.  Right-click the block handle, the sequence of dots to the left of the block (see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>), and select _Copy reference_. With the fixed formatting toolbar, clicking the block handle opens the same menu. Alternatively, right-click the text and select _Copy reference to this block_ in the _Copy_ submenu, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
+3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy reference to this tab_ in the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu of the tabs block instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
 
 The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text, and a link to a heading of the same note shows the whole heading.
 
-If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link to this block_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them. On a shared page, a link to blocks of another shared note does the same.
+If the note is [shared](../../Advanced%20Usage/Sharing.md), the menu of the block handle also offers _Copy public link_. It copies the web address of the shared page with the reference added, to send to people who read the note outside Trilium. Opening the address scrolls the shared page to the referenced blocks and flashes them. On a shared page, a link to blocks of another shared note does the same.
 
 The _Paste_ submenu of the context menu offers two more ways to insert a copied reference:
 

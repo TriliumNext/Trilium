@@ -3251,6 +3251,8 @@
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",
     "quick-edit": "Quick edit",
+    "jump-to-block": "Jump to block",
+    "jump-to-heading": "Jump to heading",
     "attachment-info": "Attachment • {{size}}"
   },
   "geo-map": {
@@ -4915,8 +4917,8 @@
   "block_reference": {
     "copy_one": "Copy reference to this block",
     "copy_other": "Copy reference to these {{count}} blocks",
-    "copy_share_link_one": "Copy public link to this block",
-    "copy_share_link_other": "Copy public link to these {{count}} blocks",
+    "copy_reference": "Copy reference",
+    "copy_share_link": "Copy public link",
     "copy_tab": "Copy link to this tab",
     "paste_as_link": "Paste reference as a link",
     "paste_as_excerpt": "Paste reference as an excerpt",
@@ -4926,9 +4928,48 @@
     "untitled": "Block",
     "excerpt": "Excerpt",
     "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
-    "edit_excerpt": "Edit excerpt",
-    "delete_one": "Delete block",
-    "delete_other": "Delete {{count}} blocks"
+    "edit_excerpt": "Edit excerpt"
+  },
+  "block_handle_menu": {
+    "block_count_one": "{{count}} block",
+    "block_count_other": "{{count}} blocks",
+    "insert_above": "Insert above",
+    "insert_below": "Insert below",
+    "insert_item_above": "Insert item above",
+    "insert_item_below": "Insert item below",
+    "insert_child_item": "Insert child item",
+    "cut": "Cut",
+    "copy": "Copy",
+    "delete": "Delete",
+    "types": {
+      "paragraph": "Paragraph",
+      "heading": "Heading {{level}}",
+      "list_item": "List item",
+      "todo_item": "To-do item",
+      "block_quote": "Block quote",
+      "code_block": "Code block",
+      "table": "Table",
+      "image": "Image",
+      "horizontal_line": "Horizontal line",
+      "page_break": "Page break",
+      "admonition": "Admonition",
+      "collapsible": "Collapsible block",
+      "tabs": "Tabs",
+      "columns": "Column layout",
+      "math": "Math equation",
+      "footnotes": "Footnotes",
+      "footnote": "Footnote",
+      "included_note": "Included note",
+      "excerpt": "Excerpt",
+      "attachment": "Attachment",
+      "drawing": "Drawing canvas",
+      "mermaid": "Mermaid diagram",
+      "video": "Video",
+      "audio": "Audio",
+      "link_preview": "Link preview",
+      "embed": "Embed",
+      "block": "Block"
+    }
   },
   "record_meeting": {
     "note_title": "Meeting {{date}}",

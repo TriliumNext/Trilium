@@ -248,10 +248,10 @@ describe("tabs layout styles", () => {
         editor.editing.view.document.isFocused = true;
         const rootStyle = document.documentElement.style;
         rootStyle.setProperty("--ck-color-focus-border", "rgb(12, 34, 56)");
-        rootStyle.setProperty("--link-color", "rgb(65, 43, 21)");
+        rootStyle.setProperty("--input-focus-outline-color", "rgb(65, 43, 21)");
         onTestFinished(() => {
             rootStyle.removeProperty("--ck-color-focus-border");
-            rootStyle.removeProperty("--link-color");
+            rootStyle.removeProperty("--input-focus-outline-color");
         });
         const inner = `<div class="trilium-tabs">${tab("B1", "<p>b1</p>")}${tab("B2", "")}</div>`;
         editor.setData(

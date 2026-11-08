@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { createRef, render as preactRender } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -1413,5 +1416,30 @@ describe("filterCommandEntries with aliases", () => {
         expect(ids("r")).toEqual([ "rule", "table", "code" ]);
         expect(ids("GRID")).toEqual([ "table" ]);
         expect(ids("tline")).toEqual([ "toc" ]);
+    });
+});
+
+describe("the slash command menu", () => {
+    afterEach(() => {
+        document.head.innerHTML = "";
+        document.body.className = "";
+    });
+
+    it("is as wide as a menu when it opens as a submenu", () => {
+        document.head.innerHTML = [ "../../stylesheets/menus.css", "NoteAutocomplete.css" ]
+            .map((file) => `<style>${readFileSync(join(__dirname, file), "utf8")}</style>`)
+            .join("");
+        document.body.className = "desktop";
+        const menu = `<div class="dropdown-menu slash-command-menu"></div>`;
+        document.body.innerHTML = `${menu}<div class="dropdown-submenu">${menu}</div>`;
+        const widths = (element: Element) => {
+            const { width, minWidth, maxWidth } = getComputedStyle(element);
+            return { width, minWidth, maxWidth };
+        };
+
+        const menus = document.querySelectorAll(".slash-command-menu");
+        const [ top, submenu ] = Array.from(menus, widths);
+        expect(top.width).toBe("350px");
+        expect(submenu).toEqual({ width: top.width, minWidth: "unset", maxWidth: top.maxWidth });
     });
 });

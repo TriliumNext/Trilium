@@ -402,6 +402,10 @@ div.ck.ck-collapsible {
         box-shadow: inset 0 0 0 1px var(--ck-color-border-control);
     }
 
+    &[style*="--tn-color"].ck-color-selector__color-tile_bordered {
+        box-shadow: none;
+    }
+
     &:hover:not(.ck-on, .ck-disabled) {
         transform: scale(1.2);
     }
@@ -415,7 +419,7 @@ div.ck.ck-collapsible {
         display: none;
     }
 
-    /* The selection ring takes the tile's own color, which only its inline background holds. */
+    /* The ring uses the original color, from the inline background or the `--tn-*` variable. */
     &.ck-on::after {
         content: "";
         position: absolute;
@@ -426,6 +430,14 @@ div.ck.ck-collapsible {
         mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
         mask-clip: padding-box, border-box;
         mask-composite: exclude;
+    }
+
+    &[style*="--tn-color"].ck-on::after {
+        background: var(--tn-color);
+    }
+
+    &[style*="--tn-background"].ck-on::after {
+        background: var(--tn-background);
     }
 
     &.ck-color-selector__color-tile_bordered.ck-on::after {
@@ -1261,6 +1273,43 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
 .ck-content .footnote-section {
     border: 0 !important;
     border-top: 1px solid var(--main-border-color) !important;
+}
+
+/*
+ * Widgets
+ */
+
+/* Block widgets only: the inline ones are `span` and `a` elements. */
+.ck-editor__editable :is(div, figure, section).ck-widget_selected {
+    --ck-color-focus-border: var(--ck-editor-widget-selection-color);
+    /* `:root` resolves `--ck-color-resizer` against its own `--ck-color-focus-border`. */
+    --ck-color-resizer: var(--ck-color-focus-border);
+}
+
+/* Selected cells use the text selection color, painted below the text like a text selection. */
+.ck-editor__editable .table :is(td, th).ck-editor__editable_selected {
+    isolation: isolate;
+
+    &::after {
+        --ck-table-selected-cell-background: var(--selection-background-color);
+        z-index: -1;
+    }
+}
+
+/* The pane gutter of `shell.css`. Outranks the resizer colors of `ckeditor5.css`, which loads
+   later. */
+:root .ck.ck-editor__editable .table .ck-table-column-resizer {
+    box-sizing: border-box;
+    /* Paints a 3px bar in the middle. The pointer keeps the full width of the resizer. */
+    padding-inline: calc((var(--ck-table-column-resizer-width) - 3px) / 2);
+    background-clip: content-box;
+    transition: background-color 150ms ease-out;
+
+    &:is(:hover, .ck-table-column-resizer__active) {
+        background-color: var(--gutter-hover-color);
+        opacity: 1;
+        transition: background-color 300ms ease-in;
+    }
 }
 
 /*

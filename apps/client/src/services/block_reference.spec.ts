@@ -1,10 +1,12 @@
-import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
+import { CANVAS_ATTACHMENT_MIME, MERMAID_ATTACHMENT_MIME } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import type { MenuCommandItem, MenuItem } from "../menus/context_menu.js";
+import type { MenuCommandItem, MenuHeader, MenuItem } from "../menus/context_menu.js";
 import {
+    type BlockHandleMenuActions,
     buildBlockReferenceMenuItems, buildReferenceConfig, consumeBlockReference, copyBlockReference,
     copyBlockShareLink, copyTabReference, getClipboardBlockReference, highlightBlockReference,
     openBlockHandleMenu, revealHighlightedBlocks
@@ -12,30 +14,42 @@ import {
 import type { ViewScope } from "./link.js";
 
 const {
-    showError, showMessage, showMenu, copyHtmlWithToast, copyTextWithToast, getTextEditorContaining,
-    getNote, getNoteShareLink, buildSortSelectionMenuItem
+    showError, showMessage, showMenu, copyHtml, copyHtmlWithToast, copyTextWithToast,
+    getTextEditorContaining, getNote, getNoteShareLink, buildSortSelectionMenuItem, attachments,
+    menuState
 } = vi.hoisted(() => ({
     buildSortSelectionMenuItem: vi.fn(),
     getNoteShareLink: vi.fn(),
     showError: vi.fn(),
     showMessage: vi.fn(),
     showMenu: vi.fn(),
+    copyHtml: vi.fn(),
     copyHtmlWithToast: vi.fn(),
     copyTextWithToast: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getNote: vi.fn()
+    getNote: vi.fn(),
+    attachments: {} as Record<string, { mime: string }>,
+    menuState: { dismissedByLastPress: false }
 }));
 vi.mock("./i18n.js", () => ({
-    t: (key: string, options?: { count?: number }) => options ? `${key}:${options.count}` : key
+    t: (key: string, options?: Record<string, unknown>) =>
+        options ? `${key}:${Object.values(options).join(",")}` : key
 }));
 vi.mock("./toast.js", () => ({ default: { showError, showMessage } }));
-vi.mock("../menus/context_menu.js", () => ({ default: { show: showMenu } }));
+vi.mock("../menus/context_menu.js", () => ({
+    default: {
+        show: showMenu,
+        get dismissedByLastPress() {
+            return menuState.dismissedByLastPress;
+        }
+    }
+}));
 vi.mock("../menus/text_editor_context_menu.js", async (importOriginal) => ({
     ...await importOriginal<typeof import("../menus/text_editor_context_menu.js")>(),
     buildSortSelectionMenuItem, getTextEditorContaining
 }));
-vi.mock("./clipboard_ext.js", () => ({ copyHtmlWithToast, copyTextWithToast }));
-vi.mock("./froca.js", () => ({ default: { getNote } }));
+vi.mock("./clipboard_ext.js", () => ({ copyHtml, copyHtmlWithToast, copyTextWithToast }));
+vi.mock("./froca.js", () => ({ default: { getNote, attachments } }));
 vi.mock("./content_renderer.js", () => ({
     EXCERPT_BOX_SIZE: "full",
     getEmbedBoxSize: () => "medium"
@@ -47,6 +61,7 @@ const scrollBy = vi.fn();
 
 beforeEach(() => {
     vi.clearAllMocks();
+    menuState.dismissedByLastPress = false;
     vi.useFakeTimers();
     Element.prototype.scrollBy = scrollBy;
 });
@@ -252,48 +267,163 @@ describe("copyBlockShareLink", () => {
 describe("openBlockHandleMenu", () => {
     it("offers the copy items, then the sort and the delete item after separators", () => {
         const event = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
+        const blocks = [ buildBlock("paragraph"), buildBlock("table"), buildBlock("paragraph") ];
+        const header = { kind: "header", title: "block_handle_menu.block_count:3" };
         const copyReference = vi.fn();
         const copyShareLink = vi.fn();
         const copyItem = expect.objectContaining({
-            title: "block_reference.copy:3",
+            title: "block_reference.copy_reference",
             handler: copyReference
         });
 
         const deleteBlocks = vi.fn();
         const deleteItem = expect.objectContaining({
-            title: "block_reference.delete:3",
+            title: "block_handle_menu.delete",
             handler: deleteBlocks
         });
 
-        openBlockHandleMenu(event, 3, { copyReference });
-        openBlockHandleMenu(event, 3, { copyReference, copyShareLink });
-        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" } });
-        openBlockHandleMenu(event, 3, { copyReference, deleteBlocks });
-        openBlockHandleMenu(event, 3, { copyReference, sortItem: { title: "SORT" }, deleteBlocks });
+        openBlockHandleMenu(event, blocks, { copyReference });
+        openBlockHandleMenu(event, blocks, { copyReference, copyShareLink });
+        openBlockHandleMenu(event, blocks, { copyReference, sortItem: { title: "SORT" } });
+        openBlockHandleMenu(event, blocks, { copyReference, deleteBlocks });
+        openBlockHandleMenu(event, blocks, {
+            copyReference, sortItem: { title: "SORT" }, deleteBlocks
+        });
+        openBlockHandleMenu(event, blocks, { insertItems: [ { title: "INSERT" } ], copyReference });
+        const cutBlocks = vi.fn();
+        const copyBlocks = vi.fn();
+        openBlockHandleMenu(event, blocks, { cutBlocks, copyBlocks, copyReference });
+        openBlockHandleMenu(event, blocks, { copyBlocks, copyReference });
 
         expect(showMenu).toHaveBeenNthCalledWith(1, expect.objectContaining({
             x: event.pageX,
             y: event.pageY,
-            items: [ copyItem ]
+            items: [ header, copyItem ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(2, expect.objectContaining({
-            items: [ copyItem, expect.objectContaining({
-                title: "block_reference.copy_share_link:3",
+            items: [ header, copyItem, expect.objectContaining({
+                title: "block_reference.copy_share_link",
                 handler: copyShareLink
             }) ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(3, expect.objectContaining({
-            items: [ copyItem, { kind: "separator" }, { title: "SORT" } ]
+            items: [ header, copyItem, { kind: "separator" }, { title: "SORT" } ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(4, expect.objectContaining({
-            items: [ copyItem, { kind: "separator" }, deleteItem ]
+            items: [ header, copyItem, { kind: "separator" }, deleteItem ]
         }));
         expect(showMenu).toHaveBeenNthCalledWith(5, expect.objectContaining({
             items: [
-                copyItem, { kind: "separator" }, { title: "SORT" }, { kind: "separator" },
-                deleteItem
+                header, copyItem, { kind: "separator" }, { title: "SORT" },
+                { kind: "separator" }, deleteItem
             ]
         }));
+        expect(showMenu).toHaveBeenNthCalledWith(6, expect.objectContaining({
+            items: [ header, { title: "INSERT" }, { kind: "separator" }, copyItem ]
+        }));
+        const copyBlocksItem = {
+            title: "block_handle_menu.copy", uiIcon: "bx bx-copy", handler: copyBlocks
+        };
+        expect(showMenu).toHaveBeenNthCalledWith(7, expect.objectContaining({
+            items: [
+                header, { title: "block_handle_menu.cut", uiIcon: "bx bx-cut", handler: cutBlocks },
+                copyBlocksItem, copyItem
+            ]
+        }));
+        expect(showMenu).toHaveBeenNthCalledWith(8, expect.objectContaining({
+            items: [ header, copyBlocksItem, copyItem ]
+        }));
+    });
+
+    it("opens below a clicked handle, unless the press closed the menu", () => {
+        const handle = document.createElement("button");
+        const rightClick = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
+        const blocks = [ buildBlock("paragraph") ];
+        const onClose = vi.fn();
+
+        openBlockHandleMenu(handle, blocks, { copyReference: vi.fn() }, null, onClose);
+        menuState.dismissedByLastPress = true;
+        openBlockHandleMenu(handle, blocks, { copyReference: vi.fn() }, null, onClose);
+        openBlockHandleMenu(rightClick, blocks, { copyReference: vi.fn() }, null, onClose);
+
+        const [ below, atPointer ] = showMenu.mock.calls.map(([ options ]) => options);
+        expect(showMenu).toHaveBeenCalledTimes(2);
+        expect(below).toMatchObject({ anchor: handle });
+        expect(below).not.toHaveProperty("x");
+        expect(atPointer).toMatchObject({ x: rightClick.pageX, y: rightClick.pageY });
+        expect(atPointer).not.toHaveProperty("anchor");
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it("heads the menu with the type of a single block", () => {
+        attachments.drawing1 = { mime: CANVAS_ATTACHMENT_MIME };
+        attachments.diagram1 = { mime: MERMAID_ATTACHMENT_MIME };
+        attachments.file1 = { mime: "application/pdf" };
+        const blocks = [
+            buildBlock("paragraph"),
+            buildBlock("heading3"),
+            buildBlock("paragraph", { listItemId: "a", listType: "bulleted" }),
+            buildBlock("paragraph", { listItemId: "b", listType: "numbered" }),
+            buildBlock("paragraph", { listItemId: "c", listType: "todo" }),
+            buildBlock("table"),
+            buildBlock("aside"),
+            buildBlock("details"),
+            buildBlock("multicolumnLayout"),
+            buildBlock("footnoteContent"),
+            buildBlock("contentEmbed", { url: "https://example.com/a.mp4", embedType: "video" }),
+            buildBlock("contentEmbed", { url: "https://example.com/a.mp3", embedType: "audio" }),
+            buildBlock("contentEmbed", { language: "mermaid", source: "graph TD" }),
+            buildBlock("contentEmbed", { language: "text-plain", source: "code" }),
+            buildBlock("contentEmbed", { noteId: "n1" }),
+            buildBlock("contentEmbed", { noteId: "n1", block: "a:b" }),
+            buildBlock("contentEmbed", { attachmentId: "drawing1" }),
+            buildBlock("contentEmbed", { attachmentId: "diagram1" }),
+            buildBlock("contentEmbed", { attachmentId: "file1" }),
+            buildBlock("contentEmbed", { attachmentId: "notLoaded" }),
+            buildBlock("contentEmbed", { uploadId: "u1" }),
+            buildBlock("htmlDivParagraph")
+        ];
+
+        const titles = blocks.map((block) => {
+            openBlockHandleMenu(new MouseEvent("contextmenu"), [ block ], {
+                copyReference: vi.fn()
+            });
+            return showMenu.mock.lastCall?.[0].items[0].title;
+        });
+
+        expect(titles).toEqual([
+            "paragraph", "heading:3", "list_item", "list_item", "todo_item", "table",
+            "admonition", "collapsible", "columns", "footnote", "video", "audio", "mermaid",
+            "code_block", "included_note", "excerpt", "drawing", "mermaid", "attachment",
+            "attachment", "attachment", "block"
+        ].map((type) => `block_handle_menu.types.${type}`));
+    });
+
+    it("gives the heading of a single block a button that opens the help page of its type", () => {
+        const openHelpPage = vi.fn();
+        const getHeader = (blocks: ModelElement[], actions: BlockHandleMenuActions = {
+            copyReference: vi.fn(), openHelpPage
+        }) => {
+            openBlockHandleMenu(new MouseEvent("contextmenu"), blocks, actions);
+            return showMenu.mock.lastCall?.[0].items[0] as MenuHeader;
+        };
+        const runHelp = (header: MenuHeader) =>
+            header.actions?.[0]?.callback(new MouseEvent("click"));
+
+        const table = getHeader([ buildBlock("table") ]);
+        expect(table.actions).toEqual([ {
+            icon: "bx bx-help-circle", caption: "open-help-page", callback: expect.any(Function)
+        } ]);
+        runHelp(table);
+        runHelp(getHeader([ buildBlock("heading2") ]));
+        expect(openHelpPage.mock.calls).toEqual([ [ "NdowYOC1GFKS" ], [ "Gr6xFaF6ioJ5" ] ]);
+
+        expect(getHeader([ buildBlock("paragraph") ])).not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("htmlDivParagraph") ])).not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("table"), buildBlock("table") ]))
+            .not.toHaveProperty("actions");
+        expect(getHeader([ buildBlock("table") ], { copyReference: vi.fn() }))
+            .not.toHaveProperty("actions");
     });
 });
 
@@ -310,13 +440,15 @@ describe("buildReferenceConfig", () => {
             ? { startId: "t1", endId: "t1", count: 1 }
             : { startId: "s1", endId: "s1", count: 1 }) as never);
         const save = vi.fn();
+        const openHelpPage = vi.fn();
         const config = buildReferenceConfig({
             getEditor: () => editor,
             getNote: () => note,
             getNotePath: () => notePath,
-            save
+            save,
+            openHelpPage
         });
-        return { config, editor, save };
+        return { config, editor, save, openHelpPage };
     }
 
     it("copies references to the blocks and the tab of the note, then saves it", async () => {
@@ -338,15 +470,17 @@ describe("buildReferenceConfig", () => {
     });
 
     it("opens the block handle menu, which copies references or deletes the blocks", async () => {
-        const { config, editor, save } = buildSource();
+        const { config, editor, save, openHelpPage } = buildSource();
         const event = new MouseEvent("contextmenu");
         getNoteShareLink.mockReturnValue("https://notes.example.com/share/page");
 
-        config.blockReference?.openHandleMenu?.(event, 1, vi.fn());
+        const blocks = [ buildBlock("paragraph") ];
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         const items = showMenu.mock.calls[0][0].items as MenuItem<CommandNames>[];
-        runItem(items[0]);
-        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        expect(items[0]).toEqual({ kind: "header", title: "block_handle_menu.types.paragraph" });
         runItem(items[1]);
+        await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+        runItem(items[2]);
         await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
 
         expect(getNoteShareLink).toHaveBeenCalledWith(note);
@@ -355,22 +489,167 @@ describe("buildReferenceConfig", () => {
             "https://notes.example.com/share/page?block=s1");
 
         getNoteShareLink.mockReturnValue(null);
-        config.blockReference?.openHandleMenu?.(event, 1, vi.fn());
-        expect(showMenu.mock.calls[1][0].items).toHaveLength(1);
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
+        expect(showMenu.mock.calls[1][0].items).toHaveLength(2);
 
         buildSortSelectionMenuItem.mockReturnValueOnce({ title: "SORT" });
-        config.blockReference?.openHandleMenu?.(event, 2, vi.fn());
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         expect(buildSortSelectionMenuItem).toHaveBeenCalledWith(editor);
         expect(showMenu.mock.calls[2][0].items.at(-1)).toEqual({ title: "SORT" });
 
         vi.mocked(editor.commands.get).mockReturnValue({ isEnabled: true } as never);
-        config.blockReference?.openHandleMenu?.(event, 2, vi.fn());
+        config.blockReference?.openHandleMenu?.(event, blocks, vi.fn());
         const deleteItem = showMenu.mock.calls[3][0].items.at(-1);
-        expect(deleteItem).toMatchObject({ title: "block_reference.delete:2" });
+        expect(deleteItem).toMatchObject({ title: "block_handle_menu.delete" });
         runItem(deleteItem);
         expect(editor.commands.get).toHaveBeenCalledWith("deleteBlocks");
         expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks");
         expect(editor.editing.view.focus).toHaveBeenCalledOnce();
+
+        config.blockReference?.openHandleMenu?.(event, [ buildBlock("table") ], vi.fn());
+        const header = showMenu.mock.lastCall?.[0].items[0] as MenuHeader;
+        header.actions?.[0]?.callback(new MouseEvent("click"));
+        expect(openHelpPage).toHaveBeenCalledWith("NdowYOC1GFKS");
+    });
+
+    it("puts the blocks on the clipboard, deleting them for a cut once copied", async () => {
+        const { config, editor } = buildSource();
+        const openMenu = (enabled: string[]) => {
+            vi.mocked(editor.commands.get).mockImplementation(((name: string) =>
+                ({ isEnabled: enabled.includes(name) })) as never);
+            config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"),
+                [ buildBlock("paragraph") ], vi.fn());
+            return showMenu.mock.lastCall?.[0].items as MenuCommandItem<CommandNames>[];
+        };
+        const range = { name: "copied range" };
+        vi.mocked(editor.execute).mockImplementation(((name: string) => name === "copyBlocks"
+            ? { html: "<p>two</p>", text: "two", range }
+            : undefined) as never);
+        const getDeleteCount = () => vi.mocked(editor.execute).mock.calls
+            .filter(([ name ]) => name === "deleteBlocks").length;
+
+        const [ , cut, copy ] = openMenu([ "copyBlocks", "deleteBlocks" ]);
+        expect([ cut.title, copy.title ])
+            .toEqual([ "block_handle_menu.cut", "block_handle_menu.copy" ]);
+        copyHtml.mockResolvedValue(true);
+        runItem(copy);
+        await vi.waitFor(() => expect(copyHtml).toHaveBeenCalledWith("<p>two</p>", "two"));
+        expect(getDeleteCount()).toBe(0);
+        runItem(cut);
+        await vi.waitFor(() => expect(getDeleteCount()).toBe(1));
+        expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks", range);
+        expect(copyHtml).toHaveBeenCalledTimes(2);
+        expect(editor.editing.view.focus).toHaveBeenCalledOnce();
+        expect(showError).not.toHaveBeenCalled();
+
+        // An edit during the clipboard write leaves the copied blocks in place.
+        copyHtml.mockImplementationOnce(async () => {
+            editor.model.document.version += 1;
+            return true;
+        });
+        runItem(cut);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(copyHtml).toHaveBeenCalledTimes(3);
+        expect(getDeleteCount()).toBe(1);
+
+        copyHtml.mockResolvedValue(false);
+        runItem(cut);
+        await vi.waitFor(() => expect(showError).toHaveBeenCalledWith("clipboard.copy_failed"));
+        expect(getDeleteCount()).toBe(1);
+
+        expect(openMenu([ "copyBlocks" ]).slice(1, 3).map((item) => item.title))
+            .toEqual([ "block_handle_menu.copy", "block_reference.copy_reference" ]);
+        expect(openMenu([ "deleteBlocks" ])[1].title).toBe("block_reference.copy_reference");
+    });
+
+    /** Opens the block handle menu of `blocks` while only the commands in `enabled` are enabled. */
+    function openInsertMenu(blocks: ModelElement[], enabled: string[], palette: object = {
+        listAll: () => [], canInsertBeside: () => true, runBeside: vi.fn()
+    }) {
+        const { config, editor } = buildSource();
+        vi.mocked(editor.plugins.has).mockReturnValue(true);
+        vi.mocked(editor.plugins.get).mockReturnValue(palette as never);
+        vi.mocked(editor.commands.get).mockImplementation(((name: string) =>
+            ({ isEnabled: enabled.includes(name) })) as never);
+        config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), blocks, vi.fn());
+        const items = showMenu.mock.lastCall?.[0].items as MenuCommandItem<CommandNames>[];
+        return { editor, items };
+    }
+
+    it("runs the palette's entries in a new paragraph above or below the blocks", () => {
+        const definitions = [
+            { id: "insertTable", title: "Table", icon: "<svg></svg>", willInsert: true },
+            { id: "align-left", title: "Align left", icon: "<svg></svg>", willTransform: true }
+        ];
+        const palette = {
+            listAll: () => definitions,
+            canInsertBeside: vi.fn((_block: ModelElement, side: string) => side === "before"),
+            runBeside: vi.fn()
+        };
+        const blocks = [ buildBlock("paragraph"), buildBlock("paragraph") ];
+        const submenu = (title: string, uiIcon: string, enabled: boolean) => ({
+            title,
+            uiIcon,
+            enabled,
+            filterable: true,
+            submenuClassName: "slash-command-menu",
+            items: [ expect.objectContaining({ title: "Table", handler: expect.any(Function) }) ]
+        });
+
+        const { items } = openInsertMenu(blocks, [ "insertParagraph" ], palette);
+        expect(items.slice(1, 4)).toEqual([
+            submenu("block_handle_menu.insert_above", "bx bx-arrow-to-top", true),
+            submenu("block_handle_menu.insert_below", "bx bx-arrow-to-bottom", false),
+            { kind: "separator" }
+        ]);
+        runItem(items[1].items?.[0]);
+        runItem(items[2].items?.[0]);
+        expect(palette.runBeside.mock.calls).toEqual([
+            [ definitions[0], blocks[0], "before" ],
+            [ definitions[0], blocks[1], "after" ]
+        ]);
+
+        expect(openInsertMenu([], [ "insertParagraph" ], palette).items[1].title)
+            .toBe("block_reference.copy_reference");
+        expect(openInsertMenu(blocks, [], palette).items[1].title)
+            .toBe("block_reference.copy_reference");
+    });
+
+    it("inserts list items beside a list item, and rows in a table cell", () => {
+        const listItem = buildBlock("paragraph", { listItemId: "a" });
+        const commands = [
+            "triliumInsertListItemAbove", "triliumInsertListItemBelow",
+            "triliumInsertChildListItem",
+            "triliumInsertTableRowsAbove", "triliumInsertTableRowsBelow"
+        ];
+        const row = (title: string, uiIcon: string) =>
+            ({ title, uiIcon, handler: expect.any(Function) });
+
+        const { editor, items } = openInsertMenu([ listItem ], [ "insertParagraph", ...commands ]);
+        expect(items.slice(1, 7)).toEqual([
+            row("block_handle_menu.insert_item_above", "bx bx-arrow-to-top"),
+            row("block_handle_menu.insert_item_below", "bx bx-arrow-to-bottom"),
+            row("block_handle_menu.insert_child_item", "bx bx-subdirectory-right"),
+            row("table_context_menu.insert_rows_above", "bx bx-horizontal-left bx-rotate-90"),
+            row("table_context_menu.insert_rows_below", "bx bx-horizontal-left bx-rotate-270"),
+            { kind: "separator" }
+        ]);
+        for (const item of items.slice(1, 6)) {
+            runItem(item);
+        }
+        expect(vi.mocked(editor.execute).mock.calls.map(([ name ]) => name)).toEqual(commands);
+        expect(editor.editing.view.focus).toHaveBeenCalledTimes(5);
+        expect(editor.editing.view.scrollToTheSelection).toHaveBeenCalledTimes(5);
+
+        const titles = (blocks: ModelElement[], enabled: string[]) =>
+            openInsertMenu(blocks, enabled).items.slice(1, 4).map((item) => item.title);
+        expect(titles([ buildBlock("paragraph"), listItem ], [ "insertParagraph", ...commands ]))
+            .toEqual([
+                "block_handle_menu.insert_above", "block_handle_menu.insert_item_below",
+                "block_handle_menu.insert_child_item"
+            ]);
+        expect(titles([ listItem ], [ "insertParagraph" ]))
+            .toEqual([ "block_reference.copy_reference" ]);
     });
 
     it("keeps the editor focused while the block handle menu is up, then reports it closed", () => {
@@ -379,7 +658,8 @@ describe("buildReferenceConfig", () => {
         const container = document.createElement("div");
         const onClose = vi.fn();
 
-        config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), 1, onClose);
+        config.blockReference?.openHandleMenu?.(
+            new MouseEvent("contextmenu"), [ buildBlock("paragraph") ], onClose);
         const { onShow, onHide } = showMenu.mock.calls[0][0];
         onShow?.(container);
         expect(focusTracker.add).toHaveBeenCalledWith(container);
@@ -589,6 +869,15 @@ function buildMenuEditor({
     return { editor: editor as typeof editor & CKTextEditor, pasteTarget };
 }
 
+/** A model element named `name` with `attributes`, as the block handle passes it. */
+function buildBlock(name: string, attributes: Record<string, string> = {}) {
+    return {
+        name,
+        getAttribute: (key: string) => attributes[key],
+        hasAttribute: (key: string) => key in attributes
+    } as unknown as ModelElement;
+}
+
 function runItem(item: MenuItem<CommandNames> | null | undefined) {
     (item as MenuCommandItem<CommandNames> | undefined)?.handler?.({} as never, {} as never);
 }
@@ -621,7 +910,11 @@ function buildEditor(root: HTMLElement, target: unknown) {
     return {
         execute: vi.fn(() => target),
         commands: { get: vi.fn() },
-        editing: { view: { getDomRoot: () => root, focus: vi.fn() } },
+        model: { document: { version: 0 } },
+        plugins: { has: vi.fn(() => false), get: vi.fn() },
+        editing: {
+            view: { getDomRoot: () => root, focus: vi.fn(), scrollToTheSelection: vi.fn() }
+        },
         ui: { focusTracker: { add: vi.fn(), remove: vi.fn() } }
     } as unknown as CKTextEditor;
 }

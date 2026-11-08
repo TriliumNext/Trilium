@@ -276,13 +276,7 @@ body:not(.math-loaded) .math-tex {
     visibility: hidden;
 }
 
-/* The tables of the app, which draws them with `ckeditor5-content.css`: Bootstrap's `.table` class
-   stretches the `<figure>` to the content's width, and `style.css` centers the cells vertically. A
-   resized table keeps the width the figure carries in its `style`. */
-.ck-content figure.table {
-    width: 100%;
-}
-
+/* The vertical alignment of table cells in the app, from `style.css`. */
 .ck-content .table :is(td, th) {
     vertical-align: middle;
 }

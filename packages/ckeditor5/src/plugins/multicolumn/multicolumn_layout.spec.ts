@@ -160,9 +160,10 @@ describe("multicolumn layout styles", () => {
             const style = getComputedStyle(widget);
             return `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
         };
-        document.documentElement.style.setProperty("--link-color", "rgb(12, 34, 56)");
+        document.documentElement.style.setProperty("--input-focus-outline-color",
+            "rgb(12, 34, 56)");
         onTestFinished(() => {
-            document.documentElement.style.removeProperty("--link-color");
+            document.documentElement.style.removeProperty("--input-focus-outline-color");
         });
 
         expect(outline()).toBe("solid 3px rgba(0, 0, 0, 0)");

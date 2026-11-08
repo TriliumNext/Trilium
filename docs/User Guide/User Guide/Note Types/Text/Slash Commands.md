@@ -10,6 +10,8 @@ Slash commands is a feature of <a class="reference-link" href="../Text.md">Text
 *   By default, the full list of commands is displayed.
 *   To search, simply start typing: commands are found by their title or by other names they go by (for example `h2` for _Heading 2_).
 *   To trigger the highlighted action, press Enter or Tab.
+*   With the fixed <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, the block handle beside an empty paragraph turns into a <span class="tn-icon cke cke-plus"></span> button. Clicking it opens the commands that insert content or turn the paragraph into another block, such as a heading, a list, a table or a link, as a menu, with a box at its top that finds them by their title, their description or the other names they go by. The commands that only change the paragraph, such as alignment or indentation, are left out of that menu.
+*   The menu of the block handle, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, starts with _Insert above_ and _Insert below_, which list the same commands and add the one picked in a new paragraph above or below the block. Beside a list item, items that add an empty list item take their place.
 
 ## Integration with other features
 

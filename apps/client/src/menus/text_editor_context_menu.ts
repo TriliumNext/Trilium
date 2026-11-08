@@ -1,12 +1,14 @@
 import type {
-    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SortTargetKind
+    AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor, SlashCommandDefinition,
+    SortTargetKind
 } from "@triliumnext/ckeditor5";
 
 import type { CommandNames } from "../components/app_context.js";
 import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
 import { t } from "../services/i18n.js";
+import { escapeHtml } from "../services/utils.js";
 import { getEditorNoteId } from "../widgets/react/NoteStore.js";
-import type { ContextMenuOptions, MenuItem } from "./context_menu.js";
+import type { ContextMenuOptions, MenuCommandItem, MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
 
 /**
@@ -169,6 +171,26 @@ export function buildSortSelectionMenuItem(
 }
 
 /**
+ * The `/` palette's `definitions` that insert or wrap content as menu rows, drawn as the
+ * `/` palette draws them, which run the one picked with `run`.
+ */
+export function buildInsertMenuItems<T>(
+    definitions: SlashCommandDefinition[], run: (definition: SlashCommandDefinition) => void
+): MenuCommandItem<T>[] {
+    return definitions
+        .filter((definition) => definition.willInsert || definition.willWrap)
+        .map((definition) => ({
+            title: escapeHtml(definition.title),
+            description: definition.description,
+            keywords: definition.aliases,
+            uiIcon: definition.iconClass ?? "bx bx-empty",
+            uiIconSvg: definition.iconClass ? undefined : definition.icon,
+            iconColorClass: definition.iconColorClass,
+            handler: () => run(definition)
+        }));
+}
+
+/**
  * The text editor the live DOM selection sits in, or `null` when it sits anywhere else.
  *
  * The containment check is what makes this answer the click rather than the tab: the active note
@@ -205,7 +227,7 @@ export async function getTextEditorContaining(
  * while the menu is up.
  */
 export function keepEditorFocused(
-    editor: CKTextEditor
+    editor: { ui: Pick<CKTextEditor["ui"], "focusTracker"> }
 ): Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> {
     let menuContainer: HTMLElement | null = null;
 

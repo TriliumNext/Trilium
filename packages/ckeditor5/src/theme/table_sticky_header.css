@@ -65,6 +65,7 @@
     from,
     to {
         z-index: 2;
+        background-color: var(--main-background-color, var(--ck-color-base-background));
         --table-header-borders: block;
     }
 }

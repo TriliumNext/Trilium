@@ -1,3 +1,5 @@
+import { encodeBlockParameter } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
@@ -6,7 +8,7 @@ import { revealHighlightedBlocks } from "./block_reference.js";
 import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
-import linkService from "./link.js";
+import linkService, { type BlockJump } from "./link.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import treeService from "./tree.js";
 import utils from "./utils.js";
@@ -102,6 +104,9 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
     let renderPromise;
     let note: FNote | null = null;
+    const blockJump = viewScope?.block
+        ? linkService.getBlockJump($link, noteId, viewScope.block)
+        : null;
     // In-page anchors and footnotes are always bare `#fragment` references; a `?` means this is a
     // note link carrying view params (e.g. the calendar's `#<noteId>?popup`), which must render a
     // note tooltip rather than being fed into a jQuery selector (the `?` is an invalid selector).
@@ -123,7 +128,7 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // Default route: a live note. A missing note (deleted/erased) renders the "note has been
         // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
         note = await froca.getNote(noteId);
-        renderPromise = renderTooltip(note, detail, viewScope?.block);
+        renderPromise = renderTooltip(note, detail, viewScope?.block, blockJump);
     }
 
     const [content] = await Promise.all([
@@ -180,6 +185,13 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
             revealHighlightedBlocks(tooltipContent);
         }
 
+        $(`.${linkId} .jump-to-blocks-button`).on("click", (e) => {
+            // Stopped, as `goToLink()` would also open the note at the blocks.
+            e.preventDefault();
+            e.stopPropagation();
+            blockJump?.show();
+        });
+
         // Dismiss the tooltip immediately if a link was clicked inside the tooltip.
         $(`.${tooltipClass} a`).on("click", (e) => {
             dismissAllTooltips();
@@ -211,11 +223,14 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
  *               attribute), shown under the title. Absent on the vast majority of links, which say
  *               nothing beyond the note itself.
  * @param block the blocks of the note to highlight, a `block` link parameter.
+ * @param jump the jump to `block` when the link is in the note it points to, which the button of
+ *             the tooltip makes in place of opening the note in a popup.
  */
 export async function renderTooltip(
     entity: FNote | FAttachment | null,
     detail?: string,
-    block?: string
+    block?: string,
+    jump?: BlockJump | null
 ) {
     const attachment = entity && "attachmentId" in entity ? entity : null;
     const note = attachment ? attachment.getNote() : entity as FNote | null;
@@ -289,8 +304,16 @@ export async function renderTooltip(
         content += $renderedContent[0].outerHTML;
     }
 
-    // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted note.
-    if (!isDeleted) {
+    if (jump && block) {
+        const title = t(jump.isHeading
+            ? "note_tooltip.jump-to-heading"
+            : "note_tooltip.jump-to-block");
+        content += `<a class="open-popup-button jump-to-blocks-button" title="${title}"`
+            + ` href="${href}?block=${encodeBlockParameter(block)}">`
+            + `<span class="bx bx-up-arrow" /></a>`;
+    } else if (!isDeleted) {
+        // The quick-edit (popup) button opens the live editor, which doesn't apply to a deleted
+        // note.
         const popupHref = attachment ? `${href}&popup` : `${href}?popup`;
         const quickEdit = t("note_tooltip.quick-edit");
         content += `<a class="open-popup-button" title="${quickEdit}" href="${popupHref}">`

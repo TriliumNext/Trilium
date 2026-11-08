@@ -12,12 +12,23 @@ body.mobile .note-detail-editable-text {
     padding-inline-start: 4px;
 }
 
-.note-detail-editable-text a:hover {
-    cursor: pointer;
+.note-detail-editable-text-editor:not(.ck-format-painter-active) a:where(:not(.excalidraw *)) {
+    cursor: default;
+
+    &:read-write {
+        cursor: text;
+    }
+
+    :root.follow-link-key-held & {
+        cursor: pointer;
+    }
 }
 
-.note-detail-editable-text a:is([href^="http://"], [href^="https://"]):where(:not(.excalidraw *)) {
-    cursor: text !important;
+@scope (.include-note-content) to (.note-detail-editable-text-editor) {
+    /* As specific as the rule above, which a scoped rule outweighs. */
+    .note-detail-editable-text-editor :scope a:where(:not(.excalidraw *)) {
+        cursor: pointer;
+    }
 }
 
 .note-detail-editable-text

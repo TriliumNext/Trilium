@@ -770,6 +770,31 @@ describe("goToLinkExt", () => {
         document.body.removeChild(content);
     });
 
+    it("jumps to an anchor of an editable text note on a ctrl+click or a double click only", async () => {
+        const $content = $("<div class='ck-content note-detail-editable-text-editor'>"
+            + "<p><a id='top'></a>text</p><p id='fn1'>note</p></div>").appendTo(document.body);
+        const $anchorLink = $("<a href='#top'>").appendTo($content);
+        const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+        // The text editor shows the link toolbar, whose first button jumps.
+        goToLinkExt(leftClick(), "#top", $anchorLink);
+        await flush();
+        expect(showAnchor).not.toHaveBeenCalled();
+
+        goToLinkExt(leftClick({ ctrlKey: true }), "#top", $anchorLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenCalledExactlyOnceWith(
+            $content[0], "top"));
+        goToLinkExt(leftClick({ type: "dblclick" }), "#top", $anchorLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenCalledTimes(2));
+
+        // A footnote has no toolbar, so a click on its link still jumps.
+        const $footnoteLink = $("<a href='#fn1'>")
+            .appendTo($("<span class='footnote-reference'>").appendTo($content));
+        goToLinkExt(leftClick(), "#fn1", $footnoteLink);
+        await vi.waitFor(() => expect(showAnchor).toHaveBeenLastCalledWith($content[0], "fn1"));
+        $content.remove();
+    });
+
     it("follows a link to blocks of the note it is in within the page", async () => {
         const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
             + "<h2 data-trilium-block-id='h'>Intro</h2></div></div>").appendTo(document.body);
@@ -798,6 +823,25 @@ describe("goToLinkExt", () => {
         expect(triggerCommand).toHaveBeenLastCalledWith("openInPopup", expect.anything());
         expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
         expect(showBlockReference).toHaveBeenCalledOnce();
+        split.remove();
+    });
+
+    it("tells a jump to a heading of the note a link is in from a jump to other blocks", async () => {
+        const split = $("<div data-ntx-id='ntx1'><div class='ck-content'>"
+            + "<h2 data-trilium-block-id='h'>Intro</h2><p data-trilium-block-id='p'>Text</p>"
+            + "</div></div>").appendTo(document.body);
+        const $link = $("<a>").appendTo(split.children());
+        const jump = (noteId: string, block: string) => linkService.getBlockJump($link, noteId, block);
+
+        expect([ "h", "p", "h:p" ].map((block) => jump("abcdefghijkl", block)?.isHeading))
+            .toStrictEqual([ true, false, false ]);
+        expect(jump("bcdefghijklm", "h")).toBeNull();
+        expect(jump("abcdefghijkl", "gone")).toBeNull();
+        expect(linkService.getBlockJump($("<a>"), "abcdefghijkl", "h")).toBeNull();
+
+        jump("abcdefghijkl", "p")?.show();
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenCalledExactlyOnceWith(
+            split.children()[0], "p"));
         split.remove();
     });
 
@@ -838,25 +882,78 @@ describe("goToLinkExt", () => {
 
     it("leaves a plain left click on a note link in an editable text note to the link toolbar", () => {
         const $editor = $("<div class='ck-content note-detail-editable-text-editor'>");
-        const $link = $("<a href='#root/aaaaaaaaaaaa'>");
-        const $embed = $("<div class='ck-content'>");
-        const $embeddedLink = $("<a href='#root/aaaaaaaaaaaa'>");
-        $editor.append($link, $embed.append($embeddedLink));
+        const $link = $("<a href='#root/aaaaaaaaaaaa'>").appendTo($editor);
 
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $link);
         goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa?popup=1", $link);
         expect(openInCurrentNoteContext).not.toHaveBeenCalled();
         expect(triggerCommand).not.toHaveBeenCalled();
+    });
 
-        // The modifiers still open the note, and a link in an embed still navigates.
-        goToLinkExt(leftClick({ ctrlKey: true }), "#root/aaaaaaaaaaaa", $link);
-        expect(openTabWithNoteWithHoisting).toHaveBeenCalledOnce();
-        goToLinkExt(leftClick({ type: "dblclick" }), "#root/aaaaaaaaaaaa", $link);
+    it("follows a link in the read-only content of an embed on a click, as in a read-only note", () => {
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+        const $editor = $("<div class='ck-content note-detail-editable-text-editor'"
+            + " contenteditable='true'><figure class='include-note' contenteditable='false'>"
+            + "<div class='include-note-content'>"
+            + "<div class='ck-content'><a class='text' href='#root/aaaaaaaaaaaa'></a></div>"
+            // A collection or a diagram has no content element of its own.
+            + "<a class='card' href='#root/bbbbbbbbbbbb'></a>"
+            + "<a class='web' href='https://example.com'></a>"
+            + "<div class='ck-content note-detail-editable-text-editor' contenteditable='true'>"
+            + "<a class='edited' href='#root/cccccccccccc'></a></div>"
+            + "</div></figure></div>").appendTo(document.body);
+        const click = (selector: string) => {
+            const $link = $editor.find(selector);
+            goToLinkExt(leftClick(), $link.attr("href"), $link);
+        };
+
+        for (const selector of [ "a.text", "a.card", "a.web" ]) {
+            click(selector);
+        }
+        expect(openInCurrentNoteContext.mock.calls.map(([ , notePath ]) => notePath))
+            .toStrictEqual([ "root/aaaaaaaaaaaa", "root/bbbbbbbbbbbb" ]);
+        expect(openSpy).toHaveBeenCalledExactlyOnceWith("https://example.com", "_blank");
+
+        // The text of an included note being edited is edited too.
+        click("a.edited");
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+        openSpy.mockRestore();
+        $editor.remove();
+    });
+
+    it("follows a link in an editable text note on a ctrl+click or a double click", async () => {
+        const split = $("<div data-ntx-id='ntx1'>"
+            + "<div class='ck-content note-detail-editable-text-editor'>"
+            + "<h2 data-trilium-block-id='h'>Intro</h2></div></div>").appendTo(document.body);
+        const follow = (evt: ReturnType<typeof leftClick>, href: string) =>
+            goToLinkExt(evt, href, $("<a>").attr("href", href).appendTo(split.children()));
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+        for (const evt of [ leftClick({ ctrlKey: true }), leftClick({ type: "dblclick" }) ]) {
+            follow(evt, "#root/aaaaaaaaaaaa");
+            follow(evt, "https://example.com");
+        }
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+        expect(openInCurrentNoteContext).toHaveBeenLastCalledWith(
+            expect.anything(), "root/aaaaaaaaaaaa", expect.anything());
+        expect(openSpy).toHaveBeenCalledTimes(2);
+        expect(openTabWithNoteWithHoisting).not.toHaveBeenCalled();
+
+        // A link to blocks of the note it is in jumps to them.
+        follow(leftClick({ ctrlKey: true }), "#root/abcdefghijkl?block=h");
+        await vi.waitFor(() => expect(showBlockReference).toHaveBeenCalledOnce());
+        expect(openInCurrentNoteContext).toHaveBeenCalledTimes(2);
+
+        // Shift and the middle button still open the note elsewhere.
+        follow(leftClick({ ctrlKey: true, shiftKey: true }), "#root/aaaaaaaaaaaa");
+        follow({ ...leftClick(), type: "auxclick", which: 2 }, "#root/aaaaaaaaaaaa");
+        follow(leftClick({ shiftKey: true }), "#root/aaaaaaaaaaaa");
+        expect(openTabWithNoteWithHoisting).toHaveBeenNthCalledWith(1,
+            "root/aaaaaaaaaaaa", expect.objectContaining({ activate: true }));
         expect(openTabWithNoteWithHoisting).toHaveBeenCalledTimes(2);
-        goToLinkExt(leftClick({ shiftKey: true }), "#root/aaaaaaaaaaaa", $link);
-        expect(triggerCommand).toHaveBeenCalledWith("openInWindow", expect.anything());
-        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $embeddedLink);
-        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+        expect(triggerCommand).toHaveBeenCalledExactlyOnceWith("openInWindow", expect.anything());
+        openSpy.mockRestore();
+        split.remove();
     });
 
     it("opens a note in place from the preview button of the link toolbar", () => {
@@ -1275,6 +1372,29 @@ describe("module-level click handlers", () => {
         $a.trigger($.Event("contextmenu", { button: 2 }));
         expect(openContextMenu).toHaveBeenCalled();
         $a.remove();
+    });
+
+    it("marks the document while Ctrl is held, for the pointer over a link being edited", () => {
+        const isMarked = () => document.documentElement.classList.contains("follow-link-key-held");
+        // A widget that keeps its keys from the editor stops them on the way down.
+        const widget = $("<input>").appendTo("body")[0];
+        widget.addEventListener("keydown", (e) => e.stopPropagation(), { capture: true });
+        const press = (type: string, init: KeyboardEventInit) =>
+            widget.dispatchEvent(new KeyboardEvent(type, { bubbles: true, ...init }));
+
+        press("keydown", { key: "Control", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        press("keyup", { key: "a", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        press("keyup", { key: "Control" });
+        expect(isMarked()).toBe(false);
+
+        // Leaving the window while the key is held drops its keyup.
+        press("keydown", { key: "Control", ctrlKey: true });
+        expect(isMarked()).toBe(true);
+        window.dispatchEvent(new Event("blur"));
+        expect(isMarked()).toBe(false);
+        widget.remove();
     });
 
     it("does not prevent default on a left mouse button down", () => {

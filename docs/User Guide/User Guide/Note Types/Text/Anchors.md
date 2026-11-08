@@ -17,7 +17,7 @@ This feature was introduced in TriliumNext v0.94.0 and augmented in v0.103.0 to 
     *   Press <kbd>Ctrl</kbd>+<kbd>K</kbd> or the <span class="tn-icon cke cke-link"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, then select _Heading / anchor_ at the top of the [_Add link_ dialog](Links.md). Alternatively, choose _Link to a heading or anchor_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>, which opens the dialog on that page.
     *   Under _Anchors_, click the desired anchor to check it. Optionally, type a _Link title_; without one, the link shows the anchor's name.
     *   Press <kbd>Enter</kbd> or _Insert link_ to confirm.
-*   Clicking a link to an anchor of the same note scrolls to the anchor and briefly highlights the block that holds it, while editing as well as in read-only notes and on shared pages.
+*   Clicking a link to an anchor of the same note scrolls to the anchor and briefly highlights the block that holds it, in read-only notes and on shared pages. While editing, clicking the link shows its popup, whose _Jump to anchor_ button does the same, as do <kbd>Ctrl</kbd>+click and double-click.
 *   To change a link to an anchor, place the cursor inside it and press <kbd>Ctrl</kbd>+<kbd>K</kbd>. Since v0.107.0, the _Edit link_ dialog opens on _Heading / anchor_, with the linked anchor checked.
 
 > [!TIP]
