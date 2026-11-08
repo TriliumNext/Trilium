@@ -1,6 +1,6 @@
 import "./appearance_fonts.css";
 
-import { customFontFamily, customFontNoteId, customFontOption, FontFamily, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
+import { customFontFamily, customFontNoteId, customFontOption, FontFamily, MONOSPACE_FONT_FAMILY, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, Fragment } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -409,6 +409,10 @@ function cssFontFamily(target: FontTarget, value: string): string {
 
     if (value === "system") {
         return target.isMonospace ? SYSTEM_MONOSPACE_FONT_STACK : SYSTEM_SANS_SERIF_FONT_STACK;
+    }
+
+    if (value === "monospace") {
+        return MONOSPACE_FONT_FAMILY;
     }
 
     // One of the user's own fonts names the note it is stored in; the family it was registered
