@@ -78,22 +78,31 @@ export async function renderTextContent(
  * a `.ck-content` child of `$renderedContent`.
  */
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
+    const container = $renderedContent[0];
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
-    applyListItemAlignment($renderedContent[0]);
-    emptyUnknownEmbeds($renderedContent[0]);
-    // Runs before the embeds render, as each embed draws its own diagrams.
-    await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
-    await applyInlineMermaid($renderedContent[0] as HTMLDivElement);
+    const hostNoteId = note instanceof FNote ? note.noteId : undefined;
+    applyListItemAlignment(container);
+    const loadEmbedBoxes = options.embedBoxes && !options.noContentEmbeds
+        ? (await import("../widgets/type_widgets/text/embed_boxes.js")).prepareEmbedBoxes(
+            container, { seenNoteIds, hostNoteId, isChanging: options.isChanging }, true)
+        : undefined;
 
-    if (options.noContentEmbeds) {
-        $renderedContent.find(".include-note").remove();
-    } else {
-        await renderContentEmbeds($renderedContent[0], {
-            seenNoteIds,
-            embedsAsReferenceLinks: options.embedsAsReferenceLinks,
-            expandNestedEmbeds: options.expandNestedEmbeds
-        });
+    if (!loadEmbedBoxes) {
+        emptyUnknownEmbeds(container);
+        // Runs before the embeds render, as each embed draws its own diagrams.
+        rewriteMermaidDiagramsInContainer(container);
+        await applyInlineMermaid(container);
+
+        if (options.noContentEmbeds) {
+            $renderedContent.find(".include-note").remove();
+        } else {
+            await renderContentEmbeds(container, {
+                seenNoteIds,
+                embedsAsReferenceLinks: options.embedsAsReferenceLinks,
+                expandNestedEmbeds: options.expandNestedEmbeds
+            });
+        }
     }
 
     if ($renderedContent.find("span.math-tex").length > 0) {
@@ -111,20 +120,25 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
     await froca.getNotes(noteIdsToPrefetch);
 
-    const hostNoteId = note instanceof FNote ? note.noteId : undefined;
-    await Promise.all(referenceLinks.toArray().map(async (el) => {
-        const innerSpan = document.createElement("span");
-        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"), hostNoteId,
-            el.textContent ?? undefined);
-        el.replaceChildren(innerSpan);
-    }));
+    await Promise.all(referenceLinks.toArray().map((el) => loadReferenceLink(el, hostNoteId)));
 
-    applyLinkEmbeds($renderedContent[0]);
+    applyLinkEmbeds(container);
     await formatCodeBlocks($renderedContent);
 
     if (options.trim) {
         $renderedContent.find("style").not("svg style").remove();
     }
+
+    // Last, so that no pass above reaches into the content of the boxes.
+    await loadEmbedBoxes?.();
+}
+
+/** Fills in the title, icon and color of `referenceLink`, a link in the content of `hostNoteId`. */
+export async function loadReferenceLink(referenceLink: HTMLElement, hostNoteId?: string) {
+    const innerSpan = document.createElement("span");
+    await link.loadReferenceLinkTitle($(innerSpan), referenceLink.getAttribute("href"), hostNoteId,
+        referenceLink.textContent ?? undefined);
+    referenceLink.replaceChildren(innerSpan);
 }
 
 /**
@@ -257,15 +271,17 @@ export function replaceWithEmbedBox(element: Element, box: HTMLElement) {
     figure.replaceWith(box);
 }
 
-function replaceWithReferenceLink(embedEl: Element, href: string) {
+/** Replaces `embedEl` with an empty reference link to `href`, and returns the link. */
+export function replaceWithReferenceLink(embedEl: Element, href: string) {
     const referenceLink = document.createElement("a");
     referenceLink.className = "reference-link";
     referenceLink.setAttribute("href", href);
     embedEl.replaceWith(referenceLink);
+    return referenceLink;
 }
 
 /** Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it. */
-export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElement) {
+export function rewriteMermaidDiagramsInContainer(container: HTMLElement) {
     const candidates = container.querySelectorAll("pre:has(code)");
     if (!candidates.length) return;
 
@@ -310,7 +326,7 @@ const mermaidLastRenderedByPosition = new WeakMap<HTMLElement, string[]>();
 /** Monotonic id for mermaid.render(), which requires a unique element id per call. */
 let mermaidRenderId = 0;
 
-export async function applyInlineMermaid(container: HTMLDivElement) {
+export async function applyInlineMermaid(container: HTMLElement) {
     const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.rendered-mermaid-diagram"));
     if (!nodes.length) {
         mermaidLastRenderedByPosition.delete(container);

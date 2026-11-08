@@ -9,10 +9,12 @@ import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
+import { buildNote } from "../test/easy-froca";
+import { loadEmbeddedNote } from "../widgets/type_widgets/text/utils";
 import content_renderer from "./content_renderer";
 import froca from "./froca";
+import link from "./link";
 import server from "./server";
-import { buildNote } from "../test/easy-froca";
 
 // `applyInlineMermaid` dynamically imports "mermaid"; provide a controllable
 // stub whose behavior we tune per-test via the shared `mermaidRenderImpl` hook.
@@ -548,6 +550,57 @@ describe("Nested embeds (single-level display vs recursive print)", () => {
         // both are left in place.
         expect(contentEl.querySelector("a.reference-link")).toBeNull();
         expect(contentEl.querySelectorAll("section.include-note").length).toBe(2);
+    });
+});
+
+describe("Embed boxes", () => {
+    const figure = (noteId: string) =>
+        `<figure class="include-note" data-note-id="${noteId}"></figure>`;
+
+    it("shows the embeds of a box in boxes, and links to the notes shown around them", async () => {
+        // A box shows its content in its wrapper, as `ContentEmbed` does once it mounts.
+        const mountBox = vi.spyOn(content_renderer, "mountInteractiveWidget")
+            .mockImplementation(async (vnode, container) => {
+                const { content } = vnode.props as { content?: HTMLElement };
+                if (content) container.append(content);
+            });
+        const createLink = vi.spyOn(link, "createLink").mockResolvedValue($("<a>"));
+        buildNote({
+            id: "boxChild",
+            title: "Child",
+            content: `<p>Child body</p>${figure("boxGrandchild")}${figure("boxParent")}`
+        });
+        buildNote({
+            id: "boxGrandchild",
+            title: "Grandchild",
+            content: `<p>Grandchild body</p><pre><code class="language-javascript">a;</code></pre>`
+                + `${figure("boxChild")}${figure("boxGrandchild")}`
+        });
+        buildNote({ id: "boxParent", title: "Parent", content: figure("boxChild") });
+        const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
+        document.body.append(wrapper);
+
+        try {
+            // As the editor of the parent note loads the box of the child.
+            await loadEmbeddedNote("boxChild", $(wrapper), "full", {
+                seenNoteIds: new Set([ "boxParent" ])
+            });
+
+            expect(wrapper.textContent).toContain("Child body");
+            expect(wrapper.textContent).toContain("Grandchild body");
+            expect(mountBox).toHaveBeenCalledTimes(2);
+            // The grandchild links to the child and itself, the child to the parent.
+            expect([ ...wrapper.querySelectorAll("a.reference-link") ]
+                .map((referenceLink) => referenceLink.getAttribute("href")))
+                .toEqual([ "#root/boxChild", "#root/boxGrandchild", "#root/boxParent" ]);
+            // The passes over the content of the child leave the content of its boxes alone.
+            expect(wrapper.querySelectorAll("pre .copy-button")).toHaveLength(1);
+        } finally {
+            wrapper.remove();
+            mountBox.mockRestore();
+            createLink.mockRestore();
+        }
     });
 });
 

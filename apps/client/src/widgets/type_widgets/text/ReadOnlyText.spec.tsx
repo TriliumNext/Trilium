@@ -472,7 +472,7 @@ describe("ReadOnlyText embedded notes", () => {
         expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
     });
 
-    it("loads an embed with the blocks it shows", async () => {
+    it("loads an embed with the blocks it shows, and the note around it", async () => {
         loadEmbeddedNote.mockClear();
         const harness = setupHarness({ isVisible: true });
         harness.note.getBlob = async () => ({
@@ -482,8 +482,9 @@ describe("ReadOnlyText embedded notes", () => {
 
         await harness.mount();
 
-        expect(loadEmbeddedNote)
-            .toHaveBeenCalledWith("src1", expect.anything(), undefined, { block: "b1:b2" });
+        expect(loadEmbeddedNote).toHaveBeenCalledWith("src1", expect.anything(), undefined, {
+            block: "b1:b2", seenNoteIds: new Set([ harness.note.noteId ]), isNested: false
+        });
         await act(async () => render(null, harness.container));
         harness.container.remove();
     });
@@ -565,7 +566,7 @@ describe("ReadOnlyText Mermaid diagrams", () => {
         expect(embeds).toEqual([
             {
                 language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "resizable",
-                options: { isFocused: false }, isInPage: true,
+                options: { isFocused: false, isNested: false }, isInPage: true,
                 data: {
                     boxSize: "resizable", displayMode: "source", hideTitle: "true",
                     language: "mermaid",
@@ -576,7 +577,7 @@ describe("ReadOnlyText Mermaid diagrams", () => {
             },
             {
                 language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "resizable",
-                options: { isFocused: false }, isInPage: true,
+                options: { isFocused: false, isNested: false }, isInPage: true,
                 data: {
                     boxSize: "resizable", hideTitle: "true", language: "mermaid",
                     triliumBlockId: "b2"

@@ -69,7 +69,7 @@ height of its own (`type-pdf`, `type-webView`).
   `contentType`, `load()`, `renderPreview()`. Any other inline language becomes an extended code
   block (`getInlineEmbedType()`).
 - Derived from it: the editor's `inlineLanguages` and `renderInlinePreview` (`buildConfig()` in
-  `text/config.ts`), `isSelfUpdatingType()`, and `applySourceEmbeds()` in `ReadOnlyText.tsx`.
+  `text/config.ts`), `isSelfUpdatingType()`, and `prepareSourceEmbeds()` in `text/embed_boxes.ts`.
 - Not derived: the content type lists above, and the paths that match `language-mermaid` by name.
   A new language shows as a plain code block in each until it gets its own branch:
   - `rewriteMermaidDiagramsInContainer()` / `applyInlineMermaid()` (`content_renderer_text.ts`):
@@ -79,7 +79,7 @@ height of its own (`type-pdf`, `type-webView`).
   - Markdown import: `markdown_renderer.ts` keeps only `mermaid` as a fence language and turns
     another unknown one into auto-detect. Export maps languages through `rewriteLanguageTag()`
     (`services/export/markdown.ts`).
-- `applySourceEmbeds()` sets the default size (code Full, else Medium), allows only Small, Medium
+- `prepareSourceEmbeds()` sets the default size (code Full, else Medium), allows only Small, Medium
   and Full, forces `hideTitle`, and copies only the `data-*` attributes it lists. A new attribute
   goes there, in `getEmbedCodeView()` (`content_renderer_text.ts`) and in `CODE_VIEW_ATTRIBUTES`
   (`apps/client/src/test/content_embed.ts`).

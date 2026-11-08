@@ -45,17 +45,30 @@ export interface RenderOptions {
     noContentEmbeds?: boolean;
     /**
      * Keep expanding embeds recursively at every depth. Used for printing/export,
-     * which preserves full nesting. When false (the default for on-screen display), only the first
+     * which preserves full nesting. When false (the default for static previews), only the first
      * level of embedding is rendered and deeper embeds are replaced with a reference
-     * link (see {@link embedsAsReferenceLinks}).
+     * link (see {@link embedsAsReferenceLinks}). {@link embedBoxes} replaces both.
      */
     expandNestedEmbeds?: boolean;
     /**
      * Internal: render this note's own embeds as reference links instead of expanding
-     * them. Set when rendering a note that is itself already an embedded note in display mode, so that
-     * embedding stops after the first level.
+     * them. Set on the content of an embed that a static preview renders, so that embedding stops
+     * after the first level.
      */
     embedsAsReferenceLinks?: boolean;
+    /**
+     * Shows the embeds of rendered text in the read-only boxes that the editor shows them in, as
+     * `ReadOnlyText` does, rather than rendering their content in place. The boxes of embeds set
+     * it, so that each box shows the embeds of its content in boxes too, and an embed of a note in
+     * {@link seenNoteIds} links to it.
+     */
+    embedBoxes?: boolean;
+    /**
+     * Whether the content changes as it is typed, as the preview of a Markdown embed does. Its
+     * diagrams and media then show in place rather than in embed boxes, which would remount on
+     * every change.
+     */
+    isChanging?: boolean;
     /** If enabled, it will include archived notes when rendering children list. */
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
@@ -344,7 +357,9 @@ async function renderEditableText(
 ) {
     const renderPreview = async (content: string, block = options.block) => {
         const $preview = $("<div>");
-        await renderTextContent(note, content, $preview, { ...options, block });
+        await renderTextContent(note, content, $preview, {
+            ...options, block, seenNoteIds: new Set(options.seenNoteIds)
+        });
         return $preview[0];
     };
     const [ blob, { default: TextEmbed } ] = await Promise.all([
@@ -422,7 +437,9 @@ async function renderMarkdownEmbed(
     const { default: MarkdownEmbed, renderMarkdownHtml } =
         await CONTENT_RENDERERS.editableMarkdown();
     const renderPreview = (source: string) =>
-        renderMarkdownPreview(entity, renderMarkdownHtml(source), options);
+        renderMarkdownPreview(entity, renderMarkdownHtml(source), {
+            ...options, isChanging: true, seenNoteIds: new Set(options.seenNoteIds)
+        });
     const preview = await renderPreview(content);
 
     const $container = $('<div class="markdown-embed">');

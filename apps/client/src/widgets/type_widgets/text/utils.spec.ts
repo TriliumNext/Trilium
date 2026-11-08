@@ -133,10 +133,11 @@ function createWrapper() {
 }
 
 describe("loadEmbeddedNote", () => {
-    it("mounts a box with the note, its own embeds reduced to reference links", async () => {
+    it("mounts a box with the note, whose embeds show in boxes too", async () => {
         const wrapper = createWrapper();
+        const seenNoteIds = new Set([ "host" ]);
 
-        await loadEmbeddedNote("noteY", $(wrapper), "medium");
+        await loadEmbeddedNote("noteY", $(wrapper), "medium", { seenNoteIds });
 
         expect(link.createLink).toHaveBeenCalledWith("noteY", {
             showTooltip: false,
@@ -144,10 +145,14 @@ describe("loadEmbeddedNote", () => {
         });
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(note, {
             interactive: true,
-            embedsAsReferenceLinks: true,
+            embedBoxes: true,
+            seenNoteIds: new Set([ "host" ]),
             mediaEnvironment: "embedded",
             hasDisplayModes: true
         });
+        // The renderer adds the note to the set it is given.
+        expect(vi.mocked(content_renderer.getRenderedContent).mock.lastCall?.[1]?.seenNoteIds)
+            .not.toBe(seenNoteIds);
         const mount = lastMount();
         expect(mount.type).toBe(ContentEmbed);
         expect(mount.container).toBe(wrapper);
@@ -257,7 +262,11 @@ describe("loadEmbeddedAttachment", () => {
             viewScope: ATTACHMENT_SCOPE
         });
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(attachment, {
-            interactive: true, mediaEnvironment: "embedded", hasDisplayModes: true
+            interactive: true,
+            embedBoxes: true,
+            seenNoteIds: new Set(),
+            mediaEnvironment: "embedded",
+            hasDisplayModes: true
         });
         const mount = lastMount();
         expect(mount.type).toBe(ContentEmbed);
@@ -284,6 +293,8 @@ describe("loadEmbeddedAttachment", () => {
 
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(attachment, {
             interactive: true,
+            embedBoxes: true,
+            seenNoteIds: new Set(),
             mediaEnvironment: "embedded",
             hasDisplayModes: true,
             attachmentEditor,
@@ -620,6 +631,26 @@ describe("an embed that leaves the page while it loads", () => {
                 .map(([ $element ]) => $element[0])).toEqual(rendersContent ? [ content ] : []);
         }
     });
+
+    it("gets its box out of the page while nested in content still rendering", async () => {
+        const loads: ((wrapper: HTMLElement) => Promise<void>)[] = [
+            (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "medium", { isNested: true }),
+            (wrapper) => loadEmbeddedNote("noteY", $(wrapper), "compact", { isNested: true }),
+            (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "full", { isNested: true }),
+            (wrapper) => loadEmbeddedAttachment("att1", $(wrapper), "compact", { isNested: true })
+        ];
+
+        for (const load of loads) {
+            vi.mocked(content_renderer.mountInteractiveWidget).mockClear();
+            const wrapper = document.createElement("div");
+            wrapper.className = "include-note-wrapper";
+
+            await load(wrapper);
+
+            expect(lastMount().container).toBe(wrapper);
+            expect(content_renderer.disposeInteractiveContent).not.toHaveBeenCalled();
+        }
+    });
 });
 
 describe("refreshEmbeddedNote", () => {
@@ -642,6 +673,30 @@ describe("refreshEmbeddedNote", () => {
         expect(vi.mocked(content_renderer.getRenderedContent).mock.calls
             .map(([ , options ]) => [ options?.block, options?.histories ]))
             .toEqual([ [ undefined, histories ], [ "b1", histories ] ]);
+    });
+
+    it("reloads a box nested in another read-only, knowing the notes around it", async () => {
+        const container = inPage(document.createElement("div"));
+        container.innerHTML = `<figure class="include-note" data-note-id="outer" data-block="b2">`
+            + `<div class="include-note-wrapper">`
+            + `<figure class="include-note" data-attachment-id="att">`
+            + `<div class="include-note-wrapper"><figure class="include-note" data-note-id="noteY">`
+            + `</figure></div></figure></div></figure>`;
+        const histories = new EmbedHistories(() => null);
+        const noteEditor = { canEdit: vi.fn() } as never;
+
+        refreshEmbeddedNote(container, "noteY", {
+            noteEditor, histories, seenNoteIds: new Set([ "host" ])
+        });
+
+        await vi.waitFor(() => {
+            expect(content_renderer.mountInteractiveWidget).toHaveBeenCalledTimes(1);
+        });
+        expect(lastMount().container.parentElement?.dataset.noteId).toBe("noteY");
+        const options = vi.mocked(content_renderer.getRenderedContent).mock.lastCall?.[1];
+        expect(options?.seenNoteIds).toEqual(new Set([ "host", "att", "outer", "outer:b2" ]));
+        expect(options?.noteEditor).toBeUndefined();
+        expect(options?.histories).toBeUndefined();
     });
 });
 

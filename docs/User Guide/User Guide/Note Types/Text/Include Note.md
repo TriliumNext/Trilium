@@ -95,6 +95,10 @@ A _Compact_ include has these buttons instead, followed by the same _More action
 
 To replace an include with a link to the included note, choose _Convert to link_ in the last group of its _More actions_ menu. An embedded attachment turns into a link to the attachment the same way.
 
+## Includes inside an included note
+
+The includes of an included note show in boxes of their own too, read-only, however deeply they nest. An include of a note that is already shown around it shows as a link to that note instead, so the chain ends there. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
+
 ## Missing notes and attachments
 
 An include whose note or attachment no longer exists, for example because it was deleted, keeps its size and shows the <span class="tn-icon bx bx-error-alt"></span> icon in place of the content, with the ID of the missing note or attachment. To remove the include, select it and press <kbd>Delete</kbd>.
