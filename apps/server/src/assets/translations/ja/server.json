@@ -2,7 +2,7 @@
   "keyboard_actions": {
     "back-in-note-history": "履歴内の前のノートに移動",
     "forward-in-note-history": "履歴内の次のノートに移動",
-    "open-jump-to-note-dialog": "「ノートへ移動」 ダイアログを開く",
+    "open-jump-to-note-dialog": "「ノートに移動」 ダイアログを開く",
     "scroll-to-active-note": "ノートツリーをアクティブなノートまでスクロールする",
     "search-in-subtree": "アクティブなノートのサブツリー内でノートを検索する",
     "expand-subtree": "現在のノートのサブツリーを展開",
