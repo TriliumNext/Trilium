@@ -392,7 +392,11 @@
     "image_size_hint": "이미지 크기는 나중에 조절할 수 있습니다.",
     "missing_note": "ID가 {{noteId}}인 노트가 없습니다.",
     "missing_attachment": "ID가 {{attachmentId}}인 첨부 파일이 없습니다.",
-    "unknown_kind": "이 콘텐츠를 사용하려면 최신 버전의 Trilium이 필요합니다."
+    "unknown_kind": "이 콘텐츠를 사용하려면 최신 버전의 Trilium이 필요합니다.",
+    "size_compact": "간결형",
+    "size_compact_description": "한 줄 표시: 제목과 작업 항목 또는 오디오 파일 컨트롤.",
+    "size_resizable": "크기 조절 가능",
+    "size_resizable_description": "원하는 크기로 조절할 수 있는 상자."
   },
   "info": {
     "modalTitle": "정보 메시지",
@@ -2966,10 +2970,11 @@
     "align_center": "가운데 정렬",
     "align_right": "오른쪽 정렬",
     "open_externally": "외부에서 열기",
-    "delete": "삭제",
+    "delete": "블록 삭제",
     "copy_url": "주소(URL) 복사",
     "display_as": "표시 형식",
-    "edit": "편집..."
+    "edit": "편집...",
+    "include_size_default": "기본값"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -4479,7 +4484,10 @@
       "add-new-tab": "새 탭 추가",
       "copy-reference-to-this-tab": "이 탭의 참조 복사",
       "delete-tab": "탭 삭제",
-      "delete-all-tabs": "모든 탭 삭제"
+      "delete-all-tabs": "모든 탭 삭제",
+      "compact": "간결",
+      "resizable": "크기 조절 가능",
+      "default": "기본값"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4987,7 +4995,8 @@
     "title": "미디어 삽입",
     "button_insert": "미디어 삽입",
     "not_a_video": "올바른 웹 주소가 아닙니다.",
-    "insert_failed": "미디어를 삽입할 수 없습니다. YouTube 동영상이나 오디오 또는 동영상 파일의 주소인지, 연결 상태는 정상인지 확인한 후 다시 시도하세요."
+    "insert_failed": "미디어를 삽입할 수 없습니다. YouTube 동영상이나 오디오 또는 동영상 파일의 주소인지, 연결 상태는 정상인지 확인한 후 다시 시도하세요.",
+    "description": "삽입할 동영상 또는 오디오의 주소를 입력하세요: YouTube 동영상 또는 HTTP나 HTTPS로 접근할 수 있는 오디오 또는 동영상 파일."
   },
   "block_handle_menu": {
     "insert_above": "위에 삽입",
