@@ -411,7 +411,7 @@
     "collapseExpand": "ノードを折りたたむ / 展開",
     "goBackForwards": "履歴を戻る／進む",
     "scrollToActiveNote": "アクティブノートまでスクロール",
-    "jumpToParentNote": "親ノートへ移動",
+    "jumpToParentNote": "親ノートに移動",
     "collapseWholeTree": "すべてのノートツリーを折りたたむ",
     "collapseSubTree": "サブツリーを折りたたむ",
     "tabShortcuts": "タブショートカット",
@@ -1736,7 +1736,9 @@
   "note_tooltip": {
     "quick-edit": "クイック編集",
     "note-has-been-deleted": "ノートは削除されました。",
-    "attachment-info": "添付ファイル • {{size}}"
+    "attachment-info": "添付ファイル • {{size}}",
+    "jump-to-block": "ブロックに移動",
+    "jump-to-heading": "見出しに移動"
   },
   "protect_note": {
     "toggle-on": "ノートを保護"
@@ -3124,8 +3126,8 @@
       "play_pause": "再生/一時停止",
       "back_10s": "10 秒戻る",
       "forward_10s": "10 秒進む",
-      "jump_start": "先頭へ移動",
-      "jump_end": "最後へ移動",
+      "jump_start": "先頭に移動",
+      "jump_end": "最後に移動",
       "mute": "ミュート",
       "fullscreen": "全画面表示",
       "navigation": "ナビゲーション",
@@ -4029,9 +4031,9 @@
       "open-attachment": "添付ファイルを開く",
       "table-size": "表のサイズ",
       "table-headers": "表のヘッダー",
-      "jump-to-heading": "見出しへ移動",
-      "jump-to-anchor": "アンカーへ移動",
-      "jump-to-block": "ブロックへ移動",
+      "jump-to-heading": "見出しに移動",
+      "jump-to-anchor": "アンカーに移動",
+      "jump-to-block": "ブロックに移動",
       "box-position": "ボックスの位置",
       "caption-for-the-video": "動画のキャプション",
       "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。",
@@ -4793,7 +4795,8 @@
     "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
     "edit_excerpt": "抜粋を編集",
     "copy_tab": "このタブへのリンクをコピー",
-    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー"
+    "copy_share_link": "公開リンクをコピー",
+    "copy_reference": "ブロックへのリンクをコピー"
   },
   "record_meeting": {
     "note_title": "ミーティング {{date}}",
@@ -4990,5 +4993,45 @@
     "button_insert": "メディアを挿入",
     "not_a_video": "これは web アドレスではありません。",
     "insert_failed": "メディアを埋め込めませんでした。指定したアドレスが YouTube 動画、または音声・動画ファイルのものであるか確認し、接続状況を確かめた上で、再度お試しください。"
+  },
+  "block_handle_menu": {
+    "block_count_other": "{{count}} 個のブロック",
+    "insert_above": "上に挿入",
+    "insert_below": "下に挿入",
+    "insert_item_above": "アイテムを上に挿入",
+    "insert_item_below": "アイテムを下に挿入",
+    "insert_child_item": "子アイテムを挿入",
+    "cut": "切り取り",
+    "copy": "コピー",
+    "delete": "削除",
+    "types": {
+      "paragraph": "段落",
+      "heading": "見出し {{level}}",
+      "list_item": "箇条書き",
+      "todo_item": "To-do",
+      "block_quote": "引用ブロック",
+      "code_block": "コードブロック",
+      "table": "表",
+      "image": "画像",
+      "horizontal_line": "区切り線",
+      "page_break": "改ページ",
+      "admonition": "注釈",
+      "collapsible": "折りたたみブロック",
+      "tabs": "タブ",
+      "columns": "列レイアウト",
+      "math": "数式",
+      "footnotes": "脚注",
+      "footnote": "脚注",
+      "included_note": "埋め込みノート",
+      "excerpt": "抜粋",
+      "attachment": "添付ファイル",
+      "drawing": "描画キャンバス",
+      "mermaid": "マーメイド図",
+      "video": "動画",
+      "audio": "音声",
+      "link_preview": "リンクプレビュー",
+      "embed": "埋め込み",
+      "block": "ブロック"
+    }
   }
 }
