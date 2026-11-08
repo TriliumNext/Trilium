@@ -38,7 +38,9 @@ import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
 import bxPen from "boxicons/svg/regular/bx-pen.svg?raw";
 import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
 import bxSubdirectoryRight from "boxicons/svg/regular/bx-subdirectory-right.svg?raw";
-import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
+import {
+    BookmarkUI, type Editor, type MentionFeedObjectItem, type ModelElement, Plugin
+} from "ckeditor5";
 
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
 import dateTimeIcon from "../../icons/date-time.svg?raw";
@@ -182,11 +184,52 @@ export default class TriliumSlashCommands extends Plugin {
     }
 
     /**
+     * Every entry the editor has the command for, including those that do not apply to the
+     * selection, in catalog order.
+     */
+    listAll(): SlashCommandDefinition[] {
+        return this._catalog(isSlashCommandAvailable);
+    }
+
+    /**
+     * Whether {@link runBeside} can insert a paragraph on `side` of `block`: never beside a list
+     * item, and only where the schema allows a paragraph.
+     */
+    canInsertBeside(block: ModelElement, side: "before" | "after"): boolean {
+        const { model } = this.editor;
+        return !block.hasAttribute("listItemId")
+            && model.schema.checkChild(model.createPositionAt(block, side), "paragraph");
+    }
+
+    /**
+     * Runs `definition` in a paragraph inserted on `side` of `block`, as one undo step with the
+     * insertion, if {@link canInsertBeside} allows it.
+     */
+    runBeside(definition: SlashCommandDefinition, block: ModelElement, side: "before" | "after") {
+        const { editor } = this;
+        const { model } = editor;
+        if (!this.canInsertBeside(block, side)) {
+            return;
+        }
+
+        const batch = model.change((writer) =>
+            editor.execute("insertParagraph", { position: model.createPositionAt(block, side) })
+                ? writer.batch
+                : null);
+        if (batch) {
+            // Commands refresh once a change block ends, so the entry runs in a block of its own,
+            // in the same batch.
+            model.enqueueChange(batch, () => this.run(definition));
+            editor.editing.view.scrollToTheSelection();
+        }
+    }
+
+    /**
      * The definitions available in *this* editor right now: the palette CKEditor's own features
      * contribute, Trilium's own entries, and one per text snippet — minus anything `removeCommands`
-     * names and anything that does not apply to the current selection.
+     * names and anything `applies` rejects, by default what does not apply to the selection.
      */
-    private _catalog(): SlashCommandDefinition[] {
+    private _catalog(applies = isSlashCommandEnabled): SlashCommandDefinition[] {
         const editor = this.editor;
         const config = (editor.config.get("slashCommand") ?? {}) as SlashCommandConfig;
         const removed = new Set(config.removeCommands ?? []);
@@ -197,7 +240,7 @@ export default class TriliumSlashCommands extends Plugin {
             ...buildSnippetSlashCommands(editor)
         ]
             .filter((definition) => !removed.has(definition.id))
-            .filter((definition) => isSlashCommandEnabled(editor, definition));
+            .filter((definition) => applies(editor, definition));
     }
 }
 
@@ -229,6 +272,18 @@ export function isSlashCommandEnabled(editor: Editor, definition: SlashCommandDe
     }
 
     return editor.commands.get(definition.commandName)?.isEnabled ?? false;
+}
+
+/**
+ * Whether the editor has what `definition` runs, wherever the selection is. An entry's own
+ * `isEnabled` still decides for it.
+ */
+function isSlashCommandAvailable(editor: Editor, definition: SlashCommandDefinition): boolean {
+    if (definition.isEnabled) {
+        return definition.isEnabled(editor);
+    }
+
+    return !definition.commandName || editor.commands.get(definition.commandName) !== undefined;
 }
 
 function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {

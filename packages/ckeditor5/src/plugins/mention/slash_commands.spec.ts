@@ -7,12 +7,15 @@ import {
     Essentials,
     _getModelData as getModelData,
     Heading,
+    HorizontalLine,
     Image,
     ImageUpload,
     keyCodes,
+    List,
     MentionEditing,
     Paragraph,
-    _setModelData as setModelData
+    _setModelData as setModelData,
+    Table
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -585,6 +588,96 @@ describe("TriliumSlashCommands", () => {
             const data = getModelData(editor.model, { withoutSelection: true });
             expect(data).not.toContain("<blockQuote>");
             expect(data).toContain("quo");
+        });
+    });
+
+    describe("inserting beside a block", () => {
+        const WITH_LINE_SELECTED = "<paragraph>a</paragraph>[<horizontalLine></horizontalLine>]";
+
+        beforeEach(async () => {
+            editor = await createTestEditor([
+                Essentials, Paragraph, Heading, BlockQuote, HorizontalLine, List, Table,
+                MentionEditing, TriliumMentionUI, TriliumSlashCommands
+            ], { heading: { options: HEADING_OPTIONS }, slashCommand: { list: createStubList } });
+        });
+
+        /** The palette's entry `id`, wherever the selection is. */
+        function entry(id: string) {
+            const definition = editor.plugins.get(TriliumSlashCommands).listAll()
+                .find((candidate) => candidate.id === id);
+            if (!definition) {
+                throw new Error(`the palette should have the ${id} entry`);
+            }
+            return definition;
+        }
+
+        /** The element at `path` from the root. */
+        function elementAt(...path: number[]) {
+            const node = editor.model.document.getRoot()?.getNodeByPath(path);
+            if (!node?.is("element")) {
+                throw new Error(`the root should have an element at ${path.join(",")}`);
+            }
+            return node;
+        }
+
+        it("lists the entries disabled at the selection, but none without a command", () => {
+            setModelData(editor.model, "<paragraph>[]a</paragraph>");
+            editor.commands.get("blockQuote")?.forceDisabled("spec");
+            const ids = editor.plugins.get(TriliumSlashCommands).listAll()
+                .map((definition) => definition.id);
+
+            expect(paletteIds("")).not.toContain("blockQuote");
+            expect(ids).toEqual(expect.arrayContaining([ "blockQuote", "math" ]));
+            expect(ids).not.toContain("codeBlock");
+        });
+
+        it("runs an entry in a new paragraph before or after a block, undone in one step", () => {
+            setModelData(editor.model, WITH_LINE_SELECTED);
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const scroll = vi.spyOn(editor.editing.view, "scrollToTheSelection");
+
+            palette.runBeside(entry("heading2"), elementAt(1), "after");
+            expect(getModelData(editor.model)).toBe(
+                "<paragraph>a</paragraph><horizontalLine></horizontalLine><heading2>[]</heading2>");
+            expect(scroll).toHaveBeenCalledOnce();
+
+            editor.execute("undo");
+            expect(getModelData(editor.model, { withoutSelection: true }))
+                .toBe("<paragraph>a</paragraph><horizontalLine></horizontalLine>");
+
+            palette.runBeside(entry("blockQuote"), elementAt(0), "before");
+            expect(getModelData(editor.model))
+                .toBe("<blockQuote><paragraph>[]</paragraph></blockQuote><paragraph>a</paragraph>"
+                    + "<horizontalLine></horizontalLine>");
+        });
+
+        it("inserts nothing beside a list item, or where the schema allows no paragraph", () => {
+            const data = "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">"
+                + "[]a</paragraph><table><tableRow><tableCell><paragraph>b</paragraph></tableCell>"
+                + "</tableRow></table>";
+            setModelData(editor.model, data);
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            const listItem = elementAt(0);
+            const cell = elementAt(1, 0, 0);
+
+            expect(palette.canInsertBeside(listItem, "before")).toBe(false);
+            expect(palette.canInsertBeside(cell, "after")).toBe(false);
+            expect(palette.canInsertBeside(elementAt(1), "after")).toBe(true);
+            palette.runBeside(entry("heading2"), listItem, "after");
+            palette.runBeside(entry("heading2"), cell, "after");
+            expect(getModelData(editor.model)).toBe(data);
+        });
+
+        it("runs nothing where the model allows no edit", () => {
+            setModelData(editor.model, "<paragraph>[]a</paragraph>");
+            editor.model.on("canEditAt", (evt) => {
+                evt.return = false;
+                evt.stop();
+            }, { priority: "highest" });
+
+            const palette = editor.plugins.get(TriliumSlashCommands);
+            palette.runBeside(entry("heading2"), elementAt(0), "after");
+            expect(getModelData(editor.model)).toBe("<paragraph>[]a</paragraph>");
         });
     });
 

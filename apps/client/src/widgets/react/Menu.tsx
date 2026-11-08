@@ -648,7 +648,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
                 icon={uiIcon ?? "bx bx-empty"} iconSvg={uiIconSvg} title={label}
                 disabled={enabled === false}
                 className={className} onDropdownToggleClicked={select} split={!!(row.command || row.handler)}
-                filterable={row.filterable}
+                filterable={row.filterable} submenuClassName={row.submenuClassName}
                 onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
             >
                 <MenuItems items={items} onSelect={onSelect} />

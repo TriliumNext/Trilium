@@ -1,4 +1,6 @@
-import type { CKTextEditor, EditorConfig, ModelElement } from "@triliumnext/ckeditor5";
+import type {
+    CKTextEditor, EditorConfig, ModelElement, TriliumSlashCommands
+} from "@triliumnext/ckeditor5";
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
@@ -12,7 +14,7 @@ import type FNote from "../entities/fnote.js";
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import {
-    buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
+    buildInsertMenuItems, buildSortSelectionMenuItem, getTextEditorContaining, keepEditorFocused
 } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
@@ -46,6 +48,8 @@ export interface BlockReferenceMenuItems {
 
 /** The actions of the block handle menu. */
 export interface BlockHandleMenuActions {
+    /** The _Insert above_ and _Insert below_ submenus, shown first, before a separator. */
+    insertItems?: MenuItem<CommandNames>[];
     /** Copies a reference to the selected blocks. */
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
@@ -90,6 +94,7 @@ export function buildReferenceConfig(
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(origin, blocks, {
+                    insertItems: buildInsertBesideMenuItems(editor, blocks),
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
                         ? () => void copy((target) => copyBlockShareLink(target, shareLink))
@@ -115,7 +120,7 @@ export function buildReferenceConfig(
 export function openBlockHandleMenu(
     origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
-    { copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
+    { insertItems, copyReference, copyShareLink, sortItem, deleteBlocks }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
 ) {
@@ -125,10 +130,15 @@ export function openBlockHandleMenu(
         return;
     }
 
-    const items: MenuItem<CommandNames>[] = [
-        { kind: "header", title: getBlocksTitle(blocks) },
-        { title: t("block_reference.copy_reference"), uiIcon: "bx bx-link", handler: copyReference }
-    ];
+    const items: MenuItem<CommandNames>[] = [ { kind: "header", title: getBlocksTitle(blocks) } ];
+    if (insertItems?.length) {
+        items.push(...insertItems, { kind: "separator" });
+    }
+    items.push({
+        title: t("block_reference.copy_reference"),
+        uiIcon: "bx bx-link",
+        handler: copyReference
+    });
     if (copyShareLink) {
         items.push({
             title: t("block_reference.copy_share_link"),
@@ -409,6 +419,44 @@ const BLOCK_TYPES: Record<string, string> = {
     linkEmbed: "link_preview",
     unknownContentEmbed: "embed"
 };
+
+/**
+ * The _Insert above_ and _Insert below_ submenus for `blocks`, which list the `/` palette's entries
+ * that insert or wrap content and run the one picked in a new paragraph above or below `blocks`.
+ * There are none without the palette or while `editor` cannot insert a paragraph.
+ */
+function buildInsertBesideMenuItems(
+    editor: CKTextEditor | null | undefined,
+    blocks: readonly ModelElement[]
+): MenuItem<CommandNames>[] {
+    const first = blocks.at(0);
+    const last = blocks.at(-1);
+    if (!editor?.plugins.has("TriliumSlashCommands")
+        || !editor.commands.get("insertParagraph")?.isEnabled || !first || !last) {
+        return [];
+    }
+
+    const palette = editor.plugins.get("TriliumSlashCommands") as TriliumSlashCommands;
+    const definitions = palette.listAll();
+    const buildSubmenu = (
+        title: string, uiIcon: string, block: ModelElement, side: "before" | "after"
+    ): MenuItem<CommandNames> => ({
+        title,
+        uiIcon,
+        enabled: palette.canInsertBeside(block, side),
+        filterable: true,
+        submenuClassName: "slash-command-menu",
+        items: buildInsertMenuItems<CommandNames>(definitions,
+            (definition) => palette.runBeside(definition, block, side))
+    });
+
+    return [
+        buildSubmenu(t("block_reference.insert_above"), "bx bx-horizontal-left bx-rotate-90",
+            first, "before"),
+        buildSubmenu(t("block_reference.insert_below"), "bx bx-horizontal-left bx-rotate-270",
+            last, "after")
+    ];
+}
 
 /** Runs `deleteBlocks` in `editor` and focuses it, or `undefined` while the command is disabled. */
 function getDeleteBlocksAction(editor: CKTextEditor | null | undefined) {

@@ -321,7 +321,7 @@
 }
 
 /*
- * The `/` list of the text and Markdown editors, and the menu of the same commands that the block
+ * The `/` list of the text and Markdown editors, and the menus of the same commands that the block
  * handle opens, at a width that fits all but the longest descriptions, and given more height than
  * a list usually is: it is long, and the query only narrows it.
  */

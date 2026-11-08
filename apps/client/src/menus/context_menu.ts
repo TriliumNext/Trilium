@@ -157,6 +157,8 @@ export interface MenuCommandItem<T> {
      * it, at any depth, into one list, which shows what was typed.
      */
     filterable?: boolean;
+    /** For an item with {@link items}: classes put on its submenu, for a caller that sizes it. */
+    submenuClassName?: string;
 }
 
 export type MenuItem<T> = MenuCommandItem<T> | CustomMenuItem | MenuSeparatorItem | MenuHeader | MenuActionRow<T>;

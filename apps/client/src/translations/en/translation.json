@@ -4919,6 +4919,8 @@
     "copy_other": "Copy reference to these {{count}} blocks",
     "copy_reference": "Copy reference",
     "copy_share_link": "Copy public link",
+    "insert_above": "Insert above",
+    "insert_below": "Insert below",
     "copy_tab": "Copy link to this tab",
     "paste_as_link": "Paste reference as a link",
     "paste_as_excerpt": "Paste reference as an excerpt",
