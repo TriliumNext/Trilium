@@ -665,7 +665,7 @@ describe("openContextMenu", () => {
                     { kind: "separator" },
                     {
                         title: "link_context_menu.delete",
-                        uiIcon: "bx bx-trash destructive-action-icon"
+                        uiIcon: "bx bx-trash"
                     },
                     { title: "Delete attachment", uiIcon: "bx bx-trash destructive-action-icon" },
                     { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
@@ -941,7 +941,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 {
                     title: "link_context_menu.delete",
-                    uiIcon: "bx bx-trash destructive-action-icon"
+                    uiIcon: "bx bx-trash"
                 }
             ]);
             titled(items, "link_context_menu.open_externally").handler();
@@ -989,7 +989,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 {
                     title: "link_context_menu.delete",
-                    uiIcon: "bx bx-trash destructive-action-icon"
+                    uiIcon: "bx bx-trash"
                 }
             ]);
             expect(pick(titled(items, "link_context_menu.delete")))

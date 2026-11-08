@@ -3213,7 +3213,7 @@
     "open_externally": "Open externally",
     "copy_url": "Copy address (URL)",
     "display_as": "Display as",
-    "delete": "Delete",
+    "delete": "Delete block",
     "edit": "Edit..."
   },
   "electron_integration": {

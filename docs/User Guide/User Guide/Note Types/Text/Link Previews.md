@@ -114,7 +114,7 @@ The toolbar of a selected embed offers:
     *   _Position_: under _Break text_, <span class="tn-icon cke cke-object-left"></span> _Align left_, <span class="tn-icon cke cke-object-center"></span> _Align center_ and <span class="tn-icon cke cke-object-right"></span> _Align right_ place the video on lines of its own, at that side of the note. Under _Wrap text_, <span class="tn-icon cke cke-object-inline-left"></span> _Align left_ and <span class="tn-icon cke cke-object-inline-right"></span> _Align right_ place it at that side and let the text run beside it. _Align center_ is the default. Only a _Resizable_ video or audio file can be positioned.
     *   _Show title_ shows the title of the media above it, as a link to the media. New media is inserted without its title. The <span class="tn-icon bx bx-dots-vertical-rounded"></span> button of the title opens this same menu.
     *   _Show caption_ adds a caption under the video, centered, and puts the cursor in it. The caption is part of the text note, so it can be formatted like the rest of the text. While the cursor is in the caption, the video stays selected and keeps its toolbar. Choosing _Show caption_ again removes the caption.
-    *   <span class="tn-icon bx bx-trash"></span> _Delete_ removes the video from the note.
+    *   <span class="tn-icon bx bx-trash"></span> _Delete block_ removes the video from the note.
 
 Right-clicking a video file or an audio file opens the same _More actions_ menu. So does right-clicking a YouTube video, but only until it plays: from then on, the right-click goes to YouTube's player, which shows its own menu.
 

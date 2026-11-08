@@ -258,8 +258,10 @@ A change to a storage form reaches every reader, most of them outside the client
    `insertInlineEmbed` and `extended_code_block.ts` `insertExtendedCodeBlock`.
    `deleteContentEmbed` serves any kind: `getDeleteAndConvertGroup()` in
    `apps/client/src/menus/link_context_menu.ts` ends the ⋮ menu of a note, an attachment, a video
-   and an extended code block with it, followed by _Convert to link_ and an attachment's own delete
-   and convert actions. Other inline sources (Mermaid) do not offer it.
+   and an extended code block with it as _Delete block_, with a neutral icon, so it reads apart
+   from an attachment's red _Delete attachment..._ that follows it. _Convert to link_ and the
+   attachment's _Convert attachment into note..._ come last. Other inline sources (Mermaid) do not
+   offer it.
    `content_embed_toolbar.ts` lists the toolbar items; `content_embed_tools.ts` turns the
    content's tools into buttons; `content_embed_box_size_dropdown.ts` and
    `content_embed_position_dropdown.ts` are the size and position menus; `content_embed_caret.ts`

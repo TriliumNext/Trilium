@@ -278,9 +278,9 @@ function getSourceItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
 }
 
 /**
- * The last group of the menu of an embed, after a separator: "Delete", which removes the embed
- * from the note, then `deletion`, then "Convert to link" for an embed that names a note or an
- * attachment, then `conversion`.
+ * The last group of the menu of an embed, after a separator: "Delete block", which removes the
+ * embed from the note, then `deletion`, then "Convert to link" for an embed that names a note or
+ * an attachment, then `conversion`.
  */
 function getDeleteAndConvertGroup(
     embed: MenuEmbed,
@@ -291,7 +291,7 @@ function getDeleteAndConvertGroup(
         { kind: "separator" },
         {
             title: t("link_context_menu.delete"),
-            uiIcon: "bx bx-trash destructive-action-icon",
+            uiIcon: "bx bx-trash",
             handler: () => runEmbedCommand(embed, "deleteContentEmbed")
         },
         ...deletion.map(toActionItem),
