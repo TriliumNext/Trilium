@@ -50,6 +50,51 @@ const LOCALE_TAGS: Record<string, string> = { cn: "zh-CN", tw: "zh-TW" };
 const LANGUAGE_NAMES: Record<string, string> = { fa: "Persian (Farsi)" };
 const SEPARATELY_SHIPPED_LABELS = new Set([ "web-clipper" ]);
 const SEPARATELY_SHIPPED_AREAS = /^(?:web-)?clipper\b/;
+/**
+ * The release note area for a commit area, so a closed issue joins the entries of its subject.
+ * Areas too broad to name one (`client`, `collections`, `server`) are left out.
+ */
+const AREA_NAMES: Record<string, string> = {
+    "attributes": "Attributes",
+    "promoted_attributes": "Attributes",
+    "promoted-attributes": "Attributes",
+    "board": "Board",
+    "collections/board": "Board",
+    "calendar": "Calendar",
+    "collections/calendar": "Calendar",
+    "canvas": "Canvas",
+    "code": "Code",
+    "codemirror": "Code",
+    "desktop": "Desktop",
+    "etapi": "ETAPI",
+    "geomap": "Geo map",
+    "collections/geomap": "Geo map",
+    "import": "Import and export",
+    "export": "Import and export",
+    "llm": "LLM",
+    "llm_chat": "LLM",
+    "llm-chat": "LLM",
+    "markdown": "Markdown",
+    "mermaid": "Mermaid",
+    "mind_map": "Mind map",
+    "oauth": "Authentication",
+    "auth": "Authentication",
+    "print": "Printing",
+    "print_preview": "Printing",
+    "relation_map": "Relation map",
+    "search": "Search",
+    "quick_search": "Search",
+    "share": "Share",
+    "spreadsheet": "Spreadsheet",
+    "sync": "Sync",
+    "collections/table": "Table collection",
+    "tabs": "Tabs",
+    "templates": "Templates",
+    "text": "Text editor",
+    "ckeditor": "Text editor",
+    "code-block": "Text editor",
+    "tree": "Tree"
+};
 const GRAPHQL_BATCH_SIZE = 50;
 const CHANGELOG_DIR = join(ROOT, ".changelog");
 const PRE_RELEASE_DIR = join(CHANGELOG_DIR, "pre-release");
@@ -432,6 +477,28 @@ export function categorize(subjects: string[], issueType: string | undefined): S
 }
 
 /**
+ * Names the release note area of a closed issue from the area of the first conventional commit
+ * that closes it, through `AREA_NAMES`.
+ */
+export function areaOf(subjects: string[]): string | undefined {
+    for (const subject of subjects) {
+        const area = parseConventionalSubject(subject)?.area;
+        if (area) {
+            return AREA_NAMES[area] ?? AREA_NAMES[area.split("/")[0]];
+        }
+    }
+    return undefined;
+}
+
+/** Drops an `Area: ` prefix from a title that its group already names. */
+export function stripAreaPrefix(title: string, area: string) {
+    const prefix = new RegExp(`^${area.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*`, "i");
+    const stripped = title.replace(prefix, "");
+    return stripped === title || !stripped
+        ? title : stripped[0].toUpperCase() + stripped.slice(1);
+}
+
+/**
  * Tells whether an issue belongs to a product released on its own (the web clipper): it carries
  * that product's label, or every change closing it is in that product's area.
  */
@@ -488,8 +555,13 @@ export function collectItems(sources: ItemSources): NoteItem[] {
         }
 
         const inferredCredits = [ ...new Set(closedBy(entry).flatMap((number) =>
-            closingsByIssue.get(number)?.contributors ?? [])) ];
-        items.push({ section: entry.section, area: entry.area, date: entry.date, text,
+            closingsByIssue.get(number)?.contributors ?? [])) ]
+            .filter((login) => !entry.text.includes(`@${login}`));
+        const area = entry.area ?? (entry.section === "Key highlights" ? undefined : areaOf([
+            ...closedBy(entry).flatMap((number) => closingsByIssue.get(number)?.subjects ?? []),
+            ...entry.closes.flatMap((number) => pullRequests?.get(number)?.title ?? [])
+        ]));
+        items.push({ section: entry.section, area, date: entry.date, text,
             details: entry.details,
             credits: entry.credits.length > 0 ? entry.credits : inferredCredits });
     }
@@ -505,13 +577,15 @@ export function collectItems(sources: ItemSources): NoteItem[] {
             continue;
         }
 
-        const title = cleanTitle(issue.title);
-        if (isNightlyOnly(title)) {
+        const cleaned = cleanTitle(issue.title);
+        if (isNightlyOnly(cleaned)) {
             continue;
         }
 
-        items.push({ section: categorize(closing.subjects, issue.issueType), date: closing.date,
-            text: `[${escapeMarkdown(title)}](${issue.url})`, details: [],
+        const area = areaOf(closing.subjects);
+        const title = area ? stripAreaPrefix(cleaned, area) : cleaned;
+        items.push({ section: categorize(closing.subjects, issue.issueType), area,
+            date: closing.date, text: `[${escapeMarkdown(title)}](${issue.url})`, details: [],
             credits: closing.contributors });
     }
 
@@ -591,7 +665,9 @@ export function renderSection(items: NoteItem[],
         const marker = markerOf(index);
         if (group.items.length === 1) {
             const [ item ] = group.items;
-            const text = group.area ? `${group.area}: ${item.text}` : item.text;
+            const named = group.area
+                && item.text.replace(/^\[/, "").toLowerCase().startsWith(group.area.toLowerCase());
+            const text = group.area && !named ? `${group.area}: ${item.text}` : item.text;
             lines.push(...renderItem(marker, text, item, " ".repeat(4)));
             continue;
         }

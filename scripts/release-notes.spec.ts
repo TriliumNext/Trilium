@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
+    areaOf, categorize, type ChangelogEntry, cleanTitle, collectClosings, collectItems, type Commit,
     escapeMarkdown, findNewLanguages, type Issue, isNightlyOnly, isShippedSeparately, languageName,
     markdownToHtml, needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences,
     parseCommits, parseDisplayLocales, parseNumstat, parsePullRequestNumber, type PullRequest,
-    rankContributors, renderReleaseNote, renderSection
+    rankContributors, renderReleaseNote, renderSection, stripAreaPrefix
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -104,6 +104,23 @@ describe("categorize", () => {
             .toBe("Bugfixes");
         expect(categorize([ "close #1" ], "Feature")).toBe("Improvements");
         expect(categorize([ "close #1" ], undefined)).toBe("Bugfixes");
+    });
+});
+
+describe("areaOf", () => {
+    it("names the area of the first conventional subject, from the full area or its root", () => {
+        expect(areaOf([ "Merge pull request #1", "fix(collections/table): x" ]))
+            .toBe("Table collection");
+        expect(areaOf([ "fix(llm/tools): x" ])).toBe("LLM");
+        expect(areaOf([ "fix(client): x", "fix(search): y" ])).toBeUndefined();
+        expect(areaOf([ "close #1" ])).toBeUndefined();
+    });
+
+    it("drops a title's prefix that the area already names", () => {
+        expect(stripAreaPrefix("Spreadsheet: sorting criteria is unclickable", "Spreadsheet"))
+            .toBe("Sorting criteria is unclickable");
+        expect(stripAreaPrefix("Markdown Preview Mode: links", "Markdown"))
+            .toBe("Markdown Preview Mode: links");
     });
 });
 
@@ -232,8 +249,9 @@ describe("collectItems", () => {
         issue(5, "[Bug]: Nightly: crash"),
         issue(6, "Second")
     ]);
-    const closings = [ 1, 2, 3, 4, 5, 6, 7 ].map((number) => ({ issue: number, date: number * 10,
-        subjects: [ "fix: x" ], contributors: number === 3 ? [ "fixer" ] : [] }));
+    const closings = [ 1, 2, 3, 4, 5, 6, 7, 9 ].map((number) => ({ issue: number,
+        date: number * 10, subjects: [ number === 1 ? "fix(sync): x" : "fix: x" ],
+        contributors: number === 3 || number === 9 ? [ "fixer" ] : [] }));
     const entry: ChangelogEntry = { file: "a.md", date: 15, section: "Bugfixes", closes: [ 3 ],
         credits: [], text: "New wording", details: [] };
     const url = (number: number) => `https://github.com/o/r/issues/${number}`;
@@ -250,22 +268,31 @@ describe("collectItems", () => {
                 { ...entry, file: "c.md", date: 35, closes: [], area: "Search",
                     text: "[Linked](https://y)" },
                 { ...entry, file: "d.md", date: 45, closes: [ 9, 20 ],
-                    text: `[Partly](${url(9)}) linked` }
+                    text: `[Partly](${url(9)}) linked (by @fixer)` },
+                { ...entry, file: "e.md", date: 55, closes: [ 21 ], text: "Inherits" },
+                { ...entry, file: "f.md", date: 65, closes: [ 21 ], text: "Showcase",
+                    section: "Key highlights" }
             ],
-            pullRequests: new Map([ [ 20, { number: 20, title: "x", closes: [ 7 ] } ] ]),
+            pullRequests: new Map([
+                [ 20, { number: 20, title: "x", closes: [ 7 ] } ],
+                [ 21, { number: 21, title: "feat(share): y", closes: [] } ]
+            ]),
             repository: "o/r"
         });
 
-        expect(items.map(({ section, text, credits }) => [ section, text, credits.join() ]))
-            .toEqual([
-                [ "Internationalization", "Persian (Farsi)", "reporter" ],
-                [ "Bugfixes", `[New wording](${url(3)})`, "fixer" ],
-                [ "Bugfixes", `Two issues ([#6](${url(6)}), [#8](${url(8)}))`, "thanked" ],
-                [ "Bugfixes", "[Linked](https://y)", "" ],
-                [ "Bugfixes", `[Partly](${url(9)}) linked ([#20](https://github.com/o/r/pull/20))`,
-                    "" ],
-                [ "Bugfixes", "[Crash on \\*save\\*](https://x/1)", "" ]
-            ]);
+        expect(items.map(({ section, area, text, credits }) =>
+            [ section, area, text, credits.join() ])).toEqual([
+            [ "Internationalization", undefined, "Persian (Farsi)", "reporter" ],
+            [ "Bugfixes", undefined, `[New wording](${url(3)})`, "fixer" ],
+            [ "Bugfixes", undefined, `Two issues ([#6](${url(6)}), [#8](${url(8)}))`, "thanked" ],
+            [ "Bugfixes", "Search", "[Linked](https://y)", "" ],
+            [ "Bugfixes", undefined,
+                `[Partly](${url(9)}) linked (by @fixer) ([#20](https://github.com/o/r/pull/20))`,
+                "" ],
+            [ "Bugfixes", "Share", "[Inherits](https://github.com/o/r/pull/21)", "" ],
+            [ "Key highlights", undefined, "[Showcase](https://github.com/o/r/pull/21)", "" ],
+            [ "Bugfixes", "Sync", "[Crash on \\*save\\*](https://x/1)", "" ]
+        ]);
     });
 });
 
