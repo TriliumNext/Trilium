@@ -1853,7 +1853,9 @@
     "search_placeholder": "글꼴 검색",
     "no_fonts_found": "찾으시는 글꼴과 일치하는 항목이 없습니다.",
     "document_preview_heading": "퍼플 하트 삽목",
-    "document_preview_body": "마디 아래에서 줄기 4개를 잘라 창가의 물에 꽂아 두었더니, 첫 뿌리는 <strong>9일 후</strong>. <em>직사광선</em> 아래에서는 색을 유지하고 그늘에서는 녹색으로 옅어집니다."
+    "document_preview_body": "마디 아래에서 줄기 4개를 잘라 창가의 물에 꽂아 두었더니, 첫 뿌리는 <strong>9일 후</strong>. <em>직사광선</em> 아래에서는 색을 유지하고 그늘에서는 녹색으로 옅어집니다.",
+    "installed-system-fonts": "시스템 글꼴",
+    "family_draws_nothing": "{{family}} 글꼴은 이 기기에서 텍스트를 표시할 수 없어 글꼴이 변경되지 않았습니다."
   },
   "max_content_width": {
     "title": "콘텐츠 폭",
