@@ -7,7 +7,8 @@ import {
     needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
     parseDisplayLocales, parseNumstat, parseProtocolVersions, parsePullRequestNumber,
     type PullRequest, rankContributors, renderReleaseNote, renderSection, splitExplanations,
-    stripAreaPrefix, unreleasedNotice
+    stripAreaPrefix, unreleasedNotice,
+    renderHighlights,
 } from "./release-notes.mjs";
 
 describe("parseClosingReferences", () => {
@@ -231,7 +232,7 @@ describe("parseChangelogEntry", () => {
         const source =
             "---\ntype: bugfix\nscope: x\ncloses: [abc]\ncredits: [a_b]\nnotable: yes\n---\n";
         expect(parseChangelogEntry(file, source).errors).toEqual([
-            "unknown key `scope`; expected type, area, closes, credits or notable",
+            "unknown key `scope`; expected type, title, area, closes, credits or notable",
             "`type` must be one of note, tip, important, warning, highlight, compatibility, "
                 + "breaking, mobile, fix, improvement, documentation, i18n, technical, security, "
                 + "not `bugfix`",
@@ -250,6 +251,16 @@ describe("parseChangelogEntry", () => {
 describe("lintChangelogEntry", () => {
     const entry: ChangelogEntry = { file: "a.md", date: 0, section: "Bugfixes", area: "Search",
         closes: [], credits: [], notable: false, text: "x", details: [] };
+
+    it("requires a title on highlights and rejects it elsewhere", () => {
+        const highlight = { ...entry, section: "Key highlights" as const, area: undefined };
+        expect(lintChangelogEntry({ ...highlight, title: "Tables" })).toEqual([]);
+        expect(lintChangelogEntry(highlight))
+            .toEqual([
+                "`title` is required for a highlight: the heading its paragraphs go under" ]);
+        expect(lintChangelogEntry({ ...entry, title: "Tables" }))
+            .toEqual([ "`title` has no effect in Bugfixes, which lists every entry" ]);
+    });
 
     it("allows notable only where areas fold", () => {
         expect(lintChangelogEntry({ ...entry, notable: true })).toEqual([]);
@@ -426,6 +437,25 @@ describe("renderSection", () => {
             "        <li>Fourth <code>#x</code><ul><li>A detail.</li></ul></li>",
             "    </ol>",
             "</details>"
+        ]);
+    });
+});
+
+describe("renderHighlights", () => {
+    it("writes a heading over each item's paragraphs, oldest first, credits last", () => {
+        const item = (date: number, title: string | undefined, text: string, details: string[],
+            credits: string[] = []): NoteItem =>
+            ({ section: "Key highlights", date, title, text, details, credits });
+        expect(renderHighlights([
+            item(2, "Tables", "Second paragraph.", [ "*   A point.", "*   Another." ],
+                [ "a", "b" ]),
+            item(1, "Editor", "First.", []),
+            item(3, undefined, "Untitled", [])
+        ])).toEqual([
+            "### Editor", "", "First.", "",
+            "### Tables", "", "Second paragraph.", "", "*   A point.", "*   Another.", "",
+            "Contributed by @a and @b.", "",
+            "### Untitled", ""
         ]);
     });
 });

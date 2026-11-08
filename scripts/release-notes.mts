@@ -157,9 +157,9 @@ const ADMONITIONS = new Set<Section>([ "Note", "Tip", "Important", "Warning" ]);
 /** Sections that fold each area into a `<details>` block; `notable` keeps an entry out of it. */
 const COLLAPSIBLE_SECTIONS = new Set<Section>(Object.values(ENTRY_TYPES)
     .filter((section) => section !== "Key highlights" && !ADMONITIONS.has(section)));
-/** Sections listed with bullets; the others are numbered. */
+/** Sections listed with bullets; the others are numbered. Key highlights are headings instead. */
 const BULLETED_SECTIONS =
-    new Set<Section>([ "Key highlights", "Compatibility", "Breaking changes", "Documentation" ]);
+    new Set<Section>([ "Compatibility", "Breaking changes", "Documentation" ]);
 
 export interface Commit {
     hash: string;
@@ -217,6 +217,8 @@ export interface ChangelogEntry {
     credits: string[];
     /** Lists the entry above its section's collapsible blocks instead of inside its area's. */
     notable: boolean;
+    /** The `###` heading of a Key highlights entry, written over its paragraphs. */
+    title?: string;
     /** The first paragraph, which becomes the list item. */
     text: string;
     /** The lines after it, nested under the list item. */
@@ -236,6 +238,8 @@ export interface NoteItem {
     closes?: number[];
     /** Keeps the item out of its area's collapsible block, listed before them. */
     notable?: boolean;
+    /** The heading a Key highlights item is written under. */
+    title?: string;
 }
 
 interface Options {
@@ -626,7 +630,7 @@ export function collectItems(sources: ItemSources): NoteItem[] {
         items.push({ section: entry.section, area: entry.area, date: entry.date, text,
             details: entry.details,
             credits: entry.credits.length > 0 ? entry.credits : inferredCredits,
-            closes: closedBy(entry), notable: entry.notable });
+            closes: closedBy(entry), notable: entry.notable, title: entry.title });
     }
 
     const covered = new Set([
@@ -703,10 +707,11 @@ export function renderReleaseNote(template: string, version: string, items: Note
             index++;
         }
         const { section } = sectionItems[0];
-        output.push("", ...renderSection(sectionItems, {
-            bulleted: BULLETED_SECTIONS.has(section),
-            collapsible: COLLAPSIBLE_SECTIONS.has(section)
-        }), "");
+        output.push("", ...section === "Key highlights" ? renderHighlights(sectionItems)
+            : renderSection(sectionItems, {
+                bulleted: BULLETED_SECTIONS.has(section),
+                collapsible: COLLAPSIBLE_SECTIONS.has(section)
+            }), "");
     }
 
     return output.join("\n").replace(/\n*$/, "\n");
@@ -830,6 +835,24 @@ export function unreleasedNotice(base: string, head: { hash: string; date: strin
         details: [],
         credits: []
     };
+}
+
+/**
+ * Writes each Key highlights item, oldest first, as a `###` heading over its text, a blank
+ * line, and its detail lines as written: paragraphs, lists and blank lines. The credits close
+ * it as a line of their own.
+ */
+export function renderHighlights(items: NoteItem[]): string[] {
+    const lines: string[] = [];
+    for (const item of [ ...items ].sort((a, b) => a.date - b.date)) {
+        const credit = item.credits.length > 0
+            ? [ "", `Contributed by ${item.credits.map((login) => `@${login}`).join(" and ")}.` ]
+            : [];
+        const body = item.title ? [ item.text, ...item.details.length > 0 ? [ "" ] : [] ] : [];
+        lines.push(...lines.length > 0 ? [ "" ] : [], `### ${item.title ?? item.text}`, "",
+            ...body, ...item.details, ...credit);
+    }
+    return lines;
 }
 
 function renderAdmonition(item: NoteItem) {
@@ -1047,8 +1070,9 @@ export function parseChangelogEntry(file: string, source: string):
     }
 
     for (const key of fields.keys()) {
-        if (![ "type", "area", "closes", "credits", "notable" ].includes(key)) {
-            errors.push(`unknown key \`${key}\`; expected type, area, closes, credits or notable`);
+        if (![ "type", "title", "area", "closes", "credits", "notable" ].includes(key)) {
+            errors.push(
+                `unknown key \`${key}\`; expected type, title, area, closes, credits or notable`);
         }
     }
 
@@ -1099,7 +1123,7 @@ export function parseChangelogEntry(file: string, source: string):
     const date = Date.UTC(year, month - 1, day, hour, minute, second) / 1000;
     return {
         entry: { file, date, section, area: fields.get("area")?.[0], closes, credits,
-            notable: notableValue === "true",
+            notable: notableValue === "true", title: fields.get("title")?.[0],
             text: trimKeepingBreak(text.trimStart()),
             details: trimBlankLines(details.map(trimKeepingBreak)) },
         errors
@@ -1113,6 +1137,12 @@ export function parseChangelogEntry(file: string, source: string):
 export function lintChangelogEntry(entry: ChangelogEntry): string[] {
     if (entry.notable && !COLLAPSIBLE_SECTIONS.has(entry.section)) {
         return [ `\`notable\` has no effect in ${entry.section}, which lists every entry` ];
+    }
+    if (entry.section === "Key highlights" && !entry.title) {
+        return [ "`title` is required for a highlight: the heading its paragraphs go under" ];
+    }
+    if (entry.title && entry.section !== "Key highlights") {
+        return [ `\`title\` has no effect in ${entry.section}, which lists every entry` ];
     }
 
     const known = AREAS.join(", ");
@@ -1253,6 +1283,8 @@ function createChangelogEntry(slug: string) {
         "---",
         `# ${Object.keys(ENTRY_TYPES).join(" | ")}`,
         "type: fix",
+        "# Required for highlight: the heading its paragraphs go under.",
+        "# title:",
         "# Required for fix and improvement: the group the entry goes to, one of",
         ...wrap(AREAS, 96).map((line) => `# ${line}`),
         "area:",

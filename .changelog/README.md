@@ -55,12 +55,13 @@ Tree Quick Search failed when `/` was in the middle of the query on some reverse
 | Key | Required | Value |
 |---|---|---|
 | `type` | yes | The release note section: `highlight`, `compatibility`, `breaking`, `mobile`, `fix`, `improvement`, `documentation`, `i18n`, `technical` or `security`. Compatibility also lists, by itself, a sync protocol or database version that differs from the previous release; a `compatibility` entry whose `closes` names the pull request or issue behind that bump is nested under it as the reason. `note`, `tip`, `important` and `warning` become a GitHub admonition above the first section instead, for a notice that concerns the whole release. |
+| `title` | for `highlight` | The `###` heading of a Key highlights entry. The text below the frontmatter is written under it as it stands: paragraphs separated by blank lines, `*` lists, inline links on the feature names. Write it as a short story: what a user could not do, what they can do now, where to find it. No `(#N)` references are appended; put a link on the feature name instead. |
 | `area` | for `fix` and `improvement` | Puts the entry in a collapsible block named after it, such as `LLM`, `Search` or `Table collection`, even when it is the only entry of that area. One of `AREAS` in `scripts/release-notes.mts`, which the template lists; a change that fits none adds its area there. |
 | `closes` | no | Issue numbers or URLs. The note links the entry to them and leaves out the entries it would generate from their titles. It does not close the issue: that is still the `(closes #N)` in the commit subject. |
 | `credits` | no | GitHub usernames to thank. Defaults to whoever fixed the issues in `closes`. Leave out maintainers. |
 | `notable` | no | `true` lists the entry above the section's collapsible blocks, prefixed with its area, so a reader who opens none still sees it. For a change the reader is worse off missing: data loss or a security fix, a lost login, sync or startup, a crash, a regression since the previous release, a whole platform or locale broken, a rename or a changed default. Never for a new feature, however large: that competes for Key highlights instead. Aim for five to eight per section. |
 
-After the frontmatter, the first line is the entry. Describe what the user sees, not the code:
+After the frontmatter, the first line is the entry (for a highlight, its first paragraph). Describe what the user sees, not the code:
 "Searching for a word containing `#` dropped everything after it", not "Stop splitting the
 tokenizer input on `#`". Lines after the first are nested under the entry, for details or
 sub-items.
