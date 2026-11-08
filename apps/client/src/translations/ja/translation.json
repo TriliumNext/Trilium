@@ -66,23 +66,27 @@
     "button_edit_link": "リンクを保存",
     "fix_link": "リンクを修正",
     "button_fix_link": "リンクを修正",
-    "web_link": "Web リンク",
+    "web_link": "Web ページ",
     "url": "アドレス (URL)",
     "display_as": "表示形式",
-    "display_plain": "プレーンリンク",
-    "display_inline": "インライン",
+    "display_plain": "テキスト",
+    "display_inline": "アイコンとテキスト",
     "display_card": "カード",
-    "display_embed": "YouTube 埋め込み",
+    "display_embed": "埋め込み",
     "page_title": "web ページのタイトル",
     "title_from_url": "URL と同じ",
     "description": "説明",
     "page_description": "web ページの説明",
-    "anchors": "見出しとアンカー",
+    "anchors": "見出し / アンカー",
     "target_anchor": "アンカー",
     "title_from_note": "設定されていない場合は、常にノートのタイトルが反映されます",
     "headings": "見出し",
     "no_headings_or_anchors": "このノートには、見出しやアンカーが含まれていません。",
-    "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます"
+    "title_from_heading": "設定されていない場合は、常に見出しのテキストが反映されます",
+    "invalid_url": "有効な URL ではありません。",
+    "script_link_not_allowed": "{{scheme}} で始まるリンクはコードを実行する可能性があるため、使用できません。",
+    "retrieving_from_page": "web ページから取得中...",
+    "title_from_attachment": "設定されていない場合、常に添付ファイルのタイトルが表示されます"
   },
   "branch_prefix": {
     "save": "保存",
@@ -407,7 +411,7 @@
     "collapseExpand": "ノードを折りたたむ / 展開",
     "goBackForwards": "履歴を戻る／進む",
     "scrollToActiveNote": "アクティブノートまでスクロール",
-    "jumpToParentNote": "親ノートへ移動",
+    "jumpToParentNote": "親ノートに移動",
     "collapseWholeTree": "すべてのノートツリーを折りたたむ",
     "collapseSubTree": "サブツリーを折りたたむ",
     "tabShortcuts": "タブショートカット",
@@ -803,7 +807,7 @@
     "column-width-narrow": "狭い（デフォルト）",
     "column-width-medium": "中",
     "column-width-wide": "広い",
-    "copy-reference": "参照をコピー",
+    "copy-reference": "リンクをコピー",
     "reference-column-missing": "その列は、このボード上にはもうありません。",
     "reference-archived": "そのカードはアーカイブされているため、ボードには表示されていません。",
     "reference-missing": "そのカードは、このボード上にはもうありません。",
@@ -914,7 +918,7 @@
   },
   "image_properties": {
     "upload_new_revision": "編集履歴をアップロード...",
-    "copy_reference_to_clipboard": "参照をクリップボードにコピー",
+    "copy_reference_to_clipboard": "リンクをクリップボードにコピー",
     "upload_success": "新しい画像の変更がアップロードされました。",
     "upload_failed": "新しい画像の変更のアップロードに失敗しました: {{message}}"
   },
@@ -925,7 +929,7 @@
     "open_custom": "プログラムから開く...",
     "open_custom_title": "ファイルを外部アプリケーションで開き、変更を監視します。その後、変更されたバージョンをTriliumにアップロードできるようになります。",
     "rename_attachment": "添付ファイルの名前を変更...",
-    "copy_link_to_clipboard": "参照先をクリップボードにコピー",
+    "copy_link_to_clipboard": "リンクをクリップボードにコピー",
     "convert_attachment_into_note": "添付ファイルをノートに変換...",
     "delete_attachment": "添付ファイルを削除...",
     "open_externally_detail_page": "添付ファイルを外部で開くは、詳細ページからのみ可能です。まず添付ファイル詳細をクリックしてから、再度操作を行ってください。",
@@ -1055,8 +1059,6 @@
     "box_size": "ボックスサイズ",
     "size_tiny": "極小",
     "size_tiny_description": "タイトルとアクションのみの 1 行表示。",
-    "size_small": "小",
-    "size_small_description": "約 10 行分のボックス。",
     "size_medium": "中",
     "size_medium_description": "約 30 行分のボックス。",
     "size_full": "全体",
@@ -1137,7 +1139,6 @@
     "note_tree_font_short": "ノートツリー",
     "note_detail_font_short": "ドキュメント",
     "monospace_font_short": "モノスペース",
-    "proportional-system-fonts": "プロポーショナルフォント（可変幅フォント）",
     "search_placeholder": "フォント検索",
     "no_fonts_found": "該当するフォントは見つかりませんでした。",
     "document_preview_heading": "パープルハートの挿し木",
@@ -1192,7 +1193,7 @@
   "images": {
     "images_section_title": "画像",
     "download_images_automatically": "画像を自動的にダウンロード",
-    "download_images_description": "貼り付けた HTML 内の参照画像をダウンロードし、オフラインでも利用できるようにする。",
+    "download_images_description": "貼り付けた HTML 内のオンライン画像をダウンロードし、オフラインでも利用できるようにする。",
     "max_image_dimensions": "画像の最大サイズ",
     "max_image_dimensions_unit": "ピクセル",
     "jpeg_quality_description": "推奨範囲は50～85です。値が低いほどファイルサイズが小さくなり、値が高いほどディテールが保持されます。",
@@ -1726,12 +1727,17 @@
     "align_center": "中央揃え",
     "align_right": "右揃え",
     "open_externally": "外部で開く",
-    "delete": "削除"
+    "delete": "削除",
+    "copy_url": "アドレス（URL）をコピー",
+    "display_as": "表示形式",
+    "edit": "編集..."
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
     "note-has-been-deleted": "ノートは削除されました。",
-    "attachment-info": "添付ファイル • {{size}}"
+    "attachment-info": "添付ファイル • {{size}}",
+    "jump-to-block": "ブロックに移動",
+    "jump-to-heading": "見出しに移動"
   },
   "protect_note": {
     "toggle-on": "ノートを保護"
@@ -1989,7 +1995,11 @@
     "mathlive_enabled": "MathLive ビジュアルエディター",
     "mathlive_description": "ビジュアルエディターを使用して数式を編集できます。",
     "sticky_table_headers_enabled": "表のヘッダー行を固定",
-    "sticky_table_headers_description": "表の残りの部分をスクロールしている間も、ヘッダー行がノートの上部に表示されたままになるようにします。"
+    "sticky_table_headers_description": "表の残りの部分をスクロールしている間も、ヘッダー行がノートの上部に表示されたままになるようにします。",
+    "link_title_retrieval_enabled": "テキストリンクのタイトルを自動的に取得",
+    "link_title_retrieval_description": "リンクエディターで、テキストリンクのタイトルが空の場合、Web ページのタイトルを自動入力します。",
+    "link_details_retrieval_enabled": "アイコンとテキスト のリンクやカードのタイトルと説明を自動的に取得",
+    "link_details_retrieval_description": "リンクエディターで、アイコンとテキスト のリンクまたはカードのタイトルや説明が空の場合、Web ページの情報を自動入力します。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -2466,8 +2476,8 @@
     "message": "Trilium の外部で開かれたファイルが {{time}} に保存されました。アップロードすると Trilium 内のコンテンツが置き換わりますが、現在のバージョンは変更履歴として保持されます。"
   },
   "image": {
-    "copied-to-clipboard": "画像への参照がクリップボードにコピーされました。これは任意のテキストノートに貼り付けることができます。",
-    "cannot-copy": "画像参照をクリップボードにコピーできませんでした。",
+    "copied-to-clipboard": "画像のリンクをクリップボードにコピーしました。これは任意のテキストノートに貼り付けることができます。",
+    "cannot-copy": "画像のリンクをクリップボードにコピーできませんでした。",
     "image-copied-to-clipboard": "画像がクリップボードにコピーされました。",
     "cannot-copy-image": "画像をクリップボードにコピーできませんでした。",
     "cannot-download": "画像をダウンロードできませんでした。",
@@ -2510,7 +2520,7 @@
     "confirm_unhoisting": "要求されたノート「{{requestedNote}}」は、ホイストされたノート「{{hoistedNote}}」サブツリーの外部にあるため、ノートにアクセスするにはホイストを解除する必要があります。ホイスト解除を続行しますか？"
   },
   "image_context_menu": {
-    "copy_reference_to_clipboard": "参照をクリップボードにコピー",
+    "copy_reference_to_clipboard": "リンクをクリップボードにコピー",
     "copy_image_to_clipboard": "画像をクリップボードにコピー"
   },
   "note_autocomplete": {
@@ -2535,7 +2545,8 @@
       "past_week": "過去 7 日間",
       "past_month": "過去 30 日間",
       "older": "それ以前"
-    }
+    },
+    "suggestions": "候補"
   },
   "geo-map": {
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
@@ -2822,7 +2833,7 @@
     "button-tree-map": "ツリーマップ"
   },
   "attachment_detail_2": {
-    "link_copied": "添付ファイルの参照先をクリップボードにコピーしました。",
+    "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。",
     "deletion_badge": "{{time}} 後に削除",
     "deletion_badge_soon": "まもなく削除されます",
@@ -3021,7 +3032,7 @@
     "annotation_highlight": "{{pageNumber}} ページのハイライト",
     "annotation_note": "{{pageNumber}} ページのノート",
     "annotation_text_box": "{{pageNumber}} のテキストボックス",
-    "copy_reference": "参照をコピー",
+    "copy_reference": "リンクをコピー",
     "page_reference": "{{pageNumber}} ページ",
     "annotation_reference": "{{pageNumber}} ページの注釈"
   },
@@ -3114,13 +3125,35 @@
       "play_pause": "再生/一時停止",
       "back_10s": "10 秒戻る",
       "forward_10s": "10 秒進む",
-      "jump_start": "先頭へ移動",
-      "jump_end": "最後へ移動",
+      "jump_start": "先頭に移動",
+      "jump_end": "最後に移動",
       "mute": "ミュート",
       "fullscreen": "全画面表示",
       "navigation": "ナビゲーション",
       "previous": "前へ",
       "next": "次へ"
+    },
+    "external-unavailable": "このメディアは再生できませんでした。アドレスにアクセスできないか、サポートされていない形式である可能性があります。",
+    "http-error": "HTTP {{status}}: <bold>{{name}}</bold>",
+    "http-status-names": {
+      "400": "不正なリクエスト",
+      "401": "認証されていません",
+      "403": "アクセスが拒否されました",
+      "404": "見つかりません",
+      "405": "許可されていないメソッド",
+      "406": "受け入れられません",
+      "408": "リクエストがタイムアウトしました",
+      "410": "削除されました",
+      "416": "範囲指定が不適切です",
+      "429": "リクエストが多すぎます",
+      "451": "法的理由により利用できません",
+      "500": "内部サーバーエラー",
+      "501": "未実装",
+      "502": "不正なゲートウェイ",
+      "503": "サービス利用不可",
+      "504": "ゲートウェイタイムアウト",
+      "client-error": "クライアントエラー",
+      "server-error": "サーバーエラー"
     }
   },
   "mermaid": {
@@ -3759,9 +3792,8 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "矢印をクリックするか、%0 を押すと、折りたたみ/展開ができます。",
       "collapsible-block": "折りたたみブロック",
       "copy-image-to-clipboard": "画像をクリップボードにコピー",
-      "copy-url": "URLをコピー",
       "create-a-bulleted-list": "箇条書きリストを作成",
-      "create-a-new-footnote-and-reference-it-here": "新しい脚注を作成し、ここに参照を挿入",
+      "create-a-new-footnote-and-reference-it-here": "新しい脚注を作成し、ここに挿入",
       "create-a-numbered-list": "番号付きリストを作成",
       "create-a-to-do-list": "to-do リストを作成",
       "display": "表示",
@@ -3770,9 +3802,7 @@
       "drag-to-reposition-the-collapsible-block": "折りたたみブロックをドラッグして位置を調整",
       "edit-task-states": "タスクの状態を編集",
       "embed": "埋め込み",
-      "inline": "インライン",
       "insert-a-0-mermaid-diagram-template": "\"%0\" マーメイド図テンプレートを挿入",
-      "insert-a-link-to-another-trilium-note": "別の Trilium ノートへのリンクを挿入",
       "insert-a-math-equation": "数式を挿入",
       "insert-a-new-admonition": "新しい注釈を挿入",
       "insert-a-page-break-for-printing": "改ページを挿入（印刷用）",
@@ -3780,9 +3810,7 @@
       "insert-an-anchor-for-internal-linking": "内部リンク用のアンカーを挿入",
       "insert-an-empty-mermaid-diagram": "空のマーメイド図を挿入",
       "justify-text-alignment": "テキストを両端揃え",
-      "link-preview": "リンクプレビュー",
       "missing-definition": "(定義がありません)",
-      "plain-link": "プレーンリンク",
       "right-click-or-press-0-to-change-state": "右クリックするか、%0 を押すと、状態を変更できます。",
       "select-collapsible-block": "折りたたみブロックを選択",
       "summary": "概要",
@@ -3917,13 +3945,11 @@
       "attach-and-embed-file": "ファイルを添付して埋め込む",
       "attach-file": "ファイルを添付",
       "attach-file-as-a-link": "ファイルをリンクとして添付",
-      "convert-to-link": "リンクに変換",
       "upload-files-as-attachments-and-insert-embeds": "ファイルを添付ファイルとしてアップロードし、埋め込みを挿入する。",
       "upload-files-as-attachments-and-insert-links": "ファイルを添付ファイルとしてアップロードし、リンクを挿入する。",
       "caption-for-the-included-note": "埋め込みノートのキャプション",
       "enter-caption": "キャプションを入力",
       "tiny": "コンパクト",
-      "show-title": "タイトルを表示",
       "more-actions": "その他のアクション",
       "drawing-canvas": "描画キャンバス",
       "editable": "編集可能",
@@ -3936,7 +3962,6 @@
       "remove-tab": "タブを削除",
       "move-tab-left": "タブを左へ移動",
       "move-tab-right": "タブを右へ移動",
-      "copy-link-to-tab": "タブへのリンクをコピー",
       "tabs-toolbar": "タブツールバー",
       "insert-titled-tabs-that-show-one-panel-at-a-time": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入。",
       "multicolumn-layout": "複数列レイアウト",
@@ -3991,7 +4016,6 @@
       "image-position": "画像の位置",
       "list": "リスト",
       "list-type": "リストタイプ",
-      "insert-a-preview-of-a-web-page-or-a-video": "web ページや動画のプレビューを挿入",
       "use-headers": "ヘッダーを使用",
       "header-columns": "ヘッダー列",
       "header-rows": "ヘッダー行",
@@ -4006,15 +4030,34 @@
       "open-attachment": "添付ファイルを開く",
       "table-size": "表のサイズ",
       "table-headers": "表のヘッダー",
-      "jump-to-heading": "見出しへ移動",
-      "jump-to-anchor": "アンカーへ移動",
-      "jump-to-block": "ブロックへ移動",
+      "jump-to-heading": "見出しに移動",
+      "jump-to-anchor": "アンカーに移動",
+      "jump-to-block": "ブロックに移動",
       "box-position": "ボックスの位置",
-      "youtube-video": "YouTube 動画",
-      "insert-youtube-video": "YouTube 動画を挿入",
-      "insert-a-youtube-video-that-can-be-watched-straight-within-the-note": "ノート内で直接視聴できる YouTube 動画を挿入します",
       "caption-for-the-video": "動画のキャプション",
-      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。"
+      "click-and-drag-to-resize-the-block-double-click-to-reset-to-the-default-size": "クリック ＆ ドラッグでブロックのサイズを変更できます。ダブルクリックすると、デフォルトのサイズに戻ります。",
+      "copy-address-url": "アドレス（URL）をコピー",
+      "create-a-link-to-a-heading-or-anchor-belonging-to-the-current-note": "現在のノートの見出しまたはアンカーへのリンクを作成",
+      "create-a-link-to-a-web-page-or-other-internet-resource": "web ページまたはその他のインターネットリソースへのリンクを作成",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-as-a-card": "web ページまたはその他のインターネットリソースへのリンクを作成（カード形式で表示）",
+      "create-a-link-to-a-web-page-or-other-internet-resource-displayed-with-an-icon": "web ページまたはその他のインターネットリソースへのリンクを作成（アイコン付きで表示）",
+      "create-a-link-to-another-trilium-note": "別の Trilium ノートへのリンクを作成",
+      "download": "ダウンロード",
+      "icon-text": "アイコンとテキスト",
+      "link-to-a-heading-or-anchor": "見出しまたはアンカーへのリンク",
+      "link-to-a-note-internal-link": "ノートへのリンク（内部リンク）",
+      "link-to-a-web-page": "web ページへのリンク",
+      "link-to-a-web-page-as-a-card": "web ページへのリンク（カード形式）",
+      "link-to-a-web-page-with-icon": "web ページへのリンク（アイコン付き）",
+      "open-link": "リンクを開く",
+      "display-as": "表示形式",
+      "caption-for-the-audio": "音声のキャプション",
+      "audio-video-embed": "音声 / 動画の埋め込み",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "YouTube 動画、または音声・動画ファイルをそのアドレスから埋め込む",
+      "add-new-tab": "新しいタブを追加",
+      "copy-reference-to-this-tab": "このタブへのリンクをコピー",
+      "delete-tab": "タブを削除",
+      "delete-all-tabs": "すべてのタブを削除"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4234,7 +4277,8 @@
     "esc_hint": "閉じる"
   },
   "link_embed": {
-    "play_video": "動画を再生"
+    "play_video": "動画を再生",
+    "play_audio": "音声を再生"
   },
   "wizard": {
     "back": "戻る",
@@ -4739,19 +4783,19 @@
     "clear_filter": "フィルターを解除"
   },
   "block_reference": {
-    "copy_other": "これら {{count}} 件のブロックへの参照をコピー",
-    "paste_as_link": "参照をリンクとして貼り付け",
-    "paste_as_excerpt": "参照を抜粋として貼り付け",
-    "no_reference_on_clipboard": "クリップボードにブロック参照が含まれていません。",
-    "broken": "参照が壊れています",
-    "not_found": "参照先のブロックが見つかりませんでした。削除された可能性があります。",
+    "copy_other": "これら {{count}} 件のブロックへのリンクをコピー",
+    "paste_as_link": "リンクとして貼り付け",
+    "paste_as_excerpt": "抜粋として貼り付け",
+    "no_reference_on_clipboard": "クリップボードにブロックのリンク情報が含まれていません。",
+    "broken": "リンク切れ",
+    "not_found": "リンク先のブロックが見つかりませんでした。削除された可能性があります。",
     "untitled": "ブロック",
     "excerpt": "抜粋",
     "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
     "edit_excerpt": "抜粋を編集",
     "copy_tab": "このタブへのリンクをコピー",
-    "copy_share_link_other": "これら {{count}} ブロックへの公開リンクをコピー",
-    "delete_other": "{{count}} 個のブロックを削除"
+    "copy_share_link": "公開リンクをコピー",
+    "copy_reference": "ブロックへのリンクをコピー"
   },
   "record_meeting": {
     "note_title": "ミーティング {{date}}",
@@ -4931,7 +4975,10 @@
   },
   "canvas": {
     "thin_stroke": "細いペン先",
-    "thin_stroke_description": "手書きに適した、より細い線を描きます。すでに描かれた線の幅はそのまま維持されます。"
+    "thin_stroke_description": "手書きに適した、より細い線を描きます。すでに描かれた線の幅はそのまま維持されます。",
+    "no_tool": "ツールなし",
+    "zoom": "ズーム",
+    "zoom_to_fit": "全体を表示"
   },
   "sort_selection": {
     "sort_blocks": "ブロックを並べ替え",
@@ -4941,9 +4988,49 @@
     "descending": "降順"
   },
   "youtube_video": {
-    "title": "YouTube 動画を挿入",
-    "button_insert": "動画を挿入",
-    "not_a_video": "これは YouTube 動画のアドレスではありません。",
-    "insert_failed": "動画を読み込めませんでした。アドレスと接続状況を確認してから、もう一度お試しください。"
+    "title": "メディアを挿入",
+    "button_insert": "メディアを挿入",
+    "not_a_video": "これは web アドレスではありません。",
+    "insert_failed": "メディアを埋め込めませんでした。指定したアドレスが YouTube 動画、または音声・動画ファイルのものであるか確認し、接続状況を確かめた上で、再度お試しください。"
+  },
+  "block_handle_menu": {
+    "block_count_other": "{{count}} 個のブロック",
+    "insert_above": "上に挿入",
+    "insert_below": "下に挿入",
+    "insert_item_above": "アイテムを上に挿入",
+    "insert_item_below": "アイテムを下に挿入",
+    "insert_child_item": "子アイテムを挿入",
+    "cut": "切り取り",
+    "copy": "コピー",
+    "delete": "削除",
+    "types": {
+      "paragraph": "段落",
+      "heading": "見出し {{level}}",
+      "list_item": "箇条書き",
+      "todo_item": "To-do",
+      "block_quote": "引用ブロック",
+      "code_block": "コードブロック",
+      "table": "表",
+      "image": "画像",
+      "horizontal_line": "区切り線",
+      "page_break": "改ページ",
+      "admonition": "注釈",
+      "collapsible": "折りたたみブロック",
+      "tabs": "タブ",
+      "columns": "列レイアウト",
+      "math": "数式",
+      "footnotes": "脚注",
+      "footnote": "脚注",
+      "included_note": "埋め込みノート",
+      "excerpt": "抜粋",
+      "attachment": "添付ファイル",
+      "drawing": "描画キャンバス",
+      "mermaid": "マーメイド図",
+      "video": "動画",
+      "audio": "音声",
+      "link_preview": "リンクプレビュー",
+      "embed": "埋め込み",
+      "block": "ブロック"
+    }
   }
 }
