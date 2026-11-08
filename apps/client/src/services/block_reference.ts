@@ -579,20 +579,25 @@ function getClipboardActions(
         return {};
     }
 
+    /** Copies the blocks and returns their range, or `undefined` if the copy failed. */
     const copy = async () => {
-        const { html, text } = editor.execute("copyBlocks");
+        const { html, text, range } = editor.execute("copyBlocks");
         const isCopied = await copyHtml(html, text);
         if (!isCopied) {
             toast.showError(t("clipboard.copy_failed"));
         }
-        return isCopied;
+        return isCopied ? range : undefined;
     };
 
     const deleteBlocks = getDeleteBlocksAction(editor);
     return {
         cutBlocks: deleteBlocks && (async () => {
-            if (await copy()) {
-                deleteBlocks();
+            const { version } = editor.model.document;
+            const range = await copy();
+            // A change during the clipboard write leaves `range` pointing at other content.
+            if (range && editor.model.document.version === version) {
+                editor.execute("deleteBlocks", range);
+                editor.editing.view.focus();
             }
         }),
         copyBlocks: () => void copy()

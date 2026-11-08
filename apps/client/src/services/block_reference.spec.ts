@@ -521,8 +521,9 @@ describe("buildReferenceConfig", () => {
                 [ buildBlock("paragraph") ], vi.fn());
             return showMenu.mock.lastCall?.[0].items as MenuCommandItem<CommandNames>[];
         };
+        const range = { name: "copied range" };
         vi.mocked(editor.execute).mockImplementation(((name: string) => name === "copyBlocks"
-            ? { html: "<p>two</p>", text: "two" }
+            ? { html: "<p>two</p>", text: "two", range }
             : undefined) as never);
         const getDeleteCount = () => vi.mocked(editor.execute).mock.calls
             .filter(([ name ]) => name === "deleteBlocks").length;
@@ -536,9 +537,20 @@ describe("buildReferenceConfig", () => {
         expect(getDeleteCount()).toBe(0);
         runItem(cut);
         await vi.waitFor(() => expect(getDeleteCount()).toBe(1));
+        expect(editor.execute).toHaveBeenLastCalledWith("deleteBlocks", range);
         expect(copyHtml).toHaveBeenCalledTimes(2);
         expect(editor.editing.view.focus).toHaveBeenCalledOnce();
         expect(showError).not.toHaveBeenCalled();
+
+        // An edit during the clipboard write leaves the copied blocks in place.
+        copyHtml.mockImplementationOnce(async () => {
+            editor.model.document.version += 1;
+            return true;
+        });
+        runItem(cut);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(copyHtml).toHaveBeenCalledTimes(3);
+        expect(getDeleteCount()).toBe(1);
 
         copyHtml.mockResolvedValue(false);
         runItem(cut);
@@ -898,6 +910,7 @@ function buildEditor(root: HTMLElement, target: unknown) {
     return {
         execute: vi.fn(() => target),
         commands: { get: vi.fn() },
+        model: { document: { version: 0 } },
         plugins: { has: vi.fn(() => false), get: vi.fn() },
         editing: {
             view: { getDomRoot: () => root, focus: vi.fn(), scrollToTheSelection: vi.fn() }

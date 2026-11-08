@@ -58,6 +58,23 @@ describe("DeleteBlocks", () => {
         }
     });
 
+    it("deletes the range that a copy returned, wherever the caret is now", async () => {
+        const editor = await createEditor();
+        setModelData(editor.model, "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
+            + "<paragraph>three</paragraph>");
+        const { range } = editor.execute("copyBlocks");
+        const root = editor.model.document.getRoot();
+        editor.model.change((writer) => {
+            if (root) {
+                writer.setSelection(writer.createPositionFromPath(root, [ 0, 1 ]));
+            }
+        });
+
+        editor.execute("deleteBlocks", range);
+        expect(getModelData(editor.model))
+            .toBe("<paragraph>one</paragraph><paragraph>[]three</paragraph>");
+    });
+
     it("deletes in one undo step", async () => {
         const editor = await createEditor();
         setModelData(editor.model, "<paragraph>one</paragraph><paragraph>tw[]o</paragraph>"
@@ -113,7 +130,7 @@ describe("CopyBlocksCommand", () => {
 
         for (const { before, html, text } of cases) {
             setModelData(editor.model, before);
-            expect(editor.execute("copyBlocks")).toEqual({ html, text });
+            expect(editor.execute("copyBlocks")).toMatchObject({ html, text });
             expect(getModelData(editor.model)).toBe(before);
         }
         expect(methods).toEqual([ "copy", "copy", "copy" ]);

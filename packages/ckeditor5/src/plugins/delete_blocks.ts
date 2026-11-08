@@ -9,6 +9,8 @@ import { getDraggedRange } from "./block_drag_handle.js";
 export interface BlocksClipboardData {
     html: string;
     text: string;
+    /** The serialized blocks, valid until the next change to the document. */
+    range: ModelRange;
 }
 
 /**
@@ -51,7 +53,8 @@ export class CopyBlocksCommand extends Command {
         const { isBackward } = model.document.selection;
         const ranges = Array.from(model.document.selection.getRanges());
         // `refresh()` enables the command only with a selected block.
-        const selection = model.createSelection(getDraggedRange(model) as ModelRange);
+        const range = getDraggedRange(model) as ModelRange;
+        const selection = model.createSelection(range);
         const dataTransfer = new ViewDataTransfer(new DataTransfer());
         // The step that a native copy runs, so that the `clipboardOutput` listeners apply.
         this.editor.plugins.get(ClipboardPipeline)
@@ -61,15 +64,16 @@ export class CopyBlocksCommand extends Command {
 
         return {
             html: dataTransfer.getData("text/html"),
-            text: dataTransfer.getData("text/plain")
+            text: dataTransfer.getData("text/plain"),
+            range
         };
     }
 
 }
 
 /**
- * Deletes the blocks that the block handle drags, then puts the caret at the start of the block
- * after them, else at the end of the block before them.
+ * Deletes the blocks that the block handle drags, or `range` when given, then puts the caret at the
+ * start of the block after them, else at the end of the block before them.
  */
 export class DeleteBlocksCommand extends Command {
 
@@ -77,13 +81,13 @@ export class DeleteBlocksCommand extends Command {
         this.isEnabled = !!first(this.editor.model.document.selection.getSelectedBlocks());
     }
 
-    override execute() {
+    override execute(range?: ModelRange) {
         const model = this.editor.model;
         // `refresh()` enables the command only with a selected block.
-        const range = getDraggedRange(model) as ModelRange;
+        const deleted = range ?? getDraggedRange(model) as ModelRange;
 
         model.change((writer) => {
-            const selection = model.createSelection(range);
+            const selection = model.createSelection(deleted);
             model.deleteContent(selection, { doNotAutoparagraph: true });
 
             // Fills an emptied parent, such as a table cell, as `DragDrop` does after a move.
