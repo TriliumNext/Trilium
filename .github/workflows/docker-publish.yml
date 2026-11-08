@@ -1,0 +1,125 @@
+name: Publish Docker images
+
+on:
+  workflow_call:
+
+env:
+  GHCR_REGISTRY: ghcr.io
+  DOCKERHUB_REGISTRY: docker.io
+  IMAGE_NAME: ${{ github.repository}}
+  TEST_TAG: ${{ github.repository}}:test
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  merge:
+    name: Merge manifest lists
+    if: ${{ github.repository == vars.REPO_MAIN }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: Set IMAGE_NAME to lowercase
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV
+      - name: Set TEST_TAG to lowercase
+        run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
+
+      - name: Set up crane
+        uses: imjasonh/setup-crane@feee3b6bb0d4c68370f256a4502498c9227e5c6b # v0.7
+
+      - name: Login to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ${{ env.DOCKERHUB_REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+          flavor: |
+            latest=false
+
+      - name: Verify digests exist on GHCR
+        working-directory: /tmp/digests
+        run: |
+          echo "Verifying all digests are available on GHCR..."
+          for DIGEST_FILE in *; do
+            DIGEST="sha256:${DIGEST_FILE}"
+            echo -n "  ${DIGEST}: "
+            crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}" > /dev/null
+            echo "OK"
+          done
+
+      - name: Create and push multi-arch manifest
+        working-directory: /tmp/digests
+        run: |
+          GHCR_IMAGE="${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          DOCKERHUB_IMAGE="${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+          # Build -m flags for crane index append from digest files
+          MANIFEST_ARGS=""
+          for d in *; do
+            MANIFEST_ARGS="${MANIFEST_ARGS} -m ${GHCR_IMAGE}@sha256:${d}"
+          done
+
+          # Create multi-arch manifest for each tag from metadata, plus copy to DockerHub.
+          # Per-commit sha-* tags stay on GHCR only.
+          while IFS= read -r TAG; do
+            echo "Creating manifest: ${TAG}"
+            crane index append ${MANIFEST_ARGS} -t "${TAG}"
+
+            SUFFIX="${TAG#*:}"
+            [[ "${SUFFIX}" == sha-* ]] && continue
+            echo "Copying to DockerHub: ${DOCKERHUB_IMAGE}:${SUFFIX}"
+            crane copy "${TAG}" "${DOCKERHUB_IMAGE}:${SUFFIX}"
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+          # For stable releases (tags without hyphens), also create stable + latest
+          REF_NAME="${GITHUB_REF#refs/tags/}"
+          if [[ "${GITHUB_REF}" == refs/tags/* && ! "${REF_NAME}" =~ - ]]; then
+            echo "Creating stable tags..."
+            crane index append ${MANIFEST_ARGS} -t "${GHCR_IMAGE}:stable"
+            crane copy "${GHCR_IMAGE}:stable" "${DOCKERHUB_IMAGE}:stable"
+
+            echo "Creating latest tags..."
+            crane copy "${GHCR_IMAGE}:stable" "${GHCR_IMAGE}:latest"
+            crane copy "${GHCR_IMAGE}:latest" "${DOCKERHUB_IMAGE}:latest"
+          fi
+
+      - name: Inspect manifests
+        run: |
+          REF_NAME="${GITHUB_REF#refs/heads/}"
+          REF_NAME="${REF_NAME#refs/tags/}"
+          echo "=== GHCR ==="
+          crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+          echo ""
+          echo "=== DockerHub ==="
+          crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+
+  mirror_legacy:
+    name: Mirror to legacy repository
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') }}
+    needs:
+      - merge
+    uses: ./.github/workflows/mirror-legacy-docker.yml
+    secrets: inherit
