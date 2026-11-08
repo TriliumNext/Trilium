@@ -223,8 +223,7 @@ function parseSearchParams(req: Request) {
         ancestorNoteId: parseString(req.query["ancestorNoteId"]),
         ancestorDepth: parseString(req.query["ancestorDepth"]), // e.g. "eq5"
         orderBy: parseString(req.query["orderBy"]),
-        // TODO: Check why the order direction was provided as a number, but it's a string everywhere else.
-        orderDirection: parseOrderDirection(req.query, "orderDirection") as unknown as string,
+        orderDirection: parseOrderDirection(req.query, "orderDirection"),
         limit: parseInteger(req.query, "limit"),
         debug: parseBoolean(req.query, "debug")
     };
@@ -267,13 +266,11 @@ function parseOrderDirection(obj: any, name: string) {
         return undefined;
     }
 
-    const integer = parseInt(obj[name]);
-
     if (!["asc", "desc"].includes(obj[name])) {
         throw new eu.EtapiError(400, SEARCH_PARAM_ERROR, `Cannot parse order direction value '${obj[name]}, allowed values are 'asc' and 'desc'.`);
     }
 
-    return integer;
+    return obj[name];
 }
 
 function parseInteger(obj: any, name: string) {
