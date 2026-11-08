@@ -1420,8 +1420,8 @@ figure.captioned-content-embed {
     overflow: auto;
 }
 
-/* PDFs and web views render in an (absolutely positioned) iframe, so they need an explicit
-   height per box size instead of an intrinsic, content-driven one. */
+/* PDFs and web views render in an iframe that fills its box, so they need an explicit height per
+   box size instead of an intrinsic, content-driven one. */
 .include-note[data-box-size="resizable"] .include-note-content.type-pdf .rendered-content,
 .include-note[data-box-size="resizable"] .include-note-content.type-webView .rendered-content {
     height: var(--include-note-height, 20em);
