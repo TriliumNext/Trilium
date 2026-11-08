@@ -1,5 +1,7 @@
 .include-note-content .text-embed-editor {
     .note-detail-editable-text-editor {
+        display: flow-root;
         padding-top: 0;
+        overflow: visible;
     }
 }

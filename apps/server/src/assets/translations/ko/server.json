@@ -357,7 +357,8 @@
     "broken-block-reference": "끊어진 참조",
     "play-video": "영상 재생",
     "content-not-available": "이 콘텐츠는 사용할 수 없습니다.",
-    "untitled-block": "블록"
+    "untitled-block": "블록",
+    "play-audio": "오디오 재생"
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",
@@ -603,5 +604,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium은 Flatpak으로 실행되므로 {{- cli}}와 같이 샌드박스 외부에 설치된 프로그램을 실행할 수 없습니다. {{- cli}}를 사용하려면:\n\n1. 이 컴퓨터에 설치하고 터미널에서 로그인합니다.\n2. 터미널에서 다음 명령어를 실행하여 Trilium이 샌드박스 외부의 프로그램을 실행할 수 있도록 허용합니다.\n\n{{- grantCommand}}\n\n3. Trilium을 다시 시작합니다.\n\n이렇게 하면 Trilium에 Flatpak 외부에 설치된 경우와 동일한 컴퓨터 접근 권한이 부여됩니다. 이 권한을 취소하려면 다음 명령어를 실행합니다.\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "파일을 열 애플리케이션을 선택하세요.",
+    "applications_filter": "애플리케이션"
   }
 }

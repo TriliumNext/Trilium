@@ -10,11 +10,9 @@ import {
     LinkEmbedCopyUrlButton, LinkEmbedDisplayDropdown
 } from "../link_embed/link_embed_toolbar.js";
 import ContentEmbed, {
-    CONVERT_EMBED_TO_LINK_COMMAND,
     CONTENT_EMBED_MENU,
     TOGGLE_CAPTION_COMMAND_NAME,
-    TOGGLE_EDITABLE_COMMAND_NAME,
-    TOGGLE_TITLE_COMMAND_NAME
+    TOGGLE_EDITABLE_COMMAND_NAME
 } from "./content_embed.js";
 import ContentEmbedBoxSizeDropdown from "./content_embed_box_size_dropdown.js";
 import ContentEmbedPositionDropdown from "./content_embed_position_dropdown.js";
@@ -121,7 +119,7 @@ describe("ContentEmbedToolbar", () => {
                 positions: PositioningFunction[];
             }>;
         };
-        const definition = repository._toolbarDefinitions.get("videoEmbed");
+        const definition = repository._toolbarDefinitions.get("mediaEmbed");
         expect(definition?.itemsConfig).toEqual([
             "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU
         ]);
@@ -174,11 +172,9 @@ describe("ContentEmbedToolbar", () => {
             "contentEmbedDisplayMode:preview",
             CONTENT_EMBED_TOOLS,
             EXTENDED_CODE_BLOCK_COPY_BUTTON,
+            TOGGLE_CAPTION_COMMAND_NAME,
             "contentEmbedBoxSizeDropdown",
             "contentEmbedPositionDropdown",
-            TOGGLE_TITLE_COMMAND_NAME,
-            TOGGLE_CAPTION_COMMAND_NAME,
-            CONVERT_EMBED_TO_LINK_COMMAND,
             CONTENT_EMBED_MENU
         ]);
     });

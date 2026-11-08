@@ -2,7 +2,7 @@
   "keyboard_actions": {
     "back-in-note-history": "履歴内の前のノートに移動",
     "forward-in-note-history": "履歴内の次のノートに移動",
-    "open-jump-to-note-dialog": "「ノートへ移動」 ダイアログを開く",
+    "open-jump-to-note-dialog": "「ノートに移動」 ダイアログを開く",
     "scroll-to-active-note": "ノートツリーをアクティブなノートまでスクロールする",
     "search-in-subtree": "アクティブなノートのサブツリー内でノートを検索する",
     "expand-subtree": "現在のノートのサブツリーを展開",
@@ -335,10 +335,11 @@
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
-    "broken-block-reference": "参照が壊れています",
+    "broken-block-reference": "リンク切れ",
     "play-video": "動画を再生",
     "content-not-available": "このコンテンツは利用できません。",
-    "untitled-block": "ブロック"
+    "untitled-block": "ブロック",
+    "play-audio": "音声を再生"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
@@ -603,5 +604,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium は Flatpak として動作するため、{{- cli}} などのサンドボックス外にインストールされたプログラムを起動できません。{{- cli}} を使用するには:\n\n1. このコンピュータにインストールし、ターミナルからサインインします。\n2. ターミナルで以下のコマンドを実行し、Triliumがサンドボックス外のプログラムを起動できるようにします:\n\n{{- grantCommand}}\n\n3. Trilium を再起動します。\n\nこれにより、Trilium は Flatpak 以外でインストールされた場合と同様に、コンピュータへのアクセス権を取得します。アクセス権を元に戻すには、以下のコマンドを実行してください:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "ファイルを開くアプリケーションを選択してください。",
+    "applications_filter": "アプリケーション"
   }
 }

@@ -1875,8 +1875,6 @@
     "no_headings": "Niciun titlu."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Fișierul <code class=\"file-path\"></code> a fost ultima oară modificat la data de <span class=\"file-last-modified\"></span>.",
-    "ignore_this_change": "Ignoră această schimbare",
     "upload_modified_file": "Încarcă fișier modificat"
   },
   "clipboard": {
@@ -3109,7 +3107,6 @@
       "copy-formatting": "Copiază formatarea",
       "copy-image-to-clipboard": "Copiază imaginea în clipboard",
       "copy-to-clipboard": "Copiază în clipboard",
-      "copy-url": "Copiază URL-ul",
       "create-a-bulleted-list": "Creează o listă cu marcatori",
       "create-a-new-footnote-and-reference-it-here": "Creează o notă de subsol nouă și o referențiază aici",
       "create-a-numbered-list": "Creează o listă numerotată",
@@ -3137,11 +3134,9 @@
       "include-note-widget": "widget de includere a notiței",
       "increase-the-indentation-of-the-current-block": "Mărește indentarea blocului curent.",
       "indent": "Indentează",
-      "inline": "În linie",
       "insert-a-0-mermaid-diagram-template": "Inserează un șablon de diagramă Mermaid „%0”",
       "insert-a-block-of-preformatted-code": "Inserează un bloc de cod preformatat.",
       "insert-a-horizontal-rule": "Inserează o linie orizontală.",
-      "insert-a-link-to-another-trilium-note": "Inserează o legătură către o altă notiță Trilium",
       "insert-a-math-equation": "Inserează o ecuație matematică",
       "insert-a-new-admonition": "Inserează o casetă de evidențiere nouă",
       "insert-a-page-break-for-printing": "Inserează un sfârșit de pagină (pentru tipărire)",
@@ -3160,7 +3155,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "widget de previzualizare a legăturii",
       "link-mention-widget": "widget de menționare a legăturii",
-      "link-preview": "Previzualizare link",
       "markdown-import": "Import Markdown",
       "markdown-import-from-clipboard": "Importă Markdown din clipboard",
       "math-editor-unavailable": "Editorul de ecuații nu este disponibil",
@@ -3176,7 +3170,6 @@
       "note": "Notă",
       "numbered-list": "Listă numerotată",
       "outdent": "Micșorează indentarea",
-      "plain-link": "Legătură simplă",
       "preview": "Previzualizare",
       "quote-a-passage-from-another-source": "Citează un pasaj dintr-o altă sursă.",
       "remove-anchor": "Elimină ancora",

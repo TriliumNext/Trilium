@@ -121,6 +121,8 @@ To let header rows scroll away with the rest of the table, turn off <a class="re
 *   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
 *   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
+*   The menu of the block handle beside a cell, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, also has _Insert row above_ and _Insert row below_.
+*   After an insertion, the caret moves into the new row and stays in its column, or into the new column and stays in its row.
 
 ## Moving rows and columns
 
@@ -223,6 +225,8 @@ The border and background colors of tables and cells adapt to the [theme](../../
 Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
 
 Older browsers that can't adapt colors show them exactly as they were picked.
+
+Header cells are shaded to suit the current theme. To change their background in every table, set the `--text-note-table-header-background` variable in a [custom theme](../../Theme%20development/Creating%20a%20custom%20theme.md) or in [custom app-wide CSS](../../Theme%20development/Custom%20app-wide%20CSS.md), for example `:root { --text-note-table-header-background: #8882; }`. A background picked for a cell still takes precedence.
 
 ## Caption
 

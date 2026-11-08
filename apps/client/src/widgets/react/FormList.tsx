@@ -375,7 +375,8 @@ export function FormListToggleableItem({
     helpPage?: string;
     /** What the setting does, shown beside the menu while the row is hovered. */
     helpTooltip?: string;
-    onChange(newValue: boolean): void | Promise<void>;
+    /** Called with the click that flipped the switch, which a press of Enter stands in for. */
+    onChange(newValue: boolean, e: MouseEvent): void | Promise<void>;
 }) {
     const isWaiting = useRef(false);
 
@@ -393,7 +394,7 @@ export function FormListToggleableItem({
                 e.stopPropagation();
                 if (!disabled && !isWaiting.current) {
                     isWaiting.current = true;
-                    await onChange(!currentValue);
+                    await onChange(!currentValue, e);
                     isWaiting.current = false;
                 }
             }}>
@@ -507,6 +508,8 @@ export interface FormDropdownSubmenuProps {
     className?: string;
     /** Inside a menu, whether typing while the submenu is open filters it. See `MenuCommandItem.filterable`. */
     filterable?: boolean;
+    /** Classes put on the layer of the submenu, for a caller that sizes it, except on a phone. */
+    submenuClassName?: string;
     /**
      * Draws the row as a tile of a `MenuTile` strip, which only opens the submenu: a tile has no
      * room for the arrow of a split row.
@@ -528,7 +531,7 @@ export function FormDropdownSubmenu(props: FormDropdownSubmenuProps) {
 function MenuSubmenu({
     menu, icon, iconSvg, title, description, children, onDropdownToggleClicked,
     split = !!onDropdownToggleClicked, closeOnSelect, onMiddleClick, onContextMenu, disabled,
-    className, filterable, tile
+    className, filterable, submenuClassName, tile
 }: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
@@ -567,7 +570,9 @@ function MenuSubmenu({
             </SubmenuPage>
         ), menu.layerHost)
         : open && openSubmenu && menu.layerHost && createPortal((
-            <SubmenuLayer level={level + 1} submenu={openSubmenu} filter={filter}>
+            <SubmenuLayer
+                level={level + 1} submenu={openSubmenu} filter={filter} className={submenuClassName}
+            >
                 {children}
             </SubmenuLayer>
         ), menu.layerHost);
@@ -678,10 +683,11 @@ function MenuSubmenu({
  * so a scrolling menu neither clips it nor scrolls it away. While its {@link filter} has text, the
  * layer keeps its top position relative to its row, and only its height changes with the matches.
  */
-function SubmenuLayer({ level, submenu, filter, children }: {
+function SubmenuLayer({ level, submenu, filter, className, children }: {
     level: number,
     submenu: OpenSubmenu,
     filter: MenuFilter | undefined,
+    className?: string,
     children: ComponentChildren
 }) {
     const layerRef = useRef<HTMLDivElement>(null);
@@ -744,7 +750,8 @@ function SubmenuLayer({ level, submenu, filter, children }: {
             <div className="dropdown-submenu">
                 <div
                     ref={layerRef} role="menu" aria-labelledby={titleId(submenu.anchor.id)}
-                    className={clsx("dropdown-menu show tn-menu", submenu.immediate && "tn-menu-immediate")}
+                    className={clsx("dropdown-menu show tn-menu",
+                        submenu.immediate && "tn-menu-immediate", className)}
                     // The fade starts once the opening delay is over.
                     onAnimationStart={(e) => {
                         if (e.target === e.currentTarget) submenuShown(submenu);

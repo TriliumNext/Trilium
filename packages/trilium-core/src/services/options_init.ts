@@ -333,6 +333,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    { name: "textNoteLinkTitleRetrievalEnabled", value: "true", isSynced: true },
+    { name: "textNoteLinkDetailsRetrievalEnabled", value: "true", isSynced: true },
     { name: "textNoteStickyTableHeadersEnabled", value: "true", isSynced: false },
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.

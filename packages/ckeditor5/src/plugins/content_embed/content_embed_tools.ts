@@ -35,7 +35,8 @@ export default class ContentEmbedTools extends Plugin {
             // The tools can follow the embed, which the editor updates. Runs before
             // `WidgetToolbarRepository` positions the toolbar from its width.
             this.listenTo(editor.ui, "update", () => {
-                view.setProvider(contentEmbed.selectedEmbedTools);
+                view.setProvider(
+                    contentEmbed.selectedEmbedTools, contentEmbed.isSelectedEmbedEditable);
             }, { priority: "high" });
             this.listenTo<ContentEmbedToolsResizeEvent>(view, "resize", () => editor.ui.update());
 
@@ -69,6 +70,8 @@ export class ContentEmbedToolsView extends View {
     private readonly items: ViewCollection;
     private updaters: Array<ToolView["update"]> = [];
     private provider: ContentEmbedToolProvider | null = null;
+    /** Whether the Editable toggle of the embed is on. */
+    private isEditable = false;
     private unsubscribe: (() => void) | undefined;
     /** What identifies each tool and its children, to create the views again for another set. */
     private toolKeys: string[] = [];
@@ -92,8 +95,12 @@ export class ContentEmbedToolsView extends View {
         });
     }
 
-    /** Shows the buttons of `provider`, and updates them when it changes. */
-    setProvider(provider: ContentEmbedToolProvider | null) {
+    /**
+     * Shows the buttons of `provider`, and updates them when it changes. `isEditable` tells whether
+     * the Editable toggle of the embed is on.
+     */
+    setProvider(provider: ContentEmbedToolProvider | null, isEditable: boolean) {
+        this.isEditable = isEditable;
         if (provider !== this.provider) {
             this.unsubscribe?.();
             this.provider = provider;
@@ -119,7 +126,7 @@ export class ContentEmbedToolsView extends View {
     private showTools() {
         const tools = this.provider?.getTools() ?? [];
         // The Editable toggle and the display modes come before the tools.
-        const isAfterItems = isEditableToggleShown(this.provider)
+        const isAfterItems = isEditableToggleShown(this.provider, this.isEditable)
             || !!this.provider?.hasDisplayModes;
         const keys = tools.map(tool => JSON.stringify([
             tool.group,
@@ -303,7 +310,8 @@ function getButtonFace(tool: ContentEmbedTool) {
  */
 function addKeystrokes(dropdown: DropdownView, children: ContentEmbedTool[]) {
     /* v8 ignore next -- `addListToDropdown()` creates `listView` before this runs. */
-    const buttons = [ ...dropdown.listView?.items ?? [] ]
+    const items = dropdown.listView?.items ?? [];
+    const buttons = [ ...items ]
         .filter(item => item instanceof ListItemView)
         .map(item => item.children.first);
     for (const [ index, button ] of buttons.entries()) {

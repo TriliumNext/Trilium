@@ -53,4 +53,13 @@ describe( 'renderEquation (KaTeX)', () => {
 
 		expect( element.querySelector( '.katex' ) ).to.not.be.null;
 	} );
+
+	it( 'marks invalid LaTeX inline unless the host options ask KaTeX to throw', async () => {
+		await renderEquation( 'x^', element, 'katex', undefined, false, false, '', [], {} );
+
+		expect( element.querySelector( '.katex-error' ) ).toBeInstanceOf( HTMLElement );
+		await expect( renderEquation(
+			'x^', element, 'katex', undefined, false, false, '', [], { throwOnError: true }
+		) ).rejects.toThrow( /KaTeX parse error/ );
+	} );
 } );

@@ -15,7 +15,7 @@
     "postinstall": "wxt prepare"
   },
   "keywords": [],
-  "packageManager": "pnpm@12.16.1",
+  "packageManager": "pnpm@12.18.0",
   "devDependencies": {
     "@triliumnext/client": "workspace:*",
     "@wxt-dev/auto-icons": "1.1.2",
@@ -26,6 +26,6 @@
   "dependencies": {
     "@boxicons/js": "1.0.1",
     "defuddle": "0.19.6",
-    "preact": "11.1.0"
+    "preact": "11.1.1"
   }
 }

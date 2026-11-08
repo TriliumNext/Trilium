@@ -420,7 +420,7 @@ describe("Obsidian importer — integration", () => {
 
         // The plain wikilink is a reference link; the embed becomes an include-note pointing at the same note.
         expect(content).toContain(`<a class="reference-link" href="#root/${target.noteId}">`);
-        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="medium">`);
+        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="resizable">`);
 
         // The embed records an includeNoteLink relation (the wikilink an internalLink).
         expect(note.getRelations().filter((r) => r.name === "includeNoteLink").map((r) => r.value)).toEqual([target.noteId]);

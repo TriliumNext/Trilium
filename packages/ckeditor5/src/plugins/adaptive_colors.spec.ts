@@ -1,11 +1,14 @@
 import {
     _getModelData as getModelData,
     _setModelData as setModelData,
+    ButtonView,
     type ClassicEditor,
+    type ColorGridView,
     type DowncastAttributeEvent,
     Essentials,
     FontBackgroundColor,
     FontColor,
+    type FontColorSelectorDropdownView,
     GeneralHtmlSupport,
     type ModelElement,
     Paragraph,
@@ -133,4 +136,61 @@ describe("AdaptiveColors", () => {
         expect(withGhs.getData())
             .toBe("<p><span style=\"--tn-color:#e64d4d;color:#e64d4d;\">a</span></p>");
     });
+
+    it("gives the tiles of the font color dropdowns the variable of their color", async () => {
+        const withPalette = await createTestEditor(
+            [ Essentials, Paragraph, FontColor, FontBackgroundColor, AdaptiveColors ],
+            {
+                fontColor: { colors: [ "#e64d4d", "#4d99e6" ] },
+                fontBackgroundColor: { colors: [ "#e5e64d" ], documentColors: 0 }
+            }
+        );
+        withPalette.setData("<p><span style=\"color:#4de64d;\">a</span></p>");
+
+        const fontColor = openColorDropdown(withPalette, "fontColor");
+        expect(tileStyles(fontColor.staticColorsGrid, "--tn-color")).toEqual([
+            [ "#e64d4d", "rgb(230, 77, 77)" ],
+            [ "#4d99e6", "rgb(77, 153, 230)" ]
+        ]);
+        expect(tileStyles(fontColor.documentColorsGrid, "--tn-color"))
+            .toEqual([ [ "#4de64d", "rgb(77, 230, 77)" ] ]);
+
+        // Each opening rebuilds the document colors.
+        fontColor.dropdown.isOpen = false;
+        withPalette.setData("<p><span style=\"color:#994de6;\">b</span></p>");
+        fontColor.dropdown.isOpen = true;
+        expect(tileStyles(fontColor.documentColorsGrid, "--tn-color"))
+            .toEqual([ [ "#994de6", "rgb(153, 77, 230)" ] ]);
+
+        const background = openColorDropdown(withPalette, "fontBackgroundColor");
+        expect(tileStyles(background.staticColorsGrid, "--tn-background"))
+            .toEqual([ [ "#e5e64d", "rgb(229, 230, 77)" ] ]);
+        expect(background.documentColorsGrid).toBeUndefined();
+
+        // Tiles of an unrendered dropdown have no element yet; other components are unchanged.
+        const unrendered = withPalette.ui.componentFactory.create("fontColor");
+        expect(() => { (unrendered as FontColorSelectorDropdownView).isOpen = true; })
+            .not.toThrow();
+        expect(withPalette.ui.componentFactory.create("undo")).toBeInstanceOf(ButtonView);
+    });
 });
+
+/** Renders and opens a font color dropdown, which builds its color grids. */
+function openColorDropdown(editor: ClassicEditor, name: string) {
+    const dropdown = editor.ui.componentFactory.create(name) as FontColorSelectorDropdownView;
+    dropdown.render();
+    dropdown.isOpen = true;
+    if (!dropdown.colorSelectorView) {
+        throw new Error(`The ${name} dropdown has no color selector.`);
+    }
+    const { staticColorsGrid, documentColorsGrid } =
+        dropdown.colorSelectorView.colorGridsFragmentView;
+    return { dropdown, staticColorsGrid, documentColorsGrid };
+}
+
+/** The variable and the inline background of each tile. */
+function tileStyles(grid: ColorGridView | undefined, variable: string) {
+    return [ ...grid?.items ?? [] ].map(({ element }) => [
+        element?.style.getPropertyValue(variable), element?.style.backgroundColor
+    ]);
+}

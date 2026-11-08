@@ -1,4 +1,4 @@
-import { Locale } from "ckeditor5";
+import { keyCodes, Locale } from "ckeditor5";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AiAssistantFormView from "./ai_assistant_form.js";
@@ -185,6 +185,23 @@ describe("AiAssistantFormView", () => {
         expect(focusPrompt).toHaveBeenCalledTimes(2);
     });
 
+    it("tracks focus on its controls and keeps Tab inside the form", () => {
+        const form = makeForm();
+        const input = form.promptInputView.element;
+        if (!input) {
+            throw new Error("the prompt input did not render");
+        }
+
+        input.dispatchEvent(new FocusEvent("focus"));
+        expect(form.focusTracker.focusedElement).toBe(input);
+
+        const tab = new KeyboardEvent("keydown", {
+            keyCode: keyCodes.tab, bubbles: true, cancelable: true
+        });
+        input.dispatchEvent(tab);
+        expect(tab.defaultPrevented).toBe(true);
+    });
+
     it("takes the prompt through a placeholder rather than a label, and sends with an icon", () => {
         const form = makeForm();
 
@@ -314,6 +331,18 @@ describe("AiAssistantFormView", () => {
         form.beginStreaming();
         form.enterReview({ hasContent: true });
         expect(previewHtml()).toBe("");
+    });
+
+    // AiAssistantUI resets the form before the dialog first renders it.
+    it("can be reset before it renders", () => {
+        form = new AiAssistantFormView(new Locale());
+        form.reset();
+        form.render();
+
+        expect(form.phase).toBe("prompt");
+        form.beginStreaming();
+        form.setPreview("<p>new</p>");
+        expect(previewHtml()).toBe("<p>new</p>");
     });
 
     // Following the stream is only wanted while the reader is at the end of it. Someone who

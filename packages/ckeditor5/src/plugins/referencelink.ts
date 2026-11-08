@@ -47,6 +47,7 @@ class ReferenceLinkCommand extends Command {
 		}
 
 		const selectionPosition = position ?? editor.model.document.selection.getFirstPosition();
+		/* v8 ignore if -- DocumentSelection falls back to a default range, so it has a position */
 		if (!selectionPosition) {
 			return;
 		}
@@ -65,7 +66,7 @@ class ReferenceLinkCommand extends Command {
 
 			const currentSelection = editor.model.document.selection;
 			const selectionUntouched = currentSelection.isCollapsed
-				&& (currentSelection.getFirstPosition()?.isEqual(insertionPosition) ?? false);
+				&& currentSelection.getFirstPosition()?.isEqual(insertionPosition);
 
 			editor.model.change(writer => {
 				const placeholder = writer.createElement('reference', referenceAttributes(href, title));

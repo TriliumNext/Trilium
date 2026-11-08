@@ -1,0 +1,99 @@
+# Lints the changelog entries, as `pnpm changelog:lint` does. Problems on a pull
+# request are posted by changelog-comment.yml.
+name: Changelog
+
+on:
+  pull_request:
+    paths:
+      - ".changelog/**"
+      - "scripts/release-notes.mts"
+  push:
+    branches:
+      - main
+    paths:
+      - ".changelog/**"
+      - "scripts/release-notes.mts"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint entries
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Lint the changelog entries
+        run: node --experimental-strip-types scripts/release-notes.mts lint --json changelog-lint.json
+
+      - name: Record the pull request
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: echo "$PR_NUMBER" > changelog-pr-number
+
+      - name: Upload the problems
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: changelog-lint
+          path: |
+            changelog-lint.json
+            changelog-pr-number
+          if-no-files-found: ignore
+          retention-days: 1
+
+  comment-on-commit:
+    name: Comment on the commit
+    needs: lint
+    if: ${{ failure() && github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # Commit comments
+    steps:
+      - name: Download the problems
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: changelog-lint
+          path: lint
+
+      - name: Comment on the commit
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            let problems = [];
+            try {
+              problems = JSON.parse(fs.readFileSync('lint/changelog-lint.json', 'utf8'));
+            } catch {
+              problems = [];
+            }
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const list = problems.map(({ file, message }) => `- \`${file}\`: ${message}`).join('\n');
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: [
+                '### Changelog entries need attention',
+                '',
+                list || 'The changelog lint failed before it could list the problems.',
+                '',
+                'A fix or an improvement needs an `area` from `AREAS` in `scripts/release-notes.mts`;'
+                  + ' see `.changelog/README.md`, and run `pnpm changelog:lint` to check.',
+                '',
+                `[Workflow run](${runUrl})`
+              ].join('\n')
+            });

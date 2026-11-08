@@ -18,17 +18,13 @@ const REFERENCE = `<paragraph>a [<reference href="${NOTE}"></reference>] b</para
 describe("NoteLinkToolbar", () => {
     let editor: ClassicEditor;
     let showDialog: ReturnType<typeof vi.fn>;
-    let copy: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
         showDialog = vi.fn(() => null);
-        copy = vi.fn();
-        // The host passes `clipboard` with a cast too, as the editor config does not declare it.
         editor = await createTestEditor([ Essentials, Paragraph, Link, NoteLinkToolbar ], {
             internalLink: { showDialog },
-            referenceLink: { getTitle: async () => "Target", getTitleSync: () => "Target" },
-            clipboard: { copy }
-        } as unknown as Parameters<typeof createTestEditor>[1]);
+            referenceLink: { getTitle: async () => "Target", getTitleSync: () => "Target" }
+        });
     });
 
     function create<T>(name: string) {
@@ -56,11 +52,15 @@ describe("NoteLinkToolbar", () => {
     });
 
     describe("on a reference link", () => {
-        function getToolbar() {
+        function getDefinition() {
             const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
-                _toolbarDefinitions: Map<string, { view: ToolbarView }>;
+                _toolbarDefinitions: Map<string, { view: ToolbarView; itemsConfig: string[] }>;
             };
-            return repository._toolbarDefinitions.get("referenceLink")?.view;
+            return repository._toolbarDefinitions.get("referenceLink");
+        }
+
+        function getToolbar() {
+            return getDefinition()?.view;
         }
 
         it("shows the buttons of the link toolbar while the reference is selected", () => {
@@ -74,7 +74,11 @@ describe("NoteLinkToolbar", () => {
             const labels = [ ...toolbar?.items ?? [] ]
                 .filter((item) => item instanceof ButtonView)
                 .map((item) => item.label);
-            expect(labels).toStrictEqual([ "Open note", "Copy URL", "Edit link", "Unlink" ]);
+            expect(labels).toStrictEqual([ "Open note", "Edit link" ]);
+            // `LinkMenu`, which this editor leaves out, adds Download and the menu with Unlink.
+            expect(getDefinition()?.itemsConfig).toStrictEqual([
+                "referenceLinkPreview", "linkDownload", "|", "editLink", "linkMenu"
+            ]);
 
             setModelData(editor.model, `<paragraph>a[] <reference href="${NOTE}"></reference></paragraph>`);
             expect(balloon.visibleView).toBeNull();
@@ -98,16 +102,6 @@ describe("NoteLinkToolbar", () => {
             expect(preview.href).toBeUndefined();
         });
 
-        it("copies the address of the reference", () => {
-            const button = create<ButtonView>("referenceLinkCopyUrl");
-            button.fire("execute");
-            expect(copy).not.toHaveBeenCalled();
-
-            setModelData(editor.model, REFERENCE);
-            button.fire("execute");
-            expect(copy).toHaveBeenCalledExactlyOnceWith(NOTE);
-        });
-
         it("opens the link dialog on the reference", () => {
             setModelData(editor.model, REFERENCE);
             create<ButtonView>("editLink").fire("execute");
@@ -115,13 +109,13 @@ describe("NoteLinkToolbar", () => {
         });
 
         it("unlinks the reference to its title, in one undo step", () => {
-            const button = create<ButtonView>("referenceLinkUnlink");
+            const command = editor.commands.get(UNLINK_REFERENCE_COMMAND);
             setModelData(editor.model, "<paragraph>a[]</paragraph>");
-            expect(button.isEnabled).toBe(false);
+            expect(command?.isEnabled).toBe(false);
 
             setModelData(editor.model, REFERENCE);
-            expect(button.isEnabled).toBe(true);
-            button.fire("execute");
+            expect(command?.isEnabled).toBe(true);
+            editor.execute(UNLINK_REFERENCE_COMMAND);
             expect(getModelData(editor.model)).toBe("<paragraph>a Target[] b</paragraph>");
 
             editor.execute("undo");

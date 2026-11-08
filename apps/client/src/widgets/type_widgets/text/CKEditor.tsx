@@ -1,23 +1,23 @@
 import {
-    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor, type DocumentHeading,
-    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest, type LinkAtSelection,
-    type LinkDialogRequest, type LinkDisplayMode, onTextEditorError, PopupEditor,
-    replaceLinkAtSelection, SnippetDefinition, type YouTubeVideoRequest
+    assignBlockId, type CKEditorError, CKTextEditor, ClassicEditor,
+    type ContentEmbedDialogRequest, type DocumentHeading,
+    getAnchorNames, getHeadings, getLinkAtSelection, type IconPickerRequest,
+    type InsertMediaRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
+    onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { type BoxSize, DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 import froca from "../../../services/froca";
 import { isMobile } from "../../../services/utils";
 import { useKeyboardShortcuts, useNoteContext, useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import { YouTubeVideoBalloon } from "../../dialogs/youtube_video";
+import { InsertMediaBalloon } from "../../dialogs/insert_media";
+import { openHelpPageFor } from "../../react/HelpButton";
 import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
 import { buildConfig, BuildEditorOptions, type ContentEmbedHandlers } from "./config";
-
-export type BoxSize = "tiny" | "small" | "medium" | "full" | "expandable";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -42,14 +42,16 @@ export interface CKEditorApi {
     updateLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
     /**
      * Puts a preview of `url` in place of the link around the caret or the selected link preview,
-     * or at the selection. `title` and `description` replace the page's own.
+     * or at the selection. `title` and `description` replace the page's own. Rejects when a
+     * selected media embed gets an address that plays nothing.
      */
     addLinkPreview(
         url: string, display: LinkDisplayMode, title: string | null, description: string | null
-    ): void;
+    ): Promise<void>;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
-    addContentEmbed(noteId: string, boxSize?: BoxSize): void;
+    /** Inserts an embed of the note at the selection, untitled when `hideTitle`. */
+    addContentEmbed(noteId: string, boxSize?: BoxSize, options?: { hideTitle?: boolean }): void;
     addImage(noteId: string): Promise<void>;
 }
 
@@ -91,6 +93,8 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     contentEmbedHandlers?: ContentEmbedHandlers;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
+    /** Shows the Include note dialog, as `contentEmbed.pickNote` does. */
+    showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
     /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
     isExcerpt?: boolean;
 }
@@ -99,7 +103,7 @@ export default function CKEditor({
     containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
     editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
     onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
-    showLinkDialog, isExcerpt
+    showLinkDialog, showContentEmbedDialog, isExcerpt
 }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
@@ -172,6 +176,8 @@ export default function CKEditor({
     contentEmbedHandlersRef.current = contentEmbedHandlers;
     const showLinkDialogRef = useRef(showLinkDialog);
     showLinkDialogRef.current = showLinkDialog;
+    const showContentEmbedDialogRef = useRef(showContentEmbedDialog);
+    showContentEmbedDialogRef.current = showContentEmbedDialog;
     const isExcerptRef = useRef(isExcerpt);
     isExcerptRef.current = isExcerpt;
     /** The open icon picker request and its balloon container, or `null` when none is open. */
@@ -189,20 +195,20 @@ export default function CKEditor({
         return () => setIconPickerRequest(null);
     }
 
-    /** The open YouTube video prompt and its balloon container, or `null` when none is open. */
-    const [ youtubeVideoRequest, setYouTubeVideoRequest ] =
-        useState<YouTubeVideoRequest | null>(null);
+    /** The open Insert media prompt and its balloon container, or `null` when none is open. */
+    const [ insertMediaRequest, setInsertMediaRequest ] =
+        useState<InsertMediaRequest | null>(null);
 
-    // On mobile, `showYouTubeVideoDialog` opens the prompt in a modal instead of the balloon.
-    function showYouTubeVideoPrompt(request: YouTubeVideoRequest) {
+    // On mobile, `showInsertMediaDialog` opens the prompt in a modal instead of the balloon.
+    function showInsertMediaPrompt(request: InsertMediaRequest) {
         if (isMobile()) {
             const { onInsert } = request;
-            parentComponent?.triggerCommand("showYouTubeVideoDialog", { onInsert });
+            parentComponent?.triggerCommand("showInsertMediaDialog", { onInsert });
             return null;
         }
 
-        setYouTubeVideoRequest(request);
-        return () => setYouTubeVideoRequest(null);
+        setInsertMediaRequest(request);
+        return () => setInsertMediaRequest(null);
     }
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
@@ -254,12 +260,12 @@ export default function CKEditor({
             const href = externalLink ? notePath : `#${notePath}`;
             await replaceLinkAtSelection(editor, href, linkTitle);
         },
-        addLinkPreview(url, display, title, description) {
+        async addLinkPreview(url, display, title, description) {
             const editor = editorRef.current;
             if (!editor) return;
 
             editor.editing.view.focus();
-            void editor.execute("insertLinkEmbed", {
+            await editor.execute("insertLinkEmbed", {
                 url, mode: display, title: title ?? undefined, description: description ?? undefined
             });
         },
@@ -287,7 +293,7 @@ export default function CKEditor({
                 }
             });
         },
-        addContentEmbed(noteId, boxSize) {
+        addContentEmbed(noteId, boxSize, options) {
             const editor = editorRef.current;
             if (!editor) return;
 
@@ -297,7 +303,8 @@ export default function CKEditor({
                 editor?.model.insertContent(
                     writer.createElement("contentEmbed", {
                         noteId,
-                        boxSize
+                        boxSize,
+                        ...(options?.hideTitle ? { hideTitle: true } : {})
                     })
                 );
             });
@@ -379,15 +386,18 @@ export default function CKEditor({
                 getComponentId: () => parentComponent?.componentId,
                 triggerHostCommand: (command, data) => parentComponent?.triggerCommand(command, data),
                 showIconPicker,
-                showYouTubeVideoPrompt,
+                showInsertMediaPrompt,
                 referenceSource: {
                     getEditor: () => editorRef.current,
                     getNote: () => noteRef.current,
                     getNotePath: () => noteLocationRef.current?.notePath,
-                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow")
+                    save: () => parentComponent?.triggerCommand("saveNoteDetailNow"),
+                    openHelpPage: (helpPage) => openHelpPageFor(helpPage, ntxId)
                 },
                 getContentEmbedHandlers: () => contentEmbedHandlersRef.current,
-                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null
+                showLinkDialog: (request) => showLinkDialogRef.current?.(request) ?? null,
+                showContentEmbedDialog:
+                    (request) => showContentEmbedDialogRef.current?.(request) ?? null
             });
 
             if (isStale) {
@@ -519,9 +529,9 @@ export default function CKEditor({
                 />,
                 iconPickerRequest.container
             )}
-            {youtubeVideoRequest && createPortal(
-                <YouTubeVideoBalloon onInsert={youtubeVideoRequest.onInsert} />,
-                youtubeVideoRequest.container
+            {insertMediaRequest && createPortal(
+                <InsertMediaBalloon onInsert={insertMediaRequest.onInsert} />,
+                insertMediaRequest.container
             )}
         </>
     );

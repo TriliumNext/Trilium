@@ -20,7 +20,8 @@ const BODY_ELEMENT = /^body(?:[.#[:][^\s>+~]*)?$/;
 describe("global CKEditor token overrides", () => {
     const rootTokens = new Map<string, string>();
     const read = new Set<string>();
-    for (const block of parse(readFileSync(CKEDITOR_CSS, "utf8"), "ckeditor5.css")) {
+    const ckeditor = parse(readFileSync(CKEDITOR_CSS, "utf8"), "ckeditor5.css");
+    for (const block of ckeditor) {
         const onRoot = block.stack.length === 1 && matchesEvery(block.stack[0], CKEDITOR_ROOT);
         for (const [ name, { value } ] of block.decls) {
             if (onRoot) rootTokens.set(name, value);
@@ -57,6 +58,20 @@ describe("global CKEditor token overrides", () => {
             }
         }
         expect(problems).toEqual([]);
+    });
+
+    it("on the root element include every color of a table caption and its highlight", () => {
+        const caption = ckeditor.filter((block) => block.stack.some((prelude) =>
+            prelude === "@keyframes ck-table-caption-highlight"
+                || prelude.startsWith(".ck-content .table > figcaption")));
+        const colors = new Set(caption.flatMap((block) =>
+            [ ...block.decls.values() ].flatMap(({ value }) => references(value))));
+        const declared = new Set(ours
+            .filter((block) => matchesEvery(block.stack[0], ROOT_ELEMENT))
+            .flatMap((block) => [ ...block.decls.keys() ]));
+
+        expect(colors.size).toBeGreaterThan(0);
+        expect([ ...colors ].filter((name) => !declared.has(name))).toEqual([]);
     });
 });
 

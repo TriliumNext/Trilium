@@ -17,6 +17,14 @@ describe("submenuItem", () => {
             });
         expect(submenuItem({ title: "Group" }, [off, separator]).enabled).toBe(false);
     });
+
+    it("counts the commands of a row of actions as its own", () => {
+        const off = { kind: "actions" as const, items: [ { title: "Off", enabled: false } ] };
+        const on = { kind: "actions" as const, items: [ { title: "On" } ] };
+
+        expect(submenuItem({ title: "Group" }, [off, on]).enabled).toBe(true);
+        expect(submenuItem({ title: "Group" }, [off]).enabled).toBe(false);
+    });
 });
 
 describe("splitMenuItem", () => {

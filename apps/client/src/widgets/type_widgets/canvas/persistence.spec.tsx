@@ -16,7 +16,7 @@ import { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from "@excalidraw
 import type { HostHistoryStep } from "@triliumnext/codemirror";
 import { type RefObject, render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type FAttachment from "../../../entities/fattachment";
@@ -28,9 +28,10 @@ import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import type { SavedData } from "../../react/hooks";
 import type { EmbedHostHistory } from "../text/embed_history";
+import { applyDrawingView, type DrawingView } from "./drawing_view";
 import { CANVAS_EXPORT_TITLE } from "./image_attachments";
 import useCanvasPersistence, {
-    roundStroke, saveDrawingPicture, useCanvasDrawingPersistence
+    roundStroke, saveDrawingFrame, saveDrawingPicture, useCanvasDrawingPersistence
 } from "./persistence";
 
 interface FakeElement {
@@ -467,6 +468,8 @@ describe("useCanvasDrawingPersistence", () => {
     let sceneFiles: Record<string, unknown>;
     let appState: Record<string, unknown>;
     let updateScene: ReturnType<typeof vi.fn>;
+    /** The Excalidraw API of the last mount. */
+    let lastApi: ExcalidrawImperativeAPI;
     let parent: Component;
     /** The note that owns the drawings, with a picture saved after them. */
     let owner: FNote;
@@ -541,6 +544,7 @@ describe("useCanvasDrawingPersistence", () => {
             history: { clear: vi.fn() },
             registerAction: vi.fn()
         } as unknown as ExcalidrawImperativeAPI;
+        lastApi = api;
         const apiRef = { current: api } as RefObject<ExcalidrawImperativeAPI | null>;
         await act(async () => {
             render(
@@ -592,6 +596,13 @@ describe("useCanvasDrawingPersistence", () => {
         const colored = buildAttachment({ elements, appState: { viewBackgroundColor: "#ffc9c9" } });
         expect((await mount(colored.attachment, buildEditor())).appState)
             .toEqual({ viewBackgroundColor: "#ffc9c9", theme: "light" });
+
+        act(() => render(null, container));
+        const tool = {
+            type: "custom", customType: "none", locked: false, lastActiveTool: null
+        } as const;
+        expect((await mount(colored.attachment, buildEditor(), { initialTool: tool })).appState)
+            .toEqual({ viewBackgroundColor: "#ffc9c9", theme: "light", activeTool: tool });
     });
 
     it("loads the content that the note has not saved yet over the saved one", async () => {
@@ -878,14 +889,21 @@ describe("useCanvasDrawingPersistence", () => {
 
         act(() => render(null, container));
         editor.scheduleSave.mockClear();
-        // Saved elsewhere since Excalidraw went away.
+        // Saved elsewhere since Excalidraw went away, with a frame.
         const added = { id: "e1", type: "ellipse", version: 1 };
-        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: [ moved, added ] }) });
+        const frame = { x: 1, y: 2, width: 300, height: 150, scale: 2 };
+        getBlob.mockResolvedValue({
+            content: JSON.stringify({ elements: [ moved, added ], frame })
+        });
         expect(steps[0].undo()).toBe(true);
         await vi.waitFor(() => expect(editor.scheduleSave).toHaveBeenCalledOnce());
         const [ getContent ] = editor.scheduleSave.mock.calls[0];
-        expect(JSON.parse(getContent()).elements)
-            .toMatchObject([ { id: "r1", x: 0 }, { id: "e1" } ]);
+        expect(JSON.parse(getContent())).toEqual(expect.objectContaining({
+            elements: [
+                expect.objectContaining({ id: "r1", x: 0 }), expect.objectContaining({ id: "e1" })
+            ],
+            frame
+        }));
     });
 
     it("shows a save made elsewhere in place, which it neither saves nor undoes", async () => {
@@ -1130,7 +1148,8 @@ describe("useCanvasDrawingPersistence", () => {
                 [ [], 1000, 400 ], [ loaded, 0, 0 ], [ [ ...loaded, LATER ], 1000, 400 ],
                 [ [ ...loaded, LATER ], 1000, 400 ]
             ] as const) {
-                drawingProps?.onChange?.(elements as never, { width, height } as never, {});
+                drawingProps?.onChange?.(
+                    elements as never, { ...appState, width, height } as never, {});
             }
             return updateScene.mock.calls.map(([ { appState } ]) => appState);
         }
@@ -1158,7 +1177,7 @@ describe("useCanvasDrawingPersistence", () => {
         const view = { width: 1000, height: 500, zoom: { value: 0.25 }, scrollX: 0, scrollY: 0 };
         drawingProps?.onChange?.([ image ] as never, view as never, {});
         expect(updateScene).toHaveBeenCalledExactlyOnceWith({
-            appState: { zoom: { value: 0.5 }, scrollX: 500, scrollY: 0 }
+            appState: { zoom: { value: 0.5 }, scrollX: 500, scrollY: 0 }, captureUpdate: "NEVER"
         });
     });
 
@@ -1194,6 +1213,269 @@ describe("useCanvasDrawingPersistence", () => {
         expect(empty).toHaveBeenCalledOnce();
     });
 
+    it("saves the box as the frame when the user moves the view, not for other moves", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const { attachment } = buildAttachment({ elements: loaded });
+        const editor = buildEditor();
+        const root = document.createElement("div");
+        const screen = document.createElement("div");
+        screen.append(root);
+        document.body.append(screen);
+        onTestFinished(() => {
+            screen.remove();
+            Reflect.deleteProperty(document, "fullscreenElement");
+        });
+        const views: DrawingView[] = [];
+        await mount(attachment, editor, {
+            rootRef: { current: root },
+            onViewChange: (view) => views.push(view)
+        });
+        const show = (view: object, cursorButton = "up") => {
+            appState = { ...appState, width: 1000, height: 500, cursorButton, ...view };
+            change();
+        };
+        const saved = () => JSON.parse(editor.scheduleSave.mock.lastCall?.[0]());
+        // Excalidraw reports its empty scene, then the loaded one at the view of the box.
+        change();
+        sceneElements = loaded;
+        show({});
+        expect(views).toEqual([ { zoom: { value: 1 }, scrollX: 1, scrollY: 2 } ]);
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+
+        // A move by the user saves once the pointer is up: the box in scene units at its scale.
+        show({ zoom: { value: 2 }, scrollX: 5, scrollY: 6 }, "down");
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+        show({ zoom: { value: 2 }, scrollX: 5, scrollY: 6 });
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        expect(saved()).toEqual(expect.objectContaining({
+            frame: { x: -5, y: -6, width: 500, height: 250, scale: 2 },
+            appState: expect.objectContaining({ zoom: { value: 2 }, scrollX: 5, scrollY: 6 })
+        }));
+        expect(views).toHaveLength(2);
+
+        // A move of Trilium's own, such as a pan to a search result, is not saved.
+        const applied = { zoom: { value: 1 }, scrollX: 0, scrollY: 0 } as DrawingView;
+        applyDrawingView(lastApi, applied);
+        show(applied);
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        expect(views).toHaveLength(3);
+
+        // The view in fullscreen is fullscreen's own: a stroke saves the frame the user moved to.
+        Object.defineProperty(document, "fullscreenElement", { value: screen, configurable: true });
+        const onScreen = {
+            zoom: { value: 3 }, scrollX: -7, scrollY: -8, width: 1920, height: 1080
+        };
+        show(onScreen);
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        show(onScreen);
+        expect(editor.scheduleSave).toHaveBeenCalledTimes(2);
+        expect(saved()).toEqual(expect.objectContaining({
+            elements: sceneElements,
+            frame: { x: -5, y: -6, width: 500, height: 250, scale: 2 },
+            appState: expect.objectContaining({ zoom: { value: 2 }, scrollX: 5, scrollY: 6 })
+        }));
+        expect(views).toHaveLength(3);
+    });
+
+    it("fills its frame box with the frame at its width, and saves a move there", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        const { attachment } = buildAttachment({ elements: loaded, frame });
+        const editor = buildEditor();
+        const frames: unknown[] = [];
+        const ready = vi.fn();
+        const initialData = await mount(attachment, editor, {
+            isFrameBox: true, onFrameChange: (changed) => frames.push(changed), onViewReady: ready
+        });
+        expect(initialData.appState)
+            .toEqual(expect.objectContaining({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 }));
+        const show = (view: object, width: number, height: number, cursorButton = "up") => {
+            appState = { ...appState, zoom: { value: 2 }, scrollX: -10, scrollY: -20, ...view,
+                width, height, cursorButton };
+            change();
+        };
+        change();
+        sceneElements = loaded;
+        // Laid out at the natural width of the frame: the view stays.
+        show({}, 0, 0);
+        expect(ready).not.toHaveBeenCalled();
+        show({}, 1000, 500);
+        expect(updateScene).not.toHaveBeenCalled();
+        expect(ready).toHaveBeenCalledOnce();
+        expect(frames).toEqual([ frame ]);
+
+        // The box narrows: the frame fills it at a smaller zoom, which is no move of the user.
+        show({}, 800, 400);
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 1.6 }, scrollX: -10, scrollY: -20 }, captureUpdate: "NEVER"
+        });
+        show({ zoom: { value: 1.6 } }, 800, 400);
+        expect(updateScene).toHaveBeenCalledOnce();
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+
+        // The user zooms in at that width: the frame is what the box shows now.
+        show({ zoom: { value: 2 }, scrollX: -30, scrollY: -40 }, 800, 400);
+        expect(updateScene).toHaveBeenCalledOnce();
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        const moved = { x: 30, y: 40, width: 400, height: 200, scale: 2 };
+        expect(JSON.parse(editor.scheduleSave.mock.lastCall?.[0]()).frame).toEqual(moved);
+        expect(frames).toEqual([ frame, moved ]);
+        expect(ready).toHaveBeenCalledOnce();
+    });
+
+    it("shows the frame that another view of the drawing saved, and keeps it", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        const { attachment, getBlob } = buildAttachment({ elements: loaded, frame });
+        const editor = buildEditor();
+        const frames: unknown[] = [];
+        const views: unknown[] = [];
+        await mount(attachment, editor, {
+            isFrameBox: true,
+            rootRef: { current: document.createElement("div") },
+            onFrameChange: (changed) => frames.push(changed),
+            onViewChange: (view) => views.push(view)
+        });
+        const show = (view: object, width: number, height: number) => {
+            appState = { ...appState, zoom: { value: 2 }, scrollX: -10, scrollY: -20, ...view,
+                width, height, cursorButton: "up" };
+            change();
+        };
+        change();
+        sceneElements = loaded;
+        show({}, 800, 400);
+        show({ zoom: { value: 1.6 } }, 800, 400);
+        updateScene.mockClear();
+        frames.length = 0;
+
+        // Another view saves a move of the same shapes: the box shows the saved frame at its
+        // width, which is no move of the user.
+        const saved = { x: 60, y: 80, width: 400, height: 200, scale: 2 };
+        getBlob.mockResolvedValue({ content: JSON.stringify({
+            elements: loaded, appState: { zoom: { value: 2 }, scrollX: -60, scrollY: -80 },
+            frame: saved
+        }) });
+        await reportSave();
+        expect(frames).toEqual([ saved ]);
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 2 }, scrollX: -60, scrollY: -80 }, captureUpdate: "NEVER"
+        });
+        show({ zoom: { value: 2 }, scrollX: -60, scrollY: -80 }, 800, 400);
+        expect(views.at(-1)).toEqual({ zoom: { value: 2 }, scrollX: -60, scrollY: -80 });
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+        expect(frames).toEqual([ saved ]);
+
+        // The same save again changes nothing, and the next save here carries the frame.
+        updateScene.mockClear();
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        show({ zoom: { value: 2 }, scrollX: -60, scrollY: -80 }, 800, 400);
+        expect(editor.scheduleSave).toHaveBeenCalledOnce();
+        expect(JSON.parse(editor.scheduleSave.mock.lastCall?.[0]()).frame).toEqual(saved);
+    });
+
+    it("keeps a frame saved elsewhere outside a frame box, without moving its view", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3, versionNonce: 1 } ];
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        const { attachment, getBlob } = buildAttachment({ elements: loaded, frame });
+        const editor = buildEditor();
+        await mount(attachment, editor, { rootRef: { current: document.createElement("div") } });
+        appState = { ...appState, width: 1200, height: 600, cursorButton: "up" };
+        change();
+        sceneElements = loaded;
+        change();
+        updateScene.mockClear();
+
+        const saved = { x: 60, y: 80, width: 400, height: 200, scale: 2 };
+        getBlob.mockResolvedValue({ content: JSON.stringify({ elements: loaded, frame: saved }) });
+        await reportSave();
+        expect(updateScene).not.toHaveBeenCalled();
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        change();
+        expect(JSON.parse(editor.scheduleSave.mock.lastCall?.[0]()).frame).toEqual(saved);
+    });
+
+    it("holds the view while the box is resized, and saves no move while cropped", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        const { attachment } = buildAttachment({ elements: loaded, frame });
+        const editor = buildEditor();
+        const views: unknown[] = [];
+        const probe = { isResizing: false, canReframe: true };
+        await mount(attachment, editor, {
+            isFrameBox: true,
+            isResizing: () => probe.isResizing,
+            canReframe: () => probe.canReframe,
+            onViewChange: (view) => views.push(view)
+        });
+        const show = (view: object, width: number, height: number) => {
+            appState = { ...appState, zoom: { value: 2 }, scrollX: -10, scrollY: -20, ...view,
+                width, height, cursorButton: "up" };
+            change();
+        };
+        change();
+        sceneElements = loaded;
+        show({}, 1000, 500);
+
+        // A drag of the resize handle shows more or less of the drawing at the same zoom.
+        probe.isResizing = true;
+        show({}, 1200, 500);
+        expect(updateScene).not.toHaveBeenCalled();
+        probe.isResizing = false;
+
+        // Cropped, a move is only for reading: the view follows, the frame stays.
+        probe.canReframe = false;
+        show({ scrollX: -60 }, 1200, 500);
+        expect(views).toHaveLength(2);
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+    });
+
+    it("takes a provisional frame from the view and the first size, unsaved", async () => {
+        const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
+        const { attachment } = buildAttachment({
+            elements: loaded, appState: { zoom: { value: 1 }, scrollX: 5, scrollY: 6 }
+        });
+        const editor = buildEditor();
+        const frames: unknown[] = [];
+        await mount(attachment, editor, {
+            isFrameBox: true, onFrameChange: (changed) => frames.push(changed)
+        });
+        change();
+        sceneElements = loaded;
+        appState = { ...appState, scrollX: 5, scrollY: 6, width: 1000, height: 500 };
+        change();
+        expect(frames).toEqual([ { x: -5, y: -6, width: 1000, height: 500, scale: 1 } ]);
+        expect(editor.scheduleSave).not.toHaveBeenCalled();
+        expect(updateScene).not.toHaveBeenCalled();
+
+        // A stroke saves it; a frame given from outside replaces it.
+        sceneElements = [ { ...loaded[0], version: 4 } ];
+        change();
+        expect(JSON.parse(editor.scheduleSave.mock.lastCall?.[0]()).frame)
+            .toEqual({ x: -5, y: -6, width: 1000, height: 500, scale: 1 });
+    });
+
+    it("opens at its frame, not its camera, unless the frame is malformed", async () => {
+        const placed = [
+            { id: "r1", type: "rectangle", version: 3, x: 0, y: 0, width: 100, height: 100 }
+        ];
+        const camera = { zoom: { value: 1 }, scrollX: 1, scrollY: 1 };
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        const { attachment } = buildAttachment({ elements: placed, appState: camera, frame });
+        const initialData = await mount(attachment, buildEditor());
+        expect(initialData.appState)
+            .toEqual(expect.objectContaining({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 }));
+
+        act(() => render(null, container));
+        const { attachment: malformed } = buildAttachment({
+            elements: placed, appState: camera, frame: { x: 10 }
+        });
+        expect((await mount(malformed, buildEditor())).appState)
+            .toEqual(expect.objectContaining(camera));
+    });
+
     it("saves nothing without an editor", async () => {
         const loaded = [ { id: "r1", type: "rectangle", version: 3 } ];
         const { attachment } = buildAttachment({ elements: loaded });
@@ -1202,6 +1484,70 @@ describe("useCanvasDrawingPersistence", () => {
 
         sceneElements = [ { ...loaded[0], version: 9 } ];
         expect(() => change()).not.toThrow();
+    });
+});
+
+describe("saveDrawingFrame", () => {
+    it("saves the frame with the content waiting for a save, and schedules the picture", async () => {
+        const frame = { x: 1, y: 2, width: 300, height: 150, scale: 2 };
+        const file = { id: "f1", dataURL: "data:image/png;base64,AA==", mimeType: "image/png" };
+        const unsaved = JSON.stringify({
+            elements: [ { id: "r1", type: "rectangle", version: 4 } ],
+            files: { f1: file },
+            appState: { viewBackgroundColor: "#ffc9c9", gridModeEnabled: true },
+            frame: { x: 9, y: 9, width: 9, height: 9, scale: 9 }
+        });
+        const getBlob = vi.fn(async () => ({ content: "{}" }));
+        const attachment = {
+            attachmentId: "a1", ownerId: "owner", getBlob
+        } as unknown as FAttachment;
+        const scheduleSave = vi.fn();
+        const editor = {
+            canEdit: () => true, getUnsavedContent: () => unsaved, scheduleSave, release: vi.fn()
+        } as unknown as ContentEditor;
+
+        await saveDrawingFrame(attachment, editor, frame);
+        expect(getBlob).not.toHaveBeenCalled();
+        const [ getContent ] = scheduleSave.mock.calls[0];
+        expect(JSON.parse(getContent())).toEqual({
+            type: "excalidraw",
+            version: 2,
+            elements: [ { id: "r1", type: "rectangle", version: 4 } ],
+            files: { f1: file },
+            appState: {
+                scrollX: -1, scrollY: -2, zoom: { value: 2 }, gridModeEnabled: true,
+                viewBackgroundColor: "#ffc9c9"
+            },
+            frame
+        });
+    });
+
+    it("keeps a change scheduled while it reads the saved drawing", async () => {
+        const frame = { x: 1, y: 2, width: 300, height: 150, scale: 2 };
+        let unsaved: string | undefined;
+        let resolveBlob: (blob: { content: string }) => void = () => {};
+        const getBlob = vi.fn(() => new Promise((resolve) => (resolveBlob = resolve)));
+        const attachment = {
+            attachmentId: "a1", ownerId: "owner", getBlob
+        } as unknown as FAttachment;
+        const scheduleSave = vi.fn();
+        const editor = {
+            canEdit: () => true, getUnsavedContent: () => unsaved, scheduleSave, release: vi.fn()
+        } as unknown as ContentEditor;
+
+        const saving = saveDrawingFrame(attachment, editor, frame);
+        unsaved = JSON.stringify({ elements: [ { id: "r2", type: "rectangle", version: 1 } ] });
+        resolveBlob({
+            content: JSON.stringify({ elements: [ { id: "r1", type: "rectangle", version: 1 } ] })
+        });
+        await saving;
+
+        expect(getBlob).toHaveBeenCalledOnce();
+        const [ getContent ] = scheduleSave.mock.calls[0];
+        expect(JSON.parse(getContent())).toMatchObject({
+            elements: [ { id: "r2", type: "rectangle", version: 1 } ],
+            frame
+        });
     });
 });
 
@@ -1220,6 +1566,25 @@ describe("saveDrawingPicture", () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         vi.mocked(exportToSvg).mockReset();
+    });
+
+    it("crops the picture to the frame of the drawing, at its size on screen", async () => {
+        const post = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        // The export of a shape from (0, 0) to (400, 200), with the padding of 5 around it.
+        const exported = svgOf("picture");
+        exported.setAttribute("viewBox", "0 0 410 210");
+        exported.setAttribute("width", "410");
+        exported.setAttribute("height", "210");
+        vi.mocked(exportToSvg).mockResolvedValueOnce(exported);
+
+        await saveDrawingPicture(drawing, JSON.stringify({
+            elements: [ { id: "r1", type: "rectangle", x: 0, y: 0, width: 400, height: 200 } ],
+            frame: { x: 100, y: 50, width: 200, height: 100, scale: 1.5 }
+        }));
+        expect(exported.getAttribute("viewBox")).toBe("105 55 200 100");
+        expect(exported.getAttribute("width")).toBe("300");
+        expect(exported.getAttribute("height")).toBe("150");
+        expect(post).toHaveBeenCalledOnce();
     });
 
     it("saves the picture of a drawing, titled after it, in the colors of its page", async () => {

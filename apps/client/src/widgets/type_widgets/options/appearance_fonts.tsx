@@ -1,6 +1,6 @@
 import "./appearance_fonts.css";
 
-import { customFontFamily, customFontNoteId, customFontOption, FontFamily, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
+import { customFontFamily, customFontNoteId, customFontOption, FontFamily, MONOSPACE_FONT_FAMILY, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, Fragment } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -8,8 +8,9 @@ import { Trans } from "react-i18next";
 
 import FNote from "../../../entities/fnote";
 import { getCustomFonts, registerFontNote } from "../../../services/custom_fonts";
-import { filterAvailableFamilies, listSystemFonts, quoteFamily, type SystemFont } from "../../../services/font";
+import { filterAvailableFamilies, listSystemFonts, quoteFamily, rendersFamily } from "../../../services/font";
 import { t } from "../../../services/i18n";
+import toast from "../../../services/toast";
 import { isElectron, isMobile } from "../../../services/utils";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
@@ -137,10 +138,12 @@ export default function Fonts() {
     const [ overrideThemeFonts, setOverrideThemeFonts ] = useTriliumOptionBool("overrideThemeFonts");
     const [ ligaturesEnabled, setLigaturesEnabled ] = useTriliumOptionBool("monospaceLigaturesEnabled");
     const isEnabled = overrideThemeFonts === true;
-    const fontGroups = useFontGroups();
     const fontOptions = useFontOptions();
     const [ pickerTarget, setPickerTarget ] = useState(FONT_TARGETS[0]);
     const [ pickerShown, setPickerShown ] = useState(false);
+    // Building the list loads fonts, so it waits for the picker to be opened.
+    const [ pickerOpened, setPickerOpened ] = useState(false);
+    const fontGroups = useFontGroups(pickerOpened);
 
     return (
         <Card className="appearance-fonts" heading={t("fonts.fonts")}
@@ -158,11 +161,11 @@ export default function Fonts() {
                         key={target.key}
                         target={target}
                         option={fontOptions[target.key]}
-                        groups={fontGroups}
                         disabled={!isEnabled}
                         onOpen={() => {
                             setPickerTarget(target);
                             setPickerShown(true);
+                            setPickerOpened(true);
                         }}
                     />
                 ))}
@@ -208,12 +211,17 @@ export default function Fonts() {
  *
  * Where the device's own fonts can be listed, they stand in for the named families: the stock list
  * is a guess at what a device has, and half of it does not resolve on any given one.
+ *
+ * Nothing is fetched, registered or measured until `active`, and only the generic families are
+ * offered while the installed ones are still being listed.
  */
-function useFontGroups(): FontGroup[] {
+function useFontGroups(active: boolean): FontGroup[] {
     const [ customFonts, setCustomFonts ] = useState<UserFont[]>([]);
-    const systemFonts = useSystemFonts();
+    const systemFonts = useSystemFonts(active);
 
     useEffect(() => {
+        if (!active) return;
+
         let cancelled = false;
         const registered: FontFace[] = [];
 
@@ -243,10 +251,19 @@ function useFontGroups(): FontGroup[] {
                 document.fonts.delete(face);
             }
         };
-    }, []);
+    }, [ active ]);
 
     return useMemo(() => {
-        const stockGroups = systemFonts.length ? installedFontGroups(systemFonts) : availableStockGroups();
+        if (!active) {
+            return [];
+        }
+
+        let stockGroups = [ GENERIC_FONTS ];
+        if (systemFonts?.length) {
+            stockGroups = installedFontGroups(systemFonts);
+        } else if (systemFonts) {
+            stockGroups = availableStockGroups();
+        }
 
         // Ahead of the rest: a font the user went and added is the one they are looking for.
         return customFonts.length
@@ -255,7 +272,7 @@ function useFontGroups(): FontGroup[] {
                 items: customFonts.map(({ noteId, title }) => ({ value: customFontOption(noteId), label: title }))
             }, ...stockGroups ]
             : stockGroups;
-    }, [ customFonts, systemFonts ]);
+    }, [ active, customFonts, systemFonts ]);
 }
 
 /**
@@ -281,24 +298,15 @@ function availableStockGroups(): FontGroup[] {
 }
 
 /**
- * The generic families, then the installed ones split by advance width. Serif and sans-serif cannot
- * be told apart from a browser — nothing reports a face's style — so this is as far as the grouping
- * goes, and an empty half is left out rather than headed.
+ * The generic families, then the installed ones in a single group. The installed families are not
+ * grouped by style, because telling them apart means loading every font file (see
+ * {@link listSystemFonts}).
  */
-function installedFontGroups(systemFonts: SystemFont[]): FontGroup[] {
-    const groups = [ GENERIC_FONTS ];
-    const named: [ string, SystemFont[] ][] = [
-        [ t("fonts.proportional-system-fonts"), systemFonts.filter(({ monospace }) => !monospace) ],
-        [ t("fonts.monospace-system-fonts"), systemFonts.filter(({ monospace }) => monospace) ]
+function installedFontGroups(systemFonts: string[]): FontGroup[] {
+    return [
+        GENERIC_FONTS,
+        { title: t("fonts.installed-system-fonts"), items: systemFonts.map((family) => ({ value: family })) }
     ];
-
-    for (const [ title, fonts ] of named) {
-        if (fonts.length) {
-            groups.push({ title, items: fonts.map(({ family }) => ({ value: family })) });
-        }
-    }
-
-    return groups;
 }
 
 /**
@@ -306,12 +314,14 @@ function installedFontGroups(systemFonts: SystemFont[]): FontGroup[] {
  * {@link listSystemFonts} also exists in a browser served over HTTPS, where reading it would cost
  * the user a permission prompt for a list the desktop app can have for free — so the ask is kept to
  * the one runtime that grants it itself (see the `local-fonts` entry in `web_contents_security.ts`).
+ *
+ * `undefined` until `active` and the desktop app has answered.
  */
-function useSystemFonts(): SystemFont[] {
-    const [ fonts, setFonts ] = useState<SystemFont[]>([]);
+function useSystemFonts(active: boolean): string[] | undefined {
+    const [ fonts, setFonts ] = useState<string[] | undefined>(isElectron() ? undefined : []);
 
     useEffect(() => {
-        if (!isElectron()) return;
+        if (!active || !isElectron()) return;
 
         let cancelled = false;
         void listSystemFonts().then((found) => {
@@ -321,7 +331,7 @@ function useSystemFonts(): SystemFont[] {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [ active ]);
 
     return fonts;
 }
@@ -363,19 +373,18 @@ function useFontOption(familyOption: OptionNames, sizeOption: OptionNames): Font
 interface FontRowProps {
     target: FontTarget;
     option: FontOption;
-    /** The picker's groups, the user's own fonts among them (see {@link useFontGroups}). */
-    groups: FontGroup[];
     disabled?: boolean;
     onOpen: () => void;
 }
 
-function FontRow({ target, option: { family, size }, groups, disabled, onOpen }: FontRowProps) {
+function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRowProps) {
     // One of the user's own fonts is named by the note holding it, so its own title says what is
     // set — read from the cache rather than waited for from the listing, and it follows a rename.
     const customFontTitle = useNoteTitle(customFontNoteId(family) ?? undefined, undefined);
 
-    const entry = groups.flatMap((group) => group.items).find((item) => item.value === family);
-    const name = customFontTitle ?? entry?.label ?? entry?.value ?? family;
+    // Only the generic entries carry a label; any other family is named by itself.
+    const genericLabel = GENERIC_FONTS.items.find((item) => item.value === family)?.label;
+    const name = customFontTitle ?? genericLabel ?? family;
 
     return (
         <OptionCardSection
@@ -400,6 +409,10 @@ function cssFontFamily(target: FontTarget, value: string): string {
 
     if (value === "system") {
         return target.isMonospace ? SYSTEM_MONOSPACE_FONT_STACK : SYSTEM_SANS_SERIF_FONT_STACK;
+    }
+
+    if (value === "monospace") {
+        return MONOSPACE_FONT_FAMILY;
     }
 
     // One of the user's own fonts names the note it is stored in; the family it was registered
@@ -591,7 +604,7 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                                 {group.items.map(item => (
                                     <FormListItem
                                         key={item.value}
-                                        onClick={() => setFamily(item.value)}
+                                        onClick={() => chooseFamily(item.value, setFamily)}
                                         checked={family === item.value}
                                         selected={family === item.value}
                                     >
@@ -651,6 +664,21 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
         </Modal>,
         document.body
     );
+}
+
+/**
+ * Sets `value` unless it names a family that draws nothing (see {@link rendersFamily}). The theme
+ * and system entries and the user's own fonts are applied without a check, because none of them is
+ * a family name the canvas can be asked about.
+ */
+function chooseFamily(value: string, setFamily: (family: string) => void) {
+    const isFamilyName = value !== "theme" && value !== "system" && !customFontNoteId(value);
+    if (isFamilyName && !rendersFamily(value)) {
+        toast.showError(t("fonts.family_draws_nothing", { family: value }));
+        return;
+    }
+
+    setFamily(value);
 }
 
 /**

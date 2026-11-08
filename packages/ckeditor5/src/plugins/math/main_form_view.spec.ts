@@ -2,7 +2,9 @@
 import './math.js';
 
 import katex from 'katex';
-import { ClassicEditor, Essentials, Locale, Paragraph, _setModelData as setModelData } from 'ckeditor5';
+import {
+	ClassicEditor, Essentials, keyCodes, Locale, Paragraph, _setModelData as setModelData
+} from 'ckeditor5';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTestEditor } from '../../../test/editor-kit.js';
@@ -83,6 +85,42 @@ describe( 'MainFormView', () => {
 			expect( () => view.focus() ).not.toThrow();
 		} );
 
+		it( 'moves focus between its fields with Tab and Shift+Tab', () => {
+			const textarea = view.mathInputView.latexTextAreaView.element;
+			const toggle = view.displayButtonView.element as HTMLElement;
+			textarea.focus();
+
+			textarea.dispatchEvent( tabKeydown( false ) );
+			expect( document.activeElement ).toBe( toggle );
+
+			toggle.dispatchEvent( tabKeydown( true ) );
+			expect( document.activeElement ).toBe( textarea );
+		} );
+
+		it( 'puts the math field first in its focus cycle, also after a rebuild', async () => {
+			await vi.waitFor(
+				() => expect( view.mathInputView.mathfield ).not.toBeNull(),
+				{ timeout: 10000 }
+			);
+			const first = view.mathInputView.mathfield as HTMLElement;
+			const focusFirst = vi.spyOn( first, 'focus' );
+			view.focus();
+			expect( focusFirst ).toHaveBeenCalled();
+
+			// Clearing the LaTeX field replaces the math field with a new one.
+			const textarea = view.mathInputView.latexTextAreaView.element;
+			textarea.value = '';
+			textarea.dispatchEvent( new Event( 'input' ) );
+			const rebuilt = view.mathInputView.mathfield as HTMLElement;
+			expect( rebuilt ).not.toBe( first );
+			const focusRebuilt = vi.spyOn( rebuilt, 'focus' );
+			view.focus();
+			rebuilt.dispatchEvent( new FocusEvent( 'focus' ) );
+
+			expect( focusRebuilt ).toHaveBeenCalled();
+			expect( view.focusTracker.focusedElement ).toBe( rebuilt );
+		} );
+
 		it( 'reports an empty equation when the input holds nothing', () => {
 			view.mathInputView.value = null;
 
@@ -102,6 +140,53 @@ describe( 'MainFormView', () => {
 			view.mathInputView.value = null;
 
 			expect( view.mathView?.value ).toBe( '' );
+		} );
+
+		it( 'shares the height of a resized form evenly between its two fields', async () => {
+			await vi.waitFor(
+				() => expect( view.mathInputView.mathfield ).not.toBeNull(),
+				{ timeout: 10000 }
+			);
+			const form = view.element as HTMLElement;
+			const container = form.querySelector( '.ck-mathlive-container' ) as HTMLElement;
+			const textarea = view.mathInputView.latexTextAreaView.element;
+			const height = ( element: Element ) => element.getBoundingClientRect().height;
+			const mathHeight = height( container );
+			const latexHeight = height( textarea );
+
+			expect( getComputedStyle( form ).resize ).toBe( 'both' );
+			expect( [ getComputedStyle( container ).resize, getComputedStyle( textarea ).resize ] )
+				.toEqual( [ 'none', 'none' ] );
+
+			form.style.height = `${ height( form ) + 200 }px`;
+
+			expect( height( container ) - mathHeight ).toBeCloseTo( 100, 0 );
+			expect( height( textarea ) - latexHeight ).toBeCloseTo( 100, 0 );
+		} );
+
+		it( 'keeps a resized form at least 450 by 350 pixels', () => {
+			const form = view.element as HTMLElement;
+
+			form.style.width = '100px';
+			form.style.height = '100px';
+
+			expect( [ form.offsetWidth, form.offsetHeight ] ).toEqual( [ 450, 350 ] );
+		} );
+
+		it( 'grows the math field to fit a tall formula', async () => {
+			await vi.waitFor(
+				() => expect( view.mathInputView.mathfield ).not.toBeNull(),
+				{ timeout: 10000 }
+			);
+			const container = view.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement;
+			const startHeight = container.getBoundingClientRect().height;
+
+			view.mathInputView.value = '\\begin{pmatrix}a\\\\b\\\\c\\\\d\\\\e\\end{pmatrix}';
+
+			await vi.waitFor( () => {
+				expect( container.getBoundingClientRect().height ).toBeGreaterThan( startHeight + 20 );
+			} );
+			expect( container.scrollHeight ).toBe( container.clientHeight );
 		} );
 	} );
 
@@ -125,6 +210,12 @@ describe( 'MainFormView', () => {
 		} );
 	} );
 } );
+
+function tabKeydown( shiftKey: boolean ): KeyboardEvent {
+	return new KeyboardEvent( 'keydown', {
+		keyCode: keyCodes.tab, shiftKey, bubbles: true, cancelable: true
+	} );
+}
 
 describe( 'MathCommand on a display equation', () => {
 	let editor: ClassicEditor;

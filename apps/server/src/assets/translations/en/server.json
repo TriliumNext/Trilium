@@ -357,7 +357,8 @@
     "content-not-available": "This content is not available.",
     "broken-block-reference": "Broken reference",
     "untitled-block": "Block",
-    "play-video": "Play video"
+    "play-video": "Play video",
+    "play-audio": "Play audio"
   },
   "onenote_import": {
     "root-title": "OneNote import",

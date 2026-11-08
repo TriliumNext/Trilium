@@ -379,7 +379,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             notePath: this.notePath,
             hoistedNoteId: this.hoistedNoteId,
             active: this.isActive(),
-            viewScope: this.viewScope,
+            viewScope: this.viewScope && getNavigationTarget(this.viewScope),
             pinned: this.pinned,
             lastActiveNtxId: this.lastActiveNtxId
         };
@@ -685,7 +685,13 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     }
 }
 
-export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, notePath: string, viewScope?: ViewScope) {
+/**
+ * Opens `notePath` in the note context that the target of `evt` is in, or in the active one
+ * without such a target.
+ */
+export function openInCurrentNoteContext(
+    evt: Pick<Event, "target"> | null, notePath: string, viewScope?: ViewScope
+) {
     const ntxId = $(evt?.target as Element)
         .closest("[data-ntx-id]")
         .attr("data-ntx-id");

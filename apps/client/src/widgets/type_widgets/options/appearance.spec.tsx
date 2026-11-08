@@ -81,7 +81,7 @@ describe("the layout orientation", () => {
         expect(host.querySelector(".orientation-illustration")).toBeNull();
     });
 
-    it("comes with the edited notes settings, of which a phone gets only the AI chats one", () => {
+    it("comes with the edited notes settings, on a phone too", () => {
         const toggle = (name: string) => host.querySelector(`input.switch-toggle[id^='${name}-']`);
         const expandToggle = () => toggle("edited-notes-open-in-ribbon");
         const chatsToggle = () => toggle("edited-notes-include-llm-chats");
@@ -92,7 +92,7 @@ describe("the layout orientation", () => {
 
         mocks.mobile = true;
         open();
-        expect(expandToggle()).toBeNull();
+        expect(expandToggle()).not.toBeNull();
         expect(chatsToggle()).not.toBeNull();
     });
 });

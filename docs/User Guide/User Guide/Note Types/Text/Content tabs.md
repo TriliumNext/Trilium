@@ -33,8 +33,16 @@ While the cursor is inside a tabs block, a toolbar appears above it with the fol
 *   <span class="tn-icon cke cke-plus"></span> _(Add tab)_ inserts a tab after the current one and selects its title.
 *   <span class="tn-icon cke cke-remove"></span> _(Remove tab)_ removes the current tab. Removing the last tab removes the whole block.
 *   <span class="tn-icon cke cke-chevron-right bx-flip-horizontal"></span> _(Move tab left)_ and <span class="tn-icon cke cke-chevron-right"></span> (_Move tab right)_ change the order of the tabs.
-*   <span class="tn-icon cke cke-link"></span> _(Copy link to tab)_ copies a link to the current tab, as described below.
-*   <span class="tn-icon cke cke-trilium-tabs"></span> _(Tab alignment)_ places the tab titles above the panel (_Align tabs at top_, the default) or below it (_Align tabs at bottom_).
+*   <span class="tn-icon cke cke-three-vertical-dots"></span> _(More actions)_ opens a menu with the actions of the toolbar and a few more.
+
+The <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu has the following entries:
+
+*   _Add new tab_ inserts a tab after the current one, like the <span class="tn-icon cke cke-plus"></span> button.
+*   _Copy reference to this tab_ copies a link to the current tab, as described below.
+*   _Move tab right_ and _Move tab left_ change the order of the tabs.
+*   _Tab alignment_ places the tab titles above the panel (_Align tabs at top_, the default) or below it (_Align tabs at bottom_).
+*   _Delete tab_ removes the current tab, like the <span class="tn-icon cke cke-remove"></span> button.
+*   _Delete all tabs_ removes the whole tabs block and leaves an empty paragraph in its place. In a tabs block nested inside another, only the inner block is removed.
 
 The tab that is showing is not saved with the note: every tabs block opens on its first tab.
 
@@ -89,7 +97,7 @@ In read-only notes, a title too long for its tab fades out where it is cut off. 
 A link can point to a single tab, much like a link to a block (see <a class="reference-link" href="Block%20references.md">Block references</a>):
 
 1.  Place the cursor in the tab, either in its title or in its panel.
-2.  Press _Copy link to tab_ (<span class="tn-icon cke cke-link"></span>) in the toolbar of the tabs block. Alternatively, right-click the text and select _Copy_ → _Copy link to this tab_. The tab flashes briefly.
+2.  In the toolbar of the tabs block, open the <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu and select _Copy reference to this tab_. Alternatively, right-click the text and select _Copy_ → _Copy link to this tab_. The tab flashes briefly.
 3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 The link shows the title of the note, followed by the title of the tab. Clicking it opens the note, shows the tab and flashes it. As with any block reference, the link can be turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only that tab.

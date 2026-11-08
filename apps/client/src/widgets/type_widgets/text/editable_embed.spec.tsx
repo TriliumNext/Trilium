@@ -1,18 +1,20 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
+import { deferred, type DeferredPromise } from "@triliumnext/commons";
 import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ContentEditor } from "../../../services/content_renderer";
+import { addContentDisposer, type ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import {
     type ContentEmbedToolProvider, enterContentEmbed, getContentEmbedTools
 } from "./content_embed_tools";
 import {
-    EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, NestedEmbedContext,
-    useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors, useEmbedPreview, useNestedEditor
+    EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, EmbedPreview,
+    NestedEmbedContext, useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors,
+    useEmbedPreview, useNestedEditor
 } from "./editable_embed";
 
 const figures: HTMLElement[] = [];
@@ -139,29 +141,69 @@ describe("useEmbedPreview", () => {
         act(() => render(null, container));
     });
 
-    it("keeps the first preview for its key, and renders one for any other key", async () => {
+    it("renders a preview per key after the first, and disposes of a late one", async () => {
         const initial = document.createElement("pre");
-        const rendered = document.createElement("pre");
-        const renderPreview = vi.fn(async () => rendered);
+        const previews = new Map<string, DeferredPromise<HTMLElement>>();
+        const renderPreview = vi.fn((key: string) => {
+            const rendered = deferred<HTMLElement>();
+            previews.set(key, rendered);
+            return rendered;
+        });
         let preview: HTMLElement | undefined;
         function Probe({ previewKey }: { previewKey: string }) {
-            preview = useEmbedPreview(initial, previewKey, renderPreview);
+            preview = useEmbedPreview(initial, previewKey, () => renderPreview(previewKey));
             return null;
         }
-
         const container = document.createElement("div");
-        await act(async () => render(<Probe previewKey="a" />, container));
+        const show = (key: string) =>
+            act(async () => render(<Probe previewKey={key} />, container));
+
+        await show("a");
         expect(preview).toBe(initial);
         expect(renderPreview).not.toHaveBeenCalled();
 
-        await act(async () => render(<Probe previewKey="b" />, container));
-        await vi.waitFor(() => expect(preview).toBe(rendered));
-        expect(renderPreview).toHaveBeenCalledOnce();
+        // The first key renders again: `EmbedPreview` disposed of its first preview.
+        for (const key of [ "b", "a" ]) {
+            await show(key);
+            const rendered = document.createElement("pre");
+            await act(async () => previews.get(key)?.resolve(rendered));
+            expect(preview).toBe(rendered);
+        }
 
-        await act(async () => render(<Probe previewKey="a" />, container));
-        expect(preview).toBe(initial);
-        expect(renderPreview).toHaveBeenCalledOnce();
+        await show("c");
+        await show("d");
+        const late = document.createElement("pre");
+        const disposeLate = vi.fn();
+        addContentDisposer(late, disposeLate);
+        await act(async () => previews.get("c")?.resolve(late));
+        expect(preview).not.toBe(late);
+        expect(disposeLate).toHaveBeenCalledOnce();
         act(() => render(null, container));
+    });
+});
+
+describe("EmbedPreview", () => {
+    it("disposes of the element it shows once it shows another one or unmounts", () => {
+        const [ first, second ] = [ document.createElement("div"), document.createElement("div") ];
+        const [ disposeFirst, disposeSecond ] = [ vi.fn(), vi.fn() ];
+        addContentDisposer(first, disposeFirst);
+        addContentDisposer(second, disposeSecond);
+        const container = document.createElement("div");
+        const shown = () => container.querySelector<HTMLElement>(".editable-embed-preview");
+
+        act(() => render(<EmbedPreview element={first} />, container));
+        expect(shown()?.firstChild).toBe(first);
+        act(() => render(<EmbedPreview element={first} isHidden />, container));
+        expect(shown()?.hidden).toBe(true);
+        expect(disposeFirst).not.toHaveBeenCalled();
+
+        act(() => render(<EmbedPreview element={second} />, container));
+        expect(shown()?.firstChild).toBe(second);
+        expect(disposeFirst).toHaveBeenCalledOnce();
+        expect(disposeSecond).not.toHaveBeenCalled();
+
+        act(() => render(null, container));
+        expect(disposeSecond).toHaveBeenCalledOnce();
     });
 });
 

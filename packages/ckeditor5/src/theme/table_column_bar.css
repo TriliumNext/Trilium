@@ -2,14 +2,26 @@
     --ck-table-column-bar-background: var(--main-background-color, var(--ck-color-base-background));
     --ck-table-column-bar-border-color: var(--main-border-color, var(--ck-color-base-border));
     --ck-table-column-bar-segment-color:
+        var(--main-background-color, var(--ck-color-base-background));
+    --ck-table-column-bar-segment-border-color:
+        var(--main-border-color, var(--ck-color-base-border));
+    --ck-table-column-bar-dot-color: var(--main-border-color, var(--ck-color-base-border));
+    --ck-table-column-bar-current-segment-color:
         var(--accented-background-color, var(--ck-color-base-hover));
+    --ck-table-column-bar-current-dot-color:
+        var(--main-background-color, var(--ck-color-base-background));
     --ck-table-column-bar-divider-color: var(--main-border-color, var(--ck-color-base-border));
     --ck-table-column-bar-handle-color: var(--muted-text-color, var(--ck-color-text));
+    --ck-table-column-bar-arrow-color: var(--muted-text-color, var(--ck-color-text));
     --ck-table-column-bar-active-color: var(--ck-color-focus-border);
 
     --ck-table-column-bar-height: 28px;
     --ck-table-column-bar-divider-hit-width: 24px;
     --ck-table-column-bar-handle-width: 6px;
+    --ck-table-column-bar-arrow-size: 12px;
+    --ck-table-column-bar-arrow-gap: 8px;
+    --ck-table-column-bar-dot-size: 6px;
+    --ck-table-column-bar-dot-gap: 25px;
     /* Must exceed `AUTO_SCROLL_EDGE` in viewport_geometry.ts. */
     --ck-table-column-bar-end-gap: 64px;
 }
@@ -43,9 +55,26 @@
     }
 
     .ck-table-column-bar__segment {
+        --_dot-color: var(--ck-table-column-bar-dot-color);
+
         position: absolute;
         inset-block: 4px;
-        background: var(--ck-table-column-bar-segment-color);
+        border: 2px solid var(--ck-table-column-bar-segment-border-color);
+        background-color: var(--ck-table-column-bar-segment-color);
+        background-image: radial-gradient(
+            circle calc(var(--ck-table-column-bar-dot-size) / 2),
+            var(--_dot-color) calc(100% - 0.5px),
+            transparent 100%
+        );
+        background-size:
+            calc(var(--ck-table-column-bar-dot-size) + var(--ck-table-column-bar-dot-gap)) 100%;
+        background-repeat: repeat-x;
+
+        &.ck-table-column-bar__segment_current {
+            --_dot-color: var(--ck-table-column-bar-current-dot-color);
+
+            background-color: var(--ck-table-column-bar-current-segment-color);
+        }
     }
 
     .ck-table-column-bar__divider {
@@ -66,8 +95,37 @@
             translate: -50%;
         }
 
+        .ck-table-column-bar__arrow {
+            display: none;
+        }
+
         &.ck-table-column-bar__divider_resizable {
             pointer-events: auto;
+
+            .ck-table-column-bar__arrow {
+                /* Boxicons draws both arrows 5/24 em in from the side that faces the grip. */
+                --_offset: calc(
+                    var(--ck-table-column-bar-handle-width) / 2
+                    + var(--ck-table-column-bar-arrow-gap) - 5em / 24
+                );
+
+                display: block;
+                position: absolute;
+                top: 50%;
+                font-size: var(--ck-table-column-bar-arrow-size);
+                line-height: 1;
+                color: var(--ck-table-column-bar-arrow-color);
+                translate: 0 -50%;
+                pointer-events: none;
+
+                &.bxs-left-arrow {
+                    right: calc(50% + var(--_offset));
+                }
+
+                &.bxs-right-arrow {
+                    left: calc(50% + var(--_offset));
+                }
+            }
 
             &::after {
                 inset-block: 4px;

@@ -67,6 +67,13 @@ async function postWithSilentInternalServerError<T>(url: string, data?: unknown,
     return await call<T>("POST", url, componentId, { data, silentInternalServerError: true });
 }
 
+/** Posts without an error toast for a 400, 404 or 500, for a caller that handles the failure. */
+async function postWithSilentErrors<T>(url: string, data?: unknown, componentId?: string) {
+    return await call<T>("POST", url, componentId, {
+        data, silentBadRequest: true, silentNotFound: true, silentInternalServerError: true
+    });
+}
+
 /**
  * For an operation that runs in minutes rather than seconds — see {@link CallOptions.timeoutMs}. The
  * work carries on server-side whatever the client does, so giving up early does not stop it; it only
@@ -548,6 +555,7 @@ export default {
     getWithSilentUnauthorized,
     getWithTimeout,
     post,
+    postWithSilentErrors,
     postWithSilentInternalServerError,
     postWithTimeout,
     put,

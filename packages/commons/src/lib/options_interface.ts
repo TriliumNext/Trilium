@@ -53,6 +53,12 @@ export const SYSTEM_MONOSPACE_FONT_STACK = [
     "monospace"
 ].join(",");
 
+/**
+ * The generic `monospace` family named twice. Browsers draw a lone `monospace` at their smaller
+ * monospace default size (13px instead of 16px); a second family in the list turns that off.
+ */
+export const MONOSPACE_FONT_FAMILY = "monospace, monospace";
+
 export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActionNames> {
     openNoteContexts: string;
     lastDailyBackupDate: string;
@@ -308,6 +314,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /** Whether the link editor fills the empty title of a text link with the page's title. */
+    textNoteLinkTitleRetrievalEnabled: boolean;
+    /**
+     * Whether the link editor fills the empty title and description of an icon & text link or a card
+     * with the page's own.
+     */
+    textNoteLinkDetailsRetrievalEnabled: boolean;
     /**
      * Whether the header rows of a table stay at the top of the note while the rest of the table
      * scrolls past.

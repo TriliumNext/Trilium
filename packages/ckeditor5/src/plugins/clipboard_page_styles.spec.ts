@@ -141,6 +141,14 @@ describe("ClipboardPageStyles", () => {
             expect(data).not.toContain("<span");
         });
 
+        it("keeps a strikethrough and drops a decoration that is only the default", () => {
+            const data = paste(`<p style="${DUMP}">`
+                + `<span style="text-decoration: line-through;">done</span> `
+                + `<a href="https://example.com" style="text-decoration: none;">link</a></p>`);
+
+            expect(data).toBe("<p><s>done</s> <a href=\"https://example.com\">link</a></p>");
+        });
+
         it("leaves colors alone when the HTML is not a dump", () => {
             const data = paste(`<p><span style="color: rgb(255, 0, 0);">red</span> <span style="background-color: rgb(255, 255, 0);">marked</span></p>`);
 

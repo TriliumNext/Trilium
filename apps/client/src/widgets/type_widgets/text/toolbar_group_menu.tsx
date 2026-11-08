@@ -58,7 +58,9 @@ function ToolbarGroupMenu({ request, onClose }: {
         request.setElement(element);
         measureRef(element);
     }, [ request, measureRef ]);
-    useClosedByToolbarTap(request.anchor, () => onClose(false));
+    // A context menu opens at a point rather than under a button.
+    const button = request.anchor instanceof HTMLElement ? request.anchor : null;
+    useClosedByToolbarTap(button, () => onClose(false));
 
     return (
         <Menu
@@ -71,7 +73,7 @@ function ToolbarGroupMenu({ request, onClose }: {
             )}
             bottomSheet={bottomSheet}
             keepOpenSelector={MOBILE_TOOLBAR_ROW}
-            aria-labelledby={request.anchor.getAttribute("aria-labelledby") ?? undefined}
+            aria-labelledby={button?.getAttribute("aria-labelledby") ?? undefined}
             elementRef={setElement}
             onDismiss={() => onClose(false)}
             onClose={() => onClose(true)}
@@ -94,7 +96,10 @@ function MenuRows({ items }: { items: ToolbarGroupMenuItem[] }) {
                     return <FormListHeader key={index} text={item.label} />;
                 }
 
-                const { label, icon, iconClass, isEnabled, isOn, isSwitch, className, run, children } = item;
+                const {
+                    label, icon, iconClass, isEnabled, isOn, isSwitch, isDestructive, className, run,
+                    children
+                } = item;
                 if (isSwitch) {
                     return (
                         <FormListToggleableItem
@@ -117,6 +122,7 @@ function MenuRows({ items }: { items: ToolbarGroupMenuItem[] }) {
                 return (
                     <FormListItem
                         key={index} icon={iconClass} iconSvg={icon} disabled={!isEnabled} onClick={() => run?.()}
+                        iconClassName={isDestructive ? "destructive-action-icon" : undefined}
                         checkable={isOn !== undefined} checked={isOn} className={className}
                     >
                         <span className="toolbar-group-menu-label">{label}</span>
@@ -146,7 +152,7 @@ function MenuTileGroups({ items }: { items: ToolbarGroupMenuItem[] }) {
             {groups.filter(({ entries }) => entries.length).map(({ heading, entries }, index) => (
                 <Fragment key={index}>
                     {heading && <FormListHeader text={heading} />}
-                    <li className="tn-menu-actions tn-menu-actions-cards toolbar-group-menu-tiles" role="group">
+                    <li className="tn-menu-actions tn-menu-tiles tn-menu-actions-cards toolbar-group-menu-tiles" role="group">
                         {entries.map(({ label, icon, iconClass, isEnabled, isOn, run, children }, tileIndex) => (children
                             ? (
                                 <FormDropdownSubmenu key={tileIndex} tile icon={iconClass} iconSvg={icon} title={label} disabled={!isEnabled}>

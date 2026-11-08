@@ -23,8 +23,8 @@ import {
     parseTabAlignment, TABS_WIDGET_PROPERTY
 } from "./constants.js";
 import {
-    AssignTabReferenceCommand, InsertTabCommand, InsertTabsCommand, MoveTabCommand,
-    MoveToTabCommand, RemoveTabCommand, TabAlignmentCommand
+    AssignTabReferenceCommand, DeleteTabsCommand, InsertTabCommand, InsertTabsCommand,
+    MoveTabCommand, MoveToTabCommand, RemoveTabCommand, TabAlignmentCommand
 } from "./tabs_commands.js";
 import TabsTitleBar from "./tabs_title_bar.js";
 
@@ -56,6 +56,7 @@ export default class TabsEditing extends Plugin {
         editor.commands.add("tabs", new InsertTabsCommand(editor));
         editor.commands.add("insertTab", new InsertTabCommand(editor));
         editor.commands.add("removeTab", new RemoveTabCommand(editor));
+        editor.commands.add("deleteTabs", new DeleteTabsCommand(editor));
         editor.commands.add("moveTabLeft", new MoveTabCommand(editor, "previous"));
         editor.commands.add("moveTabRight", new MoveTabCommand(editor, "next"));
         editor.commands.add("moveTab", new MoveTabCommand(editor));
@@ -361,7 +362,6 @@ export default class TabsEditing extends Plugin {
                 for (const tab of tabs.getChildren() as IterableIterator<ModelElement>) {
                     const view = editing.mapper.toViewElement(tab);
                     const title = editing.mapper.toViewElement(tab.getChild(0) as ModelElement);
-                    /* v8 ignore next 3 -- only a tab outside the document, which no caller passes, has no view */
                     if (!view || !title) {
                         continue;
                     }

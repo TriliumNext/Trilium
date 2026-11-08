@@ -20,7 +20,7 @@ runs:
     # pin (see customManagers in renovate.json).
     - name: Install Wrangler
       shell: bash
-      run: npm install -g wrangler@4.156.0
+      run: npm install -g wrangler@4.158.0
 
     # Deploy using Wrangler (use pre-installed wrangler)
     - name: Deploy to Cloudflare Pages
@@ -29,5 +29,5 @@ runs:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
         # On release events github.ref_name is the tag (e.g. v0.103.0), so force the production branch.
-        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=${{ github.event_name == 'release' && 'main' || github.ref_name }}
+        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=${{ github.event_name == 'release' && 'stable' || github.ref_name }}
         wranglerVersion: ''  # Use pre-installed version

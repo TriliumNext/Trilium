@@ -11,7 +11,7 @@
 /* Zero specificity, so that a theme's :root wins although themes load before this file. */
 :where(:root) {
     /* Adaptive font color limits */
-    --adaptive-text-light-max-lightness: 40;
+    --adaptive-text-light-max-lightness: 45;
     --adaptive-text-light-max-chroma: 150;
     --adaptive-text-dark-min-lightness: 75;
     --adaptive-text-dark-max-chroma: 55;

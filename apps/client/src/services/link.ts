@@ -560,14 +560,6 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     evt?.preventDefault();
     evt?.stopPropagation();
 
-    if (hrefLink && hrefLink.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
-        if (handleAnchor(hrefLink, $link)) {
-            return true;
-        }
-    }
-
-    const { notePath, noteId, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
-
     const ctrlKey = evt && utils.isCtrlKey(evt);
     const shiftKey = evt?.shiftKey;
     const isLeftClick = !evt || ("which" in evt && evt.which === 1);
@@ -577,20 +569,37 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     const isLinkToolbarPreview = !!$link?.hasClass("ck-link-toolbar__preview");
     const targetIsBlank = $link?.attr("target") === "_blank" && !isLinkToolbarPreview;
     const isDoubleClick = isLeftClick && evt?.type === "dblclick";
-    const openInNewTab = (isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick;
+    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
+    const isInEditor = !!$link && isInEditableText($link);
+    // In the text being edited, these follow the link as the first button of its toolbar does.
+    const isFollowClick = isInEditor && isLeftClick && !shiftKey && (ctrlKey || isDoubleClick);
+    const openInNewTab = !isFollowClick
+        && ((isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick);
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
-    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
+
+    if (hrefLink?.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
+        // The link toolbar jumps to the anchor, and a footnote shows no toolbar.
+        if (isPlainLeftClick && isInEditor
+            && !$link.closest(".footnote-reference, .footnote-back-link").length) {
+            return true;
+        }
+        if (handleAnchor(hrefLink, $link)) {
+            return true;
+        }
+    }
+
+    const { notePath, noteId, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
 
     if (notePath) {
-        if (isPlainLeftClick && $link && isInEditableText($link)) {
+        if (isPlainLeftClick && isInEditor) {
             // The text editor shows the link toolbar, whose preview button opens the note.
             return true;
         }
 
         // A link to blocks of the note it is in acts as a link within a page.
-        if (isPlainLeftClick && !openInPopup && !targetIsBlank && $link && viewScope?.block
-            && showBlocksInPlace($link, noteId, viewScope.block)) {
+        if ((isPlainLeftClick || isFollowClick) && !openInPopup && !targetIsBlank && $link
+            && viewScope?.block && showBlocksInPlace($link, noteId, viewScope.block)) {
             return true;
         }
 
@@ -608,9 +617,11 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
             openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
-        const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
+        const isInEditedContent = isInEditor
+            || $link?.closest("[contenteditable]").attr("contenteditable") === "true";
 
-        if (openInNewTab || openInNewWindow || (isLeftClick && (isLinkToolbarPreview || outsideOfCKEditor))) {
+        if (openInNewTab || openInNewWindow || isFollowClick
+            || (isLeftClick && (isLinkToolbarPreview || !isInEditedContent))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
             } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
@@ -642,9 +653,21 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     return true;
 }
 
-/** Whether `$link` is in the content of an editable text note, rather than in an embed in it. */
+/**
+ * Whether `$link` belongs to a text note being edited, in its text or in one of its widgets,
+ * rather than to the read-only content of an embed in it.
+ */
 function isInEditableText($link: JQuery<HTMLElement>) {
-    return $link.closest(".ck-content").hasClass("note-detail-editable-text-editor");
+    return $link.closest(".note-detail-editable-text-editor, .include-note-content")
+        .hasClass("note-detail-editable-text-editor");
+}
+
+/**
+ * Marks the document while Ctrl, or Cmd on macOS, is held: a click with it follows a link in the
+ * text being edited, and `EditableText.css` shows a pointer over the link.
+ */
+function setFollowLinkKeyHeld(isHeld: boolean) {
+    document.documentElement.classList.toggle("follow-link-key-held", isHeld);
 }
 
 /**
@@ -672,20 +695,43 @@ function handleAnchor(hrefLink: string, $link: JQuery<HTMLElement>) {
  * content of that note that holds them. Returns whether it does.
  */
 function showBlocksInPlace($link: JQuery<HTMLElement>, noteId: string | null, block: string) {
+    const jump = getBlockJump($link, noteId, block);
+    jump?.show();
+    return !!jump;
+}
+
+/** A jump to blocks of the note a link is in, which stays in that note. */
+export interface BlockJump {
+    /** Whether the blocks are a single heading. */
+    isHeading: boolean;
+    /** Scrolls to the blocks and flashes them. */
+    show(): void;
+}
+
+/**
+ * The jump to the blocks `block` of the note `noteId`, when `$link` is in the content of that note
+ * that holds them, or `null`.
+ */
+function getBlockJump(
+    $link: JQuery<HTMLElement>, noteId: string | null, block: string
+): BlockJump | null {
     const content = $link.closest(".ck-content")[0];
     const ntxId = $link.closest("[data-ntx-id]").attr("data-ntx-id");
     if (!content || !ntxId || appContext.tabManager.getNoteContextById(ntxId).noteId !== noteId) {
-        return false;
+        return null;
     }
 
     // A broken range is left to the note context, which also shows the error.
-    const { start, end } = resolveBlockReference(content, block);
+    const { start, end } = resolveBlockReference<Element>(content, block);
     if (!start || !end) {
-        return false;
+        return null;
     }
 
-    void loadBlockJump().then(({ showBlockReference }) => showBlockReference(content, block));
-    return true;
+    return {
+        isHeading: start === end && /^H[1-6]$/.test(start.tagName),
+        show: () => void loadBlockJump()
+            .then(({ showBlockReference }) => showBlockReference(content, block))
+    };
 }
 
 /** Whether something before `goToLinkExt()` already took the default action of `evt`. */
@@ -715,6 +761,11 @@ function linkContextMenu(e: PointerEvent) {
     if (utils.isCtrlKey(e) && e.button === 2) {
         appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath, viewScope });
         e.preventDefault();
+        return;
+    }
+
+    // The text editor opens the menu of the link toolbar for a link in the text being edited.
+    if (isInEditableText($link) && !$link.closest(".include-note").length) {
         return;
     }
 
@@ -928,6 +979,12 @@ if (glob.device !== "print" && !isShare) {
     //@ts-ignore
     $(document).on("dblclick", "a", goToLink);
 
+    // Captured at the window, before any widget can stop the key on its way to the editor.
+    for (const type of [ "keydown", "keyup" ] as const) {
+        window.addEventListener(type, (e) => setFollowLinkKeyHeld(!!utils.isCtrlKey(e)), true);
+    }
+    window.addEventListener("blur", () => setFollowLinkKeyHeld(false));
+
     $(document).on("mousedown", "a", (e) => {
         if (e.which === 2) {
             // prevent paste on middle click
@@ -949,5 +1006,6 @@ export default {
     getReferenceLinkTitleSync,
     calculateHash,
     calculateExtraWindowUrl,
+    getBlockJump,
     parseNavigationStateFromUrl
 };

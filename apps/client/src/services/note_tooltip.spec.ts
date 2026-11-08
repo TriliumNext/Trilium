@@ -10,6 +10,7 @@ const {
     getNoteTitleWithPathAsSuffix,
     getActiveContext,
     revealHighlightedBlocks,
+    getBlockJump,
     t
 } = vi.hoisted(() => ({
     parseNavigationStateFromUrl: vi.fn(),
@@ -18,11 +19,12 @@ const {
     getNoteTitleWithPathAsSuffix: vi.fn(),
     getActiveContext: vi.fn(),
     revealHighlightedBlocks: vi.fn(),
+    getBlockJump: vi.fn(),
     t: vi.fn((key: string) => key)
 }));
 
 vi.mock("./link.js", () => ({
-    default: { parseNavigationStateFromUrl }
+    default: { parseNavigationStateFromUrl, getBlockJump }
 }));
 
 vi.mock("./attribute_renderer.js", () => ({
@@ -100,6 +102,7 @@ beforeEach(() => {
     getRenderedContent.mockResolvedValue({ $renderedContent: $("<div class='content'>body</div>") });
     getNoteTitleWithPathAsSuffix.mockResolvedValue($("<span class='note-title-with-path'>Title</span>"));
     getActiveContext.mockReturnValue({ hoistedNoteId: "root" });
+    getBlockJump.mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -304,6 +307,20 @@ describe("renderTooltip", () => {
         // Attributes and content are still rendered.
         expect(html).toContain('class="note-tooltip-attributes"');
         expect(html).toContain("body");
+    });
+
+    it("offers a jump in place of quick edit for blocks of the note the link is in", async () => {
+        const note = fakeNote({ noteId: "n1", bestPath: "root/n1" });
+        const buttonsFor = async (isHeading: boolean) => $(`<div>${await renderTooltip(
+            note, undefined, "b 1:b2", { isHeading, show: vi.fn() })}</div>`).find(".open-popup-button");
+
+        const $heading = await buttonsFor(true);
+        expect($heading).toHaveLength(1);
+        expect($heading.hasClass("jump-to-blocks-button")).toBe(true);
+        expect($heading.attr("title")).toBe("note_tooltip.jump-to-heading");
+        expect($heading.attr("href")).toBe("#n1?block=b%201:b2");
+        expect($heading.children("span").attr("class")).toBe("bx bx-up-arrow");
+        expect((await buttonsFor(false)).attr("title")).toBe("note_tooltip.jump-to-block");
     });
 
     it("renders an attachment under its note's path, without the note's attributes", async () => {
@@ -731,6 +748,45 @@ describe("mouseEnterHandler", () => {
         const tooltipContent = $tooltip.find(".note-tooltip-content")[0];
         expect(tooltipContent).toBeDefined();
         expect(revealHighlightedBlocks).toHaveBeenCalledWith(tooltipContent);
+        $tooltip.remove();
+    });
+
+    it("jumps to blocks of the note a link is in from the button of its preview", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a href="#root/abc?block=b1">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({
+            notePath: "root/abc",
+            noteId: "abc",
+            viewScope: { viewMode: "default", block: "b1" }
+        });
+        froca.getNote = vi.fn(async () => fakeNote({ noteId: "abc", bestPath: "root/abc" })) as any;
+        const jump = { isHeading: true, show: vi.fn() };
+        getBlockJump.mockReturnValue(jump);
+        hoverActive = true;
+        const $tooltip = $("<div>");
+        ($.fn as any).tooltip = vi.fn(function (this: unknown, arg: unknown) {
+            if (arg && typeof arg === "object" && "title" in arg) {
+                $tooltip.html(String(arg.title));
+            } else if (arg === "show") {
+                $("body").append($tooltip.addClass(String($link.attr("data-link-id"))));
+            }
+            return this;
+        });
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(getBlockJump).toHaveBeenCalledExactlyOnceWith(expect.anything(), "abc", "b1");
+        expect(getBlockJump.mock.calls[0][0][0]).toBe($link[0]);
+        const $button = $tooltip.find(".jump-to-blocks-button");
+        expect($button.attr("title")).toBe("note_tooltip.jump-to-heading");
+        // The jump stays in the note, so the click goes no further than the button.
+        const click = $.Event("click");
+        $button.trigger(click);
+        expect(jump.show).toHaveBeenCalledOnce();
+        expect(click.isDefaultPrevented()).toBe(true);
+        expect(click.isPropagationStopped()).toBe(true);
         $tooltip.remove();
     });
 });

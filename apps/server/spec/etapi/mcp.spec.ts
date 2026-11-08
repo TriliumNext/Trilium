@@ -225,5 +225,37 @@ describe("mcp", () => {
             expect(parsed.noteId).toBe(noteId);
             expect(parsed.content).toContain("MCP test note content");
         });
+
+        it("records the links in the content it writes", async () => {
+            async function callTool(name: string, args: Record<string, unknown>) {
+                const response = await mcpPost(app)
+                    .send(jsonRpc("tools/call", { name, arguments: args }))
+                    .expect(200);
+                return JSON.parse(parseSseResponse(response.text).result.content[0].text);
+            }
+            const linkTargets = (id: string) =>
+                becca.getNote(id)?.getRelations("internalLink").map(relation => relation.value);
+
+            const { noteId: textNoteId } = await callTool("create_note", {
+                parentNoteId: "root", title: "MCP link source", type: "text",
+                content: `See [the test note](#root/${noteId}).`
+            });
+            expect(linkTargets(textNoteId)).toEqual([ noteId ]);
+
+            await callTool("set_note_content", { noteId: textNoteId, content: "No links any more." });
+            expect(linkTargets(textNoteId)).toEqual([]);
+
+            await callTool("append_to_note", { noteId: textNoteId, content: `Back to [it](#root/${noteId}).` });
+            expect(linkTargets(textNoteId)).toEqual([ noteId ]);
+
+            const { noteId: markdownNoteId } = await callTool("create_note", {
+                parentNoteId: "root", title: "MCP Markdown link source", type: "code", mime: "text/x-markdown",
+                content: "No links yet."
+            });
+            await callTool("edit_note_content", {
+                noteId: markdownNoteId, edits: [ { oldText: "No links yet.", newText: `See [it](#root/${noteId}).` } ]
+            });
+            expect(linkTargets(markdownNoteId)).toEqual([ noteId ]);
+        });
     });
 });

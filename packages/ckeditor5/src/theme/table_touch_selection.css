@@ -1,5 +1,6 @@
 :where(:root) {
-    --ck-table-touch-selection-color: var(--ck-color-focus-border);
+    --ck-table-touch-selection-color:
+        var(--input-focus-outline-color, var(--ck-color-focus-border));
     --ck-table-touch-selection-handle-background:
         var(--main-background-color, var(--ck-color-base-background));
 

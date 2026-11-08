@@ -368,6 +368,25 @@ describe("UploadimagePlugin", () => {
             });
         });
 
+        it("hands the file over without headers when the host has none to add", async () => {
+            const url = "api/attachments/att1/image/pic.png";
+            answerWith(JSON.stringify({ uploaded: true, url }));
+            const plugins = [Essentials, Paragraph, FileRepository, UploadimagePlugin];
+            const headerless = await createTestEditor(plugins, {
+                getNoteId: () => "noteAbc",
+                attachmentUpload: { getLocalUpload: () => localUpload }
+            });
+            const file = new File(["content"], "pic.png", { type: "image/png" });
+            const adapter = headerless.plugins.get(FileRepository)
+                .createUploadAdapter?.(createFakeLoader(file));
+
+            await expect(adapter?.upload()).resolves.toEqual({ default: url });
+            expect(localUpload).toHaveBeenCalledExactlyOnceWith(
+                "api/notes/noteAbc/attachments/upload",
+                { method: "POST", headers: {}, fields: {}, file }
+            );
+        });
+
         it("reports a failed upload as the request path does", async () => {
             const file = new File(["content"], "pic.png", { type: "image/png" });
 

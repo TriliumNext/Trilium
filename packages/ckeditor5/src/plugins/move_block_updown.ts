@@ -190,7 +190,7 @@ abstract class MoveBlockUpDownCommand extends Command {
 			// Move blocks
 			for (const block of movingBlocks) {
 				const sibling = this.getSibling(block);
-				/* v8 ignore next 1 -- isEnabled already ensures every block has a sibling; null path is unreachable */
+				/* v8 ignore else -- isEnabled already ensures every block has a sibling */
 				if (sibling) {
 					const range = model.createRangeOn(block);
 					writer.move(range, sibling, this.offset);

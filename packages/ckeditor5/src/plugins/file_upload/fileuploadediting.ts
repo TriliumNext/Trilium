@@ -91,7 +91,6 @@ export default class FileUploadEditing extends Plugin {
 			for ( const entry of changes ) {
 				if ( entry.type == 'insert' ) {
 					const item = entry.position.nodeAfter;
-					/* v8 ignore next -- defensive: an "insert" differ change always reports the inserted node as position.nodeAfter, so `item` is never null here (the falsy branch is unreachable from any model operation). */
 					if ( item ) {
 						const isInGraveyard = entry.position.root.rootName == '$graveyard';
 						for ( const file of getUploadPlaceholders( editor, item ) ) {

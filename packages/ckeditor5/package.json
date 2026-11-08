@@ -9,8 +9,8 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@vitest/browser": "5.0.5",
-    "vitest": "5.0.5"
+    "@vitest/browser": "5.1.0",
+    "vitest": "5.1.0"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",

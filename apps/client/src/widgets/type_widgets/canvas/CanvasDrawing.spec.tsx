@@ -13,7 +13,7 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import { getContentEmbedTools } from "../text/content_embed_tools";
+import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 
 interface Box {
     x: number;
@@ -23,18 +23,25 @@ interface Box {
 }
 
 vi.mock("@excalidraw/excalidraw", () => ({
+    CaptureUpdateAction: { NEVER: "never", EVENTUALLY: "eventually" },
     exportToSvg: vi.fn(),
     getCommonBounds: (elements: Box[]) => [
         Math.min(...elements.map(({ x }) => x)),
         Math.min(...elements.map(({ y }) => y)),
         Math.max(...elements.map(({ x, width }) => x + width)),
         Math.max(...elements.map(({ y, height }) => y + height))
-    ]
+    ],
+    // One line, 10 pixels for each character, from the index of the match.
+    getMatchedLines: (_element: unknown, query: string, index: number) => [
+        { offsetX: index * 10, offsetY: 0, width: query.length * 10, height: 20 }
+    ],
+    getSceneVersion: (elements: readonly { version?: number }[]) =>
+        elements.reduce((sum, { version }) => sum + (version ?? 0), 0)
 }));
-// happy-dom lays nothing out: every picture of a drawing has a box of 400 × 200.
+// happy-dom lays nothing out: every element measures `measured`, 400 × 200 unless a test sets it.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../react/hooks")>(),
-    useElementSize: () => ({ width: 400, height: 200 })
+    useElementSize: () => measured.size
 }));
 vi.mock("./Canvas", () => ({ CanvasEditor: MockCanvasEditor }));
 vi.mock("./persistence", () => ({
@@ -44,20 +51,29 @@ vi.mock("./persistence", () => ({
     },
     parseContent: (content: string) => JSON.parse(content),
     loadDrawingFiles: async () => ({ files: {}, referencedFileIds: new Set() }),
-    exportDrawingPicture
+    exportDrawingPicture,
+    saveDrawingFrame
 }));
-const { detailEditor, exportDrawingPicture } = vi.hoisted(() => ({
+const { detailEditor, exportDrawingPicture, measured, saveDrawingFrame } = vi.hoisted(() => ({
     detailEditor: { canEdit: () => true, release: vi.fn() },
     exportDrawingPicture: vi.fn(async (_scene: unknown, _files: unknown, _isDark: boolean) =>
-        document.createElementNS("http://www.w3.org/2000/svg", "svg"))
+        document.createElementNS("http://www.w3.org/2000/svg", "svg")),
+    measured: { size: { width: 400, height: 200 } },
+    saveDrawingFrame: vi.fn()
 }));
 vi.mock("../text/attachment_saves", () => ({
     useAttachmentEditor: () => detailEditor
 }));
 
+const SELECTION_TOOL = {
+    type: "selection", customType: null, locked: false, lastActiveTool: null
+} as const;
 const canvasEditorProps = vi.fn();
 const persistenceArgs = vi.fn();
-const canvasApi = { scrollToContent: vi.fn() };
+const canvasApi = {
+    getSceneElements: () => [],
+    getAppState: () => ({ activeTool: SELECTION_TOOL })
+};
 
 interface MockCanvasEditorProps {
     apiRef?: RefObject<unknown>;
@@ -70,7 +86,15 @@ interface MockCanvasEditorProps {
 /** The options that `LiveDrawing` gives its persistence. */
 interface PersistenceOptions {
     initialView?: unknown;
+    initialTool?: unknown;
+    isFrameBox?: boolean;
+    frame?: unknown;
+    isResizing?: () => boolean;
+    canReframe?: () => boolean;
     onSceneShown?: () => void;
+    onViewReady?: () => void;
+    onViewChange?: (view: unknown) => void;
+    onFrameChange?: (frame: unknown) => void;
 }
 
 /** Renders Excalidraw's focusable container after a render, as once its language loads. */
@@ -94,10 +118,11 @@ globalThis.ResizeObserver = class {
 
 const {
     default: CanvasDrawing, CanvasDrawingDetail, renderCanvasDrawingPicture, useIsToolbarOverPanel,
-    useNoteScrollingWheel, useSidePanels, useTopLayerContextMenu
+    useNoteScrollingWheel, usePropertiesSheet, useSidePanels, useTopLayerContextMenu
 } = await import("./CanvasDrawing");
 const { default: CanvasDrawingMenu } = await import("./CanvasDrawingMenu");
-const { default: CanvasEmbedTools } = await import("./CanvasEmbedTools");
+const { default: CanvasEmbedTools, NO_TOOL } = await import("./CanvasEmbedTools");
+const { MATCH_COLORS } = await import("./drawing_find");
 const { getBoundedView } = await import("./drawing_view");
 
 /** Horizontal edges by class name; happy-dom computes no layout. */
@@ -171,9 +196,10 @@ describe("useSidePanels", () => {
     let container: HTMLElement;
     let showPopover: ReturnType<typeof vi.fn>;
 
-    function SidePanelProbe({ isEnabled, hasLibrary }: {
+    function SidePanelProbe({ isEnabled, hasLibrary, hasPicker = false }: {
         isEnabled: boolean;
         hasLibrary: boolean;
+        hasPicker?: boolean;
     }) {
         const rootRef = useRef<HTMLDivElement>(null);
         useSidePanels(rootRef, isEnabled);
@@ -184,6 +210,9 @@ describe("useSidePanels", () => {
                         <div ref={rootRef} className="drawing">
                             {hasLibrary && <div className="Island sidebar default-sidebar" />}
                             <div className="App-menu__left" />
+                            {hasPicker && (
+                                <div className="picker" data-radix-popper-content-wrapper="" />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -439,6 +468,32 @@ describe("useSidePanels", () => {
         expect(getPlacement(panel)).toBe(false);
     });
 
+    it("raises the pickers that the panel opens above it, and puts them back with it", async () => {
+        const { viewport, panel } = await mount(300);
+        await act(async () => {
+            render(<SidePanelProbe isEnabled hasLibrary={false} hasPicker />, container);
+            await Promise.resolve();
+        });
+        const picker = container.querySelector<HTMLElement>(".picker");
+        expect(picker?.getAttribute("popover")).toBe("manual");
+        expect(showPopover.mock.contexts).toEqual([ panel, picker ]);
+
+        rects.drawing = { left: 100, top: 200, right: 1100, bottom: 520 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(getPlacement(panel)).toBe(false);
+        expect(picker?.hasAttribute("popover")).toBe(false);
+
+        rects.drawing = { left: 340, top: 200, right: 840, bottom: 520 };
+        viewport.dispatchEvent(new Event("scroll"));
+        expect(showPopover.mock.contexts).toEqual([ panel, picker, panel, picker ]);
+
+        await act(async () => {
+            render(<SidePanelProbe isEnabled={false} hasLibrary={false} hasPicker />, container);
+        });
+        expect(getPlacement(panel)).toBe(false);
+        expect(picker?.hasAttribute("popover")).toBe(false);
+    });
+
     it("keeps the panel in the drawing without the focus or in fullscreen", async () => {
         const { body, panel } = await mount(300);
 
@@ -454,6 +509,178 @@ describe("useSidePanels", () => {
         });
         document.dispatchEvent(new Event("fullscreenchange"));
         expect(getPlacement(panel)).toBe(false);
+    });
+});
+
+describe("usePropertiesSheet", () => {
+    /** Boxes by class name, in pixels; happy-dom computes no layout. */
+    const rects: Record<string, { left: number; top: number; right: number; bottom: number }> = {};
+    let container: HTMLElement;
+    /** The elements that went into the top layer, in order. */
+    let raised: HTMLElement[];
+
+    interface SheetProbeProps {
+        isOpen: boolean;
+        hasPicker?: boolean;
+    }
+
+    /** A drawing in the phone layout, in a note above the formatting toolbar. */
+    function SheetProbe({ isOpen, hasPicker }: SheetProbeProps) {
+        const rootRef = useRef<HTMLDivElement>(null);
+        // `CanvasDrawing` runs both hooks on a phone.
+        useSidePanels(rootRef, true);
+        usePropertiesSheet(rootRef, true);
+        return (
+            <div className="note-split">
+                <div className="scrolling-container">
+                    <div className="include-note-body active">
+                        <div ref={rootRef} className="drawing">
+                            <div className="App-bottom-bar">
+                                <div className="Island">
+                                    {isOpen && <section className="App-mobile-menu" />}
+                                    <footer className="App-toolbar" />
+                                </div>
+                            </div>
+                            {hasPicker && (
+                                <div className="picker" data-radix-popper-content-wrapper="" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <div className="classic-toolbar-outer-container visible">
+                    <div className="classic-toolbar-island" />
+                </div>
+            </div>
+        );
+    }
+
+    beforeEach(() => {
+        // A phone of 400 × 900, whose note area spans from 100 to 800, above a toolbar from 740.
+        Object.defineProperties(document.documentElement, {
+            clientWidth: { value: 400, configurable: true },
+            clientHeight: { value: 900, configurable: true }
+        });
+        rects["scrolling-container"] = { left: 0, top: 100, right: 400, bottom: 800 };
+        rects["classic-toolbar-island"] = { left: 6, top: 740, right: 394, bottom: 786 };
+        rects.Island = { left: 6, top: 500, right: 394, bottom: 734 };
+        rects.drawing = { left: 0, top: 200, right: 400, bottom: 400 };
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockImplementation(function (this: HTMLElement) {
+                const { left, top, right, bottom } = rects[this.classList[0]] ?? rects.drawing;
+                const size = { width: right - left, height: bottom - top };
+                return { left, top, right, bottom, ...size } as DOMRect;
+            });
+        vi.spyOn(window, "getComputedStyle").mockReturnValue({
+            fontSize: "16px",
+            getPropertyValue: (name: string) => name === "--mobile-toolbar-gap" ? "6px" : ""
+        } as CSSStyleDeclaration);
+        // happy-dom has no Popover API.
+        raised = [];
+        Object.defineProperty(HTMLElement.prototype, "showPopover", {
+            value(this: HTMLElement) {
+                raised.push(this);
+            },
+            configurable: true
+        });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        render(null, container);
+        container.remove();
+        vi.restoreAllMocks();
+        Reflect.deleteProperty(HTMLElement.prototype, "showPopover");
+        Reflect.deleteProperty(document.documentElement, "clientWidth");
+        Reflect.deleteProperty(document.documentElement, "clientHeight");
+    });
+
+    async function show(props: SheetProbeProps) {
+        await act(async () => render(<SheetProbe {...props} />, container));
+        const viewport = element(".scrolling-container");
+        if (viewport) {
+            Object.defineProperties(viewport, {
+                clientWidth: { value: 400, configurable: true },
+                clientHeight: { value: 700, configurable: true }
+            });
+        }
+        // Places the sheet again, with the size of the note.
+        await scrollNote();
+    }
+
+    const element = (selector: string) => container.querySelector<HTMLElement>(selector);
+
+    async function scrollNote() {
+        await act(async () => {
+            element(".scrolling-container")?.dispatchEvent(new Event("scroll"));
+        });
+    }
+
+    /** Where the sheet is, or `false` while the island is in the drawing. */
+    function getSheet() {
+        const island = element(".Island");
+        const isPlaced = !!island?.hasAttribute("data-properties-sheet");
+        expect(island?.getAttribute("popover") ?? null).toBe(isPlaced ? "manual" : null);
+        return isPlaced && [ "left", "width", "bottom", "max-height" ]
+            .map((name) => island?.style.getPropertyValue(`--properties-sheet-${name}`));
+    }
+
+    const getRailInset = () =>
+        document.body.style.getPropertyValue("--canvas-drawing-sheet-inset");
+
+    it("shows the open properties above the note's bottom, or above the toolbar", async () => {
+        await show({ isOpen: false });
+        expect(getSheet()).toBe(false);
+        expect(getRailInset()).toBe("");
+
+        // Inside the 6px gap of the toolbar, and at most half of the note above it.
+        await show({ isOpen: true });
+        expect(getSheet()).toEqual([ "6px", "388px", "106px", "347px" ]);
+        // The rail keeps above the top of the sheet, 400px above the bottom of the window.
+        expect(getRailInset()).toBe("400px");
+
+        await act(async () => element(".classic-toolbar-outer-container")?.classList.add("active"));
+        expect(getSheet()).toEqual([ "6px", "388px", "166px", "317px" ]);
+
+        await show({ isOpen: false });
+        expect(getSheet()).toBe(false);
+        expect(getRailInset()).toBe("");
+    });
+
+    it("raises the pickers above the sheet, and puts both back without the focus", async () => {
+        await show({ isOpen: true, hasPicker: true });
+        expect(raised).toEqual([ element(".Island"), element(".picker") ]);
+        expect(element(".picker")?.getAttribute("popover")).toBe("manual");
+
+        await act(async () => element(".include-note-body")?.classList.remove("active"));
+        expect(getSheet()).toBe(false);
+        expect(element(".picker")?.hasAttribute("popover")).toBe(false);
+        expect(getRailInset()).toBe("");
+
+        await act(async () => element(".include-note-body")?.classList.add("active"));
+        expect(getSheet()).not.toBe(false);
+        rects.drawing = { left: 0, top: -300, right: 400, bottom: 90 };
+        await scrollNote();
+        expect(getSheet()).toBe(false);
+
+        rects.drawing = { left: 0, top: 200, right: 400, bottom: 400 };
+        await scrollNote();
+        expect(getSheet()).not.toBe(false);
+        await act(async () => render(null, container));
+        expect(getRailInset()).toBe("");
+    });
+
+    it("keeps the pickers above the sheet while the note scrolls and after", async () => {
+        await show({ isOpen: true, hasPicker: true });
+        const picker = element(".picker");
+        await scrollNote();
+        expect(raised).toEqual([ element(".Island"), picker ]);
+
+        await act(async () => {
+            element(".scrolling-container")?.dispatchEvent(new Event("scrollend"));
+        });
+        expect(getSheet()).not.toBe(false);
+        expect(picker?.getAttribute("popover")).toBe("manual");
     });
 });
 
@@ -768,14 +995,16 @@ describe("CanvasDrawing", () => {
 
         // Excalidraw stays, read-only, until the picture of the drawing shows at the same view.
         const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
-        // Excalidraw counts as drawn on the frame after it shows the scene.
+        // Excalidraw counts as drawn on the frame after it shows the view of the box.
+        const root = box.querySelector(".canvas-drawing-editor");
+        expect(root?.hasAttribute("data-view-pending")).toBe(true);
         await act(async () => {
             options.onSceneShown?.();
+            options.onViewReady?.();
             await new Promise(requestAnimationFrame);
         });
-        const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
-            .persistence ?? {};
-        onChange?.([], { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }, {});
+        expect(root?.hasAttribute("data-view-pending")).toBe(false);
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: 10, scrollY: 20 });
         await setEmbedEditable(embed, false);
         expect(getEditingState().isReadOnly).toBe(true);
         expect(getPicture()).not.toBeNull();
@@ -790,7 +1019,10 @@ describe("CanvasDrawing", () => {
         expect(getPicture()).not.toBeNull();
         const reopened = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
         expect(reopened.initialView).toEqual({ zoom: { value: 2 }, scrollX: 10, scrollY: 20 });
-        await act(async () => reopened.onSceneShown?.());
+        await act(async () => {
+            reopened.onSceneShown?.();
+            reopened.onViewReady?.();
+        });
         await vi.waitFor(() => expect(getPicture()).toBeNull());
 
         // An attachment that the note cannot save shows as a picture, with no toggle to offer.
@@ -847,26 +1079,395 @@ describe("CanvasDrawing", () => {
         await mount(null);
         await vi.waitFor(() => expect(box.querySelector<SVGElement>(".canvas-drawing-view > svg")
             ?.style.left).toBe("600px"));
+
+        // A frame places the picture, over the camera saved beside it.
+        render(null, box);
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        await mount(null);
+        await vi.waitFor(() => expect(box.querySelector<SVGElement>(".canvas-drawing-view > svg")
+            ?.style.left).toBe("120px"));
     });
 
-    it("centers the picture once fullscreen changes its size, as Excalidraw does", async () => {
+    /** Puts `box` in an embed that the user can resize, with the box size `boxSize`. */
+    function embedBox(boxSize = "resizable") {
+        const embed = document.createElement("figure");
+        embed.className = "include-note";
+        embed.setAttribute("data-editable", "true");
+        embed.setAttribute("data-box-size", boxSize);
+        embed.append(box);
+        document.body.append(embed);
+        onTestFinished(() => {
+            embed.remove();
+            measured.size = { width: 400, height: 200 };
+        });
+        return embed;
+    }
+
+    /** Sets or removes the class that marks the embed while the user drags its resize handle. */
+    async function setEmbedResizing(embed: HTMLElement, isResizing: boolean) {
+        await act(async () => {
+            embed.classList.toggle("ck-widget_resizing", isResizing);
+            await Promise.resolve();
+        });
+    }
+
+    /** Waits for the frames in which the box takes its new size and is measured, rendering each. */
+    async function waitForLayout() {
+        for (let i = 0; i < 4; i++) {
+            await new Promise(requestAnimationFrame);
+            await act(async () => {});
+        }
+    }
+
+    /** Reports `frame` to the drawing as its persistence does, and waits for the box to take it. */
+    async function reportFrame(options: PersistenceOptions, frame: object) {
+        await act(async () => {
+            options.onFrameChange?.(frame);
+            await new Promise(requestAnimationFrame);
+        });
+    }
+
+    it("sizes its box from the frame, else from the embed, also during a resize", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        expect(options.isFrameBox).toBe(true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("");
+
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        await reportFrame(options, frame);
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "1000px", "500px", "2" ]);
+        expect(options.canReframe?.()).toBe(true);
+
+        // Narrower than three quarters of the frame, the box crops it: a move leaves the frame.
+        measured.size = { width: 400, height: 200 };
+        await reportFrame(options, { ...frame });
+        expect(options.canReframe?.()).toBe(false);
+
+        // The embed sizes the box while the user drags its resize handle.
+        await setEmbedResizing(embed, true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        expect(options.isResizing?.()).toBe(true);
+    });
+
+    it("saves the frame again once the box is resized by its handle or its box size", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        const updateScene = vi.fn();
+        if (apiRef) apiRef.current = { ...canvasApi, updateScene };
+        const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            if (apiRef) apiRef.current = null;
+        });
+        saveDrawingFrame.mockClear();
+        await reportFrame(options, { x: 10, y: 20, width: 500, height: 250, scale: 2 });
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+
+        // The handle: the box keeps its new size until the frame is taken from it, at its view.
+        await setEmbedResizing(embed, true);
+        await setEmbedResizing(embed, false);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await waitForLayout();
+        const resized = { x: 10, y: 20, width: 400, height: 200, scale: 2 };
+        expect(saveDrawingFrame).toHaveBeenCalledExactlyOnceWith(ATTACHMENT, EDITOR, resized);
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        expect(updateScene).not.toHaveBeenCalled();
+
+        // The box size: the frame widens around its center at its scale, and the view follows.
+        rect.mockReturnValue({ width: 1200, height: 400 } as DOMRect);
+        await act(async () => {
+            embed.setAttribute("data-box-size", "full");
+            await Promise.resolve();
+        });
+        expect(outer?.className).toBe("canvas-drawing-box reframing");
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenLastCalledWith(ATTACHMENT, EDITOR, {
+            x: -90, y: 20, width: 600, height: 200, scale: 2
+        });
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 2 }, scrollX: 90, scrollY: -20 }, captureUpdate: "never"
+        });
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+    });
+
+    it("saves the frame again once an undo or a reset changes the size of the box", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        await reportFrame(options, { x: 10, y: 20, width: 500, height: 250, scale: 2 });
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+        saveDrawingFrame.mockClear();
+        const setEmbedStyle = (style: string | null) => act(async () => {
+            if (style === null) embed.removeAttribute("style");
+            else embed.setAttribute("style", style);
+            await Promise.resolve();
+        });
+
+        // An undo restores the height of the embed without a drag of its handle.
+        await setEmbedStyle("--include-note-height:20em");
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenCalledExactlyOnceWith(ATTACHMENT, EDITOR, {
+            x: 10, y: 20, width: 400, height: 200, scale: 2
+        });
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+
+        // A double click on the handle removes the size.
+        rect.mockReturnValue({ width: 800, height: 300 } as DOMRect);
+        await setEmbedStyle(null);
+        await waitForLayout();
+        expect(saveDrawingFrame).toHaveBeenLastCalledWith(ATTACHMENT, EDITOR, {
+            x: 10, y: 20, width: 400, height: 150, scale: 2
+        });
+        expect(saveDrawingFrame).toHaveBeenCalledTimes(2);
+    });
+
+    it("widens the frame to a box size that draws the drawing again", async () => {
+        const embed = embedBox();
+        measured.size = { width: 1000, height: 500 };
+        await mount();
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        const frame = { x: 10, y: 20, width: 500, height: 250, scale: 2 };
+        await reportFrame(options, frame);
+        options.onViewChange?.({ zoom: { value: 2 }, scrollX: -10, scrollY: -20 });
+        saveDrawingFrame.mockClear();
+
+        // The box size changes, which the drawing sees, and the embed draws its content again,
+        // in the wider box, before the drawing takes the frame from the box.
+        await act(async () => {
+            embed.setAttribute("data-box-size", "full");
+            await Promise.resolve();
+        });
+        await act(async () => render(null, box));
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 1200, height: 500 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        await mount();
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const reopened = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
+        expect(reopened.initialView).toBeNull();
+
+        // The frame of the drawing before widens to the box, keeping its height.
+        await vi.waitFor(() => expect(saveDrawingFrame).toHaveBeenCalledOnce(), { timeout: 2000 });
+        expect(saveDrawingFrame).toHaveBeenCalledWith(ATTACHMENT, EDITOR, {
+            x: -40, y: 20, width: 600, height: 250, scale: 2
+        });
+        await waitForLayout();
+        expect(outer?.className).toBe("canvas-drawing-box framed");
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "1200px", "500px", "2.4" ]);
+        expect(reopened.isResizing?.()).toBe(false);
+    });
+
+    it("shows the picture gray until it is drawn, and fills its box with the frame", async () => {
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        const parent = new Component();
+        onTestFinished(() => {
+            measured.size = { width: 400, height: 200 };
+        });
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CanvasDrawing attachment={ATTACHMENT} />
+                </ParentComponent.Provider>,
+                box
+            );
+        });
+        const layer = box.querySelector(".canvas-drawing-view");
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        expect(layer?.classList.contains("stale")).toBe(true);
+        expect(outer?.className).toBe("canvas-drawing-box include-note-box-height");
+        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("120px"));
+        expect(layer?.classList.contains("stale")).toBe(false);
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("400px");
+
+        // A save grays the picture until it is drawn again, here in a narrower box.
+        measured.size = { width: 300, height: 150 };
+        const loadResults = new LoadResults([]);
+        loadResults.addAttachmentRow({ attachmentId: "a1" } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        expect(layer?.classList.contains("stale")).toBe(true);
+        await vi.waitFor(() => expect(layer?.classList.contains("stale")).toBe(false));
+        // The 200 units of the frame fill 300 pixels at zoom 1.5: the picture at (50 + 10) × 1.5.
+        expect([ getSvg()?.style.left, getSvg()?.style.width ]).toEqual([ "90px", "300px" ]);
+    });
+
+    it("sizes its box and places the picture by a frame that another view saved", async () => {
+        const elements = [ { x: 50, y: 30, width: 200, height: 100 } ];
+        sceneContent = JSON.stringify({
+            elements, appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 },
+            frame: { x: -10, y: -20, width: 200, height: 100, scale: 2 }
+        });
+        const parent = new Component();
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <CanvasDrawing attachment={ATTACHMENT} />
+                </ParentComponent.Provider>,
+                box
+            );
+        });
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        expect(getSvg()?.style.left).toBe("120px");
+
+        // Another view saves a wider frame: the box takes its size, the picture its place. The
+        // 250 units of the frame fill the 400 pixels of the box at zoom 1.6.
+        sceneContent = JSON.stringify({
+            elements, appState: { zoom: { value: 2 }, scrollX: -30, scrollY: -10 },
+            frame: { x: 30, y: 10, width: 250, height: 100, scale: 2 }
+        });
+        const loadResults = new LoadResults([]);
+        loadResults.addAttachmentRow({ attachmentId: "a1" } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults });
+        });
+        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("32px"));
+        await vi.waitFor(() =>
+            expect(root?.style.getPropertyValue("--canvas-drawing-natural-width")).toBe("500px"));
+        expect(saveDrawingFrame).not.toHaveBeenCalled();
+    });
+
+    it("takes a frame from the view and the box of a drawing that saved none", async () => {
         sceneContent = JSON.stringify({
             elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
             appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }
         });
         await mount(null);
-        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
-        await vi.waitFor(() => expect(getSvg()?.style.left).toBe("120px"));
+        const outer = box.querySelector(".canvas-drawing-box");
+        const root = box.querySelector<HTMLElement>(".canvas-drawing-editor");
+        await vi.waitFor(() => expect(outer?.className).toBe("canvas-drawing-box framed"));
+        const variables = [
+            "--canvas-drawing-natural-width", "--canvas-drawing-natural-height",
+            "--canvas-drawing-frame-ratio"
+        ];
+        expect(variables.map((name) => root?.style.getPropertyValue(name)))
+            .toEqual([ "400px", "200px", "2" ]);
+    });
+
+    it("shows the whole picture in fullscreen, and its view again after", async () => {
+        sceneContent = JSON.stringify({
+            elements: [ { x: 50, y: 30, width: 200, height: 100 } ],
+            appState: { zoom: { value: 2 }, scrollX: 10, scrollY: 20 }
+        });
+        await mount(null);
+        const getPlacement = () => {
+            const svg = box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+            return [ svg?.style.left, svg?.style.top, svg?.style.width ];
+        };
+        await vi.waitFor(() => expect(getPlacement()).toEqual([ "120px", "100px", "400px" ]));
         vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
             .mockReturnValue({ width: 400, height: 200 } as DOMRect);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            Reflect.deleteProperty(document, "fullscreenElement");
+        });
 
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
         await act(async () => {
             box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
         });
+        // Zoomed to fit the 400 × 200 screen, up to 100%: the shapes centered at zoom 1.
+        expect(getPlacement()).toEqual([ "100px", "50px", "200px" ]);
 
-        // The center of the shapes, (150, 80), in the middle of the 400 × 200 box at zoom 2.
-        expect([ getSvg()?.style.left, getSvg()?.style.top ]).toEqual([ "0px", "0px" ]);
+        Reflect.deleteProperty(document, "fullscreenElement");
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        await act(async () => {
+            box.dispatchEvent(new Event("leaveFullscreen", { bubbles: true }));
+        });
+        expect(getPlacement()).toEqual([ "120px", "100px", "400px" ]);
+    });
+
+    it("finds its text, moving the picture to a match out of view and back", async () => {
+        const embed = document.createElement("figure");
+        embed.className = "include-note";
+        embed.append(box);
+        document.body.append(embed);
+        sceneContent = JSON.stringify({
+            elements: [ {
+                id: "text", type: "text", x: 50, y: 500, width: 200, height: 100, angle: 0,
+                version: 1, originalText: "Find me", text: "Find me"
+            } ],
+            appState: { zoom: { value: 1 }, scrollX: 0, scrollY: 0 }
+        });
+        await mount(null);
+        const getSvg = () => box.querySelector<SVGElement>(".canvas-drawing-view > svg");
+        await vi.waitFor(() => expect(getSvg()?.style.top).toBe("500px"));
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ left: 0, top: 0, width: 400, height: 200 } as DOMRect);
+
+        const target = getEmbedFindTarget(embed);
+        expect(target).not.toBeNull();
+        let count = 0;
+        await act(async () => {
+            count = await target?.find("me", { matchCase: false, wholeWord: false }) ?? 0;
+        });
+        expect(count).toBe(1);
+
+        // The match at y = 500 moves to the middle of the 200 pixels of the box.
+        await act(async () => target?.highlight(0));
+        expect(getSvg()?.style.top).toBe("90px");
+        const layer = box.querySelector(".canvas-drawing-find > g");
+        expect(layer?.getAttribute("transform")).toBe("scale(1) translate(0 -410)");
+        const match = layer?.querySelector("rect");
+        expect([ match?.getAttribute("x"), match?.getAttribute("y") ]).toEqual([ "100", "500" ]);
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.current);
+
+        await act(async () => target?.highlight(null));
+        expect(getSvg()?.style.top).toBe("500px");
+        expect(match?.parentElement?.getAttribute("fill")).toBe(MATCH_COLORS.light.other);
         vi.restoreAllMocks();
+        embed.remove();
     });
 
     it("renders the picture again when the drawing saves, and not for other saves", async () => {
@@ -916,41 +1517,162 @@ describe("CanvasDrawing", () => {
         expect(listener).not.toHaveBeenCalled();
     });
 
-    it("centers the drawing after a change of fullscreen, hidden until then", async () => {
+    it("shows the whole drawing in fullscreen, and the view of the box again after", async () => {
         await mount();
         const root = box.querySelector(".canvas-drawing-editor");
         const isHidden = () => !!root?.classList.contains("recentering");
         const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        const options = persistenceArgs.mock.lastCall?.[4] as PersistenceOptions;
         if (!apiRef) {
             throw new Error("Expected the API reference of the editor.");
         }
-        apiRef.current = canvasApi;
-        canvasApi.scrollToContent.mockClear();
+        const updateScene = vi.fn();
+        let appState = { activeTool: SELECTION_TOOL, zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
+        apiRef.current = {
+            ...canvasApi,
+            updateScene,
+            registerAction: vi.fn(),
+            onChange: vi.fn(() => () => {}),
+            getAppState: () => appState,
+            getSceneElements: () => [ { x: 50, y: 30, width: 200, height: 100 } ]
+        };
+        vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockReturnValue({ width: 800, height: 400 } as DOMRect);
         const other = document.createElement("div");
         document.body.append(other);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+            Reflect.deleteProperty(document, "fullscreenElement");
+            apiRef.current = null;
+            other.remove();
+        });
+        const boxView = { zoom: { value: 2 }, scrollX: 10, scrollY: 20 };
+        // Excalidraw shows the drawing at the view of the box.
+        options.onSceneShown?.();
+        options.onViewChange?.(boxView);
 
-        for (const name of [ "enterFullscreen", "leaveFullscreen" ]) {
-            await act(async () => {
-                other.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
-            });
-            expect(isHidden()).toBe(false);
-            await act(async () => {
-                box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
-            });
-            expect(isHidden()).toBe(true);
+        await act(async () => {
+            other.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(isHidden()).toBe(false);
 
-            await act(async () => {
-                box.dispatchEvent(new Event(name, { bubbles: true }));
-                other.dispatchEvent(new Event(name, { bubbles: true }));
-            });
-            // Shown again once Excalidraw drew the centered view, on the next frame.
-            expect(isHidden()).toBe(true);
-            await vi.waitFor(() => expect(isHidden()).toBe(false));
+        // Hidden from the start of the switch until the frame after the new view is drawn.
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(isHidden()).toBe(true);
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        // Zoomed to fit the 800 × 400 screen, up to 100%: the shapes centered at zoom 1.
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: { zoom: { value: 1 }, scrollX: 250, scrollY: 120 }, captureUpdate: "never"
+        });
+        expect(isHidden()).toBe(true);
+        await vi.waitFor(() => expect(isHidden()).toBe(false));
+
+        // The view that the user zooms and pans to in fullscreen is kept for fullscreen alone.
+        appState = { ...appState, zoom: { value: 3 }, scrollX: -5, scrollY: -7 };
+        Reflect.deleteProperty(document, "fullscreenElement");
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+        });
+        expect(updateScene).toHaveBeenLastCalledWith({ appState: boxView, captureUpdate: "never" });
+        expect(isHidden()).toBe(true);
+        await act(async () => {
+            box.dispatchEvent(new Event("leaveFullscreen", { bubbles: true }));
+        });
+        await vi.waitFor(() => expect(isHidden()).toBe(false));
+
+        // Fullscreen opens again at the view it was left at.
+        Object.defineProperty(document, "fullscreenElement", { value: box, configurable: true });
+        await act(async () => {
+            box.dispatchEvent(new Event("fullscreenChangeStart", { bubbles: true }));
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(updateScene).toHaveBeenLastCalledWith({
+            appState: { zoom: { value: 3 }, scrollX: -5, scrollY: -7 }, captureUpdate: "never"
+        });
+    });
+
+    it("leaves the drawing to the note while no tool is active", async () => {
+        await mount();
+        const root = box.querySelector(".canvas-drawing-editor");
+        const { onChange } = (canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps)
+            .persistence ?? {};
+
+        onChange?.([], { activeTool: NO_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(true);
+
+        onChange?.([], { activeTool: SELECTION_TOOL }, {});
+        expect(root?.hasAttribute("data-no-tool")).toBe(false);
+    });
+
+    it("starts with no tool in the mobile layout, back to it as the focus leaves", async () => {
+        const device = window.glob.device;
+        const body = document.createElement("div");
+        body.className = "include-note-body active";
+        body.append(box);
+        document.body.append(body);
+        onTestFinished(() => {
+            window.glob.device = device;
+            body.remove();
+        });
+        const setActiveTool = vi.fn();
+        const api = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool: NO_TOOL }) };
+        const getApiRef = () => {
+            const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+            if (!apiRef) {
+                throw new Error("Expected the API reference of the editor.");
+            }
+            return apiRef;
+        };
+        const getInitialTool = () =>
+            (persistenceArgs.mock.lastCall?.[4] as PersistenceOptions).initialTool;
+
+        window.glob.device = "mobile";
+        await mount();
+        expect(getInitialTool()).toEqual(NO_TOOL);
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledWith(NO_TOOL);
+        await act(async () => body.classList.add("active"));
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).toHaveBeenCalledTimes(2);
+
+        render(null, box);
+        setActiveTool.mockClear();
+        body.classList.add("active");
+        window.glob.device = "desktop";
+        await mount();
+        expect(getInitialTool()).toBeUndefined();
+        getApiRef().current = api;
+        await act(async () => body.classList.remove("active"));
+        expect(setActiveTool).not.toHaveBeenCalled();
+    });
+
+    it("switches from no tool to the selection tool in fullscreen", async () => {
+        await mount();
+        const { apiRef } = canvasEditorProps.mock.lastCall?.[0] as MockCanvasEditorProps;
+        if (!apiRef) {
+            throw new Error("Expected the API reference of the editor.");
         }
-        expect(canvasApi.scrollToContent).toHaveBeenCalledTimes(2);
-        expect(canvasApi.scrollToContent).toHaveBeenCalledWith();
+        const setActiveTool = vi.fn();
+        let activeTool: unknown = NO_TOOL;
+        apiRef.current = { ...canvasApi, setActiveTool, getAppState: () => ({ activeTool }) };
+
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledWith({ type: "selection" });
+
+        activeTool = SELECTION_TOOL;
+        await act(async () => {
+            box.dispatchEvent(new Event("enterFullscreen", { bubbles: true }));
+        });
+        expect(setActiveTool).toHaveBeenCalledTimes(1);
         apiRef.current = null;
-        other.remove();
     });
 
     it("takes the focus that its embed box holds once Excalidraw renders", async () => {

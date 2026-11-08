@@ -139,7 +139,8 @@ describe("TableTouchSelection", () => {
         });
 
         it("hides while the cells are out of view", async () => {
-            await showHandles(editor, GRID);
+            const unsized = modelTable([["a[]", "b"], ["c", "d"]]);
+            await showHandles(editor, unsized);
             const editorElement = editor.ui.element as HTMLElement;
 
             editorElement.style.marginTop = "200vh";
@@ -149,7 +150,7 @@ describe("TableTouchSelection", () => {
 
             editorElement.style.marginTop = "";
             editorElement.style.marginLeft = "-200vw";
-            window.dispatchEvent(new Event("resize"));
+            window.visualViewport?.dispatchEvent(new Event("resize"));
             await frames();
             expect(overlay(editor).isVisible).toBe(false);
 
@@ -482,6 +483,31 @@ describe("TableTouchSelection", () => {
                 expect(scroller.scrollTop).toBe(scrollTop);
             });
 
+        it("stops the auto-scroll when the handles hide while it runs", async () => {
+            const scroller = wrapInScroller(editor, 150);
+            const rows = Array.from({ length: 12 }, (_, row) => [`r${row}`, "x"]);
+            rows[0][0] = "a[]";
+            await showHandles(editor, modelTable(rows));
+            const errors = collectErrors();
+            const handle = handleCenter(editor, BOTTOM_RIGHT);
+            const scrollerRect = scroller.getBoundingClientRect();
+
+            touchStart(handle.x, handle.y);
+            touchMove(handle.x, scrollerRect.top + scroller.clientHeight - 5);
+            await expect.poll(() => scroller.scrollTop).toBeGreaterThan(0);
+            // The next frame of the auto-scroll finds the handles hidden and ends the drag.
+            (document.activeElement as HTMLElement | null)?.blur();
+            await expect.poll(() => overlay(editor).isDragging).toBe(false);
+            const scrollTop = scroller.scrollTop;
+            const selected = selectedCells(editor);
+
+            await frames();
+            expect(overlay(editor).isVisible).toBe(false);
+            expect(scroller.scrollTop).toBe(scrollTop);
+            expect(selectedCells(editor)).toEqual(selected);
+            expect(errors).toEqual([]);
+        });
+
         it("scrolls a wide table sideways while the handle is near its edge", async () => {
             await showHandles(editor, modelTable(
                 [["a[]", "b", "c", "d"], ["e", "f", "g", "h"]],
@@ -764,4 +790,13 @@ function coverWithForeignTable(rect: DOMRect) {
     document.body.append(table);
     onTestFinished(() => table.remove());
     return cover;
+}
+
+/** Collects the errors that reach `window` until the test finishes. */
+function collectErrors() {
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => errors.push(event.error ?? event.message);
+    window.addEventListener("error", onError);
+    onTestFinished(() => window.removeEventListener("error", onError));
+    return errors;
 }

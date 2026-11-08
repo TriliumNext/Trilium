@@ -166,17 +166,15 @@ function UserInterface() {
                 />
             </OptionCardSection>
 
-            {!isMobile() && (
-                <OptionCardSection
-                    name="edited-notes-open-in-ribbon"
-                    label={t("theme.edited_notes_expanded")}
-                >
-                    <FormToggle
-                        currentValue={editedNotesOpenInRibbon}
-                        onChange={setEditedNotesOpenInRibbon}
-                    />
-                </OptionCardSection>
-            )}
+            <OptionCardSection
+                name="edited-notes-open-in-ribbon"
+                label={t("theme.edited_notes_expanded")}
+            >
+                <FormToggle
+                    currentValue={editedNotesOpenInRibbon}
+                    onChange={setEditedNotesOpenInRibbon}
+                />
+            </OptionCardSection>
 
             <OptionCardSection
                 name="edited-notes-include-llm-chats"

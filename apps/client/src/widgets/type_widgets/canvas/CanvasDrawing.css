@@ -16,8 +16,12 @@
 .canvas-drawing {
     background-color: var(--canvas-drawing-background-color);
 
+    > .canvas-drawing-box {
+        overflow-x: auto;
+    }
+
     /* Resets the typography inherited from the text note. */
-    > .canvas-drawing-editor {
+    .canvas-drawing-editor {
         position: relative;
         height: 100%;
         font-size: var(--canvas-drawing-font-size);
@@ -31,11 +35,28 @@
             transition: opacity 150ms ease-out;
         }
 
-        /* Hidden while `useRecenteringOnFullscreen()` centers the drawing in its new size. */
-        &.recentering > .canvas-render {
+        /* Hidden until Excalidraw shows the view of the box, also after fullscreen changes it. */
+        &:is(.recentering, [data-view-pending]) > .canvas-render {
             opacity: 0;
             transition: none;
         }
+    }
+
+    /* The frame at its natural size at most, narrowed with the box down to `MIN_FRAME_SCALE` of
+       `drawing_view.ts`, and wider than the box below that. */
+    > .canvas-drawing-box.framed > .canvas-drawing-editor {
+        width: clamp(
+            calc(var(--canvas-drawing-natural-width) * 0.75),
+            100%,
+            var(--canvas-drawing-natural-width)
+        );
+        height: auto;
+        margin-inline: auto;
+        aspect-ratio: var(--canvas-drawing-frame-ratio);
+    }
+
+    > .canvas-drawing-box.reframing > .canvas-drawing-editor {
+        height: var(--canvas-drawing-natural-height);
     }
 
     /* Resets CKEditor's content style for `hr`, which matches the menu separators. */
@@ -70,11 +91,28 @@
     }
 }
 
-/* Excalidraw's toolbars, menus, panels and selection show only while the drawing has the focus.
+.include-note .include-note-body > .include-note-content.type-canvasDrawing {
+    height: auto;
+}
+
+.include-note-content:fullscreen .canvas-drawing {
+    height: 100%;
+
+    > .canvas-drawing-box,
+    > .canvas-drawing-box > .canvas-drawing-editor {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        aspect-ratio: auto;
+    }
+}
+
+/* Excalidraw's toolbars, menus, panels and selection show only while the drawing has the focus,
+   and the canvas of the selection also while it draws the matches of "Search in note".
    `opacity` hides the footer too, which sets `visibility` of its own. */
 .include-note-body:not(.active) .canvas-drawing :is(
     .layer-ui__wrapper, .excalidraw > .FixedSideContainer, .excalidraw > .App-bottom-bar,
-    canvas.interactive
+    .canvas-drawing-editor:not([data-find-matches]) canvas.interactive
 ) {
     opacity: 0;
 }
@@ -131,6 +169,33 @@
     color: inherit;
 }
 
+/* The properties panel of the phone layout across the bottom of the note, in the top layer, placed
+   by `usePropertiesSheet()`. Resets the user agent style of a popover and Excalidraw's own size. */
+.canvas-drawing-editor .excalidraw .App-bottom-bar > .Island[data-properties-sheet][popover] {
+    position: fixed;
+    inset: auto auto var(--properties-sheet-bottom) var(--properties-sheet-left);
+    margin: 0;
+    border: none;
+    width: var(--properties-sheet-width);
+    min-width: 0;
+    max-width: none;
+    max-height: var(--properties-sheet-max-height);
+    overflow: visible;
+    color: inherit;
+}
+
+/* The pickers of the properties panel or sheet, in the top layer above it. Resets the user agent
+   style of a popover below the position that Radix sets inline. */
+:where(.canvas-drawing-editor [data-radix-popper-content-wrapper][popover]) {
+    inset: auto;
+    margin: 0;
+    border: none;
+    padding: 0;
+    overflow: visible;
+    background: none;
+    color: inherit;
+}
+
 /* Excalidraw narrows its controls for a docked library, which is beside the drawing instead. */
 .canvas-drawing-editor:has(.default-sidebar[data-side-panel]) .layer-ui__wrapper {
     width: 100% !important;
@@ -138,7 +203,7 @@
 
 /* While `CanvasEmbedTools` sets `data-embed-tools`, the tools, the main menu, undo and redo, and
    zoom are buttons of the embed's toolbar, which fullscreen hides. `CanvasTools` clicks the hidden
-   undo and redo buttons. */
+   undo and redo buttons, and `CanvasDrawingRail` the other buttons of the phone layout's footer. */
 .include-note-content:not(:fullscreen) .canvas-drawing-editor[data-embed-tools] .excalidraw {
     .App-toolbar-container > .App-toolbar,
     .main-menu-trigger,
@@ -146,14 +211,19 @@
         [data-testid="toolbar-lock"], [data-testid="toolbar-hand"]
     ),
     .layer-ui__wrapper__footer-left :is(.zoom-actions, .undo-redo-buttons),
-    .App-toolbar-content > div:has(> [data-testid="button-undo"]) {
+    .App-toolbar-content {
         display: none;
     }
 }
 
+/* With no tool, the touch over the drawing scrolls the note, as the wheel does. */
+.canvas-drawing-editor[data-no-tool] .excalidraw__canvas {
+    pointer-events: none;
+}
+
 /* Excalidraw hides its overflow, so its rounded container clips what it draws. */
 .include-note-content:not(:fullscreen) .canvas-drawing {
-    &, .excalidraw-container, .canvas-drawing-view {
+    &, .excalidraw-container, .canvas-drawing-view, .canvas-drawing-find {
         border-radius: var(--_include-note-content-top-radius)
                        var(--_include-note-content-top-radius)
                        var(--_include-note-content-bottom-radius)
@@ -189,9 +259,35 @@
     > svg {
         position: absolute;
     }
+
+    &.stale {
+        &::before {
+            background-color: var(--accented-background-color);
+        }
+
+        > svg {
+            visibility: hidden;
+        }
+    }
+}
+
+/* The matches of "Search in note" that `DrawingMatches` draws over the picture. */
+.canvas-drawing-find {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+
+    /* Excalidraw draws its matches on canvases that its dark theme filters. */
+    &.theme-dark {
+        filter: invert(93%) hue-rotate(180deg);
+    }
 }
 
 .canvas-drawing-picture {
+    display: block;
+    margin-inline: auto;
     max-width: 100%;
     height: auto;
 }

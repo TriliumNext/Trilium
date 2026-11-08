@@ -2,6 +2,7 @@ import { _setModelData as setModelData, ClassicEditor, Code, CodeBlock, Essentia
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import { registerTestCleanup } from "../../test/globals-test-kit.js";
 import CopyToClipboardButton, { CopyToClipboardCommand } from "./copy_to_clipboard_button.js";
 
 describe("CopyToClipboardButton", () => {
@@ -162,6 +163,8 @@ describe("CopyToClipboardCommand - inline code", () => {
             writable: true,
             configurable: true
         });
+        const warnSpy = vi.spyOn(console, "warn");
+        registerTestCleanup(() => warnSpy.mockRestore());
 
         // Place cursor inside inline code: `foo` with code attribute
         setModelData(editor.model, "<paragraph><$text code=\"true\">foo[]bar</$text></paragraph>");
@@ -170,6 +173,7 @@ describe("CopyToClipboardCommand - inline code", () => {
         await Promise.resolve();
 
         expect(writeSpy).toHaveBeenCalledWith("foobar");
+        expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it("warns when there is no code block or inline code at cursor", () => {

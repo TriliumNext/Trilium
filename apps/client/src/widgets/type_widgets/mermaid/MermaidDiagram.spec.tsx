@@ -98,7 +98,7 @@ describe("MermaidDiagram", () => {
     it("groups the fullscreen with the zoom, and the help apart", async () => {
         const { figure } = await mount({ editor: buildEditor(), displayMode: "split" });
         figure.dataset.hideTitle = "true";
-        figure.dataset.boxSize = "medium";
+        figure.dataset.boxSize = "resizable";
         const tools = getContentEmbedTools(figure)?.getTools() ?? [];
         expect(tools.map(({ id, group }) => [ id, group ])).toEqual([
             [ "zoomOut", "zoom" ], [ "resetZoom", "zoom" ], [ "zoomIn", "zoom" ],
@@ -144,7 +144,7 @@ describe("MermaidDiagram", () => {
     });
 
     it("offers fullscreen over a read-only diagram whose box has no title row", async () => {
-        const untitled = await mount({ editor: undefined, boxSize: "medium", hideTitle: true });
+        const untitled = await mount({ editor: undefined, boxSize: "resizable", hideTitle: true });
         await waitForDiagram(untitled.figure);
         const buttons = getZoomButtons(untitled.figure)?.querySelectorAll("button");
         // Zoom out, the zoom level, zoom in, fullscreen.
@@ -161,7 +161,7 @@ describe("MermaidDiagram", () => {
         });
         expect(getZoomButtons(untitled.figure)?.querySelectorAll("button")).toHaveLength(3);
 
-        for (const options of [ { boxSize: "small", hideTitle: true }, { boxSize: "full" } ]) {
+        for (const options of [ { boxSize: "compact", hideTitle: true }, { boxSize: "full" } ]) {
             const other = await mount({ editor: undefined, ...options });
             await waitForDiagram(other.figure);
             expect(getZoomButtons(other.figure)?.querySelectorAll("button")).toHaveLength(3);

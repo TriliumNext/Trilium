@@ -8,26 +8,32 @@ vi.mock("@excalidraw/excalidraw", () => ({ MainMenu: {}, useI18n: vi.fn() }));
 
 const {
     DEFAULT_SIDEBAR, EXTRA_TOOLS, HISTORY_ACTIONS, LOCK, MAIN_TOOLS, MENU_COMMANDS, SEARCH_TAB,
-    ZOOM_STEP, ZOOMS
+    ZOOMS
 } = await import("./CanvasEmbedTools");
-const { MAX_ZOOM, MIN_ZOOM } = await import("./drawing_view");
-const { FITTED_MENU_STYLES } = await import("./CanvasDrawing");
+const { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } = await import("./drawing_view");
+const {
+    FITTED_MENU_STYLES, PICKER_SELECTOR, PROPERTIES_PANEL_CLASS
+} = await import("./CanvasDrawing");
+const { FOOTER_ACTIONS, SELECTED_BUTTON_CLASS, SHOWN_BUTTON_CLASS } =
+    await import("./CanvasDrawingRail");
 const { DRAWING_DARK_FILTER, IMAGE_DARK_FILTER } = await import("./persistence");
 const { HISTORY_ICON_PATHS, isInteracting } = await import("./drawing_history");
+const { MATCH_COLORS } = await import("./drawing_find");
 
 /** The classes of Trilium that `CanvasDrawing.css` selects. Every other class is Excalidraw's. */
 const TRILIUM_CLASSES = new Set([
-    "note-detail", "canvas-drawing", "canvas-drawing-editor", "canvas-render",
-    "canvas-drawing-picture", "canvas-drawing-view", "theme-dark", "toolbar-over-panel",
-    "recentering", "include-note",
-    "include-note-body",
-    "include-note-content", "active", "tn-icon"
+    "note-detail", "canvas-drawing", "canvas-drawing-box", "canvas-drawing-editor",
+    "canvas-render", "canvas-drawing-picture", "canvas-drawing-view", "canvas-drawing-find",
+    "theme-dark", "toolbar-over-panel", "recentering", "framed", "reframing", "stale",
+    "include-note", "include-note-body", "include-note-content", "type-canvasDrawing", "active",
+    "tn-icon"
 ]);
 
-/** The classes of Excalidraw that `CanvasDrawing.tsx` and `CanvasEmbedTools.tsx` look up. */
+/** The classes of Excalidraw that the code of the canvas drawing looks up. */
 const CODE_CLASSES = [
     "excalidraw", "excalidraw-container", "App-menu__left", "App-toolbar-container",
-    "context-menu", "popover"
+    "App-toolbar-content", "context-menu", "popover", SHOWN_BUTTON_CLASS, SELECTED_BUTTON_CLASS,
+    PROPERTIES_PANEL_CLASS
 ];
 
 /**
@@ -70,7 +76,8 @@ describe("Excalidraw contract of the canvas drawing", () => {
         const keys = [
             ...[ ...MAIN_TOOLS, ...EXTRA_TOOLS, LOCK, "extraTools" ].map((id) => `toolBar.${id}`),
             ...[ ...HISTORY_ACTIONS, ...Object.keys(ZOOMS) ].map((id) => `buttons.${id}`),
-            ...MENU_COMMANDS.map((command) => command.label)
+            ...MENU_COMMANDS.map((command) => command.label),
+            ...FOOTER_ACTIONS.map((action) => action.label)
         ];
 
         const missing = keys.filter((key) => {
@@ -78,6 +85,40 @@ describe("Excalidraw contract of the canvas drawing", () => {
             return !getEnglishKeys(source, section).has(name);
         });
         expect(missing).toEqual([]);
+    });
+
+    it("renders the footer buttons of the phone layout that `CanvasDrawingRail` finds", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const menu = source.split("varMobileMenu=(")[1]?.split("//components/")[0] ?? "";
+
+        expect(menu).toContain("\"div\",{className:\"App-toolbar-content\",children:[");
+        expect(menu).toContain("actionManager.renderAction(\"toggleEditMenu\")");
+        expect(menu).toContain("actionManager.renderAction("
+            + "appState.multiElement?\"finalize\":\"duplicateSelection\")");
+        expect(menu).toContain("actionManager.renderAction(\"deleteSelectedElements\")");
+        // `getShownActions()` finds each button by its label, and reads its classes.
+        const unnamed = FOOTER_ACTIONS
+            .filter(({ label }) => !source.includes(`"aria-label":t("${label}")`))
+            .map(({ label }) => label);
+        expect(unnamed).toEqual([]);
+        expect(source).toContain(`visible&&!props.hidden?"${SHOWN_BUTTON_CLASS}"`);
+        expect(source).toContain(`"${SELECTED_BUTTON_CLASS}":props.selected`);
+    });
+
+    it("renders the phone layout's properties and pickers as the sheet finds them", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const menu = source.split("varMobileMenu=(")[1]?.split("//components/")[0] ?? "";
+
+        // `usePropertiesSheet()` places the island of the bottom bar while it holds the panel.
+        expect(menu).toContain("\"div\",{className:\"App-bottom-bar\",");
+        expect(menu).toContain("Island,{padding:0,children:[appState.openMenu===\"shape\"");
+        expect(menu).toContain(
+            `Section,{className:"${PROPERTIES_PANEL_CLASS}",heading:"selectedShapeActions"`);
+        // The pickers render in the container of the drawing, in the wrapper of Radix's popper.
+        expect(source).toContain("Popover.Portal,{container,children:");
+        const popover = createRequire(entry).resolve("@radix-ui/react-popover");
+        const popper = createRequire(popover).resolve("@radix-ui/react-popper");
+        expect(readFileSync(popper, "utf8")).toContain(PICKER_SELECTOR.slice(1, -1));
     });
 
     it("zooms with the step, the limits and the math that the toolbar copies", () => {
@@ -90,6 +131,9 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(source).toContain("viewportX:appState.width/2+appState.offsetLeft");
         expect(source).toContain("baseScrollX=appState.scrollX+(appLayerX-appLayerX/currentZoom)");
         expect(source).toContain("zoomOffsetScrollX=-(appLayerX-appLayerX/nextZoom)");
+        // `getZoomToFitView()` zooms in up to 100%, in steps, as `zoomToFitBounds()` does.
+        expect(source).toContain("returnMath.min(adjustedZoomValue,1);");
+        expect(source).toContain("roundToStep(adjustedZoomValue,ZOOM_STEP,\"floor\")");
     });
 
     it("exports in dark colors with the filters that a saved picture applies", () => {
@@ -125,7 +169,7 @@ describe("Excalidraw contract of the canvas drawing", () => {
         const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
         // Excalidraw's names of the shortcuts, which its own main menu shows.
         const names: Record<string, string> = {
-            exportImage: "imageExport", searchMenu: "searchMenu", help: "toggleShortcuts"
+            exportImage: "imageExport", help: "toggleShortcuts"
         };
 
         const missing = MENU_COMMANDS
@@ -134,6 +178,82 @@ describe("Excalidraw contract of the canvas drawing", () => {
                 `${names[id]}:[getShortcutKey("${keystroke?.replace("Ctrl", "CtrlOrCmd")}")]`)
             .filter((shortcut) => !source.includes(shortcut));
         expect(missing).toEqual([]);
+    });
+
+    it("measures matches with the `getMatchedLines()` that the Trilium patch exports", () => {
+        for (const dir of [ productionDir, developmentDir ]) {
+            const source = readFileSync(join(dir, "index.js"), "utf8");
+            const exported = [ ...source.matchAll(/export ?\{([^}]*)\}/g) ]
+                .map((match) => match[1]).join(",");
+            const name = exported.match(/([\w$]+) as getMatchedLines\b/)?.[1]
+                ?? (/\bgetMatchedLines\b/.test(exported) ? "getMatchedLines" : null);
+            expect(name, dir).not.toBeNull();
+
+            // `handleSearch()` measures each match with it.
+            const call = new RegExp(String.raw`[=(]\s*${name?.replaceAll("$", "\\$")}\(\s*[\w$]+,`
+                + String.raw`\s*[\w$]+,\s*[\w$]+\.index\)`);
+            expect(call.test(source), dir).toBe(true);
+        }
+    });
+
+    it("draws the matches of its search as `DrawingMatches` draws them over the picture", () => {
+        const compact = (text: string) => text.replace(/\s+/g, "");
+        const { light, dark } = MATCH_COLORS;
+
+        expect(compact(readBundle(developmentDir, [ ".js" ]))).toContain(compact(`
+            appState.searchMatches.forEach(({ id, focus, matchedLines }) => {
+                const element = elementsMap.get(id);
+                if (element && isTextElement(element)) {
+                    const [elementX1, elementY1, , , cx, cy] = getElementAbsoluteCoords(
+                        element, elementsMap, true);
+                    context.save();
+                    if (appState.theme === THEME.LIGHT) {
+                        if (focus) {
+                            context.fillStyle = "${light.current}";
+                        } else {
+                            context.fillStyle = "${light.other}";
+                        }
+                    } else if (focus) {
+                        context.fillStyle = "${dark.current}";
+                    } else {
+                        context.fillStyle = "${dark.other}";
+                    }
+                    context.translate(appState.scrollX, appState.scrollY);
+                    context.translate(cx, cy);
+                    context.rotate(element.angle);
+                    matchedLines.forEach((matchedLine) => {
+                        context.fillRect(
+                            elementX1 + matchedLine.offsetX - cx,
+                            elementY1 + matchedLine.offsetY - cy,
+                            matchedLine.width,
+                            matchedLine.height
+                        );
+                    });`));
+
+        // The dark theme filters the canvas of the matches, as `CanvasDrawing.css` the picture's.
+        const styles = compact(readBundle(productionDir, [ ".css" ]));
+        expect(styles).toContain(".excalidraw.theme--darkcanvas{filter:var(--theme-filter)}");
+        expect(styles).toContain(
+            `.excalidraw.theme--dark{--theme-filter:${compact(DRAWING_DARK_FILTER)};`);
+        const ownStyles = compact(readFileSync(join(__dirname, "CanvasDrawing.css"), "utf8")
+            .replace(/\/\*[\s\S]*?\*\//g, ""));
+        const findStyles = ownStyles.slice(ownStyles.lastIndexOf(".canvas-drawing-find{"))
+            .split("}}")[0];
+        expect(findStyles).toContain(`&.theme-dark{filter:${compact(DRAWING_DARK_FILTER)};`);
+    });
+
+    it("lets Ctrl+F reach the note once the drawing replaces the `searchMenu` action", () => {
+        const source = readBundle(developmentDir, [ ".js" ]).replace(/\s+/g, "");
+        const action = source.split("varactionToggleSearchMenu=register({")[1]
+            ?.split("});")[0] ?? "";
+
+        // The only action on Ctrl+F, which `attachExcalidraw()` registers again by its name.
+        expect(action).toContain("name:\"searchMenu\",");
+        expect(action).toContain("keyTest:(event)=>event[KEYS.CTRL_OR_CMD]&&event.key===KEYS.F");
+        expect(source.split("event.key===KEYS.F}").length - 1).toBe(1);
+        // A key runs the registered action whose `keyTest` takes it.
+        expect(source).toContain("constdata=Object.values(this.actions).sort(");
+        expect(source).toContain("action2.keyTest&&action2.keyTest(");
     });
 
     it("fits the context menu in its container with the styles that the top layer replaces", () => {
@@ -270,6 +390,29 @@ describe("Excalidraw contract of the canvas drawing", () => {
         expect(source).toContain("addEventListener(this.excalidrawContainerRef.current,"
             + "\"wheel\"/*WHEEL*/,this.handleWheel,{passive:false})");
         expect(source).not.toMatch(/addEventListener\((window|document),"wheel"/);
+    });
+
+    it("creates nothing with `NO_TOOL`, whose touch the canvases alone take", () => {
+        const source = readBundle(developmentDir, [ ".js" ]);
+        const compact = source.replace(/\s+/g, "");
+
+        expect(compact).toContain("activeTool.type===\"custom\"){"
+            + "setCursorForShape(this.interactiveCanvas,this.state);}elseif");
+        // `initialData` restores it.
+        expect(source).toMatch(/var AllowedExcalidrawActiveTools = \{[^}]*\bcustom: true/);
+        // `CanvasDrawing.css` takes the canvases out of the way of the touch with no tool: they
+        // alone forbid the browser the scroll, and the interactive one holds the listener that
+        // prevents it.
+        expect(compact).toContain("this.interactiveCanvas.addEventListener("
+            + "\"touchstart\"/*TOUCH_START*/,this.onTouchStart,{passive:false})");
+        const styles = readBundle(productionDir, [ ".css" ]);
+        const selectors = [ ...styles.matchAll(/([^{}]+)\{[^}]*touch-action:none/g) ]
+            .map((match) => match[1]);
+        expect(selectors).toEqual([
+            ".excalidraw .excalidraw-eye-dropper-container,"
+                + ".excalidraw .excalidraw-eye-dropper-backdrop",
+            ".excalidraw canvas"
+        ]);
     });
 });
 

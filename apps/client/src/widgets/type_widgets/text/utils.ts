@@ -1,6 +1,7 @@
 import type { CKTextEditor, InlineEmbedSource } from "@triliumnext/ckeditor5";
 import {
-    attachmentIcon, type LinkPreviewData, safeHostname, safeLinkPreviewHref, VIDEO_EMBED_CLASS
+    attachmentIcon, getEmbedKey, getLinkPreviewPlayer, getMediaFileTitle, type LinkPreviewData,
+    type LinkPreviewPlayer, MEDIA_EMBED_CLASS, safeHostname, safeLinkPreviewHref
 } from "@triliumnext/commons";
 import { h, type JSX } from "preact";
 
@@ -8,7 +9,7 @@ import appContext from "../../../components/app_context";
 import type FAttachment from "../../../entities/fattachment";
 import linkContextMenu from "../../../menus/link_context_menu";
 import content_renderer, {
-    type AttachmentEditor, CONTENT_RENDERERS, type NoteEditor
+    type AttachmentEditor, CONTENT_RENDERERS, getEmbedContentInfo, type NoteEditor
 } from "../../../services/content_renderer";
 import { getEmbedCaption, getEmbedCodeView } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
@@ -17,10 +18,11 @@ import link, { ViewScope } from "../../../services/link";
 import { renderEmbedPreview } from "../../../services/link_embed";
 import { getInlineEmbedType } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
+import { getExternalMediaSource } from "../file/media_source";
 import type { InlineSourceSaves } from "./attachment_saves";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
-    ContentEmbedError, getNoteActions, TinyContentEmbed
+    CompactContentEmbed, ContentEmbedError, getNoteActions
 } from "./ContentEmbed";
 import type EmbedHistories from "./embed_history";
 
@@ -33,6 +35,16 @@ interface EmbeddedNoteOptions {
     block?: string;
     /** Points the embed at the blocks that its editor holds, once they change. */
     onBlockChange?: (block: string) => void;
+    /**
+     * The notes and blocks shown around the embed, by `getEmbedKey()`. An embed in the content
+     * that shows one of them, or the note itself, becomes a reference link to it.
+     */
+    seenNoteIds?: ReadonlySet<string>;
+    /**
+     * Whether the embed sits in the content of another embed, which renders before it joins the
+     * page. The box then mounts out of the page, and that content disposes of it.
+     */
+    isNested?: boolean;
 }
 
 /**
@@ -49,7 +61,9 @@ export async function loadEmbeddedNote(
     noteId: string,
     $el: JQuery<HTMLElement>,
     boxSize?: string,
-    { noteEditor, histories, block, onBlockChange }: EmbeddedNoteOptions = {}
+    {
+        noteEditor, histories, block, onBlockChange, seenNoteIds, isNested
+    }: EmbeddedNoteOptions = {}
 ) {
     const note = await froca.getNote(noteId, true);
     const el = $el[0];
@@ -58,26 +72,26 @@ export async function loadEmbeddedNote(
         const text = t("include_note.missing_note", { noteId });
         await mountEmbedBox(el, h(ContentEmbedError, {
             boxSize: size, icon: "bx bx-error-alt", text
-        }));
+        }), { isNested });
         return;
     }
 
     const viewScope: ViewScope | undefined = block ? { block } : undefined;
     const isExcerpt = !!block;
-    if (size === "tiny") {
+    if (size === "compact" && !getEmbedContentInfo(note).hasCompactContent) {
         const $link = await link.createLink(note.noteId, {
             showTooltip: false,
             showNotePath: true,
             viewScope
         });
-        const box = h(TinyContentEmbed, {
+        const box = h(CompactContentEmbed, {
             icon: note.getIcon(),
             title: $link[0],
             notePath: note.noteId,
             viewScope,
             actions: getNoteActions(note.noteId)
         });
-        await mountEmbedBox(el, box, undefined, isExcerpt);
+        await mountEmbedBox(el, box, { isExcerpt, hasCaption: false, isNested });
         return;
     }
 
@@ -87,11 +101,10 @@ export async function loadEmbeddedNote(
         viewScope
     });
 
-    // The embed widget itself is the first level of embedding, so the embedded note's own
-    // embeds are rendered as reference links rather than expanded (see embedsAsReferenceLinks).
     const { $renderedContent, type } = await content_renderer.getRenderedContent(note, {
         interactive: true,
-        embedsAsReferenceLinks: true,
+        embedBoxes: true,
+        seenNoteIds: new Set(seenNoteIds),
         mediaEnvironment: "embedded",
         hasDisplayModes: true,
         noteEditor,
@@ -110,10 +123,10 @@ export async function loadEmbeddedNote(
         viewScope,
         isExcerpt
     });
-    await mountEmbedBox(el, box, $renderedContent, isExcerpt);
+    await mountEmbedBox(el, box, { content: $renderedContent, isExcerpt, isNested });
 }
 
-interface EmbeddedAttachmentOptions {
+interface EmbeddedAttachmentOptions extends Pick<EmbeddedNoteOptions, "seenNoteIds" | "isNested"> {
     /** Saves the changes that the content makes to the attachment, such as a canvas drawing. */
     attachmentEditor?: AttachmentEditor;
     /** Keeps the undo steps of the content on the undo stack of the text note. */
@@ -131,7 +144,9 @@ export async function loadEmbeddedAttachment(
     attachmentId: string,
     $el: JQuery<HTMLElement>,
     boxSize?: string,
-    { attachmentEditor, histories, isFocused }: EmbeddedAttachmentOptions = {}
+    {
+        attachmentEditor, histories, isFocused, seenNoteIds, isNested
+    }: EmbeddedAttachmentOptions = {}
 ) {
     const attachment = await froca.getAttachment(attachmentId, true);
     const el = $el[0];
@@ -141,18 +156,18 @@ export async function loadEmbeddedAttachment(
         const text = t("include_note.missing_attachment", { attachmentId });
         await mountEmbedBox(el, h(ContentEmbedError, {
             boxSize: size, icon: "bx bx-error-alt", text
-        }));
+        }), { isNested });
         return;
     }
 
     const viewScope: ViewScope = { viewMode: "attachments", attachmentId };
-    if (size === "tiny") {
+    if (size === "compact" && !getEmbedContentInfo(attachment).hasCompactContent) {
         // `attachment_actions` is imported on demand: it imports the image compression dialog.
         const [ $link, { getDownloadAction, getOpenExternallyAction } ] = await Promise.all([
             link.createLink(attachment.ownerId, { showTooltip: false, viewScope }),
             import("../../../services/attachment_actions")
         ]);
-        const box = h(TinyContentEmbed, {
+        const box = h(CompactContentEmbed, {
             icon: attachmentIcon(attachment.role, attachment.mime),
             title: $link[0],
             description: utils.formatSize(attachment.contentLength),
@@ -160,7 +175,7 @@ export async function loadEmbeddedAttachment(
             viewScope,
             actions: [ getOpenExternallyAction(attachment), getDownloadAction(attachment) ]
         });
-        await mountEmbedBox(el, box);
+        await mountEmbedBox(el, box, { hasCaption: false, isNested });
         return;
     }
 
@@ -171,6 +186,8 @@ export async function loadEmbeddedAttachment(
     });
     const { $renderedContent, type } = await content_renderer.getRenderedContent(attachment, {
         interactive: true,
+        embedBoxes: true,
+        seenNoteIds: new Set(seenNoteIds),
         mediaEnvironment: "embedded",
         hasDisplayModes: true,
         attachmentEditor,
@@ -190,7 +207,7 @@ export async function loadEmbeddedAttachment(
         viewScope,
         ...(isFocused ? { isFocusedOnMount: true } : {})
     });
-    await mountEmbedBox(el, box, $renderedContent);
+    await mountEmbedBox(el, box, { content: $renderedContent, isNested });
 }
 
 /**
@@ -208,7 +225,7 @@ export function showsAttachmentSave(container: HTMLElement, attachment: FAttachm
     });
 }
 
-interface InlineEmbedOptions {
+interface InlineEmbedOptions extends Pick<EmbeddedNoteOptions, "isNested"> {
     /** Whether the content takes the focus once the box is mounted. */
     isFocused: boolean;
     /** The writes that the text note saves first. */
@@ -225,7 +242,7 @@ export async function loadInlineEmbed(
     source: InlineEmbedSource,
     $el: JQuery<HTMLElement>,
     boxSize: string | undefined,
-    { isFocused, saves, histories }: InlineEmbedOptions
+    { isFocused, saves, histories, isNested }: InlineEmbedOptions
 ) {
     const type = getInlineEmbedType(source.language);
     const el = $el[0];
@@ -244,7 +261,7 @@ export async function loadInlineEmbed(
         contentType: type.contentType,
         ...(isFocused ? { isFocusedOnMount: true } : {})
     });
-    await mountEmbedBox(el, box, $renderedContent);
+    await mountEmbedBox(el, box, { content: $renderedContent, isNested });
 }
 
 /** Fills an embed box with the error of an embed of an unknown kind. */
@@ -255,66 +272,120 @@ export async function loadUnknownEmbed(el: HTMLElement, boxSize: string | undefi
         h(ContentEmbedError, { boxSize, icon: "bx bx-error", text }), getWrapper(el));
 }
 
-/**
- * Fills an embed box with the player of the video of a link preview, which loads on a click, under
- * a title that links to the video. The title row opens the menu of the embed while `hasMenu`, as in
- * the editor.
- */
-export function loadVideoEmbed(
-    preview: LinkPreviewData, el: HTMLElement, { hasMenu = false }: { hasMenu?: boolean } = {}
-) {
-    const content = document.createElement("div");
-    content.className = "rendered-content";
-    renderEmbedPreview(content, preview, true);
-    const box = h(ContentEmbed, {
-        title: createVideoTitle(preview),
-        content,
-        contentType: "videoEmbed",
-        ...(hasMenu ? { openMenu: linkContextMenu.openEmbedContextMenu } : {})
-    });
-    // The editor calls this before the box is in the page, which `mountEmbedBox()` skips.
-    void content_renderer.mountInteractiveWidget(box, getWrapper(el));
+/** The latest load of a media embed into each wrapper, which an earlier one that ends later yields to. */
+const mediaEmbedLoads = new WeakMap<HTMLElement, object>();
+
+interface MediaEmbedOptions {
+    /** The box size of the embed. The editor passes it before `data-box-size` is in the DOM. */
+    boxSize?: string;
+    hasMenu?: boolean;
 }
 
 /**
- * Mounts `box` in the embed `el`. An embed that left the page while it loaded gets no box,
- * and `content` rendered for it is disposed: `watchContentEmbeds()` has already passed it.
+ * Fills an embed box with the player of the media of a link preview, which loads on a click, under
+ * a title that links to the media: the YouTube player, or the media player of Trilium for a video
+ * or an audio file. The title row opens the menu of the embed while `hasMenu`, as in the editor.
  */
+export async function loadMediaEmbed(
+    preview: LinkPreviewData,
+    el: HTMLElement,
+    { boxSize: givenBoxSize, hasMenu = false }: MediaEmbedOptions = {}
+) {
+    const player = getLinkPreviewPlayer(preview);
+    const boxSize = givenBoxSize ?? getEmbedBoxSize(el);
+    const isAudio = player?.type === "audio";
+    const isTitleRow = boxSize === "compact" && !isAudio;
+    const wrapper = getWrapper(el, !isTitleRow);
+    const load = {};
+    mediaEmbedLoads.set(wrapper, load);
+
+    const content = document.createElement("div");
+    content.className = "rendered-content";
+    if (isTitleRow) {
+        // A Compact video shows its title row alone.
+    } else if (player && player.type !== "youtube") {
+        const MediaPreview = (await CONTENT_RENDERERS.file.media()).default;
+        const media = document.createElement("div");
+        media.className = "rendered-media";
+        content.append(media);
+        await content_renderer.mountInteractiveWidget(h(MediaPreview, {
+            source: getExternalMediaSource(preview, player.type),
+            environment: "embedded"
+        }), media);
+    } else {
+        renderEmbedPreview(content, preview, true);
+    }
+
+    if (mediaEmbedLoads.get(wrapper) !== load) {
+        content_renderer.disposeInteractiveContent($(content));
+        return;
+    }
+    const box = h(ContentEmbed, {
+        // Only Compact audio renders content in a Compact box.
+        ...(boxSize === "compact" && isAudio ? { boxSize } : {}),
+        title: createMediaTitle(preview, player),
+        content,
+        contentType: "mediaEmbed",
+        ...(hasMenu ? { openMenu: linkContextMenu.openEmbedContextMenu } : {})
+    });
+    // The editor calls this before the box is in the page, which `mountEmbedBox()` skips.
+    await content_renderer.mountInteractiveWidget(box, wrapper);
+}
+
+interface MountEmbedBoxOptions extends Pick<EmbeddedNoteOptions, "isNested"> {
+    /** The content rendered for the box, which is disposed when the box cannot be mounted. */
+    content?: JQuery<HTMLElement>;
+    isExcerpt?: boolean;
+    /** Whether the box keeps the caption of its embed; a box of a title row alone does not. */
+    hasCaption?: boolean;
+}
+
 /**
  * Mounts `box` in the wrapper of the embed `el`, which carries the `excerpt` class while
- * `isExcerpt`. The class is not saved with the note.
+ * `isExcerpt`. The class is not saved with the note. An embed that left the page while it loaded
+ * gets no box, and `content` rendered for it is disposed: `watchContentEmbeds()` has already
+ * passed it. A nested embed is out of the page until its content is, and mounts anyway.
  */
 async function mountEmbedBox(
     el: HTMLElement,
     box: JSX.Element,
-    content?: JQuery<HTMLElement>,
-    isExcerpt = false
+    { content, isExcerpt = false, hasCaption = true, isNested = false }: MountEmbedBoxOptions = {}
 ) {
-    if (!el.isConnected) {
+    if (!el.isConnected && !isNested) {
         if (content) {
             content_renderer.disposeInteractiveContent(content);
         }
         return;
     }
 
-    const wrapper = getWrapper(el);
+    const wrapper = getWrapper(el, hasCaption);
     wrapper.classList.toggle("excerpt", isExcerpt);
     await content_renderer.mountInteractiveWidget(box, wrapper);
 }
 
-/** The title of a video: its icon and a link to it, named by its title or its host. */
-function createVideoTitle({ url, title }: LinkPreviewData) {
+/**
+ * The title of media: its icon and a link to it, named by its title, or by the file name of a
+ * media file or the host of a YouTube video.
+ */
+function createMediaTitle({ url, title }: LinkPreviewData, player: LinkPreviewPlayer | null) {
     const icon = document.createElement("span");
-    icon.className = "bx bxl-youtube";
+    icon.className = MEDIA_TITLE_ICONS[player?.type ?? "youtube"];
     const link = document.createElement("a");
     link.href = safeLinkPreviewHref(url);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-    link.textContent = title || safeHostname(url);
+    link.textContent = title
+        || (player && player.type !== "youtube" ? getMediaFileTitle(url) : safeHostname(url));
     const heading = document.createElement("span");
     heading.append(icon, link);
     return heading;
 }
+
+const MEDIA_TITLE_ICONS: Record<LinkPreviewPlayer["type"], string> = {
+    youtube: "bx bxl-youtube",
+    video: "bx bx-movie",
+    audio: "bx bx-music"
+};
 
 function getEmbedBoxSize(el: HTMLElement) {
     return el.closest<HTMLElement>(".include-note")?.dataset.boxSize;
@@ -323,9 +394,9 @@ function getEmbedBoxSize(el: HTMLElement) {
 /**
  * The element an embed box is mounted in: `el` when it is the `.include-note-wrapper` the
  * editor renders, otherwise the wrapper of the `.include-note`, reused or created ahead of the
- * caption.
+ * caption, which is kept while `hasCaption`.
  */
-function getWrapper(el: HTMLElement) {
+function getWrapper(el: HTMLElement, hasCaption = true) {
     if (el.classList.contains("include-note-wrapper")) {
         return el;
     }
@@ -337,21 +408,21 @@ function getWrapper(el: HTMLElement) {
 
     const wrapper = document.createElement("div");
     wrapper.className = "include-note-wrapper";
-    const caption = getEmbedCaption(el);
+    const caption = hasCaption ? getEmbedCaption(el) : null;
     el.replaceChildren(wrapper, ...(caption ? [ caption ] : []));
     return wrapper;
 }
 
 /**
  * Opens the context menu of the note or attachment that `embed` shows, or the commands of an embed
- * of a source or a video, below `anchor`. The menu opens from the embed, so that the text editor
+ * of a source or media, below `anchor`. The menu opens from the embed, so that the text editor
  * that contains it stays focused.
  */
 export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLElement) {
     const { noteId, attachmentId, block, language } = embed.dataset;
     const origin = linkContextMenu.getOriginBelow(anchor, embed);
 
-    if (language || embed.classList.contains(VIDEO_EMBED_CLASS)) {
+    if (language || embed.classList.contains(MEDIA_EMBED_CLASS)) {
         await linkContextMenu.openEmbedContextMenu(origin);
         return;
     }
@@ -408,19 +479,46 @@ function disposeRemoved(records: MutationRecord[]) {
     }
 }
 
+/**
+ * Loads the boxes of `noteId` in `container` again, with `options`. A box in the content of
+ * another box loads read-only, with the notes around it, as it did first.
+ */
 export function refreshEmbeddedNote(
     container: HTMLDivElement,
     noteId: string,
-    options?: EmbeddedNoteOptions
+    options: EmbeddedNoteOptions = {}
 ) {
     const embeddedNotes =
         container.querySelectorAll<HTMLElement>(`.include-note[data-note-id="${noteId}"]`);
     for (const embeddedNote of embeddedNotes) {
-        loadEmbeddedNote(noteId, $(embeddedNote), undefined, {
-            ...options,
-            block: embeddedNote.dataset.block
-        });
+        const { block } = embeddedNote.dataset;
+        const outerEmbeds = getOuterEmbeds(embeddedNote, container);
+        if (!outerEmbeds.length) {
+            void loadEmbeddedNote(noteId, $(embeddedNote), undefined, { ...options, block });
+            continue;
+        }
+
+        const seenNoteIds = new Set(options.seenNoteIds);
+        for (const outerEmbed of outerEmbeds) {
+            const { attachmentId, noteId: outerNoteId, block: outerBlock } = outerEmbed.dataset;
+            const id = attachmentId || outerNoteId;
+            if (id) {
+                seenNoteIds.add(id).add(getEmbedKey(id, outerBlock));
+            }
+        }
+        void loadEmbeddedNote(noteId, $(embeddedNote), undefined, { block, seenNoteIds });
     }
+}
+
+/** The embeds in `container` around `embed`, innermost first. */
+function getOuterEmbeds(embed: HTMLElement, container: HTMLElement) {
+    const outerEmbeds: HTMLElement[] = [];
+    let outerEmbed = embed.parentElement?.closest<HTMLElement>(".include-note");
+    while (outerEmbed && container.contains(outerEmbed)) {
+        outerEmbeds.push(outerEmbed);
+        outerEmbed = outerEmbed.parentElement?.closest<HTMLElement>(".include-note");
+    }
+    return outerEmbeds;
 }
 
 export function setupImageOpening(container: HTMLDivElement, singleClickOpens: boolean) {

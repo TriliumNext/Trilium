@@ -58,7 +58,10 @@ export async function notePathMenuItem<T>(
     };
 }
 
-/** A row that opens `items` as a submenu, enabled while any of their commands is. */
+/**
+ * A row that opens `items` as a submenu, enabled while any of their commands is, a row of actions
+ * included.
+ */
 export function submenuItem<T>(
     row: Pick<MenuCommandItem<T>, "title" | "uiIcon">,
     items: MenuItem<T>[]
@@ -82,6 +85,9 @@ export function splitMenuItem<T>(
     }
 }
 
-function isEnabledCommand<T>(item: MenuItem<T>) {
-    return !("kind" in item) && item.enabled !== false
+function isEnabledCommand<T>(item: MenuItem<T>): boolean {
+    if ("kind" in item) {
+        return item.kind === "actions" && item.items.some(isEnabledCommand)
+    }
+    return item.enabled !== false
 }

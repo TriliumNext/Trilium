@@ -248,10 +248,10 @@ describe("tabs layout styles", () => {
         editor.editing.view.document.isFocused = true;
         const rootStyle = document.documentElement.style;
         rootStyle.setProperty("--ck-color-focus-border", "rgb(12, 34, 56)");
-        rootStyle.setProperty("--link-color", "rgb(65, 43, 21)");
+        rootStyle.setProperty("--input-focus-outline-color", "rgb(65, 43, 21)");
         onTestFinished(() => {
             rootStyle.removeProperty("--ck-color-focus-border");
-            rootStyle.removeProperty("--link-color");
+            rootStyle.removeProperty("--input-focus-outline-color");
         });
         const inner = `<div class="trilium-tabs">${tab("B1", "<p>b1</p>")}${tab("B2", "")}</div>`;
         editor.setData(
@@ -366,6 +366,30 @@ describe("tabs layout styles", () => {
         editor.execute("moveTab", { target: "first" });
         expect(edited.viewport.scrollLeft).toBe(0);
         expect(edited.viewport.firstElementChild?.textContent).toBe("Step 10 of the guide");
+    });
+
+    it("skips a title removed before its reveal and reveals the one shown instead", async () => {
+        document.body.classList.add("motion-disabled");
+        onTestFinished(() => document.body.classList.remove("motion-disabled"));
+        const editor = await createTestEditor([Essentials, Paragraph, Tabs]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        editable.style.width = "400px";
+        editor.setData(manyTabsHtml());
+        const { bar, viewport } = barOf(editable);
+        const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+        const lastTab = tabs.getChild(9) as ModelElement;
+        await expect.poll(() => isOverflowing(bar)).toBe(true);
+
+        // The queued change removes the tab before the view renders the change that showed it.
+        editor.model.change(writer => {
+            writer.setSelection(lastTab.getChild(1) as ModelElement, 0);
+            editor.model.enqueueChange(queuedWriter => queuedWriter.remove(lastTab));
+        });
+
+        const lastTitle = viewport.lastElementChild as HTMLElement;
+        expect(lastTitle.textContent).toBe("Step 9 of the guide");
+        expect(lastTitle.classList.contains("trilium-tab-title--active")).toBe(true);
+        expect(isShown(lastTitle, viewport)).toBe(true);
     });
 
     it("reveals the title of a nested tab that was hidden in saved content", async () => {

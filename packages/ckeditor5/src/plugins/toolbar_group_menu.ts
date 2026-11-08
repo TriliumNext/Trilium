@@ -1,6 +1,7 @@
 import {
-    BalloonToolbar, BlockToolbar, ButtonView, DropdownView, type Editor, type FocusTracker,
-    ListItemGroupView, ListItemView, ListSeparatorView, ListView, Plugin, SearchTextView, SplitButtonView, SwitchButtonView,
+    BalloonToolbar, BlockToolbar, ButtonView, ContextualBalloon, DropdownView, type Editor,
+    type FocusTracker, LinkUI, ListItemGroupView, ListItemView, ListSeparatorView, ListView, Plugin,
+    SearchTextView, SplitButtonView, SwitchButtonView,
     type ToolbarConfig, type ToolbarConfigItem, ToolbarSeparatorView, type ToolbarView, type View,
     WidgetToolbarRepository
 } from "ckeditor5";
@@ -32,8 +33,8 @@ export interface ToolbarGroupMenuHost {
 
 /** What a {@link ToolbarGroupMenuHost} shows a menu for. */
 export interface ToolbarGroupMenuRequest {
-    /** The group's button, which the menu opens under. */
-    anchor: HTMLElement;
+    /** The group's button, which the menu opens under, or the point a context menu opens at. */
+    anchor: HTMLElement | { x: number; y: number };
     items: ToolbarGroupMenuItem[];
     /**
      * `tiles` draws the entries as tiles, each its icon over its label, for a list of choices that
@@ -48,7 +49,8 @@ export interface ToolbarGroupMenuRequest {
     setElement(element: HTMLElement | null): void;
     /**
      * Called as the menu closes without running an entry. `returnFocus` puts focus back on the
-     * group's button, for a menu closed with Escape rather than a press elsewhere.
+     * group's button, or on the text for a context menu, for a menu closed with Escape rather than
+     * a press elsewhere.
      */
     onClose(returnFocus: boolean): void;
 }
@@ -70,6 +72,8 @@ export interface ToolbarGroupMenuEntry {
     isOn?: boolean;
     /** Whether the item is a switch, as the "Header row" row of `tableRow` is, for the host to draw as one. */
     isSwitch?: boolean;
+    /** Whether the item takes something away, as Unlink does, for the host to mark its icon. */
+    isDestructive?: boolean;
     /** The classes CKEditor gives the item, such as `ck-fontsize-option text-tiny`, for the host to style. */
     className?: string;
     /** Runs the toolbar item. An entry with `children` and no action only opens them. */
@@ -83,9 +87,11 @@ export interface ListMenuOptions {
     layout?: "tiles";
     /**
      * Describes the menu's entries on each open, for a dropdown whose content its views do not
-     * hold. `run` wraps an entry's action, so the menu hides before it runs.
+     * hold. `run` wraps an entry's action, so the menu hides before it runs. A promise of the
+     * entries opens the menu once they arrive, unless it was closed in the meantime.
      */
-    describe?(run: (action: () => void) => () => void): ToolbarGroupMenuItem[];
+    describe?(run: (action: () => void) => () => void):
+        ToolbarGroupMenuItem[] | Promise<ToolbarGroupMenuItem[]>;
 }
 
 /** The dropdowns handed to {@link openListAsMenu}, with their options. */
@@ -122,8 +128,16 @@ export default class ToolbarGroupMenu extends Plugin {
 
     private watchedDropdowns = new WeakSet<DropdownView>();
     private host: ToolbarGroupMenuHost | null = null;
-    /** The menu the host shows, with the dropdown it stands for, or `null`. */
-    private shown: { dropdown: DropdownView; request: ToolbarGroupMenuRequest } | null = null;
+    /**
+     * The menu the host shows, with the dropdown it stands for, `null` for a context menu, or
+     * `null`.
+     */
+    private shown: {
+        dropdown: DropdownView | null;
+        request: ToolbarGroupMenuRequest;
+    } | null = null;
+    /** The menu that waits for the entries its `describe()` promised, or `null`. */
+    private pending: { dropdown: DropdownView | null } | null = null;
     /** Set while the plugin opens a dropdown itself, to have CKEditor build its views. */
     private building = false;
 
@@ -144,7 +158,11 @@ export default class ToolbarGroupMenu extends Plugin {
             return;
         }
         const createHost = () => menuConfig.host(editor);
-        const watchToolbar = (toolbar: ToolbarView) => {
+        // Entries that arrive after the selection moves describe what it was on before.
+        this.listenTo(editor.model.document.selection, "change:range", () => {
+            this.pending = null;
+        });
+        const watchToolbar =(toolbar: ToolbarView) => {
             for (const item of toolbar.items) {
                 this.watchGroupDropdown(toolbar, item, groups, createHost);
             }
@@ -167,10 +185,25 @@ export default class ToolbarGroupMenu extends Plugin {
                 }
             });
         }
+
+        // `LinkUI` builds its toolbar the first time it shows it in the balloon.
+        if (editor.plugins.has(LinkUI)) {
+            const linkUI = editor.plugins.get(LinkUI);
+            const balloon = editor.plugins.get(ContextualBalloon);
+            const watchLinkToolbar = () => {
+                const toolbar = linkUI.toolbarView;
+                if (toolbar) {
+                    this.stopListening(balloon, "change:visibleView", watchLinkToolbar);
+                    watchToolbar(toolbar);
+                }
+            };
+            this.listenTo(balloon, "change:visibleView", watchLinkToolbar);
+        }
     }
 
     destroy() {
         super.destroy();
+        this.pending = null;
         this.host?.destroy();
     }
 
@@ -227,37 +260,78 @@ export default class ToolbarGroupMenu extends Plugin {
             }
 
             evt.return = false;
-            if (this.shown?.dropdown === item) {
+            if (this.shown?.dropdown === item || this.pending?.dropdown === item) {
                 const toKeyboard = this.host?.isInPlaceOfKeyboard?.() ?? false;
                 this.hideMenu();
                 if (toKeyboard) {
                     this.editor.editing.view.focus();
                 }
             } else {
-                this.showMenu(toolbar, item, options, createHost);
+                this.showGroupMenu(toolbar, item, options, createHost);
             }
         }, { priority: "high" });
     }
 
-    private showMenu(
+    /**
+     * Opens the entries `describe` lists as a context menu at `point`, in the viewport, in place
+     * of any menu the host shows. Escape gives the focus back to the text. Returns whether a host
+     * draws the menu, which takes `toolbarGroupMenu.host` in the configuration.
+     */
+    openContextMenu(point: { x: number; y: number }, describe: MenuDescription): boolean {
+        const editor = this.editor;
+        const menuConfig = editor.config.get("toolbarGroupMenu");
+        if (!menuConfig) {
+            return false;
+        }
+
+        this.showMenu({
+            dropdown: null,
+            anchor: point,
+            describe,
+            returnFocus: () => editor.editing.view.focus()
+        }, () => menuConfig.host(editor));
+        return true;
+    }
+
+    private showGroupMenu(
         toolbar: ToolbarView, dropdown: DropdownView, options: ListMenuOptions,
         createHost: () => ToolbarGroupMenuHost
     ) {
-        const editor = this.editor;
         const anchor = dropdown.buttonView.element;
         /* v8 ignore next 3 -- a dropdown is opened from its rendered button */
         if (!anchor) {
             return;
         }
 
-        this.hideMenu();
-        const host = this.host ??= createHost();
-
         // The toolbar's "Show more items" dropdown closes as focus or a press leaves it, so it
         // counts the menu as its own too, while it holds the group.
         const enclosing = [...toolbar.children].filter((child): child is DropdownView =>
             child instanceof DropdownView && child !== dropdown
             && !!child.element?.contains(anchor));
+        const { describe, ...menuOptions } = options;
+        this.showMenu({
+            ...menuOptions,
+            dropdown,
+            anchor,
+            enclosing,
+            describe: describe ?? ((runAction) => {
+                const run = (view: View) => runAction(() => view.fire("execute"));
+                return listMenuDropdowns.has(dropdown)
+                    ? this.describeList(dropdown, run)
+                    : describeItems(this.sourceItems(dropdown), run);
+            }),
+            returnFocus: () => dropdown.buttonView.focus()
+        }, createHost);
+    }
+
+    /** Has the host show the menu of `source`, in place of any menu it shows. */
+    private showMenu(
+        { dropdown, anchor, enclosing = [], describe, returnFocus, ...menuOptions }: MenuSource,
+        createHost: () => ToolbarGroupMenuHost
+    ) {
+        const editor = this.editor;
+        this.hideMenu();
+        const host = this.host ??= createHost();
         const trackers = [editor.ui.focusTracker, ...enclosing.map((child) => child.focusTracker)];
 
         const runAction = (action: () => void) => () => {
@@ -268,47 +342,53 @@ export default class ToolbarGroupMenu extends Plugin {
             editor.editing.view.focus();
             action();
         };
-        const run = (view: View) => runAction(() => view.fire("execute"));
 
         let element: HTMLElement | null = null;
-        const { describe, ...menuOptions } = options;
-        let items: ToolbarGroupMenuItem[];
-        if (describe) {
-            items = describe(runAction);
-        } else if (listMenuDropdowns.has(dropdown)) {
-            items = this.describeList(dropdown, run);
-        } else {
-            items = describeItems(this.sourceItems(dropdown), run);
-        }
-        const request: ToolbarGroupMenuRequest = {
-            anchor,
-            items,
-            ...menuOptions,
-            setElement: (next) => {
-                if (element) {
-                    untrackElement(element, trackers);
+        const show = (items: ToolbarGroupMenuItem[]) => {
+            const request: ToolbarGroupMenuRequest = {
+                anchor,
+                items,
+                ...menuOptions,
+                setElement: (next) => {
+                    if (element) {
+                        untrackElement(element, trackers);
+                    }
+                    element = next;
+                    if (element) {
+                        trackElement(element, trackers);
+                    }
+                },
+                onClose: (shouldReturnFocus) => {
+                    if (this.shown?.request !== request) {
+                        return;
+                    }
+                    this.shown = null;
+                    if (shouldReturnFocus) {
+                        returnFocus();
+                    }
                 }
-                element = next;
-                if (element) {
-                    trackElement(element, trackers);
-                }
-            },
-            onClose: (returnFocus) => {
-                if (this.shown?.request !== request) {
-                    return;
-                }
-                this.shown = null;
-                if (returnFocus) {
-                    dropdown.buttonView.focus();
-                }
-            }
+            };
+
+            this.shown = { dropdown, request };
+            host.show(request);
         };
 
-        this.shown = { dropdown, request };
-        host.show(request);
+        const described = describe(runAction);
+        if (described instanceof Promise) {
+            const pending = this.pending = { dropdown };
+            void described.then((items) => {
+                if (this.pending === pending) {
+                    this.pending = null;
+                    show(items);
+                }
+            });
+        } else {
+            show(described);
+        }
     }
 
     private hideMenu() {
+        this.pending = null;
         if (this.shown) {
             this.shown = null;
             this.host?.hide();
@@ -343,6 +423,20 @@ export default class ToolbarGroupMenu extends Plugin {
         return [...dropdown.toolbarView?.items ?? []];
     }
 
+}
+
+type MenuDescription = NonNullable<ListMenuOptions["describe"]>;
+
+/** The menu of a toolbar group, or a context menu, for the host to show. */
+interface MenuSource extends Omit<ListMenuOptions, "describe"> {
+    /** The dropdown the menu stands for, or `null` for a context menu. */
+    dropdown: DropdownView | null;
+    anchor: ToolbarGroupMenuRequest["anchor"];
+    /** The dropdowns holding the group's button, which close as an entry runs. */
+    enclosing?: DropdownView[];
+    describe: MenuDescription;
+    /** Gives the focus back, for a menu closed with Escape. */
+    returnFocus(): void;
 }
 
 type DropdownSetIsOpenEvent = {
@@ -514,15 +608,21 @@ function listEntriesOf(dropdown: DropdownView) {
     return listItemEntries(listView.items);
 }
 
-/** The buttons and separators of a list's items, a group's label before its own. */
+/**
+ * The buttons and separators of a list's items, a group's label before its own. A row or a group
+ * that the list hides is left out.
+ */
 function listItemEntries(items: Iterable<View>) {
     const entries: Array<ButtonView | ListSeparatorView | ListItemGroupView> = [];
     for (const item of items) {
         if (item instanceof ListSeparatorView) {
             entries.push(item);
         } else if (item instanceof ListItemGroupView) {
-            entries.push(item, ...listItemEntries(item.items));
-        } else if (item instanceof ListItemView && item.children.first instanceof ButtonView) {
+            if (item.isVisible) {
+                entries.push(item, ...listItemEntries(item.items));
+            }
+        } else if (item instanceof ListItemView && item.children.first instanceof ButtonView
+            && item.children.first.isVisible) {
             entries.push(item.children.first);
         }
     }

@@ -62,22 +62,40 @@
     "find-in-text": "切換搜尋面板",
     "toggle-zen-mode": "啟用 / 禁用禪模式（極簡界面以專注編輯）",
     "save-named-revision": "儲存目前筆記的命名修訂",
-    "toggle-archived-notes": "在筆記樹中顯示/隱藏已歸檔的筆記"
+    "toggle-archived-notes": "在筆記樹中顯示/隱藏已歸檔的筆記",
+    "show-deleted-notes": "顯示「已刪除的筆記」對話方塊",
+    "show-space-usage": "開啟「儲存空間佔用」頁面",
+    "show-shortcut-hints": "顯示當前焦點所在小工具的鍵盤快捷鍵",
+    "note-panels": "筆記面板",
+    "show-note-map": "在右側窗格中顯示筆記地圖",
+    "peek-right-pane": "將右側窗格設為暫時性面板，使其懸浮於內容上方，並在失去焦點時關閉",
+    "focus-collection-properties": "將焦點移至該集合的檢視類型選取器",
+    "focus-formatting-toolbar": "在固定格式工具列與編輯器之間切換焦點",
+    "create-new-split": "在目前使用中分割視窗的右側開啟一個新的空白分割視窗",
+    "close-active-split": "關閉目前使用中的分割視窗，同時保持該分頁的其他分割視窗保持開啟狀態",
+    "focus-split-left": "將焦點移至目前使用中分割視窗的左側",
+    "focus-split-right": "將焦點移至目前使用中視窗右側的分割視窗",
+    "split-view": "分割視圖",
+    "move-split-left": "將目前選中的分割區與其左側的分割區互換位置，使筆記及焦點移動",
+    "move-split-right": "將目前選中的分割區與其右側的分割區互換位置，使筆記及焦點移動",
+    "peek-left-pane": "將筆記樹以暫時性面板的形式顯示，使其懸浮於內容上方"
   },
   "login": {
     "title": "登入",
     "heading": "Trilium 登入",
-    "incorrect-password": "密碼不正確。請再試一次。",
+    "incorrect-password": "密碼不正確。請重新嘗試。",
     "password": "密碼",
     "remember-me": "記住我",
     "button": "登入",
     "incorrect-totp": "TOTP 不正確。請再試一次。",
-    "sign_in_with_sso": "用 {{ ssoIssuerName }} 登入"
+    "sign_in_with_sso": "用 {{ ssoIssuerName }} 登入",
+    "sso-wrong-account": "該帳號並非與此 Trilium 實例綁定的帳號。請使用已綁定的帳號登入。",
+    "sso-not-enrolled": "單一登入功能尚未設定完成。請先使用密碼登入，然後在設定中將您的帳戶進行綁定。"
   },
   "set_password": {
     "title": "設定密碼",
     "heading": "設定密碼",
-    "description": "在由網頁開始使用 Trilium 之前，您需要先設定一個密碼並用此密碼登入。",
+    "description": "在您開始透過網頁使用 Trilium 之前，必須先設定密碼。之後您將使用此密碼登入。",
     "password": "密碼",
     "password-confirmation": "確認密碼",
     "button": "設定密碼"
@@ -208,7 +226,31 @@
     "toggle-full-screen": "切換全螢幕",
     "command-palette": "命令面板",
     "save-named-revision": "儲存命名修訂",
-    "toggle-archived-notes": "切換已歸檔筆記的顯示狀態"
+    "toggle-archived-notes": "切換已歸檔筆記的顯示狀態",
+    "duplicate-note": "複製筆記（不含子筆記）",
+    "show-deleted-notes": "顯示已刪除的筆記",
+    "show-space-usage": "顯示空間佔用",
+    "show-shortcut-hints": "顯示快捷鍵提示",
+    "focus-formatting-toolbar": "聚焦格式工具列",
+    "show-basic-properties": "顯示基本屬性",
+    "focus-collection-properties": "聚焦集合屬性",
+    "focus-file-actions": "聚焦檔案操作",
+    "focus-image-actions": "聚焦圖片操作",
+    "toggle-owned-attributes": "切換自有屬性",
+    "toggle-inherited-attributes": "切換繼承屬性",
+    "toggle-promoted-attributes": "切換提升屬性",
+    "show-note-map": "顯示筆記地圖",
+    "show-note-info": "顯示筆記資訊",
+    "show-note-paths": "顯示筆記路徑",
+    "toggle-similar-notes": "切換相似筆記",
+    "peek-right-pane": "預覽右側面板",
+    "create-new-split": "建立新的分割",
+    "close-active-split": "關閉使用中分割",
+    "move-split-left": "向左移動分割",
+    "move-split-right": "向右移動分割",
+    "focus-split-left": "將焦點移至左側分割",
+    "focus-split-right": "將焦點移至右側分割",
+    "peek-left-pane": "預覽筆記樹面板"
   },
   "weekdayNumber": "第 {weekNumber} 週",
   "quarterNumber": "第 {quarterNumber} 季度",
@@ -251,7 +293,7 @@
     "code-notes-title": "程式碼筆記",
     "images-title": "媒體",
     "spellcheck-title": "拼寫檢查",
-    "password-title": "密碼",
+    "password-title": "密碼及身份驗證",
     "multi-factor-authentication-title": "多重身份驗證",
     "etapi-title": "ETAPI",
     "backup-title": "備份",
@@ -268,26 +310,56 @@
     "llm-chat-history-title": "AI 對話歷史",
     "llm-title": "AI / LLM",
     "sidebar-chat-title": "AI 對話",
-    "custom-dictionary-title": "自訂字典"
+    "custom-dictionary-title": "自訂字典",
+    "task-states-title": "任務狀態",
+    "task-state-none": "無",
+    "task-state-doing": "進行中",
+    "task-state-done": "已完成",
+    "task-state-maybe": "待定",
+    "task-state-cancelled": "已取消",
+    "task-state-attr-state-id": "識別碼（必填）",
+    "task-state-attr-markdown-symbol": "Markdown 符號",
+    "task-state-attr-is-completed": "視為已完成",
+    "task-state-attr-color": "顏色",
+    "task-state-attr-is-hidden": "從清單中隱藏",
+    "space-usage-title": "儲存空間佔用-",
+    "deleted-notes-title": "已刪除的筆記",
+    "color-scheme-switcher-title": "配色方案切換",
+    "content-manager-title": "內容管理",
+    "desktop-title": "桌面",
+    "security-title": "安全性",
+    "database-title": "資料庫",
+    "record-meeting-title": "轉錄會議",
+    "transcription-title": "轉錄",
+    "resources-title": "已下載的資源"
   },
   "notes": {
     "new-note": "新增筆記",
     "duplicate-note-suffix": "(重複)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "刪除筆記失敗：{{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "後端日誌文件 '{{ fileName }}' 暫不存在。",
-    "reading-log-failed": "讀取後端日誌文件 '{{ fileName }}' 失敗。"
+    "reading-log-failed": "讀取後端日誌文件 '{{ fileName }}' 失敗。",
+    "log-file-unavailable": "無法開啟日誌檔案，因此僅顯示記憶體中保留的最新條目。Trilium 會持續嘗試開啟該檔案，並在成功開啟後將這些條目寫入其中。"
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "無法顯示此類型筆記。"
+    "note-cannot-be-displayed": "無法顯示此類型筆記。",
+    "included-note-requires-credentials": "此包含的筆記受密碼保護，因此無法在此處顯示。",
+    "content-not-available": "此內容不可用。",
+    "broken-block-reference": "參考連結失效",
+    "untitled-block": "區塊",
+    "play-video": "播放影片",
+    "play-audio": "播放音訊"
   },
   "pdf": {
     "export_filter": "PDF 文件 (*.pdf)",
     "unable-to-export-message": "目前筆記無法被匯出為 PDF 。",
     "unable-to-export-title": "無法匯出為 PDF",
     "unable-to-save-message": "所選檔案無法被寫入。請重試或選擇其他路徑。",
-    "unable-to-print": "無法列印筆記"
+    "unable-to-print": "無法列印筆記",
+    "render-timeout": "該筆記未能在 {{seconds}} 秒內完成渲染。"
   },
   "tray": {
     "tooltip": "Trilium 筆記",
@@ -303,7 +375,8 @@
     "old_version": "您目前的版本不支援直接遷移。請先更新至最新的 v0.60.4 然後再到此版本。",
     "error_message": "遷移至版本 {{version}} 時發生錯誤：{{stack}}",
     "wrong_db_version": "資料庫版本（{{version}}）比程式預期（{{targetVersion}}）新，這意味著它由一個更新且不相容的 Trilium 版本所創建。升級至最新版的 Trilium 以解決此問題。",
-    "invalid_db_version": "資料庫版本號不是有效的數字。這通常表示資料庫中的「dbVersion」選項已損毀。請從備份還原。"
+    "invalid_db_version": "資料庫版本號不是有效的數字。這通常表示資料庫中的「dbVersion」選項已損毀。請從備份還原。",
+    "automatic_migrations_disabled": "已透過環境變數 TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}} 停用自動資料庫遷移功能"
   },
   "modals": {
     "error_title": "錯誤"
@@ -318,7 +391,23 @@
     "expand": "展開",
     "toggle-navigation": "切換導航",
     "toggle-toc": "切換目錄",
-    "logo-alt": "標誌"
+    "logo-alt": "標誌",
+    "appearance": "外觀",
+    "theme-light": "淺色",
+    "theme-dark": "深色",
+    "theme-system": "跟隨系統",
+    "theme-current": "外觀：{{- theme}}",
+    "subpages-of": "{{- title}} 的子頁面",
+    "hidden-subpages_one": "{{count}} 個已於樹中被隱藏的子頁面",
+    "login": "登入",
+    "tab-title": "分頁標題",
+    "heading-link": "連結至此章節",
+    "previous": "上一頁",
+    "next": "下一頁",
+    "page-navigation": "上一頁和下一頁",
+    "previous-tabs": "捲動至前一個分頁",
+    "next-tabs": "捲動至下一個分頁",
+    "copy-code": "複製程式碼"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文字片段",
@@ -345,7 +434,11 @@
     "presentation": "簡報",
     "presentation_slide": "簡報投影片",
     "presentation_slide_first": "第一張投影片",
-    "presentation_slide_second": "第二張投影片"
+    "presentation_slide_second": "第二張投影片",
+    "markdown-snippet": "Markdown 片段",
+    "code-snippet": "程式碼片段",
+    "ai-quick-action": "AI 快速操作",
+    "dashboard": "儀表板"
   },
   "sql_init": {
     "db_not_initialized_desktop": "資料庫尚未初始化，請依螢幕指示操作。",
@@ -358,7 +451,8 @@
       "cannot-compare-with": "無法與 \"{{- token}}\" 進行比較。若要搜尋字面值，請使用引號：\"{{- token}}\"",
       "misplaced-expression": "\"{{- token}}\" 的表達式位置不當或不完整",
       "fulltext-after-expression": "\"{{- token}}\" 不是有效的表達式。若要搜尋文字，請將其置於屬性篩選條件之前（例如：\"{{- token}} #label\"，而非 \"#label {{- token}}\"）。",
-      "unrecognized-expression": "無法辨識的表達式 \"{{- token}}\""
+      "unrecognized-expression": "無法辨識的表達式 \"{{- token}}\"",
+      "regex-not-allowed": "此處無法使用正則表達式運算子「%=」。"
     }
   },
   "password": {
@@ -366,5 +460,153 @@
   },
   "script": {
     "wrong-environment": "無法執行筆記「{{- noteTitle}}」（{{- noteId}}）。這是一個 {{- actualEnv}} 腳本，但嘗試在 {{- expectedEnv}} 中執行。"
+  },
+  "note_conversion": {
+    "revision_before_markdown": "轉換為 Markdown 之前",
+    "revision_before_text": "轉換為文字筆記之前"
+  },
+  "onenote_import": {
+    "root-title": "OneNote 匯入",
+    "failed-page-placeholder": "無法從 OneNote 匯入此頁面。錯誤：{{error}}",
+    "failed-section-placeholder": "無法從 OneNote 匯入此章節，因此已建立為空白章節。錯誤：{{error}}",
+    "protected-section-error": "此章節受密碼保護。請在 OneNote 中移除其密碼，然後再次匯入。",
+    "protected-section-placeholder": "此章節受密碼保護，因此無法匯入其中的頁面，且建立時為空白狀態。若要匯入此章節，請在 OneNote 中開啟該章節，移除其密碼保護（右鍵點擊該區段 → 密碼保護 → 移除密碼），然後再次執行匯入。",
+    "report": {
+      "row-pages": "已成功匯入頁面",
+      "row-notebooks": "已成功匯入筆記本",
+      "row-sections": "已成功匯入章節",
+      "row-duration": "總匯入時長",
+      "row-images": "圖片",
+      "row-attachments": "附件檔案",
+      "row-ink": "含有手寫文字或繪圖的頁面",
+      "row-links": "跨頁連結",
+      "row-throttling": "受 Microsoft Graph 限流",
+      "value-links": "{{resolved}} 已解析，{{unresolved}} 指向匯入選項範圍外",
+      "value-throttling_one": "{{- wait}}（{{count}} 個被限流的請求）",
+      "skipped-sections-title": "無法匯入的章節",
+      "skipped-sections-section": "章節",
+      "skipped-sections-notebook": "筆記本",
+      "skipped-sections-error": "錯誤",
+      "failed-pages-title": "無法匯入的頁面",
+      "failed-pages-page": "頁面",
+      "failed-pages-section": "章節",
+      "failed-pages-error": "錯誤",
+      "failed-resources-title": "缺失的圖片和附件",
+      "failed-resources-item_one": "{{- pageLink}}：無法下載 {{count}} 項資源"
+    }
+  },
+  "notion_import": {
+    "root-title": "Notion 匯入",
+    "markdown-export-unsupported": "這看起來像是 Notion 的「Markdown & CSV」匯出檔，Trilium 無法匯入此類檔案。請改用「HTML」匯出格式重新匯出您的 Notion 工作區，並將該檔案匯入。",
+    "subpage-folders-disabled": "此 Notion 匯出檔是在未啟用「為子頁面建立資料夾」選項的情況下建立的，因此無法重建頁面層級結構。請在 Notion 中啟用「為子頁面建立資料夾」選項後重新匯出，並改為匯入該檔案。"
+  },
+  "keep_import": {
+    "root-title": "Google Keep 匯入"
+  },
+  "anytype_import": {
+    "root-title": "Anytype 匯入",
+    "protobuf-export-unsupported": "這看起來像是 Anytype 的「Protobuf」匯出格式，Trilium 無法匯入此格式。請將您的 Anytype 空間重新匯出為「Any-Block」格式（並選取「JSON」），然後改為匯入該檔案。",
+    "markdown-export-unsupported": "這看起來像是 Anytype 的「Markdown」匯出檔，Trilium 無法匯入此格式。請改用「Any-Block」格式重新匯出您的 Anytype 空間（並選取「JSON」），然後將該檔案匯入。"
+  },
+  "obsidian_import": {
+    "root-title": "Obsidian 匯入"
+  },
+  "export": {
+    "zip_filter": "ZIP 壓縮檔 (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "檔案選取已過期或無效。請重新選擇檔案。"
+  },
+  "open_custom": {
+    "choose_application": "請選擇用來開啟此檔案的應用程式。",
+    "applications_filter": "應用程式"
+  },
+  "restore": {
+    "pick_backup_title": "選擇要還原的備份",
+    "backup_filter": "Trilium 備份 (*.db, *.tnbackup)",
+    "any_file_filter": "所有檔案"
+  },
+  "backup": {
+    "custom_directory_unwritable": "資料庫備份失敗：無法寫入 {{- location}}。將改為備份至預設位置。",
+    "passphrase_unavailable": "無法讀取備份密碼，因此此備份未經加密。該備份已儲存至預設位置，而非您所選擇的位置。"
+  },
+  "dialog": {
+    "select_directory": "選擇資料夾"
+  },
+  "backup-password-dialog": {
+    "cancel": "取消",
+    "set-title": "要設定備份密碼嗎？",
+    "set-message": "未來的備份將使用此密碼進行加密。",
+    "set-detail": "Trilium 無法再次顯示此密碼，因此請將其備份存放在安全的地方：若無此密碼，將無法還原備份。\n\n若您並未預期會被要求輸入此密碼，請取消此操作——這可能是某個筆記或腳本所觸發的請求。",
+    "set-confirm": "設定密碼",
+    "clear-title": "忘記備份密碼了嗎？",
+    "clear-message": "備份將不再進行加密。",
+    "clear-detail": "已建立的備份會保留建立時所使用的密碼，並仍可使用該密碼進行還原。\n\n若您未預期會被要求輸入密碼，請取消此操作——這可能是某個筆記或腳本所觸發的請求。",
+    "clear-confirm": "忘記密碼"
+  },
+  "security-dialog": {
+    "enable-title": "啟用 {{settingLabel}}",
+    "enable-message": "您確定要啟用 {{settingLabel}} 嗎？",
+    "enable-detail": "{{warning}}\n\n請僅在您明確打算使用此功能時才啟用此選項。若是由腳本或不熟悉的提示所引導，請勿啟用此功能。\n\n此變更需重新啟動後方能生效。",
+    "disable-title": "停用 {{settingLabel}}",
+    "disable-message": "{{settingLabel}} 將被停用。",
+    "disable-detail": "此變更需重新啟動後方能生效。",
+    "cancel": "取消",
+    "enable": "啟用",
+    "disable": "停用",
+    "dont-ask-again": "重啟前不再詢問",
+    "backend-scripting": "後端腳本執行",
+    "backend-scripting-warning": "後端腳本對伺服器擁有完全存取權限，包括檔案系統和網路。",
+    "sql-console": "SQL 控制台",
+    "sql-console-warning": "SQL 控制台允許對資料庫執行任意的 SQL 查詢。",
+    "lan-access": "網路存取",
+    "lan-access-warning": "該應用程式及您的共享筆記將透過網路提供服務——您可透過這台電腦上的瀏覽器，以及本地網路上的其他裝置存取這些內容。"
+  },
+  "setup-window": {
+    "getting-started": "入門指南 —— Trilium Notes",
+    "start-over": "重頭開始 —— Trilium 筆記"
+  },
+  "start-over-dialog": {
+    "title": "從頭開始",
+    "message": "重新啟動 Trilium 並返回設定畫面？",
+    "detail": "系統會先提供您目前知識庫的備份。在您選擇建立新知識庫、還原備份或從其他裝置同步資料之前，系統不會刪除任何內容。\n\n若某個腳本或您不熟悉的筆記提示您繼續，請勿繼續。",
+    "cancel": "取消",
+    "confirm": "重啟並從頭開始"
+  },
+  "transcription": {
+    "already-recording": "會議已在轉錄。",
+    "note-not-found": "該會議筆記已不存在。",
+    "start-failed": "無法開始轉錄：{{- message}}",
+    "stopped-unexpectedly": "轉錄過程意外中斷。截至當時已轉錄的內容仍會保留。",
+    "save-locked": "在受保護的會話處於鎖定狀態時，無法儲存轉錄內容。只要 Trilium 保持開啟狀態，系統便會保留該轉錄內容，並在您進入受保護的會話時將其儲存。",
+    "save-failed": "無法儲存轉錄文字：{{- message}} 轉錄系統會保留該段文字，並在下一句時再次嘗試。",
+    "capture-lost": "由於無法再擷取音訊，因此轉錄已停止。截至目前為止已轉錄的內容仍會保留。",
+    "attachment-title": "轉錄",
+    "model-not-downloaded": "語音辨識模型尚未下載。請從啟動器開始錄音以下載該模型。",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3，高精度",
+    "recognizer-description": "NVIDIA 所推出支援 25 種歐洲語言的語音辨識模型。辨識過程完全在裝置上進行，因此您的錄音絕不會離開該裝置。",
+    "vad-title": "Silero VAD",
+    "vad-description": "用於偵測音訊中的語音，以便僅將含有語音的部分進行轉錄。",
+    "speaker-description": "用於區分發言者，以便您能在對話紀錄中清楚看到誰說了什麼。",
+    "speaker-title": "TitaNet small"
+  },
+  "resources": {
+    "unknown": "沒有名為 {{id}} 的資源。",
+    "http-error": "下載 {{name}} 失敗，HTTP 狀態碼為 {{status}}。",
+    "size-mismatch": "{{name}} 的大小與預期不符。",
+    "hash-mismatch": "{{name}} 與預期的校驗和不符，因此已被刪除。",
+    "delete-while-downloading": "正在下載 {{- title}}。請在刪除前取消下載。",
+    "not-foreign": "{{- name}} 並非資源資料夾中未被使用的項目。",
+    "stalled": "{{name}} 的下載已中斷：{{seconds}} 秒內未接收到任何資料。請檢查您的網路連線，然後再試一次。"
+  },
+  "share_target": {
+    "default-title": "共享內容",
+    "nothing-to-share": "沒有內容可分享：未收到任何文字、連結或檔案。",
+    "rejected": "分享被拒絕：{{- reason}}",
+    "other-page": "只有系統的「分享」選單才能將內容傳送至此地址。"
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium 是以 Flatpak 形式運作的，因此無法啟動安裝在其沙盒外的程式，例如 {{- cli}}。若要使用 {{- cli}}：\n\n1. 將其安裝在此電腦上，並透過終端機登入該程式。\n2. 在終端機中執行以下指令，允許 Trilium 啟動沙盒外的程式：\n\n{{- grantCommand}}\n\n3. 重新啟動 Trilium。\n\n此操作將使 Trilium 對您的電腦擁有與非 Flatpak 安裝相同的存取權限。若要撤銷此權限，請執行：\n\n{{- revokeCommand}}"
   }
 }

@@ -34,7 +34,11 @@
     "electron:build": "pnpm desktop:build",
     "electron:start": "pnpm desktop:start",
     "electron:start-prod": "pnpm desktop:start-prod",
+    "changelog:lint": "node --experimental-strip-types ./scripts/release-notes.mts lint",
+    "changelog:new": "node --experimental-strip-types ./scripts/release-notes.mts new",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
+    "chore:release": "node --experimental-strip-types ./scripts/release.mts",
+    "chore:release-notes": "node --experimental-strip-types ./scripts/release-notes.mts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
     "chore:update-electron-locales": "tsx ./scripts/update-electron-locales.ts",
@@ -66,15 +70,15 @@
     "@types/express": "5.0.6",
     "@types/node": "24.19.2",
     "@typescript/native": "npm:typescript@7.0.2",
-    "@vitest/browser-playwright": "5.0.5",
-    "@vitest/coverage-v8": "5.0.5",
-    "@vitest/ui": "5.0.5",
+    "@vitest/browser-playwright": "5.1.0",
+    "@vitest/coverage-v8": "5.1.0",
+    "@vitest/ui": "5.1.0",
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
     "eslint": "10.14.0",
     "eslint-config-preact": "2.0.0",
-    "eslint-plugin-playwright": "2.12.1",
+    "eslint-plugin-playwright": "2.12.2",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "happy-dom": "21.0.4",
     "http-server": "14.1.1",
@@ -86,7 +90,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "license": "AGPL-3.0-or-later",
   "author": {
@@ -102,5 +106,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.16.1"
+  "packageManager": "pnpm@12.18.0"
 }

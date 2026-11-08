@@ -59,7 +59,7 @@ describe("CKEditor config", () => {
 });
 
 describe("the Insert group", () => {
-    it("offers the drawing canvas above the Mermaid diagram, then the YouTube video", () => {
+    it("offers the drawing canvas above the Mermaid diagram, then the media embed", () => {
         const toolbars = [
             buildClassicToolbar(false, true).toolbar.items,
             buildFloatingToolbar(true).blockToolbar
@@ -70,7 +70,7 @@ describe("the Insert group", () => {
             const groupItems = (group as { items: string[] } | undefined)?.items ?? [];
             const index = groupItems.indexOf("drawingCanvas");
             expect(groupItems.slice(index, index + 3))
-                .toEqual([ "drawingCanvas", "mermaid", "youtubeVideo" ]);
+                .toEqual([ "drawingCanvas", "mermaid", "insertMedia" ]);
             expect(items).not.toContain("drawingCanvas");
         }
     });
@@ -221,6 +221,25 @@ describe("the insert menus", () => {
             expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
         }
     });
+
+    it("list the footnote right below the page break", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            const insert = insertItems(items);
+            expect(insert.indexOf("footnote")).toBe(insert.indexOf("pageBreak") + 1);
+            expect(items).not.toContain("footnote");
+        }
+    });
+
+    it("leave the link to the bar, right ahead of the attach menu", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            expect(insertItems(items)).not.toContain("link");
+            expect(items.indexOf("attachMenu")).toBe(items.indexOf("link") + 1);
+        }
+    });
 });
 
 describe("buildMobileToolbar", () => {
@@ -240,7 +259,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "horizontalLine", "pageBreak", "footnote",
                 "|",
-                "math", "drawingCanvas", "mermaid", "youtubeVideo",
+                "math", "drawingCanvas", "mermaid", "insertMedia",
                 "|",
                 "bookmark", "childNote", "contentEmbed",
                 "|",

@@ -40,6 +40,7 @@ const MIN_CARD_HEIGHT = 32;
 /** How long an open takes. Matches `--board-expand-duration` in the board's own rules. */
 export const EXPAND_MS = 200;
 import NoteLink from "../../react/NoteLink";
+import { RAIL_EXIT_MS } from "../../react/OverlayRail";
 import TemplateDropdown, { type TemplateChoice } from "../../react/TemplateDropdown";
 import {
     BoardActionsContext, BoardDragStateContext, BoardEditingContext, BoardOverlayHostContext,
@@ -48,7 +49,7 @@ import {
 import BoardApi from "./api";
 import Card from "./card";
 import { DEFAULT_CARD_ICON, DEFAULT_COLUMN_ICON, INBOX_COLUMN } from "./columns";
-import { ColumnToolbar, RAIL_EXIT_MS } from "./card_toolbar";
+import { ColumnToolbar } from "./card_toolbar";
 import { openColumnContextMenu, openColumnSortMenu, openCreateCardMenu } from "./context_menu";
 import type { ColumnSort } from "./data";
 import { cardSpacing } from "./drag_measure";

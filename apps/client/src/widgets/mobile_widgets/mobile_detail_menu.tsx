@@ -45,6 +45,7 @@ export default function MobileDetailMenu() {
         <div style={{ contain: "none" }}>
             {note ? (
                 <NoteContextMenu
+                    key={viewScope?.viewMode ?? "default"}
                     dropdownRef={dropdownRef}
                     note={note} noteContext={noteContext}
                     leadingViewActions={subContexts.length < 2 ? [ {

@@ -20,6 +20,15 @@ describe("LinkEmbed", () => {
         expect(editor.ui.componentFactory.has("linkEmbed")).toBe(false);
     });
 
+    it("lists the display modes with their labels, for a host reaching it by name", () => {
+        expect(editor.plugins.get("LinkEmbed").getDisplayModes()).toEqual([
+            { value: "textLink", label: "Text" },
+            { value: "iconAndTextLink", label: "Icon & text" },
+            { value: "cardLink", label: "Card" },
+            { value: "embedLink", label: "Embed" }
+        ]);
+    });
+
     it("shows previews as their title or URL, and inserts unresolved cards, without linkEmbed", async () => {
         const plainEditor = await createTestEditor(LINK_EMBED_TEST_PLUGINS);
         setModelData(plainEditor.model, "<paragraph>"
@@ -33,7 +42,9 @@ describe("LinkEmbed", () => {
         expect(domRoot?.querySelector(".link-embed-preview-wrapper")?.textContent).toBe("https://c.example/");
 
         setModelData(plainEditor.model, "<paragraph>[]</paragraph>");
-        await plainEditor.execute(LINK_EMBED_COMMAND, { url: "https://youtube.com/watch?v=x", mode: "embed" });
+        await plainEditor.execute(LINK_EMBED_COMMAND, {
+            url: "https://youtube.com/watch?v=x", mode: "embedLink"
+        });
         expect(findElement(plainEditor, "linkEmbed")?.getAttribute("embedType")).toBe("opengraph");
     });
 });

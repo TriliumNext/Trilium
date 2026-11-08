@@ -75,7 +75,7 @@ export function buildMobileToolbar(aiAssistant: boolean) {
                         "|",
                         "horizontalLine", "pageBreak", "footnote",
                         "|",
-                        "math", "drawingCanvas", "mermaid", "youtubeVideo",
+                        "math", "drawingCanvas", "mermaid", "insertMedia",
                         "|",
                         "bookmark", "childNote", "contentEmbed",
                         "|",
@@ -167,6 +167,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 // down among the last items the assistant was grouped away at every ordinary note
                 // width.
                 ...(aiAssistant ? ["aiAssistant"] : []),
+                "link",
                 "attachMenu",
                 "blockQuote",
                 "admonition",
@@ -175,15 +176,14 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 "code",
                 "codeBlock",
                 "|",
-                "footnote",
                 {
                     ...buildInsertGroup(),
                     items: [
-                        "link", "bookmark", "internallink", "childNote", "contentEmbed",
+                        "bookmark", "internallink", "childNote", "contentEmbed",
                         "|",
                         "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
-                        "math", "drawingCanvas", "mermaid", "youtubeVideo", "horizontalLine",
-                        "pageBreak",
+                        "math", "drawingCanvas", "mermaid", "insertMedia", "horizontalLine",
+                        "pageBreak", "footnote",
                         "|",
                         "dateTime", "specialCharacters", "emoji", "insertIcon"
                     ]
@@ -249,20 +249,20 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "numberedList",
             "todoList",
             "|",
+            "link",
             "attachMenu",
             "blockQuote",
             "admonition",
             "codeBlock",
             "insertTable",
-            "footnote",
             {
                 ...buildInsertGroup(),
                 items: [
-                    "link", "bookmark", "internallink", "childNote", "contentEmbed",
+                    "bookmark", "internallink", "childNote", "contentEmbed",
                     "|",
                     "collapsible", "tabs", "multicolumnLayout", ...getExtendedCodeBlockItems(),
-                    "math", "drawingCanvas", "mermaid", "youtubeVideo", "horizontalLine",
-                    "pageBreak", "dateTime"
+                    "math", "drawingCanvas", "mermaid", "insertMedia", "horizontalLine",
+                    "pageBreak", "footnote", "dateTime"
                 ]
             },
             "|",

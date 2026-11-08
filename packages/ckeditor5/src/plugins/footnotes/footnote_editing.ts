@@ -246,8 +246,6 @@ export default class FootnoteEditing extends Plugin {
             const footnoteSection = modelQueryElement(this.editor, this.rootElement, (element) =>
                 element.is("element", ELEMENTS.footnoteSection)
             );
-            /* v8 ignore next 3 -- defensive: this only runs after a reference was inserted,
-               which implies the section exists */
             if (!footnoteSection) {
                 return;
             }
@@ -279,7 +277,7 @@ export default class FootnoteEditing extends Plugin {
                  * above: events initiated by a `change:data` event do not themselves fire another
                  * `change:data` event.
                  */
-                /* v8 ignore next -- defensive: an item without an id cannot be downcast, so it
+                /* v8 ignore else -- defensive: an item without an id cannot be downcast, so it
                    never reaches the document */
                 if (id) {
                     this._updateReferenceIndices(batch, `${id}`, index);

@@ -226,7 +226,7 @@
         "website": "Webサイト"
     },
     "section_nav": {
-        "aria_label": "セクションへ移動",
+        "aria_label": "セクションに移動",
         "organization": "整理",
         "productivity": "機能",
         "note_types": "ノートタイプ",

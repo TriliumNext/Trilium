@@ -131,6 +131,7 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 - **CSS nesting for scoping**: since CSS modules are not available, scope styles using a root class and native CSS nesting. For example, a dialog with `className="my-dialog"` should have its styles nested under `.modal.my-dialog { … }`.
 - **Reuse existing components** instead of building custom markup — prefer `FormTextBox`, `FormTextBoxWithUnit`, `FormSelect`, `Slider`, `Button`, etc. over hand-rolled `<input>`, `<select>`, or `<button>` elements.
 - **Safe-area insets** always read `var(--safe-area-inset-top, env(safe-area-inset-top))` (and the `-bottom`/`-left`/`-right` twins), never a bare `env()`. Android's WebView leaves `env(safe-area-inset-*)` at `0`, so `apps/mobile`'s `MainActivity` injects the real values as those custom properties; the `env()` fallback covers iOS and desktop browsers, where nothing is injected. Details in the **`developing-capacitor-mobile` skill**.
+- **Colors in note content** (font, highlight, table and cell colors) are saved with a `--tn-*` variable next to the color and adapted to the theme only in CSS (`packages/ckeditor5/src/theme/adaptive_colors.css`). Load the **`working-with-adaptive-colors` skill** before touching the palette, the `AdaptiveColors` plugin, the `--adaptive-*` limits or a surface that shows note colors.
 
 ### API Architecture
 
@@ -252,7 +253,8 @@ follow-up. Before reporting the work done: `node .claude/skills/writing-document
 --diff` (plus `impact "<feature name>"` for names the diff cannot know) lists the pages that mention the
 changed UI strings and the help pages wired from the touched components; read every hit and edit what
 describes an affordance that changed; a feature no page covers gets a page (`docs.mjs new`). Then
-`docs.mjs sync` and `docs.mjs check`. Release notes are the maintainer's at release time — not on a branch.
+`docs.mjs sync` and `docs.mjs check`. The release note itself is the maintainer's at release time; what a
+change contributes to it is a changelog entry (below).
 
 Two traps this catches:
 
@@ -262,6 +264,19 @@ Two traps this catches:
 - **A capability gate has a blast radius.** Widening one (a note type added to a list a widget switches
   on) can surface panels, bars and menu entries the change never mentioned. Grep the gate's other readers
   and say what else now appears.
+
+### A user-facing change gets a changelog entry
+
+The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
+feature that reaches users adds its entry in the same commit**: `pnpm changelog:new <slug>`, then fill in
+`type`, `area` (required for a fix or an improvement, checked by `pnpm changelog:lint`), the optional
+`closes`/`credits`, and one line describing what the user sees — the outcome,
+not the mechanism. Format and the skip list: `.changelog/README.md`. Skip it for internal changes, for a
+fix to something introduced since the last release, and for a fix whose closed issue's title already
+reads as the entry (closed issues are listed without one). `closes:` only links: the issue is still
+closed by `(closes #N)` in the commit subject. `pnpm chore:release-notes <version> --unlisted` lists the
+fixes and features that slipped through without one. Entries are public before the release: the nightly
+release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
 
 ## Recipes
 

@@ -27,7 +27,7 @@ async function renderRevision(content: string, noteId = "revisedNote") {
 }
 
 describe("RevisionContentText", () => {
-    it("renders an inline link preview that is stored as an empty element", async () => {
+    it("renders an icon & text link that is stored as an empty element", async () => {
         const container = await renderRevision(
             '<p>before</p><p><span class="link-mention" data-url="https://github.com/TriliumNext/Trilium/issues"'
             + ' data-title="Issues · TriliumNext/Trilium"></span></p><p>after</p>'

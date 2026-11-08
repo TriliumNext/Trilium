@@ -1,4 +1,5 @@
-import { render } from "preact";
+import { Tooltip } from "bootstrap";
+import { render, type VNode } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -8,10 +9,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { audioVisualizer } = vi.hoisted(() => ({ audioVisualizer: vi.fn((_props: { compact?: boolean }) => null) }));
 vi.mock("./audio_waveform", () => ({ loadWaveform: vi.fn(async () => null) }));
 vi.mock("./AudioVisualizer", () => ({ AudioVisualizer: audioVisualizer }));
+vi.mock("../../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    t: (key: string) => key
+}));
+// The real i18n is not initialized under test, so the stub renders the values and components.
+vi.mock("react-i18next", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    Trans: ({ i18nKey, values, components }: {
+        i18nKey: string; values: object; components: Record<string, VNode>;
+    }) => <span data-i18n-key={i18nKey}>{JSON.stringify(values)}{Object.values(components)}</span>
+}));
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
+import server from "../../../services/server";
+import { getExternalMediaSource } from "./media_source";
 import MediaPreview from "./MediaPreview";
 
 const videoNote = { noteId: "vid1", title: "Holiday", mime: "video/mp4", blobId: "blobV" } as FNote;
@@ -33,6 +47,7 @@ describe("MediaPreview", () => {
     afterEach(() => {
         render(null, container);
         container.remove();
+        vi.restoreAllMocks();
     });
 
     const mediaElement = () => container.querySelector("video, audio") as HTMLMediaElement | null;
@@ -270,6 +285,102 @@ describe("MediaPreview", () => {
             const { download, open } = fileActions();
             expect(download).toBeNull();
             expect(open).toBeNull();
+        });
+    });
+
+    describe("media on another site", () => {
+        const fileUrl = "https://example.com/clip.mp4";
+        const poster = "api/attachments/a1/image/clip.jpg";
+
+        it("shows a video behind its thumbnail, loading nothing, then plays it on a click", async () => {
+            const source = getExternalMediaSource({ url: fileUrl, image: poster }, "video");
+            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
+
+            expect(mediaElement()).toBeNull();
+            expect(container.querySelector(".media-proxy.has-poster > img.media-proxy-poster")
+                ?.getAttribute("src")).toBe(poster);
+            const button = proxyPlayButton();
+            expect(button).not.toBeNull();
+            act(() => {
+                if (button) Tooltip.getInstance(button)?.show();
+            });
+            // The title of a file on another site is the name in its URL.
+            expect(document.querySelector(".tooltip-inner")?.textContent).toBe("link_embed.play_video");
+            await act(async () => proxyPlayButton()?.click());
+
+            const media = mediaElement();
+            expect([ media?.tagName, media?.getAttribute("src"), media?.getAttribute("poster") ])
+                .toEqual([ "VIDEO", fileUrl, poster ]);
+            // The removed placeholder left the focus to the page, which would blur an editor.
+            expect(document.activeElement).toBe(container.querySelector(".video-preview-wrapper"));
+            await act(async () => { media?.dispatchEvent(new Event("canplay")); });
+            expect(play).toHaveBeenCalled();
+            expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
+        });
+
+        it("mounts an audio player with no address until play is pressed", async () => {
+            const { loadWaveform } = await import("./audio_waveform");
+            const url = "https://example.com/a.mp3";
+            const source = getExternalMediaSource({ url }, "audio");
+            await act(async () => render(<MediaPreview source={source} environment="embedded" />, container));
+
+            const media = mediaElement();
+            expect([ media?.tagName, media?.hasAttribute("src") ]).toEqual([ "AUDIO", false ]);
+            expect(container.querySelector(".audio-preview-visualization-wrapper")).toBeNull();
+            expect(audioVisualizer).not.toHaveBeenCalled();
+            expect(loadWaveform).not.toHaveBeenCalled();
+            expect(container.querySelector(".bx-download, .bx-link-external")).toBeNull();
+            expect(play).not.toHaveBeenCalled();
+
+            let srcAtPlay: string | null = null;
+            play.mockImplementationOnce(async function (this: HTMLMediaElement) {
+                srcAtPlay = this.getAttribute("src");
+            });
+            const playButton =
+                container.querySelector<HTMLElement>(".media-compact-row .play-button");
+            expect(playButton).not.toBeNull();
+            await act(async () => playButton?.click());
+
+            // The address is set in the click itself, which the browser requires for `play()`.
+            expect(srcAtPlay).toBe(url);
+            expect(play).toHaveBeenCalledOnce();
+        });
+
+        it("says that the media cannot be played, with the HTTP error of its host", async () => {
+            const post = vi.spyOn(server, "postWithSilentErrors")
+                .mockImplementationOnce(async () => ({ status: 404 }))
+                .mockImplementationOnce(async () => ({ status: 200 }));
+            const status = () => container.querySelector(".media-playback-status");
+            const video = getExternalMediaSource({ url: fileUrl }, "video");
+            await act(async () => render(
+                <MediaPreview source={video} environment="embedded" />, container));
+            await act(async () => proxyPlayButton()?.click());
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+
+            expect(container.textContent).toContain("media.external-unavailable");
+            expect(post).toHaveBeenCalledExactlyOnceWith("link-embed/status", { url: fileUrl });
+            await vi.waitFor(() => expect(status()).not.toBeNull());
+            expect(status()?.querySelector("[data-i18n-key='media.http-error']")?.textContent)
+                .toBe(`{"status":404,"name":"media.http-status-names.404"}`);
+            expect(status()?.querySelector("strong")).not.toBeNull();
+
+            render(null, container);
+            const audio = getExternalMediaSource({ url: "https://example.com/a.mp3" }, "audio");
+            await act(async () => render(
+                <MediaPreview source={audio} environment="embedded" />, container));
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+            // Lets the answer arrive and render, as the 404 above did.
+            await act(() => new Promise((resolve) => setTimeout(resolve)));
+            expect(container.textContent).toContain("media.external-unavailable");
+            expect(post).toHaveBeenCalledTimes(2);
+            expect(status()).toBeNull();
+
+            render(null, container);
+            await act(async () => render(
+                <MediaPreview entity={videoNote} environment="embedded" />, container));
+            await act(async () => { mediaElement()?.dispatchEvent(new Event("error")); });
+            expect(container.textContent).toContain("media.unsupported-format");
+            expect(post).toHaveBeenCalledTimes(2);
         });
     });
 

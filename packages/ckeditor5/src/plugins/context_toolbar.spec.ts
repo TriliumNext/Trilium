@@ -8,6 +8,7 @@ import bxPencil from "boxicons/svg/regular/bx-pencil.svg?raw";
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import ContentEmbedToolbar from "./content_embed/content_embed_toolbar.js";
 import ContextToolbar from "./context_toolbar.js";
 import ImagePosition from "./image_position.js";
 import LinkEmbedToolbar from "./link_embed/link_embed_toolbar.js";
@@ -448,6 +449,31 @@ describe("ContextToolbar", () => {
                 expect(title).toMatchObject({ isVisible: false, label: "", icon: "" });
             }
         }
+    });
+
+    it("names the toolbar of an embed after its content, which can name it once the embed is selected", async () => {
+        let tools: ContentEmbedToolProvider | null = null;
+        const editor = await createTestEditor([Essentials, Paragraph, ContentEmbedToolbar, ContextToolbar], {
+            toolbar: ["contextToolbar"],
+            contentEmbed: { getTools: () => tools }
+        });
+        editor.ui.focusTracker.isFocused = true;
+        const plugin = editor.plugins.get(ContextToolbar);
+        const button = getButton(editor);
+        const getNames = () => [button.label, [...plugin.toolbarView.items][2]?.element?.textContent];
+        setModelData(editor.model, "[<contentEmbed noteId=\"n1\" boxSize=\"medium\"></contentEmbed>]<paragraph>a</paragraph>");
+        editor.ui.update();
+        expect(plugin.isActive).toBe(true);
+        expect(getNames()).toStrictEqual(["Embed", "Embed"]);
+
+        // The content adds its tools after the embed is selected, as a drawing does once it renders.
+        tools = { toolbarTitle: "Canvas", getTools: () => [], execute: () => {}, subscribe: () => () => {} };
+        editor.ui.update();
+        expect(getNames()).toStrictEqual(["Canvas", "Canvas"]);
+
+        tools = null;
+        editor.ui.update();
+        expect(getNames()).toStrictEqual(["Embed", "Embed"]);
     });
 
     it("takes over the balloons only in an editor whose toolbar holds its button, at any depth", async () => {
