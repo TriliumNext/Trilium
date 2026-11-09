@@ -6,7 +6,7 @@
     "scroll-to-active-note": "Przewiń drzewo do aktywnej notatki",
     "quick-search": "Aktywuj szybki pasek wyszukiwania",
     "search-in-subtree": "Szukaj notatek w poddrzewie aktywnej notatki",
-    "expand-subtree": "Rozwiń sub-drzewo obecnej notatki",
+    "expand-subtree": "Rozwiń poddrzewo bieżącej notatki",
     "collapse-tree": "Zwiń całe drzewo notatek",
     "collapse-subtree": "Zwiń poddrzewo aktualnej notatki",
     "sort-child-notes": "Sortuj notatki podrzędne",
@@ -32,10 +32,10 @@
     "dialogs": "Okna dialogowe",
     "show-note-source": "Pokaż okno \"Źródło notatki\"",
     "show-options": "Otwórz stronę \"Opcje\"",
-    "show-revisions": "Pokaż okno \"Rewizje notatki\"",
+    "show-revisions": "Pokaż okno „Wersje notatki”",
     "show-recent-changes": "Pokaż okno \"Ostatnie zmiany\"",
     "show-sql-console": "Otwórz stronę \"Konsola SQL\"",
-    "show-backend-log": "Otwórz stronę \"Logi backendu\"",
+    "show-backend-log": "Otwórz stronę „Dziennik serwera”",
     "show-help": "Otwórz wbudowany Poradnik Użytkownika",
     "show-cheatsheet": "Pokaż listę skrótów klawiszowych",
     "text-note-operations": "Operacje na notatkach",
@@ -47,23 +47,38 @@
     "create-new-relation": "Utwórz nową relację",
     "attributes-labels-and-relations": "Atrybuty (etykiety i relacje)",
     "open-note-externally": "Otwórz notatkę w domyślnej aplikacji zewnętrznej",
-    "cut-into-note": "Wytnij zaznaczenie i utwórz z niego podnotatkę",
+    "cut-into-note": "Wytnij zaznaczony tekst z bieżącej notatki i utwórz z niego notatkę podrzędną",
     "other": "Inne",
     "render-active-note": "Renderuj (ponownie) aktywną notatkę",
     "find-in-text": "Przełącz panel wyszukiwania w tekście",
     "note-navigation": "Nawigacja notatek",
     "copy-without-formatting": "Kopiuj bez formatowania",
-    "force-save-revision": "Wymuś utworzenie/zapisanie nowej rewizji aktywnej notatki",
+    "force-save-revision": "Wymuś utworzenie i zapisanie nowej wersji aktywnej notatki",
     "toggle-left-note-tree-panel": "Przełącz lewy panel (drzewo notatek)",
     "add-include-note-to-text": "Otwórz okno dołączania (include) notatki",
     "toggle-right-pane": "Przełącz prawy panel (spis treści i wyróżnienia)",
     "run-active-note": "Uruchom aktywny kod JavaScript (frontend/backend)",
-    "toggle-note-hoisting": "Włącz/wyłącz skupienie na bieżącej notatce",
-    "unhoist": "Wyłącz skupienie z dowolnego miejsca",
+    "toggle-note-hoisting": "Włącz lub wyłącz zawężenie widoku do aktywnej notatki",
+    "unhoist": "Cofnij zawężenie widoku z dowolnego miejsca",
     "toggle-zen-mode": "Włącz/wyłącz tryb Zen (minimalistyczny interfejs)",
     "toggle-archived-notes": "Pokaż/ukryj zarchiwizowane notatki w drzewie notatek",
     "show-deleted-notes": "Pokaż okno \"Usunięte notatki\"",
-    "show-space-usage": "Otwórz stronę \"Użycie pamięci\""
+    "show-space-usage": "Otwórz stronę „Zajęte miejsce”",
+    "show-shortcut-hints": "Pokaż skróty klawiaturowe dla aktywnego widżetu",
+    "note-panels": "Panele notatek",
+    "show-note-map": "Pokaż mapę notatek w prawym panelu",
+    "peek-right-pane": "Pokaż prawy panel jako tymczasowy panel nakładany na treść, który zamyka się po utracie fokusu",
+    "save-named-revision": "Zapisz nazwaną wersję aktywnej notatki",
+    "focus-collection-properties": "Przenieś fokus do selektora typu widoku kolekcji",
+    "focus-formatting-toolbar": "Przełącz fokus między stałym paskiem formatowania a edytorem",
+    "create-new-split": "Otwórz nowy pusty panel po prawej stronie aktywnego panelu",
+    "close-active-split": "Zamknij aktywny panel, pozostawiając otwarte pozostałe panele karty",
+    "focus-split-left": "Przenieś fokus do panelu po lewej stronie aktywnego panelu",
+    "focus-split-right": "Przenieś fokus do panelu po prawej stronie aktywnego panelu",
+    "split-view": "Widok podzielony",
+    "move-split-left": "Zamień aktywny panel z panelem po lewej, aby przenieść notatkę i fokus razem z nim",
+    "move-split-right": "Zamień aktywny panel z panelem po prawej, aby przenieść notatkę i fokus razem z nim",
+    "peek-left-pane": "Pokaż drzewo notatek jako tymczasowy panel nakładany na treść"
   },
   "keyboard_action_names": {
     "zoom-in": "Powiększ",
@@ -99,12 +114,12 @@
     "open-note-externally": "Otwórz notatkę zewnętrznie",
     "render-active-note": "Renderuj aktywną notatkę",
     "run-active-note": "Uruchom aktywną notatkę",
-    "show-revisions": "Pokaż rewizje",
+    "show-revisions": "Pokaż wersje notatki",
     "show-recent-changes": "Pokaż ostatnie zmiany",
     "show-sql-console": "Pokaż konsolę SQL",
     "reset-zoom-level": "Resetuj poziom powiększenia",
     "add-link-to-text": "Dodaj link do tekstu",
-    "force-save-revision": "Wymuś zapis rewizji",
+    "force-save-revision": "Wymuś zapis wersji notatki",
     "create-note-after": "Utwórz notatkę po",
     "create-note-into": "Utwórz notatkę wewnątrz",
     "create-note-into-inbox": "Utwórz notatkę w skrzynce odbiorczej",
@@ -127,12 +142,12 @@
     "switch-to-last-tab": "Przełącz na ostatnią kartę",
     "show-note-source": "Pokaż źródło notatki",
     "show-options": "Pokaż opcje",
-    "show-backend-log": "Pokaż logi backendu",
+    "show-backend-log": "Pokaż dziennik serwera",
     "show-help": "Pokaż pomoc",
     "show-cheatsheet": "Pokaż listę skrótów",
     "back-in-note-history": "Wstecz w historii notatek",
     "forward-in-note-history": "Dalej w historii notatek",
-    "command-palette": "Paleta komend",
+    "command-palette": "Paleta poleceń",
     "edit-branch-prefix": "Edytuj prefiks gałęzi",
     "paste-markdown-into-text": "Wklej Markdown do tekstu",
     "cut-into-note": "Wytnij do nowej notatki",
@@ -146,9 +161,35 @@
     "insert-date-and-time-to-text": "Wstaw datę i czas",
     "add-include-note-to-text": "Dołącz notatkę do tekstu",
     "toggle-right-pane": "Przełącz prawy panel",
-    "toggle-note-hoisting": "Przełącz windowanie notatki",
-    "unhoist-note": "Cofnij windowanie",
-    "reload-frontend-app": "Przeładuj aplikację"
+    "toggle-note-hoisting": "Przełącz zawężenie widoku do notatki",
+    "unhoist-note": "Cofnij zawężenie widoku",
+    "reload-frontend-app": "Przeładuj aplikację",
+    "toggle-archived-notes": "Przełącz widoczność zarchiwizowanych notatek",
+    "duplicate-note": "Duplikuj notatkę bez notatek podrzędnych",
+    "show-deleted-notes": "Pokaż usunięte notatki",
+    "show-space-usage": "Pokaż użycie miejsca",
+    "show-shortcut-hints": "Pokaż podpowiedzi skrótów",
+    "focus-formatting-toolbar": "Przejdź do paska narzędzi formatowania",
+    "show-basic-properties": "Pokaż podstawowe właściwości",
+    "focus-collection-properties": "Przejdź do właściwości kolekcji",
+    "focus-file-actions": "Przejdź do działań na pliku",
+    "focus-image-actions": "Przejdź do działań na obrazie",
+    "toggle-owned-attributes": "Przełącz widoczność własnych atrybutów",
+    "toggle-inherited-attributes": "Przełącz widoczność dziedziczonych atrybutów",
+    "toggle-promoted-attributes": "Przełącz widoczność wyróżnionych atrybutów",
+    "show-note-map": "Pokaż mapę notatki",
+    "show-note-info": "Pokaż informacje o notatce",
+    "show-note-paths": "Pokaż ścieżki notatki",
+    "toggle-similar-notes": "Przełącz widoczność podobnych notatek",
+    "peek-right-pane": "Podejrzyj prawy panel",
+    "save-named-revision": "Zapisz nazwaną wersję",
+    "create-new-split": "Utwórz nowy podział",
+    "close-active-split": "Zamknij aktywny podział",
+    "move-split-left": "Przenieś podział w lewo",
+    "move-split-right": "Przenieś podział w prawo",
+    "focus-split-left": "Przejdź do podziału po lewej",
+    "focus-split-right": "Przejdź do podziału po prawej",
+    "peek-left-pane": "Podejrzyj panel drzewa"
   },
   "login": {
     "password": "Hasło",
@@ -157,9 +198,10 @@
     "heading": "Logowanie Trilium",
     "incorrect-totp": "Kod TOTP jest nieprawidłowy. Spróbuj ponownie.",
     "incorrect-password": "Hasło jest nieprawidłowe. Spróbuj ponownie.",
-    "button": "Zaloguj",
-    "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}",
-    "sso-wrong-account": "Te konto nie jest połączone z tą instancją Trilium. Zaloguj się połączonym kontem."
+    "button": "Zaloguj się",
+    "sign_in_with_sso": "Zaloguj się przez {{ ssoIssuerName }}",
+    "sso-wrong-account": "To konto nie jest powiązane z tą instancją Trilium. Zaloguj się przy użyciu powiązanego konta.",
+    "sso-not-enrolled": "Logowanie jednokrotne nie jest jeszcze skonfigurowane. Najpierw zaloguj się hasłem, a potem połącz konto w ustawieniach."
   },
   "weekdays": {
     "monday": "Poniedziałek",
@@ -187,7 +229,8 @@
   },
   "quarterNumber": "Kwartał {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Szukaj:"
+    "search_prefix": "Szukaj:",
+    "llm_chat_prefix": "Czat:"
   },
   "test_sync": {
     "not-configured": "Adres serwera synchronizacji nie jest skonfigurowany. Skonfiguruj najpierw synchronizację.",
@@ -200,28 +243,28 @@
     "shortcuts-title": "Skróty",
     "appearance-title": "Wygląd",
     "spellcheck-title": "Sprawdzanie pisowni",
-    "password-title": "Hasło",
+    "password-title": "Hasło i uwierzytelnianie",
     "backup-title": "Kopia zapasowa",
     "sync-title": "Synchronizacja",
     "advanced-title": "Zaawansowane",
-    "localization": "Język i Region",
+    "localization": "Język i region",
     "search-history-title": "Historia wyszukiwania",
     "note-map-title": "Mapa notatek",
     "sql-console-history-title": "Historia konsoli SQL",
     "shared-notes-title": "Udostępnione notatki",
     "bulk-action-title": "Akcja masowa",
-    "backend-log-title": "Logi backendu",
+    "backend-log-title": "Dziennik serwera",
     "user-hidden-title": "Ukryte przez użytkownika",
-    "launch-bar-templates-title": "Szablony paska uruchamiania",
-    "base-abstract-launcher-title": "Bazowy launcher abstrakcyjny",
-    "command-launcher-title": "Launcher poleceń",
-    "note-launcher-title": "Launcher notatek",
-    "script-launcher-title": "Launcher skryptów",
+    "launch-bar-templates-title": "Szablony paska szybkiego dostępu",
+    "base-abstract-launcher-title": "Bazowy abstrakcyjny element uruchamiający",
+    "command-launcher-title": "Przycisk uruchamiający polecenie",
+    "note-launcher-title": "Przycisk otwierający notatkę",
+    "script-launcher-title": "Przycisk uruchamiający skrypt",
     "built-in-widget-title": "Wbudowany widżet",
     "spacer-title": "Separator",
     "custom-widget-title": "Niestandardowy widżet",
-    "launch-bar-title": "Pasek uruchamiania",
-    "available-launchers-title": "Dostępne launchery",
+    "launch-bar-title": "Pasek szybkiego dostępu",
+    "available-launchers-title": "Dostępne przyciski uruchamiające",
     "go-to-previous-note-title": "Idź do poprzedniej notatki",
     "go-to-next-note-title": "Idź do następnej notatki",
     "new-note-title": "Nowa notatka",
@@ -230,27 +273,53 @@
     "calendar-title": "Kalendarz",
     "recent-changes-title": "Ostatnie zmiany",
     "bookmarks-title": "Zakładki",
-    "command-palette": "Otwórz paletę komend",
+    "command-palette": "Otwórz paletę poleceń",
     "zen-mode": "Tryb Zen",
     "open-today-journal-note-title": "Otwórz dzisiejszy dziennik",
     "quick-search-title": "Szybkie wyszukiwanie",
-    "protected-session-title": "Chroniona sesja",
+    "protected-session-title": "Sesja chroniona",
     "sync-status-title": "Status synchronizacji",
     "text-notes": "Notatki tekstowe",
     "code-notes-title": "Notatki kodowe",
-    "images-title": "Obrazy",
+    "images-title": "Multimedia",
     "multi-factor-authentication-title": "MFA",
     "etapi-title": "ETAPI",
     "other": "Inne",
-    "visible-launchers-title": "Widoczne launchery",
+    "visible-launchers-title": "Widoczne przyciski uruchamiające",
     "user-guide": "Podręcznik użytkownika",
     "inbox-title": "Skrzynka odbiorcza",
-    "tab-switcher-title": "Przełącznik kart"
+    "tab-switcher-title": "Przełącznik kart",
+    "llm-chat-history-title": "Historia czatu z AI",
+    "task-states-title": "Stany zadań",
+    "task-state-none": "Brak",
+    "task-state-doing": "W trakcie",
+    "task-state-done": "Zrobione",
+    "task-state-maybe": "Być może",
+    "task-state-cancelled": "Anulowane",
+    "task-state-attr-state-id": "Identyfikator (wymagany)",
+    "task-state-attr-markdown-symbol": "Symbol Markdown",
+    "task-state-attr-is-completed": "Oznacza jako ukończone",
+    "task-state-attr-color": "Kolor",
+    "task-state-attr-is-hidden": "Ukryte na liście",
+    "space-usage-title": "Zajęte miejsce",
+    "custom-dictionary-title": "Słownik niestandardowy",
+    "deleted-notes-title": "Usunięte notatki",
+    "color-scheme-switcher-title": "Przełącznik schematu kolorów",
+    "content-manager-title": "Menedżer zawartości",
+    "desktop-title": "Komputer",
+    "security-title": "Bezpieczeństwo",
+    "database-title": "Baza danych",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Czat z AI",
+    "record-meeting-title": "Transkrybuj spotkanie",
+    "transcription-title": "Transkrypcja",
+    "resources-title": "Pobrane zasoby"
   },
   "notes": {
     "new-note": "Nowa notatka",
     "duplicate-note-suffix": "(kopia)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Nie udało się usunąć notatek: {{- message}}"
   },
   "set_password": {
     "title": "Ustaw hasło",
@@ -277,11 +346,32 @@
     "on-this-page": "Na tej stronie",
     "site-theme": "Motyw strony",
     "search_placeholder": "Szukaj...",
-    "expand": "Rozwiń"
+    "expand": "Rozwiń",
+    "appearance": "Wygląd",
+    "theme-light": "Jasny",
+    "theme-dark": "Ciemny",
+    "theme-system": "Systemowy",
+    "theme-current": "Wygląd: {{- theme}}",
+    "subpages-of": "Podstrony: {{- title}}",
+    "hidden-subpages_one": "{{count}} podstrona ukryta w drzewie",
+    "hidden-subpages_few": "{{count}} podstrony ukryte w drzewie",
+    "hidden-subpages_many": "{{count}} podstron ukrytych w drzewie",
+    "toggle-navigation": "Przełącz widoczność nawigacji",
+    "toggle-toc": "Przełącz widoczność spisu treści",
+    "logo-alt": "Logo",
+    "login": "Zaloguj się",
+    "tab-title": "Tytuł karty",
+    "heading-link": "Link do tej sekcji",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "page-navigation": "Poprzednie i następne strony",
+    "previous-tabs": "Przewiń do poprzednich kart",
+    "next-tabs": "Przewiń do następnych kart",
+    "copy-code": "Kopiuj kod"
   },
   "hidden_subtree_templates": {
     "table": "Tabela",
-    "geo-map": "Mapa",
+    "geo-map": "Mapa geograficzna",
     "start-date": "Data rozpoczęcia",
     "end-date": "Data zakończenia",
     "start-time": "Czas rozpoczęcia",
@@ -304,7 +394,11 @@
     "presentation": "Prezentacja",
     "presentation_slide": "Slajd prezentacji",
     "presentation_slide_first": "Pierwszy slajd",
-    "presentation_slide_second": "Drugi slajd"
+    "presentation_slide_second": "Drugi slajd",
+    "markdown-snippet": "Fragment Markdown",
+    "code-snippet": "Fragment kodu",
+    "ai-quick-action": "Szybkie działanie AI",
+    "dashboard": "Pulpit nawigacyjny"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza danych nie jest zainicjowana, postępuj zgodnie z instrukcjami na ekranie.",
@@ -312,17 +406,25 @@
   },
   "backend_log": {
     "log-does-not-exist": "Plik logów backendu '{{ fileName }}' (jeszcze) nie istnieje.",
-    "reading-log-failed": "Błąd odczytu pliku logów backendu '{{ fileName }}'."
+    "reading-log-failed": "Błąd odczytu pliku logów backendu '{{ fileName }}'.",
+    "log-file-unavailable": "Nie można otworzyć pliku dziennika, więc wyświetlane są tylko najnowsze wpisy przechowywane w pamięci. Trilium nadal próbuje go otworzyć i zapisze te wpisy, gdy będzie to możliwe."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Ten typ notatki nie może zostać wyświetlony."
+    "note-cannot-be-displayed": "Ten typ notatki nie może zostać wyświetlony.",
+    "included-note-requires-credentials": "Ta osadzona notatka jest chroniona hasłem i nie można jej tutaj wyświetlić.",
+    "content-not-available": "Ta zawartość jest niedostępna.",
+    "broken-block-reference": "Nieprawidłowe odwołanie do bloku",
+    "untitled-block": "Blok",
+    "play-video": "Odtwórz wideo",
+    "play-audio": "Odtwórz dźwięk"
   },
   "pdf": {
     "export_filter": "Dokument PDF (*.pdf)",
     "unable-to-export-message": "Aktualna notatka nie mogła zostać wyeksportowana jako PDF.",
     "unable-to-export-title": "Błąd eksportu do PDF",
     "unable-to-save-message": "Nie można zapisać wybranego pliku. Spróbuj ponownie lub wybierz inną lokalizację.",
-    "unable-to-print": "Nie można wydrukować notatki"
+    "unable-to-print": "Nie można wydrukować notatki",
+    "render-timeout": "Renderowanie notatki nie zakończyło się w ciągu {{seconds}} sekund."
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -337,9 +439,180 @@
   "migration": {
     "old_version": "Bezpośrednia migracja z obecnej wersji nie jest obsługiwana. Najpierw zaktualizuj do v0.60.4, a dopiero potem do tej wersji.",
     "error_message": "Błąd podczas migracji do wersji {{version}}: {{stack}}",
-    "wrong_db_version": "Wersja bazy danych ({{version}}) jest nowsza niż obsługiwana przez aplikację ({{targetVersion}}). Oznacza to, że została utworzona przez nowszą i niekompatybilną wersję Trilium. Zaktualizuj Trilium do najnowszej wersji."
+    "wrong_db_version": "Wersja bazy danych ({{version}}) jest nowsza niż obsługiwana przez aplikację ({{targetVersion}}). Oznacza to, że została utworzona przez nowszą i niekompatybilną wersję Trilium. Zaktualizuj Trilium do najnowszej wersji.",
+    "automatic_migrations_disabled": "Automatyczne migracje bazy danych są wyłączone za pomocą zmiennej środowiskowej TRILIUM_MANUAL_DB_MIGRATION = {{envVarValue}}",
+    "invalid_db_version": "Wersja bazy danych nie jest prawidłową liczbą. Zwykle oznacza to, że opcja „dbVersion” w bazie danych jest uszkodzona. Przywróć bazę danych z kopii zapasowej."
   },
   "modals": {
     "error_title": "Błąd"
+  },
+  "password": {
+    "incorrect": "Wpisane hasło jest nieprawidłowe."
+  },
+  "note_conversion": {
+    "revision_before_markdown": "Przed konwersją na Markdown",
+    "revision_before_text": "Przed konwersją na notatkę tekstową"
+  },
+  "onenote_import": {
+    "root-title": "Import z OneNote",
+    "failed-page-placeholder": "Nie udało się zaimportować tej strony z OneNote. Błąd: {{error}}",
+    "failed-section-placeholder": "Nie udało się zaimportować tej sekcji z OneNote, dlatego utworzono ją jako pustą. Błąd: {{error}}",
+    "protected-section-error": "Ta sekcja jest chroniona hasłem. Usuń hasło w OneNote, a następnie zaimportuj ją ponownie.",
+    "protected-section-placeholder": "Ta sekcja jest chroniona hasłem, więc nie udało się zaimportować jej stron i utworzono ją jako pustą. Aby ją zaimportować, otwórz sekcję w OneNote, usuń ochronę hasłem (kliknij sekcję prawym przyciskiem myszy → Ochrona hasłem → Usuń hasło), a następnie ponów import.",
+    "report": {
+      "row-pages": "Pomyślnie zaimportowane strony",
+      "row-notebooks": "Zaimportowane notesy",
+      "row-sections": "Zaimportowane sekcje",
+      "row-duration": "Łączny czas importu",
+      "row-images": "Obrazy",
+      "row-attachments": "Załączniki plików",
+      "row-ink": "Strony z pismem odręcznym lub rysunkami",
+      "row-links": "Linki między stronami",
+      "row-throttling": "Czas ograniczania szybkości przez Microsoft Graph",
+      "value-links": "Rozwiązane: {{resolved}}, wskazujące poza wybranym zakresem importu: {{unresolved}}",
+      "value-throttling_one": "{{- wait}} ({{count}} żądanie z ograniczoną szybkością)",
+      "value-throttling_few": "{{- wait}} ({{count}} żądania z ograniczoną szybkością)",
+      "value-throttling_many": "{{- wait}} ({{count}} żądań z ograniczoną szybkością)",
+      "skipped-sections-title": "Sekcje, których nie udało się zaimportować",
+      "skipped-sections-section": "Sekcja",
+      "skipped-sections-notebook": "Notes",
+      "skipped-sections-error": "Błąd",
+      "failed-pages-title": "Strony, których nie udało się zaimportować",
+      "failed-pages-page": "Strona",
+      "failed-pages-section": "Sekcja",
+      "failed-pages-error": "Błąd",
+      "failed-resources-title": "Brakujące obrazy i załączniki",
+      "failed-resources-item_one": "{{- pageLink}}: nie udało się pobrać {{count}} zasobu",
+      "failed-resources-item_few": "{{- pageLink}}: nie udało się pobrać {{count}} zasoby",
+      "failed-resources-item_many": "{{- pageLink}}: nie udało się pobrać {{count}} zasobów"
+    }
+  },
+  "notion_import": {
+    "root-title": "Import z Notion",
+    "markdown-export-unsupported": "Wygląda na to, że jest to eksport Notion w formacie „Markdown i CSV”, którego Trilium nie może zaimportować. Wyeksportuj obszar roboczy Notion ponownie w formacie „HTML” i zaimportuj go.",
+    "subpage-folders-disabled": "Ten eksport z Notion utworzono bez opcji „Utwórz foldery dla podstron”, dlatego nie można odtworzyć hierarchii stron. Wyeksportuj obszar roboczy ponownie z włączoną opcją „Utwórz foldery dla podstron” i zaimportuj go."
+  },
+  "keep_import": {
+    "root-title": "Import z Google Keep"
+  },
+  "anytype_import": {
+    "root-title": "Import z Anytype",
+    "protobuf-export-unsupported": "Wygląda na to, że jest to eksport „Protobuf” z Anytype, którego Trilium nie może zaimportować. Wyeksportuj ponownie przestrzeń Anytype w formacie „Any-Block”, wybierając „JSON”, a następnie zaimportuj ten plik.",
+    "markdown-export-unsupported": "Wygląda na to, że jest to eksport „Markdown” z Anytype, którego Trilium nie może zaimportować. Wyeksportuj ponownie przestrzeń Anytype w formacie „Any-Block”, wybierając „JSON”, a następnie zaimportuj ten plik."
+  },
+  "obsidian_import": {
+    "root-title": "Import z Obsidian"
+  },
+  "export": {
+    "zip_filter": "Archiwum ZIP (*.zip)"
+  },
+  "import": {
+    "invalid_file_grant": "Wybór pliku wygasł lub jest nieprawidłowy. Wybierz plik ponownie."
+  },
+  "open_custom": {
+    "choose_application": "Wybierz aplikację, w której chcesz otworzyć plik.",
+    "applications_filter": "Aplikacje"
+  },
+  "restore": {
+    "pick_backup_title": "Wybierz kopię zapasową do przywrócenia",
+    "backup_filter": "Kopia zapasowa Trilium (*.db, *.tnbackup)",
+    "any_file_filter": "Wszystkie pliki"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Nie udało się utworzyć kopii zapasowej bazy danych: nie można zapisać w lokalizacji {{- location}}. Zamiast tego kopia zostanie zapisana w domyślnej lokalizacji.",
+    "passphrase_unavailable": "Nie udało się odczytać hasła do kopii zapasowej, więc kopia nie jest zaszyfrowana. Zamiast tego została zapisana w domyślnej lokalizacji."
+  },
+  "dialog": {
+    "select_directory": "Wybierz folder"
+  },
+  "script": {
+    "wrong-environment": "Nie można wykonać notatki „{{- noteTitle}}” ({{- noteId}}). Jest to skrypt dla środowiska {{- actualEnv}}, ale próbowano go uruchomić w środowisku {{- expectedEnv}}."
+  },
+  "search": {
+    "error": {
+      "in-context": "Błąd w {{- context}}: {{- message}}",
+      "reserved-keyword": "„{{- token}}” jest słowem zastrzeżonym. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: „{{- token}}”",
+      "cannot-compare-with": "Nie można porównać z „{{- token}}”. Aby wyszukać dosłowną wartość, ujmij ją w cudzysłów: „{{- token}}”",
+      "misplaced-expression": "Wyrażenie „{{- token}}” jest umieszczone w niewłaściwym miejscu lub niekompletne.",
+      "fulltext-after-expression": "„{{- token}}” nie jest prawidłowym wyrażeniem. Aby wyszukać tekst, umieść go przed filtrami atrybutów (np. „{{- token}} #label” zamiast „#label {{- token}}”).",
+      "unrecognized-expression": "Nierozpoznane wyrażenie „{{- token}}”",
+      "regex-not-allowed": "Operator wyrażeń regularnych „%=” jest tu niedostępny."
+    }
+  },
+  "backup-password-dialog": {
+    "cancel": "Anuluj",
+    "set-title": "Ustawić hasło kopii zapasowej?",
+    "set-message": "Przyszłe kopie zapasowe będą szyfrowane tym hasłem.",
+    "set-detail": "Trilium nie może ponownie wyświetlić tego hasła, więc przechowuj jego kopię w bezpiecznym miejscu. Bez niego nie będzie można odtworzyć kopii zapasowej.\n\nJeśli to pytanie pojawiło się niespodziewanie, anuluj — mogła o to poprosić notatka lub skrypt.",
+    "set-confirm": "Ustaw hasło",
+    "clear-title": "Usunąć hasło kopii zapasowej?",
+    "clear-message": "Kopie zapasowe nie będą już szyfrowane.",
+    "clear-detail": "Do już utworzonych kopii zapasowych nadal będzie potrzebne hasło, którego użyto do ich utworzenia. Nadal będzie można je nim odtworzyć.\n\nJeśli to pytanie pojawiło się niespodziewanie, anuluj — mogła o to poprosić notatka lub skrypt.",
+    "clear-confirm": "Usuń hasło"
+  },
+  "security-dialog": {
+    "enable-title": "Włącz: {{settingLabel}}",
+    "enable-message": "Czy na pewno chcesz włączyć: {{settingLabel}}?",
+    "enable-detail": "{{warning}}\n\nWłącz tę funkcję tylko wtedy, gdy wyraźnie zamierzasz z niej korzystać. Nie włączaj jej na prośbę skryptu ani nieznanej notatki.\n\nAby ta zmiana zaczęła obowiązywać, wymagane jest ponowne uruchomienie.",
+    "disable-title": "Wyłącz: {{settingLabel}}",
+    "disable-message": "{{settingLabel}} zostanie wyłączone.",
+    "disable-detail": "Aby ta zmiana zaczęła obowiązywać, wymagane jest ponowne uruchomienie.",
+    "cancel": "Anuluj",
+    "enable": "Włącz",
+    "disable": "Wyłącz",
+    "dont-ask-again": "Nie pytaj ponownie przed ponownym uruchomieniem",
+    "backend-scripting": "Wykonywanie skryptów po stronie serwera",
+    "backend-scripting-warning": "Skrypty zaplecza mają pełny dostęp do serwera, w tym do systemu plików i sieci.",
+    "sql-console": "Konsola SQL",
+    "sql-console-warning": "Konsola SQL umożliwia wykonywanie dowolnych zapytań SQL na bazie danych.",
+    "lan-access": "dostęp do sieci",
+    "lan-access-warning": "Aplikacja i udostępnione notatki będą dostępne przez sieć — z przeglądarki na tym komputerze i innych urządzeń w sieci lokalnej."
+  },
+  "setup-window": {
+    "getting-started": "Pierwsze kroki — Trilium Notes",
+    "start-over": "Rozpocznij od nowa — Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Rozpocznij od nowa",
+    "message": "Uruchomić Trilium ponownie i wrócić do ekranu konfiguracji?",
+    "detail": "Najpierw będzie można utworzyć kopię zapasową bieżącej bazy wiedzy. Żadne dane nie zostaną usunięte, dopóki nie wybierzesz utworzenia nowej bazy wiedzy, przywrócenia kopii zapasowej lub synchronizacji z innego urządzenia.\n\nNie kontynuuj, jeśli do tej czynności skłonił Cię skrypt lub nieznana notatka.",
+    "cancel": "Anuluj",
+    "confirm": "Uruchom ponownie i zacznij od nowa"
+  },
+  "transcription": {
+    "already-recording": "Transkrypcja spotkania już trwa.",
+    "note-not-found": "Notatka ze spotkania już nie istnieje.",
+    "start-failed": "Nie udało się rozpocząć transkrypcji: {{- message}}",
+    "stopped-unexpectedly": "Transkrypcja została nieoczekiwanie zatrzymana. Dotychczasowy zapis został zachowany.",
+    "save-locked": "Nie można zapisać transkrypcji, gdy sesja chroniona jest zablokowana. Transkrypcja zostanie zachowana i zapisana po wejściu do sesji chronionej, o ile Trilium pozostanie otwarte.",
+    "save-failed": "Nie udało się zapisać transkrypcji: {{- message}} Transkrypcja zostanie zachowana, a zapis ponowiony po następnym zdaniu.",
+    "capture-lost": "Transkrypcja została zatrzymana, ponieważ nie można było dalej przechwytywać dźwięku. Dotychczasowy zapis został zachowany.",
+    "attachment-title": "Transkrypcja",
+    "model-not-downloaded": "Model rozpoznawania mowy nie został jeszcze pobrany. Rozpocznij nagrywanie z paska uruchamiania, aby go pobrać.",
+    "recognizer-int8-title": "Parakeet TDT 0.6B v3",
+    "recognizer-fp32-title": "Parakeet TDT 0.6B v3, wysoka dokładność",
+    "recognizer-description": "Model rozpoznawania mowy firmy NVIDIA obsługujący 25 języków europejskich. Rozpoznawanie odbywa się w całości na tym urządzeniu, więc nagrania nigdy go nie opuszczają.",
+    "vad-title": "Silero VAD",
+    "vad-description": "Służy do wykrywania mowy w nagraniu, aby transkrybowane były tylko fragmenty zawierające mowę.",
+    "speaker-title": "TitaNet small",
+    "speaker-description": "Służy do rozróżniania osób mówiących, aby można było zobaczyć, kto co powiedział w transkrypcji."
+  },
+  "resources": {
+    "unknown": "Nie ma zasobu o identyfikatorze {{id}}.",
+    "http-error": "Pobieranie {{name}} nie powiodło się: kod HTTP {{status}}.",
+    "size-mismatch": "Rozmiar {{name}} jest inny niż oczekiwany.",
+    "hash-mismatch": "Suma kontrolna {{name}} jest inna niż oczekiwana, dlatego plik został odrzucony.",
+    "delete-while-downloading": "Trwa pobieranie {{- title}}. Anuluj pobieranie, zanim usuniesz ten plik.",
+    "not-foreign": "{{- name}} nie jest nieużywanym elementem folderu zasobów.",
+    "stalled": "Pobieranie {{name}} zatrzymano: od {{seconds}} sekund nie odebrano żadnych danych. Sprawdź połączenie i spróbuj ponownie."
+  },
+  "share_target": {
+    "default-title": "Udostępniona zawartość",
+    "nothing-to-share": "Brak zawartości do udostępnienia: nie otrzymano tekstu, linku ani plików.",
+    "rejected": "Odrzucono udostępnianie: {{- reason}}",
+    "other-page": "Tylko systemowe menu udostępniania może wysyłać zawartość pod ten adres."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium działa jako Flatpak, więc nie może uruchamiać programów zainstalowanych poza jego piaskownicą, takich jak {{- cli}}. Aby używać {{- cli}}:\n\n1. Zainstaluj go na tym komputerze i zaloguj się do niego z terminala.\n2. Zezwól Trilium na uruchamianie programów spoza piaskownicy, wykonując w terminalu polecenie:\n\n{{- grantCommand}}\n\n3. Uruchom ponownie Trilium.\n\nDaje to Trilium taki sam dostęp do komputera jak instalacja spoza Flatpaka. Aby cofnąć tę zmianę, wykonaj polecenie:\n\n{{- revokeCommand}}"
   }
 }
