@@ -242,6 +242,16 @@ build adjudicates it).
 - **What triggers a build**: `refs/pull/*/head` (test, publishes nothing), `master`
   (stable publish), `beta` (beta channel). A push to any other branch builds nothing — so
   a pull request is the only way to get a build without publishing.
+- **Every PR also gets a `flathub/permissions` status** from vorarbeiter, which
+  posts the built permissions to a review service in `flathub-infra/website`
+  (`backend/app/moderation/permission_rules.py`). It diffs the PR's permissions against the
+  published build: an addition is approved or rejected automatically when a moderator's
+  rule matches, otherwise it waits for a moderator. The rules are database rows only
+  moderators can list, so they cannot be mirrored. Rejected so far:
+  `--talk-name=org.freedesktop.secrets` (#3; `safeStorage` uses the Secret portal instead,
+  which works only where the desktop's `*-portals.conf` maps
+  `org.freedesktop.impl.portal.Secret` to a backend) and the two data-dir grants from
+  #10014.
 - Therefore **untagged commits go out as draft PRs to `master`** (shared `update/beta`
   branch, superseded per run) purely for the two-arch verdict. A real `beta` branch is
   for `-rc` tags with actual testers, and publishing there has no review gate.

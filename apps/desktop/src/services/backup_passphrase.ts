@@ -17,32 +17,37 @@ const TEMP_PATH = `${PASSPHRASE_PATH}.tmp`;
 /**
  * Whether the OS has somewhere safe to keep the passphrase.
  *
- * `isEncryptionAvailable()` alone is not enough. On Linux without a keyring the selected backend is
- * `basic_text`, which "encrypts" with a hardcoded password, so the file would be plaintext in all
- * but name. Both that and the backend name are only meaningful once the app is ready.
+ * `isAsyncEncryptionAvailable()` alone is not enough. On Linux without a keyring or the Secret
+ * portal, Chromium encrypts with a hardcoded key and tags the ciphertext `v10`, so the file would
+ * be plaintext in all but name. The tag is the only place `safeStorage` reveals which key it used.
  */
-export function isKeyringAvailable(): boolean {
-    if (!electron.app.isReady() || !electron.safeStorage.isEncryptionAvailable()) {
+export async function isKeyringAvailable(): Promise<boolean> {
+    if (!electron.app.isReady() || !await electron.safeStorage.isAsyncEncryptionAvailable()) {
         return false;
     }
+    if (process.platform !== "linux") {
+        return true;
+    }
 
-    return process.platform !== "linux"
-        || electron.safeStorage.getSelectedStorageBackend() !== "basic_text";
+    const probe = await electron.safeStorage.encryptStringAsync("probe");
+    return probe.subarray(0, LINUX_HARDCODED_KEY_TAG.length).toString() !== LINUX_HARDCODED_KEY_TAG;
 }
+
+const LINUX_HARDCODED_KEY_TAG = "v10";
 
 export function isPassphraseSet(): boolean {
     return fs.existsSync(PASSPHRASE_PATH);
 }
 
-export function getBackupPassphraseStatus(): BackupPassphraseStatus {
-    return { available: isKeyringAvailable(), set: isPassphraseSet() };
+export async function getBackupPassphraseStatus(): Promise<BackupPassphraseStatus> {
+    return { available: await isKeyringAvailable(), set: isPassphraseSet() };
 }
 
 /**
  * Stores a passphrase, replacing any existing one. Returns `false` when there is no keyring to use.
  */
 export async function storeBackupPassphrase(passphrase: string): Promise<boolean> {
-    if (!isKeyringAvailable() || !passphrase) {
+    if (!passphrase || !await isKeyringAvailable()) {
         return false;
     }
 
@@ -89,7 +94,7 @@ export async function adoptBackupPassphrase(passphrase: string | null): Promise<
  * ciphertext is bound to the user account that wrote it.
  */
 export async function getBackupPassphrase(): Promise<string | null> {
-    if (!isPassphraseSet() || !isKeyringAvailable()) {
+    if (!isPassphraseSet() || !await isKeyringAvailable()) {
         return null;
     }
 
@@ -146,13 +151,13 @@ export function registerBackupPassphraseIpcHandlers(): void {
     electron.ipcMain.handle("backup-passphrase-clear", handleClear);
 }
 
-function handleStatus(): BackupPassphraseStatus {
+function handleStatus(): Promise<BackupPassphraseStatus> {
     return getBackupPassphraseStatus();
 }
 
 async function handleSet(_event: unknown, passphrase: string): Promise<BackupPassphraseChange> {
     // Nothing to confirm when it could not be honoured anyway.
-    if (!isKeyringAvailable() || !passphrase) {
+    if (!passphrase || !await isKeyringAvailable()) {
         return "unavailable";
     }
     if (!await confirmChange("set")) {
