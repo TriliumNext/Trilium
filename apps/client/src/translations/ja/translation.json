@@ -1066,7 +1066,11 @@
     "image_size_hint": "画像のサイズは後から変更可能です。",
     "missing_note": "ID {{noteId}} のノートが見つかりません。",
     "missing_attachment": "ID {{attachmentId}} の添付ファイルが見つかりません。",
-    "unknown_kind": "このコンテンツを表示するには、より新しいバージョンの Trilium が必要です。"
+    "unknown_kind": "このコンテンツを表示するには、より新しいバージョンの Trilium が必要です。",
+    "size_compact": "コンパクト",
+    "size_compact_description": "1 行構成: タイトルとアクション、あるいはオーディオファイルの操作コントロールを表示。",
+    "size_resizable": "サイズ変更可能",
+    "size_resizable_description": "ボックスは任意のサイズに変更可能です。"
   },
   "ancestor": {
     "placeholder": "ノート名で検索",
@@ -1725,10 +1729,11 @@
     "align_center": "中央揃え",
     "align_right": "右揃え",
     "open_externally": "外部で開く",
-    "delete": "削除",
+    "delete": "ブロックを削除",
     "copy_url": "アドレス（URL）をコピー",
     "display_as": "表示形式",
-    "edit": "編集..."
+    "edit": "編集...",
+    "include_size_default": "デフォルト"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -4053,7 +4058,10 @@
       "add-new-tab": "新しいタブを追加",
       "copy-reference-to-this-tab": "このタブへのリンクをコピー",
       "delete-tab": "タブを削除",
-      "delete-all-tabs": "すべてのタブを削除"
+      "delete-all-tabs": "すべてのタブを削除",
+      "compact": "コンパクト",
+      "resizable": "サイズ変更可能",
+      "default": "デフォルト"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4987,7 +4995,8 @@
     "title": "メディアを挿入",
     "button_insert": "メディアを挿入",
     "not_a_video": "これは web アドレスではありません。",
-    "insert_failed": "メディアを埋め込めませんでした。指定したアドレスが YouTube 動画、または音声・動画ファイルのものであるか確認し、接続状況を確かめた上で、再度お試しください。"
+    "insert_failed": "メディアを埋め込めませんでした。指定したアドレスが YouTube 動画、または音声・動画ファイルのものであるか確認し、接続状況を確かめた上で、再度お試しください。",
+    "description": "埋め込む動画または音声のアドレスを入力してください: YouTube 動画、あるいは HTTP または HTTPS 経由でアクセス可能な音声・動画ファイルが指定できます。"
   },
   "block_handle_menu": {
     "block_count_other": "{{count}} 個のブロック",
