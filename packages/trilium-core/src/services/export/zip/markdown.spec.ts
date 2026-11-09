@@ -35,12 +35,12 @@ describe("MarkdownExportProvider", () => {
     });
 
     describe("prepareContent", () => {
-        it("rewrites, converts HTML to markdown and prepends a title heading", () => {
+        it("rewrites, converts HTML to markdown and prepends a title heading", async () => {
             const rewriteFn = vi.fn((content: string, _noteMeta: NoteMeta) => content);
             const provider = buildProvider({ rewriteFn });
             const noteMeta: NoteMeta = { format: "markdown" };
 
-            const result = provider.prepareContent("My Note", "<p>Hello <b>world</b></p>", noteMeta) as string;
+            const result = await provider.prepareContent("My Note", "<p>Hello <b>world</b></p>", noteMeta) as string;
 
             // rewriteFn is applied once with the original note meta.
             expect(rewriteFn).toHaveBeenCalledTimes(1);
@@ -51,10 +51,10 @@ describe("MarkdownExportProvider", () => {
             expect(result).not.toContain("<p>");
         });
 
-        it("does not prepend a title when the converted content already starts with a heading", () => {
+        it("does not prepend a title when the converted content already starts with a heading", async () => {
             const provider = buildProvider();
 
-            const result = provider.prepareContent("Ignored", "<h1>Existing Heading</h1>", {
+            const result = await provider.prepareContent("Ignored", "<h1>Existing Heading</h1>", {
                 format: "markdown"
             }) as string;
 
@@ -63,42 +63,42 @@ describe("MarkdownExportProvider", () => {
             expect(result.startsWith("# Ignored")).toBe(false);
         });
 
-        it("does not prepend a title when the converted content is blank", () => {
+        it("does not prepend a title when the converted content is blank", async () => {
             const provider = buildProvider();
 
             // Empty / whitespace-only HTML converts to an empty (trimmed) string.
-            const result = provider.prepareContent("Empty", "   ", { format: "markdown" }) as string;
+            const result = await provider.prepareContent("Empty", "   ", { format: "markdown" }) as string;
 
             expect(result.includes("# Empty")).toBe(false);
             expect(result.trim().length).toBe(0);
         });
 
-        it("returns non-markdown string content unchanged without rewriting or converting", () => {
+        it("returns non-markdown string content unchanged without rewriting or converting", async () => {
             const rewriteFn = vi.fn((content: string) => content);
             const provider = buildProvider({ rewriteFn });
 
             const html = "<p>untouched</p>";
-            expect(provider.prepareContent("T", html, { format: "html" })).toBe(html);
-            expect(provider.prepareContent("T", html, {})).toBe(html);
+            expect(await provider.prepareContent("T", html, { format: "html" })).toBe(html);
+            expect(await provider.prepareContent("T", html, {})).toBe(html);
 
             expect(rewriteFn).not.toHaveBeenCalled();
         });
 
-        it("returns binary content unchanged even when the format is markdown", () => {
+        it("returns binary content unchanged even when the format is markdown", async () => {
             const rewriteFn = vi.fn((content: string) => content);
             const provider = buildProvider({ rewriteFn });
             const binary = new Uint8Array([1, 2, 3]);
 
-            expect(provider.prepareContent("T", binary, { format: "markdown" })).toBe(binary);
+            expect(await provider.prepareContent("T", binary, { format: "markdown" })).toBe(binary);
             expect(rewriteFn).not.toHaveBeenCalled();
         });
 
-        it("applies the link rewrite before the markdown conversion", () => {
+        it("applies the link rewrite before the markdown conversion", async () => {
             // rewriteFn receives the raw HTML, so it can inject markup that toMarkdown then converts.
             const rewriteFn = vi.fn((_content: string) => "<p><em>rewritten</em></p>");
             const provider = buildProvider({ rewriteFn });
 
-            const result = provider.prepareContent("Title", "<p>original</p>", {
+            const result = await provider.prepareContent("Title", "<p>original</p>", {
                 format: "markdown"
             }) as string;
 

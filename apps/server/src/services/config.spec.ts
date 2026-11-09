@@ -305,6 +305,7 @@ corsAllowOrigin=https://ini-cors.com
             process.env.TRILIUM_GENERAL_NOAUTHENTICATION = "true";
             process.env.TRILIUM_GENERAL_NOBACKUP = "1";
             process.env.TRILIUM_GENERAL_READONLY = "false";
+            process.env.TRILIUM_GENERAL_SEARCHWORKER = "false";
             process.env.TRILIUM_NETWORK_HTTPS = "0";
 
             const { default: config } = await import("./config.js");
@@ -312,6 +313,7 @@ corsAllowOrigin=https://ini-cors.com
             expect(config.General.noAuthentication).toBe(true);
             expect(config.General.noBackup).toBe(true);
             expect(config.General.readOnly).toBe(false);
+            expect(config.General.searchWorker).toBe(false);
             expect(config.Network.https).toBe(false);
         });
 
@@ -403,6 +405,7 @@ corsAllowOrigin=https://ini-cors.com
             expect(config.General.noBackup).toBe(false);
             expect(config.General.noDesktopIcon).toBe(false);
             expect(config.General.readOnly).toBe(false);
+            expect(config.General.searchWorker).toBe(true);
 
             // Network defaults (host is the web/server bind address)
             expect(config.Network.host).toBe("0.0.0.0");

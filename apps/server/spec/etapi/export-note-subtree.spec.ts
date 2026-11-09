@@ -1,8 +1,9 @@
-import { becca, cls, events, getZipProvider, note_service, password_encryption, protected_session, TaskContext } from "@triliumnext/core";
+import { becca, cls, events, getZipProvider, initContentJobExecutor, note_service, password_encryption, protected_session, TaskContext } from "@triliumnext/core";
+import { createHash } from "crypto";
 import { Application } from "express";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import supertest from "supertest";
-import { createNote, login } from "./utils.js";
+import { createNote, login, outOfOrderContentJobs } from "./utils.js";
 import config from "../../src/services/config.js";
 
 let app: Application;
@@ -48,6 +49,42 @@ describe("etapi/export-note-subtree", () => {
             .auth(USER, token, { "type": "basic"})
             .expect(400);
         expect(response.body.code).toStrictEqual("UNRECOGNIZED_EXPORT_FORMAT");
+    });
+
+    describe("with conversions that finish out of order", () => {
+        afterEach(() => initContentJobExecutor());
+
+        it.each([ "html", "markdown" ])("exports the same %s archive as converting one note at a time", async (format) => {
+            const expected = await exportEntries(format);
+
+            const { executor, stats } = outOfOrderContentJobs();
+            initContentJobExecutor(executor);
+            const actual = await exportEntries(format);
+
+            expect(actual).toEqual(expected);
+            expect(stats.maxInFlight).toBeGreaterThan(1);
+            expect(stats.finished).not.toEqual(stats.started);
+        });
+
+        /** The archive's entry names in order, each with the hash of its bytes. */
+        async function exportEntries(format: string) {
+            const response = await supertest(app)
+                .get(`/etapi/notes/root/export?format=${format}`)
+                .auth(USER, token, { "type": "basic"})
+                .buffer(true)
+                .parse((res, callback) => {
+                    const chunks: Buffer[] = [];
+                    res.on("data", (chunk: Buffer) => chunks.push(chunk));
+                    res.on("end", () => callback(null, Buffer.concat(chunks)));
+                })
+                .expect(200);
+
+            const entries: string[] = [];
+            await getZipProvider().readZipFile(response.body as Buffer, async (entry, readContent) => {
+                entries.push(`${entry.fileName} ${createHash("sha256").update(await readContent()).digest("hex")}`);
+            });
+            return entries;
+        }
     });
 
     describe("with a protected note while the protected session is open", () => {

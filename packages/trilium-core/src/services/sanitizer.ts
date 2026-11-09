@@ -1,7 +1,7 @@
 import { sanitizeUrl as sanitizeUrlInternal } from "@braintree/sanitize-url";
-import { ALLOWED_PROTOCOLS, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
 
-import optionService from "./options.js";
+import { getDefaultAllowedHtmlTags } from "./content_jobs/env.js";
 import sanitize from "sanitize-html";
 import sanitizeFileNameInternal from "sanitize-filename";
 
@@ -9,7 +9,8 @@ import sanitizeFileNameInternal from "sanitize-filename";
 // secondarily, it (partly) protects against "CSS takeover"
 // sanitize also note titles, label values etc. - there are so many usages which make it difficult
 // to guarantee all of them are properly handled
-export function sanitizeHtml(dirtyHtml: string) {
+// `allowedTags` defaults to the `allowedHtmlTags` option; a caller off the main thread passes it in.
+export function sanitizeHtml(dirtyHtml: string, allowedTags?: readonly string[]) {
     if (!dirtyHtml) {
         return dirtyHtml;
     }
@@ -24,15 +25,6 @@ export function sanitizeHtml(dirtyHtml: string) {
         } else {
             break;
         }
-    }
-
-    // Get allowed tags from options, with fallback to default list if option not yet set
-    let allowedTags: readonly string[];
-    try {
-        allowedTags = JSON.parse(optionService.getOption("allowedHtmlTags"));
-    } catch (e) {
-        // Fallback to default list if option doesn't exist or is invalid
-        allowedTags = SANITIZER_DEFAULT_ALLOWED_TAGS;
     }
 
     const colorRegex = [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/, /^hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)$/];
@@ -54,7 +46,7 @@ export function sanitizeHtml(dirtyHtml: string) {
 
     // to minimize document changes, compress H
     return sanitizeHtmlCustom(dirtyHtml, {
-        allowedTags: allowedTags as string[],
+        allowedTags: (allowedTags ?? getDefaultAllowedHtmlTags()) as string[],
         allowedAttributes: {
             "*": ["class", "style", "title", "src", "href", "hash", "disabled", "align", "alt", "center", "data-*"],
             a: ["id"],

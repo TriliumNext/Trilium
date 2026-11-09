@@ -34,14 +34,7 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
  * them turns a page of content into the megabytes a workbook can.
  */
 export async function convertOfficeToHtml(content: string | Uint8Array, mime: string, options: OfficePreviewOptions = {}): Promise<string> {
-    if (!isOfficeMimeType(mime)) {
-        throw new ValidationError(`MIME type '${mime}' is not a supported office format.`);
-    }
-
-    const buffer = wrapStringOrBuffer(content);
-    if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
-        throw new ValidationError(`Office document is too large to preview (${buffer.byteLength} bytes).`);
-    }
+    const buffer = assertOfficePreviewable(content, mime);
 
     if (mime === XLSX_MIME) {
         try {
@@ -74,6 +67,22 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
     // fallback arm is unreachable unless the library breaks its own contract.
     /* v8 ignore next */
     return typeof value === "string" ? value : "";
+}
+
+/**
+ * Throws the {@link ValidationError} {@link convertOfficeToHtml} would, for a caller that runs the
+ * conversion elsewhere and needs the error as a 400 here. Returns the content as bytes.
+ */
+export function assertOfficePreviewable(content: string | Uint8Array, mime: string): Uint8Array {
+    if (!isOfficeMimeType(mime)) {
+        throw new ValidationError(`MIME type '${mime}' is not a supported office format.`);
+    }
+
+    const buffer = wrapStringOrBuffer(content);
+    if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
+        throw new ValidationError(`Office document is too large to preview (${buffer.byteLength} bytes).`);
+    }
+    return buffer;
 }
 
 /**

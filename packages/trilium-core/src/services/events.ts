@@ -11,6 +11,15 @@ const ENTITY_DELETE_SYNCED = "ENTITY_DELETE_SYNCED";
 const CHILD_NOTE_CREATED = "CHILD_NOTE_CREATED";
 const NOTE_CONTENT_CHANGE = "NOTE_CONTENT_CHANGED";
 const DB_INITIALIZED = "DB_INITIALIZED";
+/** Emitted at the end of every full `becca_loader.load()`, with a {@link BeccaReloadedEvent}. */
+const BECCA_RELOADED = "BECCA_RELOADED";
+
+/** Why becca was loaded again, when the reload answers an event that listeners also receive. */
+export type BeccaReloadCause = "leaveProtectedSession";
+
+export interface BeccaReloadedEvent {
+    cause?: BeccaReloadCause;
+}
 
 type EventType = string | string[];
 type EventListener = (data: any) => void;
@@ -74,5 +83,6 @@ export default {
     ENTITY_DELETE_SYNCED,
     CHILD_NOTE_CREATED,
     NOTE_CONTENT_CHANGE,
-    DB_INITIALIZED
+    DB_INITIALIZED,
+    BECCA_RELOADED
 };

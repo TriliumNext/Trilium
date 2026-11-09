@@ -65,6 +65,10 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
         getLog().error(message + errStack);
 
         return [500, message];
+    } finally {
+        // Entity events and change ids are off during the import, so neither becca nor the replica
+        // has seen what it wrote, even when it failed partway.
+        becca_loader.load();
     }
 
     if (!note) {
@@ -82,9 +86,6 @@ async function importNotesToBranch(req: ImportRequest<{ parentNoteId: string }>)
             1000
         );
     }
-
-    // import has deactivated note events so becca is not updated, instead we force it to reload
-    becca_loader.load();
 
     return note.getPojo();
 }

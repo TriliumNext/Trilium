@@ -4,8 +4,9 @@
  * the build forgot to ship.
  *
  * 1. Moves `dist/out/<product>-<platform>-<arch>` into the OS temp directory.
- * 2. Checks that every package a bundle leaves external is inside `app.asar`, together with the
- *    dependencies it needs, read from the per-entry metafiles under `meta/` in the archive.
+ * 2. Checks that every worker entry and every package a bundle leaves external is inside
+ *    `app.asar`, together with the dependencies it needs, read from the per-entry metafiles under
+ *    `meta/` in the archive.
  * 3. Launches the executable there, with throwaway data directories and an environment stripped
  *    of anything pointing into the repository, and waits for its HTTP server to answer.
  *    `--smoke` then quits it; otherwise the app stays open for manual testing.
@@ -51,12 +52,27 @@ const NOT_SHIPPED: Record<string, string> = {
     "pdfjs-dist": "officeparser loads it for PDFs, which go through unpdf instead"
 };
 
+/**
+ * Bundled worker entries the app starts by path; without one, its pool silently falls back to the
+ * main process.
+ */
+const WORKER_ENTRIES = [ "image_worker.cjs", "content_job_worker.cjs", "search_replica_worker.cjs" ];
+
 async function main() {
     const smoke = process.argv.includes("--smoke");
     const appDir = moveOutOfRepo();
     console.log(`Testing the package at ${appDir}`);
 
-    const missing = findMissingPackages(new Asar(join(getResourcesDir(appDir), "app.asar")));
+    const asar = new Asar(join(getResourcesDir(appDir), "app.asar"));
+    const missingWorkers = WORKER_ENTRIES.filter((entry) => !asar.has(entry));
+    if (missingWorkers.length) {
+        console.error(`\nWorker entries missing from app.asar: ${missingWorkers.join(", ")}\n`);
+        process.exitCode = 1;
+    } else {
+        console.log("Every worker entry ships inside app.asar.");
+    }
+
+    const missing = findMissingPackages(asar);
     if (missing.length) {
         console.error("\nPackages the app loads but the package does not contain:");
         for (const { name, reason } of missing) {

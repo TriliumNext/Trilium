@@ -204,7 +204,8 @@
     "sso-not-enrolled": "Single sign-on isn't set up yet. Sign in with your password first, then link your account from the settings."
   },
   "password": {
-    "incorrect": "The password you entered is incorrect."
+    "incorrect": "The password you entered is incorrect.",
+    "changed-concurrently": "The password was changed somewhere else at the same time. Enter the current password and try again."
   },
   "set_password": {
     "title": "Set Password",

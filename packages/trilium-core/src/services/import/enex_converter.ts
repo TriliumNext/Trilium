@@ -15,6 +15,7 @@
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { HTMLElement, parse } from "node-html-parser";
 
+import { sanitizeHtml } from "../sanitizer.js";
 import { escapeHtml } from "../utils/index.js";
 
 export interface EnexTask {
@@ -23,6 +24,62 @@ export interface EnexTask {
     status?: string;
     /** The task group (`taskGroupNoteLevelID`) this task belongs to, matched against a placeholder's `--en-id`. */
     groupId?: string;
+}
+
+/**
+ * Turns the raw `<content>` of an ENEX note into the sanitized HTML of a Trilium note, before its
+ * resources become attachments: strips the `<en-note>` wrapper, converts Evernote's blocks and works
+ * around CKEditor's list limitations. `allowedTags` defaults to the `allowedHtmlTags` option.
+ */
+export function extractEnexNoteContent(content: string, tasks: EnexTask[] = [], allowedTags?: readonly string[]): string {
+    const openingNoteIndex = content.indexOf("<en-note>");
+
+    if (openingNoteIndex !== -1) {
+        content = content.substr(openingNoteIndex + 9);
+    }
+
+    const closingNoteIndex = content.lastIndexOf("</en-note>");
+
+    if (closingNoteIndex !== -1) {
+        content = content.substr(0, closingNoteIndex);
+    }
+
+    content = content.trim();
+
+    // Replace OneNote converted checkboxes with unicode ballot box based
+    // on known hash of checkboxes for regular, p1, and p2 checkboxes
+    content = content.replace(
+        /<en-media alt="To Do( priority [12])?" hash="(74de5d3d1286f01bac98d32a09f601d9|4a19d3041585e11643e808d68dd3e72f|8e17580123099ac6515c3634b1f6f9a1)"( type="[a-z\/]*"| width="\d+"| height="\d+")*\/>/g,
+        "\u2610 "
+    );
+    content = content.replace(
+        /<en-media alt="To Do( priority [12])?" hash="(5069b775461e471a47ce04ace6e1c6ae|7912ee9cec35fc3dba49edb63a9ed158|3a05f4f006a6eaf2627dae5ed8b8013b)"( type="[a-z\/]*"| width="\d+"| height="\d+")*\/>/g,
+        "\u2611 "
+    );
+
+    // Rewrite Evernote's richer blocks (code/math/mermaid/callouts/toggles/checkboxes) and inline the
+    // note's tasks. Runs BEFORE the list workarounds below: those match on closing tags alone (e.g.
+    // `</div></li>`) and would corrupt the attribute-tagged `--en-todo` checkbox lists; the converter has
+    // already rewritten those into clean todo-lists. Also runs before sanitization, which would strip the
+    // `--en-*` style markers the conversion keys off.
+    content = convertEnexContent(content, tasks);
+
+    // workaround for https://github.com/ckeditor/ckeditor5-list/issues/116
+    content = content.replace(/<li>\s*<div>/g, "<li>");
+    content = content.replace(/<\/div>\s*<\/li>/g, "</li>");
+
+    // workaround for https://github.com/ckeditor/ckeditor5-list/issues/115
+    content = content.replace(/<ul>\s*<ul>/g, "<ul><li><ul>");
+    content = content.replace(/<\/li>\s*<ul>/g, "<ul>");
+    content = content.replace(/<\/ul>\s*<\/ul>/g, "</ul></li></ul>");
+    content = content.replace(/<\/ul>\s*<li>/g, "</ul></li><li>");
+
+    content = content.replace(/<ol>\s*<ol>/g, "<ol><li><ol>");
+    content = content.replace(/<\/li>\s*<ol>/g, "<ol>");
+    content = content.replace(/<\/ol>\s*<\/ol>/g, "</ol></li></ol>");
+    content = content.replace(/<\/ol>\s*<li>/g, "</ol></li><li>");
+
+    return sanitizeHtml(content, allowedTags);
 }
 
 export function convertEnexContent(html: string, tasks: EnexTask[] = []): string {

@@ -1,6 +1,12 @@
+import { strToU8, zipSync } from "fflate";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import becca_loader from "../../becca/becca_loader";
+import { setBeccaReplicaSink } from "../../services/becca_replica_feed";
+import { initContentJobExecutor } from "../../services/content_jobs/executor";
+import { runContentJob } from "../../services/content_jobs/jobs";
+import { getContext } from "../../services/context";
 import enexImportService from "../../services/import/enex";
 import singleImportService from "../../services/import/single";
 import TaskContext from "../../services/task_context";
@@ -107,6 +113,56 @@ describe("Import API (core)", () => {
             });
 
             expect(res.status).toBe(500);
+        });
+
+        it("reloads becca and signals the replica when a zip import fails after a committed batch", async () => {
+            const entries: Record<string, Uint8Array> = {};
+            for (let i = 0; i < 205; i++) {
+                entries[`note-${String(i).padStart(3, "0")}.html`] = strToU8(`<p>body ${i}</p>`);
+            }
+            const zip = Buffer.from(zipSync(entries));
+
+            let prepared = 0;
+            initContentJobExecutor({
+                run: (job) => {
+                    if (job.kind === "prepareNoteText" && ++prepared === 203) {
+                        return Promise.reject(new Error("conversion failed"));
+                    }
+                    return runContentJob(job);
+                }
+            });
+            const reloads: string[] = [];
+            setBeccaReplicaSink({
+                onCommit: () => {},
+                onReload: () => reloads.push("reload"),
+                onProtectedSession: () => {}
+            });
+
+            try {
+                const res = await api.post(`/api/notes/${parentNoteId}/notes-import`, {
+                    body: {},
+                    file: { originalname: "partial.zip", mimetype: "application/zip", buffer: zip }
+                });
+
+                expect(res.status).toBe(500);
+                expect(reloads).toEqual([ "reload" ]);
+                const committed = getSql().getValue<number>(
+                    "SELECT COUNT(*) FROM notes WHERE title LIKE 'note-%' AND isDeleted = 0"
+                );
+                expect(committed).toBe(200);
+
+                const snapshot = () => ({
+                    notes: Object.keys(becca.notes).sort(),
+                    branches: Object.keys(becca.branches).sort(),
+                    attributes: Object.keys(becca.attributes).sort()
+                });
+                const afterImport = snapshot();
+                getContext().init(() => becca_loader.load());
+                expect(afterImport).toEqual(snapshot());
+            } finally {
+                setBeccaReplicaSink(null);
+                initContentJobExecutor();
+            }
         });
 
         it("imports an .opml document (single root) and creates the note", async () => {

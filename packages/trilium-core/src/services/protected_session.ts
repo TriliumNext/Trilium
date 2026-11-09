@@ -8,7 +8,7 @@ function setDataKey(decryptedDataKey: Uint8Array) {
     dataKey = Uint8Array.from(decryptedDataKey);
 }
 
-function getDataKey() {
+export function getDataKey() {
     return dataKey;
 }
 

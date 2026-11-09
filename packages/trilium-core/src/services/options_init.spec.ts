@@ -1,8 +1,13 @@
 import type { OptionDefinitions, OptionNames } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
+import { getContext } from "./context.js";
+import { getLog } from "./log.js";
 import optionService from "./options.js";
-import { getDefaultOptionSyncedFlag, initNotSyncedOptions, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import { getDefaultOptionSyncedFlag, initNotSyncedOptions, initStartupOptions, migrateSyncTimeoutFromMilliseconds } from "./options_init.js";
+import { getPlatform } from "./platform.js";
+import { getSql } from "./sql/index.js";
 
 describe("migrateSyncTimeoutFromMilliseconds", () => {
     it("returns null when no migration is needed (values < 1000 are already in seconds)", () => {
@@ -26,6 +31,45 @@ describe("migrateSyncTimeoutFromMilliseconds", () => {
 
         // Rounds to nearest second
         expect(migrateSyncTimeoutFromMilliseconds(120500)).toEqual({ value: 121, scale: 1 });
+    });
+});
+
+describe("initStartupOptions", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("builds missing defaults in becca only on a read-only connection and stores them otherwise", () => {
+        const sql = getSql();
+        const optionRow = (name: string) => sql.getRowOrNull<{ value: string }>("SELECT value FROM options WHERE name = ?", [ name ]);
+        const removeOption = (name: string) => {
+            delete becca.options[name];
+            sql.execute("DELETE FROM options WHERE name = ?", [ name ]);
+        };
+        vi.spyOn(getPlatform(), "getEnv").mockImplementation((key: string) => key === "TRILIUM_START_NOTE_ID" ? "startNote" : undefined);
+        const logError = vi.spyOn(getLog(), "error");
+        // Opens the shared fixture connection read-only, so the write guard in `SqlService` applies.
+        const connection = (sql as unknown as { params: { isReadOnly: boolean } }).params;
+        const storedContexts = optionRow("openNoteContexts");
+
+        removeOption("ocrMinConfidence");
+        connection.isReadOnly = true;
+        try {
+            getContext().init(() => initStartupOptions());
+        } finally {
+            connection.isReadOnly = false;
+        }
+        expect(becca.options.ocrMinConfidence?.value).toBe("0.75");
+        expect(becca.options.openNoteContexts?.value).toContain("startNote");
+        expect(optionRow("ocrMinConfidence")).toBeNull();
+        expect(optionRow("openNoteContexts")).toEqual(storedContexts);
+        expect(logError).not.toHaveBeenCalled();
+
+        removeOption("ocrMinConfidence");
+        getContext().init(() => initStartupOptions());
+        expect(optionRow("ocrMinConfidence")?.value).toBe("0.75");
+        expect(optionRow("openNoteContexts")?.value).toContain("startNote");
+        expect(logError).not.toHaveBeenCalled();
     });
 });
 

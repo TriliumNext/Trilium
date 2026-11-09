@@ -1,4 +1,4 @@
-import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
+import { executeSearch, type ExportFormat, note_service as noteService, NoteParams, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import { becca } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
@@ -18,20 +18,20 @@ function register(router: Router) {
         }
 
         const searchParams = parseSearchParams(req);
-        const searchContext = new SearchContext(searchParams);
 
-        const searchResults = searchService.findResultsWithQuery(search, searchContext);
-        const foundNotes = searchResults.map((sr) => becca.notes[sr.noteId]);
+        executeSearch("etapiSearch", { hoistedNoteId: "root", search, params: searchParams }).then(({ noteIds, debugInfo }) => {
+            const foundNotes = noteIds.map((noteId) => becca.notes[noteId]).filter((note) => note !== undefined);
 
-        const resp: any = {
-            results: foundNotes.map((note) => mappers.mapNoteToPojo(note))
-        };
+            const resp: any = {
+                results: foundNotes.map((note) => mappers.mapNoteToPojo(note))
+            };
 
-        if (searchContext.debugInfo) {
-            resp.debugInfo = searchContext.debugInfo;
-        }
+            if (debugInfo) {
+                resp.debugInfo = debugInfo;
+            }
 
-        res.json(resp);
+            res.json(resp);
+        }).catch((e: unknown) => eu.handleRequestError(e, res, "get", "/etapi/notes"));
     });
 
     eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId", (req, res, next) => {

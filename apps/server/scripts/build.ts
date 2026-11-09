@@ -4,11 +4,13 @@ const build = new BuildHelper("apps/server");
 
 async function main() {
     // ESM so dynamic-import boundaries split into chunks/ that only load on first use; the
-    // image worker below is spawned by its .cjs path and stays CJS.
+    // workers below are spawned by their .cjs paths and stay CJS.
     await build.buildBackend([ "src/main.ts" ], { format: "esm" });
-    // Its own call so it lands beside the bundle rather than under a `services/` path: the pool
-    // looks for it next to whatever is running, and desktop builds it the same way.
+    // One call per worker so each lands beside the bundle rather than under a `services/` path:
+    // the pools look for them next to whatever is running, and desktop builds them the same way.
     await build.buildBackend([ "src/services/image_worker.ts" ]);
+    await build.buildBackend([ "src/services/workers/content_job_worker.ts" ]);
+    await build.buildBackend([ "src/services/search_replica/search_replica_worker.ts" ]);
     await build.buildTesseractWorker("src/services/ocr/tesseract_worker.ts");
 
     // Copy assets

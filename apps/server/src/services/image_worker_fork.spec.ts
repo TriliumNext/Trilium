@@ -2,14 +2,15 @@ import { initLog } from "@triliumnext/core/src/services/log.js";
 import { Jimp } from "jimp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { compressInWorker, shutdownImageWorkers } from "./image_worker_pool.js";
+import { resizePreviewImage } from "./image_codec.js";
+import { compressInWorker, resizePreviewInWorker, shutdownImageWorkers } from "./image_worker_pool.js";
 
 /**
  * One image through a real forked worker — no mocks, the actual child process, channel and codec.
  *
- * This is the only automated coverage the transport has: the mocked spec beside this one pins the
- * pool's semantics, but a renamed message field, a broken ready gate or a serialization change
- * would sail through it. Separate from that spec because this one must NOT mock `node:child_process`.
+ * This is the only automated coverage the transport has: the spec beside this one pins the pool's
+ * semantics through a fake spawner, so a renamed message field, a broken ready gate or a
+ * serialization change would pass there.
  */
 let jpeg: Uint8Array;
 let previousNodeOptions: string | undefined;
@@ -66,5 +67,20 @@ describe("image worker fork round-trip", () => {
         expect(outcome.format.mime).toBe("image/jpeg");
         expect(outcome.buffer.byteLength).toBeGreaterThan(0);
         expect(outcome.buffer.byteLength).toBeLessThan(jpeg.byteLength);
+    });
+
+    it("resizes a preview in a real child process to the same bytes as in-process", { timeout: 30000 }, async () => {
+        const request = { maxEdge: 64, jpegQuality: 80 };
+        const offThread = await resizePreviewInWorker(jpeg, request);
+        const inProcess = await resizePreviewImage(jpeg, request);
+
+        expect(offThread).not.toBeNull();
+
+        if (!offThread?.resized || !inProcess.resized) {
+            throw new Error(`expected both to resize, got ${JSON.stringify({ offThread, inProcess })}`);
+        }
+
+        expect(offThread.bytes).toBeInstanceOf(Uint8Array);
+        expect(Buffer.from(offThread.bytes).equals(Buffer.from(inProcess.bytes))).toBe(true);
     });
 });

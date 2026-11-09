@@ -14,6 +14,7 @@ import NodejsCryptoProvider from "./crypto_provider.js";
 import NodejsInAppHelpProvider from "./in_app_help_provider.js";
 import ServerLogService from "./log_provider.js";
 import ServerPlatformProvider from "./platform_provider.js";
+import { applyPostInit, createCoreExtensions } from "./services/core_extensions.js";
 import dataDirs from "./services/data_dir.js";
 import NodeRequestProvider from "./services/request.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
@@ -47,6 +48,7 @@ export async function initializeServerCore() {
     }
 
     const logService = new ServerLogService();
+    const extensions = createCoreExtensions();
 
     await initializeCore({
         dbConfig: {
@@ -95,9 +97,12 @@ export async function initializeServerCore() {
         // Read before core exists, because what it says is whether to open the database at all.
         setupMarker: consumeSetupMarker(),
         setupPlatform,
+        contentJobs: extensions.contentJobs,
+        search: extensions.search,
         extraAppInfo: {
             nodeVersion: process.version,
             dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)
         }
     });
+    applyPostInit(extensions);
 }
