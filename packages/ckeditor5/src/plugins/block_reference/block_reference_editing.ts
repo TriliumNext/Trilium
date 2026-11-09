@@ -12,6 +12,9 @@ const BLOCK_ID_LENGTH = 12;
 const BLOCK_ID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const EDGES = [ "first", "last" ] as const;
 
+/** How long the blocks stay unchanged before `linkedBlockChanged` reports them. */
+const LINKED_BLOCK_DELAY = 300;
+
 type Edge = typeof EDGES[number];
 
 /** The blocks that a reference made from the selection points at. */
@@ -22,12 +25,26 @@ export interface BlockReferenceTarget {
 }
 
 /**
+ * Fired once the editing pauses, with the ids of the blocks whose content changed, or with `null`
+ * when any block can have changed.
+ */
+export type LinkedBlockChangedEvent = {
+    name: "linkedBlockChanged";
+    args: [ blockIds: ReadonlySet<string> | null ];
+};
+
+/**
  * Stores the id of a referenced block as `data-trilium-block-id`, and keeps each id unique in the
  * document.
  */
 export default class BlockReferenceEditing extends Plugin {
 
     private isRangeEditor = false;
+
+    /** The ids that the next `linkedBlockChanged` reports, or `null` for any block. */
+    private changedBlockIds: Set<string> | null = new Set();
+
+    private changeTimer: ReturnType<typeof setTimeout> | undefined;
 
     static get pluginName() {
         return "BlockReferenceEditing" as const;
@@ -64,6 +81,12 @@ export default class BlockReferenceEditing extends Plugin {
         editor.model.document.registerPostFixer((writer) =>
             this.isRangeEditor && giveIdsToEdgeBlocks(editor.model, writer));
         editor.commands.add("assignBlockReference", new AssignBlockReferenceCommand(editor));
+        this.listenTo(editor.model.document, "change:data", () => this.collectChangedBlocks());
+    }
+
+    override destroy() {
+        clearTimeout(this.changeTimer);
+        super.destroy();
     }
 
     /**
@@ -84,6 +107,23 @@ export default class BlockReferenceEditing extends Plugin {
         const startId = getEdgeId(model, "first", preferred?.startId);
         const endId = getEdgeId(model, "last", preferred?.endId);
         return startId && endId ? { startId, endId } : null;
+    }
+
+    /** Adds the blocks of the last change to the next report, which waits for a pause. */
+    private collectChangedBlocks() {
+        const blockIds = getChangedBlockIds(this.editor.model);
+        if (blockIds && !blockIds.size) {
+            return;
+        }
+
+        this.changedBlockIds = blockIds && this.changedBlockIds
+            && new Set([ ...this.changedBlockIds, ...blockIds ]);
+        clearTimeout(this.changeTimer);
+        this.changeTimer = setTimeout(() => {
+            const changed = this.changedBlockIds;
+            this.changedBlockIds = new Set();
+            this.fire<LinkedBlockChangedEvent>("linkedBlockChanged", changed);
+        }, LINKED_BLOCK_DELAY);
     }
 }
 
@@ -208,6 +248,53 @@ function getEdgeChild(element: ModelElement, edge: Edge) {
     return element.getChild(edge === "first" ? 0 : element.childCount - 1);
 }
 
+/**
+ * The ids of the blocks whose content the last change of `model` changed, or `null` when it
+ * inserted or removed a block that holds others, whose ids the differ does not list.
+ */
+function getChangedBlockIds(model: Model) {
+    const ids = new Set<string>();
+    for (const change of model.document.differ.getChanges()) {
+        if (change.type === "attribute") {
+            if (change.attributeKey === BLOCK_ID) {
+                addBlockIds(ids, change.attributeOldValue, change.attributeNewValue);
+            }
+            continue;
+        }
+
+        // `reconvertItem()` redraws an element without changing it.
+        if (change.action === "refresh") {
+            continue;
+        }
+
+        if (canHoldBlocks(model, change.name)) {
+            return null;
+        }
+
+        addBlockIds(ids, change.attributes.get(BLOCK_ID));
+        let parent = change.position.parent as ModelElement | null;
+        for (; parent; parent = parent.parent as ModelElement | null) {
+            addBlockIds(ids, parent.getAttribute(BLOCK_ID));
+        }
+    }
+
+    return ids;
+}
+
+/** Whether an element named `name` holds blocks rather than text. */
+function canHoldBlocks(model: Model, name: string) {
+    const schema = model.schema;
+    return !schema.isInline(name) && !schema.isObject(name) && !schema.checkChild(name, "$text");
+}
+
+function addBlockIds(ids: Set<string>, ...values: unknown[]) {
+    for (const value of values) {
+        if (typeof value === "string") {
+            ids.add(value);
+        }
+    }
+}
+
 function getInsertedBlocksWithId(model: Model) {
     const blocks: ModelElement[] = [];
     for (const change of model.document.differ.getChanges()) {
@@ -238,6 +325,21 @@ function getBlocksById(model: Model, excluded: Set<ModelElement>) {
     }
 
     return blocks;
+}
+
+/** The id of `block`, which gets a new id first if it has none. */
+export function assignBlockId(model: Model, block: ModelElement): string {
+    const id = block.getAttribute(BLOCK_ID);
+    if (typeof id === "string") {
+        return id;
+    }
+
+    const newId = generateBlockId();
+    // Not an undo step: the id is invisible, so undoing it would seem to do nothing.
+    model.enqueueChange({ isUndoable: false }, (writer) => {
+        writer.setAttribute(BLOCK_ID, newId, block);
+    });
+    return newId;
 }
 
 /** A new random block id. */

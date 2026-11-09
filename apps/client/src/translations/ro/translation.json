@@ -1394,7 +1394,6 @@
     "custom_url_placeholder": "Personalizați URL-ul motorului de căutare",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "predefined_templates_label": "Motoare de căutare predefinite",
     "save_button": "Salvează",
     "title": "Motor de căutare",
     "custom_url_description": "Folosiți {keyword} ca substituent pentru termenul de căutare."
@@ -1876,8 +1875,6 @@
     "no_headings": "Niciun titlu."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Fișierul <code class=\"file-path\"></code> a fost ultima oară modificat la data de <span class=\"file-last-modified\"></span>.",
-    "ignore_this_change": "Ignoră această schimbare",
     "upload_modified_file": "Încarcă fișier modificat"
   },
   "clipboard": {
@@ -2393,9 +2390,7 @@
   },
   "experimental_features": {
     "title": "Opțiuni experimentale",
-    "disclaimer": "Aceste opțiuni sunt experimentale și pot cauza instabilitate. Folosiți cu prudență.",
-    "llm_name": "Chat AI / LLM",
-    "llm_description": "Activează bara laterală de chat AI și notițele de chat LLM bazate pe modele lingvistice mari."
+    "disclaimer": "Aceste opțiuni sunt experimentale și pot cauza instabilitate. Folosiți cu prudență."
   },
   "server": {
     "unknown_http_error_title": "Eroare de comunicare cu server-ul",
@@ -3112,7 +3107,6 @@
       "copy-formatting": "Copiază formatarea",
       "copy-image-to-clipboard": "Copiază imaginea în clipboard",
       "copy-to-clipboard": "Copiază în clipboard",
-      "copy-url": "Copiază URL-ul",
       "create-a-bulleted-list": "Creează o listă cu marcatori",
       "create-a-new-footnote-and-reference-it-here": "Creează o notă de subsol nouă și o referențiază aici",
       "create-a-numbered-list": "Creează o listă numerotată",
@@ -3126,7 +3120,6 @@
       "drag-to-reposition-the-collapsible-block": "Trageți pentru a repoziționa blocul pliabil",
       "edit-anchor": "Editează ancora",
       "edit-task-states": "Editează stările sarcinii",
-      "edit-title": "Editează titlul",
       "embed": "Încorporat",
       "enter-the-anchor-name-without-spaces": "Introduceți numele ancorei fără spații.",
       "equation-preview": "Previzualizarea ecuației",
@@ -3141,11 +3134,9 @@
       "include-note-widget": "widget de includere a notiței",
       "increase-the-indentation-of-the-current-block": "Mărește indentarea blocului curent.",
       "indent": "Indentează",
-      "inline": "În linie",
       "insert-a-0-mermaid-diagram-template": "Inserează un șablon de diagramă Mermaid „%0”",
       "insert-a-block-of-preformatted-code": "Inserează un bloc de cod preformatat.",
       "insert-a-horizontal-rule": "Inserează o linie orizontală.",
-      "insert-a-link-to-another-trilium-note": "Inserează o legătură către o altă notiță Trilium",
       "insert-a-math-equation": "Inserează o ecuație matematică",
       "insert-a-new-admonition": "Inserează o casetă de evidențiere nouă",
       "insert-a-page-break-for-printing": "Inserează un sfârșit de pagină (pentru tipărire)",
@@ -3164,7 +3155,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "widget de previzualizare a legăturii",
       "link-mention-widget": "widget de menționare a legăturii",
-      "link-preview": "Previzualizare link",
       "markdown-import": "Import Markdown",
       "markdown-import-from-clipboard": "Importă Markdown din clipboard",
       "math-editor-unavailable": "Editorul de ecuații nu este disponibil",
@@ -3180,7 +3170,6 @@
       "note": "Notă",
       "numbered-list": "Listă numerotată",
       "outdent": "Micșorează indentarea",
-      "plain-link": "Legătură simplă",
       "preview": "Previzualizare",
       "quote-a-passage-from-another-source": "Citează un pasaj dintr-o altă sursă.",
       "remove-anchor": "Elimină ancora",
@@ -3195,14 +3184,12 @@
       "text-snippet": "Fragment de text",
       "text-snippets-found-0": "Fragmente de text găsite: %0",
       "tip": "Sfat",
-      "title": "Titlu",
       "to-do-list": "Listă de sarcini",
       "toggle-collapsible-block": "Comută blocul pliabil",
       "turn-the-current-block-into-a-heading": "Transformă blocul curent într-un titlu.",
       "turn-the-current-block-into-a-paragraph": "Transformă blocul curent într-un paragraf.",
       "type-the-content-here": "Scrieți conținutul aici...",
       "undefined-custom-task-state": "Stare personalizată de sarcină nedefinită",
-      "url": "URL",
       "warning": "Avertisment",
       "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "Fișierul este prea mare pentru a fi încărcat (HTTP 413). Dacă Trilium se află în spatele unui proxy invers, măriți limita de dimensiune a corpului cererilor.",
       "the-server-responded-with-http-0": "Serverul a răspuns cu HTTP %0."

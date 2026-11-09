@@ -2,7 +2,7 @@ import "./TextEmbedEditor.css";
 
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { createPortal, type RefObject } from "preact";
-import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
@@ -17,7 +17,8 @@ import { useLegacyComponentElement, useNoteContext, useTriliumEvent } from "../.
 import { registerEmbedFindTarget } from "./content_embed_tools";
 import EditableText, { getBlockData } from "./EditableText";
 import {
-    findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot, useEmbedCaretNavigation
+    EmbedEditorShownContext, findTextEditorIn, NestedEmbedContext, useEmbedBadgeSlot,
+    useEmbedCaretNavigation
 } from "./editable_embed";
 import { getClosingSave, trackClosingSave } from "./TextEmbed";
 
@@ -99,6 +100,7 @@ function ScopedEditor({ rootRef, note, block, onBlockChange }: ScopedEditorProps
     // `appContext.getComponentByEl()` finds the host of the editor by this element.
     useLegacyComponentElement(rootRef);
     const badgeSlot = useEmbedBadgeSlot(rootRef);
+    const onContentShown = useContext(EmbedEditorShownContext);
     useEditorFindTarget(ntxId);
 
     return (
@@ -112,6 +114,7 @@ function ScopedEditor({ rootRef, note, block, onBlockChange }: ScopedEditorProps
                     viewScope={noteContext.viewScope}
                     block={block}
                     onBlockChange={onBlockChange}
+                    onContentShown={onContentShown}
                 />
             )}
             {badgeSlot && createPortal(<SaveStatusBadge />, badgeSlot)}

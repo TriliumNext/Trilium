@@ -39,10 +39,13 @@
 
     --input-text-color: #ccc;
     --input-background-color: #333;
+    --input-focus-outline-color: #ffffff57;
 
     --hover-item-text-color: #ccc;
     --hover-item-background-color: transparent;
     --hover-item-border-color: #aaa;
+
+    --menu-item-arrow-color: #ffffffa3;
 
     --active-item-text-color: black;
     --active-item-background-color: #777;
@@ -68,8 +71,6 @@
     --inactive-tab-hover-background-color: #525252;
     --inactive-tab-text-color: #bbb;
 
-    --scrollbar-border-color: #666;
-    --scrollbar-background-color: #333;
     --selection-background-color: #3399FF70;
     --tooltip-background-color: #333;
     --link-color: lightskyblue;
@@ -102,10 +103,6 @@ body ::-webkit-calendar-picker-indicator {
 
 body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
-}
-
-.btn-close {
-    filter: invert(1);
 }
 
 .ck-content pre {

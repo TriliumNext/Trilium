@@ -4,14 +4,17 @@ import appContext, { type CommandNames } from "../components/app_context.js";
 import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import { t } from "../services/i18n.js";
-import options from "../services/options.js";
+import { getSearchEngine } from "../services/search_engine.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import { buildCodeEditorContextMenuItems } from "./code_editor_context_menu.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
 import { splitMenuItem } from "./context_menu_utils.js";
 import { buildTableContextMenuSections, hasTableCellSelection } from "./table_context_menu.js";
-import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
+import {
+    buildAiActionsMenuItem, buildSortSelectionMenuItem, getTextEditorAtSelection,
+    getTextEditorContaining
+} from "./text_editor_context_menu.js";
 
 /** What the pointer was over when the menu was summoned. */
 export interface ContextMenuTarget {
@@ -144,6 +147,11 @@ export async function buildNoteContextMenuItems(
     const codeEditorItems = target.isEditable
         ? await buildCodeEditorContextMenuItems(target.element)
         : null;
+    // The table section sorts the rows.
+    const sortItem = target.isEditable
+        ? buildSortSelectionMenuItem(await getTextEditorContaining(target.element),
+            { isRowsExcluded: tableSections !== null })
+        : null;
     const hasText = !hasCellSelection && target.selectionText.trim().length > 0;
     const hasClipboardContent = hasText || hasCellSelection;
 
@@ -251,8 +259,11 @@ export async function buildNoteContextMenuItems(
     }
 
     if (tableSections) {
-        items.push({ kind: "separator" }, tableSections.sort, { kind: "separator" },
+        const sortItems = sortItem ? [ tableSections.sort, sortItem ] : [ tableSections.sort ];
+        items.push({ kind: "separator" }, ...sortItems, { kind: "separator" },
             ...tableSections.delete, { kind: "separator" }, tableSections.select);
+    } else if (sortItem) {
+        items.push({ kind: "separator" }, sortItem);
     }
 
     if (codeEditorItems) {
@@ -265,30 +276,20 @@ export async function buildNoteContextMenuItems(
             ? `${selectionText.slice(0, 13)}…`
             : selectionText;
 
-        const customSearchEngineName = options.get("customSearchEngineName");
-        const customSearchEngineUrl = options.get("customSearchEngineUrl") as string;
-        let searchEngineName;
-        let searchEngineUrl;
-        if (customSearchEngineName && customSearchEngineUrl) {
-            searchEngineName = customSearchEngineName;
-            searchEngineUrl = customSearchEngineUrl;
-        } else {
-            searchEngineName = "DuckDuckGo";
-            searchEngineUrl = "https://duckduckgo.com/?q={keyword}";
-        }
-
-        const searchUrl = searchEngineUrl.replace("{keyword}", encodeURIComponent(selectionText));
-
         items.push({ kind: "separator" });
 
-        items.push({
-            title: t("electron_context_menu.search_online", {
-                term: utils.escapeHtml(shortenedSelection),
-                searchEngine: utils.escapeHtml(searchEngineName)
-            }),
-            uiIcon: "bx bx-search-alt",
-            handler: () => host.openExternal(searchUrl)
-        });
+        const searchEngine = getSearchEngine();
+        if (searchEngine) {
+            const searchUrl = searchEngine.url.replace("{keyword}", encodeURIComponent(selectionText));
+            items.push({
+                title: t("electron_context_menu.search_online", {
+                    term: utils.escapeHtml(shortenedSelection),
+                    searchEngine: utils.escapeHtml(searchEngine.name)
+                }),
+                uiIcon: searchEngine.icon,
+                handler: () => host.openExternal(searchUrl)
+            });
+        }
 
         items.push({
             title: t("electron_context_menu.search_in_trilium", { term: utils.escapeHtml(shortenedSelection) }),

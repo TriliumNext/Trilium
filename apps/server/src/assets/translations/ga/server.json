@@ -348,7 +348,10 @@
     "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint.",
     "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo.",
     "broken-block-reference": "Tagairt bhriste",
-    "play-video": "Seinn físeán"
+    "play-video": "Seinn físeán",
+    "content-not-available": "Níl an t-ábhar seo ar fáil.",
+    "untitled-block": "Bloc",
+    "play-audio": "Seinn fuaim"
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",
@@ -436,7 +439,6 @@
     "presentation_slide": "Sleamhnán cur i láthair",
     "presentation_slide_first": "An chéad sleamhnán",
     "presentation_slide_second": "An dara sleamhnán",
-    "background": "Cúlra",
     "markdown-snippet": "Sleachta Marcála",
     "code-snippet": "Sleachta Cód",
     "dashboard": "Dashboard",
@@ -456,7 +458,8 @@
       "cannot-compare-with": "ní féidir comparáid a dhéanamh le \"{{- token}}\". Chun luach liteartha a chuardach, bain úsáid as comharthaí athfhriotail: \"{{- token}}\"",
       "misplaced-expression": "Slonn mí-áitithe nó neamhiomlán \"{{- token}}\"",
       "fulltext-after-expression": "Ní abairt bhailí í \"{{- token}}\". Chun téacs a chuardach, cuir é roimh scagairí tréithe (m.sh., \"{{- token}} #label\" in ionad \"#label {{- token}}\").",
-      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\""
+      "unrecognized-expression": "Sloinneadh neamhaitheanta \"{{- token}}\"",
+      "regex-not-allowed": "Níl an t-oibreoir slonn rialta \"%=\" ar fáil anseo."
     }
   },
   "password": {
@@ -613,5 +616,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Ritheann Trilium mar Flatpak, mar sin ní féidir leis cláir a shuiteáiltear lasmuigh dá bhosca gainimh a thosú, mar shampla {{- cli}}. Chun {{- cli}} a úsáid:\n\n1. Suiteáil é ar an ríomhaire seo agus logáil isteach ann ó theirminéal.\n2. Tabhair cead do Trilium cláir a thosú lasmuigh dá bhosca gainimh tríd an méid seo a rith i dteirminéal:\n\n{{- grantCommand}}\n\n3. Atosaigh Trilium.\n\nLeis seo, bíonn an rochtain chéanna ag Trilium ar do ríomhaire is a bheadh aige dá mbeadh sé suiteáilte lasmuigh de Flatpak. Chun an cead sin a tharraingt siar, rith:\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "Roghnaigh feidhmchlár chun an comhad a oscailt leis.",
+    "applications_filter": "Feidhmchláir"
   }
 }

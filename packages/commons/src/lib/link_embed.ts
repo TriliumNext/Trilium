@@ -7,6 +7,79 @@ export function extractYouTubeVideoId(url: string): string | null {
     return match ? match[1] : null;
 }
 
+/** The embed types of a link preview that plays the audio or video file at its URL. */
+export const MEDIA_FILE_EMBED_TYPES = [ "video", "audio" ] as const;
+
+export type MediaFileEmbedType = typeof MEDIA_FILE_EMBED_TYPES[number];
+
+/** Whether `embedType` is that of a preview that plays an audio or video file. */
+export function isMediaFileEmbedType(
+    embedType: string | null | undefined
+): embedType is MediaFileEmbedType {
+    return MEDIA_FILE_EMBED_TYPES.some((type) => type === embedType);
+}
+
+/** The file extensions that name a video or an audio file, as `<video>` and `<audio>` play them. */
+const MEDIA_FILE_EXTENSIONS: Record<string, MediaFileEmbedType> = {
+    mp4: "video", m4v: "video", webm: "video", ogv: "video", mov: "video", mkv: "video",
+    mp3: "audio", m4a: "audio", aac: "audio", oga: "audio", ogg: "audio", opus: "audio",
+    wav: "audio", flac: "audio", weba: "audio"
+};
+
+/**
+ * Whether the file at the http(s) `url` is a video or an audio file, as the extension of its path
+ * names it, or `null`. The type of a file without one is known only once it is fetched.
+ */
+export function getMediaFileTypeOfUrl(url: string): MediaFileEmbedType | null {
+    if (!isHttpUrl(url)) {
+        return null;
+    }
+
+    const extension = new URL(url).pathname.match(/\.([a-z0-9]+)$/i)?.[1].toLowerCase();
+    return (extension && MEDIA_FILE_EXTENSIONS[extension]) || null;
+}
+
+/** The largest term of a ratio that `getVideoAspectRatio()` reads. */
+const MAX_ASPECT_RATIO_TERM = 9999;
+
+/**
+ * The simplest ratio `<width>/<height>` that the whole-pixel `width` and `height` can round from,
+ * such as `16/9` for 200x113, or `undefined` when they are not whole numbers or when that ratio
+ * needs a term above {@link MAX_ASPECT_RATIO_TERM}.
+ */
+export function toAspectRatio(width: unknown, height: unknown) {
+    if (!isPositiveInteger(width) || !isPositiveInteger(height)) {
+        return undefined;
+    }
+
+    const min = (width - 0.5) / (height + 0.5);
+    const max = (width + 0.5) / (height - 0.5);
+    for (let denominator = 1; denominator <= MAX_ASPECT_RATIO_TERM; denominator++) {
+        const numerator = Math.ceil(min * denominator);
+        if (numerator > MAX_ASPECT_RATIO_TERM) {
+            return undefined;
+        }
+        if (numerator / denominator <= max) {
+            return `${numerator}/${denominator}`;
+        }
+    }
+    return undefined;
+}
+
+function isPositiveInteger(value: unknown): value is number {
+    return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+/** The name of the file at `url`: the last segment of its path, or its host. */
+export function getMediaFileTitle(url: string): string {
+    try {
+        const segment = new URL(url).pathname.split("/").filter(Boolean).pop();
+        return segment ? decodeURIComponent(segment) : safeHostname(url);
+    } catch {
+        return safeHostname(url);
+    }
+}
+
 /**
  * True when the URL is one a link preview may ever point at.
  *
@@ -115,8 +188,15 @@ export function safeHostname(url: string): string {
  *
  * The fragment is left out of both. It never reaches the server and never changes the picture, so
  * two links into different sections of one page share the cover they both showed anyway.
+ *
+ * A YouTube video is named by its ID instead, so all address forms of one video share a thumbnail.
  */
 export function linkPreviewImageName(url: string): string {
+    const videoId = extractYouTubeVideoId(url);
+    if (videoId) {
+        return `youtube-${videoId}`;
+    }
+
     let canonical = url;
     let readable = toFileNamePart(url);
 
@@ -166,12 +246,15 @@ export interface LinkEmbedMetadata {
     image?: string;
     favicon?: string;
     siteName?: string;
-    embedType: "youtube" | "opengraph";
+    /** `video` and `audio` play the file at `url`. */
+    embedType: "youtube" | "opengraph" | MediaFileEmbedType;
+    /** The shape of a video, as its width and height in whole numbers, such as `9/16`. */
+    aspectRatio?: string;
     /**
      * True when the page could not be read at all — a network error, a bot challenge (many sites
      * answer a server-side fetch with a Cloudflare interstitial), a non-HTML response, or a page
      * carrying no title of its own. The remaining fields then hold nothing but a hostname-derived
-     * placeholder, so an auto-detected URL is left as a plain link rather than becoming a preview
+     * placeholder, so an auto-detected URL is left as a text link rather than becoming a preview
      * that shows less than the URL itself did. Never persisted into the note's HTML.
      */
     unresolved?: boolean;
@@ -196,8 +279,7 @@ export interface BlockChildLike {
 export function isUrlAloneInBlock(children: Iterable<BlockChildLike>, url: string): boolean {
     let text = "";
     for (const child of children) {
-        // Any non-text node (inline image, soft break, mention, …) means the
-        // URL isn't alone.
+        // Any non-text node (inline image, mention, …) means the URL isn't alone.
         if (!child.isText) {
             return false;
         }
@@ -206,7 +288,7 @@ export function isUrlAloneInBlock(children: Iterable<BlockChildLike>, url: strin
     return text.trim() === url;
 }
 
-export type LinkPreviewKind = "embed" | "card" | "mention";
+export type LinkPreviewKind = "embedLink" | "cardLink" | "iconAndTextLink";
 
 /** Where an auto-detected URL sits, and what the user did right after typing it. */
 export interface LinkPreviewPlacement {
@@ -230,15 +312,15 @@ export interface LinkPreviewPlacement {
  * A URL only becomes a block-level preview when the user deliberately left it alone on its own
  * line — sole content of a plain paragraph, then Enter. That gesture is the signal; anything else
  * (text either side, a list/table/quote, or a caret still sitting in the block because the user is
- * still typing) yields an unobtrusive inline mention.
+ * still typing) yields an unobtrusive icon & text link.
  *
  * Given that gesture, the URL decides which block form: an embeddable one (e.g. YouTube) becomes a
  * player, everything else a card.
  */
 export function chooseLinkPreviewKind(embedType: string, placement: LinkPreviewPlacement): LinkPreviewKind {
     if (!placement.urlAloneInBlock || !placement.blockIsStandalone || !placement.caretLeftBlock) {
-        return "mention";
+        return "iconAndTextLink";
     }
 
-    return embedType !== "opengraph" ? "embed" : "card";
+    return embedType !== "opengraph" ? "embedLink" : "cardLink";
 }

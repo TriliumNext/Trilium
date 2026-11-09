@@ -6,7 +6,6 @@ import {
     UserTheme
 } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
-import Mark from "mark.js";
 import { CSSProperties, Ref, RefObject, VNode } from "preact";
 import { useSyncExternalStore } from "preact/compat";
 import { useCallback, useContext, useDebugValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -19,6 +18,7 @@ import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { expandAncestorDetails } from "../../services/collapsible";
 import froca from "../../services/froca";
+import { addHighlights, findRegExpRanges, findTermRanges, removeHighlights } from "../../services/highlight_matches";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
@@ -29,7 +29,9 @@ import protected_session_holder from "../../services/protected_session_holder";
 import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
-import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
+import shortcuts, {
+    Handler, removeIndividualBinding, type ShortcutBinding
+} from "../../services/shortcuts";
 import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
@@ -162,6 +164,8 @@ export function useEditorSpacedUpdate({
         // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a
         // shared page cannot save
         if (data === undefined || !note || note.type !== noteType || isShare) return;
+        // A deleted note is gone from `froca`, and the server refuses its changes.
+        if (!(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 
@@ -288,7 +292,7 @@ export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData
 
     const commit = useCallback(async (data: Blob | undefined) => {
         // for read only notes
-        if (data === undefined || note.type !== noteType) return;
+        if (data === undefined || note.type !== noteType || !(note.noteId in froca.notes)) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
         await server.upload(`notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`, new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
@@ -1091,7 +1095,7 @@ export function useWhenShown(ref: RefObject<Element | null> | undefined) {
         } else if (waiting) {
             waiting.callback = callback;
         } else {
-            // `display: none` gives the element no size, so showing it resizes it.
+            // A `ResizeObserver` first reports a hidden element once it is shown.
             const observer = new ResizeObserver(() => {
                 const current = waitingRef.current;
                 if (current && isShown(element)) {
@@ -1152,6 +1156,74 @@ export function useIsOnScreen(ref: RefObject<Element | null>, enabled: boolean) 
 }
 
 /**
+ * Puts `className` on the parent of the element in `ref` while `enabled` holds, for a parent laid
+ * out by what the component renders, such as a legacy `ScrollingContainer`. The parent is read when
+ * `enabled` turns true: a legacy container renders its Preact children into a fragment first.
+ */
+export function useParentClass(
+    ref: RefObject<HTMLElement | null>, className: string, enabled: boolean
+) {
+    useLayoutEffect(() => {
+        const parent = ref.current?.parentElement;
+        if (!enabled || !parent) return;
+        parent.classList.add(className);
+        return () => parent.classList.remove(className);
+    }, [ ref, className, enabled ]);
+}
+
+/**
+ * Puts `className` on `body` while at least one mounted component enables it, for an element whose
+ * style depends on a state it has no DOM relation to.
+ */
+export function useBodyClass(className: string, enabled: boolean) {
+    useLayoutEffect(() => {
+        if (!enabled) return;
+        bodyClassCounts.set(className, (bodyClassCounts.get(className) ?? 0) + 1);
+        document.body.classList.add(className);
+        return () => {
+            const remaining = (bodyClassCounts.get(className) ?? 1) - 1;
+            if (remaining > 0) {
+                bodyClassCounts.set(className, remaining);
+                return;
+            }
+            bodyClassCounts.delete(className);
+            document.body.classList.remove(className);
+        };
+    }, [ className, enabled ]);
+}
+
+/** How many mounted components enable each class of {@link useBodyClass}. */
+const bodyClassCounts = new Map<string, number>();
+
+/**
+ * Whether an element holds the focus anywhere in the document and, given `selector`, sits in an
+ * element that matches it. Unlike {@link useFocusWithin}, it needs no element of its own.
+ */
+export function useDocumentFocus(selector?: string) {
+    const [ isFocused, setIsFocused ] = useState(() => isFocusIn(document.activeElement, selector));
+
+    useEffect(() => {
+        // During `focusout`, `relatedTarget` is the element that receives the focus, if any.
+        const update = (e: FocusEvent) => {
+            setIsFocused(isFocusIn(e.type === "focusin" ? e.target : e.relatedTarget, selector));
+        };
+        document.addEventListener("focusin", update);
+        document.addEventListener("focusout", update);
+        return () => {
+            document.removeEventListener("focusin", update);
+            document.removeEventListener("focusout", update);
+        };
+    }, [ selector ]);
+
+    return isFocused;
+}
+
+function isFocusIn(target: EventTarget | null, selector: string | undefined) {
+    return target instanceof Element && target !== document.body
+        && (!selector || !!target.closest(selector));
+}
+
+/**
  * Whether the focus is in the element, including in an `<iframe>` or a `<webview>` inside it,
  * which the document reports as its `activeElement`. Switching to another window keeps the value.
  */
@@ -1173,13 +1245,19 @@ export function useFocusWithin(ref: RefObject<HTMLElement | null>) {
         update();
         element.addEventListener("focusin", update);
         element.addEventListener("focusout", updateLater);
-        // A frame taking or returning the focus fires no focus event inside the document.
+        // A frame taking or returning the focus fires no focus event inside the document. The
+        // text editor dispatches `focus` and `blur` at a frame in an embed that the focus moves to
+        // or from, which only a capturing listener hears.
+        element.addEventListener("focus", update, true);
+        element.addEventListener("blur", updateLater, true);
         window.addEventListener("blur", updateLater);
         window.addEventListener("focus", updateLater);
         return () => {
             window.clearTimeout(timer);
             element.removeEventListener("focusin", update);
             element.removeEventListener("focusout", updateLater);
+            element.removeEventListener("focus", update, true);
+            element.removeEventListener("blur", updateLater, true);
             window.removeEventListener("blur", updateLater);
             window.removeEventListener("focus", updateLater);
         };
@@ -1687,7 +1765,9 @@ export function useSyncedRef<T>(
 ): RefObject<T | null> {
     const ref = useRef<T>(initialValue);
 
-    useEffect(() => {
+    // A layout effect, so that the external ref holds the element before any parent's `useEffect`
+    // reads it, as a ref passed straight to the element would.
+    useLayoutEffect(() => {
         if (typeof externalRef === "function") {
             externalRef(ref.current);
         } else if (externalRef) {
@@ -1700,50 +1780,37 @@ export function useSyncedRef<T>(
 
 /** Longer regex tokens are rejected outright rather than compiled, to avoid pathological patterns. */
 const MAX_REGEX_TOKEN_LENGTH = 1000;
-/** Caps the number of matches a single regex token can wrap, mirroring the cap mark.js's own term API implicitly applies via node-at-a-time processing. */
+/** Caps the number of matches a single regex token can wrap. */
 const MAX_REGEX_MATCHES = 500;
 
 export function useImperativeSearchHighlighlighting(
     highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
 ) {
-    const mark = useRef<Mark | undefined>(undefined);
+    const ranges = useRef<Range[]>([]);
     const tokenInfos = useMemo<HighlightedTokenInfo[] | null>(() => {
         if (!highlightedTokens?.length) return null;
         return highlightedTokens.map((token) => (typeof token === "string" ? { token, type: "plain" as const } : token));
     }, [ highlightedTokens ]);
 
+    // `CSS.highlights` keeps the ranges, and the nodes they hold, after the element is removed.
+    useEffect(() => () => removeHighlights("search-match", ranges.current), []);
+
     return (el: HTMLElement | null | undefined) => {
         if (!el) return;
 
-        // Nothing has ever been highlighted here, so there is also nothing to clear.
-        if (!mark.current && !tokenInfos) return;
-
-        if (!mark.current) {
-            mark.current = new Mark(el);
-        }
-
         // Clearing comes first and happens even with no tokens left: callers that keep the same
         // element and merely drop the tokens (e.g. emptying a filter box) rely on this to remove the
-        // previous highlights, which would otherwise stay in the DOM for good.
-        mark.current.unmark();
+        // previous highlights, which would otherwise stay drawn for good.
+        removeHighlights("search-match", ranges.current);
+        ranges.current = [];
 
         if (!tokenInfos) return;
 
+        // `findTermRanges()` ignores diacritics, so an unaccented query like "ktory" (the server
+        // strips diacritics before indexing) still highlights "ktorý" (#10616). It matches
+        // substrings, so CJK tokens without word boundaries ("笔记" in "我的笔记本") work too.
         const plainTokens = tokenInfos.filter((info) => info.type === "plain").map((info) => info.token);
-        if (plainTokens.length) {
-            // Term API (not markRegExp): its diacritics map lets an unaccented query like "ktory"
-            // (the server strips diacritics before indexing) still highlight "ktorý" (#10616).
-            // separateWordSearch: false keeps a multi-word token as one literal phrase; the default
-            // "partially" accuracy keeps plain substring matching, so CJK tokens without word
-            // boundaries (e.g. "笔记" inside "我的笔记本") keep working.
-            mark.current.mark(plainTokens, {
-                separateWordSearch: false,
-                diacritics: true,
-                caseSensitive: false,
-                element: "span",
-                className: "ck-find-result"
-            });
-        }
+        ranges.current.push(...findTermRanges(el, plainTokens));
 
         for (const info of tokenInfos) {
             if (info.type !== "regex" || info.token.length > MAX_REGEX_TOKEN_LENGTH) continue;
@@ -1756,19 +1823,16 @@ export function useImperativeSearchHighlighlighting(
                 continue;
             }
 
-            mark.current.markRegExp(regex, {
-                element: "span",
-                className: "ck-find-result",
-                // markRegExp's filter is called as (node, match, totalCounter so far); returning
-                // false once the cap is hit stops further matches from being wrapped.
-                filter: (_node, _match, totalCounter) => totalCounter < MAX_REGEX_MATCHES
-            });
+            ranges.current.push(...findRegExpRanges(el, regex, { limit: MAX_REGEX_MATCHES }));
         }
 
-        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted in
-        // the DOM but hidden until the block is expanded.
-        for (const match of el.querySelectorAll<HTMLElement>(".ck-find-result")) {
-            expandAncestorDetails(match);
+        addHighlights("search-match", ranges.current);
+
+        // Reveal matches that landed inside collapsed <details> blocks, which are highlighted but
+        // hidden until the block is expanded.
+        for (const range of ranges.current) {
+            const parent = range.startContainer.parentElement;
+            if (parent) expandAncestorDetails(parent);
         }
     };
 }
@@ -2096,6 +2160,46 @@ export function useKeyboardShortcuts(
             }
         };
     }, [ scope, containerRef, parentComponent, ntxId ]);
+}
+
+/** Marks a container whose `useFindShortcut()` has an explicit note context. */
+const FIND_NTX_ID_ATTR = "data-find-ntx-id";
+
+/**
+ * Opens "Search in note" on a shortcut of `findInText` pressed inside `containerRef`, for the note
+ * context `ntxId`, else for that of the closest container bound with one or of the note split
+ * around the container. The window binding of the shortcut targets the active tab, and an embed in
+ * a text note keeps its keys from the window.
+ */
+export function useFindShortcut(containerRef: RefObject<HTMLElement | null>, ntxId?: string) {
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        if (ntxId) container.setAttribute(FIND_NTX_ID_ATTR, ntxId);
+        let bindings: ShortcutBinding[] = [];
+        let isDisposed = false;
+        void keyboard_actions.getAction("findInText", true).then((action) => {
+            if (isDisposed) return;
+            bindings = (action?.effectiveShortcuts ?? []).flatMap((shortcut) =>
+                shortcuts.bindElShortcut($(container), shortcut, () => {
+                    const scope = container.closest(`[${FIND_NTX_ID_ATTR}], [data-ntx-id]`);
+                    const contextId = ntxId
+                        ?? scope?.getAttribute(FIND_NTX_ID_ATTR)
+                        ?? scope?.getAttribute("data-ntx-id")
+                        ?? undefined;
+                    void appContext.triggerCommand("findInText", { ntxId: contextId });
+                }) ?? []);
+        });
+
+        return () => {
+            isDisposed = true;
+            if (ntxId) container.removeAttribute(FIND_NTX_ID_ATTR);
+            for (const binding of bindings) {
+                removeIndividualBinding(binding);
+            }
+        };
+    }, [ containerRef, ntxId ]);
 }
 
 /**

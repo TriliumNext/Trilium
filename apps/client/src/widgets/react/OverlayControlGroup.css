@@ -81,6 +81,15 @@
             height: var(--_overlay-height);
             min-width: 50px;
             font-size: var(--overlay-button-text-size, 14px);
+
+            &:has(> .bx) {
+                gap: 6px;
+                padding-inline: 12px;
+
+                > .bx {
+                    font-size: var(--overlay-button-icon-size, 16px);
+                }
+            }
         }
 
         &:first-child {
@@ -105,7 +114,17 @@
         }
     }
 
-    > :where(:not(button)) {
+    > .tn-overlay-control-dropdown {
+        &:not(:first-child) > button {
+            --_start-border-radius: 0;
+        }
+
+        &:not(:last-child) > button {
+            --_end-border-radius: 0;
+        }
+    }
+
+    > :where(:not(button, .tn-overlay-control-dropdown)) {
         display: flex;
         align-items: center;
         height: var(--_overlay-height);

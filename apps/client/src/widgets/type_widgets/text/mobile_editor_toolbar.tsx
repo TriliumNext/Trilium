@@ -8,7 +8,9 @@ import { isIOS } from "../../../services/utils";
 import {
     HideKeyboardAction, holdVisibleBottom, usePositioningOniOS
 } from "../../mobile_widgets/hide_keyboard_button";
-import { useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent } from "../../react/hooks";
+import {
+    useBodyClass, useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent
+} from "../../react/hooks";
 import { useNestedEditor } from "./editable_embed";
 
 /**
@@ -31,6 +33,8 @@ export default function MobileEditorToolbar() {
     const editor = nestedEditor?.ui.view.toolbar ? nestedEditor : noteEditor;
     const toolbarElement = useShownToolbarElement(editor);
     const isActive = useEditorsFocused(noteEditor, nestedEditor) || dropdownActive;
+    // The toolbar has its own hide-keyboard action; this class hides `HideKeyboardButton`.
+    useBodyClass("mobile-toolbar-active", shouldDisplay && isActive);
     // A press outside the menu closes it as it starts, so the X's click only brings the keyboard
     // back, focusing the text within the tap.
     const isPanelOpen = useIsKeyboardPanelOpen();
@@ -212,16 +216,16 @@ export function getShownToolbarIsland() {
 /**
  * Closes a menu of the toolbar as a tap on another item of {@link MOBILE_TOOLBAR_ROW} clicks, before
  * the item runs. The menu's `Popup` keeps it open on a press there, which can start a scroll; the
- * menu's own button, at `anchor`, toggles it in the editor.
+ * menu's own button, at `anchor`, toggles it in the editor. A context menu has no button.
  */
-export function useClosedByToolbarTap(anchor: HTMLElement, close: () => void) {
+export function useClosedByToolbarTap(anchor: HTMLElement | null, close: () => void) {
     const closeRef = useRef(close);
     closeRef.current = close;
 
     useLayoutEffect(() => {
         const onClick = (event: MouseEvent) => {
             const target = event.target;
-            if (!(target instanceof Element) || anchor.contains(target)) return;
+            if (!(target instanceof Element) || anchor?.contains(target)) return;
             if (!target.closest(MOBILE_TOOLBAR_ROW)) return;
             isClosingInClick = true;
             try {

@@ -1,5 +1,4 @@
 <html>
-  
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,11 +6,9 @@
     <base target="_parent">
     <title data-trilium-title>Bash startup modes</title>
   </head>
-  
   <body>
     <div class="content">
-       <h1 data-trilium-h1>Bash startup modes</h1>
-
+      <h1 data-trilium-h1>Bash startup modes</h1>
       <div class="ck-content">
         <h3>Login shell</h3>
         <p>As a "login shell", Bash reads and sets (executes) the user's profile
@@ -41,7 +38,7 @@
         <ul>
           <li>--noprofile disables reading of all profile files</li>
         </ul>
-         <h3>Interactive shell</h3>
+        <h3>Interactive shell</h3>
         <p>When Bash starts as an interactive non-login shell, it reads and executes
           commands from ~/.bashrc. This file should contain, for example, aliases,
           since they need to be defined in every shell as they're not inherited from
@@ -64,7 +61,7 @@
           <li>--rcfile defines another startup file (instead of /etc/bash.bashrc and
             ~/.bashrc)</li>
         </ul>
-         <h3>SH mode</h3>
+        <h3>SH mode</h3>
         <p>When Bash starts in SH compatiblity mode, it tries to mimic the startup
           behaviour of historical versions of sh as closely as possible, while conforming
           to the POSIX® standard as well. The profile files read are /etc/profile
@@ -92,5 +89,4 @@
       </div>
     </div>
   </body>
-
 </html>

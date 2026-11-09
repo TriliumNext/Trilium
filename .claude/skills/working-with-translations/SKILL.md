@@ -194,3 +194,4 @@ That is the repo's only translation test: valid JSON, no duplicate keys, plus th
 ## Related
 
 - **translating-locales** — filling in a lagging non-English locale: measuring coverage, exporting work lists, placeholder validation, plural categories per locale, and how Weblate sync works. Use that skill, not this one, when the task is "bring `<locale>` to 100%".
+- **adding-a-display-language** — making a new language selectable: registering it in `LOCALES`, the per-library mappings, and the Electron locale check.

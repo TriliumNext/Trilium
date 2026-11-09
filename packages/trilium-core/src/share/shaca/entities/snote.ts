@@ -1,10 +1,9 @@
 import { BlobRow, getNoteIcon, NoteType } from "@triliumnext/commons";
 import { decodeUtf8 } from "../../../services/utils/binary.js";
-import escape from "escape-html";
 
 import becca from "../../../becca/becca.js";
 
-import { isStringNote } from "../../../services/utils/index.js";
+import { escapeHtml, isStringNote } from "../../../services/utils/index.js";
 import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
 import type { SNoteRow } from "./rows.js";
@@ -491,7 +490,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     get escapedTitle() {
-        return escape(this.title);
+        return escapeHtml(this.title);
     }
 
     get encodedTitle() {

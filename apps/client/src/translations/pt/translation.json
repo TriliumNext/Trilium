@@ -1051,7 +1051,6 @@
   "search_engine": {
     "title": "Motor de Pesquisa",
     "custom_search_engine_info": "O motor de pesquisa personalizado requer que sejam definidos um nome e uma URL. Se um destes não estiver definido, o DuckDuckGo será usado como o motor de pesquisa padrão.",
-    "predefined_templates_label": "Modelos de motor de pesquisa predefinidos",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1403,9 +1402,7 @@
     "no_headings": "Sem cabeçalhos."
   },
   "watched_file_update_status": {
-    "file_last_modified": "O ficheiro <code class=\"file-path\"></code> foi modificado pela última vez em <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Enviar ficheiro modificado",
-    "ignore_this_change": "Ignorar esta alteração"
+    "upload_modified_file": "Enviar ficheiro modificado"
   },
   "app_context": {
     "please_wait_for_save": "Por favor aguarde alguns segundos para finalizar a gravação e depois tente novamente."

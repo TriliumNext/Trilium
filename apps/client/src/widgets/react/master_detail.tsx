@@ -216,11 +216,18 @@ export function MasterDetailModal({ backTitle, listIcon, listActions, children, 
         switchMobileView(title === null ? "list" : "page");
     }, [ switchMobileView ]);
 
-    // Opens on the list, whatever page a previous show was left on.
+    // Opens on the list, whatever page a previous show was left on. Hiding closes the page, so that a
+    // modal kept in the DOM (`keepInDom`) leaves no page for the system back gesture to act on.
+    const pageRef = useRef(page);
+    pageRef.current = page;
+    const wasShown = useRef(false);
     useEffect(() => {
         if (modalProps.show) {
             resetMobileView("list");
+        } else if (wasShown.current) {
+            pageRef.current?.close();
         }
+        wasShown.current = modalProps.show;
     }, [ modalProps.show, resetMobileView ]);
 
     return (

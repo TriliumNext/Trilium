@@ -1458,9 +1458,7 @@
   },
   "experimental_features": {
     "title": "Opsi Eksperimental",
-    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati.",
-    "llm_name": "Chat AI / LLM",
-    "llm_description": "Aktifkan panel samping chat AI dan catatan chat LLM yang didukung oleh large language model."
+    "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati."
   },
   "fonts": {
     "theme_defined": "Tema ditentukan",
@@ -1493,7 +1491,6 @@
     "monospace_font_short": "Monospace",
     "custom_fonts_description": "Menggantikan font tema. Font yang diunggah ke Trilium dapat ditambahkan dari catatannya sendiri.",
     "user-fonts": "Font khusus",
-    "proportional-system-fonts": "Font proporsional",
     "search_placeholder": "Cari font",
     "no_fonts_found": "Tidak ada font yang sesuai dengan pencarian Anda.",
     "document_preview_heading": "Stek tanaman hati ungu",
@@ -1664,7 +1661,6 @@
   "search_engine": {
     "title": "Mesin Pencari",
     "custom_search_engine_info": "Digunakan saat mencari di web untuk teks yang dipilih. Jika tidak dikonfigurasi, DuckDuckGo akan digunakan.",
-    "predefined_templates_label": "Preset",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2356,9 +2352,7 @@
     "no_headings": "Tidak ada heading."
   },
   "watched_file_update_status": {
-    "file_last_modified": "File <code class=\"file-path\"></code> terakhir diubah pada <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Unggah file yang telah diubah",
-    "ignore_this_change": "Abaikan perubahan ini"
+    "upload_modified_file": "Unggah file yang telah diubah"
   },
   "app_context": {
     "please_wait_for_save": "Harap tunggu beberapa detik sampai penyimpanan selesai, lalu Anda dapat mencoba lagi."
@@ -3365,7 +3359,6 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Klik panah atau tekan %0 untuk melipat/membuka.",
       "collapsible-block": "Blok yang dapat dilipat",
       "copy-image-to-clipboard": "Salin gambar ke clipboard",
-      "copy-url": "Salin URL",
       "create-a-bulleted-list": "Buat daftar berpoin",
       "create-a-new-footnote-and-reference-it-here": "Buat footnote baru dan rujuk di sini",
       "create-a-numbered-list": "Buat daftar bernomor",
@@ -3375,7 +3368,6 @@
       "drag-to-reposition-the-collapsible-block": "Seret untuk mengubah posisi blok yang dapat dilipat",
       "edit-task-states": "Edit status tugas",
       "insert-a-0-mermaid-diagram-template": "Sisipkan template diagram Mermaid \"%0\"",
-      "insert-a-link-to-another-trilium-note": "Sisipkan tautan ke catatan Trilium lain",
       "insert-a-math-equation": "Sisipkan persamaan matematika",
       "insert-a-new-admonition": "Sisipkan admonition baru",
       "insert-a-page-break-for-printing": "Sisipkan pemisah halaman (untuk pencetakan)",
@@ -3410,7 +3402,6 @@
       "display": "Tampilan",
       "display-mode": "Mode tampilan",
       "edit-anchor": "Edit anchor",
-      "edit-title": "Edit judul",
       "embed": "Sematkan",
       "enter-the-anchor-name-without-spaces": "Masukkan nama anchor tanpa spasi.",
       "equation-preview": "Pratinjau persamaan",
@@ -3425,7 +3416,6 @@
       "include-note-widget": "widget sertakan catatan",
       "increase-the-indentation-of-the-current-block": "Tambahkan indentasi pada blok saat ini.",
       "indent": "Indentasi",
-      "inline": "Sebaris",
       "insert-a-block-of-preformatted-code": "Sisipkan blok kode yang telah diformat sebelumnya.",
       "insert-a-horizontal-rule": "Sisipkan garis horizontal.",
       "insert-a-table": "Sisipkan tabel.",
@@ -3439,7 +3429,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "widget sematan tautan",
       "link-mention-widget": "widget penyebutan tautan",
-      "link-preview": "Pratinjau tautan",
       "markdown-import": "Impor Markdown",
       "markdown-import-from-clipboard": "Impor Markdown dari papan klip",
       "math-editor-unavailable": "Editor matematika tidak tersedia",
@@ -3455,7 +3444,6 @@
       "note": "Catatan",
       "numbered-list": "Daftar bernomor",
       "outdent": "Kurangi indentasi",
-      "plain-link": "Tautan biasa",
       "preview": "Pratinjau",
       "quote-a-passage-from-another-source": "Kutip bagian dari sumber lain.",
       "remove-anchor": "Hapus anchor",
@@ -3467,11 +3455,9 @@
       "text-snippet": "Cuplikan teks",
       "text-snippets-found-0": "Cuplikan teks ditemukan: %0",
       "tip": "Tips",
-      "title": "Judul",
       "to-do-list": "Daftar tugas",
       "turn-the-current-block-into-a-heading": "Ubah blok saat ini menjadi judul.",
       "turn-the-current-block-into-a-paragraph": "Ubah blok saat ini menjadi paragraf.",
-      "url": "URL",
       "warning": "Peringatan",
       "ai-0": "AI: %0",
       "ai-assistant": "Asisten AI",

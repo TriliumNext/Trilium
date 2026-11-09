@@ -2,6 +2,7 @@ import { type TaskStateDef } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { _setModelData as setModelData, ClassicEditor, Essentials, HorizontalLine, keyCodes, List, Paragraph, TodoList, type ModelElement } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import TodoListUncheckOnEnter from "../todo_list_uncheck_on_enter.js";
@@ -942,5 +943,47 @@ describe("toggling a checkbox of an editor without a selection of its own", () =
         const position = editor.model.document.selection.getFirstPosition();
         expect(position?.parent).toBe(getBlock(editor, 1));
         expect(position?.offset).toBe(2);
+    });
+});
+
+describe("clicking a checkbox", () => {
+    it("toggles the item and leaves the focus and the caret in the editable", async () => {
+        const editor = await createEditor();
+        setModelData(editor.model,
+            '<paragraph listIndent="0" listItemId="t-a" listType="todo">Ta[]sk</paragraph>'
+            + '<paragraph listIndent="0" listItemId="t-b" listType="todo">Other</paragraph>');
+        editor.editing.view.focus();
+        const root = editor.editing.view.getDomRoot();
+        const checkboxes = () =>
+            root?.querySelectorAll<HTMLInputElement>('.todo-list__label input[type="checkbox"]');
+        const input = checkboxes()?.[1];
+        expect(root).toBeDefined();
+        expect(input).toBeDefined();
+        if (!root || !input) return;
+        expect(document.activeElement).toBe(root);
+        const focused: EventTarget[] = [];
+        root.addEventListener("focusin", (event) => focused.push(event.target ?? root));
+
+        await userEvent.click(input);
+        expect(getBlock(editor, 1).getAttribute(TODO_LIST_CHECKED_ATTRIBUTE)).toBe(true);
+        expect(focused).toEqual([]);
+        expect(document.activeElement).toBe(root);
+        const position = editor.model.document.selection.getFirstPosition();
+        expect(position?.parent).toBe(getBlock(editor, 0));
+        expect(position?.offset).toBe(2);
+
+        // Only a left-button press on a checkbox of a focused editor keeps the focus.
+        const rightPress = new MouseEvent("mousedown", { button: 2, bubbles: true, cancelable: true });
+        checkboxes()?.[0]?.dispatchEvent(rightPress);
+        const textPress = new MouseEvent("mousedown", { button: 0, bubbles: true, cancelable: true });
+        root.querySelector(".todo-list__label__description")?.dispatchEvent(textPress);
+        root.blur();
+        expect(editor.editing.view.document.isFocused).toBe(false);
+        const blurredPress = new MouseEvent("mousedown",
+            { button: 0, bubbles: true, cancelable: true });
+        checkboxes()?.[0]?.dispatchEvent(blurredPress);
+        expect(rightPress.defaultPrevented).toBe(false);
+        expect(textPress.defaultPrevented).toBe(false);
+        expect(blurredPress.defaultPrevented).toBe(false);
     });
 });

@@ -86,6 +86,10 @@ export function sanitizeHtml(dirtyHtml: string, allowedTags?: readonly string[])
                 "--include-note-width": sizeRegex,
                 "--include-note-height": sizeRegex
             },
+            // The width of a resized video, saved as the `<section>` of its link preview.
+            section: {
+                "--include-note-width": sizeRegex
+            },
             img: {
                 // Allow fractional ratios too (e.g. OneNote reports 577.5×277.5 screen clippings).
                 "aspect-ratio": [ /^\d+(\.\d+)?\/\d+(\.\d+)?$/ ],

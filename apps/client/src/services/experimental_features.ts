@@ -1,4 +1,3 @@
-import { t } from "./i18n";
 import options from "./options";
 
 export interface ExperimentalFeature {
@@ -7,11 +6,25 @@ export interface ExperimentalFeature {
     description: string;
 }
 
+// Not translated: experimental features are temporary.
 export const experimentalFeatures = [
     {
         id: "llm",
-        name: t("experimental_features.llm_name"),
-        description: t("experimental_features.llm_description"),
+        name: "AI / LLM Chat",
+        description: "Enable the AI chat sidebar and LLM chat notes powered by large language "
+            + "models."
+    },
+    {
+        id: "extendedCodeBlocks",
+        name: "Extended code blocks",
+        description: "A faster code block with a more advanced syntax highlighting engine and "
+            + "code folding."
+    },
+    {
+        id: "sortSelection",
+        name: "Sort selection in text editor",
+        description: "Sort the selected paragraphs, list items or table rows of a text note from "
+            + "the formatting toolbar, the block handle and the context menu."
     }
 ] as const satisfies ExperimentalFeature[];
 

@@ -1,7 +1,7 @@
 import { render } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Popup, { placeFloating, type PopupProps } from "./Popup";
+import Popup, { closeOpenPopups, placeFloating, type PopupProps } from "./Popup";
 
 describe("Popup", () => {
     const host = document.createElement("div");
@@ -282,6 +282,14 @@ describe("Popup", () => {
         expect(dialogHeard).not.toHaveBeenCalled();
         document.removeEventListener("keydown", dialogHeard);
         outside.remove();
+
+        // As for a keyboard shortcut that opens a dialog.
+        onDismiss.mockClear();
+        closeOpenPopups();
+        expect(onDismiss).toHaveBeenCalledExactlyOnceWith("escape");
+        render(null, host);
+        closeOpenPopups();
+        expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
     it("drops the click after a dismissing press unless it lands on what was pressed", async () => {

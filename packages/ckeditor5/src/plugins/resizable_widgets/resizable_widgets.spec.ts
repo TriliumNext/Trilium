@@ -2,6 +2,7 @@ import {
     _getModelData as getModelData,
     type ClassicEditor,
     Essentials,
+    type ModelElement,
     Paragraph,
     Plugin,
     Undo,
@@ -17,10 +18,11 @@ import ResizableWidgets, { type ResizableWidgetConfig } from "./resizable_widget
 
 const STYLES = `
     .ck.ck-editor__editable { width: 400px; padding: 0; font-size: 10px; }
-    .test-box { width: var(--test-width, auto); }
+    .test-box { position: relative; width: var(--test-width, auto); }
     .test-box-content { height: var(--test-height, 50px); }
     .test-rtl .test-box { direction: rtl; }
     .test-centered .test-box { margin-inline: auto; }
+    .test-box.ck-widget_resize-anchor-right { margin-left: auto; }
     .test-scroller .ck.ck-editor__main { height: 150px; overflow-y: auto; }
     .test-scroller .ck.ck-editor__editable { height: 1000px; }
 `;
@@ -46,7 +48,8 @@ describe("ResizableWidgets", () => {
 
     async function createEditor(
         config: Partial<ResizableWidgetConfig> = {},
-        extraPlugins: Array<typeof Plugin> = []
+        extraPlugins: Array<typeof Plugin> = [],
+        editorConfig: Record<string, unknown> = {}
     ) {
         class ResizableTestBox extends Plugin {
             static get requires() {
@@ -79,7 +82,7 @@ describe("ResizableWidgets", () => {
 
         editor = await createTestEditor([
             Essentials, Paragraph, Undo, ResizableTestBox, ...extraPlugins
-        ]);
+        ], editorConfig);
         return editor;
     }
 
@@ -221,6 +224,48 @@ describe("ResizableWidgets", () => {
         expect(getBox().classList.contains("ck-widget_resizable")).toBe(true);
     });
 
+    it("resizes only the axes that the state of the widget allows", async () => {
+        const isRound = (element: ModelElement) => element.getAttribute("kind") !== "fixed";
+        const getDisplays = () => [ "width", "height", "corner" ]
+            .map((name) => getComputedStyle(getHandle(name)).display);
+
+        await createEditor({ isHeightResizable: isRound });
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box?.is("element")) {
+            throw new Error("Expected a box.");
+        }
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(getDisplays).toEqual([ "block", "block", "block" ]);
+
+        // Only the corner is left, which changes the width alone.
+        editor.model.change((writer) => writer.setAttribute("kind", "fixed", box));
+        expect(getBox().classList.contains("ck-widget_fixed-height")).toBe(true);
+        expect(getDisplays()).toEqual([ "none", "none", "block" ]);
+        expect(getComputedStyle(getHandle("corner"), "::after").content).toBe("\"\"");
+        press(getHandle("height"));
+        move(100, 400);
+        expect(getBox().classList.contains("ck-widget_resizing")).toBe(false);
+        press(getHandle("corner"));
+        move(150, 400);
+        release();
+        expect(getSize())
+            .toBe("<testBox customHeight=\"8em\" customWidth=\"35em\" kind=\"fixed\"></testBox>");
+
+        editor.model.change((writer) => writer.removeAttribute("kind", box));
+        expect(getBox().classList.contains("ck-widget_fixed-height")).toBe(false);
+
+        await createEditor({ isWidthResizable: () => false });
+        editor.setData(RESIZED);
+        expect(getBox().classList.contains("ck-widget_fixed-width")).toBe(true);
+        expect(getDisplays()).toEqual([ "none", "none", "block" ]);
+        press(getHandle("corner"));
+        move(150, 330);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"11em\" customWidth=\"30em\"></testBox>");
+    });
+
     it("resizes from the corner, previewing in the view and saving in one undo step", async () => {
         await createEditor();
         editor.setData("<p>text</p><div class=\"test-box\"></div>");
@@ -279,7 +324,7 @@ describe("ResizableWidgets", () => {
 
     it("keeps the dragged edge of a centered widget under the pointer", async () => {
         document.body.classList.add("test-centered");
-        await createEditor({ isCentered: true });
+        await createEditor({ getAnchor: () => "center" });
         editor.setData("<div class=\"test-box\"></div>");
         const { left, right } = getBox().getBoundingClientRect();
 
@@ -290,6 +335,65 @@ describe("ResizableWidgets", () => {
         release();
 
         expect(getSize()).toBe("<testBox customWidth=\"30em\"></testBox>");
+    });
+
+    it("grows a widget anchored to an edge from the other edge, with the handles", async () => {
+        await createEditor({
+            getAnchor: (element) => element.getAttribute("kind") === "right" ? "right" : "left"
+        });
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box?.is("element")) {
+            throw new Error("Expected a box.");
+        }
+        /** The edges of the box that the width and corner handles are centered on. */
+        const getHandleEdges = () => {
+            const { left, right } = getBox().getBoundingClientRect();
+            return [ "width", "corner" ].map((name) => {
+                const handle = getHandle(name).getBoundingClientRect();
+                const center = Math.round(handle.left + handle.width / 2);
+                if (center === Math.round(left)) {
+                    return "left";
+                }
+                return center === Math.round(right) && "right";
+            });
+        };
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(() => getComputedStyle(getHandle("width")).display).toBe("block");
+
+        expect(getBox().classList.contains("ck-widget_resize-anchor-left")).toBe(true);
+        expect(getHandleEdges()).toEqual([ "right", "right" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nwse-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"8em\" customWidth=\"35em\"></testBox>");
+
+        editor.model.change((writer) => writer.setAttribute("kind", "right", box));
+        expect([ ...getBox().classList ]).toEqual(expect.arrayContaining([
+            "ck-widget_resizable", "ck-widget_resize-anchor-right"
+        ]));
+        expect(getBox().classList.contains("ck-widget_resize-anchor-left")).toBe(false);
+        expect(getHandleEdges()).toEqual([ "left", "left" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nesw-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        const { right } = getBox().getBoundingClientRect();
+        release();
+        expect(getSize())
+            .toBe("<testBox customHeight=\"8em\" customWidth=\"30em\" kind=\"right\"></testBox>");
+        expect(getBox().getBoundingClientRect().right).toBe(right);
+
+        // The edges are physical: right to left, a box anchored left still grows to the right.
+        document.body.classList.add("test-rtl");
+        editor.model.change((writer) => writer.removeAttribute("kind", box));
+        expect(getHandleEdges()).toEqual([ "right", "right" ]);
+        expect(getComputedStyle(getHandle("corner")).cursor).toBe("nwse-resize");
+        press(getHandle("width"));
+        move(150, 300);
+        release();
+        expect(getSize()).toBe("<testBox customHeight=\"8em\" customWidth=\"35em\"></testBox>");
     });
 
     it("cancels on Escape, pointercancel or lost capture, and ignores other pointers", async () => {
@@ -394,6 +498,62 @@ describe("ResizableWidgets", () => {
         tap(getHandle("corner"));
         tap(getHandle("corner"));
         expect(getSize()).toBe("<testBox></testBox>");
+    });
+
+    it("shows a hint while the pointer rests on the corner, until it leaves or presses", async () => {
+        const getHint = () => document
+            .querySelector(".tooltip.content-hint.text-editor-content-tooltip")?.textContent ?? null;
+        const enter = (name: string) => getHandle(name)
+            .dispatchEvent(new PointerEvent("pointerenter"));
+        await createEditor();
+        editor.setData(RESIZED);
+        const box = editor.model.document.getRoot()?.getChild(0);
+        if (!box) {
+            throw new Error("Expected a box.");
+        }
+        editor.model.change((writer) => writer.setSelection(box, "on"));
+        editor.editing.view.focus();
+        await expect.poll(() => getComputedStyle(getHandle("corner")).display).toBe("block");
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        registerTestCleanup(() => vi.useRealTimers());
+
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).toBe("Click and drag to resize the block. "
+            + "Double-click to reset to the default size.");
+        editor.editing.view.forceRender();
+        vi.advanceTimersByTime(60_000);
+        expect(getHint()).not.toBeNull();
+        press(getHandle("corner"));
+        expect(getHint()).toBeNull();
+        release();
+
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        getHandle("corner").dispatchEvent(new PointerEvent("pointerleave"));
+        expect(getHint()).toBeNull();
+
+        // A touch presses during the dwell, and only the corner has a hint.
+        enter("corner");
+        press(getHandle("corner"));
+        release();
+        enter("width");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).toBeNull();
+
+        // A removed handle gets no `pointerleave`.
+        enter("corner");
+        vi.advanceTimersByTime(200);
+        expect(getHint()).not.toBeNull();
+        editor.setData("<p>text</p>");
+        expect(getHint()).toBeNull();
+
+        vi.useRealTimers();
+        await createEditor({}, [], { contentHintsEnabled: false });
+        editor.setData(RESIZED);
+        enter("corner");
+        await sleep(300);
+        expect(getHint()).toBeNull();
     });
 
     it("resizes the height of the widget itself without a height target", async () => {
@@ -528,4 +688,8 @@ function tap(target: Element) {
 
 function nextFrame() {
     return new Promise((resolve) => requestAnimationFrame(resolve));
+}
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

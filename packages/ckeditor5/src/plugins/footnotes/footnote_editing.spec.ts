@@ -133,6 +133,25 @@ describe("FootnoteEditing", () => {
             expect(indicesOf(ELEMENTS.footnoteItem)).toEqual(["1"]);
         });
 
+        it("keeps a reference pasted into a document that has no footnotes", () => {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+            const dataTransfer = new DataTransfer();
+            dataTransfer.setData(
+                "text/html",
+                `<span ${ATTRIBUTES.footnoteReference}="" ${ATTRIBUTES.footnoteIndex}="1" ` +
+                `${ATTRIBUTES.footnoteId}="abc"><sup><a href="#fnabc">[1]</a></sup></span>`
+            );
+
+            editor.editing.view.document.fire("paste", {
+                dataTransfer, preventDefault: vi.fn(), stopPropagation: vi.fn()
+            });
+
+            expect(model()).toBe(
+                `<paragraph>foo<${ELEMENTS.footnoteReference} ${ATTRIBUTES.footnoteId}="abc" ` +
+                `${ATTRIBUTES.footnoteIndex}="1"></${ELEMENTS.footnoteReference}></paragraph>`
+            );
+        });
+
         it("keeps each reference's index in step with its footnote", () => {
             seedFootnotes(editor, 2);
 

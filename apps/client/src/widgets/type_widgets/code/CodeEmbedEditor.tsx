@@ -31,6 +31,8 @@ export interface CodeEmbedEditorProps {
     wrapLines?: boolean;
     /** Whether to show the line numbers, or `undefined` to follow the global option. */
     hasLineNumbers?: boolean;
+    /** The name of the language, shown in the corner of the editor as on a code block. */
+    languageLabel?: string;
     /** Holds the CodeMirror view while the editor is open, and `null` once it goes away. */
     viewRef: RefObject<VanillaCodeMirror | null>;
     /** Whether the editor shows. "Search in note" skips a hidden one. Shown by default. */
@@ -49,7 +51,7 @@ export interface CodeEmbedEditorProps {
  */
 export default function CodeEmbedEditor({
     note, ownerNote, editor, history, content, mime, tabWidth, useTabs, wrapLines, hasLineNumbers,
-    viewRef, isShown = true, onClose, onChange, onReady
+    languageLabel, viewRef, isShown = true, onClose, onChange, onReady
 }: CodeEmbedEditorProps) {
     const isLoadingRef = useRef(false);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
@@ -137,6 +139,7 @@ export default function CodeEmbedEditor({
             vimKeybindings={vimKeymapEnabled}
             readOnly={!editor}
             lineNumbers={hasLineNumbers}
+            languageLabel={languageLabel}
             onInitialized={() => setView(viewRef.current)}
             onContentChanged={() => handleChangeRef.current()}
             {...(tabWidth !== undefined && { indentSize: tabWidth })}

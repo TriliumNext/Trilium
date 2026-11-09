@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
 import { allViewTypes } from "../widgets/collections/interface";
 import { getPresentationThemes } from "../widgets/collections/presentation/themes";
 import { MEDIA_PLAY_MODES } from "../widgets/type_widgets/file/media_play_mode";
-import attributeService, { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute, removeOwnedAttributesByNameOrType, setAttribute, setBooleanWithInheritance, setLabel, setRelation } from "./attributes";
+import attributeService, { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute, removeOwnedAttributesByNameOrType, setAttribute, setBooleanWithInheritance, setLabel, setLabelValueWithInheritance, setRelation } from "./attributes";
 import froca from "./froca";
 import server from "./server.js";
 
@@ -221,6 +222,99 @@ describe("Set boolean with inheritance", () => {
     });
 });
 
+describe("Set label value with inheritance", () => {
+    const set = (note: FNote, value: string, isInheritable = false) =>
+        setLabelValueWithInheritance(note, "mode", value, "a", isInheritable);
+    const putCall = (noteId: string, value: string, isInheritable = false) => [
+        `notes/${noteId}/set-attribute`,
+        { type: "label", name: "mode", value, isInheritable },
+        undefined
+    ];
+    const removeCall = (note: FNote, index: number) => [
+        `notes/${note.noteId}/attributes/${note.getOwnedLabels("mode")[index]?.attributeId}`
+    ];
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        buildNote({
+            title: "Parent note",
+            "#mode(inheritable)": "b",
+            children: [
+                { id: "inherits", title: "Inherits" },
+                { id: "overrides", title: "Overrides", "#mode": [ "c", "c" ] }
+            ]
+        });
+    });
+
+    it("leaves a note alone that reads the value already, the default included", async () => {
+        await set(froca.notes["inherits"], "b");
+        await set(froca.notes["overrides"], "c");
+        await set(buildNote({ title: "Bare" }), "a");
+        await set(buildNote({ title: "Blank", "#mode": "" }), "a");
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("overrides the inherited or default value with an owned label", async () => {
+        await set(froca.notes["inherits"], "a");
+        expect(vi.mocked(server.put).mock.lastCall).toEqual(putCall("inherits", "a"));
+
+        const bare = buildNote({ title: "Bare" });
+        await set(bare, "b");
+        expect(vi.mocked(server.put).mock.lastCall).toEqual(putCall(bare.noteId, "b"));
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned labels when they keep the value from being inherited", async () => {
+        const note = froca.notes["overrides"];
+        const expectedRemovals = [ removeCall(note, 0), removeCall(note, 1) ];
+        await set(note, "b");
+        expect(vi.mocked(server.remove).mock.calls).toEqual(expectedRemovals);
+        expect(server.put).not.toHaveBeenCalled();
+
+        vi.clearAllMocks();
+        const owned = buildNote({ title: "Owned", "#mode": "b" });
+        const expectedRemoval = removeCall(owned, 0);
+        await set(owned, "a");
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned duplicates before changing the value", async () => {
+        const note = froca.notes["overrides"];
+        const expectedRemoval = removeCall(note, 1);
+        await set(note, "d");
+
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall("overrides", "d") ]);
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+
+    it("keeps an owned label inheritable when asked to, so the children read the value", async () => {
+        // An inheritable label in place already, or inherited from a parent, needs no write.
+        await set(buildNote({ title: "Inheritable", "#mode(inheritable)": "b" }), "b", true);
+        await set(froca.notes["inherits"], "b", true);
+        expect(server.put).not.toHaveBeenCalled();
+        expect(server.remove).not.toHaveBeenCalled();
+
+        const bare = buildNote({ title: "Bare" });
+        await set(bare, "b", true);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall(bare.noteId, "b", true) ]);
+
+        // `set-attribute` leaves an owned label's inheritability as it is, so the label is replaced.
+        vi.clearAllMocks();
+        const plain = buildNote({ title: "Plain", "#mode": "b" });
+        const expectedRemoval = removeCall(plain, 0);
+        await set(plain, "b", true);
+        expect(vi.mocked(server.remove).mock.calls).toEqual([ expectedRemoval ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ putCall(plain.noteId, "b", true) ]);
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+});
+
 describe("addLabel / setLabel / setRelation", () => {
     beforeEach(() => vi.clearAllMocks());
 
@@ -324,6 +418,41 @@ describe("setLabelValues", () => {
         await attributeService.setLabelValues(note, "tags", []);
         expect(server.remove).toHaveBeenCalledTimes(3);
     });
+
+    it("removes only the label of a value taken out of the middle (#12382)", async () => {
+        const note = noteHolding("a", "b", "c", "d");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d" ]);
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+
+        // Removing one value and appending another leaves the kept labels alone.
+        vi.clearAllMocks();
+        await attributeService.setLabelValues(note, "tags", [ "a", "c", "d", "e" ]);
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/attr-1`, undefined ]
+        ]);
+        expect(vi.mocked(server.put).mock.calls).toEqual([ [
+            `notes/${note.noteId}/attribute`,
+            { attributeId: undefined, type: "label", name: "tags", value: "e" },
+            undefined
+        ] ]);
+    });
+
+    it("rewrites the labels after a value inserted mid-set, as a new one goes last", async () => {
+        const note = noteHolding("a", "c");
+
+        await attributeService.setLabelValues(note, "tags", [ "a", "b", "c" ]);
+
+        expect(server.remove).not.toHaveBeenCalled();
+        expect(vi.mocked(server.put).mock.calls.map(([ , body ]) => body)).toEqual([
+            { attributeId: "attr-1", type: "label", name: "tags", value: "b" },
+            { attributeId: undefined, type: "label", name: "tags", value: "c" }
+        ]);
+    });
 });
 
 describe("setRelationValues", () => {
@@ -352,6 +481,24 @@ describe("setRelationValues", () => {
         vi.clearAllMocks();
         await attributeService.setRelationValues(note, "crew", [ "aaa" ], "comp-1");
         expect(server.remove).toHaveBeenCalledWith(`notes/${note.noteId}/attributes/rel-1`, "comp-1");
+    });
+
+    it("removes only the relation of a target taken out of the middle (#12382)", async () => {
+        const note = buildNote({ title: "N" });
+        for (const [ index, value ] of [ "aaa", "bbb", "ccc" ].entries()) {
+            note.attributes.push(`rel-${index}`);
+            froca.attributes[`rel-${index}`] = {
+                attributeId: `rel-${index}`, noteId: note.noteId, type: "relation",
+                name: "crew", value, position: index, isInheritable: false
+            } as never;
+        }
+
+        await attributeService.setRelationValues(note, "crew", [ "aaa", "ccc" ], "comp-1");
+
+        expect(server.put).not.toHaveBeenCalled();
+        expect(vi.mocked(server.remove).mock.calls).toEqual([
+            [ `notes/${note.noteId}/attributes/rel-1`, "comp-1" ]
+        ]);
     });
 });
 

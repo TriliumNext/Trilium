@@ -70,7 +70,7 @@ Here's a list of various features supported by text notes:
         </tr>
         <tr>
             <td><a class="reference-link" href="Text/Other%20features.md">Other features</a></td>
-            <td><ul><li>Indentation<ul><li>Markdown import</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Cut to subnote</a></li></ul></td>
+            <td><ul><li>Indentation<ul><li>Markdown import</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Cut to subnote</a></li><li><a class="reference-link" href="Text/Sorting.md">Sorting</a></li></ul></td>
         </tr>
         <tr>
             <td><a class="reference-link" href="Text/Premium%20features.md">Premium features</a></td>

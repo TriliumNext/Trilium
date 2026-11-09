@@ -64,10 +64,12 @@ export interface MenuContextValue {
      */
     openSubmenu(level: number, id?: string, anchor?: HTMLElement, chosen?: boolean): void;
     /**
-     * Closes the submenus open at `level` and deeper. If the active row is inside them, the row
-     * that opened them becomes active, so the keys continue from there.
+     * As {@link openSubmenu}, for the pointer moving onto a row at `level`, except that without a
+     * row it also moves the active row out of the submenus it closes. A submenu in view at `level`
+     * stays open until 750ms after the pointer moved onto the first other row, so the pointer can
+     * cross rows on its way into it; the pointer back on its row or over its layer keeps it.
      */
-    closeSubmenu(level: number): void;
+    hoverSubmenu(level: number, id?: string, anchor?: HTMLElement): void;
     /** Records that the layer of `submenu` is past the stylesheet's opening delay, and in view. */
     submenuShown(submenu: OpenSubmenu): void;
     active?: ActiveRow;

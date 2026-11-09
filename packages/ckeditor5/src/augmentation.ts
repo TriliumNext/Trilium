@@ -9,6 +9,7 @@ declare global {
         favicon?: string;
         siteName?: string;
         image?: string;
+        aspectRatio?: string;
         /**
          * True when the host could not read the page (network error, bot challenge, non-HTML
          * response, or a page with no title of its own) and the fields above hold nothing but a
@@ -51,7 +52,7 @@ declare global {
 
     /** An item of the embed toolbar that the content of an embed can hide. */
     type ContentEmbedToolbarItem =
-        "contentEmbedBoxSizeDropdown" | "toggleContentEmbedTitle" | "convertEmbedToLink";
+        "contentEmbedBoxSizeDropdown" | "contentEmbedPositionDropdown" | "toggleContentEmbedEditable";
 
     /** The buttons that the content of an embed, such as a canvas drawing, adds to its toolbar. */
     interface ContentEmbedToolProvider {
@@ -61,8 +62,18 @@ declare global {
         openMenu?(id: string, anchor: HTMLElement): void;
         /** Calls `callback` when `getTools()` changes, until the returned function is called. */
         subscribe(callback: () => void): () => void;
+        /**
+         * The name of the content, such as _Canvas_, that the formatting toolbar of the mobile
+         * layout shows ahead of the tools of the embed. _Embed_ when left out.
+         */
+        toolbarTitle?: string;
         /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
         hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+        /**
+         * The items of the embed toolbar to hide while the Editable toggle of the embed is on. The
+         * menu of the embed still offers them.
+         */
+        hiddenToolbarItemsWhileEditable?: readonly ContentEmbedToolbarItem[];
         /**
          * An SVG icon that the box size dropdown of the embed toolbar shows in place of the name of
          * the box size, which its tooltip then names.
@@ -78,6 +89,12 @@ declare global {
          * menu of the embed then switch. The embed carries the mode as `data-display-mode`.
          */
         hasDisplayModes?: boolean;
+        /**
+         * Whether the toolbar and the menu of the embed set where the content is placed in the
+         * text. The menu of an embed of a note, an attachment or a video sets it either way. The
+         * embed saves a position other than centered as `data-position`.
+         */
+        hasPositions?: boolean;
     }
 }
 

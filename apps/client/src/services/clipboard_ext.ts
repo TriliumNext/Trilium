@@ -15,13 +15,21 @@ export function copyText(text: string) {
         // Fallback method: https://stackoverflow.com/a/72239825
         const textArea = document.createElement("textarea");
         textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        // An open Bootstrap modal traps focus, so the textarea goes inside it to keep its selection.
+        const previouslyFocused = document.activeElement;
+        const container = previouslyFocused?.closest(".modal.show") ?? document.body;
         try {
-            document.body.appendChild(textArea);
+            container.appendChild(textArea);
             textArea.focus();
             textArea.select();
             return document.execCommand('copy');
         } finally {
-            document.body.removeChild(textArea);
+            textArea.remove();
+            if (previouslyFocused instanceof HTMLElement) {
+                previouslyFocused.focus();
+            }
         }
         
     } catch (e) {
@@ -95,4 +103,36 @@ export async function copyReferenceWithToast(href: string) {
     await link.loadReferenceLinkTitle($link, href);
 
     await copyHtmlWithToast($link[0].outerHTML, href);
+}
+
+/**
+ * Whether {@link readClipboardText} can work here: always on desktop, and in a browser that has
+ * `navigator.clipboard.readText()` (a secure context) unless the `clipboard-read` permission is
+ * denied.
+ */
+export async function canReadClipboardText() {
+    if (window.electronApi) return true;
+    if (!navigator.clipboard?.readText) return false;
+
+    try {
+        // The DOM typings do not list `clipboard-read`, which only Chromium knows.
+        const name = "clipboard-read" as unknown as PermissionName;
+        const { state } = await navigator.permissions.query({ name });
+        return state !== "denied";
+    } catch {
+        // Firefox and Safari have no `clipboard-read` permission and ask on each read.
+        return true;
+    }
+}
+
+/**
+ * Reads the text on the clipboard, through the main process on desktop. Rejects when the read is
+ * not allowed.
+ */
+export async function readClipboardText() {
+    if (window.electronApi) {
+        return window.electronApi.clipboard.readText();
+    }
+
+    return navigator.clipboard.readText();
 }

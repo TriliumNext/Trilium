@@ -58,7 +58,7 @@ Trilium supports custom user themes, allowing you to personalize the application
     --link-color: lightskyblue;
     --modal-background-color: #404552;
     --modal-backdrop-color: black;
-    --scrollbar-border-color: rgba(175, 184, 198, 0.5);
+    --scrollbar-thumb-color: rgba(175, 184, 198, 0.5);
 }&#10;
 body .note-detail-text {
     font-size: 120%;

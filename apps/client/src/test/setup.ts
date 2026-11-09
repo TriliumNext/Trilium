@@ -7,11 +7,14 @@ import { Modal } from "bootstrap";
 import $ from "jquery";
 import { afterAll, vi } from "vitest";
 
+import { stubHighlightApi } from "./highlights";
+
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
 vi.mock("../services/ws.js", mockWebsocket);
 vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
+stubHighlightApi();
 survivePendingModalCallbacks();
 deferSelectionChange();
 drainBootstrapTransitions();
@@ -145,6 +148,10 @@ function mockServer() {
             // note rather than as a request that went wrong; it differs from `post` only in how it
             // reports a 500, which the mock never produces.
             postWithSilentInternalServerError: (url: string, data: object) => post(url, data),
+
+            // A media player that cannot play a file on another site asks for its HTTP status
+            // through this variant.
+            postWithSilentErrors: (url: string, data: object) => post(url, data),
 
             post,
 

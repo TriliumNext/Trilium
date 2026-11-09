@@ -18,10 +18,10 @@ import toast from "../services/toast.js";
 import utils, { reuseAcrossHotReloads } from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
-import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import { EditLinkOpts } from "../widgets/dialogs/edit_link.jsx";
 import { IconPickerOpts } from "../widgets/dialogs/icon_picker.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { ResourceDownloadDialogOptions } from "../widgets/dialogs/resource_download.jsx";
@@ -32,6 +32,7 @@ import type { PrintPreviewData } from "../widgets/dialogs/print_preview.jsx";
 import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
 import type { ItemPickerDialogOptions } from "../widgets/dialogs/item_picker.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
+import type { InsertMediaOpts } from "../widgets/dialogs/insert_media.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import type { PaneId, PaneMode } from "../widgets/react/peek_pane.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
@@ -99,6 +100,8 @@ export interface OpenInPopupData extends CommandData {
     viewScope?: ViewScope;
     /** Offers the note type switcher while the note is still blank, as the tab layout does. */
     showNoteTypeSwitcher?: boolean;
+    /** Focuses the title with all of it selected instead of the content, for a note to name. */
+    selectTitle?: boolean;
 }
 
 export interface ExecuteCommandData<T> extends CommandData {
@@ -155,12 +158,6 @@ export type CommandMappings = {
         forceDeleteAllClones: boolean;
     };
     showConfirmDeleteNoteBoxWithNoteDialog: ConfirmWithTitleOptions;
-    openedFileUpdated: CommandData & {
-        entityType: string;
-        entityId: string;
-        lastModifiedMs?: number;
-        filePath: string;
-    };
     focusAndSelectTitle: CommandData & {
         isNewNote?: boolean;
     };
@@ -203,6 +200,7 @@ export type CommandMappings = {
         oldMainNtxId?: string | null;
         newMainNtxId?: string | null;
     };
+    openNote: ContextMenuCommandData;
     openInTab: ContextMenuCommandData;
     openNoteInSplit: ContextMenuCommandData;
     openNoteInWindow: ContextMenuCommandData;
@@ -279,8 +277,9 @@ export type CommandMappings = {
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showContentEmbedDialog: CommandData & ContentEmbedOpts;
-    showAddLinkDialog: CommandData & AddLinkOpts;
+    showEditLinkDialog: CommandData & EditLinkOpts;
     showIconPickerDialog: CommandData & IconPickerOpts;
+    showInsertMediaDialog: CommandData & InsertMediaOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;
@@ -594,7 +593,7 @@ type EventMappings = {
     noteTypeMimeChanged: { noteId: string };
     zenModeChanged: { isEnabled: boolean };
     activeNoteChanged: {ntxId: string | null | undefined};
-    showAddLinkDialog: AddLinkOpts;
+    showEditLinkDialog: EditLinkOpts;
     showContentEmbedDialog: ContentEmbedOpts;
     openBulkActionsDialog: {
         selectedOrActiveNoteIds: string[];

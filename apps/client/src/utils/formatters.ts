@@ -130,7 +130,7 @@ function getDateTimeFormatter(locale: string, variant: string, formatOptions: In
     let formatter = dateTimeFormatterCache.get(cacheKey);
     if (!formatter) {
         try {
-            formatter = new Intl.DateTimeFormat(locale, formatOptions);
+            formatter = new Intl.DateTimeFormat(withTriliumCalendar(locale), formatOptions);
         } catch {
             // An unusable locale (e.g. the dev-only "en_rtl", which normalizes to the invalid
             // "en-rtl") makes the constructor throw; fall back to the environment default. Whether
@@ -142,6 +142,18 @@ function getDateTimeFormatter(locale: string, variant: string, formatOptions: In
     }
 
     return formatter;
+}
+
+/**
+ * Pins the Gregorian calendar for Persian, which CLDR otherwise renders on the Solar Hijri one. Day
+ * notes, the calendar collection and the date pickers are all Gregorian, so a formatted date has to
+ * name the same day they do. The locale's own digits are kept.
+ */
+function withTriliumCalendar(locale: string) {
+    const parsed = new Intl.Locale(locale);
+    return parsed.language === "fa"
+        ? new Intl.Locale(locale, { calendar: "gregory" }).toString()
+        : locale;
 }
 
 function is12HourLocale(locale: string) {

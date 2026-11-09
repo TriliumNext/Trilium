@@ -99,7 +99,7 @@ function isValidEntityId(obj: unknown) {
     }
 
     if (typeof obj !== "string" || !utils.isValidEntityId(obj)) {
-        return `'${obj}' is not a valid entityId. Only alphanumeric characters are allowed of length 4 to 32.`;
+        return `'${obj}' is not a valid entityId. Only letters, digits and underscores are allowed, with a length of 4 to 128.`;
     }
 }
 

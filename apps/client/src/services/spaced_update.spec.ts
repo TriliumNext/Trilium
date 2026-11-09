@@ -109,6 +109,25 @@ describe("SpacedUpdate", () => {
             expect(updater).not.toHaveBeenCalled();
         });
 
+        it("also saves the changes made while it saves", async () => {
+            let finishFirstSave = () => {};
+            const updater = vi.fn()
+                .mockImplementationOnce(() => new Promise<void>((resolve) => {
+                    finishFirstSave = resolve;
+                }))
+                .mockResolvedValue(undefined);
+            const spacedUpdate = new SpacedUpdate(updater, 50);
+
+            spacedUpdate.scheduleUpdate();
+            const flushed = spacedUpdate.updateNowIfNecessary();
+            spacedUpdate.scheduleUpdate();
+            finishFirstSave();
+            await flushed;
+
+            expect(updater).toHaveBeenCalledTimes(2);
+            expect(spacedUpdate.hasUnsavedChanges()).toBe(false);
+        });
+
         it("re-marks changed, emits error and rethrows when the updater fails", async () => {
             const states: string[] = [];
             let shouldFail = true;
@@ -228,6 +247,45 @@ describe("SpacedUpdate", () => {
             expect(updater).not.toHaveBeenCalled();
 
             await vi.advanceTimersByTimeAsync(500);
+            expect(updater).toHaveBeenCalledTimes(1);
+        });
+
+        it("waits for changes made during a save to pause before saving them", async () => {
+            const updater = vi.fn(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+            });
+            const spacedUpdate = new SpacedUpdate(updater, 50);
+            const type = () => {
+                spacedUpdate.resetUpdateTimer();
+                spacedUpdate.scheduleUpdate();
+            };
+
+            // The first save starts at 50 ms and runs until 150 ms.
+            type();
+            await vi.advanceTimersByTimeAsync(60);
+            expect(updater).toHaveBeenCalledTimes(1);
+
+            // Typing continues through the save and after it, until 300 ms.
+            for (let i = 0; i < 12; i++) {
+                type();
+                await vi.advanceTimersByTimeAsync(20);
+            }
+            expect(updater).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(60);
+            expect(updater).toHaveBeenCalledTimes(2);
+        });
+
+        it("saves a change within ten intervals, however often the timer is reset", async () => {
+            const updater = vi.fn(async () => {});
+            const spacedUpdate = new SpacedUpdate(updater, 50);
+
+            for (let i = 0; i < 30; i++) {
+                spacedUpdate.resetUpdateTimer();
+                spacedUpdate.scheduleUpdate();
+                await vi.advanceTimersByTimeAsync(20);
+            }
+
             expect(updater).toHaveBeenCalledTimes(1);
         });
     });

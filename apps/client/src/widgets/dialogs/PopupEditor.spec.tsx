@@ -157,9 +157,10 @@ function fakeNote(labels: string[] = [], isOptions = false) {
 let container: HTMLDivElement;
 let parent: Component;
 
-async function openPopup(
-    data: { noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean }
-) {
+async function openPopup(data: {
+    noteIdOrPath: string, viewScope?: ViewScope, showNoteTypeSwitcher?: boolean,
+    selectTitle?: boolean
+}) {
     await act(async () => {
         await parent.handleEvent("openInPopup", data as never);
     });
@@ -171,7 +172,22 @@ async function attachmentsReloaded(attachmentId: string) {
         await parent.handleEvent("entitiesReloaded", {
             loadResults: {
                 getAttachmentRows: () => [ { attachmentId } ],
-                getAttributeRows: () => []
+                getAttributeRows: () => [],
+                isNoteReloaded: () => false
+            }
+        } as never);
+    });
+}
+
+/** An entity reload of one note, deleted or not. */
+async function noteReloaded(noteId: string, isDeleted: boolean) {
+    await act(async () => {
+        await parent.handleEvent("entitiesReloaded", {
+            loadResults: {
+                getAttachmentRows: () => [],
+                getAttributeRows: () => [],
+                isNoteReloaded: (id: string) => id === noteId,
+                getEntityRow: (_entityName: string, id: string) => (id === noteId ? { noteId, isDeleted } : undefined)
             }
         } as never);
     });
@@ -347,6 +363,17 @@ describe("PopupEditor", () => {
         expect(modal()?.dataset.shown).toBe("false");
     });
 
+    it("closes when the note it shows is deleted, and only then", async () => {
+        await openPopup({ noteIdOrPath: "root/n1" });
+
+        await noteReloaded("other", true);
+        await noteReloaded("n1", false);
+        expect(modal()?.dataset.shown).toBe("true");
+
+        await noteReloaded("n1", true);
+        expect(modal()?.dataset.shown).toBe("false");
+    });
+
     it("stays put when there is no note to maximize", async () => {
         await openPopup({ noteIdOrPath: "root/n1" });
         const context = lastContext();
@@ -390,6 +417,28 @@ describe("PopupEditor", () => {
         await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
         expect(modal()?.dataset.shown).toBe("false");
         expect(document.body.classList.contains("popup-editor-open")).toBe(false);
+    });
+
+    it("selects the title instead of the content when asked to, for that open only", async () => {
+        const handleEvent = vi.spyOn(parent, "handleEvent");
+        const focusCalls = () =>
+            handleEvent.mock.calls.filter(([ name ]) => name.startsWith("focus"));
+        const selectTitle = [ "focusAndSelectTitle", { isNewNote: true, ntxId: "_popup-editor" } ];
+        const focusContent = [ "focusOnDetail", { ntxId: "_popup-editor" } ];
+
+        await openPopup({ noteIdOrPath: "root/n1", selectTitle: true });
+        expect(focusCalls()).toEqual([]);
+        await act(async () => container.querySelector<HTMLElement>(".shown-stub")?.click());
+        expect(focusCalls()).toEqual([ selectTitle ]);
+
+        // Opened in the popup already on show, which fires no `shown` event.
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n2" });
+        expect(focusCalls()).toEqual([ focusContent ]);
+
+        handleEvent.mockClear();
+        await openPopup({ noteIdOrPath: "root/n3", selectTitle: true });
+        expect(focusCalls()).toEqual([ selectTitle ]);
     });
 
     it("opens a nested popup over itself, which answers only its own command and context", async () => {

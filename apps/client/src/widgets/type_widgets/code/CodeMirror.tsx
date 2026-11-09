@@ -22,9 +22,18 @@ export interface CodeMirrorProps extends Omit<EditorConfig, "parent"> {
     bulkActionNote?: boolean;
     /** The snippets the completion list offers after a `/`, read each time the list opens. */
     getSnippets?: () => CodeSnippet[];
+    /**
+     * The name of the language, which a text editor around the code shows in its corner, as on its
+     * code blocks.
+     */
+    languageLabel?: string;
 }
 
-export default function CodeMirror({ className, content, mime, editorRef: externalEditorRef, containerRef: externalContainerRef, onInitialized, lineWrapping, lineNumbers = true, customRequestHandler, bulkActionNote, allowKeyboardSuggestions, getSnippets, ...extraOpts }: CodeMirrorProps) {
+export default function CodeMirror({
+    className, content, mime, editorRef: externalEditorRef, containerRef: externalContainerRef,
+    onInitialized, lineWrapping, lineNumbers = true, customRequestHandler, bulkActionNote,
+    allowKeyboardSuggestions, getSnippets, languageLabel, ...extraOpts
+}: CodeMirrorProps) {
     const parentRef = useSyncedRef(externalContainerRef);
     const codeEditorRef = useRef<VanillaCodeMirror | undefined>(undefined);
     const getSnippetsRef = useRef(getSnippets);
@@ -93,6 +102,6 @@ export default function CodeMirror({ className, content, mime, editorRef: extern
     }, [ extraOpts.indentSize, extraOpts.useTabs ]);
 
     return (
-        <pre ref={parentRef} className={className} />
+        <pre ref={parentRef} className={className} data-language={languageLabel} />
     )
 }

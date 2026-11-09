@@ -10,7 +10,7 @@
     text-align: center;
     white-space: pre-line;
 
-    .tn-icon {
+    > .tn-icon {
         font-size: 4em;
         margin-bottom: 1rem;
         opacity: 0.65;
@@ -24,7 +24,7 @@
 .no-items.no-items-small {
     padding: 1.25em 0.75em;
 
-    .tn-icon {
+    > .tn-icon {
         font-size: 2em;
         margin-bottom: 0.5rem;
     }

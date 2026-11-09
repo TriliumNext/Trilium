@@ -151,6 +151,10 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "excludeFromNoteMap", valueType: "boolean" },
     { type: "label", name: "excludeFromLlm", valueType: "boolean" },
     { type: "label", name: "bookmarkFolder", valueType: "boolean" },
+    // Where a click on the note's launch bar button opens it. Without the label, in the current tab.
+    { type: "label", name: "bookmarkOpenMode", valueType: "select", selectOptions: [
+        "currentTab", "newTab", "newSplit", "newWindow", "quickEdit"
+    ] },
     { type: "label", name: "sorted", valueType: "boolean" },
     { type: "label", name: "sortDirection", valueType: "select", selectOptions: [ "asc", "desc" ] },
     { type: "label", name: "sortFoldersFirst", valueType: "boolean" },

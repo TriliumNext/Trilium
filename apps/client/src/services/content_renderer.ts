@@ -1,15 +1,9 @@
 import "./content_renderer.css";
 
 import {
-    attachmentIcon,
-    getEditableBlockRun,
-    getFileContentType,
-    getMimeTypeFromFileName,
-    getNoteContentType,
-    isAcceptedImageMime,
-    isImageAttachmentRole,
-    isMarkdownMime,
-    type TextRepresentationResponse
+    attachmentIcon, type BoxSize, getEditableBlockRun, getFileContentType, getMimeTypeFromFileName,
+    getNoteContentType, hasCompactContent, isAcceptedImageMime, isImageAttachmentRole,
+    isMarkdownMime, type TextRepresentationResponse
 } from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
@@ -22,7 +16,6 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
-import type { BoxSize } from "../widgets/type_widgets/text/CKEditor.js";
 import type {
     ContentHistory, default as EmbedHistories
 } from "../widgets/type_widgets/text/embed_history.js";
@@ -52,17 +45,30 @@ export interface RenderOptions {
     noContentEmbeds?: boolean;
     /**
      * Keep expanding embeds recursively at every depth. Used for printing/export,
-     * which preserves full nesting. When false (the default for on-screen display), only the first
+     * which preserves full nesting. When false (the default for static previews), only the first
      * level of embedding is rendered and deeper embeds are replaced with a reference
-     * link (see {@link embedsAsReferenceLinks}).
+     * link (see {@link embedsAsReferenceLinks}). {@link embedBoxes} replaces both.
      */
     expandNestedEmbeds?: boolean;
     /**
      * Internal: render this note's own embeds as reference links instead of expanding
-     * them. Set when rendering a note that is itself already an embedded note in display mode, so that
-     * embedding stops after the first level.
+     * them. Set on the content of an embed that a static preview renders, so that embedding stops
+     * after the first level.
      */
     embedsAsReferenceLinks?: boolean;
+    /**
+     * Shows the embeds of rendered text in the read-only boxes that the editor shows them in, as
+     * `ReadOnlyText` does, rather than rendering their content in place. The boxes of embeds set
+     * it, so that each box shows the embeds of its content in boxes too, and an embed of a note in
+     * {@link seenNoteIds} links to it.
+     */
+    embedBoxes?: boolean;
+    /**
+     * Whether the content changes as it is typed, as the preview of a Markdown embed does. Its
+     * diagrams and media then show in place rather than in embed boxes, which would remount on
+     * every change.
+     */
+    isChanging?: boolean;
     /** If enabled, it will include archived notes when rendering children list. */
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
@@ -134,6 +140,8 @@ export interface RenderOptions {
 
 /** Saves the changes that rendered content makes to attachments of the note that shows it. */
 export interface AttachmentEditor {
+    /** The ID of the component that sends the saves, which their entity changes include. */
+    readonly componentId?: string;
     /** Whether the rendered content can change `attachment`. */
     canEdit(attachment: FAttachment): boolean;
     /** The content of the attachment that is not saved yet, or `undefined`. */
@@ -147,6 +155,11 @@ export interface AttachmentEditor {
         getContent: () => string,
         onSaved?: (content: string) => void
     ): void;
+    /**
+     * Postpones the scheduled save by its interval. Content that changes continuously, such as a
+     * canvas drawing, calls it at each change, so that it saves once the changes pause.
+     */
+    postponeSave(): void;
     /** Reads the unsaved content of the attachment now, before its editor unmounts. */
     release(attachmentId: string): void;
 }
@@ -198,9 +211,6 @@ const PREVIEWED_TYPES = new Set([
  * `useSavedContent()` in `CodeEmbed` and `MarkdownEmbed`.
  */
 const SELF_UPDATING_TYPES = new Set([ "canvasDrawing", "code", "markdown" ]);
-
-/** The box size a new embed of blocks of a note, an excerpt, starts with. */
-export const EXCERPT_BOX_SIZE: BoxSize = "full";
 
 export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
 
@@ -293,11 +303,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
                 .on("click", () => {
                     const webViewSrc = entity.getLabelValue("webViewSrc");
                     if (webViewSrc) {
-                        if (window.electronApi) {
-                            window.electronApi.shell.openExternal(webViewSrc);
-                        } else {
-                            window.open(webViewSrc, '_blank', 'noopener,noreferrer');
-                        }
+                        openService.openUrlExternally(webViewSrc);
                     }
                 });
             $footer.appendTo($renderedContent);
@@ -351,7 +357,9 @@ async function renderEditableText(
 ) {
     const renderPreview = async (content: string, block = options.block) => {
         const $preview = $("<div>");
-        await renderTextContent(note, content, $preview, { ...options, block });
+        await renderTextContent(note, content, $preview, {
+            ...options, block, seenNoteIds: new Set(options.seenNoteIds)
+        });
         return $preview[0];
     };
     const [ blob, { default: TextEmbed } ] = await Promise.all([
@@ -429,7 +437,9 @@ async function renderMarkdownEmbed(
     const { default: MarkdownEmbed, renderMarkdownHtml } =
         await CONTENT_RENDERERS.editableMarkdown();
     const renderPreview = (source: string) =>
-        renderMarkdownPreview(entity, renderMarkdownHtml(source), options);
+        renderMarkdownPreview(entity, renderMarkdownHtml(source), {
+            ...options, isChanging: true, seenNoteIds: new Set(options.seenNoteIds)
+        });
     const preview = await renderPreview(content);
 
     const $container = $('<div class="markdown-embed">');
@@ -563,10 +573,14 @@ function getCodeMime(entity: FNote | FAttachment) {
 
 /** Saves the changes that rendered content makes to one note or attachment. */
 export interface ContentEditor {
+    /** The ID of the component that sends the saves, which their entity changes include. */
+    componentId?: string;
     /** Whether the rendered content can change the note or attachment. */
     canEdit(): boolean;
     getUnsavedContent(): string | undefined;
     scheduleSave(getContent: () => string, onSaved?: (content: string) => void): void;
+    /** Postpones the scheduled save by its interval, as `AttachmentEditor.postponeSave()` does. */
+    postponeSave?(): void;
     release(): void;
     /**
      * How the saving goes, for content that saves on its own rather than with the note that shows
@@ -585,9 +599,11 @@ export function bindAttachmentEditor(
     attachment: FAttachment
 ): ContentEditor {
     return {
+        componentId: editor.componentId,
         canEdit: () => editor.canEdit(attachment),
         getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
         scheduleSave: (getContent, onSaved) => editor.scheduleSave(attachment, getContent, onSaved),
+        postponeSave: () => editor.postponeSave(),
         release: () => editor.release(attachment.attachmentId)
     };
 }
@@ -678,7 +694,7 @@ async function renderCanvasDrawing(
         await CONTENT_RENDERERS.file.canvasDrawing();
 
     if (options.interactive && entity instanceof FAttachment) {
-        const $container = $('<div class="canvas-drawing include-note-box-height">');
+        const $container = $('<div class="canvas-drawing">');
         const container = $container.get(0);
         if (container) {
             await mountInteractiveWidget(h(CanvasDrawing, {
@@ -1017,25 +1033,34 @@ const INTERACTIVE_MOUNT_ATTR = "data-interactive-mount";
  * Wrapping it in a {@link ParentComponent} provider connected to {@link appContext} is what lets its
  * `useTriliumEvent` subscriptions actually receive events — a bare standalone Preact root has no
  * parent component in context, so otherwise e.g. an embedded collection never reacts to new notes.
+ *
+ * The widget gets a component of its own under appContext rather than appContext itself: the
+ * command handlers it registers (`useLegacyImperativeHandlers`, e.g. a table's "New row") are
+ * written onto its parent component, and `AppContext.triggerCommand` never looks there.
  */
 export async function mountInteractiveWidget(vnode: JSX.Element, container: HTMLElement) {
-    const [ { renderReactWidgetAtElement }, { default: appContext } ] = await Promise.all([
+    const [ { renderReactWidgetAtElement }, { default: appContext }, { default: Component } ] = await Promise.all([
         import("../widgets/react/react_utils"),
-        import("../components/app_context")
+        import("../components/app_context"),
+        import("../components/component")
     ]);
-    renderReactWidgetAtElement(appContext, vnode, container);
+    const component = new Component();
+    appContext.child(component);
+    addContentDisposer(container, () => appContext.removeChild(component));
+    renderReactWidgetAtElement(component, vnode, container);
     // Mark the standalone Preact root so disposeInteractiveContent() can later unmount it.
     container.setAttribute(INTERACTIVE_MOUNT_ATTR, "");
 
     // The global [data-trigger-command] click delegate resolves its handler via
     // closest(".component").prop("component"). A standalone mount has no legacy widget setting that
     // prop (ReactWrappedWidget does it in the note detail), so point the rendered ".component"
-    // element(s) at appContext — an unhandled command there is converted into an event, reaching the
-    // widget's own useTriliumEvent subscription. Without it an embedded command button (e.g. the geo
-    // map "Add marker") throws "component is undefined".
+    // element(s) at the widget's component — a command it does not handle goes on to appContext,
+    // which converts it into an event, reaching the widget's own useTriliumEvent subscription.
+    // Without it an embedded command button (e.g. the geo map "Add marker") throws "component is
+    // undefined".
     for (const el of container.querySelectorAll<HTMLElement>(".component")) {
         if (!$(el).prop("component")) {
-            $(el).prop("component", appContext);
+            $(el).prop("component", component);
         }
     }
 }
@@ -1141,11 +1166,34 @@ async function showRenderError($content: JQuery<HTMLElement>, error: unknown, no
 }
 
 /**
- * The box size a new embed of `entity` starts with: `tiny` when the embed shows no preview of
- * it, `small` for audio, `full` for code and `medium` for the rest.
+ * The box size a new embed of `entity` starts with: Compact when the embed shows no preview of
+ * it and for audio, Full for code and Resizable for the rest.
  */
 export function getEmbedBoxSize(entity: FNote | FAttachment): BoxSize {
     return getBoxSize(getContentType(entity), hasRenderedPreview(entity));
+}
+
+/** How a new embed starts: its box size, and whether its title row is hidden. */
+export interface EmbedBoxDefaults {
+    boxSize: BoxSize;
+    isTitleHidden: boolean;
+}
+
+/**
+ * How a new embed of `entity` starts. A Compact audio embed is a row of controls, which starts
+ * without its title row.
+ */
+export function getEmbedBoxDefaults(entity: FNote | FAttachment): EmbedBoxDefaults {
+    return getBoxDefaults(getContentType(entity), hasRenderedPreview(entity));
+}
+
+/** What the content type of `entity` decides about the box of its embed, for the text editor. */
+export function getEmbedContentInfo(entity: FNote | FAttachment) {
+    const type = getContentType(entity);
+    return {
+        defaultBoxSize: getBoxSize(type, hasRenderedPreview(entity)),
+        hasCompactContent: hasCompactContent(type)
+    };
 }
 
 /**
@@ -1159,17 +1207,21 @@ export function hasRenderedPreview(entity: FNote | FAttachment) {
         : PREVIEWED_TYPES.has(type);
 }
 
-/** The box size of a new embed of a file being uploaded, from the attachment it becomes. */
-export function getUploadBoxSize(mime: string, size?: number): BoxSize {
+/** How a new embed of a file being uploaded starts, from the attachment it becomes. */
+export function getUploadBoxDefaults(mime: string, size?: number): EmbedBoxDefaults {
     const type = isAcceptedImageMime(mime) ? "image" : getAttachedFileContentType(mime, size);
-    return getBoxSize(type, PREVIEWED_TYPES.has(type));
+    return getBoxDefaults(type, PREVIEWED_TYPES.has(type));
+}
+
+function getBoxDefaults(type: string, hasPreview: boolean): EmbedBoxDefaults {
+    const boxSize = getBoxSize(type, hasPreview);
+    return { boxSize, isTitleHidden: boxSize === "compact" && hasCompactContent(type) };
 }
 
 function getBoxSize(type: string, hasPreview: boolean): BoxSize {
-    if (!hasPreview) return "tiny";
-    if (type === "audio") return "small";
+    if (!hasPreview || hasCompactContent(type)) return "compact";
     if (type === "code") return "full";
-    return "medium";
+    return "resizable";
 }
 
 /**
@@ -1195,7 +1247,7 @@ function getRenderingType(entity: FNote | FAttachment) {
 }
 
 /** The kind of content `entity` holds, from its note type or attachment role and its media type. */
-function getContentType(entity: FNote | FAttachment) {
+export function getContentType(entity: FNote | FAttachment) {
     if (entity instanceof FNote) {
         // Disabled icon packs (#disabled:iconPack, e.g. from a safe import) still preview.
         return getNoteContentType(entity.type, entity.mime, entity.hasLabelOrDisabled("iconPack"));

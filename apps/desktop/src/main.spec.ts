@@ -1,4 +1,4 @@
-import { join as pathJoin } from "node:path";
+import { join as pathJoin, resolve as pathResolve } from "node:path";
 
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,7 +50,7 @@ const h = vi.hoisted(() => ({
     setPath: vi.fn(),
     setUserTasks: vi.fn(),
     // Controllable values.
-    squirrel: { default: false as boolean },
+    spawn: vi.fn(),
     isPrimaryInstance: true as boolean,
     allWindows: [] as unknown[],
     smoothScroll: "true" as string | null,
@@ -137,7 +137,10 @@ vi.mock("electron", () => {
 
 vi.mock("electron-debug", () => ({ default: vi.fn() }));
 vi.mock("electron-dl", () => ({ default: vi.fn() }));
-vi.mock("electron-squirrel-startup", () => ({ get default() { return h.squirrel.default; } }));
+vi.mock("child_process", async (importOriginal) => ({
+    ...await importOriginal<typeof import("child_process")>(),
+    spawn: (...a: unknown[]) => h.spawn(...a)
+}));
 
 vi.mock("fs", () => ({ default: { readFileSync: vi.fn(() => Buffer.from("zip")) } }));
 vi.mock("i18next", () => ({ t: (key: string) => key }));
@@ -282,7 +285,7 @@ function resetState() {
     h.quit.mockClear();
     h.exit.mockClear();
     h.setPath.mockClear();
-    h.squirrel.default = false;
+    h.spawn.mockClear();
     h.isPrimaryInstance = true;
     h.allWindows = [];
     h.smoothScroll = "true";
@@ -359,7 +362,7 @@ describe("main() bootstrap", () => {
         const { main } = await importMain();
         await main();
 
-        // Streams got an error handler; squirrel false → no exit.
+        // Streams got an error handler; no Squirrel event → no exit.
         expect(h.streamErrorHandlers.length).toBe(2);
         expect(exitSpy).not.toHaveBeenCalled();
 
@@ -475,6 +478,48 @@ describe("main() bootstrap", () => {
         const { main } = await importMain();
         await main();
         expect(h.appendSwitch).toHaveBeenCalledWith("lang", "de");
+    });
+
+    it("hands a Squirrel installer event to Update.exe and exits", async () => {
+        const originalArgv = process.argv;
+        const originalExecPath = process.execPath;
+        Object.defineProperty(process, "execPath", { value: "/opt/trilium/app-1.0.0/trilium.exe", configurable: true });
+        try {
+            for (const [ event, action ] of [
+                [ "--squirrel-install", "--createShortcut=trilium.exe" ],
+                [ "--squirrel-updated", "--createShortcut=trilium.exe" ],
+                [ "--squirrel-uninstall", "--removeShortcut=trilium.exe" ]
+            ]) {
+                setPlatform("win32");
+                process.argv = [ "trilium.exe", event ];
+                h.spawn.mockClear();
+                exitSpy.mockClear();
+                const { main } = await importMain();
+                await expect(main()).rejects.toThrow("__exit__");
+                expect(h.spawn).toHaveBeenCalledWith(
+                    pathResolve("/opt/trilium/Update.exe"), [ action ], { detached: true });
+                expect(exitSpy).toHaveBeenCalledWith(0);
+                vi.resetModules();
+            }
+
+            // An obsolete version exits without touching the shortcuts.
+            process.argv = [ "trilium.exe", "--squirrel-obsolete" ];
+            h.spawn.mockClear();
+            await expect((await importMain()).main()).rejects.toThrow("__exit__");
+            expect(h.spawn).not.toHaveBeenCalled();
+            vi.resetModules();
+
+            // The same flags mean nothing outside Windows.
+            setPlatform("linux");
+            process.argv = [ "trilium", "--squirrel-install" ];
+            exitSpy.mockClear();
+            await (await importMain()).main();
+            expect(h.spawn).not.toHaveBeenCalled();
+            expect(exitSpy).not.toHaveBeenCalled();
+        } finally {
+            process.argv = originalArgv;
+            Object.defineProperty(process, "execPath", { value: originalExecPath, configurable: true });
+        }
     });
 
     it("exits when it is not the primary instance", async () => {

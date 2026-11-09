@@ -10,7 +10,7 @@ import toastService from "./toast.js";
 
 vi.mock("./clipboard_ext.js", () => ({ copyHtml: vi.fn(async () => true) }));
 
-branchService.moveToParentNote = vi.fn(async () => {}) as typeof branchService.moveToParentNote;
+branchService.moveToParentNote = vi.fn(async () => true) as typeof branchService.moveToParentNote;
 toastService.showMessage = vi.fn() as typeof toastService.showMessage;
 
 describe("pasteNotes", () => {

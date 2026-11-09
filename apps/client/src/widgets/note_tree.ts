@@ -224,7 +224,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         });
 
         // note tree starts initializing already during render which is atypical
-        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => this.initFancyTree());
+        Promise.all([options.initializedPromise, froca.initializedPromise]).then(() => {
+            this.applyDensity();
+            this.initFancyTree();
+        });
 
         this.setupNoteTitleTooltip();
     }
@@ -270,6 +273,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     get treeScrollFollowNavigation() {
         return options.is("treeScrollFollowNavigation");
+    }
+
+    /** Makes the rows compact while the `treeDensity` option is `dense`. */
+    private applyDensity() {
+        this.$widget.toggleClass("dense", options.get("treeDensity") === "dense");
     }
 
     private toggleSettings(isShown: boolean) {
@@ -449,7 +457,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 dragEnter: (node, data) => {
                     publishDropMarkerShift(node);
 
-                    if (node.data.noteType === "search") {
+                    // Content dragged out of a text note lists no notes, and its editor deletes
+                    // the content once a drop accepts it as a move.
+                    if (data.dataTransfer.types.includes("application/ckeditor5-dragging-uid")) {
+                        return false;
+                    } else if (node.data.noteType === "search") {
                         return false;
                     } else if (node.data.noteId === "_lbRoot") {
                         return false;
@@ -524,7 +536,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         } else if (data.hitMode === "after") {
                             branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);
                         } else if (data.hitMode === "over") {
-                            branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId);
+                            branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId, treeService.getNotePath(node));
                         } else {
                             throw new Error(`Unknown hitMode '${data.hitMode}'`);
                         }
@@ -1178,6 +1190,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         this.activityDetected();
 
+        if (loadResults.isOptionReloaded("treeDensity")) {
+            this.applyDensity();
+        }
+
         if (loadResults.isEmptyForTree()) {
             return;
         }
@@ -1662,7 +1678,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const toNode = node.getPrevSibling();
 
         if (toNode !== null) {
-            branchService.moveToParentNote([node.data.branchId], toNode.data.branchId, this.componentId);
+            branchService.moveToParentNote([node.data.branchId], toNode.data.branchId, this.componentId, treeService.getNotePath(toNode));
         }
     }
 

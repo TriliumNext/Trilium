@@ -355,7 +355,10 @@
     "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다.",
     "included-note-requires-credentials": "여기에 포함된 노트는 비밀번호로 보호되어 있어 표시할 수 없습니다.",
     "broken-block-reference": "끊어진 참조",
-    "play-video": "영상 재생"
+    "play-video": "영상 재생",
+    "content-not-available": "이 콘텐츠는 사용할 수 없습니다.",
+    "untitled-block": "블록",
+    "play-audio": "오디오 재생"
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",
@@ -493,7 +496,6 @@
     "presentation_slide": "프레젠테이션 슬라이드",
     "presentation_slide_first": "첫 번째 슬라이드",
     "presentation_slide_second": "두 번째 슬라이드",
-    "background": "배경",
     "dashboard": "대시보드",
     "ai-quick-action": "AI 빠른 작업"
   },
@@ -511,7 +513,8 @@
       "cannot-compare-with": "\"{{- token}}\"과(와) 비교할 수 없습니다. 값을 그대로 검색하려면 따옴표로 감싸세요: \"{{- token}}\"",
       "misplaced-expression": "잘못 배치되었거나 불완전한 표현식 ‘{{- token}}’",
       "fulltext-after-expression": "\"{{- token}}\"은(는) 올바른 표현식이 아닙니다. 텍스트를 검색하려면 속성 필터 앞에 배치하세요(예: \"#label {{- token}}\" 대신 \"{{- token}} #label\").",
-      "unrecognized-expression": "인식할 수 없는 표현식 ‘{{- token}}’"
+      "unrecognized-expression": "인식할 수 없는 표현식 ‘{{- token}}’",
+      "regex-not-allowed": "정규 표현식 연산자 \"%=\"는 여기에서 사용할 수 없습니다."
     }
   },
   "security-dialog": {
@@ -601,5 +604,9 @@
   },
   "llm_providers": {
     "flatpak_sandbox": "Trilium은 Flatpak으로 실행되므로 {{- cli}}와 같이 샌드박스 외부에 설치된 프로그램을 실행할 수 없습니다. {{- cli}}를 사용하려면:\n\n1. 이 컴퓨터에 설치하고 터미널에서 로그인합니다.\n2. 터미널에서 다음 명령어를 실행하여 Trilium이 샌드박스 외부의 프로그램을 실행할 수 있도록 허용합니다.\n\n{{- grantCommand}}\n\n3. Trilium을 다시 시작합니다.\n\n이렇게 하면 Trilium에 Flatpak 외부에 설치된 경우와 동일한 컴퓨터 접근 권한이 부여됩니다. 이 권한을 취소하려면 다음 명령어를 실행합니다.\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "파일을 열 애플리케이션을 선택하세요.",
+    "applications_filter": "애플리케이션"
   }
 }

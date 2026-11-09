@@ -6,8 +6,9 @@ import {
     applyStickyTableHeaders
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
 import {
-    BLOCK_ID_ATTRIBUTE, type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey,
-    getNestedEmbedOptions, getNoteEmbedHref, KATEX_MACROS, resolveContentEmbed,
+    BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
+    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
+    getNoteEmbedHref, isEmbedShownAsLink, KATEX_MACROS, normalizeEmbedBox, resolveContentEmbed,
     sliceToBlockReference
 } from "@triliumnext/commons";
 
@@ -16,7 +17,7 @@ import FNote from "../entities/fnote.js";
 import { getContentEmbedFlag } from "../widgets/type_widgets/text/content_embed_tools.js";
 import { highlightBlockReference } from "./block_reference.js";
 import {
-    addContentDisposer, default as content_renderer, type RenderOptions
+    addContentDisposer, default as content_renderer, getContentType, type RenderOptions
 } from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -77,21 +78,31 @@ export async function renderTextContent(
  * a `.ck-content` child of `$renderedContent`.
  */
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
+    const container = $renderedContent[0];
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
-    applyListItemAlignment($renderedContent[0]);
-    // Runs before the embeds render, as each embed draws its own diagrams.
-    await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
-    await applyInlineMermaid($renderedContent[0] as HTMLDivElement);
+    const hostNoteId = note instanceof FNote ? note.noteId : undefined;
+    applyListItemAlignment(container);
+    const loadEmbedBoxes = options.embedBoxes && !options.noContentEmbeds
+        ? (await import("../widgets/type_widgets/text/embed_boxes.js")).prepareEmbedBoxes(
+            container, { seenNoteIds, hostNoteId, isChanging: options.isChanging }, true)
+        : undefined;
 
-    if (options.noContentEmbeds) {
-        $renderedContent.find(".include-note").remove();
-    } else {
-        await renderContentEmbeds($renderedContent[0], {
-            seenNoteIds,
-            embedsAsReferenceLinks: options.embedsAsReferenceLinks,
-            expandNestedEmbeds: options.expandNestedEmbeds
-        });
+    if (!loadEmbedBoxes) {
+        emptyUnknownEmbeds(container);
+        // Runs before the embeds render, as each embed draws its own diagrams.
+        rewriteMermaidDiagramsInContainer(container);
+        await applyInlineMermaid(container);
+
+        if (options.noContentEmbeds) {
+            $renderedContent.find(".include-note").remove();
+        } else {
+            await renderContentEmbeds(container, {
+                seenNoteIds,
+                embedsAsReferenceLinks: options.embedsAsReferenceLinks,
+                expandNestedEmbeds: options.expandNestedEmbeds
+            });
+        }
     }
 
     if ($renderedContent.find("span.math-tex").length > 0) {
@@ -109,20 +120,25 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
     await froca.getNotes(noteIdsToPrefetch);
 
-    const hostNoteId = note instanceof FNote ? note.noteId : undefined;
-    await Promise.all(referenceLinks.toArray().map(async (el) => {
-        const innerSpan = document.createElement("span");
-        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"), hostNoteId,
-            el.textContent ?? undefined);
-        el.replaceChildren(innerSpan);
-    }));
+    await Promise.all(referenceLinks.toArray().map((el) => loadReferenceLink(el, hostNoteId)));
 
-    applyLinkEmbeds($renderedContent[0]);
+    applyLinkEmbeds(container);
     await formatCodeBlocks($renderedContent);
 
     if (options.trim) {
         $renderedContent.find("style").not("svg style").remove();
     }
+
+    // Last, so that no pass above reaches into the content of the boxes.
+    await loadEmbedBoxes?.();
+}
+
+/** Fills in the title, icon and color of `referenceLink`, a link in the content of `hostNoteId`. */
+export async function loadReferenceLink(referenceLink: HTMLElement, hostNoteId?: string) {
+    const innerSpan = document.createElement("span");
+    await link.loadReferenceLinkTitle($(innerSpan), referenceLink.getAttribute("href"), hostNoteId,
+        referenceLink.textContent ?? undefined);
+    referenceLink.replaceChildren(innerSpan);
 }
 
 /**
@@ -131,10 +147,13 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
  * `postProcessRichContent()` then fills in each link's title, icon and color.
  */
 async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbedContext) {
-    const embeds = [ ...contentEl.querySelectorAll(".include-note") ].map((embedEl) => ({
-        embedEl,
-        embed: resolveContentEmbed((name) => embedEl.getAttribute(name), context)
-    }));
+    const embeds = [ ...contentEl.querySelectorAll(".include-note") ].map((embedEl) => {
+        normalizeEmbedBox(embedEl);
+        return {
+            embedEl,
+            embed: resolveContentEmbed((name) => embedEl.getAttribute(name), context)
+        };
+    });
     const noteIds = embeds.flatMap(({ embed }) => embed?.kind === "note" ? [ embed.noteId ] : []);
     await froca.getNotes(noteIds);
 
@@ -145,7 +164,7 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
             const attachment = await froca.getAttachment(embed.attachmentId, true);
             if (!attachment) continue;
 
-            if (embed.asLink) {
+            if (isEmbedShownAsLink(embed, getContentType(attachment))) {
                 const { ownerId, attachmentId } = attachment;
                 replaceWithReferenceLink(embedEl, getAttachmentEmbedHref(ownerId, attachmentId));
             } else {
@@ -167,6 +186,10 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
             console.warn(`Unable to embed ${embed.noteId} because it could not be found.`);
             continue;
         }
+        if (isEmbedShownAsLink(embed, getContentType(note))) {
+            replaceWithReferenceLink(embedEl, getNoteEmbedHref(embed.noteId, embed.block));
+            continue;
+        }
 
         const { $renderedContent } = await content_renderer.getRenderedContent(note, {
             ...getNestedEmbedOptions(context, embed.block),
@@ -174,6 +197,37 @@ async function renderContentEmbeds(contentEl: HTMLElement, context: ContentEmbed
         });
         replaceEmbedContent(embedEl, $renderedContent.toArray());
     }
+}
+
+/** The attributes that the box of an embed of an unknown kind keeps from its section. */
+const UNKNOWN_EMBED_ATTRIBUTES = [
+    CONTENT_EMBED_KIND_ATTRIBUTE, "data-box-size", BLOCK_ID_ATTRIBUTE
+];
+
+/**
+ * Turns each embed of a kind that this version does not know into an empty `.include-note` box,
+ * and returns the boxes. The content of the section is dropped, as it needs the renderer of its
+ * kind, and so are its other attributes, as `data-note-id` makes the include passes load it.
+ */
+export function emptyUnknownEmbeds(container: Element) {
+    const boxes: HTMLElement[] = [];
+    const sections = container.querySelectorAll<HTMLElement>(
+        `section[${CONTENT_EMBED_KIND_ATTRIBUTE}]`);
+    for (const section of sections) {
+        // Inside an embed emptied before it.
+        if (!container.contains(section)) continue;
+
+        for (const name of section.getAttributeNames()) {
+            if (!UNKNOWN_EMBED_ATTRIBUTES.includes(name)) {
+                section.removeAttribute(name);
+            }
+        }
+        section.className = "include-note unknown-content-embed";
+        normalizeEmbedBox(section);
+        section.replaceChildren();
+        boxes.push(section);
+    }
+    return boxes;
 }
 
 /** How `embedEl` shows a code file or a code note, by its `data-code-*` attributes. */
@@ -193,24 +247,41 @@ function replaceEmbedContent(embedEl: Element, content: Node[]) {
     embedEl.replaceChildren(...content, ...(caption ? [ caption ] : []));
 }
 
-/** The caption of an embed, or `null` for a Tiny embed, which shows none. */
+/** The caption of an embed, or `null` without one. */
 export function getEmbedCaption(embedEl: Element) {
-    if (embedEl.getAttribute("data-box-size") === "tiny") {
-        return null;
-    }
-
     return embedEl.querySelector<HTMLElement>(":scope > figcaption");
 }
 
-function replaceWithReferenceLink(embedEl: Element, href: string) {
+/**
+ * Replaces `element`, the saved element of an embed, with `box`, its `.include-note` box. The
+ * `<figure class="captioned-content-embed">` that holds `element` with a caption is replaced
+ * too, and the caption moves into `box`.
+ */
+export function replaceWithEmbedBox(element: Element, box: HTMLElement) {
+    const figure = element.parentElement;
+    if (!figure?.matches(`figure.${CAPTIONED_CONTENT_EMBED_CLASS}`)) {
+        element.replaceWith(box);
+        return;
+    }
+
+    const caption = figure.querySelector(":scope > figcaption");
+    if (caption) {
+        box.append(caption);
+    }
+    figure.replaceWith(box);
+}
+
+/** Replaces `embedEl` with an empty reference link to `href`, and returns the link. */
+export function replaceWithReferenceLink(embedEl: Element, href: string) {
     const referenceLink = document.createElement("a");
     referenceLink.className = "reference-link";
     referenceLink.setAttribute("href", href);
     embedEl.replaceWith(referenceLink);
+    return referenceLink;
 }
 
 /** Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it. */
-export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElement) {
+export function rewriteMermaidDiagramsInContainer(container: HTMLElement) {
     const candidates = container.querySelectorAll("pre:has(code)");
     if (!candidates.length) return;
 
@@ -255,7 +326,7 @@ const mermaidLastRenderedByPosition = new WeakMap<HTMLElement, string[]>();
 /** Monotonic id for mermaid.render(), which requires a unique element id per call. */
 let mermaidRenderId = 0;
 
-export async function applyInlineMermaid(container: HTMLDivElement) {
+export async function applyInlineMermaid(container: HTMLElement) {
     const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.rendered-mermaid-diagram"));
     if (!nodes.length) {
         mermaidLastRenderedByPosition.delete(container);

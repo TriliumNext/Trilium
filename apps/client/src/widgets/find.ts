@@ -56,15 +56,6 @@ const TPL = /*html*/`
         .find-widget-spacer {
             flex-grow: 1;
         }
-
-        /* Muted highlight for the non-seed tokens of a multi-token jump-to-match (see
-           FindInHtml.highlightExtraTokens): a reduced-opacity variant of the primary
-           .ck-find-result highlight, so extra matches are visible without competing with the
-           seed match that Enter/F3 cycles. */
-        .find-result-secondary {
-            background-color: color-mix(in srgb, var(--ck-color-find-result-background, #66ff99) 40%, transparent);
-            border-radius: 2px;
-        }
     </style>
 
     <div class="find-widget-box">

@@ -90,7 +90,7 @@ describe("resolveLinks", () => {
 
     it("converts a resolved note embed into an include-note section and records the include", () => {
         const { html, includeLinks } = resolveLinks(`<p><img src="/Other"></p>`, index);
-        expect(html).toBe(`<p><section class="include-note" data-note-id="id2" data-box-size="medium">&nbsp;</section></p>`);
+        expect(html).toBe(`<p><section class="include-note" data-note-id="id2" data-box-size="resizable">&nbsp;</section></p>`);
         expect(includeLinks).toEqual(["id2"]);
     });
 

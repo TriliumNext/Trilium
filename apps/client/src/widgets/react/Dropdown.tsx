@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MenuItem } from "../../menus/context_menu";
 import { isMobile, isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import { focusListItem } from "./FormList";
-import { useTooltip, useUniqueName } from "./hooks";
+import { useBodyClass, useTooltip, useUniqueName } from "./hooks";
 import { suspendModalFocusTraps } from "./modal_focustrap";
 import Menu from "./Menu";
 import Popup, { type PopupProps } from "./Popup";
@@ -42,6 +42,11 @@ export interface DropdownProps extends Pick<HTMLAttributes<HTMLDivElement>, "id"
     /** If set to true, then the dropdown button will be considered an icon action (without normal border and sized for icons only). */
     iconAction?: boolean;
     noSelectButtonStyle?: boolean;
+    /**
+     * Leaves the look of the toggle to {@link buttonClassName} alone, without Bootstrap's `btn`, for a
+     * toggle on a surface that styles its own buttons, such as an `OverlayControlGroup`.
+     */
+    bareButton?: boolean;
     /** Disables the toggle, and closes the popup if it is open. */
     disabled?: boolean;
     text?: ComponentChildren;
@@ -179,7 +184,7 @@ interface PopupSlot {
  * The toggle both kinds of dropdown share: the button, its tooltip, the open state and its
  * callbacks, the handle, and the phone's cover. `popup` draws what opens under it.
  */
-function DropdownToggle({ id, className, buttonClassName, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, onShown, onHidden, placement, autoClose = true, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, mobileBottomSheet, backdrop, hasPopup, onToggleArrow, popup }: Omit<DropdownProps, "children"> & {
+function DropdownToggle({ id, className, buttonClassName, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, bareButton, onShown, onHidden, placement, autoClose = true, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop: mobileBackdropProp, mobileBottomSheet, backdrop, hasPopup, onToggleArrow, popup }: Omit<DropdownProps, "children"> & {
     hasPopup: "menu" | "true";
     /** Called for Up or Down on the toggle while the popup is up. */
     onToggleArrow?(popup: HTMLElement, edge: "first" | "last"): void;
@@ -202,6 +207,7 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const popupRef = useRef<HTMLDivElement | null>(null);
     const [ shown, setShown ] = useState(false);
+    useBodyClass("backdrop-open", shown && (!!backdrop || mobileBackdrop));
     /** The item to start at once the popup shows, for a popup a key on the toggle opened. */
     const [ startAt, setStartAt ] = useState<"first" | "last">();
 
@@ -305,7 +311,9 @@ function DropdownToggle({ id, className, buttonClassName, title, text, dropdownC
             <button
                 {...buttonProps}
                 className={clsx(
-                    iconAction ? "icon-action" : "btn",
+                    iconAction ? "icon-action" : !bareButton && "btn",
+                    // `.icon-action` styles its disabled state by class, as `ActionButton` sets it.
+                    iconAction && disabled && "disabled",
                     !noSelectButtonStyle && "select-button",
                     buttonClassName,
                     !hideToggleArrow && "dropdown-toggle",

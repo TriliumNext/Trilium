@@ -48,7 +48,7 @@ export default function NotePickerDialog() {
             title={opts.current?.title ?? t("note_picker.title")}
             size="lg"
             zIndex={2000}
-            onShown={() => autocompleteRef.current?.showRecentNotes()}
+            onShown={() => autocompleteRef.current?.focus()}
             onSubmit={() => {
                 pickedNoteId.current = tree.getNoteIdFromUrl(suggestion?.notePath);
                 setShown(false);

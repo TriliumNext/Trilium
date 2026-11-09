@@ -214,12 +214,65 @@ describe("Files API (core)", () => {
             expect(download.headers["Content-Disposition"]).toBeTruthy();
             expect(download.headers["Content-Security-Policy"]).toBeUndefined();
 
-            // A non-SVG mime keeps the plain path, scripts and all.
+            // A non-SVG mime keeps its bytes, scripts and all; the sandbox below keeps them inert.
             const plainId = await createSvgNote("text/plain");
             const plain = await api.get<string>(`/api/notes/${plainId}/open`);
             expect(plain.status).toBe(200);
             expect(plain.body).toContain("<script>");
-            expect(plain.headers["Content-Security-Policy"]).toBeUndefined();
+            expect(plain.headers["Content-Security-Policy"]).toBe("sandbox");
+        });
+    });
+
+    /** Any other mime that renders as a document runs its scripts the same way an SVG does. */
+    describe("HTML and other documents served inline", () => {
+        const MALICIOUS_HTML = `<!DOCTYPE html><html><body><script>alert(document.domain)</script></body></html>`;
+
+        async function createNote(mime: string, type = "code"): Promise<string> {
+            const res = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+                body: { title: "page.html", type, mime, content: MALICIOUS_HTML }
+            });
+            expect(res.status).toBe(200);
+            return res.body.note.noteId;
+        }
+
+        it("sandboxes an HTML note or attachment opened inline", async () => {
+            for (const mime of [ "text/html", "application/xhtml+xml", "text/xml" ]) {
+                const noteId = await createNote(mime);
+                const res = await api.get<string>(`/api/notes/${noteId}/open`);
+                expect(res.status, mime).toBe(200);
+                expect(res.headers["Content-Type"], mime).toBe(mime);
+                expect(res.headers["Content-Security-Policy"], mime).toBe("sandbox");
+                expect(res.headers["X-Content-Type-Options"], mime).toBe("nosniff");
+                expect(res.body, mime).toBe(MALICIOUS_HTML);
+            }
+
+            const { noteId } = await createTextNote(api, { title: "Has HTML" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "text/html", title: "page.html", content: MALICIOUS_HTML }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const { attachmentId } = list.body[0];
+
+            const res = await api.get<string>(`/api/attachments/${attachmentId}/open`);
+            expect(res.status).toBe(200);
+            expect(res.headers["Content-Security-Policy"]).toBe("sandbox");
+            expect(res.headers["X-Content-Type-Options"]).toBe("nosniff");
+        });
+
+        it("leaves a PDF opened inline and an HTML download without a sandbox", async () => {
+            // Chrome refuses to display a PDF in a sandboxed document.
+            const pdfId = await createNote("application/pdf", "file");
+            const pdf = await api.get<string>(`/api/notes/${pdfId}/open`);
+            expect(pdf.status).toBe(200);
+            expect(pdf.headers["Content-Type"]).toBe("application/pdf");
+            expect(pdf.headers["Content-Security-Policy"]).toBeUndefined();
+
+            const htmlId = await createNote("text/html");
+            const download = await api.get<string>(`/api/notes/${htmlId}/download`);
+            expect(download.status).toBe(200);
+            expect(download.headers["Content-Disposition"]).toMatch(/^attachment;/);
+            expect(download.headers["Content-Security-Policy"]).toBeUndefined();
         });
     });
 

@@ -8,10 +8,23 @@ import { isCtrlKey } from "../../services/utils";
 import { useGlobalShortcut, useNoteLabel } from "../react/hooks";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
-export function CustomNoteLauncher(props: {
+/** How a click on a launcher button finds the note it opens, and where it opens it. */
+interface NoteLaunchOptions {
     launcherNote: FNote;
     getTargetNoteId: (launcherNote: FNote) => string | null | Promise<string | null>;
     getHoistedNoteId?: (launcherNote: FNote) => string | null;
+    /** A `#bookmarkOpenMode` value. Without one, a plain click opens the note in the current tab. */
+    getOpenMode?: (launcherNote: FNote) => string | null;
+}
+
+/** The link menu commands that open a note as each `#bookmarkOpenMode` value says. */
+const OPEN_MODE_COMMANDS = new Map<string, CommandNames>([
+    [ "newSplit", "openNoteInNewSplit" ],
+    [ "newWindow", "openNoteInNewWindow" ],
+    [ "quickEdit", "openNoteInPopup" ]
+]);
+
+export function CustomNoteLauncher(props: NoteLaunchOptions & {
     keyboardShortcut?: string;
     /** The launch bar section that shows the button. See `ShowLauncherContextMenuOptions`. */
     parentNoteId?: string;
@@ -54,11 +67,11 @@ export function CustomNoteLauncher(props: {
     );
 }
 
-export async function launchCustomNoteLauncher(evt: MouseEvent | KeyboardEvent, { launcherNote, getTargetNoteId, getHoistedNoteId }: {
-    launcherNote: FNote;
-    getTargetNoteId: (launcherNote: FNote) => string | null | Promise<string | null>;
-    getHoistedNoteId?: (launcherNote: FNote) => string | null;
-}) {
+export async function launchCustomNoteLauncher(
+    evt: MouseEvent | KeyboardEvent,
+    options: NoteLaunchOptions
+) {
+    const { launcherNote, getTargetNoteId, getHoistedNoteId, getOpenMode } = options;
     if (evt.which === 3) return;
 
     const targetNoteId = await getTargetNoteId(launcherNote);
@@ -73,6 +86,29 @@ export async function launchCustomNoteLauncher(evt: MouseEvent | KeyboardEvent, 
             targetNoteId, hoistedNoteIdWithDefault, activate, "afterCurrent"
         );
     } else {
-        await appContext.tabManager.openInSameTab(targetNoteId, hoistedNoteIdWithDefault);
+        await openInMode(
+            evt, targetNoteId, hoistedNoteIdWithDefault ?? null, getOpenMode?.(launcherNote)
+        );
+    }
+}
+
+/**
+ * Opens `targetNoteId` where `openMode`, a `#bookmarkOpenMode` value, says. A new tab opened this
+ * way is activated, unlike one opened with Ctrl or the middle button.
+ */
+async function openInMode(
+    evt: MouseEvent | KeyboardEvent,
+    targetNoteId: string,
+    hoistedNoteId: string | null,
+    openMode: string | null | undefined
+) {
+    const command = openMode ? OPEN_MODE_COMMANDS.get(openMode) : undefined;
+
+    if (openMode === "newTab") {
+        await appContext.tabManager.openInNewTab(targetNoteId, hoistedNoteId, true, "afterCurrent");
+    } else if (command) {
+        link_context_menu.handleLinkContextMenuItem(command, evt, targetNoteId, {}, hoistedNoteId);
+    } else {
+        await appContext.tabManager.openInSameTab(targetNoteId, hoistedNoteId);
     }
 }

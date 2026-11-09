@@ -1,11 +1,15 @@
 import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
+import { getEmbedContentInfo } from "../../../services/content_renderer.js";
+import froca from "../../../services/froca.js";
 import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import imageService from "../../../services/image.js";
 import linkService from "../../../services/link.js";
 import { ensureMimeTypesForHighlighting } from "../../../services/syntax_highlight.js";
-import type { AddLinkOpts } from "../../dialogs/add_link.js";
+import type { EditLinkOpts } from "../../dialogs/edit_link.js";
+import { FLOATING_LAYER_SELECTOR } from "../../react/floating_layers.js";
 import { buildConfig, type BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./config.js";
 
 // Mutable option values, reset before each test (see `beforeEach`).
@@ -39,6 +43,11 @@ vi.mock("i18next", () => ({
             return catalogState.bundle && (() => catalogState.bundle);
         }
     }
+}));
+
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
 }));
 
 vi.mock("../../../services/options.js", () => ({
@@ -95,7 +104,13 @@ vi.mock("../../../services/dialog.js", () => ({
 }));
 vi.mock("@triliumnext/highlightjs", () => ({ default: { name: "hljs-stub" } }));
 vi.mock("../../../services/math.js", () => ({ default: { name: "katex-stub" } }));
-vi.mock("../../../services/content_renderer.js", () => ({ getUploadBoxSize: vi.fn(() => "medium") }));
+vi.mock("../../../services/content_renderer.js", () => ({
+    getUploadBoxDefaults: vi.fn((mime: string) => ({
+        boxSize: mime.startsWith("audio/") ? "compact" : "resizable",
+        isTitleHidden: mime.startsWith("audio/")
+    })),
+    getEmbedContentInfo: vi.fn()
+}));
 const { convertImageToDrawing } = vi.hoisted(() => ({
     convertImageToDrawing: vi.fn(async () => "d1")
 }));
@@ -115,6 +130,11 @@ vi.mock("../../../services/server.js", async (importOriginal) => {
         }
     };
 });
+const { openInCurrentNoteContext } = vi.hoisted(() => ({ openInCurrentNoteContext: vi.fn() }));
+vi.mock("../../../components/note_context.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../components/note_context.js")>()),
+    openInCurrentNoteContext
+}));
 vi.mock("../../../services/link_embed.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/link_embed.js")>()),
     fetchMetadata: vi.fn(async (url: string, ownerNoteId: string) => ({ url, embedType: "opengraph", title: ownerNoteId }))
@@ -154,6 +174,7 @@ async function buildDynamicConfig(overrides: Partial<BuildEditorOptions> = {}) {
 beforeEach(() => {
     optionsState.map = {};
     optionsState.json = {};
+    experimentalState.enabled.clear();
     imageState.copySupported = false;
     catalogState.bundle = undefined;
     catalogState.entries = {};
@@ -192,6 +213,18 @@ describe("CK config", () => {
             }
         }
     }, 20_000);
+
+    it("mounts the floating UI in the document body, even for an editor in a shadow root", async () => {
+        const config = await buildConfig(baseOpts());
+        expect(config.ui?.overlayContainer).toBe(document.body);
+    });
+
+    // With "auto", a pasted image goes inline in a list item or after text, and on its own line in an
+    // empty paragraph; CKEditor's fallback inserts every image as a block.
+    it("inserts images inline or as a block depending on where the cursor is", async () => {
+        const config = await buildConfig(baseOpts());
+        expect((config.image as { insert?: { type?: string } }).insert?.type).toBe("auto");
+    });
 
     // The `text-editor.ck` section of the English catalog is the registry of editor strings: each
     // entry names the English message id a plugin passes to `editor.t()`, and the value the editor
@@ -391,16 +424,40 @@ describe("CK config - tables", () => {
         // Headers without a value are left out rather than sent as the text "null".
         expect(await config.attachmentUpload?.getHeaders?.())
             .toStrictEqual({ "x-csrf-token": "csrf", "trilium-component-id": "editor1" });
-        expect(config.attachmentUpload?.getEmbedBoxSize?.("image/png", 1)).toBe("medium");
+        expect(config.attachmentUpload?.getEmbedBox?.("image/png", 1))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
+        expect(config.attachmentUpload?.getEmbedBox?.("audio/mpeg", 1))
+            .toEqual({ boxSize: "compact", isTitleHidden: true });
+    });
+
+    it("tells the editor what the cache knows of an embedded note or attachment", async () => {
+        const config = await buildConfig(baseOpts());
+        const info = { defaultBoxSize: "compact" as const, hasCompactContent: true };
+        vi.mocked(getEmbedContentInfo).mockReturnValue(info);
+        const describe = config.contentEmbed?.getEmbedContentInfo;
+        if (!describe) throw new Error("Expected the host to describe embeds.");
+
+        expect(describe({ noteId: "unknown" })).toBeNull();
+        expect(describe({ attachmentId: "unknown" })).toBeNull();
+        froca.notes.cached = { noteId: "cached" } as never;
+        froca.attachments.att = { attachmentId: "att" } as never;
+        try {
+            expect(describe({ noteId: "cached" })).toBe(info);
+            expect(describe({ attachmentId: "att" })).toBe(info);
+            expect(vi.mocked(getEmbedContentInfo).mock.calls)
+                .toEqual([ [ froca.notes.cached ], [ froca.attachments.att ] ]);
+        } finally {
+            delete froca.notes.cached;
+            delete froca.attachments.att;
+        }
     });
 
     it("hands the dialogs and cut to note of the editor to the app commands that do them", async () => {
         const triggerHostCommand = vi.fn(async () => undefined);
         const config = await buildConfig(baseOpts({ triggerHostCommand }));
+
         const callbacks = [
-            [ config.internalLink?.openDialog, "addLinkToText" ],
             [ config.markdownImport?.open, "pasteMarkdownIntoText" ],
-            [ config.contentEmbed?.pickNote, "addIncludeNoteToText" ],
             [ config.cutToNote?.cut, "cutIntoNote" ],
             [ config.cutToNote?.saveNow, "saveNoteDetailNow" ]
         ] as const;
@@ -420,6 +477,66 @@ describe("CK config - tables", () => {
         expect((await buildConfig(baseOpts({ showIconPicker }))).inlineIcon?.showPicker(request)).toBe(release);
         expect(showIconPicker).toHaveBeenCalledWith(request);
         expect((await buildConfig(baseOpts())).inlineIcon?.showPicker(request)).toBeNull();
+    });
+
+    it("shows the link dialog the editor asks for, and none without a host for it", async () => {
+        const release = vi.fn();
+        const showLinkDialog = vi.fn(() => release);
+        const request = {
+            container: document.createElement("div"), target: "url" as const, close: vi.fn()
+        };
+
+        expect((await buildConfig(baseOpts({ showLinkDialog }))).internalLink?.showDialog(request))
+            .toBe(release);
+        expect(showLinkDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).internalLink?.showDialog(request)).toBeNull();
+        // The note suggestions of the dialog render in the page's body.
+        expect((await buildConfig(baseOpts())).hostedBalloon)
+            .toStrictEqual({ keepOpenSelector: FLOATING_LAYER_SELECTOR });
+    });
+
+    it("shows the Include note dialog the editor asks for, and none without a host", async () => {
+        const release = vi.fn();
+        const showContentEmbedDialog = vi.fn(() => release);
+        const request = { container: document.createElement("div"), close: vi.fn() };
+
+        const config = await buildConfig(baseOpts({ showContentEmbedDialog }));
+        expect(config.contentEmbed?.pickNote?.(request)).toBe(release);
+        expect(showContentEmbedDialog).toHaveBeenCalledWith(request);
+        expect((await buildConfig(baseOpts())).contentEmbed?.pickNote?.(request)).toBeNull();
+    });
+
+    it("hands the menu of a link the path and the view scope of the note it links to", async () => {
+        const getEntries = vi.spyOn(linkContextMenu, "getLinkToolbarEntries")
+            .mockResolvedValue({ target: [], actions: [], afterUnlink: [] });
+        const download = vi.spyOn(linkContextMenu, "downloadLinkedAttachment")
+            .mockResolvedValue();
+        onTestFinished(() => {
+            getEntries.mockRestore();
+            download.mockRestore();
+        });
+        const host = (await buildConfig(baseOpts())).linkMenu;
+        const element = document.createElement("a");
+        const run = vi.fn();
+        const notePath = "root/parent1/note1";
+        const href = `#${notePath}?viewMode=attachments&attachmentId=a1`;
+        const viewScope = expect.objectContaining({ viewMode: "attachments", attachmentId: "a1" });
+
+        await host?.describeNoteLink(href, element, run);
+        host?.openNote(href, element);
+        host?.downloadAttachment(href);
+        expect(getEntries).toHaveBeenCalledExactlyOnceWith(notePath, viewScope, element, run);
+        expect(openInCurrentNoteContext)
+            .toHaveBeenCalledExactlyOnceWith({ target: element }, notePath, viewScope);
+        expect(download).toHaveBeenCalledExactlyOnceWith(notePath, viewScope);
+
+        // An address that names no note.
+        await host?.describeNoteLink("https://example.com", element, run);
+        host?.openNote("https://example.com", element);
+        host?.downloadAttachment("https://example.com");
+        expect(getEntries).toHaveBeenLastCalledWith("", {}, element, run);
+        expect(openInCurrentNoteContext).toHaveBeenCalledOnce();
+        expect(download).toHaveBeenLastCalledWith("", {});
     });
 
     it("copies block and tab references from the reference source, and none without one", async () => {
@@ -458,6 +575,9 @@ describe("CK config - tables", () => {
             loadNote: vi.fn(),
             loadAttachment: vi.fn(),
             loadInline: vi.fn(),
+            flushInline: vi.fn(),
+            loadUnknown: vi.fn(),
+            loadMedia: vi.fn(),
             focusAttachment: vi.fn(),
             getAttachmentHref: vi.fn(async () => "#root/n1?viewMode=attachments&attachmentId=a1"),
             openMenu: vi.fn(),
@@ -469,6 +589,7 @@ describe("CK config - tables", () => {
         const embed = document.createElement("figure");
         const wrapper = document.createElement("div");
         const source = {} as InlineEmbedSource;
+        const video = { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", embedType: "youtube" };
         const onBlockChange = vi.fn();
         const host = (await buildConfig(baseOpts({ getContentEmbedHandlers: () => handlers })))
             .contentEmbed;
@@ -478,6 +599,9 @@ describe("CK config - tables", () => {
         host?.loadNote?.("n2", wrapper, undefined, undefined, onBlockChange);
         host?.loadAttachment?.("a1", wrapper, "medium");
         host?.loadInline?.(source, wrapper, "full", { isFocused: true });
+        host?.flushInline?.();
+        host?.loadUnknown?.(wrapper, "small");
+        host?.loadMedia?.(video, wrapper, "compact");
         host?.focusAttachment?.("a1");
         host?.openMenu?.(embed, wrapper);
 
@@ -485,6 +609,9 @@ describe("CK config - tables", () => {
         expect(second.loadNote).toHaveBeenCalledExactlyOnceWith("n2", wrapper, undefined, undefined, onBlockChange);
         expect(first.loadAttachment).toHaveBeenCalledWith("a1", wrapper, "medium");
         expect(first.loadInline).toHaveBeenCalledWith(source, wrapper, "full", { isFocused: true });
+        expect(first.flushInline).toHaveBeenCalledOnce();
+        expect(first.loadUnknown).toHaveBeenCalledWith(wrapper, "small");
+        expect(first.loadMedia).toHaveBeenCalledWith(video, wrapper, "compact");
         expect(first.focusAttachment).toHaveBeenCalledWith("a1");
         expect(first.openMenu).toHaveBeenCalledWith(embed, wrapper);
         expect(await host?.getAttachmentHref?.("a1")).toBe("#root/n1?viewMode=attachments&attachmentId=a1");
@@ -497,24 +624,40 @@ describe("CK config - tables", () => {
         expect(host?.getTools?.(embed)).toBeNull();
         expect(host?.enter?.(embed, "start")).toBe(false);
         expect(() => host?.loadNote?.("n1", wrapper, undefined, undefined, onBlockChange)).not.toThrow();
+        expect(() => host?.flushInline?.()).not.toThrow();
     });
 
     it("titles reference links through the link service, in the note open at the time", async () => {
         const loadTitle = vi.spyOn(linkService, "loadReferenceLinkTitle").mockResolvedValue();
-        onTestFinished(() => loadTitle.mockRestore());
+        const getTitleSync = vi.spyOn(linkService, "getReferenceLinkTitleSync")
+            .mockReturnValue("Title");
+        onTestFinished(() => {
+            loadTitle.mockRestore();
+            getTitleSync.mockRestore();
+        });
         let noteId = "n1";
-        const referenceLink = (await buildConfig(baseOpts({ getNoteId: () => noteId }))).referenceLink;
+        let isExcerpt = false;
+        const referenceLink = (await buildConfig(baseOpts({
+            getNoteId: () => noteId, isExcerpt: () => isExcerpt
+        }))).referenceLink;
         const element = document.createElement("span");
+        const content = document.createElement("div");
 
-        referenceLink?.renderTitle?.(element, "#root/n2", "Stored");
+        referenceLink?.renderTitle?.(element, "#root/n2", "Stored", content);
+        expect(referenceLink?.getTitleSync?.("#root/n2", "Stored", content)).toBe("Title");
         noteId = "n3";
+        isExcerpt = true;
         referenceLink?.renderTitle?.(element, "#root/n2");
+        referenceLink?.getTitleSync?.("#root/n2");
 
         expect(referenceLink?.getTitle).toBe(linkService.getReferenceLinkTitle);
-        expect(referenceLink?.getTitleSync).toBe(linkService.getReferenceLinkTitleSync);
         expect(loadTitle.mock.calls.map(([ $el, ...rest ]) => [ $el[0], ...rest ])).toEqual([
-            [ element, "#root/n2", "n1", "Stored" ],
-            [ element, "#root/n2", "n3", undefined ]
+            [ element, "#root/n2", "n1", "Stored", content, false ],
+            [ element, "#root/n2", "n3", undefined, undefined, true ]
+        ]);
+        expect(getTitleSync.mock.calls).toEqual([
+            [ "#root/n2", "Stored", content, false ],
+            [ "#root/n2", undefined, undefined, true ]
         ]);
     });
 
@@ -525,10 +668,10 @@ describe("CK config - tables", () => {
 
         referenceLink?.fixLink?.("Gone", fix);
 
-        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showAddLinkDialog", expect.objectContaining({
+        expect(triggerHostCommand).toHaveBeenCalledExactlyOnceWith("showEditLinkDialog", expect.objectContaining({
             text: "Gone", hasSelection: false, fixLink: true
         }));
-        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, AddLinkOpts ];
+        const [ , dialog ] = triggerHostCommand.mock.calls[0] as unknown as [ string, EditLinkOpts ];
         await dialog.addLink("root/n9", null);
         expect(fix).toHaveBeenCalledExactlyOnceWith("#root/n9");
     });
@@ -801,6 +944,16 @@ describe("CK config - inline embeds", () => {
     it("keeps the source of every source embed type inline, as a code block of its language", async () => {
         const config = await buildDynamicConfig();
         expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
+    });
+
+    it("offers the slash command of extended code blocks while their feature is on", async () => {
+        const getRemoved = async () =>
+            (await buildConfig(baseOpts())).slashCommand?.removeCommands ?? [];
+
+        expect(await getRemoved()).toContain("extended-code-block");
+        experimentalState.enabled.add("extendedCodeBlocks");
+        expect(await getRemoved()).not.toContain("extended-code-block");
+        expect(await getRemoved()).toEqual([ "bulletedList", "numberedList" ]);
     });
 });
 

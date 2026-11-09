@@ -436,12 +436,15 @@ describe("PromotedAttributesContent rendering", () => {
         expect(unchecked.querySelector<HTMLInputElement>("input[type=checkbox]")?.checked).toBe(false);
     });
 
-    it("renders the colour picker alongside a colour attribute", async () => {
+    it("renders a single colour picker for a colour attribute", async () => {
         const container = await renderCells(note, [
             buildCell(note, { definition: { labelType: "color" }, value: "#123456" })
         ]);
 
-        expect(container.querySelector(".color-picker")).not.toBeNull();
+        const pickers = container.querySelectorAll<HTMLInputElement>("input[type=color]");
+        expect(pickers).toHaveLength(1);
+        expect(pickers[0]?.value).toBe("#123456");
+        expect(container.querySelector(".color-picker")).toBeNull();
         // The raw input is kept but hidden, the picker drives the value.
         expect(container.querySelector("input.promoted-attribute-input")?.getAttribute("type")).toBe("hidden");
     });

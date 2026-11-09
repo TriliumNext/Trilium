@@ -2,7 +2,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // All mutable mock state lives in a hoisted holder so the (hoisted) vi.mock
 // factory below can reference it.
-const h = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
+const h = vi.hoisted(() => ({
+    triggerCommand: vi.fn(),
+    options: {} as Record<string, string>
+}));
 
 vi.mock("../components/app_context.js", () => ({
     default: { triggerCommand: h.triggerCommand }
@@ -16,7 +19,9 @@ vi.mock("../services/block_reference.js", () => ({
 }));
 vi.mock("../services/clipboard_ext.js", () => ({ copyHtml: vi.fn(), copyTextWithToast: vi.fn() }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
-vi.mock("../services/options.js", () => ({ default: { get: () => "" } }));
+vi.mock("../services/options.js", () => ({
+    default: { get: (name: string) => h.options[name] ?? "" }
+}));
 vi.mock("../services/server.js", () => ({ default: { post: vi.fn() } }));
 vi.mock("../services/utils.js", () => ({
     default: { escapeHtml: (s: string) => s, isMac: () => false },
@@ -32,6 +37,10 @@ vi.mock("./table_context_menu.js", () => ({
     buildTableContextMenuSections: vi.fn(async () => null),
     hasTableCellSelection: vi.fn(async () => false)
 }));
+vi.mock("./text_editor_context_menu.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./text_editor_context_menu.js")>(),
+    buildSortSelectionMenuItem: vi.fn(() => null)
+}));
 
 import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
@@ -44,6 +53,7 @@ import {
     hasTableCellSelection,
     type TableMenuSections
 } from "./table_context_menu.js";
+import { buildSortSelectionMenuItem } from "./text_editor_context_menu.js";
 import {
     buildNoteContextMenuItems,
     type ContextMenuHost,
@@ -161,6 +171,7 @@ function submenu(items: MenuItem<any>[], title: string): MenuItem<any>[] {
 describe("buildNoteContextMenuItems", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        h.options = {};
     });
 
     it("offers copy, copy-as-markdown and the search rows for a plain selection", async () => {
@@ -271,6 +282,36 @@ describe("buildNoteContextMenuItems", () => {
         });
     });
 
+    it("searches with the configured engine and its icon, leaving it out for none", async () => {
+        const host = browserLikeHost();
+        const webSearchIcon = async () =>
+            findItem(await build(), "electron_context_menu.search_online")?.uiIcon;
+        h.options = {
+            customSearchEngineName: "Google",
+            customSearchEngineUrl: "https://www.google.com/search?q={keyword}"
+        };
+        const items = await build({ selectionText: "trilium" }, host);
+        expect(await webSearchIcon()).toBe("bx bxl-google");
+        run(items, "electron_context_menu.search_online");
+        expect(host.openExternal).toHaveBeenCalledWith("https://www.google.com/search?q=trilium");
+
+        // A custom engine has no logo of its own, and nothing stored means DuckDuckGo.
+        h.options = {
+            customSearchEngineName: "Example",
+            customSearchEngineUrl: "https://example.com/?s={keyword}"
+        };
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
+        h.options = {};
+        expect(await webSearchIcon()).toBe("bx bx-search-alt");
+
+        h.options = { customSearchEngineName: "", customSearchEngineUrl: "none" };
+        expect(titles(await build())).toEqual([
+            "electron_context_menu.copy",
+            "---",
+            "electron_context_menu.search_in_trilium"
+        ]);
+    });
+
     it("puts the text tools of a code editor below the clipboard rows", async () => {
         const line = document.createElement("div");
         vi.mocked(buildCodeEditorContextMenuItems).mockResolvedValueOnce([
@@ -344,6 +385,44 @@ describe("buildNoteContextMenuItems", () => {
             "PR1",
             "PR2"
         ]);
+    });
+
+    it("puts the sort submenu below the clipboard rows, or beside the table's", async () => {
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+        vi.mocked(buildSortSelectionMenuItem).mockReturnValueOnce({ title: "SORT" });
+
+        const items = await build({ isEditable: true, element: document.createElement("p") }, host);
+
+        expect(titles(items)).toEqual([
+            "electron_context_menu.cut",
+            "electron_context_menu.copy",
+            "electron_context_menu.paste",
+            "---",
+            "SORT",
+            "---",
+            "electron_context_menu.search_online",
+            "electron_context_menu.search_in_trilium"
+        ]);
+        expect(buildSortSelectionMenuItem)
+            .toHaveBeenLastCalledWith(null, { isRowsExcluded: false });
+
+        // In a cell, the submenu sorts what the selection holds there; the table sorts the rows.
+        vi.mocked(buildSortSelectionMenuItem).mockReturnValueOnce({ title: "SORT" });
+        vi.mocked(buildTableContextMenuSections).mockResolvedValueOnce({
+            main: [], sort: { title: "S" }, delete: [ { title: "DEL" } ], select: { title: "SEL" },
+            pasteRows: []
+        } as TableMenuSections);
+        const cell = document.createElement("td");
+        const cellItems = await build({ isEditable: true, element: cell, selectionText: "" }, host);
+        expect(buildSortSelectionMenuItem).toHaveBeenLastCalledWith(null, { isRowsExcluded: true });
+        expect(titles(cellItems).slice(-7))
+            .toEqual([ "---", "S", "SORT", "---", "DEL", "---", "SEL" ]);
+
+        vi.mocked(buildSortSelectionMenuItem).mockClear();
+        await build({ element: document.createElement("p") }, host);
+        expect(buildSortSelectionMenuItem).not.toHaveBeenCalled();
     });
 
     it("skips the table section for a non-editable target", async () => {
@@ -698,6 +777,42 @@ describe("setupContextMenu (browser)", () => {
         await run(await menuFor(editorRoot), "electron_context_menu.copy");
 
         expect(copyHtml).toHaveBeenCalledWith("<table><tr><td>a1</td></tr></table>", "a1");
+    });
+
+    it("copies, cuts and pastes in the code editor of an embed through the browser", async () => {
+        const execCommand = stubExecCommand();
+        Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: {
+                read: vi.fn(async () => [
+                    { types: [ "text/plain" ], getType: async () => ({ text: async () => "hi" }) }
+                ])
+            }
+        });
+
+        try {
+            // The text editor has the whole embed selected while its code editor has the focus.
+            const editorRoot = codeEditable();
+            const editor = fakeEditor(editorRoot, "<pre>whole block</pre>", "whole block");
+            const wrapper = editorRoot.appendChild(document.createElement("div"));
+            wrapper.setAttribute("data-cke-ignore-events", "true");
+            const line = codeLine(wrapper.appendChild(codeEditable()));
+            setSelection(line, "<span>code</span>", "code");
+
+            const rows = await menuFor(line);
+            await run(rows, "electron_context_menu.copy");
+            expect(copyHtml).toHaveBeenCalledWith("<span>code</span>", "code");
+            await run(rows, "electron_context_menu.cut");
+            expect(execCommand).toHaveBeenCalledWith("cut");
+            await run(rows, "electron_context_menu.paste");
+            await vi.waitFor(() =>
+                expect(execCommand).toHaveBeenCalledWith("insertText", false, "hi"));
+            expect(editor.getSelectedHtml).not.toHaveBeenCalled();
+            expect(editor.execute).not.toHaveBeenCalled();
+            expect(editor.capturePasteTarget).not.toHaveBeenCalled();
+        } finally {
+            delete (navigator as { clipboard?: unknown }).clipboard;
+        }
     });
 
     it("offers paste in a secure context and routes it through the editor's pipeline", async () => {

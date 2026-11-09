@@ -116,15 +116,9 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 /* #endregion */
 
 #horizontal-main-container {
-    /* The default start-start and end-start border radius for the note split.
-     * Updated automatically according to the layout. */
+    /* The default start-start and end-start border radius for the note split. */
     --note-split-top-border-radius: var(--center-pane-border-radius);
     --note-split-bottom-border-radius: var(--center-pane-border-radius);
-}
-
-/* Matches when a status bar panel is open */
-#horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
-    --note-split-bottom-border-radius: 0;
 }
 
 /* Draws the launch bar's border in the gap between the peek button and the peeked tree. The
@@ -289,12 +283,6 @@ body.layout-horizontal > .horizontal {
         background-color 100ms ease-in,
         color 80ms ease-in,
         box-shadow 100ms ease-in;
-}
-
-#launcher-pane div.launcher-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 #launcher-pane .launcher-button {
@@ -1134,11 +1122,6 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
     background: var(--classic-toolbar-horiz-layout-background-color);
 }
 
-.classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
-    /* Remove the center panel border radius when the toolbar is visible */
-    --note-split-top-border-radius: 0;
-}
-
 /*
  * CENTER PANE
  */
@@ -1151,15 +1134,31 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-start-start-radius: var(--note-split-top-border-radius);
+}
 
-    body.desktop & {
-        border-end-start-radius: var(--note-split-bottom-border-radius);
+body.desktop .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
+    border-end-start-radius: var(--note-split-bottom-border-radius);
+}
 
-        > .scrolling-container {
-            /* Use clip-path to force rounded bottom corner for the note content */
-            clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
-        }
-    }
+/* Use clip-path to force rounded bottom corner for the note content */
+body.desktop .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) > .scrolling-container {
+    clip-path: inset(0px round 0 0 0 var(--note-split-bottom-border-radius));
+}
+
+.vertical-layout .classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container
+    #center-pane .note-split:not(.visible ~ .visible) {
+    border-start-start-radius: 0;
+}
+
+body.desktop.status-bar-panel-open .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) {
+    border-end-start-radius: 0;
+}
+
+body.desktop.status-bar-panel-open .vertical-layout #center-pane
+    .note-split:not(.visible ~ .visible) > .scrolling-container {
+    clip-path: inset(0);
 }
 
 #center-pane .note-split {
@@ -1185,8 +1184,9 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 }
 
 /* The active split in a multi-split view */
-#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after,
-body.mobile #detail-container > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active::after {
+#center-pane > .split-note-container-widget.multiple-splits > .note-split.active::after,
+body.mobile #detail-container > .split-note-container-widget.multiple-splits
+    > .note-split.active::after {
     border-color: var(--link-selection-outline-color);
 }
 
@@ -1219,7 +1219,7 @@ body.mobile .note-title {
     margin-inline-end: 0;
 }
 
-.title-row > *:nth-child(2) {
+.title-row > .component:nth-child(2) {
     margin-inline-start: 0;
 }
 
@@ -1403,14 +1403,6 @@ div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type
     margin-inline-end: 0.5em;
 }
 
-div.promoted-attribute-cell.promoted-attribute-label-color {
-    justify-content: space-between;
-}
-
-div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
-    width: auto;
-}
-
 /*
  * Find and replace bar
  */
@@ -1424,7 +1416,7 @@ div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
     padding: 8px;
 }
 
-.find-replace-widget > div + div {
+.find-replace-widget > .replace-widget-box {
     padding-top: 0;
 }
 

@@ -14,6 +14,7 @@ export const CLASSES = {
     tabPanel: "trilium-tab-panel",
     activeTab: "trilium-tab--active",
     activeTitle: "trilium-tab-title--active",
+    focusedTabs: "trilium-tabs--focused",
     titleBar: "trilium-tabs-bar"
 } as const;
 

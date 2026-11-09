@@ -42,7 +42,7 @@ pnpm dev:format-check | dev:format-fix   # stylistic formatting
 - **Subject**: imperative mood, short (aim for 50 characters before any suffix), no trailing period, and it states the user-visible outcome rather than the mechanism.
 - **Issue references go in the subject**: `(closes #N)` for a bugfix, `(#N)` when the issue stays open, `(regression of #N)` for a regression. The body never carries the closing keyword.
 - **Body**: separated from the subject by a blank line, wrapped at 72 characters, and omitted when the subject says it all. Use it to explain what the user saw and why the code did it (naming the offending identifier), what changes and why that shape — including the alternative rejected — and what is deliberately unchanged or out of scope. Measurements, before/after numbers and red/green verification belong here, not in code comments.
-- **AI attribution is an `Assisted-by` trailer, not prose.** When an AI tool wrote or materially shaped the commit, end the message with a blank line and `Assisted-by: <tool and model>` (e.g. `Assisted-by: DeepSeek V4.1 Flash`), one trailer per tool. `Co-Authored-By` is for human co-authors and `Signed-off-by` is the human's DCO certification, so neither names a tool; never announce the tool in the subject or as a `Generated with …` footer.
+- **AI attribution is an `Assisted-by` trailer, not prose.** When an AI tool wrote or materially shaped the commit, end the message with a blank line and `Assisted-by: <tool and model>` (e.g. `Assisted-by: DeepSeek V4.1 Flash`), one trailer per tool. `Co-Authored-By` is for human co-authors and `Signed-off-by` is the human's DCO certification, so neither names a tool; never announce the tool in the subject or as a `Generated with …` footer. A commit hook rewrites the trailer to name the model (`Assisted-by: Claude Code (Claude Opus 5.5)`); that is expected, so leave it alone and don't mention it to the user.
 - **One logical change per commit**, each message self-contained: PR bodies are assembled from these bodies, so a message that only reads in sequence with the previous commit loses its rationale.
 
 ### Opening a PR
@@ -51,6 +51,7 @@ pnpm dev:format-check | dev:format-fix   # stylistic formatting
 
 - **`origin` is `TriliumNext/Trilium`** — the working directory is named `Notes` and ~19 contributor forks are configured as remotes, so neither the path nor the remote list names the target. `gh` resolves it from `remote.origin.gh-resolved`, already set, so `--repo` is redundant; `upstream` is the archived `zadam/trilium` and is never a base.
 - **Write the body from the commit bodies, grouped by what the change does** — `git log --format='=== %s%n%b' main..HEAD`. A feature branch here carries a long, self-contained rationale per commit (the measurements, the rejected alternative, the reason a value is what it is), and a PR description that restates the subject lines throws all of it away. Group the commits under headings by area, not chronologically: a reviewer reads the reworked subsystem, not the order it was built in.
+- **The body describes the change, not how the branch got there.** No section on merges from `main`, conflict resolutions or rebases: they are branch bookkeeping, and the diff against `main` already holds their result. No "Testing" section either: CI runs the suites on every push, so a list of local `typecheck`/spec runs adds nothing. A red/green run that proves a fix belongs in that commit's body, and an untested gap goes in the chat reply to the user.
 - **Pass the body via `--body-file`, not `--body`.** Markdown of this length in an argument hits shell quoting and heredoc-in-`fish` problems; write it to the scratchpad first.
 - **Cosmetic `edit-docs` churn is ignored, not mentioned.** `pnpm edit-docs:edit-docs` (and `edit-docs:sync-docs`) reformats whole `apps/server/src/assets/doc_notes/**/*.html` files it merely opened (`<li><p>x</p></li>` ↔ `<li>x</li>`, `&nbsp;` shifted across a tag, attributes rewrapped), so a docs commit routinely touches pages the branch has nothing to do with. That is expected and needs neither a rebase nor a note in the description. Read the diff first, though: reflow is safe, but a changed `href`, a dropped `<img src>` or a paragraph that lost its text is a real defect and must be fixed before the PR goes up.
 
@@ -130,6 +131,7 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 - **CSS nesting for scoping**: since CSS modules are not available, scope styles using a root class and native CSS nesting. For example, a dialog with `className="my-dialog"` should have its styles nested under `.modal.my-dialog { … }`.
 - **Reuse existing components** instead of building custom markup — prefer `FormTextBox`, `FormTextBoxWithUnit`, `FormSelect`, `Slider`, `Button`, etc. over hand-rolled `<input>`, `<select>`, or `<button>` elements.
 - **Safe-area insets** always read `var(--safe-area-inset-top, env(safe-area-inset-top))` (and the `-bottom`/`-left`/`-right` twins), never a bare `env()`. Android's WebView leaves `env(safe-area-inset-*)` at `0`, so `apps/mobile`'s `MainActivity` injects the real values as those custom properties; the `env()` fallback covers iOS and desktop browsers, where nothing is injected. Details in the **`developing-capacitor-mobile` skill**.
+- **Colors in note content** (font, highlight, table and cell colors) are saved with a `--tn-*` variable next to the color and adapted to the theme only in CSS (`packages/ckeditor5/src/theme/adaptive_colors.css`). Load the **`working-with-adaptive-colors` skill** before touching the palette, the `AdaptiveColors` plugin, the `--adaptive-*` limits or a surface that shows note colors.
 
 ### API Architecture
 
@@ -176,7 +178,7 @@ SQLite (`better-sqlite3` on Node, `@sqlite.org/sqlite-wasm` on OPFS in standalon
 - **Multi-paragraph text is one message with `\n\n` between paragraphs**, never a key per paragraph, so the translation decides where paragraphs fall. Render it with `.pre-wrap-text` or split it on blank lines into `<p>` — see the `working-with-translations` skill.
 - Third-party components (mind-map context menu, …) still go through `t()` with their strings under a dedicated namespace (e.g. `"mind-map"`).
 - **Text editor (`packages/ckeditor5`)**: plugins call `editor.t("English text")` — the English text *is* the message id, the entry lives under `text-editor.ck` keyed by its slug, and `apps/client/src/services/i18n.spec.ts` fails on a missing or stale one. Rules (name it `t`, literal argument, don't shadow upstream strings, `MESSAGE_OVERRIDES`, `renderShortcut`): **`ckeditor5-plugin-development` skill**.
-- New locale: `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`.
+- New display language: load the **`adding-a-display-language` skill** (readiness, the per-library mappings, the Electron locale check); the step list is `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`.
 
 ### Attribute Inheritance
 
@@ -251,7 +253,8 @@ follow-up. Before reporting the work done: `node .claude/skills/writing-document
 --diff` (plus `impact "<feature name>"` for names the diff cannot know) lists the pages that mention the
 changed UI strings and the help pages wired from the touched components; read every hit and edit what
 describes an affordance that changed; a feature no page covers gets a page (`docs.mjs new`). Then
-`docs.mjs sync` and `docs.mjs check`. Release notes are the maintainer's at release time — not on a branch.
+`docs.mjs sync` and `docs.mjs check`. The release note itself is the maintainer's at release time; what a
+change contributes to it is a changelog entry (below).
 
 Two traps this catches:
 
@@ -261,6 +264,39 @@ Two traps this catches:
 - **A capability gate has a blast radius.** Widening one (a note type added to a list a widget switches
   on) can surface panels, bars and menu entries the change never mentioned. Grep the gate's other readers
   and say what else now appears.
+
+### A user-facing change gets a changelog entry
+
+The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
+feature that reaches users adds its entry in the same commit**. Skip it for internal changes, for a fix to
+something introduced since the last release, and for a fix whose closed issue's title already reads as the
+entry (closed issues are listed without one).
+
+1. `pnpm changelog:new <slug>` prints the path of a new file; replace its whole template, comments
+   included, with only the keys that apply.
+2. `type`: `fix` or `improvement` for most changes. `area` is required for both, one of the names the
+   template lists (`AREAS` in `scripts/release-notes.mts`), e.g. `Text editor`, `Search`, `Tree`.
+3. `closes: [N]` when the commit closes an issue. It only links: the issue is still closed by
+   `(closes #N)` in the commit subject. Leave it out for a discussion or an idea.
+4. `credits` names only an outside contributor whose code is the change. **Never credit the reporter** of
+   the bug or the author of the idea, and leave it out when the maintainers wrote the change.
+5. The body is one line, past tense for a fix, describing what the user saw, not the code: "Typing `/2`
+   in the slash command menu suggested the column layout before the heading", not "Rank exact alias
+   matches first".
+6. `pnpm changelog:lint`, then commit the entry with the code.
+
+```markdown
+---
+type: fix
+area: Text editor
+---
+
+Typing `/2` to `/4` in the slash command menu suggested the column layout before the heading of that level.
+```
+
+Full format, `notable` and the other types: `.changelog/README.md`. `pnpm chore:release-notes <version>
+--unlisted` lists the fixes and features that slipped through without one. Entries are public before the
+release: the nightly release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
 
 ## Recipes
 

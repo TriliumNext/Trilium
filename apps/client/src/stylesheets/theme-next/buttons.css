@@ -6,8 +6,9 @@ button.btn.btn-primary,
 button.btn.btn-secondary,
 button.btn.btn-sm:not(.select-button),
 button.btn.btn-success,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text,
 button.ck.ck-button.ck-ai-assistant-form__icon-action {
     display: inline-flex;
     align-items: center;
@@ -29,8 +30,9 @@ button.btn.btn-primary:hover,
 button.btn.btn-secondary:hover,
 button.btn.btn-sm:not(.select-button):hover,
 button.btn.btn-success:hover,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):hover,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):hover,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):hover,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):hover,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):hover {
     background: var(--cmd-button-hover-background-color);
     color: var(--cmd-button-hover-text-color);
@@ -40,8 +42,9 @@ button.btn.btn-primary:active,
 button.btn.btn-secondary:active,
 button.btn.btn-sm:not(.select-button):active,
 button.btn.btn-success:active,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):active,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):active,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):active,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):active,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):active {
     opacity: 0.85;
     box-shadow: unset;
@@ -54,8 +57,9 @@ button.btn.btn-primary:disabled,
 button.btn.btn-secondary:disabled,
 button.btn.btn-sm:not(.select-button):disabled,
 button.btn.btn-success:disabled,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text.ck-disabled,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text.ck-disabled,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text.ck-disabled,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text.ck-disabled,
 button.ck.ck-button.ck-ai-assistant-form__icon-action.ck-disabled {
     opacity: var(--cmd-button-disabled-opacity);
 }
@@ -64,8 +68,9 @@ button.btn.btn-primary:focus-visible,
 button.btn.btn-secondary:focus-visible,
 button.btn.btn-sm:not(.select-button):focus-visible,
 button.btn.btn-success:focus-visible,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible,
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace, .ck-button_standard).ck-button_with-text:not(.ck-disabled):focus-visible,
 .ck-ai-assistant-form__actions > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):focus-visible,
+.ck-table-form__action-row > button.ck.ck-button.ck-button_with-text:not(.ck-disabled):focus-visible,
 button.ck.ck-button.ck-ai-assistant-form__icon-action:not(.ck-disabled):focus-visible,
 .tn-focusable-button:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
@@ -110,29 +115,14 @@ button.btn.btn-success kbd {
 }
 
 /*
- * Low profile buttons
- */
-
-button.tn-low-profile {
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: inherit;
-}
-
-button.tn-low-profile:hover {
-    background-color: var(--icon-button-hover-background);
-}
-
-/*
  * Icon buttons
  */
 
 :root .icon-action:not(.global-menu-button),
 :root .tn-tool-button,
 :root .btn-group .tn-tool-button:not(:last-child),
-:root .btn-group .tn-tool-button:last-child {
+:root .btn-group .tn-tool-button:last-child,
+:root button.ck.ck-button.ck-button-back {
     width: var(--icon-button-size);
     height: var(--icon-button-size);
     border: unset !important;
@@ -180,7 +170,8 @@ button.tn-low-profile:hover {
 :root .icon-action:not(.global-menu-button):hover,
 :root .icon-action:not(.global-menu-button).show,
 :root .tn-tool-button:hover,
-:root .tn-tool-button.show {
+:root .tn-tool-button.show,
+:root button.ck.ck-button.ck-button-back:hover {
     background: var(--icon-button-hover-background);
     color: var(--icon-button-hover-color);
 }
@@ -191,7 +182,8 @@ button.tn-low-profile:hover {
 }
 
 :root .icon-action:not(.global-menu-button):focus-visible,
-:root .tn-tool-button:focus-visible {
+:root .tn-tool-button:focus-visible,
+:root button.ck.ck-button.ck-button-back:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
 }
 
@@ -230,7 +222,9 @@ button.tn-low-profile:hover {
     }
 }
 
-:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes {
+:root .ck.ck-ai-assistant-form .ck-ai-assistant-form__viewmodes,
+:root .ck.ck-toolbar[role="radiogroup"] > .ck-toolbar__items,
+:root .ck.ck-emoji__categories-list {
     gap: 4px;
     border-radius: 8px;
     background: var(--button-group-background-color);
@@ -243,10 +237,16 @@ button.tn-low-profile:hover {
         border-radius: 8px;
         background: transparent;
         border-color: transparent;
+        color: var(--cmd-button-text-color);
 
         &:hover:not(.ck-on) {
-            background: var(--hover-item-background-color);
-            color: var(--hover-item-text-color);
+            background: var(--cmd-button-hover-background-color);
+            color: var(--cmd-button-hover-text-color);
+        }
+
+        &:not(.ck-disabled):active {
+            opacity: 0.85;
+            transform: scale(0.95);
         }
 
         &.ck-on, &.ck-on:hover {

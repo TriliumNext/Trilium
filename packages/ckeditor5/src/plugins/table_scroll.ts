@@ -177,7 +177,6 @@ export default class TriliumTableScroll extends TableScrollEditing {
         const domFigure = this.editor.editing.view.domConverter.mapViewToDom(viewFigure);
         const domTable = domFigure?.querySelector(":scope > table");
         const domParent = domFigure?.parentElement;
-        /* v8 ignore next 3 -- defensive: a rendered figure has a table and a parent element */
         if (!domTable || !domParent) {
             return false;
         }
@@ -270,7 +269,6 @@ function getViewTable(view: EditingView, figure: HTMLElement) {
             return child;
         }
     }
-    /* v8 ignore next -- defensive: the downcast always puts a table in the figure */
     return undefined;
 }
 

@@ -4,7 +4,6 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import { networkInterfaces } from "os";
-import tmp from "tmp";
 
 import buildApp from "./app.js";
 import { TRILIUM_LOGO } from "./log_provider.js";
@@ -70,8 +69,6 @@ export default async function startTriliumServer(): Promise<Express> {
         process.exit(1);
     }
 
-    tmp.setGracefulCleanup();
-
     const app = await buildApp();
     const httpServer = startHttpServer(app);
 
@@ -117,7 +114,7 @@ async function displayStartupMessage() {
     getLog().info(`💾 DB size:     ${utils.formatSize(getDbSize() * 1024)}`);
 
     if (isScriptingEnabled()) {
-        getLog().info("WARNING: Backend script execution is ENABLED. Backend scripts have full server access including " +
+        getLog().warn("Backend script execution is ENABLED. Backend scripts have full server access including " +
                  "filesystem, network, and OS commands. Only enable in trusted environments.");
     } else {
         getLog().info("Backend script execution is DISABLED. Set [Security] backendScriptingEnabled=true in config.ini to enable.");

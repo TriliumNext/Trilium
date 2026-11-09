@@ -3,7 +3,7 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import type { RefObject } from "preact";
 
 import Icon from "../../react/Icon";
-import { DEFAULT_SIDEBAR, useExcalidrawTranslation } from "./CanvasEmbedTools";
+import { DEFAULT_SIDEBAR, SEARCH_TAB, useExcalidrawTranslation } from "./CanvasEmbedTools";
 
 interface CanvasDrawingMenuProps {
     apiRef: RefObject<ExcalidrawImperativeAPI | null>;
@@ -19,7 +19,14 @@ export default function CanvasDrawingMenu({ apiRef, isEditable }: CanvasDrawingM
             <MainMenu.DefaultItems.LoadScene />
             <MainMenu.DefaultItems.SaveAsImage />
             <MainMenu.Separator />
-            <MainMenu.DefaultItems.SearchMenu />
+            <MainMenu.Item
+                icon={<Icon icon="bx bx-search" />}
+                onSelect={() => apiRef.current?.toggleSidebar({
+                    name: DEFAULT_SIDEBAR, tab: SEARCH_TAB, force: true
+                })}
+            >
+                {t("search.title")}
+            </MainMenu.Item>
             {isEditable && (
                 <MainMenu.Item
                     icon={<Icon icon="bx bx-library" />}

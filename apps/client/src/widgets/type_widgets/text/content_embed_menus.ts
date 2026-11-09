@@ -4,8 +4,10 @@ import { useEffect, useMemo } from "preact/hooks";
 import type { CommandNames } from "../../../components/app_context";
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "../../../menus/context_menu";
 import linkContextMenu from "../../../menus/link_context_menu";
+import { keepEditorFocused } from "../../../menus/text_editor_context_menu";
 import {
-    type ContentEmbedTool, type ContentEmbedToolProvider, registerContentEmbedTools
+    type ContentEmbedTool, type ContentEmbedToolbarItem, type ContentEmbedToolProvider,
+    registerContentEmbedTools
 } from "./content_embed_tools";
 import { findTextEditorAround } from "./editable_embed";
 
@@ -27,6 +29,10 @@ export interface ContentEmbedMenusOptions {
     hasEditableFlag?: boolean;
     /** An SVG icon that the box size dropdown shows in place of the name of the box size. */
     boxSizeIcon?: string;
+    /** The items of the embed toolbar to hide. The menu of the embed still offers them. */
+    hiddenToolbarItems?: readonly ContentEmbedToolbarItem[];
+    /** Whether the toolbar and the menu of the embed set where it is placed in the text. */
+    hasPositions?: boolean;
 }
 
 /**
@@ -38,12 +44,16 @@ export function useContentEmbedMenus(
     rootRef: RefObject<HTMLElement | null>,
     menus: ContentEmbedMenu[],
     menuItems: MenuItem<CommandNames>[] = [],
-    { hasEditableFlag = true, boxSizeIcon }: ContentEmbedMenusOptions = {}
+    {
+        hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems, hasPositions = false
+    }: ContentEmbedMenusOptions = {}
 ) {
     // The toolbar reads the options when the provider of the selected embed changes.
     const provider = useMemo(
-        () => new ContentEmbedMenus(rootRef, { hasEditableFlag, boxSizeIcon }),
-        [ rootRef, hasEditableFlag, boxSizeIcon ]
+        () => new ContentEmbedMenus(rootRef, {
+            hasEditableFlag, boxSizeIcon, hiddenToolbarItems, hasPositions
+        }),
+        [ rootRef, hasEditableFlag, boxSizeIcon, hiddenToolbarItems, hasPositions ]
     );
 
     useEffect(() => provider.setMenus(menus, menuItems));
@@ -60,6 +70,8 @@ export function useContentEmbedMenus(
 export class ContentEmbedMenus implements ContentEmbedToolProvider {
     readonly hasEditableFlag: boolean;
     readonly boxSizeIcon: string | undefined;
+    readonly hiddenToolbarItems: readonly ContentEmbedToolbarItem[] | undefined;
+    readonly hasPositions: boolean;
     private menus: ContentEmbedMenu[] = [];
     private menuItems: MenuItem<CommandNames>[] = [];
     /** The menu that is open, whose button shows as on. */
@@ -72,10 +84,14 @@ export class ContentEmbedMenus implements ContentEmbedToolProvider {
 
     constructor(
         private readonly rootRef: RefObject<HTMLElement | null>,
-        { hasEditableFlag = true, boxSizeIcon }: ContentEmbedMenusOptions = {}
+        {
+            hasEditableFlag = true, boxSizeIcon, hiddenToolbarItems, hasPositions = false
+        }: ContentEmbedMenusOptions = {}
     ) {
         this.hasEditableFlag = hasEditableFlag;
         this.boxSizeIcon = boxSizeIcon;
+        this.hiddenToolbarItems = hiddenToolbarItems;
+        this.hasPositions = hasPositions;
     }
 
     /** Sets the menus of the buttons, and the items of the menu of the embed. */
@@ -110,7 +126,7 @@ export class ContentEmbedMenus implements ContentEmbedToolProvider {
 
         const editor = findTextEditorAround(this.rootRef.current);
         const editorFocus: Pick<ContextMenuOptions<unknown>, "onShow" | "onHide"> = editor
-            ? linkContextMenu.keepEditorFocused(editor)
+            ? keepEditorFocused(editor)
             : {};
         const { pageX, pageY } = linkContextMenu.getOriginBelow(anchor);
         void contextMenu.show({

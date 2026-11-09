@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link.js";
+import utils from "../services/utils.js";
 import { buildNote } from "../test/easy-froca.js";
 import appContext from "./app_context.js";
 import NoteContext from "./note_context.js";
@@ -130,5 +131,61 @@ describe("NoteContext view scope", () => {
 
         await navigate({ bookmark: "intro" });
         expect(noteContext.viewScope).toEqual({ viewMode: "default", bookmark: "intro" });
+    });
+
+    it("saves the note a tab shows without the editing state of its view", async () => {
+        buildNote({ id: "root", title: "root", children: [ { id: "edited", title: "Edited" } ] });
+        const noteContext = new NoteContext();
+        await noteContext.setNote("root/edited", {
+            viewScope: { viewMode: "source" }, skipRecentNotes: true, triggerSwitchEvent: false
+        });
+        const { viewScope } = noteContext;
+        if (viewScope) {
+            viewScope.isReadOnly = true;
+            viewScope.readOnlyTemporarilyDisabled = true;
+        }
+
+        const { tabManager } = appContext;
+        appContext.tabManager = { activeNtxId: noteContext.ntxId } as TabManager;
+        try {
+            expect(noteContext.getPojoState()?.viewScope).toEqual({ viewMode: "source" });
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+        expect(noteContext.viewScope).toEqual({
+            viewMode: "source", isReadOnly: true, readOnlyTemporarilyDisabled: true
+        });
+    });
+});
+
+describe("NoteContext on a phone", () => {
+    // `tree.resolveNotePath()` reads the active note path from the tab manager.
+    const { tabManager } = appContext;
+    beforeEach(() => {
+        appContext.tabManager = { getActiveContextNotePath: () => null } as unknown as TabManager;
+    });
+    afterEach(() => {
+        appContext.tabManager = tabManager;
+        vi.restoreAllMocks();
+    });
+
+    it("shows a note it opens, but stays on the tree when hoisting opens one", async () => {
+        buildNote({ id: "root", title: "root", children: [
+            { id: "elsewhere", title: "Elsewhere" },
+            { id: "workspace", title: "Workspace", "#workspace": "", children: [ { id: "inside", title: "Inside" } ] }
+        ] });
+        vi.spyOn(utils, "isMobile").mockReturnValue(true);
+        const noteContext = new NoteContext();
+        const triggerCommand = vi.spyOn(noteContext, "triggerCommand");
+        const screenSwitches = () => triggerCommand.mock.calls.filter(([ name ]) => name === "setActiveScreen");
+
+        await noteContext.setNote("root/elsewhere", { skipRecentNotes: true, triggerSwitchEvent: false });
+        expect(screenSwitches()).toEqual([ [ "setActiveScreen", { screen: "detail" } ] ]);
+
+        triggerCommand.mockClear();
+        // The open note lies outside the workspace, so hoisting opens the workspace note.
+        await noteContext.setHoistedNoteId("workspace");
+        expect(noteContext.notePath).toBe("root/workspace");
+        expect(screenSwitches()).toEqual([]);
     });
 });

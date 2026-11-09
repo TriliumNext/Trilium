@@ -6,7 +6,9 @@ import prefresh from "@prefresh/vite";
 import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
-import { shareTheme, stripUniverEmojiData, stripUniverHyphenation } from "../client/vite-plugins.mjs";
+import {
+    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+} from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
@@ -194,6 +196,7 @@ function copyHelpAssetsPlugin(): Plugin {
 let plugins: any = [
     stripUniverHyphenation(),
     stripUniverEmojiData(),
+    narrowThirdPartySelectors(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
     viteStaticCopy({
@@ -501,6 +504,9 @@ export default defineConfig(() => ({
                 test: {
                     name: "core",
                     include: ["../../packages/trilium-core/src/**/*.{test,spec}.{ts,tsx}"],
+                    // The same timeouts as the server runner, which runs these specs too.
+                    hookTimeout: 20_000,
+                    testTimeout: 40_000,
                     environment: join(__dirname, "src/test_environment_worker.ts"),
                     alias: {
                         // The specs make their test images with Jimp, whose `browser` entry is an empty stub.

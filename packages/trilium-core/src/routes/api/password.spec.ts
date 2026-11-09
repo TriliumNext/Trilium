@@ -5,7 +5,7 @@ import { getSql } from "../../services/sql/index";
 import { CoreApiTester } from "../../test/api_tester";
 
 // Changing/setting a password does real scrypt (N=16384) hashing + data-key
-// re-derivation. Under the browser provider that runs in pure JS (scrypt-js),
+// re-derivation. Under the browser provider that runs in pure JS (@noble/hashes),
 // ~10x slower with V8 coverage instrumentation than Node's native scryptSync —
 // enough to blow the 5s default. Give the standalone suite a larger
 // timeout; the server suite keeps the strict default.

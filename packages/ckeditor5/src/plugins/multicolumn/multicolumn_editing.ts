@@ -14,9 +14,11 @@ import {
 } from "ckeditor5";
 
 import NestedLimitSelection from "../nested_limit_selection.js";
+import { markFocusedContainers } from "../widget_utils.js";
 import {
-    COLUMN_CLASS, COLUMN_RATIOS, ELEMENTS, getColumnCount, getDefaultRatios, LAYOUT_CLASS,
-    LAYOUT_WIDGET_PROPERTY, MAX_COLUMNS, MIN_COLUMNS, RATIOS_ATTRIBUTE, RATIOS_DATA_ATTRIBUTE
+    COLUMN_CLASS, COLUMN_RATIOS, ELEMENTS, FOCUSED_LAYOUT_CLASS, getColumnCount, getDefaultRatios,
+    LAYOUT_CLASS, LAYOUT_WIDGET_PROPERTY, MAX_COLUMNS, MIN_COLUMNS, RATIOS_ATTRIBUTE,
+    RATIOS_DATA_ATTRIBUTE
 } from "./constants.js";
 import {
     ColumnLayoutCommand, InsertLayoutColumnCommand, InsertMulticolumnLayoutCommand,
@@ -50,6 +52,8 @@ export default class MulticolumnEditing extends Plugin {
         this.registerSchema();
         this.registerConversion();
         this.registerPostFixer();
+        markFocusedContainers(editor, FOCUSED_LAYOUT_CLASS,
+            element => element.hasClass(LAYOUT_CLASS));
     }
 
     private registerSchema() {

@@ -1,5 +1,13 @@
-import { ClassicEditor, Essentials, Paragraph, _setModelData as setModelData, _getModelData as getModelData } from "ckeditor5";
+import {
+    _getModelData as getModelData,
+    _setModelData as setModelData,
+    ClassicEditor,
+    Essentials,
+    Paragraph,
+    Plugin
+} from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createTestEditor } from "../../../test/editor-kit.js";
 import CollapsibleEditing from "./collapsible_editing.js";
 
 /**
@@ -105,6 +113,22 @@ describe("collapsible open state", () => {
             });
 
             expect(detailsDom().open).toBe(true);
+        });
+
+        it("leaves the saved attribute to a converter that consumed it first", async () => {
+            const customEditor = await createTestEditor([
+                Essentials, Paragraph, CollapsibleEditing, DataOpenAttribute
+            ]);
+
+            customEditor.setData("<details open><summary>T</summary><p>body</p></details>");
+
+            expect(customEditor.getData()).toBe(
+                "<details class=\"trilium-collapsible\" data-open=\"true\">" +
+                "<summary>T</summary><p>body</p></details>"
+            );
+            // The editing view has no competing converter, so the block still renders open.
+            const details = customEditor.editing.view.getDomRoot()?.querySelector("details");
+            expect(details?.open).toBe(true);
         });
 
         it("keeps the attribute through insertContent, which filters against the schema", () => {
@@ -245,3 +269,22 @@ describe("collapsible open state", () => {
         });
     });
 });
+
+/** Saves the expanded state as `data-open`, ahead of the collapsible's own data converter. */
+class DataOpenAttribute extends Plugin {
+
+    init() {
+        this.editor.conversion.for("dataDowncast").add((dispatcher) => {
+            dispatcher.on("attribute:open:details", (evt, data, conversionApi) => {
+                if (!conversionApi.consumable.consume(data.item, evt.name)) {
+                    return;
+                }
+                const viewElement = conversionApi.mapper.toViewElement(data.item);
+                if (viewElement && data.attributeNewValue) {
+                    conversionApi.writer.setAttribute("data-open", "true", viewElement);
+                }
+            }, { priority: "high" });
+        });
+    }
+
+}

@@ -1,4 +1,4 @@
-import { deferred, escapeHtml, fnv1a, formatLogMessage } from "./utils.js";
+import { deferred, escapeHtml, fnv1a, formatLogMessage, Mutex } from "./utils.js";
 import { describe, expect, it } from "vitest";
 
 describe("#deferred", () => {
@@ -110,5 +110,53 @@ describe("#escapeHtml", () => {
             .toBe("&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39; &amp;amp;&lt;/a&gt;");
         expect(escapeHtml("plain text = 1/2")).toBe("plain text = 1/2");
         expect(escapeHtml("")).toBe("");
+    });
+});
+
+describe("Mutex", () => {
+    it("returns the callback's value, synchronous or not", async () => {
+        const mutex = new Mutex();
+        expect(await mutex.runExclusive(async () => 42)).toBe(42);
+        expect(await mutex.runExclusive(() => "sync")).toBe("sync");
+    });
+
+    it("runs overlapping callers one after another, in call order", async () => {
+        const mutex = new Mutex();
+        const events: string[] = [];
+        const allowFirstToFinish = deferred<void>();
+        const firstStarted = deferred<void>();
+
+        const first = mutex.runExclusive(async () => {
+            events.push("first-start");
+            firstStarted.resolve();
+            await allowFirstToFinish;
+            events.push("first-end");
+        });
+        const second = mutex.runExclusive(() => {
+            events.push("second");
+        });
+        const third = mutex.runExclusive(() => {
+            events.push("third");
+        });
+
+        await firstStarted;
+        expect(events).toEqual(["first-start"]);
+
+        allowFirstToFinish.resolve();
+        await Promise.all([first, second, third]);
+        expect(events).toEqual(["first-start", "first-end", "second", "third"]);
+    });
+
+    it("releases the lock when a callback throws or rejects", async () => {
+        const mutex = new Mutex();
+
+        await expect(mutex.runExclusive(async () => {
+            throw new Error("rejected");
+        })).rejects.toThrow("rejected");
+        await expect(mutex.runExclusive(() => {
+            throw new Error("thrown");
+        })).rejects.toThrow("thrown");
+
+        expect(await mutex.runExclusive(() => "recovered")).toBe("recovered");
     });
 });

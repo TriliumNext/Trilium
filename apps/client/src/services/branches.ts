@@ -17,18 +17,19 @@ interface Response {
     message: string;
 }
 
+/** Moves the branches before `beforeBranchId`. Returns whether every move went through. */
 async function moveBeforeBranch(branchIdsToMove: string[], beforeBranchId: string) {
     branchIdsToMove = filterRootNote(branchIdsToMove);
     branchIdsToMove = filterSearchBranches(branchIdsToMove);
 
     const beforeBranch = froca.getBranch(beforeBranchId);
     if (!beforeBranch) {
-        return;
+        return false;
     }
 
     if (beforeBranch.noteId === "root" || utils.isLaunchBarConfig(beforeBranch.noteId)) {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
     for (const branchIdToMove of branchIdsToMove) {
@@ -36,25 +37,27 @@ async function moveBeforeBranch(branchIdsToMove: string[], beforeBranchId: strin
 
         if (!resp.success) {
             toastService.showError(resp.message);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
+/** Moves the branches after `afterBranchId`. Returns whether every move went through. */
 async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string) {
     branchIdsToMove = filterRootNote(branchIdsToMove);
     branchIdsToMove = filterSearchBranches(branchIdsToMove);
 
     const afterNote = await froca.getBranch(afterBranchId)?.getNote();
     if (!afterNote) {
-        return;
+        return false;
     }
 
     const forbiddenNoteIds = ["root", hoistedNoteService.getHoistedNoteId(), "_lbRoot", "_lbAvailableLaunchers", "_lbVisibleLaunchers"];
 
     if (forbiddenNoteIds.includes(afterNote.noteId)) {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
     branchIdsToMove.reverse(); // need to reverse to keep the note order
@@ -64,22 +67,29 @@ async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string)
 
         if (!resp.success) {
             toastService.showError(resp.message);
-            return;
+            return false;
         }
     }
+    return true;
 }
 
-async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string) {
+/**
+ * Moves the movable branches under the note of `newParentBranchId`. Returns whether the move went through.
+ * When the active note is moved, it follows to `newParentNotePath`, the parent's path as the user picked it.
+ */
+async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string, newParentNotePath?: string) {
     const newParentBranch = froca.getBranch(newParentBranchId);
     if (!newParentBranch) {
-        return;
+        return false;
     }
 
     if (newParentBranch.noteId === "_lbRoot") {
         toastService.showError(t("branches.cannot-move-notes-here"));
-        return;
+        return false;
     }
 
+    const activeContext = appContext.tabManager.getActiveContext();
+    let movesActiveNote = false;
     const movableBranchIds: string[] = [];
     for (const branchIdToMove of filterRootNote(branchIdsToMove)) {
         const branchToMove = froca.getBranch(branchIdToMove);
@@ -89,17 +99,25 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
         }
 
         movableBranchIds.push(branchIdToMove);
+        movesActiveNote ||= branchToMove.noteId === activeContext?.noteId && branchToMove.parentNoteId === activeContext.parentNoteId;
     }
 
     if (movableBranchIds.length === 0) {
-        return;
+        return false;
     }
 
     const resp = await server.put<Response>(`branches/move-to/${newParentBranchId}`, { branchIds: movableBranchIds }, componentId);
 
     if (!resp.success) {
         toastService.showError(resp.message);
+        return false;
     }
+
+    if (activeContext && movesActiveNote && newParentNotePath) {
+        await ws.waitForMaxKnownEntityChangeId();
+        await activeContext.setNote(`${newParentNotePath}/${activeContext.noteId}`, { viewScope: activeContext.viewScope });
+    }
+    return true;
 }
 
 /**

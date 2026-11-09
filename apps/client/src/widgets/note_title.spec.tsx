@@ -3,11 +3,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../components/component";
 import NoteContext from "../components/note_context";
+import froca from "../services/froca";
 import protectedSessionHolder from "../services/protected_session_holder";
+import server from "../services/server";
 import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import NoteTitleWidget from "./note_title";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
+
+vi.stubGlobal("logError", vi.fn());
 
 vi.mock("../services/i18n", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../services/i18n")>()),
@@ -57,5 +61,38 @@ describe("NoteTitleWidget", () => {
         expect(input.value).toBe("R&D");
         expect(input.classList.contains("protected-title")).toBe(false);
         expect(input.readOnly).toBe(false);
+    });
+
+    it("drops a title change to a note deleted before it saves", async () => {
+        const put = vi.spyOn(server, "put").mockRejectedValue(new Error("Note not found"));
+        const note = buildNote({ title: "Doomed" });
+        const noteContext = new NoteContext("ntx-title");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        const parent = new Component();
+
+        let container: HTMLElement | undefined;
+        await act(async () => {
+            container = renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <NoteContextContext.Provider value={noteContext}>
+                        <NoteTitleWidget />
+                    </NoteContextContext.Provider>
+                </ParentComponent.Provider>
+            );
+        });
+        const input = container?.querySelector<HTMLInputElement>("input.note-title");
+        expect(input?.readOnly).toBe(false);
+
+        act(() => {
+            if (!input) return;
+            input.value = "Renamed";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        delete froca.notes[note.noteId];
+        await act(async () => {
+            await parent.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        });
+        expect(put).not.toHaveBeenCalled();
     });
 });

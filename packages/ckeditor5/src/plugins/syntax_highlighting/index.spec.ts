@@ -309,7 +309,7 @@ describe("SyntaxHighlighting", () => {
         expect(fakeHljs.highlight).toHaveBeenCalledWith("", { language: "javascript" });
     });
 
-    it("clears markers when a code block is removed", async () => {
+    it("does not re-highlight when a code block is removed", async () => {
         editor = await createEditor(makeConfig());
 
         setModelData(editor.model,

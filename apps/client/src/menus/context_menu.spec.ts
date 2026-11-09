@@ -117,6 +117,37 @@ describe("contextMenu", () => {
         expect(onHide).toHaveBeenCalledTimes(1);
     });
 
+    it("hides for `closeOpenPopups()`, as a keyboard shortcut opening a dialog calls it", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const onHide = vi.fn();
+
+        await contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onHide });
+        closeOpenPopups();
+        await vi.waitFor(() => expect(menuElement()).toBeNull());
+        expect(contextMenu.isShown).toBe(false);
+
+        closeOpenPopups();
+        expect(onHide).toHaveBeenCalledTimes(1);
+    });
+
+    it("cancels a menu still loading `Menu` for `closeOpenPopups()`", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        const { closeOpenPopups } = await import("../widgets/react/Popup");
+        const onShow = vi.fn();
+
+        const shown = contextMenu.show({ x: 10, y: 20, items, selectMenuItemHandler: () => {}, onShow });
+        closeOpenPopups();
+        await shown;
+
+        expect(onShow).not.toHaveBeenCalled();
+        expect(menuElement()).toBeNull();
+        expect(contextMenu.isShown).toBe(false);
+        expect(document.body.innerHTML).toBe(`<div id="app"></div>`);
+    });
+
     it("shows only the last of two menus asked for while `Menu` still loads, and hides it", async () => {
         buildPage();
         const contextMenu = await buildContextMenu();
@@ -359,6 +390,55 @@ describe("contextMenu", () => {
             await vi.waitFor(() => {
                 expect(menuRows().map((row) => row.textContent)).toEqual([ "Python" ]);
             });
+        });
+
+        it("puts the focus in the filter input of a menu that asks for it", async () => {
+            buildPage();
+            const contextMenu = await buildContextMenu();
+
+            await contextMenu.show({
+                x: 10, y: 10, filterable: true, focusFilter: true, className: "slash-command-menu",
+                selectMenuItemHandler: () => {}, items: [ { title: "Plain text" } ]
+            });
+
+            expect(menuElement()?.className)
+                .toContain("dropdown-menu-sm dropend slash-command-menu");
+            const input = menuElement()?.querySelector("input.tn-menu-filter-input");
+            expect(input).not.toBeNull();
+            await vi.waitFor(() => expect(document.activeElement).toBe(input));
+        });
+
+        it("finds items by description and keywords, drawing their SVG icons", async () => {
+            buildPage();
+            const contextMenu = await buildContextMenu();
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" class="table-icon"></svg>`;
+
+            await contextMenu.show({
+                x: 10, y: 10, filterable: true, selectMenuItemHandler: () => {},
+                items: [
+                    { title: "Table", description: "Insert a grid of cells", uiIconSvg: svg },
+                    { title: "Numbered list", keywords: [ "ol" ] },
+                    { title: "Quote" }
+                ]
+            });
+
+            expect(menuRows()[0]?.querySelector(".tn-svg-icon svg.table-icon")).not.toBeNull();
+            const input = menuElement()
+                ?.querySelector<HTMLInputElement>("input.tn-menu-filter-input");
+            if (!input) throw new Error("no filter input");
+            const shownRows = () => menuRows().map((row) => [
+                row.querySelector(".tn-menu-filter-title")?.textContent,
+                row.querySelector(".description")?.textContent,
+                !!row.querySelector(".tn-svg-icon svg.table-icon")
+            ]);
+            for (const [ text, rows ] of [
+                [ "grid", [ [ "Table", "Insert a grid of cells", true ] ] ],
+                [ "ol", [ [ "Numbered list", undefined, false ] ] ]
+            ] as const) {
+                input.value = text;
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+                await vi.waitFor(() => expect(shownRows()).toEqual(rows));
+            }
         });
 
         it("shows badges after the title, and a trailing icon at the end of the row", async () => {

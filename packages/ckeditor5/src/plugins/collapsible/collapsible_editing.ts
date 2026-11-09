@@ -524,7 +524,7 @@ export default class CollapsibleEditing extends Plugin {
         const view = this.editor.editing.view;
         for (const viewRoot of view.document.getRoots()) {
             const dom = view.getDomRoot(viewRoot.rootName);
-            /* v8 ignore next -- an editing view root is always an HTMLElement */
+            // The view still renders after the editor UI detaches the DOM root on destroy.
             if (dom instanceof HTMLElement) fn(dom);
         }
     }
@@ -602,7 +602,7 @@ export default class CollapsibleEditing extends Plugin {
         const selection = model.document.selection;
 
         const summary = selection.getFirstPosition()?.findAncestor("summary");
-        /* v8 ignore next -- the listener is registered with context: summary, so a summary is always found */
+        // The summary context also matches a selection that starts above the title.
         if (!summary) return;
 
         // Titles are single-line: always swallow Enter so it never inserts a newline
@@ -1076,13 +1076,6 @@ export default class CollapsibleEditing extends Plugin {
                 // Modifier-click on an interactive element (link/button): let the
                 // browser handle it — we encountered the interactive element before
                 // the summary so the user clearly intended its default action.
-                //
-                // Not reachable from a test: `data.target` is resolved through
-                // `domConverter.mapDomToView`, which maps container elements but not the
-                // attribute elements links render as, so a click on an <a> arrives with the
-                // enclosing <summary> as the target and this branch is skipped. (In the running
-                // editor LinkEditing handles modifier-clicks on links before this listener.)
-                /* v8 ignore next 3 -- see above */
                 if (hasModifier && (node.is?.("element", "a") || node.is?.("element", "button"))) {
                     return;
                 }
@@ -1171,7 +1164,7 @@ export default class CollapsibleEditing extends Plugin {
         // Adopt a state the model doesn't know about yet. Toggles that originated
         // from the model land here too and are absorbed by setDetailsOpen's guard.
         const detailsModel = this.detailsFromDom(detailsDom);
-        /* v8 ignore next -- the toggle only fires for a rendered, mapped <details> */
+        // A collapsible inside embedded content, such as an included note, has no model element.
         if (!detailsModel) return;
         // A find-reveal drives this block's `open` transiently in the editing view
         // only — adopting it into the (persisted) model would let a search rewrite
@@ -1233,7 +1226,7 @@ export default class CollapsibleEditing extends Plugin {
     /** Add or strip the transient `open` (and its CSS marker) on the editing view. */
     private applyFindReveal(details: any, reveal: boolean) {
         const viewElement = this.editor.editing.mapper.toViewElement(details);
-        /* v8 ignore next -- only called for a <details> that is currently rendered */
+        // A revealed block deleted from the document has no view element.
         if (!viewElement) return;
         this.editor.editing.view.change((writer: any) => {
             if (reveal) {
@@ -1315,7 +1308,7 @@ export default class CollapsibleEditing extends Plugin {
                 const view = domConverter.mapDomToView(dom);
                 /* v8 ignore next -- the mapper always resolves a rendered view element */
                 const model = view ? mapper.toModelElement(view as any) : null;
-                /* v8 ignore next -- the mapper always resolves a rendered view element */
+                // A title inside embedded content, such as an included note, has no model element.
                 if (model) current.set(model, dom);
             }
         });
@@ -1631,7 +1624,7 @@ export default class CollapsibleEditing extends Plugin {
                 // into a <details> that already has one gives us two summaries.
                 const parent = (entry as any).position?.parent;
                 if (parent?.is("element", "details") && ensureValid(parent)) return true;
-            } else if (entry.type === "remove" || entry.type === "attribute") {
+            } else {
                 const parent = (entry as any).position?.parent;
                 if (parent?.is("element", "details") && ensureValid(parent)) return true;
             }

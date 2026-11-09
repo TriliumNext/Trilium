@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import consistencyChecksService from "../../services/consistency_checks";
 import entityChangesService from "../../services/entity_changes";
+import { getLog } from "../../services/log";
 import optionService from "../../services/options";
 import { getSql } from "../../services/sql/index";
 import sqlInit from "../../services/sql_init";
@@ -11,6 +12,7 @@ import syncOptions from "../../services/sync_options";
 import syncUpdateService from "../../services/sync_update";
 import ws from "../../services/ws";
 import { CoreApiTester } from "../../test/api_tester";
+import { cleanUpPartialRequests } from "./sync";
 
 /**
  * Drives the shared core sync routes through {@link CoreApiTester} (no Express),
@@ -155,6 +157,19 @@ describe("Sync API (core)", () => {
             expect(Array.isArray(res.body.entityChanges)).toBe(true);
             expect(res.body.entityChanges.length).toBeGreaterThan(0);
             expect(typeof res.body.outstandingPullCount).toBe("number");
+        });
+
+        it("logs the returned changes under the client's log marker", async () => {
+            const info = vi.spyOn(getLog(), "info");
+
+            const res = await api.get("/api/sync/changed", {
+                query: { instanceId: "someOtherInstance", lastEntityChangeId: "0", logMarkerId: "marker1234" }
+            });
+
+            expect(res.status).toBe(200);
+            expect(info).toHaveBeenCalledWith(expect.stringMatching(
+                /^Sync marker1234: returning \d+ entity changes after entity change 0 \(~\d+ bytes, \d+ outstanding\) in \d+ms$/
+            ));
         });
 
         it("advances past batches that are fully filtered out by instanceId", async () => {
@@ -420,6 +435,45 @@ describe("Sync API (core)", () => {
             });
             expect(last.status).toBe(204);
             expect(update).toHaveBeenCalledWith([{ a: 1 }], "y");
+        });
+
+        it("keeps a push that is still receiving pages after 20 minutes", async () => {
+            const update = vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {});
+            const payload = JSON.stringify({ entities: [ { a: 1 } ], instanceId: "slow" });
+            const pageCount = 6;
+            const pageSize = Math.ceil(payload.length / pageCount);
+            let now = Date.now();
+            vi.spyOn(Date, "now").mockImplementation(() => now);
+
+            for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                const res = await api.put<{ message: string }>("/api/sync/update", {
+                    headers: { pageCount: String(pageCount), pageIndex: String(pageIndex), requestId: "slow" },
+                    body: payload.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+                });
+                expect(res.status, res.body?.message).toBe(204);
+
+                now += 5 * 60 * 1000;
+                cleanUpPartialRequests();
+            }
+
+            expect(update).toHaveBeenCalledWith([ { a: 1 } ], "slow");
+        });
+
+        it("drops a push that received no page for 20 minutes", async () => {
+            let now = Date.now();
+            vi.spyOn(Date, "now").mockImplementation(() => now);
+            const page = (pageIndex: number) => api.put<{ message: string }>("/api/sync/update", {
+                headers: { pageCount: "2", pageIndex: String(pageIndex), requestId: "abandoned" },
+                body: "chunk"
+            });
+
+            expect((await page(0)).status).toBe(204);
+            now += 21 * 60 * 1000;
+            cleanUpPartialRequests();
+
+            const res = await page(1);
+            expect(res.status).toBe(500);
+            expect(res.body.message).toContain("does not have expected record");
         });
 
         it("throws when a continuation page has no initialized record", async () => {

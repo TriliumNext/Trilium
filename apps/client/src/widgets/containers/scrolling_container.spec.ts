@@ -6,19 +6,17 @@ import ScrollingContainer from "./scrolling_container";
 describe("ScrollingContainer", () => {
     let paragraphTop: number;
     let isDisplayed: boolean;
-    let frames: FrameRequestCallback[];
 
     beforeEach(() => {
         FakeResizeObserver.instances = [];
         vi.stubGlobal("ResizeObserver", FakeResizeObserver);
-        frames = [];
-        vi.stubGlobal("requestAnimationFrame",
-            (callback: FrameRequestCallback) => frames.push(callback));
+        vi.useFakeTimers();
         paragraphTop = 0;
         isDisplayed = true;
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.unstubAllGlobals();
         vi.restoreAllMocks();
         document.body.innerHTML = "";
@@ -42,7 +40,7 @@ describe("ScrollingContainer", () => {
         // A hidden element reads `scrollTop` as 0; the browser restores it once shown.
         isDisplayed = false;
         observer.resize(0, 0);
-        scrollAndWaitForFrame(container, 0);
+        scrollAndStop(container, 0);
         isDisplayed = true;
         container.scrollTop = 1000;
         paragraphTop = 40;
@@ -57,27 +55,65 @@ describe("ScrollingContainer", () => {
         paragraphTop = -120;
         observer.resize(300, 400);
 
-        scrollAndWaitForFrame(container, 0);
+        scrollAndStop(container, 0);
         observer.resize(0, 0);
         observer.resize(500, 400);
 
         expect(scrollTo).not.toHaveBeenCalled();
     });
 
+    it("records the top block once the scroll stops, and not while it moves", () => {
+        const endScroll = (container: HTMLElement) => {
+            container.dispatchEvent(new Event("scrollend"));
+        };
+        const wait = (ms: number) => () => vi.advanceTimersByTime(ms);
+        // While the scroll still moves, the anchor stays the one from where it stopped before.
+        // Without `scrollend`, a pause in the scroll events stands for it.
+        const stops = [
+            { hasScrollEnd: true, stop: wait(1000), restoredTop: 880 },
+            { hasScrollEnd: true, stop: endScroll, restoredTop: 910 },
+            { hasScrollEnd: false, stop: wait(100), restoredTop: 880 },
+            { hasScrollEnd: false, stop: wait(150), restoredTop: 910 }
+        ];
+        for (const { hasScrollEnd, stop, restoredTop } of stops) {
+            if (hasScrollEnd) {
+                Object.defineProperty(HTMLElement.prototype, "onscrollend", {
+                    configurable: true, writable: true, value: null
+                });
+            }
+            paragraphTop = 0;
+            const { container, scrollTo, observer } = render();
+            Reflect.deleteProperty(HTMLElement.prototype, "onscrollend");
+
+            paragraphTop = -30;
+            container.dispatchEvent(new Event("scroll"));
+            expect(vi.getTimerCount()).toBe(hasScrollEnd ? 0 : 1);
+            stop(container);
+            isDisplayed = false;
+            observer.resize(0, 0);
+            isDisplayed = true;
+            paragraphTop = -120;
+            observer.resize(300, 400);
+
+            expect(scrollTo).toHaveBeenCalledExactlyOnceWith({
+                top: restoredTop,
+                behavior: "instant"
+            });
+        }
+    });
+
     it("stops observing and listening to scrolls on cleanup", () => {
-        const { scrollingContainer, container, observer } = render();
-        const cancelAnimationFrame = vi.fn();
-        vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrame);
+        const { scrollingContainer, container, observer, paragraphRect } = render();
 
         container.dispatchEvent(new Event("scroll"));
         scrollingContainer.cleanup();
-
-        expect(observer.disconnected).toBe(true);
-        expect(cancelAnimationFrame).toHaveBeenCalledWith(frames.length);
-
-        const framesBefore = frames.length;
+        const reads = paragraphRect.mock.calls.length;
         container.dispatchEvent(new Event("scroll"));
-        expect(frames).toHaveLength(framesBefore);
+        container.dispatchEvent(new Event("scrollend"));
+        vi.runAllTimers();
+
+        expect(paragraphRect).toHaveBeenCalledTimes(reads);
+        expect(observer.disconnected).toBe(true);
     });
 
     it("keeps the position while switching to editing, until the user scrolls", async () => {
@@ -110,20 +146,22 @@ describe("ScrollingContainer", () => {
         vi.spyOn(container, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 500, 400));
         vi.spyOn(container, "getClientRects").mockImplementation(
             () => (isDisplayed ? [ new DOMRect() ] : []) as unknown as DOMRectList);
-        vi.spyOn(paragraph, "getBoundingClientRect").mockImplementation(
+        const paragraphRect = vi.spyOn(paragraph, "getBoundingClientRect").mockImplementation(
             () => new DOMRect(0, paragraphTop, 500, 50));
         const scrollTo = vi.fn();
         container.scrollTo = scrollTo;
-        scrollAndWaitForFrame(container, 1000);
+        scrollAndStop(container, 1000);
 
-        const observer = FakeResizeObserver.instances[0];
-        return { scrollingContainer, container, scrollTo, observer };
+        const observer = FakeResizeObserver.instances[FakeResizeObserver.instances.length - 1];
+        return { scrollingContainer, container, scrollTo, observer, paragraphRect };
     }
 
-    function scrollAndWaitForFrame(container: HTMLElement, top: number) {
+    /** Scrolls `container` to `top` and stops, with or without `scrollend`. */
+    function scrollAndStop(container: HTMLElement, top: number) {
         container.scrollTop = top;
         container.dispatchEvent(new Event("scroll"));
-        for (const callback of frames.splice(0)) callback(0);
+        container.dispatchEvent(new Event("scrollend"));
+        vi.runOnlyPendingTimers();
     }
 });
 

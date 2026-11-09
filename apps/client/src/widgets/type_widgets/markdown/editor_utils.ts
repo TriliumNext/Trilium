@@ -52,12 +52,12 @@ export async function uploadImageAndInsert(view: VanillaCodeMirror, note: FNote,
     toast.showError(detail ? `${base} ${detail}` : base);
 }
 
-/** Opens the add link dialog, then puts the link picked in place of the selection of `view`. */
-export function showAddLinkDialog(view: VanillaCodeMirror) {
+/** Opens the edit link dialog, then puts the link picked in place of the selection of `view`. */
+export function showEditLinkDialog(view: VanillaCodeMirror) {
     const { from, to } = view.state.selection.main;
     const selectedText = view.state.sliceDoc(from, to);
 
-    void appContext.triggerCommand("showAddLinkDialog", {
+    void appContext.triggerCommand("showEditLinkDialog", {
         text: selectedText,
         hasSelection: from !== to,
         async addLink(notePath: string, linkTitle: string | null, externalLink?: boolean) {
@@ -88,8 +88,9 @@ export function insertDateTime(view: VanillaCodeMirror) {
 export function showIncludeNoteDialog(view: VanillaCodeMirror) {
     void appContext.triggerCommand("showContentEmbedDialog", {
         editorApi: {
-            addContentEmbed(noteId: string, boxSize?: string) {
-                const attributes = `data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"`;
+            addContentEmbed(noteId: string, boxSize?: string, options?: { hideTitle?: boolean }) {
+                const attributes = `data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"`
+                    + (options?.hideTitle ? ' data-hide-title="true"' : "");
                 insertText(view, `<figure class="include-note" ${attributes}></figure>\n`);
                 view.focus();
             },

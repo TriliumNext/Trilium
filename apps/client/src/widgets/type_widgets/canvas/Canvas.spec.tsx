@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CanvasEditorProps } from "./Canvas";
 
 const excalidrawProps = vi.fn((_props: ExcalidrawProps) => undefined);
+const options = vi.hoisted(() => ({ canvasThinStroke: false }));
 vi.mock("@excalidraw/excalidraw", () => ({
     Excalidraw: (props: ExcalidrawProps) => {
         excalidrawProps(props);
@@ -18,7 +19,8 @@ vi.mock("@excalidraw/excalidraw", () => ({
 }));
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../react/hooks")>(),
-    useTriliumOption: () => [ "en" ]
+    useTriliumOption: () => [ "en" ],
+    useTriliumOptionBool: (name: keyof typeof options) => [ options[name] ]
 }));
 
 const { CanvasEditor } = await import("./Canvas");
@@ -32,6 +34,7 @@ describe("CanvasEditor", () => {
 
     beforeEach(() => {
         excalidrawProps.mockClear();
+        options.canvasThinStroke = false;
         offsets = { offsetLeft: 0, offsetTop: 0 };
         refresh = vi.fn(() => {
             offsets = { offsetLeft: 0, offsetTop: 0 };
@@ -72,16 +75,20 @@ describe("CanvasEditor", () => {
         }
     }
 
-    it("reads its position again before pointer input once the drawing moved", async () => {
+    it("reads its position again before pointer input or a drop, not on scroll", async () => {
         const excalidraw = await mount({ isEmbedded: true });
         point(excalidraw);
         expect(refresh).not.toHaveBeenCalled();
 
         // The note scrolled, so the position that Excalidraw read last is out of date.
-        offsets = { offsetLeft: 0, offsetTop: 120 };
-        point(excalidraw);
-        expect(refresh).toHaveBeenCalledTimes(1);
-        expect(excalidrawProps).toHaveBeenLastCalledWith(expect.objectContaining({ detectScroll: true }));
+        for (const type of [ "pointerover", "pointermove", "pointerdown", "dragover" ]) {
+            offsets = { offsetLeft: 0, offsetTop: 120 };
+            excalidraw?.dispatchEvent(new Event(type, { bubbles: true }));
+        }
+        expect(refresh).toHaveBeenCalledTimes(4);
+        expect(excalidrawProps).toHaveBeenLastCalledWith(
+            expect.objectContaining({ detectScroll: false })
+        );
     });
 
     it("leaves the position to Excalidraw in a canvas note, which does not move", async () => {
@@ -121,5 +128,18 @@ describe("CanvasEditor", () => {
         const constrainView = vi.fn();
         await mount({ constrainView });
         expect(excalidrawProps.mock.lastCall?.[0].UIOptions?.constrainView).toBe(constrainView);
+    });
+
+    it("draws a pen stroke at half the picked width only while thin strokes are on", async () => {
+        const getFactor = () =>
+            excalidrawProps.mock.lastCall?.[0].UIOptions?.freedrawStrokeWidthFactor;
+
+        options.canvasThinStroke = true;
+        await mount();
+        expect(getFactor()).toBe(0.5);
+
+        options.canvasThinStroke = false;
+        await mount({ isReadOnly: true });
+        expect(getFactor()).toBe(1);
     });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type Component from "../components/component";
+import type NoteContext from "../components/note_context";
 import clipboard from "../services/clipboard";
 import froca from "../services/froca";
 import noteCreateService from "../services/note_create";
@@ -19,7 +20,7 @@ vi.mock("../services/i18n", () => ({
 
 describe("buildTreeContextMenuItems", () => {
     /** The menu for a child note, with the note type data the insert submenus read stubbed. */
-    function setUp() {
+    function setUp(target?: "mobile") {
         vi.spyOn(noteTypesService, "loadNoteTypeData")
             .mockResolvedValue({ builtInTemplateNotes: [], userTemplateNotes: [], newTemplates: new Set() });
         const parent = buildNote({ title: "Parent", children: [ { title: "Child" } ] });
@@ -28,7 +29,7 @@ describe("buildTreeContextMenuItems", () => {
         if (!child || !branch) throw new Error("expected the child and its branch");
 
         const build = () => buildTreeContextMenuItems({
-            note: child, branch, notePath: `${parent.noteId}/${child.noteId}`, component: {} as Component
+            note: child, branch, notePath: `${parent.noteId}/${child.noteId}`, component: {} as Component, target
         });
         return { child, build };
     }
@@ -80,6 +81,20 @@ describe("buildTreeContextMenuItems", () => {
         expect(open.items?.map((item) => "command" in item && item.command))
             .toStrictEqual([ "openInTab", "openNoteInSplit", "openNoteInWindow" ]);
         expect(quickEdit.command).toBe("openNoteInPopup");
+    });
+
+    it("lists the current tab, a new tab and a new split as rows of their own on mobile, without a new window", async () => {
+        const { build } = setUp("mobile");
+        const items = await build();
+        const separator = items.findIndex((item) => "kind" in item && item.kind === "separator");
+        const rows = items.slice(separator + 1, separator + 5);
+
+        expect(rows.map((item) => !("kind" in item) && [ item.command, item.items ])).toStrictEqual([
+            [ "openNote", undefined ],
+            [ "openInTab", undefined ],
+            [ "openNoteInSplit", undefined ],
+            [ "openNoteInPopup", undefined ]
+        ]);
     });
 
     it("ends with Advanced, right after Search in subtree", async () => {
@@ -185,5 +200,20 @@ describe("handleTreeContextMenuSelect", () => {
         for (const command of [ "copyNotesToClipboard", "cutNotesToClipboard", "deleteNotes", "toggleNoteHoisting", "moveNotesTo" ] as const) {
             expect(await reveals(command), command).toBe(false);
         }
+    });
+
+    it("opens the note in the tab the menu was opened from", async () => {
+        const parent = buildNote({ title: "Parent", children: [ { title: "Child" } ] });
+        const child = froca.notes[parent.children[0] ?? ""];
+        const [ branch ] = child?.getParentBranches() ?? [];
+        if (!child || !branch) throw new Error("expected the child and its branch");
+        const setNote = vi.fn();
+
+        await handleTreeContextMenuSelect({ title: "openNote", command: "openNote" }, {
+            note: child, branch, notePath: `${parent.noteId}/${child.noteId}`,
+            component: { triggerCommand: vi.fn() } as unknown as Component,
+            noteContext: { setNote } as unknown as NoteContext
+        });
+        expect(setNote).toHaveBeenCalledWith(`${parent.noteId}/${child.noteId}`);
     });
 });

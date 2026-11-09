@@ -1,6 +1,6 @@
 import "./PopupEditor.css";
 
-import { ComponentChildren, type RefObject } from "preact";
+import { ComponentChildren } from "preact";
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
@@ -8,9 +8,7 @@ import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import keyboard_actions from "../../services/keyboard_actions";
 import type { ViewScope } from "../../services/link";
-import shortcutService, { removeIndividualBinding, type ShortcutBinding } from "../../services/shortcuts";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
@@ -23,8 +21,8 @@ import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { DropdownPanel, type DropdownHandle } from "../react/Dropdown";
 import {
-    useContainedLinkNavigation, useDetachedNoteContext, useLegacyWidget, useNoteContext, useNoteLabel,
-    useTriliumEvent
+    useContainedLinkNavigation, useDetachedNoteContext, useFindShortcut, useLegacyWidget,
+    useNoteContext, useNoteLabel, useTriliumEvent
 } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
@@ -49,13 +47,18 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
     const [ switchable, setSwitchable ] = useState(false);
+    const selectsTitleRef = useRef(false);
+    /** Set while a note opened in the popup already on show waits to render before taking focus. */
+    const focusesOnRenderRef = useRef(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
     useDetachedNoteContext(noteContext);
 
-    useTriliumEvent(openCommand, async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
+    useTriliumEvent(openCommand, async ({
+        noteIdOrPath, viewScope, showNoteTypeSwitcher, selectTitle
+    }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -70,6 +73,8 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
         const noteContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
         setSwitchable(!!showNoteTypeSwitcher);
+        selectsTitleRef.current = !!selectTitle;
+        focusesOnRenderRef.current = shown;
 
         const hasUserSetNoteReadOnly = note.hasLabel("readOnly");
         await noteContext.setNote(noteIdOrPath, {
@@ -88,10 +93,37 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
         setShown(true);
     });
 
+    function focusOpenedNote() {
+        const shownNtxId = noteContext.ntxId;
+        if (selectsTitleRef.current) {
+            parentComponent?.handleEvent("focusAndSelectTitle", {
+                isNewNote: true, ntxId: shownNtxId
+            });
+        } else {
+            parentComponent?.handleEvent("focusOnDetail", { ntxId: shownNtxId });
+        }
+    }
+
+    // The modal fires `shown` only as it opens, so a note opened in the popup already on show is
+    // focused once it renders.
+    useEffect(() => {
+        if (!focusesOnRenderRef.current) return;
+        focusesOnRenderRef.current = false;
+        focusOpenedNote();
+    }, [ noteContext ]);
+
     // Asked to stand aside by something within it that has sent the reader elsewhere — the note map,
     // whose nodes navigate the pane behind rather than the popup, which would otherwise be left covering
     // the note it has just gone to with a map of the note it came from.
     useTriliumEvent("closePopupEditor", () => setShown(false));
+
+    // The popup's context is detached, so it never receives `entitiesReloaded` to clear a deleted note.
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const { noteId } = noteContext;
+        if (noteId && loadResults.isNoteReloaded(noteId) && loadResults.getEntityRow("notes", noteId)?.isDeleted) {
+            setShown(false);
+        }
+    });
 
     // Keep navigation that follows internal links inside the popup, rather than letting the global
     // link handler open the target in the background tab. Settings links open the options dialog.
@@ -200,7 +232,7 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                     className="popup-editor-dialog"
                     size="lg"
                     show={shown}
-                    onShown={() => parentComponent?.handleEvent("focusOnDetail", { ntxId: noteContext.ntxId })}
+                    onShown={focusOpenedNote}
                     onHidden={() => setShown(false)}
                     keepInDom // needed for faster loading
                     noFocus // automatic focus breaks block popup
@@ -265,34 +297,6 @@ function BacklinksInPopup({ note, onNavigate }: { note: FNote, onNavigate: (note
             <BacklinksWidget note={note} />
         </div>
     );
-}
-
-/**
- * Binds `findInText` on the popup for its own context. The window binding targets the active tab,
- * which is the one behind the popup.
- */
-function useFindShortcut(modalRef: RefObject<HTMLDivElement | null>, ntxId: string) {
-    useEffect(() => {
-        const modal = modalRef.current;
-        if (!modal) return;
-
-        let bindings: ShortcutBinding[] = [];
-        let isDisposed = false;
-        void keyboard_actions.getAction("findInText", true).then((action) => {
-            if (isDisposed) return;
-            bindings = (action?.effectiveShortcuts ?? []).flatMap((shortcut) =>
-                shortcutService.bindElShortcut($(modal), shortcut, () => {
-                    void appContext.triggerCommand("findInText", { ntxId });
-                }) ?? []);
-        });
-
-        return () => {
-            isDisposed = true;
-            for (const binding of bindings) {
-                removeIndividualBinding(binding);
-            }
-        };
-    }, [ modalRef, ntxId ]);
 }
 
 function syncPopupClasses() {

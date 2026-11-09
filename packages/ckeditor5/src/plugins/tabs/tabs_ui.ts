@@ -1,33 +1,38 @@
 import {
-    addListToDropdown,
     ButtonView,
-    Collection,
     type Command,
     createDropdown,
+    type Editor,
     IconLink,
     IconNextArrow,
     IconPlus,
     IconPreviousArrow,
     IconRemove,
-    type ListDropdownButtonDefinition,
-    type Locale,
+    IconThreeVerticalDots,
     type LocaleTranslate,
     Plugin,
-    ViewModel,
     WidgetToolbarRepository
 } from "ckeditor5";
 
 import tabsBottomIcon from "../../icons/tabs-bottom.svg?raw";
 import tabsIcon from "../../icons/tabs.svg?raw";
+import ToolbarGroupMenu, {
+    openListAsMenu, type ToolbarGroupMenuEntry, type ToolbarGroupMenuItem
+} from "../toolbar_group_menu.js";
 import { findSelectedWidget } from "../widget_utils.js";
 import {
     DEFAULT_TAB_ALIGNMENT, TAB_ALIGNMENTS, type TabAlignment, TABS_WIDGET_PROPERTY
 } from "./constants.js";
 import type { TabAlignmentCommand } from "./tabs_commands.js";
 
+/** Wraps the action of an entry, as `ToolbarGroupMenu` runs it. */
+type RunEntry = (action: () => void) => () => void;
+
 /**
- * The insert button for tabs blocks and the contextual toolbar that adds, removes, reorders and
- * aligns tabs while the selection is inside a block.
+ * The insert button for tabs blocks and the contextual toolbar that adds, removes and reorders
+ * tabs while the selection is inside a block. The "More actions" menu at the end of the toolbar
+ * repeats those actions, and also copies a reference to the tab, aligns the tabs and deletes the
+ * whole block.
  */
 export default class TabsUI extends Plugin {
 
@@ -36,7 +41,7 @@ export default class TabsUI extends Plugin {
     }
 
     public static get requires() {
-        return [WidgetToolbarRepository] as const;
+        return [WidgetToolbarRepository, ToolbarGroupMenu] as const;
     }
 
     public init(): void {
@@ -46,71 +51,39 @@ export default class TabsUI extends Plugin {
         this.addButton("removeTab", t("Remove tab"), IconRemove);
         this.addButton("moveTabLeft", t("Move tab left"), IconPreviousArrow);
         this.addButton("moveTabRight", t("Move tab right"), IconNextArrow);
-        this.addCopyLinkButton();
-        this.editor.ui.componentFactory.add("tabAlignment",
-            locale => this.createAlignmentDropdown(locale));
+        this.addMenu();
     }
 
     public afterInit(): void {
         const t = this.editor.t;
         this.editor.plugins.get(WidgetToolbarRepository).register("tabs", {
             ariaLabel: t("Tabs toolbar"),
-            items: [
-                "insertTab", "removeTab", "|", "moveTabLeft", "moveTabRight", "|", "copyTabLink",
-                "|", "tabAlignment"
-            ],
+            items: ["insertTab", "removeTab", "|", "moveTabLeft", "moveTabRight", "tabsMenu"],
             getRelatedElement: selection =>
                 findSelectedWidget(selection, TABS_WIDGET_PROPERTY)
         });
     }
 
-    /** Adds the button that copies a link to the tab holding the selection, through the host. */
-    private addCopyLinkButton() {
-        const editor = this.editor;
-        editor.ui.componentFactory.add("copyTabLink", locale => {
-            const button = new ButtonView(locale);
-            button.set({ label: editor.t("Copy link to tab"), icon: IconLink, tooltip: true });
-
-            const command = editor.commands.get("assignTabReference") as Command;
-            button.bind("isEnabled").to(command, "isEnabled");
-            this.listenTo(button, "execute", () => editor.config.get("tabs")?.copyReference?.());
-            return button;
-        });
-    }
-
     /**
-     * A dropdown that puts the titles above or below the panels. Its button shows the icon of the
-     * current alignment.
+     * Adds the "More actions" menu, which `ToolbarGroupMenu` has the host draw with the entries of
+     * {@link describeMenu}.
      */
-    private createAlignmentDropdown(locale: Locale) {
+    private addMenu() {
         const editor = this.editor;
-        const command = editor.commands.get("tabAlignment") as TabAlignmentCommand;
-        const dropdown = createDropdown(locale);
-        dropdown.buttonView.set({ label: editor.t("Tab alignment"), tooltip: true });
-        dropdown.buttonView.bind("icon").to(command, "value",
-            value => getAlignmentIcon(value ?? DEFAULT_TAB_ALIGNMENT));
-        dropdown.bind("isEnabled").to(command, "isEnabled");
-
-        const items = new Collection<ListDropdownButtonDefinition>();
-        for (const alignment of TAB_ALIGNMENTS) {
-            const model = new ViewModel({
-                commandParam: alignment,
-                label: getAlignmentLabel(editor.t, alignment),
-                icon: getAlignmentIcon(alignment),
-                role: "menuitemradio",
-                withText: true
+        editor.ui.componentFactory.add("tabsMenu", locale => {
+            // A plain button, without the arrow of `DropdownButtonView`, opens the dropdown.
+            const button = new ButtonView(locale);
+            button.set({
+                label: editor.t("More actions"),
+                icon: IconThreeVerticalDots,
+                tooltip: true
             });
-            model.bind("isOn").to(command, "value", value => value === alignment);
-            items.add({ type: "button", model });
-        }
-        addListToDropdown(dropdown, items);
+            button.delegate("execute").to(button, "open");
 
-        this.listenTo(dropdown, "execute", evt => {
-            const value = (evt.source as { commandParam: TabAlignment }).commandParam;
-            editor.execute("tabAlignment", { value });
-            editor.editing.view.focus();
+            const dropdown = createDropdown(locale, button);
+            openListAsMenu(dropdown, { describe: run => describeMenu(editor, run) });
+            return dropdown;
         });
-        return dropdown;
     }
 
     private addButton(name: string, label: string, icon: string) {
@@ -130,6 +103,55 @@ export default class TabsUI extends Plugin {
             return button;
         });
     }
+}
+
+/**
+ * The entries of the "More actions" menu: adding a tab, copying a reference to the tab holding the
+ * selection, moving that tab, a submenu of alignments, and deleting the tab or the whole block.
+ */
+function describeMenu(editor: Editor, run: RunEntry): ToolbarGroupMenuItem[] {
+    const t = editor.t;
+    const alignmentCommand = editor.commands.get("tabAlignment") as TabAlignmentCommand;
+    const alignment = alignmentCommand.value ?? DEFAULT_TAB_ALIGNMENT;
+
+    return [
+        describeCommand(editor, run, "insertTab", t("Add new tab"), IconPlus),
+        {
+            kind: "entry", label: t("Copy reference to this tab"), icon: IconLink,
+            isEnabled: (editor.commands.get("assignTabReference") as Command).isEnabled,
+            run: run(() => editor.config.get("tabs")?.copyReference?.())
+        },
+        { kind: "separator" },
+        describeCommand(editor, run, "moveTabRight", t("Move tab right"), IconNextArrow),
+        describeCommand(editor, run, "moveTabLeft", t("Move tab left"), IconPreviousArrow),
+        { kind: "separator" },
+        {
+            kind: "entry", label: t("Tab alignment"), icon: getAlignmentIcon(alignment),
+            isEnabled: alignmentCommand.isEnabled,
+            children: TAB_ALIGNMENTS.map((value): ToolbarGroupMenuEntry => ({
+                kind: "entry", label: getAlignmentLabel(t, value), icon: getAlignmentIcon(value),
+                isEnabled: true, isOn: value === alignment,
+                run: run(() => editor.execute("tabAlignment", { value }))
+            }))
+        },
+        { kind: "separator" },
+        describeCommand(editor, run, "removeTab", t("Delete tab"), IconRemove),
+        {
+            ...describeCommand(editor, run, "deleteTabs", t("Delete all tabs"), IconRemove),
+            isDestructive: true
+        }
+    ];
+}
+
+/** The entry that runs `commandName`, enabled while the command is. */
+function describeCommand(
+    editor: Editor, run: RunEntry, commandName: string, label: string, icon: string
+): ToolbarGroupMenuEntry {
+    return {
+        kind: "entry", label, icon,
+        isEnabled: (editor.commands.get(commandName) as Command).isEnabled,
+        run: run(() => editor.execute(commandName))
+    };
 }
 
 function getAlignmentLabel(t: LocaleTranslate, alignment: TabAlignment): string {

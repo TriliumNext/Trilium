@@ -7,9 +7,7 @@ describe("Check artifacts are present", () => {
 
     it("has the necessary node modules", async () => {
         const paths = [
-            "node_modules/better-sqlite3",
-            "node_modules/bindings",
-            "node_modules/file-uri-to-path",
+            "node_modules/better-sqlite3"
         ];
 
         ensurePathsExist(paths);

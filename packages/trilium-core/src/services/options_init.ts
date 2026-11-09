@@ -205,6 +205,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "rightPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneCollapsedItems", value: "[]", isSynced: false },
     { name: "rightPaneSelectedTab", value: "outline", isSynced: false },
+    { name: "presentationSidebarVisible", value: "true", isSynced: false },
     // Synced, unlike the rest of the pane's state: which map to read connections as is a preference
     // rather than where a window happens to be left standing.
     { name: "rightPaneNoteMapType", value: "link", isSynced: true },
@@ -216,6 +217,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "headingStyle", value: "underline", isSynced: true },
     { name: "autoCollapseNoteTree", value: "true", isSynced: true },
     { name: "treeScrollFollowNavigation", value: "true", isSynced: true },
+    { name: "treeDensity", value: "relaxed", isSynced: false },
     { name: "autoReadonlySizeText", value: "32000", isSynced: false },
     { name: "autoReadonlySizeCode", value: "64000", isSynced: false },
     { name: "dailyBackupEnabled", value: "true", isSynced: false },
@@ -330,6 +332,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
+    { name: "textNoteLinkTitleRetrievalEnabled", value: "true", isSynced: true },
+    { name: "textNoteLinkDetailsRetrievalEnabled", value: "true", isSynced: true },
     { name: "textNoteStickyTableHeadersEnabled", value: "true", isSynced: false },
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
@@ -353,6 +357,9 @@ const defaultOptions: DefaultOption[] = [
     // options, so an uninitialized setting opens on those rather than on a second set of defaults
     // that could disagree with them.
     { name: "imageCompressionToolOptions", value: "{}", isSynced: true },
+
+    // Canvas settings
+    { name: "canvasThinStroke", value: "true", isSynced: true },
 
     // Share settings
     { name: "redirectBareDomain", value: "false", isSynced: true },

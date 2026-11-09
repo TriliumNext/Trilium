@@ -44,6 +44,28 @@ describe("etapi/import", () => {
         expect(becca.getBranchFromChildAndParent("root", "root")).toBeFalsy();
     });
 
+    it("accepts the archive sent as application/zip", async () => {
+        const buffer = readFileSync(join(__dirname, "../../src/assets/db/demo.zip"));
+        const response = await supertest(app)
+            .post("/etapi/notes/root/import")
+            .auth(USER, token, { "type": "basic"})
+            .set("Content-Type", "application/zip")
+            .send(buffer)
+            .expect(201);
+
+        expect(response.body.note.title).toStrictEqual("root");
+    });
+
+    it("rejects a request whose body is not a ZIP file", async () => {
+        const response = await supertest(app)
+            .post("/etapi/notes/root/import")
+            .auth(USER, token, { "type": "basic"})
+            .send({ file: "notes.zip" })
+            .expect(400);
+
+        expect(response.body.code).toStrictEqual("ZIP_FILE_REQUIRED");
+    });
+
     describe("with conversions that finish out of order", () => {
         afterEach(() => initContentJobExecutor());
 

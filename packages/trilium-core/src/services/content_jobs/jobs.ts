@@ -1,5 +1,4 @@
-import html from "html";
-
+import { formatHtml } from "../export/format_html.js";
 import markdownExportService, { type HeaderlessTableMode } from "../export/markdown.js";
 import { type EnexTask, extractEnexNoteContent } from "../import/enex_converter.js";
 import markdownImportService from "../import/markdown.js";
@@ -16,7 +15,7 @@ import type { ContentJobEnv } from "./env.js";
 export type ContentJob =
     | { kind: "markdownToHtml"; markdown: string; title: string; obsidian?: boolean; env: ContentJobEnv }
     | { kind: "htmlToMarkdown"; html: string; headerlessTables?: HeaderlessTableMode; env: ContentJobEnv }
-    | { kind: "prettyPrintHtml"; html: string }
+    | { kind: "formatHtml"; html: string }
     | { kind: "sanitizeHtml"; html: string; env: ContentJobEnv }
     | { kind: "enexNoteContent"; content: string; tasks: EnexTask[]; env: ContentJobEnv }
     | { kind: "officeToHtml"; bytes: Uint8Array; mime: string; options: OfficePreviewOptions }
@@ -29,7 +28,7 @@ export type ContentJobOf<K extends ContentJobKind> = Extract<ContentJob, { kind:
 export interface ContentJobResults {
     markdownToHtml: string;
     htmlToMarkdown: string;
-    prettyPrintHtml: string;
+    formatHtml: string;
     sanitizeHtml: string;
     enexNoteContent: string;
     officeToHtml: string;
@@ -54,7 +53,7 @@ const HANDLERS: { [K in ContentJobKind]: (job: ContentJobOf<K>) => ContentJobRes
         headerlessTables: job.headerlessTables,
         taskStates: job.env.taskStates
     }),
-    prettyPrintHtml: (job) => html.prettyPrint(job.html, { indent_size: 2 }),
+    formatHtml: (job) => formatHtml(job.html),
     sanitizeHtml: (job) => sanitizeHtml(job.html, job.env.allowedHtmlTags),
     enexNoteContent: (job) => extractEnexNoteContent(job.content, job.tasks, job.env.allowedHtmlTags),
     officeToHtml: (job) => convertOfficeToHtml(job.bytes, job.mime, job.options),

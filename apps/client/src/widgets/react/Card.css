@@ -108,6 +108,36 @@
     }
 }
 
+.tn-card-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    .tn-card-choice-label {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .tn-card-choice-check {
+        flex-shrink: 0;
+        margin-inline-start: auto;
+    }
+
+    .tn-card-choice-expander {
+        flex-shrink: 0;
+        font-size: 1.25em;
+    }
+
+    .tn-card-choice-expander-empty {
+        visibility: hidden;
+    }
+}
+
+body[dir=rtl] .tn-card-choice-expander {
+    transform: scaleX(-1);
+}
+
 .tn-card-section-link {
     display: flex;
     align-items: center;
@@ -258,12 +288,18 @@ body[dir=rtl] .tn-card-option::after {
         max-width: none;
         /* Room at the end for the mark standing over it, so the value stops short of it. */
         padding-inline: 0 calc(var(--card-option-mark-size) + 8px);
+        border: 0;
         background: none;
         color: var(--muted-text-color);
         overflow: hidden;
         text-align: end;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    /* The row's chevron stands in for the toggle's own caret. */
+    .tn-card .tn-card-option > .dropdown > .btn::after {
+        content: none;
     }
 
     /* Each state the theme gives a combo box would put the frame and the arrow back, so all of them

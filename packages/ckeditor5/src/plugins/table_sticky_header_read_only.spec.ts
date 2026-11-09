@@ -45,6 +45,7 @@ describe("applyStickyTableHeaders", () => {
         await scrollTo(scroller, offsetIn(scroller, thead) + 150);
         expect(topIn(scroller, thead)).toBeCloseTo(0, 0);
         expect(bordersOf(thead)).toBe("block");
+        expect(getComputedStyle(thead).overflowAnchor).toBe("none");
         const hit = document.elementFromPoint(
             thead.getBoundingClientRect().left + 10, scroller.getBoundingClientRect().top + 5);
         expect(hit?.closest("thead")).toBe(thead);
@@ -57,6 +58,23 @@ describe("applyStickyTableHeaders", () => {
         expect(getComputedStyle(thead).translate).toBe("none");
         expect(bordersOf(thead)).toBe("none");
     });
+
+    it("hides the rows under the header rows behind the content background while they stick",
+        async () => {
+            const { scroller, content } = renderContent(tableFigure(1, 20));
+            scroller.style.setProperty("--main-background-color", "rgb(1, 2, 3)");
+            applyStickyTableHeaders(content);
+            await settle();
+
+            const { thead } = parts(content);
+            expect(getComputedStyle(thead).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+
+            await scrollTo(scroller, offsetIn(scroller, thead) + 150);
+            expect(getComputedStyle(thead).backgroundColor).toBe("rgb(1, 2, 3)");
+
+            await scrollTo(scroller, 0);
+            expect(getComputedStyle(thead).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        });
 
     it("leaves the header rows in place while `sticky-table-headers-disabled` is set", async () => {
         document.body.classList.add("sticky-table-headers-disabled");

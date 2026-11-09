@@ -180,6 +180,19 @@ describe("BrowserZipProvider.readZipFile", () => {
         await expect(provider.readZipFile(garbage, async () => {})).rejects.toBeDefined();
     });
 
+    it("reads entries up to the size limit and rejects one declared past it", async () => {
+        const limited = new BrowserZipProvider(64 * 1024);
+        const sizes: Record<string, number> = {};
+        const read = (zip: Uint8Array) => limited.readZipFile(zip, async (entry, readContent) => {
+            sizes[entry.fileName] = (await readContent()).length;
+        });
+
+        await read(zipSync({ "small.bin": new Uint8Array(64 * 1024) }));
+        expect(sizes).toEqual({ "small.bin": 64 * 1024 });
+        await expect(read(zipSync({ "zeros.bin": new Uint8Array(1024 * 1024) })))
+            .rejects.toThrow(/"zeros\.bin" decompresses to more than 65536 bytes/);
+    });
+
     it("propagates errors thrown while processing an entry", async () => {
         const zip = makeZip({ "one.txt": "first" });
         await expect(

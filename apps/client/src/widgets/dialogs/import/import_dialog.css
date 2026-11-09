@@ -37,7 +37,7 @@
         margin: 0;
     }
 
-    .option-row-description p + p {
+    .option-row-description p:not(:first-child) {
         margin-top: 0.4em;
     }
 

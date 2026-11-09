@@ -1,8 +1,7 @@
 import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_chat_text.js";
 import { extractSpreadsheetText } from "@triliumnext/commons/src/lib/spreadsheet/extract_text.js";
-import striptags from "striptags";
 import { normalizeSearchText } from "../utils/text_utils";
-import { normalize, unescapeHtml } from "../../utils/index";
+import { normalize, stripTags, unescapeHtml } from "../../utils/index";
 
 /** Resolves a note's title by its id, injected so this module stays free of a becca import. */
 export type NoteTitleResolver = (noteId: string) => string | null;
@@ -13,15 +12,16 @@ export default function preprocessContent(rawContent: string | Uint8Array, type:
 
     if (type === "text" && mime === "text/html") {
         if (!raw) {
-            // Runs before stripTags(), which discards the data-* metadata and anchor text, and
-            // against the original markup, because normalize() lowercases the noteIds it needs.
+            // Runs before stripTagsKeepingLinks(), which discards the data-* metadata and anchor
+            // text, and against the original markup, because normalize() lowercases the noteIds
+            // it needs.
             const injectedText = [
                 extractLinkSearchText(originalContent, resolveNoteTitle),
                 extractIconSearchText(originalContent)
             ].filter(Boolean).join(" ");
 
             // Content size already filtered at DB level, safe to process
-            content = stripTags(content);
+            content = stripTagsKeepingLinks(content);
 
             // The body is decoded so a query can reach the text the editor shows, and before the
             // injected link text is appended, since that arrives decoded already.
@@ -242,7 +242,7 @@ function extractAttribute(tag: string, attrName: string): string | null {
     return rawValue ? unescapeHtml(rawValue) : null;
 }
 
-function stripTags(content: string) {
+function stripTagsKeepingLinks(content: string) {
     // we want to allow link to preserve URLs: https://github.com/zadam/trilium/issues/2412
     // we want to insert space in place of block tags (because they imply text separation)
     // but we don't want to insert text for typical formatting inline tags which can occur within one word
@@ -250,10 +250,10 @@ function stripTags(content: string) {
     const inlineFormattingTags = ["b", "strong", "em", "i", "span", "big", "small", "font", "sub", "sup"];
 
     // replace tags which imply text separation with a space
-    content = striptags(content, [linkTag, ...inlineFormattingTags], " ");
+    content = stripTags(content, [linkTag, ...inlineFormattingTags], " ");
 
     // replace the inline formatting tags (but not links) without a space
-    content = striptags(content, [linkTag], "");
+    content = stripTags(content, [linkTag], "");
 
     // at least the closing link tag can be easily stripped
     return content.replace(/<\/a>/gi, "");

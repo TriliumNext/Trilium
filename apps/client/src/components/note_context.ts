@@ -29,6 +29,8 @@ export interface SetNoteOpts {
     skipRecentNotes?: boolean;
     /** The `switchToHistoryEntry()` call that shows the note. Pinned tabs pass it on. */
     historyEntry?: HistoryEntry;
+    /** If true, the mobile layout stays on the screen it shows instead of switching to the note. */
+    keepScreen?: boolean;
 }
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
@@ -251,7 +253,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         await this.setHoistedNoteIfNeeded();
 
-        if (utils.isMobile()) {
+        if (utils.isMobile() && !opts.keepScreen) {
             this.triggerCommand("setActiveScreen", { screen: "detail" });
         }
 
@@ -377,7 +379,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             notePath: this.notePath,
             hoistedNoteId: this.hoistedNoteId,
             active: this.isActive(),
-            viewScope: this.viewScope,
+            viewScope: this.viewScope && getNavigationTarget(this.viewScope),
             pinned: this.pinned,
             lastActiveNtxId: this.lastActiveNtxId
         };
@@ -394,8 +396,10 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         this.hoistedNoteId = noteIdToHoist;
 
+        // The hoisted note replaces one outside it without being opened on purpose, so a phone
+        // showing the tree keeps showing it.
         if (!this.notePathArray?.includes(noteIdToHoist)) {
-            await this.setNote(noteIdToHoist);
+            await this.setNote(noteIdToHoist, { keepScreen: true });
         }
 
         await this.triggerEvent("hoistedNoteChanged", {
@@ -681,7 +685,13 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     }
 }
 
-export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, notePath: string, viewScope?: ViewScope) {
+/**
+ * Opens `notePath` in the note context that the target of `evt` is in, or in the active one
+ * without such a target.
+ */
+export function openInCurrentNoteContext(
+    evt: Pick<Event, "target"> | null, notePath: string, viewScope?: ViewScope
+) {
     const ntxId = $(evt?.target as Element)
         .closest("[data-ntx-id]")
         .attr("data-ntx-id");

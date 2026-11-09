@@ -6535,6 +6535,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "0vgWgxQAWj4a",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "0vgWgxQAWj4a"
+                                    ],
+                                    "title": "Sorting",
+                                    "notePosition": 290,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "sorting",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-sort-alt-2",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Sorting.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "oBo3iHIZnbG2",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -6543,7 +6578,7 @@
                                         "oBo3iHIZnbG2"
                                     ],
                                     "title": "Spell Check",
-                                    "notePosition": 290,
+                                    "notePosition": 300,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6578,7 +6613,7 @@
                                         "BFvAtE74rbP6"
                                     ],
                                     "title": "Table of contents",
-                                    "notePosition": 300,
+                                    "notePosition": 310,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6613,7 +6648,7 @@
                                         "NdowYOC1GFKS"
                                     ],
                                     "title": "Tables",
-                                    "notePosition": 310,
+                                    "notePosition": 320,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6681,7 +6716,7 @@
                                         "pwc194wlRzcH"
                                     ],
                                     "title": "Text Snippets",
-                                    "notePosition": 320,
+                                    "notePosition": 330,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6710,7 +6745,7 @@
                                         "fASfBrYnquKU"
                                     ],
                                     "title": "To-do Lists",
-                                    "notePosition": 330,
+                                    "notePosition": 340,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

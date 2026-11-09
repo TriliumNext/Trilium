@@ -1,12 +1,13 @@
 import type { AiDiffResult } from "@triliumnext/ckeditor5";
 import { diffArrays } from "diff";
-import HtmlDiff from "htmldiff-js";
+
+import { diffHtml } from "../../../services/html_diff";
 
 /**
  * The "Changes" view of the AI assistant's review: the response marked up against the content it
  * would replace.
  *
- * A word-level HTML diff — `htmldiff-js` on the two fragments, which is what the revisions dialog
+ * A word-level HTML diff — `diffHtml()` on the two fragments, which is what the revisions dialog
  * shows — is the right tool only while both sides are recognisably the same text. It aligns on the
  * longest common runs of words, so a corrected typo or a tightened sentence comes out as a precise
  * mark on an otherwise readable paragraph. Give it a translation, or any rewrite that keeps the
@@ -32,7 +33,7 @@ export default function diffAiResponse(oldHtml: string, newHtml: string): AiDiff
 
     // Nothing to align against, so the whole of whichever side exists is the change.
     if (!oldBlocks.length || !newBlocks.length) {
-        return { html: HtmlDiff.execute(oldHtml, newHtml), rewriteRatio: 1 };
+        return { html: diffHtml(oldHtml, newHtml), rewriteRatio: 1 };
     }
 
     const chunks: string[] = [];
@@ -249,12 +250,12 @@ function kindOf(block: Block): string {
  *
  * Only what the blocks hold is diffed. The containers are rarely identical even when the block is
  * the same one — the captured selection may have none at all, and a rewrapped paragraph carries
- * different attributes — and handing two markup streams to `htmldiff-js` is what makes it emit
+ * different attributes — and handing two markup streams to `diffHtml()` is what makes it emit
  * tags that close in the wrong order, leaving the preview's parser to rebuild the result in
  * whatever shape it likes.
  */
 function diffInside(before: Block, after: Block): string | null {
-    const diffed = HtmlDiff.execute(before.inner, after.inner);
+    const diffed = diffHtml(before.inner, after.inner);
     return markedRatio(before, after, diffed) > INLINE_DIFF_CHURN_LIMIT ? null : wrap(after, diffed);
 }
 

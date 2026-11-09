@@ -226,7 +226,7 @@ The defaults are:
 
 | Role | Light themes | Dark themes |
 | --- | --- | --- |
-| `text` | `max-lightness: 40`, `max-chroma: 150` | `min-lightness: 75`, `max-chroma: 55` |
+| `text` | `max-lightness: 45`, `max-chroma: 150` | `min-lightness: 75`, `max-chroma: 55` |
 | `background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
 | `table-border` | `max-lightness: 60`, `max-chroma: 150` | `min-lightness: 47`, `max-chroma: 150` |
 | `table-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |

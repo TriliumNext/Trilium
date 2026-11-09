@@ -1,22 +1,31 @@
-import type { CKTextEditor, EditorConfig } from "@triliumnext/ckeditor5";
+import type {
+    CKTextEditor, EditorConfig, ModelElement, TriliumSlashCommands
+} from "@triliumnext/ckeditor5";
 import {
     flashBlocks, getBlockBoxes, getBlockRangeElements, showBlockReference
 } from "@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js";
 import {
-    type BlockRange, encodeBlockParameter, formatBlockRange, parseBlockRange, resolveBlockRange,
+    type BlockRange, CANVAS_ATTACHMENT_MIME, encodeBlockParameter, EXCERPT_BOX_SIZE,
+    formatBlockRange, MERMAID_ATTACHMENT_MIME, parseBlockRange, resolveBlockRange,
     resolveBlockReference
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu, { type MenuItem } from "../menus/context_menu.js";
+import contextMenu, {
+    type ContextMenuOptions, type MenuHeader, type MenuItem
+} from "../menus/context_menu.js";
 import type { ClipboardAccess } from "../menus/table_context_menu.js";
-import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
+import {
+    buildAiAssistantMenuItem, buildInsertMenuItems, buildSortSelectionMenuItem,
+    getTextEditorContaining, keepEditorFocused
+} from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
-import { copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
+import { copyHtml, copyHtmlWithToast, copyTextWithToast } from "./clipboard_ext.js";
 import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { byBlockType } from "./in_app_help.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
 import { getNoteShareLink } from "./share_link.js";
 import toast from "./toast.js";
@@ -44,10 +53,24 @@ export interface BlockReferenceMenuItems {
 
 /** The actions of the block handle menu. */
 export interface BlockHandleMenuActions {
+    /** The items that insert blocks, list items or table rows, shown first, before a separator. */
+    insertItems?: MenuItem<CommandNames>[];
+    /** Puts the selected blocks on the clipboard and deletes them, first in the copy items. */
+    cutBlocks?: () => void;
+    /** Puts the selected blocks on the clipboard, before the reference items. */
+    copyBlocks?: () => void;
     /** Copies a reference to the selected blocks. */
     copyReference: () => void;
     /** Copies a link to the selected blocks on the shared page of the note, if it is shared. */
     copyShareLink?: () => void;
+    /** The _AI assistant_ submenu, after the copy items and a separator. */
+    aiItem?: MenuItem<CommandNames> | null;
+    /** The _Sort_ submenu, after a separator. */
+    sortItem?: MenuItem<CommandNames> | null;
+    /** Deletes the selected blocks, shown last, after a separator. */
+    deleteBlocks?: () => void;
+    /** Opens an in-app help page, by its ID without `_help_`, from the button of the heading. */
+    openHelpPage?: (helpPage: string) => void;
 }
 
 /** The note a text editor is open on, which the references it copies point to. */
@@ -58,6 +81,11 @@ export interface ReferenceSource {
     getNotePath(): string | null | undefined;
     /** Saves the note now, so that a copied link resolves at once. */
     save(): unknown;
+    /**
+     * Opens an in-app help page, by its ID without `_help_`, where the note context of the editor
+     * can show it.
+     */
+    openHelpPage?: (helpPage: string) => void;
 }
 
 type CopyReference = (editor: CKTextEditor, notePath: string, noteTitle: string) => unknown;
@@ -79,15 +107,22 @@ export function buildReferenceConfig(
 
     return {
         blockReference: {
-            openHandleMenu(event, count) {
+            openHandleMenu(origin, blocks, onClose) {
+                const editor = source.getEditor();
                 const note = source.getNote();
                 const shareLink = note && getNoteShareLink(note);
-                openBlockHandleMenu(event, count, {
+                openBlockHandleMenu(origin, blocks, {
+                    insertItems: buildInsertItems(editor, blocks),
+                    ...getClipboardActions(editor),
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
-                        ? () => void copy((editor) => copyBlockShareLink(editor, shareLink))
-                        : undefined
-                });
+                        ? () => void copy((target) => copyBlockShareLink(target, shareLink))
+                        : undefined,
+                    aiItem: buildAiAssistantMenuItem(editor, "cke cke-trilium-ai", blocks),
+                    sortItem: buildSortSelectionMenuItem(editor),
+                    deleteBlocks: getDeleteBlocksAction(editor),
+                    openHelpPage: source.openHelpPage
+                }, editor, onClose);
             },
             copyReference: () => void copy(copyBlockReference)
         },
@@ -97,26 +132,82 @@ export function buildReferenceConfig(
     };
 }
 
-/** Opens the menu of the block handle at `event`, for `count` selected blocks. */
+/**
+ * Opens the menu of the block handle at the pointer of the right click `origin`, or below the
+ * clicked handle `origin`, headed by the type of `blocks`, the blocks that the handle drags, and
+ * calls `onClose` once the menu is closed. `editor` stays focused while the menu is up, so that its
+ * handle stays shown.
+ */
 export function openBlockHandleMenu(
-    event: MouseEvent,
-    count: number,
-    { copyReference, copyShareLink }: BlockHandleMenuActions
+    origin: MouseEvent | HTMLElement,
+    blocks: readonly ModelElement[],
+    {
+        insertItems, cutBlocks, copyBlocks, copyReference, copyShareLink, aiItem, sortItem,
+        deleteBlocks, openHelpPage
+    }: BlockHandleMenuActions,
+    editor?: CKTextEditor | null,
+    onClose?: () => void
 ) {
-    const items = [ getCopyItem(count, copyReference) ];
+    // A click on the handle of the open menu only closes the menu.
+    if (origin instanceof HTMLElement && contextMenu.dismissedByLastPress) {
+        onClose?.();
+        return;
+    }
+
+    const items: MenuItem<CommandNames>[] = [ getBlocksHeader(blocks, openHelpPage) ];
+    if (insertItems?.length) {
+        items.push(...insertItems, { kind: "separator" });
+    }
+    if (cutBlocks) {
+        items.push({ title: t("block_handle_menu.cut"), uiIcon: "bx bx-cut", handler: cutBlocks });
+    }
+    if (copyBlocks) {
+        items.push({
+            title: t("block_handle_menu.copy"),
+            uiIcon: "bx bx-copy",
+            handler: copyBlocks
+        });
+    }
+    items.push({
+        title: t("block_reference.copy_reference"),
+        uiIcon: "bx bx-link",
+        handler: copyReference
+    });
     if (copyShareLink) {
         items.push({
-            title: t("block_reference.copy_share_link", { count }),
+            title: t("block_reference.copy_share_link"),
             uiIcon: "bx bx-world",
             handler: copyShareLink
         });
     }
+    if (aiItem) {
+        items.push({ kind: "separator" }, aiItem);
+    }
+    if (sortItem) {
+        items.push({ kind: "separator" }, sortItem);
+    }
+    if (deleteBlocks) {
+        items.push({ kind: "separator" }, {
+            title: t("block_handle_menu.delete"),
+            uiIcon: "bx bx-trash destructive-action-icon",
+            handler: deleteBlocks
+        });
+    }
 
+    const editorFocus: Pick<ContextMenuOptions<CommandNames>, "onShow" | "onHide"> = editor
+        ? keepEditorFocused(editor)
+        : {};
     void contextMenu.show({
-        x: event.pageX,
-        y: event.pageY,
+        ...(origin instanceof HTMLElement
+            ? { anchor: origin }
+            : { x: origin.pageX, y: origin.pageY }),
         items,
-        selectMenuItemHandler: () => {}
+        selectMenuItemHandler: () => {},
+        onShow: editorFocus.onShow,
+        onHide: () => {
+            editorFocus.onHide?.();
+            onClose?.();
+        }
     });
 }
 
@@ -294,22 +385,257 @@ export function revealHighlightedBlocks(container: HTMLElement) {
     container.scrollTop += top - viewportTop - margin;
 }
 
-function getCopyItem(count: number, copyReference: () => void): MenuItem<CommandNames> {
+/**
+ * The heading of the menu for `blocks`: the type of the only block, such as _Table_, with a button
+ * that opens the help page of the type through `openHelpPage`, else the number of blocks.
+ */
+function getBlocksHeader(
+    blocks: readonly ModelElement[],
+    openHelpPage: ((helpPage: string) => void) | undefined
+): MenuHeader {
+    const block = blocks.length === 1 ? blocks[0] : undefined;
+    if (!block) {
+        const title = t("block_handle_menu.block_count", { count: blocks.length });
+        return { kind: "header", title };
+    }
+
+    const type = getBlockType(block);
+    const header: MenuHeader = {
+        kind: "header",
+        title: type === "heading"
+            ? t("block_handle_menu.types.heading", { level: block.name.slice("heading".length) })
+            : t(`block_handle_menu.types.${type}`)
+    };
+    const helpPage = byBlockType[type];
+    if (helpPage && openHelpPage) {
+        header.actions = [ {
+            icon: "bx bx-help-circle",
+            caption: t("open-help-page"),
+            callback: () => openHelpPage(helpPage)
+        } ];
+    }
+    return header;
+}
+
+/** The type of `block`. */
+function getBlockType(block: ModelElement): BlockType {
+    if (/^heading\d$/.test(block.name)) {
+        return "heading";
+    }
+    if (block.name === "paragraph" && block.hasAttribute("listItemId")) {
+        return block.getAttribute("listType") === "todo" ? "todo_item" : "list_item";
+    }
+    if (block.name === "contentEmbed") {
+        return getEmbedType(block);
+    }
+
+    return BLOCK_TYPES[block.name] ?? "block";
+}
+
+/** The type of the content embed `embed`. */
+function getEmbedType(embed: ModelElement): BlockType {
+    if (embed.hasAttribute("url")) {
+        return embed.getAttribute("embedType") === "audio" ? "audio" : "video";
+    }
+    if (embed.hasAttribute("language")) {
+        return embed.getAttribute("language") === "mermaid" ? "mermaid" : "code_block";
+    }
+    if (embed.hasAttribute("noteId")) {
+        return embed.hasAttribute("block") ? "excerpt" : "included_note";
+    }
+
+    const attachmentId = embed.getAttribute("attachmentId");
+    const mime = typeof attachmentId === "string" ? froca.attachments[attachmentId]?.mime : null;
+    switch (mime) {
+        case CANVAS_ATTACHMENT_MIME:
+            return "drawing";
+        case MERMAID_ATTACHMENT_MIME:
+            return "mermaid";
+        default:
+            return "attachment";
+    }
+}
+
+/** The type of block of each element that names a single type. */
+const BLOCK_TYPES: Record<string, BlockType> = {
+    paragraph: "paragraph",
+    blockQuote: "block_quote",
+    codeBlock: "code_block",
+    table: "table",
+    imageBlock: "image",
+    horizontalLine: "horizontal_line",
+    pageBreak: "page_break",
+    aside: "admonition",
+    details: "collapsible",
+    tabs: "tabs",
+    multicolumnLayout: "columns",
+    "mathtex-display": "math",
+    footnoteSection: "footnotes",
+    footnoteItem: "footnote",
+    footnoteContent: "footnote",
+    linkEmbed: "link_preview",
+    unknownContentEmbed: "embed"
+};
+
+/** A type of block, by its key under `block_handle_menu.types`. */
+export type BlockType = "paragraph" | "heading" | "list_item" | "todo_item" | "block_quote"
+    | "code_block" | "table" | "image" | "horizontal_line" | "page_break" | "admonition"
+    | "collapsible" | "tabs" | "columns" | "math" | "footnotes" | "footnote" | "included_note"
+    | "excerpt" | "attachment" | "drawing" | "mermaid" | "video" | "audio" | "link_preview"
+    | "embed" | "block";
+
+/** The commands of the insert items for a list item or a table cell. */
+type InsertCommandName = "triliumInsertListItemAbove" | "triliumInsertListItemBelow"
+    | "triliumInsertChildListItem" | "triliumInsertTableRowsAbove" | "triliumInsertTableRowsBelow";
+
+/**
+ * The insert items of the block handle menu for `blocks`. Beside a list item, they insert list
+ * items, and elsewhere _Insert above_ and _Insert below_ open the `/` palette's entries that insert
+ * or wrap content. In a table cell, the items that insert rows follow.
+ */
+function buildInsertItems(
+    editor: CKTextEditor | null | undefined,
+    blocks: readonly ModelElement[]
+): MenuItem<CommandNames>[] {
+    const first = blocks.at(0);
+    const last = blocks.at(-1);
+    if (!editor || !first || !last) {
+        return [];
+    }
+
+    const insertBeside = getInsertBesideBuilder(editor);
+    const command = (title: string, uiIcon: string, name: InsertCommandName) =>
+        getInsertCommandItem(editor, title, uiIcon, name);
+    const above = first.hasAttribute("listItemId")
+        ? [ command(t("block_handle_menu.insert_item_above"), "bx bx-arrow-to-top",
+            "triliumInsertListItemAbove") ]
+        : [ insertBeside?.(t("block_handle_menu.insert_above"), "bx bx-arrow-to-top",
+            first, "before") ];
+    const below = last.hasAttribute("listItemId")
+        ? [
+            command(t("block_handle_menu.insert_item_below"), "bx bx-arrow-to-bottom",
+                "triliumInsertListItemBelow"),
+            command(t("block_handle_menu.insert_child_item"), "bx bx-subdirectory-right",
+                "triliumInsertChildListItem")
+        ]
+        : [ insertBeside?.(t("block_handle_menu.insert_below"), "bx bx-arrow-to-bottom",
+            last, "after") ];
+    const rows = [
+        command(t("table_context_menu.insert_rows_above"), "bx bx-horizontal-left bx-rotate-90",
+            "triliumInsertTableRowsAbove"),
+        command(t("table_context_menu.insert_rows_below"), "bx bx-horizontal-left bx-rotate-270",
+            "triliumInsertTableRowsBelow")
+    ];
+
+    return [ ...above, ...below, ...rows ]
+        .filter((item): item is MenuItem<CommandNames> => !!item);
+}
+
+/**
+ * Builds the _Insert above_ and _Insert below_ submenus, which list the `/` palette's entries that
+ * insert or wrap content and run the one picked in a new paragraph beside a block. It is `null`
+ * without the palette or while `editor` cannot insert a paragraph.
+ */
+function getInsertBesideBuilder(editor: CKTextEditor) {
+    if (!editor.plugins.has("TriliumSlashCommands")
+        || !editor.commands.get("insertParagraph")?.isEnabled) {
+        return null;
+    }
+
+    const palette = editor.plugins.get("TriliumSlashCommands") as TriliumSlashCommands;
+    const definitions = palette.listAll();
+    return (
+        title: string, uiIcon: string, block: ModelElement, side: "before" | "after"
+    ): MenuItem<CommandNames> => ({
+        title,
+        uiIcon,
+        enabled: palette.canInsertBeside(block, side),
+        filterable: true,
+        submenuClassName: "slash-command-menu",
+        items: buildInsertMenuItems<CommandNames>(definitions,
+            (definition) => palette.runBeside(definition, block, side))
+    });
+}
+
+/** A row that runs `name` in `editor`, or `null` while the command is disabled. */
+function getInsertCommandItem(
+    editor: CKTextEditor, title: string, uiIcon: string, name: InsertCommandName
+): MenuItem<CommandNames> | null {
+    if (!editor.commands.get(name)?.isEnabled) {
+        return null;
+    }
+
     return {
-        title: t("block_reference.copy", { count }),
-        uiIcon: "bx bx-link",
-        handler: copyReference
+        title,
+        uiIcon,
+        handler: () => {
+            editor.execute(name);
+            editor.editing.view.focus();
+            editor.editing.view.scrollToTheSelection();
+        }
     };
 }
 
-function getCopyMenuItem(editor: CKTextEditor) {
+/**
+ * The actions that put the blocks of the handle on the clipboard, as a copy does, each `undefined`
+ * while its command is disabled. Cutting deletes the blocks once the clipboard holds them.
+ */
+function getClipboardActions(
+    editor: CKTextEditor | null | undefined
+): Pick<BlockHandleMenuActions, "cutBlocks" | "copyBlocks"> {
+    if (!editor?.commands.get("copyBlocks")?.isEnabled) {
+        return {};
+    }
+
+    /** Copies the blocks and returns their range, or `undefined` if the copy failed. */
+    const copy = async () => {
+        const { html, text, range } = editor.execute("copyBlocks");
+        const isCopied = await copyHtml(html, text);
+        if (!isCopied) {
+            toast.showError(t("clipboard.copy_failed"));
+        }
+        return isCopied ? range : undefined;
+    };
+
+    const deleteBlocks = getDeleteBlocksAction(editor);
+    return {
+        cutBlocks: deleteBlocks && (async () => {
+            const { version } = editor.model.document;
+            const range = await copy();
+            // A change during the clipboard write leaves `range` pointing at other content.
+            if (range && editor.model.document.version === version) {
+                editor.execute("deleteBlocks", range);
+                editor.editing.view.focus();
+            }
+        }),
+        copyBlocks: () => void copy()
+    };
+}
+
+/** Runs `deleteBlocks` in `editor` and focuses it, or `undefined` while the command is disabled. */
+function getDeleteBlocksAction(editor: CKTextEditor | null | undefined) {
+    if (!editor?.commands.get("deleteBlocks")?.isEnabled) {
+        return undefined;
+    }
+
+    return () => {
+        editor.execute("deleteBlocks");
+        editor.editing.view.focus();
+    };
+}
+
+function getCopyMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
     const command = editor.commands.get("assignBlockReference");
     const copyReference = editor.config.get("blockReference")?.copyReference;
     if (!command?.isEnabled || !copyReference) {
         return null;
     }
 
-    return getCopyItem(command.value, () => copyReference());
+    return {
+        title: t("block_reference.copy", { count: command.value }),
+        uiIcon: "bx bx-link",
+        handler: () => copyReference()
+    };
 }
 
 function getCopyTabMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
@@ -356,7 +682,7 @@ function getPasteMenuItems(
 async function pasteBlockReference(
     editor: CKTextEditor,
     clipboard: ClipboardAccess,
-    toHtml: (reference: ClipboardBlockReference) => string | Promise<string>
+    toHtml: (reference: ClipboardBlockReference) => string
 ) {
     const target = editor.capturePasteTarget();
     try {
@@ -371,7 +697,7 @@ async function pasteBlockReference(
             return;
         }
 
-        target.paste(await toHtml(reference), reference.href);
+        target.paste(toHtml(reference), reference.href);
     } catch (error) {
         console.warn("Failed to paste a block reference:", error);
     } finally {
@@ -388,10 +714,7 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
 }
 
 /** The HTML of an embed of the referenced blocks. */
-async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
-    // Imported on demand: `content_renderer` imports `content_renderer_text`, which imports this
-    // module.
-    const { EXCERPT_BOX_SIZE } = await import("./content_renderer.js");
+function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
     const embed = document.createElement("figure");
     embed.className = "include-note";
     embed.dataset.noteId = noteId;

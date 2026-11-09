@@ -34,8 +34,9 @@ See <a class="reference-link" href="Note%20Tree/Note%20tree%20contextual%20menu
 
 ## Tree Settings
 
-Click the tree icon in the tree toolbar to open the tree settings popup. Each option is a toggle that takes effect as soon as it is switched:
+Click the tree icon in the tree toolbar to open the tree settings popup. Each option takes effect as soon as it is changed:
 
+*   _Display density_: _Relaxed_ (default) or _Dense_. Dense rows are shorter, so more notes fit on the screen. This setting is not synchronized, so each device keeps its own.
 *   _Hide archived notes_: When enabled, archived notes are not shown in the tree.
 *   _Automatically collapse notes_: When enabled, notes are collapsed after a period of inactivity to keep the tree tidy.
 *   _Follow active note_: When enabled (default), the tree automatically scrolls and expands parent nodes to keep the currently active note visible. When disabled, the tree is fully detached from navigation — only the background highlight of the active note is updated, but the tree viewport and its expanded/collapsed state are never changed by navigation. Use the crosshair button to manually jump the tree to the active note at any time.

@@ -3,11 +3,7 @@
 }
 
 @media (max-width: 991px) {
-    body.mobile:not(.ios):has(
-        #context-menu-cover.show,
-        > .tn-dropdown-portal > .tn-dropdown-backdrop,
-        .tn-popover-backdrop
-    ) #background-color-tracker {
+    body.mobile:not(.ios):is(.context-menu-shown, .backdrop-open) #background-color-tracker {
         /* `--mobile-backdrop-color` (style.css) laid over the page background. */
         color: color-mix(in srgb, var(--main-background-color), black 50%) !important;
     }

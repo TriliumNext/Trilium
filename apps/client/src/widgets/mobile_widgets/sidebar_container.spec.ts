@@ -94,6 +94,17 @@ describe("SidebarContainer", () => {
             expect(tree.style.transform).toBe("translateX(-30%)");
         });
 
+        it("marks the body while the tree is open", () => {
+            const sidebar = render(true);
+
+            sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
+            expect(tree.classList.contains("show")).toBe(true);
+            expect(document.body.classList.contains("mobile-sidebar-open")).toBe(true);
+
+            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+            expect(document.body.classList.contains("mobile-sidebar-open")).toBe(false);
+        });
+
         it("marks the tree as dragged while a swipe from the edge reveals it", () => {
             render(true);
             const touch = (type: string, clientX: number) => document.dispatchEvent(

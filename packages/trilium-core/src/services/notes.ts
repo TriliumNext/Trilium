@@ -1,4 +1,4 @@
-import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
+import { type AttachmentRow, attachmentRoleTraits, type AttributeRow, type BranchRow, CANVAS_ATTACHMENT_MIME, CONTENT_EMBED_KIND_ATTRIBUTE, dayjs, getDrawingPictureTitle, isEmbeddedAttachmentRole, isImageAttachmentRole, type NoteRow, NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType, parseMindMapNoteLink } from "@triliumnext/commons";
 import { t } from "i18next";
 import { parse as parseHtml } from "node-html-parser";
 
@@ -292,6 +292,10 @@ function createNewNote(params: NoteParams): {
             + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
+    if (typeof forcedNoteId === "string" && forcedNoteId && becca.notes[forcedNoteId]) {
+        throw new ValidationError(`Note '${forcedNoteId}' already exists.`);
+    }
+
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
     // This ensures binary types (PDF, images, etc.) get the correct mime from the start.
     if (params.templateNoteId) {
@@ -315,9 +319,6 @@ function createNewNote(params: NoteParams): {
                 cls.disableEntityEvents();
             }
 
-            // TODO: think about what can happen if the note already exists with the forced ID
-            //       I guess on DB it's going to be fine, but becca references between entities
-            //       might get messed up (two note instances for the same ID existing in the references)
             note = new BNote({
                 noteId: params.noteId, // optionally can force specific noteId
                 title: params.title,
@@ -792,6 +793,7 @@ function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAt
 /**
  * The content of `entity` for a copy outside its note, such as a download: a canvas drawing gets
  * the images that it refers to by file ID inline, from the image attachments of its owner.
+ * The output depends only on the stored entities, so an unchanged drawing yields the same bytes.
  */
 function getPortableContent(entity: BNote | BAttachment) {
     const content = entity.getContent();
@@ -824,7 +826,7 @@ function getPortableContent(entity: BNote | BAttachment) {
             id: image.title,
             mimeType: image.mime,
             dataURL: `data:${image.mime};base64,${encodeBase64(image.getContent())}`,
-            created: Date.now()
+            created: dayjs(image.getUtcDateChanged()).valueOf()
         };
     }
     return JSON.stringify({ ...scene, files });
@@ -1008,6 +1010,15 @@ function findIncludeNoteLinks(content: string, foundLinks: FoundLink[]) {
             name: "includeNoteLink",
             value: match[1]
         });
+    }
+
+    // Embeds of other kinds, with the attributes in any order.
+    const embedRe = new RegExp(`<section[^>]*\\s${CONTENT_EMBED_KIND_ATTRIBUTE}="[^>]*>`, "g");
+    while ((match = embedRe.exec(content))) {
+        const noteId = /\sdata-note-id="([a-zA-Z0-9_]+)"/.exec(match[0])?.[1];
+        if (noteId) {
+            foundLinks.push({ name: "includeNoteLink", value: noteId });
+        }
     }
 
     return content;

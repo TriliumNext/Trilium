@@ -7,9 +7,10 @@ To create a table, simply press the table button and select with the mouse the d
 
 Since v0.107.0, the same menu starts with an _Insert table…_ item, for a table larger than the grid or to type its size instead:
 
-1.  Click the <span class="tn-icon cke cke-table"></span>button and select _Insert table…_. A small form opens at the cursor.
+1.  Click the <span class="tn-icon cke cke-table"></span> button and select _Insert table…_. A small form opens at the cursor.
 2.  Enter the number of _Columns_ (up to 100) and _Rows_ (up to 1000). The table can have at most 5000 cells in total, for example 1000 rows of 5 columns.
-3.  Press _Insert_ or <kbd>Enter</kbd>.
+3.  Optionally, turn on _Use headers_ and enter the number of _Header columns_ and _Header rows_. A table cannot have more header columns or rows than it has columns or rows.
+4.  Press _Insert_ or <kbd>Enter</kbd>.
 
 To close the form without inserting a table, press <kbd>Esc</kbd> or click outside it. From the keyboard, <kbd>Tab</kbd> moves between _Insert table…_ and the grid while the menu is open.
 
@@ -47,7 +48,7 @@ Since v0.106.0, right-clicking anywhere inside a table opens a context menu with
 *   _Sort_, below the clipboard section, sorts the rows by the column of the current cell, in _Ascending_ or _Descending_ order. See [Sorting rows](#sorting-rows).
 *   _Delete row_ and _Delete column_, below _Sort_, remove every row or column the selection touches, even when only some of their cells are selected.
 *   _Delete table_ removes the whole table and leaves an empty paragraph in its place. In a table nested inside another, only the inner table is removed.
-*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span>button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
+*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
 
 Right-clicking a cell that is not part of the current selection moves the cursor there first, so the menu always applies to the cell under the pointer.
 
@@ -72,7 +73,7 @@ Right-clicking a cell that is not part of the current selection moves the cursor
 ## Resizing cells
 
 *   Columns can be resized by hovering the mouse over the border of two adjacent cells and dragging it.
-*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span>button of the formatting toolbar or from the [context menu](#context-menu).
+*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span> button of the formatting toolbar or from the [context menu](#context-menu).
 *   By default, the row height is not adjustable using the mouse, but it can be configured from the cell settings (see below).
 *   To adjust exactly the width (in pixels or percentages) of a cell, select the <span class="tn-icon cke cke-table-cell-properties"></span> button.
 
@@ -120,6 +121,8 @@ To let header rows scroll away with the rest of the table, turn off <a class="re
 *   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
 *   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
+*   The menu of the block handle beside a cell, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, also has _Insert row above_ and _Insert row below_.
+*   After an insertion, the caret moves into the new row and stays in its column, or into the new column and stays in its row.
 
 ## Moving rows and columns
 
@@ -138,7 +141,7 @@ Outside of tables, <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right<
 
 Since v0.107.0, the rows of a table can be sorted by the values of one column:
 
-*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span>button of the formatting toolbar.
+*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.
 *   To sort only some of the rows, select their cells in the column to sort by, then sort the same way. Sorting is not available while the selection spans more than one column.
 
 Header rows always stay at the top of the table and are never sorted. A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
@@ -222,6 +225,8 @@ The border and background colors of tables and cells adapt to the [theme](../../
 Colors applied with older versions of Trilium are shown exactly as they were picked, until the note is next edited.
 
 Older browsers that can't adapt colors show them exactly as they were picked.
+
+Header cells are shaded to suit the current theme. To change their background in every table, set the `--text-note-table-header-background` variable in a [custom theme](../../Theme%20development/Creating%20a%20custom%20theme.md) or in [custom app-wide CSS](../../Theme%20development/Custom%20app-wide%20CSS.md), for example `:root { --text-note-table-header-background: #8882; }`. A background picked for a cell still takes precedence.
 
 ## Caption
 

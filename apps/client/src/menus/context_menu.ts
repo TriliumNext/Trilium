@@ -1,5 +1,6 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
+import clsx from "clsx";
 import { h, JSX, render } from "preact";
 
 import note_tooltip from "../services/note_tooltip.js";
@@ -7,6 +8,7 @@ import type { NotePresetId } from "../services/note_presets.js";
 import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
+import { registerOpenPopup } from "../widgets/react/Popup";
 
 /**
  * Where the menu opens: beside a point, towards the right unless `orientation` says otherwise, or
@@ -26,6 +28,10 @@ interface ContextMenuBaseOptions<T> {
     items: MenuItem<T>[];
     /** Offers an input at the top of the menu that filters its items. */
     filterable?: boolean;
+    /** For a {@link filterable} menu: puts the focus in its input as it opens. */
+    focusFilter?: boolean;
+    /** Classes put on the menu, for a caller that sizes it. */
+    className?: string;
     /** On mobile, if set to `true` then the context menu is shown near the element. If `false` (default), then the context menu is shown at the bottom of the screen. */
     forcePositionOnMobile?: boolean;
     /** Called with the element the menu renders into, before the menu takes the focus. */
@@ -84,6 +90,8 @@ export interface MenuCommandItem<T> {
     titleIcon?: string;
     /** A second line below the title, in smaller text. */
     description?: string;
+    /** Other words that a filter finds the item by, beside its title and its description. */
+    keywords?: string[];
     command?: T;
     type?: string;
     mime?: string;
@@ -98,6 +106,11 @@ export interface MenuCommandItem<T> {
      * share one. Drawn in a row of actions only.
      */
     uiIconBadge?: string;
+    /**
+     * An SVG icon in place of {@link uiIcon}, for an icon that a font cannot draw, such as one of
+     * more than one color.
+     */
+    uiIconSvg?: string;
     /**
      * What the row shows as a tooltip on hover, in place of its title: for a short title that
      * needs a word of explanation, whether the row is a menu row or one of a row of actions.
@@ -128,6 +141,11 @@ export interface MenuCommandItem<T> {
      * edge when the item has a {@link uiIcon} of its own, and in place of the icon when it has none.
      */
     checked?: boolean;
+    /**
+     * Draws the item as a switch, as in the note menu, on while {@link checked} is set. Its title
+     * is text, not HTML.
+     */
+    isSwitch?: boolean;
     /** Classes put on the item itself, for a menu styling one of its entries differently. */
     className?: string;
     /** Plain text at the trailing edge of the item, where a shortcut would go, such as a note's path. */
@@ -139,6 +157,8 @@ export interface MenuCommandItem<T> {
      * it, at any depth, into one list, which shows what was typed.
      */
     filterable?: boolean;
+    /** For an item with {@link items}: classes put on its submenu, for a caller that sizes it. */
+    submenuClassName?: string;
 }
 
 export type MenuItem<T> = MenuCommandItem<T> | CustomMenuItem | MenuSeparatorItem | MenuHeader | MenuActionRow<T>;
@@ -166,6 +186,8 @@ class ContextMenu {
     private stopFollowingLayout?: () => void;
     /** Stops closing the menu on the system back gesture. */
     private stopAnsweringBack?: () => void;
+    /** Stops closing the menu for `closeOpenPopups()`. */
+    private unregisterOpenPopup?: () => void;
 
     constructor() {
         this.cover = utils.isMobile() ? document.getElementById("context-menu-cover") : null;
@@ -200,7 +222,9 @@ class ContextMenu {
         const request = ++this.lastShowRequest;
         // Loaded here rather than imported: the core services that import this module would
         // otherwise reach the widget tree through the rows `Menu` draws, in a cycle.
-        const { default: Menu } = await import("../widgets/react/Menu");
+        // `closeOpenPopups()` during the import cancels this menu before it opens.
+        const cancelPending = registerOpenPopup(() => this.lastShowRequest++);
+        const { default: Menu } = await import("../widgets/react/Menu").finally(cancelPending);
         // A later `show()` made during the import replaces this one.
         if (request !== this.lastShowRequest) return;
 
@@ -224,6 +248,7 @@ class ContextMenu {
             void this.hide();
             return true;
         });
+        this.unregisterOpenPopup = registerOpenPopup(() => void this.hide());
         // A mobile menu is a sheet or placed at the press depending on the layout, decided here,
         // so it closes when a tablet turns past that width.
         if (utils.isMobile() && !options.forcePositionOnMobile) {
@@ -233,7 +258,7 @@ class ContextMenu {
         render(h(Menu<T>, {
             // The id and classes the stylesheets, themes and `floating_layers` know this menu by.
             id: "context-menu-container",
-            className: "dropdown-menu-sm dropend",
+            className: clsx("dropdown-menu-sm dropend", options.className),
             ...(options.anchor
                 ? { anchor: options.anchor, placement: options.centered ? "bottom" : undefined }
                 : {
@@ -248,6 +273,7 @@ class ContextMenu {
             startAt: this.lastInputWasKey ? "first" : undefined,
             items: options.items,
             filterable: options.filterable,
+            focusFilter: options.focusFilter,
             onSelect: (item, e) => {
                 // A submenu's row stays up to be opened, unless it runs something of its own.
                 if (!item.items || item.handler || item.command) void this.hide();
@@ -278,6 +304,8 @@ class ContextMenu {
         this.stopFollowingLayout = undefined;
         this.stopAnsweringBack?.();
         this.stopAnsweringBack = undefined;
+        this.unregisterOpenPopup?.();
+        this.unregisterOpenPopup = undefined;
         this.cover?.classList.remove("show");
         document.body.classList.remove("context-menu-shown");
 

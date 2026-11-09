@@ -2,7 +2,7 @@
     .geo-map-corner input {
         width: 8em;
 
-        & + input {
+        &.form-control + input {
             margin-inline-start: 0.5em;
         }
     }

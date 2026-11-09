@@ -10,9 +10,17 @@ const mocks = vi.hoisted(() => ({
     mobile: false,
     stored: {} as Record<string, string | boolean>,
     userFonts: [] as { noteId: string; title: string; blobId: string }[],
-    systemFonts: [] as { family: string; monospace: boolean }[],
+    /** What `listSystemFonts()` resolves to; a pending promise holds the list back. */
+    systemFonts: [] as string[] | Promise<string[]>,
     /** The stock families this device can render, or `null` to let every one of them through. */
-    availableFamilies: null as string[] | null
+    availableFamilies: null as string[] | null,
+    /** The families that resolve but draw nothing. */
+    blankFamilies: [] as string[],
+    /** Every option write, as `[ name, value ]`. */
+    saved: [] as [ string, string ][],
+    showError: vi.fn(),
+    /** How often each lookup that loads fonts was made. */
+    calls: { getCustomFonts: 0, listSystemFonts: 0, filterAvailableFamilies: 0 }
 }));
 
 // Only the desktop app can be asked what fonts the device has.
@@ -35,22 +43,39 @@ vi.mock("react-i18next", () => ({
 // The picker asks for the user's own fonts and registers each one it is given; only the list is of
 // interest here, so the registration is stood in for.
 vi.mock("../../../services/custom_fonts", () => ({
-    getCustomFonts: async () => mocks.userFonts,
+    getCustomFonts: async () => {
+        mocks.calls.getCustomFonts++;
+        return mocks.userFonts;
+    },
     registerFontNote: async (_noteId: string, family: string) => ({ family })
 }));
 
 // happy-dom exposes no `queryLocalFonts`, so what the desktop app would find is stood in for.
 vi.mock("../../../services/font", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/font")>()),
-    listSystemFonts: async () => mocks.systemFonts,
-    filterAvailableFamilies: (families: string[]) => mocks.availableFamilies ?? families
+    listSystemFonts: async () => {
+        mocks.calls.listSystemFonts++;
+        return await mocks.systemFonts;
+    },
+    filterAvailableFamilies: (families: string[]) => {
+        mocks.calls.filterAvailableFamilies++;
+        return mocks.availableFamilies ?? families;
+    },
+    rendersFamily: (family: string) => !mocks.blankFamilies.includes(family)
+}));
+
+vi.mock("../../../services/toast", () => ({
+    default: { showError: mocks.showError }
 }));
 
 // useNoteTitle names the font a font option points at; the listing above is what the picker lists.
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks")>()),
     useNoteTitle: (noteId: string | undefined) => mocks.userFonts.find((font) => font.noteId === noteId)?.title,
-    useTriliumOption: (name: string) => [ String(mocks.stored[name] ?? ""), vi.fn() ],
+    useTriliumOption: (name: string) => [
+        String(mocks.stored[name] ?? ""),
+        async (value: string) => void mocks.saved.push([ name, value ])
+    ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
 
@@ -65,6 +90,10 @@ beforeEach(() => {
     mocks.userFonts = [];
     mocks.systemFonts = [];
     mocks.availableFamilies = null;
+    mocks.blankFamilies = [];
+    mocks.saved = [];
+    mocks.showError.mockClear();
+    mocks.calls = { getCustomFonts: 0, listSystemFonts: 0, filterAvailableFamilies: 0 };
     Object.defineProperty(document, "fonts", {
         configurable: true,
         value: { add: vi.fn(), delete: vi.fn() }
@@ -89,6 +118,15 @@ function open() {
 }
 
 const fontRows = () => [ ...host.querySelectorAll(".font-option") ];
+
+/** Opens the picker from the first row, and waits for the lists the opening asks for. */
+async function openFirstRow() {
+    const row = fontRows()[0];
+    if (!(row instanceof HTMLElement)) throw new Error("the card has no font row");
+
+    await act(async () => row.click());
+    await act(async () => {});
+}
 const listedFonts = () => [ ...document.querySelectorAll(".font-picker-list .dropdown-item") ].map((item) => item.textContent?.trim());
 const listedHeaders = () => [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
 
@@ -101,7 +139,7 @@ async function openPicker() {
     mocks.stored = { overrideThemeFonts: true };
     open();
     await act(async () => {});
-    await act(async () => (fontRows()[0] as HTMLElement).click());
+    await openFirstRow();
 }
 
 /** The generic entries, which head every list and are never measured against the device. */
@@ -155,7 +193,7 @@ describe("the font settings", () => {
         open();
         await act(async () => {});
 
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         const picker = document.querySelector(".font-picker-list");
         const headers = [ ...(picker?.querySelectorAll(".dropdown-header") ?? []) ].map((header) => header.textContent);
@@ -181,7 +219,7 @@ describe("the font settings", () => {
         mocks.stored = { overrideThemeFonts: true };
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
         expect(headers).not.toContain("fonts.user-fonts");
@@ -190,49 +228,27 @@ describe("the font settings", () => {
 
     it("offers the fonts installed on the device in place of the guessed families", async () => {
         mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [
-            { family: "Adwaita Mono", monospace: true },
-            { family: "Inter", monospace: false }
-        ];
+        mocks.systemFonts = [ "Adwaita Mono", "Inter" ];
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
-        const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        // Split by the one thing a browser can tell about an installed family.
-        expect(headers).toContain("fonts.proportional-system-fonts");
-        expect(headers).toContain("fonts.monospace-system-fonts");
-        // The named families are a guess at what a device has, and go once there is an answer.
-        expect(headers).not.toContain("fonts.sans-serif-system-fonts");
-        // The generics resolve wherever Trilium runs, so they stay.
-        expect(headers).toContain("fonts.generic-fonts");
-
-        const listed = [ ...document.querySelectorAll(".font-picker-list .dropdown-item") ].map((item) => item.textContent?.trim());
-        expect(listed).toEqual(expect.arrayContaining([ "Adwaita Mono", "Inter" ]));
-    });
-
-    it("heads only the half of the split that has fonts in it", async () => {
-        mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [ { family: "Inter", monospace: false } ];
-        open();
-        await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
-
-        const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        expect(headers).toContain("fonts.proportional-system-fonts");
-        expect(headers).not.toContain("fonts.monospace-system-fonts");
+        // The named families are a guess at what a device has, and go once there is an answer. The
+        // generics resolve wherever Trilium runs, so they stay.
+        expect(listedHeaders()).toEqual([ "fonts.generic-fonts", "fonts.installed-system-fonts" ]);
+        expect(listedFonts()).toEqual([ ...GENERIC_LABELS, "Adwaita Mono", "Inter" ]);
     });
 
     it("keeps the named families on a server build, which cannot ask what the device has", async () => {
         mocks.electron = false;
         mocks.stored = { overrideThemeFonts: true };
-        mocks.systemFonts = [ { family: "Inter", monospace: false } ];
+        mocks.systemFonts = [ "Inter" ];
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         const headers = [ ...document.querySelectorAll(".font-picker-list .dropdown-header") ].map((header) => header.textContent);
-        expect(headers).not.toContain("fonts.proportional-system-fonts");
+        expect(headers).not.toContain("fonts.installed-system-fonts");
         expect(headers).toContain("fonts.sans-serif-system-fonts");
     });
 
@@ -243,7 +259,7 @@ describe("the font settings", () => {
         mocks.availableFamilies = [ "Arial", "Verdana", "Courier New" ];
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         expect(listedFonts()).toEqual([ ...GENERIC_LABELS, "Arial", "Verdana", "Courier New" ]);
         // A group left with nothing goes, its header with it; the generics are never measured.
@@ -252,6 +268,77 @@ describe("the font settings", () => {
             "fonts.sans-serif-system-fonts",
             "fonts.monospace-system-fonts"
         ]);
+    });
+
+    it("asks for no font list until the picker is opened, and names the set font all the same", async () => {
+        mocks.stored = { overrideThemeFonts: true, mainFontFamily: "theme" };
+        mocks.systemFonts = [ "Inter" ];
+        mocks.userFonts = [ { noteId: "fontNoteA1", title: "Iosevka", blobId: "b1" } ];
+        open();
+        await act(async () => {});
+
+        // Each of these loads fonts: a family is loaded to be measured, a custom font to be registered.
+        expect(mocks.calls).toEqual({ getCustomFonts: 0, listSystemFonts: 0, filterAvailableFamilies: 0 });
+        expect(fontRows()[0].querySelector(".font-option-specimen")?.textContent).toBe("fonts.theme_defined");
+
+        await openFirstRow();
+        expect(mocks.calls).toEqual({ getCustomFonts: 1, listSystemFonts: 1, filterAvailableFamilies: 0 });
+        expect(listedFonts()).toEqual([ "Iosevka", ...GENERIC_LABELS, "Inter" ]);
+
+        // Opening it again reuses what the first opening found.
+        await openFirstRow();
+        expect(mocks.calls).toEqual({ getCustomFonts: 1, listSystemFonts: 1, filterAvailableFamilies: 0 });
+    });
+
+    it("measures none of the guessed families while the installed ones are being listed", async () => {
+        let answer: (families: string[]) => void = () => {};
+        mocks.stored = { overrideThemeFonts: true };
+        mocks.systemFonts = new Promise((resolve) => {
+            answer = resolve;
+        });
+        open();
+        await openFirstRow();
+
+        expect(listedFonts()).toEqual(GENERIC_LABELS);
+        expect(mocks.calls.filterAvailableFamilies).toBe(0);
+
+        await act(async () => answer([ "Inter" ]));
+        await act(async () => {});
+        expect(listedFonts()).toEqual([ ...GENERIC_LABELS, "Inter" ]);
+        expect(mocks.calls.filterAvailableFamilies).toBe(0);
+    });
+
+    it("falls back to the guessed families when the desktop app finds no installed ones", async () => {
+        mocks.stored = { overrideThemeFonts: true };
+        mocks.availableFamilies = [ "Arial" ];
+        open();
+        await openFirstRow();
+
+        expect(listedFonts()).toEqual([ ...GENERIC_LABELS, "Arial" ]);
+        expect(mocks.calls.filterAvailableFamilies).toBe(1);
+    });
+
+    it("refuses an installed family that draws nothing, and sets one that draws", async () => {
+        mocks.stored = { overrideThemeFonts: true };
+        mocks.systemFonts = [ "Inter", "Unifont" ];
+        mocks.blankFamilies = [ "Unifont" ];
+        open();
+        await act(async () => {});
+        await openFirstRow();
+
+        // The family is still offered: only choosing it is refused.
+        const items = [ ...document.querySelectorAll<HTMLElement>(".font-picker-list .dropdown-item") ];
+        const item = (family: string) => items.find((candidate) => candidate.textContent?.trim() === family);
+        expect(item("Unifont")).toBeDefined();
+        expect(item("Inter")).toBeDefined();
+
+        await act(async () => item("Unifont")?.click());
+        expect(mocks.saved).toEqual([]);
+        expect(mocks.showError).toHaveBeenCalledTimes(1);
+
+        await act(async () => item("Inter")?.click());
+        expect(mocks.saved).toEqual([ [ "mainFontFamily", "Inter" ] ]);
+        expect(mocks.showError).toHaveBeenCalledTimes(1);
     });
 
     it("narrows the list to the fonts matching what is searched for", async () => {
@@ -297,7 +384,7 @@ describe("the font settings", () => {
         mocks.stored = { overrideThemeFonts: true, mainFontFamily: "Arial", detailFontFamily: "Georgia" };
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         expect(pickerTargets().map((target) => target.textContent?.trim())).toEqual([
             "fonts.main_font_short",
@@ -341,7 +428,7 @@ describe("the font settings", () => {
         mocks.stored = { overrideThemeFonts: true, mainFontSize: "120" };
         open();
         await act(async () => {});
-        await act(async () => (fontRows()[0] as HTMLElement).click());
+        await openFirstRow();
 
         const slider = document.querySelector<HTMLInputElement>(".font-picker-modal .slider");
         const box = document.querySelector<HTMLInputElement>(".font-picker-modal .font-size-value");

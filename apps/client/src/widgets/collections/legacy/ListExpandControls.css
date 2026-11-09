@@ -2,19 +2,4 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5em;
-
-    .list-expand-split {
-        display: inline-flex;
-        align-items: center;
-
-        > .icon-action {
-            border-start-end-radius: 0;
-            border-end-end-radius: 0;
-        }
-
-        > .dropdown .icon-action {
-            border-start-start-radius: 0;
-            border-end-start-radius: 0;
-        }
-    }
 }

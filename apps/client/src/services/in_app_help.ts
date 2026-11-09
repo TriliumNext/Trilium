@@ -2,6 +2,7 @@ import { NoteType } from "@triliumnext/commons";
 
 import FNote from "../entities/fnote";
 import { ViewTypeOptions } from "../widgets/collections/interface";
+import type { BlockType } from "./block_reference";
 
 export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
     canvas: null,
@@ -33,6 +34,37 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     board: "CtBQqbwXDx1w",
     presentation: "zP3PMqaG71Ct",
     dashboard: "IF7Q6I9x7zuw"
+};
+
+/** The help page of each type of block, which the heading of the block handle menu opens. */
+export const byBlockType: Record<BlockType, string | null> = {
+    paragraph: null,
+    heading: "Gr6xFaF6ioJ5",
+    list_item: "S6Xx8QIWTV66",
+    todo_item: "fASfBrYnquKU",
+    block_quote: "NwBbFdNZ9h7O",
+    admonition: "NwBbFdNZ9h7O",
+    code_block: "QxEyIjRBizuC",
+    table: "NdowYOC1GFKS",
+    image: "mT0HEkOsz6i1",
+    horizontal_line: "CohkqWQC1iBv",
+    page_break: "CohkqWQC1iBv",
+    mermaid: "CohkqWQC1iBv",
+    collapsible: "4n4oQUVbnOxa",
+    tabs: "EK2ckIZ74tbT",
+    columns: "wYDzQ1fBFgfT",
+    math: "YfYAtQBcfo5V",
+    footnotes: "AgjCISero73a",
+    footnote: "AgjCISero73a",
+    link_preview: "UmgZAfcltxkS",
+    video: "UmgZAfcltxkS",
+    audio: "UmgZAfcltxkS",
+    included_note: "nBAXQFj20hS1",
+    attachment: "nBAXQFj20hS1",
+    drawing: "nBAXQFj20hS1",
+    embed: "nBAXQFj20hS1",
+    excerpt: "klC3ilXa9kUE",
+    block: null
 };
 
 /** In-app help note describing labels and relations. */

@@ -113,7 +113,24 @@ describe("FetchRequestProvider.exec", () => {
             (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
         }));
         const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
-        const rejection = expect(promise).rejects.toThrow("timeout after 50ms");
+        const rejection = expect(promise).rejects.toThrow("timeout after 50ms waiting for the response headers");
+        await vi.advanceTimersByTimeAsync(50);
+        await rejection;
+    });
+
+    it("reports a timeout while reading the body with the status and when the headers arrived", async () => {
+        vi.useFakeTimers();
+        const abortErr = Object.assign(new Error("aborted"), { name: "AbortError" });
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => ({
+            status: 200,
+            text: () => new Promise<string>((_resolve, reject) => {
+                (init?.signal as AbortSignal).addEventListener("abort", () => reject(abortErr));
+            })
+        }) as unknown as Response);
+        const promise = provider.exec({ method: "GET", url: `${location.origin}/x`, timeout: 50 } as ExecOpts);
+        const rejection = expect(promise).rejects.toThrow(
+            /timeout after 50ms while reading the response body \(status 200 received after 0ms\)$/
+        );
         await vi.advanceTimersByTimeAsync(50);
         await rejection;
     });
@@ -174,6 +191,16 @@ describe("FetchRequestProvider.fetchResource", () => {
             bytes: new TextEncoder().encode("<html/>")
         });
         expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });
+    });
+
+    it("asks with the method it is given", async () => {
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+
+        await provider.fetchResource("https://example.com/clip.mp4", {
+            method: "HEAD", maxBytes: 0
+        });
+
+        expect(spy.mock.calls[0][1]).toMatchObject({ method: "HEAD" });
     });
 
     it("refuses an address before a request is made of it", async () => {

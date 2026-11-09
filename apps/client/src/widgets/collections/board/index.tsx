@@ -38,6 +38,7 @@ import {
     useSetContextData, useTrackedElement, useTriliumEvent
 } from "../../react/hooks";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
+import { RAIL_EXIT_MS, RailStand, RailStandContext } from "../../react/OverlayRail";
 import { type TemplateChoiceConfig, useTemplateChoice } from "../../react/TemplateDropdown";
 import { ShortcutHintOverlayButton } from "../../shortcut_hints/shortcut_hint_button";
 import { onWheelHorizontalScroll } from "../../widget_utils";
@@ -45,7 +46,7 @@ import { useDragPan } from "../../react/drag_pan";
 import { FLIP_SETTLE_MS, useFlip } from "../../react/flip";
 import { SelectionContext, SelectionStore } from "../../react/selection";
 import { CollectionFilterInput, useCollectionFilter } from "../collection_filter";
-import { BoardRailContext, RAIL_EXIT_MS, RailStand, SelectionToolbar } from "./card_toolbar";
+import { SelectionToolbar } from "./card_toolbar";
 import BoardHeaderTools from "./selection_bar";
 import { ViewModeProps } from "../interface";
 import Api, { getPendingWrites, PendingColumnWrites, settleColumn } from "./api";
@@ -362,7 +363,7 @@ const READ_ONLY_BOARD_HINTS: ShortcutHintDefinition = [
  */
 export default function BoardView(props: ViewModeProps<BoardViewData>) {
     const { noteContext } = useNoteContext();
-    const isReadOnly = useEffectiveReadOnly(props.note, noteContext);
+    const isReadOnly = useEffectiveReadOnly(props.note, noteContext) || !!props.isReadOnly;
     const editing = useBoardEditing(!isReadOnly);
     const [ waitsForEditing ] = useState(!isReadOnly && editing === undefined);
     if (waitsForEditing && editing === undefined) {
@@ -1468,7 +1469,7 @@ function Board({
                 <SelectionContext.Provider value={selection}>
                 <BoardOverlayHostContext.Provider value={containerRef}>
                 <BoardSelectionModeContext.Provider value={isSelecting}>
-                <BoardRailContext.Provider value={railStand}>
+                <RailStandContext.Provider value={railStand}>
                     {byColumn && columns && <div
                         ref={containerRef}
                         className={clsx("board-view-container", {
@@ -1629,7 +1630,7 @@ function Board({
                             }}
                         />
                     )}
-                </BoardRailContext.Provider>
+                </RailStandContext.Provider>
                 </BoardSelectionModeContext.Provider>
                 </BoardOverlayHostContext.Provider>
                 </SelectionContext.Provider>

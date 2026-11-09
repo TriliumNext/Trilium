@@ -1,0 +1,23 @@
+:host::before {
+    content: none;
+}
+
+.reveal-viewport {
+    width: 1280px;
+    height: 720px;
+    transform: scale(var(--thumbnail-scale));
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+:host .reveal {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    clip-path: none;
+}
+
+.reveal .slides > section {
+    top: 50%;
+    translate: 0 -50%;
+}

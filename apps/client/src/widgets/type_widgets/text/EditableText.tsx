@@ -5,11 +5,16 @@ import {
     type AttachmentLinkChange,
     type CKEditorError,
     CKTextEditor,
+    type ContentEmbedDialogRequest,
     type FileUploadData,
     type FileUploadEvent,
+    type LinkDialogRequest,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
+import {
+    deferred, encodeBlockParameter, formatBlockRange, parseBlockRange
+} from "@triliumnext/commons";
+import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -24,7 +29,8 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
-import type { AddLinkOpts } from "../../dialogs/add_link";
+import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
+import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
     useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
@@ -44,6 +50,8 @@ import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
     loadInlineEmbed,
+    loadUnknownEmbed,
+    loadMediaEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -63,10 +71,12 @@ interface EditableTextProps extends TypeWidgetProps {
     block?: string;
     /** Receives the blocks that the editor of `block` holds, each time they change. */
     onBlockChange?: (block: string) => void;
+    /** Called each time the editor shows the content of the note, once it has loaded. */
+    onContentShown?: () => void;
 }
 
 export default function EditableText({
-    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange
+    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange, onContentShown
 }: EditableTextProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
@@ -93,7 +103,7 @@ export default function EditableText({
         ? watchEditorBlocks(block, onBlockChange)
         : undefined));
     const [ attachmentSaves ] = useState(() =>
-        new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
+        new AttachmentSaves(() => spacedUpdate, parentComponent?.componentId));
     const [ inlineSourceSaves ] = useState(() =>
         new InlineSourceSaves(() => spacedUpdate.scheduleUpdate()));
     const [ embedHistories ] = useState(() => new EmbedHistories(() => editorRef.current));
@@ -142,6 +152,9 @@ export default function EditableText({
             editor?.setData(newContent);
             if (editor && note) {
                 applyPendingAttachmentChanges(editor, note.noteId, pendingAttachmentChangesRef);
+            }
+            if (editor) {
+                onContentShown?.();
             }
 
             // Jump to the first search match when navigated from search results.
@@ -208,13 +221,16 @@ export default function EditableText({
         editor.editing.view.focus();
     });
 
+    // An embed in the content of an embed links to this note rather than showing it again.
+    const seenNoteIds = new Set([ note.noteId ]);
     const contentEmbedHandlers: ContentEmbedHandlers = {
         loadNote(noteId, wrapper, boxSize, embedBlock, onEmbedBlockChange) {
             void loadEmbeddedNote(noteId, $(wrapper), boxSize, {
                 noteEditor: embedNoteEditor,
                 histories,
                 block: embedBlock,
-                onBlockChange: onEmbedBlockChange
+                onBlockChange: onEmbedBlockChange,
+                seenNoteIds
             });
         },
         loadAttachment(attachmentId, wrapper, boxSize) {
@@ -225,13 +241,21 @@ export default function EditableText({
             void loadEmbeddedAttachment(attachmentId, $(wrapper), boxSize, {
                 attachmentEditor: embedAttachmentEditor,
                 histories,
-                isFocused
+                isFocused,
+                seenNoteIds
             });
         },
         loadInline(source, wrapper, boxSize, options) {
             void loadInlineEmbed(source, $(wrapper), boxSize, {
                 ...options, saves: inlineSourceSaves, histories
             });
+        },
+        flushInline: () => inlineSourceSaves.flush(),
+        loadUnknown(wrapper, boxSize) {
+            void loadUnknownEmbed(wrapper, boxSize);
+        },
+        loadMedia(preview, wrapper, boxSize) {
+            void loadMediaEmbed(preview, wrapper, { boxSize, hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
@@ -242,11 +266,55 @@ export default function EditableText({
         enter: enterContentEmbed
     };
 
+    const [ linkDialog, setLinkDialog ] = useState<{
+        opts: EditLinkOpts;
+        request: LinkDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `EditLinkBalloon` renders into its container.
+    // On mobile, `showEditLinkDialog` opens the form in a modal instead.
+    function showLinkDialog(request: LinkDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = getEditLinkOpts(editorApiRef.current, waitForEditor, {
+            target: request.target,
+            display: request.display,
+            notePath: noteContext?.notePath
+        });
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showEditLinkDialog", opts);
+            return null;
+        }
+
+        setLinkDialog({ opts, request });
+        return () => setLinkDialog(null);
+    }
+
+    const [ contentEmbedDialog, setContentEmbedDialog ] = useState<{
+        opts: ContentEmbedOpts;
+        request: ContentEmbedDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `ContentEmbedBalloon` renders into its container.
+    // On mobile, `showContentEmbedDialog` opens the form in a modal instead.
+    function showContentEmbedDialog(request: ContentEmbedDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = { editorApi: editorApiRef.current, sizeEditable: true };
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showContentEmbedDialog", opts);
+            return null;
+        }
+
+        setContentEmbedDialog({ opts, request });
+        return () => setContentEmbedDialog(null);
+    }
+
     useLegacyImperativeHandlers({
-        addLinkToTextCommand() {
-            if (!editorApiRef.current) return;
-            const opts = getAddLinkOpts(editorApiRef.current, waitForEditor);
-            parentComponent?.triggerCommand("showAddLinkDialog", opts);
+        // Keyboard shortcut
+        async addLinkToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertInternalLink");
         },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
@@ -259,13 +327,10 @@ export default function EditableText({
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
         },
-        // Include note functionality note
-        addIncludeNoteToTextCommand() {
-            if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showContentEmbedDialog", {
-                editorApi: editorApiRef.current,
-                sizeEditable: true
-            });
+        // Keyboard shortcut
+        async addIncludeNoteToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertContentEmbed");
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -330,7 +395,7 @@ export default function EditableText({
     useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
         refreshEmbeddedNote(containerRef.current, noteId, {
-            noteEditor: embedNoteEditor, histories
+            noteEditor: embedNoteEditor, histories, seenNoteIds
         });
     });
 
@@ -350,6 +415,7 @@ export default function EditableText({
                 pendingAttachmentChangesRef
             );
         }
+        editor?.plugins.get("ReferenceLinkEditing").refreshNoteLinks(loadResults.getNoteIds());
         if (editor?.plugins.has("ImageEditingSource")) {
             editor.plugins.get("ImageEditingSource").refresh();
         }
@@ -503,7 +569,12 @@ export default function EditableText({
                 onEditorError={(error) => reportEditorError(error, reloadEditor)}
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
+                showLinkDialog={showLinkDialog}
+                showContentEmbedDialog={showContentEmbedDialog}
+                isExcerpt={block !== undefined}
                 onChange={() => {
+                    // `getData()` serializes the whole note, so saves wait for typing to pause.
+                    spacedUpdate.resetUpdateTimer();
                     spacedUpdate.scheduleUpdate();
                     const editor = editorRef.current;
                     if (editor) {
@@ -537,11 +608,25 @@ export default function EditableText({
                         setEditorNoteId(editor, contentNoteIdRef.current);
                     }
                     editor.setData(contentRef.current);
+                    if (contentNoteIdRef.current) {
+                        onContentShown?.();
+                    }
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
 
                 }}
             />}
 
+            {linkDialog && createPortal(
+                <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
+                linkDialog.request.container
+            )}
+
+            {contentEmbedDialog && createPortal(
+                <ContentEmbedBalloon
+                    opts={contentEmbedDialog.opts} onClose={contentEmbedDialog.request.close}
+                />,
+                contentEmbedDialog.request.container
+            )}
         </>
     );
 }
@@ -550,40 +635,107 @@ export default function EditableText({
  * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
  * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
  */
+/** What the edit link dialog opens on, besides the editor. */
+interface EditLinkRequest extends Pick<EditLinkOpts, "target" | "display"> {
+    /** The path of the note in the editor. Without it, the dialog lists no headings. */
+    notePath?: string | null;
+}
+
 /**
- * What the Add link dialog opens on: the link around the caret, which saving rewrites, or a new
- * link at the selection.
+ * What the edit link dialog opens on: the link around the caret or the selected link preview, which
+ * saving rewrites, or a new link at the selection, on the `target` side and shown as `display`.
  */
-export function getAddLinkOpts(api: CKEditorApi, ready: () => Promise<unknown>): AddLinkOpts {
+export function getEditLinkOpts(
+    api: CKEditorApi, ready: () => Promise<unknown>,
+    { target, display, notePath }: EditLinkRequest = {}
+): EditLinkOpts {
+    async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
+        await ready();
+        try {
+            await api.addLinkPreview(...args);
+        } catch (e) {
+            // Only a media embed given an address that plays nothing rejects.
+            console.error("Failed to change the media:", e);
+            toast.showError(t("youtube_video.insert_failed"));
+        }
+    }
+
+    const anchors = api.getAnchors();
+    const headings = notePath ? getLinkHeadings(api, notePath) : undefined;
     const currentLink = api.getCurrentLink();
     if (currentLink) {
+        const currentHeading = notePath && headings
+            ? findLinkedHeading(currentLink.href, headings, notePath)
+            : undefined;
         return {
             text: currentLink.text,
             hasSelection: false,
-            currentTitle: currentLink.text,
-            ...parseLinkHref(currentLink.href),
+            currentTitle: currentLink.isReference ? undefined : currentLink.text,
+            currentDescription: currentLink.description,
+            display: currentLink.display,
+            isMedia: currentLink.isMedia,
+            anchors,
+            headings,
+            ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),
             async addLink(notePath, linkTitle, externalLink) {
                 await ready();
                 await api.updateLink(notePath, linkTitle, externalLink);
-            }
+            },
+            addLinkPreview
         };
     }
 
     return {
         text: api.getSelectedText(),
         hasSelection: api.hasSelection(),
+        target,
+        display,
+        anchors,
+        headings,
         async addLink(notePath, linkTitle, externalLink) {
             await ready();
             api.addLink(notePath, linkTitle, externalLink);
-        }
+        },
+        addLinkPreview
     };
 }
 
+/** The headings of the editor, which link to their blocks in the note at `notePath`. */
+function getLinkHeadings(api: CKEditorApi, notePath: string): LinkHeading[] {
+    return api.getHeadings().map((heading) => ({
+        title: heading.text,
+        level: heading.level,
+        blockId: heading.blockId,
+        createLinkPath() {
+            const blockId = api.assignBlockId(heading);
+            return blockId ? `${notePath}?block=${encodeBlockParameter(blockId)}` : notePath;
+        }
+    }));
+}
+
+/** The heading of `headings` whose block `href` links to, in the note at `notePath`. */
+function findLinkedHeading(href: string, headings: LinkHeading[], notePath: string) {
+    if (!href.startsWith("#")) return undefined;
+
+    const [ path, query = "" ] = href.slice(1).split("?", 2);
+    const blockId = new URLSearchParams(query).get("block");
+    const isSameNote = path.split("/").at(-1) === notePath.split("/").at(-1);
+    return blockId && isSameNote
+        ? headings.find((heading) => heading.blockId === blockId)
+        : undefined;
+}
+
 /**
- * What a link's `href` opens the Add link dialog on: the note, with the anchor it points at, or
- * the address.
+ * What a link's `href` opens the edit link dialog on: one of the document's `anchors`, the note
+ * with the anchor it points at, or the address.
  */
-export function parseLinkHref(href: string): Pick<AddLinkOpts, "currentLink" | "currentBookmark"> {
+export function parseLinkHref(
+    href: string, anchors: string[] = []
+): Pick<EditLinkOpts, "currentLink" | "currentBookmark" | "currentAnchor"> {
+    if (href.startsWith("#") && anchors.includes(href.slice(1))) {
+        return { currentAnchor: href.slice(1) };
+    }
+
     if (!href.startsWith("#")) {
         return { currentLink: { externalLink: href }, currentBookmark: undefined };
     }

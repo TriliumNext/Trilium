@@ -30,21 +30,21 @@ overrides:
   "@codemirror/autocomplete": "6.20.4"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
-  "@lezer/common": "1.5.3"
+  "@lezer/common": "1.5.5"
   "@lezer/highlight": "1.2.5"
-  "@lezer/lr": "1.4.11"
+  "@lezer/lr": "1.4.12"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in
   # step: `ai` and the OpenAI/Google providers ask for one, the Anthropic provider for another. Two
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.65"
+  "@ai-sdk/provider-utils": "5.0.75"
   # The Codex provider runs the adapter against the user's own `codex` (CODEX_PATH), so the
   # 300-400 MB native Codex build the adapter depends on is never used.
   "@agentclientprotocol/codex-acp>@openai/codex": "-"
   "zod": "4.6.7"
-  "mermaid": "12.2.0"
-  "preact": "11.0.1"
+  "mermaid": "12.3.0"
+  "preact": "11.1.1"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"
   "flat@<5.0.1": ">=5.0.1"
@@ -125,7 +125,6 @@ ignoredOptionalDependencies:
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch
-  html@1.0.0: patches/html@1.0.0.patch
   react-zoom-pan-pinch@4.2.0: patches/react-zoom-pan-pinch@4.2.0.patch
 
 allowBuilds:

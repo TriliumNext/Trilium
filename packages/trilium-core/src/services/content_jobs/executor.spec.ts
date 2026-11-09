@@ -61,9 +61,9 @@ describe("content job executor", () => {
         createNote("<p>child</p>", source.noteId);
         createNote("<p>second child</p>", source.noteId);
         expect(await kindsOf(() => exportZip(source, "markdown"))).toEqual(new Set([ "htmlToMarkdown" ]));
-        expect(await kindsOf(() => exportZip(source, "html"))).toEqual(new Set([ "prettyPrintHtml" ]));
+        expect(await kindsOf(() => exportZip(source, "html"))).toEqual(new Set([ "formatHtml" ]));
         expect(await kindsOf(() => exportSingle(source, "markdown"))).toEqual(new Set([ "htmlToMarkdown" ]));
-        expect(await kindsOf(() => exportSingle(source, "html"))).toEqual(new Set([ "prettyPrintHtml" ]));
+        expect(await kindsOf(() => exportSingle(source, "html"))).toEqual(new Set([ "formatHtml" ]));
 
         const safe = { textImportedAsText: true, safeImport: true };
         expect(await kindsOf(() => importSingle("Note.md", "# Note\n\nBody", safe))).toEqual(new Set([ "markdownToHtml", "sanitizeHtml" ]));

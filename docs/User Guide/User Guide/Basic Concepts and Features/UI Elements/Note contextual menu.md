@@ -3,10 +3,13 @@
 
 Right-clicking the content of some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> or <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> reveals a contextual menu.
 
+In a text note being edited, right-clicking a link opens the menu of the link instead, the same as its _More actions_ menu (see <a class="reference-link" href="../../Note%20Types/Text/Links/External%20links.md">External links</a> and <a class="reference-link" href="../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>). A selection holding the link and more text keeps the contextual menu.
+
 ## Features
 
 *   On the <a class="reference-link" href="../../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>, the <a class="reference-link" href="../../Note%20Types/Text/Spell%20Check.md">Spell Check</a> suggestions are shown when right clicking on a misspelled word.
-*   The selected text can be searched either with a search engine (configured from <a class="reference-link" href="Options.md">Options</a>) or [inside Trilium](../Navigation/Search.md).
+*   The selected text can be searched either with a search engine (configured in <a class="reference-link" href="Options.md">Options</a> → _Other_) or [inside Trilium](../Navigation/Search.md).
+    *   To remove the web search from the menu, choose _None_ as the search engine.
 *   Basic clipboard functionality (cut, copy, paste).
 *   Copying the selected text as <a class="reference-link" href="../Import%20%26%20Export/Markdown.md">Markdown</a>.
 *   Performing quick operations using the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>.

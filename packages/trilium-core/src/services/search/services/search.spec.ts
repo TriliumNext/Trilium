@@ -464,6 +464,36 @@ describe("Search", () => {
         expect(searchResults[0].noteId).toEqual(guide.noteId);
     });
 
+    it("refuses the regex operator when the search context disallows it", () => {
+        const target = getContext().init(() => {
+            const { note: created } = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Regex target",
+                content: "aaaa body",
+                type: "text"
+            });
+            created.setLabel("code", "abc");
+            return created;
+        });
+
+        const queries = [
+            "note.content %= 'a+ body'",
+            "#code %= 'a.c'",
+            "note.title %= '^Regex'",
+            "#code = x OR (note.content %= 'body')",
+            "#code '%=' 'a.c'"
+        ];
+        for (const query of queries) {
+            const allowed = new SearchContext();
+            expect(searchService.findResultsWithQuery(query, allowed).map((r) => r.noteId), query)
+                .toContain(target.noteId);
+
+            const refused = new SearchContext({ allowRegex: false });
+            expect(searchService.findResultsWithQuery(query, refused), query).toEqual([]);
+            expect(refused.getError(), query).toContain("%=");
+        }
+    });
+
     it("fuzzy operator queries (~=) match note properties, labels and relations end-to-end (#9426)", () => {
         const tolkienAuthor = note("Tolkien");
         const booksNote = note("Books")
@@ -1212,7 +1242,7 @@ describe("Search", () => {
 
 
     it("breaks a collapsible summary onto its own line in the quick-search snippet", () => {
-        // striptags concatenates block text with no separator, which would merge a
+        // `stripTags()` concatenates block text with no separator, which would merge a
         // collapsible's summary straight into its body ("Summary TitleBody text").
         const noteBuilder = note("Collapsible note");
         noteBuilder.note.getContent = () => "<details class=\"trilium-collapsible\"><summary>Summary Title</summary><p>Body text here</p></details><p>After the block</p>";
@@ -1281,7 +1311,7 @@ describe("Search", () => {
     });
 
     it("surfaces link-preview url/title/description as separate lines in the quick-search snippet", () => {
-        // The url/title/description live in data attributes that striptags would otherwise drop,
+        // The url/title/description live in data attributes that `stripTags()` would drop,
         // leaving a blank snippet even though the note matched on the embedded title. The entity-
         // encoded ampersand in the title must be decoded rather than shown as "&amp;".
         const noteBuilder = note("Link preview note");
@@ -1293,8 +1323,8 @@ describe("Search", () => {
     });
 
     it("decodes HTML entities in the quick-search snippet instead of showing escape codes", () => {
-        // striptags leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, which would surface as
-        // literal escape codes in the dropdown.
+        // `stripTags()` leaves entities (&lt;, &gt;, &amp;, &nbsp;) untouched, so they would
+        // surface as literal escape codes in the dropdown.
         const noteBuilder = note("Entity note");
         noteBuilder.note.getContent = () => "<p>if a &lt; b &amp;&amp; b &gt; c, then&nbsp;done</p>";
         rootNote.child(noteBuilder);

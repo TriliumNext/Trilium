@@ -69,6 +69,17 @@ export async function renderCodeNotePreview(
     return template.content.firstElementChild as HTMLElement;
 }
 
+/**
+ * Returns the CSS that colors the previews for a background that `isDark` tells, unscoped, for
+ * previews in a shadow root, where the CSS of the page and its scopes do not reach: a presentation
+ * slide, whose theme rather than the app sets how dark it is.
+ */
+export async function getCodePreviewThemeCss(isDark: boolean) {
+    const choices = getThemeChoices();
+    const choice = choices.find(({ key }) => key === (isDark ? "d" : "l")) ?? choices[0];
+    return buildCodePreviewCss(await loadSlot(choice));
+}
+
 /** The light and dark themes when they follow the app, else the one theme. Print is light. */
 function getThemeChoices(): ThemeChoice[] {
     if (glob.device === "print") {

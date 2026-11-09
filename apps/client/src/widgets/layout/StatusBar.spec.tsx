@@ -83,11 +83,20 @@ describe("StatusBar panels", () => {
         fire("toggleRibbonTabSimilarNotes");
         // The panel carries the list, which is the whole point of the action reaching the bar at all.
         expect(container.querySelector(".similar-notes-pane .similar-notes-widget")).not.toBeNull();
-        expect(container.querySelector(".status-bar")?.className).toContain("status-bar-panel-open");
+        expect(document.body.classList.contains("status-bar-panel-open")).toBe(true);
 
         fire("toggleRibbonTabSimilarNotes");
         expect(container.querySelector(".similar-notes-pane")).toBeNull();
-        expect(container.querySelector(".status-bar")?.className).not.toContain("status-bar-panel-open");
+        expect(document.body.classList.contains("status-bar-panel-open")).toBe(false);
+    });
+
+    it("removes the body class when unmounted with a panel open", () => {
+        renderBar();
+        fire("toggleRibbonTabSimilarNotes");
+        expect(document.body.classList.contains("status-bar-panel-open")).toBe(true);
+
+        act(() => render(null, container));
+        expect(document.body.classList.contains("status-bar-panel-open")).toBe(false);
     });
 
     it("shows one panel at a time, the newer taking the place of the one already open", () => {

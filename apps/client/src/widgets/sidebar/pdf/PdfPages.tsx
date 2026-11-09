@@ -1,14 +1,14 @@
 import "./PdfPages.css";
 
 import type { CSSProperties } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 import type React from "react";
 import { List, type RowComponentProps } from "react-window";
 
 import { NoteContextDataMap } from "../../../components/note_context";
 import { t } from "../../../services/i18n";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
-import RightPanelWidget from "../RightPanelWidget";
+import RightPanelWidget, { NavigatedInNote } from "../RightPanelWidget";
 import { showCopyReferenceMenu } from "./PdfAnnotations";
 
 const ROW_HEIGHT = 180;
@@ -135,6 +135,7 @@ function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scroll
     copyReference: (page: number) => void;
 }) {
     const hasRequested = useRef(false);
+    const onNavigated = useContext(NavigatedInNote);
 
     useEffect(() => {
         if (!thumbnail && !hasRequested.current) {
@@ -146,7 +147,10 @@ function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scroll
     return (
         <div
             className={`pdf-page-item ${isActive ? 'active' : ''}`}
-            onClick={() => scrollToPage(pageNumber)}
+            onClick={() => {
+                scrollToPage(pageNumber);
+                onNavigated?.();
+            }}
             onContextMenu={(e) => showCopyReferenceMenu(e, () => copyReference(pageNumber))}
         >
             <div className="pdf-page-thumbnail">

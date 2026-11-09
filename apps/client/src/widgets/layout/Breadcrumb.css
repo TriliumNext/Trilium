@@ -64,12 +64,11 @@
             &::before {
                 opacity: .75;
             }
-        }
-    }
 
-    > span:last-of-type a {
-        max-width: 300px;
-        flex-shrink: 1;
+            body[dir=rtl] & .tn-icon {
+                transform: scaleX(-1);
+            }
+        }
     }
 
     ul {

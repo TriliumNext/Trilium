@@ -803,7 +803,6 @@
     "save_button": "حفظ",
     "baidu": "Baidu",
     "title": "محرك البحث",
-    "predefined_templates_label": "الإعدادات المسبقة",
     "custom_name_label": "اسم",
     "custom_name_placeholder": "اسم محرك البحث",
     "custom_url_placeholder": "عنوان URL لمحرك البحث",
@@ -1670,9 +1669,7 @@
     "integrity_check_succeeded": "نجح فحص سلامة البيانات — لم يتم العثور على أي مشاكل."
   },
   "watched_file_update_status": {
-    "upload_modified_file": "رفع الملف المعدل",
-    "ignore_this_change": "اهمل هذا التغيير",
-    "file_last_modified": "تم تعديل الملف <code class=\"file-path\"></code> آخر مرة في <span class=\"file-last-modified\"></span>."
+    "upload_modified_file": "رفع الملف المعدل"
   },
   "clipboard": {
     "copy_success": "تم النسخ للحافظة.",
@@ -2270,9 +2267,7 @@
   },
   "experimental_features": {
     "title": "الخيارات التجريبية",
-    "llm_name": "دردشة الذكاء الاصطناعي / نموذج اللغة الكبير",
-    "disclaimer": "هذه الخيارات تجريبية وقد تسبب عدم استقرار. استخدمها بحذر.",
-    "llm_description": "تفعيل الشريط الجانبي للدردشة بالذكاء الاصطناعي وملاحظات الدردشة المعتمدة على نماذج اللغة الكبيرة (LLMs)."
+    "disclaimer": "هذه الخيارات تجريبية وقد تسبب عدم استقرار. استخدمها بحذر."
   },
   "settings_appearance": {
     "ui": "واجهة المستخدم",

@@ -13,10 +13,13 @@
     },
     "contributor_full_list": "Pogledajte celu zajednicu",
     "channel": {
-      "nightly": "Noćni"
+      "nightly": "Noćni",
+      "standalone": "Samostalan"
     },
     "github_tooltip": "Prijavi probleme, predloži nove funkcionalnosti ili podrži na GitHub-u",
-    "license_tooltip": "Licenca"
+    "license_tooltip": "Licenca",
+    "donate": "Doniraj",
+    "donate_tooltip": "Donirajte da biste podržali ovaj projekat"
   },
   "toast": {
     "critical-error": {
@@ -31,6 +34,12 @@
     "bundle-error": {
       "title": "Pokretanje prilagođene skripte neuspešno",
       "message": "Skripta iz beleške sa ID-jem \"{{id}}\", naslovom \"{{title}}\" nije mogla da se izvrši zbog:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Nije uspelo preuzimanje liste vidžeta sa servera"
+    },
+    "widget-render-error": {
+      "title": "Nije uspelo prikazivanje prilagođenog React vidžeta"
     }
   },
   "add_link": {

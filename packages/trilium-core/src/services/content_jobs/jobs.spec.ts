@@ -1,11 +1,11 @@
 import { DEFAULT_TASK_STATES, MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, type TaskStateDef } from "@triliumnext/commons";
 import fs from "fs";
-import html from "html";
 import path from "path";
 import { fileURLToPath } from "url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
+import { formatHtml } from "../export/format_html.js";
 import markdownExportService from "../export/markdown.js";
 import { extractEnexNoteContent } from "../import/enex_converter.js";
 import markdownImportService from "../import/markdown.js";
@@ -111,7 +111,7 @@ describe("content jobs", () => {
                 () => markdownExportService.toMarkdown(RICH_HTML, { headerlessTables, taskStates: ENV.taskStates })
             ]);
         }
-        cases.push([ { kind: "prettyPrintHtml", html: RICH_HTML }, () => html.prettyPrint(RICH_HTML, { indent_size: 2 }) ]);
+        cases.push([ { kind: "formatHtml", html: RICH_HTML }, () => formatHtml(RICH_HTML) ]);
         cases.push([
             { kind: "officeToHtml", bytes: rtf, mime: "application/rtf", options: {} },
             () => convertOfficeToHtml(rtf, "application/rtf", {})
@@ -151,7 +151,7 @@ describe("content jobs", () => {
         try {
             await runContentJob({ kind: "markdownToHtml", markdown: RICH_MARKDOWN, title: "Title", env: ENV });
             await runContentJob({ kind: "htmlToMarkdown", html: RICH_HTML, env: ENV });
-            await runContentJob({ kind: "prettyPrintHtml", html: RICH_HTML });
+            await runContentJob({ kind: "formatHtml", html: RICH_HTML });
             await runContentJob({ kind: "sanitizeHtml", html: MALICIOUS_HTML, env: ENV });
             await runContentJob({ kind: "enexNoteContent", content: ENEX_CONTENT, tasks: [], env: ENV });
             await runContentJob({ kind: "prepareNoteText", input: { content: RICH_MARKDOWN, title: "T", extractFrontmatter: true, renderMarkdown: true, isTextLike: true, safeImport: true }, env: ENV });

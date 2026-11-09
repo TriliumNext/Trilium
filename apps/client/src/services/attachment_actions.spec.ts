@@ -36,7 +36,9 @@ vi.mock("../widgets/dialogs/image_compression/image_compression_dialog", () => (
     showImageCompressionDialog: mocks.showImageCompressionDialog
 }));
 
-const { copyAttachmentReference, getAttachmentActionGroups } = await import("./attachment_actions");
+const {
+    copyAttachmentReference, getAttachmentActionGroups, getLinkedAttachmentActions
+} = await import("./attachment_actions");
 
 function attachmentOf(role: string, mime = "application/pdf") {
     const title = "report.pdf";
@@ -108,7 +110,7 @@ describe("getAttachmentActionGroups", () => {
         await actions["compress-image-menu"].run();
 
         expect(mocks.open.openAttachmentExternally).toHaveBeenCalledWith("att1", "image/png");
-        expect(mocks.open.openAttachmentCustom).toHaveBeenCalledWith("att1", "image/png");
+        expect(mocks.open.openAttachmentCustom).toHaveBeenCalledWith("att1");
         expect(mocks.open.downloadAttachment).toHaveBeenCalledWith("att1");
         expect(mocks.triggerCommand).toHaveBeenCalledWith("showOcrTextDialog", {
             textUrl: "ocr/attachments/att1/text",
@@ -147,6 +149,31 @@ describe("getAttachmentActionGroups", () => {
             "attachments_actions.download",
             "ocr.view_extracted_text"
         ] ]);
+    });
+
+    it("gives the menu of a link or an embed the actions by what they do", () => {
+        const KINDS = [ "view", "change", "image", "deletion", "conversion" ] as const;
+        const byKind = (attachment: FAttachment, isReadOnly = false) => {
+            const actions = getLinkedAttachmentActions(attachment, { isReadOnly });
+            return Object.fromEntries(KINDS.map((kind) =>
+                [ kind, actions[kind].map((action) => action.title) ]));
+        };
+        const [ view ] = titles(attachmentOf("file"));
+
+        expect(byKind(attachmentOf("file"))).toStrictEqual({
+            view,
+            change: [
+                "attachments_actions.upload_new_revision", "attachments_actions.rename_attachment"
+            ],
+            image: [],
+            deletion: [ "attachments_actions.delete_attachment" ],
+            conversion: [ "attachments_actions.convert_attachment_into_note" ]
+        });
+        expect(byKind(attachmentOf("image", "image/png")).image)
+            .toStrictEqual([ "compress-image-menu" ]);
+        expect(byKind(attachmentOf("file"), true)).toStrictEqual({
+            view, change: [], image: [], deletion: [], conversion: []
+        });
     });
 
     it("renames, deletes and converts only once the user has agreed", async () => {

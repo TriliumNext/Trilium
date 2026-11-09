@@ -1,5 +1,5 @@
 :where(:root) {
-    --tabs-focus-border-color: var(--link-color, var(--ck-color-focus-border));
+    --tabs-focus-border-color: var(--input-focus-outline-color, var(--ck-color-focus-border));
 }
 
 /* Saved HTML without a marked tab, such as a preview or a printout, reads as a sequence of titled
@@ -149,10 +149,12 @@
     }
 }
 
-.ck-editor__editable .trilium-tabs:has(.ck-editor__nested-editable_focused) {
-    &:not(:has(.trilium-tabs .ck-editor__nested-editable_focused)) {
-        outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
-    }
+.ck-editor__editable .trilium-tabs.ck-widget > .ck-widget__selection-handle {
+    margin-inline-start: var(--_tabs-border-radius, 0px);
+}
+
+.ck-editor__editable .trilium-tabs.ck-widget.trilium-tabs--focused {
+    outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
 }
 
 .ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-panel {

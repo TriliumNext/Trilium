@@ -13,8 +13,13 @@
 }
 
 .include-note-content.type-mermaidDiagram:has(.note-detail-split:not(.split-read-only)) {
+    --_include-note-frame-height:
+        calc(var(--_include-note-content-top-inset) + var(--_include-note-content-bottom-inset));
+
     padding: var(--_include-note-content-top-inset) var(--_include-note-content-inset)
              var(--_include-note-content-bottom-inset);
+    /* `.include-note-box-height` takes the resized height, less the frame. */
+    height: auto;
 }
 
 .include-note-content:not(:fullscreen) .mermaid-diagram {

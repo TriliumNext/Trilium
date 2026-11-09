@@ -278,6 +278,16 @@ describe("MasterDetailModal", () => {
 
         // Closed, so nothing resets it: the announced page is still what the header names.
         expect(container.querySelector(".tn-master-detail-title")?.textContent).toBe("Attributes");
+        expect(close).not.toHaveBeenCalled();
+    });
+
+    it("closes the page on show when the modal hides, as its back button would", () => {
+        const close = vi.fn();
+        renderModal("Attributes", close);
+        expect(close).not.toHaveBeenCalled();
+
+        renderModal("Attributes", close, false);
+        expect(close).toHaveBeenCalledTimes(1);
     });
 
     it("wraps each half in the class master_detail.css lays it out with", () => {

@@ -1,10 +1,9 @@
 import type { CryptoProvider, ScryptOptions } from "@triliumnext/core";
 import { binary_utils } from "@triliumnext/core";
 import crypto from "crypto";
-import { generator } from "rand-token";
 import { promisify } from "util";
 
-const randtoken = generator({ source: "crypto" });
+const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const scryptAsync = promisify(crypto.scrypt) as (
     password: crypto.BinaryLike,
     salt: crypto.BinaryLike,
@@ -31,7 +30,11 @@ export default class NodejsCryptoProvider implements CryptoProvider {
     }
 
     randomString(length: number): string {
-        return randtoken.generate(length);
+        let result = "";
+        for (let i = 0; i < length; i++) {
+            result += CHARS[crypto.randomInt(CHARS.length)];
+        }
+        return result;
     }
 
     hmac(secret: string | Uint8Array, value: string | Uint8Array) {

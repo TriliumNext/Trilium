@@ -1,6 +1,6 @@
 import type { EmojiSuggestion, MentionHostedListState, SlashCommandConfig, SlashCommandDefinition } from "@triliumnext/ckeditor5";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 const { getNoteSuggestions, createNoteFromSuggestion } = vi.hoisted(() => ({
     getNoteSuggestions: vi.fn(async () => [ { notePath: "root/a", noteTitle: "Alpha", highlightedNotePathTitle: "Alpha" } ]),
@@ -13,7 +13,18 @@ vi.mock("../../../services/note_autocomplete", async (importOriginal) => ({
     createNoteFromSuggestion
 }));
 
-import { createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view";
+const { createChildNote, openChildNote } = vi.hoisted(() => ({
+    createChildNote: vi.fn<(parent: object, title?: string) => Promise<string | undefined>>(),
+    openChildNote: vi.fn()
+}));
+
+vi.mock("./child_note", () => ({ createChildNote, openChildNote }));
+
+import contextMenu, { type MenuCommandItem } from "../../../menus/context_menu";
+import {
+    createAutocompleteMentionList, createEmojiList, createNoteMentionList, createSlashCommandList,
+    openSlashCommandMenu
+} from "./mention_list_view";
 
 describe("createNoteMentionList", () => {
     beforeEach(() => {
@@ -82,6 +93,51 @@ describe("createNoteMentionList", () => {
         list.handleKeyDown(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
         expect(createNoteFromSuggestion).toHaveBeenLastCalledWith(childRow, "root/second");
         list.destroy?.();
+    });
+
+    it("creates a child note without asking its type, and opens it once linked", async () => {
+        const childRow = {
+            action: "create-child-note", noteTitle: "al", highlightedNotePathTitle: "Create child"
+        };
+        getNoteSuggestions.mockResolvedValue([ childRow ] as never);
+        createNoteFromSuggestion.mockClear();
+        createChildNote.mockResolvedValueOnce("root/edited/al").mockResolvedValueOnce(undefined);
+        const parent = { notePath: "root/edited", isProtected: false, ntxId: "ntx" };
+        const order: string[] = [];
+        openChildNote.mockImplementation(() => order.push("open"));
+        const pick = async () => {
+            const list = createNoteMentionList({
+                allowCreatingNotes: true, getChildNoteParent: () => parent
+            });
+            // As the editor does, which inserts the link once the promised mention settles.
+            const commit = vi.fn<MentionHostedListState["commit"]>((item) => {
+                void Promise.resolve(item).then((mention) => order.push(mention ? "link" : "none"));
+            });
+            await act(async () => list.show({
+                query: "al", caretRect: () => new DOMRect(10, 10, 1, 16), editable: null,
+                commit, setActiveDescendant: vi.fn()
+            }));
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+            list.handleKeyDown(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+            await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+            list.destroy?.();
+            return commit;
+        };
+
+        const commit = await pick();
+        expect(createChildNote).toHaveBeenLastCalledWith(parent, "al");
+        expect(createNoteFromSuggestion).not.toHaveBeenCalled();
+        expect(await commit.mock.calls[0]?.[0])
+            .toEqual({ id: "@root/edited/al", notePath: "root/edited/al" });
+        expect(openChildNote)
+            .toHaveBeenCalledExactlyOnceWith("root/edited/al", "ntx", { selectTitle: false });
+        expect(order).toEqual([ "link", "open" ]);
+
+        // Nothing is linked or opened where the note is not created.
+        order.length = 0;
+        await pick();
+        expect(order).toEqual([ "none" ]);
+        expect(openChildNote).toHaveBeenCalledOnce();
     });
 });
 
@@ -177,6 +233,69 @@ describe("createSlashCommandList", () => {
         await act(() => new Promise((resolve) => setTimeout(resolve, 100)));
         expect(commit).toHaveBeenCalledExactlyOnceWith({ id: "snippet-0", definition: definitions[1] });
         list.destroy?.();
+    });
+});
+
+describe("openSlashCommandMenu", () => {
+    it("lists the entries that insert or wrap below the handle, and runs the one picked", () => {
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        const definitions: SlashCommandDefinition[] = [
+            {
+                id: "table", title: "Table", description: "Insert a table.", aliases: [ "grid" ],
+                icon: "<svg></svg>", willInsert: true
+            },
+            { id: "heading2", title: "Heading 2", icon: "<svg></svg>", willWrap: true },
+            { id: "align-left", title: "Align left", icon: "<svg></svg>", willTransform: true },
+            { id: "custom", title: "Custom", icon: "<svg></svg>" },
+            {
+                id: "snippet-0", title: "<b>Hi</b>", iconClass: "tn-icon bx bx-note",
+                iconColorClass: "use-note-color", willInsert: true
+            }
+        ];
+        const palette = { search: vi.fn(() => definitions), run: vi.fn() };
+        const focusTracker = { add: vi.fn(), remove: vi.fn() };
+        const editor = {
+            plugins: { get: () => palette }, ui: { focusTracker }
+        } as unknown as Parameters<NonNullable<SlashCommandConfig["list"]>>[0];
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue();
+        const handle = document.createElement("button");
+        const onClose = vi.fn();
+
+        openSlashCommandMenu(editor, handle, onClose);
+
+        expect(palette.search).toHaveBeenCalledExactlyOnceWith("");
+        const options = show.mock.calls[0][0];
+        expect(options).toMatchObject({
+            anchor: handle, filterable: true, focusFilter: true, className: "slash-command-menu"
+        });
+        expect(options.items).toEqual([ {
+            title: "Table", description: "Insert a table.", keywords: [ "grid" ],
+            uiIcon: "bx bx-empty", uiIconSvg: "<svg></svg>", handler: expect.any(Function)
+        }, {
+            title: "Heading 2", uiIcon: "bx bx-empty", uiIconSvg: "<svg></svg>",
+            handler: expect.any(Function)
+        }, {
+            title: "&lt;b&gt;Hi&lt;&#x2F;b&gt;", uiIcon: "tn-icon bx bx-note",
+            iconColorClass: "use-note-color", handler: expect.any(Function)
+        } ]);
+        const greeting = options.items[2] as MenuCommandItem<never>;
+        greeting.handler?.(greeting, new MouseEvent("click"));
+        expect(palette.run).toHaveBeenCalledExactlyOnceWith(definitions[4]);
+
+        const container = document.createElement("div");
+        options.onShow?.(container);
+        expect(focusTracker.add).toHaveBeenCalledWith(container);
+        options.onHide?.();
+        expect(focusTracker.remove).toHaveBeenCalledWith(container);
+        expect(onClose).toHaveBeenCalledOnce();
+
+        // A click on the handle of the open menu only closes the menu.
+        vi.spyOn(contextMenu, "dismissedByLastPress", "get").mockReturnValue(true);
+        openSlashCommandMenu(editor, handle, onClose);
+        expect(show).toHaveBeenCalledOnce();
+        expect(onClose).toHaveBeenCalledTimes(2);
     });
 });
 

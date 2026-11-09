@@ -200,7 +200,8 @@ function withDispatcherCleanup(response: UndiciResponse, dispatcher: Agent): Res
             }
         },
         cancel() {
-            void reader.cancel();
+            // Cancelling the body of an aborted request rejects, as the abort errored it.
+            void reader.cancel().catch(() => {});
             cleanup();
         }
     });

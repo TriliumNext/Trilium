@@ -61,6 +61,12 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/NoteWithBranch"
+                "409":
+                    description: a note with the given noteId already exists (NOTE_ALREADY_EXISTS)
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 default:
                     description: unexpected error
                     content:
@@ -352,6 +358,20 @@ paths:
             description: Imports ZIP file into a given note.
             tags: [Notes]
             operationId: importZip
+            requestBody:
+                description: >
+                    The ZIP file, sent as `application/zip` or `application/octet-stream`;
+                    other content types are not accepted.
+                required: true
+                content:
+                    application/zip:
+                        schema:
+                            type: string
+                            format: binary
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "201":
                     description: note created
@@ -805,6 +825,12 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Attribute"
+                "409":
+                    description: an attribute with the given attributeId already exists (ATTRIBUTE_ALREADY_EXISTS)
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
                 default:
                     description: unexpected error
                     content:
@@ -1276,7 +1302,7 @@ components:
                     description: true if this note (as a folder) should appear expanded
                 noteId:
                     $ref: "#/components/schemas/EntityId"
-                    description: DON'T specify unless you want to force a specific noteId
+                    description: DON'T specify unless you want to force a specific noteId. It must not belong to an existing note.
                 branchId:
                     $ref: "#/components/schemas/EntityId"
                     description: DON'T specify unless you want to force a specific branchId

@@ -1,304 +1,143 @@
-import { ClassicEditor, Essentials, Paragraph, Widget, _setModelData as setModelData } from "ckeditor5";
+import { INLINE_BOX_SIZES } from "@triliumnext/commons";
+import {
+    ButtonView, type ClassicEditor, DropdownView, Essentials, ListItemView, ListSeparatorView,
+    type ModelElement, Paragraph, Widget
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getListRows } from "../../../test/dropdown-kit.js";
 import { createTestEditor } from "../../../test/editor-kit.js";
-import ContentEmbedBoxSizeDropdown from "./content_embed_box_size_dropdown.js";
-import ContentEmbed, { BOX_SIZE_COMMAND_NAME, BOX_SIZES } from "./content_embed.js";
+import ContentEmbedBoxSizeDropdown, {
+    CONTENT_EMBED_BOX_SIZE_DROPDOWN
+} from "./content_embed_box_size_dropdown.js";
+import ContentEmbed, {
+    BOX_SIZE_COMMAND_NAME, DEFAULT_BOX_SIZE_COMMAND_NAME, type EmbedContentInfo
+} from "./content_embed.js";
 
 describe("ContentEmbedBoxSizeDropdown", () => {
     let editor: ClassicEditor;
+    let tools: ContentEmbedToolProvider | null;
+    let contentInfo: EmbedContentInfo | null;
 
     beforeEach(async () => {
-        editor = await createTestEditor([Essentials, Paragraph, Widget, ContentEmbed, ContentEmbedBoxSizeDropdown]);
-    });
-
-    it("loads the plugin and registers the dropdown component", () => {
-        expect(editor.plugins.get(ContentEmbedBoxSizeDropdown)).toBeInstanceOf(ContentEmbedBoxSizeDropdown);
-        expect(editor.ui.componentFactory.has("contentEmbedBoxSizeDropdown")).toBe(true);
-    });
-
-    it("dropdown has all BOX_SIZES as list items with correct labels", () => {
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as {
-            listView?: { items: Iterable<{ children?: Iterable<{ label?: string }> }> };
-            panelView?: { children: Iterable<{ items: Iterable<{ children?: Iterable<{ label?: string }> }> }> };
-        };
-
-        // Render the dropdown so its panel children are initialised
-        (dropdownView as unknown as { render(): void }).render?.();
-
-        // The dropdown button should exist
-        const buttonView = (dropdownView as unknown as { buttonView: { label: string; withText: boolean; tooltip: boolean } }).buttonView;
-        expect(buttonView.withText).toBe(true);
-        expect(buttonView.tooltip).toBe(true);
-        expect(buttonView.label).toBe("Box size");
-    });
-
-    it("button label shows 'Box size' when command value is null", () => {
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            buttonView: { label: string };
-        };
-
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { value: string | null; isEnabled: boolean };
-        // No embed selected -> value is null
-        expect(command.value).toBeNull();
-        expect(dropdownView.buttonView.label).toBe("Box size");
-    });
-
-    it("button label updates to the size label when a value is set", () => {
-        // Insert an contentEmbed element so the command can find something to bind to
-        editor.model.change((writer) => {
-            const root = editor.model.document.getRoot();
-            if (!root) {
-                throw new Error("No root");
-            }
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note",
-                boxSize: "small"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
+        tools = null;
+        contentInfo = { defaultBoxSize: "resizable", hasCompactContent: false };
+        editor = await createTestEditor([
+            Essentials, Paragraph, Widget, ContentEmbed, ContentEmbedBoxSizeDropdown
+        ], {
+            contentEmbed: { getTools: () => tools, getEmbedContentInfo: () => contentInfo }
         });
-
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            buttonView: { label: string };
-        };
-
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { value: string | null };
-        expect(command.value).toBe("small");
-        // No dictionary is configured, so the label renders its English message id.
-        expect(dropdownView.buttonView.label).toBe("Small");
     });
 
-    it("shows the box size icon of the selected embed's content, naming the size in its tooltip", () => {
-        const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"></svg>";
-        let provider: ContentEmbedToolProvider | null = {
-            boxSizeIcon: icon,
-            getTools: () => [],
-            execute: () => {},
-            subscribe: () => () => {}
-        };
-        editor.config.set("contentEmbed", { getTools: () => provider });
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            buttonView: { icon?: string; label: string; withText: boolean; tooltip: boolean };
-        };
-        const getFace = () => {
-            const { icon, label, withText, tooltip } = dropdownView.buttonView;
-            return { icon, label, withText, tooltip };
-        };
-
-        editor.model.change((writer) => {
-            const root = editor.model.document.getRoot();
-            if (!root) {
-                throw new Error("No root");
-            }
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note",
-                boxSize: "small"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
-        });
-        editor.ui.update();
-        expect(getFace()).toEqual({ icon, label: "Box size: Small", withText: false, tooltip: true });
-
-        // Content without an icon shows the name of the size.
-        provider = null;
-        editor.ui.update();
-        expect(getFace()).toEqual({ icon: undefined, label: "Small", withText: true, tooltip: true });
-    });
-
-    it("button label falls back to raw value for an unknown size", () => {
-        // Insert an contentEmbed with a size value not in BOX_SIZES
-        editor.model.change((writer) => {
-            const root = editor.model.document.getRoot();
-            if (!root) {
-                throw new Error("No root");
-            }
-
-            // Extend schema temporarily by bypassing schema checks for test
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note",
-                boxSize: "huge"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
-        });
-
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            buttonView: { label: string };
-        };
-
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { value: string | null };
-        // "huge" is not in BOX_SIZES, so label falls back to the raw value
-        if (command.value === "huge") {
-            expect(dropdownView.buttonView.label).toBe("huge");
-        } else {
-            // If schema rejected "huge", value is null -> label is "Box size"
-            expect(dropdownView.buttonView.label).toBe("Box size");
+    function createDropdown() {
+        const dropdown = editor.ui.componentFactory.create(CONTENT_EMBED_BOX_SIZE_DROPDOWN);
+        if (!(dropdown instanceof DropdownView)) {
+            throw new Error("Expected the box size dropdown.");
         }
-    });
+        dropdown.render();
+        return dropdown;
+    }
 
-    it("dropdown is bound to command isEnabled", () => {
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            isEnabled: boolean;
-        };
-
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { isEnabled: boolean };
-        // With no embed selected the command should be disabled
-        expect(dropdownView.isEnabled).toBe(command.isEnabled);
-        expect(dropdownView.isEnabled).toBe(false);
-    });
-
-    it("dropdown is enabled when an embed element is selected", () => {
+    function insertEmbed(attributes: Record<string, unknown>): ModelElement {
+        let embed: ModelElement | null = null;
         editor.model.change((writer) => {
             const root = editor.model.document.getRoot();
             if (!root) {
-                throw new Error("No root");
+                throw new Error("The editor has no root.");
             }
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note-2",
-                boxSize: "medium"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
+            embed = writer.createElement("contentEmbed", attributes);
+            writer.insert(embed, root, 0);
+            writer.setSelection(embed, "on");
         });
+        if (!embed) {
+            throw new Error("Expected an embed.");
+        }
+        editor.ui.update();
+        return embed;
+    }
 
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            isEnabled: boolean;
+    /** The row `label`, which `getListRows` leaves out once the list hides it. */
+    function getRow(dropdown: DropdownView, label: string) {
+        dropdown.isOpen = true;
+        const button = [ ...dropdown.listView?.items ?? [] ]
+            .map((item) => (item instanceof ListItemView ? item.children.first : null))
+            .find((view): view is ButtonView => view instanceof ButtonView && view.label === label);
+        if (!button) {
+            throw new Error(`Expected the row "${label}".`);
+        }
+        return button;
+    }
+
+    it("names the box size of the selected embed, and the size in the tooltip of an icon", () => {
+        const dropdown = createDropdown();
+        expect(dropdown.buttonView).toMatchObject({ label: "Box size", tooltip: true });
+        expect(dropdown.isEnabled).toBe(false);
+
+        insertEmbed({ noteId: "n1", boxSize: "compact" });
+        expect(dropdown.isEnabled).toBe(true);
+        expect(dropdown.buttonView).toMatchObject({ label: "Compact", withText: true });
+
+        const icon = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"></svg>";
+        tools = { boxSizeIcon: icon, getTools: () => [], execute: () => {}, subscribe: () => () => {} };
+        editor.ui.update();
+        expect(dropdown.buttonView)
+            .toMatchObject({ icon, label: "Box size: Compact", withText: false });
+    });
+
+    it("lists the sizes the selected embed can take, the current one on, and Default last", () => {
+        const dropdown = createDropdown();
+        insertEmbed({ noteId: "n1", boxSize: "full" });
+        expect(getListRows(dropdown))
+            .toStrictEqual([ "Compact", "Resizable", "Full ✓", "Expandable", "Default" ]);
+        const items = [ ...dropdown.listView?.items ?? [] ];
+        expect(items.at(-2)).toBeInstanceOf(ListSeparatorView);
+        expect(getRow(dropdown, "Default").role).toBe("menuitem");
+        expect(getRow(dropdown, "Full").role).toBe("menuitemradio");
+
+        // A source embed has no title for Compact or Expandable to show.
+        insertEmbed({ language: "mermaid", source: "graph TD", boxSize: "resizable" });
+        const rows = [ ...dropdown.listView?.items ?? [] ]
+            .map((item) => (item instanceof ListItemView ? item.children.first : null))
+            .filter((view): view is ButtonView => view instanceof ButtonView);
+        expect(rows.filter((row) => row.isVisible).map((row) => row.label))
+            .toEqual([ "Resizable", "Full", "Default" ]);
+        expect(INLINE_BOX_SIZES).toEqual([ "resizable", "full" ]);
+    });
+
+    it("sets the size picked and focuses the editor, and Default puts the box back", () => {
+        const dropdown = createDropdown();
+        const embed = insertEmbed({ noteId: "n1", boxSize: "resizable", customHeight: "12em" });
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        const execute = vi.spyOn(editor, "execute");
+
+        getRow(dropdown, "Full").fire("execute");
+        expect(execute).toHaveBeenCalledWith(BOX_SIZE_COMMAND_NAME, { value: "full" });
+        expect(embed.getAttribute("boxSize")).toBe("full");
+        expect(embed.hasAttribute("customHeight")).toBe(false);
+        expect(focus).toHaveBeenCalled();
+
+        expect(getRow(dropdown, "Default").isEnabled).toBe(true);
+        getRow(dropdown, "Default").fire("execute");
+        expect(execute).toHaveBeenCalledWith(DEFAULT_BOX_SIZE_COMMAND_NAME);
+        expect(embed.getAttribute("boxSize")).toBe("resizable");
+        expect(getRow(dropdown, "Default").isEnabled).toBe(false);
+
+        // The host has not loaded the note, so its default is unknown.
+        contentInfo = null;
+        editor.ui.update();
+        expect(getRow(dropdown, "Default").isEnabled).toBe(false);
+    });
+
+    it("hides for content whose tools hide it, and shows a raw size the model holds", () => {
+        const dropdown = createDropdown();
+        insertEmbed({ noteId: "n1", boxSize: "huge" });
+        expect(dropdown.buttonView.label).toBe("huge");
+
+        tools = {
+            hiddenToolbarItems: [ CONTENT_EMBED_BOX_SIZE_DROPDOWN ],
+            getTools: () => [], execute: () => {}, subscribe: () => () => {}
         };
-
-        expect(dropdownView.isEnabled).toBe(true);
-    });
-
-    it("executing an item fires the box size command with the correct value", () => {
-        editor.model.change((writer) => {
-            const root = editor.model.document.getRoot();
-            if (!root) {
-                throw new Error("No root");
-            }
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note-3",
-                boxSize: "small"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
-        });
-
-        const spy = vi.spyOn(editor, "execute");
-
-        // Create the dropdown (which calls addListToDropdown and registers the "execute" listener)
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown");
-
-        // In CKEditor, when a dropdown list item is activated the dropdown fires "execute"
-        // with evt.source being the button model of the chosen item.  We simulate that by
-        // creating a fake source object with _boxSizeValue and firing it directly on the
-        // dropdown's ObservableMixin through the internal `fire(eventName, eventInfo)` API.
-        // The EventInfo object's .source property must carry _boxSizeValue.
-        const fakeSource = { _boxSizeValue: "full" };
-
-        // ObservableMixin#fire: first arg is event name/EventInfo, subsequent args are data.
-        // When called as dropdownView.fire("execute") the EventInfo.source is the emitter.
-        // We need the handler to see a source with _boxSizeValue, so we fire it on the
-        // fakeSource object after temporarily binding it as the emitter:
-        (dropdownView as unknown as {
-            fire(name: string): void;
-            on(name: string, cb: (evt: { source: unknown }) => void): void;
-        });
-
-        // The cleanest approach: attach our own listener that re-fires with the correct source,
-        // or use the fact that the handler reads evt.source off the EventInfo.
-        // CKEditor's Observable#fire returns the EventInfo; we can craft one manually.
-
-        // Simplest: get the underlying on("execute") handler by wrapping a new listener
-        // and directly passing a crafted EventInfo-like object to the registered callback.
-        // We fire on a surrogate that has _boxSizeValue and make that the emitter.
-        (fakeSource as unknown as {
-            fire(name: string): void;
-            on(name: string, cb: () => void): void;
-            off(name: string, cb: () => void): void;
-            decorate(name: string): void;
-            listenTo(emitter: unknown, event: string, callback: () => void): void;
-            stopListening(): void;
-        });
-
-        // Best approach: fire the event on the dropdown but patch evt.source in a
-        // wrapper listener before our handler sees it.  We leverage that listeners
-        // are called in registration order.
-        let capturedEvt: { source: unknown } | null = null;
-        (dropdownView as unknown as {
-            on(event: string, cb: (evt: { source: unknown }) => void, opts?: object): void;
-        }).on(
-            "execute",
-            (evt) => {
-                capturedEvt = evt;
-                // Override the source with our fake so the next (already-registered)
-                // listener sees _boxSizeValue.  CKEditor EventInfo is a plain object here.
-                (evt as unknown as Record<string, unknown>).source = fakeSource;
-            },
-            { priority: "highest" }
-        );
-
-        (dropdownView as unknown as { fire(name: string): void }).fire("execute");
-
-        expect(spy).toHaveBeenCalledWith(BOX_SIZE_COMMAND_NAME, { value: "full" });
-        expect(capturedEvt).not.toBeNull();
-    });
-
-    it("item isOn binding reflects the current command value", () => {
-        editor.model.change((writer) => {
-            const root = editor.model.document.getRoot();
-            if (!root) {
-                throw new Error("No root");
-            }
-            const contentEmbed = writer.createElement("contentEmbed", {
-                noteId: "test-note-4",
-                boxSize: "medium"
-            });
-            writer.insert(contentEmbed, root, 0);
-            writer.setSelection(contentEmbed, "on");
-        });
-
-        // Create a fresh dropdown which builds the itemDefinitions for the current command state
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown") as unknown as {
-            panelView: {
-                children: {
-                    get(index: number): {
-                        items: {
-                            get(index: number): {
-                                children: {
-                                    get(index: number): { isOn: boolean; _boxSizeValue: string };
-                                };
-                            };
-                        };
-                    };
-                };
-            };
-        };
-
-        // Open the dropdown to force rendering of the list
-        (dropdownView as unknown as { isOpen: boolean }).isOpen = true;
-
-        const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as { value: string | null };
-        expect(command.value).toBe("medium");
-
-        // The "medium" index in BOX_SIZES
-        expect(BOX_SIZES.indexOf("medium")).toBeGreaterThanOrEqual(0);
-    });
-
-    it("_getBoxSizeListItemDefinitions returns one item per BOX_SIZES entry", () => {
-        // Indirect test: verify the dropdown panel eventually has as many items as BOX_SIZES
-        const dropdownView = editor.ui.componentFactory.create("contentEmbedBoxSizeDropdown");
-
-        // Force the dropdown to render its panel
-        (dropdownView as unknown as { render(): void }).render?.();
-        (dropdownView as unknown as { isOpen: boolean }).isOpen = true;
-
-        // The panel should contain a list view with BOX_SIZES.length items
-        const panel = (dropdownView as unknown as { panelView: { children: { length: number } } }).panelView;
-        expect(panel).toBeDefined();
-    });
-
-    it("initialises with ContentEmbed in its requires list", () => {
-        expect(ContentEmbedBoxSizeDropdown.requires).toContain(ContentEmbed);
+        editor.ui.update();
+        expect(dropdown.element?.classList.contains("ck-hidden")).toBe(true);
     });
 });

@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 import { applyTabs, getTabTitle } from "../tabs/tabs_read_only.js";
-import { getBlockRangeElements, showBlockReference } from "./block_reference_read_only.js";
+import {
+    getBlockRangeElements, showAnchor, showBlockReference
+} from "./block_reference_read_only.js";
 
 const SPACER = "<div style=\"height: 1000px\"></div>";
 
@@ -153,6 +155,51 @@ describe("showBlockReference", () => {
         expect(showBlockReference(container, "gone:b")).toBe(false);
         expect(scrollBy).toHaveBeenCalledOnce();
         expect(getFlashed(container)).toEqual([ "B" ]);
+    });
+});
+
+describe("showAnchor", () => {
+    it("centers and flashes the block that holds an anchor, or the anchor itself", () => {
+        const scroller = mountScroller(SPACER
+            + "<details><summary>s</summary><p style=\"height: 100px\">"
+            + "<strong><a id=\"a&quot;b\"></a>held</strong></p></details>"
+            + SPACER + "<span id=\"loose\">loose</span>" + SPACER);
+
+        expect(showAnchor(scroller, "a\"b")).toBe(true);
+        expect(scroller.querySelector("details")?.open).toBe(true);
+        const paragraph = scroller.querySelector("p");
+        expect(paragraph?.getBoundingClientRect().top)
+            .toBeCloseTo(scroller.getBoundingClientRect().top + 150);
+        expect(getFlashed(scroller)).toEqual([ "held" ]);
+
+        expect(showAnchor(scroller, "loose")).toBe(true);
+        expect(getFlashed(scroller)).toEqual([ "held", "loose" ]);
+
+        expect(showAnchor(scroller, "missing")).toBe(false);
+        expect(scrollBy).toHaveBeenCalledTimes(2);
+    });
+
+    it("scrolls the root of a page that has no scrolling element", () => {
+        // A page in quirks mode has none when both its root and its body clip their overflow.
+        const frame = document.createElement("iframe");
+        document.body.append(frame);
+        mounted.push(frame);
+        const page = frame.contentDocument as Document;
+        page.open();
+        page.write("<html><style>html, body { overflow: hidden; }</style>"
+            + "<body><p id=\"a\">A</p></body></html>");
+        page.close();
+        expect(page.compatMode).toBe("BackCompat");
+        expect(page.scrollingElement).toBeNull();
+        const pageWindow = frame.contentWindow as typeof window;
+        const pageScrollBy = vi.spyOn(pageWindow.Element.prototype, "scrollBy")
+            .mockImplementation(() => {});
+
+        expect(showAnchor(page.body, "a")).toBe(true);
+
+        expect(pageScrollBy).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ behavior: "smooth" }));
+        expect(pageScrollBy.mock.contexts[0]).toBe(page.documentElement);
     });
 });
 

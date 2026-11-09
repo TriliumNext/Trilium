@@ -151,8 +151,12 @@ describe("#sanitizeSqlIdentifier", () => {
 });
 
 describe("#escapeHtml", () => {
-    it("should re-export 'escape-html' npm module as escapeHtml", () => {
-        expect(utils.escapeHtml).toBeTypeOf("function");
+    it("escapes the five markup characters and leaves everything else alone", () => {
+        expect(utils.escapeHtml(`<a href="x?a=1&b=2" title='t'>`))
+            .toBe("&lt;a href=&quot;x?a=1&amp;b=2&quot; title=&#39;t&#39;&gt;");
+        expect(utils.escapeHtml("&amp; is escaped again")).toBe("&amp;amp; is escaped again");
+        expect(utils.escapeHtml("plain text, ünïcödé")).toBe("plain text, ünïcödé");
+        expect(utils.escapeHtml("")).toBe("");
     });
 });
 

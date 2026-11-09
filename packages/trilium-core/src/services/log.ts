@@ -8,6 +8,10 @@ export default class LogService {
         console.info(message);
     }
 
+    warn(message: string | Error | unknown) {
+        console.warn("WARNING: ", message);
+    }
+
     error(message: string | Error | unknown) {
         console.error("ERROR: ", message);
     }

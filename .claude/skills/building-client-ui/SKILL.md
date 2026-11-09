@@ -57,7 +57,8 @@ Three things people get wrong:
 
 Form controls:
 
-- `FormTextBox` — text input with validation and controlled input handling; `FormTextBoxWithUnit` for a unit suffix (`mm`, `px`). `FormTextArea`, `PasswordField`, `FormPasswordWithConfirmation` for their cases.
+- `FormTextBox` — text input with validation and controlled input handling; `FormTextBoxWithUnit` for a unit suffix (`mm`, `px`); `FormTextBoxWithPaste` for a paste button at its end. `FormTextArea`, `PasswordField`, `FormPasswordWithConfirmation` for their cases.
+- `PasteButton` — the input action button that replaces a field's value with the clipboard text, fires an `input` event (`inputType: "insertFromPaste"`) so the field's own handler sees it, and selects the text. Place it in an `.input-group` after any `<input>` or `<textarea>`, passing the field's ref. It renders only where `canReadClipboardText()` (`services/clipboard_ext.ts`) says the clipboard can be read.
 - `FormSelect` — dropdown/combobox taking an object array as data. `FormDropdownList` for a list of items with icons; `FormAutocomplete` / `NoteAutocomplete` for typeahead (the latter searches notes).
 - `FormCheckbox`, `FormToggle`, `FormRadioGroup` / `FormInlineRadioGroup` — boolean and exclusive choices. `SegmentedChoice` is a row of buttons acting as one exclusive choice (use where a dropdown would hide the alternatives).
 - `Slider` — range slider with label.
@@ -263,6 +264,7 @@ use parameter defaults.
 - **Bootstrap utility classes or inline static styles on `Form*` components** — use the sibling per-component `.css` scoped under a root class.
 - **A scroller inside a padded `CardSection`** — scrolled content is clipped short of the card's border. Use `noPadding` on the section and put `--card-padding-block`/`--card-padding-inline` on the scrolling element (see `Card` in the catalogue).
 - **Hand-rolled overlay buttons** — `tn-overlay-*` classes at a call site instead of `OverlayControlGroup` / `OverlayControlButton`.
+- **Returning `null` from a component mounted with `.child(<X />)`** — `ReactWrappedWidget.doRender()` adopts the elements the first render produces as `$widget`, so a component that first renders nothing never reaches the page, and its later renders go into a detached fragment. Always render a root element and put the condition inside it (`<div className="x">{note && <Button … />}</div>`), or hide it with CSS. That root also gets the widget's `component` class, which `style.css` gives `contain: size`: in a flex row it collapses to 0×0 and its content overflows below it, so a wrapper sized by its content needs `.component.x { contain: none; }` (as `toggle_sidebar_button.css` and `NoteBadges.css` do).
 - **Copying the jQuery lifecycle** (`doRenderBody` / `refreshWithNote` / `this.$widget`) into new `.tsx` — use `useLegacyWidget` only to embed an existing widget.
 - **A `useEffect` cleanup that must run during the unmount** — it runs after paint; reporting to a host or reading a child instance belongs in a `useLayoutEffect` cleanup (see "Preact 11 conventions").
 - **Importing core names through `preact/compat`** — `createPortal`, hooks and types come from `preact` / `preact/hooks`; compat is for `memo`, `lazy`, `Suspense`, `flushSync`, `useSyncExternalStore`.

@@ -191,6 +191,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         }
 
         this.sidebarEl.classList.toggle("show", isOpen);
+        document.body.classList.toggle("mobile-sidebar-open", isOpen);
         this.#applyTranslate(isOpen ? 0 : -100);
         this.sidebarEl.style.transition = this.originalSidebarTransition;
         if (this.detailEl) this.detailEl.style.transition = this.originalDetailTransition;

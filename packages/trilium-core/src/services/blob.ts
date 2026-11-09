@@ -175,10 +175,9 @@ function encryptTextRepresentation(textRepresentation: string, isProtected: bool
  * it than a caller that has no key, and one unreadable blob should not fail the request around it.
  *
  * One inherited edge: a stored value whose length rules out ciphertext altogether takes
- * dataEncryptionService's recovery path for zadam/trilium#510, which hands back what it was given —
- * and only under Node, since that path is selected by a Node crypto error message. Nothing writes a
- * value of that shape here ({@link encryptTextRepresentation} is the only writer and always emits real
- * ciphertext), so this is noted rather than defended against.
+ * dataEncryptionService's recovery path for zadam/trilium#510, which hands back what it was given.
+ * Nothing writes a value of that shape here ({@link encryptTextRepresentation} is the only writer
+ * and always emits real ciphertext), so this is noted rather than defended against.
  */
 function decryptTextRepresentation(textRepresentation: string | null | undefined, isProtected: boolean): string {
     if (!textRepresentation) {

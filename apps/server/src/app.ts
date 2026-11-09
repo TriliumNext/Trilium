@@ -95,7 +95,7 @@ export default async function buildApp() {
 
     app.use(express.text({ limit: "500mb" }));
     app.use(express.json({ limit: "500mb" }));
-    app.use(express.raw({ limit: "500mb" }));
+    app.use(express.raw({ type: ["application/octet-stream", "application/zip"], limit: "500mb" }));
     app.use(express.urlencoded({ extended: false }));
     app.use(cookieParser());
 

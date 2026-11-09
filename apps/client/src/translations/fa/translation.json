@@ -4,9 +4,9 @@
     "version_label": "نسخه:",
     "version": "{{appVersion}} (پایگاه‌داده: {{dbVersion}}، پروتکل همگام‌سازی: {{syncVersion}})",
     "build_info": "ساخت: {{buildDate}}، بازنگری: <buildRevision />",
-    "contributors_label": "مشارکت کنندگان:",
+    "contributors_label": "همکاران:",
     "contributor_roles": {
-      "lead-dev": "توسعه دهنده ارشد",
+      "lead-dev": "توسعه‌دهندهٔ اصلی",
       "original-dev": "توسعه‌دهندهٔ اولیه"
     },
     "role_brief_history": {
@@ -792,7 +792,7 @@
     "board_sort_columns_descending": "برای مجموعه‌های تخته‌ای، ترتیب <code>#board:sortColumns</code> را برعکس اجرا می‌کند.",
     "calendar_view": "تقویم در کدام نمایش باز می‌شود: <code>timeGridDay</code>، <code>timeGridWeek</code>، <code>dayGridMonth</code>، <code>multiMonthYear</code> یا <code>listMonth</code>.",
     "calendar_initial_date": "تاریخی که تقویم در آن باز می‌شود. در صورت تنظی نشدن، امروز باز می‌شود.",
-    "calendar_hide_weekends": "شنبه و یکشنبه را از تقویم پنهان می‌کند. صرف‌نظر از مقدار اعمال می‌شود.",
+    "calendar_hide_weekends": "جمعه و یکشنبه را از تقویم پنهان می‌کند. صرف‌نظر از مقدار اعمال می‌شود.",
     "calendar_week_numbers": "شمارهٔ هفته را در تقویم نمایش می‌دهد. صرف‌نظر از مقدار اعمال می‌شود.",
     "calendar_slot_duration": "مدت هر بازهٔ زمانی تقویم، به صورت <code>HH:MM:SS</code>. پیش‌فرض 15 دقیقه.",
     "calendar_slot_label_interval": "دورهٔ برچسب‌گذاری بازه‌های زمانی تقویم، به صورت <code>HH:MM:SS</code>. پیش‌فرض یک ساعت.",
@@ -1849,9 +1849,7 @@
   },
   "experimental_features": {
     "title": "گزینه‌های تجربی",
-    "disclaimer": "این گزینه‌ها تجربی هستند و ممکن است باعث بی‌ثباتی شوند. با احتیاط استفاده کنید.",
-    "llm_name": "هوش مصنوعی / گفتگوی LLM",
-    "llm_description": "نوار کناری گفتگوی هوش مصنوعی و یادداشت‌های گفتگوی LLM قدرت‌گرفته از مدل‌های زبانی بزرگ را فعال کنید."
+    "disclaimer": "این گزینه‌ها تجربی هستند و ممکن است باعث بی‌ثباتی شوند. با احتیاط استفاده کنید."
   },
   "fonts": {
     "theme_defined": "تعریف‌شده توسط پوسته",
@@ -1876,7 +1874,6 @@
     "apply_changes": "بارگذاری مجدد برای اعمال تغییرات",
     "generic-fonts": "فونت‌های عمومی",
     "user-fonts": "فونت‌های سفارشی",
-    "proportional-system-fonts": "فونت‌های متناسب",
     "sans-serif-system-fonts": "فونت‌هایSans Serif",
     "serif-system-fonts": "فونت‌های Serif",
     "monospace-system-fonts": "فونت‌های یک‌اندازه",
@@ -2056,7 +2053,6 @@
   "search_engine": {
     "title": "موتور جستجو",
     "custom_search_engine_info": "هنگام جستجوی وب برای متن انتخاب‌شده استفاده می‌شود. اگر پیکربندی نشده باشد، DuckDuckGo استفاده خواهد شد.",
-    "predefined_templates_label": "قالب‌های از پیش تعریف‌شده",
     "bing": "بینگ",
     "baidu": "بایدو",
     "duckduckgo": "داک‌داک‌گو",
@@ -2885,9 +2881,7 @@
     "no_headings": "عنوانی وجود ندارد."
   },
   "watched_file_update_status": {
-    "file_last_modified": "فایل <code class=\"file-path\"></code> آخرین بار در <span class=\"file-last-modified\"></span> تغییر یافته است.",
-    "upload_modified_file": "بارگذاری فایل تغییریافته",
-    "ignore_this_change": "نادیده گرفتن این تغییر"
+    "upload_modified_file": "بارگذاری فایل تغییریافته"
   },
   "app_context": {
     "please_wait_for_save": "لطفاً چند ثانیه برای پایان ذخیره صبر کنید، سپس می‌توانید دوباره تلاش کنید."
@@ -4374,12 +4368,10 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "روی فلش کلیک کنید یا %0 را بزنید تا جمع/باز شود.",
       "collapsible-block": "بلوک جمع‌شونده",
       "convert-image-to-a-drawing-canvas": "تبدیل تصویر به بوم طراحی",
-      "convert-to-link": "تبدیل به پیوند",
       "copy-anchor-reference-link": "کپی پیوند مرجع لنگر",
       "copy-formatting": "کپی قالب‌بندی",
       "copy-image-to-clipboard": "کپی تصویر به حافظهٔ موقت",
       "copy-to-clipboard": "کپی به حافظهٔ موقت",
-      "copy-url": "کپی URL",
       "create-a-bulleted-list": "ایجاد فهرست نقطه‌ای",
       "create-a-new-footnote-and-reference-it-here": "ایجاد یادداشت پانویس جدید و ارجاع به آن در اینجا",
       "create-a-numbered-list": "ایجاد فهرست شماره‌دار",
@@ -4394,7 +4386,6 @@
       "drag-to-reposition-the-collapsible-block": "برای جابه‌جایی بلوک جمع‌شونده بکشید",
       "edit-anchor": "ویرایش لنگر",
       "edit-task-states": "ویرایش وضعیت‌های کار",
-      "edit-title": "ویرایش عنوان",
       "embed": "تعبیه",
       "enter-caption": "شرح را وارد کنید",
       "enter-the-anchor-name-without-spaces": "نام لنگر را بدون فاصله وارد کنید.",
@@ -4410,11 +4401,9 @@
       "include-note-widget": "ابزارک شامل یادداشت",
       "increase-the-indentation-of-the-current-block": "افزایش تورفتگی بلوک فعلی.",
       "indent": "تورفتگی",
-      "inline": "درون‌خطی",
       "insert-a-0-mermaid-diagram-template": "درج قالب نمودار Mermaid «%0»",
       "insert-a-block-of-preformatted-code": "درج بلوک کد از پیش قالب‌بندی‌شده.",
       "insert-a-horizontal-rule": "درج خط افقی.",
-      "insert-a-link-to-another-trilium-note": "درج پیوند به یادداشت دیگر Trilium",
       "insert-a-math-equation": "درج معادلهٔ ریاضی",
       "insert-a-new-admonition": "درج هشدار جدید",
       "insert-a-page-break-for-printing": "درج شکست صفحه (برای چاپ)",
@@ -4436,7 +4425,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "ابزارک تعبیهٔ پیوند",
       "link-mention-widget": "ابزارک اشارهٔ پیوند",
-      "link-preview": "پیش‌نمایش پیوند",
       "looks-good-already-nothing-to-change": "قبلاً خوب به نظر می‌رسد — چیزی برای تغییر نیست.",
       "markdown-import": "درون‌برد Markdown",
       "markdown-import-from-clipboard": "درون‌برد Markdown از حافظهٔ موقت",
@@ -4453,7 +4441,6 @@
       "note": "یادداشت",
       "numbered-list": "فهرست شماره‌دار",
       "outdent": "بیرون رفتن از تورفتگی",
-      "plain-link": "پیوند ساده",
       "preview": "پیش‌نمایش",
       "quote-a-passage-from-another-source": "نقل‌قول عبارتی از منبع دیگر.",
       "remove-anchor": "حذف لنگر",
@@ -4473,7 +4460,6 @@
       "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "فایل برای بارگذاری بزرگ است (HTTP 413). اگر Trilium پشت یک پروکسی معکوس است، محدودیت اندازهٔ بدنهٔ درخواست آن را افزایش دهید.",
       "the-server-responded-with-http-0": "سرور با HTTP %0 پاسخ داد.",
       "tip": "نکته",
-      "title": "عنوان",
       "to-do-list": "فهرست کارها",
       "toggle-collapsible-block": "تغییر حالت بلوک جمع‌شونده",
       "tokens": "توکن",
@@ -4482,7 +4468,6 @@
       "turn-the-current-block-into-a-paragraph": "تبدیل بلوک فعلی به پاراگراف.",
       "type-the-content-here": "محتوا را اینجا تایپ کنید...",
       "undefined-custom-task-state": "وضعیت کار سفارشی تعریف‌نشده",
-      "url": "URL",
       "upload-an-image-from-your-device": "یک تصویر از دستگاه خود بارگذاری کنید.",
       "upload-files-as-attachments-and-insert-embeds": "فایل‌ها را به‌صورت پیوست بارگذاری کنید و محتوای جاسازی‌شده درج کنید.",
       "upload-files-as-attachments-and-insert-links": "فایل‌ها را به‌صورت پیوست بارگذاری کنید و پیوند درج کنید.",
@@ -4519,7 +4504,6 @@
       "descending": "نزولی",
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "برخی سطرها با هم مرتب شدند، چون سلول‌های ادغام‌شده آن‌ها را به یکدیگر وابسته کرده‌اند",
       "tiny": "ریز",
-      "show-title": "نمایش عنوان",
       "more-actions": "اقدام‌های بیشتر",
       "drawing-canvas": "بوم طراحی",
       "editable": "قابل ویرایش",
@@ -4532,7 +4516,6 @@
       "remove-tab": "حذف زبانه",
       "move-tab-left": "انتقال زبانه به چپ",
       "move-tab-right": "انتقال زبانه به راست",
-      "copy-link-to-tab": "کپی پیوند به زبانه",
       "tabs-toolbar": "نوار ابزار زبانه‌ها",
       "tab-alignment": "تراز زبانه‌ها",
       "align-tabs-at-top": "تراز زبانه‌ها در بالا",

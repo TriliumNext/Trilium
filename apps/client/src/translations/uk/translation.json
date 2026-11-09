@@ -1181,7 +1181,6 @@
   "search_engine": {
     "title": "Пошукова система",
     "custom_search_engine_info": "Для користувацького пошуку потрібно вказати як назву, так і URL-адресу. Якщо жодного з цих параметрів не встановлено, DuckDuckGo використовуватиметься як пошукова система за замовчуванням.",
-    "predefined_templates_label": "Попередньо визначені шаблони пошукових систем",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1310,9 +1309,7 @@
     "table_of_contents": "Зміст"
   },
   "watched_file_update_status": {
-    "file_last_modified": "Файл <code class=\"file-path\"></code> востаннє змінювався <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Завантажити змінений файл",
-    "ignore_this_change": "Ігнорувати цю зміну"
+    "upload_modified_file": "Завантажити змінений файл"
   },
   "app_context": {
     "please_wait_for_save": "Зачекайте кілька секунд, поки завершиться збереження, а потім спробуйте ще раз."

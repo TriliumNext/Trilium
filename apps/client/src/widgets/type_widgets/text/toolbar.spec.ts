@@ -11,6 +11,11 @@ vi.mock("../../../services/options.js", () => ({
     default: { get: (name: string) => optionsState.values[name] }
 }));
 
+const experimentalState = vi.hoisted(() => ({ enabled: new Set<string>() }));
+vi.mock("../../../services/experimental_features.js", () => ({
+    isExperimentalFeatureEnabled: (id: string) => experimentalState.enabled.has(id)
+}));
+
 // The group labels are translated when the toolbar is built (CKEditor renders a nested dropdown's
 // `label` verbatim), so echo the key back to make the lookup visible to the assertions below.
 vi.mock("../../../services/i18n.js", () => ({ t: (key: string) => key }));
@@ -54,7 +59,7 @@ describe("CKEditor config", () => {
 });
 
 describe("the Insert group", () => {
-    it("offers the drawing canvas above the Mermaid diagram, on both toolbars", () => {
+    it("offers the drawing canvas above the Mermaid diagram, then the media embed", () => {
         const toolbars = [
             buildClassicToolbar(false, true).toolbar.items,
             buildFloatingToolbar(true).blockToolbar
@@ -64,8 +69,70 @@ describe("the Insert group", () => {
                 && "label" in item && item.label === "text-editor.toolbar-groups.insert");
             const groupItems = (group as { items: string[] } | undefined)?.items ?? [];
             const index = groupItems.indexOf("drawingCanvas");
-            expect(groupItems.slice(index, index + 2)).toEqual([ "drawingCanvas", "mermaid" ]);
+            expect(groupItems.slice(index, index + 3))
+                .toEqual([ "drawingCanvas", "mermaid", "insertMedia" ]);
             expect(items).not.toContain("drawingCanvas");
+        }
+    });
+});
+
+describe("the extended code block", () => {
+    afterEach(() => experimentalState.enabled.clear());
+
+    function getInsertGroups() {
+        const toolbars = [
+            buildClassicToolbar(false, true).toolbar.items,
+            buildFloatingToolbar(true).blockToolbar,
+            buildMobileToolbar(true).toolbar.items
+        ];
+        return toolbars.map((items) => {
+            const group = items.find((item) => typeof item === "object"
+                && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+            return (group as { items: string[] } | undefined)?.items ?? [];
+        });
+    }
+
+    it("follows the columns in the Insert group of every toolbar, while its feature is on", () => {
+        experimentalState.enabled.add("extendedCodeBlocks");
+        for (const items of getInsertGroups()) {
+            const index = items.indexOf("multicolumnLayout");
+            expect(items.slice(index, index + 2))
+                .toEqual([ "multicolumnLayout", "extendedCodeBlock" ]);
+        }
+
+        experimentalState.enabled.clear();
+        for (const items of getInsertGroups()) {
+            expect(items).toContain("multicolumnLayout");
+            expect(items).not.toContain("extendedCodeBlock");
+        }
+    });
+});
+
+describe("the sort selection button", () => {
+    afterEach(() => experimentalState.enabled.clear());
+
+    /** The items each sort button follows: the indentation, or the block moves on a phone. */
+    function getPlacements() {
+        const mobile = buildMobileToolbar(true);
+        return [
+            [ buildClassicToolbar(false, true).toolbar.items, "indent" ],
+            [ buildFloatingToolbar(true).blockToolbar, "indent" ],
+            [ mobile.toolbar.items, "moveBlockDown" ],
+            [ mobile.listToolbar, "moveBlockDown" ]
+        ] as const;
+    }
+
+    it("follows the indentation or the block moves in every toolbar while it is on", () => {
+        experimentalState.enabled.add("sortSelection");
+        for (const [ items, previous ] of getPlacements()) {
+            const index = items.indexOf(previous);
+            expect(items.slice(index, index + 2)).toEqual([ previous, "sortSelection" ]);
+        }
+
+        experimentalState.enabled.clear();
+        for (const [ items, previous ] of getPlacements()) {
+            expect(items).toContain(previous);
+            expect(items).not.toContain("sortSelection");
         }
     });
 });
@@ -137,6 +204,44 @@ describe("group labels", () => {
     });
 });
 
+describe("the insert menus", () => {
+    function insertItems(items: unknown[]) {
+        const group = items.find((item): item is { label: string; items: string[] } =>
+            typeof item === "object" && item !== null
+            && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+        return group?.items ?? [];
+    }
+
+    it("list the new child note right above the included note", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            const insert = insertItems(items);
+            expect(insert).toContain("childNote");
+            expect(insert.indexOf("contentEmbed")).toBe(insert.indexOf("childNote") + 1);
+        }
+    });
+
+    it("list the footnote right below the page break", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            const insert = insertItems(items);
+            expect(insert.indexOf("footnote")).toBe(insert.indexOf("pageBreak") + 1);
+            expect(items).not.toContain("footnote");
+        }
+    });
+
+    it("leave the link to the bar, right ahead of the attach menu", () => {
+        const classic = buildClassicToolbar(false, true).toolbar.items;
+        const floating = buildFloatingToolbar(true).blockToolbar;
+        for (const items of [ classic, floating ]) {
+            expect(insertItems(items)).not.toContain("link");
+            expect(items.indexOf("attachMenu")).toBe(items.indexOf("link") + 1);
+        }
+    });
+});
+
 describe("buildMobileToolbar", () => {
     it("nests only the insert menu, which holds the least used insertions and the wrapping blocks", () => {
         const { toolbar, textFormattingToolbar } = buildMobileToolbar(true);
@@ -154,9 +259,9 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "horizontalLine", "pageBreak", "footnote",
                 "|",
-                "math", "drawingCanvas", "mermaid",
+                "math", "drawingCanvas", "mermaid", "insertMedia",
                 "|",
-                "bookmark", "linkEmbed", "contentEmbed",
+                "bookmark", "childNote", "contentEmbed",
                 "|",
                 "specialCharacters", "emoji", "insertIcon",
                 "|",

@@ -1014,9 +1014,7 @@
   },
   "experimental_features": {
     "title": "प्रायोगिक विकल्प (Experimental Options)",
-    "disclaimer": "ये विकल्प अभी टेस्टिंग में (experimental) हैं और इनसे अस्थिरता आ सकती है। सावधानी से इस्तेमाल करें।",
-    "llm_name": "AI / LLM चैट",
-    "llm_description": "बड़े भाषा मॉडल (LLMs) द्वारा संचालित एआई चैट साइडबार और एलएलएम चैट नोट्स इनेबल करें।"
+    "disclaimer": "ये विकल्प अभी टेस्टिंग में (experimental) हैं और इनसे अस्थिरता आ सकती है। सावधानी से इस्तेमाल करें।"
   },
   "fonts": {
     "theme_defined": "थीम के अनुसार",
@@ -1185,7 +1183,6 @@
   "search_engine": {
     "title": "सर्च इंजन",
     "custom_search_engine_info": "कस्टम सर्च इंजन के लिए नाम और URL दोनों ज़रूरी हैं। अगर कोई भी एक नहीं भरा गया, तो DuckDuckGo का इस्तेमाल होगा।",
-    "predefined_templates_label": "पहले से बने सर्च इंजन टेम्पलेट्स",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1673,9 +1670,7 @@
     "no_headings": "कोई हेडिंग नहीं मिली।"
   },
   "watched_file_update_status": {
-    "file_last_modified": "फ़ाइल <code class=\"file-path\"></code> आखिरी बार <span class=\"file-last-modified\"></span> को बदली गई थी।",
-    "upload_modified_file": "बदली हुई फ़ाइल अपलोड करें",
-    "ignore_this_change": "इस बदलाव को छोड़ें"
+    "upload_modified_file": "बदली हुई फ़ाइल अपलोड करें"
   },
   "app_context": {
     "please_wait_for_save": "कृपया सेव होने के लिए कुछ सेकंड रुकें, फिर से कोशिश करें।"
@@ -2583,7 +2578,6 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "सिकुड़ने/फैलने के लिए तीर पर क्लिक करें या %0 दबाएं।",
       "collapsible-block": "कोलाप्सिबल ब्लॉक",
       "copy-image-to-clipboard": "इमेज क्लिपबोर्ड पर कॉपी करें",
-      "copy-url": "URL कॉपी करें",
       "create-a-bulleted-list": "बुलेटेड लिस्ट बनाएं",
       "create-a-new-footnote-and-reference-it-here": "एक नया फुटनोट बनाएं और उसका संदर्भ (reference) यहाँ दें",
       "create-a-numbered-list": "नंबर वाली लिस्ट बनाएं",
@@ -2593,7 +2587,6 @@
       "drag-to-reposition-the-collapsible-block": "कोलाप्सिबल ब्लॉक को फिर से स्थानांतरित करने के लिए ड्रैग करें",
       "edit-task-states": "टास्क स्टेट्स संपादित करें",
       "insert-a-0-mermaid-diagram-template": "\"%0\" मरमेड डायग्राम टेम्पलेट डालें",
-      "insert-a-link-to-another-trilium-note": "दूसरे ट्रिलियम नोट का लिंक डालें",
       "insert-a-math-equation": "मैथ इक्वेशन डालें",
       "insert-a-new-admonition": "एक नया एडमोनिशन (admonition) डालें",
       "insert-a-page-break-for-printing": "पेज ब्रेक डालें (प्रिंट करने के लिए)",

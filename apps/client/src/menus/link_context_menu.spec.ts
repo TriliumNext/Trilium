@@ -1,7 +1,14 @@
+import type { ToolbarGroupMenuItem } from "@triliumnext/ckeditor5";
+import { EXTENDED_CODE_BLOCK_CLASS } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ViewScope } from "../services/link";
 import type { ContextMenuEvent } from "./context_menu";
+import centerIcon from "./icons/position-center.svg?raw";
+import leftIcon from "./icons/position-left.svg?raw";
+import rightIcon from "./icons/position-right.svg?raw";
+import wrapLeftIcon from "./icons/position-wrap-left.svg?raw";
+import wrapRightIcon from "./icons/position-wrap-right.svg?raw";
 
 const mocks = vi.hoisted(() => ({
     show: vi.fn(),
@@ -20,17 +27,24 @@ const mocks = vi.hoisted(() => ({
     getAttachmentOfNote: vi.fn(),
     getNote: vi.fn(),
     getAttachmentActionGroups: vi.fn(),
+    getLinkedAttachmentActions: vi.fn(),
     getTextEditorContaining: vi.fn(),
-    getEmbedBoxSize: vi.fn()
+    getEmbedBoxDefaults: vi.fn(),
+    openUrlExternally: vi.fn(),
+    downloadAttachment: vi.fn()
 }));
 
-vi.mock("./text_editor_context_menu", () => ({
+vi.mock("./text_editor_context_menu", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./text_editor_context_menu")>(),
     getTextEditorContaining: mocks.getTextEditorContaining
+}));
+// `text_editor_context_menu` imports `options`, which fails against the partial `utils` mock.
+vi.mock("../services/experimental_features", () => ({
+    isExperimentalFeatureEnabled: () => false
 }));
 
 vi.mock("../services/content_renderer", () => ({
-    EXCERPT_BOX_SIZE: "full",
-    getEmbedBoxSize: mocks.getEmbedBoxSize
+    getEmbedBoxDefaults: mocks.getEmbedBoxDefaults
 }));
 
 vi.mock("./context_menu", () => ({ default: { show: mocks.show } }));
@@ -40,10 +54,16 @@ vi.mock("../services/froca", () => ({
 }));
 
 vi.mock("../services/attachment_actions", () => ({
-    getAttachmentActionGroups: mocks.getAttachmentActionGroups
+    getAttachmentActionGroups: mocks.getAttachmentActionGroups,
+    getLinkedAttachmentActions: mocks.getLinkedAttachmentActions
 }));
 
 vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
+
+vi.mock("../services/open", () => ({
+    default: { downloadAttachment: mocks.downloadAttachment },
+    openUrlExternally: mocks.openUrlExternally
+}));
 
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
@@ -81,6 +101,13 @@ import { registerContentEmbedTools } from "../widgets/type_widgets/text/content_
 import linkContextMenu from "./link_context_menu";
 
 const VIEW_SCOPE = { viewMode: "attachments" as const, attachmentId: "att-1" };
+
+/** An item of a shown menu, with the fields that the tests read. */
+interface ShownItem {
+    title?: string;
+    handler: () => void;
+    items: ShownItem[];
+}
 
 function contextMenuEvent(target?: HTMLElement) {
     return { pageX: 12, pageY: 34, target } as unknown as ContextMenuEvent;
@@ -258,6 +285,160 @@ describe("handleLinkContextMenuItem", () => {
     });
 });
 
+describe("getLinkToolbarEntries", () => {
+    /** Wraps an action as the editor's menu does, recording that it ran through it. */
+    const run = vi.fn((action: () => void) => action);
+
+    /** An entry as its label, marked `(off)`; a rule as `---`. */
+    function labels(items: ToolbarGroupMenuItem[]) {
+        return items.map((item) => (item.kind === "entry"
+            ? `${item.label}${item.isEnabled ? "" : " (off)"}`
+            : "---"));
+    }
+
+    function editableWith(html: string) {
+        const editable = document.createElement("div");
+        editable.className = "ck-editor__editable";
+        editable.setAttribute("contenteditable", "true");
+        editable.innerHTML = html;
+        return editable;
+    }
+
+    it("opens the note in the places of the context menu, from a link in the text", async () => {
+        const editable = editableWith("<p><a href=\"#root/n1\">Note</a></p>");
+        const { target, afterUnlink } = await linkContextMenu.getLinkToolbarEntries(
+            "root/n1", {}, editable, run);
+
+        expect(labels(target)).toStrictEqual([
+            "link_context_menu.open_note_in_new_tab", "link_context_menu.open_note_in_new_split",
+            "link_context_menu.open_note_in_new_window", "link_context_menu.open_note_in_popup"
+        ]);
+        expect(target[0]).toMatchObject({ iconClass: "bx bx-link-external" });
+        // Only a reference link converts into an embed.
+        expect(afterUnlink).toStrictEqual([]);
+
+        const [ newTab ] = target;
+        if (newTab.kind === "entry") newTab.run?.();
+        expect(run).toHaveBeenCalled();
+        expect(mocks.openContextWithNote).toHaveBeenCalledWith("root/n1", {
+            hoistedNoteId: "hoistedNote", viewScope: {}, placement: "afterCurrent"
+        });
+    });
+
+    it("lists the actions on an attachment, deleting and converting it after Unlink", async () => {
+        const execute = vi.fn();
+        mocks.getEmbedBoxDefaults.mockReturnValue({ boxSize: "compact", isTitleHidden: true });
+        mocks.getTextEditorContaining.mockResolvedValue({
+            commands: { get: () => ({ isEnabled: true }) },
+            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
+            execute
+        });
+        const editable = editableWith("<a class=\"reference-link\" href=\"#\">report.pdf</a>");
+        const link = editable.querySelector("a");
+        if (!link) return;
+
+        const attachment = { attachmentId: "att-1" };
+        const deleteAttachment = vi.fn();
+        const convertAttachment = vi.fn();
+        mocks.getAttachmentOfNote.mockResolvedValue(attachment);
+        mocks.getLinkedAttachmentActions.mockReturnValue({
+            view: [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
+            change: [
+                { title: "Rename", icon: "bx bx-rename", disabledReason: "No", run: vi.fn() }
+            ],
+            image: [ { title: "Compress", icon: "bx bx-collapse-alt", run: vi.fn() } ],
+            deletion: [ { title: "Delete", icon: "bx bx-trash", run: deleteAttachment } ],
+            conversion: [ { title: "Convert", icon: "bx bx-note", run: convertAttachment } ]
+        });
+        const { target, actions, afterUnlink } =
+            await linkContextMenu.getLinkToolbarEntries("root/n1", VIEW_SCOPE, link, run);
+        expect(mocks.getLinkedAttachmentActions)
+            .toHaveBeenCalledWith(attachment, { isReadOnly: false });
+        expect(target).toHaveLength(4);
+        expect(actions.map(labels))
+            .toStrictEqual([ [ "Download" ], [ "Rename (off)" ], [ "Compress" ] ]);
+        expect(labels(afterUnlink))
+            .toStrictEqual([ "Delete", "link_context_menu.convert_link_to_embed", "Convert" ]);
+        const [ remove, convertLink, convert ] = afterUnlink;
+        if (convertLink.kind === "entry") convertLink.run?.();
+        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
+            domElement: link, boxSize: "compact", hideTitle: true
+        });
+        if (remove.kind === "entry") remove.run?.();
+        if (convert.kind === "entry") convert.run?.();
+        expect([ deleteAttachment, convertAttachment ].map((action) => action.mock.calls.length))
+            .toStrictEqual([ 1, 1 ]);
+
+        // A link to an attachment deleted since, and a reference link to a note.
+        mocks.getAttachmentOfNote.mockResolvedValue(null);
+        const deleted = await linkContextMenu.getLinkToolbarEntries(
+            "root/n1", VIEW_SCOPE, link, run);
+        expect([ deleted.target.length, deleted.actions, deleted.afterUnlink ])
+            .toStrictEqual([ 4, [], [] ]);
+        mocks.getNote.mockResolvedValue({ noteId: "n1" });
+        const note = await linkContextMenu.getLinkToolbarEntries("root/n1", {}, link, run);
+        expect(note.actions).toStrictEqual([]);
+        expect(labels(note.afterUnlink))
+            .toStrictEqual([ "link_context_menu.convert_link_to_included_note" ]);
+    });
+
+    it("converts a reference link to an included note, or to an excerpt for blocks", async () => {
+        const execute = vi.fn();
+        mocks.getEmbedBoxDefaults.mockReturnValue({ boxSize: "resizable", isTitleHidden: false });
+        mocks.getTextEditorContaining.mockResolvedValue({
+            commands: { get: () => ({ isEnabled: true }) },
+            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
+            execute
+        });
+        const link = editableWith("<a class=\"reference-link\" href=\"#\">Note</a>")
+            .querySelector("a");
+        if (!link) throw new Error("Expected a link.");
+        const note = { noteId: "n1" };
+        mocks.getNote.mockResolvedValue(note);
+        /** Runs the conversion of the link for `viewScope`, and returns its label. */
+        const convert = async (viewScope: ViewScope) => {
+            const [ entry ] = (await linkContextMenu.getLinkToolbarEntries(
+                "root/n1", viewScope, link, run)).afterUnlink;
+            if (entry?.kind !== "entry") throw new Error("Expected a conversion.");
+            entry.run?.();
+            return entry.label;
+        };
+
+        expect(await convert({})).toBe("link_context_menu.convert_link_to_included_note");
+        expect(mocks.getEmbedBoxDefaults).toHaveBeenCalledWith(note);
+        expect(await convert({ block: "b1" }))
+            .toBe("link_context_menu.convert_link_to_note_excerpt");
+        expect(execute.mock.calls).toStrictEqual([
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "resizable", hideTitle: false } ],
+            [ "convertLinkToEmbed", { domElement: link, boxSize: "full", hideTitle: false } ]
+        ]);
+
+        // A note deleted since has nothing to embed.
+        mocks.getNote.mockResolvedValue(null);
+        const deleted = await linkContextMenu.getLinkToolbarEntries("root/n1", {}, link, run);
+        expect(deleted.afterUnlink).toStrictEqual([]);
+    });
+});
+
+describe("downloadLinkedAttachment", () => {
+    it("downloads the attachment a link points to, unless it is deleted", async () => {
+        mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
+        // From a note path, and from a note ID alone.
+        await linkContextMenu.downloadLinkedAttachment("root/n1", VIEW_SCOPE);
+        await linkContextMenu.downloadLinkedAttachment("n1", VIEW_SCOPE);
+        expect(mocks.getAttachmentOfNote.mock.calls)
+            .toStrictEqual([ [ "n1", "att-1" ], [ "n1", "att-1" ] ]);
+        expect(mocks.downloadAttachment.mock.calls).toStrictEqual([ [ "att-1" ], [ "att-1" ] ]);
+
+        mocks.downloadAttachment.mockClear();
+        mocks.getAttachmentOfNote.mockResolvedValue(null);
+        await linkContextMenu.downloadLinkedAttachment("root/n1", VIEW_SCOPE);
+        await linkContextMenu.downloadLinkedAttachment("root/n1", {});
+        expect(mocks.getAttachmentOfNote).toHaveBeenCalledTimes(3);
+        expect(mocks.downloadAttachment).not.toHaveBeenCalled();
+    });
+});
+
 describe("getOriginBelow", () => {
     it("opens a menu below the anchor, from the anchor or from another element", () => {
         const anchor = document.createElement("button");
@@ -341,154 +522,63 @@ describe("openContextMenu", () => {
         ]);
     });
 
-    it("ends with converting an attachment link to an embed, only in a note being edited", async () => {
-        const execute = vi.fn();
-        const attachment = { attachmentId: "att-1" };
-        mocks.getAttachmentOfNote.mockResolvedValue(attachment);
-        mocks.getEmbedBoxSize.mockReturnValue("small");
-        mocks.getAttachmentActionGroups.mockReturnValue([
-            [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ]
-        ]);
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<a class="reference-link" href="#"><span>report.pdf</span></a>`;
-        const link = editable.querySelector("a");
-
-        const title = link?.querySelector("span") ?? undefined;
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(title), VIEW_SCOPE);
-
-        const { items } = mocks.show.mock.calls[0][0];
-        expect(items.slice(4)).toMatchObject([
-            { kind: "separator" },
-            { title: "Download" },
-            { title: "link_context_menu.convert_link_to_embed" }
-        ]);
-        items.at(-1).handler();
-        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(attachment);
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "small"
-        });
-
-        editable.removeAttribute("contenteditable");
-        const event = contextMenuEvent(link ?? undefined);
-        await linkContextMenu.openContextMenu("root/n1", event, VIEW_SCOPE);
-        expect(mocks.show.mock.calls[1][0].items).toHaveLength(6);
-        expect(mocks.getTextEditorContaining).toHaveBeenCalledTimes(1);
-    });
-
-    it("ends with converting a note link to an embed, if the editor can convert it", async () => {
-        const execute = vi.fn();
-        const canConvertLinkToEmbed = vi.fn(() => true);
-        const note = { noteId: "n1" };
-        mocks.getNote.mockResolvedValue(note);
-        mocks.getEmbedBoxSize.mockReturnValue("full");
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<p><a class="reference-link" href="#root/n1">Note</a></p>`;
-        const link = editable.querySelector("a");
-        if (!link) return;
-
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(link));
-        expect(canConvertLinkToEmbed).toHaveBeenCalledWith(link);
-        const { items } = mocks.show.mock.calls[0][0];
-        expect(items.slice(4)).toMatchObject([
-            { kind: "separator" },
-            { title: "link_context_menu.convert_link_to_included_note", uiIcon: "bx bx-window-alt" }
-        ]);
-        items.at(-1).handler();
-        expect(mocks.getNote).toHaveBeenCalledWith("n1");
-        expect(mocks.getEmbedBoxSize).toHaveBeenCalledWith(note);
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "full"
-        });
-
-        // Such as one with a query, which names a part of the note.
-        canConvertLinkToEmbed.mockReturnValue(false);
-        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(link));
-        expect(mocks.show.mock.calls[1][0].items).toHaveLength(4);
-    });
-
-    it("offers converting a link to blocks of a note to an excerpt of full size", async () => {
-        const execute = vi.fn();
-        mocks.getNote.mockResolvedValue({ noteId: "n1" });
-        mocks.getEmbedBoxSize.mockReturnValue("medium");
-        mocks.getTextEditorContaining.mockResolvedValue({
-            commands: { get: () => ({ isEnabled: true }) },
-            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
-            execute
-        });
-        const editable = document.createElement("div");
-        editable.className = "ck-editor__editable";
-        editable.setAttribute("contenteditable", "true");
-        editable.innerHTML = `<p><a class="reference-link" href="#root/n1?block=b1">Note</a></p>`;
-        const link = editable.querySelector("a");
-        expect(link).not.toBeNull();
-
-        await linkContextMenu.openContextMenu(
-            "root/n1", contextMenuEvent(link ?? undefined), { block: "b1" }
-        );
-
-        const item = mocks.show.mock.calls[0][0].items.at(-1);
-        expect(item).toMatchObject({
-            title: "link_context_menu.convert_link_to_note_excerpt",
-            uiIcon: "bx bx-window-alt"
-        });
-        item.handler();
-        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
-            domElement: link,
-            boxSize: "full"
-        });
-    });
-
     describe("opened on an embed in a note being edited", () => {
         const CHECK = "bx bx-check";
         const execute = vi.fn();
         const focus = vi.fn();
+        const copy = vi.fn();
+        const deleteAttachment = vi.fn();
+        const convertAttachment = vi.fn();
         const selectEmbedAt = vi.fn();
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
         const getBoxSizes = vi.fn(() => [
-            { value: "tiny", label: "Tiny" },
-            { value: "medium", label: "Medium" }
+            { value: "compact", label: "Compact" },
+            { value: "resizable", label: "Resizable" }
         ]);
+        const ALL_POSITIONS = [ "left", "center", "right", "wrap-left", "wrap-right" ];
+        const getDisplayModes = () => [
+            { value: "textLink", label: "Text" },
+            { value: "cardLink", label: "Card" },
+            { value: "embedLink", label: "Embed" }
+        ];
         let editable: HTMLElement;
 
         beforeEach(() => {
             selectEmbedAt.mockReset().mockReturnValue(true);
             hasPlugin = true;
             state = {
-                boxSize: "medium", isTitleShown: false, isTitleToggleable: true,
-                hasCaption: true, isCaptionToggleable: true, isConvertibleToLink: true
+                boxSize: "resizable", isDefaultBoxSize: false, positions: ALL_POSITIONS,
+                isTitleSupported: true, isTitleShown: false,
+                isTitleToggleable: true, isCaptionSupported: true, hasCaption: true,
+                isCaptionToggleable: true, isConvertibleToLink: true
             };
             mocks.getAttachmentOfNote.mockResolvedValue({ attachmentId: "att-1" });
-            mocks.getAttachmentActionGroups.mockReturnValue([
-                [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
-                [ { title: "Rename", icon: "bx bx-rename", run: vi.fn() } ]
-            ]);
+            mocks.getLinkedAttachmentActions.mockReturnValue({
+                view: [ { title: "Download", icon: "bx bx-download", run: vi.fn() } ],
+                change: [ { title: "Rename", icon: "bx bx-rename", run: vi.fn() } ],
+                image: [],
+                deletion: [ {
+                    title: "Delete attachment",
+                    icon: "bx bx-trash destructive-action-icon",
+                    run: deleteAttachment
+                } ],
+                conversion: [
+                    { title: "Convert attachment", icon: "bx bx-note", run: convertAttachment }
+                ]
+            });
             mocks.getTextEditorContaining.mockResolvedValue({
                 plugins: {
                     has: () => hasPlugin,
                     get: () => ({
                         selectEmbedAt,
                         getEmbedStateAt: () => state,
-                        getBoxSizes
+                        getBoxSizes,
+                        getDisplayModes
                     })
                 },
                 commands: { get: () => undefined },
+                config: { get: (name: string) => (name === "clipboard" ? { copy } : undefined) },
                 execute,
                 editing: { view: { focus } }
             });
@@ -529,7 +619,14 @@ describe("openContextMenu", () => {
             return execute.mock.calls;
         }
 
-        it("puts the commands of an embed after its first group, converting it last", async () => {
+        /** The item of `items` titled `title`, which the mocked `t()` leaves as the key. */
+        function titled(items: ShownItem[], title: string) {
+            const item = items.find((candidate) => candidate.title === title);
+            if (!item) throw new Error(`Expected an item titled "${title}".`);
+            return item;
+        }
+
+        it("orders an embed's menu, with the attachment's under Delete and Convert", async () => {
             // From the title, from the menu button beside it, and from a control acting on the
             // whole embed, as its toolbar does.
             for (const target of [ "a", "button.include-note-menu", "figure" ]) {
@@ -543,44 +640,79 @@ describe("openContextMenu", () => {
                         title: "link_context_menu.include_size",
                         uiIcon: "bx bx-expand-vertical",
                         items: [
-                            { title: "Tiny", trailingIcon: undefined },
-                            { title: "Medium", trailingIcon: CHECK }
+                            { title: "link_context_menu.include_size_default", enabled: true },
+                            { kind: "separator" },
+                            { title: "Compact", trailingIcon: undefined },
+                            { title: "Resizable", trailingIcon: CHECK }
                         ]
                     },
                     {
                         title: "link_context_menu.show_title",
                         uiIcon: "bx bx-window-alt",
+                        isSwitch: true,
                         enabled: true,
                         checked: false
                     },
                     {
                         title: "link_context_menu.show_caption",
                         uiIcon: "bx bx-captions",
+                        isSwitch: true,
                         enabled: true,
                         checked: true
                     },
                     { kind: "separator" },
                     { title: "Rename" },
-                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" }
+                    { kind: "separator" },
+                    {
+                        title: "link_context_menu.delete",
+                        uiIcon: "bx bx-trash"
+                    },
+                    { title: "Delete attachment", uiIcon: "bx bx-trash destructive-action-icon" },
+                    { title: "link_context_menu.convert_embed_to_link", uiIcon: "bx bx-link" },
+                    { title: "Convert attachment", uiIcon: "bx bx-note" }
                 ]);
-                expect(items).toHaveLength(13);
             }
             expect(selectEmbedAt).not.toHaveBeenCalled();
+            expect(mocks.getLinkedAttachmentActions)
+                .toHaveBeenCalledWith({ attachmentId: "att-1" }, { isReadOnly: false });
+            expect(mocks.getAttachmentActionGroups).not.toHaveBeenCalled();
 
             const items = await openOn(editable.querySelector("a"));
-            expect(pick(items[7].items[0]))
-                .toEqual([ [ "contentEmbedBoxSize", { value: "tiny" } ] ]);
+            const item = (title: string) => titled(items, title);
+            expect(pick(item("link_context_menu.include_size").items[0]))
+                .toEqual([ [ "contentEmbedDefaultBoxSize", undefined ] ]);
+            expect(pick(item("link_context_menu.include_size").items[2]))
+                .toEqual([ [ "contentEmbedBoxSize", { value: "compact" } ] ]);
             expect(getBoxSizes).toHaveBeenLastCalledWith(embed());
-            expect(pick(items[8])).toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
-            expect(pick(items[9]))
+            expect(pick(item("link_context_menu.show_title")))
+                .toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
+            expect(pick(item("link_context_menu.show_caption")))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
-            expect(pick(items[12])).toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            expect(pick(item("link_context_menu.delete")))
+                .toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(item("link_context_menu.convert_embed_to_link")))
+                .toEqual([ [ "convertEmbedToLink", undefined ] ]);
+            item("Delete attachment").handler();
+            item("Convert attachment").handler();
+            expect([ deleteAttachment, convertAttachment ].map((run) => run.mock.calls.length))
+                .toEqual([ 1, 1 ]);
 
             // An embed the editor cannot select is left as it is.
             selectEmbedAt.mockReturnValue(false);
             execute.mockClear();
-            items[12].handler();
+            item("link_context_menu.convert_embed_to_link").handler();
             expect(execute).not.toHaveBeenCalled();
+
+            // An embed that cannot turn into a link has the attachment's conversion after the
+            // deletions.
+            state = { ...state, isConvertibleToLink: false };
+            expect((await openOn(editable.querySelector("a"))).slice(-5)).toMatchObject([
+                { title: "Rename" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" },
+                { title: "Delete attachment" },
+                { title: "Convert attachment" }
+            ]);
         });
 
         it("offers Editable above the size, for content that has an editable mode", async () => {
@@ -592,16 +724,17 @@ describe("openContextMenu", () => {
                 {
                     title: "link_context_menu.editable",
                     uiIcon: "bx bx-edit-alt",
+                    isSwitch: true,
                     checked: true
                 },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(14);
-            expect(pick(items[7])).toEqual([ [ "toggleContentEmbedEditable", undefined ] ]);
+            expect(pick(titled(items, "link_context_menu.editable")))
+                .toEqual([ [ "toggleContentEmbedEditable", undefined ] ]);
 
             state = { ...state, isEditable: false };
-            expect((await openOn(editable.querySelector("a")))[7])
-                .toMatchObject({ title: "link_context_menu.editable", checked: false });
+            expect(titled(await openOn(editable.querySelector("a")), "link_context_menu.editable"))
+                .toMatchObject({ checked: false });
         });
 
         it("offers the display modes above the size, for content that has them", async () => {
@@ -616,8 +749,7 @@ describe("openContextMenu", () => {
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" }
             ]);
-            expect(items).toHaveLength(17);
-            expect(pick(items[9]))
+            expect(pick(titled(items, "display_mode.preview")))
                 .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
 
             // After Editable, which comes first.
@@ -629,6 +761,64 @@ describe("openContextMenu", () => {
                 { title: "display_mode.preview" },
                 { kind: "separator" }
             ]);
+        });
+
+        it("offers the positions after the size, for content that has them", async () => {
+            state = { ...state, position: "wrap-left" };
+            const items = await openOn(editable.querySelector("a"));
+            const option = (key: string, icon: string, svg: string, checked = false) => ({
+                title: `link_context_menu.${key}`, uiIcon: `cke cke-object-${icon}`, uiIconSvg: svg,
+                checked
+            });
+            const tiles = (...options: ReturnType<typeof option>[]) => ({
+                kind: "actions",
+                className: "tn-menu-tiles tn-menu-actions-cards embed-position-tiles",
+                items: options
+            });
+
+            expect(items.slice(7, 9)).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                {
+                    title: "link_context_menu.include_position",
+                    uiIcon: "cke cke-object-inline-left",
+                    enabled: true,
+                    items: [
+                        { kind: "header", title: "link_context_menu.break_text" },
+                        tiles(
+                            option("align_left", "left", leftIcon),
+                            option("align_center", "center", centerIcon),
+                            option("align_right", "right", rightIcon)
+                        ),
+                        { kind: "header", title: "link_context_menu.wrap_text" },
+                        tiles(
+                            option("align_left", "inline-left", wrapLeftIcon, true),
+                            option("align_right", "inline-right", wrapRightIcon)
+                        )
+                    ]
+                }
+            ]);
+            expect(new Set([ leftIcon, centerIcon, rightIcon, wrapLeftIcon, wrapRightIcon ]).size)
+                .toBe(5);
+            const [ , breakTiles, , wrapTiles ] =
+                titled(items, "link_context_menu.include_position").items;
+            expect(pick(breakTiles.items[1]))
+                .toEqual([ [ "contentEmbedPosition", { value: "center" } ] ]);
+
+            // An Expandable embed takes the full width, so it only breaks the text.
+            state = { ...state, boxSize: "expandable", positions: [ "left", "center", "right" ] };
+            const expandable = titled(await openOn(editable.querySelector("a")),
+                "link_context_menu.include_position");
+            expect(expandable.items).toMatchObject([
+                { kind: "header", title: "link_context_menu.break_text" },
+                tiles(
+                    option("align_left", "left", leftIcon),
+                    option("align_center", "center", centerIcon),
+                    option("align_right", "right", rightIcon)
+                )
+            ]);
+            state = { ...state, boxSize: "resizable", positions: ALL_POSITIONS };
+            expect(pick(wrapTiles.items[1]))
+                .toEqual([ [ "contentEmbedPosition", { value: "wrap-right" } ] ]);
         });
 
         it("offers the items of its content after Editable, in a group of their own", async () => {
@@ -670,7 +860,7 @@ describe("openContextMenu", () => {
             }
         });
 
-        it("appends the commands of an embedded note, its conversion in a group of its own", async () => {
+        it("ends the menu of an embedded note with deleting and converting it", async () => {
             embed().removeAttribute("data-attachment-id");
             embed().setAttribute("data-note-id", "n1");
 
@@ -682,23 +872,166 @@ describe("openContextMenu", () => {
                 { title: "link_context_menu.show_title" },
                 { title: "link_context_menu.show_caption" },
                 { kind: "separator" },
+                { title: "link_context_menu.delete" },
                 { title: "link_context_menu.convert_embed_to_link" }
             ]);
-            expect(items).toHaveLength(10);
+            expect(pick(titled(items, "link_context_menu.delete")))
+                .toEqual([ [ "deleteContentEmbed", undefined ] ]);
+            expect(pick(titled(items, "link_context_menu.convert_embed_to_link")))
+                .toEqual([ [ "convertEmbedToLink", undefined ] ]);
             expect(mocks.getAttachmentOfNote).not.toHaveBeenCalled();
+        });
+
+        it("leaves out the title and the caption of an embed that has none", async () => {
+            embed().removeAttribute("data-attachment-id");
+            state = {
+                ...state, isTitleSupported: true, isCaptionSupported: false,
+                position: "center", isConvertibleToLink: false
+            };
+            expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" },
+                { title: "link_context_menu.show_title", enabled: true, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
+            ]);
+
+            state = { ...state, isTitleSupported: false };
+            expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position" },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
+            ]);
+        });
+
+        it("heads the menu of a video with the entries of a link preview", async () => {
+            const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            state = {
+                ...state, url, isCaptionSupported: true, isCaptionToggleable: true,
+                hasCaption: false, isConvertibleToLink: false
+            };
+            const openMenu = async () => {
+                await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+                return mocks.show.mock.lastCall?.[0].items;
+            };
+
+            const items = await openMenu();
+            expect(items).toMatchObject([
+                { title: "link_context_menu.open_externally", uiIcon: "bx bx-link-external" },
+                { title: "link_context_menu.edit", uiIcon: "cke cke-pencil" },
+                { kind: "separator" },
+                { title: "link_context_menu.copy_url", uiIcon: "cke cke-trilium-copy" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.display_as",
+                    uiIcon: "cke cke-trilium-link-preview",
+                    items: [
+                        { title: "Text", trailingIcon: undefined },
+                        { title: "Card", trailingIcon: undefined },
+                        { title: "Embed", trailingIcon: CHECK }
+                    ]
+                },
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" },
+                { title: "link_context_menu.show_caption", enabled: true, checked: false },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash"
+                }
+            ]);
+            titled(items, "link_context_menu.open_externally").handler();
+            expect(mocks.openUrlExternally).toHaveBeenCalledExactlyOnceWith(url);
+            titled(items, "link_context_menu.copy_url").handler();
+            expect(copy).toHaveBeenCalledExactlyOnceWith(url);
+
+            // The link dialog opens on the selected video and focuses its own fields.
+            const edit = titled(items, "link_context_menu.edit");
+            execute.mockClear();
+            focus.mockClear();
+            edit.handler();
+            expect(selectEmbedAt).toHaveBeenLastCalledWith(embed());
+            expect(execute.mock.calls).toEqual([ [ "insertInternalLink" ] ]);
+            expect(focus).not.toHaveBeenCalled();
+            selectEmbedAt.mockReturnValueOnce(false);
+            edit.handler();
+            expect(execute).toHaveBeenCalledOnce();
+            expect(pick(titled(items, "link_context_menu.display_as").items[1]))
+                .toEqual([ [ "changeLinkDisplay", { value: "cardLink" } ] ]);
+            expect(pick(titled(items, "link_context_menu.delete")))
+                .toEqual([ [ "deleteContentEmbed", undefined ] ]);
+
+            // An embed of a source has neither, nor a caption.
+            state = { ...state, url: null, isCaptionSupported: false };
+            expect(await openMenu()).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.show_title" }
+            ]);
+        });
+
+        it("deletes an extended code block last, after its position", async () => {
+            embed().removeAttribute("data-attachment-id");
+            embed().classList.add(EXTENDED_CODE_BLOCK_CLASS);
+            state = {
+                ...state, url: null, position: "right", isTitleSupported: false,
+                isCaptionSupported: false, isConvertibleToLink: false
+            };
+
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            const items = mocks.show.mock.lastCall?.[0].items;
+            expect(items).toMatchObject([
+                { title: "link_context_menu.include_size" },
+                { title: "link_context_menu.include_position", uiIcon: "cke cke-object-right" },
+                { kind: "separator" },
+                {
+                    title: "link_context_menu.delete",
+                    uiIcon: "bx bx-trash"
+                }
+            ]);
+            expect(pick(titled(items, "link_context_menu.delete")))
+                .toEqual([ [ "deleteContentEmbed", undefined ] ]);
+        });
+
+        it("opens no menu of an embed off one, or once a later menu opened", async () => {
+            const first = linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            await linkContextMenu.openContextMenu("root/n2", contextMenuEvent());
+            await first;
+            expect(mocks.show).toHaveBeenCalledOnce();
+
+            // Outside a note being edited, and on an embed the editor does not know.
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent());
+            state = null;
+            await linkContextMenu.openEmbedContextMenu(contextMenuEvent(embed()));
+            expect(mocks.show).toHaveBeenCalledOnce();
         });
 
         it("disables what the embed cannot do, and offers nothing for no embed", async () => {
             embed().removeAttribute("data-attachment-id");
             state = {
-                boxSize: "tiny", isTitleShown: true, isTitleToggleable: false,
-                hasCaption: false, isCaptionToggleable: false, isConvertibleToLink: false
+                boxSize: "compact", isDefaultBoxSize: true, positions: [],
+                isTitleSupported: true, isTitleShown: true,
+                isTitleToggleable: false, isCaptionSupported: true, hasCaption: false,
+                isCaptionToggleable: false, isConvertibleToLink: false
             };
             expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
                 { kind: "separator" },
-                { title: "link_context_menu.include_size" },
+                {
+                    title: "link_context_menu.include_size",
+                    items: [
+                        { title: "link_context_menu.include_size_default", enabled: false },
+                        { kind: "separator" },
+                        { title: "Compact" },
+                        { title: "Resizable" }
+                    ]
+                },
                 { title: "link_context_menu.show_title", enabled: false, checked: true },
-                { title: "link_context_menu.show_caption", enabled: false, checked: false }
+                { title: "link_context_menu.show_caption", enabled: false, checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.delete" }
             ]);
 
             // A link in the embedded content, an embed the editor does not know, and an editor

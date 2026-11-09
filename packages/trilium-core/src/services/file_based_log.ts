@@ -185,11 +185,12 @@ export default abstract class FileBasedLogService extends LogService {
         this.log(message);
     }
 
+    override warn(message: string | Error | unknown): void {
+        this.log(`WARNING: ${stringifyMessage(message)}`);
+    }
+
     override error(message: string | Error | unknown): void {
-        const str = message instanceof Error
-            ? message.stack || message.message
-            : String(message);
-        this.log(`ERROR: ${str}`);
+        this.log(`ERROR: ${stringifyMessage(message)}`);
     }
 
     override getLogContents(): string | null {
@@ -219,4 +220,10 @@ export default abstract class FileBasedLogService extends LogService {
     protected formatDate(): string {
         return `${this.pad(this.todaysMidnight.getFullYear())}-${this.pad(this.todaysMidnight.getMonth() + 1)}-${this.pad(this.todaysMidnight.getDate())}`;
     }
+}
+
+function stringifyMessage(message: string | Error | unknown): string {
+    return message instanceof Error
+        ? message.stack || message.message
+        : String(message);
 }

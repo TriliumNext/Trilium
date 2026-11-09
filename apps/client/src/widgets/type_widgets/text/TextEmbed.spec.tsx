@@ -1,6 +1,6 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { render } from "preact";
-import { useContext } from "preact/hooks";
+import { useContext, useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -25,14 +25,19 @@ const editorAskedToSave = vi.fn();
 const editorProps = vi.fn();
 /** What the text editor holds. */
 let editorData = "";
+/** Whether the text editor waits to show the note, as a real one does until the note loads. */
+let isContentHeld = false;
 
 /** The text editor, which has a spec of its own. It listens for what a real editor listens for. */
 vi.mock("./EditableText", () => ({
     getBlockData: () => ({ content: editorData }),
-    default: (props: TypeWidgetProps) => {
+    default: (props: TypeWidgetProps & { onContentShown?: () => void }) => {
         const isNested = useContext(NestedEmbedContext);
         editorProps({ ...props, isNested });
         useTriliumEvent("beforeNoteContextRemove", editorAskedToSave);
+        useEffect(() => {
+            if (!isContentHeld) props.onContentShown?.();
+        }, []);
         return (
             <div className="editable-text-stub">
                 <div
@@ -62,6 +67,7 @@ beforeEach(() => {
     };
     editorAskedToSave.mockClear();
     editorProps.mockClear();
+    isContentHeld = false;
 });
 
 afterEach(() => {
@@ -139,7 +145,7 @@ describe("TextEmbed", () => {
         // The plugins of the editor find their host from its DOM.
         const stub = figure.querySelector<HTMLElement>(".editable-text-stub");
         expect(stub && appContext.getComponentByEl(stub)).toBe(props.parentComponent);
-        expect(figure.querySelector(".editable-embed-preview")).toBeNull();
+        expect(figure.querySelector<HTMLElement>(".editable-embed-preview")?.hidden).toBe(true);
 
         // The title row of the embed shows how the saving of the note goes.
         act(() => props.noteContext?.setContextData("saveState", { state: "error" }));
@@ -155,7 +161,34 @@ describe("TextEmbed", () => {
         expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ props.ntxId ] });
         expect(figure.querySelector(".save-status-badge")).toBeNull();
         expect(figure.querySelector(".editable-text-stub")).toBeNull();
-        expect(figure.querySelector(".editable-embed-preview")).not.toBeNull();
+        expect(figure.querySelector<HTMLElement>(".editable-embed-preview")?.hidden).toBe(false);
+    });
+
+    it("keeps the preview in place until its editor shows the note", async () => {
+        isContentHeld = true;
+        const preview = buildPreview("<p>Shown</p>");
+        const { figure } = await mount(buildTextNote("loading"), buildEditor(), {
+            isEditable: true, preview
+        });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        const loading = figure.querySelector(".editable-embed-editor.loading");
+        expect(loading).not.toBeNull();
+        expect(loading?.querySelector(".editable-text-stub")).not.toBeNull();
+        const shownPreview = figure.querySelector<HTMLElement>(".editable-embed-preview");
+        expect(shownPreview?.firstChild).toBe(preview);
+        expect(shownPreview?.hidden).toBe(false);
+
+        const { onContentShown } = editorProps.mock.lastCall?.[0] as {
+            onContentShown?: () => void;
+        };
+        expect(onContentShown).toBeTypeOf("function");
+        act(() => onContentShown?.());
+        expect(figure.querySelector(".editable-embed-editor.loading")).toBeNull();
+        expect(figure.querySelector(".editable-embed-editor > .text-embed-editor")).not.toBeNull();
+        // Hidden, not unmounted, so that the embed boxes it shows survive the edit.
+        const hiddenPreview = figure.querySelector<HTMLElement>(".editable-embed-preview");
+        expect(hiddenPreview?.firstChild).toBe(preview);
+        expect(hiddenPreview?.hidden).toBe(true);
     });
 
     it("previews what the editor holds once it closes, before the note saves", async () => {

@@ -181,7 +181,9 @@ function saveImageToAttachment(
     /** Which kind of picture this is; see {@link IMAGE_ATTACHMENT_ROLES}. */
     role: ImageAttachmentRole = "image"
 ): { attachmentId: string | undefined; title: string } {
-    getLog().info(`Saving image '${originalName}' as attachment into note '${noteId}'`);
+    // The title of a deduplicated role is made from a URL, which stays out of the log.
+    const logName = isDeduplicatedAttachmentRole(role) ? role : `'${originalName}'`;
+    getLog().info(`Saving image ${logName} as attachment into note '${noteId}'`);
 
     // A deduplicated role's title is what identifies the picture, so it is never collapsed: every
     // hostname past the limit would otherwise share one icon.
@@ -200,7 +202,8 @@ function saveImageToAttachment(
         // Handed back untouched rather than rewritten with the same bytes: it already holds them,
         // and its content is what a blob is keyed by. Any erasure it was scheduled for is cleared
         // by checkImageAttachments on the save that follows, which owns that state.
-        getLog().info(`Reusing attachment '${reusable.attachmentId}' of note '${noteId}' for '${fileName}'`);
+        getLog().info(
+            `Reusing attachment '${reusable.attachmentId}' of note '${noteId}' for ${logName}`);
 
         return { attachmentId: reusable.attachmentId, title: reusable.title };
     }

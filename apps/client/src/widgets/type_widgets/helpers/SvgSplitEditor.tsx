@@ -15,6 +15,11 @@ import { ShortcutHintOverlayButton } from "../../shortcut_hints/shortcut_hint_bu
 import SplitEditor, { SplitEditorProps } from "./SplitEditor";
 import { resolveDisplayMode } from "./split_editor_mode";
 
+/** How long the rendered SVG stays the same before it is saved, in ms. */
+const SVG_SAVE_DELAY = 500;
+/** The picture of a note without content. */
+const EMPTY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"></svg>`;
+
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
      * The title of the note attachment used for storing the preview, extension included. Take it from
@@ -56,35 +61,53 @@ export default function SvgSplitEditor({ ntxId, note, attachmentTitle, renderSvg
     useZoomPanWheel(zoom.ref, previewEl);
     useContextualShortcutHints(mode !== "source" ? ZOOM_PAN_HINTS : []);
 
+    // The SVG that the attachment holds, as far as the editor knows: the first one rendered for the
+    // note, which the attachment was saved from, then each one saved.
+    const savedSvgRef = useRef<string | undefined>(undefined);
+
     // Reset the render state when switching notes so a previous note's render (and the
     // "showing last valid render" badge) can't briefly carry over to a different note.
-    useEffect(reset, [ note.noteId ]);
+    useEffect(() => {
+        reset();
+        savedSvgRef.current = undefined;
+    }, [ note.noteId ]);
 
-    // Save as attachment.
-    const onSave = useCallback(() => {
-        if (!svg) return; // Don't save if SVG hasn't been rendered yet
-
-        const payload = {
+    const saveSvg = useCallback((toSave: string) => {
+        if (toSave === savedSvgRef.current) return;
+        savedSvgRef.current = toSave;
+        server.post(`notes/${note.noteId}/attachments?matchBy=title`, {
             role: "image",
             title: attachmentTitle,
             mime: "image/svg+xml",
-            content: svg,
+            content: toSave || EMPTY_SVG,
             position: 0
-        };
+        });
+    }, [ attachmentTitle, note.noteId ]);
 
-        server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }, [ svg, attachmentTitle, note.noteId ]);
+    // A save of the note saves the SVG at once, which also covers a save as the editor closes.
+    const onSave = useCallback(() => {
+        if (svg !== undefined) saveSvg(svg);
+    }, [ svg, saveSvg ]);
 
-    // Save the SVG when entering a note only when it does not have an attachment.
+    // The SVG also changes with content that the editor does not save, such as a sample diagram
+    // written to the note, so each SVG that differs from the attachment's is saved once it settles.
     useEffect(() => {
-        if (!svg) return; // Wait until SVG is rendered
-
-        note?.getAttachments().then((attachments) => {
-            if (!attachments.find((a) => a.title === attachmentTitle)) {
-                onSave();
-            }
-        }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
-    }, [ note, svg, attachmentTitle, onSave ]);
+        if (svg === undefined) return;
+        if (savedSvgRef.current === undefined) {
+            savedSvgRef.current = svg;
+            // A note made before its pictures were saved has no attachment yet.
+            note.getAttachments().then((attachments) => {
+                if (!attachments.some((a) => a.title === attachmentTitle)) {
+                    savedSvgRef.current = undefined;
+                    saveSvg(svg);
+                }
+            }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
+            return;
+        }
+        if (readOnly || svg === savedSvgRef.current) return;
+        const timer = setTimeout(() => saveSvg(svg), SVG_SAVE_DELAY);
+        return () => clearTimeout(timer);
+    }, [ svg ]);
 
     // Import/export. Exports the `svg` string from `renderSvg()` rather than the on-screen element,
     // which CSS has sized to the preview pane.

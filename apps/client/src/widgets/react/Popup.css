@@ -143,17 +143,29 @@ body[dir=rtl] .tn-popup[data-reveal]:is([data-reveal="bottom-end"], [data-reveal
     flex-direction: column;
 }
 
+/*
+ * The padding of a popup's frame, which the scrollers and menu pages inside it reach past. The
+ * theme's `.dropdown-menu:not(.static)` rule sets the same value. Set through Bootstrap's variables,
+ * so a component's own `padding` on its frame still wins.
+ */
+.dropdown-menu:is(
+    .tn-popup,
+    :has(> :is(.tn-menu-scroll, .tn-menu-filterable, .tn-menu-page, .tn-panel-scroll))
+) {
+    --tn-popup-padding: var(--padding, var(--menu-padding-size, .5rem));
+    --bs-dropdown-padding-x: var(--tn-popup-padding);
+    --bs-dropdown-padding-y: var(--tn-popup-padding);
+}
+
 .tn-menu-scroll,
 .tn-panel-scroll {
-    /* Matches the frame's own padding in the theme's `.dropdown-menu:not(.static)` rule. */
-    --tn-popup-padding: var(--padding, var(--menu-padding-size));
     flex: 1 1 auto;
     min-height: 0;
     /*
      * Spans the frame's padding, so the content scrolls up to its edge instead of being cut off
      * inside it, and the separator and header lines, which the theme draws that far past a row,
-     * stay inside the scroller instead of scrolling it sideways. Without the theme's variables
-     * both fall back to 0, as that theme's menu has no padding.
+     * stay inside the scroller instead of scrolling it sideways. Outside a `.dropdown-menu`, as in
+     * a host's suggestion list, `--tn-popup-padding` is unset and both fall back to 0.
      */
     margin: calc(0px - var(--tn-popup-padding));
     padding: var(--tn-popup-padding);

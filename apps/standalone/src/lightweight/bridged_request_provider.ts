@@ -163,16 +163,11 @@ export default class BridgedRequestProvider implements RequestProvider {
      *
      * Two things the server's implementation has are missing here, and neither can be had in full:
      *
-     * - The body arrives whole, so there is no stream to abandon partway. `maxBytes` is checked
-     *   against the encoded length the moment the reply lands and before anything is decoded from
-     *   it, which is the earliest point this side of the bridge can see a size at all — see
-     *   {@link decodedLengthOf}. What that spares is the decoding, which is where the cost
-     *   multiplies: `atob` yields a binary string and `Uint8Array.from` yields a copy of that, so a
-     *   body checked afterwards has already been held three times over.
-     *   It does not spare what the native side and the bridge already spent to deliver it. Bounding
-     *   *that* means giving the ceiling to the transport, which the plugin cannot honour — it
-     *   answers only once the whole response is in hand. The Android streaming proxy could, and
-     *   binding these two together is the fix worth making; it is not this change.
+     * - The body arrives whole, so there is no stream to abandon partway. The request sets a
+     *   `Range` that ends one byte past `maxBytes`, so a host that supports ranges sends no more
+     *   than that, even for a media file read by its prefix. A host that ignores the `Range` still
+     *   sends the whole body. `maxBytes` is checked against the encoded length before anything is
+     *   decoded (see {@link decodedLengthOf}), because `atob` and `Uint8Array.from` each copy it.
      * - Nothing resolves the hostname, so the private-address check cannot be made and DNS
      *   rebinding has no meaning here anyway. What is left is {@link validateFetchableUrl}, and
      *   the reason that is enough: this transport runs on the user's own device, reaching the
@@ -191,27 +186,35 @@ export default class BridgedRequestProvider implements RequestProvider {
                 type: "HTTP_REQUEST",
                 id,
                 request: {
-                    method: "GET",
+                    method: opts.method ?? "GET",
                     url: validated,
-                    headers: opts.headers ?? {},
+                    // One byte past the ceiling, so that a body over it is still refused.
+                    headers: { Range: `bytes=0-${opts.maxBytes}`, ...opts.headers },
                     responseType: "arraybuffer"
                 }
             });
         });
 
-        const encoded = msg.body ?? "";
+        const contentType =
+            (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+        const prefix = opts.prefixLength?.(contentType);
+        // Four base64 characters encode three bytes, so a prefix decodes from the start alone.
+        const encoded = prefix === undefined
+            ? msg.body ?? ""
+            : (msg.body ?? "").slice(0, Math.ceil(prefix / 3) * 4);
 
-        if (decodedLengthOf(encoded) > opts.maxBytes) {
+        if (prefix === undefined && decodedLengthOf(encoded) > opts.maxBytes) {
             throw new Error(`Response exceeds the ${opts.maxBytes} byte limit`);
         }
 
         const binary = atob(encoded);
+        const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
 
         return {
             status: msg.status,
             ok: msg.status >= 200 && msg.status < 300,
-            contentType: (msg.headers?.["content-type"] ?? "").split(";")[0].trim().toLowerCase(),
-            bytes: Uint8Array.from(binary, (c) => c.charCodeAt(0))
+            contentType,
+            bytes: prefix === undefined ? bytes : bytes.subarray(0, prefix)
         };
     }
 

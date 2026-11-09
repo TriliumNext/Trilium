@@ -1,4 +1,22 @@
-.modal.include-note-dialog {
+.include-note-balloon {
+    padding: 8px;
+    /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
+    width: 34rem;
+    max-width: calc(100vw - 2rem);
+    font-size: var(--main-font-size);
+    line-height: var(--bs-body-line-height);
+    white-space: normal;
+    text-align: start;
+
+    .include-note-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+    }
+}
+
+:is(.modal.include-note-dialog, .include-note-balloon) {
     @container (min-width: 501px) {
         :is(.include-note-note, .include-note-size) {
             > .tn-card-option-label {

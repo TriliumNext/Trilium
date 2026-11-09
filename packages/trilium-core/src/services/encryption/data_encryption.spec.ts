@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeUtf8, encodeUtf8 } from "../utils/binary.js";
+import { decodeUtf8, encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import dataEncryption from "./data_encryption.js";
 
 // The global server spec setup (apps/server/spec/setup.ts) calls initializeCore,
@@ -89,6 +89,18 @@ describe("data_encryption", () => {
                 expect(decodeUtf8(recovered)).not.toBe("secret payload");
             } else {
                 expect(recovered).toBe(false);
+            }
+        });
+
+        it("hands back a value that cannot be ciphertext unchanged (zadam/trilium#510)", () => {
+            // 40 bytes take a 13-byte IV, which leaves 27 bytes: not a whole number of blocks.
+            const misaligned = encodeBase64(Uint8Array.from({ length: 40 }, (_, i) => i));
+            // A 16-byte IV with no block after it.
+            const ivOnly = encodeBase64(new Uint8Array(16).fill(5));
+
+            for (const value of [ misaligned, ivOnly ]) {
+                expect(dataEncryption.decrypt(KEY, value), value).toEqual(encodeUtf8(value));
+                expect(dataEncryption.decrypt(KEY, encodeUtf8(value)), value).toEqual(encodeUtf8(value));
             }
         });
     });

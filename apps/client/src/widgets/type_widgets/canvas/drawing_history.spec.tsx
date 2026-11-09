@@ -75,6 +75,31 @@ describe("DrawingHistory", () => {
         expect(drawing.appState.viewBackgroundColor).toBe("#ffc9c9");
     });
 
+    it("compares the elements only to record a change, not to attach or show a saved scene", () => {
+        const { host, steps } = createHost();
+        const drawing = createDrawing([ RECTANGLE, ELLIPSE ]);
+        const mount = new DrawingHistory(host).mount();
+        // `getChangedKeys()` compares each property as JSON.
+        const stringify = vi.spyOn(JSON, "stringify");
+        try {
+            mount.attach(drawing.api, drawing.root, createStore([]));
+            mount.show({
+                elements: [ { ...RECTANGLE, x: 30, version: 5 }, ELLIPSE ], appState: {}, files: {}
+            });
+            expect(stringify).not.toHaveBeenCalled();
+
+            drawing.input("pointerdown");
+            drawing.setElements([ { ...RECTANGLE, x: 40, version: 6 }, ELLIPSE ]);
+            mount.record();
+            expect(stringify).toHaveBeenCalled();
+        } finally {
+            stringify.mockRestore();
+        }
+        expect(steps).toHaveLength(1);
+        expect(steps[0].undo()).toBe(true);
+        expect(drawing.getElements()[0]).toMatchObject({ x: 30 });
+    });
+
     it("joins a change that the user did not make to the last step, while it is the last", () => {
         const { host, steps, setLatest } = createHost();
         const drawing = createDrawing([]);

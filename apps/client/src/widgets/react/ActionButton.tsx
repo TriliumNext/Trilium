@@ -31,6 +31,8 @@ export interface ActionButtonProps extends Pick<
      */
     noTooltipOnTouch?: boolean;
     triggerCommand?: CommandNames;
+    /** A shortcut named in the tooltip as it is written, for a button whose key is no `triggerCommand` action. */
+    shortcut?: string;
     noIconActionClass?: boolean;
     frame?: boolean;
     active?: boolean;
@@ -39,9 +41,10 @@ export interface ActionButtonProps extends Pick<
 
 const cachedIsMobile = isMobile();
 
-export default function ActionButton({ text, icon, className, triggerCommand, titlePosition, tooltipClass, tooltipHtml, noIconActionClass, noTooltipOnTouch, frame, active, disabled, ...restProps }: ActionButtonProps) {
+export default function ActionButton({ text, icon, className, triggerCommand, shortcut, titlePosition, tooltipClass, tooltipHtml, noIconActionClass, noTooltipOnTouch, frame, active, disabled, ...restProps }: ActionButtonProps) {
     const buttonRef = useRef<HTMLButtonElement>(null);
-    const [ keyboardShortcut, setKeyboardShortcut ] = useState<string[]>();
+    const [ actionShortcuts, setKeyboardShortcut ] = useState<string[]>();
+    const keyboardShortcut = actionShortcuts ?? (shortcut ? [ shortcut ] : undefined);
     const triggerOwnCommand = useCommandTrigger(triggerCommand);
 
     const title = keyboardShortcut?.length

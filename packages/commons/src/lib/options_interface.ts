@@ -13,6 +13,9 @@ type KeyboardShortcutsOptions<T extends KeyboardActionNames> = {
     [key in T as `keyboardShortcuts${Capitalize<key>}`]: string;
 };
 
+/** How tall the rows of the note tree are. */
+export type TreeDensity = "relaxed" | "dense";
+
 export type FontFamily = "theme" | "serif" | "sans-serif" | "monospace" | string;
 
 /**
@@ -49,6 +52,12 @@ export const SYSTEM_MONOSPACE_FONT_STACK = [
     "Liberation Mono",
     "monospace"
 ].join(",");
+
+/**
+ * The generic `monospace` family named twice. Browsers draw a lone `monospace` at their smaller
+ * monospace default size (13px instead of 16px); a second family in the list turns that off.
+ */
+export const MONOSPACE_FONT_FAMILY = "monospace, monospace";
 
 export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActionNames> {
     openNoteContexts: string;
@@ -222,11 +231,15 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     transcriptionKeepRecordings: boolean;
     leftPaneVisible: boolean;
     rightPaneVisible: boolean;
+    /** Whether a presentation shows its slide sidebar. Not synced, as the room for it differs by device. */
+    presentationSidebarVisible: boolean;
     nativeTitleBarVisible: boolean;
     hideArchivedNotes_main: boolean;
     debugModeEnabled: boolean;
     autoCollapseNoteTree: boolean;
     treeScrollFollowNavigation: boolean;
+    /** Not synced, so each device keeps its own. */
+    treeDensity: TreeDensity;
     dailyBackupEnabled: boolean;
     weeklyBackupEnabled: boolean;
     monthlyBackupEnabled: boolean;
@@ -299,6 +312,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteContentHintsEnabled: boolean;
     /** Whether a URL typed or pasted into a text note is automatically turned into a link preview. The "Link preview" dialog is unaffected and always inserts one on request. */
     textNoteAutoLinkPreviewsEnabled: boolean;
+    /** Whether the link editor fills the empty title of a text link with the page's title. */
+    textNoteLinkTitleRetrievalEnabled: boolean;
+    /**
+     * Whether the link editor fills the empty title and description of an icon & text link or a card
+     * with the page's own.
+     */
+    textNoteLinkDetailsRetrievalEnabled: boolean;
     /**
      * Whether the header rows of a table stay at the top of the note while the rest of the table
      * scrolls past.
@@ -334,6 +354,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     searchAutocompleteFuzzy: boolean;
     /** Number of search results shown per page on the full-search results view. */
     searchResultsPageSize: number;
+
+    // Canvas settings
+    /** Whether a new pen stroke on a canvas takes half the stroke width that is picked. */
+    canvasThinStroke: boolean;
 
     // Share settings
     redirectBareDomain: boolean;

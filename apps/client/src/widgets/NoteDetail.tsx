@@ -28,6 +28,7 @@ import {
     useGetContextDataFrom,
     useLegacyComponentElement,
     useNoteContext,
+    useParentClass,
     useTriliumEvent
 } from "./react/hooks";
 import Icon from "./react/Icon";
@@ -52,6 +53,9 @@ export default function NoteDetail() {
     const { note, type, mime, noteContext, parentComponent } = useNoteInfo();
     const { ntxId, viewScope } = noteContext ?? {};
     const isFullHeight = checkFullHeight(noteContext, type);
+    const fillsPane = checkFillsPane(noteContext, type);
+    useParentClass(containerRef, "detail-full-height", isFullHeight);
+    useParentClass(containerRef, "detail-fills-pane", fillsPane);
     const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
     const widgetRequestId = useRef(0);
@@ -250,7 +254,8 @@ export default function NoteDetail() {
         <div
             ref={containerRef}
             class={clsx("component note-detail", {
-                "full-height": isFullHeight
+                "full-height": isFullHeight,
+                "fills-pane": fillsPane
             })}
         >
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
@@ -585,6 +590,13 @@ export function checkFullHeight(noteContext: NoteContext | undefined, type: Exte
     return (!noteContext?.hasNoteList() && isFullHeightNoteType)
         || noteContext?.viewScope?.viewMode === "attachments"
         || isBackendNote;
+}
+
+/** Whether the note's page lays itself out across the pane and scrolls inside itself. */
+export function checkFillsPane(
+    noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined
+) {
+    return type === "contentWidget" && noteContext?.noteId === "_spaceUsage";
 }
 
 function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {

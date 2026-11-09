@@ -75,11 +75,12 @@ describe("content_renderer", () => {
                     <p>After</p>
                 `
             });
+            // A box size saved by an older version reads as the size it became, at its height.
             const result = getContent(note);
             expect(result.content).toStrictEqual(trimIndentation`\
                 <p>Before</p>
-                <section class="include-note" data-note-id="subnote1" data-box-size="small"><p>Foo</p><div>Bar</div></section>
-                <section class="include-note" data-note-id="subnote2" data-box-size="small"><strong>Baz</strong></section>
+                <section class="include-note" data-note-id="subnote1" data-box-size="resizable" style="--include-note-height:10em"><p>Foo</p><div>Bar</div></section>
+                <section class="include-note" data-note-id="subnote2" data-box-size="resizable" style="--include-note-height:10em"><strong>Baz</strong></section>
                 <p>After</p>
             `);
         });
@@ -89,12 +90,12 @@ describe("content_renderer", () => {
             const note = buildShareNote({
                 id: "note1",
                 content: `<figure class="include-note" data-note-id="subnote1"`
-                    + ` data-box-size="medium"><figcaption>A <strong>caption</strong></figcaption>`
+                    + ` data-box-size="resizable"><figcaption>A <strong>caption</strong></figcaption>`
                     + `</figure>`
             });
 
             expect(getContent(note).content).toStrictEqual(
-                `<figure class="include-note" data-note-id="subnote1" data-box-size="medium">`
+                `<figure class="include-note" data-note-id="subnote1" data-box-size="resizable">`
                 + `<p>Foo</p><figcaption>A <strong>caption</strong></figcaption></figure>`
             );
         });
@@ -126,6 +127,28 @@ describe("content_renderer", () => {
             expect(content).toContain("reference-link");
             expect(content).toContain("Tiny note");
             expect(content).toContain(`href="api/attachments/tinyPic1/download"`);
+        });
+
+        it("keeps a Compact audio file as an embed, where other Compact content is a link", () => {
+            buildShareNotes([
+                { id: "songNote1", title: "Song", type: "file", mime: "audio/mpeg", content: "" }
+            ]);
+            const embed = (attribute: string) =>
+                `<figure class="include-note" ${attribute} data-box-size="compact"></figure>`;
+            const note = buildShareNote({
+                content: embed(`data-note-id="songNote1"`) + embed(`data-attachment-id="songAtt1"`)
+                    + embed(`data-attachment-id="pdfAtt1"`),
+                attachments: [
+                    { id: "songAtt1", role: "file", mime: "audio/mpeg", title: "song.mp3" },
+                    { id: "pdfAtt1", role: "file", mime: "application/pdf", title: "report.pdf" }
+                ]
+            });
+
+            const content = String(getContent(note).content);
+            expect(parse(content).querySelectorAll("figure.include-note").map((figure) =>
+                figure.getAttribute("data-note-id") ?? figure.getAttribute("data-attachment-id")))
+                .toEqual([ "songNote1", "songAtt1" ]);
+            expect(content).toContain(`href="api/attachments/pdfAtt1/download"`);
         });
 
         it("renders only the first level of nested embeds on the share view (nested embed becomes a reference link)", () => {
@@ -228,7 +251,7 @@ describe("content_renderer", () => {
             const nested = getContent(note, { embedsAsReferenceLinks: true }).content as string;
 
             expect(content.match(/Top/g)).toHaveLength(2);
-            expect(nested).toContain(`href="./blkSelf"`);
+            expect(nested).toContain(`href="./blkSelf?block=top"`);
             expect(nested).not.toContain("include-note");
         });
 
@@ -595,17 +618,26 @@ describe("content_renderer", () => {
             expect(page).toMatch(/<img src="plain.png" alt="[^"]+" loading="lazy">/);
         });
 
-        it("leaves an include-note section untouched when the referenced note is missing", () => {
+        it("replaces a missing note or attachment, or an unknown kind, with a public message", () => {
             const note = buildShareNote({
                 id: "missingRefHost",
-                content: `<p>host</p><section class="include-note" data-note-id="ghostNote" data-box-size="medium">&nbsp;</section>`
+                content: `<p>host</p>`
+                    + `<section class="include-note" data-note-id="ghostNote"`
+                    + ` data-box-size="medium">&nbsp;</section>`
+                    + `<figure class="include-note" data-attachment-id="ghostAtt"`
+                    + ` data-trilium-block-id="b1"></figure>`
+                    + `<section data-trilium-embed="note-card" data-note-id="ghostNote"`
+                    + ` data-trilium-block-id="b2"><p>Fallback</p>`
+                    + `<section data-trilium-embed="nested"><p>Inner</p></section></section>`
             });
-            const result = getContent(note);
-            if (typeof result.content !== "string") throw new Error("expected string content");
-            // The missing note is skipped: the section stays, nothing is expanded or reference-linked.
-            expect(result.content).toContain("host");
-            expect(result.content).toContain(`data-note-id="ghostNote"`);
-            expect(result.content).not.toContain("reference-link");
+
+            const content = getContent(note).content;
+
+            const message = t("content_renderer.content-not-available");
+            expect(content).toBe(`<p>host</p>`
+                + `<div class="include-note-unavailable">${message}</div>`
+                + `<div class="include-note-unavailable" data-trilium-block-id="b1">${message}</div>`
+                + `<div class="include-note-unavailable" data-trilium-block-id="b2">${message}</div>`);
         });
 
         it("renders an embedded large code note without hanging or re-parsing it as HTML (#9717)", () => {
@@ -740,26 +772,37 @@ describe("content_renderer", () => {
             }
         });
 
-        it("renders a picture or drawing embed as an image, any other embed as a download", () => {
+        it("renders a picture as an image, a drawing as its picture, others as a download", () => {
             const embed = (id: string) =>
                 `<section class="include-note" data-attachment-id="${id}">&nbsp;</section>`;
             const drawing = {
                 role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw"
             };
+            const picture = (id: string) =>
+                ({ id: `${id}Picture`, role: "image", mime: "image/svg+xml", title: `${id}.svg` });
             const note = buildShareNote({
                 content: embed("embedPic1") + embed("embedPdf1") + embed("embedGone")
-                    + embed("embedDraw1") + embed("embedDraw2"),
+                    + embed("embedDraw1") + embed("embedDraw2") + embed("embedDraw3"),
                 attachments: [
                     { id: "embedPic1", role: "image", mime: "image/png", title: "my photo.png" },
                     { id: "embedPdf1", role: "file", mime: "application/pdf", title: "report.pdf" },
                     { id: "embedDraw1", ...drawing },
-                    {
-                        id: "drawPicture", role: "image", mime: "image/svg+xml",
-                        title: "embedDraw1.svg"
-                    },
-                    { id: "embedDraw2", ...drawing }
+                    picture("embedDraw1"),
+                    { id: "embedDraw2", ...drawing },
+                    { id: "embedDraw3", ...drawing },
+                    picture("embedDraw3")
                 ]
             });
+            const setDrawingContent = (id: string, content: object) => {
+                const attachment = shaca.getAttachment(id);
+                if (!attachment) throw new Error(`No attachment ${id}`);
+                attachment.getContent = () => JSON.stringify(content);
+            };
+            // The picture of a drawing saved with a frame shows the frame, 900 pixels wide here.
+            setDrawingContent("embedDraw1", {
+                elements: [], frame: { x: 10, y: 20, width: 600, height: 300, scale: 1.5 }
+            });
+            setDrawingContent("embedDraw3", { elements: [] });
 
             const content = getContent(note).content as string;
 
@@ -768,17 +811,60 @@ describe("content_renderer", () => {
                 + `<img src="${src}" alt="my photo.png"></section>`);
             expect(content).toContain(
                 `<section class="include-note" data-attachment-id="embedDraw1">`
-                + `<img src="api/attachments/drawPicture/image/embedDraw1.svg" `
-                + `alt="Canvas.excalidraw"></section>`);
+                + `<div class="canvas-drawing-box" style="--canvas-drawing-natural-width:900px">`
+                + `<img class="canvas-drawing-picture" `
+                + `src="api/attachments/embedDraw1Picture/image/embedDraw1.svg" `
+                + `alt="Canvas.excalidraw"></div></section>`);
             expect(content).toContain(
                 `<section class="include-note" data-attachment-id="embedDraw2">`
                 + `<a class="reference-link attachment-link role-file" `
                 + `href="api/attachments/embedDraw2/download">`);
+            expect(content).toContain(
+                `<section class="include-note" data-attachment-id="embedDraw3">`
+                + `<img src="api/attachments/embedDraw3Picture/image/embedDraw3.svg" `
+                + `alt="Canvas.excalidraw"></section>`);
             expect(content).toContain(`<section class="include-note" data-attachment-id="embedPdf1">`
                 + `<a class="reference-link attachment-link role-file"`);
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);
             expect(content).toContain("report.pdf");
             expect(content).not.toContain("embedGone");
+        });
+
+        it("shows all of a drawing whose frame cannot be read, and logs it", () => {
+            const drawing = (id: string) => [
+                { id, role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw" },
+                { id: `${id}Picture`, role: "image", mime: "image/svg+xml", title: `${id}.svg` }
+            ];
+            const ids = [ "brokenDraw1", "emptyDraw1" ];
+            const note = buildShareNote({
+                content: ids.map((id) =>
+                    `<section class="include-note" data-attachment-id="${id}">&nbsp;</section>`)
+                    .join(""),
+                attachments: ids.flatMap(drawing)
+            });
+            const setDrawingContent = (id: string, content: string | undefined) => {
+                const attachment = shaca.getAttachment(id);
+                if (!attachment) throw new Error(`No attachment ${id}`);
+                attachment.getContent = () => content;
+            };
+            setDrawingContent("brokenDraw1", "{ not JSON");
+            setDrawingContent("emptyDraw1", undefined);
+            const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            try {
+                const content = getContent(note).content as string;
+
+                expect(content).not.toContain("canvas-drawing-box");
+                for (const id of ids) {
+                    expect(content)
+                        .toContain(`<img src="api/attachments/${id}Picture/image/${id}.svg"`);
+                }
+                expect(logError.mock.calls.map(([ message ]) => String(message).split(":")[0]))
+                    .toEqual(ids.map((id) =>
+                        `Cannot read the frame of the canvas drawing '${id}'`));
+            } finally {
+                vi.restoreAllMocks();
+            }
         });
 
         describe("Reference links", () => {
@@ -844,6 +930,47 @@ describe("content_renderer", () => {
                 const result = getContent(note);
                 const content = (result.content as string).replaceAll(/\s/g, "");
                 expect(content).toStrictEqual("<p>Foo</p>");
+            });
+
+            it("shows a link to a heading of the note it is in as the text of the heading", () => {
+                const note = buildShareNote({
+                    id: "headingLink1",
+                    content: `<h2 data-trilium-block-id="h">Lists &amp;\n  <em>more</em>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=h">Intro</a></h2>`
+                        + `<p><a class="reference-link" href="#root/headingLink1?block=h">a</a>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=p">b</a>`
+                        + `<a class="reference-link" href="#root/headingLink1?block=gone">c</a>`
+                        + `<a class="reference-link" href="#root/headingLink1">d</a></p>`
+                        + `<p data-trilium-block-id="p">Text</p>`
+                });
+
+                const content = getContent(note).content as string;
+
+                expect(content).toContain(`<a class="reference-link type-text"`
+                    + ` href="./headingLink1?block=h"><span>Lists &amp; more</span></a>`);
+                // A link to another block, to one that is gone or to the whole note shows the note.
+                expect(content.match(/<span class="tn-icon bx bx-note"><\/span>/g)).toHaveLength(3);
+            });
+
+            it("names a heading without text, inside an included note too", () => {
+                buildShareNote({
+                    id: "includedHead",
+                    title: "Included",
+                    content: `<h2 data-trilium-block-id="i">Inner heading</h2>`
+                        + `<p><a class="reference-link" href="#root/includedHead?block=i">x</a></p>`
+                });
+                const note = buildShareNote({
+                    id: "emptyHeading",
+                    content: `<h2 data-trilium-block-id="e"> </h2>`
+                        + `<p><a class="reference-link" href="#root/emptyHeading?block=e">x</a></p>`
+                        + `<section class="include-note" data-note-id="includedHead"></section>`
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+                expect(links.map((link) => link.innerHTML)).toStrictEqual([
+                    `<span>${t("content_renderer.untitled-block")}</span>`,
+                    "<span>Inner heading</span>"
+                ]);
             });
 
             it("does not treat an external URL's query string as a note ID", () => {
@@ -914,6 +1041,35 @@ describe("content_renderer", () => {
                 expect(externalLink.getAttribute("target")).toBe("_blank");
                 expect(externalLink.getAttribute("rel")).toBe("noopener noreferrer");
                 expect(externalLink.text).toBe("Ext");
+            });
+
+            it("keeps the blocks that a link points at, inside an included note too", () => {
+                buildShareNote({ id: "blockTarget1", title: "Target" });
+                buildShareNote({
+                    id: "extBlocks001",
+                    title: "Ext",
+                    "#shareExternalLink": "https://example.com/page"
+                });
+                buildShareNote({
+                    id: "includedNote",
+                    content: "<p><a class=\"reference-link\" href=\"#root/blockTarget1?block=c\">"
+                        + "Old</a></p>"
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: "<p><a href=\"#root/x/blockTarget1?block=a:b%20c\">range</a>"
+                        + "<a href=\"#root/extBlocks001?block=a\">ext</a>"
+                        + "<a href=\"#root/blockTarget1?viewMode=source\">plain</a></p>"
+                        + "<section class=\"include-note\" data-note-id=\"includedNote\"></section>"
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+                expect(links.map((link) => [ link.getAttribute("href"), link.text ])).toEqual([
+                    [ "./blockTarget1?block=a:b%20c", "range" ],
+                    [ "https://example.com/page", "ext" ],
+                    [ "./blockTarget1", "plain" ],
+                    [ "./blockTarget1?block=c", "Target" ]
+                ]);
             });
 
             it("links a note with either external link label out, as the navigation does", () => {
@@ -995,6 +1151,89 @@ describe("content_renderer", () => {
             expect(content).not.toContain("youtube-nocookie.com");
             expect(content).toContain(`<button type="button" class="link-embed-video-facade" data-video-id="dQw4w9WgXcQ"`);
             expect(content).toContain(`<img class="link-embed-video-thumbnail" src="data:image/jpeg;base64,BBB"`);
+        });
+
+        it("renders a video or audio file as a facade that loads nothing, in its box", () => {
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/clip.mp4"`
+                    + ` data-embed-type="video" data-aspect-ratio="4/3" data-box-size="medium"></section>`
+                    + `<section class="link-embed" data-url="https://example.com/song.mp3"`
+                    + ` data-embed-type="audio"></section>`
+            });
+
+            const content = String(getContent(note).content);
+            expect(content).not.toMatch(/<(video|audio)\b/);
+            expect(content).toContain(`<button type="button" class="link-embed-video-facade"`
+                + ` data-media-url="https://example.com/clip.mp4"`);
+            expect(content).toContain(`<button type="button" class="link-embed-audio-facade"`
+                + ` data-media-url="https://example.com/song.mp3"`);
+            const sections = parse(content).querySelectorAll("section");
+            expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
+                .toEqual([ [ "resizable", `--video-aspect-ratio:${4 / 3}` ], [ "compact", undefined ] ]);
+        });
+
+        it("renders a video at Compact as a mention: its title row alone, no player", () => {
+            const note = buildShareNote({
+                content: `<section class="link-embed" data-url="https://example.com/clip.mp4"`
+                    + ` data-embed-type="video" data-box-size="compact"></section>`
+                    + `<section class="link-embed" data-url="https://example.com/song.mp3"`
+                    + ` data-embed-type="audio" data-box-size="compact"></section>`
+            });
+
+            const sections = parse(String(getContent(note).content)).querySelectorAll("section");
+            expect(sections.map((section) => [
+                section.getAttribute("data-box-size"),
+                section.querySelector("a.link-embed-mention") !== null,
+                section.querySelector(".link-embed-audio-facade") !== null
+            ])).toEqual([ [ "compact", true, false ], [ "compact", false, true ] ]);
+        });
+
+        it("gives a video the box size and the shape that the app draws it with", () => {
+            const video = `<section class="link-embed" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const note = buildShareNote({
+                content: `<p>Videos</p>`
+                    + `${video} data-aspect-ratio="9/16" data-box-size="resizable" style="--include-note-width:11.3em;"></section>`
+                    + `${video}></section>`
+                    + `${video} data-aspect-ratio="9/16"></section>`
+            });
+
+            const sections = parse(String(getContent(note).content)).querySelectorAll("section");
+            expect(sections.map((section) => [ section.getAttribute("data-box-size"), section.getAttribute("style") ]))
+                .toEqual([
+                    [ "resizable", "--include-note-width:11.3em;--video-aspect-ratio:0.5625" ],
+                    [ "full", undefined ],
+                    [ "full", "--video-aspect-ratio:0.5625" ]
+                ]);
+        });
+
+        it("places a video saved with a caption by the figure that holds both", () => {
+            const video = `<section class="link-embed"`
+                + ` data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"`
+                + ` data-embed-type="youtube"`;
+            const captioned = (section: string) => `<figure class="captioned-content-embed">`
+                + `${section}&nbsp;</section><figcaption>A caption</figcaption></figure>`;
+            const note = buildShareNote({
+                content: captioned(`${video} style="--include-note-width:30em;"`
+                    + ` data-box-size="resizable" data-position="wrap-right">`)
+                    + captioned(`${video}>`)
+            });
+
+            const figures = parse(String(getContent(note).content)).querySelectorAll("figure");
+            const box = (element: ReturnType<typeof parse> | null | undefined) => [
+                "style", "data-box-size", "data-position"
+            ].map((name) => element?.getAttribute(name));
+            expect(figures.map((figure) => [
+                box(figure), box(figure.querySelector("section.link-embed"))
+            ])).toEqual([
+                [
+                    [ "--include-note-width:30em;", "resizable", "wrap-right" ],
+                    [ undefined, undefined, undefined ]
+                ],
+                [ [ undefined, "full", undefined ], [ undefined, undefined, undefined ] ]
+            ]);
+            expect(figures[0]?.querySelector(".link-embed-video-facade")).not.toBeNull();
+            expect(figures[0]?.querySelector("figcaption")?.textContent).toBe("A caption");
         });
 
         it("neuters a hostile scheme in the stored URL, on a page served to anyone", () => {

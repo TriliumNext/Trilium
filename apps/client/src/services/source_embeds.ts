@@ -9,6 +9,8 @@ export interface SourceEmbedProps {
     content: string;
     /** Saves the edited source. Without it the content is read-only. */
     editor?: ContentEditor;
+    /** The language of a source kept inline, as a CKEditor code block language. */
+    language?: string;
 }
 
 /**
@@ -47,6 +49,23 @@ export const SOURCE_EMBED_TYPES: readonly SourceEmbedType[] = [
         }
     }
 ];
+
+/** What an embed of a source kept inline shows, by {@link getInlineEmbedType}. */
+export type InlineEmbedType = Pick<SourceEmbedType, "contentType" | "load">;
+
+/** An extended code block: code kept inline, shown in the code editor by `InlineCodeEmbed`. */
+const EXTENDED_CODE_BLOCK_TYPE: InlineEmbedType = {
+    contentType: "extendedCodeBlock",
+    load: async () => (await import("../widgets/type_widgets/code/CodeEmbed")).InlineCodeEmbed
+};
+
+/**
+ * The type of an embed of a source kept inline, of `language`: the source embed type of that
+ * language, otherwise an extended code block.
+ */
+export function getInlineEmbedType(language: string): InlineEmbedType {
+    return getSourceEmbedTypeByLanguage(language) ?? EXTENDED_CODE_BLOCK_TYPE;
+}
 
 /** The type of the source embeds whose code blocks are of `language`, or `undefined`. */
 export function getSourceEmbedTypeByLanguage(language: string) {

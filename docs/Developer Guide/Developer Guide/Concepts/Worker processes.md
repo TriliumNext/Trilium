@@ -58,7 +58,7 @@ On the server and in the desktop app, Trilium moves CPU-heavy backend work into 
 
 ## Content jobs
 
-A content job is a CPU-bound conversion described by plain, structured-clone-safe data. `packages/trilium-core/src/services/content_jobs/jobs.ts` defines the `ContentJob` union and dispatches it with `runContentJob()`. The kinds are `markdownToHtml`, `htmlToMarkdown`, `prettyPrintHtml`, `sanitizeHtml`, `enexNoteContent`, `officeToHtml` and `prepareNoteText`. Callers are the ZIP, ENEX, single-file and Obsidian importers, the ZIP and single-file exporters and the office preview route.
+A content job is a CPU-bound conversion described by plain, structured-clone-safe data. `packages/trilium-core/src/services/content_jobs/jobs.ts` defines the `ContentJob` union and dispatches it with `runContentJob()`. The kinds are `markdownToHtml`, `htmlToMarkdown`, `formatHtml`, `sanitizeHtml`, `enexNoteContent`, `officeToHtml` and `prepareNoteText`. Callers are the ZIP, ENEX, single-file and Obsidian importers, the ZIP and single-file exporters and the office preview route.
 
 The worker entry `content_job_worker.ts` imports `jobs.ts` by its sub-path, never the core barrel, so its bundle contains the converters and none of becca, SQL or options.
 

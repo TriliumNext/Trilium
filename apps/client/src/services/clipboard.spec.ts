@@ -19,8 +19,8 @@ import * as ws from "./ws.js";
 // Provide a no-op so looking up an unknown branch id doesn't blow up.
 (globalThis as any).logError = (globalThis as any).logError ?? (() => {});
 
-branchService.moveAfterBranch = vi.fn(async () => {}) as typeof branchService.moveAfterBranch;
-branchService.moveToParentNote = vi.fn(async () => {}) as typeof branchService.moveToParentNote;
+branchService.moveAfterBranch = vi.fn(async () => true) as typeof branchService.moveAfterBranch;
+branchService.moveToParentNote = vi.fn(async () => true) as typeof branchService.moveToParentNote;
 branchService.cloneNoteAfter = vi.fn(async () => {}) as typeof branchService.cloneNoteAfter;
 branchService.cloneNoteToBranch = vi.fn(async () => {}) as typeof branchService.cloneNoteToBranch;
 toastService.showMessage = vi.fn() as typeof toastService.showMessage;

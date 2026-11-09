@@ -6,9 +6,12 @@ import { getPlatform } from "../platform";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import { extensions as mimeToExt, types as extToMime } from "mime-types";
-import escape from "escape-html";
 import { basename, extname } from "./path";
+import { stripTags } from "./strip_tags";
 import { NoteMeta } from "../../meta";
+
+export { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+export { stripTags };
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
@@ -213,6 +216,19 @@ export function sanitizeSqlIdentifier(str: string) {
 export const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:";
 
 /**
+ * Headers for stored, non-SVG content served without a `Content-Disposition`. A browser that
+ * navigates to such a response renders it as a document in Trilium's origin, so `sandbox` keeps
+ * its scripts from running. Embedders (`<img>`, `<video>`, `fetch()`, `@font-face`) ignore the
+ * policy. A PDF goes without it, because Chrome refuses to display a sandboxed PDF.
+ */
+export function getInlineContentHeaders(mime: string): Record<string, string> {
+    return {
+        "X-Content-Type-Options": "nosniff",
+        ...(mime === "application/pdf" ? {} : { "Content-Security-Policy": "sandbox" })
+    };
+}
+
+/**
  * Sanitize SVG to remove potentially dangerous elements and attributes.
  * This prevents XSS via script injection in SVG content.
  */
@@ -271,8 +287,6 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
     }
     return map;
 }
-
-export const escapeHtml = escape;
 
 /**
  * Escapes `value` for use inside a double-quoted CSS string, one hex escape per character.
@@ -503,10 +517,6 @@ export function slugify(text: string) {
         .toLowerCase()
         .replace(/[^\p{Letter}\p{Number}]+/gu, "-") // replace non-letter/number with "-"
         .replace(/(^-|-$)+/g, ""); // trim dashes
-}
-
-export function stripTags(text: string) {
-    return text.replace(/<(?:.|\n)*?>/gm, "");
 }
 
 /**

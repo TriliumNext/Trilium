@@ -8,7 +8,10 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
-import { useGetContextDataFrom, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelInt, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import {
+    useGetContextDataFrom, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelInt,
+    useNoteProperty, useParentClass, useTriliumEvent
+} from "../react/hooks";
 import { ViewModeMedia, ViewModeProps, resolveViewType, ViewTypeOptions } from "./interface";
 import ViewModeStorage, { type ViewModeStorageType } from "./view_mode_storage";
 
@@ -32,6 +35,8 @@ interface NoteListProps {
     onProgressChanged?(progress: number): void;
     showTextRepresentation?: boolean;
     onOpenNote?: (noteId: string) => void;
+    /** Shows the collection read-only even when its note can be edited. */
+    isReadOnly?: boolean;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);
@@ -102,6 +107,7 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, conten
     const [ isIntersecting, setIsIntersecting ] = useState(false);
     const shouldRender = shouldRenderNoteList(note, viewType, isIntersecting, media);
     const isEnabled = (note && shouldEnable && !!viewType && shouldRender);
+    useParentClass(widgetRef, "list-full-height", !!(isFullHeight && isEnabled));
 
     useEffect(() => {
         if (isFullHeight || displayOnlyCollections || note?.type === "book") {

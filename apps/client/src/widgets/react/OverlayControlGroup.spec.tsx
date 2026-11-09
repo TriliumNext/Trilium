@@ -4,10 +4,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The bootstrap tooltip needs real layout; capture what it would have been given instead.
 const { staticTooltipSpy } = vi.hoisted(() => ({ staticTooltipSpy: vi.fn() }));
-vi.mock("./hooks", () => ({ useStaticTooltip: staticTooltipSpy }));
+vi.mock("./hooks", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./hooks")>(),
+    useStaticTooltip: staticTooltipSpy
+}));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
-import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "./OverlayControlGroup";
+import { FormListItem } from "./FormList";
+import OverlayControlGroup, {
+    OverlayControlButton, OverlayControlDropdown, OverlayFullscreenButton, ZoomControls
+} from "./OverlayControlGroup";
 
 let container: HTMLDivElement;
 
@@ -169,9 +175,22 @@ describe("OverlayControlGroup", () => {
             </OverlayControlGroup>
         );
 
-        expect(tooltipFor("Zoom out")).toEqual({ title: "Zoom out", placement: "bottom" });
+        // Never flipped to a side, where the tooltip would cover the neighbouring buttons.
+        expect(tooltipFor("Zoom out")).toEqual({ title: "Zoom out", placement: "bottom", fallbackPlacements: [ "bottom" ] });
         // A button placed unlike its neighbours overrides what the group hands down.
-        expect(tooltipFor("Elsewhere")).toEqual({ title: "Elsewhere", placement: "left" });
+        expect(tooltipFor("Elsewhere")).toEqual({ title: "Elsewhere", placement: "left", fallbackPlacements: [ "left" ] });
+    });
+
+    it("names its shortcut in the tooltip, but not in the button's name", () => {
+        mount(
+            <OverlayControlGroup>
+                <OverlayControlButton title="Overview" icon="bx-grid-horizontal" shortcut="O" />
+                <OverlayControlButton title="Next slide" icon="bx-chevron-right" shortcut="Space" />
+            </OverlayControlGroup>
+        );
+
+        expect(tooltipFor("Overview")?.title).toBe("Overview (O)");
+        expect(tooltipFor("Next slide")?.title).toMatch(/^Next slide \(.+\)$/);
     });
 
     it("opens tooltips away from the bottom edge unless told otherwise", () => {
@@ -279,6 +298,31 @@ describe("OverlayControlGroup", () => {
 
         expect(container.querySelector("button")?.textContent).toBe("250%");
         expect(staticTooltipSpy.mock.calls.at(-1)?.[1]).toBe(first);
+    });
+});
+
+describe("OverlayControlDropdown", () => {
+    it("draws an icon button named by its title, without Bootstrap's look, that opens its menu", async () => {
+        mount(
+            <OverlayControlGroup placement="bottom-end">
+                <OverlayControlButton title="Add" icon="bx-plus" />
+                <OverlayControlDropdown title="More" icon="bx-chevron-down">
+                    <FormListItem>Row</FormListItem>
+                </OverlayControlDropdown>
+            </OverlayControlGroup>
+        );
+
+        const toggle = container.querySelector<HTMLButtonElement>(".tn-overlay-control-dropdown > button");
+        expect(toggle?.getAttribute("aria-label")).toBe("More");
+        expect(toggle?.classList.contains("tn-overlay-icon-button")).toBe(true);
+        expect(toggle?.classList.contains("bx-chevron-down")).toBe(true);
+        expect(toggle?.classList.contains("btn")).toBe(false);
+
+        await act(async () => toggle?.click());
+        await vi.waitFor(() => {
+            expect(document.querySelector(".tn-popup li.dropdown-item")?.textContent?.trim()).toBe("Row");
+        });
+        await act(async () => toggle?.click());
     });
 });
 

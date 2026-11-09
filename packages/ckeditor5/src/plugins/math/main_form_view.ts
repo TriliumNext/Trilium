@@ -118,7 +118,7 @@ export default class MainFormView extends View {
 
 		focusableViews.forEach( v => {
 			this._focusables.add( v );
-			/* v8 ignore next -- every focusable above is a child of this view's template, so
+			/* v8 ignore else -- every focusable above is a child of this view's template, so
 			   super.render() has already given it an element */
 			if ( v.element ) {
 				this.focusTracker.add( v.element );
@@ -127,8 +127,8 @@ export default class MainFormView extends View {
 
 		this.mathInputView.on( 'mathfieldReady', () => {
 			const mathfieldView = this.mathInputView.mathFieldFocusableView;
-			/* v8 ignore next 5 -- defensive cleanup: the focusable is registered with an element and
-			   is always still tracked at this point */
+			/* v8 ignore else -- _initMathField() calls setElement() on the focusable before it
+			   fires mathfieldReady */
 			if ( mathfieldView.element ) {
 				if ( this._focusables.has( mathfieldView ) ) {
 					this._focusables.remove( mathfieldView );
@@ -138,7 +138,7 @@ export default class MainFormView extends View {
 			}
 		} );
 
-		/* v8 ignore next -- super.render() assigns the element before this runs */
+		/* v8 ignore else -- super.render() assigns the element before this runs */
 		if ( this.element ) {
 			this.keystrokes.listenTo( this.element );
 		}
@@ -169,7 +169,7 @@ export default class MainFormView extends View {
 				eq = params.equation;
 				this.displayButtonView.isOn = params.display;
 
-				/* v8 ignore next -- only reached when the value carried delimiters, and stripping
+				/* v8 ignore else -- only reached when the value carried delimiters, and stripping
 				   them always shortens it, so the two can never be equal here */
 				if ( this.mathInputView.value !== eq ) {
 					this.mathInputView.value = eq.length ? eq : null;

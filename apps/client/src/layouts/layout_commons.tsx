@@ -23,8 +23,9 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showNotePickerDialog"]} loader={() => import("../widgets/dialogs/note_picker.js")} />)
         .child(<LazyDialog triggerEvents={["chooseNoteType"]} loader={() => import("../widgets/dialogs/note_type_chooser.js")} />)
         .child(<LazyDialog triggerEvents={["jumpToNote", "commandPalette"]} loader={() => import("../widgets/dialogs/jump_to_note.js")} />)
-        .child(<LazyDialog triggerEvents={["showAddLinkDialog"]} loader={() => import("../widgets/dialogs/add_link.js")} />)
+        .child(<LazyDialog triggerEvents={["showEditLinkDialog"]} loader={() => import("../widgets/dialogs/edit_link.js")} />)
         .child(<LazyDialog triggerEvents={["showIconPickerDialog"]} loader={() => import("../widgets/dialogs/icon_picker.js")} />)
+        .child(<LazyDialog triggerEvents={["showInsertMediaDialog"]} loader={() => import("../widgets/dialogs/insert_media.js")} />)
         .child(<LazyDialog triggerEvents={["cloneNoteIdsTo"]} loader={() => import("../widgets/dialogs/clone_to.js")} />)
         .child(<LazyDialog triggerEvents={["moveBranchIdsTo"]} loader={() => import("../widgets/dialogs/move_to.js")} />)
         .child(<LazyDialog triggerEvents={["showImportDialog"]} loader={() => import("../widgets/dialogs/import/import_dialog.js")} />)
@@ -45,7 +46,6 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showOptions"]} loader={() => import("../widgets/dialogs/OptionsDialog.jsx")} />)
         .child(<LazyDialog triggerEvents={["showContentLanguagesDialog"]} loader={() => import("../widgets/dialogs/content_languages.js")} />)
         .child(<LazyDialog triggerEvents={["showOcrTextDialog"]} loader={() => import("../widgets/dialogs/ocr_text.js")} />)
-        .child(<LazyDialog triggerEvents={["showNoteAttributes"]} loader={() => import("../widgets/dialogs/note_attributes.jsx")} />)
         .child(<LazyDialog triggerEvents={["showUploadAttachmentsDialog"]} loader={() => import("../widgets/dialogs/upload_attachments.js")} />)
         .child(<LazyDialog triggerEvents={["openInTreePopup"]} loader={() => import("../widgets/dialogs/TreePopupEditor.jsx")} />)
         // The following three are deliberately eager (not wrapped in LazyDialog):

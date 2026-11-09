@@ -1,7 +1,19 @@
-import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, ClickObserver, Essentials, FindAndReplace, Heading, Paragraph } from "ckeditor5";
+import {
+    _getModelData as getModelData,
+    _setModelData as setModelData,
+    ClassicEditor,
+    ClickObserver,
+    Essentials,
+    FindAndReplace,
+    Heading,
+    Paragraph,
+    Widget
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
+import { registerTestCleanup } from "../../../test/globals-test-kit.js";
+import ContentEmbed from "../content_embed/content_embed.js";
 import CollapsibleEditing from "./collapsible_editing.js";
 
 /**
@@ -113,7 +125,7 @@ describe("collapsible edge cases", () => {
     });
 
     describe("arrow keys with a measurable caret", () => {
-        it("stays put when the caret is not on the title's first visual line", () => {
+        it("measures a real caret and still jumps out of a single-line title", () => {
             setModelData(
                 editor.model,
                 "<details open=\"true\"><summary>first</summary><paragraph>one</paragraph></details>" +
@@ -130,6 +142,26 @@ describe("collapsible edge cases", () => {
             // A single-line title puts the caret on both the first and last visual line, so the
             // jump does fire here — the point is that the geometry path ran without throwing.
             expect(preventDefault).toHaveBeenCalled();
+        });
+
+        it("leaves a wrapped title to the browser while the caret is below its first line", () => {
+            const wrapped = "and more ".repeat(40);
+            setModelData(
+                editor.model,
+                "<details open=\"true\"><summary>A</summary><paragraph>one</paragraph></details>" +
+                "<details open=\"true\"><summary>" + wrapped + "end[]</summary>" +
+                "<paragraph>two</paragraph></details>"
+            );
+            syncDomSelection();
+            const preventDefault = vi.fn();
+
+            editor.editing.view.document.fire("arrowKey", {
+                keyCode: 38, shiftKey: false, preventDefault,
+                domTarget: editor.editing.view.getDomRoot()
+            });
+
+            expect(preventDefault).not.toHaveBeenCalled();
+            expect(getModelData(editor.model)).toContain("<summary>" + wrapped + "end[]</summary>");
         });
     });
 
@@ -153,6 +185,42 @@ describe("collapsible edge cases", () => {
             expect(() => stray.dispatchEvent(new Event("toggle"))).not.toThrow();
 
             stray.remove();
+        });
+
+        it("leaves a collapsible inside an embedded note to the browser", async () => {
+            const embedEditor = await createTestEditor(
+                [Essentials, Paragraph, Widget, ContentEmbed, CollapsibleEditing],
+                { contentEmbed: { loadNote: renderEmbeddedCollapsible } }
+            );
+            embedEditor.setData(
+                "<details><summary>Own</summary><p>body</p></details>" +
+                "<figure class=\"include-note\" data-note-id=\"included\"></figure>"
+            );
+            const embedded = embedEditor.editing.view.getDomRoot()
+                ?.querySelector(".include-note-wrapper details");
+            if (!(embedded instanceof HTMLDetailsElement)) {
+                throw new Error("Expected a collapsible inside the embedded note.");
+            }
+            const errors: string[] = [];
+            const recordError = (event: ErrorEvent) => {
+                if (event.error instanceof Error) {
+                    errors.push(event.error.message);
+                }
+            };
+            window.addEventListener("error", recordError);
+            registerTestCleanup(() => window.removeEventListener("error", recordError));
+            const toggled = new Promise<void>((resolve) => {
+                embedded.addEventListener("toggle", () => resolve(), { once: true });
+            });
+
+            embedded.open = true;
+            await toggled;
+
+            expect(errors).toEqual([]);
+            expect(embedded.open).toBe(true);
+            expect(getModelData(embedEditor.model, { withoutSelection: true })).toContain(
+                "<details><summary>Own</summary><paragraph>body</paragraph></details>"
+            );
         });
     });
 
@@ -261,3 +329,9 @@ describe("collapsible edge cases", () => {
         });
     });
 });
+
+/** `contentEmbed.loadNote` stub: renders an included note that contains a collapsible. */
+function renderEmbeddedCollapsible(_noteId: string, wrapper: HTMLElement): void {
+    wrapper.innerHTML =
+        "<details class=\"trilium-collapsible\"><summary>Included</summary><p>inner</p></details>";
+}

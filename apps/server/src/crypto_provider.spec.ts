@@ -79,3 +79,12 @@ describe("NodejsCryptoProvider scrypt", () => {
         expect(await derivation).toBe(true);
     });
 });
+
+describe("NodejsCryptoProvider randomString", () => {
+    it("returns alphanumeric strings of the requested length", () => {
+        for (const length of [ 0, 1, 12, 64 ]) {
+            expect(provider.randomString(length)).toMatch(new RegExp(`^[0-9A-Za-z]{${length}}$`));
+        }
+        expect(provider.randomString(32)).not.toBe(provider.randomString(32));
+    });
+});

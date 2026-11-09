@@ -123,6 +123,17 @@ describe("FileBasedLogService (shared logic)", () => {
         expect(contents).toContain("plain failure");
     });
 
+    it("warn() writes a WARNING: entry, with the stack of an Error", async () => {
+        await log.initialize();
+        log.warn("careful");
+        log.warn(new Error("shaky"));
+
+        const contents = log.getLogContents() ?? "";
+        expect(contents).toMatch(/\d{2}:\d{2}:\d{2}\.\d{3} WARNING: careful/);
+        expect(contents).toContain("WARNING: Error: shaky\n    at ");
+        expect(consoleLogSpy).toHaveBeenCalledWith("WARNING: careful");
+    });
+
     it("getScriptContext returns undefined when the context lookup throws", () => {
         vi.spyOn(cls, "getContext").mockImplementation(() => {
             throw new Error("no context");

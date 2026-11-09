@@ -62,6 +62,15 @@ describe("sanitize", () => {
         // An embed that keeps its source in the note is saved as a code block.
         const inline = `<pre style="--include-note-width:30em;--include-note-height:12.5em" data-box-size="medium"><code class="language-mermaid">graph TD;</code></pre>`;
         expect(sanitizeHtml(inline)).toBe(inline);
+
+        // A video takes its height from its width.
+        const video = `<section class="link-embed" style="--include-note-width:30em"`
+            + ` data-url="https://youtu.be/dQw4w9WgXcQ" data-embed-type="youtube"`
+            + ` data-position="wrap-left"></section>`;
+        const width = "--include-note-width:30em";
+        expect(sanitizeHtml(video)).toBe(video);
+        expect(sanitizeHtml(video.replace(width, "--include-note-height:12em")))
+            .toBe(video.replace(` style="${width}"`, ""));
     });
 
     it("keeps the hidden-border style on table header cells", () => {

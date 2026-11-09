@@ -207,6 +207,20 @@ describe("triliumLogHighlighter", () => {
         expect(lineClassesAt(s, 5)).toContain("cm-log-info");
     });
 
+    it("colours a WARNING: block and its continuation lines, closing it at the next entry", () => {
+        const doc = [
+            "17:34:08.519 WARNING: shaky",
+            "    at foo (bar.ts:1:2)",
+            "17:34:08.600 Becca (note cache) load took 120ms"
+        ].join("\n");
+        const s = state(doc);
+
+        expect(lineClassesAt(s, 1)).toContain("cm-log-warning");
+        expect(lineClassesAt(s, 2)).toContain("cm-log-warning");
+        expect(lineClassesAt(s, 3)).not.toContain("cm-log-warning");
+        expect(lineClassesAt(s, 1)).not.toContain("cm-log-error");
+    });
+
     it("rebuilds decorations when the document changes (editable notes)", () => {
         let s = state("17:35:56.745 Backend script execution is DISABLED.");
         expect(classesOfState(s)).toEqual([ "cm-log-timestamp" ]);

@@ -22,7 +22,6 @@ import blockquote from "./theme/blockquote.css?inline";
 import ckContentRaw from "./theme/ck-content.css?raw";
 import codeBlockToolbar from "./theme/code_block_toolbar.css?inline";
 import contentColors from "./theme/content_colors.css?inline";
-import linkEmbedForm from "./theme/link_embed_form.css?inline";
 import todoLists from "./theme/todo_lists.css?inline";
 import oldFull from "./zz_ckcss_old.css?inline";
 import oldContent from "./zz_ckcss_old_content.css?inline";
@@ -30,7 +29,7 @@ import oldContent from "./zz_ckcss_old_content.css?inline";
 export type Side = "old" | "new";
 
 /** What `src/index.ts` imports after `ckeditor5/ckeditor5.css`. Keep in step with it. */
-const PACKAGE_LAYER = [ blockquote, contentColors, codeBlockToolbar, linkEmbedForm ];
+const PACKAGE_LAYER = [ blockquote, contentColors, codeBlockToolbar ];
 /** `ck-content.css` without its `@import`s, which the share and export contexts load explicitly. */
 const CK_CONTENT_REST = ckContentRaw.replace(/@import[^;]*;/g, "");
 

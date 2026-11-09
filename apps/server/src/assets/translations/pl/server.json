@@ -304,8 +304,7 @@
     "presentation": "Prezentacja",
     "presentation_slide": "Slajd prezentacji",
     "presentation_slide_first": "Pierwszy slajd",
-    "presentation_slide_second": "Drugi slajd",
-    "background": "Tło"
+    "presentation_slide_second": "Drugi slajd"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza danych nie jest zainicjowana, postępuj zgodnie z instrukcjami na ekranie.",

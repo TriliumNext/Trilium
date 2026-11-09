@@ -9,6 +9,8 @@ const FLASH_CLASS = "block-reference-flash";
 const FLASH_DURATION_MS = 1500;
 /** The smallest gap above the shown blocks, as a share of the height of their scroll container. */
 const MIN_TOP_GAP = 0.15;
+/** The elements that `showAnchor()` flashes when they hold the anchor. */
+const ANCHOR_BLOCKS = "p, h1, h2, h3, h4, h5, h6, li, dt, dd, pre, blockquote, figure, td, th";
 
 /**
  * Scrolls to the blocks that `value`, a `block` link parameter, points at in `container` and
@@ -21,15 +23,45 @@ export function showBlockReference(container: Element, value: string) {
     const { start, end } = resolveBlockReference<HTMLElement>(container, value);
     const first = start ?? end;
     if (first) {
-        const last = start && end ? end : first;
-        // `first` is revealed last, so it stays shown when both are in different tabs of a block.
-        reveal(last);
-        reveal(first);
-        scrollToBlocks(first, last);
-        flashBlocks(getBlockRangeElements(first, last));
+        showBlocks(first, start && end ? end : first);
     }
 
     return !!start && !!end;
+}
+
+/**
+ * Scrolls to the blocks from `first` to `last`, in document order, and flashes them, as
+ * {@link showBlockReference} does.
+ */
+export function showBlocks(first: Element, last: Element) {
+    // `first` is revealed last, so it stays shown when both are in different tabs of a block.
+    reveal(last);
+    reveal(first);
+    scrollToBlocks(first, last);
+    flashBlocks(getBlockRangeElements(first, last));
+}
+
+/**
+ * Scrolls to the element whose `id` is `name` in `container`, such as an anchor, and flashes the
+ * block that holds it, as {@link showBlockReference} does. Returns `false` when it is missing.
+ */
+export function showAnchor(container: Element, name: string) {
+    // Exact comparison: an anchor name can hold characters that a CSS selector does not allow.
+    const anchor = Array.from(container.querySelectorAll("[id]"))
+        .find((element) => element.id === name);
+    if (anchor) {
+        showAnchorElement(anchor);
+    }
+
+    return !!anchor;
+}
+
+/** Scrolls to the block that holds `anchor` and flashes it, as {@link showAnchor} does. */
+export function showAnchorElement(anchor: Element) {
+    const block = anchor.closest(ANCHOR_BLOCKS) ?? anchor;
+    reveal(block);
+    scrollToBlocks(block, block);
+    flashBlocks([ block ]);
 }
 
 /** Flashes `elements` for a moment. */

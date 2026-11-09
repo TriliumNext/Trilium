@@ -11,6 +11,7 @@ import "@triliumnext/ckeditor5/src/theme/lists.css";
 import "@triliumnext/ckeditor5/src/theme/reference_links.css";
 import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
 import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
+import "@triliumnext/ckeditor5/src/theme/tables.css";
 import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 import "@triliumnext/commons/src/lib/scroll_fade.css";
 
@@ -42,7 +43,7 @@ async function bootstrap() {
     reportSplashPhase("bootstrap");
     // Only iOS sets `navigator.standalone`, and only for a web app added to the home screen.
     const isIosWebApp = (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    document.documentElement.classList.toggle("ios-web-app", isIosWebApp);
+    document.documentElement.classList.toggle("ios-web-app", isIosWebApp && extendsUnderStatusBar());
     await setupGlob();
     await Promise.all([
         initJQuery(),
@@ -59,6 +60,19 @@ async function bootstrap() {
     reportSplashPhase("application");
     await loadScripts();
     hideSplash();
+}
+
+/**
+ * Whether the page is drawn under the status bar, which gives it a top safe-area inset. With the
+ * status bar above the page instead, there is no inset and the viewport already fits the screen.
+ */
+function extendsUnderStatusBar() {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;visibility:hidden;padding-top:var(--safe-area-inset-top, env(safe-area-inset-top))";
+    document.documentElement.append(probe);
+    const insetTop = parseFloat(getComputedStyle(probe).paddingTop);
+    probe.remove();
+    return insetTop > 0;
 }
 
 async function initJQuery() {

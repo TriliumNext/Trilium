@@ -229,18 +229,6 @@
     --badge-background-color: #ffffff1a;
     --badge-text-color: var(--muted-text-color);
 
-    --badge-temporaraily-editable-background-color: #297331;
-    --badge-read-only-background-color: #af4340;
-    --badge-office-preview-background-color: #3f5470;
-    --badge-share-background-color: #4d4d4d;
-    --badge-snippet-background-color: #4d4d4d;
-    --badge-template-background-color: #7d6f52;
-    --badge-template-text-color: white;
-    --badge-clipped-note-background-color: #295773;
-    --badge-doc-url-background-color: #1e5c42;
-    --badge-execute-background-color: #604180;
-    --badge-active-content-background-color: rgb(12, 68, 70);
-
     --note-icon-background-color: #444444;
     --note-icon-color: #d4d4d4;
     --note-icon-hover-background-color: #555555;
@@ -291,6 +279,8 @@
     --log-search-count-color: #818181;
     --log-error-color: #FF867F;
     --log-error-line-background-color: #d44b4b1f;
+    --log-warning-color: #e3b341;
+    --log-warning-line-background-color: #e3b3411a;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
     /* Search query syntax (the search string of a saved search) */
@@ -355,6 +345,9 @@
     --ck-editor-toolbar-button-on-shadow: 1px 1px 2px rgba(0, 0, 0, .75);
     --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
 
+    --ck-editor-widget-selection-color: var(--link-color);
+    --text-note-table-header-background: #ffffff12;
+
     --note-list-view-icon-color: var(--left-pane-icon-color);
     --note-list-view-large-icon-background: var(--note-icon-background-color);
     --note-list-view-large-icon-color: var(--note-icon-color);
@@ -362,8 +355,6 @@
     --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
     --note-list-view-search-result-fuzzy-highlight-color: var(--quick-search-result-fuzzy-highlight-color);
     --note-list-view-content-background: rgba(0, 0, 0, .2);
-    --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
-    --note-list-view-content-search-result-highlight-color: black;
 
     --calendar-coll-event-background-saturation: 25%;
     --calendar-coll-event-background-lightness: 20%;
@@ -414,39 +405,6 @@
 
     --space-usage-donut-hover-saturation: 90%;
     --space-usage-donut-hover-lightness: 80%;
-
-    --board-limit-exceeded-background: #e57373;
-    --board-limit-exceeded-outline: #e5737380;
-    --board-column-background: #3b3b3b;
-    --board-column-background-saturation: 14%;
-    --board-column-background-lightness: 23%;
-
-    --board-item-background-saturation: 21%;
-    --board-item-background-lightness: 32%;
-
-    --board-item-hover-background-saturation: 25%;
-    --board-item-hover-background-lightness: 35%;
-
-    --board-drop-hint-background-saturation: 20%;
-    --board-drop-hint-background-lightness: 45%;
-    --board-drop-hint-color: #ffffffc9;
-
-    --board-edit-backdrop: rgba(0, 0, 0, 0.3);
-
-    --board-drop-placeholder-background: rgba(255, 255, 255, 0.1);
-    --board-column-drop-placeholder-background: rgba(255, 255, 255, 0.06);
-
-    --board-text-saturation: 25%;
-    --board-text-lightness: 80%;
-    --board-muted-text-saturation: 18%;
-    --board-muted-text-lightness: 73%;
-    --board-column-header-text-saturation: 67%;
-    --board-column-header-text-lightness: 81%;
-    --board-column-header-muted-text-saturation: 18%;
-    --board-column-header-muted-text-lightness: 73%;
-
-    --board-focus-outline-saturation: 60%;
-    --board-focus-outline-lightness: 70%;
 
     --space-usage-donut-selected-saturation: 90%;
     --space-usage-donut-selected-lightness: 80%;
@@ -527,7 +485,9 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 }
 
 .note-split.with-hue *::selection,
-.quick-edit-dialog-wrapper.with-hue *::selection {
+.quick-edit-dialog-wrapper.with-hue *::selection,
+.note-split.with-hue .table :is(td, th).ck-editor__editable_selected,
+.quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected {
     --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
 }
 

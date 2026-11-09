@@ -64,8 +64,8 @@ describe("content job fork round-trip", () => {
         const kinds = new Set(jobs.map(({ job }) => job.kind));
 
         expect([ ...kinds ].sort()).toEqual([
-            "enexNoteContent", "htmlToMarkdown", "markdownToHtml", "officeToHtml",
-            "prepareNoteText", "prettyPrintHtml", "sanitizeHtml"
+            "enexNoteContent", "formatHtml", "htmlToMarkdown", "markdownToHtml", "officeToHtml",
+            "prepareNoteText", "sanitizeHtml"
         ]);
 
         inProcessRuns.mockClear();
@@ -141,7 +141,7 @@ function buildJobs(): { label: string; job: ContentJob }[] {
         jobs.push({ label: `htmlToMarkdown ${headerlessTables}`, job: { kind: "htmlToMarkdown", html, headerlessTables, env: ENV } });
     }
 
-    jobs.push({ label: "prettyPrintHtml", job: { kind: "prettyPrintHtml", html } });
+    jobs.push({ label: "formatHtml", job: { kind: "formatHtml", html } });
 
     for (const [ file, mime ] of OFFICE_SAMPLES) {
         const bytes = new Uint8Array(readFileSync(join(SAMPLES_DIR, file)));

@@ -9,6 +9,11 @@ import { ZoomViewer } from "./zoom_viewer.js";
 // Bootstrap tooltip needs real layout.
 vi.mock("@triliumnext/client/src/widgets/react/hooks.js", () => ({ useStaticTooltip: () => {} }));
 vi.mock("@triliumnext/client/src/services/i18n.js", () => ({ t: (key: string) => key }));
+vi.mock("@triliumnext/client/src/services/keyboard_shortcut_display.js", () => ({
+    formatShortcut: (shortcut: string) => [ shortcut ],
+    joinShortcut: (keys: string[]) => keys.join("+")
+}));
+vi.mock("@triliumnext/client/src/widgets/react/Dropdown.js", () => ({ default: () => null, DropdownPanel: () => null }));
 
 // react-zoom-pan-pinch measures its boxes, which happy-dom cannot do. As in the client's
 // `SvgSplitEditor.spec.tsx`, this fake keeps what the controls drive: `zoomIn`/`zoomOut` add their

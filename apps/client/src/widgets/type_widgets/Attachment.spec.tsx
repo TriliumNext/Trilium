@@ -84,6 +84,14 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".attachment-system-group .collapsible-title")?.getAttribute("aria-expanded")).toBe("false");
     });
 
+    it("folds away the picture of a canvas note", async () => {
+        const picture = { ...role("image"), title: "canvas-export.svg", mime: "image/svg+xml" };
+        const container = await mount([ role("image"), picture ] as FAttachment[], "canvas");
+
+        expect(cards(container)).toHaveLength(1);
+        expect(container.querySelector(".attachment-system-group")).not.toBeNull();
+    });
+
     it("previews a file as text only where the renderer draws nothing of it", async () => {
         const drawingBlob = vi.fn(async () => ({ content: "{}" }));
         const drawing = { ...role("file"), mime: CANVAS_MIME, getBlob: drawingBlob };
@@ -236,10 +244,11 @@ function role(role: string) {
 }
 
 /** Renders the list for a note carrying the given attachments, once the asynchronous load has settled. */
-async function mount(attachments: FAttachment[]) {
+async function mount(attachments: FAttachment[], type = "text") {
     const props = {
         note: {
             noteId: "note1",
+            type,
             getAttachments: async () => attachments
         }
     } as unknown as Parameters<typeof AttachmentList>[0];

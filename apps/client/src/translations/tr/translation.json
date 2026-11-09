@@ -474,7 +474,6 @@
       "create-a-numbered-list": "Numaralı liste oluştur",
       "create-a-to-do-list": "Yapılacaklar listesi oluştur",
       "display-the-content-of-another-note-in-this-note": "Bu notta başka bir notun içeriğini görüntüle",
-      "insert-a-link-to-another-trilium-note": "Başka Trilium notuna link ekleyin",
       "insert-a-math-equation": "Matematiksel bir denklem ekle",
       "insert-a-new-admonition": "Yeni bir uyarı ekler",
       "insert-a-page-break-for-printing": "Sayfa sonu ekle (yazdırma için)",
@@ -500,7 +499,6 @@
       "copy-formatting": "Biçimlendirmeyi kopyala",
       "copy-image-to-clipboard": "Resmi panoya kopyala",
       "copy-to-clipboard": "Panoya kopyala",
-      "copy-url": "URL'yi kopyala",
       "cut-selection-into-a-sub-note": "Seçimi bir alt nota kes",
       "decrease-the-indentation-of-the-current-block": "Geçerli bloğun girintisini azaltır.",
       "display": "Görüntüle",
@@ -509,7 +507,6 @@
       "drag-to-reposition-the-collapsible-block": "Daraltılabilir bloğu yeniden konumlandırmak için sürükleyin",
       "edit-anchor": "Bağlantı noktasını düzenle",
       "edit-task-states": "Görev durumlarını düzenle",
-      "edit-title": "Başlığı düzenle",
       "embed": "Göm",
       "enter-the-anchor-name-without-spaces": "Bağlantı noktası adını boşluksuz girin.",
       "equation-preview": "Denklem önizlemesi",
@@ -524,7 +521,6 @@
       "include-note-widget": "not dahil etme widget'ı",
       "increase-the-indentation-of-the-current-block": "Geçerli bloğun girintisini artırır.",
       "indent": "Girintile",
-      "inline": "Satır içi",
       "insert-a-0-mermaid-diagram-template": "Bir \"%0\" Mermaid diyagram şablonu ekle",
       "insert-a-block-of-preformatted-code": "Önceden biçimlendirilmiş bir kod bloğu ekler.",
       "insert-a-horizontal-rule": "Yatay bir çizgi ekler.",
@@ -540,7 +536,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "bağlantı gömme widget'ı",
       "link-mention-widget": "bağlantı bahsetme widget'ı",
-      "link-preview": "Bağlantı önizlemesi",
       "markdown-import": "Markdown içe aktarma",
       "markdown-import-from-clipboard": "Panodan Markdown içe aktarma",
       "math-editor-unavailable": "Matematik düzenleyici kullanılamıyor",
@@ -556,7 +551,6 @@
       "note": "Not",
       "numbered-list": "Numaralı liste",
       "outdent": "Girintiyi azalt",
-      "plain-link": "Düz bağlantı",
       "preview": "Önizleme",
       "quote-a-passage-from-another-source": "Başka bir kaynaktan bir pasaj alıntılar.",
       "remove-anchor": "Bağlantı noktasını kaldır",
@@ -571,14 +565,12 @@
       "text-snippet": "Metin parçacığı",
       "text-snippets-found-0": "Bulunan metin parçacıkları: %0",
       "tip": "İpucu",
-      "title": "Başlık",
       "to-do-list": "Yapılacaklar listesi",
       "toggle-collapsible-block": "Daraltılabilir bloğu aç/kapat",
       "turn-the-current-block-into-a-heading": "Geçerli bloğu bir başlığa dönüştürür.",
       "turn-the-current-block-into-a-paragraph": "Geçerli bloğu bir paragrafa dönüştürür.",
       "type-the-content-here": "İçeriği buraya yazın...",
       "undefined-custom-task-state": "Tanımsız özel görev durumu",
-      "url": "URL",
       "warning": "Uyarı"
     },
     "task-state-dropped-title": "Geçersiz görev durumları",
@@ -1891,9 +1883,7 @@
   },
   "experimental_features": {
     "title": "Deneysel Seçenekler",
-    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın.",
-    "llm_name": "Yapay Zeka / LLM Sohbeti",
-    "llm_description": "Büyük dil modelleri tarafından desteklenen yapay zeka sohbet kenar çubuğunu ve LLM sohbet notlarını etkinleştirir."
+    "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın."
   },
   "fonts": {
     "theme_defined": "Tema tarafından tanımlanır",
@@ -2086,7 +2076,6 @@
   "search_engine": {
     "title": "Arama Motoru",
     "custom_search_engine_info": "Seçili metin için web'de arama yapılırken kullanılır. Yapılandırılmamışsa DuckDuckGo kullanılır.",
-    "predefined_templates_label": "Ön ayarlar",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2713,9 +2702,7 @@
     "no_headings": "Başlık yok."
   },
   "watched_file_update_status": {
-    "file_last_modified": "<code class=\"file-path\"></code> dosyası en son <span class=\"file-last-modified\"></span> tarihinde değiştirildi.",
-    "upload_modified_file": "Değiştirilen dosyayı yükle",
-    "ignore_this_change": "Bu değişikliği yok say"
+    "upload_modified_file": "Değiştirilen dosyayı yükle"
   },
   "app_context": {
     "please_wait_for_save": "Kaydetmenin bitmesi için lütfen birkaç saniye bekleyin, ardından tekrar deneyebilirsiniz."

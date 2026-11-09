@@ -3,7 +3,7 @@ import { DEFAULT_COLOR_PALETTE } from "../../react/ColorPicker.js";
 
 /**
  * The swatches of the Font Color and Font Background Color dropdowns: four greys, then the hues of
- * the note color palette.
+ * the note color palette. Black and white have an edge, since either can match a menu's background.
  */
 export function buildFontColorConfig() {
     const colors = buildSwatches();
@@ -13,20 +13,21 @@ export function buildFontColorConfig() {
     };
 }
 
-/** The same swatches for the table and cell properties. */
+/** The same swatches and rows for the table and cell properties. */
 export function buildTableColorConfig() {
     const colors = buildSwatches();
+    const palette = { borderColors: colors, backgroundColors: colors, colorGridColumns: 4 };
     return {
-        tableProperties: { borderColors: colors, backgroundColors: colors },
-        tableCellProperties: { borderColors: colors, backgroundColors: colors }
+        tableProperties: palette,
+        tableCellProperties: palette
     };
 }
 
 const GREYS = [
-    { color: "#000000", label: "Black" },
+    { color: "#000000", label: "Black", hasBorder: true },
     { color: "#555555", label: "Dim grey" },
     { color: "#aaaaaa", label: "Light grey" },
-    { color: "#ffffff", label: "White" }
+    { color: "#ffffff", label: "White", hasBorder: true }
 ];
 
 /** The names of the `DEFAULT_COLOR_PALETTE` hues, which CKEditor translates on its own. */

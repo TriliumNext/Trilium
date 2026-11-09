@@ -1,5 +1,7 @@
 import {
+    type ColorSelectorView,
     type DowncastAttributeEvent,
+    type FontColorSelectorDropdownView,
     type ModelElement,
     Plugin,
     type UpcastElementEvent,
@@ -10,7 +12,8 @@ import {
  * Saves the colors of text and tables a second time as CSS variables: `--tn-color`,
  * `--tn-background` and `--tn-border-color`. The app's and the share theme's stylesheets derive a
  * shade that suits the theme from them; everything else shows the color itself, which stays in the
- * markup. The variables never reach the model.
+ * markup. The variables never reach the model. The tiles of the font color dropdowns get the same
+ * variables, so they show the shades of the note.
  */
 export default class AdaptiveColors extends Plugin {
 
@@ -26,6 +29,7 @@ export default class AdaptiveColors extends Plugin {
         this.addVariable("tableCell", "tableCellBackgroundColor", "--tn-background");
         this.addVariable("tableCell", "tableCellBorderColor", "--tn-border-color");
         this.dropVariablesOnLoad();
+        this.addVariablesToDropdownTiles();
     }
 
     /** Writes a text color or highlight as CKEditor does, with the variable next to it. */
@@ -91,9 +95,48 @@ export default class AdaptiveColors extends Plugin {
         });
     }
 
+    /**
+     * Sets the variable of each font color dropdown on its tiles whenever it opens. The component
+     * factory has no hook for the dropdowns it creates, so `create()` is wrapped.
+     */
+    private addVariablesToDropdownTiles() {
+        const factory = this.editor.ui.componentFactory;
+        const create = factory.create.bind(factory);
+        factory.create = (name) => {
+            const component = create(name);
+            const variable = DROPDOWN_VARIABLES.get(name);
+            if (variable) {
+                const dropdown = component as FontColorSelectorDropdownView;
+                // Runs after the dropdown's own listener, which builds the grids.
+                dropdown.on("change:isOpen", (_eventInfo, _name, isOpen) => {
+                    if (isOpen) {
+                        setTileVariables(dropdown.colorSelectorView as ColorSelectorView, variable);
+                    }
+                });
+            }
+            return component;
+        };
+    }
+
 }
 
 const VARIABLES = [ "--tn-color", "--tn-background", "--tn-border-color" ];
+
+/** The variable that the tiles of each font color dropdown get. */
+const DROPDOWN_VARIABLES = new Map([
+    [ "fontColor", "--tn-color" ],
+    [ "fontBackgroundColor", "--tn-background" ]
+]);
+
+/** Sets the variable on the tiles of the palette and of the document colors. */
+function setTileVariables(colorSelector: ColorSelectorView, variable: string) {
+    const { staticColorsGrid, documentColorsGrid } = colorSelector.colorGridsFragmentView;
+    for (const grid of [ staticColorsGrid, documentColorsGrid ]) {
+        for (const tile of grid?.items ?? []) {
+            tile.element?.style.setProperty(variable, tile.color as string);
+        }
+    }
+}
 
 /** The cell itself, or the `<table>` inside the table widget's `<figure>`. */
 function findStyledElement(viewElement: ViewElement | undefined) {

@@ -113,7 +113,7 @@ describe("createInlineSourceEditor", () => {
 });
 
 describe("InlineSourceEmbed", () => {
-    it("passes the source and its editor to the component, and the source again once it changes", () => {
+    it("passes the source, its language and its editor, and the source once it changes", () => {
         const container = document.createElement("div");
         const source = createSource("graph TD;");
         const shown: SourceEmbedProps[] = [];
@@ -124,6 +124,7 @@ describe("InlineSourceEmbed", () => {
 
         act(() => render(<InlineSourceEmbed source={source} component={Probe} />, container));
         expect(shown.at(-1)?.content).toBe("graph TD;");
+        expect(shown.at(-1)?.language).toBe("mermaid");
         expect(shown.at(-1)?.editor?.canEdit()).toBe(true);
 
         // As an undo in the text editor changes the source.

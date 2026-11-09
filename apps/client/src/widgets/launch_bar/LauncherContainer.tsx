@@ -9,7 +9,7 @@ import { isDesktop, isElectron, isMobile } from "../../services/utils";
 import TabSwitcher, { useLaunchBarTabSwipe } from "../mobile_widgets/TabSwitcher";
 import { useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
-import BookmarkButtons, { BookmarkFolder } from "./BookmarkButtons";
+import BookmarkButtons, { BookmarkFolder, getBookmarkOpenMode } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
 import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import { CustomNoteLauncher } from "./GenericButtons";
@@ -108,6 +108,7 @@ function ClonedNoteLauncher({ note }: { note: FNote }) {
         <CustomNoteLauncher
             launcherNote={note}
             getTargetNoteId={() => note.noteId}
+            getOpenMode={getBookmarkOpenMode}
             parentNoteId={parentNoteId}
         />
     );

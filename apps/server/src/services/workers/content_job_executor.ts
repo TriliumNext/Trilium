@@ -141,7 +141,7 @@ function jobSize(job: ContentJob): number {
         case "markdownToHtml":
             return job.markdown.length;
         case "htmlToMarkdown":
-        case "prettyPrintHtml":
+        case "formatHtml":
         case "sanitizeHtml":
             return job.html.length;
         case "enexNoteContent":

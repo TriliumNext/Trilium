@@ -13,7 +13,7 @@ import passwordEncryption from "./password_encryption.js";
 // so the destructive verification-hash test is kept last.
 const FIXTURE_PASSWORD = "demo1234";
 
-// scrypt (N=16384) runs in pure JS (scrypt-js) under the browser provider, which is
+// scrypt (N=16384) runs in pure JS (@noble/hashes) under the browser provider, which is
 // ~10x slower under V8 coverage instrumentation than Node's native scryptSync. Give the
 // standalone suite a larger timeout; the server suite keeps the strict
 // default. The derived bytes are identical across runtimes — only the speed differs.

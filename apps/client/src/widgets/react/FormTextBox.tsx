@@ -1,7 +1,11 @@
-import type { AccessibleInputHTMLAttributes, InputHTMLAttributes, RefObject } from "preact";
+import "./FormTextBox.css";
+
+import type { InputHTMLAttributes, LooseInputHTMLAttributes, RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
-export interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
+import PasteButton from "./PasteButton";
+
+export interface FormTextBoxProps extends Omit<LooseInputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
     id?: string;
     currentValue?: string;
     onChange?(newValue: string, validity: ValidityState): void;
@@ -87,7 +91,7 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
             {...({
                 ...rest,
                 type: type ?? "text"
-            } as AccessibleInputHTMLAttributes<HTMLInputElement>)}
+            } as InputHTMLAttributes<HTMLInputElement>)}
         />
     );
 }
@@ -99,4 +103,22 @@ export function FormTextBoxWithUnit(props: FormTextBoxProps & { unit: string }) 
             <span class="input-group-text">{props.unit}</span>
         </label>
     )
+}
+
+/**
+ * A text box with a {@link PasteButton} at its end. `onPasted` is called once the button put the
+ * clipboard text in it.
+ */
+export function FormTextBoxWithPaste({ onPasted, ...props }: FormTextBoxProps & {
+    onPasted?(): void;
+}) {
+    const ownRef = useRef<HTMLInputElement | null>(null);
+    const inputRef = props.inputRef ?? ownRef;
+
+    return (
+        <div className="input-group">
+            <FormTextBox {...props} inputRef={inputRef} />
+            <PasteButton inputRef={inputRef} onPasted={onPasted} />
+        </div>
+    );
 }

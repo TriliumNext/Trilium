@@ -237,7 +237,10 @@
     "note-cannot-be-displayed": "此笔记类型无法显示。",
     "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。",
     "broken-block-reference": "引用已损坏",
-    "play-video": "播放视频"
+    "play-video": "播放视频",
+    "content-not-available": "此内容不可用。",
+    "untitled-block": "块",
+    "play-audio": "播放音频"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
@@ -351,7 +354,7 @@
     "find-in-text": "在文本中查找",
     "toggle-left-pane": "切换左侧面板",
     "toggle-full-screen": "切换全屏模式",
-    "save-named-revision": "保存已命名的修订",
+    "save-named-revision": "保存修订并命名",
     "toggle-archived-notes": "显示/隐藏已归档笔记",
     "show-deleted-notes": "显示已删除的笔记",
     "peek-right-pane": "快速查看右侧面板",
@@ -432,7 +435,6 @@
     "presentation_slide": "演示幻灯片",
     "presentation_slide_first": "第一张幻灯片",
     "presentation_slide_second": "第二张幻灯片",
-    "background": "背景",
     "markdown-snippet": "Markdown 片段",
     "code-snippet": "代码片段",
     "dashboard": "仪表板",
@@ -449,7 +451,8 @@
       "cannot-compare-with": "无法与“{{- token}}”进行比较。要搜索字面值，请使用引号：“{{- token}}”",
       "misplaced-expression": "位置错误或不完整的表达式“{{- token}}”",
       "fulltext-after-expression": "“{{- token}}”不是有效表达式。要搜索文本，请将其放在属性筛选器之前（例如，“{{- token}} #label”而不是“#label {{- token}}”）。",
-      "unrecognized-expression": "无法识别的表达式“{{- token}}”"
+      "unrecognized-expression": "无法识别的表达式“{{- token}}”",
+      "regex-not-allowed": "正则表达式运算符「%=」在此处不可用。"
     }
   },
   "password": {
@@ -598,5 +601,12 @@
     "nothing-to-share": "没有可分享的内容：未收到任何文本、链接或文件。",
     "rejected": "分享被拒绝：{{- reason}}",
     "other-page": "只有系统分享菜单才能向此地址发送内容。"
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Trilium 以 Flatpak 方式运行，因此无法启动安装在自身沙箱之外的程序，例如 {{- cli}}。要使用 {{- cli}}：\n\n1. 在本机安装它，并在终端中登录。\n2. 在终端中运行以下命令，允许 Trilium 启动自身沙箱之外的程序\n\n{{- grantCommand}}\n\n3. 重启 Trilium。\n\n这样 Trilium 就能获得与 Flatpak 之外的安装相同的计算机访问权限。要收回权限，请运行：\n\n{{- revokeCommand}}"
+  },
+  "open_custom": {
+    "choose_application": "选择用于打开该文件的应用程序。",
+    "applications_filter": "应用程序"
   }
 }

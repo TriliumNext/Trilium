@@ -26,6 +26,24 @@ export interface ExpandWidgetRequest {
 /** The pending {@link ExpandWidgetRequest}, set by whoever lays the widgets out. */
 export const ExpandWidgetRequests = createContext<ExpandWidgetRequest | null>(null);
 
+/**
+ * Lay the widgets out one under the next at the height of their content, ignoring `grow`. Set by a
+ * host whose whole tab scrolls, such as the mobile note panel, for a tab of more than one widget.
+ */
+export const StackedWidgets = createContext(false);
+
+/**
+ * An element in the host's header where the widgets of a tab put their controls instead of their own
+ * header. Set per tab by the mobile note panel, `null` elsewhere.
+ */
+export const TabHeaderSlot = createContext<HTMLElement | null>(null);
+
+/**
+ * Called after a widget scrolls the note to a place in it (a heading, a PDF page), set by a host that
+ * covers the note, such as the mobile note panel, so that it can close and show that place.
+ */
+export const NavigatedInNote = createContext<(() => void) | null>(null);
+
 interface RightPanelWidgetProps {
     id: string;
     title: ComponentChildren;
@@ -63,6 +81,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
     const parentComponent = useContext(ParentComponent);
     const collapsible = useContext(CollapsibleWidgets);
     const expandRequest = useContext(ExpandWidgetRequests);
+    const stacked = useContext(StackedWidgets);
     // Whatever an earlier layout collapsed stays remembered but is disregarded here: the widget is all
     // its tab has, so a collapsed one would leave nothing behind, chevron included, to expand it again.
     const expanded = collapsible ? !collapsedByUser : true;
@@ -102,7 +121,7 @@ export default function RightPanelWidget({ id, title, buttons, children, contain
             className={clsx("card widget", {
                 collapsed: !expanded,
                 "not-collapsible": !collapsible,
-                grow,
+                grow: grow && !stacked,
                 highlighted
             })}
             // The flash lasts as long as its animation (see RightPanelContainer.css) rather than a

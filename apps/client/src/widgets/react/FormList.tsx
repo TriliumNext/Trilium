@@ -232,11 +232,12 @@ export function FormListItem({
         run(new MouseEvent("click", { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey }));
     }
 
-    function onPointed(e: { currentTarget: HTMLLIElement }) {
+    function onPointed() {
         if (!menu || isMobile()) return;
+        // Before `menu.setActive()`: closing a submenu can activate the row that opened it.
+        menu.hoverSubmenu(level);
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, undefined, e.currentTarget);
     }
 
     const hasOwnIcon = !!iconSvg || (!!icon && icon !== EMPTY_ICON);
@@ -266,13 +267,13 @@ export function FormListItem({
             tabIndex={menu ? undefined : container ? -1 : 0}
             // While the keys drive the menu, a row entered by a pointer at rest, as when the menu
             // appears under it, keeps the keys' row. See `pointerMoved`.
-            onPointerEnter={menu ? (e) => {
-                if (!menu.keyboardDriven) onPointed(e);
+            onPointerEnter={menu ? () => {
+                if (!menu.keyboardDriven) onPointed();
             } : undefined}
             // The keys can move the active row from under a pointer at rest, whose `:hover` would
             // then mark a second row. The next move of the pointer makes its row the active one.
             onPointerMove={menu ? (e) => {
-                if (!isActive && pointerMoved(e)) onPointed(e);
+                if (!isActive && pointerMoved(e)) onPointed();
             } : undefined}
             // A press keeps focus where it was, as in a native menu: a text editor keeps the
             // selection a command such as a spelling fix acts on, and a field beside a dropdown
@@ -374,7 +375,8 @@ export function FormListToggleableItem({
     helpPage?: string;
     /** What the setting does, shown beside the menu while the row is hovered. */
     helpTooltip?: string;
-    onChange(newValue: boolean): void | Promise<void>;
+    /** Called with the click that flipped the switch, which a press of Enter stands in for. */
+    onChange(newValue: boolean, e: MouseEvent): void | Promise<void>;
 }) {
     const isWaiting = useRef(false);
 
@@ -392,7 +394,7 @@ export function FormListToggleableItem({
                 e.stopPropagation();
                 if (!disabled && !isWaiting.current) {
                     isWaiting.current = true;
-                    await onChange(!currentValue);
+                    await onChange(!currentValue, e);
                     isWaiting.current = false;
                 }
             }}>
@@ -454,7 +456,7 @@ export function FormListHeader({ text, actions = [] }: FormListHeaderOpts) {
                         className="tn-menu-header-actions"
                         // As over a row, the pointer closes the submenu open at this level.
                         onPointerMove={(e) => {
-                            if (menu && pointerMoved(e)) menu.closeSubmenu(level);
+                            if (menu && pointerMoved(e)) menu.hoverSubmenu(level);
                         }}
                         // A press keeps focus where it was, as on a row.
                         onMouseDown={(e) => e.preventDefault()}
@@ -506,6 +508,8 @@ export interface FormDropdownSubmenuProps {
     className?: string;
     /** Inside a menu, whether typing while the submenu is open filters it. See `MenuCommandItem.filterable`. */
     filterable?: boolean;
+    /** Classes put on the layer of the submenu, for a caller that sizes it, except on a phone. */
+    submenuClassName?: string;
     /**
      * Draws the row as a tile of a `MenuTile` strip, which only opens the submenu: a tile has no
      * room for the arrow of a split row.
@@ -527,7 +531,7 @@ export function FormDropdownSubmenu(props: FormDropdownSubmenuProps) {
 function MenuSubmenu({
     menu, icon, iconSvg, title, description, children, onDropdownToggleClicked,
     split = !!onDropdownToggleClicked, closeOnSelect, onMiddleClick, onContextMenu, disabled,
-    className, filterable, tile
+    className, filterable, submenuClassName, tile
 }: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
@@ -553,7 +557,7 @@ function MenuSubmenu({
         if (isMobile()) return;
         // The keyboard goes on from the row the pointer last pointed at.
         if (!disabled) menu.setActive(level, id);
-        menu.openSubmenu(level, disabled ? undefined : id, e.currentTarget);
+        menu.hoverSubmenu(level, disabled ? undefined : id, e.currentTarget);
     }
 
     const layer = isMobile()
@@ -566,7 +570,9 @@ function MenuSubmenu({
             </SubmenuPage>
         ), menu.layerHost)
         : open && openSubmenu && menu.layerHost && createPortal((
-            <SubmenuLayer level={level + 1} submenu={openSubmenu} filter={filter}>
+            <SubmenuLayer
+                level={level + 1} submenu={openSubmenu} filter={filter} className={submenuClassName}
+            >
                 {children}
             </SubmenuLayer>
         ), menu.layerHost);
@@ -587,7 +593,7 @@ function MenuSubmenu({
                 // opens its own only on a press.
                 onPointerMove={(e) => {
                     if (!pointerMoved(e)) return;
-                    if (!open) menu.closeSubmenu(level);
+                    menu.hoverSubmenu(level, open ? id : undefined, e.currentTarget);
                     if (!disabled && !isActive) menu.setActive(level, id);
                 }}
                 // As any row: the press keeps focus where it was, and the release acts.
@@ -677,14 +683,15 @@ function MenuSubmenu({
  * so a scrolling menu neither clips it nor scrolls it away. While its {@link filter} has text, the
  * layer keeps its top position relative to its row, and only its height changes with the matches.
  */
-function SubmenuLayer({ level, submenu, filter, children }: {
+function SubmenuLayer({ level, submenu, filter, className, children }: {
     level: number,
     submenu: OpenSubmenu,
     filter: MenuFilter | undefined,
+    className?: string,
     children: ComponentChildren
 }) {
     const layerRef = useRef<HTMLDivElement>(null);
-    const { dropStart: dropStartLevels, setDropStart, submenuShown } = useMenu();
+    const { dropStart: dropStartLevels, setDropStart, submenuShown, hoverSubmenu } = useMenu();
     const dropStart = !!dropStartLevels[level - 1];
     const pinned = !!filter?.text;
     /** How far below its row's top the layer stands while pinned. */
@@ -743,11 +750,15 @@ function SubmenuLayer({ level, submenu, filter, children }: {
             <div className="dropdown-submenu">
                 <div
                     ref={layerRef} role="menu" aria-labelledby={titleId(submenu.anchor.id)}
-                    className={clsx("dropdown-menu show tn-menu", submenu.immediate && "tn-menu-immediate")}
+                    className={clsx("dropdown-menu show tn-menu",
+                        submenu.immediate && "tn-menu-immediate", className)}
                     // The fade starts once the opening delay is over.
                     onAnimationStart={(e) => {
                         if (e.target === e.currentTarget) submenuShown(submenu);
                     }}
+                    // Over the layer, the pointer keeps it open as over its row, whatever rows it
+                    // crossed on the way.
+                    onPointerEnter={() => hoverSubmenu(level - 1, submenu.id, submenu.anchor)}
                 >
                     <MenuList filter={filter}>{children}</MenuList>
                 </div>

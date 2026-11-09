@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // --- Mocks (hoisted above the module-under-test import) ---
 
 vi.mock("ejs", () => ({ default: { render: vi.fn(() => "<html>404</html>") } }));
-vi.mock("html-to-text", () => ({ convert: vi.fn((s: string) => `TEXT:${s}`) }));
 
 const mockContentRenderer = {
     readShareTemplate: vi.fn(() => "TEMPLATE"),
@@ -39,6 +38,7 @@ vi.mock("./share_data.js", async (importOriginal) => ({
 const {
     default: ShareThemeExportProvider,
     hasMermaidDiagrams,
+    htmlToSearchText,
     getAppViewGroups,
     getShareThemeExportFiles,
     getShareThemeTranslationFiles
@@ -174,7 +174,7 @@ describe("ShareThemeExportProvider", () => {
 
             const entry = (p as any).searchIndex.get("noteABC");
             expect(entry.title).toBe("Title");
-            expect(entry.content).toContain("TEXT:");
+            expect(entry.content).toBe("html");
             // Path built from titles, excluding root and falsy titles.
             expect(entry.path).toBe("Parent");
         });
@@ -416,6 +416,19 @@ describe("hasMermaidDiagrams", () => {
             { ...markdown, content: "Inline ```mermaid is not a fence.\n\n```js\nmermaid();\n```" },
             { type: "code", mime: "application/javascript", content: "```mermaid" }
         ))).toBe(false);
+    });
+});
+
+describe("htmlToSearchText", () => {
+    it("joins the text of the blocks and drops scripts, styles and markup", () => {
+        const html = `<h2>Hello &amp; <b>World</b></h2><p>A <a href="https://x.y">link</a>&nbsp;here.</p>`
+            + `<ul><li>one</li><li>two</li></ul><script>alert(1)</script><style>p {}</style>`
+            + `<p>zero​width and\tother\n\nspaces</p><pre>code\n  block</pre>`;
+
+        expect(htmlToSearchText(html))
+            .toBe("Hello & World A link here. one two zero width and other spaces code block");
+        expect(htmlToSearchText("a < b && c")).toBe("a < b && c");
+        expect(htmlToSearchText("")).toBe("");
     });
 });
 

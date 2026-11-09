@@ -10,7 +10,10 @@ import { useCallback, useContext, useLayoutEffect, useRef, useState } from "prea
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, MenuList } from "./FormList";
+import {
+    FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem,
+    FormListToggleableItem, MenuList
+} from "./FormList";
 import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
 import Icon, { SvgIcon } from "./Icon";
 import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
@@ -59,6 +62,8 @@ export interface MenuProps<T> extends Pick<PopupProps, "anchor" | "offset" | "co
      * and the first row lowest and active as it opens.
      */
     filterable?: boolean;
+    /** For a {@link filterable} menu: puts the focus in its input as it opens. */
+    focusFilter?: boolean;
     /**
      * For a {@link filterable} menu placed above its anchor: keeps the input at the bottom, but
      * draws the rows in their own order, the first one at the top, as in the note tree.
@@ -88,7 +93,18 @@ const ACTION_TOOLTIP = { placement: "top", animation: false } as const;
 /** How long typed letters keep adding to the text a row is looked up by. */
 const TYPEAHEAD_TIMEOUT = 500;
 
-export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
+/** How long a submenu in view stays open once the pointer moves onto another row of its level. */
+const SUBMENU_CLOSE_DELAY = 750;
+
+/** A change to the submenus at `level` that the pointer asked for, held back by `SUBMENU_CLOSE_DELAY`. */
+interface HeldChange {
+    level: number;
+    rowId?: string;
+    anchor?: HTMLElement;
+    timeout: number;
+}
+
+export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, focusFilter, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
     const menuRef = useRef<HTMLDivElement | null>(null);
     // The submenus' layers render into the menu element, which rows reach through the context.
     const [ layerHost, setLayerHost ] = useState<HTMLElement | null>(null);
@@ -102,16 +118,23 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     /** The submenus whose layer waited out the stylesheet's opening delay. */
     const shownSubmenus = useRef(new WeakSet<OpenSubmenu>()).current;
 
+    const heldChange = useRef<HeldChange | undefined>(undefined);
+    const dropHeldChange = useCallback(() => {
+        window.clearTimeout(heldChange.current?.timeout);
+        heldChange.current = undefined;
+    }, []);
+    useLayoutEffect(() => dropHeldChange, [ dropHeldChange ]);
+
     const openSubmenu = useCallback((level: number, rowId?: string, anchor?: HTMLElement, chosen = false) => {
+        dropHeldChange();
         setOpen((current) => {
             if (rowId ? current[level]?.id === rowId : current.length <= level) return current;
             const kept = current.slice(0, level);
             const replaced = current[level];
-            const immediate = chosen
-                || (!!replaced && (replaced.immediate || shownSubmenus.has(replaced)));
+            const immediate = chosen || (!!replaced && isInView(replaced, shownSubmenus));
             return rowId && anchor ? [ ...kept, { id: rowId, anchor, immediate } ] : kept;
         });
-    }, [ shownSubmenus ]);
+    }, [ shownSubmenus, dropHeldChange ]);
     const submenuShown = useCallback((submenu: OpenSubmenu) => {
         shownSubmenus.add(submenu);
     }, [ shownSubmenus ]);
@@ -177,14 +200,46 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             activateFirstRowRef.current(row.level);
         });
     }, [ rows ]);
+    /**
+     * Closes the submenus open at `level` and deeper. If the active row is inside them, the row
+     * that opened them becomes active, so the keys continue from there.
+     */
     const closeSubmenu = (level: number) => {
         const opener = open[level];
         if (!opener) return;
         openSubmenu(level);
         if (active && active.level > level) setActive(level, opener.id);
     };
+    const applyHover = (level: number, rowId?: string, anchor?: HTMLElement) => {
+        if (rowId && anchor) openSubmenu(level, rowId, anchor);
+        else closeSubmenu(level);
+    };
+    // The held change runs with the state of the render it runs after.
+    const applyHoverRef = useRef(applyHover);
+    applyHoverRef.current = applyHover;
+    const hoverSubmenu = (level: number, rowId?: string, anchor?: HTMLElement) => {
+        const standing = open[level];
+        if (!standing || standing.id === rowId || !isInView(standing, shownSubmenus)) {
+            dropHeldChange();
+            applyHover(level, rowId, anchor);
+            return;
+        }
+        // The delay runs from the first row the pointer moved onto; the last one decides.
+        const held = heldChange.current;
+        if (held?.level === level) {
+            Object.assign(held, { rowId, anchor });
+            return;
+        }
+        dropHeldChange();
+        const change: HeldChange = { level, rowId, anchor, timeout: 0 };
+        change.timeout = window.setTimeout(() => {
+            heldChange.current = undefined;
+            applyHoverRef.current(change.level, change.rowId, change.anchor);
+        }, SUBMENU_CLOSE_DELAY);
+        heldChange.current = change;
+    };
     const context: MenuContextValue = {
-        open, openSubmenu, closeSubmenu, submenuShown, active, setActive, rows, registerRow,
+        open, openSubmenu, hoverSubmenu, submenuShown, active, setActive, rows, registerRow,
         keyboardDriven, isReversed, dropStart, setDropStart, close, filter, setFilter, layerHost
     };
 
@@ -284,6 +339,8 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     }, []);
 
     function onKeyDown(e: KeyboardEvent) {
+        // Cancel the pending pointer change, so it cannot undo the key's change to the submenus.
+        dropHeldChange();
         // From a filter input, the keys act on the rows of the submenu it filters.
         const filterInput = e.target instanceof HTMLInputElement && e.target.matches(FILTER_INPUT) ? e.target : undefined;
         // On a phone, the deepest open submenu is the page on show, even before a row in it is active.
@@ -418,6 +475,7 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
         // A menu already closing, as one whose row ran before it was placed, leaves focus alone.
         if (closed.current || isWanted?.() === false) return;
         menuRef.current?.focus({ preventScroll: true });
+        if (focusFilter) filterInputIn(menuRef.current)?.focus({ preventScroll: true });
         const isLowestFirst = isBottomUp && !keepOrder;
         if (!startAt && !isLowestFirst) return;
         const rowIds = navigableRows(0);
@@ -464,9 +522,10 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
                     if (pointerMoved(e)) setKeyboardDriven(false);
                 }}
                 // Fires only when the pointer is off every level, as the submenu layers are children
-                // of this element. Unless the keys drive the menu, only the deepest open submenu's
-                // row stays active.
+                // of this element. The open submenus stay, and unless the keys drive the menu, only
+                // the deepest one's row stays active.
                 onPointerLeave={() => {
+                    dropHeldChange();
                     if (keyboardDriven) return;
                     const deepest = open.at(-1);
                     setActiveRow(deepest && { level: open.length - 1, id: deepest.id });
@@ -546,7 +605,8 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
         {matches.map(([ index, { item, title, isName, path } ]) => (
             <FormListItem
                 key={index}
-                icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
+                icon={item.uiIcon ?? "bx bx-empty"} iconSvg={item.uiIconSvg}
+                iconClassName={item.iconColorClass} description={item.description}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
                 className={item.className} closeOnSelect={false}
                 onClick={(e) => onSelect?.(item, e)}
@@ -572,8 +632,8 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     }
 
     const {
-        title, titleIcon, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges,
-        className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
+        title, titleIcon, description, tooltip, uiIcon, uiIconSvg, iconColorClass, checked, enabled,
+        badges, className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
         middleClickHandler, contextMenuHandler
     } = row;
     // Callers pass HTML: titles escaped with `escapeHtml()` or boxed by `menuName()`.
@@ -585,9 +645,10 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     if (items) {
         return (
             <FormDropdownSubmenu
-                icon={uiIcon ?? "bx bx-empty"} title={label} disabled={enabled === false}
+                icon={uiIcon ?? "bx bx-empty"} iconSvg={uiIconSvg} title={label}
+                disabled={enabled === false}
                 className={className} onDropdownToggleClicked={select} split={!!(row.command || row.handler)}
-                filterable={row.filterable}
+                filterable={row.filterable} submenuClassName={row.submenuClassName}
                 onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
             >
                 <MenuItems items={items} onSelect={onSelect} />
@@ -595,10 +656,20 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
         );
     }
 
+    if (row.isSwitch) {
+        return (
+            <FormListToggleableItem
+                icon={uiIcon} title={title} currentValue={!!checked} disabled={enabled === false}
+                helpTooltip={tooltip} className={className} closeOnSelect={false}
+                onChange={(_, e) => select(e)}
+            />
+        );
+    }
+
     return (
         <FormListItem
             // An item with neither keeps no slot for an icon, as an all-text menu such as spelling fixes needs.
-            icon={"uiIcon" in row || "checked" in row ? uiIcon : null}
+            icon={"uiIcon" in row || "checked" in row ? uiIcon : null} iconSvg={uiIconSvg}
             iconClassName={iconColorClass} checked={checked} checkable={"checked" in row} disabled={enabled === false}
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
             keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
@@ -625,9 +696,10 @@ function MenuActions<T>({ items, className, onSelect }: { items: MenuCommandItem
 function MenuAction<T>({ item, onSelect }: { item: MenuCommandItem<T>, onSelect: MenuProps<T>["onSelect"] }) {
     return (
         <MenuTile
-            icon={item.uiIcon} iconBadge={item.uiIconBadge} title={item.title}
-            tooltip={item.tooltip ?? textOf(item.title)} keyboardShortcut={item.keyboardShortcut}
-            disabled={item.enabled === false} onSelect={(e) => onSelect?.(item, e)}
+            icon={item.uiIcon} iconSvg={item.uiIconSvg} iconBadge={item.uiIconBadge}
+            title={item.title} tooltip={item.tooltip} keyboardShortcut={item.keyboardShortcut}
+            disabled={item.enabled === false} checked={item.checked}
+            onSelect={(e) => onSelect?.(item, e)}
         />
     );
 }
@@ -641,8 +713,8 @@ interface MenuTileProps {
     iconBadge?: string;
     /** The title as HTML, as for a row's. */
     title: string;
-    /** The full title, which a narrow tile can cut short. */
-    tooltip: string;
+    /** What the tooltip shows in place of the title, such as a word of explanation. */
+    tooltip?: string;
     keyboardShortcut?: MenuCommandItem<unknown>["keyboardShortcut"];
     disabled?: boolean;
     /** Makes the tile one that is checked or not, which a menu tells assistive technology. */
@@ -659,10 +731,12 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
     const buttonRef = useRef<HTMLButtonElement | null>(null);
-    // The full title, which a narrow menu can cut short, and the shortcut a row would show. A phone
-    // has no pointer to hover with and no keyboard, so it gets neither; an empty title shows none.
+    // The explanation or the shortcut a row would show, with the title only alongside a shortcut,
+    // since the tile shows its title already. A phone has no pointer to hover with and no keyboard,
+    // so it gets neither; an empty title shows none.
     const mobile = isMobile();
-    useStaticTooltipWithKeyboardShortcut(buttonRef, mobile ? "" : tooltip,
+    const tooltipText = tooltip ?? (keyboardShortcut ? textOf(title) : "");
+    useStaticTooltipWithKeyboardShortcut(buttonRef, mobile ? "" : tooltipText,
         mobile ? undefined : keyboardShortcut, ACTION_TOOLTIP);
 
     return (
@@ -682,7 +756,7 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
             // goes on from the action it last pointed at.
             onPointerMove={(e) => {
                 if (!menu || !pointerMoved(e)) return;
-                menu.closeSubmenu(level);
+                menu.hoverSubmenu(level);
                 if (!disabled && menu.active?.id !== id) menu.setActive(level, id);
             }}
             // A press keeps focus where it was, as on a row.
@@ -712,8 +786,9 @@ interface MenuMatch<T> {
 
 /**
  * The items, at any depth, that run something and match `text`: every word of it is in the
- * item's title or in those of the submenus it stands in. Those whose title starts with the text
- * come first, then those whose title holds it, each group in menu order.
+ * item's title, its description, its keywords or the titles of the submenus it stands in. Those
+ * whose title starts with the text come first, then those whose title holds it, each group in
+ * menu order.
  */
 function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] {
     const query = text.trim().toLowerCase();
@@ -733,7 +808,8 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
             }
             if (item.enabled === false) continue;
             const lowerTitle = title.toLowerCase();
-            const haystack = [ ...path, title ].join(" ").toLowerCase();
+            const haystack = [ ...path, title, item.description ?? "", ...item.keywords ?? [] ]
+                .join(" ").toLowerCase();
             if (!words.every((word) => haystack.includes(word))) continue;
             const rank = lowerTitle.startsWith(query) ? 0 : lowerTitle.includes(query) ? 1 : 2;
             found.push({ item, title, isName: isMenuName(item.title), path, rank });
@@ -797,6 +873,14 @@ function hasRowBefore(row: Element | undefined) {
         if (sibling.classList.contains("dropdown-item")) return true;
     }
     return false;
+}
+
+/**
+ * Whether the layer of `submenu` is in view: shown at once, past the stylesheet's opening delay as
+ * `shown` records, or with motion off, which runs no delay.
+ */
+function isInView(submenu: OpenSubmenu, shown: WeakSet<OpenSubmenu>) {
+    return submenu.immediate || shown.has(submenu) || document.body.classList.contains("motion-disabled");
 }
 
 /** The filter input of the submenu open in `menu`, if one is. */

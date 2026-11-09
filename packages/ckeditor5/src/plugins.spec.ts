@@ -9,6 +9,7 @@ import BlockReference from "./plugins/block_reference/block_reference.js";
 import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
 import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import { CHAT_INPUT_PLUGINS, CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import ChildNotePlugin from "./plugins/child_note.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
@@ -80,6 +81,7 @@ describe("plugin lists", () => {
     it("COMMON_PLUGINS includes the in-tree Trilium feature plugins", () => {
         expect(COMMON_PLUGINS).toContain(CutToNotePlugin);
         expect(COMMON_PLUGINS).toContain(InternalLinkPlugin);
+        expect(COMMON_PLUGINS).toContain(ChildNotePlugin);
         expect(COMMON_PLUGINS).toContain(ContentEmbed);
         expect(COMMON_PLUGINS).toContain(BlockReference);
         expect(COMMON_PLUGINS).toContain(LinkEmbed);

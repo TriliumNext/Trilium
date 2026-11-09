@@ -9,20 +9,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // also how we reach `App`'s inline `onReady`/`onProgressChanged` callbacks.
 const h = vi.hoisted(() => ({
     getRenderedContent: vi.fn(),
-    noteListProps: null as any
+    noteListProps: null as any,
+    noteListParent: null as unknown
 }));
 
 vi.mock("./services/content_renderer", () => ({
     default: { getRenderedContent: h.getRenderedContent }
 }));
 
-vi.mock("./widgets/collections/NoteList", () => ({
-    useNoteViewType: () => "grid",
-    CustomNoteList: (props: any) => {
-        h.noteListProps = props;
-        return "NOTELIST";
-    }
-}));
+vi.mock("./widgets/collections/NoteList", async () => {
+    const { useContext } = await import("preact/hooks");
+    const { ParentComponent } = await import("./widgets/react/react_utils");
+    return {
+        useNoteViewType: () => "grid",
+        CustomNoteList: (props: any) => {
+            h.noteListProps = props;
+            h.noteListParent = useContext(ParentComponent);
+            return "NOTELIST";
+        }
+    };
+});
 
 import Component from "./components/component";
 import { App, Error404, loadCustomCss, main, SingleNoteRenderer } from "./print";
@@ -139,6 +145,15 @@ describe("App", () => {
         window.removeEventListener("note-ready", readyListener);
     });
 
+    it("gives a collection a root component, for the hooks of its view", async () => {
+        buildNote({ id: "root", title: "root", children: [{ id: "app-book-parent", title: "Book", type: "book" }] });
+        const note = await froca.getNote("app-book-parent");
+        renderInto(<App note={note} noteId="app-book-parent" />);
+
+        await vi.waitFor(() => expect(h.noteListProps).toBeTruthy());
+        expect(h.noteListParent).toBeInstanceOf(Component);
+    });
+
     it("renders CollectionRenderer for a search note, whose results print as a list", async () => {
         const loadSearchNote = vi.spyOn(froca, "loadSearchNote").mockResolvedValue(undefined);
         buildNote({ id: "root", title: "root", children: [{ id: "app-search", title: "Search", type: "search" }] });
@@ -246,18 +261,20 @@ describe("loadCustomCss", () => {
         const promise = loadCustomCss(note);
 
         const codeLink = await vi.waitFor(() => {
-            const link = document.head.querySelector<HTMLLinkElement>('link[href="/api/notes/css-code/download"]');
+            const link = document.head.querySelector<HTMLLinkElement>('link[href="api/notes/css-code/download"]');
             expect(link).toBeTruthy();
             return link;
         });
-        expect(document.head.querySelector('link[href="/api/notes/css-mime/download"]')).toBeTruthy();
+        expect(document.head.querySelector('link[href="api/notes/css-mime/download"]')).toBeTruthy();
         await promise;
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-code"));
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-mime"));
         warn.mockRestore();
 
         expect(codeLink?.rel).toBe("stylesheet");
-        expect(document.head.querySelector('link[href="/api/notes/css-text/download"]')).toBeNull();
+        // Relative, so it resolves against the app base when Trilium is served from a subpath
+        expect(codeLink?.getAttribute("href")).toBe("api/notes/css-code/download");
+        expect(document.head.querySelector('link[href="api/notes/css-text/download"]')).toBeNull();
     });
 });
 

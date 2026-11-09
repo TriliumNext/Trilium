@@ -823,9 +823,17 @@ export default class TabRowWidget extends BasicWidget {
 
             this.draggabillies.push(draggabilly);
 
-            draggabilly.on("staticClick", () => {
-                // restore the tab's last-focused split rather than always jumping to its main split
+            // restore the tab's last-focused split rather than always jumping to its main split
+            const activate = () =>
                 appContext.tabManager.activateTabContext(tabEl.getAttribute("data-ntx-id"));
+
+            // A mouse switches tabs on press, as browsers do. A touch switches on release, as a
+            // long press opens the context menu instead.
+            draggabilly.on("pointerDown", (event: PointerEvent) => {
+                if (event.pointerType === "mouse") activate();
+            });
+            draggabilly.on("staticClick", (event: PointerEvent) => {
+                if (event.pointerType !== "mouse") activate();
             });
 
             draggabilly.on("dragStart", () => {

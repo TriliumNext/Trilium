@@ -1,13 +1,14 @@
-import { DomEmitterMixin, Plugin } from "ckeditor5";
+import { DomEmitterMixin, type ModelElement, Plugin } from "ckeditor5";
 
+import { getDraggedBlocks } from "../block_drag_handle.js";
 import BlockReferenceEditing, {
     type AssignBlockReferenceCommand
 } from "./block_reference_editing.js";
 
 /**
- * References to blocks of a text note. A right click on the block handle calls
- * `blockReference.openHandleMenu()` of the host, whose menu copies a reference to the selected
- * blocks.
+ * References to blocks of a text note. A right click on the block handle, or a click on the handle
+ * of `BlockDragHandle`, calls `blockReference.openHandleMenu()` of the host with the blocks that
+ * the handle drags, and the host's menu copies a reference to the selected blocks.
  */
 export default class BlockReference extends Plugin {
 
@@ -37,6 +38,15 @@ export default class BlockReference extends Plugin {
             event.preventDefault();
             this.openMenu(event);
         });
+        // The button of `BlockToolbar` opens the toolbar on a click.
+        if (this.editor.plugins.has("BlockDragHandle")) {
+            const dragHandle = this.editor.plugins.get("BlockDragHandle");
+            this.domEmitter.listenTo(handle, "click", () => {
+                if (!dragHandle.opensInsertMenu) {
+                    this.openMenu(handle);
+                }
+            });
+        }
     }
 
     override destroy() {
@@ -56,21 +66,37 @@ export default class BlockReference extends Plugin {
         return null;
     }
 
-    private openMenu(event: MouseEvent) {
+    private openMenu(origin: MouseEvent | HTMLElement) {
         const editor = this.editor;
         const command = editor.commands.get("assignBlockReference");
-        if (!command?.isEnabled) {
+        const openHandleMenu = editor.config.get("blockReference")?.openHandleMenu;
+        if (!command?.isEnabled || !openHandleMenu) {
             return;
         }
 
-        editor.config.get("blockReference")?.openHandleMenu?.(event, command.value);
+        const plugins = editor.plugins;
+        const dragHandle = plugins.has("BlockDragHandle") ? plugins.get("BlockDragHandle") : null;
+        if (dragHandle) {
+            dragHandle.isMenuOpen = true;
+        }
+        openHandleMenu(origin, getDraggedBlocks(editor.model), () => {
+            if (dragHandle) {
+                dragHandle.isMenuOpen = false;
+            }
+        });
     }
 }
 
 /** What the host of the editor does with references to blocks. */
 export interface BlockReferenceHost {
-    /** Opens the menu of the block handle at `event`, for `count` selected blocks. */
-    openHandleMenu(event: MouseEvent, count: number): void;
+    /**
+     * Opens the menu of the block handle for `blocks`, the outermost blocks that the handle drags:
+     * at the pointer of `origin` for a right click, or below `origin` for a click on the handle.
+     * Calls `onClose` once the menu is closed, or at once if it opens no menu.
+     */
+    openHandleMenu(
+        origin: MouseEvent | HTMLElement, blocks: ModelElement[], onClose: () => void
+    ): void;
     /** Copies a reference to the selected blocks. */
     copyReference(): void;
 }

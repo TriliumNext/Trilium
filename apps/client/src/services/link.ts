@@ -1,9 +1,13 @@
-import { ALLOWED_PROTOCOLS, encodeBlockParameter } from "@triliumnext/commons";
+import {
+    ALLOWED_PROTOCOLS, encodeBlockParameter, resolveBlockReference
+} from "@triliumnext/commons";
 
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
 import linkContextMenuService from "../menus/link_context_menu.js";
-import { getCachedBlockReferenceLabel, loadBlockReferenceLabel } from "./block_excerpts.js";
+import {
+    getBlockReferenceLabel, getCachedBlockReferenceLabel, loadBlockReferenceLabel
+} from "./block_excerpts.js";
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -546,29 +550,59 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
         return true;
     }
 
-    evt?.preventDefault();
-    evt?.stopPropagation();
-
-    if (hrefLink && hrefLink.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
-        if (handleAnchor(hrefLink, $link)) {
-            return true;
-        }
+    // The preview button of the text editor's link toolbar acts on its clicks alone, and the
+    // editor has handled a click that jumped into the note itself.
+    if (evt && $link?.hasClass("ck-link-toolbar__preview")
+        && (evt.type === "dblclick" || isDefaultPrevented(evt))) {
+        return true;
     }
 
-    const { notePath, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
+    evt?.preventDefault();
+    evt?.stopPropagation();
 
     const ctrlKey = evt && utils.isCtrlKey(evt);
     const shiftKey = evt?.shiftKey;
     const isLeftClick = !evt || ("which" in evt && evt.which === 1);
     // Right click is handled separately.
     const isMiddleClick = evt && "which" in evt && evt.which === 2;
-    const targetIsBlank = ($link?.attr("target") === "_blank");
+    // The preview button of the text editor's link toolbar opens a note in place, as a link does.
+    const isLinkToolbarPreview = !!$link?.hasClass("ck-link-toolbar__preview");
+    const targetIsBlank = $link?.attr("target") === "_blank" && !isLinkToolbarPreview;
     const isDoubleClick = isLeftClick && evt?.type === "dblclick";
-    const openInNewTab = (isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick;
+    const isPlainLeftClick = isLeftClick && !ctrlKey && !shiftKey && !isDoubleClick;
+    const isInEditor = !!$link && isInEditableText($link);
+    // In the text being edited, these follow the link as the first button of its toolbar does.
+    const isFollowClick = isInEditor && isLeftClick && !shiftKey && (ctrlKey || isDoubleClick);
+    const openInNewTab = !isFollowClick
+        && ((isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick);
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
 
+    if (hrefLink?.startsWith("#") && !hrefLink.startsWith("#root/") && $link) {
+        // The link toolbar jumps to the anchor, and a footnote shows no toolbar.
+        if (isPlainLeftClick && isInEditor
+            && !$link.closest(".footnote-reference, .footnote-back-link").length) {
+            return true;
+        }
+        if (handleAnchor(hrefLink, $link)) {
+            return true;
+        }
+    }
+
+    const { notePath, noteId, viewScope, openInPopup } = parseNavigationStateFromUrl(hrefLink);
+
     if (notePath) {
+        if (isPlainLeftClick && isInEditor) {
+            // The text editor shows the link toolbar, whose preview button opens the note.
+            return true;
+        }
+
+        // A link to blocks of the note it is in acts as a link within a page.
+        if ((isPlainLeftClick || isFollowClick) && !openInPopup && !targetIsBlank && $link
+            && viewScope?.block && showBlocksInPlace($link, noteId, viewScope.block)) {
+            return true;
+        }
+
         if (isLeftClick && openInPopup) {
             appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath, viewScope });
         } else if (openInNewWindow) {
@@ -583,10 +617,11 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
             openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
-        const withinEditLink = $link?.hasClass("ck-link-actions__preview");
-        const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
+        const isInEditedContent = isInEditor
+            || $link?.closest("[contenteditable]").attr("contenteditable") === "true";
 
-        if (openInNewTab || openInNewWindow || (isLeftClick && (withinEditLink || outsideOfCKEditor))) {
+        if (openInNewTab || openInNewWindow || isFollowClick
+            || (isLeftClick && (isLinkToolbarPreview || !isInEditedContent))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
             } else if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
@@ -619,6 +654,23 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
 }
 
 /**
+ * Whether `$link` belongs to a text note being edited, in its text or in one of its widgets,
+ * rather than to the read-only content of an embed in it.
+ */
+function isInEditableText($link: JQuery<HTMLElement>) {
+    return $link.closest(".note-detail-editable-text-editor, .include-note-content")
+        .hasClass("note-detail-editable-text-editor");
+}
+
+/**
+ * Marks the document while Ctrl, or Cmd on macOS, is held: a click with it follows a link in the
+ * text being edited, and `EditableText.css` shows a pointer over the link.
+ */
+function setFollowLinkKeyHeld(isHeld: boolean) {
+    document.documentElement.classList.toggle("follow-link-key-held", isHeld);
+}
+
+/**
  * Scrolls to either the footnote (if clicking on a reference such as `[1]`), or to the reference of a footnote (if clicking on the footnote `^` arrow),
  * or CKEditor bookmarks.
  *
@@ -627,11 +679,69 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
  * @returns `true` if the link was handled (i.e., the element was found and scrolled to), `false` otherwise.
  */
 function handleAnchor(hrefLink: string, $link: JQuery<HTMLElement>) {
-    const el = $link.closest(".ck-content").find(hrefLink)[0];
-    if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const content = $link.closest(".ck-content")[0];
+    const name = hrefLink.slice(1);
+    // Exact comparison: an anchor name can hold characters that a CSS selector does not allow.
+    const isFound = !!content
+        && Array.from(content.querySelectorAll("[id]")).some((element) => element.id === name);
+    if (isFound) {
+        void loadBlockJump().then(({ showAnchor }) => showAnchor(content, name));
     }
-    return !!el;
+    return isFound;
+}
+
+/**
+ * Scrolls to the blocks `block` of the note `noteId` and flashes them, when `$link` is in the
+ * content of that note that holds them. Returns whether it does.
+ */
+function showBlocksInPlace($link: JQuery<HTMLElement>, noteId: string | null, block: string) {
+    const jump = getBlockJump($link, noteId, block);
+    jump?.show();
+    return !!jump;
+}
+
+/** A jump to blocks of the note a link is in, which stays in that note. */
+export interface BlockJump {
+    /** Whether the blocks are a single heading. */
+    isHeading: boolean;
+    /** Scrolls to the blocks and flashes them. */
+    show(): void;
+}
+
+/**
+ * The jump to the blocks `block` of the note `noteId`, when `$link` is in the content of that note
+ * that holds them, or `null`.
+ */
+function getBlockJump(
+    $link: JQuery<HTMLElement>, noteId: string | null, block: string
+): BlockJump | null {
+    const content = $link.closest(".ck-content")[0];
+    const ntxId = $link.closest("[data-ntx-id]").attr("data-ntx-id");
+    if (!content || !ntxId || appContext.tabManager.getNoteContextById(ntxId).noteId !== noteId) {
+        return null;
+    }
+
+    // A broken range is left to the note context, which also shows the error.
+    const { start, end } = resolveBlockReference<Element>(content, block);
+    if (!start || !end) {
+        return null;
+    }
+
+    return {
+        isHeading: start === end && /^H[1-6]$/.test(start.tagName),
+        show: () => void loadBlockJump()
+            .then(({ showBlockReference }) => showBlockReference(content, block))
+    };
+}
+
+/** Whether something before `goToLinkExt()` already took the default action of `evt`. */
+function isDefaultPrevented(evt: NonNullable<Parameters<typeof goToLinkExt>[0]>) {
+    return "isDefaultPrevented" in evt ? evt.isDefaultPrevented() : evt.defaultPrevented;
+}
+
+/** The module that scrolls to blocks and anchors and flashes them, loaded on first use. */
+function loadBlockJump() {
+    return import("@triliumnext/ckeditor5/src/plugins/block_reference/block_reference_read_only.js");
 }
 
 function linkContextMenu(e: PointerEvent) {
@@ -654,6 +764,11 @@ function linkContextMenu(e: PointerEvent) {
         return;
     }
 
+    // The text editor opens the menu of the link toolbar for a link in the text being edited.
+    if (isInEditableText($link) && !$link.closest(".include-note").length) {
+        return;
+    }
+
     e.preventDefault();
 
     linkContextMenuService.openContextMenu(notePath, e, viewScope, null);
@@ -661,14 +776,18 @@ function linkContextMenu(e: PointerEvent) {
 
 /**
  * Fills `$el` with the label of the reference link to `href`. A link to blocks of `hostNoteId`, the
- * note the link is in, shows only the text of the blocks. A link to a note that does not exist
- * shows `storedTitle`, the title the content holds for it.
+ * note the link is in, shows only the text of the blocks, read from `content` when it holds them,
+ * as an editor does. When `isExcerpt`, `content` holds only some blocks of the note, and the others
+ * are read from the saved note. A link to a note that does not exist shows `storedTitle`, the title
+ * the content holds for it.
  */
 async function loadReferenceLinkTitle(
     $el: JQuery<HTMLElement>,
     href: string | null | undefined = null,
     hostNoteId?: string,
-    storedTitle?: string
+    storedTitle?: string,
+    content?: ParentNode | null,
+    isExcerpt = false
 ) {
     const $link = $el[0].tagName === "A" ? $el : $el.find("a");
 
@@ -690,12 +809,16 @@ async function loadReferenceLinkTitle(
     const subjectId = viewScope?.card || noteId;
     const note = subjectId ? await froca.getNote(subjectId, true) : null;
 
-    if (viewScope?.block && note && noteId === hostNoteId) {
-        const label = await loadBlockReferenceLabel(note, viewScope.block);
+    if (viewScope?.block && note && (content || noteId === hostNoteId)) {
+        const liveLabel = content ? getBlockReferenceLabel(content, viewScope.block) : null;
+        const label = liveLabel && !(liveLabel.isBroken && isExcerpt)
+            ? liveLabel
+            : await loadBlockReferenceLabel(note, viewScope.block) ?? liveLabel;
         if (label) {
-            $el.text(label.text)
-                .toggleClass("block-reference-broken", label.isBroken)
-                .prepend($("<span>").addClass("tn-icon bx bx-paragraph"));
+            $el.text(label.text).toggleClass("block-reference-broken", label.isBroken);
+            if (!label.isHeading) {
+                $el.prepend($("<span>").addClass("tn-icon bx bx-paragraph"));
+            }
             return;
         }
     }
@@ -778,15 +901,27 @@ async function getReferenceLinkTitle(href: string) {
 
 /**
  * The label of the reference link to `href`, from the notes already in froca. A link to a note that
- * is not there gets `storedTitle`, the title the content holds for it.
+ * is not there gets `storedTitle`, the title the content holds for it. A link to blocks of
+ * `content`, the content the link is in, gets their text. When `isExcerpt`, `content` holds only
+ * some blocks of the note, and the others are read from the saved note.
  */
-function getReferenceLinkTitleSync(href: string, storedTitle?: string) {
+function getReferenceLinkTitleSync(
+    href: string, storedTitle?: string, content?: ParentNode | null, isExcerpt = false
+) {
     const { noteId, viewScope } = parseNavigationStateFromUrl(href);
     if (!noteId) {
         return storedTitle || MISSING_NOTE_TITLE;
     }
 
     const note = froca.getNoteFromCache(viewScope?.card || noteId);
+    if (content && viewScope?.block) {
+        const label = getBlockReferenceLabel(content, viewScope.block);
+        const savedLabel = label.isBroken && isExcerpt && note
+            ? getCachedBlockReferenceLabel(note, viewScope.block)
+            : null;
+        return (savedLabel ?? label).text;
+    }
+
     if (!note) {
         return storedTitle || MISSING_NOTE_TITLE;
     }
@@ -844,6 +979,12 @@ if (glob.device !== "print" && !isShare) {
     //@ts-ignore
     $(document).on("dblclick", "a", goToLink);
 
+    // Captured at the window, before any widget can stop the key on its way to the editor.
+    for (const type of [ "keydown", "keyup" ] as const) {
+        window.addEventListener(type, (e) => setFollowLinkKeyHeld(!!utils.isCtrlKey(e)), true);
+    }
+    window.addEventListener("blur", () => setFollowLinkKeyHeld(false));
+
     $(document).on("mousedown", "a", (e) => {
         if (e.which === 2) {
             // prevent paste on middle click
@@ -865,5 +1006,6 @@ export default {
     getReferenceLinkTitleSync,
     calculateHash,
     calculateExtraWindowUrl,
+    getBlockJump,
     parseNavigationStateFromUrl
 };

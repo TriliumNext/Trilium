@@ -67,9 +67,7 @@
     "button_edit_link": "Gem link",
     "button_fix_link": "Ret link",
     "web_link": "Weblink",
-    "url": "URL",
-    "mirror_title": "Spejl notens titel",
-    "mirror_title_description": "Linket viser notens aktuelle titel og ændrer sig, når noten omdøbes."
+    "url": "URL"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Rediger grenpræfiks",
@@ -367,8 +365,6 @@
     "box_size": "Boksstørrelse",
     "size_tiny": "Minimal",
     "size_tiny_description": "En enkelt række med titlen og handlingerne.",
-    "size_small": "Lille",
-    "size_small_description": "En boks på ca. 10 linjer.",
     "size_medium": "Mellem",
     "size_medium_description": "En boks på ca. 30 linjer.",
     "size_full": "Fuld",
@@ -1879,9 +1875,7 @@
   },
   "experimental_features": {
     "title": "Eksperimentelle indstillinger",
-    "disclaimer": "Disse indstillinger er eksperimentelle og kan forårsage ustabilitet. Brug med forsigtighed.",
-    "llm_name": "AI / LLM-chat",
-    "llm_description": "Aktivér AI-chatsidepanelet og LLM-chatnoter drevet af store sprogmodeller."
+    "disclaimer": "Disse indstillinger er eksperimentelle og kan forårsage ustabilitet. Brug med forsigtighed."
   },
   "fonts": {
     "theme_defined": "Defineret af tema",
@@ -1906,7 +1900,6 @@
     "apply_changes": "Genindlæs for at anvende ændringerne",
     "generic-fonts": "Generiske skrifttyper",
     "user-fonts": "Brugerdefinerede skrifttyper",
-    "proportional-system-fonts": "Proportionale skrifttyper",
     "sans-serif-system-fonts": "Sans-serif-skrifttyper",
     "serif-system-fonts": "Serif-skrifttyper",
     "monospace-system-fonts": "Monospace-skrifttyper",
@@ -2098,7 +2091,6 @@
   "search_engine": {
     "title": "Søgemaskine",
     "custom_search_engine_info": "Bruges ved websøgning efter markeret tekst. Hvis den ikke er konfigureret, bruges DuckDuckGo.",
-    "predefined_templates_label": "Forudindstillinger",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -2940,9 +2932,7 @@
     "no_headings": "Ingen overskrifter."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Filen <code class=\"file-path\"></code> blev senest ændret <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Upload den ændrede fil",
-    "ignore_this_change": "Ignorér denne ændring"
+    "upload_modified_file": "Upload den ændrede fil"
   },
   "app_context": {
     "please_wait_for_save": "Vent et par sekunder på, at gemningen afsluttes, og prøv derefter igen."
@@ -4451,12 +4441,10 @@
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Klik på pilen, eller tryk på %0 for at folde sammen/ud.",
       "collapsible-block": "Sammenfoldelig blok",
       "convert-image-to-a-drawing-canvas": "Konvertér billede til tegneområde",
-      "convert-to-link": "Konvertér til link",
       "copy-anchor-reference-link": "Kopiér ankerreferencelink",
       "copy-formatting": "Kopiér formatering",
       "copy-image-to-clipboard": "Kopiér billede til udklipsholder",
       "copy-to-clipboard": "Kopiér til udklipsholder",
-      "copy-url": "Kopiér URL",
       "create-a-bulleted-list": "Opret en punktopstilling",
       "create-a-new-footnote-and-reference-it-here": "Opret en ny fodnote og referér til den her",
       "create-a-numbered-list": "Opret en nummereret liste",
@@ -4471,7 +4459,6 @@
       "drag-to-reposition-the-collapsible-block": "Træk for at flytte den sammenfoldelige blok",
       "edit-anchor": "Rediger anker",
       "edit-task-states": "Rediger opgavetilstande",
-      "edit-title": "Rediger titel",
       "embed": "Indlejre",
       "enter-caption": "Indtast billedtekst",
       "enter-the-anchor-name-without-spaces": "Indtast ankernavnet uden mellemrum.",
@@ -4487,11 +4474,9 @@
       "include-note-widget": "inkluder-note-widget",
       "increase-the-indentation-of-the-current-block": "Forøg indrykningen af den aktuelle blok.",
       "indent": "Indryk",
-      "inline": "Indlinjeret",
       "insert-a-0-mermaid-diagram-template": "Indsæt en \"%0\"-Mermaid-diagramskabelon",
       "insert-a-block-of-preformatted-code": "Indsæt en blok med forformateret kode.",
       "insert-a-horizontal-rule": "Indsæt en vandret linje.",
-      "insert-a-link-to-another-trilium-note": "Indsæt et link til en anden Trilium-note",
       "insert-a-math-equation": "Indsæt en matematisk ligning",
       "insert-a-new-admonition": "Indsæt en ny bemærkningsboks",
       "insert-a-page-break-for-printing": "Indsæt et sideskift (til udskrift)",
@@ -4513,7 +4498,6 @@
       "latex": "LaTeX",
       "link-embed-widget": "link-indlejrings-widget",
       "link-mention-widget": "link-omtale-widget",
-      "link-preview": "Linkforhåndsvisning",
       "looks-good-already-nothing-to-change": "Ser allerede godt ud — intet at ændre.",
       "markdown-import": "Markdown-import",
       "markdown-import-from-clipboard": "Markdown-import fra udklipsholder",
@@ -4530,7 +4514,6 @@
       "note": "Note",
       "numbered-list": "Nummereret liste",
       "outdent": "Udryk",
-      "plain-link": "Almindeligt link",
       "preview": "Forhåndsvisning",
       "quote-a-passage-from-another-source": "Citér et afsnit fra en anden kilde.",
       "remove-anchor": "Fjern anker",
@@ -4550,7 +4533,6 @@
       "the-file-is-too-large-to-be-uploaded-http-413-if-trilium-is-behind-a-reverse-proxy-raise-its-request-body-size-limit": "Filen er for stor til at blive uploadet (HTTP 413). Hvis Trilium er bag en omvendt proxy, skal du øge dens grænse for anmodningstekststørrelse.",
       "the-server-responded-with-http-0": "Serveren svarede med HTTP %0.",
       "tip": "Tip",
-      "title": "Titel",
       "to-do-list": "Opgaveliste",
       "toggle-collapsible-block": "Slå sammenfoldelig blok til/fra",
       "tokens": "tokens",
@@ -4559,7 +4541,6 @@
       "turn-the-current-block-into-a-paragraph": "Ændr den aktuelle blok til et afsnit.",
       "type-the-content-here": "Skriv indholdet her...",
       "undefined-custom-task-state": "Udefineret brugerdefineret opgavetilstand",
-      "url": "URL",
       "upload-an-image-from-your-device": "Upload et billede fra din enhed.",
       "upload-files-as-attachments-and-insert-embeds": "Upload filer som vedhæftninger, og indsæt indlejringer.",
       "upload-files-as-attachments-and-insert-links": "Upload filer som vedhæftninger, og indsæt links.",
@@ -4596,7 +4577,6 @@
       "descending": "Faldende",
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Nogle rækker blev sorteret sammen, fordi flettede celler binder dem til hinanden",
       "tiny": "Lille",
-      "show-title": "Vis titel",
       "more-actions": "Flere handlinger",
       "drawing-canvas": "Tegneområde",
       "editable": "Redigerbar",
@@ -4609,7 +4589,6 @@
       "remove-tab": "Fjern fane",
       "move-tab-left": "Flyt fane til venstre",
       "move-tab-right": "Flyt fane til højre",
-      "copy-link-to-tab": "Kopiér link til fane",
       "tabs-toolbar": "Faneværktøjslinje",
       "tab-alignment": "Fanejustering",
       "align-tabs-at-top": "Placér faner øverst",
@@ -4660,8 +4639,7 @@
       "move-down": "Flyt ned",
       "image-position": "Billedposition",
       "list": "Liste",
-      "list-type": "Listetype",
-      "insert-a-preview-of-a-web-page-or-a-video": "Indsæt en forhåndsvisning af en webside eller en video"
+      "list-type": "Listetype"
     },
     "task-state-dropped-title": "Ugyldige opgavetilstande",
     "task-state-dropped-message_one": "En brugerdefineret opgavetilstandsdefinition er ugyldig og blev ignoreret.",

@@ -1,5 +1,5 @@
+import { Mutex } from "@triliumnext/commons";
 import { ConflictError, GoneError, type HttpError, NotFoundError, utils as coreUtils, ValidationError } from "@triliumnext/core";
-import { Mutex } from "async-mutex";
 import type { Request } from "express";
 import { createWriteStream } from "fs";
 import fsp from "fs/promises";

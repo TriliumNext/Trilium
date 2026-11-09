@@ -1295,7 +1295,6 @@
   "search_engine": {
     "title": "Wyszukiwarka",
     "custom_search_engine_info": "Niestandardowa wyszukiwarka wymaga ustawienia zarówno nazwy, jak i adresu URL. Jeśli którykolwiek z nich nie zostanie ustawiony, jako domyślna wyszukiwarka zostanie użyte DuckDuckGo.",
-    "predefined_templates_label": "Predefiniowane szablony wyszukiwarek",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
@@ -1657,9 +1656,7 @@
     "no_headings": "Brak nagłówków."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Plik <code class=\"file-path\"></code> został ostatnio zmodyfikowany <span class=\"file-last-modified\"></span>.",
-    "upload_modified_file": "Prześlij zmodyfikowany plik",
-    "ignore_this_change": "Ignoruj tę zmianę"
+    "upload_modified_file": "Prześlij zmodyfikowany plik"
   },
   "app_context": {
     "please_wait_for_save": "Poczekaj kilka sekund na zakończenie zapisu, a następnie spróbuj ponownie."

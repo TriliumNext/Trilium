@@ -1,4 +1,4 @@
-import type { AccessibleImgHTMLAttributes, ImgHTMLAttributes } from "preact";
+import type { ImgHTMLAttributes, LooseImgHTMLAttributes } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 /**
@@ -19,7 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
  * from the VDOM `src` (the original URL) and reverts it, aborting the retry.
  * Owning the URL in component state keeps the VDOM and DOM in agreement.
  */
-type SafeImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
+type SafeImageProps = Omit<LooseImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
     src: string;
 };
 
@@ -52,7 +52,7 @@ export function SafeImage({ src, ...rest }: SafeImageProps) {
 
     return (
         <img
-            {...(rest as AccessibleImgHTMLAttributes<HTMLImageElement>)}
+            {...(rest as ImgHTMLAttributes<HTMLImageElement>)}
             src={currentSrc}
             onError={handleError}
         />

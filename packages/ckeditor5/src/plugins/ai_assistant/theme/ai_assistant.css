@@ -194,9 +194,10 @@
     white-space: nowrap;
 }
 
-/* The inline diff shown by the "Changes" view (htmldiff-js `ins`/`del` markup, the same
-   convention the revisions dialog styles). Colors are self-contained rather than borrowing the
-   client's Bootstrap variables, so the plugin package stays host-agnostic. */
+/* The inline diff shown by the "Changes" view (`ins`/`del` markup from the client's
+   `diffHtml()`, the same convention the revisions dialog styles). Colors are self-contained
+   rather than borrowing the client's Bootstrap variables, so the plugin package stays
+   host-agnostic. */
 .ck.ck-ai-assistant-form .ck-ai-assistant-form__preview ins {
     text-decoration: none;
 }

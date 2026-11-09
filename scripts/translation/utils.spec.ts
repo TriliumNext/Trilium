@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CACHE_MAX_AGE_MS, fetchAllPages, isCacheFresh } from "./utils.mts";
+import { CACHE_MAX_AGE_MS, fetchAllPages, findUnofferedLanguages, isCacheFresh } from "./utils.mts";
 
 describe("isCacheFresh", () => {
     const now = new Date("2026-08-20T12:00:00Z").getTime();
@@ -59,5 +59,28 @@ describe("fetchAllPages", () => {
 
         await expect(fetchAllPages("/first"))
             .rejects.toThrow("Weblate answered 404 Not Found for /gone.");
+    });
+});
+
+describe("findUnofferedLanguages", () => {
+    function stat(code: string, percent: number) {
+        return { language_code: code, translated_percent: percent, language: { name: code } };
+    }
+
+    it("flags a language above the threshold only when it is not offered", () => {
+        const stats = [ stat("de", 99), stat("fa", 97), stat("ug", 19), stat("ga", 50) ];
+        const unoffered = findUnofferedLanguages(stats, [ { id: "de" } ], 50);
+
+        expect(unoffered.map(s => s.language_code)).toStrictEqual([ "fa" ]);
+    });
+
+    it("treats a content-only locale as not offered", () => {
+        const stats = [ stat("fa", 97), stat("he", 80), stat("ar", 99) ];
+        const locales = [
+            { id: "fa", contentOnly: true }, { id: "he", contentOnly: true }, { id: "ar" }
+        ];
+
+        expect(findUnofferedLanguages(stats, locales, 50).map(s => s.language_code))
+            .toStrictEqual([ "fa", "he" ]);
     });
 });

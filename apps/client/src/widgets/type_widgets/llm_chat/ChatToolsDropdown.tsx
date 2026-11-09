@@ -50,13 +50,14 @@ export default function ChatToolsDropdown({ enableNoteTools, onNoteToolsChange, 
             titlePosition="top"
             placement="top-start"
             disabled={disabled}
+            mobileBottomSheet
         >
             <FormListToggleableItem
                 icon="bx bx-note"
                 title={t("llm_chat.note_tools")}
                 description={t("llm_chat.note_tools_description")}
                 currentValue={enableNoteTools}
-                onChange={onNoteToolsChange}
+                onChange={(newValue) => onNoteToolsChange(newValue)}
             />
 
             <FormDropdownSubmenu

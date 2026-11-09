@@ -34,7 +34,7 @@ export default function ListExpandControls({ note }: { note: FNote }) {
                 text={t("book_properties.collapse_all_notes")}
                 onClick={() => void collapseAll()}
             />
-            <div className="list-expand-split">
+            <div className="list-expand-split icon-action-split">
                 <ActionButton
                     icon="bx bx-move-vertical"
                     text={t("book_properties.expand_tooltip")}

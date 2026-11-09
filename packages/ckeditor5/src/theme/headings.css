@@ -1,5 +1,6 @@
 /* The heading scale of Bootstrap 5, which the app also loads; the values must stay equal to its. */
-.ck-content :is(h1, h2, h3, h4, h5, h6) {
+.ck-content h1, .ck-content h2, .ck-content h3,
+.ck-content h4, .ck-content h5, .ck-content h6 {
     margin-top: 0;
     margin-bottom: 0.5rem;
     line-height: 1.2;

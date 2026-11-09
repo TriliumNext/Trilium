@@ -4,7 +4,9 @@ import type { IndexRange } from "../table_move/table_move_groups.js";
 
 const SEGMENT_CLASS = "ck-table-column-bar__segment";
 const DIVIDER_CLASS = "ck-table-column-bar__divider";
+const CURRENT_SEGMENT_CLASS = "ck-table-column-bar__segment_current";
 const ACTIVE_DIVIDER_CLASS = "ck-table-column-bar__divider_active";
+const ARROW_CLASS = "ck-table-column-bar__arrow";
 export const RESIZABLE_DIVIDER_CLASS = "ck-table-column-bar__divider_resizable";
 /** The elements of the bar that start a gesture. */
 export const HANDLE_SELECTOR = `.${SEGMENT_CLASS}, .${RESIZABLE_DIVIDER_CLASS}`;
@@ -89,8 +91,8 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
 
     /**
      * Draws a segment between each two of `edges`, in pixels from the table's left edge, and a
-     * divider labeled from `labels` at the end of each segment. Only the dividers of the
-     * `resizable` columns take a drag.
+     * divider labeled from `labels` at the end of each segment. The `resizable` columns, the ones
+     * at the selection, have current segments, and only their dividers take a drag.
      */
     setColumns(edges: readonly number[], labels: readonly string[], resizable: IndexRange) {
         if (this.strip.childElementCount !== labels.length * 2) {
@@ -102,6 +104,7 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
                 divider.dataset.column = String(column);
                 divider.setAttribute("role", "separator");
                 divider.setAttribute("aria-orientation", "vertical");
+                divider.append(createArrow("bxs-left-arrow"), createArrow("bxs-right-arrow"));
                 this.strip.append(segment, divider);
             }
         }
@@ -116,6 +119,7 @@ export default class TableColumnBarView extends View<HTMLDivElement> {
             divider.style.left = `${end}px`;
             divider.setAttribute("aria-label", label);
             const isResizable = column >= resizable.first && column <= resizable.last;
+            segment.classList.toggle(CURRENT_SEGMENT_CLASS, isResizable);
             divider.classList.toggle(RESIZABLE_DIVIDER_CLASS, isResizable);
         }
     }
@@ -152,4 +156,10 @@ function createElement(className: string) {
     const element = document.createElement("div");
     element.className = className;
     return element;
+}
+
+function createArrow(icon: string) {
+    const arrow = createElement(`${ARROW_CLASS} bx ${icon}`);
+    arrow.setAttribute("aria-hidden", "true");
+    return arrow;
 }

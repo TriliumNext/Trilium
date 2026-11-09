@@ -40,7 +40,9 @@ tracking this", not downloads.
 
 ## What is published where
 
-`.github/workflows/main-docker.yml` builds on GHCR and copies to Docker Hub in its merge job:
+`.github/workflows/main-docker.yml` builds on GHCR; `docker-publish.yml` tags the images and copies them
+to Docker Hub in its merge job. A release (`release.yml`) runs both, publishing only once every desktop,
+server and Docker build has passed:
 
 - **`sha-<commit>`** — GHCR only. Until 2026-10 they were copied to Docker Hub too, which left
   1,672 `sha-*` tags and ~10K untagged images there (974 GB in `triliumnext/trilium`, 658 GB in

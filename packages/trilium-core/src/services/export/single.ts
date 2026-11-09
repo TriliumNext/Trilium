@@ -1,7 +1,6 @@
 
 
 import type { Response } from "../../http_interface";
-import html from "html";
 import mimeTypes from "mime-types";
 
 import becca from "../../becca/becca.js";
@@ -12,6 +11,7 @@ import { captureContentJobEnv } from "../content_jobs/env.js";
 import { getContentJobExecutor } from "../content_jobs/executor.js";
 import type TaskContext from "../task_context.js";
 import { escapeHtml,getContentDisposition } from "../utils/index.js";
+import { formatHtml } from "./format_html.js";
 import mdService from "./markdown.js";
 import { stripListItemIds } from "./strip_list_item_ids.js";
 import { ExportFormat } from "../../meta.js";
@@ -76,7 +76,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
         content = prepareTextNoteContent(content, format);
 
         if (format === "html") {
-            payload = content.length < 100_000 ? html.prettyPrint(content, { indent_size: 2 }) : content;
+            payload = formatHtml(content);
             extension = "html";
             mime = "text/html";
         } else if (format === "markdown") {
@@ -106,7 +106,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
         payload = content;
         extension = "triliumsheet";
         mime = "application/json";
-    } else if (note.type === "relationMap" || note.type === "search") {
+    } else if (note.type === "relationMap" || note.type === "search" || note.type === "mindMap") {
         payload = content;
         extension = "json";
         mime = "application/json";
@@ -134,7 +134,7 @@ async function mapForExport(note: BNote, content: string | Uint8Array, format: E
     const executor = getContentJobExecutor();
     const prepared = prepareTextNoteContent(content, format);
     if (format === "html") {
-        const payload = prepared.length < 100_000 ? await executor.run({ kind: "prettyPrintHtml", html: prepared }) : prepared;
+        const payload = await executor.run({ kind: "formatHtml", html: prepared });
         return { payload, extension: "html", mime: "text/html" };
     }
 

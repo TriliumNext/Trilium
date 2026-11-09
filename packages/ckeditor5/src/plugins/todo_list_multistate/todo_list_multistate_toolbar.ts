@@ -2,7 +2,6 @@ import {
     BalloonPanelView,
     ButtonView,
     ContextualBalloon,
-    DomEventObserver,
     Plugin,
     ToolbarSeparatorView,
     ToolbarView,
@@ -11,17 +10,9 @@ import {
     type ModelElement,
     type ViewElement
 } from "ckeditor5";
+import { ContextMenuObserver } from "../../utils.js";
 import { getConfiguredTaskStates, TASK_STATE_ATTRIBUTE } from "./todo_list_multistate_editing.js";
 import TodoListMultistateUI, { getTaskStateToolbarItems } from "./todo_list_multistate_ui.js";
-
-class TodoCheckboxContextMenuObserver extends DomEventObserver<"contextmenu"> {
-    get domEventType() {
-        return "contextmenu" as const;
-    }
-    onDomEvent(domEvent: MouseEvent) {
-        this.fire("contextmenu", domEvent);
-    }
-}
 
 export default class TodoListMultistateToolbar extends Plugin {
 
@@ -37,7 +28,7 @@ export default class TodoListMultistateToolbar extends Plugin {
     init() {
         const editor = this.editor;
         this._balloon = editor.plugins.get(ContextualBalloon);
-        editor.editing.view.addObserver(TodoCheckboxContextMenuObserver);
+        editor.editing.view.addObserver(ContextMenuObserver);
         this._toolbarView = this._createToolbarView();
 
         this.listenTo(editor.editing.view.document, "contextmenu", (_evt, data) => {

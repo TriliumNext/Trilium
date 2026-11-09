@@ -1,4 +1,3 @@
-import { autoSort } from "@triliumnext/commons";
 import {
     Command,
     Notification,
@@ -7,8 +6,9 @@ import {
     TableUtils,
     TableWalker
 } from "ckeditor5";
-import type { Editor, Model, ModelElement, ModelPosition, ModelWriter } from "ckeditor5";
+import type { Editor, Model, ModelElement } from "ckeditor5";
 
+import { blockText, sortRuns } from "./sort_selection/sort_runs.js";
 import { splitIntoGroups } from "./table_move/table_move_groups.js";
 import type { IndexRange } from "./table_move/table_move_groups.js";
 
@@ -70,41 +70,20 @@ export class SortTableRowsCommand extends Command {
 
         const editor = this.editor;
         const groups = readGroups(editor.model, plan);
-        const sorted = autoSort(groups, (group) => group.text, {
-            locale: editor.locale.contentLanguage,
-            isDescending: this.isDescending,
-            dateFormats: editor.config.get("autoSort")?.dateFormats
-        });
-
-        if (sorted.some((group, index) => group !== groups[index])) {
-            this.applyOrder(plan.table, plan.groups[0].first, sorted.map((group) => group.range));
-        }
+        const rows = [...plan.table.getChildren()]
+            .filter((child): child is ModelElement => child.is("element", "tableRow"));
+        // The selection ranges are live, so they follow the moved rows.
+        sortRuns(editor, groups.map(({ range, text }) => ({
+            first: rows[range.first],
+            last: rows[range.last],
+            text
+        })), this.isDescending);
 
         if (groups.some((group) => group.isTied)) {
             const t = editor.t;
             editor.plugins.get(Notification).showInfo(
                 t("Some rows were sorted together because merged cells tie them to each other"));
         }
-    }
-
-    /** Moves the row groups into `order`, starting at row `firstIndex`, in one undo step. */
-    private applyOrder(table: ModelElement, firstIndex: number, order: IndexRange[]) {
-        const model = this.editor.model;
-        const rows = [...table.getChildren()]
-            .filter((child): child is ModelElement => child.is("element", "tableRow"));
-        const firstRow = rows[firstIndex];
-
-        // The selection ranges are live, so they follow the moved rows.
-        model.change((writer) => {
-            let previous: ModelElement | null = null;
-            for (const range of order) {
-                const insertAt = previous
-                    ? writer.createPositionAfter(previous)
-                    : writer.createPositionBefore(firstRow);
-                moveRows(writer, rows[range.first], rows[range.last], insertAt);
-                previous = rows[range.last];
-            }
-        });
     }
 
     private planSort(): SortPlan | null {
@@ -161,30 +140,9 @@ function readGroups(model: Model, { table, column, groups }: SortPlan): RowGroup
 
     return groups.map((range) => ({
         range,
-        text: cellText(model, cellsByRow[range.first]),
+        text: blockText(model, cellsByRow[range.first]),
         isTied: new Set(cellsByRow.slice(range.first, range.last + 1)).size > 1
     }));
-}
-
-/** The plain text of a cell. Elements such as paragraphs and line breaks become spaces. */
-function cellText(model: Model, cell: ModelElement): string {
-    let text = "";
-    for (const item of model.createRangeIn(cell).getItems()) {
-        text += item.is("$textProxy") ? item.data : " ";
-    }
-    return text;
-}
-
-function moveRows(
-    writer: ModelWriter,
-    firstRow: ModelElement,
-    lastRow: ModelElement,
-    insertAt: ModelPosition
-) {
-    const start = writer.createPositionBefore(firstRow);
-    if (!start.isEqual(insertAt)) {
-        writer.move(writer.createRange(start, writer.createPositionAfter(lastRow)), insertAt);
-    }
 }
 
 declare module "ckeditor5" {

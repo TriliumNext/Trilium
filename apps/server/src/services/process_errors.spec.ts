@@ -144,3 +144,26 @@ describe("reportProcessError", () => {
         expect(getLogMock.error.mock.calls[2][0]).toContain("will not be reported");
     });
 });
+
+describe("reportStdioError", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    it("ignores a closed terminal or pipe, and reports any other write failure", async () => {
+        const { markAppReady, reportStdioError } = await freshModule();
+        markAppReady();
+
+        reportStdioError(Object.assign(new Error("write EIO"), { code: "EIO" }));
+        reportStdioError(Object.assign(new Error("write EPIPE"), { code: "EPIPE" }));
+
+        expect(console.error).not.toHaveBeenCalled();
+        expect(getLogMock.error).not.toHaveBeenCalled();
+        expect(sendMessageToAllClientsMock).not.toHaveBeenCalled();
+
+        reportStdioError(Object.assign(new Error("write ENOSPC"), { code: "ENOSPC" }));
+
+        expect(sendMessageToAllClientsMock).toHaveBeenCalledWith(expect.objectContaining({ message: "write ENOSPC" }));
+    });
+});

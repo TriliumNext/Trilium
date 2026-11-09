@@ -2,10 +2,13 @@
  * LLM tools for attribute operations (get, set, delete labels/relations).
  */
 
-import attributeService from "../../../services/attributes.js";
-import becca from "../../../becca/becca.js";
+import type { AttributeType } from "@triliumnext/commons";
 import { z } from "zod";
 
+import becca from "../../../becca/becca.js";
+import type BAttribute from "../../../becca/entities/battribute.js";
+import type BNote from "../../../becca/entities/bnote.js";
+import attributeService from "../../../services/attributes.js";
 import { flag, getLlmNote, isAttributeVisibleToLlm } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
@@ -63,10 +66,11 @@ export const attributeTools = defineTools({
             name: z.string().describe("The attribute name"),
             value: z.string().optional().describe("The attribute value (for relations, this must be a target noteId)"),
             mode: z.enum(["set", "add"]).optional().describe("'set' (default) updates the existing attribute of this name; 'add' creates another one next to it, for multi-valued labels such as #tag"),
-            attributeId: z.string().optional().describe("The ID of the attribute to update (from get_attributes), when several share the name; type and name must match it. Not used with mode 'add'")
+            attributeId: z.string().optional().describe("The ID of the attribute to update (from get_attributes), when several share the name; type and name must match it. Not used with mode 'add'"),
+            isInheritable: z.boolean().optional().describe("Whether child notes inherit the attribute. New attributes are not inheritable by default; when updating an existing attribute, leaving this out keeps its current setting, and changing it replaces the attribute with one under a new attributeId")
         }),
         mutates: true,
-        execute: ({ noteId, type, name, value = "", mode = "set", attributeId }) => {
+        execute: ({ noteId, type, name, value = "", mode = "set", attributeId, isInheritable }) => {
             const note = getLlmNote(noteId);
             if (!note) {
                 return { error: "Note not found" };
@@ -106,9 +110,9 @@ export const attributeTools = defineTools({
                     attribute.markAsDeleted();
                 }
                 if (mode === "add" || target) {
-                    note.addAttribute(type, disabledName, value);
+                    note.addAttribute(type, disabledName, value, isInheritable ?? false);
                 } else {
-                    note.setAttribute(type, disabledName, value);
+                    writeAttribute(note, type, disabledName, value, isInheritable, note.getOwnedAttributes(type, disabledName)[0]);
                 }
 
                 return {
@@ -117,6 +121,7 @@ export const attributeTools = defineTools({
                     type,
                     name: disabledName,
                     value,
+                    ...(isInheritable === undefined ? {} : { isInheritable }),
                     disabled: true,
                     message: `${sigil}${name.trim()} can run code, so it was saved as ${sigil}${disabledName} and is inactive. `
                         + (target
@@ -129,26 +134,25 @@ export const attributeTools = defineTools({
                 };
             }
 
-            const result = { success: true, noteId: note.noteId, type, name, value };
+            const result = { success: true, noteId: note.noteId, type, name, value, ...(isInheritable === undefined ? {} : { isInheritable }) };
 
             if (mode === "add") {
-                note.addAttribute(type, name, value);
+                note.addAttribute(type, name, value, isInheritable ?? false);
                 return result;
             }
 
             if (target) {
                 const previousValue = target.value;
-                if (previousValue === value) {
+                if (previousValue === value && (isInheritable === undefined || target.isInheritable === isInheritable)) {
                     return result;
                 }
-                target.value = value;
-                target.save();
-                return { ...result, previousValue };
+                writeAttribute(note, type, target.name, value, isInheritable, target);
+                return previousValue === value ? result : { ...result, previousValue };
             }
 
             const [ existing, ...others ] = note.getOwnedAttributes(type, name);
             const previousValue = existing?.value;
-            note.setAttribute(type, name, value);
+            writeAttribute(note, type, name, value, isInheritable, existing);
             if (previousValue === undefined || previousValue === value) {
                 return result;
             }
@@ -198,3 +202,20 @@ export const attributeTools = defineTools({
         }
     }
 });
+
+/**
+ * Creates the attribute, or updates `existing`, applying `isInheritable` when it is given.
+ * Like `updateNoteAttributes()`, it treats `isInheritable` as immutable and replaces the attribute,
+ * since deleting the old one is what invalidates the subtree that inherited it.
+ */
+function writeAttribute(note: BNote, type: AttributeType, name: string, value: string, isInheritable: boolean | undefined, existing: BAttribute | undefined) {
+    if (!existing) {
+        note.addAttribute(type, name, value, isInheritable ?? false);
+    } else if (isInheritable !== undefined && existing.isInheritable !== isInheritable) {
+        note.addAttribute(type, name, value, isInheritable, existing.position);
+        existing.markAsDeleted();
+    } else if (existing.value !== value) {
+        existing.value = value;
+        existing.save();
+    }
+}

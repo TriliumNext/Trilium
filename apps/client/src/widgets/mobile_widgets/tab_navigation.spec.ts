@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNotes } from "../../test/easy-froca";
-import { forgetTabs, getSpotlightedNoteId, getTabNavigation, getTreeStack, setTabScreen, setTabTree } from "./tab_navigation";
+import { enterHoistedNote, forgetTabs, getParentStack, getSpotlightedNoteId, getTabNavigation, getTreeStack, leaveHoistedNote, setTabScreen, setTabTree } from "./tab_navigation";
 
 describe("tab navigation", () => {
     buildNotes([
@@ -22,6 +22,16 @@ describe("tab navigation", () => {
         // A tab whose tree never moved: the column of its note, or a folder's own column.
         expect(getTreeStack("other", "root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
         expect(getTreeStack("other", "root/folder/inner", "root")).toEqual(drilled);
+    });
+
+    it("goes back from a note to the column listing it, even when the note has children", () => {
+        expect(getParentStack("root/folder/page", "root")).toEqual([ "root", "root/folder" ]);
+        expect(getParentStack("root/folder/inner", "root")).toEqual([ "root", "root/folder" ]);
+        expect(getParentStack("root/folder", "root")).toEqual([ "root" ]);
+        // A hoisted tree goes no higher than the hoisted note.
+        expect(getParentStack("root/folder/inner/leaf", "folder")).toEqual([ "folder", "folder/inner" ]);
+        expect(getParentStack("root/folder", "folder")).toEqual([ "folder" ]);
+        expect(getParentStack(null, "root")).toEqual([ "root" ]);
     });
 
     it("keeps a tab's screen beside its tree and forgets both once the tab closes", () => {
@@ -46,5 +56,21 @@ describe("tab navigation", () => {
         expect(getSpotlightedNoteId("folder", "root/folder/inner/leaf")).toBe("inner");
         expect(getSpotlightedNoteId("folder/inner", "root/folder/inner/leaf")).toBe("leaf");
         expect(getSpotlightedNoteId("folder/inner", "root/folder/page")).toBeUndefined();
+    });
+
+    it("leaves a hoisted note for the column holding it, whatever note the tab shows", () => {
+        const notePath = "root/folder/inner/leaf";
+        leaveHoistedNote("leaving", notePath, "inner");
+        expect(getTreeStack("leaving", notePath, "root")).toEqual([ "root", "root/folder" ]);
+
+        // A hoisted note right under the root leaves for the root.
+        leaveHoistedNote("leaving", notePath, "folder");
+        expect(getTreeStack("leaving", notePath, "root")).toEqual([ "root" ]);
+    });
+
+    it("enters a hoisted note on its own column, even with a note deep inside it open", () => {
+        const notePath = "root/folder/inner/leaf";
+        enterHoistedNote("entering", notePath, "folder");
+        expect(getTreeStack("entering", notePath, "folder")).toEqual([ "folder" ]);
     });
 });

@@ -49,7 +49,7 @@ export function InlineSourceEmbed({
         () => createInlineSourceEditor(source, saves, histories), [ source, saves, histories ]);
     useEffect(() => () => editor.release(), [ editor ]);
 
-    return <Component content={content} editor={editor} />;
+    return <Component content={content} editor={editor} language={source.language} />;
 }
 
 /**

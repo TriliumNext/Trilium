@@ -1,7 +1,9 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
 import { TypeWidgetProps } from "../type_widget";
 import "@excalidraw/excalidraw/index.css";
-import { useColorScheme, useEffectiveReadOnly, useTriliumOption } from "../../react/hooks";
+import {
+    useColorScheme, useEffectiveReadOnly, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
 import type { ComponentChildren, RefObject } from "preact";
 import { useCallback, useRef } from "preact/hooks";
 import {
@@ -65,12 +67,14 @@ export function CanvasEditor({
     constrainView, children
 }: CanvasEditorProps) {
     const [ locale ] = useTriliumOption("locale");
+    const [ isThinStroke ] = useTriliumOptionBool("canvasThinStroke");
     const noteDrop = useCanvasNoteDrop(apiRef, isReadOnly);
 
     // Excalidraw maps the pointer with the container position it read last. An embedded editor
-    // moves with the note, so it reads the position again before the pointer acts. `refresh()`
-    // renders all of Excalidraw, so it runs only once the position changed.
-    const refreshPosition = useCallback((e: PointerEvent) => {
+    // moves with the note, so it reads the position again before the pointer acts or something
+    // drops, and not on each scroll as `detectScroll` would. `refresh()` renders all of
+    // Excalidraw, the drawing included, so it runs only once the position changed.
+    const refreshPosition = useCallback((e: Event) => {
         const api = apiRef.current;
         const container = (e.currentTarget as HTMLElement).querySelector(".excalidraw-container");
         if (!api || !container) return;
@@ -123,6 +127,8 @@ export function CanvasEditor({
             onWheel={onWheel}
             onPointerOverCapture={isEmbedded ? refreshPosition : undefined}
             onPointerMoveCapture={isEmbedded ? refreshPosition : undefined}
+            onPointerDownCapture={isEmbedded ? refreshPosition : undefined}
+            onDragOverCapture={isEmbedded ? refreshPosition : undefined}
         >
             <div className="excalidraw-wrapper" {...noteDrop}>
                 <Excalidraw
@@ -130,7 +136,7 @@ export function CanvasEditor({
                     viewModeEnabled={isReadOnly || options.is("databaseReadonly")}
                     zenModeEnabled={false}
                     isCollaborating={false}
-                    detectScroll={isEmbedded}
+                    detectScroll={false}
                     handleKeyboardGlobally={false}
                     autoFocus={false}
                     langCode={LANGUAGE_MAPPINGS[locale as DISPLAYABLE_LOCALE_IDS] ?? undefined}
@@ -140,7 +146,8 @@ export function CanvasEditor({
                             export: false
                         },
                         getFormFactor: isDesktopLayout ? getDesktopFormFactor : undefined,
-                        constrainView
+                        constrainView,
+                        freedrawStrokeWidthFactor: isThinStroke ? THIN_STROKE_WIDTH_FACTOR : 1
                     }}
                     onLinkOpen={onLinkOpen}
                     validateEmbeddable={validateEmbeddable}
@@ -153,6 +160,12 @@ export function CanvasEditor({
         </div>
     )
 }
+
+/**
+ * The width of a pen stroke while thin strokes are on, as a factor of the picked width. Excalidraw
+ * after 0.18.1 draws its pen at the same widths.
+ */
+const THIN_STROKE_WIDTH_FACTOR = 0.5;
 
 /** The form factor of Excalidraw's desktop layout, for an editor of any size. */
 function getDesktopFormFactor() {

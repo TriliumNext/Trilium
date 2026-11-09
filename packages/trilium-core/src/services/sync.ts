@@ -613,7 +613,7 @@ interface SyncContext {
 }
 
 async function syncRequest<T extends {}>(syncContext: SyncContext, method: string, requestPath: string, _body?: {}) {
-    const body = _body ? JSON.stringify(_body) : "";
+    const body = serializeSyncRequestBody(_body);
 
     const timeout = syncOptions.getSyncTimeout();
 
@@ -641,6 +641,69 @@ async function syncRequest<T extends {}>(syncContext: SyncContext, method: strin
     }
 
     return response;
+}
+
+/** Strings at least this long are spliced into the JSON output instead of passing through `JSON.stringify`. */
+const SPLICED_STRING_MIN_LENGTH = 1024 * 1024;
+
+/** Characters that `JSON.stringify` escapes inside a string; a string without them serializes verbatim. */
+const JSON_ESCAPED_CHARACTERS = /["\\\u0000-\u001f\ud800-\udfff]/;
+
+/**
+ * Serializes a sync request body to the JSON string that `syncRequest()` splits into pages.
+ *
+ * Electron 45 aborts the process when a `JSON.stringify` output reaches about 268 million characters,
+ * which the base64 content of a ~192 MiB blob exceeds. Long strings that need no escaping are therefore
+ * replaced by placeholders before `JSON.stringify` and concatenated into its output afterwards, which
+ * produces the same JSON.
+ */
+export function serializeSyncRequestBody(body?: {}): string {
+    if (!body) {
+        return "";
+    }
+
+    const spliced: string[] = [];
+    const placeholderPrefix = `\u0000${randomString(16)}:`;
+    const json = JSON.stringify(replaceLongStrings(body, spliced, placeholderPrefix));
+
+    let result = "";
+    let cursor = 0;
+    for (const [ index, value ] of spliced.entries()) {
+        const placeholder = JSON.stringify(`${placeholderPrefix}${index}`);
+        const position = json.indexOf(placeholder, cursor);
+        result += `${json.slice(cursor, position)}"${value}"`;
+        cursor = position + placeholder.length;
+    }
+
+    return result + json.slice(cursor);
+}
+
+/**
+ * Copies the plain objects and arrays of `value`, replacing each long string that `JSON.stringify`
+ * would not escape with `placeholderPrefix` and its index in `spliced`.
+ */
+function replaceLongStrings(value: unknown, spliced: string[], placeholderPrefix: string): unknown {
+    if (typeof value === "string") {
+        if (value.length < SPLICED_STRING_MIN_LENGTH || JSON_ESCAPED_CHARACTERS.test(value)) {
+            return value;
+        }
+        spliced.push(value);
+        return `${placeholderPrefix}${spliced.length - 1}`;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item) => replaceLongStrings(item, spliced, placeholderPrefix));
+    }
+
+    if (value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype) {
+        const copy: Record<string, unknown> = {};
+        for (const [ key, child ] of Object.entries(value)) {
+            copy[key] = replaceLongStrings(child, spliced, placeholderPrefix);
+        }
+        return copy;
+    }
+
+    return value;
 }
 
 function getEntityChangeRow(entityChange: EntityChange, maxBlobContentSize?: number) {

@@ -75,6 +75,20 @@ describe("TabManager tab placement", () => {
         await tm.openInNewTab("", null);
         expect(order()).toEqual([a.ntxId, b.ntxId, "new", c.ntxId, "new"]);
     });
+
+    it("keeps the mobile screen for a tab opened in the background, and leaves it for an activated one", async () => {
+        const tm = new TabManager();
+        const setNote = vi.spyOn(NoteContext.prototype, "setNote").mockResolvedValue(new NoteContext());
+
+        await tm.openContextWithNote("root/background");
+        await tm.openContextWithNote("root/activated", { activate: true });
+
+        expect(setNote.mock.calls.map(([ notePath, opts ]) => [ notePath, opts?.keepScreen ])).toEqual([
+            [ "root/background", true ],
+            [ "root/activated", false ]
+        ]);
+        setNote.mockRestore();
+    });
 });
 
 describe("moving a tab with splits into a window of its own", () => {

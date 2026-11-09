@@ -74,6 +74,21 @@ describe("ValuesInput", () => {
         expect(onCommit).toHaveBeenCalledWith([ "two" ]);
     });
 
+    it("links the chips of a url, email or phone field, and only those", async () => {
+        await mount({ labelType: "url", values: [ "https://a.test/", "javascript:alert(1)" ], onCommit: vi.fn() });
+        expect([ ...container.querySelectorAll(".tn-chip a") ].map((a) => a.getAttribute("href")))
+            .toEqual([ "https://a.test/", "about:blank" ]);
+
+        await mount({ labelType: "email", values: [ "a@b.test" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("mailto:a@b.test");
+
+        await mount({ labelType: "phone", values: [ "+15550100" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")?.getAttribute("href")).toBe("tel:+15550100");
+
+        await mount({ labelType: "text", values: [ "https://a.test/" ], onCommit: vi.fn() });
+        expect(container.querySelector(".tn-chip a")).toBeNull();
+    });
+
     it("takes what was typed on Enter and empties the box, refusing a second of the same", async () => {
         const onCommit = vi.fn();
         const input = await mount({ labelType: "text", values: [ "one" ], onCommit });

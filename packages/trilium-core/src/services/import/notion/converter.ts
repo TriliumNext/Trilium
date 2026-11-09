@@ -311,7 +311,7 @@ function convertInlineDatabases(root: HTMLElement) {
         if (!notionId) {
             continue;
         }
-        block.insertAdjacentHTML("beforebegin", `<section class="include-note" data-notion-id="${notionId}" data-box-size="medium">&nbsp;</section>`);
+        block.insertAdjacentHTML("beforebegin", `<section class="include-note" data-notion-id="${notionId}" data-box-size="resizable">&nbsp;</section>`);
         block.remove();
     }
 }

@@ -130,7 +130,22 @@ client bundle, or a lazy chunk?
 
 Ask: does the PR patch around CKEditor, Excalidraw, MindElixir, CodeMirror, FullCalendar,
 Tabulator, Electron? Does it add a CKEditor plugin? Is it the third workaround for the same library?
+Does it add or grow a library patch under `patches/`? Then: is the patch strictly necessary for a
+proper integration in Trilium, does an extensive suite of tests cover the patched behavior, and is
+the patching process well documented?
 
+Library patches are avoided. The exception is a patch that is strictly necessary for a proper
+integration in Trilium, and it needs both an extensive suite of tests for the patched behavior and
+a well-documented patching process.
+
+- The Excalidraw patch (`patches/@excalidraw__excalidraw@<version>.patch`) is the model for that
+  exception. `excalidraw_contract.spec.ts` checks that the changes are present in both the
+  development and the minified production bundle, and `excalidraw_offsets.spec.ts` checks the
+  zoom-to-fit change. The patching process is documented in `.claude/skills/patching-excalidraw/`,
+  written as a skill for AI-assisted patching, in plain Markdown that a developer can follow
+  without AI as well: `references/hunks.md` explains each change and the code that depends on it,
+  and `SKILL.md` the procedure to change, check and upgrade the patch with the
+  `excalidraw_patch.mjs` script.
 - #8382: "We are already spending a huge amount of time maintaining the plugins we have to CKEditor
   … and we don't have the bandwidth to add more."
 - #7848: "We have to use off-the-shelf solutions in order to avoid the maintenance burden."

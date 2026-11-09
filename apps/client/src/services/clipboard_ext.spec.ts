@@ -1,10 +1,12 @@
+import type { ElectronApi } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import toast from "./toast.js";
 import utils from "./utils.js";
 import { buildNote } from "../test/easy-froca";
 import {
-    copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText, copyTextWithToast
+    canReadClipboardText, copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText,
+    copyTextWithToast, readClipboardText
 } from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
@@ -61,6 +63,42 @@ describe("copyText", () => {
         expect(capturedValue).toBe("fallback-text");
         // The textarea is removed in the finally block.
         expect(document.querySelector("textarea")).toBeNull();
+    });
+
+    it("keeps the fallback textarea inside an open modal that traps focus", () => {
+        setClipboard(undefined);
+
+        document.body.innerHTML = `
+            <input class="quick-search">
+            <div class="modal show" tabindex="-1"><input class="first"><button class="copy">Copy</button></div>`;
+        const modal = document.querySelector<HTMLElement>(".modal");
+        const first = document.querySelector<HTMLInputElement>(".first");
+        const button = document.querySelector<HTMLButtonElement>(".copy");
+        if (!modal || !first || !button) throw new Error("fixture missing");
+        // Bootstrap's `FocusTrap` pulls focus that lands outside the modal back into it.
+        const trap = (e: FocusEvent) => {
+            if (!modal.contains(e.target as Node)) {
+                first.focus();
+            }
+        };
+        document.addEventListener("focusin", trap);
+        button.focus();
+
+        let copiedValue: string | undefined;
+        (document as unknown as { execCommand: () => boolean }).execCommand = () => {
+            const active = document.activeElement;
+            copiedValue = active instanceof HTMLTextAreaElement ? active.value : undefined;
+            return true;
+        };
+
+        try {
+            expect(copyText("in-modal")).toBe(true);
+        } finally {
+            document.removeEventListener("focusin", trap);
+        }
+        expect(copiedValue).toBe("in-modal");
+        expect(document.querySelector("textarea")).toBeNull();
+        expect(document.activeElement).toBe(button);
     });
 
     it("returns false and warns when the fallback throws", () => {
@@ -221,5 +259,57 @@ describe("copyReferenceWithToast", () => {
         // What a Markdown or code note pastes, where the rich flavour is of no use.
         expect(plainText).toBe(href);
         expect(showMessage).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("reading the clipboard text", () => {
+    const originalPermissions = Object.getOwnPropertyDescriptor(navigator, "permissions");
+
+    function setPermissionQuery(query: (descriptor: PermissionDescriptor) => Promise<unknown>) {
+        Object.defineProperty(navigator, "permissions", {
+            value: { query },
+            configurable: true,
+            writable: true
+        });
+    }
+
+    afterEach(() => {
+        delete window.electronApi;
+        if (originalPermissions) {
+            Object.defineProperty(navigator, "permissions", originalPermissions);
+        }
+    });
+
+    it("can read on desktop, and in a browser only through navigator.clipboard.readText()", async () => {
+        setPermissionQuery(async () => ({ state: "granted" }));
+        setClipboard(undefined);
+        expect(await canReadClipboardText()).toBe(false);
+        setClipboard({ writeText: vi.fn() });
+        expect(await canReadClipboardText()).toBe(false);
+
+        window.electronApi = {} as unknown as ElectronApi;
+        expect(await canReadClipboardText()).toBe(true);
+    });
+
+    it("follows the clipboard-read permission where the browser knows it", async () => {
+        setClipboard({ readText: vi.fn() });
+        const query = vi.fn(async (_descriptor: PermissionDescriptor) => ({ state: "denied" }));
+        setPermissionQuery(query);
+        expect(await canReadClipboardText()).toBe(false);
+        expect(query).toHaveBeenCalledExactlyOnceWith({ name: "clipboard-read" });
+
+        query.mockResolvedValue({ state: "prompt" });
+        expect(await canReadClipboardText()).toBe(true);
+        query.mockRejectedValue(new TypeError("'clipboard-read' is not a valid PermissionName"));
+        expect(await canReadClipboardText()).toBe(true);
+    });
+
+    it("reads through the main process on desktop, and navigator.clipboard elsewhere", async () => {
+        setClipboard({ readText: vi.fn(async () => "from the browser") });
+        expect(await readClipboardText()).toBe("from the browser");
+
+        const readText = vi.fn(async () => "from the main process");
+        window.electronApi = { clipboard: { readText } } as unknown as ElectronApi;
+        expect(await readClipboardText()).toBe("from the main process");
     });
 });

@@ -3,8 +3,8 @@ import "./CollectionProperties.css";
 import { SearchResultDetails, SearchResultDetailsResponse } from "@triliumnext/commons";
 import clsx from "clsx";
 import { t } from "i18next";
-import { ComponentChildren } from "preact";
-import { useRef, useState } from "preact/hooks";
+import { ComponentChildren, createContext } from "preact";
+import { useContext, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
@@ -75,6 +75,8 @@ export const MAX_NESTING_DEPTH_PROPERTY: NumberProperty & PropertyHelp = {
 
 interface CollectionPropertiesProps {
     note: FNote;
+    /** The view's controls on the left of the bar, after the view type switcher and the settings. */
+    leftChildren?: ComponentChildren;
     centerChildren?: ComponentChildren;
     rightChildren?: ComponentChildren;
     /** Entries appended below a divider at the end of the settings dropdown. */
@@ -82,18 +84,25 @@ interface CollectionPropertiesProps {
 }
 
 /**
+ * Which of its own controls {@link CollectionProperties} shows, for a collection embedded where its view
+ * type cannot change or its settings are out of place, such as on a presentation slide.
+ */
+export const CollectionControls = createContext({ viewTypeSwitcher: true, viewOptions: true });
+
+/**
  * The bar above a collection that switches its view, sets its options and holds the view's own
  * controls, such as a calendar's navigation. A shared page keeps only the view's own controls, as a
  * visitor cannot change the note, and has no bar for a view without any.
  */
 export default function CollectionProperties(props: CollectionPropertiesProps) {
-    return isShare && !props.centerChildren && !props.rightChildren
+    return isShare && !props.leftChildren && !props.centerChildren && !props.rightChildren
         ? null
         : <CollectionPropertiesBar {...props} />;
 }
 
 function CollectionPropertiesBar({
     note,
+    leftChildren,
     centerChildren,
     rightChildren,
     optionsChildren
@@ -101,14 +110,20 @@ function CollectionPropertiesBar({
     const [ viewType, setViewType ] = useViewType(note);
     const noteType = useNoteProperty(note, "type");
     const [ isOpening, setIsOpening ] = useState(false);
+    const controls = useContext(CollectionControls);
 
     return ([ "book", "search" ].includes(noteType ?? "") &&
         <div className="collection-properties">
             <div className="left-container">
                 {!isShare && <>
-                    <ViewTypeSwitcher noteType={noteType} viewType={viewType} setViewType={setViewType} />
-                    <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                    {controls.viewTypeSwitcher && (
+                        <ViewTypeSwitcher noteType={noteType} viewType={viewType} setViewType={setViewType} />
+                    )}
+                    {controls.viewOptions && (
+                        <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                    )}
                 </>}
+                {leftChildren}
             </div>
             <div className="center-container">
                 {centerChildren}

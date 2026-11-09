@@ -14,8 +14,8 @@ import froca from "../services/froca";
 vi.mock("./note_tree", () => ({ default: class {} }));
 
 import {
-    getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange, useDeferredDetailFocus,
-    useNoteInfo
+    checkFillsPane, getExtendedWidgetType, NoteDetailWrapper, shouldFocusOnNoteChange,
+    useDeferredDetailFocus, useNoteInfo
 } from "./NoteDetail";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "./react/hooks";
 import {
@@ -72,6 +72,17 @@ describe("getExtendedWidgetType blob-stub routing", () => {
         const note = fakeNote({ type: "launcher", getBlob });
         expect(await getExtendedWidgetType(note, fakeContext())).toBe("doc");
         expect(getBlob).not.toHaveBeenCalled();
+    });
+});
+
+describe("checkFillsPane", () => {
+    it("lets the space usage page fill the pane, in its own view only", () => {
+        const spaceUsage = { noteId: "_spaceUsage" } as unknown as NoteContext;
+        const backendLog = { noteId: "_backendLog" } as unknown as NoteContext;
+        expect(checkFillsPane(spaceUsage, "contentWidget")).toBe(true);
+        expect(checkFillsPane(spaceUsage, "attachmentList")).toBe(false);
+        expect(checkFillsPane(backendLog, "contentWidget")).toBe(false);
+        expect(checkFillsPane(undefined, "contentWidget")).toBe(false);
     });
 });
 

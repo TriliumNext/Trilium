@@ -52,7 +52,7 @@ export default class CollapsibleCommand extends Command {
                     // Skip whitespace-only runs — wrapping invisible whitespace in a
                     // paragraph just litters the body.
                     const hasContent = pending.some(n =>
-                        n.is?.("element") || (n.is?.("$text") && /\S/.test(n.data ?? ""))
+                        n.is?.("element") || (n.is?.("$text") && /\S/.test(n.data))
                     );
                     if (!hasContent) { pending = []; return; }
                     const p = writer.createElement("paragraph");

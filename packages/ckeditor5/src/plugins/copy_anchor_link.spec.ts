@@ -37,7 +37,7 @@ describe("CopyAnchorLinkButton", () => {
         getButton().fire("execute");
 
         const href = "#root/noteAbc?bookmark=my%20anchor";
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith(href, undefined);
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith(href, undefined, undefined);
         expect(copyHtml).toHaveBeenCalledWith(`<a class="reference-link" href="${href}">Some title</a>`, href);
     });
 

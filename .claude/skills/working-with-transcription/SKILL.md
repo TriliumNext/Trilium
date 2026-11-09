@@ -272,7 +272,7 @@ The same 31-minute Romanian meeting (no reference, judged by reading): int8 is o
 - **The capture window must be `offscreen`**: a hidden window renders no frames without it, and the self-capture that yields system audio times out. `getDisplayMedia()` needs a user gesture, which only `executeJavaScript(…, true)` gives a hidden window.
 - **Chromium's audio processing is applied during capture**, so the WAV already holds it and no replay can switch it off. The system track runs with echo cancellation, noise suppression and auto gain all off; the microphone keeps echo cancellation, so the meeting played through speakers is not transcribed twice, and its auto gain. Earlier recordings, including the one under "Findings so far", had noise suppression on both tracks and echo cancellation on the system track, so do not compare transcripts across that change.
 - **A silent system source** usually means the sink's monitor volume is near zero (seen at -66 dB); the per-source peak logged every 5 s shows it.
-- **Prebuilds**: `sherpa-onnx-node` has none for win-arm64. `provider: "trt"` exits the process with an offline model.
+- **`provider: "trt"`** exits the process with an offline model.
 
 ## Tests
 

@@ -65,6 +65,10 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "INVALID_MIME_FOR_IMAGE", `MIME type '${params.mime}' is not allowed for image notes. MIME must start with 'image/'.`);
         }
 
+        if (params.noteId && becca.getNote(params.noteId)) {
+            throw new eu.EtapiError(409, "NOTE_ALREADY_EXISTS", `Note '${params.noteId}' already exists.`);
+        }
+
         try {
             const resp = noteService.createNewNote(params);
             // `save()` stamps the current time, so `setDateCreatedAndModified()` applies the
@@ -188,8 +192,12 @@ function register(router: Router) {
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+            throw new eu.EtapiError(400, "ZIP_FILE_REQUIRED", "The request body must be a ZIP file sent as 'application/zip' or 'application/octet-stream'.");
+        }
+
+        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
         zipImportService.importZip(taskContext, req.body, note).then((importedNote) => {
             res.status(201).json({
                 note: mappers.mapNoteToPojo(importedNote),
@@ -215,8 +223,7 @@ function parseSearchParams(req: Request) {
         ancestorNoteId: parseString(req.query["ancestorNoteId"]),
         ancestorDepth: parseString(req.query["ancestorDepth"]), // e.g. "eq5"
         orderBy: parseString(req.query["orderBy"]),
-        // TODO: Check why the order direction was provided as a number, but it's a string everywhere else.
-        orderDirection: parseOrderDirection(req.query, "orderDirection") as unknown as string,
+        orderDirection: parseOrderDirection(req.query, "orderDirection"),
         limit: parseInteger(req.query, "limit"),
         debug: parseBoolean(req.query, "debug")
     };
@@ -259,13 +266,11 @@ function parseOrderDirection(obj: any, name: string) {
         return undefined;
     }
 
-    const integer = parseInt(obj[name]);
-
     if (!["asc", "desc"].includes(obj[name])) {
         throw new eu.EtapiError(400, SEARCH_PARAM_ERROR, `Cannot parse order direction value '${obj[name]}, allowed values are 'asc' and 'desc'.`);
     }
 
-    return integer;
+    return obj[name];
 }
 
 function parseInteger(obj: any, name: string) {

@@ -1,4 +1,8 @@
-import { BlockQuote, _getModelData as getModelData, _setModelData as setModelData, ButtonView, ClassicEditor, CodeBlockEditing, Dialog, DropdownView, Essentials, keyCodes, Paragraph, SplitButtonView } from "ckeditor5";
+import {
+    _getModelData as getModelData, _setModelData as setModelData, BlockQuote, ButtonView,
+    ClassicEditor, CodeBlockEditing, Dialog, DropdownView, Essentials, HorizontalLine, keyCodes,
+    Paragraph, SplitButtonView
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -218,6 +222,10 @@ describe("AiAssistantUI toolbar entry", () => {
 
         button.fire("execute");
         expect(showSpy).toHaveBeenCalled();
+
+        // Without a provider the command is off, and the button with it.
+        const unavailable = (await createEditor()).ui.componentFactory.create("aiAssistant");
+        expect((unavailable as ButtonView).isEnabled).toBe(false);
     });
 
     // The feature has to be reachable without leaving the text being written, and the toolbar
@@ -467,6 +475,17 @@ describe("AiAssistantUI toolbar entry", () => {
             expect(requests[0]).toEqual({ query: "Translate to Japanese.", context: "foo", surroundings: NO_SURROUNDINGS, history: [] });
         });
 
+        it("keeps only the prompt row once the quick actions are emptied on a live editor", () => {
+            const plugin = editor.plugins.get(AiAssistantUI);
+            plugin.updateQuickActions([]);
+            expect(menuEntries(dropdown)).toEqual(["Ask AI…"]);
+
+            // The footer rows still sit below a single rule.
+            plugin.updateMenuFooter([{ label: "Model: Sonnet 5", run: vi.fn() }]);
+            dropdown.isOpen = false;
+            expect(menuEntries(dropdown)).toEqual(["Ask AI…", "---", "Model: Sonnet 5"]);
+        });
+
         // What a run answers to rather than an instruction for one — Trilium hangs the model picker
         // here — so it closes the menu below a rule and never asks whether there is content.
         it("closes the menu with its footer rows, and opens the ones that hold others", async () => {
@@ -661,6 +680,7 @@ describe("AiAssistantUI toolbar entry", () => {
             // restored over the top of that, which would leave the insertion selected.
             expect(editor.model.markers.has("triliumAiTarget")).toBe(false);
             expect(getModelData(editor.model)).toBe("<paragraph>[]done</paragraph>");
+            expect(editor.plugins.get(Dialog).isOpen).toBe(false);
         });
 
         it("titles the dialog with the action it is running, as the palette names it", async () => {
@@ -685,6 +705,22 @@ describe("AiAssistantUI toolbar entry", () => {
             expect(dialogTitle(editor)).toBe("AI assistant");
         });
 
+        // A custom action is labeled with its note's title, which can be empty.
+        it("runs a follow-up in the headerless dialog an untitled action opens", async () => {
+            setModelData(editor.model, "<paragraph>[foo]</paragraph>");
+            const untitled = { id: "custom:x", label: "", prompt: "Do it." };
+            editor.plugins.get(AiAssistantUI).runQuickAction(untitled);
+
+            const form = openForm(editor);
+            await vi.waitFor(() => expect(form.phase).toBe("review"));
+            expect(editor.plugins.get(Dialog).view?.headerView).toBeUndefined();
+
+            form.query = "now make it shorter";
+            form.fire("submit");
+            await vi.waitFor(() => expect(requests).toHaveLength(2));
+            expect(requests[1].query).toBe("now make it shorter");
+        });
+
         it("closes itself off while a run is in flight", async () => {
             let release = () => {};
             const editorWithSlowStream = await createTestEditor([Essentials, Paragraph, TriliumAiAssistant], {
@@ -707,6 +743,38 @@ describe("AiAssistantUI toolbar entry", () => {
             await vi.waitFor(() => expect(slowDropdown.isEnabled).toBe(false));
             release();
             await vi.waitFor(() => expect(slowDropdown.isEnabled).toBe(true));
+        });
+
+        it("drops a quick action picked while a run is still streaming", async () => {
+            const slowRequests: AiCompletionRequest[] = [];
+            let release = () => {};
+            const plugins = [Essentials, Paragraph, TriliumAiAssistant];
+            const editorWithSlowStream = await createTestEditor(plugins, {
+                aiAssistant: {
+                    sanitizeHtml,
+                    quickActions: QUICK_ACTIONS,
+                    stream: (request, onData) => new Promise<void>((resolve) => {
+                        slowRequests.push(request);
+                        release = () => {
+                            onData(`<p>${request.query}</p>`);
+                            resolve();
+                        };
+                    })
+                }
+            });
+            const plugin = editorWithSlowStream.plugins.get(AiAssistantUI);
+            const [fixTypos, makeShorter] = QUICK_ACTIONS[0].actions;
+
+            setModelData(editorWithSlowStream.model, "<paragraph>[foo]</paragraph>");
+            plugin.runQuickAction(fixTypos);
+            await vi.waitFor(() => expect(slowRequests).toHaveLength(1));
+
+            // What the `/` palette does: unlike the toolbar entry, it stays enabled mid-run.
+            plugin.runQuickAction(makeShorter);
+            release();
+            await vi.waitFor(() => expect(openForm(editorWithSlowStream).phase).toBe("review"));
+            expect(slowRequests).toHaveLength(1);
+            expect(previewHtml(editorWithSlowStream)).toBe("<p>Fix all mistakes.</p>");
         });
     });
 
@@ -992,6 +1060,21 @@ describe("AiAssistantUI toolbar entry", () => {
             await vi.waitFor(() => expect(requests).toHaveLength(2));
 
             expect(requests[1]).toEqual({ query: "Fix all mistakes.", context: "bar", surroundings: NO_SURROUNDINGS, history: [] });
+        });
+
+        it("is open until hide(), which ends the conversation and changes no model", async () => {
+            const fixTypos = await open();
+            const ui = editor.plugins.get(AiAssistantUI);
+            const { version } = editor.model.document;
+
+            expect(ui.isOpen).toBe(true);
+            ui.hide();
+            expect([ ui.isOpen, editor.model.document.version ]).toEqual([ false, version ]);
+
+            setModelData(editor.model, "<paragraph>[bar]</paragraph>");
+            fixTypos.fire("execute");
+            await vi.waitFor(() => expect(requests).toHaveLength(2));
+            expect(requests[1]).toMatchObject({ context: "bar", history: [] });
         });
 
         it("records the delivered HTML for a host that reports no source", async () => {
@@ -1458,8 +1541,10 @@ describe("AiAssistantUI toolbar entry", () => {
     describe("committing below the target", () => {
         /** Runs one completion against whatever the model data selected, then commits it. */
         async function commitBelow(modelData: string, response = "<p>new</p>") {
-            // BlockQuote for the nesting the walk exists to climb out of.
-            const editor = await createTestEditor([Essentials, Paragraph, BlockQuote, TriliumAiAssistant], {
+            // BlockQuote for the nesting the walk exists to climb out of. HorizontalLine for a
+            // block object: a selection on one ends in the root.
+            const plugins = [Essentials, Paragraph, BlockQuote, HorizontalLine, TriliumAiAssistant];
+            const editor = await createTestEditor(plugins, {
                 aiAssistant: { sanitizeHtml, quickActions: QUICK_ACTIONS, stream: createStreamStub(response).stream }
             });
             setModelData(editor.model, modelData);
@@ -1498,10 +1583,12 @@ describe("AiAssistantUI toolbar entry", () => {
 
         // A range whose end sits in the root has no block to walk out of — it is already past one.
         it("inserts at the range's end when it ends in the root itself", async () => {
-            const editor = await commitBelow("<paragraph>a</paragraph>[<paragraph>b</paragraph>]");
+            const editor = await commitBelow("<paragraph>a</paragraph>"
+                + "[<horizontalLine></horizontalLine>]<paragraph>b</paragraph>");
 
-            expect(getModelData(editor.model, { withoutSelection: true }))
-                .toBe("<paragraph>a</paragraph><paragraph>b</paragraph><paragraph>new</paragraph>");
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<paragraph>a</paragraph><horizontalLine></horizontalLine>"
+                + "<paragraph>new</paragraph><paragraph>b</paragraph>");
         });
     });
 

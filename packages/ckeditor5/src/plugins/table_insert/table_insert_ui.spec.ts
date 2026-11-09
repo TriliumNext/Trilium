@@ -167,6 +167,52 @@ describe("TableInsertUI", () => {
             expect(gap).toBeLessThan(30);
         });
 
+        it("is at least 350px wide, with segments spanning it", async () => {
+            const form = await openForm(editor);
+            form.useHeaders = true;
+
+            const formElement = getElement(form);
+            const formRect = formElement.getBoundingClientRect();
+            const formStyle = getComputedStyle(formElement);
+            const contentLeft = formRect.left + parseFloat(formStyle.paddingLeft);
+            const contentRight = formRect.right - parseFloat(formStyle.paddingRight);
+            expect(formRect.width).toBeGreaterThanOrEqual(350);
+            expect(getElement(form.insertButtonView).getBoundingClientRect().right)
+                .toBeCloseTo(contentRight, 0);
+
+            const segments = Array.from(formElement
+                .querySelectorAll<HTMLElement>(".ck-table-insert-form__segment"));
+            expect(segments).toHaveLength(5);
+            for (const segment of segments) {
+                const rect = segment.getBoundingClientRect();
+                expect(rect.left).toBeCloseTo(contentLeft, 0);
+                expect(rect.right).toBeCloseTo(contentRight, 0);
+            }
+
+            const segmentStyle = getComputedStyle(segments[0]);
+            const innerLeft = contentLeft + parseFloat(segmentStyle.borderLeftWidth)
+                + parseFloat(segmentStyle.paddingLeft);
+            const innerRight = contentRight - parseFloat(segmentStyle.borderRightWidth)
+                - parseFloat(segmentStyle.paddingRight);
+            for (const field of ["columns", "rows", "headingColumns", "headingRows"] as const) {
+                const input = getInput(form, field);
+                const rect = input.getBoundingClientRect();
+                const fontSize = parseFloat(getComputedStyle(input).fontSize);
+                const iconRect = getElement(form[`${field}Field`].iconView).getBoundingClientRect();
+                expect(rect.width, field).toBeCloseTo(5 * fontSize, 0);
+                expect(rect.right, field).toBeCloseTo(innerRight, 0);
+                expect(iconRect.left, field).toBeCloseTo(innerLeft, 0);
+            }
+
+            // The switch fills its segment: the label starts at the icons, the toggle ends at
+            // the inputs.
+            const toggleElement = getElement(form.headersSwitchView);
+            const switchLabel = toggleElement.querySelector(".ck-button__label");
+            const toggle = toggleElement.querySelector(".ck-button__toggle");
+            expect(switchLabel?.getBoundingClientRect().left).toBeCloseTo(innerLeft, 0);
+            expect(toggle?.getBoundingClientRect().right).toBeCloseTo(innerRight, 0);
+        });
+
         it("inserts a table of the typed size and closes", async () => {
             const form = await openForm(editor);
 
@@ -175,6 +221,7 @@ describe("TableInsertUI", () => {
             await userEvent.click(getElement(form.insertButtonView));
 
             expect(getTableSize(editor)).toEqual({ rows: 5, columns: 7 });
+            expect(getTableHeadings(editor)).toEqual({ rows: 0, columns: 0 });
             expect(balloon.hasView(form)).toBe(false);
             expect(editor.editing.view.document.isFocused).toBe(true);
             expect(editor.model.document.selection.getFirstPosition()?.findAncestor("tableCell"))
@@ -184,6 +231,39 @@ describe("TableInsertUI", () => {
             editor.execute("undo");
             expect(getModelData(editor.model, { withoutSelection: true }))
                 .toBe("<paragraph>foo</paragraph>");
+        });
+
+        it("inserts a table with the typed header rows and columns", async () => {
+            const form = await openForm(editor);
+
+            await userEvent.fill(getInput(form, "rows"), "5");
+            await userEvent.fill(getInput(form, "columns"), "4");
+            await userEvent.click(getElement(form.headersSwitchView));
+            await userEvent.fill(getInput(form, "headingColumns"), "1");
+            await userEvent.fill(getInput(form, "headingRows"), "2");
+            await userEvent.click(getElement(form.insertButtonView));
+
+            expect(getTableSize(editor)).toEqual({ rows: 5, columns: 4 });
+            expect(getTableHeadings(editor)).toEqual({ rows: 2, columns: 1 });
+            expect(balloon.hasView(form)).toBe(false);
+        });
+
+        it("keeps the form open while there are more header rows than rows", async () => {
+            const form = await openForm(editor);
+
+            await userEvent.click(getElement(form.headersSwitchView));
+            await userEvent.fill(getInput(form, "headingRows"), "3");
+            await userEvent.keyboard("{Enter}");
+
+            expect(getTableSize(editor)).toBeNull();
+            expect(balloon.visibleView).toBe(form);
+            expect(form.headingRowsField.errorText)
+                .toBe(`Enter a whole number between 0 and ${DEFAULT_TABLE_SIZE}.`);
+
+            await userEvent.fill(getInput(form, "rows"), "3");
+            await userEvent.keyboard("{Enter}");
+            expect(getTableSize(editor)).toEqual({ rows: 3, columns: DEFAULT_TABLE_SIZE });
+            expect(getTableHeadings(editor)).toEqual({ rows: 3, columns: 0 });
         });
 
         it("inserts the table on Enter", async () => {
@@ -275,8 +355,9 @@ describe("TableInsertUI", () => {
             expect(balloon.visibleView).toBe(form);
         });
 
-        it("opens with the default size every time", async () => {
+        it("opens with the default size and without headers every time", async () => {
             let form = await openForm(editor);
+            await userEvent.click(getElement(form.headersSwitchView));
             await userEvent.fill(getInput(form, "rows"), "0");
             await userEvent.keyboard("{Enter}");
             await userEvent.keyboard("{Escape}");
@@ -285,6 +366,7 @@ describe("TableInsertUI", () => {
 
             expect(getInput(form, "rows").value).toBe(String(DEFAULT_TABLE_SIZE));
             expect(form.rowsField.errorText).toBeNull();
+            expect(form.useHeaders).toBe(false);
         });
 
         it("showForm() leaves an open form alone", async () => {
@@ -319,9 +401,15 @@ describe("TableInsertUI", () => {
                     en: {
                         dictionary: {
                             "Insert table…": "Tabel personalizat…",
+                            "Table size": "Dimensiune",
+                            "Table headers": "Antet",
                             "Rows": "Rânduri",
                             "Columns": "Coloane",
-                            "Enter a whole number between 1 and %0.": "Între 1 și %0."
+                            "Use headers": "Cu antet",
+                            "Header columns": "Coloane antet",
+                            "Header rows": "Rânduri antet",
+                            "Enter a whole number between 1 and %0.": "Între 1 și %0.",
+                            "Enter a whole number between 0 and %0.": "Între 0 și %0."
                         }
                     }
                 }]
@@ -332,13 +420,21 @@ describe("TableInsertUI", () => {
 
             getFormButton(dropdown).click();
             const form = getForm(translated.plugins.get(ContextualBalloon));
+            const headings = Array.from(getElement(form)
+                .querySelectorAll(".ck-table-insert-form__card-heading"))
+                .map((heading) => heading.textContent);
+            expect(headings).toEqual(["Dimensiune", "Antet"]);
             const labels = Array.from(getElement(form).querySelectorAll("label"))
                 .map((label) => label.textContent);
-            expect(labels).toEqual(["Coloane", "Rânduri"]);
+            expect(labels).toEqual(["Coloane", "Rânduri", "Coloane antet", "Rânduri antet"]);
+            expect(getElement(form.headersSwitchView).textContent).toBe("Cu antet");
 
             getInput(form, "rows").value = "0";
+            form.useHeaders = true;
+            getInput(form, "headingColumns").value = "9";
             form.validate();
             expect(form.rowsField.errorText).toBe("Între 1 și 1000.");
+            expect(form.headingColumnsField.errorText).toBe(`Între 0 și ${DEFAULT_TABLE_SIZE}.`);
         });
     });
 
@@ -408,23 +504,41 @@ async function openForm(editor: ClassicEditor): Promise<TableInsertFormView> {
     return getForm(editor.plugins.get(ContextualBalloon));
 }
 
-function getInput(form: TableInsertFormView, field: "rows" | "columns"): HTMLInputElement {
-    const view = field === "rows" ? form.rowsField.inputView : form.columnsField.inputView;
-    return getElement(view) as HTMLInputElement;
+function getInput(
+    form: TableInsertFormView,
+    field: "rows" | "columns" | "headingRows" | "headingColumns"
+): HTMLInputElement {
+    return getElement(form[`${field}Field`].inputView) as HTMLInputElement;
 }
 
 /** The size of the table in the document, or `null` when there is none. */
 function getTableSize(editor: ClassicEditor): { rows: number; columns: number } | null {
-    const root = editor.model.document.getRoot();
-    const children = root ? Array.from(root.getChildren()) : [];
-    const table = children.find((child) => child.is("element", "table")) as
-        ModelElement | undefined;
+    const table = findTable(editor);
     if (!table) {
         return null;
     }
 
     const tableUtils = editor.plugins.get(TableUtils);
     return { rows: tableUtils.getRows(table), columns: tableUtils.getColumns(table) };
+}
+
+/** The number of header rows and columns of the table in the document. */
+function getTableHeadings(editor: ClassicEditor): { rows: number; columns: number } {
+    const table = findTable(editor);
+    if (!table) {
+        throw new Error("The document has no table.");
+    }
+
+    return {
+        rows: Number(table.getAttribute("headingRows") ?? 0),
+        columns: Number(table.getAttribute("headingColumns") ?? 0)
+    };
+}
+
+function findTable(editor: ClassicEditor): ModelElement | undefined {
+    const root = editor.model.document.getRoot();
+    const children = root ? Array.from(root.getChildren()) : [];
+    return children.find((child) => child.is("element", "table")) as ModelElement | undefined;
 }
 
 function getCaretRect(editor: ClassicEditor): DOMRect {

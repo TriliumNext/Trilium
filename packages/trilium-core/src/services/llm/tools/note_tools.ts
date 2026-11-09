@@ -3,9 +3,10 @@
  */
 
 import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
 import markdownImport from "../../../services/import/markdown.js";
 import noteTypesService from "../../../services/note_types.js";
-import noteService from "../../../services/notes.js";
+import noteService, { saveLinks } from "../../../services/notes.js";
 import searchService from "../../../services/search/services/search.js";
 import SearchContext from "../../../services/search/search_context.js";
 import TaskContext from "../../../services/task_context.js";
@@ -149,6 +150,7 @@ export const noteTools = defineTools({
                 note.save();
             }
             setNoteContentFromLlm(note, content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -197,6 +199,7 @@ export const noteTools = defineTools({
 
             note.saveRevision({ source: "llm" });
             note.setContent(newContent);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -261,6 +264,7 @@ export const noteTools = defineTools({
 
             note.saveRevision({ source: "llm" });
             note.setContent(result.content);
+            scanWrittenContent(note);
             return {
                 success: true,
                 noteId: note.noteId,
@@ -333,6 +337,7 @@ export const noteTools = defineTools({
                     type,
                     ...(mime ? { mime } : {})
                 });
+                scanWrittenContent(note);
 
                 return {
                     success: true,
@@ -415,3 +420,12 @@ export const noteTools = defineTools({
         }
     }
 });
+
+/** Records the `internalLink` relations of what a tool wrote, as `updateNoteData()` does for the editor. */
+function scanWrittenContent(note: BNote) {
+    const content = note.getContent();
+    const { forceFrontendReload, content: newContent } = saveLinks(note, content);
+    if (newContent !== content) {
+        note.setContent(newContent, { forceFrontendReload });
+    }
+}
