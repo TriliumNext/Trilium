@@ -29,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Lint the changelog entries
         run: node --experimental-strip-types scripts/release-notes.mts lint --json changelog-lint.json
