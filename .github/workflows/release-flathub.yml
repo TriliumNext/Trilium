@@ -55,7 +55,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes appstream
-          appstreamcli validate --explain apps/desktop/flatpak/org.triliumnotes.Trilium.metainfo.xml
+          appstreamcli validate --no-net --explain apps/desktop/flatpak/org.triliumnotes.Trilium.metainfo.xml
 
       - name: Show the resulting change
         run: git -C flathub --no-pager diff --stat
