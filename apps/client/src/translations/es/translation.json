@@ -72,7 +72,7 @@
     "display_plain": "Texto",
     "display_inline": "Icono y texto",
     "display_card": "Tarjeta",
-    "display_embed": "Vídeo de YouTube incrustado",
+    "display_embed": "Incrustado",
     "page_title": "Título de la página web",
     "title_from_url": "Igual que la URL",
     "description": "Descripción",
@@ -85,7 +85,8 @@
     "title_from_heading": "Si no se indica, reflejará siempre el texto del encabezado",
     "invalid_url": "Esta no es una URL válida.",
     "script_link_not_allowed": "Los enlaces que empiezan por {{scheme}} pueden ejecutar código, así que no están permitidos.",
-    "retrieving_from_page": "Obteniendo datos de la página web..."
+    "retrieving_from_page": "Obteniendo datos de la página web...",
+    "title_from_attachment": "Si no se indica, reflejará siempre el título del archivo adjunto"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Editar prefijo de rama",
@@ -305,7 +306,11 @@
     "image_size_hint": "La imagen se puede cambiar de tamaño más adelante.",
     "missing_note": "Falta la nota con el identificador {{noteId}}.",
     "missing_attachment": "Falta el archivo adjunto con el identificador {{attachmentId}}.",
-    "unknown_kind": "Este contenido requiere una versión más reciente de Trilium."
+    "unknown_kind": "Este contenido requiere una versión más reciente de Trilium.",
+    "size_compact": "Compacto",
+    "size_compact_description": "Una sola fila: el título y las acciones, o los controles de un archivo de audio.",
+    "size_resizable": "Redimensionable",
+    "size_resizable_description": "Un recuadro cuyo tamaño se puede ajustar libremente."
   },
   "info": {
     "modalTitle": "Mensaje informativo",
@@ -1453,7 +1458,9 @@
     "search_placeholder": "Buscar fuentes",
     "no_fonts_found": "Ninguna fuente coincide con lo que está buscando.",
     "document_preview_heading": "Esquejes de tradescantia púrpura",
-    "document_preview_body": "Recorté 4 tallos bajo un nudo y los puse en agua en el alféizar; las primeras raíces aparecieron tras <strong>9 días</strong>. Conserva su color a <em>pleno sol</em> y se vuelve verde a la sombra."
+    "document_preview_body": "Recorté 4 tallos bajo un nudo y los puse en agua en el alféizar; las primeras raíces aparecieron tras <strong>9 días</strong>. Conserva su color a <em>pleno sol</em> y se vuelve verde a la sombra.",
+    "installed-system-fonts": "Fuentes del sistema",
+    "family_draws_nothing": "{{family}} no puede mostrar texto en este dispositivo, por lo que no se ha cambiado la fuente."
   },
   "max_content_width": {
     "title": "Ancho del contenido",
@@ -2345,9 +2352,11 @@
     "align_center": "Alinear al centro",
     "align_right": "Alinear a la derecha",
     "open_externally": "Abrir externamente",
-    "delete": "Eliminar",
+    "delete": "Eliminar bloque",
     "copy_url": "Copiar dirección (URL)",
-    "display_as": "Mostrar como"
+    "display_as": "Mostrar como",
+    "edit": "Editar...",
+    "include_size_default": "Predeterminado"
   },
   "electron_integration": {
     "desktop-application": "Aplicación de escritorio",
@@ -2386,7 +2395,9 @@
   "note_tooltip": {
     "note-has-been-deleted": "La nota ha sido eliminada.",
     "quick-edit": "Edición rápida",
-    "attachment-info": "Archivo adjunto • {{size}}"
+    "attachment-info": "Archivo adjunto • {{size}}",
+    "jump-to-block": "Ir al bloque",
+    "jump-to-heading": "Ir al encabezado"
   },
   "geo-map": {
     "create-child-note-title": "Crear una nueva subnota y añadirla al mapa",
@@ -2613,8 +2624,8 @@
   },
   "board_view": {
     "delete-note": "Eliminar nota...",
-    "insert-above": "Insertar arriba",
-    "insert-below": "Insertar abajo",
+    "insert-above": "Insertar nuevo arriba",
+    "insert-below": "Insertar nuevo abajo",
     "delete-column": "Eliminar columna...",
     "delete-column-confirmation": "¿Seguro que desea eliminar esta columna? El atributo correspondiente también se eliminará de las notas de esta columna.",
     "add-column": "Añadir columna",
@@ -3206,6 +3217,28 @@
       "navigation": "Navegación",
       "previous": "Anterior",
       "next": "Siguiente"
+    },
+    "external-unavailable": "No se ha podido reproducir este contenido multimedia. Es posible que su dirección no sea accesible o que su formato no sea compatible.",
+    "http-error": "HTTP {{status}}: <bold>{{name}}</bold>",
+    "http-status-names": {
+      "400": "Solicitud incorrecta",
+      "401": "No autorizado",
+      "403": "Prohibido",
+      "404": "No encontrado",
+      "405": "Método no permitido",
+      "406": "No aceptable",
+      "408": "Tiempo de espera agotado",
+      "410": "Ya no está disponible",
+      "416": "Intervalo no satisfactorio",
+      "429": "Demasiadas solicitudes",
+      "451": "No disponible por motivos legales",
+      "500": "Error interno del servidor",
+      "501": "No implementado",
+      "502": "Puerta de enlace incorrecta",
+      "503": "Servicio no disponible",
+      "504": "Tiempo de espera de la puerta de enlace",
+      "client-error": "Error del cliente",
+      "server-error": "Error del servidor"
     }
   },
   "mermaid": {
@@ -3888,7 +3921,7 @@
     },
     "titles": {
       "image": "Subir imagen",
-      "mermaid": "Diagrama Mermaid",
+      "mermaid": "Diagrama de Mermaid",
       "mermaid_template": "Diagrama de Mermaid: {{name}}",
       "collapsible": "Bloque plegable",
       "page_break": "Salto de página",
@@ -4045,7 +4078,8 @@
     "open": "Abrir"
   },
   "link_embed": {
-    "play_video": "Reproducir vídeo"
+    "play_video": "Reproducir vídeo",
+    "play_audio": "Reproducir audio"
   },
   "time_interval": {
     "seconds_one": "{{count}} segundo",
@@ -4329,7 +4363,7 @@
       "tab-0": "Pestaña %0",
       "tab-content": "Contenido de la pestaña",
       "add-tab": "Añadir pestaña",
-      "remove-tab": "Eliminar pestaña",
+      "remove-tab": "Quitar pestaña",
       "move-tab-left": "Mover la pestaña a la izquierda",
       "move-tab-right": "Mover la pestaña a la derecha",
       "tabs-toolbar": "Barra de herramientas de pestañas",
@@ -4420,7 +4454,17 @@
       "link-to-a-web-page-as-a-card": "Enlace a una página web (como tarjeta)",
       "link-to-a-web-page-with-icon": "Enlace a una página web (con icono)",
       "open-link": "Abrir enlace",
-      "display-as": "Mostrar como"
+      "display-as": "Mostrar como",
+      "caption-for-the-audio": "Leyenda del audio",
+      "audio-video-embed": "Incrustación de audio/vídeo",
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "Incrustar un vídeo de YouTube o un archivo de audio o vídeo a partir de su dirección",
+      "add-new-tab": "Añadir pestaña nueva",
+      "copy-reference-to-this-tab": "Copiar referencia a esta pestaña",
+      "delete-tab": "Eliminar pestaña",
+      "delete-all-tabs": "Eliminar todas las pestañas",
+      "compact": "Compacto",
+      "resizable": "Redimensionable",
+      "default": "Predeterminado"
     },
     "toolbar-groups": {
       "text-formatting": "Formato de texto",
@@ -4925,9 +4969,10 @@
     "excerpt_description": "Actualmente solo está viendo un fragmento de esta nota. Pulse el botón {{icon}} para abrir la nota completa en una pestaña nueva.",
     "edit_excerpt": "Editar extracto",
     "copy_tab": "Copiar el enlace a esta pestaña",
-    "copy_share_link_one": "Copiar el enlace público a este bloque",
-    "copy_share_link_many": "Copiar el enlace público a estos {{count}} bloques",
-    "copy_share_link_other": "Copiar el enlace público a estos {{count}} bloques"
+    "copy_share_link_one": "Copiar enlace público",
+    "copy_share_link_many": "Copiar enlace público",
+    "copy_share_link_other": "Copiar enlace público",
+    "copy_reference": "Copiar referencia"
   },
   "split_button": {
     "more_actions": "Más acciones"
@@ -5110,7 +5155,10 @@
   },
   "canvas": {
     "thin_stroke": "Trazo fino del lápiz",
-    "thin_stroke_description": "Dibuja los trazos del lápiz más finos, adecuados para la escritura a mano. Los trazos ya dibujados conservan su grosor."
+    "thin_stroke_description": "Dibuja los trazos del lápiz más finos, adecuados para la escritura a mano. Los trazos ya dibujados conservan su grosor.",
+    "no_tool": "Sin herramienta",
+    "zoom": "Zoom",
+    "zoom_to_fit": "Ajustar a la ventana"
   },
   "sort_selection": {
     "sort_blocks": "Ordenar bloques",
@@ -5120,9 +5168,52 @@
     "descending": "Descendente"
   },
   "youtube_video": {
-    "title": "Insertar vídeo de YouTube",
-    "button_insert": "Insertar vídeo",
-    "not_a_video": "Esta no es la dirección de un vídeo de YouTube.",
-    "insert_failed": "No se ha podido cargar el vídeo. Compruebe la dirección y la conexión, e inténtelo de nuevo."
+    "title": "Insertar contenido multimedia",
+    "button_insert": "Insertar multimedia",
+    "not_a_video": "Esta no es una dirección web.",
+    "insert_failed": "No se ha podido incrustar el contenido multimedia. Compruebe que la dirección corresponde a un vídeo de YouTube, a un archivo de audio o de vídeo, y la conexión; a continuación, inténtelo de nuevo.",
+    "description": "Introduzca la dirección del vídeo o audio que desea incrustar: un vídeo de YouTube o cualquier archivo de audio o vídeo accesible por HTTP o HTTPS."
+  },
+  "block_handle_menu": {
+    "block_count_one": "{{count}} bloque",
+    "block_count_many": "{{count}} bloques",
+    "block_count_other": "{{count}} bloques",
+    "insert_above": "Insertar arriba",
+    "insert_below": "Insertar abajo",
+    "insert_item_above": "Insertar elemento arriba",
+    "insert_item_below": "Insertar elemento abajo",
+    "insert_child_item": "Insertar elemento hijo",
+    "cut": "Cortar",
+    "copy": "Copiar",
+    "delete": "Eliminar",
+    "types": {
+      "paragraph": "Párrafo",
+      "heading": "Encabezado {{level}}",
+      "list_item": "Elemento de lista",
+      "todo_item": "Tarea pendiente",
+      "block_quote": "Cita en bloque",
+      "code_block": "Bloque de código",
+      "table": "Tabla",
+      "image": "Imagen",
+      "horizontal_line": "Línea horizontal",
+      "page_break": "Salto de página",
+      "admonition": "Admonición",
+      "collapsible": "Bloque plegable",
+      "tabs": "Pestañas",
+      "columns": "Disposición en columnas",
+      "math": "Ecuación matemática",
+      "footnotes": "Notas al pie",
+      "footnote": "Nota al pie",
+      "included_note": "Nota incluida",
+      "excerpt": "Extracto",
+      "attachment": "Archivo adjunto",
+      "drawing": "Lienzo de dibujo",
+      "mermaid": "Bloque Mermaid",
+      "video": "Vídeo",
+      "audio": "Audio",
+      "link_preview": "Vista previa del enlace",
+      "embed": "Incrustado",
+      "block": "Bloque"
+    }
   }
 }
