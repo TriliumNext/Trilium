@@ -239,7 +239,8 @@
     "broken-block-reference": "Referencia no válida",
     "play-video": "Reproducir vídeo",
     "content-not-available": "Este contenido no está disponible.",
-    "untitled-block": "Bloque"
+    "untitled-block": "Bloque",
+    "play-audio": "Reproducir audio"
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
