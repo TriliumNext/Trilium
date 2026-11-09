@@ -252,7 +252,7 @@
     "gemini-omni-flash-preview": {
       "input": 1.5,
       "output": 9,
-      "ctx": 1048576
+      "ctx": 131072
     },
     "gemini-pro-latest": {
       "input": 2,
@@ -552,7 +552,7 @@
     "gpt-5.6-cyber": {
       "input": 12.5,
       "output": 75,
-      "ctx": 400000
+      "ctx": 272000
     },
     "gpt-5.6-luna": {
       "input": 0.2,
@@ -577,6 +577,11 @@
     "gpt-6-astra-law": {
       "input": 10,
       "output": 50,
+      "ctx": 922000
+    },
+    "gpt-6-cyber": {
+      "input": 20,
+      "output": 100,
       "ctx": 922000
     },
     "gpt-6-luna": {
