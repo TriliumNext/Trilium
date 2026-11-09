@@ -314,7 +314,11 @@
     "image_size_hint": "之后可以调整图片大小。",
     "missing_note": "找不到 ID 为 {{noteId}} 的笔记。",
     "missing_attachment": "找不到 ID 为 {{attachmentId}} 的附件。",
-    "unknown_kind": "此内容需要更新版本的 Trilium。"
+    "unknown_kind": "此内容需要更新版本的 Trilium。",
+    "size_compact": "紧凑",
+    "size_compact_description": "只占一行：显示标题和操作按钮，或音频文件的操作控件。",
+    "size_resizable": "可调整大小",
+    "size_resizable_description": "可调整到任意大小的方框。"
   },
   "info": {
     "modalTitle": "信息消息",
@@ -1450,7 +1454,9 @@
     "search_placeholder": "搜索字体",
     "no_fonts_found": "没有符合你搜索条件的字体。",
     "document_preview_heading": "紫竹梅扦插",
-    "document_preview_body": "从节下方剪下 4 根枝条，插在窗台上的水里；第一批根会在 <strong>9 天</strong> 后长出. 在 <em>阳关充足</em> 处它保持颜色，在阴凉处则会褪为绿色。"
+    "document_preview_body": "从节下方剪下 4 根枝条，插在窗台上的水里；第一批根会在 <strong>9 天</strong> 后长出. 在 <em>阳关充足</em> 处它保持颜色，在阴凉处则会褪为绿色。",
+    "installed-system-fonts": "系统字体",
+    "family_draws_nothing": "{{family}} 无法在此设备上显示文本，因此未更改字体。"
   },
   "max_content_width": {
     "title": "内容宽度",
@@ -2310,8 +2316,9 @@
     "open_externally": "在外部打开",
     "copy_url": "复制地址（URL）",
     "display_as": "显示为",
-    "delete": "删除",
-    "edit": "编辑…"
+    "delete": "删除块",
+    "edit": "编辑…",
+    "include_size_default": "默认"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2350,7 +2357,9 @@
   "note_tooltip": {
     "note-has-been-deleted": "笔记已被删除。",
     "quick-edit": "快速编辑",
-    "attachment-info": "附件 • {{size}}"
+    "attachment-info": "附件 • {{size}}",
+    "jump-to-block": "跳转到块",
+    "jump-to-heading": "跳转到标题"
   },
   "geo-map": {
     "create-child-note-title": "创建一个新的子笔记并将其添加到地图中",
@@ -4061,7 +4070,14 @@
       "display-as": "显示为",
       "caption-for-the-audio": "音频的题注",
       "audio-video-embed": "音频/视频嵌入",
-      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "嵌入 YouTube 视频，或通过地址嵌入音频或视频文件"
+      "embed-a-youtube-video-or-an-audio-or-video-file-from-its-address": "嵌入 YouTube 视频，或通过地址嵌入音频或视频文件",
+      "add-new-tab": "新建标签页",
+      "copy-reference-to-this-tab": "复制指向此标签页的引用",
+      "delete-tab": "删除标签页",
+      "delete-all-tabs": "删除所有标签页",
+      "compact": "紧凑",
+      "resizable": "可调整大小",
+      "default": "默认"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4798,7 +4814,8 @@
     "excerpt_description": "你目前看到的只是该笔记的一个片段。按 {{icon}} 按钮即可在新标签页中打开整条笔记。",
     "edit_excerpt": "编辑摘录",
     "copy_tab": "复制此标签页的链接",
-    "copy_share_link_other": "复制指向这 {{count}} 个块的公开链接"
+    "copy_share_link": "复制公开链接",
+    "copy_reference": "复制引用"
   },
   "record_meeting": {
     "note_title": "会议 {{date}}",
@@ -4962,7 +4979,10 @@
   },
   "canvas": {
     "thin_stroke": "细笔触",
-    "thin_stroke_description": "绘制更细的笔触，适合手写。已绘制的笔触保持原有宽度。"
+    "thin_stroke_description": "绘制更细的笔触，适合手写。已绘制的笔触保持原有宽度。",
+    "no_tool": "无工具",
+    "zoom": "缩放",
+    "zoom_to_fit": "适应窗口"
   },
   "sort_selection": {
     "sort_blocks": "排序块",
@@ -4975,6 +4995,47 @@
     "title": "插入媒体",
     "button_insert": "插入媒体",
     "not_a_video": "这不是网页地址。",
-    "insert_failed": "无法嵌入此媒体。请检查地址是否为 YouTube 视频、音频或视频文件，并检查网络连接，然后重试。"
+    "insert_failed": "无法嵌入此媒体。请检查地址是否为 YouTube 视频、音频或视频文件，并检查网络连接，然后重试。",
+    "description": "输入要嵌入的视频或音频地址：YouTube 视频，或任何可通过 HTTP 或 HTTPS 访问的音频或视频文件。"
+  },
+  "block_handle_menu": {
+    "block_count_other": "{{count}} 个块",
+    "insert_above": "在上方插入",
+    "insert_below": "在下方插入",
+    "insert_item_above": "在上方插入项",
+    "insert_item_below": "在下方插入项",
+    "insert_child_item": "插入子项",
+    "cut": "剪切",
+    "copy": "复制",
+    "delete": "删除",
+    "types": {
+      "paragraph": "段落",
+      "heading": "标题 {{level}}",
+      "list_item": "列表项",
+      "todo_item": "待办项",
+      "block_quote": "引用块",
+      "code_block": "代码块",
+      "table": "表格",
+      "image": "图片",
+      "horizontal_line": "水平分割线",
+      "page_break": "分页符",
+      "admonition": "提示块",
+      "collapsible": "可折叠区块",
+      "tabs": "标签页",
+      "columns": "分栏布局",
+      "math": "公式",
+      "footnotes": "脚注",
+      "footnote": "脚注",
+      "included_note": "包含的笔记",
+      "excerpt": "摘录",
+      "attachment": "附件",
+      "drawing": "绘图画布",
+      "mermaid": "Mermaid 图表",
+      "video": "视频",
+      "audio": "音频",
+      "link_preview": "链接预览",
+      "embed": "嵌入",
+      "block": "块"
+    }
   }
 }
