@@ -1319,7 +1319,7 @@
     "unprotecting-finished-successfully": "La desprotección finalizó exitosamente.",
     "protecting-in-progress": "Protección en progreso: {{count}}",
     "unprotecting-in-progress-count": "Desprotección en progreso: {{count}}",
-    "locked_note_title": "Protegida"
+    "locked_note_title": "Protegido"
   },
   "relation_map": {
     "remove_note": "Quitar nota...",
