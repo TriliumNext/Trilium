@@ -7,13 +7,14 @@ const h = vi.hoisted(() => ({
     showMessageBox: vi.fn(async (_options: Record<string, unknown>) => ({ response: 1 })),
     isReady: true,
     encryptionAvailable: true,
-    storageBackend: "gnome_libsecret",
+    keyTag: "v11",
     platform: "linux",
     // Base64 rather than a readable prefix, so "never stored in the clear" is a real assertion.
+    // The key tag leads the ciphertext, as in Chromium's.
     encrypt: vi.fn(async (plainText: string) =>
-        Buffer.from(Buffer.from(plainText, "utf8").toString("base64"), "utf8")),
+        Buffer.from(`${h.keyTag}${Buffer.from(plainText, "utf8").toString("base64")}`, "utf8")),
     decrypt: vi.fn(async (buffer: Buffer) => ({
-        result: Buffer.from(buffer.toString("utf8"), "base64").toString("utf8"),
+        result: Buffer.from(buffer.toString("utf8").slice(3), "base64").toString("utf8"),
         shouldReEncrypt: false
     })),
     errors: [] as string[]
@@ -62,8 +63,7 @@ vi.mock("electron", () => ({
         app: { isReady: () => h.isReady },
         dialog: { showMessageBox: h.showMessageBox },
         safeStorage: {
-            isEncryptionAvailable: () => h.encryptionAvailable,
-            getSelectedStorageBackend: () => h.storageBackend,
+            isAsyncEncryptionAvailable: async () => h.encryptionAvailable,
             encryptStringAsync: (plainText: string) => h.encrypt(plainText),
             decryptStringAsync: (buffer: Buffer) => h.decrypt(buffer)
         },
@@ -89,7 +89,7 @@ describe("backup passphrase storage", () => {
         h.errors.length = 0;
         h.isReady = true;
         h.encryptionAvailable = true;
-        h.storageBackend = "gnome_libsecret";
+        h.keyTag = "v11";
         Object.defineProperty(process, "platform", { value: h.platform, configurable: true });
         h.decrypt.mockClear();
         h.encrypt.mockClear();
@@ -113,8 +113,8 @@ describe("backup passphrase storage", () => {
         expect(await passphrase.getBackupPassphrase()).toBe("second");
     });
 
-    it("reports status without disclosing anything", () => {
-        expect(passphrase.getBackupPassphraseStatus()).toEqual({ available: true, set: false });
+    it("reports status without disclosing anything", async () => {
+        expect(await passphrase.getBackupPassphraseStatus()).toEqual({ available: true, set: false });
     });
 
     it("forgets the passphrase on clear", async () => {
@@ -162,7 +162,7 @@ describe("keyring availability", () => {
         h.fileStore.clear();
         h.isReady = true;
         h.encryptionAvailable = true;
-        h.storageBackend = "gnome_libsecret";
+        h.keyTag = "v11";
         Object.defineProperty(process, "platform", { value: "linux", configurable: true });
     });
 
@@ -170,22 +170,29 @@ describe("keyring availability", () => {
         [ "the app is not ready yet", () => { h.isReady = false; } ],
         [ "the platform offers no encryption", () => { h.encryptionAvailable = false; } ],
         [
-            "Linux falls back to the hardcoded-password backend",
-            () => { h.storageBackend = "basic_text"; }
+            "Linux falls back to the hardcoded key",
+            () => { h.keyTag = "v10"; }
         ]
     ])("treats the keyring as unavailable when %s", async (_label, arrange) => {
         arrange();
 
-        expect(passphrase.isKeyringAvailable()).toBe(false);
+        expect(await passphrase.isKeyringAvailable()).toBe(false);
         expect(await passphrase.storeBackupPassphrase("hunter2")).toBe(false);
         expect(h.fileStore.size).toBe(0);
     });
 
-    it("ignores the backend name away from Linux, where it is not reported", () => {
-        Object.defineProperty(process, "platform", { value: "win32", configurable: true });
-        h.storageBackend = "basic_text";
+    it("accepts the Secret portal's key, which the Flatpak uses", async () => {
+        h.keyTag = "v12";
 
-        expect(passphrase.isKeyringAvailable()).toBe(true);
+        expect(await passphrase.isKeyringAvailable()).toBe(true);
+        expect(await passphrase.storeBackupPassphrase("hunter2")).toBe(true);
+    });
+
+    it("ignores the key tag away from Linux, where v10 is not the hardcoded key", async () => {
+        Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+        h.keyTag = "v10";
+
+        expect(await passphrase.isKeyringAvailable()).toBe(true);
     });
 
     it("refuses an empty passphrase", async () => {
@@ -209,7 +216,7 @@ describe("IPC handlers", () => {
         h.handlers.clear();
         h.isReady = true;
         h.encryptionAvailable = true;
-        h.storageBackend = "gnome_libsecret";
+        h.keyTag = "v11";
         h.showMessageBox.mockClear();
         h.showMessageBox.mockResolvedValue({ response: 1 });
         passphrase.registerBackupPassphraseIpcHandlers();
