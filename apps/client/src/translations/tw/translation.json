@@ -301,7 +301,11 @@
     "image_size_hint": "圖片可於之後調整大小。",
     "missing_note": "找不到 ID 為 {{noteId}} 的筆記。",
     "missing_attachment": "找不到 ID 為{{attachmentId}} 的附件。",
-    "unknown_kind": "此內容需要較新版本的 Trilium。"
+    "unknown_kind": "此內容需要較新版本的 Trilium。",
+    "size_compact": "緊湊",
+    "size_compact_description": "單行：顯示標題以及音訊檔案的操作選項或控制項。",
+    "size_resizable": "可調整大小",
+    "size_resizable_description": "可調整大小至任意尺寸的方框。"
   },
   "info": {
     "modalTitle": "資訊消息",
@@ -637,7 +641,10 @@
     "calendar_slot_duration": "日曆中每個時段的長度，格式為 <code>HH:MM:SS</code>。預設值為 15 分鐘。",
     "calendar_slot_label_interval": "日曆中各時段標示的頻率，格式為 <code>HH:MM:SS</code>。預設值為每小時一次。",
     "calendar_title": "指定事件標題所依據的屬性名稱（而非筆記標題）。該屬性可以是標籤（label）或關係（relation），內容不得包含 <code>#</code> 或 <code>~</code> 。",
-    "calendar_title_template": "行事曆中活動的標題，此標題將套用至每個重複活動。顯示格式為 <code>${title}</code>、<code>${years}</code>（自開始日期起算的完整年數），以及日期 <code>${date}</code> 和 <code>${startDate}</code>，例如每年生日的 <code>${title} (${years})</code>。"
+    "calendar_title_template": "行事曆中活動的標題，此標題將套用至每個重複活動。顯示格式為 <code>${title}</code>、<code>${years}</code>（自開始日期起算的完整年數），以及日期 <code>${date}</code> 和 <code>${startDate}</code>，例如每年生日的 <code>${title} (${years})</code>。",
+    "calendar_displayed_attributes": "在事件上顯示其值的屬性名稱，以逗號分隔。關聯關係會顯示為它所指向的筆記標題。",
+    "calendar_start_date": "指定事件讀取其開始日期的標籤名稱，而非 <code>#startDate</code>。書寫時不包含 <code>#</code>。",
+    "calendar_end_date": "指定事件從該標籤讀取結束日期，而非 <code>#endDate</code>。"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
