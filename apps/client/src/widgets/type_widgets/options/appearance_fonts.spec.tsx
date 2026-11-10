@@ -441,6 +441,25 @@ describe("the font settings", () => {
         expect(box?.step).toBe(slider?.step);
     });
 
+    it("draws the interface specimens at the interface size, not that size again", async () => {
+        mocks.stored = { overrideThemeFonts: true, mainFontSize: "175", treeFontSize: "120", detailFontSize: "130" };
+        open();
+        await act(async () => {});
+
+        // The interface size is applied to the whole page as it changes, so a percentage on top
+        // of it would draw the specimen at 175% of 175%.
+        const [ mainRow, treeRow ] = fontRows();
+        expect(mainRow.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize).toBe("1rem");
+        expect(treeRow.querySelector<HTMLElement>(".font-option-specimen")?.style.fontSize).toBe("120%");
+
+        await openFirstRow();
+        const preview = () => document.querySelector<HTMLElement>(".font-picker-modal .font-preview-text");
+        expect(preview()?.style.fontSize).toBe("1rem");
+
+        await act(async () => pickerTargets()[2].click());
+        expect(preview()?.style.fontSize).toBe("130%");
+    });
+
     it("shows the interface on the components the interface is made of", async () => {
         // The picker opens on the interface font, so this is what it lands on.
         await openPicker();

@@ -68,11 +68,11 @@ span.fancytree-node.fancytree-hide {
     font-family: "boxicons" !important;
     content: "\ea50"; /* lookup code for "chevron-right" in boxicons.css */
     speak: none;
-    font-size: x-large;
+    font-size: 1.5em;
     text-transform: none;
     line-height: 1;
     position: relative;
-    top: 2px;
+    top: .08em;
     margin-inline-end: 5px;
 }
 

@@ -19,7 +19,8 @@
 
         > .breadcrumb {
             flex-grow: 1;
-            --icon-button-size: 23px;
+            /* Resolved against the `.9rem` that `Breadcrumb.css` gives each `.icon-action`: 23px at 16px. */
+            --icon-button-size: 1.6em;
         }
 
         > .actions-row {

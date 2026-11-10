@@ -394,11 +394,19 @@ function FontRow({ target, option: { family, size }, disabled, onOpen }: FontRow
             onAction={disabled ? undefined : onOpen}
         >
             <span className="font-option-preview">
-                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: `${size}%` }}>{name}</span>
+                <span className="font-option-specimen" style={{ fontFamily: cssFontFamily(target, family), fontSize: specimenFontSize(target, size) }}>{name}</span>
                 <span className="tn-card-chevron" />
             </span>
         </OptionCardSection>
     );
+}
+
+/**
+ * The size a specimen is drawn at. The other sizes are percentages of the interface size, which
+ * the page itself is already drawn at once it is saved, so the interface specimen takes `1rem`.
+ */
+function specimenFontSize(target: FontTarget, size: number): string {
+    return target.key === "main" ? "1rem" : `${size}%`;
 }
 
 /** What CSS is given to draw an entry, whose value is not always a family the browser can resolve. */
@@ -653,7 +661,7 @@ function FontPickerModal({ show, onHidden, target, onTargetChange, option: { fam
                             className="font-preview-text"
                             style={{
                                 fontFamily: cssFontFamily(target, family),
-                                fontSize: `${size}%`
+                                fontSize: specimenFontSize(target, size)
                             }}
                         >
                             {Preview ? <Preview /> : PREVIEW_TEXT}

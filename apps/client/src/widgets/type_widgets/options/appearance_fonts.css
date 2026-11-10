@@ -38,13 +38,17 @@
 
 /* Font Picker Modal */
 body.desktop .modal.font-picker-modal {
+    .modal-dialog {
+        --bs-modal-width: 50rem;
+    }
+
     .modal-content-with-sidebar {
         height: 60vh;
     }
 
     /* On the sidebar rather than on the list, which a search matching nothing takes away. */
     .modal-sidebar {
-        width: 280px;
+        width: 17.5rem;
     }
 
     /* The title is hidden beside a sidebar (see `style.css`) and grows to fill the header, which
