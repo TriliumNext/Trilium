@@ -145,6 +145,30 @@ describe("a JPEG whose header cannot be read", () => {
     });
 });
 
+describe("a PNG with bytes past its IEND chunk", () => {
+    it("is compressed from the image its chunks end at (#12555)", async () => {
+        // An editor that writes a cropped image over the original file without truncating it
+        // leaves the tail of the original, IEND included, after the new IEND.
+        const photo = await Jimp.fromBuffer(Buffer.from(truecolorPng));
+        const cropped = new Uint8Array(await photo.crop({ x: 0, y: 0, w: 100, h: 75 }).getBuffer("image/png"));
+        expect(cropped.byteLength).toBeLessThan(truecolorPng.byteLength);
+        const malformed = new Uint8Array(truecolorPng);
+        malformed.set(cropped);
+
+        const outcome = await compressImageBytes(malformed, request());
+
+        if (!outcome.compressed) {
+            throw new Error("expected the PNG to be optimized");
+        }
+        const decoded = await Jimp.fromBuffer(Buffer.from(outcome.buffer));
+        expect([ decoded.bitmap.width, decoded.bitmap.height ]).toEqual([ 100, 75 ]);
+
+        // A PNG cut short before IEND reaches the decoder unchanged, and is still rejected there.
+        await expect(compressImageBytes(cropped.subarray(0, cropped.byteLength - 12), request()))
+            .rejects.toThrow();
+    });
+});
+
 describe("detectSvg", () => {
     it("rejects a buffer holding nothing but whitespace, or nothing at all", () => {
         expect(detectSvg(new TextEncoder().encode(" \t\r\n"))).toBeNull();
