@@ -88,8 +88,9 @@ export function insertDateTime(view: VanillaCodeMirror) {
 export function showIncludeNoteDialog(view: VanillaCodeMirror) {
     void appContext.triggerCommand("showContentEmbedDialog", {
         editorApi: {
-            addContentEmbed(noteId: string, boxSize?: string) {
-                const attributes = `data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"`;
+            addContentEmbed(noteId: string, boxSize?: string, options?: { hideTitle?: boolean }) {
+                const attributes = `data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"`
+                    + (options?.hideTitle ? ' data-hide-title="true"' : "");
                 insertText(view, `<figure class="include-note" ${attributes}></figure>\n`);
                 view.focus();
             },

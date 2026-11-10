@@ -1,4 +1,4 @@
-import { customFontFamily, customFontNoteId, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, type OptionMap } from "@triliumnext/commons";
+import { customFontFamily, customFontNoteId, MONOSPACE_FONT_FAMILY, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, type OptionMap } from "@triliumnext/commons";
 import type { Request, Response } from "../../http_interface";
 
 import optionService from "../../services/options.js";
@@ -15,8 +15,8 @@ function getFontCss(req: Request, res: Response) {
 
     const optionsMap = optionService.getOptionMap();
 
-    // using body to be more specific than themes' :root
-    let style = "body {";
+    // `html:root` outranks the themes' `:root` and `html`, and `--main-font-size` must reach `<html>`.
+    let style = "html:root {";
     style += getFontFamily(optionsMap);
     style += getFontSize(optionsMap);
     style += "}";
@@ -73,6 +73,10 @@ function getFontFamily({ mainFontFamily, treeFontFamily, detailFontFamily, monos
  * left as it stands rather than built into a declaration.
  */
 function resolveFamily(optionValue: string) {
+    if (optionValue === "monospace") {
+        return MONOSPACE_FONT_FAMILY;
+    }
+
     const noteId = customFontNoteId(optionValue);
     return noteId ? `"${customFontFamily(noteId)}"` : optionValue;
 }

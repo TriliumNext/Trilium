@@ -15,6 +15,15 @@
     &:active {
         cursor: grabbing;
     }
+
+    &.block-drag-handle--insert .ck-icon {
+        scale: 0.6;
+
+        & path {
+            stroke: currentColor;
+            stroke-width: 0.8;
+        }
+    }
 }
 
 .ck-editor__editable .block-drag-handle-target {

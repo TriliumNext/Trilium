@@ -174,6 +174,16 @@ describe("inspectImage", () => {
             expect(inspectImage(png(8, 8, { colorType }))).toMatchObject(expected);
         });
 
+        it("states no channel count for a PNG colour type the format does not define", () => {
+            expect(inspectImage(png(8, 8, { colorType: 5 }))).toMatchObject({ channels: null, hasAlpha: false, indexed: false });
+        });
+
+        it("walks past fill bytes and the markers that carry no length", () => {
+            expect(inspectImage(jpeg(640, 480, { before: [ 0xff ] }))).toMatchObject({ width: 640, height: 480 });
+            expect(inspectImage(jpeg(640, 480, { before: [ 0xff, 0xd8, 0xff, 0x01, 0xff, 0xd3 ] })))
+                .toMatchObject({ width: 640, height: 480 });
+        });
+
         it("reads how many bits a channel is given, a deep PNG included", () => {
             expect(inspectImage(png(8, 8, { depth: 8 })).bitDepth).toBe(8);
             expect(inspectImage(png(8, 8, { depth: 16 })).bitDepth).toBe(16);
@@ -188,7 +198,8 @@ describe("inspectImage", () => {
         it.each([
             [ "a PNG cut off before its IHDR", () => Uint8Array.from([ ...png(10, 10) ].slice(0, 20)) ],
             [ "a JPEG with no frame header", () => Uint8Array.from([ 0xff, 0xd8, ...app1(16) ]) ],
-            [ "a JPEG whose segments do not line up", () => Uint8Array.from([ 0xff, 0xd8, 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0, 0, 0 ]) ]
+            [ "a JPEG whose segments do not line up", () => Uint8Array.from([ 0xff, 0xd8, ...app1(2), 0x12, 0x34, 0x56, 0x78, 0, 0 ]) ],
+            [ "a JPEG whose frame header is cut short", () => Uint8Array.from([ 0xff, 0xd8, ...app1(2), 0xff, 0xc0, 0x00, 0x04, 0, 0 ]) ]
         ])("answers no size for %s rather than guessing one", (_label, build) => {
             expect(inspectImage(build())).toMatchObject({ width: null, height: null });
         });

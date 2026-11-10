@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import attributes from "./attributes.js";
 import getSharedBootstrapItems, { getIconConfig } from "./bootstrap_utils.js";
 import * as cls from "./context.js";
+import * as iconPacks from "./icon_packs.js";
 import notes from "./notes.js";
 import options from "./options.js";
 import { getPlatform } from "./platform.js";
@@ -31,7 +32,10 @@ function fullPayload(theme: string) {
 }
 
 describe("bootstrap_utils (real DB)", () => {
-    afterEach(() => cls.reset());
+    afterEach(() => {
+        cls.reset();
+        vi.restoreAllMocks();
+    });
 
     it("returns the minimal setup payload before the DB is initialized", () => {
         const items = getSharedBootstrapItems(ASSET_PATH, false);
@@ -178,5 +182,17 @@ describe("bootstrap_utils (real DB)", () => {
         const config = getIconConfig(ASSET_PATH);
         expect(config.iconRegistry).toBeTruthy();
         expect(typeof config.iconPackCss).toBe("string");
+    });
+
+    it("getIconConfig serves a built-in pack's font from the assets and a user pack's from its attachment", () => {
+        const [ builtin ] = iconPacks.getIconPacks();
+        vi.spyOn(iconPacks, "getIconPacks").mockReturnValue([
+            builtin,
+            { ...builtin, prefix: "userpack", builtin: false, fontAttachmentId: "userFontAttachment" }
+        ]);
+
+        const { iconPackCss } = getIconConfig(ASSET_PATH);
+        expect(iconPackCss).toContain(`url('${ASSET_PATH}/fonts/${builtin.fontAttachmentId}.woff2')`);
+        expect(iconPackCss).toContain("url('api/attachments/download/userFontAttachment')");
     });
 });

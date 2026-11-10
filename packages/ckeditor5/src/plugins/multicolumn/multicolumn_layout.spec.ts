@@ -160,9 +160,10 @@ describe("multicolumn layout styles", () => {
             const style = getComputedStyle(widget);
             return `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
         };
-        document.documentElement.style.setProperty("--link-color", "rgb(12, 34, 56)");
+        document.documentElement.style.setProperty("--input-focus-outline-color",
+            "rgb(12, 34, 56)");
         onTestFinished(() => {
-            document.documentElement.style.removeProperty("--link-color");
+            document.documentElement.style.removeProperty("--input-focus-outline-color");
         });
 
         expect(outline()).toBe("solid 3px rgba(0, 0, 0, 0)");
@@ -282,6 +283,41 @@ describe("multicolumn layout styles", () => {
         const container = renderContent(html, 480);
         const saved = expectStacked(container.querySelector(".trilium-multicolumn-layout"));
         expect(saved).toEqual(["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"]);
+    });
+
+    it("borders the widget and darkens alternate rows on the dark theme only on mobile", async () => {
+        const html = layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]);
+        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        editable.style.width = "480px";
+        editor.setData(html);
+        const widget = editable.querySelector(".trilium-multicolumn-layout") as HTMLElement;
+        const handle = widget.querySelector(":scope > .ck-widget__selection-handle");
+        const saved = renderContent(html, 480).querySelector(".trilium-multicolumn-layout");
+        const alternateRow = () => getComputedStyle(columnsOf(widget)[1]).backgroundColor;
+        document.documentElement.style.setProperty("--main-border-color", "rgb(12, 34, 56)");
+        onTestFinished(() => {
+            document.documentElement.style.removeProperty("--main-border-color");
+            document.body.classList.remove("mobile", "dark-theme");
+        });
+
+        const lightRow = alternateRow();
+        document.body.classList.add("dark-theme");
+        expect(handle).not.toBeNull();
+        expect(getComputedStyle(widget).borderTopWidth).toBe("0px");
+        expect(columnsOf(widget).map(cornersOf)).toEqual(["0px 0px 0px 0px", "0px 0px 0px 0px"]);
+        expect(alternateRow()).toBe(lightRow);
+
+        document.body.classList.add("mobile");
+        expect(getComputedStyle(widget).border).toBe("2px solid rgb(12, 34, 56)");
+        expect(saved && getComputedStyle(saved).borderTopWidth).toBe("0px");
+        expect(handle?.getBoundingClientRect().bottom)
+            .toBeCloseTo(widget.getBoundingClientRect().top, 1);
+        expect(columnsOf(widget).map(cornersOf)).toEqual(["0px 0px 0px 0px", "0px 0px 6px 6px"]);
+        expect(alternateRow()).toBe("rgba(0, 0, 0, 0.22)");
+
+        document.body.classList.remove("dark-theme");
+        expect(alternateRow()).toBe(lightRow);
     });
 
     it("stacks a nested layout by its own width", () => {

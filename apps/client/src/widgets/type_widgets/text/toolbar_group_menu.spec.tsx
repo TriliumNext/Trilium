@@ -119,6 +119,20 @@ describe("createToolbarGroupMenuHost", () => {
         expect(rows[1]?.classList).toContain("dropdown-item");
     });
 
+    it("marks only the icon of an entry that takes something away", () => {
+        const items: ToolbarGroupMenuItem[] = [
+            { kind: "entry", label: "Unlink", icon: ICON, isEnabled: true, isDestructive: true },
+            { kind: "entry", label: "Link", icon: ICON, isEnabled: true }
+        ];
+        host.show({ anchor, items, setElement: vi.fn(), onClose: vi.fn() });
+
+        const unlink = rowTitled("Unlink");
+        expect(unlink.classList).not.toContain("destructive-action-icon");
+        expect(unlink.querySelector(".tn-svg-icon")?.classList)
+            .toContain("destructive-action-icon");
+        expect(rowTitled("Link").querySelector(".destructive-action-icon")).toBeNull();
+    });
+
     it("checks the entry that is on, and marks only those that can be on as checkable", () => {
         const items: ToolbarGroupMenuItem[] = [
             { kind: "entry", label: "Paragraph", icon: ICON, isEnabled: true, isOn: false },
@@ -380,6 +394,28 @@ describe("createToolbarGroupMenuHost", () => {
         anchor.click();
         expect(toggled.onClose).not.toHaveBeenCalled();
         document.body.append(anchor);
+        island.remove();
+    });
+
+    it("opens a context menu at a point, unlabeled, closed by a tap on the phone toolbar", () => {
+        const row = document.createElement("div");
+        row.className = "classic-toolbar-widget";
+        const island = document.createElement("div");
+        island.className = "classic-toolbar-island";
+        island.append(row);
+        document.body.append(island);
+        const onClose = vi.fn<ToolbarGroupMenuRequest["onClose"]>();
+
+        const items: ToolbarGroupMenuItem[] = [
+            { kind: "entry", label: "Unlink", icon: ICON, isEnabled: true }
+        ];
+        host.show({ anchor: { x: 40, y: 60 }, items, setElement: vi.fn(), onClose });
+        const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+        expect(menu?.textContent).toBe("Unlink");
+        expect(menu?.hasAttribute("aria-labelledby")).toBe(false);
+
+        row.click();
+        expect(onClose).toHaveBeenCalledExactlyOnceWith(false);
         island.remove();
     });
 

@@ -1,4 +1,7 @@
-import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
+import {
+    _getModelData as getModelData, _setModelData as setModelData, Bold, ClassicEditor, Essentials,
+    Paragraph
+} from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -93,6 +96,19 @@ describe("footnote autoformatting", () => {
 
         expect(countOf(ELEMENTS.footnoteItem)).toBe(0);
         expect(model()).toContain("[^1]");
+    });
+
+    it("ignores a leftover pattern when the next character has other formatting", async () => {
+        editor = await createTestEditor([Essentials, Paragraph, Bold, Footnotes]);
+        setModelData(editor.model, "<paragraph>foo[]</paragraph>");
+        // With no footnote yet, `[^2]` stays as typed.
+        type(editor, "[^2]");
+
+        editor.execute("bold");
+        type(editor, "x");
+
+        expect(model()).toBe("<paragraph>foo[^2]<$text bold=\"true\">x</$text></paragraph>");
+        expect(countOf(ELEMENTS.footnoteItem)).toBe(0);
     });
 
     it("does nothing when the insert command is disabled", () => {

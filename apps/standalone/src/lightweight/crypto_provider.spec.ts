@@ -5,7 +5,7 @@ import {
     createHmac as nodeCreateHmac,
     scryptSync as nodeScrypt
 } from "node:crypto";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import BrowserCryptoProvider from "./crypto_provider.js";
 
@@ -439,6 +439,41 @@ describe("BrowserCryptoProvider base64", () => {
             expect(provider.base64DecodeInto("abcd", target)).toBe(1);
             expect(target[0]).toBe(4);
         });
+    });
+});
+
+describe("BrowserCryptoProvider with __TRILIUM_FORCE_B64_FALLBACK__ set", () => {
+    afterEach(() => {
+        delete (globalThis as Record<string, unknown>).__TRILIUM_FORCE_B64_FALLBACK__;
+        vi.resetModules();
+    });
+
+    it("skips the native base64 methods even where the runtime has them", async () => {
+        (globalThis as Record<string, unknown>).__TRILIUM_FORCE_B64_FALLBACK__ = true;
+        vi.resetModules();
+        const { default: FallbackProvider } = await import("./crypto_provider.js");
+        const fallback = new FallbackProvider();
+
+        const proto = Uint8Array.prototype as unknown as Record<string, unknown>;
+        const ctor = Uint8Array as unknown as Record<string, unknown>;
+        const saved = { toBase64: proto.toBase64, setFromBase64: proto.setFromBase64, fromBase64: ctor.fromBase64 };
+        const native = vi.fn(() => { throw new Error("native path taken"); });
+        proto.toBase64 = native;
+        proto.setFromBase64 = native;
+        ctor.fromBase64 = native;
+        try {
+            const bytes = new TextEncoder().encode("foobar");
+            expect(fallback.base64Encode(bytes)).toBe("Zm9vYmFy");
+            expect(Array.from(fallback.base64Decode("Zm9vYmFy"))).toEqual(Array.from(bytes));
+            const target = new Uint8Array(6);
+            expect(fallback.base64DecodeInto("Zm9vYmFy", target)).toBe(6);
+            expect(Array.from(target)).toEqual(Array.from(bytes));
+            expect(native).not.toHaveBeenCalled();
+        } finally {
+            proto.toBase64 = saved.toBase64;
+            proto.setFromBase64 = saved.setFromBase64;
+            ctor.fromBase64 = saved.fromBase64;
+        }
     });
 });
 

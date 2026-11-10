@@ -1,5 +1,6 @@
 import {
-    ClassicEditor, Essentials, Link, Paragraph, WidgetToolbarRepository, _setModelData as setModelData
+    ClassicEditor, Essentials, Link, LinkUI, Paragraph, WidgetToolbarRepository,
+    _setModelData as setModelData
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -99,6 +100,10 @@ describe("LinkEmbedToolbar", () => {
         expect(requires).toContain(LinkEmbed);
     });
 
+    it("declares InternalLinkPlugin, whose editLink it shows, as a required plugin", () => {
+        expect(LinkEmbedToolbar.requires).toContain(InternalLinkPlugin);
+    });
+
     it("registers the linkEmbed toolbar in WidgetToolbarRepository", () => {
         const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
             _toolbarDefinitions: Map<string, unknown>;
@@ -106,11 +111,11 @@ describe("LinkEmbedToolbar", () => {
         expect(repository._toolbarDefinitions.has("linkEmbed")).toBe(true);
     });
 
-    it("registered toolbar contains the Edit link and Display items", () => {
-        const def = getToolbarDef(editor);
-        expect(def).toBeDefined();
-        expect(def?.itemsConfig).toContain("linkEmbedEditLink");
-        expect(def?.itemsConfig).toContain("linkEmbedDisplayDropdown");
+    it("registered toolbar holds the actions, Display and the menu, which holds Unlink", () => {
+        expect(getToolbarDef(editor)?.itemsConfig).toStrictEqual([
+            "linkEmbedLink", "linkEmbedCopyUrl", "editLink", "|",
+            "linkEmbedDisplayDropdown", "linkMenu"
+        ]);
     });
 
     it("registered toolbar has the correct balloonClassName", () => {
@@ -392,7 +397,7 @@ describe("LinkEmbedToolbar", () => {
             writer.setSelection(embed, "on");
         });
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
-        // embedType "opengraph" maps to mode "card". No dictionary is configured, so the label
+        // embedType "opengraph" maps to mode "cardLink". No dictionary is configured, so the label
         // renders its English message id.
         expect(dropdown.buttonView.label).toBe("Card");
     });
@@ -428,7 +433,7 @@ describe("LinkEmbedToolbar", () => {
         }
 
         // No dictionary is configured, so each label renders its English message id.
-        expect(labels).toEqual([ "Inline", "Card", "Embed", "Plain link" ]);
+        expect(labels).toEqual([ "Text", "Icon & text", "Card", "Embed" ]);
     });
 
     it("list item isOn is true for the matching mode when a card linkEmbed is selected", () => {
@@ -448,17 +453,17 @@ describe("LinkEmbedToolbar", () => {
         });
 
         const command = editor.commands.get(CHANGE_LINK_DISPLAY_COMMAND) as { value: string | null };
-        // embedType "opengraph" → mode "card"
-        expect(command.value).toBe("card");
+        // embedType "opengraph" → mode "cardLink"
+        expect(command.value).toBe("cardLink");
 
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
         const listView = openDropdown(dropdown);
 
-        // Find the "card" item and verify it is on.
+        // Find the "cardLink" item and verify it is on.
         let cardButton: ListButtonView | null = null;
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "card") {
+            if (button._displayMode === "cardLink") {
                 cardButton = button;
                 break;
             }
@@ -488,7 +493,7 @@ describe("LinkEmbedToolbar", () => {
 
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode !== "card") {
+            if (button._displayMode !== "cardLink") {
                 expect(button.isOn).toBe(false);
             }
         }
@@ -506,7 +511,7 @@ describe("LinkEmbedToolbar", () => {
         let embedButton: ListButtonView | null = null;
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "embed") {
+            if (button._displayMode === "embedLink") {
                 embedButton = button;
                 break;
             }
@@ -539,16 +544,16 @@ describe("LinkEmbedToolbar", () => {
         const dropdown = editor.ui.componentFactory.create("linkEmbedDisplayDropdown") as unknown as DropdownView;
         const listView = openDropdown(dropdown);
 
-        // Find the "inline" button and fire execute.
+        // Find the "iconAndTextLink" button and fire execute.
         for (let i = 0; i < listView.items.length; i++) {
             const button = listView.items.get(i).children.get(0);
-            if (button._displayMode === "inline") {
+            if (button._displayMode === "iconAndTextLink") {
                 button.fire("execute");
                 break;
             }
         }
 
-        expect(spy).toHaveBeenCalledWith(CHANGE_LINK_DISPLAY_COMMAND, { value: "inline" });
+        expect(spy).toHaveBeenCalledWith(CHANGE_LINK_DISPLAY_COMMAND, { value: "iconAndTextLink" });
     });
 
     it("focuses the editing view after dropdown execute", () => {
@@ -603,10 +608,10 @@ describe("LinkEmbedToolbar", () => {
     });
 
     // -----------------------------------------------------------------------
-    // The balloon's other items: open-link, copy-URL and unlink
+    // The balloon's other items: open-link, copy-URL and edit-link
     // -----------------------------------------------------------------------
 
-    describe("link, copy and unlink buttons", () => {
+    describe("link, copy and edit buttons", () => {
         const URL = "https://example.com/page";
         let copy: ReturnType<typeof vi.fn>;
 
@@ -630,19 +635,20 @@ describe("LinkEmbedToolbar", () => {
             return editor.ui.componentFactory.create(name) as unknown as ToolbarButton;
         }
 
-        it("linkEmbedLink is an <a target=_blank> bound to the selected widget's URL", () => {
+        it("linkEmbedLink is an <a target=_blank> named Open link, to the widget's URL", () => {
             const button = createButton("linkEmbedLink");
             button.render();
 
             // Nothing selected: the command exposes no URL, so the button is inert.
             expect(button.isEnabled).toBe(false);
-            expect(button.label).toBeUndefined();
+            expect([button.label, button.tooltip])
+                .toStrictEqual(["Open link", "Open link in new tab"]);
             expect(button.href).toBeUndefined();
 
             selectLinkMention();
 
             expect(button.isEnabled).toBe(true);
-            expect(button.label).toBe(URL);
+            expect(button.label).toBe("Open link");
             expect(button.href).toBe(URL);
 
             // Rendered as a real anchor so a click opens the page in a new tab, reusing
@@ -654,9 +660,30 @@ describe("LinkEmbedToolbar", () => {
             expect(button.element?.classList.contains("ck-link-toolbar__preview")).toBe(true);
         });
 
+        it("names the linkPreview button of a link to a web page Open link", async () => {
+            const register = vi.spyOn(LinkUI.prototype, "registerLinksListProvider");
+            editor = await createTestEditor(
+                [Essentials, Paragraph, Link, LinkEmbed, LinkEmbedToolbar]);
+            // The provider names the button and offers no list of links in the link form.
+            expect(register.mock.calls[0]?.[0].getListItems()).toStrictEqual([]);
+            register.mockRestore();
+            const button = createButton("linkPreview");
+
+            setModelData(editor.model,
+                `<paragraph><$text linkHref="${URL}">fo[]o</$text></paragraph>`);
+            expect([button.label, button.tooltip])
+                .toStrictEqual(["Open link", "Open link in new tab"]);
+            expect(button.href).toBe(URL);
+
+            // Any other link keeps the label `LinkUI` gives it, its address.
+            setModelData(editor.model,
+                "<paragraph><$text linkHref=\"mailto:a@b.c\">fo[]o</$text></paragraph>");
+            expect(button.label).toBe("mailto:a@b.c");
+        });
+
         it("linkEmbedCopyUrl copies the selected widget's URL through the host clipboard", () => {
             const button = createButton("linkEmbedCopyUrl");
-            expect(button.label).toBe("Copy URL");
+            expect(button.label).toBe("Copy address (URL)");
 
             // With nothing selected there is no URL, so nothing is copied.
             button.fire("execute");
@@ -667,28 +694,13 @@ describe("LinkEmbedToolbar", () => {
             expect(copy).toHaveBeenCalledWith(URL);
         });
 
-        it("linkEmbedUnlink is enabled only for a selected widget and unlinks it", () => {
-            const button = createButton("linkEmbedUnlink");
-            expect(button.isEnabled).toBe(false);
-
-            selectLinkMention();
-            expect(button.isEnabled).toBe(true);
-
-            button.fire("execute");
-
-            // The widget is gone, leaving the bare URL as plain text.
-            expect(editor.getData()).toBe(`<p>${URL}</p>`);
-        });
-
-        it("linkEmbedEditLink opens the link dialog on the selected widget", async () => {
-            expect(createButton("linkEmbedEditLink").isEnabled).toBe(false);
-
+        it("editLink opens the link dialog on the selected widget", async () => {
             const showDialog = vi.fn(() => null);
             editor = await createTestEditor(
-                [Essentials, Paragraph, LinkEmbed, LinkEmbedToolbar, InternalLinkPlugin],
+                [Essentials, Paragraph, Link, LinkEmbed, LinkEmbedToolbar],
                 { internalLink: { showDialog } }
             );
-            const button = createButton("linkEmbedEditLink");
+            const button = createButton("editLink");
             expect(button.label).toBe("Edit link");
 
             selectLinkMention();
@@ -702,6 +714,7 @@ describe("LinkEmbedToolbar", () => {
 type ToolbarButton = {
     isEnabled: boolean;
     label?: string;
+    tooltip?: string | boolean;
     href?: string;
     element?: HTMLElement | null;
     render(): void;

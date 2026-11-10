@@ -152,10 +152,11 @@ function buildNoteUsage(noteId: string, revisionOptions: EraseExcessRevisionsOpt
 
         return {
             noteId: childId,
-            /* v8 ignore next 3 -- the totals cover every note of the forest, so the fallbacks
+            /* v8 ignore start -- the totals cover every note of the forest, so the fallbacks
                would only fire on an internally inconsistent forest */
             subtreeSize: total?.size ?? 0,
             subtreeNoteCount: total?.noteCount ?? 0
+            /* v8 ignore stop */
         };
     });
 
@@ -178,6 +179,7 @@ function buildNoteUsage(noteId: string, revisionOptions: EraseExcessRevisionsOpt
             attachmentId: attachment.attachmentId,
             title: attachment.getTitleOrProtected(),
             role: attachment.role,
+            /* v8 ignore next -- every attachment blob is measured into `blob_usage` */
             size: attachmentSizes[attachment.attachmentId] ?? 0
         } ];
     });
@@ -762,8 +764,9 @@ function buildForestFromBecca(): CanonicalForest {
             }
 
             return note.getChildBranches()
-                /* v8 ignore next -- getChildBranches' nulls only appear on a corrupted cache */
+                /* v8 ignore start -- getChildBranches' nulls only appear on a corrupted cache */
                 .flatMap((branch) => branch ? [ branch ] : [])
+                /* v8 ignore stop */
                 // Sorted here rather than trusting cache order, so the canonical choice between
                 // equally deep clones is the same on every instance of a sync cluster.
                 .sort((a, b) => a.notePosition - b.notePosition || a.noteId.localeCompare(b.noteId))

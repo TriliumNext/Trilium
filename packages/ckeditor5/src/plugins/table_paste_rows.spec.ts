@@ -81,6 +81,22 @@ describe("TablePasteRows", () => {
         expect(selectedCellTexts(editor)).toEqual(["plain", ""]);
     });
 
+    it("inserts rows only once when the paste inserts content more than once", () => {
+        setModelData(editor.model, modelTable([ [ "1[]1", "12" ] ]));
+        let nested = false;
+        editor.model.on("insertContent", () => {
+            if (nested) {
+                return;
+            }
+            nested = true;
+            editor.model.insertContent(editor.model.change((writer) => writer.createText("more")));
+        }, { priority: "low" });
+
+        editor.execute(BELOW, { html: "", text: "plain" });
+
+        expect(tableData(editor)).toBe(modelTable([ [ "11", "12" ], [ "plainmore", "" ] ]));
+    });
+
     it("keeps the new rows out of a block of rows joined by a merged cell", () => {
         const block = (...rows: string[][]) => modelTable([
             [{ contents: "a", rowspan: 2 }, "b"],
@@ -110,6 +126,15 @@ describe("TablePasteRows", () => {
         editor.execute("undo");
         expect(tableData(editor)).toBe(modelTable([["11", "12"]]));
     });
+
+    it("changes nothing when run in the change block that moves the selection out", () => {
+        const content = `${modelTable([["11", "12"]])}<paragraph>foo</paragraph>`;
+        setModelData(editor.model, content.replace("11", "1[]1"));
+
+        executeLeavingTable(editor, BELOW, { html: htmlTable([["a", "b"]]), text: "" });
+
+        expect(getModelData(editor.model)).toBe(content.replace("foo", "[]foo"));
+    });
 });
 
 function htmlTable(rows: string[][]): string {
@@ -133,4 +158,19 @@ function selectedCellTexts(editor: ClassicEditor): string[] {
     return cells.map((cell) => Array.from(editor.model.createRangeIn(cell).getItems())
         .map((item) => (item.is("$textProxy") ? item.data : ""))
         .join(""));
+}
+
+/**
+ * Runs `command` in the change block that moves the selection into the paragraph after the table,
+ * where the command still has the `isEnabled` of the selection in the table.
+ */
+function executeLeavingTable(editor: ClassicEditor, command: string, ...args: unknown[]) {
+    const paragraph = editor.model.document.getRoot()?.getChild(1);
+    if (!paragraph?.is("element", "paragraph")) {
+        throw new Error("No paragraph follows the table.");
+    }
+    editor.model.change((writer) => {
+        writer.setSelection(paragraph, 0);
+        editor.execute(command, ...args);
+    });
 }

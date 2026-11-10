@@ -12,6 +12,7 @@ import syncOptions from "../../services/sync_options";
 import syncUpdateService from "../../services/sync_update";
 import ws from "../../services/ws";
 import { CoreApiTester } from "../../test/api_tester";
+import { cleanUpPartialRequests } from "./sync";
 
 /**
  * Drives the shared core sync routes through {@link CoreApiTester} (no Express),
@@ -271,6 +272,29 @@ describe("Sync API (core)", () => {
             });
         });
 
+        it("keeps the cursor before a change whose entity row is missing", async () => {
+            const sql = getSql();
+            const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+            sql.execute(
+                `INSERT INTO entity_changes (id, entityName, entityId, hash, isErased, changeId, componentId, instanceId, isSynced, utcDateChanged)
+                 VALUES (?, 'options', 'missingRowOpt', 'h', 0, 'missingRowChg', 'cmp', 'OTHER', 1, '2020-01-01T00:00:00.000Z')`,
+                [ maxId + 1 ]
+            );
+            vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            const res = await api.get<{ entityChanges: unknown[]; lastEntityChangeId: number; outstandingPullCount: number }>(
+                "/api/sync/changed",
+                { query: { instanceId: "CLIENTX", lastEntityChangeId: String(maxId) } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.entityChanges).toEqual([]);
+            expect(res.body.lastEntityChangeId).toBe(maxId);
+            expect(res.body.outstandingPullCount).toBe(1);
+
+            sql.execute("DELETE FROM entity_changes WHERE id = ?", [ maxId + 1 ]);
+        });
+
         it("stubs blob content larger than maxBlobContentSize while leaving the hash and other rows intact", () => {
             const sql = getSql();
             const maxId = sql.getValue<number>("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
@@ -434,6 +458,45 @@ describe("Sync API (core)", () => {
             });
             expect(last.status).toBe(204);
             expect(update).toHaveBeenCalledWith([{ a: 1 }], "y");
+        });
+
+        it("keeps a push that is still receiving pages after 20 minutes", async () => {
+            const update = vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {});
+            const payload = JSON.stringify({ entities: [ { a: 1 } ], instanceId: "slow" });
+            const pageCount = 6;
+            const pageSize = Math.ceil(payload.length / pageCount);
+            let now = Date.now();
+            vi.spyOn(Date, "now").mockImplementation(() => now);
+
+            for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                const res = await api.put<{ message: string }>("/api/sync/update", {
+                    headers: { pageCount: String(pageCount), pageIndex: String(pageIndex), requestId: "slow" },
+                    body: payload.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+                });
+                expect(res.status, res.body?.message).toBe(204);
+
+                now += 5 * 60 * 1000;
+                cleanUpPartialRequests();
+            }
+
+            expect(update).toHaveBeenCalledWith([ { a: 1 } ], "slow");
+        });
+
+        it("drops a push that received no page for 20 minutes", async () => {
+            let now = Date.now();
+            vi.spyOn(Date, "now").mockImplementation(() => now);
+            const page = (pageIndex: number) => api.put<{ message: string }>("/api/sync/update", {
+                headers: { pageCount: "2", pageIndex: String(pageIndex), requestId: "abandoned" },
+                body: "chunk"
+            });
+
+            expect((await page(0)).status).toBe(204);
+            now += 21 * 60 * 1000;
+            cleanUpPartialRequests();
+
+            const res = await page(1);
+            expect(res.status).toBe(500);
+            expect(res.body.message).toContain("does not have expected record");
         });
 
         it("throws when a continuation page has no initialized record", async () => {

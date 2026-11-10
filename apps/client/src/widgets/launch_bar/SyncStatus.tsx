@@ -115,41 +115,53 @@ function useSyncStatus() {
     const [ pullProgress, setPullProgress ] = useState<SyncPullProgress>();
 
     useEffect(() => {
-        let lastSyncedPush: number;
+        let connection: "unknown" | "in-progress" | "connected" | "disconnected" = "unknown";
+        let lastSyncedPush: number | undefined;
+        let maxKnownSyncId = 0;
 
         function onMessage(message: WebSocketMessage) {
-            // First, read last synced push.
             if ("lastSyncedPush" in message) {
                 lastSyncedPush = message.lastSyncedPush;
-            } else if ("data" in message && message.data && "lastSyncedPush" in message.data && lastSyncedPush !== undefined) {
-                lastSyncedPush = message.data.lastSyncedPush;
             }
-
-            // Determine if all changes were pushed.
-            const allChangesPushed = lastSyncedPush === ws.getMaxKnownEntityChangeSyncId();
 
             switch (message.type) {
                 case "sync-pull-in-progress":
-                    setSyncState("in-progress");
+                    connection = "in-progress";
                     if (message.progress && message.progress.total > 0) {
                         setPullProgress(message.progress);
                     }
                     break;
                 case "sync-push-in-progress":
-                    setSyncState("in-progress");
+                    connection = "in-progress";
                     setPullProgress(undefined);
                     break;
                 case "sync-finished":
-                    setSyncState(allChangesPushed ? "connected-no-changes" : "connected-with-changes");
+                    connection = "connected";
                     setPullProgress(undefined);
                     break;
                 case "sync-failed":
-                    setSyncState(allChangesPushed ? "disconnected-no-changes" : "disconnected-with-changes");
+                    connection = "disconnected";
                     setPullProgress(undefined);
                     break;
                 case "frontend-update":
                     lastSyncedPush = message.data.lastSyncedPush;
+                    // Subscribers run before `ws` records these changes, so the message's own
+                    // synced changes are counted here.
+                    for (const entityChange of message.data.entityChanges) {
+                        if (entityChange.isSynced && entityChange.id) {
+                            maxKnownSyncId = Math.max(maxKnownSyncId, entityChange.id);
+                        }
+                    }
                     break;
+            }
+
+            maxKnownSyncId = Math.max(maxKnownSyncId, ws.getMaxKnownEntityChangeSyncId());
+
+            if (connection === "unknown" || connection === "in-progress") {
+                setSyncState(connection);
+            } else {
+                const allChangesPushed = lastSyncedPush === maxKnownSyncId;
+                setSyncState(`${connection}-${allChangesPushed ? "no-changes" : "with-changes"}`);
             }
         }
 

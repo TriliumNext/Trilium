@@ -5,6 +5,7 @@ import {
     applyLinkEmbeds,
     detectEmbedType,
     fetchMetadata,
+    fetchPageDetails,
     renderEmbedPreview,
     renderMentionPreview,
     safeHostname
@@ -45,6 +46,11 @@ describe("detectEmbedType", () => {
     it("returns opengraph for non-YouTube URLs", () => {
         expect(detectEmbedType("https://example.com")).toBe("opengraph");
         expect(detectEmbedType("https://github.com/TriliumNext/Notes")).toBe("opengraph");
+    });
+
+    it("detects a video or audio file by the extension of its path", () => {
+        expect(detectEmbedType("http://nas.local/movies/a.mkv?t=1")).toBe("video");
+        expect(detectEmbedType("https://example.com/podcast/episode.mp3")).toBe("audio");
     });
 });
 
@@ -96,9 +102,24 @@ describe("fetchMetadata", () => {
             url: "https://youtu.be/abcdefghijk",
             embedType: "youtube",
             title: "youtu.be",
-            // Nothing was actually read about the page, so callers can keep a plain link instead.
+            // Nothing was actually read about the page, so callers can keep a text link instead.
             unresolved: true
         });
+    });
+
+    it("plays a media file the server cannot read, named by its extension, as one", async () => {
+        const url = "http://192.168.1.2/media/Clip%201.mp4";
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "192.168.1.2", unresolved: true
+        })) as typeof server.post;
+        expect(await fetchMetadata(url, "note1"))
+            .toEqual({ url, embedType: "video", title: "Clip 1.mp4" });
+
+        server.post = vi.fn(async () => {
+            throw new Error("network down");
+        }) as typeof server.post;
+        expect(await fetchMetadata("https://example.com/a.flac", "note1"))
+            .toEqual({ url: "https://example.com/a.flac", embedType: "audio", title: "a.flac" });
     });
 
     it("passes the server's unresolved flag through", async () => {
@@ -129,6 +150,27 @@ describe("fetchMetadata", () => {
 
         expect(result.favicon).toBe("api/attachments/att1/image/example.com.ico");
         expect(result.image).toBe("api/attachments/att2/image/example.com-1a2b3c4d.jpeg");
+    });
+});
+
+describe("fetchPageDetails", () => {
+    it("reads a page's title and description, and nothing for a page not read", async () => {
+        const url = "https://example.com/path?a=b";
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "Title", description: "Desc", siteName: "Example"
+        })) as typeof server.post;
+        expect(await fetchPageDetails(url)).toStrictEqual({ title: "Title", description: "Desc" });
+        expect(server.post).toHaveBeenCalledExactlyOnceWith("link-embed/details", { url });
+
+        server.post = vi.fn(async () => ({
+            url, embedType: "opengraph", title: "example.com", unresolved: true
+        })) as typeof server.post;
+        expect(await fetchPageDetails(url)).toBeNull();
+
+        server.post = vi.fn(async () => {
+            throw new Error("network down");
+        }) as typeof server.post;
+        expect(await fetchPageDetails(url)).toBeNull();
     });
 });
 

@@ -1,0 +1,8 @@
+.canvas-drawing-rail .tn-overlay-control-group {
+    /* Above the properties sheet, by the inset that `usePropertiesSheet()` sets on `body`. */
+    --overlay-group-inset-bottom: calc(
+        var(--canvas-drawing-sheet-inset, 0px) + var(--overlay-group-inset)
+    );
+    /* Above the popup editor (1100, PopupEditor.css), below dropdowns (1200, Popup.css). */
+    z-index: 1150;
+}

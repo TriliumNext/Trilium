@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { calculateOptimizedEditDistance, validateFuzzySearchTokens, fuzzyMatchWord, fuzzyMatchWordWithResult, getAutoMaxEditDistance, stripWordPunctuation, tokenizeIntoWords, wordsContainPhrase } from './text_utils.js';
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { calculateOptimizedEditDistance, FUZZY_SEARCH_CONFIG, normalizeSearchText, validateAndPreprocessContent, validateFuzzySearchTokens, fuzzyMatchWord, fuzzyMatchWordWithResult, getAutoMaxEditDistance, stripWordPunctuation, tokenizeIntoWords, wordsContainPhrase } from "./text_utils.js";
 
 describe('Fuzzy Search Core', () => {
     describe('calculateOptimizedEditDistance', () => {
@@ -195,5 +196,88 @@ describe('Fuzzy Search Core', () => {
             expect(wordsContainPhrase(['a', 'b'], [])).toBe(false);
             expect(wordsContainPhrase(['a'], ['a', 'b'])).toBe(false);
         });
+    });
+});
+
+describe("input guards", () => {
+    it("rejects invalid edit-distance arguments and handles empty and long strings", () => {
+        expect(() => calculateOptimizedEditDistance(1 as unknown as string, "a")).toThrow("must be strings");
+        expect(() => calculateOptimizedEditDistance("a", 2 as unknown as string)).toThrow("must be strings");
+        expect(() => calculateOptimizedEditDistance("a", "b", -1)).toThrow("non-negative integer");
+        expect(() => calculateOptimizedEditDistance("a", "b", 1.5)).toThrow("non-negative integer");
+
+        expect(calculateOptimizedEditDistance("", "ab", 2)).toBe(2);
+        expect(calculateOptimizedEditDistance("ab", "", 2)).toBe(2);
+        expect(calculateOptimizedEditDistance("a".repeat(1001), "a".repeat(1002), 2)).toBe(1);
+        expect(calculateOptimizedEditDistance("a".repeat(5), "a".repeat(1002), 2)).toBe(3);
+    });
+
+    it("normalizes only non-empty strings", () => {
+        expect(normalizeSearchText("")).toBe("");
+        expect(normalizeSearchText(5 as unknown as string)).toBe("");
+        expect(normalizeSearchText("CAFÉ")).toBe("cafe");
+    });
+
+    it("rejects a missing operator, non-array tokens, non-string and overlong tokens", () => {
+        expect(validateFuzzySearchTokens([ "a" ], "").isValid).toBe(false);
+        expect(validateFuzzySearchTokens([ "a" ], 3 as unknown as string).error).toContain("Invalid operator");
+        expect(validateFuzzySearchTokens("abc" as unknown as string[], "=").error).toContain("must be an array");
+        expect(validateFuzzySearchTokens([ null as unknown as string ], "=").error).toContain("non-null strings");
+        expect(validateFuzzySearchTokens([ 3 as unknown as string ], "=").error).toContain("non-null strings");
+        expect(validateFuzzySearchTokens([ "a".repeat(101) ], "~*").error).toContain("too long");
+        expect(validateFuzzySearchTokens([ "a".repeat(100) ], "~*").isValid).toBe(true);
+    });
+
+    it("returns null from fuzzy matching on non-string input or an internal error", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        expect(fuzzyMatchWordWithResult(1 as unknown as string, "abc")).toBeNull();
+        expect(fuzzyMatchWordWithResult("abc", 1 as unknown as string)).toBeNull();
+        // A fractional distance passes the chunk filter but makes the edit-distance check throw.
+        expect(fuzzyMatchWordWithResult("abc", "abd", 1.5)).toBeNull();
+        expect(warn).toHaveBeenCalledOnce();
+        warn.mockRestore();
+    });
+});
+
+describe("validateAndPreprocessContent", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it("returns null for empty or non-string content and passes ordinary content through", () => {
+        expect(validateAndPreprocessContent("")).toBeNull();
+        expect(validateAndPreprocessContent(5 as unknown as string)).toBeNull();
+        expect(validateAndPreprocessContent("hello world", "note1")).toBe("hello world");
+    });
+
+    it("warns about large content and word counts but keeps it whole", () => {
+        const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+        const large = "x".repeat(FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_SIZE + 1);
+        expect(validateAndPreprocessContent(large, "big")).toBe(large);
+        expect(info.mock.calls.map(([ message ]) => String(message))).toEqual([
+            expect.stringContaining("Large content for note big"),
+            expect.stringContaining("Very large content for note big")
+        ]);
+
+        info.mockClear();
+        const manyWords = "a ".repeat(FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_WORDS);
+        expect(validateAndPreprocessContent(manyWords)).toBe(manyWords);
+        expect(info.mock.calls.map(([ message ]) => String(message))).toEqual([
+            expect.stringContaining("High word count for note unknown"),
+            expect.stringContaining("Very large content for note unknown")
+        ]);
+    });
+
+    it("truncates content beyond the absolute size and word limits", () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(console, "info").mockImplementation(() => {});
+
+        const huge = "x".repeat(FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_CONTENT_SIZE + 1);
+        expect(validateAndPreprocessContent(huge)?.length).toBe(FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_CONTENT_SIZE);
+
+        const wordy = "a ".repeat(FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT + 1);
+        expect(validateAndPreprocessContent(wordy, "wordy")?.split(" ")).toHaveLength(FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT);
+        expect(error).toHaveBeenCalledTimes(2);
+        expect(String(error.mock.calls[0][0])).toContain("note unknown");
+        expect(String(error.mock.calls[1][0])).toContain("note wordy");
     });
 });

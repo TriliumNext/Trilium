@@ -344,7 +344,7 @@ export const importMiddlewareWithErrorHandling = function (req: express.Request,
         }
 
         const file = req.file;
-        if (file?.path && isStreamableZipUpload(req)) {
+        if (file?.path && isStreamableZipUpload(req, file)) {
             // Zip import (generic *or* a tagged provider): hand the importer the temp file's path so the
             // archive is read in place per entry (the route prefers `file.path`), never buffered. Keep the
             // temp file alive through the import and delete it once the response is done (or the connection
@@ -368,9 +368,9 @@ export const shareTargetMiddlewareWithErrorHandling = createShareTargetMiddlewar
  * chose not to explode, go through the buffer-based {@link materializeUploadedImport} path instead. Kept in
  * sync with the zip branches in the core import route (services/import/dispatch.ts).
  */
-function isStreamableZipUpload(req: express.Request): boolean {
+function isStreamableZipUpload(req: express.Request, file: Express.Multer.File): boolean {
     const body = req.body as Record<string, string> | undefined;
-    const isZip = req.file?.originalname?.toLowerCase().endsWith(".zip") ?? false;
+    const isZip = file.originalname.toLowerCase().endsWith(".zip");
     if (!isZip) {
         return false;
     }

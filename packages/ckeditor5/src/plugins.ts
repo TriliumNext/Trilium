@@ -27,7 +27,7 @@ import ContentEmbed from "./plugins/content_embed/content_embed.js";
 import BlockReference from "./plugins/block_reference/block_reference.js";
 import InlineIcon from "./plugins/inline_icon/inline_icon.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
-import YouTubeVideoPlugin from "./plugins/youtube_video.js";
+import InsertMediaPlugin from "./plugins/insert_media.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
 import SyntaxHighlighting from "./plugins/syntax_highlighting/index.js";
@@ -72,11 +72,13 @@ import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.j
 import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
 import ExtendedCodeBlock from "./plugins/content_embed/extended_code_block.js";
 import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
+import LinkMenu from "./plugins/link_menu.js";
 import NoteLinkToolbar from "./plugins/note_link_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
 import CollapsibleListItems from "./plugins/collapsible_list_items.js";
 import ListItemAlignment from "./plugins/list_item_alignment.js";
+import ListItemInsert from "./plugins/list_item_insert.js";
 import TableIndent from "./plugins/table_indent.js";
 import TableContextMenu from "./plugins/table_context_menu.js";
 import TableMove from "./plugins/table_move/table_move.js";
@@ -116,7 +118,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     BlockReference,
     InlineIcon,
     LinkEmbed,
-    YouTubeVideoPlugin,
+    InsertMediaPlugin,
     Uploadfileplugin,
     SyntaxHighlighting,
     CodeBlockLanguageDropdown,
@@ -137,9 +139,11 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ExtendedCodeBlock,
     LinkEmbedToolbar,
     NoteLinkToolbar,
+    LinkMenu,
     TodoListMultistate,
     CollapsibleListItems,
     ListItemAlignment,
+    ListItemInsert,
     TableIndent,
     TableContextMenu,
     TableMove,

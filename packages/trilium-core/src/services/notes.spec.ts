@@ -1,14 +1,15 @@
-import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons";
+import { CANVAS_ATTACHMENT_MIME, type NoteType } from "@triliumnext/commons";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import BAttachment from "../becca/entities/battachment.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
 import { ValidationError } from "../errors.js";
 import blobService from "./blob.js";
 import { disableEntityEvents, getContext } from "./context.js";
 import { getLog } from "./log.js";
-import noteService, { prepareTitle, saveLinks } from "./notes.js";
+import noteService, { findBookmarks, findLlmChatLinks, prepareTitle, saveLinks } from "./notes.js";
 import optionService from "./options.js";
 import protectedSessionService from "./protected_session.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
@@ -929,5 +930,298 @@ describe("prepareTitle", () => {
         expect(prepareTitle("document.pdf")).toBe("document.pdf");
         expect(prepareTitle("My File (1).png")).toBe("My File (1).png");
         expect(prepareTitle("")).toBe("");
+    });
+});
+
+describe("notes service edge cases (real DB)", () => {
+    const PROTECTED_KEY = encodeUtf8("fedcba9876543210");
+
+    function undeleteContext() {
+        return new TaskContext("spec-undelete", "undeleteNotes", null);
+    }
+
+    function deleteContext() {
+        return new TaskContext("spec-delete", "deleteNotes", null);
+    }
+
+    afterEach(() => {
+        protectedSessionService.resetDataKey();
+        vi.restoreAllMocks();
+    });
+
+    describe("createNewNote", () => {
+        it("places a note above its siblings under #newNotesOnTop, counting a position of 0", () => {
+            const parent = createNote("root", { attributes: [ { type: "label", name: "newNotesOnTop", value: "" } ] });
+            createNote(parent.note.noteId, { notePosition: 0 });
+            createNote(parent.note.noteId, { notePosition: 20 });
+
+            expect(createNote(parent.note.noteId).branch.notePosition).toBe(-10);
+        });
+
+        it("rejects launcher parents, non-launchers in the launcher bars, invalid dates and a missing type", () => {
+            const launcher = createNote("root", { type: "launcher", content: "" });
+
+            expect(() => createNote(launcher.note.noteId)).toThrow(ValidationError);
+            expect(() => createNote("_lbAvailableLaunchers", { ignoreForbiddenParents: true })).toThrow(/Only 'launcher' notes/);
+            expect(() => createNote("root", { dateCreated: "yesterday" })).toThrow();
+            expect(() => createNote("root", { utcDateCreated: "yesterday" })).toThrow();
+            expect(() => createNote("root", { type: "" as NoteType })).toThrow(/Note type is a required param/);
+        });
+
+        it("titles an untitled note with the default title when the parent has no #titleTemplate", () => {
+            expect(createNote("root", { title: undefined }).note.title).toBeTruthy();
+        });
+
+        it("fails for a template that does not exist", () => {
+            expect(() => createNote("root", { templateNoteId: "missingTemplate1" }))
+                .toThrow(/Template note 'missingTemplate1' does not exist/);
+        });
+
+        it("copies a binary template's content and its file attachments, leaving out the images", () => {
+            const template = createNote("root", { type: "file", mime: "application/octet-stream", content: new Uint8Array([ 7, 8 ]) }).note;
+            getContext().init(() => {
+                template.saveAttachment({ role: "file", mime: "text/plain", title: "notes.txt", content: "kept" });
+                template.saveAttachment({ role: "image", mime: "image/png", title: "picture.png", content: "skipped" });
+            });
+            const emptyTemplate = createNote("root", { type: "file", mime: "application/octet-stream", content: "" }).note;
+
+            const fromTemplate = createNote("root", { type: "file", mime: "application/pdf", templateNoteId: template.noteId, content: "" }).note;
+            const fromEmpty = createNote("root", { type: "file", templateNoteId: emptyTemplate.noteId, content: "own" }).note;
+
+            expect(fromTemplate.mime).toBe("application/pdf");
+            expect([ ...new Uint8Array(fromTemplate.getContent() as Uint8Array) ]).toStrictEqual([ 7, 8 ]);
+            expect(fromTemplate.getAttachments().map((attachment) => attachment.title)).toStrictEqual([ "notes.txt" ]);
+            expect(fromEmpty.mime).toBe("application/octet-stream");
+            expect(decodeUtf8(fromEmpty.getContent())).toBe("own");
+        });
+    });
+
+    describe("createNewNoteWithTarget", () => {
+        it("inherits a code parent's type and mime, places a note before a sibling and rejects an unknown target", () => {
+            const codeParent = createNote("root", { type: "code", mime: "text/x-python", content: "" }).note;
+            const sibling = createNote(codeParent.noteId);
+
+            const { note, branch } = getContext().init(() =>
+                noteService.createNewNoteWithTarget("before", sibling.branch.branchId, {
+                    parentNoteId: codeParent.noteId, title: "spec-before", content: ""
+                }));
+
+            expect([ note.type, note.mime ]).toStrictEqual([ "code", "text/x-python" ]);
+            expect(branch.notePosition).toBeLessThan(sibling.branch.notePosition);
+            expect(() => getContext().init(() => noteService.createNewNoteWithTarget("before", undefined, {
+                parentNoteId: "root", title: "spec-no-target", content: "", type: "text"
+            }))).toThrow(/Unknown target/);
+        });
+    });
+
+    describe("protectNoteRecursively", () => {
+        it("requires a protected session and leaves an already protected attachment alone", () => {
+            const { note } = createNote("root");
+            const attachment = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "secret.txt", content: "secret" }));
+            const protect = () => getContext().init(() =>
+                noteService.protectNoteRecursively(note, true, false, new TaskContext("spec-protect-twice", "protectNotes", { protect: true })));
+
+            expect(protect).toThrow(/without active protected session/);
+
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            protect();
+            const protectedBlobId = becca.getAttachmentOrThrow(attachment.attachmentId ?? "").blobId;
+            protect();
+
+            expect(becca.getAttachmentOrThrow(attachment.attachmentId ?? "").blobId).toBe(protectedBlobId);
+        });
+
+        it("logs and rethrows when an attachment cannot be protected", () => {
+            const { note } = createNote("root");
+            getContext().init(() => note.saveAttachment({ role: "file", mime: "text/plain", title: "stuck.txt", content: "x" }));
+            const error = vi.spyOn(getLog(), "error");
+            vi.spyOn(BAttachment.prototype, "setContent").mockImplementation(() => {
+                throw new Error("cannot write");
+            });
+
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            expect(() => getContext().init(() => noteService.protectNoteRecursively(
+                note, true, false, new TaskContext("spec-protect-fail", "protectNotes", { protect: true })))).toThrow("cannot write");
+            expect(error).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe("links", () => {
+        it("finds bookmarks only on anchors without an href, and keeps their labels in sync", () => {
+            expect(findBookmarks(`<a id="kept"></a><a id="link" href="#x">x</a>`)).toStrictEqual([ "kept" ]);
+
+            const { note } = createNote("root");
+            const bookmarks = () => note.getOwnedLabels("internalBookmark").map((label) => label.value).sort();
+            getContext().init(() => noteService.updateNoteData(note.noteId, `<p><a id="one"></a><a id="two"></a></p>`));
+            getContext().init(() => noteService.updateNoteData(note.noteId, `<p><a id="two"></a><a id="three"></a></p>`));
+
+            expect(bookmarks()).toStrictEqual([ "three", "two" ]);
+        });
+
+        it("reads chat links from text blocks and tool calls only", () => {
+            const found: Parameters<typeof findLlmChatLinks>[1] = [];
+            findLlmChatLinks(JSON.stringify({ messages: [
+                null,
+                { role: "assistant", content: [
+                    null,
+                    { type: "thinking", content: "[[ignored]]" },
+                    { type: "tool_call" },
+                    { type: "tool_call", toolCall: { input: "not an object" } },
+                    { type: "tool_call", toolCall: { input: { noteId: "toolNote1" } } }
+                ] }
+            ] }), found);
+
+            expect(found).toStrictEqual([ { name: "internalLink", value: "toolNote1" } ]);
+        });
+
+        it("ignores a content embed without a note, and scans spreadsheets and canvases", () => {
+            const target = createNote("root").note;
+            const { note } = createNote("root");
+            getContext().init(() => noteService.updateNoteData(note.noteId,
+                `<section data-trilium-embed="web"></section><section data-trilium-embed="note" data-note-id="${target.noteId}"></section>`));
+            expect(note.getRelations("includeNoteLink").map((relation) => relation.value)).toStrictEqual([ target.noteId ]);
+
+            for (const type of [ "spreadsheet", "canvas" ] as const) {
+                const typed = createNote("root", { type, mime: "application/json", content: "{}" }).note;
+                expect(getContext().init(() => saveLinks(typed, "{}")).content).toBe("{}");
+            }
+        });
+
+        it("logs a link scan that fails after a content change", async () => {
+            const { note } = createNote("root");
+            const error = vi.spyOn(getLog(), "error");
+            vi.spyOn(note, "getRelations").mockImplementation(() => {
+                throw new Error("relations unavailable");
+            });
+
+            await getContext().init(() => noteService.asyncPostProcessContent(note, "<p>x</p>"));
+
+            expect(error).toHaveBeenCalledWith(expect.stringContaining("relations unavailable"));
+        });
+
+        it("throws for a scanned type whose content is binary", () => {
+            const chat = createNote("root", { type: "llmChat", mime: "application/json", content: "{}" }).note;
+            expect(() => getContext().init(() => saveLinks(chat, new Uint8Array([ 1 ])))).toThrow(/Unrecognized type/);
+        });
+
+        it("copies a foreign attachment of an unknown role once, reusing the copy on the next save", () => {
+            const owner = createNote("root").note;
+            const foreign = getContext().init(() =>
+                owner.saveAttachment({ role: "customRole", mime: "text/plain", title: "foreign.txt", content: "foreign" }));
+            const { note } = createNote("root");
+            const content = `<p><a href="#root/${owner.noteId}?viewMode=attachments&attachmentId=${foreign.attachmentId}">f</a></p>`;
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, content));
+            const [ copy ] = note.getAttachments();
+            getContext().init(() => noteService.updateNoteData(note.noteId, content));
+
+            expect(copy.role).toBe("customRole");
+            expect(note.getAttachments().map((attachment) => attachment.attachmentId)).toStrictEqual([ copy.attachmentId ]);
+        });
+    });
+
+    describe("updateNoteData attachments", () => {
+        it("decodes base64 content and updates an attachment matched by title", () => {
+            const { note } = createNote("root");
+            const existing = getContext().init(() =>
+                note.saveAttachment({ role: "file", mime: "text/plain", title: "by-title.txt", content: "old" }));
+            const row = { ownerId: note.noteId, role: "file", mime: "text/plain" };
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, "<p>x</p>", [
+                { ...row, title: "encoded.bin", mime: "application/octet-stream", content: "AQID", encoding: "base64" },
+                { ...row, title: "by-title.txt", mime: "text/markdown", content: "new" }
+            ]));
+            getContext().init(() => noteService.updateNoteData(note.noteId, "<p>x</p>", [
+                { ...row, title: "by-title.txt", content: "" }
+            ]));
+
+            const encoded = note.getAttachmentByTitle("encoded.bin");
+            expect([ ...new Uint8Array(encoded?.getContent() as Uint8Array) ]).toStrictEqual([ 1, 2, 3 ]);
+            const updated = becca.getAttachmentOrThrow(existing.attachmentId ?? "");
+            expect(decodeUtf8(updated.getContent())).toBe("new");
+            expect(note.getAttachments().filter((attachment) => attachment.title === "by-title.txt")).toHaveLength(1);
+        });
+    });
+
+    describe("undeleteNote", () => {
+        it("refuses a live note and an orphan whose fallback parent is missing", () => {
+            const { note } = createNote("root");
+            const parent = createNote("root").note;
+            const orphan = createNote(parent.noteId).note;
+            getContext().init(() => parent.deleteNote(null, deleteContext()));
+
+            expect(getContext().init(() => noteService.undeleteNote(note.noteId, undeleteContext())).undeleted).toBe(false);
+            expect(getContext().init(() => noteService.undeleteNote(orphan.noteId, undeleteContext(), {
+                fallbackParentNoteId: "missingParent1"
+            })).undeleted).toBe(false);
+        });
+
+        it("leaves out a child that was deleted on its own, restoring the rest of the deletion", () => {
+            const parent = createNote("root").note;
+            getContext().init(() => {
+                parent.setLabel("restoredLabel", "yes");
+                parent.saveAttachment({ role: "file", mime: "text/plain", title: "restored.txt", content: "x" });
+            });
+            const otherParent = createNote("root").note;
+            const child = createNote(parent.noteId).note;
+            getContext().init(() => child.cloneTo(otherParent.noteId));
+
+            // Deleting the parent keeps the child, which still hangs under the other parent.
+            getContext().init(() => parent.deleteNote(null, deleteContext()));
+            getContext().init(() => child.deleteNote(null, deleteContext()));
+            expect(getContext().init(() => noteService.undeleteNote(parent.noteId, undeleteContext())).undeleted).toBe(true);
+
+            const restored = becca.getNoteOrThrow(parent.noteId);
+            expect(restored.getChildNotes()).toStrictEqual([]);
+            expect(restored.getLabelValue("restoredLabel")).toBe("yes");
+            expect(restored.getAttachments().map((attachment) => attachment.title)).toStrictEqual([ "restored.txt" ]);
+            expect(becca.getNote(child.noteId)).toBeNull();
+        });
+    });
+
+    describe("duplicating", () => {
+        it("duplicates the children only, and refuses the root and a missing note", () => {
+            const original = createNote("root").note;
+            createNote(original.noteId, { title: "spec-dup-without-root-child" });
+            const target = createNote("root").note;
+
+            getContext().init(() => noteService.duplicateSubtreeWithoutRoot(original.noteId, target.noteId));
+
+            expect(target.getChildNotes().map((note) => note.title)).toStrictEqual([ "spec-dup-without-root-child" ]);
+            expect(() => noteService.duplicateSubtreeWithoutRoot("root", target.noteId)).toThrow(/root/);
+            expect(() => noteService.duplicateSubtreeWithoutRoot("missingNote1", target.noteId)).toThrow(/Unable to find/);
+        });
+
+        it("duplicates into another parent, links inside the subtree and clones within it, and code verbatim", () => {
+            const original = createNote("root").note;
+            const first = createNote(original.noteId).note;
+            const second = createNote(original.noteId).note;
+            const shared = createNote(first.noteId, { type: "code", mime: "text/plain", content: `#root/${first.noteId}` }).note;
+            getContext().init(() => {
+                shared.cloneTo(second.noteId);
+                original.setContent(`<p><a href="#root/${first.noteId}">first</a></p>`);
+            });
+            const elsewhere = createNote("root").note;
+
+            const { note: copy, branch } = getContext().init(() => noteService.duplicateSubtree(original.noteId, elsewhere.noteId));
+
+            const [ firstCopy, secondCopy ] = copy.getChildNotes();
+            const [ sharedCopy ] = firstCopy.getChildNotes();
+            expect(branch.notePosition).not.toBeNull();
+            expect(copy.getContent()).toContain(`#root/${firstCopy.noteId}`);
+            expect(secondCopy.getChildNotes()).toStrictEqual([ sharedCopy ]);
+            expect(sharedCopy.getContent()).toBe(`#root/${first.noteId}`);
+        });
+
+        it("refuses to duplicate a protected note without a protected session", () => {
+            const { note } = createNote("root");
+            protectedSessionService.setDataKey(PROTECTED_KEY);
+            getContext().init(() =>
+                noteService.protectNoteRecursively(note, true, false, new TaskContext("spec-dup-protect", "protectNotes", { protect: true })));
+            protectedSessionService.resetDataKey();
+
+            expect(() => getContext().init(() => noteService.duplicateSubtree(note.noteId, "root"))).toThrow(/protected session/);
+        });
     });
 });

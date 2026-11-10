@@ -106,8 +106,10 @@ export function seedDefaultTaskStates() {
 
     // Apply the default ordering (None, Doing, Done, Maybe, Cancelled) across all states.
     DEFAULT_TASK_STATES.forEach((state, index) => {
+        /* v8 ignore next -- every default state has an id */
         const note = state.id ? becca.notes[state.id] : undefined;
         const branch = note?.getParentBranches().find((b) => b.parentNoteId === TASK_STATES_CONTAINER_ID);
+        /* v8 ignore else -- each seeded state hangs under the container */
         if (branch) {
             branch.notePosition = index * 10;
             branch.save();

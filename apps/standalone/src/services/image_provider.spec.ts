@@ -91,3 +91,16 @@ describe("standaloneImageProvider.compressImage", () => {
         ).resolves.toEqual({ compressed: false, reason: "unsupported-platform" });
     });
 });
+
+describe("standaloneImageProvider without a decoder", () => {
+    it("declines planning, preview resizing and parallel compression", async () => {
+        expect(standaloneImageProvider.compressionConcurrency()).toBe(1);
+        await expect(standaloneImageProvider.planCompression(new Uint8Array(16), {
+            resize: true, maxWidthHeight: 100, jpegHandling: "compress", pngHandling: "optimize",
+            quality: 75, conversionQuality: 85
+        }))
+            .resolves.toEqual({ skip: "unsupported-platform", decodeCost: null });
+        await expect(standaloneImageProvider.resizeForPreview(new Uint8Array(16), { maxEdge: 100, jpegQuality: 80 }))
+            .resolves.toEqual({ resized: false, reason: "unsupported-platform" });
+    });
+});

@@ -1,4 +1,4 @@
-import { becca, cls, note_service as noteService } from "@triliumnext/core";
+import { becca, cls, note_service as noteService, options } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -54,6 +54,18 @@ describe("OCR API", () => {
             expect(result).toMatchObject({ success: true, result: { text: "hello" } });
         });
 
+        it("passes the language and reprocess flag on, defaulting both when there is no body", async () => {
+            ocrState.noteResult = { text: "hello" };
+            cls.init(() => options.setOption("ocrMinConfidence", "0.6"));
+
+            expect(await ocrRoutes.processNoteOCR({ params: { noteId } } as unknown as Request<{ noteId: string }>))
+                .toEqual({ success: true, result: { text: "hello" }, minConfidence: 0.6 });
+            expect(ocrService.processNoteOCR).toHaveBeenLastCalledWith(noteId, { language: undefined, forceReprocess: false });
+
+            await ocrRoutes.processNoteOCR({ params: { noteId }, body: { language: "deu", forceReprocess: true } } as unknown as Request<{ noteId: string }>);
+            expect(ocrService.processNoteOCR).toHaveBeenLastCalledWith(noteId, { language: "deu", forceReprocess: true });
+        });
+
         it("names the locked vault rather than blaming the note's format", async () => {
             const note = becca.getNoteOrThrow(noteId);
             note.isProtected = true;
@@ -85,6 +97,16 @@ describe("OCR API", () => {
             ocrState.attachmentResult = { text: "ocr" };
             expect(await ocrRoutes.processAttachmentOCR({ params: { attachmentId }, body: {} } as unknown as Request<{ attachmentId: string }>))
                 .toMatchObject({ success: true });
+        });
+
+        it("passes the language and reprocess flag on, defaulting both when there is no body", async () => {
+            ocrState.attachmentResult = { text: "ocr" };
+
+            await ocrRoutes.processAttachmentOCR({ params: { attachmentId } } as unknown as Request<{ attachmentId: string }>);
+            expect(ocrService.processAttachmentOCR).toHaveBeenLastCalledWith(attachmentId, { language: undefined, forceReprocess: false });
+
+            await ocrRoutes.processAttachmentOCR({ params: { attachmentId }, body: { language: "deu", forceReprocess: true } } as unknown as Request<{ attachmentId: string }>);
+            expect(ocrService.processAttachmentOCR).toHaveBeenLastCalledWith(attachmentId, { language: "deu", forceReprocess: true });
         });
 
         it("names the locked vault rather than blaming the attachment's format", async () => {

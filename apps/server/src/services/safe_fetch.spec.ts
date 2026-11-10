@@ -291,6 +291,34 @@ describe("safeFetch", () => {
         expect(agentInstances[0].closed).toBe(true);
     });
 
+    it("cancels the wrapped body of an aborted request without a stray rejection", async () => {
+        let source: ReadableStreamDefaultController<Uint8Array> | undefined;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                source = controller;
+                controller.enqueue(new TextEncoder().encode("data"));
+            }
+        });
+        fetchMock.mockResolvedValueOnce(makeResponse(body, { status: 200 }));
+        const response = await safeFetch("http://8.8.8.8/aborted");
+
+        const rejections: unknown[] = [];
+        const collect = (reason: unknown) => rejections.push(reason);
+        process.on("unhandledRejection", collect);
+        try {
+            // The wrapper reads ahead; undici then errors the body of the aborted request.
+            await nextTask();
+            source?.error(new DOMException("This operation was aborted", "AbortError"));
+            await response.body?.cancel();
+            await nextTask();
+        } finally {
+            process.off("unhandledRejection", collect);
+        }
+
+        expect(rejections).toEqual([]);
+        expect(agentInstances[0].closed).toBe(true);
+    });
+
     it("propagates a body read error to the consumer and closes the dispatcher", async () => {
         const erroringStream = new ReadableStream({
             pull() {
@@ -444,5 +472,39 @@ describe("safeFetch", () => {
             expect(err).toBeInstanceOf(Error);
             expect(err.message).toMatch(/No validated addresses/);
         });
+    });
+});
+
+function nextTask() {
+    return new Promise((resolve) => setTimeout(resolve));
+}
+
+describe("safeFetch with an undici module that carries no default export", () => {
+    it("reads Agent and fetch from the namespace itself", async () => {
+        const namedFetch = vi.fn().mockResolvedValue({
+            status: 204,
+            statusText: "No Content",
+            headers: new Headers(),
+            body: null
+        });
+        // Vitest refuses a read of an export the factory did not return, so `default` is undefined.
+        vi.doMock("undici", () => ({ default: undefined, Agent: MockAgent, fetch: namedFetch }));
+        vi.resetModules();
+        agentInstances.length = 0;
+
+        try {
+            const response = await safeFetch("http://8.8.8.8/named");
+            expect(response.status).toBe(204);
+            expect(namedFetch).toHaveBeenCalledWith(
+                "http://8.8.8.8/named", expect.objectContaining({ dispatcher: agentInstances[0] }));
+            expect(undiciFetch).not.toHaveBeenCalled();
+        } finally {
+            vi.doMock("undici", () => ({
+                default: { Agent: MockAgent, fetch: undiciFetch },
+                Agent: MockAgent,
+                fetch: undiciFetch
+            }));
+            vi.resetModules();
+        }
     });
 });

@@ -7,7 +7,7 @@ import { Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
-import type { ContentEditor } from "../../../services/content_renderer";
+import { type ContentEditor, disposeInteractiveContent } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { useNoteLabelBoolean } from "../../react/hooks";
 import {
@@ -110,7 +110,8 @@ export function EditableEmbedContent({
                     </CaretNavigationContext.Provider>
                 </div>
             )}
-            {(!isEditing || !isEditorShown) && <EmbedPreview element={preview} />}
+            {/* Hidden while the editor shows: unmounting it disposes of its embed boxes. */}
+            <EmbedPreview element={preview} isHidden={isEditing && isEditorShown} />
         </div>
     );
 }
@@ -183,9 +184,10 @@ export function useEmbedCaretNavigation(
 }
 
 /**
- * The preview of the content of an embed: `initial` while `key` has its first value, otherwise
- * what `render` returns for the current key. The previous preview stays until the next is ready.
- * While `isPaused`, as while the content is edited, no preview renders.
+ * The preview of the content of an embed: `initial` until `key` changes, then what `render`
+ * returns for the current key. The previous preview stays until the next is ready. While
+ * `isPaused`, as while the content is edited, no preview renders. A preview that is no longer
+ * current when it is ready is disposed of; `EmbedPreview` disposes of the ones it showed.
  */
 export function useEmbedPreview(
     initial: HTMLElement,
@@ -194,23 +196,18 @@ export function useEmbedPreview(
     isPaused = false
 ) {
     const [ preview, setPreview ] = useState(initial);
-    const initialKeyRef = useRef(key);
     const shownKeyRef = useRef(key);
 
     useEffect(() => {
         if (isPaused || key === shownKeyRef.current) return;
-
-        if (key === initialKeyRef.current) {
-            shownKeyRef.current = key;
-            setPreview(initial);
-            return;
-        }
 
         let isCurrent = true;
         render().then((element) => {
             if (isCurrent) {
                 shownKeyRef.current = key;
                 setPreview(element);
+            } else {
+                disposeInteractiveContent($(element));
             }
         });
         return () => {
@@ -330,15 +327,23 @@ function leaveContentEmbed(element: HTMLElement, edge: EmbedEdge) {
         && editor.plugins.get("ContentEmbedCaret").leaveEmbed(element, edge);
 }
 
-/** Shows `element`, the rendered content of an embed. */
-export function EmbedPreview({ element }: { element: HTMLElement }) {
+/**
+ * Shows `element`, the rendered content of an embed, and disposes of it once it shows another
+ * element or unmounts.
+ */
+export function EmbedPreview({ element, isHidden = false }: {
+    element: HTMLElement;
+    isHidden?: boolean;
+}) {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useLayoutEffect(() => {
         containerRef.current?.replaceChildren(element);
+        // The embed boxes of the preview are standalone roots, which a parent unmount misses.
+        return () => disposeInteractiveContent($(element));
     }, [ element ]);
 
-    return <div ref={containerRef} className="editable-embed-preview" />;
+    return <div ref={containerRef} className="editable-embed-preview" hidden={isHidden} />;
 }
 
 /**

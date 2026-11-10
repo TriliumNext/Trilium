@@ -261,5 +261,10 @@
   },
   "link_context_menu": {
     "align_center": "Align centre"
+  },
+  "media": {
+    "http-status-names": {
+      "401": "Unauthorised"
+    }
   }
 }

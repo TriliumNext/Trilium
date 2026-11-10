@@ -1,7 +1,10 @@
 import MathEditing from './math_editing.js';
 import MainFormView from './main_form_view.js';
 import mathIcon from '../../icons/math.svg?raw';
-import { Plugin, ClickObserver, ButtonView, ContextualBalloon, clickOutsideHandler, CKEditorError, uid } from 'ckeditor5';
+import {
+	Plugin, ClickObserver, ButtonView, ContextualBalloon, clickOutsideHandler, CKEditorError,
+	ModelLiveRange, uid, type ModelRange
+} from 'ckeditor5';
 import { getBalloonPositionData } from './utils.js';
 import MathCommand from './math_command.js';
 
@@ -19,6 +22,11 @@ export default class MathUI extends Plugin {
 	private _previewUid = `math-preview-${ uid() }`;
 	private _balloon: ContextualBalloon = this.editor.plugins.get( ContextualBalloon );
 	public formView: MainFormView | null = null;
+
+	/** The selection the form was opened on, which Save writes to. */
+	private _formRange: ModelLiveRange | null = null;
+	private _openedEquation = '';
+	private _openedDisplay = false;
 
 	public init(): void {
 		const editor = this.editor;
@@ -94,23 +102,41 @@ export default class MathUI extends Plugin {
 		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );
 		formView.displayButtonView.bind( 'isOn' ).to( mathCommand, 'display' );
 
-		// Form elements should be read-only when corresponding commands are disabled.
-		formView.mathInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', ( value: boolean ) => !value );
+		// The open form edits the equation in `_formRange`, wherever the selection moves, so it
+		// is disabled only when the editor is read-only.
+		const isEditable = ( isCommandEnabled: boolean ) =>
+			isCommandEnabled || ( this._formRange !== null && !editor.isReadOnly );
+		formView.mathInputView.bind( 'isReadOnly' ).to(
+			mathCommand,
+			'isEnabled',
+			( isCommandEnabled: boolean ) => !isEditable( isCommandEnabled )
+		);
 		formView.saveButtonView.bind( 'isEnabled' ).to(
 			mathCommand,
 			'isEnabled',
 			formView.mathInputView,
 			'value',
-			( commandEnabled, equation ) => {
+			( isCommandEnabled, equation ) => {
 				const normalizedEquation = ( equation ?? '' ).trim();
-				return commandEnabled && normalizedEquation.length > 0;
+				return isEditable( isCommandEnabled ) && normalizedEquation.length > 0;
 			}
 		);
-		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled' );
+		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled', isEditable );
 
 		// Listen to submit button click
 		this.listenTo( formView, 'submit', () => {
-			editor.execute( 'math', formView.equation, formView.displayButtonView.isOn, mathConfig.outputType, mathConfig.forceOutputType );
+			editor.model.change( writer => {
+				if ( this._formRange ) {
+					writer.setSelection( this._formRange );
+					// `execute()` skips a disabled command, and the command refreshes on its own
+					// only once this change ends.
+					mathCommand.refresh();
+				}
+				editor.execute(
+					'math', formView.equation, formView.displayButtonView.isOn,
+					mathConfig.outputType, mathConfig.forceOutputType
+				);
+			} );
 			this._closeFormView();
 		} );
 
@@ -121,13 +147,15 @@ export default class MathUI extends Plugin {
 
 		// Close plugin ui, if esc is pressed (while ui is focused)
 		formView.keystrokes.set( 'esc', ( _data, cancel ) => {
-			this._closeFormView();
+			if ( !this._isFormChanged ) {
+				this._closeFormView();
+			}
 			cancel();
 		} );
 
 		// Allow pressing Enter to submit changes, and use Shift+Enter to insert a new line
 		formView.keystrokes.set( 'enter', ( data, cancel ) => {
-			/* v8 ignore next -- Shift+Enter is a distinct keystroke that never routes to the
+			/* v8 ignore else -- Shift+Enter is a distinct keystroke that never routes to the
 			   'enter' handler, so shiftKey is always false by the time this runs */
 			if ( !data.shiftKey ) {
 				formView.fire( 'submit' );
@@ -180,6 +208,10 @@ export default class MathUI extends Plugin {
 		// form when the dialog is reopened.
 		this.formView.equation = mathCommand.value ?? '';
 		this.formView.displayButtonView.isOn = mathCommand.display || false;
+		this._openedEquation = this.formView.equation;
+		this._openedDisplay = this.formView.displayButtonView.isOn;
+		const range = editor.model.document.selection.getFirstRange() as ModelRange;
+		this._formRange = ModelLiveRange.fromRange( range );
 	}
 
 	/**
@@ -210,13 +242,17 @@ export default class MathUI extends Plugin {
 		}
 	}
 
-	private _removeFormView() {
+	private _removeFormView( isRefocusing = true ) {
 		if ( this._isFormInPanel && this.formView ) {
 			// Hide virtual keyboard before removing the form
 			this.formView.hideKeyboard();
 
-			this.formView.saveButtonView.focus();
+			if ( isRefocusing ) {
+				this.formView.saveButtonView.focus();
+			}
 			this._balloon.remove( this.formView );
+			( this._formRange as ModelLiveRange ).detach();
+			this._formRange = null;
 
 			// Hide preview element.
 			/* v8 ignore start -- dead in this order: the preview lives inside the form view, so
@@ -227,7 +263,9 @@ export default class MathUI extends Plugin {
 			}
 			/* v8 ignore stop */
 
-			this.editor.editing.view.focus();
+			if ( isRefocusing ) {
+				this.editor.editing.view.focus();
+			}
 		}
 	}
 
@@ -284,28 +322,34 @@ export default class MathUI extends Plugin {
 			}
 		} );
 
+		// `editor.setData()` replaces the content the form edits, as when another note loads.
+		this.listenTo( editor.data, 'set', () => {
+			this._removeFormView( false );
+		} );
+
 		// Close the panel on the Esc key press when the editable has focus and the balloon is visible.
 		editor.keystrokes.set( 'Esc', ( _data, cancel ) => {
-			if ( this._isUIVisible ) {
+			if ( this._isUIVisible && !this._isFormChanged ) {
 				this._hideUI();
 				cancel();
 			}
 		} );
 
 		// Close on click outside of balloon panel element.
-		/* v8 ignore start -- defensive: init() builds the form view before wiring interactions */
+		/* v8 ignore else -- defensive: init() builds the form view before wiring interactions */
 		if ( this.formView ) {
 			clickOutsideHandler( {
 				emitter: this.formView,
-				activator: () => !!this._isFormInPanel,
-				/* v8 ignore next -- defensive: the balloon view is rendered by the time init() runs */
-				contextElements: this._balloon.view.element ? [ this._balloon.view.element ] : [],
+				activator: () => !!this._isFormInPanel && !this._isFormChanged,
+				contextElements: this._balloon.view.element ?
+					[ this._balloon.view.element ] :
+					/* v8 ignore next -- the `view` getter renders the balloon panel it creates */
+					[],
 				callback: () => { this._hideUI(); }
 			} );
 		} else {
 			throw new Error( 'missing form view' );
 		}
-		/* v8 ignore stop */
 	}
 
 	private get _isUIVisible() {
@@ -316,5 +360,12 @@ export default class MathUI extends Plugin {
 
 	private get _isFormInPanel() {
 		return this.formView && this._balloon.hasView( this.formView );
+	}
+
+	/** Whether the form holds an edit that only Save or Cancel can close. */
+	private get _isFormChanged() {
+		const formView = this.formView as MainFormView;
+		return formView.equation !== this._openedEquation ||
+			formView.displayButtonView.isOn !== this._openedDisplay;
 	}
 }

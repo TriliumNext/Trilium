@@ -103,7 +103,7 @@ export default class TableColumnBar extends Plugin {
         });
         this.domEmitter.listenTo(window, "resize", () => this.scheduleUpdate(true));
         const viewport = window.visualViewport;
-        /* v8 ignore next 3 -- defensive: supported browsers have a visual viewport */
+        /* v8 ignore else -- defensive: supported browsers have a visual viewport */
         if (viewport) {
             this.domEmitter.listenTo(viewport, "resize", () => this.scheduleUpdate(false));
         }
@@ -228,7 +228,7 @@ export default class TableColumnBar extends Plugin {
     private layOut(target: BarTarget): number | null {
         const view = this.view;
         const area = getBarArea(target.domRoot, this.getToolbarElement(), this.getBottomObstacle());
-        const barTop = area.bottom - view.track.offsetHeight;
+        const barTop = area.bottom - (view.element as HTMLElement).offsetHeight;
         const tableRect = target.domTable.getBoundingClientRect();
         const clip = getClientBox(findScroller(target.domTable, "overflowX"));
         const trackLeft = Math.max(clip.left, area.left);
@@ -242,7 +242,6 @@ export default class TableColumnBar extends Plugin {
         }
 
         const edges = this.measure(target, tableRect);
-        /* v8 ignore next 3 -- defensive: the bar shows a rendered table */
         if (!edges) {
             return null;
         }
@@ -284,7 +283,6 @@ export default class TableColumnBar extends Plugin {
         const isRtl = editor.locale.contentLanguageDirection === "rtl";
         const columnCount = tableUtils.getColumns(target.table);
         const measured = measureColumnEdges(editor, target.table, columnCount);
-        /* v8 ignore next 3 -- defensive: the bar shows a rendered table */
         if (!measured) {
             return null;
         }
@@ -400,7 +398,6 @@ export default class TableColumnBar extends Plugin {
         const direction = editor.locale.contentLanguageDirection === "rtl" ? -1 : 1;
         const columnCount = editor.plugins.get(TableUtils).getColumns(table);
         const edges = measureColumnEdges(editor, table, columnCount);
-        /* v8 ignore next 3 -- defensive: the bar shows a rendered table */
         if (!edges) {
             return;
         }
@@ -558,7 +555,6 @@ export default class TableColumnBar extends Plugin {
         }
 
         const basis = getTableWidthBasis(editor, table, domFigure);
-        /* v8 ignore next 3 -- defensive: the bar shows a table with a width */
         if (!basis) {
             return;
         }

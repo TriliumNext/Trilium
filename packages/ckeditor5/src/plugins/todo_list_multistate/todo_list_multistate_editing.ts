@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
-import { Command, ListEditing, MouseObserver, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
+import { Command, getCode, ListEditing, MouseObserver, parseKeystroke, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewDocumentKeyDownEvent, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
 
 import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
@@ -14,6 +14,7 @@ const TOOLTIP_DWELL_MS = 200;
 
 export const TASK_STATE_ATTRIBUTE = "taskState";
 const TODO_LIST_CHECKED_ATTRIBUTE = "todoListChecked";
+const ITEM_TOGGLE_KEYSTROKE = parseKeystroke("Ctrl+Enter");
 
 /**
  * The ordered task states. Includes the built-in `none`/`done` anchors — those
@@ -133,6 +134,18 @@ export default class TodoListMultistateEditing extends Plugin {
                 data.preventDefault();
             }
         });
+
+        // On a link or a note reference, Ctrl+Enter is left to the app's `followLinkUnderCursor`
+        // shortcut, which databases created before Alt+Enter became its default still bind to it.
+        // Stopping the view event keeps `TodoListEditing` from also toggling the item.
+        this.listenTo<ViewDocumentKeyDownEvent>(viewDocument, "keydown", (evt, data) => {
+            const selection = editor.model.document.selection;
+            if (getCode(data) === ITEM_TOGGLE_KEYSTROKE
+                && (selection.hasAttribute("linkHref")
+                    || selection.getSelectedElement()?.is("element", "reference"))) {
+                evt.stop();
+            }
+        }, { priority: "highest" });
 
         editor.keystrokes.set(STATE_CYCLE_SHORTCUT, (_data, cancel) => {
             const command = editor.commands.get("setTaskState");
@@ -365,18 +378,15 @@ export default class TodoListMultistateEditing extends Plugin {
                     if (ownedByCaret()) return;
                     handle.hide();
                 });
-            /* v8 ignore start -- taskState is scope:"item", so any state change
-               triggers a full item reconvert and gives us a fresh `<input>`. The
-               old input is reaped by the disconnected loop above before we get
-               here, so this branch is defensive: it would only fire if CKEditor
-               ever stopped reconverting on scope:"item" attribute changes. */
-            } else if (currentState !== previousState) {
+                continue;
+            }
+            /* v8 ignore if -- a taskState change reconverts the item, which gets a new checkbox */
+            if (currentState !== previousState) {
                 this._hoverHandles.get(input)?.setContent(this._computeContent(input));
                 if (input === this._caretInput) {
                     caretItemStateChanged = true;
                 }
             }
-            /* v8 ignore stop */
         }
 
         return caretItemStateChanged;
@@ -419,27 +429,18 @@ export default class TodoListMultistateEditing extends Plugin {
                 this._caretHandle?.dispose();
                 this._caretHandle = null;
                 this._caretInput = target;
-                /* v8 ignore next -- inside the "same item, input changed"
-                   branch, `target` cannot be null: `!itemChanged` means
-                   `targetItemId === this._caretItemId`, and if `target` were
-                   null then `targetItemId` would be null too, forcing the
-                   `_caretItemId` we're comparing against to also be null —
-                   but then `_caretInput` was null too, so `inputChanged`
-                   would be false and we wouldn't be in this branch. */
+                /* v8 ignore else -- `_caretInput` is null whenever `_caretItemId` is */
                 if (target) {
                     this._caretHandle = manager.createHandle(target, this._computeContent(target));
                     this._caretHandle.show();
                 }
-            /* v8 ignore start -- reachable only when `forceShowIfSameTarget`
-               is true, which the render listener only sets when
-               `_refreshHoverHandles` observes a state change on the caret's
-               input WITHOUT the input being recreated — see the paired v8
-               ignore in `_refreshHoverHandles`. Defensive counterpart. */
-            } else if (target && this._caretHandle && options.forceShowIfSameTarget) {
+                return;
+            }
+            /* v8 ignore if -- forceShowIfSameTarget is never true, see `_refreshHoverHandles()` */
+            if (target && this._caretHandle && options.forceShowIfSameTarget) {
                 this._caretHandle.setContent(this._computeContent(target));
                 this._caretHandle.show();
             }
-            /* v8 ignore stop */
             return;
         }
 

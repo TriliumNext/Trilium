@@ -150,6 +150,7 @@ describe("startChatStream", () => {
         expect(() => startChatStream({ body: { streamId: "", messages: HELLO } })).toThrow(/streamId is required/);
         expect(() => startChatStream({ body: { streamId: "s1", messages: [] } })).toThrow(/messages array is required/);
         expect(() => startChatStream({ body: {} as never })).toThrow(/streamId is required/);
+        expect(() => startChatStream({ body: undefined as never })).toThrow(/streamId is required/);
     });
 
     it("refuses to reuse the id of a stream still running, and frees it once it ends", async () => {
@@ -234,6 +235,7 @@ describe("answerToolCall", () => {
         expect(() => answerToolCall({ body: { streamId: "s1", toolCallId: "c1" } })).toThrow(/approved are required/);
         expect(() => answerToolCall({ body: { streamId: "s1", approved: true } })).toThrow(/approved are required/);
         expect(() => answerToolCall({ body: { toolCallId: "c1", approved: true } })).toThrow(/approved are required/);
+        expect(() => answerToolCall({ body: undefined as never })).toThrow(/approved are required/);
         expect(() => answerToolCall({ body: { streamId: "s1", toolCallId: "c1", approved: true, scope: "forever" as "chat" } }))
             .toThrow(/scope/);
     });

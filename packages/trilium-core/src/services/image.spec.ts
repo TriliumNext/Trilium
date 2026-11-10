@@ -3,11 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { imageMimeForExtension } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
+import BAttachment from "../becca/entities/battachment.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import imageService from "./image.js";
 import { getImageProvider } from "./image_provider.js";
 import type { ProcessedImage } from "./image_provider.js";
+import { getLog } from "./log.js";
 import noteService from "./notes.js";
 import protectedSessionService from "./protected_session.js";
 
@@ -188,6 +190,27 @@ describe("image service (real DB)", () => {
             expect(cover.attachmentId).not.toBe(first.attachmentId);
         });
 
+        it("logs the role of a link preview picture, not its title made from the URL", () => {
+            const host = createTargetNote();
+            const info = vi.spyOn(getLog(), "info");
+            const store = (title: string, role: "image" | "coverImage") =>
+                getContext().init(() => imageService.saveImageToAttachment(
+                    host.noteId, fakeBuffer, title, false, false, role));
+
+            store("cdn.example.org-holiday-mp4-1a2b3c4d.jpeg", "coverImage");
+            store("cdn.example.org-holiday-mp4-1a2b3c4d.jpeg", "coverImage");
+            store("photo.png", "image");
+
+            const lines = info.mock.calls.map(([ line ]) => String(line));
+            expect(lines.filter((line) => line.includes("coverImage"))).toEqual([
+                expect.stringMatching(/^Saving image coverImage as attachment/),
+                expect.stringMatching(/^Saving image coverImage as attachment/),
+                expect.stringMatching(/^Reusing attachment '\w+' of note '\w+' for coverImage$/)
+            ]);
+            expect(lines.filter((line) => /example\.org|holiday/.test(line))).toEqual([]);
+            expect(lines.filter((line) => line.includes("'photo.png'"))).toHaveLength(1);
+        });
+
         it("stores the user's own images separately however they are named", () => {
             // Two pictures the user gave one name are two pictures; collapsing them would lose one.
             const host = createTargetNote();
@@ -284,6 +307,54 @@ describe("image service (real DB)", () => {
             expect(attachment.mime).toBe("image/jpeg");
             expect(attachment.title).toBe("nodotattach.jpg");
             expect(bytesOf(attachment.getContent())).toEqual(Array.from(fakeBuffer));
+        });
+
+        it("shortens a long title of the user's own image, and processes without shrinking by default", async () => {
+            const host = createTargetNote();
+            const processImage = stubProcessImage({ ext: "png" });
+
+            const att = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, `${"a".repeat(45)}.png`, undefined, true));
+            await imageService.awaitImageWrite(att.attachmentId);
+
+            expect(att.title).toBe("image");
+            expect(processImage).toHaveBeenCalledWith(fakeBuffer, "image", false);
+        });
+
+        it("logs a failed write rather than leaving it to reject, whatever was thrown", async () => {
+            const host = createTargetNote();
+            const error = vi.spyOn(getLog(), "error");
+            const processImage = vi.spyOn(getImageProvider(), "processImage");
+
+            processImage.mockRejectedValueOnce(new Error("undecodable"));
+            const failed = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, "broken.png", false));
+            processImage.mockRejectedValueOnce("no codec");
+            getContext().init(() => imageService.saveImageToAttachment(host.noteId, fakeBuffer, "other.png", false));
+            await imageService.awaitPendingImageWrites();
+
+            const lines = error.mock.calls.map(([ line ]) => String(line));
+            expect(lines).toEqual(expect.arrayContaining([
+                expect.stringMatching(new RegExp(`^Failed to store image attachment '${failed.attachmentId}': Error: undecodable`)),
+                expect.stringMatching(/^Failed to store image attachment '\w+': no codec$/)
+            ]));
+            // A write that is not owed to any image is nothing to wait for.
+            await expect(imageService.awaitImageWrite(undefined)).resolves.toBeUndefined();
+        });
+
+        it("refuses to write the processed image of an attachment that was saved without an id", async () => {
+            const host = createTargetNote();
+            const error = vi.spyOn(getLog(), "error");
+            stubProcessImage({ ext: "png" });
+            const unsaved = new BAttachment({ ownerId: host.noteId, role: "image", mime: "unknown", title: "unsaved.png" });
+            vi.spyOn(host, "saveAttachment").mockReturnValue(unsaved);
+
+            const att = getContext().init(() =>
+                imageService.saveImageToAttachment(host.noteId, fakeBuffer, "unsaved.png", false));
+            await imageService.awaitPendingImageWrites();
+
+            expect(att.attachmentId).toBeUndefined();
+            expect(error).toHaveBeenCalledWith(expect.stringMatching(/^Failed to store image attachment 'undefined': Error: Missing attachment ID\./));
         });
 
         it("records the media type the provider reported rather than rebuilding one from its extension", async () => {

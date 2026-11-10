@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+    getVirtualNoteAssets,
     getVirtualNoteContent,
     getVirtualNoteProvider,
     getVirtualNoteProviders,
@@ -74,5 +75,15 @@ describe("virtual_notes registry", () => {
         // provider without getContent → empty content
         registerVirtualNoteProvider(makeProvider("_vnother"));
         expect(getVirtualNoteContent("_vnotherPage")).toBe("");
+    });
+
+    it("delegates assets to the provider and falls back to none", () => {
+        const asset = { id: "img_1", url: "/assets/img.png", title: "img.png", mime: "image/png", getContent: async () => null };
+        registerVirtualNoteProvider(makeProvider("_vnreg", { getAssets: () => [ asset ] }));
+        registerVirtualNoteProvider(makeProvider("_vnother"));
+
+        expect(getVirtualNoteAssets("_vnregPage")).toEqual([ asset ]);
+        expect(getVirtualNoteAssets("_vnotherPage")).toEqual([]);
+        expect(getVirtualNoteAssets("_nowhere")).toEqual([]);
     });
 });

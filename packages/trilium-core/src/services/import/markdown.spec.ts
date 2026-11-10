@@ -781,6 +781,17 @@ $$`;
             expect(markdownExportService.toMarkdown(roundTrip(original))).toStrictEqual(markdown);
         });
 
+        it("leaves the class name in plain text and stray text inside a layout alone", () => {
+            expect(markdownService.renderToHtml("The trilium-multicolumn-layout class.", "Title"))
+                .toBe("<p>The trilium-multicolumn-layout class.</p>");
+
+            const stray = `<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1">` +
+                `stray${column("<p>A</p>")}${column("<p>B</p>")}</div>`;
+            const result = markdownService.renderToHtml(stray, "Title");
+            expect(result).toContain("stray");
+            expect(result).toContain(column("<p>A</p>"));
+        });
+
         it("round-trips a layout inside a tab panel", () => {
             const twoColumns = layout("1-1", "<p>A</p>", "<p>B</p>");
             const panel = `<div class="trilium-tab-panel">${twoColumns}</div>`;

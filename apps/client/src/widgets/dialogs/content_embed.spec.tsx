@@ -9,21 +9,27 @@ import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import type { NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { ParentComponent } from "../react/react_utils";
-import ContentEmbedDialog from "./content_embed";
+import ContentEmbedDialog, { ContentEmbedBalloon } from "./content_embed";
 
 const autocomplete = vi.hoisted(() => ({
     onChange: undefined as ((suggestion: Suggestion | null) => void) | undefined,
-    clear: vi.fn()
+    clear: vi.fn(),
+    focus: vi.fn()
 }));
+const openInAppHelpFromUrl = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../services/utils", async (importActual) => ({
+    ...await importActual<typeof import("../../services/utils")>(),
+    openInAppHelpFromUrl
+}));
 vi.mock("../react/NoteAutocomplete", () => ({
     default: ({ onChange, handleRef }: {
         onChange: (suggestion: Suggestion | null) => void;
         handleRef: RefObject<Partial<NoteAutocompleteHandle>>;
     }) => {
         autocomplete.onChange = onChange;
-        handleRef.current = { clear: autocomplete.clear };
+        handleRef.current = { clear: autocomplete.clear, focus: autocomplete.focus };
         return <input />;
     }
 }));
@@ -91,8 +97,8 @@ describe("ContentEmbedDialog", () => {
         expect(labels).toStrictEqual([ "include_note.label_note", "include_note.box_size" ]);
         expect(container.querySelector(".include-note-note input")).not.toBeNull();
         expect(sizeButtons().map((button) => button.textContent?.trim())).toStrictEqual([
-            "include_note.size_tiny", "include_note.size_small", "include_note.size_medium",
-            "include_note.size_full", "include_note.size_expandable"
+            "include_note.size_compact", "include_note.size_resizable", "include_note.size_full",
+            "include_note.size_expandable"
         ]);
         expect(sizeButtons().every((button) => button.querySelector("svg"))).toBe(true);
         // The name is written on the button, so a tooltip would only repeat it.
@@ -102,34 +108,44 @@ describe("ContentEmbedDialog", () => {
         // chosen one is shown.
         expect(container.querySelector(".include-note-size .tn-card-option-label small")).toBeNull();
         const descriptions = [ ...container.querySelectorAll(".include-note-size-description > *") ];
-        expect(descriptions).toHaveLength(5);
+        expect(descriptions).toHaveLength(4);
         const description = () => {
             const shown = descriptions.filter((d) => d.getAttribute("aria-hidden") !== "true");
             return shown.length === 1 ? shown[0]?.textContent : `${shown.length} shown`;
         };
-        expect(checkedSize()).toBe("medium");
-        expect(description()).toBe("include_note.size_medium_description");
-        await choose("tiny");
-        expect(checkedSize()).toBe("tiny");
-        expect(description()).toBe("include_note.size_tiny_description");
+        expect(checkedSize()).toBe("resizable");
+        expect(description()).toBe("include_note.size_resizable_description");
+        await choose("compact");
+        expect(checkedSize()).toBe("compact");
+        expect(description()).toBe("include_note.size_compact_description");
     });
 
     it("preselects the size that suits the picked note, until another size is chosen", async () => {
         const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
         const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
-        expect(checkedSize()).toBe("medium");
+        expect(checkedSize()).toBe("resizable");
 
         await pick(script);
         expect(checkedSize()).toBe("full");
-        await choose("tiny");
-        expect(checkedSize()).toBe("tiny");
+        await choose("compact");
+        expect(checkedSize()).toBe("compact");
 
-        // Another note drops the size chosen by hand.
+        // Another note drops the size chosen by hand. Audio suits Compact, a row of controls
+        // without a title.
         await pick(song);
-        expect(checkedSize()).toBe("small");
+        expect(checkedSize()).toBe("compact");
         await choose("expandable");
         await submit();
-        expect(editorApi.addContentEmbed).toHaveBeenCalledWith(song.noteId, "expandable");
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledWith(song.noteId, "expandable", { hideTitle: false });
+    });
+
+    it("includes an audio file at Compact without its title, a row of controls", async () => {
+        const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
+        await pick(song);
+        await submit();
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledWith(song.noteId, "compact", { hideTitle: true });
     });
 
     it("explains instead of offering sizes for a note inserted as an image", async () => {
@@ -183,13 +199,64 @@ describe("ContentEmbedDialog", () => {
         const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
         await pick(script);
         await submit();
-        expect(editorApi.addContentEmbed).toHaveBeenCalledExactlyOnceWith(script.noteId, "full");
+        expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full", { hideTitle: false });
 
         autocomplete.clear.mockClear();
         await open();
         expect(autocomplete.clear).toHaveBeenCalledOnce();
-        expect(checkedSize()).toBe("medium");
+        expect(checkedSize()).toBe("resizable");
         await submit();
         expect(editorApi.addContentEmbed).toHaveBeenCalledOnce();
+    });
+});
+
+describe("ContentEmbedBalloon", () => {
+    const editorApi = { addContentEmbed: vi.fn(), addImage: vi.fn() };
+    const onClose = vi.fn();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("focuses the note field, opens help, and includes the picked note once closed", async () => {
+        const script = buildNote({ title: "Script", type: "code", mime: "text/javascript" });
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(
+                <ContentEmbedBalloon opts={{ editorApi, sizeEditable: true }} onClose={onClose} />
+            );
+        });
+        const form = container.querySelector("form");
+        const button = container.querySelector<HTMLButtonElement>(".include-note-actions .btn");
+        if (!form || !button) throw new Error("The balloon has no form or no include button.");
+        const submit = () => act(async () => {
+            form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(container.querySelector(".modal")).toBeNull();
+        expect(autocomplete.focus).toHaveBeenCalledOnce();
+        expect(container.querySelector(".include-note-size-hint")?.textContent)
+            .toBe("include_note.size_hint");
+        expect(button.disabled).toBe(true);
+
+        // The help button sits on the left of the include button.
+        const help = container.querySelector<HTMLButtonElement>(
+            ".include-note-actions > .bx-help-circle:first-child"
+        );
+        if (!help) throw new Error("The balloon has no help button before the include button.");
+        await act(async () => help.click());
+        expect(openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("nBAXQFj20hS1");
+
+        await submit();
+        expect(onClose).not.toHaveBeenCalled();
+
+        await act(async () => {
+            autocomplete.onChange?.({ notePath: `root/${script.noteId}` });
+        });
+        expect(button.disabled).toBe(false);
+        await submit();
+        expect(onClose).toHaveBeenCalledOnce();
+        await vi.waitFor(() => expect(editorApi.addContentEmbed)
+            .toHaveBeenCalledExactlyOnceWith(script.noteId, "full", { hideTitle: false }));
     });
 });

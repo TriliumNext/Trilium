@@ -21,9 +21,8 @@ async function extractAndSendLayers() {
     try {
         // Get the config from the viewer if available (has updated state), otherwise from document
         const pdfViewer = app.pdfViewer;
-        const optionalContentConfig = pdfViewer?.optionalContentConfigPromise
-            ? await pdfViewer.optionalContentConfigPromise
-            : await app.pdfDocument.getOptionalContentConfig();
+        const optionalContentConfig = await (pdfViewer?.optionalContentConfigPromise
+            ?? app.pdfDocument.getOptionalContentConfig());
 
         if (!optionalContentConfig) {
             window.parent.postMessage({

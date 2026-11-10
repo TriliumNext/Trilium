@@ -59,7 +59,7 @@ This feature is quite similar to the <a class="reference-link" href="../Mermaid
 
 <figure class="image"><img style="aspect-ratio:1174/358;" src="2_Insert buttons_image.png" width="1174" height="358"></figure>
 
-A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Small_, _Medium_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
+A diagram shows in a box like the one of an included note, so it can be resized, given another box size (_Resizable_ or _Full_) from its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu or shown in fullscreen, as described in <a class="reference-link" href="Include%20Note.md">Include Note</a>.
 
 *   The <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of the diagram's toolbar decides whether its source can be changed. While it is off, the source still shows, but read-only.
 *   The buttons next to it choose what the diagram shows, as for a Mermaid note: <span class="tn-icon bx bx-code"></span> _Source view_ for the Mermaid source alone, <span class="tn-icon bx bxs-dock-left"></span> _Split view_ for the source with the diagram next to it, and <span class="tn-icon bx bx-show"></span> _Preview_ for the diagram alone. Its _More actions_ menu offers the same choice.
@@ -74,9 +74,9 @@ The source of the diagram stays in the note as a Mermaid code block, so the diag
 
 Diagrams created in earlier versions keep the view they were saved with, and open editable.
 
-## YouTube video
+## Audio/video embed
 
-Choose <span class="tn-icon bx bxl-youtube"></span> _YouTube video_ to insert a YouTube video that can be watched inside the note. Paste the address of the video, then press _Insert video_ or <kbd>Enter</kbd>. The video is inserted as a link preview in the _Embed_ display mode, described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>. The same action is available as _Insert YouTube video_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+Choose <span class="tn-icon bx bx-movie-play"></span> _Audio/video embed_ to insert a YouTube video, or an audio or video file from its web address, that can be played inside the note. Paste the address, then press _Insert media_ or <kbd>Enter</kbd>. The media is inserted as a link preview in the _Embed_ display mode, described in <a class="reference-link" href="Link%20Previews.md">Link Previews</a>. The same action is available as _Audio/video embed_ in the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 
 ## Horizontal ruler
 
@@ -96,6 +96,10 @@ Page breaks are marked in the editor with the words _Page break_, but they will 
 
 *   To insert a page break, press the <span class="tn-icon cke cke-page-break"></span> in the formatting toolbar.
 *   To insert many page breaks at once, insert a page break first, click on it and press <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then use <kbd>Ctrl</kbd>+<kbd>V</kbd>, to paste as many times as needed.
+
+## Footnotes
+
+See the dedicated <a class="reference-link" href="Footnotes.md">Footnotes</a> page.
 
 ## Date and time
 

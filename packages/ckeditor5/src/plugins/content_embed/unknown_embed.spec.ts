@@ -33,11 +33,12 @@ describe("UnknownContentEmbed", () => {
         expect(editor.getData()).toBe(SAVED);
     });
 
-    it("has the host fill an embed box instead of the content, at the section's box size", () => {
-        editor.setData(SAVED + SAVED.replace(` data-note-id="abc"`, ` data-box-size="small"`));
+    it("has the host fill an embed box instead of the content, at the box size it reads as", () => {
+        editor.setData(SAVED + SAVED.replace(` data-note-id="abc"`, ` data-box-size="small"`)
+            + SAVED.replace(` data-note-id="abc"`, ` data-box-size="full"`));
 
         const sections = getPlaceholders(editor);
-        expect(sections).toHaveLength(2);
+        expect(sections).toHaveLength(3);
         const wrappers = sections
             .map((section) => section.querySelector(":scope > .include-note-wrapper"));
         for (const section of sections) {
@@ -47,11 +48,13 @@ describe("UnknownContentEmbed", () => {
             expect(section.getAttribute("data-trilium-embed")).toBe("future-kind");
             expect(section.querySelector("p")).toBeNull();
         }
-        expect(sections[0].hasAttribute("data-box-size")).toBe(false);
-        expect(sections[1].getAttribute("data-box-size")).toBe("small");
+        expect(sections.map((section) => [
+            section.getAttribute("data-box-size"),
+            section.style.getPropertyValue("--include-note-height")
+        ])).toEqual([ [ null, "" ], [ "resizable", "10em" ], [ "full", "" ] ]);
         expect(wrappers[0]).toBeInstanceOf(HTMLElement);
         expect(loadUnknown.mock.calls).toEqual([
-            [ wrappers[0], undefined ], [ wrappers[1], "small" ]
+            [ wrappers[0], undefined ], [ wrappers[1], "resizable" ], [ wrappers[2], "full" ]
         ]);
     });
 

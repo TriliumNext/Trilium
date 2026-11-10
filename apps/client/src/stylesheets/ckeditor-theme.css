@@ -10,8 +10,8 @@ html:root {
     --ck-color-text: var(--main-text-color);
     --ck-color-shadow-drop: var(--main-background-color);
     --ck-color-shadow-inner: var(--main-background-color);
-    --ck-color-table-caption-text: var(--main-text-color);
-    --ck-color-table-caption-background: var(--accented-background-color);
+    --ck-content-table-caption-text-color: var(--main-text-color);
+    --ck-content-table-caption-background-color: var(--accented-background-color);
     --ck-color-table-caption-highlighted-background: var(--accented-background-color);
 
     /* -- Overrides the default .ck-button class colors. ---------------------------------------- */
@@ -97,7 +97,7 @@ html:root {
 
     --ck-color-link-default: var(--link-color);
 
-    --ck-color-table-focused-cell-background: var(--more-accented-background-color);
+    --ck-color-table-focused-cell-background: transparent;
 
     --ck-color-labeled-field-label-background: var(--accented-background-color);
 
@@ -126,6 +126,25 @@ html:root {
     box-shadow: 0 0 0 6px
         color-mix(in srgb, var(--ck-color-widget-type-around-button-active) 25%, transparent);
     animation: none;
+}
+
+/* Outranks the focus outline and shadow of the active table cell in `ckeditor5.css`, which loads
+   later. */
+:root .ck.ck-editor__editable .ck-widget.table :is(td, th).ck-editor__nested-editable {
+    outline: none;
+
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        box-shadow: none;
+    }
+}
+
+/* Outranks the focus ring and shadow of nested editables in `ckeditor5.css`. */
+:root .ck-content :is(.image, .table, .include-note) > figcaption.ck-editor__nested-editable {
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
 }
 
 div.ck.ck-dialog {
@@ -208,6 +227,10 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
 
 div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
     overflow-x: clip;
+}
+
+.ck.ck-color-ui-dropdown {
+    --ck-color-grid-tile-size: 30px;
 }
 
 :root .ck.ck-editor__editable_inline {

@@ -16,7 +16,7 @@ function buildMap(...nodes: Partial<NodeObj>[]) {
     const container = document.createElement("div");
 
     for (const [ index, node ] of nodes.entries()) {
-        const topic = document.createElement("me-tpc") as Topic;
+        const topic = Object.assign(document.createElement("div"), { className: "me-tpc" }) as unknown as Topic;
         topic.nodeObj = { id: `n${index}`, topic: "Node", ...node } as NodeObj;
         container.appendChild(topic);
     }
@@ -25,7 +25,7 @@ function buildMap(...nodes: Partial<NodeObj>[]) {
 }
 
 function markedNodes(container: HTMLElement) {
-    return [ ...container.querySelectorAll<Topic>("me-tpc") ]
+    return [ ...container.querySelectorAll<Topic>(".me-tpc") ]
         .filter((topic) => topic.hasAttribute(MEMO_MARKER_ATTRIBUTE))
         .map((topic) => topic.nodeObj.id);
 }
@@ -75,23 +75,21 @@ describe("renderMemoMarkers", () => {
         renderMemoMarkers(container);
         expect(markedNodes(container)).toEqual([ "n0" ]);
 
-        const [ topic ] = container.querySelectorAll<Topic>("me-tpc");
+        const [ topic ] = container.querySelectorAll<Topic>(".me-tpc");
         delete (topic.nodeObj as NodeObj & { memo?: string }).memo;
         renderMemoMarkers(container);
 
         expect(markedNodes(container)).toEqual([]);
     });
 
-    it("stays on a node through being selected, which rewrites what the node wears", () => {
-        // Selecting a node sets its `className` outright — Mind Elixir writes "selected" over
-        // whatever was there — and unselecting takes only that word off again. A mark held as a
-        // class went with the first click and stayed gone until the map was next laid out, which is
-        // to say the dot vanished the moment anyone touched the node it was telling them about.
+    it("stays on a node through being selected, which changes the node's classes", () => {
+        // Mind Elixir toggles the `selected` class on selection, so the mark is an attribute
+        // rather than a class that a rewrite of `className` could drop.
         const container = buildMap({ memo: "<p>About it</p>" } as Partial<NodeObj>);
         renderMemoMarkers(container);
 
-        const [ topic ] = container.querySelectorAll<Topic>("me-tpc");
-        topic.className = "selected";
+        const [ topic ] = container.querySelectorAll<Topic>(".me-tpc");
+        topic.classList.add("selected");
         expect(markedNodes(container)).toEqual([ "n0" ]);
 
         topic.classList.remove("selected");
@@ -100,10 +98,10 @@ describe("renderMemoMarkers", () => {
 
     it("passes over a node that has yet to be given the one it stands for", () => {
         const container = document.createElement("div");
-        container.appendChild(document.createElement("me-tpc"));
+        container.appendChild(Object.assign(document.createElement("div"), { className: "me-tpc" }));
 
         expect(() => renderMemoMarkers(container)).not.toThrow();
-        expect(container.querySelector("me-tpc")?.hasAttribute(MEMO_MARKER_ATTRIBUTE)).toBe(false);
+        expect(container.querySelector(".me-tpc")?.hasAttribute(MEMO_MARKER_ATTRIBUTE)).toBe(false);
     });
 });
 

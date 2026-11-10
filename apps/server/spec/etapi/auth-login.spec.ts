@@ -42,6 +42,24 @@ describe("etapi/auth/login", () => {
         expect(verifiedAsSystem).toEqual([ true ]);
     });
 
+    it("answers 500 and issues no token when the credential check itself fails", async () => {
+        vi.spyOn(totp, "isTotpEnabled").mockImplementation(() => {
+            throw new Error("options unavailable");
+        });
+
+        try {
+            const response = await supertest(app)
+                .post(LOGIN_URL)
+                .send({ password: CORRECT_PASSWORD, tokenName: "test" })
+                .expect(500);
+
+            expect(response.body.message).toBe("options unavailable");
+            expect(response.body.authToken).toBeUndefined();
+        } finally {
+            vi.restoreAllMocks();
+        }
+    });
+
     // verifyPassword is async; this guards that a wrong password is rejected and the
     // async verification result actually gates token issuance.
     it("rejects a wrong password and issues no token", async () => {

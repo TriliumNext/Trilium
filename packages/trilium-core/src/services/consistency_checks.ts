@@ -81,12 +81,11 @@ class ConsistencyChecks {
 
             for (const parentNoteId of childToParents[noteId]) {
                 if (path.includes(parentNoteId)) {
-                    if (this.autoFix) {
-                        const branch = becca.getBranchFromChildAndParent(noteId, parentNoteId);
-                        if (branch) {
-                            branch.markAsDeleted("cycle-autofix");
-                            logFix(`Branch '${branch.branchId}' between child '${noteId}' and parent '${parentNoteId}' has been deleted since it was causing a tree cycle.`);
-                        }
+                    // Without the cached branch nothing is deleted, so retrying would find the same cycle forever.
+                    const branch = this.autoFix ? becca.getBranchFromChildAndParent(noteId, parentNoteId) : null;
+                    if (branch) {
+                        branch.markAsDeleted("cycle-autofix");
+                        logFix(`Branch '${branch.branchId}' between child '${noteId}' and parent '${parentNoteId}' has been deleted since it was causing a tree cycle.`);
 
                         return true;
                     }
@@ -184,6 +183,7 @@ class ConsistencyChecks {
                     let message = `Branch '${branchId}' was missing parent note '${parentNoteId}', so it was deleted. `;
 
                     const note = becca.getNote(noteId);
+                    /* v8 ignore if -- becca still holds the branch's child note, a skeleton if its row is missing */
                     if (!note) {
                         return;
                     }
@@ -488,25 +488,26 @@ class ConsistencyChecks {
                     LEFT JOIN blobs USING (blobId)
                     WHERE blobs.blobId IS NULL
                         AND notes.isDeleted = 0`,
-            ({ noteId, isProtected, type, mime }) => {
+            ({ noteId, isProtected, mime }) => {
                 if (this.autoFix) {
                     // it might be possible that the blob is not available only because of the interrupted
                     // sync, and it will come later. It's therefore important to guarantee that this artificial
                     // record won't overwrite the real one coming from the sync.
                     const fakeDate = "2000-01-01 00:00:00Z";
 
-                    const blankContent = getBlankContent(isProtected, type, mime);
-                    if (!blankContent) {
+                    // A protected note's blank content cannot be encrypted without the password.
+                    if (isProtected) {
                         logError(`Unable to recover note ${noteId} since it's content could not be retrieved (might be protected note).`);
                         return;
                     }
+                    const blankContent = getBlankContent(mime);
                     const blobId = hashedBlobId(blankContent);
                     const blobAlreadyExists = !!sql.getValue("SELECT 1 FROM blobs WHERE blobId = ?", [blobId]);
 
                     if (!blobAlreadyExists) {
                         // manually creating row since this can also affect deleted notes
                         sql.upsert("blobs", "blobId", {
-                            noteId,
+                            blobId,
                             content: blankContent,
                             utcDateModified: fakeDate,
                             dateModified: fakeDate
@@ -546,15 +547,13 @@ class ConsistencyChecks {
                         WHERE isDeleted = 0
                         AND isProtected = 0
                         AND content IS NULL`,
-                ({ noteId, type, mime }) => {
+                ({ noteId, mime }) => {
                     if (this.autoFix) {
                         const note = becca.getNote(noteId);
-                        const blankContent = getBlankContent(false, type, mime);
+                        const blankContent = getBlankContent(mime);
                         if (!note) return;
 
-                        if (blankContent) {
-                            note.setContent(blankContent);
-                        }
+                        note.setContent(blankContent);
 
                         this.reloadNeeded = true;
 
@@ -658,12 +657,14 @@ class ConsistencyChecks {
             ({ attributeId }) => {
                 if (this.autoFix) {
                     const relation = becca.getAttribute(attributeId);
+                    /* v8 ignore start -- the broken-reference check above already deletes these, since no note has an empty ID */
                     if (!relation) return;
                     relation.markAsDeleted();
 
                     this.reloadNeeded = true;
 
                     logFix(`Removed relation '${relation.attributeId}' of name '${relation.name}' with empty target.`);
+                    /* v8 ignore stop */
                 } else {
                     logError(`Relation '${attributeId}' has empty target.`);
                 }
@@ -956,11 +957,7 @@ class ConsistencyChecks {
     }
 }
 
-function getBlankContent(isProtected: boolean, type: string, mime: string) {
-    if (isProtected) {
-        return null; // this is wrong for protected non-erased notes, but we cannot create a valid value without a password
-    }
-
+function getBlankContent(mime: string) {
     if (mime === "application/json") {
         return "{}";
     }

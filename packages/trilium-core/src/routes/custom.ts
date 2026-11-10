@@ -47,15 +47,13 @@ export function handleCustomRequest(
             continue;
         }
 
-        // Only the first matching handler runs.
+        // Only the first matching handler runs. The query above reads only the two handler labels.
         if (attr.name === "customRequestHandler") {
             return runHandler(attr.getNote(), path, match, req, res, isScriptingEnabled);
-        } else if (attr.name === "customResourceProvider") {
-            downloadNoteInt(attr.noteId, res);
-            return;
-        } else {
-            throw new Error(`Unrecognized attribute name '${attr.name}'`);
         }
+
+        downloadNoteInt(attr.noteId, res);
+        return;
     }
 
     const message = `No handler matched for custom '${path}' request.`;

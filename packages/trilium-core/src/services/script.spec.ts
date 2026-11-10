@@ -474,3 +474,127 @@ describe("describeScriptFailure", () => {
         expect(describeScriptFailure(looped)).toEqual({ message: "outer", noteId: "n1" });
     });
 });
+
+describe("script bundles with child modules", () => {
+    const originalScriptingEnabled = config.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        config.Security.backendScriptingEnabled = true;
+    });
+
+    afterAll(() => {
+        config.Security.backendScriptingEnabled = originalScriptingEnabled;
+    });
+
+    beforeEach(() => {
+        becca.reset();
+        vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
+    });
+
+    it("injects matching child notes as modules, skipping excluded children", () => {
+        const parent = buildNote({
+            type: "code",
+            mime: "application/javascript;env=backend",
+            content: "return helper.value + 1;",
+            children: [
+                {
+                    title: "help-er",
+                    type: "code",
+                    mime: "application/javascript;env=backend",
+                    content: "module.exports = { value: 41 };"
+                },
+                {
+                    "title": "excluded",
+                    "type": "code",
+                    "mime": "application/javascript;env=backend",
+                    "content": "throw new Error('should not be included');",
+                    "#disableInclusion": ""
+                }
+            ]
+        });
+
+        const bundle = getScriptBundle(parent, true, "backend");
+        expect(bundle?.script).toContain("function(exports, module, require, api, helper)");
+        expect(bundle?.script).not.toContain("should not be included");
+        expect(bundle?.allNotes?.map((n) => n.title)).toEqual([ "New note", "help-er" ]);
+
+        getContext().init(() => {
+            expect(scriptService.executeNote(parent, {})).toBe(42);
+        });
+    });
+
+    it("collects the HTML of child notes", () => {
+        const parent = buildNote({
+            type: "code",
+            mime: "application/javascript;env=frontend",
+            content: "",
+            children: [ { title: "markup", type: "file", mime: "text/html", content: "<b>child html</b>" } ]
+        });
+
+        const bundle = getScriptBundle(parent, true, "frontend");
+        expect(bundle?.html).toBe("<b>child html</b>");
+        expect(bundle?.allNotes?.map((n) => n.title)).toEqual([ "New note", "markup" ]);
+    });
+
+    it("runs a script whose children include HTML, passing only script children as modules", () => {
+        const parent = buildNote({
+            type: "code",
+            mime: "application/javascript;env=backend",
+            content: "return typeof markup + ':' + helper.value;",
+            children: [
+                { title: "markup", type: "file", mime: "text/html", content: "<b>child html</b>" },
+                { title: "helper", type: "code", mime: "application/javascript;env=backend", content: "module.exports = { value: 7 };" }
+            ]
+        });
+
+        const bundle = getScriptBundle(parent, true, "backend");
+        expect(bundle?.html).toBe("<b>child html</b>");
+        expect(bundle?.script).toContain("function(exports, module, require, api, helper)");
+        getContext().init(() => {
+            expect(scriptService.executeNote(parent, {})).toBe("undefined:7");
+        });
+    });
+
+    it("returns a stub bundle for a note that is already part of the bundle", () => {
+        const note = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "return 1;" });
+
+        const bundle = getScriptBundle(note, true, "backend", [ note.noteId ]);
+        expect(bundle).toEqual({ note, script: "", html: "", allNotes: [ note ] });
+    });
+
+    it("compiles a JSX note", () => {
+        const note = buildNote({ type: "code", mime: "text/jsx", content: "return <p>hi</p>;" });
+
+        const bundle = getScriptBundle(note, true, "frontend");
+        expect(bundle?.script).toContain("api.preact.h('p'");
+        expect(bundle?.script).toContain("return await ((async function(exports, module, require, api)");
+    });
+
+    it("does nothing for notes that are not a backend script, warning only for frontend scripts", () => {
+        const textNote = buildNote({ type: "text", content: "hi" });
+        const envlessScript = buildNote({ type: "code", mime: "application/javascript", content: "" });
+
+        expect(scriptService.executeNote(textNote, {})).toBeUndefined();
+        expect(scriptService.executeNote(envlessScript, {})).toBeUndefined();
+        expect(ws.sendMessageToAllClients).not.toHaveBeenCalled();
+    });
+
+    it("gives no bundle for a note that is not a script", () => {
+        const textNote = buildNote({ type: "text", content: "hi" });
+
+        expect(scriptService.getScriptBundleForFrontend(textNote)).toBeUndefined();
+        getContext().init(() => {
+            expect(() => scriptService.executeScript("() => 1", [], textNote.noteId, textNote.noteId, "notes", textNote.noteId, becca))
+                .toThrow(/Unable to determine script bundle/);
+        });
+    });
+
+    it("passes function parameters through as source", () => {
+        const note = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
+
+        getContext().init(() => {
+            const result = scriptService.executeScript("(fn) => fn(2)", [ "!@#Function: (x) => x * 10" ], note.noteId, note.noteId, "notes", note.noteId, becca);
+            expect(result).toBe(20);
+        });
+    });
+});

@@ -110,6 +110,37 @@ describe("desktop native import — capability token", () => {
         expect(coreMock.dispatch).not.toHaveBeenCalled();
     });
 
+    it("cancels the picker when no window is focused", async () => {
+        electronMock.getFocusedWindow.mockReturnValue(null);
+
+        expect(await pick()).toEqual({ status: "cancelled" });
+        expect(electronMock.showOpenDialog).not.toHaveBeenCalled();
+    });
+
+    it("expires unredeemed grants and prunes them on the next grant", async () => {
+        vi.useFakeTimers();
+        try {
+            dialogReturns(["/data/stale.md", "/data/pruned.md"]);
+            const { files } = await pick();
+            await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 1);
+
+            // An expired grant redeems to nothing.
+            const stale = await importFromToken({ token: files?.[0].token, parentNoteId: "p", taskId: "t", options: OPTIONS, last: false });
+            expect(stale.status).toBe("error");
+
+            // Minting a new grant drops the other expired one, so it cannot be redeemed either.
+            dialogReturns(["/data/fresh.md"]);
+            const fresh = await pick();
+            const pruned = await importFromToken({ token: files?.[1].token, parentNoteId: "p", taskId: "t", options: OPTIONS, last: false });
+            expect(pruned.status).toBe("error");
+            const ok = await importFromToken({ token: fresh.files?.[0].token, parentNoteId: "p", taskId: "t", options: OPTIONS, last: false });
+            expect(ok.status).toBe("imported");
+            expect(coreMock.dispatch).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("grants tokens for dropped files (same capability as the dialog)", async () => {
         const result = await grantDropped(["/data/a.zip", "/data/b.md"]);
 
@@ -243,6 +274,17 @@ describe("desktop native import — capability token", () => {
 
         expect(result).toEqual({ status: "error", message: "corrupt archive" });
         expect(coreMock.reportError).toHaveBeenCalledWith("corrupt archive");
+    });
+
+    it("reports a non-Error rejection by its string form", async () => {
+        dialogReturns(["/data/bad.md"]);
+        coreMock.dispatch.mockRejectedValue("boom");
+        const { files } = await pick();
+
+        const result = await importFromToken({ token: files?.[0].token, parentNoteId: "p", taskId: "t", options: OPTIONS, last: true });
+
+        expect(result).toEqual({ status: "error", message: "boom" });
+        expect(coreMock.reportError).toHaveBeenCalledWith("boom");
     });
 
     it("surfaces an OPML structured failure (the [status, message] tuple) as an error", async () => {

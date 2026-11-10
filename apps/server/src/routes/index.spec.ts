@@ -1,7 +1,22 @@
 import type { Request, Response } from "express";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { markAsInternalElectronRequest } from "../services/electron_request.js";
+
+const state = vi.hoisted(() => {
+    const defaults = () => ({
+        config: { General: {}, Network: {} } as { General?: Record<string, unknown>; Network: Record<string, unknown> },
+        isMac: false,
+        supportsBackgroundMaterial: false,
+        isDbInitialized: true,
+        isPasswordSet: true,
+        sharedItems: {} as Record<string, unknown>,
+        optionMap: {} as Record<string, string>,
+        csrfToken: "csrf-test-token" as string | undefined,
+        logInfo: [] as string[]
+    });
+    return { defaults, current: defaults() };
+});
 
 // Force the process-wide desktop-build flag ON so these tests reproduce the
 // #10589 setup: a browser hitting the desktop app's HTTP listener. The gating
@@ -9,14 +24,25 @@ import { markAsInternalElectronRequest } from "../services/electron_request.js";
 // exactly what the assertions below verify.
 vi.mock("../services/utils.js", async (orig) => {
     const actual = await orig<typeof import("../services/utils.js")>();
-    return { ...actual, isElectron: true, isDev: true, isMac: false, supportsBackgroundMaterial: false };
+    return {
+        ...actual,
+        isElectron: true,
+        isDev: true,
+        get isMac() { return state.current.isMac; },
+        get supportsBackgroundMaterial() { return state.current.supportsBackgroundMaterial; }
+    };
 });
 
-vi.mock("../services/config.js", () => ({ default: { General: {}, Network: {} } }));
+vi.mock("../services/config.js", () => ({
+    default: {
+        get General() { return state.current.config.General; },
+        get Network() { return state.current.config.Network; }
+    }
+}));
 vi.mock("../services/port.js", () => ({ default: 8080 }));
 vi.mock("../services/app_path.js", () => ({ default: "app" }));
 vi.mock("../services/asset_path.js", () => ({ default: "assets" }));
-vi.mock("./csrf_protection.js", () => ({ generateCsrfToken: () => "csrf-test-token" }));
+vi.mock("./csrf_protection.js", () => ({ generateCsrfToken: () => state.current.csrfToken }));
 vi.mock("../services/open_id.js", () => ({
     default: { isOpenIDEnabled: () => false, getSSOIssuerName: () => "", getSSOIssuerIcon: () => "" }
 }));
@@ -25,21 +51,25 @@ vi.mock("../services/totp.js", () => ({ default: { isTotpEnabled: () => false } 
 vi.mock("@triliumnext/core", () => ({
     attributes: {},
     BNote: class {},
-    getSharedBootstrapItems: () => ({}),
+    getSharedBootstrapItems: () => state.current.sharedItems,
     icon_packs: { getIconPacks: () => [], generateCss: () => "", MIME_TO_EXTENSION_MAPPINGS: {} },
-    options: { getOptionMap: () => ({}) },
-    password: { isPasswordSet: () => true },
-    sql_init: { isDbInitialized: () => true },
+    options: { getOptionMap: () => state.current.optionMap },
+    password: { isPasswordSet: () => state.current.isPasswordSet },
+    sql_init: { isDbInitialized: () => state.current.isDbInitialized },
     task_states: { generateTaskStateCss: () => "" },
     user_homes: { getTopLevelHomeNoteId: (userId: string) => `home_${userId}` },
     user_service: {
         hasUsersWithOwnPassword: () => false,
         getSignedInUser: (userId?: string) => (userId === "alice" ? { username: "alice", isAdmin: false, avatarHue: 210 } : undefined)
     },
-    getLog: () => ({ info: () => {}, error: () => {} })
+    getLog: () => ({ info: (message: string) => state.current.logInfo.push(message), error: () => {} })
 }));
 
 const { bootstrap, getView } = await import("./index.js");
+
+afterEach(() => {
+    state.current = state.defaults();
+});
 
 function makeReq(overrides: {
     loggedIn?: boolean;
@@ -48,9 +78,13 @@ function makeReq(overrides: {
     query?: Record<string, unknown>;
     cookies?: Record<string, string>;
     userAgent?: string;
+    session?: Record<string, unknown>;
 } = {}): Request {
     const req = {
-        session: { loggedIn: overrides.loggedIn ?? false, userId: overrides.userId },
+        session: Object.assign(overrides.session ?? {}, {
+            loggedIn: overrides.loggedIn ?? false,
+            userId: overrides.userId
+        }),
         query: overrides.query ?? {},
         headers: overrides.userAgent ? { "user-agent": overrides.userAgent } : {},
         cookies: overrides.cookies ?? {}
@@ -121,6 +155,136 @@ describe("bootstrap auth gating (desktop build, #10589)", () => {
         // absolute renderer-only URLs it can't derive from trilium-app://.
         expect(body().isElectron).toBe(true);
         expect(body().wsBaseUrl).toBeTruthy();
+    });
+});
+
+describe("bootstrap payloads", () => {
+    it("serves the setup payload before the database exists, with background effects only for the renderer", () => {
+        state.current.isDbInitialized = false;
+        state.current.isMac = true;
+
+        const browser = makeRes();
+        bootstrap(makeReq(), browser.res);
+        expect(browser.body()).toMatchObject({ hasBackgroundEffects: false, isMainWindow: true, appCssNoteIds: [] });
+        expect(browser.body().loggedIn).toBeUndefined();
+
+        const renderer = makeRes();
+        bootstrap(makeReq({ internal: true }), renderer.res);
+        expect(renderer.body().hasBackgroundEffects).toBe(true);
+
+        state.current.isMac = false;
+        state.current.supportsBackgroundMaterial = true;
+        const windows = makeRes();
+        bootstrap(makeReq({ internal: true }), windows.res);
+        expect(windows.body().hasBackgroundEffects).toBe(true);
+    });
+
+    it("asks a browser to set a password while none is set, unless authentication is off", () => {
+        state.current.isPasswordSet = false;
+
+        const browser = makeRes();
+        bootstrap(makeReq(), browser.res);
+        expect(browser.body()).toMatchObject({ passwordSet: false, hasNativeTitleBar: false });
+
+        state.current.config.General = { noAuthentication: true };
+        const open = makeRes();
+        bootstrap(makeReq(), open.res);
+        expect(open.body()).toMatchObject({ loggedIn: true, passwordSet: true });
+    });
+
+    it("exempts the renderer and an unauthenticated instance from the setup password gate", () => {
+        state.current.sharedItems = { setupAuthRequired: true, setupSecondFactorRequired: true };
+        const gates = (req: Request) => {
+            const { res, body } = makeRes();
+            bootstrap(req, res);
+            return [ body().setupAuthRequired, body().setupSecondFactorRequired ];
+        };
+
+        expect(gates(makeReq())).toEqual([ true, true ]);
+        expect(gates(makeReq({ internal: true }))).toEqual([ false, false ]);
+        state.current.config.General = { noAuthentication: true };
+        expect(gates(makeReq())).toEqual([ false, false ]);
+    });
+
+    it("hands the login screen a pending SSO error once, and reduces a connection failure to a flag", () => {
+        const session: Record<string, unknown> = { ssoError: "access_denied", ssoConnectionFailed: "ECONNREFUSED" };
+        const first = makeRes();
+        bootstrap(makeReq({ session }), first.res);
+        expect(first.body().login).toMatchObject({ ssoError: "access_denied", ssoConnectionFailed: true });
+        expect(session).not.toHaveProperty("ssoError");
+        expect(session).not.toHaveProperty("ssoConnectionFailed");
+
+        const second = makeRes();
+        bootstrap(makeReq({ session }), second.res);
+        expect(second.body().login).toMatchObject({ ssoError: undefined, ssoConnectionFailed: false });
+    });
+
+    it("hands a logged-in client its one-shot OAuth notices and keeps an initialized CSRF session", () => {
+        const session: Record<string, unknown> = {
+            csrfInitialized: true, ssoJustEnrolled: true, ssoConnectionFailed: "TLS rejected"
+        };
+        const first = makeRes();
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", session }), first.res);
+        expect(first.body()).toMatchObject({ oauthJustEnrolled: true, oauthConnectionFailed: "TLS rejected" });
+        expect(session).toEqual({ loggedIn: true, userId: "alice", csrfInitialized: true });
+
+        const second = makeRes();
+        bootstrap(makeReq({ loggedIn: true, userId: "alice", session }), second.res);
+        expect(second.body()).toMatchObject({ oauthJustEnrolled: false, oauthConnectionFailed: undefined });
+    });
+
+    it("logs a failed CSRF token generation", () => {
+        state.current.csrfToken = undefined;
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), makeRes().res);
+        state.current.csrfToken = "t";
+        bootstrap(makeReq({ loggedIn: true, userId: "alice" }), makeRes().res);
+
+        expect(state.current.logInfo).toEqual([ "CSRF token generation: Failed", "CSRF token generation: Successful" ]);
+    });
+
+    it("gives the renderer loopback URLs with the configured protocol and the window chrome options", () => {
+        state.current.config = { General: { instanceName: "work" }, Network: { https: true } };
+        state.current.optionMap = { nativeTitleBarVisible: "false", backgroundEffects: "true" };
+        state.current.isMac = true;
+
+        const renderer = makeRes();
+        bootstrap(makeReq({ internal: true }), renderer.res);
+        expect(renderer.body()).toMatchObject({
+            instanceName: "work",
+            wsBaseUrl: "ws://127.0.0.1:8080/",
+            httpBaseUrl: "https://127.0.0.1:8080",
+            hasNativeTitleBar: false,
+            hasBackgroundEffects: true
+        });
+
+        state.current.config = { General: undefined, Network: { https: false } };
+        state.current.optionMap = { nativeTitleBarVisible: "true", backgroundEffects: "true" };
+        const titled = makeRes();
+        bootstrap(makeReq({ internal: true }), titled.res);
+        expect(titled.body()).toMatchObject({
+            instanceName: null,
+            httpBaseUrl: "http://127.0.0.1:8080",
+            hasNativeTitleBar: true,
+            hasBackgroundEffects: false
+        });
+
+        state.current.isMac = false;
+        state.current.optionMap = { backgroundEffects: "true" };
+        const plain = makeRes();
+        bootstrap(makeReq({ internal: true }), plain.res);
+        expect(plain.body().hasBackgroundEffects).toBe(false);
+    });
+
+    it("marks only an extra desktop window as secondary", () => {
+        const isMainWindow = (req: Request) => {
+            const { res, body } = makeRes();
+            bootstrap(req, res);
+            return body().isMainWindow;
+        };
+
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice" }))).toBe(true);
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice", query: { extraWindow: "1" } }))).toBe(false);
+        expect(isMainWindow(makeReq({ loggedIn: true, userId: "alice", query: { extraWindow: "1", mobile: "" } }))).toBe(true);
     });
 });
 

@@ -1,10 +1,29 @@
 import { cls, getLog, NotFoundError } from "@triliumnext/core";
 import express from "express";
-import { existsSync } from "fs";
+import { existsSync, rmSync } from "fs";
 import http, { type Server } from "http";
 import type { AddressInfo } from "net";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
+
+const readBack = vi.hoisted(() => ({
+    error: undefined as Error | undefined,
+    removeError: undefined as Error | undefined,
+    removed: [] as string[]
+}));
+
+vi.mock("fs/promises", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("fs/promises")>();
+    return {
+        ...actual,
+        readFile: (...args: Parameters<typeof actual.readFile>) =>
+            readBack.error ? Promise.reject(readBack.error) : actual.readFile(...args),
+        rm: (...args: Parameters<typeof actual.rm>) => {
+            readBack.removed.push(String(args[0]));
+            return readBack.removeError ? Promise.reject(readBack.removeError) : actual.rm(...args);
+        }
+    };
+});
 
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
@@ -36,6 +55,9 @@ function buildApp() {
             // Whether the temp file is still on disk while the handler runs.
             tempPresent: file?.path ? existsSync(file.path) : null
         });
+    });
+    app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+        res.status(500).send(err.message);
     });
     return app;
 }
@@ -119,6 +141,32 @@ describe("importMiddlewareWithErrorHandling (disk storage)", () => {
         expect(res.status).toBe(400);
         expect(res.text).toContain("nested multipart field names are not allowed");
     });
+
+    it("forwards a body it cannot parse as an error instead of reaching the handler", async () => {
+        const res = await request(buildApp())
+            .post("/import")
+            .set("Content-Type", "multipart/form-data; boundary=b")
+            .send("--b\r\nContent-Disposition: form-data; name=\"upload\"; filename=\"a.enex\"\r\n\r\nhi");
+
+        expect([ res.status, res.text ]).toEqual([ 500, "Unexpected end of form" ]);
+    });
+
+    it("forwards an upload it cannot read back as an error, and removes its temp file", async () => {
+        readBack.error = new Error("EIO: i/o error, read");
+        readBack.removed = [];
+        try {
+            const res = await request(buildApp())
+                .post("/import")
+                .attach("upload", Buffer.from("<en-export/>"), "notes.enex");
+
+            expect([ res.status, res.text ]).toEqual([ 500, "EIO: i/o error, read" ]);
+        } finally {
+            readBack.error = undefined;
+        }
+        expect(readBack.removed).toHaveLength(1);
+        expect(readBack.removed[0]).toMatch(/upload-\w+\.trilium$/);
+        await vi.waitFor(() => expect(existsSync(readBack.removed[0])).toBe(false));
+    });
 });
 
 describe("uploadMiddlewareWithErrorHandling (in-memory)", () => {
@@ -194,6 +242,34 @@ describe("createShareTargetMiddleware", () => {
             .send("--b c\r\nContent-Disposition: form-data; name=\"text\"\r\n\r\nhi\r\n\0--b c--\r\n");
 
         expect(res.body).toEqual({ text: "hi" });
+    });
+});
+
+describe("temp file cleanup", () => {
+    it("leaves no stray rejection when an upload's temp file cannot be removed", async () => {
+        const rejections: unknown[] = [];
+        const collect = (reason: unknown) => rejections.push(reason);
+        process.on("unhandledRejection", collect);
+        readBack.removeError = Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" });
+        readBack.removed = [];
+        try {
+            const shareApp = express();
+            shareApp.post("/share", createShareTargetMiddleware(), (_req, res) => res.sendStatus(200));
+
+            await request(shareApp).post("/share").attach("files", Buffer.from("shared"), "shared.txt").expect(200);
+            await request(buildApp()).post("/import").attach("upload", Buffer.from("PK-zip-bytes"), "backup.zip").expect(200);
+            await request(buildApp()).post("/import").attach("upload", Buffer.from("<en-export/>"), "notes.enex").expect(200);
+
+            await vi.waitFor(() => expect(readBack.removed).toHaveLength(3));
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            expect(rejections).toEqual([]);
+        } finally {
+            readBack.removeError = undefined;
+            process.off("unhandledRejection", collect);
+            for (const filePath of readBack.removed) {
+                rmSync(filePath, { force: true });
+            }
+        }
     });
 });
 
@@ -395,6 +471,62 @@ describe("internalRoute without a result handler", () => {
     });
 });
 
+describe("internalRoute result handling", () => {
+    let app: express.Application;
+
+    beforeAll(() => {
+        route("get", "/result/:status", [], (req) => {
+            const status = Number(req.params.status);
+            return [ status, status === 204 ? "" : { status } ];
+        }, apiResultHandler);
+
+        route("get", "/result-handled", [], (_req, res) => {
+            res.triliumResponseHandled = true;
+            res.status(207).send("handled by the route");
+            return { ignored: true };
+        }, apiResultHandler);
+
+        asyncRoute("get", "/result-late-failure", [], async (_req, res) => {
+            res.status(202).send("partial");
+            throw new Error("late failure");
+        }, apiResultHandler);
+
+        app = express();
+        app.use(router);
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("sends a [status, body] result with that status, and logs only an unsuccessful one", async () => {
+        const info = vi.spyOn(getLog(), "info");
+
+        expect((await request(app).get("/result/201").expect(201)).body).toEqual({ status: 201 });
+        await request(app).get("/result/204").expect(204);
+        expect((await request(app).get("/result/409").expect(409)).body).toEqual({ status: 409 });
+
+        expect(info.mock.calls.flat().filter((line) => String(line).includes("returned")))
+            .toEqual([ `GET /result/409 returned 409 with response {"status":409}` ]);
+    });
+
+    it("leaves the response a route already sent alone, and logs it without a length", async () => {
+        const logRequest = vi.spyOn(getLog(), "request");
+
+        const res = await request(app).get("/result-handled").expect(207);
+
+        expect(res.text).toBe("handled by the route");
+        expect(logRequest).toHaveBeenCalledExactlyOnceWith(expect.anything(), expect.anything(), expect.any(Number), 0);
+    });
+
+    it("logs a handler that fails after answering, without answering twice", async () => {
+        const error = vi.spyOn(getLog(), "error");
+
+        const res = await request(app).get("/result-late-failure").expect(202);
+
+        expect(res.text).toBe("partial");
+        expect(error).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/^get \/result-late-failure threw exception: 'late failure'/));
+    });
+});
+
 describe("internalRoute response delivery", () => {
     let server: Server;
     let port: number;
@@ -402,6 +534,13 @@ describe("internalRoute response delivery", () => {
     beforeAll(async () => {
         route("get", "/delivery/large", [], () => ({ payload: "x".repeat(64 * 1024 * 1024) }), apiResultHandler);
         route("get", "/delivery/small", [], () => ({ ok: true }), apiResultHandler);
+        // Sends the head and the start of a 1024-byte body and holds back the rest, as a transfer
+        // that the client gives up on does.
+        route("get", "/delivery/stalled", [], () => ({}), (_req, res) => {
+            res.status(200).setHeader("Content-Type", "text/plain");
+            res.write("x".repeat(16));
+            return 1024;
+        });
 
         const app = express();
         app.use(router);
@@ -414,11 +553,10 @@ describe("internalRoute response delivery", () => {
         server.close();
     });
 
-    it("logs a client that disconnects before the response is delivered", async () => {
-        const info = vi.spyOn(getLog(), "info");
-
-        await new Promise<void>((resolve, reject) => {
-            const req = http.get({ port, path: "/delivery/large?logMarkerId=m1" }, (res) => {
+    /** Requests `path` and drops the connection as soon as the first bytes of the body arrive. */
+    function disconnectAfterFirstChunk(path: string) {
+        return new Promise<void>((resolve, reject) => {
+            const req = http.get({ port, path }, (res) => {
                 res.once("data", () => {
                     req.destroy();
                     resolve();
@@ -426,9 +564,31 @@ describe("internalRoute response delivery", () => {
             });
             req.on("error", (e: NodeJS.ErrnoException) => e.code === "ECONNRESET" ? resolve() : reject(e));
         });
+    }
+
+    it("logs a client that disconnects before the response is delivered", async () => {
+        const info = vi.spyOn(getLog(), "info");
+
+        await disconnectAfterFirstChunk("/delivery/stalled?logMarkerId=m1");
+
+        await vi.waitFor(() => expect(info).toHaveBeenCalledWith(
+            expect.stringMatching(/^Aborted 200 GET \/delivery\/stalled\?logMarkerId=m1 after \d+ms: /),
+        ));
+        expect(info.mock.calls.flat().filter((line) => String(line).startsWith("Aborted"))).toEqual([
+            expect.stringMatching(/: the client disconnected before receiving the 1024-byte response$/)
+        ]);
+        info.mockRestore();
+    });
+
+    // Windows accepts the whole 64 MiB write into the socket at once, even over loopback with a
+    // client that reads nothing, so the response counts as finished before the client disconnects.
+    it.skipIf(process.platform === "win32")("logs a client that disconnects during a large transfer", async () => {
+        const info = vi.spyOn(getLog(), "info");
+
+        await disconnectAfterFirstChunk("/delivery/large?logMarkerId=m2");
 
         await vi.waitFor(() => expect(info).toHaveBeenCalledWith(expect.stringMatching(
-            /^Aborted 200 GET \/delivery\/large\?logMarkerId=m1 after \d+ms: the client disconnected before receiving the \d+-byte response$/
+            /^Aborted 200 GET \/delivery\/large\?logMarkerId=m2 after \d+ms: the client disconnected before receiving the \d+-byte response$/
         )));
         info.mockRestore();
     });

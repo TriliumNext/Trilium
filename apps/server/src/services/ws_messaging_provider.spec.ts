@@ -184,6 +184,26 @@ describe("WebSocketMessagingProvider", () => {
             await Promise.resolve(); // let the fire-and-forget async body settle
         });
 
+        it("logs a malformed message or a failing handler instead of rejecting", async () => {
+            const { server } = init();
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+            provider.setClientMessageHandler(vi.fn(async () => {
+                throw new Error("handler failed");
+            }));
+            const ws = makeSocket();
+            server.emit("connection", ws, {});
+
+            ws.emit("message", "{not json");
+            ws.emit("message", JSON.stringify({ type: "hello" }));
+
+            await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(2));
+            expect(consoleError.mock.calls.map(([ prefix, error ]) => [ prefix, (error as Error).constructor.name ])).toEqual([
+                [ "Failed to process websocket message:", "SyntaxError" ],
+                [ "Failed to process websocket message:", "Error" ]
+            ]);
+            expect((consoleError.mock.calls[1][1] as Error).message).toBe("handler failed");
+        });
+
         it("logs server errors via the error handler", () => {
             const { server } = init();
             expect(() => server.emit("error", new Error("ws boom"))).not.toThrow();

@@ -65,7 +65,7 @@ export default function CloneToDialog() {
                 <Button text={t("clone_to.clone_to_selected_note")} keyboardShortcut="Enter" />
             </>}
             onSubmit={onSubmit}
-            onShown={() => autocompleteRef.current?.showRecentNotes()}
+            onShown={() => autocompleteRef.current?.focus()}
             onHidden={() => setShown(false)}
             show={shown}
         >

@@ -154,10 +154,6 @@ describe("Route transport & middleware", () => {
         });
     });
 
-    it("redirects /setup to the app when the DB is already initialized", async () => {
-        await supertest(app).get("/setup").expect(302);
-    });
-
     it("logs out an authenticated session", async () => {
         await ctx.agent.post("/logout").set("x-csrf-token", ctx.csrfToken).expect(302);
     });

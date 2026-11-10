@@ -57,7 +57,7 @@ export default function ChatToolsDropdown({ enableNoteTools, onNoteToolsChange, 
                 title={t("llm_chat.note_tools")}
                 description={t("llm_chat.note_tools_description")}
                 currentValue={enableNoteTools}
-                onChange={onNoteToolsChange}
+                onChange={(newValue) => onNoteToolsChange(newValue)}
             />
 
             <FormDropdownSubmenu

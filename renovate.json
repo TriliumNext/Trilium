@@ -74,6 +74,11 @@
             "enabled": false
         },
         {
+            "description": "typescript stays on 6.x: v7 is the native compiler and its package no longer exports the JS compiler API that TypeDoc, typescript-eslint and the browser-bundled language service in packages/codemirror load. The v7 compiler is installed as the @typescript/native alias, which matchDepNames leaves free to update. See the Developer Guide, Environment Setup, \"TypeScript\"",
+            "matchDepNames": ["typescript"],
+            "allowedVersions": "<7"
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },

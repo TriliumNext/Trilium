@@ -57,6 +57,7 @@ button.global-menu-button {
     height: 100% !important;
     border: none;
     padding: 6px;
+    font-size: 16px;
 }
 
 .global-menu-button svg > g {

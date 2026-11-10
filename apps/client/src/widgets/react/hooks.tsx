@@ -29,7 +29,9 @@ import protected_session_holder from "../../services/protected_session_holder";
 import { consumeSearchTerms } from "../../services/search_jump";
 import server from "../../services/server";
 import type { ShortcutHintDefinition, ShortcutHintProvider } from "../../services/shortcut_hints";
-import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
+import shortcuts, {
+    Handler, removeIndividualBinding, type ShortcutBinding
+} from "../../services/shortcuts";
 import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
@@ -2158,6 +2160,46 @@ export function useKeyboardShortcuts(
             }
         };
     }, [ scope, containerRef, parentComponent, ntxId ]);
+}
+
+/** Marks a container whose `useFindShortcut()` has an explicit note context. */
+const FIND_NTX_ID_ATTR = "data-find-ntx-id";
+
+/**
+ * Opens "Search in note" on a shortcut of `findInText` pressed inside `containerRef`, for the note
+ * context `ntxId`, else for that of the closest container bound with one or of the note split
+ * around the container. The window binding of the shortcut targets the active tab, and an embed in
+ * a text note keeps its keys from the window.
+ */
+export function useFindShortcut(containerRef: RefObject<HTMLElement | null>, ntxId?: string) {
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        if (ntxId) container.setAttribute(FIND_NTX_ID_ATTR, ntxId);
+        let bindings: ShortcutBinding[] = [];
+        let isDisposed = false;
+        void keyboard_actions.getAction("findInText", true).then((action) => {
+            if (isDisposed) return;
+            bindings = (action?.effectiveShortcuts ?? []).flatMap((shortcut) =>
+                shortcuts.bindElShortcut($(container), shortcut, () => {
+                    const scope = container.closest(`[${FIND_NTX_ID_ATTR}], [data-ntx-id]`);
+                    const contextId = ntxId
+                        ?? scope?.getAttribute(FIND_NTX_ID_ATTR)
+                        ?? scope?.getAttribute("data-ntx-id")
+                        ?? undefined;
+                    void appContext.triggerCommand("findInText", { ntxId: contextId });
+                }) ?? []);
+        });
+
+        return () => {
+            isDisposed = true;
+            if (ntxId) container.removeAttribute(FIND_NTX_ID_ATTR);
+            for (const binding of bindings) {
+                removeIndividualBinding(binding);
+            }
+        };
+    }, [ containerRef, ntxId ]);
 }
 
 /**

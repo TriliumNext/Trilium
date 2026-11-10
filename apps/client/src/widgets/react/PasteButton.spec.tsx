@@ -33,7 +33,9 @@ describe("PasteButton", () => {
     });
 
     /** Renders the button after a plain controlled field, which reports what it receives. */
-    async function renderField(onInput: (value: string, inputType: string) => void = () => {}) {
+    async function renderField(
+        onInput: (value: string, inputType: string) => void = () => {}, onPasted?: () => void
+    ) {
         function Field() {
             const inputRef = useRef<HTMLInputElement>(null);
             const [ value, setValue ] = useState("typed");
@@ -47,7 +49,7 @@ describe("PasteButton", () => {
                             onInput(e.currentTarget.value, e.inputType);
                         }}
                     />
-                    <PasteButton inputRef={inputRef} />
+                    <PasteButton inputRef={inputRef} onPasted={onPasted} />
                 </div>
             );
         }
@@ -71,14 +73,18 @@ describe("PasteButton", () => {
         await settle();
     }
 
-    it("replaces the value of the field as a paste would, and selects all of it", async () => {
+    it("replaces the field's value as a paste would, selects it and reports it", async () => {
         const onInput = vi.fn();
+        const onPasted = vi.fn(() => {
+            expect(input.value).toBe(VIDEO_URL);
+        });
         readClipboardText.mockResolvedValue(VIDEO_URL);
-        const input = await renderField(onInput);
+        const input = await renderField(onInput, onPasted);
         expect(pasteButton()?.type).toBe("button");
 
         await paste();
         expect(onInput).toHaveBeenCalledExactlyOnceWith(VIDEO_URL, "insertFromPaste");
+        expect(onPasted).toHaveBeenCalledOnce();
         expect(input.value).toBe(VIDEO_URL);
         expect(document.activeElement).toBe(input);
         expect([ input.selectionStart, input.selectionEnd ]).toEqual([ 0, VIDEO_URL.length ]);
@@ -87,6 +93,7 @@ describe("PasteButton", () => {
         await paste();
         expect(input.value).toBe(VIDEO_URL);
         expect(onInput).toHaveBeenCalledOnce();
+        expect(onPasted).toHaveBeenCalledOnce();
     });
 
     it("shows only where the clipboard can be read, and hides after a denial", async () => {

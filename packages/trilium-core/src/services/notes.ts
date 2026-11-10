@@ -178,9 +178,13 @@ function getNewNoteTitle(parentNote: BNote) {
 function getTemplateNoteTitle(note: BNote, parentNote: BNote) {
     for (const relation of note.getOwnedRelations("template")) {
         const templateNote = relation.targetNote;
-        const titleTemplate = templateNote ? getTemplateTitleTemplate(templateNote) : null;
+        /* v8 ignore if -- deleting a note deletes the relations pointing at it */
+        if (!templateNote) {
+            continue;
+        }
 
-        if (templateNote && titleTemplate !== null) {
+        const titleTemplate = getTemplateTitleTemplate(templateNote);
+        if (titleTemplate !== null) {
             return evaluateTitleTemplate(
                 titleTemplate,
                 parentNote,
@@ -208,7 +212,7 @@ function evaluateTitleTemplate(titleTemplate: string | null, parentNote: BNote, 
     let title = t("notes.new-note");
 
     if (titleTemplate !== null) {
-        const now = dayjs(date_utils.localNowDateTime() || new Date());
+        const now = dayjs(date_utils.localNowDateTime());
 
         // "officially" injected values:
         // - now
@@ -536,6 +540,7 @@ function protectNote(note: BNote, protect: boolean) {
  * it is stored, and put back by {@link writeExtractedText} once the new state does.
  */
 function readExtractedText(blobId: string | undefined, isProtected: boolean | undefined): string {
+    /* v8 ignore if -- saved notes and attachments always have a blob */
     if (!blobId) {
         return "";
     }
@@ -673,7 +678,9 @@ export function checkImageAttachments(note: BNote, content: string) {
         // and carrying the app's role over would leave the copy deduplicated against this note's own
         // previews, denied the OCR and compression a picture is offered, and filed out of sight. A
         // role we know nothing about is left alone: there is nothing better to say about it.
-        const copiedRole = previewPictureIds.has(unknownAttachment.attachmentId ?? "")
+        const copiedRole = previewPictureIds.has(
+            /* v8 ignore next -- loaded attachments have an ID */
+            unknownAttachment.attachmentId ?? "")
             ? unknownAttachment.role
             : attachmentRoleTraits(unknownAttachment.role)?.copiedAs ?? unknownAttachment.role;
 
@@ -788,7 +795,8 @@ function copyDrawingImages(note: BNote, drawing: BAttachment, copiedDrawing: BAt
     }
 
     const fileIds = collectCanvasImageFileIds(decodeUtf8(drawing.getContent()));
-    const pictureTitle = getDrawingPictureTitle(drawing.attachmentId ?? "");
+    const pictureTitle = getDrawingPictureTitle(
+        /* v8 ignore next -- loaded attachments have an ID */ drawing.attachmentId ?? "");
     for (const image of owner.getAttachments()) {
         const title = image.title === pictureTitle && copiedDrawing.attachmentId
             ? getDrawingPictureTitle(copiedDrawing.attachmentId)
@@ -1398,6 +1406,7 @@ function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskCon
     const sql = getSql();
     const branchRow = sql.getRow<BranchRow>("SELECT * FROM branches WHERE branchId = ?", [branchId]);
 
+    /* v8 ignore if -- callers pass deleted branches, and only the parent's restore reaches one */
     if (!branchRow.isDeleted) {
         return;
     }
@@ -1426,6 +1435,7 @@ function restoreNoteAndDescendants(noteRow: NoteRow, deleteId: string, taskConte
     const sql = getSql();
     const noteEntity = becca.getNote(noteRow.noteId);
 
+    /* v8 ignore if -- saving the branch above creates the note's skeleton */
     if (!noteEntity) {
         throw new Error("Unable to find the just restored note.");
     }
@@ -1538,10 +1548,6 @@ async function asyncPostProcessContent(note: BNote, content: string | Uint8Array
 
 // all keys should be replaced by the corresponding values
 function replaceByMap(str: string, mapObj: Record<string, string>) {
-    if (!mapObj) {
-        return str;
-    }
-
     const re = new RegExp(Object.keys(mapObj).join("|"), "g");
 
     return str.replace(re, (matched) => mapObj[matched]);
@@ -1594,6 +1600,7 @@ function duplicateSubtreeWithoutRoot(origNoteId: string, newNoteId: string) {
 
     const noteIdMapping = getNoteIdMapping(origNote);
     for (const childBranch of origNote.getChildBranches()) {
+        /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
         if (childBranch) {
             duplicateSubtreeInner(childBranch.getNote(), childBranch, newNoteId, noteIdMapping);
         }
@@ -1652,6 +1659,7 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
 
         if (withChildren) {
             for (const childBranch of origNote.getChildBranches()) {
+                /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
                 if (childBranch) {
                     duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
                 }

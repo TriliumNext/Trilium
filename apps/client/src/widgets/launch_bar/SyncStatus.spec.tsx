@@ -1,4 +1,4 @@
-import type { WebSocketMessage } from "@triliumnext/commons";
+import type { EntityChange, WebSocketMessage } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -136,6 +136,33 @@ describe("SyncStatus", () => {
             mount();
             expect(icon()).toBeNull();
         }
+    });
+
+    it("marks unpushed changes as soon as an edit arrives, and clears the mark once pushed", () => {
+        mount();
+        const star = () => container.querySelector(".sync-status-sub-icon");
+        const frontendUpdate = (id: number, isSynced: boolean): WebSocketMessage => ({
+            type: "frontend-update",
+            data: {
+                lastSyncedPush: 0,
+                entityChanges: [ { id, isSynced, entityName: "notes", entityId: "note1" } as EntityChange ]
+            }
+        });
+
+        act(() => { mocks.onMessage?.({ type: "sync-finished", lastSyncedPush: 0 }); });
+        expect(icon()?.classList.contains("sync-status-connected-no-changes")).toBe(true);
+        expect(star()).toBeNull();
+
+        act(() => { mocks.onMessage?.(frontendUpdate(4, false)); });
+        expect(star()).toBeNull();
+
+        act(() => { mocks.onMessage?.(frontendUpdate(5, true)); });
+        expect(icon()?.classList.contains("sync-status-connected-with-changes")).toBe(true);
+        expect(star()).not.toBeNull();
+
+        act(() => { mocks.onMessage?.({ type: "sync-finished", lastSyncedPush: 5 }); });
+        expect(icon()?.classList.contains("sync-status-connected-no-changes")).toBe(true);
+        expect(star()).toBeNull();
     });
 
     it("fills a progress bar while pulling, and drops it once the pull is over", () => {

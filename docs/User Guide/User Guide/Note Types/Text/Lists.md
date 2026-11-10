@@ -18,6 +18,7 @@ For bulleted and numbered lists, it's possible to configure an alternative marke
 *   To exit out of the list, press <kbd>Enter</kbd> twice.
 *   To merge two lists, simply delete the gap between them.
 *   To create nested lists, simply use the <span class="tn-icon cke cke-indent"></span> button (see _Indentation_ in <a class="reference-link" href="Other%20features.md">Other features</a>) or the <kbd>Tab</kbd> key. To decrease the nesting level for the current element, press <kbd>Shift</kbd>+<kbd>Tab</kbd>.
+*   The menu of the block handle, described in <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, has _Insert item above_, _Insert item below_ and _Insert child item_, which add an empty item above the item, below it and its nested items, or as its first nested item.
 
 ## Headings, code blocks within lists
 

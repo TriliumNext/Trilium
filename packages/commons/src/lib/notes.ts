@@ -71,6 +71,28 @@ export function getDrawingPictureTitle(attachmentId: string) {
     return `${attachmentId}.svg`;
 }
 
+/**
+ * The part of a canvas drawing that its box shows: a rectangle in scene units, and the scale it
+ * was drawn at, in pixels per scene unit. A drawing saves it as its top-level `frame`.
+ */
+export interface DrawingFrame {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    scale: number;
+}
+
+/** `value` as a frame, or `null` unless it has a position, a size and a scale. */
+export function readDrawingFrame(value: unknown): DrawingFrame | null {
+    if (!value || typeof value !== "object") return null;
+    const { x, y, width, height, scale } = value as Record<string, unknown>;
+    const fields = [ x, y, width, height, scale ];
+    if (!fields.every((field) => typeof field === "number" && Number.isFinite(field))) return null;
+    const frame = { x, y, width, height, scale } as DrawingFrame;
+    return frame.width > 0 && frame.height > 0 && frame.scale > 0 ? frame : null;
+}
+
 /** The content of a new, empty canvas drawing. */
 export const EMPTY_CANVAS_CONTENT = JSON.stringify({
     type: "excalidraw",

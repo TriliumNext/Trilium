@@ -25,6 +25,9 @@
       "path": "./apps/desktop"
     },
     {
+      "path": "./apps/standalone"
+    },
+    {
       "path": "./apps/website"
     },
     {

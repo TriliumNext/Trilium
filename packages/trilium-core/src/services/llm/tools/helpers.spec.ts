@@ -4,13 +4,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getBlobMock = vi.hoisted(() => vi.fn());
 const getNoteMock = vi.hoisted(() => vi.fn());
+const getAttachmentMock = vi.hoisted(() => vi.fn());
+const getRevisionMock = vi.hoisted(() => vi.fn());
 
 // getContentPreview / getNoteContentForLlm consult becca.getBlob (SQL-backed) and getNoteMeta checks owners through becca.getNote;
 // partial-mock core so both return deterministic stubs while markdown
 // import/export services keep their real implementations.
 vi.mock("../../../becca/becca.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../becca/becca.js")>();
-    return { default: { ...actual.default, getBlob: getBlobMock, getNote: getNoteMock } };
+    return { default: {
+        ...actual.default,
+        getBlob: getBlobMock,
+        getNote: getNoteMock,
+        getAttachment: getAttachmentMock,
+        getRevision: getRevisionMock
+    } };
 });
 
 import blobService from "../../blob.js";
@@ -21,6 +29,7 @@ import {
     flag,
     getAttachmentContentPreview,
     getContentPreview,
+    getLlmAttachment,
     getNoteContentForLlm,
     getNoteMeta,
     getSvgImageError,
@@ -246,6 +255,31 @@ describe("getAttachmentContentPreview", () => {
         const result = getAttachmentContentPreview(att)!;
         expect(result.endsWith("…")).toBe(true);
         expect(result.length).toBe(201); // 200 chars + ellipsis
+    });
+});
+
+describe("getLlmAttachment", () => {
+    beforeEach(() => {
+        getNoteMock.mockReset();
+        getRevisionMock.mockReset();
+    });
+
+    it("finds the owner of a revision's attachment through the revision's note", () => {
+        const attachment = { attachmentId: "att1", ownerId: "rev1" };
+        getAttachmentMock.mockReturnValue(attachment);
+        let excluded = false;
+        getRevisionMock.mockReturnValue({ getNote: () => ({ isLabelTruthy: () => excluded }) });
+
+        expect(getLlmAttachment("att1")).toBe(attachment);
+        expect(getRevisionMock).toHaveBeenCalledWith("rev1");
+
+        excluded = true;
+        expect(getLlmAttachment("att1")).toBeNull();
+    });
+
+    it("hides an attachment whose owner is gone", () => {
+        getAttachmentMock.mockReturnValue({ attachmentId: "att1", ownerId: "gone" });
+        expect(getLlmAttachment("att1")).toBeNull();
     });
 });
 

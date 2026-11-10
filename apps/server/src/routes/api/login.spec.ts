@@ -1,8 +1,10 @@
 import { app_info as appInfo, cls, date_utils as dateUtils, options } from "@triliumnext/core";
 import type { Application, Request } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import etapiTokenService from "../../services/etapi_tokens.js";
+import sqlInit from "../../services/sql_init.js";
 import totpService from "../../services/totp.js";
 import utils from "../../services/utils.js";
 import loginApiRoute from "./login.js";
@@ -59,6 +61,31 @@ describe("Login (sync) API", () => {
         expect(req.session.loggedIn).toBe(true);
         expect(req.session.isSyncPeer).toBe(true);
     });
+
+    it("refuses to sync when the database has no schema", async () => {
+        vi.spyOn(sqlInit, "schemaExists").mockReturnValue(false);
+        try {
+            const req = syncReq({ timestamp: dateUtils.utcNowDateTime(), syncVersion: appInfo.syncVersion });
+            expect(await loginApiRoute.loginSync(req)).toEqual([ 500, { message: "DB schema does not exist, can't sync." } ]);
+            expect(req.session.loggedIn).toBeUndefined();
+        } finally {
+            vi.restoreAllMocks();
+        }
+    });
+
+    it("does not log the session in when regenerating it fails", async () => {
+        const now = dateUtils.utcNowDateTime();
+        const hash = utils.hmac(options.getOption("documentSecret"), now);
+        const session: Record<string, unknown> = {
+            regenerate(cb: (err?: unknown) => void) {
+                cb(new Error("store unavailable"));
+            }
+        };
+        const req = { body: { timestamp: now, syncVersion: appInfo.syncVersion, hash }, session } as unknown as Request;
+
+        await expect(loginApiRoute.loginSync(req)).rejects.toThrow("store unavailable");
+        expect(session.loggedIn).toBeUndefined();
+    });
 });
 
 // Integration test that drives the request through the real route registration
@@ -101,6 +128,16 @@ describe("Login (token) API", () => {
         const req = { body: { password: "demo1234", tokenName: "spec-sender" } } as unknown as Request;
         const result = await cls.init(() => loginApiRoute.token(req)) as { token: string };
         expect(result.token).toBeTruthy();
+        expect(etapiTokenService.isValidAuthHeader(result.token)).toBe(true);
+        expect(etapiTokenService.getTokens().some(t => t.name === "spec-sender")).toBe(true);
+    });
+
+    it("names the token after Trilium Sender when the client sends no name", async () => {
+        const req = { body: { password: "demo1234" } } as unknown as Request;
+        const result = await cls.init(() => loginApiRoute.token(req)) as { token: string };
+        const parsed = etapiTokenService.parseAuthToken(result.token);
+        const token = etapiTokenService.getTokens().find(t => t.etapiTokenId === parsed?.etapiTokenId);
+        expect(token?.name).toBe("Trilium Sender / Web Clipper");
     });
 
     it("rejects login when TOTP is enabled and the submitted token is wrong", async () => {

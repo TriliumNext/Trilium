@@ -1,5 +1,6 @@
 import "./appearance.css";
 
+import type { OptionDefinitions } from "@triliumnext/commons";
 import { useMemo } from "preact/hooks";
 
 import zoomService from "../../../components/zoom";
@@ -52,6 +53,11 @@ const COLOR_SCHEMES: SegmentedChoiceOption<ColorScheme>[] = [
     { value: "dark", label: t("theme.color_scheme_dark"), icon: "bx-moon" }
 ];
 
+const NOTE_TITLE_STYLES: SegmentedChoiceOption<OptionDefinitions["noteTitleStyle"]>[] = [
+    { value: "large", label: t("theme.note_title_style_large"), icon: "bx-heading" },
+    { value: "compact", label: t("theme.note_title_style_compact"), icon: "bx-collapse-vertical" }
+];
+
 function resolveTheme(themeVal: string | null): { family: ThemeFamily | null; scheme: ColorScheme; isCustom: boolean } {
     const { family: familyKey, scheme, isCustom } = resolveColorScheme(themeVal);
     const family = THEME_FAMILIES.find(f => f.key === familyKey) ?? null;
@@ -86,6 +92,7 @@ function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme");
     const customThemes = useUserThemes();
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
+    const [ noteTitleStyle, setNoteTitleStyle ] = useTriliumOption("noteTitleStyle");
 
     const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
     const isCustom = resolved.isCustom;
@@ -164,17 +171,28 @@ function UserInterface() {
                 />
             </OptionCardSection>
 
-            {!isMobile() && (
-                <OptionCardSection
-                    name="edited-notes-open-in-ribbon"
-                    label={t("theme.edited_notes_expanded")}
-                >
-                    <FormToggle
-                        currentValue={editedNotesOpenInRibbon}
-                        onChange={setEditedNotesOpenInRibbon}
-                    />
-                </OptionCardSection>
-            )}
+            <OptionCardSection
+                name="note-title-style"
+                label={t("theme.note_title_style")}
+                description={t("theme.note_title_style_description")}
+            >
+                <SegmentedChoice
+                    options={NOTE_TITLE_STYLES}
+                    currentValue={noteTitleStyle === "compact" ? "compact" : "large"}
+                    onChange={setNoteTitleStyle}
+                    collapseOnMobile
+                />
+            </OptionCardSection>
+
+            <OptionCardSection
+                name="edited-notes-open-in-ribbon"
+                label={t("theme.edited_notes_expanded")}
+            >
+                <FormToggle
+                    currentValue={editedNotesOpenInRibbon}
+                    onChange={setEditedNotesOpenInRibbon}
+                />
+            </OptionCardSection>
         </Card>
     );
 }

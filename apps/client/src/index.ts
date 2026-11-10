@@ -11,6 +11,7 @@ import "@triliumnext/ckeditor5/src/theme/lists.css";
 import "@triliumnext/ckeditor5/src/theme/reference_links.css";
 import "@triliumnext/ckeditor5/src/theme/table_scroll.css";
 import "@triliumnext/ckeditor5/src/theme/table_sticky_header.css";
+import "@triliumnext/ckeditor5/src/theme/tables.css";
 import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 import "@triliumnext/commons/src/lib/scroll_fade.css";
 

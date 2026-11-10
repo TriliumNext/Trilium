@@ -69,11 +69,7 @@ export default defineConfig(() => ({
       // `../../packages/…` glob never matches.
       include: ["src/**/*.{ts,tsx}", `${CORE_SRC}/**/*.{ts,tsx}`],
       exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
-      // Threshold globs, unlike `include`, match paths relative to the root.
-      thresholds: {
-        "../../packages/trilium-core/src/share/**": FULL_COVERAGE,
-        "src/share/**": FULL_COVERAGE
-      }
+      thresholds: FULL_COVERAGE
     },
     pool: "forks",
     maxWorkers: 6

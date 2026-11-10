@@ -300,6 +300,15 @@ async function doLogin(): Promise<SyncContext> {
 }
 
 async function pullChanges(syncContext: SyncContext) {
+    try {
+        await pullChangeBatches(syncContext);
+    } finally {
+        // A failed pull must not hand its total to the next one, whose progress would start from it.
+        totalPullCount = null;
+    }
+}
+
+async function pullChangeBatches(syncContext: SyncContext) {
     const log = getLog();
     const maxBatchBytes = getMaxPullBatchBytes();
     const maxBlobContentSize = getMaxBlobContentSize();
@@ -357,7 +366,7 @@ async function pullChanges(syncContext: SyncContext) {
                 // and count only this session's work.
                 const alreadyPulled = sqlInit.isDbInitialized()
                     ? 0
-                    : getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1") ?? 0;
+                    : getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1");
                 totalPullCount = alreadyPulled + resp.entityChanges.length + outstandingPullCount;
             }
 
@@ -408,6 +417,7 @@ async function pullChanges(syncContext: SyncContext) {
         });
 
         if (batch.length > 0) {
+            /* v8 ignore next -- the first response of a pull sets totalPullCount to at least its own length */
             if (totalPullCount) {
                 ws.syncPullInProgress({
                     pulled: Math.max(0, totalPullCount - outstandingPullCount),
@@ -426,8 +436,6 @@ async function pullChanges(syncContext: SyncContext) {
     }
 
     log.info("Finished pull");
-
-    totalPullCount = null;
 }
 
 async function fetchChangesChunk(syncContext: SyncContext, cursor: number, maxBlobContentSize: number): Promise<ChangesResponse> {
@@ -528,6 +536,7 @@ async function pushChanges(syncContext: SyncContext) {
 
         lastSyncedPush = entityChangesRecords[entityChangesRecords.length - 1].entityChange.id;
 
+        /* v8 ignore next -- the pushed records are rows of entity_changes, which always carry an id */
         if (lastSyncedPush) {
             setLastSyncedPush(lastSyncedPush);
         }
@@ -613,7 +622,7 @@ interface SyncContext {
 }
 
 async function syncRequest<T extends {}>(syncContext: SyncContext, method: string, requestPath: string, _body?: {}) {
-    const body = _body ? JSON.stringify(_body) : "";
+    const body = serializeSyncRequestBody(_body);
 
     const timeout = syncOptions.getSyncTimeout();
 
@@ -641,6 +650,69 @@ async function syncRequest<T extends {}>(syncContext: SyncContext, method: strin
     }
 
     return response;
+}
+
+/** Strings at least this long are spliced into the JSON output instead of passing through `JSON.stringify`. */
+const SPLICED_STRING_MIN_LENGTH = 1024 * 1024;
+
+/** Characters that `JSON.stringify` escapes inside a string; a string without them serializes verbatim. */
+const JSON_ESCAPED_CHARACTERS = /["\\\u0000-\u001f\ud800-\udfff]/;
+
+/**
+ * Serializes a sync request body to the JSON string that `syncRequest()` splits into pages.
+ *
+ * Electron 45 aborts the process when a `JSON.stringify` output reaches about 268 million characters,
+ * which the base64 content of a ~192 MiB blob exceeds. Long strings that need no escaping are therefore
+ * replaced by placeholders before `JSON.stringify` and concatenated into its output afterwards, which
+ * produces the same JSON.
+ */
+export function serializeSyncRequestBody(body?: {}): string {
+    if (!body) {
+        return "";
+    }
+
+    const spliced: string[] = [];
+    const placeholderPrefix = `\u0000${randomString(16)}:`;
+    const json = JSON.stringify(replaceLongStrings(body, spliced, placeholderPrefix));
+
+    let result = "";
+    let cursor = 0;
+    for (const [ index, value ] of spliced.entries()) {
+        const placeholder = JSON.stringify(`${placeholderPrefix}${index}`);
+        const position = json.indexOf(placeholder, cursor);
+        result += `${json.slice(cursor, position)}"${value}"`;
+        cursor = position + placeholder.length;
+    }
+
+    return result + json.slice(cursor);
+}
+
+/**
+ * Copies the plain objects and arrays of `value`, replacing each long string that `JSON.stringify`
+ * would not escape with `placeholderPrefix` and its index in `spliced`.
+ */
+function replaceLongStrings(value: unknown, spliced: string[], placeholderPrefix: string): unknown {
+    if (typeof value === "string") {
+        if (value.length < SPLICED_STRING_MIN_LENGTH || JSON_ESCAPED_CHARACTERS.test(value)) {
+            return value;
+        }
+        spliced.push(value);
+        return `${placeholderPrefix}${spliced.length - 1}`;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item) => replaceLongStrings(item, spliced, placeholderPrefix));
+    }
+
+    if (value !== null && typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype) {
+        const copy: Record<string, unknown> = {};
+        for (const [ key, child ] of Object.entries(value)) {
+            copy[key] = replaceLongStrings(child, spliced, placeholderPrefix);
+        }
+        return copy;
+    }
+
+    return value;
 }
 
 function getEntityChangeRow(entityChange: EntityChange, maxBlobContentSize?: number) {

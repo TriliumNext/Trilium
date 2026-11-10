@@ -2,10 +2,11 @@
 // The label injection relies on sanitizeNoteContentHtml (DOMPurify), which happy-dom
 // breaks (NodeIterator mishandling — see sanitize_content.spec.ts). jsdom matches
 // real-browser behavior.
-import MindElixir, { type MindElixirData, type MindElixirInstance } from "mind-elixir";
+import MindElixir, { type MindElixirData } from "mind-elixir";
 import { describe, expect, it, vi } from "vitest";
 
 import { inlineExportedImages, postProcessExportedSvg, renderMindMapPreviewSvg } from "./export";
+import { exportMindMapSvg } from "./svg_exporter";
 
 // mind-elixir touches these browser APIs at construction time; jsdom lacks them.
 window.matchMedia = window.matchMedia ?? ((query: string) => ({
@@ -25,9 +26,12 @@ globalThis.ResizeObserver = globalThis.ResizeObserver ?? class {
     disconnect() {}
 
 };
+if (!("fonts" in document)) {
+    Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() } });
+}
 
 /**
- * Reproduces the structure of mind-elixir's `exportSvg()` output:
+ * Reproduces the structure of `exportMindMapSvg()` output:
  * an outer svg holding a background rect and an inner svg with the map layers.
  */
 function buildExportedSvg() {
@@ -37,8 +41,9 @@ function buildExportedSvg() {
         `</svg>`;
 }
 
-function buildMind({ labels = [] as string[], exportedSvg = buildExportedSvg(), canvasColor = "#252526" } = {}) {
-    const nodes = document.createElement("me-nodes");
+function buildMind({ labels = [] as string[], canvasColor = "#252526" } = {}) {
+    const nodes = Object.assign(document.createElement("div"), { className: "me-nodes" });
+    nodes.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "svg")).classList.add("topiclinks");
     for (const labelHtml of labels) {
         const label = document.createElement("div");
         label.className = "svg-label";
@@ -49,9 +54,8 @@ function buildMind({ labels = [] as string[], exportedSvg = buildExportedSvg(), 
 
     return {
         nodes,
-        theme: { cssVar: { "--bgcolor": canvasColor } },
-        exportSvg: () => new Blob([ exportedSvg ], { type: "image/svg+xml" })
-    } as unknown as MindElixirInstance;
+        theme: { cssVar: { "--bgcolor": canvasColor } }
+    } as unknown as MindElixir;
 }
 
 describe("postProcessExportedSvg", () => {
@@ -291,16 +295,16 @@ describe("renderMindMapPreviewSvg", () => {
 
 /**
  * Non-regression tests against a real mind-elixir instance, guarding the internals the
- * label injection depends on (labels as `.svg-label` divs inside `mind.nodes`, the
- * nested-svg export structure). If these fail after a mind-elixir upgrade, re-verify
- * export.ts against the new internals — see the module comment there.
+ * exporter and the label injection depend on (the `.me-tpc` topics and SVG layers inside
+ * `mind.nodes`, labels as `.svg-label` divs). If these fail after a mind-elixir upgrade,
+ * re-verify svg_exporter.ts and export.ts against the new internals.
  */
 describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
-    function initRealMindMap(data: MindElixirData): MindElixirInstance {
+    async function initRealMindMap(data: MindElixirData): Promise<MindElixir> {
         const el = document.createElement("div");
         document.body.appendChild(el);
         const mind = new MindElixir({ el });
-        mind.init(data);
+        await mind.init(data);
         return mind;
     }
 
@@ -328,8 +332,8 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
         ]
     };
 
-    it("renders arrow and summary labels as .svg-label elements inside mind.nodes", () => {
-        const mind = initRealMindMap(MAP_WITH_LABELS);
+    it("renders arrow and summary labels as .svg-label elements inside mind.nodes", async () => {
+        const mind = await initRealMindMap(MAP_WITH_LABELS);
         const labels = mind.nodes.querySelectorAll(".svg-label");
 
         expect(labels).toHaveLength(2);
@@ -338,11 +342,9 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
         expect(labelTexts).toContain("my summary label");
     });
 
-    it("exportSvg() alone still misses the labels (the upstream gap we patch)", async () => {
-        // If this starts failing, upstream fixed SSShooter/mind-elixir-core#359 and
-        // injectSvgLabels may duplicate labels — re-evaluate whether it is still needed.
-        const mind = initRealMindMap(MAP_WITH_LABELS);
-        const rawExport = await mind.exportSvg().text();
+    it("the exporter alone misses the labels, which post-processing adds", async () => {
+        const mind = await initRealMindMap(MAP_WITH_LABELS);
+        const rawExport = exportMindMapSvg(mind);
 
         expect(rawExport).toContain("Topic A");
         expect(rawExport).not.toContain("my arrow label");
@@ -350,7 +352,7 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
     });
 
     it("the preview contains topics and both labels, and parses as valid SVG", async () => {
-        const mind = initRealMindMap(MAP_WITH_LABELS);
+        const mind = await initRealMindMap(MAP_WITH_LABELS);
         const result = await renderMindMapPreviewSvg(mind);
 
         const doc = new DOMParser().parseFromString(result, "image/svg+xml");
@@ -372,7 +374,7 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
     });
 
     it("XML-special characters in topics and labels survive export as valid SVG", async () => {
-        const mind = initRealMindMap({
+        const mind = await initRealMindMap({
             nodeData: {
                 id: "root",
                 topic: "Both l & r <tags>",
@@ -404,11 +406,11 @@ describe("renderMindMapPreviewSvg (real mind-elixir)", () => {
     });
 
     it("a map without arrows or summaries exports without label injection", async () => {
-        const mind = initRealMindMap({
+        const mind = await initRealMindMap({
             nodeData: { id: "root", topic: "Just a root", children: [] }
         });
         const result = await renderMindMapPreviewSvg(mind);
-        const rawExport = await mind.exportSvg().text();
+        const rawExport = exportMindMapSvg(mind);
 
         expect(result).toContain("Just a root");
         // Post-processing must not add foreignObjects beyond the exporter's own

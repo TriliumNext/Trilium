@@ -5,6 +5,7 @@ import {
     type AttachmentLinkChange,
     type CKEditorError,
     CKTextEditor,
+    type ContentEmbedDialogRequest,
     type FileUploadData,
     type FileUploadEvent,
     type LinkDialogRequest,
@@ -28,6 +29,7 @@ import note_create from "../../../services/note_create";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
+import { ContentEmbedBalloon, type ContentEmbedOpts } from "../../dialogs/content_embed";
 import { EditLinkBalloon, type EditLinkOpts, type LinkHeading } from "../../dialogs/edit_link";
 import {
     useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
@@ -49,7 +51,7 @@ import {
     loadEmbeddedNote,
     loadInlineEmbed,
     loadUnknownEmbed,
-    loadVideoEmbed,
+    loadMediaEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -219,13 +221,16 @@ export default function EditableText({
         editor.editing.view.focus();
     });
 
+    // An embed in the content of an embed links to this note rather than showing it again.
+    const seenNoteIds = new Set([ note.noteId ]);
     const contentEmbedHandlers: ContentEmbedHandlers = {
         loadNote(noteId, wrapper, boxSize, embedBlock, onEmbedBlockChange) {
             void loadEmbeddedNote(noteId, $(wrapper), boxSize, {
                 noteEditor: embedNoteEditor,
                 histories,
                 block: embedBlock,
-                onBlockChange: onEmbedBlockChange
+                onBlockChange: onEmbedBlockChange,
+                seenNoteIds
             });
         },
         loadAttachment(attachmentId, wrapper, boxSize) {
@@ -236,7 +241,8 @@ export default function EditableText({
             void loadEmbeddedAttachment(attachmentId, $(wrapper), boxSize, {
                 attachmentEditor: embedAttachmentEditor,
                 histories,
-                isFocused
+                isFocused,
+                seenNoteIds
             });
         },
         loadInline(source, wrapper, boxSize, options) {
@@ -248,8 +254,8 @@ export default function EditableText({
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
         },
-        loadVideo(preview, wrapper) {
-            loadVideoEmbed(preview, wrapper, { hasMenu: true });
+        loadMedia(preview, wrapper, boxSize) {
+            void loadMediaEmbed(preview, wrapper, { boxSize, hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
@@ -284,6 +290,26 @@ export default function EditableText({
         return () => setLinkDialog(null);
     }
 
+    const [ contentEmbedDialog, setContentEmbedDialog ] = useState<{
+        opts: ContentEmbedOpts;
+        request: ContentEmbedDialogRequest;
+    } | null>(null);
+
+    // CKEditor places the balloon at the caret; `ContentEmbedBalloon` renders into its container.
+    // On mobile, `showContentEmbedDialog` opens the form in a modal instead.
+    function showContentEmbedDialog(request: ContentEmbedDialogRequest) {
+        if (!editorApiRef.current) return null;
+
+        const opts = { editorApi: editorApiRef.current, sizeEditable: true };
+        if (isMobile()) {
+            parentComponent?.triggerCommand("showContentEmbedDialog", opts);
+            return null;
+        }
+
+        setContentEmbedDialog({ opts, request });
+        return () => setContentEmbedDialog(null);
+    }
+
     useLegacyImperativeHandlers({
         // Keyboard shortcut
         async addLinkToTextCommand() {
@@ -301,13 +327,10 @@ export default function EditableText({
             const editor = await waitForEditor();
             editor?.execute("insertDateTimeToText");
         },
-        // Include note functionality note
-        addIncludeNoteToTextCommand() {
-            if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showContentEmbedDialog", {
-                editorApi: editorApiRef.current,
-                sizeEditable: true
-            });
+        // Keyboard shortcut
+        async addIncludeNoteToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertContentEmbed");
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -372,7 +395,7 @@ export default function EditableText({
     useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
         refreshEmbeddedNote(containerRef.current, noteId, {
-            noteEditor: embedNoteEditor, histories
+            noteEditor: embedNoteEditor, histories, seenNoteIds
         });
     });
 
@@ -547,6 +570,7 @@ export default function EditableText({
                 rebuildKey={editorRebuildKey}
                 contentEmbedHandlers={contentEmbedHandlers}
                 showLinkDialog={showLinkDialog}
+                showContentEmbedDialog={showContentEmbedDialog}
                 isExcerpt={block !== undefined}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
@@ -596,6 +620,13 @@ export default function EditableText({
                 <EditLinkBalloon opts={linkDialog.opts} onClose={linkDialog.request.close} />,
                 linkDialog.request.container
             )}
+
+            {contentEmbedDialog && createPortal(
+                <ContentEmbedBalloon
+                    opts={contentEmbedDialog.opts} onClose={contentEmbedDialog.request.close}
+                />,
+                contentEmbedDialog.request.container
+            )}
         </>
     );
 }
@@ -620,7 +651,13 @@ export function getEditLinkOpts(
 ): EditLinkOpts {
     async function addLinkPreview(...args: Parameters<CKEditorApi["addLinkPreview"]>) {
         await ready();
-        api.addLinkPreview(...args);
+        try {
+            await api.addLinkPreview(...args);
+        } catch (e) {
+            // Only a media embed given an address that plays nothing rejects.
+            console.error("Failed to change the media:", e);
+            toast.showError(t("youtube_video.insert_failed"));
+        }
     }
 
     const anchors = api.getAnchors();
@@ -636,6 +673,7 @@ export function getEditLinkOpts(
             currentTitle: currentLink.isReference ? undefined : currentLink.text,
             currentDescription: currentLink.description,
             display: currentLink.display,
+            isMedia: currentLink.isMedia,
             anchors,
             headings,
             ...(currentHeading ? { currentHeading } : parseLinkHref(currentLink.href, anchors)),

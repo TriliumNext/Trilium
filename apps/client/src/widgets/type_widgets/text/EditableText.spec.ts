@@ -19,6 +19,7 @@ import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import type LoadResults from "../../../services/load_results";
 import { renderInto } from "../../../test/render";
+import type { ContentEmbedBalloon } from "../../dialogs/content_embed";
 import type { EditLinkBalloon } from "../../dialogs/edit_link";
 import type CKEditor from "./CKEditor";
 
@@ -51,7 +52,8 @@ vi.mock("./utils", async (importOriginal) => ({
 // Stand-ins for what `EditableText` renders, which keep the props they receive.
 const rendered = vi.hoisted(() => ({
     editor: undefined as ComponentProps<typeof CKEditor> | undefined,
-    balloon: undefined as ComponentProps<typeof EditLinkBalloon> | undefined
+    balloon: undefined as ComponentProps<typeof EditLinkBalloon> | undefined,
+    includeBalloon: undefined as ComponentProps<typeof ContentEmbedBalloon> | undefined
 }));
 vi.mock("./CKEditor", () => ({
     default: (props: ComponentProps<typeof CKEditor>) => {
@@ -63,6 +65,12 @@ vi.mock("../../dialogs/edit_link", () => ({
     EditLinkBalloon: (props: ComponentProps<typeof EditLinkBalloon>) => {
         rendered.balloon = props;
         return "edit link balloon";
+    }
+}));
+vi.mock("../../dialogs/content_embed", () => ({
+    ContentEmbedBalloon: (props: ComponentProps<typeof ContentEmbedBalloon>) => {
+        rendered.includeBalloon = props;
+        return "include note balloon";
     }
 }));
 vi.mock("./snippets.js", () => ({ default: async () => [], updateTemplateCache: vi.fn() }));
@@ -494,6 +502,10 @@ describe("parseLinkHref", () => {
 });
 
 describe("EditableText", () => {
+    beforeEach(() => {
+        rendered.editor = undefined;
+    });
+
     it("opens the link balloon at the caret, on the headings of the note it edits", async () => {
         renderInto(h(EditableText, {
             note: { noteId: "abc" } as FNote,
@@ -525,6 +537,34 @@ describe("EditableText", () => {
         act(() => closeBalloon?.());
         expect(request.container.textContent).toBe("");
     });
+
+    it("opens the Include note balloon at the caret, on the editor's API", async () => {
+        renderInto(h(EditableText, {
+            note: { noteId: "abc" } as FNote,
+            noteContext: { notePath: "root/abc" } as NoteContext,
+            viewScope: undefined,
+            ntxId: "ntx",
+            parentComponent: undefined
+        }));
+        await vi.waitFor(() => expect(rendered.editor).toBeDefined());
+        const api = createApi(null);
+        const editorApi = rendered.editor?.editorApi;
+        if (editorApi) {
+            editorApi.current = api;
+        }
+        const request = { container: document.createElement("div"), close: vi.fn() };
+
+        let closeBalloon: (() => void) | null | undefined;
+        act(() => {
+            closeBalloon = rendered.editor?.showContentEmbedDialog?.(request);
+        });
+        expect(request.container.textContent).toBe("include note balloon");
+        expect(rendered.includeBalloon?.onClose).toBe(request.close);
+        expect(rendered.includeBalloon?.opts).toStrictEqual({ editorApi: api, sizeEditable: true });
+
+        act(() => closeBalloon?.());
+        expect(request.container.textContent).toBe("");
+    });
 });
 
 describe("getEditLinkOpts", () => {
@@ -532,26 +572,26 @@ describe("getEditLinkOpts", () => {
 
     it("edits the link at the caret, rewriting it on save", async () => {
         const api = createApi({
-            href: "#root/abc?bookmark=part", text: "See there", display: "plain"
+            href: "#root/abc?bookmark=part", text: "See there", display: "textLink"
         });
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             text: "See there", hasSelection: false, currentTitle: "See there",
-            currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "plain"
+            currentLink: { notePath: "root/abc" }, currentBookmark: "part", display: "textLink"
         });
 
         await opts.addLink("root/def", "Elsewhere");
         expect(api.updateLink).toHaveBeenCalledExactlyOnceWith("root/def", "Elsewhere", undefined);
         expect(api.addLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "card", "Example", "About");
+        await opts.addLinkPreview?.("https://example.com", "cardLink", "Example", "About");
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "card", "Example", "About");
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "cardLink", "Example", "About");
     });
 
     it("edits a selected reference link with its title still mirroring the note's", () => {
         const api = createApi({
-            href: "#root/abc", text: "Target", display: "plain", isReference: true
+            href: "#root/abc", text: "Target", display: "textLink", isReference: true
         });
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({ text: "Target", currentLink: { notePath: "root/abc" } });
@@ -560,12 +600,31 @@ describe("getEditLinkOpts", () => {
 
     it("edits a selected link preview as a web link titled by its title, shown as it is", () => {
         const api = createApi({
-            href: "https://example.com", text: "Example", description: "About", display: "card"
+            href: "https://example.com", text: "Example", description: "About", display: "cardLink"
         });
-        expect(getEditLinkOpts(api, ready, { display: "inline" })).toMatchObject({
+        expect(getEditLinkOpts(api, ready, { display: "iconAndTextLink" })).toMatchObject({
             currentLink: { externalLink: "https://example.com" }, currentTitle: "Example",
-            currentDescription: "About", display: "card"
+            currentDescription: "About", display: "cardLink"
         });
+    });
+
+    it("edits a selected media embed as media, and reports media it cannot load", async () => {
+        const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        const api = createApi({
+            href: video, text: "Clip", description: "", display: "embedLink", isMedia: true
+        });
+        const opts = getEditLinkOpts(api, ready);
+        expect(opts).toMatchObject({
+            currentLink: { externalLink: video }, currentTitle: "Clip", display: "embedLink",
+            isMedia: true
+        });
+
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        showError.mockClear();
+        api.addLinkPreview.mockRejectedValueOnce(new Error("The address plays nothing."));
+        await opts.addLinkPreview?.("https://example.com/page", "embedLink", null, null);
+        expect(showError).toHaveBeenCalledExactlyOnceWith("youtube_video.insert_failed");
+        consoleError.mockRestore();
     });
 
     it("adds a link from the selection outside one", async () => {
@@ -578,9 +637,9 @@ describe("getEditLinkOpts", () => {
         expect(api.addLink).toHaveBeenCalledExactlyOnceWith("https://example.com", "Example", true);
         expect(api.updateLink).not.toHaveBeenCalled();
 
-        await opts.addLinkPreview?.("https://example.com", "inline", null, null);
+        await opts.addLinkPreview?.("https://example.com", "iconAndTextLink", null, null);
         expect(api.addLinkPreview)
-            .toHaveBeenCalledExactlyOnceWith("https://example.com", "inline", null, null);
+            .toHaveBeenCalledExactlyOnceWith("https://example.com", "iconAndTextLink", null, null);
     });
 
     it("offers the document's anchors, and edits a link to one of them as that anchor", () => {
@@ -588,7 +647,7 @@ describe("getEditLinkOpts", () => {
             anchors: [ "intro" ]
         });
 
-        const api = createApi({ href: "#intro", text: "Start", display: "plain" }, [ "intro" ]);
+        const api = createApi({ href: "#intro", text: "Start", display: "textLink" }, [ "intro" ]);
         const opts = getEditLinkOpts(api, ready);
         expect(opts).toMatchObject({
             anchors: [ "intro" ], currentAnchor: "intro", currentTitle: "Start"
@@ -616,7 +675,7 @@ describe("getEditLinkOpts", () => {
     it("edits a link to a heading of the note as that heading", () => {
         const intro = { element: {} as ModelElement, level: 2, text: "Intro", blockId: "a" };
         const edit = (href: string, isReference?: boolean) => getEditLinkOpts(
-            createApi({ href, text: "See intro", display: "plain", isReference }, [], [ intro ]),
+            createApi({ href, text: "See intro", display: "textLink", isReference }, [], [ intro ]),
             ready, { notePath: "root/abc" }
         );
 
@@ -643,8 +702,10 @@ describe("getEditLinkOpts", () => {
     });
 
     it("opens a new link on the side and with the display it is asked for", () => {
-        const opts = getEditLinkOpts(createApi(null), ready, { target: "url", display: "embed" });
-        expect(opts).toMatchObject({ target: "url", display: "embed" });
+        const opts = getEditLinkOpts(
+            createApi(null), ready, { target: "url", display: "embedLink" }
+        );
+        expect(opts).toMatchObject({ target: "url", display: "embedLink" });
         expect(getEditLinkOpts(createApi(null), ready)).toMatchObject({
             target: undefined, display: undefined
         });

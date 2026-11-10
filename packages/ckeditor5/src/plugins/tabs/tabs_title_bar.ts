@@ -239,7 +239,6 @@ export default class TabsTitleBar extends Plugin {
         for (const title of this.pendingReveals) {
             const domTitle = domConverter.mapViewToDom(title);
             const bar = this.bars.get(title.parent?.parent as ViewElement);
-            /* v8 ignore next 3 -- only a title that left the view before the render has neither */
             if (domTitle && bar) {
                 bar.scrollableBar.reveal(domTitle);
             }

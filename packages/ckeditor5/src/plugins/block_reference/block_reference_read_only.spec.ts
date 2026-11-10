@@ -178,6 +178,29 @@ describe("showAnchor", () => {
         expect(showAnchor(scroller, "missing")).toBe(false);
         expect(scrollBy).toHaveBeenCalledTimes(2);
     });
+
+    it("scrolls the root of a page that has no scrolling element", () => {
+        // A page in quirks mode has none when both its root and its body clip their overflow.
+        const frame = document.createElement("iframe");
+        document.body.append(frame);
+        mounted.push(frame);
+        const page = frame.contentDocument as Document;
+        page.open();
+        page.write("<html><style>html, body { overflow: hidden; }</style>"
+            + "<body><p id=\"a\">A</p></body></html>");
+        page.close();
+        expect(page.compatMode).toBe("BackCompat");
+        expect(page.scrollingElement).toBeNull();
+        const pageWindow = frame.contentWindow as typeof window;
+        const pageScrollBy = vi.spyOn(pageWindow.Element.prototype, "scrollBy")
+            .mockImplementation(() => {});
+
+        expect(showAnchor(page.body, "a")).toBe(true);
+
+        expect(pageScrollBy).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ behavior: "smooth" }));
+        expect(pageScrollBy.mock.contexts[0]).toBe(page.documentElement);
+    });
 });
 
 describe("getBlockRangeElements", () => {

@@ -48,7 +48,11 @@ async function zipEntryMtimeSupported(): Promise<boolean> {
 
 /** Runs the Obsidian importer over `files` and returns the import root note. */
 async function importObsidian(files: Record<string, string | Buffer>, fileName?: string, dates?: Record<string, Date>): Promise<BNote> {
-    const buffer = await createZipBuffer(files, dates);
+    return importObsidianZip(await createZipBuffer(files, dates), fileName);
+}
+
+/** Runs the Obsidian importer over an already built zip and returns the import root note. */
+async function importObsidianZip(buffer: Buffer, fileName?: string): Promise<BNote> {
     const taskContext = TaskContext.getInstance("obsidian-integration", "importNotes", { safeImport: true });
 
     return new Promise<BNote>((resolve, reject) => {
@@ -282,6 +286,18 @@ describe("Obsidian importer — integration", () => {
         expect(named.title).toBe(unnamed.title);
     });
 
+    it("uses the default root title when the vault folder has an empty name", async () => {
+        // archiver collapses `//` in entry names, so the names are rewritten in the finished zip.
+        // "Vx/" and "V//" have the same length, which keeps every offset in the archive valid.
+        const zip = await createZipBuffer({ "Vx/.obsidian/app.json": "{}", "Vx/Note.md": "x" });
+        const renamed = Buffer.from(zip.toString("latin1").replaceAll("Vx/", "V//"), "latin1");
+
+        const importRoot = await importObsidianZip(renamed);
+
+        expect(importRoot.title).toBe("Obsidian import");
+        expect(importRoot.getChildNotes().map((n) => n.title)).toEqual([ "Note" ]);
+    });
+
     it("falls back to stripping a single shared wrapper folder when there is no .obsidian", async () => {
         const importRoot = await importObsidian({ "Wrapper/A.md": "a", "Wrapper/B.md": "b" });
 
@@ -420,7 +436,7 @@ describe("Obsidian importer — integration", () => {
 
         // The plain wikilink is a reference link; the embed becomes an include-note pointing at the same note.
         expect(content).toContain(`<a class="reference-link" href="#root/${target.noteId}">`);
-        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="medium">`);
+        expect(content).toContain(`<section class="include-note" data-note-id="${target.noteId}" data-box-size="resizable">`);
 
         // The embed records an includeNoteLink relation (the wikilink an internalLink).
         expect(note.getRelations().filter((r) => r.name === "includeNoteLink").map((r) => r.value)).toEqual([target.noteId]);

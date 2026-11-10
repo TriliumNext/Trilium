@@ -163,8 +163,9 @@ export default class TableInsertUI extends Plugin {
         clickOutsideHandler({
             emitter: form,
             activator: () => balloon.hasView(form),
-            /* v8 ignore next -- the balloon renders its panel as the editor starts up */
-            contextElements: () => balloon.view.element ? [balloon.view.element] : [],
+            contextElements: () => balloon.view.element
+                ? [balloon.view.element]
+                : /* v8 ignore next -- reading `balloon.view` renders the panel */ [],
             callback: () => this.hideForm(form)
         });
 
@@ -230,13 +231,13 @@ class InsertTablePanelView extends View {
 
         for (const view of [this.listView, this.gridView]) {
             this.focusables.add(view);
-            /* v8 ignore next -- a child view rendered as part of this template has an element */
+            /* v8 ignore else -- a child view rendered as part of this template has an element */
             if (view.element) {
                 this.focusTracker.add(view.element);
             }
         }
 
-        /* v8 ignore next -- super.render() has just built this view's element */
+        /* v8 ignore else -- super.render() has just built this view's element */
         if (this.element) {
             this.keystrokes.listenTo(this.element);
         }

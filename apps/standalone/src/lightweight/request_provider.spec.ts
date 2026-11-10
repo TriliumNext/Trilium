@@ -77,7 +77,7 @@ describe("FetchRequestProvider.exec", () => {
 
     it("serializes object bodies as JSON and passes string bodies through", async () => {
         const spy = mockFetch({ status: 200, text: async () => "{}" });
-        await provider.exec({ method: "POST", url: `${location.origin}/x`, body: { a: 1 } } as ExecOpts);
+        await provider.exec({ proxy: null, timeout: 0, method: "POST", url: `${location.origin}/x`, body: { a: 1 } });
         expect(lastInit(spy).body).toBe(JSON.stringify({ a: 1 }));
 
         spy.mockClear();
@@ -193,6 +193,16 @@ describe("FetchRequestProvider.fetchResource", () => {
         expect(spy.mock.calls[0][1]).toMatchObject({ headers: { "user-agent": "TriliumNotes" } });
     });
 
+    it("asks with the method it is given", async () => {
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null));
+
+        await provider.fetchResource("https://example.com/clip.mp4", {
+            method: "HEAD", maxBytes: 0
+        });
+
+        expect(spy.mock.calls[0][1]).toMatchObject({ method: "HEAD" });
+    });
+
     it("refuses an address before a request is made of it", async () => {
         const spy = vi.spyOn(globalThis, "fetch");
 
@@ -218,5 +228,38 @@ describe("FetchRequestProvider.fetchResource", () => {
 
         await expect(provider.fetchResource("https://example.com/p", { maxBytes: 10 }))
             .rejects.toThrow(/Failed to fetch/);
+    });
+
+    it("aborts a request still waiting after five seconds", async () => {
+        vi.useFakeTimers();
+        let signal: AbortSignal | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => new Promise<Response>((_resolve, reject) => {
+            signal = init?.signal ?? undefined;
+            signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        }));
+
+        const rejection = expect(provider.fetchResource("https://example.com/slow", { maxBytes: 10 }))
+            .rejects.toThrow("aborted");
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(signal?.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await rejection;
+        expect(signal?.aborted).toBe(true);
+    });
+});
+
+describe("FetchRequestProvider.fetchApi", () => {
+    it("calls the validated URL with the init it is given, and refuses a bad one", async () => {
+        const response = new Response("{}");
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+        const init = { method: "POST", body: "{}" };
+
+        await expect(provider.fetchApi("https://api.example.com/v1/chat", init, { allowPrivateNetwork: false }))
+            .resolves.toBe(response);
+        expect(spy).toHaveBeenCalledWith("https://api.example.com/v1/chat", init);
+
+        await expect(provider.fetchApi("file:///etc/passwd", {}, { allowPrivateNetwork: false }))
+            .rejects.toThrow(/http and https/);
+        expect(spy).toHaveBeenCalledTimes(1);
     });
 });

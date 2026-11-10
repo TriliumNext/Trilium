@@ -2,11 +2,13 @@ import i18next from "i18next";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getBackup } from "./backup.js";
+import { getConfig } from "./config.js";
 import { getContext, isSystem } from "./context.js";
 import eventService from "./events.js";
 import migrationService from "./migration.js";
+import { enterSetupMode, leaveSetupMode } from "./setup_mode.js";
 import { getSql } from "./sql/index.js";
-import sqlInit, { applySetupLanguage } from "./sql_init.js";
+import sqlInit, { applySetupLanguage, initDemoArchive } from "./sql_init.js";
 import { SqlService } from "./sql/sql.js";
 
 describe("sql_init (real DB)", () => {
@@ -229,5 +231,80 @@ describe("sql_init (real DB)", () => {
             );
             expect(adminUserId).toBe(nonAdminId);
         });
+    });
+});
+
+describe("sql_init startup", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it("leaves the connection closed while setup is requested", async () => {
+        const execute = vi.spyOn(getSql(), "execute");
+        enterSetupMode({ lang: "en" });
+        try {
+            await getContext().init(() => sqlInit.initDbConnection());
+        } finally {
+            leaveSetupMode();
+        }
+        expect(execute).not.toHaveBeenCalled();
+    });
+
+    it("schedules backups and optimizes the database periodically unless it is read-only", async () => {
+        vi.useFakeTimers();
+        const scheduleBackups = vi.spyOn(getBackup(), "scheduleBackups").mockImplementation(() => {});
+        const execute = vi.spyOn(getSql(), "execute");
+
+        sqlInit.initializeDb();
+        await sqlInit.dbReady;
+        expect(scheduleBackups).toHaveBeenCalledOnce();
+
+        execute.mockClear();
+        await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
+        expect(execute).toHaveBeenCalledWith("PRAGMA optimize");
+
+        execute.mockClear();
+        const general = getConfig().General;
+        general.readOnly = true;
+        try {
+            await vi.advanceTimersByTimeAsync(10 * 60 * 60 * 1000);
+        } finally {
+            general.readOnly = false;
+        }
+        expect(execute).not.toHaveBeenCalledWith("PRAGMA optimize");
+    });
+});
+
+/** Rebuilds the database from scratch, so it runs last and leaves an empty document behind. */
+describe("createInitialDatabase with demo content", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    async function createAgain(locale: string) {
+        getSql().execute("UPDATE options SET value = 'false' WHERE name = 'initialized'");
+        await getContext().init(() => sqlInit.createInitialDatabase(false, locale));
+    }
+
+    it("imports the demo archive onto the root note when the platform provides one", async () => {
+        const { default: zipImportService } = await import("./import/zip.js");
+        const importZip = vi.spyOn(zipImportService, "importZip").mockResolvedValue(undefined as never);
+        const archive = new Uint8Array([ 1, 2, 3 ]);
+        const getDemoArchive = vi.fn<() => Promise<Uint8Array | null>>().mockResolvedValueOnce(null).mockResolvedValueOnce(archive);
+        initDemoArchive(getDemoArchive);
+
+        await createAgain("zz-not-a-locale");
+        expect(getDemoArchive).toHaveBeenCalledOnce();
+        expect(importZip).not.toHaveBeenCalled();
+        // A locale that cannot be displayed keeps the default.
+        expect(getSql().getValue("SELECT value FROM options WHERE name = 'locale'")).toBe("en");
+
+        await createAgain("en");
+        expect(importZip).toHaveBeenCalledOnce();
+        const [ , file, parent, options ] = importZip.mock.calls[0];
+        expect(file).toBe(archive);
+        expect(parent.noteId).toBe("root");
+        expect(options).toEqual({ restoreAsRoot: true });
     });
 });

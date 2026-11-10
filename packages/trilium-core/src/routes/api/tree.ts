@@ -21,6 +21,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         collectedNoteIds.add(note.noteId);
 
         for (const branch of note.getParentBranches()) {
+            /* v8 ignore else -- branches in becca always carry their id */
             if (branch.branchId) {
                 collectedBranchIds.add(branch.branchId);
             }
@@ -30,6 +31,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
 
         for (const childNote of note.children) {
             const childBranch = becca.getBranchFromChildAndParent(childNote.noteId, note.noteId);
+            /* v8 ignore else -- `note.children` is built from these branches */
             if (childBranch && childBranch.branchId) {
                 collectedBranchIds.add(childBranch.branchId);
             }

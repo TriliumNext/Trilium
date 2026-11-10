@@ -177,6 +177,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // POSTed rather than taking the URL in a query string: a link can carry a one-time token or a
     // signature, and a query string ends up in every access log along the way.
     asyncApiRoute(PST, "/api/link-embed/metadata", linkEmbedRoute.getMetadata);
+    asyncApiRoute(PST, "/api/link-embed/details", linkEmbedRoute.getPageDetails);
+    asyncApiRoute(PST, "/api/link-embed/status", linkEmbedRoute.getHttpStatus);
+    asyncApiRoute(PST, "/api/link-embed/thumbnail", linkEmbedRoute.storeMediaThumbnail);
 
     asyncRoute(GET, "/api/spreadsheet/:noteId/xlsx", [checkApiAuthOrElectron], spreadsheetRoute.exportXlsx);
 

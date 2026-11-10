@@ -239,3 +239,12 @@ describe("CryptoProvider behaviour (wired-up provider)", () => {
         });
     });
 });
+
+describe("getCrypto before initCrypto", () => {
+    it("throws on a fresh module instance", async () => {
+        vi.resetModules();
+        const fresh = await import("./crypto.js");
+
+        expect(() => fresh.getCrypto()).toThrow("Crypto not initialized.");
+    });
+});

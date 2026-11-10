@@ -16,6 +16,7 @@ import {
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
+import { Features, transform } from "lightningcss";
 import {
     build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
     type ResolvedConfig, type Rollup, type ViteDevServer
@@ -133,6 +134,26 @@ export function narrowThirdPartySelectors(): Plugin {
 }
 
 /**
+ * Flattens CSS nesting in a stylesheet copied by `viteStaticCopy`, for the browsers without
+ * nesting support. Only stylesheets that a module imports go through Vite's lightningcss
+ * transformer; `style.css` and the theme stylesheets are linked at runtime and copied as-is.
+ * Returns files other than `.css` unchanged.
+ */
+export function flattenCssNesting(content: string, filename: string): string {
+    if (!filename.endsWith(".css")) {
+        return content;
+    }
+
+    const { code } = transform({
+        filename,
+        code: Buffer.from(content),
+        include: Features.Nesting,
+        errorRecovery: true
+    });
+    return code.toString();
+}
+
+/**
  * Returns `code` with the rewrites of the stylesheet `id` applied, and `null` for other
  * modules.
  */
@@ -219,14 +240,16 @@ const CKEDITOR_REWRITES: SelectorRewrite[] = [
     // A blurred editor shows its selection in the same color as a focused one.
     {
         from: "&.ck-blurred ::selection {\n"
-            + "    background: var(--ck-color-editable-blur-selection, #d9d9d9);\n  }",
+            + "    background: var(--ck-color-editable-blur-selection, "
+            + "var(--ck-editor-editable-blurred-selection-background));\n  }",
         to: "",
         count: 1
     },
     // The icon's `svg *` rule reads its stroke from this variable.
     {
-        from: "& svg * {\n    stroke: var(--ck-color-widget-blurred-border);\n  }",
-        to: "--ck-color-widget-type-around-button-icon: var(--ck-color-widget-blurred-border);",
+        from: "& svg * {\n    stroke: var(--ck-widget-type-around-button-blurred-icon-color);\n  }",
+        to: "--ck-color-widget-type-around-button-icon: "
+            + "var(--ck-widget-type-around-button-blurred-icon-color);",
         count: 1
     }
 ];

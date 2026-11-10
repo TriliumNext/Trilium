@@ -130,6 +130,11 @@ describe("BNote content / misc getters", () => {
 
             expect(note.utcDateCreated).toBe(originalUtcCreated);
             expect(note.utcDateModified).toBe("2030-01-02 03:04:05.000Z");
+
+            getContext().init(() => note.setDateCreatedAndModified("2019-01-02 03:04:05.000Z"));
+
+            expect(note.utcDateCreated).toBe("2019-01-02 03:04:05.000Z");
+            expect(note.utcDateModified).toBe("2030-01-02 03:04:05.000Z");
         });
     });
 

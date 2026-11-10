@@ -264,6 +264,12 @@ describe("Notes API (core)", () => {
             expect(noteIsDeleted(child.noteId)).toBe(1);
         });
 
+        it("400s for a fallback parent that is not a note id", async () => {
+            const { noteId } = await createTextNote(api, { title: "Bad fallback" });
+            const res = await api.put(`/api/notes/${noteId}/undelete`, { body: { fallbackParentNoteId: 5 } });
+            expect(res.status).toBe(400);
+        });
+
         it("restores an orphaned note under the fallback parent when one is given", async () => {
             const parent = await createTextNote(api, { title: "Doomed parent" });
             const child = await createTextNote(api, { parentNoteId: parent.noteId, title: "Rehomed child" });
@@ -550,8 +556,33 @@ describe("Notes API (core)", () => {
             });
             expect(noBranchIds.status).toBe(400);
 
+            const noBody = await api.post("/api/delete-notes");
+            expect(noBody.status).toBe(400);
+
             // Neither one deleted anything.
             expect(noteIsDeleted(noteId)).toBe(0);
+        });
+
+        it("reports a failure that is not an Error", async () => {
+            const { branchId } = await createTextNote(api, { title: "Delete that throws a string" });
+            const messages = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+            const erase = vi.spyOn(eraseService, "eraseNotesWithDeleteIds")
+                .mockImplementation(() => {
+                    throw "plain failure";
+                });
+
+            try {
+                const res = await api.post("/api/delete-notes", {
+                    body: { branchIdsToDelete: [ branchId ], eraseNotes: true, taskId: "test-batch-string" }
+                });
+                expect(res.status).toBe(500);
+                expect(messages.mock.calls.map(([ message ]) => message)).toContainEqual(expect.objectContaining({
+                    type: "taskError", message: expect.stringContaining("plain failure")
+                }));
+            } finally {
+                erase.mockRestore();
+                messages.mockRestore();
+            }
         });
     });
 
@@ -598,6 +629,14 @@ describe("Notes API (core)", () => {
             const res = await api.post<{ attachment: unknown }>(`/api/notes/${noteId}/convert-to-attachment`);
             expect(res.status).toBe(200);
             expect(res.body.attachment).toBeNull();
+        });
+
+        it("converts a text note to Markdown", async () => {
+            const { noteId } = await createTextNote(api, { title: "To Markdown", content: "<p>text</p>" });
+            const res = await api.post<{ type: string }>(`/api/notes/${noteId}/convert-format`);
+            expect(res.status).toBe(200);
+            expect(res.body.type).toBe("code");
+            expect(becca.getNoteOrThrow(noteId).mime).toBe("text/x-markdown");
         });
     });
 
@@ -741,6 +780,19 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.noteIdsToBeDeleted).toEqual(expect.arrayContaining([ parent.noteId, child.noteId ]));
             expect(res.body.brokenRelations.some((attr) => attr.noteId === outside.noteId)).toBe(true);
+        });
+
+        it("keeps a clone with another strong parent out of the delete preview", async () => {
+            const note = await createTextNote(api, { title: "Previewed clone" });
+            const otherParent = await createTextNote(api, { title: "Previewed clone parent" });
+            const clone = await api.put(`/api/notes/${note.noteId}/clone-to-note/${otherParent.noteId}`, { body: {} });
+            expect(clone.status).toBe(200);
+
+            const res = await api.post<{ noteIdsToBeDeleted: string[] }>(
+                "/api/delete-notes-preview",
+                { body: { branchIdsToDelete: [ note.branchId ], deleteAllClones: false } }
+            );
+            expect(res.body.noteIdsToBeDeleted).not.toContain(note.noteId);
         });
 
         it("skips missing branches in the delete preview", async () => {

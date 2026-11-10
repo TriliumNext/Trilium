@@ -107,12 +107,10 @@ export function convertNoteByConversionId(note: BNote, conversionId: string): bo
 
 /** Saves the pre-conversion revision, transforms the content, and switches the note's type/mime. */
 function performConversion(note: BNote, sourceFormat: SourceFormat) {
-    const rawContent = note.getContent();
-    if (rawContent != null && typeof rawContent !== "string") {
+    const content = note.getContent();
+    if (typeof content !== "string") {
         throw new ValidationError(`Note '${note.noteId}' does not have textual content.`);
     }
-    // A brand-new or empty note may have no content; treat it as an empty document rather than failing.
-    const content = rawContent ?? "";
 
     // Snapshot the current (pre-conversion) state under a descriptive name.
     const description = sourceFormat === "markdown"

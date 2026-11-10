@@ -181,7 +181,7 @@
     "llm-chat-history-title": "Historique des discussions IA",
     "llm-title": "AI / LLM",
     "tab-switcher-title": "Commutateur d'onglets",
-    "sidebar-chat-title": "AI Chat",
+    "sidebar-chat-title": "Chat IA",
     "custom-dictionary-title": "Dictionnaire personnalisé",
     "task-states-title": "Statuts des tâches",
     "task-state-none": "Aucun",
@@ -195,7 +195,15 @@
     "task-state-attr-color": "Couleur",
     "task-state-attr-is-hidden": "Masqué de la liste",
     "security-title": "Sécurité",
-    "desktop-title": "Bureau"
+    "desktop-title": "Bureau",
+    "space-usage-title": "Utilisation de l'espace de stockage",
+    "deleted-notes-title": "Notes supprimées",
+    "color-scheme-switcher-title": "Sélecteur de palette de couleurs",
+    "content-manager-title": "Gestionnaire de contenu",
+    "database-title": "Base de données",
+    "record-meeting-title": "Transcrire une réunion",
+    "transcription-title": "Transcription",
+    "resources-title": "Ressources téléchargées"
   },
   "notes": {
     "new-note": "Nouvelle note",

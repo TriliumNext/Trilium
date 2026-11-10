@@ -121,6 +121,16 @@ describe("Note type mappings", () => {
         }
     });
 
+    it("keeps the document of a text note that already has one, and names an unknown code mime .code", () => {
+        const text = buildNote({ type: "text", title: "Page" });
+        const { payload } = mapByNoteType(text, "<HTML><body><p>Hi</p></body></HTML>", "html");
+        expect(payload).not.toContain("<meta");
+        expect(payload).toContain("<p>Hi</p>");
+
+        const code = buildNote({ type: "code", mime: "text/x-unknown-language", title: "Snippet" });
+        expect(mapByNoteType(code, "x", "html")).toMatchObject({ extension: "code", mime: "text/x-unknown-language" });
+    });
+
     it("dumps canvas, relation map and search notes verbatim as JSON", () => {
         const cases = [
             { type: "canvas" as const, extension: "excalidraw" },

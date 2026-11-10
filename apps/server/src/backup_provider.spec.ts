@@ -1,4 +1,4 @@
-import { readBackupContainer } from "@triliumnext/backup-container";
+import { readBackupContainer, writeBackupContainer } from "@triliumnext/backup-container";
 import type { OptionNames, SetupBackupSettings } from "@triliumnext/commons";
 import { getLog, getSql, ws } from "@triliumnext/core";
 import fs from "fs";
@@ -137,6 +137,28 @@ describe("ServerBackupService: backup location", () => {
         // Listed once, not once per configured directory.
         const listed = await service.getExistingBackups();
         expect(listed.map((b) => b.fileName)).toEqual([ "backup-now.db" ]);
+    });
+});
+
+describe("ServerBackupService.scheduleBackups", () => {
+    it("takes the first backup soon after startup and then one every four hours", () => {
+        vi.useFakeTimers();
+        try {
+            const service = desktopService("");
+            const regularBackup = vi.spyOn(service, "regularBackup").mockImplementation(() => {});
+
+            service.scheduleBackups();
+            expect(regularBackup).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(5 * 60 * 1000);
+            expect(regularBackup).toHaveBeenCalledTimes(1);
+
+            vi.advanceTimersByTime(4 * 60 * 60 * 1000);
+            expect(regularBackup).toHaveBeenCalledTimes(2);
+        } finally {
+            vi.clearAllTimers();
+            vi.useRealTimers();
+        }
     });
 });
 
@@ -530,6 +552,14 @@ describe("ServerBackupService: what reaches the backend log", () => {
         expect(linesFrom(error)).not.toContain(CUSTOM_DIR);
     });
 
+    it("strips the location from a failure that is not an Error, quoting the rest as it was thrown", async () => {
+        copyDatabase.mockRejectedValue(`SQLITE_FULL writing to ${DEFAULT_DIR}`);
+
+        const failure = await desktopService("").backupNow("now").catch((e: Error) => e.message);
+
+        expect(failure).toBe("SQLITE_FULL writing to <backup location>");
+    });
+
     it("strips the location from the failure it propagates when there is nowhere left to fall back to", async () => {
         copyDatabase.mockRejectedValue(new Error(`ENOSPC: no space left on device, open '${DEFAULT_DIR}\\backup-now.db'`));
 
@@ -582,6 +612,64 @@ describe("ServerBackupService.getExistingBackups", () => {
 
     it("tolerates a custom directory that does not exist", async () => {
         await expect(desktopService(path.join(tempRoot, "gone")).getExistingBackups()).resolves.toEqual([]);
+    });
+
+    it("leaves out a backup that is gone by the time it is measured", async () => {
+        fs.mkdirSync(DEFAULT_DIR, { recursive: true });
+        fs.writeFileSync(path.join(DEFAULT_DIR, "backup-kept.db"), "a");
+        fs.writeFileSync(path.join(DEFAULT_DIR, "backup-vanished.db"), "b");
+        const statSync = fs.statSync;
+        vi.spyOn(fs, "statSync").mockImplementation(((filePath: fs.PathLike, options?: fs.StatSyncOptions) =>
+            String(filePath).endsWith("backup-vanished.db") ? undefined : statSync(filePath, options)
+        ) as typeof fs.statSync);
+
+        const backups = await desktopService("").getExistingBackups();
+
+        expect(backups.map((b) => b.fileName)).toEqual([ "backup-kept.db" ]);
+    });
+
+    it("lists a container whose header could not be read without passing judgement on it", async () => {
+        fs.mkdirSync(DEFAULT_DIR, { recursive: true });
+        fs.writeFileSync(path.join(DEFAULT_DIR, "backup-locked.tnbackup"), "unopenable");
+        fs.writeFileSync(path.join(DEFAULT_DIR, "backup-unreadable.tnbackup"), "opens, but will not read");
+        const { openSync } = fs;
+        vi.spyOn(fs, "openSync").mockImplementation(((filePath: fs.PathLike, ...rest: [fs.OpenMode]) => {
+            if (String(filePath).endsWith("backup-locked.tnbackup")) {
+                throw new Error("EBUSY: resource busy or locked");
+            }
+            return openSync(filePath, ...rest);
+        }) as typeof fs.openSync);
+        const unreadable: number[] = [];
+        vi.spyOn(fs, "readSync").mockImplementation(((descriptor: number, ...rest: [NodeJS.ArrayBufferView]) => {
+            unreadable.push(descriptor);
+            throw new Error("EIO: i/o error, read");
+        }) as typeof fs.readSync);
+        const closed = vi.spyOn(fs, "closeSync");
+
+        const byName = new Map((await desktopService("").getExistingBackups()).map((b) => [ b.fileName, b ]));
+
+        // Nothing was learned about either, which is not the same as having learned they are no good.
+        for (const fileName of [ "backup-locked.tnbackup", "backup-unreadable.tnbackup" ]) {
+            expect(byName.get(fileName)).toBeDefined();
+            expect(byName.get(fileName)).not.toHaveProperty("unreadable");
+            expect(byName.get(fileName)).not.toHaveProperty("encrypted");
+        }
+        // The one that did open is closed again, so the listing leaves no handle behind on it.
+        expect(unreadable).toHaveLength(1);
+        expect(closed).toHaveBeenCalledWith(unreadable[0]);
+    });
+
+    it("leaves the size of the database inside a container unstated where its writer did not know it", async () => {
+        fs.mkdirSync(DEFAULT_DIR, { recursive: true });
+        const filePath = path.join(DEFAULT_DIR, "backup-unsized.tnbackup");
+        await writeBackupContainer(Readable.from([ Buffer.from("db-bytes") ]), fs.createWriteStream(filePath), {
+            compress: true
+        });
+
+        const [ backup ] = await desktopService("").getExistingBackups();
+
+        expect(backup).toMatchObject({ fileName: "backup-unsized.tnbackup", compressed: true, encrypted: false });
+        expect(backup.plaintextSize).toBeUndefined();
     });
 });
 

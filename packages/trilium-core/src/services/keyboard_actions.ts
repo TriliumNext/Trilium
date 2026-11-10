@@ -580,7 +580,7 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.follow-link-under-cursor"),
             actionName: "followLinkUnderCursor",
             iconClass: "bx bx-link-external",
-            defaultShortcuts: ["CommandOrControl+Enter"],
+            defaultShortcuts: ["Alt+Enter"],
             description: t("keyboard_actions.follow-link-under-cursor"),
             scope: "text-detail"
         },
@@ -927,8 +927,8 @@ function getKeyboardActions() {
     const actions: KeyboardShortcut[] = JSON.parse(JSON.stringify(getDefaultKeyboardActions()));
 
     for (const action of actions) {
-        if ("effectiveShortcuts" in action && action.effectiveShortcuts) {
-            /* v8 ignore next -- no default action pre-defines effectiveShortcuts; defensive seeding */
+        if ("actionName" in action && !action.effectiveShortcuts) {
+            /* v8 ignore next -- every default action defines `defaultShortcuts` */
             action.effectiveShortcuts = action.defaultShortcuts ? action.defaultShortcuts.slice() : [];
         }
     }

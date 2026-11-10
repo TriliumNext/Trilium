@@ -13,11 +13,6 @@ import {
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
 import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
-import {
-    EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getLinkPreviewVideoId,
-    getVideoAspectRatio, readLinkPreviewData, readVideoEmbedBox, VIDEO_ASPECT_RATIO_PROPERTY,
-    VIDEO_EMBED_CLASS
-} from "@triliumnext/commons";
 import clsx from "clsx";
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "preact/hooks";
@@ -26,16 +21,12 @@ import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import {
-    applyInlineMermaid, emptyUnknownEmbeds, replaceWithEmbedBox, rewriteMermaidDiagramsInContainer
-} from "../../../services/content_renderer_text";
 import { t } from "../../../services/i18n";
 import { applyNoteImageVersions } from "../../../services/image_urls";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
-import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
 import {
@@ -45,17 +36,9 @@ import {
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { mountScrollableLabel } from "../../react/ScrollableLabel";
 import { TypeWidgetProps } from "../type_widget";
+import { hasSourceEmbedBoxes, prepareEmbedBoxes } from "./embed_boxes";
 import { applyReferenceLinks } from "./read_only_helper";
-import {
-    loadEmbeddedAttachment,
-    loadEmbeddedNote,
-    loadInlineEmbed,
-    loadUnknownEmbed,
-    loadVideoEmbed,
-    refreshEmbeddedNote,
-    setupImageOpening,
-    watchContentEmbeds
-} from "./utils";
+import { refreshEmbeddedNote, setupImageOpening, watchContentEmbeds } from "./utils";
 
 export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent, isVisible }: TypeWidgetProps) {
     // The componentId matters: the WS echo of a save made by the editable-text editor in the same
@@ -139,8 +122,7 @@ interface ReadOnlyTextContentProps {
 export function ReadOnlyTextContent({
     html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false
 }: ReadOnlyTextContentProps) {
-    // Printing snapshots the page, before an embed box would have drawn its diagram.
-    const hasEmbedBoxes = !isChanging && glob.device !== "print";
+    const hasEmbedBoxes = hasSourceEmbedBoxes(isChanging);
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -165,16 +147,15 @@ export function ReadOnlyTextContent({
         // which render a whole note of their own — finish after this effect returns. On screen they
         // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
         // them, so the work is registered rather than dropped on the floor.
+        const loadEmbedBoxes = prepareEmbedBoxes(container, {
+            seenNoteIds: new Set(), hostNoteId: noteId, isChanging
+        });
         trackPendingRender(container, Promise.all([
-            // First, so that no other pass renders the content of these embeds.
-            applyUnknownEmbeds(container),
-            ...(hasEmbedBoxes
-                ? [ applySourceEmbeds(container), applyVideoEmbeds(container) ]
-                : [ rewriteMermaidDiagramsInContainer(container), applyInlineMermaid(container) ]),
-            applyContentEmbeds(container),
             applyLinkEmbeds(container),
             applyReferenceLinks(container, noteId),
-            formatCodeBlocks($(container))
+            formatCodeBlocks($(container)),
+            // Last, so that no pass above reaches into the content of the boxes.
+            loadEmbedBoxes()
         ]));
 
         applyNoteImageVersions(container);
@@ -203,7 +184,7 @@ export function ReadOnlyTextContent({
                 dispose();
             }
         };
-    }, [ html, noteId, ntxId, contentRef, hasEmbedBoxes ]);
+    }, [ html, noteId, ntxId, contentRef, isChanging ]);
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -215,9 +196,11 @@ export function ReadOnlyTextContent({
     });
 
     // React to embedded note changes.
-    useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
+    useTriliumEvent("refreshEmbeddedNote", ({ noteId: embeddedNoteId }) => {
         if (!contentRef.current) return;
-        refreshEmbeddedNote(contentRef.current, noteId);
+        refreshEmbeddedNote(contentRef.current, embeddedNoteId, {
+            seenNoteIds: new Set(noteId ? [ noteId ] : [])
+        });
     });
 
     // Search integration.
@@ -248,120 +231,6 @@ function useNoteLanguage(note: FNote) {
     const [ defaultContentLanguage ] = useTriliumOption("defaultContentLanguage");
     const isRtl = useMemo(() => isContentRightToLeft(language), [ language, defaultContentLanguage ]);
     return { isRtl };
-}
-
-function applyContentEmbeds(container: HTMLDivElement) {
-    const loaded: Promise<unknown>[] = [];
-    const embeddedNotes = container.querySelectorAll<HTMLElement>(".include-note");
-    for (const embeddedNote of embeddedNotes) {
-        const { attachmentId, noteId, block } = embeddedNote.dataset;
-        if (attachmentId) {
-            loaded.push(loadEmbeddedAttachment(attachmentId, $(embeddedNote)));
-        } else if (noteId) {
-            loaded.push(loadEmbeddedNote(noteId, $(embeddedNote), undefined, { block }));
-        }
-    }
-    return Promise.all(loaded);
-}
-
-/**
- * Shows each video of a link preview in the embed box the editor shows it in, with its title row
- * and caption, and without the menu of the editor.
- */
-function applyVideoEmbeds(container: HTMLDivElement) {
-    for (const section of container.querySelectorAll<HTMLElement>("section.link-embed")) {
-        const getAttribute = (name: string) => section.getAttribute(name);
-        const preview = readLinkPreviewData(getAttribute);
-        if (!preview || !getLinkPreviewVideoId(preview)) continue;
-
-        const figure = document.createElement("figure");
-        figure.className = `include-note ${VIDEO_EMBED_CLASS}`;
-        const { boxSize, isTitleHidden } = readVideoEmbedBox(getAttribute);
-        figure.dataset.boxSize = boxSize;
-        if (isTitleHidden) {
-            figure.dataset.hideTitle = "true";
-        }
-        const { position, triliumBlockId } = section.dataset;
-        for (const [ name, value ] of Object.entries({ position, triliumBlockId })) {
-            if (value) {
-                figure.dataset[name] = value;
-            }
-        }
-        const style = section.getAttribute("style");
-        if (style) {
-            figure.setAttribute("style", style);
-        }
-        const aspectRatio = getVideoAspectRatio(preview);
-        if (aspectRatio) {
-            figure.style.setProperty(VIDEO_ASPECT_RATIO_PROPERTY, String(aspectRatio));
-        }
-        replaceWithEmbedBox(section, figure);
-        loadVideoEmbed(preview, figure);
-    }
-}
-
-/** Shows each embed of a kind that this version does not know as the editor does: an error box. */
-function applyUnknownEmbeds(container: HTMLDivElement) {
-    return Promise.all(emptyUnknownEmbeds(container)
-        .map((box) => loadUnknownEmbed(box, box.dataset.boxSize)));
-}
-
-/**
- * Shows each code block that keeps the source of an embed, such as a Mermaid diagram, in the embed
- * box the editor shows it in, read-only.
- */
-function applySourceEmbeds(container: HTMLDivElement) {
-    const loaded: Promise<unknown>[] = [];
-    for (const code of container.querySelectorAll<HTMLElement>("pre > code")) {
-        const pre = code.parentElement;
-        const codeLanguage = [ ...code.classList ]
-            .find((name) => name.startsWith("language-"))?.slice("language-".length);
-        const isDiagram = !!codeLanguage && !!getSourceEmbedTypeByLanguage(codeLanguage);
-        const isCodeBlock = !isDiagram && !!pre?.classList.contains(EXTENDED_CODE_BLOCK_CLASS);
-        if (!pre || (!isDiagram && !isCodeBlock)) continue;
-        const language = codeLanguage ?? EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE;
-
-        const figure = document.createElement("figure");
-        figure.className = clsx("include-note", isCodeBlock && EXTENDED_CODE_BLOCK_CLASS);
-        const {
-            boxSize, displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth,
-            codeIndentWithTabs
-        } = pre.dataset;
-        const defaultBoxSize = isCodeBlock ? "full" : "medium";
-        figure.dataset.boxSize = boxSize === "small" || boxSize === "medium" || boxSize === "full"
-            ? boxSize
-            : defaultBoxSize;
-        figure.dataset.language = language;
-        const views = {
-            displayMode, position, codeWrapLines, codeLineNumbers, codeTabWidth, codeIndentWithTabs
-        };
-        for (const [ name, value ] of Object.entries(views)) {
-            if (value) {
-                figure.dataset[name] = value;
-            }
-        }
-        figure.dataset.hideTitle = "true";
-        // Diagrams saved before the embed keep their block ID on the `<code>`.
-        const blockId = pre.dataset.triliumBlockId ?? code.dataset.triliumBlockId;
-        if (blockId) {
-            figure.dataset.triliumBlockId = blockId;
-        }
-        const style = pre.getAttribute("style");
-        if (style) {
-            figure.setAttribute("style", style);
-        }
-        pre.replaceWith(figure);
-
-        const source = code.textContent;
-        loaded.push(loadInlineEmbed({
-            language,
-            getSource: () => source,
-            setSource: () => {},
-            subscribe: () => () => {},
-            isReadOnly: () => true
-        }, $(figure), figure.dataset.boxSize, { isFocused: false }));
-    }
-    return Promise.all(loaded);
 }
 
 function applyMath(container: HTMLDivElement) {

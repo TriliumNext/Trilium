@@ -76,6 +76,7 @@ async function importAnytype(taskContext: TaskContext<"importNotes">, source: Zi
     const objectIds = new Set(objects.map((snapshot) => snapshot.snapshot?.data?.details?.id).filter((id): id is string => !!id));
     const collectionExport = !!fileName && isSingleCollectionExport(pageSnapshots, objectIds);
     const rootTitle = collectionExport && fileName ? collectionTitleFromFileName(fileName) : undefined;
+    /* v8 ignore next -- isSingleCollectionExport holds only when every page carries details */
     const rootColumns = collectionExport ? synthesizeColumns(pageSnapshots.map((snapshot) => snapshot.snapshot?.data?.details ?? {}), relationMap) : undefined;
 
     // Assign each page its Trilium note id up front so cross-page links resolve even when they point at a
@@ -376,11 +377,13 @@ function createNotes(importRootNote: BNote, pages: ParsedObject[], targets: Map<
     // collections. Done after the page loop so the owning collection note already exists.
     for (const fileId of fileMemberIds(pages, notesByPageId, fileObjects)) {
         const info = fileObjects.get(fileId);
+        /* v8 ignore next -- fileMemberIds yields only ids that fileObjects holds */
         const bytes = info ? files.get(normalizePath(info.source)) : undefined;
         if (!info || !bytes) {
             continue;
         }
         const primaryCollectionId = primaryCollectionByMember.get(fileId);
+        /* v8 ignore next -- a file member is listed by a collection, whose note exists by now */
         const parentNoteId = (primaryCollectionId ? notesByPageId.get(primaryCollectionId)?.noteId : undefined) ?? rootNote.noteId;
         notesByPageId.set(fileId, createFileMemberNote(parentNoteId, info, bytes, isProtected, shrinkImages));
     }
@@ -486,6 +489,7 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
     // leaving a bare id that renders as a broken image; the client already falls back to a placeholder
     // when the attribute is absent).
     for (const section of root.querySelectorAll("section.link-embed")) {
+        /* v8 ignore next -- renderBookmark writes data-url on every card it keeps */
         const url = section.getAttribute("data-url") ?? "";
 
         for (const [ attr, role ] of [ [ "data-favicon", "favicon" ], [ "data-image", "coverImage" ] ] as const) {
@@ -505,6 +509,7 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
 
     for (const img of root.querySelectorAll("img")) {
         const targetId = img.getAttribute("src");
+        /* v8 ignore next -- extractContent writes the file id into every image's src */
         const bytes = targetId ? inlineFileBytes(targetId, fileObjects, files) : undefined;
         if (!targetId || !bytes) {
             // Unresolved image (still uploading, or bytes absent) — drop the broken figure rather than
@@ -512,6 +517,7 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
             // remove; an inline `<img>` (e.g. inside a paragraph or table cell) must drop just itself so
             // surrounding text survives.
             const parent = img.parentNode;
+            /* v8 ignore else -- extractContent wraps every image in a <figure> */
             if (parent?.tagName?.toLowerCase() === "figure") {
                 parent.remove();
             } else {
@@ -522,6 +528,7 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
             continue;
         }
         const info = fileObjects.get(targetId);
+        /* v8 ignore next -- the bytes were found through info, whose title names the file */
         const { attachmentId, title } = imageService.saveImageToAttachment(note.noteId, bytes, info?.title || "image", shrinkImages);
         /* v8 ignore next -- saveImageToAttachment always returns the id of the attachment it just created, so this guard is never false in practice */
         if (attachmentId) {
@@ -535,7 +542,9 @@ function applyInlineFiles(note: BNote, fileObjects: Map<string, FileObjectInfo>,
         changed = true;
 
         const targetId = anchor.getAttribute("href");
+        /* v8 ignore next -- extractContent writes the file id into every file link's href */
         const info = targetId ? fileObjects.get(targetId) : undefined;
+        /* v8 ignore next -- as above */
         const bytes = targetId ? inlineFileBytes(targetId, fileObjects, files) : undefined;
         if (!info || !bytes) {
             // Unresolved file — keep the (now class-less) link text but drop the bare-id href.

@@ -65,8 +65,7 @@ async function invalidateCacheFor(snippet: FNote) {
 
 async function handleContentUpdate(affectedNoteIds: string[], setTemplates: (value: SnippetDefinition[]) => void) {
     const updatedNoteIds = new Set(affectedNoteIds);
-    const templateNoteIds = new Set(templateCache.keys());
-    const affectedTemplateNoteIds = templateNoteIds.intersection(updatedNoteIds);
+    const affectedTemplateNoteIds = [ ...templateCache.keys() ].filter((noteId) => updatedNoteIds.has(noteId));
 
     await froca.getNotes(affectedNoteIds, true);
 

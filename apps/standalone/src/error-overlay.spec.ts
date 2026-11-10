@@ -103,6 +103,27 @@ describe("showErrorOverlay", () => {
         }
     });
 
+    it("shows the overlay rather than reloading when session storage is unavailable", async () => {
+        const reload = vi.fn();
+        const original = window.location;
+        Object.defineProperty(window, "location", { value: { ...original, reload }, configurable: true });
+        // Blocked site data makes the `sessionStorage` accessor itself throw.
+        const getItem = vi.spyOn(window, "sessionStorage", "get").mockImplementation(() => {
+            throw new DOMException("denied", "SecurityError");
+        });
+
+        try {
+            const { showErrorOverlay } = await freshOverlay();
+            showErrorOverlay("Trilium couldn't start", "Importing a module script failed.");
+            expect(reload).not.toHaveBeenCalled();
+            expect(document.getElementById("trilium-error-overlay")?.textContent)
+                .toContain("Importing a module script failed.");
+        } finally {
+            getItem.mockRestore();
+            Object.defineProperty(window, "location", { value: original, configurable: true });
+        }
+    });
+
     it("recognizes each engine's module load failure and nothing else", async () => {
         const { isModuleLoadFailure } = await freshOverlay();
         expect(isModuleLoadFailure("Importing a module script failed.")).toBe(true);

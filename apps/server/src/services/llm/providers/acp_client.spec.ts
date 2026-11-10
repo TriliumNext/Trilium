@@ -6,7 +6,8 @@ import { PassThrough } from "stream";
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
 const infoLogMock = vi.hoisted(() => vi.fn());
-vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: infoLogMock, error: vi.fn() }) }));
+const errorLogMock = vi.hoisted(() => vi.fn());
+vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: infoLogMock, error: errorLogMock }) }));
 
 // A fake ChildProcess: stdin captures what the client writes, stdout/stderr are
 // streams the test pushes into, and it is an EventEmitter for exit/error.
@@ -14,7 +15,7 @@ class FakeProc extends EventEmitter {
     stdin = new PassThrough();
     stdout = new PassThrough();
     stderr = new PassThrough();
-    pid = 4242;
+    pid: number | undefined = 4242;
     written: string[] = [];
 
     constructor() {
@@ -30,6 +31,23 @@ class FakeProc extends EventEmitter {
 
 const spawnMock = vi.hoisted(() => vi.fn());
 vi.mock("child_process", () => ({ spawn: spawnMock }));
+
+// The real Worker, recorded so a test can watch it; `workers.standIn`, when set, is returned instead.
+const workers = vi.hoisted(() => ({ started: [] as import("worker_threads").Worker[], standIn: undefined as object | undefined }));
+vi.mock("worker_threads", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("worker_threads")>();
+    return {
+        ...actual,
+        Worker: function Worker(script: string, options: import("worker_threads").WorkerOptions) {
+            if (workers.standIn) {
+                return workers.standIn;
+            }
+            const worker = new actual.Worker(script, options);
+            workers.started.push(worker);
+            return worker;
+        }
+    };
+});
 
 const { AcpClient, AcpError, killLiveAgents } = await import("./acp_client.js");
 
@@ -329,6 +347,32 @@ describe("AcpClient", () => {
         expect(killSpy).not.toHaveBeenCalled();
     });
 
+    it("logs a taskkill that cannot be started", () => {
+        stubPlatform("win32");
+        vi.useFakeTimers();
+        const taskkill = new EventEmitter();
+        spawnMock.mockReturnValueOnce(proc).mockReturnValueOnce(taskkill);
+        errorLogMock.mockReset();
+        AcpClient.start("C:\\agy\\agy_acp_server.exe", { cwd: "C:\\tmp" }).dispose();
+        vi.advanceTimersByTime(5_000);
+
+        taskkill.emit("error", new Error("spawn taskkill ENOENT"));
+        expect(errorLogMock).toHaveBeenCalledExactlyOnceWith("Failed to end the ACP agent's process tree: spawn taskkill ENOENT");
+    });
+
+    it("signals nothing for an agent that never got a process id", () => {
+        vi.useFakeTimers();
+        proc.pid = undefined;
+        for (const platform of [ "linux", "win32" ] as const) {
+            stubPlatform(platform);
+            AcpClient.start("/bin/copilot", { cwd: "/tmp" }).dispose();
+            vi.advanceTimersByTime(5_000);
+        }
+        expect(killSpy).not.toHaveBeenCalled();
+        // Both clients spawned the agent, and no taskkill followed.
+        expect(spawnMock.mock.calls.map(([ binary ]) => binary)).toEqual([ "/bin/copilot", "/bin/copilot" ]);
+    });
+
     it("rejects in-flight requests on dispose and ignores a second dispose", async () => {
         stubPlatform("linux");
         vi.useFakeTimers();
@@ -434,6 +478,42 @@ describe("AcpClient.startWorker", () => {
         await vi.waitFor(() => expect(fs.existsSync(marker)).toBe(true));
         await new Promise(resolve => setTimeout(resolve, 50));
         expect(onExit).not.toHaveBeenCalled();
+    });
+
+    it("terminates a worker that is still running after the grace period, without reporting a failure", async () => {
+        // An agent that keeps running after its stdin closes.
+        fs.writeFileSync(script, `
+            import { createInterface } from "node:readline";
+            createInterface({ input: process.stdin }).on("line", line => {
+                process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: JSON.parse(line).id, result: {} }) + "\\n");
+            });
+            setInterval(() => {}, 1000);
+        `);
+        const onExit = vi.fn();
+        const client = AcpClient.startWorker(script, { cwd: "/unused", onExit });
+        await expect(client.request("ping", {})).resolves.toEqual({});
+        const worker = workers.started.at(-1);
+        const exited = new Promise(resolve => worker?.once("exit", resolve));
+
+        vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        try {
+            client.dispose();
+            vi.advanceTimersByTime(5_000);
+        } finally {
+            vi.useRealTimers();
+        }
+        // terminate() ends the worker with exit code 1.
+        await expect(exited).resolves.toBe(1);
+        expect(onExit).not.toHaveBeenCalled();
+    });
+
+    it("refuses a worker that offers no stdin", () => {
+        workers.standIn = { stdin: null };
+        try {
+            expect(() => AcpClient.startWorker(script, { cwd: "/unused" })).toThrow("The ACP agent's worker has no stdin.");
+        } finally {
+            workers.standIn = undefined;
+        }
     });
 
     it("fails in-flight requests and reports the death when the worker throws", async () => {

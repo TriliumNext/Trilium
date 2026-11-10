@@ -3,6 +3,27 @@ import { containerSize } from "@triliumnext/backup-container/web";
 import { Readable, Writable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+/** When set, replaces what the container writer sends with these chunks. */
+const containerOverride = vi.hoisted(() => ({ chunks: null as Uint8Array[] | null }));
+
+vi.mock("@triliumnext/backup-container/web", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@triliumnext/backup-container/web")>();
+    return {
+        ...actual,
+        writeBackupContainer: async (...args: Parameters<typeof actual.writeBackupContainer>) => {
+            const chunks = containerOverride.chunks;
+            if (!chunks) {
+                return actual.writeBackupContainer(...args);
+            }
+            const writer = args[1].getWriter();
+            for (const chunk of chunks) {
+                await writer.write(chunk);
+            }
+            await writer.close();
+        }
+    };
+});
+
 import { type DownloadPort, streamDatabaseDownload } from "./backup-download.js";
 import type { LiveDatabaseReader } from "./backup-stream.js";
 
@@ -93,6 +114,7 @@ async function unwrap(port: ReturnType<typeof fakePort>, passphrase?: string): P
 
 describe("streamDatabaseDownload", () => {
     afterEach(() => {
+        containerOverride.chunks = null;
         vi.useRealTimers();
         vi.restoreAllMocks();
     });
@@ -201,5 +223,52 @@ describe("streamDatabaseDownload", () => {
         expect(port.sent[0].type).toBe("begin");
         expect(port.sent.at(-1)?.type).toBe("error");
         expect(port.closed).toBe(true);
+    });
+
+    it("waits for each pull as it arrives, ignoring messages that are not requests", async () => {
+        const port = fakePort();
+        let outcome: unknown;
+        const running = streamDatabaseDownload(fakeReader(), port).then((result) => {
+            outcome = result;
+        });
+
+        while (outcome === undefined) {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            port.deliver(null);
+            port.deliver({ type: "progress" });
+            port.deliver({ type: "pull" });
+        }
+        await running;
+
+        expect(outcome).toEqual({ status: "done" });
+        expect(await unwrap(port)).toEqual(fakeDatabaseBytes());
+    });
+
+    it("reports a failure that is not an Error by its string form", async () => {
+        const port = fakePort();
+        const outcome = await streamDatabaseDownload({
+            getValue: () => {
+                throw "database is locked";
+            },
+            getColumn: () => []
+        }, port);
+
+        expect(outcome).toEqual({ status: "failed", message: "database is locked" });
+        expect(port.sent).toEqual([ { type: "error", message: "database is locked" } ]);
+    });
+
+    it("copies a chunk that is a view into a larger buffer before handing it over", async () => {
+        const backing = new Uint8Array([ 1, 2, 3, 4, 5, 6 ]);
+        containerOverride.chunks = [ backing.subarray(2, 4), new Uint8Array([ 7, 8 ]) ];
+        const port = fakePort();
+        const running = streamDatabaseDownload(fakeReader(), port);
+
+        port.deliver({ type: "pull" });
+        port.deliver({ type: "pull" });
+
+        expect(await running).toEqual({ status: "done" });
+        expect(port.chunks().map((chunk) => Array.from(new Uint8Array(chunk)))).toEqual([ [ 3, 4 ], [ 7, 8 ] ]);
+        // The backing buffer stays usable: only the copy was transferred.
+        expect(Array.from(backing)).toEqual([ 1, 2, 3, 4, 5, 6 ]);
     });
 });

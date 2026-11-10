@@ -175,8 +175,9 @@ function createNote(req: Request) {
         throw new ValidationError("Invalid target type.");
     }
 
+    /* v8 ignore if -- Express can parse a repeated query param into an array; the string-only
+       test harness cannot */
     if (targetBranchId && typeof targetBranchId !== "string") {
-        /* v8 ignore next -- defensive guard for Express array query params; unreachable via the string-only test harness */
         throw new ValidationError("Missing or incorrect type for target branch ID.");
     }
 

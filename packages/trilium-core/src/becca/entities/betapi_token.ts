@@ -80,6 +80,7 @@ class BEtapiToken extends AbstractBeccaEntity<BEtapiToken> {
 
         super.beforeSaving();
 
+        /* v8 ignore next -- super.beforeSaving() has just generated etapiTokenId */
         if (this.etapiTokenId) {
             this.becca.etapiTokens[this.etapiTokenId] = this;
         }

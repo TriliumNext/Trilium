@@ -534,7 +534,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         } else if (data.hitMode === "after") {
                             branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);
                         } else if (data.hitMode === "over") {
-                            branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId);
+                            branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId, treeService.getNotePath(node));
                         } else {
                             throw new Error(`Unknown hitMode '${data.hitMode}'`);
                         }
@@ -1701,7 +1701,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const toNode = node.getPrevSibling();
 
         if (toNode !== null) {
-            branchService.moveToParentNote([node.data.branchId], toNode.data.branchId, this.componentId);
+            branchService.moveToParentNote([node.data.branchId], toNode.data.branchId, this.componentId, treeService.getNotePath(toNode));
         }
     }
 

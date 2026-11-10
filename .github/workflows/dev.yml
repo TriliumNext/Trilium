@@ -108,7 +108,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -347,7 +347,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -405,7 +405,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -468,7 +468,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -533,7 +533,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: env.AFFECTED == 'true'
       - name: Set up node & dependencies
         if: env.AFFECTED == 'true'
@@ -597,7 +597,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -639,7 +639,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:

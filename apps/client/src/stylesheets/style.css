@@ -77,6 +77,8 @@ html {
     /* Chrome on Android sizes `vh` without its toolbar, which leaves the page that much to scroll. */
     height: 100dvh;
     overscroll-behavior: none;
+    /* On the root, so that `rem` units follow the interface font size too. */
+    font-size: var(--main-font-size);
 }
 
 /* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
@@ -97,7 +99,6 @@ body {
     background-color: var(--main-background-color);
     color: var(--main-text-color);
     font-family: var(--main-font-family);
-    font-size: var(--main-font-size);
 
     --native-titlebar-foreground: var(--main-text-color);
     --native-titlebar-darwin-x-offset: 10;
@@ -1096,12 +1097,14 @@ svg.ck-icon.note-icon {
 }
 
 /*
- * Table borders in text notes. `ckeditor5-content.css` hardcodes a light grey, which glares on a
- * dark background. The default mixes the text color into transparency, which matches that grey
- * on a light theme. A border set through the table or cell properties is inline and still wins.
+ * Table colors in text notes. `ckeditor5-content.css` hardcodes a light grey border, which glares
+ * on a dark background. The default border mixes the text color into transparency, which matches
+ * that grey on a light theme. A color set through the table or cell properties is inline and still
+ * wins.
  */
 :where(:root) {
     --text-note-table-border-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+    --text-note-table-header-background: var(--accented-background-color);
 }
 
 :root .ck-content .table table:not(.layout-table) {
@@ -1113,7 +1116,9 @@ svg.ck-icon.note-icon {
 }
 
 :root .ck-content .table table:not(.layout-table) th {
-    background-color: var(--accented-background-color);
+    /* The active header cell keeps its background. */
+    --ck-color-table-focused-cell-background: var(--text-note-table-header-background);
+    background-color: var(--text-note-table-header-background);
 }
 
 .ck-content .image > figcaption {
@@ -1390,7 +1395,7 @@ figure.captioned-content-embed {
     /* What the frame takes from `.include-note-box-height`, set by content that draws it. */
     --_include-note-frame-height: 0px;
 
-    &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
+    &[data-hide-title="true"]:not([data-box-size="expandable"]) {
         --_include-note-content-top-radius: var(--_include-note-top-border-radius, 8px);
         --_include-note-content-top-inset: var(--_include-note-content-inset);
     }
@@ -1410,46 +1415,74 @@ figure.captioned-content-embed {
     content: "" !important;
 }
 
-/* Using data- attribute to support both CKEditor and readonly view */
-.include-note[data-box-size="small"] .include-note-content {
-    max-height: var(--include-note-height, 10em);
-    overflow: auto;
-}
-
-/* PDFs and web views render in an (absolutely positioned) iframe, so they need an explicit
-   height per box size instead of an intrinsic, content-driven one. */
-.include-note[data-box-size="small"] .include-note-content.type-pdf,
-.include-note[data-box-size="small"] .include-note-content.type-webView {
-    height: var(--include-note-height, 10em);
-}
-
-/* The small box has room for the compact audio player's visualizer band (which carries a floor of its own) or
-   for its controls row and the file footer below it — not for all three. Drop the band, and release the floor
-   so the box shrinks to what is left instead of overflowing onto the Download / Open buttons. */
-.include-note[data-box-size="small"] .include-note-content.type-audio .audio-preview-visualization-wrapper {
-    display: none;
-}
-
-.include-note[data-box-size="small"] .include-note-content.type-audio .rendered-media {
-    min-height: 0;
-}
-
-.include-note[data-box-size="medium"] .include-note-content {
+/* Using data- attribute to support both CKEditor and readonly view. Each rule reaches the content
+   of its own box only, and `:where()` keeps it as specific as the rules of the content types that
+   override it in their own stylesheets. */
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
     max-height: var(--include-note-height, 20em);
     overflow: auto;
 }
 
-.include-note[data-box-size="medium"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="medium"] .include-note-content.type-webView .rendered-content {
+.include-note .include-note {
+    --include-note-height: initial;
+    --include-note-width: initial;
+}
+
+/* PDFs and web views render in an iframe that fills its box, so they need an explicit height per
+   box size instead of an intrinsic, content-driven one. */
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
     height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="full"] .include-note-content.type-pdf .rendered-content,
-.include-note[data-box-size="full"] .include-note-content.type-webView .rendered-content {
+/* Compact audio is the row of controls alone, which has padding of its own. */
+.include-note[data-box-size="compact"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-audio, .type-mediaEmbed) {
+    padding: 0;
+
+    .audio-preview-visualization-wrapper {
+        display: none;
+    }
+
+    .rendered-media {
+        min-height: 0;
+    }
+}
+
+/* The visualizer band gives way first in a box too short for it, down to nothing. */
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio > .rendered-content,
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio .rendered-media {
+    height: 100%;
+    min-height: 0;
+}
+
+.include-note[data-box-size="resizable"] > :where(.include-note-wrapper)
+    > :where(.include-note-body) > .include-note-content.type-audio
+    .audio-preview-wrapper.media-compact {
+    .audio-preview-visualization-wrapper {
+        flex: 1 1 8rem;
+        min-height: 0;
+    }
+
+    .media-preview-controls {
+        flex-shrink: 0;
+    }
+}
+
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-pdf, .type-webView) .rendered-content {
     height: 50em; /* an iframe can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-webView .rendered-content {
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content.type-webView .rendered-content {
     height: var(--include-note-height, 20em);
 }
 
@@ -1457,32 +1490,30 @@ figure.captioned-content-embed {
    scroll region with no intrinsic height, so — like PDFs and web views — they need an explicit
    height per box size. The inner widget fills it via its existing height:100% chain. List/grid
    collections are content-driven and keep the generic max-height above. */
-.include-note[data-box-size="small"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="small"] .include-note-content.type-search:has(.note-list-widget.full-height) {
-    height: var(--include-note-height, 10em);
-}
-
-.include-note[data-box-size="medium"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="medium"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="resizable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: var(--include-note-height, 20em);
 }
 
-.include-note[data-box-size="full"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="full"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="full"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: 50em; /* a full-height view can't take a percentage full height, so fall back to a large fixed one */
 }
 
-.include-note[data-box-size="expandable"] .include-note-content.type-book:has(.note-list-widget.full-height),
-.include-note[data-box-size="expandable"] .include-note-content.type-search:has(.note-list-widget.full-height) {
+.include-note[data-box-size="expandable"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content:is(.type-book, .type-search):has(.note-list-widget.full-height) {
     height: var(--include-note-height, 20em);
 }
 
 /* Pictures, diagrams and players fit the box height, where text scrolls in it. */
-.include-note[data-box-size="small"] {
-    --include-note-media-max-height: var(--include-note-height, 10em);
+.include-note {
+    --include-note-media-max-height: initial;
 }
 
-.include-note[data-box-size="medium"] {
+.include-note[data-box-size="resizable"] {
     --include-note-media-max-height: var(--include-note-height, 20em);
 }
 
@@ -1500,41 +1531,40 @@ figure.captioned-content-embed {
     max-height: none;
 }
 
+.include-note {
+    --_include-note-box-height: var(--include-note-height, 20em);
+}
+
+.include-note[data-box-size="full"] {
+    --_include-note-box-height: 50em;
+}
+
 .include-note-box-height {
-    height: calc(var(--include-note-height, 20em) - var(--_include-note-frame-height, 0px));
-}
-
-.include-note[data-box-size="small"] .include-note-box-height {
-    height: calc(var(--include-note-height, 10em) - var(--_include-note-frame-height, 0px));
-}
-
-.include-note[data-box-size="full"] .include-note-box-height {
-    height: calc(50em - var(--_include-note-frame-height, 0px));
+    height: calc(var(--_include-note-box-height, var(--include-note-height, 20em))
+        - var(--_include-note-frame-height, 0px));
 }
 
 .include-note-content:fullscreen .include-note-box-height {
     height: 100%;
 }
 
-/* Tiny and Full fit their content: only these box sizes take a resized size. */
-.include-note:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"]) {
+/* Compact and Full fit their content: only these box sizes take a resized height. */
+.include-note:is([data-box-size="resizable"], [data-box-size="expandable"]) {
     margin-inline: auto;
     max-width: 100%;
-    width: var(--include-note-width, auto);
 
-    .include-note-content {
+    > :where(.include-note-wrapper) > :where(.include-note-body) > .include-note-content {
         height: var(--include-note-height, auto);
         overflow: auto;
     }
+}
 
-    &.include-note_collapsed {
-        --ck-resize-corner-radius: var(--_include-note-bottom-border-radius, 8px);
+.include-note[data-box-size="resizable"] {
+    width: var(--include-note-width, auto);
+}
 
-        > .ck-widget__resize-handles
-            > .ck-widget__resize-handle:not(.ck-widget__resize-handle_width) {
-            display: none;
-        }
-    }
+.include-note[data-box-size="expandable"].include-note_collapsed > .ck-widget__resize-handles {
+    display: none;
 }
 
 .link-embed:where([data-embed-type="youtube"]) {
@@ -1546,7 +1576,10 @@ figure.captioned-content-embed {
 .include-note,
 .link-embed:where([data-embed-type="youtube"]) {
     clear: both;
+}
 
+.include-note[data-box-size="resizable"],
+.link-embed:where([data-embed-type="youtube"])[data-box-size="resizable"] {
     &[data-position="left"] {
         margin-right: auto;
         margin-left: 0;
@@ -1575,6 +1608,19 @@ figure.captioned-content-embed {
         float: right;
         margin-left: var(--_include-note-wrap-gap);
     }
+}
+
+/* An Expandable embed takes the full width: its position aligns the content inside the box. */
+.include-note[data-box-size="expandable"][data-position="left"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
+    text-align: left;
+}
+
+.include-note[data-box-size="expandable"][data-position="right"]
+    > :where(.include-note-wrapper) > :where(.include-note-body)
+    > .include-note-content > .rendered-content {
+    text-align: right;
 }
 
 body.mobile :is(.include-note, .link-embed)[data-position] {
@@ -1900,31 +1946,38 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
     outline: none;
 }
 
-/* Outlined as a selected widget in the editor. */
-.include-note:has(> .include-note-wrapper > .include-note-body.active) {
-    /* With the focus in its content, the widget is either selected in a blurred editor or not
-       selected at all. */
-    --ck-color-widget-blurred-border: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-hover: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-active: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-blurred-editable: var(--ck-color-focus-border);
-    --ck-color-widget-type-around-button-icon: var(--main-background-color);
-
-    outline: var(--ck-widget-outline-thickness, 3px) solid var(--ck-color-focus-border);
+/* Chrome selects nothing in a non-editable widget that inherits `user-select: none` from `body`. */
+.include-note-content .ck-content {
+    user-select: text;
 }
 
-/* Hides what a larger box size drew, until the Tiny row replaces it. */
-.include-note[data-box-size="tiny"] > .include-note-wrapper > .include-note-body {
+.include-note.ck-widget_selected {
+    --_include-note-active-outline-color: var(--ck-color-focus-border);
+}
+
+/* The focus is in the content of the embed. */
+.include-note:has(> .include-note-wrapper > .include-note-body.active) {
+    /* The editor can be blurred, where CKEditor colors its selected widgets with these. */
+    --ck-color-widget-blurred-border: var(--ck-color-focus-border);
+    --ck-color-widget-type-around-button-blurred-editable: var(--ck-color-focus-border);
+
+    outline: var(--ck-widget-outline-thickness, 3px) solid
+             var(--_include-note-active-outline-color, var(--input-focus-outline-color));
+}
+
+/* Hides what a larger box size drew, until the Compact row replaces it. */
+.include-note[data-box-size="compact"] > .include-note-wrapper
+    > .include-note-body:not(.compact-content) {
     display: none;
 }
 
-.include-note[data-box-size="tiny"] > .include-note-wrapper > .include-note-title-row {
+.include-note[data-box-size="compact"] > .include-note-wrapper > .include-note-title-row {
     user-select: none;
     -webkit-user-select: none;
 }
 
-.include-note[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
-    > .include-note-wrapper > :is(.include-note-title-row, .include-note-title) {
+.include-note[data-hide-title="true"]:not([data-box-size="expandable"]) {
+    > .include-note-wrapper > :is(.include-note-title-row:not(.title-only), .include-note-title) {
         display: none;
     }
 
@@ -2279,7 +2332,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 }
 
 #launcher-pane .launcher-button {
-    font-size: 150%;
+    font-size: 24px;
     /* Matches the `line-height: 1` boxicons gives an icon-only launcher, so an icon in a child
        span, as in a dropdown launcher, centers the same way. */
     line-height: 1;

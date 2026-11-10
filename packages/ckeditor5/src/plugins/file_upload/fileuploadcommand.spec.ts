@@ -145,10 +145,14 @@ describe("FileUploadCommand", () => {
         ));
     });
 
-    it("inserts an embed placeholder per file, in the size the host gives its type and size", () => {
-        const getEmbedBoxSize = vi.fn((mime: string, _size: number) =>
-            (mime === "image/png" || mime === "application/vnd.excalidraw+json" ? "medium" : "tiny"));
-        editor.config.set("attachmentUpload", { getEmbedBoxSize });
+    it("inserts an embed placeholder per file, in the box the host gives its type and size", () => {
+        const getEmbedBox = vi.fn((mime: string, _size: number) => ({
+            boxSize: mime === "image/png" || mime === "application/vnd.excalidraw+json"
+                ? "resizable" as const
+                : "compact" as const,
+            isTitleHidden: mime === "image/png"
+        }));
+        editor.config.set("attachmentUpload", { getEmbedBox });
         setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
 
         editor.execute("fileUpload", {
@@ -162,21 +166,21 @@ describe("FileUploadCommand", () => {
 
         expect(getModelData(editor.model)).toMatch(new RegExp(
             "^<paragraph>foo</paragraph>" +
-            "<contentEmbed boxSize=\"tiny\" uploadFileName=\"a.txt\" uploadId=\"\\w+\">" +
+            "<contentEmbed boxSize=\"compact\" uploadFileName=\"a.txt\" uploadId=\"\\w+\">" +
             "</contentEmbed>" +
-            "<contentEmbed boxSize=\"medium\" uploadFileName=\"b.png\" uploadId=\"\\w+\">" +
-            "</contentEmbed>" +
-            "<contentEmbed boxSize=\"medium\" uploadFileName=\"c.excalidraw\" uploadId=\"\\w+\">" +
+            "<contentEmbed boxSize=\"resizable\" hideTitle=\"true\" uploadFileName=\"b.png\"" +
+            " uploadId=\"\\w+\"></contentEmbed>" +
+            "<contentEmbed boxSize=\"resizable\" uploadFileName=\"c.excalidraw\" uploadId=\"\\w+\">" +
             "</contentEmbed>" +
             "<paragraph>\\[\\]bar</paragraph>$"
         ));
         // A drawing picked from disk has no type, so the host gets the type it is saved with.
-        expect(getEmbedBoxSize.mock.calls).toEqual([
+        expect(getEmbedBox.mock.calls).toEqual([
             [ "text/plain", 1 ], [ "image/png", 1 ], [ "application/vnd.excalidraw+json", 1 ]
         ]);
     });
 
-    it("sizes the embeds medium for a host that names no size", () => {
+    it("sizes the embeds Resizable, with their title, for a host that names no box", () => {
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         editor.execute("fileUpload", {
@@ -184,13 +188,13 @@ describe("FileUploadCommand", () => {
             asEmbed: true
         });
 
-        expect(getModelData(editor.model)).toMatch(/^<contentEmbed boxSize="medium" /);
+        expect(getModelData(editor.model)).toMatch(/^<contentEmbed boxSize="resizable" /);
         expect(getModelData(editor.model)).not.toMatch(/editable|hideTitle/);
     });
 
     it("gives the embeds the box size, hidden title and editing the caller asks for", () => {
-        const getEmbedBoxSize = vi.fn(() => "tiny");
-        editor.config.set("attachmentUpload", { getEmbedBoxSize });
+        const getEmbedBox = vi.fn(() => ({ boxSize: "compact" as const, isTitleHidden: false }));
+        editor.config.set("attachmentUpload", { getEmbedBox });
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         editor.execute("fileUpload", {
@@ -198,16 +202,16 @@ describe("FileUploadCommand", () => {
                 new File(["{}"], "Canvas.excalidraw", { type: "application/vnd.excalidraw+json" })
             ],
             asEmbed: true,
-            boxSize: "medium",
+            boxSize: "resizable",
             hideTitle: true,
             editable: true
         });
 
         expect(getModelData(editor.model)).toMatch(new RegExp(
-            "^<contentEmbed boxSize=\"medium\" editable=\"true\" hideTitle=\"true\" " +
+            "^<contentEmbed boxSize=\"resizable\" editable=\"true\" hideTitle=\"true\" " +
             "uploadFileName=\"Canvas.excalidraw\""
         ));
-        expect(getEmbedBoxSize).not.toHaveBeenCalled();
+        expect(getEmbedBox).not.toHaveBeenCalled();
     });
 
     it("places an embed that takes the focus as an image, keeping the text and the cursor", () => {

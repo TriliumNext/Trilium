@@ -1,4 +1,27 @@
-import type { DifferItemAttribute, Editor, ModelDocumentFragment, ModelElement, ModelNode } from "ckeditor5";
+import {
+    type DifferItemAttribute, DomEventObserver, type Editor, type ModelDocumentFragment,
+    type ModelElement, type ModelNode, type ViewDocumentDomEventData
+} from "ckeditor5";
+
+/**
+ * Fires `contextmenu` on the view document for a right-click in the editable. The plugins that
+ * listen to it share this class, as each observer class fires the event once.
+ */
+export class ContextMenuObserver extends DomEventObserver<"contextmenu"> {
+    get domEventType() {
+        return "contextmenu" as const;
+    }
+
+    onDomEvent(domEvent: MouseEvent) {
+        this.fire("contextmenu", domEvent);
+    }
+}
+
+/** The `contextmenu` event of {@link ContextMenuObserver}. */
+export type ViewDocumentContextMenuEvent = {
+    name: "contextmenu";
+    args: [data: ViewDocumentDomEventData<MouseEvent>];
+};
 
 export function escapeHtml(str: string): string {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

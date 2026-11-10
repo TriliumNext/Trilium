@@ -2,6 +2,7 @@ import type { SetupBackupSettings } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getBackup } from "./backup.js";
+import { getLog } from "./log.js";
 import optionService from "./options.js";
 import {
     backUpExistingData,
@@ -304,6 +305,34 @@ describe("the started backup, followed through its status", () => {
         startBackUpExistingData(new Date());
         await vi.waitFor(() => expect(getExistingBackupStatus().state).toBe("failed"));
         expect(getExistingBackupStatus()).toEqual({ state: "failed", fraction: null, error: "disk full" });
+        restore();
+
+        const restoreString = stubBackup(async () => {
+            throw "no space left";
+        });
+        startBackUpExistingData(new Date());
+        await vi.waitFor(() => expect(getExistingBackupStatus()).toEqual({ state: "failed", fraction: null, error: "no space left" }));
+        restoreString();
+    });
+
+    it("logs each tenth of a write once, starting over for the next write", async () => {
+        const info = vi.spyOn(getLog(), "info");
+        const restore = stubBackup(async (onProgress) => {
+            for (const fraction of [ 0.05, 0.08, 0.5, 1 ]) {
+                onProgress?.(fraction);
+            }
+            return { fileName: "b", filePath: "/b", fileSize: 1 };
+        });
+        const progressLines = () => info.mock.calls.filter(([ message ]) => String(message).endsWith("%]"));
+
+        // A write that failed earlier in this file left its last tenth behind; a completed one clears it.
+        await backUpExistingData(ANY_SETTINGS);
+        info.mockClear();
+
+        await backUpExistingData(ANY_SETTINGS);
+        expect(progressLines()).toHaveLength(3);
+        await backUpExistingData(ANY_SETTINGS);
+        expect(progressLines()).toHaveLength(6);
 
         restore();
     });

@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca.js";
 import type BNote from "./bnote.js";
 import BRevision from "./brevision.js";
 import { getContext } from "../../services/context.js";
+import eraseService from "../../services/erase.js";
 import noteService from "../../services/notes.js";
 import protectedSession from "../../services/protected_session.js";
 import { encodeUtf8, unwrapStringOrBuffer } from "../../services/utils/binary.js";
@@ -284,6 +285,18 @@ describe("Revision eraseRevision", () => {
         getContext().init(() => revision.eraseRevision());
 
         expect(becca.getRevision(revisionId)).toBeNull();
+    });
+
+    it("erases nothing for a revision that was never saved", () => {
+        const eraseRevisions = vi.spyOn(eraseService, "eraseRevisions");
+        const revision = new BRevision({
+            noteId: "unsavedRevNote", type: "text", mime: "text/html", isProtected: false, title: "unsaved"
+        } as ConstructorParameters<typeof BRevision>[0]);
+
+        revision.eraseRevision();
+
+        expect(eraseRevisions).not.toHaveBeenCalled();
+        eraseRevisions.mockRestore();
     });
 });
 

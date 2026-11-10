@@ -2,6 +2,7 @@ import { CaptureUpdateAction, newElementWith } from "@excalidraw/excalidraw";
 import type { Action, PanelComponentProps } from "@excalidraw/excalidraw/actions/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, BinaryFiles, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
+import type { DrawingFrame } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useSyncExternalStore } from "preact/compat";
 
@@ -19,6 +20,8 @@ export interface DrawingScene {
     elements: readonly ExcalidrawElement[];
     appState: Partial<SavedAppState>;
     files: BinaryFiles;
+    /** The part that the box shows, once saved. */
+    frame?: DrawingFrame | null;
 }
 
 /** Reads and saves the drawing while no Excalidraw shows it. */
@@ -475,7 +478,8 @@ function applyToScene(scene: DrawingScene, step: DrawingStep, isUndo: boolean): 
         appState: background === undefined
             ? scene.appState
             : { ...scene.appState, viewBackgroundColor: background },
-        files: { ...step.files, ...scene.files }
+        files: { ...step.files, ...scene.files },
+        frame: scene.frame
     };
 }
 

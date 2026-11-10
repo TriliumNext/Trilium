@@ -1,6 +1,7 @@
 import { attachmentIcon, CONTENT_RENDERER_GROUPS } from "@triliumnext/commons";
 import { h, render, VNode } from "preact";
 import { useLayoutEffect } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // --- Mock heavy / side-effecting collaborators BEFORE importing the SUT. ---
@@ -160,14 +161,16 @@ import Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
+import { useLegacyImperativeHandlers } from "../widgets/react/hooks.js";
 import EmbedHistories from "../widgets/type_widgets/text/embed_history.js";
 import {
     addContentDisposer,
     CONTENT_RENDERERS,
     disposeInteractiveContent,
+    getEmbedBoxDefaults,
     getEmbedBoxSize,
     getRenderedContent as rawGetRenderedContent,
-    getUploadBoxSize,
+    getUploadBoxDefaults,
     hasRenderedPreview,
     snapshotAndDispose
 } from "./content_renderer.js";
@@ -230,12 +233,15 @@ describe("getEmbedBoxSize", () => {
             buildNote({ title: "Archive", type: "file", mime: "application/zip" }),
             buildAttachment({ role: "file", mime: "application/zip" }),
             buildAttachment({ role: "canvasLibraryItem", mime: "application/json" })
-        ].map(getEmbedBoxSize)).toEqual(Array(6).fill("tiny"));
+        ].map(getEmbedBoxSize)).toEqual(Array(6).fill("compact"));
 
-        expect([
-            buildNote({ title: "Song", type: "file", mime: "audio/mpeg" }),
-            buildAttachment({ role: "file", mime: "audio/ogg" })
-        ].map(getEmbedBoxSize)).toEqual([ "small", "small" ]);
+        const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
+        expect([ song, buildAttachment({ role: "file", mime: "audio/ogg" }) ].map(getEmbedBoxSize))
+            .toEqual([ "compact", "compact" ]);
+        // Compact audio is a row of controls, which starts without its title row.
+        expect(getEmbedBoxDefaults(song)).toEqual({ boxSize: "compact", isTitleHidden: true });
+        expect(getEmbedBoxDefaults(buildNote({ title: "Map", type: "relationMap" })))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
 
         expect([
             buildNote({ title: "Script", type: "code", mime: "text/javascript" }),
@@ -258,13 +264,16 @@ describe("getEmbedBoxSize", () => {
             buildAttachment({ role: "file", mime: "application/vnd.excalidraw+json" }),
             buildAttachment({ role: "file", mime: "text/markdown" }),
             buildAttachment({ role: "file", mime: "text/plain", title: "readme.md" })
-        ].map(getEmbedBoxSize)).toEqual(Array(11).fill("medium"));
+        ].map(getEmbedBoxSize)).toEqual(Array(11).fill("resizable"));
     });
+
+    const getUploadBoxSize = (mime: string, size?: number) =>
+        getUploadBoxDefaults(mime, size).boxSize;
 
     it("shows an upload too large to highlight as a file", () => {
         expect(getUploadBoxSize("text/plain", 256 * 1024)).toBe("full");
-        expect(getUploadBoxSize("text/plain", 256 * 1024 + 1)).toBe("tiny");
-        expect(getUploadBoxSize("application/json", 10_000_000)).toBe("tiny");
+        expect(getUploadBoxSize("text/plain", 256 * 1024 + 1)).toBe("compact");
+        expect(getUploadBoxSize("application/json", 10_000_000)).toBe("compact");
     });
 
     it("sizes an upload by its media type, as the attachment it becomes", () => {
@@ -273,9 +282,11 @@ describe("getEmbedBoxSize", () => {
             "image/png", "video/mp4", "application/vnd.excalidraw+json", "text/plain",
             "application/x-sql", "text/rtf", "text/markdown"
         ].map(getUploadBoxSize)).toEqual([
-            "tiny", "tiny", "small", "full", "medium", "medium", "medium", "medium", "full",
-            "full", "medium", "medium"
+            "compact", "compact", "compact", "full", "resizable", "resizable", "resizable",
+            "resizable", "full", "full", "resizable", "resizable"
         ]);
+        expect([ "audio/mpeg", "application/zip", "image/png" ]
+            .map((mime) => getUploadBoxDefaults(mime).isTitleHidden)).toEqual([ true, false, false ]);
     });
 });
 
@@ -1110,7 +1121,7 @@ describe("generic FNote fallback / webView", () => {
         expect($renderedContent.hasClass("no-preview")).toBe(false);
     });
 
-    it("points a freshly mounted .component element at appContext so embedded command buttons resolve", async () => {
+    it("points a freshly mounted .component element at a component of its own under appContext", async () => {
         // The real renderReactWidgetAtElement runs here; make the mounted widget emit a bare
         // ".component" element (as a real widget root would) with no component prop yet.
         webViewComponent.mockImplementationOnce(() => h("div", { class: "component" }));
@@ -1120,7 +1131,34 @@ describe("generic FNote fallback / webView", () => {
 
         const $component = $renderedContent.find(".note-detail-web-view .component");
         expect($component.length).toBe(1);
-        expect($component.prop("component")).toBe(appContext);
+        const component = $component.prop("component");
+        expect(component).toBeInstanceOf(Component);
+        expect(component).not.toBe(appContext);
+        expect(component.parent).toBe(appContext);
+        expect(appContext.children).toContain(component);
+
+        disposeInteractiveContent($renderedContent);
+        expect(appContext.children).not.toContain(component);
+    });
+
+    it("lets an embedded widget's buttons reach the command handlers it registers", async () => {
+        // As a table's "New row" does: the handler is written onto the widget's parent component.
+        const addNewRowCommand = vi.fn();
+        function Widget() {
+            useLegacyImperativeHandlers({ addNewRowCommand });
+            return h("div", { class: "component" });
+        }
+        webViewComponent.mockImplementationOnce(() => h(Widget, {}));
+        const note = buildNote({ title: "WICmd", type: "webView", "#webViewSrc": "https://example.com" });
+
+        let $renderedContent!: JQuery<HTMLElement>;
+        await act(async () => {
+            ({ $renderedContent } = await getRenderedContent(note, { interactive: true }));
+        });
+
+        $renderedContent.find(".note-detail-web-view .component").prop("component").triggerCommand("addNewRow", {});
+        expect(addNewRowCommand).toHaveBeenCalledOnce();
+        disposeInteractiveContent($renderedContent);
     });
 
     it("leaves a .component element that already carries a component prop untouched", async () => {

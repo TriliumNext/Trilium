@@ -1,8 +1,8 @@
 import { HIGHLIGHT_STYLE, trimIndentation } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { getContext } from "./context.js";
-import { convertNoteContent, convertNoteFormat } from "./note_format_conversion.js";
+import { convertNoteByConversionId, convertNoteContent, convertNoteFormat } from "./note_format_conversion.js";
 import noteService from "./notes.js";
 
 describe("note format conversion", () => {
@@ -126,5 +126,22 @@ describe("note format conversion (real DB)", () => {
         expect(markdownDescription).toBeTruthy();
         expect(textDescription).toBeTruthy();
         expect(textDescription).not.toBe(markdownDescription);
+    });
+
+    it("rejects a note of another type, unavailable content and binary content", () => {
+        const codeNote = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "convert-spec-code", content: "x", type: "code", mime: "application/javascript"
+        }).note);
+        expect(() => convertNoteFormat(codeNote)).toThrow("cannot be converted");
+
+        const unavailable = createTextNote();
+        vi.spyOn(unavailable, "isContentAvailable").mockReturnValue(false);
+        expect(() => convertNoteFormat(unavailable)).toThrow("not available");
+        expect(convertNoteByConversionId(unavailable, "htmlToMarkdown")).toBe(false);
+
+        const binary = createTextNote();
+        vi.spyOn(binary, "getContent").mockReturnValue(new Uint8Array([ 1, 2 ]));
+        expect(() => convertNoteFormat(binary)).toThrow("textual content");
+        expect(binary.type).toBe("text");
     });
 });

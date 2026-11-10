@@ -39,7 +39,7 @@ vi.mock("../../../services/shortcuts", async (importOriginal) => ({
     removeIndividualBinding
 }));
 
-import { HtmlFindTarget } from "../../find_in_html";
+import MergedFind from "../../merged_find";
 import {
     getEmbedFindTarget, registerContentEmbedTools, revealContentEmbed
 } from "./content_embed_tools";
@@ -47,8 +47,8 @@ import ContentEmbed, {
     ContentEmbedError,
     getNoteActions,
     type ContentEmbedProps,
-    TinyContentEmbed,
-    type TinyContentEmbedProps
+    CompactContentEmbed,
+    type CompactContentEmbedProps
 } from "./ContentEmbed";
 
 const ATTACHMENT_SCOPE = { viewMode: "attachments", attachmentId: "att1" } as const;
@@ -102,15 +102,15 @@ function renderBox(props: Partial<ContentEmbedProps> = {}) {
     return boxProps;
 }
 
-function renderTinyBox(props: Partial<TinyContentEmbedProps> = {}) {
-    const boxProps: TinyContentEmbedProps = {
+function renderCompactBox(props: Partial<CompactContentEmbedProps> = {}) {
+    const boxProps: CompactContentEmbedProps = {
         icon: "bx bx-note",
         title: element(`<span><a href="#root/noteA">Note A</a></span>`),
         notePath: "noteA",
         actions: [],
         ...props
     };
-    act(() => render(<TinyContentEmbed {...boxProps} />, container));
+    act(() => render(<CompactContentEmbed {...boxProps} />, container));
     return boxProps;
 }
 
@@ -244,8 +244,8 @@ describe("ContentEmbed", () => {
         const withFullscreen = [ "title-label", "badges", "open", "fullscreen", "menu" ];
         const layouts: [ string | undefined, string[] ][] = [
             [ undefined, plain ],
-            [ "small", plain ],
-            [ "medium", withFullscreen ],
+            [ "compact", plain ],
+            [ "resizable", withFullscreen ],
             [ "full", withFullscreen ],
             [ "expandable", [ "toggle", "title-label", "badges", "open", "menu" ] ]
         ];
@@ -254,14 +254,17 @@ describe("ContentEmbed", () => {
             act(() => render(null, container));
             renderBox({ boxSize });
             expect(titleRow(), boxSize).toEqual(expected.map((name) => `include-note-${name}`));
+            // The stylesheet hides what a larger box size drew in a Compact box, not this body.
+            expect(container.querySelector(".include-note-body")?.classList.contains("compact-content"),
+                boxSize).toBe(boxSize === "compact");
         }
     });
 
     it("lays out an excerpt with an edit button in place of fullscreen", () => {
         const excerpt = [ "title-label", "badges", "open", "edit", "menu" ];
         const layouts: [ string, string[] ][] = [
-            [ "small", excerpt ],
-            [ "medium", excerpt ],
+            [ "compact", excerpt ],
+            [ "resizable", excerpt ],
             [ "full", excerpt ],
             [ "expandable", [ "toggle", ...excerpt ] ]
         ];
@@ -331,7 +334,7 @@ describe("ContentEmbed", () => {
         container.classList.add("include-note");
         renderBox({ boxSize: "expandable" });
         const target = getEmbedFindTarget(container);
-        expect(target).toBeInstanceOf(HtmlFindTarget);
+        expect(target).toBeInstanceOf(MergedFind);
         expect(await target?.find("body", { matchCase: false, wholeWord: false })).toBe(1);
         target?.close(null);
 
@@ -353,6 +356,36 @@ describe("ContentEmbed", () => {
         act(() => render(null, container));
         renderBox({ contentType: "book" });
         expect(getEmbedFindTarget(container)).toBeNull();
+    });
+
+    it("lets the find search the boxes in its text, and shows a collapsed one", async () => {
+        container.classList.add("include-note");
+        const { content } = renderBox({
+            content: element(`<div class="rendered-content"><p>needle outside</p>`
+                + `<figure class="include-note"><div class="include-note-wrapper"></div>`
+                + `</figure></div>`)
+        });
+        const wrapper = content.querySelector<HTMLElement>(".include-note-wrapper");
+        if (!wrapper) throw new Error("Expected the wrapper of the nested box.");
+        act(() => render(
+            <ContentEmbed
+                boxSize="expandable"
+                title={element(`<span><a href="#root/noteB">Note B</a></span>`)}
+                content={element(`<div class="rendered-content"><p>needle inside</p></div>`)}
+                contentType="text"
+                notePath="noteB"
+            />, wrapper));
+        onTestFinished(() => act(() => render(null, wrapper)));
+        const nestedBox = wrapper.querySelector<HTMLElement>(".include-note-content");
+        expect(nestedBox?.hidden).toBe(true);
+
+        const target = getEmbedFindTarget(container);
+        expect(await target?.find("needle", { matchCase: false, wholeWord: false })).toBe(2);
+        act(() => target?.highlight(1));
+        expect(nestedBox?.hidden).toBe(false);
+        act(() => target?.highlight(0));
+        expect(nestedBox?.hidden).toBe(true);
+        target?.close(null);
     });
 
     it("toggles an expandable box on a click on its title row, but its buttons and link", () => {
@@ -451,7 +484,7 @@ describe("ContentEmbed", () => {
 
     it("turns the editing of an excerpt on and off through the editor around it", async () => {
         const { editor, embed } = placeInHostEditor();
-        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        const { content } = renderBox({ boxSize: "resizable", isExcerpt: true });
         const edit = button("include-note-edit");
         expect(edit.className).toContain("bx-pencil");
         expect(tooltipOf(edit)).toBe("block_reference.edit_excerpt");
@@ -484,7 +517,7 @@ describe("ContentEmbed", () => {
 
     it("switches the display mode of content that has them, from the title row", async () => {
         const embed = placeInEmbed();
-        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        const { content } = renderBox({ boxSize: "resizable", contentType: "markdown" });
         expect(container.querySelector(".include-note-display-modes")).toBeNull();
 
         let unregister = () => {};
@@ -531,7 +564,7 @@ describe("ContentEmbed", () => {
 
     it("picks the display mode through the text editor that holds the embed", () => {
         const { editor, embed } = placeInHostEditor();
-        const { content } = renderBox({ boxSize: "medium", contentType: "markdown" });
+        const { content } = renderBox({ boxSize: "resizable", contentType: "markdown" });
         act(() => {
             onTestFinished(registerContentEmbedTools(content, DISPLAY_MODE_TOOLS));
         });
@@ -561,7 +594,7 @@ describe("ContentEmbed", () => {
     });
 
     it("keeps the edit button of an excerpt disabled without an editor around it", () => {
-        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        const { content } = renderBox({ boxSize: "resizable", isExcerpt: true });
         act(() => {
             onTestFinished(registerContentEmbedTools(content, EDITABLE_TOOLS));
         });
@@ -594,7 +627,7 @@ describe("ContentEmbed", () => {
             value: exitFullscreen,
             configurable: true
         });
-        renderBox({ boxSize: "medium" });
+        renderBox({ boxSize: "resizable" });
         const box = contentBox();
         box.requestFullscreen = vi.fn(async () => {});
 
@@ -659,7 +692,7 @@ describe("ContentEmbed", () => {
             });
             document.dispatchEvent(new Event("fullscreenchange"));
         };
-        renderBox({ boxSize: "medium" });
+        renderBox({ boxSize: "resizable" });
         const box = contentBox();
         const events: string[] = [];
         const listener = (event: Event) => events.push(`${event.type}:${event.target === box}`);
@@ -705,13 +738,13 @@ describe("ContentEmbed", () => {
     });
 
     it("leaves the fullscreen controls out of a box that offers no fullscreen", () => {
-        renderBox({ boxSize: "small" });
+        renderBox({ boxSize: "compact" });
         expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
     });
 
     it("titles a video with the menu of its embed, or no menu, and no fullscreen", () => {
         const openMenu = vi.fn();
-        const video = { notePath: undefined, boxSize: "medium", contentType: "videoEmbed" };
+        const video = { notePath: undefined, boxSize: "resizable", contentType: "mediaEmbed" };
         renderBox({ ...video, openMenu });
         expect(titleRow()).toEqual([
             "include-note-title-label", "include-note-badges", "include-note-menu"
@@ -742,15 +775,49 @@ describe("ContentEmbed", () => {
         expect(unhandled.defaultPrevented).toBe(false);
     });
 
+    it("opens the menu of a video's embed on a right click on the player, at the pointer", () => {
+        const embed = placeInEmbed();
+        const openMenu = vi.fn();
+        const video = () => ({
+            notePath: undefined,
+            contentType: "mediaEmbed",
+            content: element(`<div class="rendered-content"><video></video></div>`)
+        });
+        renderBox({ ...video(), openMenu });
+        const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        // happy-dom's mouse events have no page coordinates.
+        Object.defineProperties(event, { pageX: { value: 140 }, pageY: { value: 230 } });
+        const stopPropagation = vi.spyOn(event, "stopPropagation");
+        act(() => {
+            contentBox().querySelector("video")?.dispatchEvent(event);
+        });
+        expect(openMenu).toHaveBeenCalledExactlyOnceWith({ pageX: 140, pageY: 230, target: embed });
+        expect(event.defaultPrevented).toBe(true);
+        expect(stopPropagation).toHaveBeenCalled();
+
+        // Outside a text editor, the player keeps the browser's menu.
+        act(() => render(null, container));
+        renderBox(video());
+        expect(rightClick(contentBox().querySelector("video")))
+            .toEqual({ opened: false, isTaken: false });
+
+        // The content of a note keeps its own menus, such as the one of a selection.
+        act(() => render(null, container));
+        renderBox();
+        expect(rightClick(contentBox().querySelector("p"))).toEqual({ opened: false, isTaken: false });
+    });
+
     it("keeps its content behind a backdrop until a click on it focuses what is under it", async () => {
-        const content = element(
-            `<div class="rendered-content"><p>body</p><div tabindex="0"><img></div></div>`
-        );
+        const content = element(`<div class="rendered-content"><p>body</p>`
+            + `<div tabindex="0"><img></div><button><span class="bx"></span></button>`
+            + `<a href="#root/noteB">link</a></div>`);
         renderBox({ content });
         const box = contentBox();
         const text = content.querySelector("p");
         const viewer = content.querySelector<HTMLElement>("[tabindex]");
         const image = content.querySelector("img");
+        const button = content.querySelector("button");
+        const link = content.querySelector("a");
         const isActive = () => box.parentElement?.classList.contains("active");
         const backdrop = () => container.querySelector<HTMLElement>(
             ".include-note-body > .include-note-content + .include-note-backdrop"
@@ -759,7 +826,14 @@ describe("ContentEmbed", () => {
         expect(firstBackdrop).not.toBeNull();
         expect(box.tabIndex).toBe(-1);
         expect(isActive()).toBe(false);
-        if (!firstBackdrop || !text || !viewer || !image) return;
+        if (!firstBackdrop || !text || !viewer || !image || !button || !link) return;
+        const clicked: Element[] = [];
+        for (const target of [ viewer, button, link ]) {
+            target.addEventListener("click", (e) => {
+                e.preventDefault();
+                clicked.push(target);
+            });
+        }
 
         // What takes the focus under the pointer gets it, as it would from a click on it.
         const elementsFromPoint = stubElementsFromPoint([ firstBackdrop, image, viewer, box ]);
@@ -782,10 +856,29 @@ describe("ContentEmbed", () => {
         click(secondBackdrop);
         expect(document.activeElement).toBe(box);
         expect(isActive()).toBe(true);
+
+        // A button, such as the menu of an embed in the content, acts on the same click; a link
+        // and other content only take the focus.
+        const clickThrough = async (hit: Element[]) => {
+            act(() => {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            });
+            await vi.waitFor(() => expect(backdrop()).not.toBeNull());
+            const shown = backdrop();
+            if (!shown) throw new Error("Expected the backdrop.");
+            stubElementsFromPoint([ shown, ...hit, box ]);
+            click(shown);
+        };
+        await clickThrough([ button.firstElementChild ?? button, button ]);
+        expect(document.activeElement).toBe(button);
+        expect(clicked).toEqual([ button ]);
+        await clickThrough([ link ]);
+        expect(document.activeElement).toBe(link);
+        expect(clicked).toEqual([ button ]);
     });
 
     it("leaves an extended code block and a video uncovered, to take the first click", () => {
-        for (const contentType of [ "extendedCodeBlock", "videoEmbed" ]) {
+        for (const contentType of [ "extendedCodeBlock", "mediaEmbed" ]) {
             act(() => render(null, container));
             renderBox({ title: undefined, notePath: undefined, contentType });
             expect(contentBox().classList.contains(`type-${contentType}`)).toBe(true);
@@ -880,10 +973,10 @@ describe("ContentEmbed focused on mount", () => {
     });
 });
 
-describe("TinyContentEmbed", () => {
+describe("CompactContentEmbed", () => {
     it("lays out a single row: icon, title and description, actions, menu", () => {
         const run = vi.fn();
-        const { title } = renderTinyBox({
+        const { title } = renderCompactBox({
             icon: "bx bx-file",
             description: "2 KiB",
             notePath: "owner",
@@ -898,6 +991,9 @@ describe("TinyContentEmbed", () => {
             "include-note-icon", "include-note-heading",
             "include-note-action", "include-note-action", "include-note-menu"
         ]);
+        // A hidden title does not hide the row of a box that shows nothing else.
+        expect(container.querySelector(".include-note-title-row")?.classList.contains("title-only"))
+            .toBe(true);
         expect(container.querySelector(".include-note-content")).toBeNull();
         expect(container.querySelector(".include-note-icon")?.className).toContain("bx-file");
         expect([
@@ -922,7 +1018,7 @@ describe("TinyContentEmbed", () => {
     });
 
     it("opens its menu on a right click on the row, leaving the title link its own", () => {
-        renderTinyBox({ notePath: "owner", viewScope: ATTACHMENT_SCOPE });
+        renderCompactBox({ notePath: "owner", viewScope: ATTACHMENT_SCOPE });
         const row = container.querySelector(".include-note-title-row");
 
         expect(rightClick(row?.querySelector(".include-note-icon") ?? null))
@@ -933,7 +1029,7 @@ describe("TinyContentEmbed", () => {
     });
 
     it("leaves out the description line when there is none", () => {
-        renderTinyBox();
+        renderCompactBox();
         expect(container.querySelector(".include-note-description")).toBeNull();
     });
 });
@@ -941,11 +1037,10 @@ describe("TinyContentEmbed", () => {
 describe("ContentEmbedError", () => {
     it("keeps the height of its box size around the placeholder", () => {
         const cases = [
-            [ "medium", true, false ],
+            [ "resizable", true, false ],
             [ "full", true, false ],
             [ undefined, true, false ],
-            [ "small", true, true ],
-            [ "tiny", false, true ],
+            [ "compact", false, true ],
             [ "expandable", false, true ]
         ] as const;
 

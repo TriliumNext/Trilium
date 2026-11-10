@@ -138,6 +138,7 @@ async function downloadImage(noteId: string, imageUrl: string) {
         const imageBuffer = new Uint8Array(await request.getImage(unescapedUrl));
 
         const parsedUrl = url.parse(unescapedUrl);
+        /* v8 ignore next -- an http(s) URL, checked above, always parses with a pathname */
         const title = basename(parsedUrl.pathname || "");
 
         // Given a context of its own, as the link rewrite below is: the download resumes long
@@ -243,7 +244,6 @@ export function downloadImages(noteId: string, content: string) {
 
             cls.getContext().init(() => {
                 getSql().transactional(() => {
-                const imageNotes = becca.getNotes(Object.values(imageUrlToAttachmentIdMapping), true);
                     const log = getLog();
 
                 const origNote = becca.getNote(noteId);
@@ -261,11 +261,11 @@ export function downloadImages(noteId: string, content: string) {
                     return;
                 }
 
-                for (const url in imageUrlToAttachmentIdMapping) {
-                    const imageNote = imageNotes.find((note) => note.noteId === imageUrlToAttachmentIdMapping[url]);
+                    for (const [ url, attachmentId ] of Object.entries(imageUrlToAttachmentIdMapping)) {
+                        const attachment = becca.getAttachment(attachmentId);
 
-                    if (imageNote) {
-                        updatedContent = replaceUrl(updatedContent, url, imageNote);
+                        if (attachment) {
+                            updatedContent = replaceUrl(updatedContent, url, attachment);
                     }
                 }
 

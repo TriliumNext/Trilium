@@ -19,6 +19,7 @@ function makeFakeLeg() {
         getClientCount: vi.fn(() => 0),
         dispose: vi.fn(),
         attachToHttpServer: vi.fn(),
+        disconnectAllClients: vi.fn(),
         /** Simulate an inbound message arriving on this transport. */
         emit(id: string, message: unknown) { void handler?.(id, message); }
     };
@@ -99,5 +100,14 @@ describe("CompositeMessagingProvider", () => {
 
         expect(ws.attachToHttpServer).toHaveBeenCalledWith(httpServer, sessionParser);
         expect(ipc.attachToHttpServer).not.toHaveBeenCalled();
+    });
+
+    it("disconnects only the WebSocket leg's clients", () => {
+        const { ipc, ws, composite } = build();
+
+        composite.disconnectAllClients("restarting");
+
+        expect(ws.disconnectAllClients).toHaveBeenCalledWith("restarting");
+        expect(ipc.disconnectAllClients).not.toHaveBeenCalled();
     });
 });

@@ -33,7 +33,8 @@ Local search allows you to search within the currently displayed note. 
 
 In a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note, the search also finds the text of the notes included with <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>, in the order they appear in the note.
 
-*   The text of included text and code notes and of embedded code files, such as a `.js` or `.txt` attachment, is searched. The title of an include and the content of other notes, such as a collection or a drawing, are not.
+*   The text of included text and code notes, of embedded code files, such as a `.js` or `.txt` attachment, and of drawing canvases is searched. The title of an include and the content of other notes, such as a collection or an included <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a> note, are not.
+*   A result in a drawing canvas is highlighted on the drawing. The canvas moves only to show a result outside its view, and moves back once the search moves on, unless it was moved in the meantime. In a note being edited, closing the search on such a result leaves the canvas there and, while the canvas is editable, selects the text of the result.
 *   The up and down arrows move through the results of an include as through the rest of the note.
 *   A result in a collapsed _Expandable_ include expands the include while that result is the current one, and collapses it again once the search moves on.
-*   _Replace_ and _Replace all_ change an included note only while its _Editable_ button is on. While the current result is in an include that cannot be edited, _Replace_ is disabled, and _Replace all_ leaves such results unchanged.
+*   _Replace_ and _Replace all_ change an included note only while its _Editable_ button is on. While the current result is in an include that cannot be edited, _Replace_ is disabled, and _Replace all_ leaves such results unchanged. The text of a drawing canvas is never replaced.

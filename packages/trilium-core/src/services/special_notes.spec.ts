@@ -125,6 +125,39 @@ describe("special_notes (core, real DB)", () => {
                 .toThrow(/workspace note/);
         });
 
+        it("saves into the search home of a non-root workspace, falling back to the workspace", () => {
+            function createWorkspace(homeLabel?: string) {
+                return getContext().init(() => {
+                    const workspace = noteService.createNewNote({
+                        parentNoteId: "root", title: "search-workspace", content: "", type: "text"
+                    }).note;
+                    workspace.setLabel("workspace");
+                    const home = noteService.createNewNote({
+                        parentNoteId: workspace.noteId, title: "search-home", content: "", type: "text"
+                    }).note;
+                    if (homeLabel) {
+                        home.setLabel(homeLabel);
+                    }
+                    return { workspace, home };
+                });
+            }
+
+            // `searchNoteInSubtree()` searches the whole tree, so each label is added only after
+            // the case that needs it to be absent.
+            for (const [ homeLabel, expectHome ] of [
+                [ undefined, false ], [ "searchHome", true ], [ "workspaceSearchHome", true ]
+            ] as const) {
+                const { workspace, home } = createWorkspace(homeLabel);
+                vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(workspace);
+                const note = getContext().init(() => specialNotes.createSearchNote("q", ""));
+
+                getContext().init(() => specialNotes.saveSearchNote(note.noteId));
+
+                const expectedParent = expectHome ? home : workspace;
+                expect(note.getParentNotes().map((parent) => parent.noteId)).toContain(expectedParent.noteId);
+            }
+        });
+
         it("clones to the search home and removes the hidden-subtree parent branch", () => {
             const note = getContext().init(() => specialNotes.createSearchNote("q", ""));
             expect(note.hasAncestor("_hidden")).toBe(true);

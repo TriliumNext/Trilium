@@ -165,12 +165,12 @@ function setExpanded(req: Request<{ branchId: string, expanded: string }>) {
 
         if (branch) {
             branch.isExpanded = !!expanded;
-        }
 
-        eventService.emit(eventService.ENTITY_CHANGED, {
-            entityName: "branches",
-            entity: branch
-        });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "branches",
+                entity: branch
+            });
+        }
     }
 }
 
@@ -193,6 +193,7 @@ function setExpandedForSubtree(req: Request<{ branchId: string, expanded: string
         if (!visitedNoteIds.has(branch.noteId)) {
             visitedNoteIds.add(branch.noteId);
             for (const childBranch of branch.childNote.getChildBranches()) {
+                /* v8 ignore else -- `getChildBranches()` maps each child to its branch */
                 if (childBranch) {
                     pending.push(childBranch);
                 }

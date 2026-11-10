@@ -1,12 +1,46 @@
 import { writeBackupContainer } from "@triliumnext/backup-container";
 // `sql_init` from core rather than the server's own re-export, which copies the function references
 // onto a fresh object: a spy on that one would not be seen by `database_restore`.
-import { app_info as appInfo, getBackup, getLog, getSql, sql_init as sqlInit } from "@triliumnext/core";
+import {
+    app_info as appInfo,
+    events,
+    getBackup,
+    getLog,
+    getSql,
+    OLDEST_SUPPORTED_DB_VERSION,
+    sql_init as sqlInit
+} from "@triliumnext/core";
 import Database from "better-sqlite3";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+/** Where the backup directory is configured to be, when a test needs it somewhere in particular. */
+const { configuredBackupDir } = vi.hoisted(() => ({ configuredBackupDir: { value: "" } }));
+
+// The database a restore replaces, and everything around it, live in a temporary directory: the
+// restore detaches, renames and deletes the files at these paths.
+vi.mock("./data_dir.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("./data_dir.js")>();
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+    const root = mkdtempSync(join(tmpdir(), "trilium-restore-data-spec-"));
+
+    return {
+        ...original,
+        default: {
+            ...original.default,
+            TRILIUM_DATA_DIR: root,
+            DOCUMENT_PATH: join(root, "document.db"),
+            TMP_DIR: join(root, "tmp"),
+            get BACKUP_DIR() {
+                return configuredBackupDir.value || join(root, "backup");
+            }
+        }
+    };
+});
 
 import type ServerBackupService from "../backup_provider.js";
 import dataDir from "./data_dir.js";
@@ -29,9 +63,16 @@ import {
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-restore-spec-"));
 let counter = 0;
 
+/** The database being replaced, and the files a restore leaves beside it. */
+const DOCUMENT_FILES = [ "", "-wal", "-shm", ".pre-restore", ".restore-in-progress" ]
+    .map((suffix) => `${dataDir.DOCUMENT_PATH}${suffix}`);
+
 beforeEach(() => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
     fs.mkdirSync(tempRoot, { recursive: true });
+    for (const file of DOCUMENT_FILES) {
+        fs.rmSync(file, { force: true });
+    }
     // The state a restore actually runs in: the setup screen, with no database of this instance's
     // own open. `restoreDatabase` refuses anywhere else, and the shared fixture is initialized.
     vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
@@ -39,8 +80,13 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
+afterAll(() => {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    fs.rmSync(dataDir.TRILIUM_DATA_DIR, { recursive: true, force: true });
+});
+
 /** A database that would pass validation, so a test can tell a rejected file from a rejected step. */
-function validDatabase(name = `db-${counter++}.db`) {
+function validDatabase(name = `db-${counter++}.db`, dbVersion = appInfo.dbVersion) {
     const filePath = path.join(tempRoot, name);
     const db = new Database(filePath);
     try {
@@ -49,7 +95,7 @@ function validDatabase(name = `db-${counter++}.db`) {
         }
         const insert = db.prepare("INSERT INTO options (name, value) VALUES (?, ?)");
         insert.run("initialized", "true");
-        insert.run("dbVersion", String(appInfo.dbVersion));
+        insert.run("dbVersion", String(dbVersion));
     } finally {
         db.close();
     }
@@ -211,6 +257,28 @@ describe("what the log is told", () => {
         logRestore("detaching the database being replaced");
 
         expect(said[0]).toContain("detaching the database being replaced");
+    });
+
+    it("scrubs a relatively configured location in both spellings, and a bare word in neither", () => {
+        const said: string[] = [];
+        vi.spyOn(getLog(), "info").mockImplementation((message) => said.push(String(message)));
+
+        // An error quotes back whichever form the failed call was given: the configured one, or
+        // the one resolved against the working directory.
+        configuredBackupDir.value = path.join("relative", "backups");
+        try {
+            logRestore(`EACCES: ${path.resolve("relative", "backups")} and ${path.join("relative", "backups")}`);
+
+            configuredBackupDir.value = "backups";
+            logRestore(`EACCES: ${path.resolve("backups")}, while the backups were being listed`);
+        } finally {
+            configuredBackupDir.value = "";
+        }
+
+        expect(said).toEqual([
+            "Backup restore: EACCES: <backup location> and <backup location>",
+            "Backup restore: EACCES: <backup location>, while the backups were being listed"
+        ]);
     });
 
     it("names every step it enters and where it stopped, without naming the backup", async () => {
@@ -487,6 +555,10 @@ describe("restoring a database", () => {
             error: "setup is already busy with 'new-document'",
             reason: "restore-refused"
         });
+
+        // A refusal that already carries a reason keeps it.
+        reportRestoreFailure("backup.db", new RestoreFailure("database-too-new", "From a newer version."));
+        expect(getRestoreProgress()).toMatchObject({ reason: "database-too-new", error: "From a newer version." });
     });
 
     it("stops before touching the live database when the backup is from a newer version", async () => {
@@ -523,14 +595,15 @@ describe("the backup password after a restore", () => {
     });
 
     it.each([
-        [ "an unlocked backup", undefined ],
-        [ "a password typed for a backup that turned out not to need one", "typed anyway" ]
-    ])("lets go of the stored password after %s", async (_label, passphrase) => {
+        [ "an unlocked backup", undefined, false ],
+        [ "a password typed for a backup that turned out not to need one", "typed anyway", false ],
+        [ "a locked backup that was somehow opened without one", undefined, true ]
+    ])("lets go of the stored password after %s", async (_label, passphrase, wasEncrypted) => {
         // The stored one belongs to the database that was here before. Kept, this instance goes on
         // encrypting with it and writes backups the password the user expects will not open.
         const adopted = vi.spyOn(backupService(), "adoptPassphrase").mockResolvedValue();
 
-        await adoptBackupPassphrase(request(passphrase), false);
+        await adoptBackupPassphrase(request(passphrase), wasEncrypted);
 
         expect(adopted).toHaveBeenCalledWith(null);
     });
@@ -545,5 +618,198 @@ describe("the backup password after a restore", () => {
         // honest way to call the restore failed.
         await expect(adoptBackupPassphrase(request("a password"), true)).resolves.toBeUndefined();
         expect(said.join("\n")).toContain("the keyring is locked");
+    });
+});
+
+describe("putting a restored database in place", () => {
+    const document = dataDir.DOCUMENT_PATH;
+
+    /**
+     * Stands in for the connection and everything that opens a database, so the files can be
+     * exchanged for real while the shared in-memory fixture stays attached.
+     */
+    function attachedDatabase() {
+        const said: string[] = [];
+        vi.spyOn(getLog(), "info").mockImplementation((message) => said.push(String(message)));
+        vi.spyOn(getLog(), "error").mockImplementation((message) => said.push(String(message)));
+
+        return {
+            log: () => said.join("\n"),
+            detach: vi.spyOn(getSql(), "detachConnection").mockImplementation(() => {}),
+            attach: vi.spyOn(getSql(), "attachFromFile").mockImplementation(() => {}),
+            open: vi.spyOn(sqlInit, "initDbConnection").mockResolvedValue(),
+            announce: vi.spyOn(events, "emit").mockImplementation(() => {}),
+            adopt: vi.spyOn(getBackup() as ServerBackupService, "adoptPassphrase").mockResolvedValue()
+        };
+    }
+
+    it("exchanges the files, opens the restored database and leaves nothing of the old one behind", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database being replaced");
+        const source = validDatabase();
+
+        await restoreDatabase({ path: source, fileName: "backup.db", consumable: false });
+
+        expect(fs.readFileSync(document)).toEqual(fs.readFileSync(source));
+        // A backup from the backup directory is copied, never taken.
+        expect(fs.existsSync(source)).toBe(true);
+        expect(fs.existsSync(`${document}.pre-restore`)).toBe(false);
+        expect(fs.existsSync(`${document}.restore-in-progress`)).toBe(false);
+
+        expect(db.detach).toHaveBeenCalledBefore(db.attach);
+        expect(db.attach).toHaveBeenCalledWith(document, expect.any(Boolean));
+        expect(db.open).toHaveBeenCalledOnce();
+        expect(db.announce).toHaveBeenCalledWith(events.DB_INITIALIZED);
+        // Unlocked, so the stored password of the previous database is let go.
+        expect(db.adopt).toHaveBeenCalledWith(null);
+        expect(getRestoreProgress()).toMatchObject({ stage: "done", fileName: "backup.db" });
+
+        expect(db.log()).toContain("from a backup already on this device");
+        expect(db.log()).toContain("database version");
+        expect(db.log()).toContain("already current");
+        expect(db.log()).toMatch(/opening the restored database$/m);
+        expect(db.log()).toContain("finished in");
+    });
+
+    it("migrates an older locked backup it was given, and takes on the password that opened it", async () => {
+        const db = attachedDatabase();
+        const source = validDatabase(undefined, OLDEST_SUPPORTED_DB_VERSION);
+        const backup = await containerOf(source, "hunter2");
+
+        await restoreDatabase({ path: backup, fileName: "old.tnbackup", consumable: true, passphrase: "hunter2" });
+
+        expect(fs.readFileSync(document)).toEqual(fs.readFileSync(source));
+        // Given to be restored, so it is spent once unwrapped.
+        expect(fs.existsSync(backup)).toBe(false);
+        expect(db.adopt).toHaveBeenCalledWith("hunter2");
+        expect(db.log()).toContain("from a backup this instance was given");
+        expect(db.log()).toContain("needs migrating");
+        expect(db.log()).toContain("which is being migrated first");
+    });
+
+    it("says what an earlier, interrupted restore left behind, and replaces it", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database being replaced");
+        fs.writeFileSync(`${document}.restore-in-progress`, "");
+        fs.writeFileSync(`${document}.pre-restore`, "set aside by an earlier attempt");
+        fs.writeFileSync(`${document}-wal`, "a log that belongs to the old database");
+
+        await restoreDatabase({ path: validDatabase(), fileName: "backup.db", consumable: false });
+
+        expect(db.log()).toContain("a marker from an earlier restore was still in place");
+        expect(db.log()).toContain("a database set aside by an earlier restore was still there");
+        expect(db.log()).toContain("the database has sidecar files");
+        expect(fs.existsSync(`${document}-wal`)).toBe(false);
+        expect(fs.existsSync(`${document}.pre-restore`)).toBe(false);
+        expect(getRestoreProgress()).toMatchObject({ stage: "done" });
+    });
+
+    it("copies the restored database into place where a rename cannot reach it", async () => {
+        const db = attachedDatabase();
+        const source = validDatabase();
+        const { renameSync } = fs;
+        vi.spyOn(fs, "renameSync").mockImplementation((from, to) => {
+            if (to === document) {
+                throw Object.assign(new Error("EXDEV: cross-device link not permitted"), { code: "EXDEV" });
+            }
+            renameSync(from, to);
+        });
+
+        await restoreDatabase({ path: source, fileName: "backup.db", consumable: false });
+
+        expect(fs.readFileSync(document)).toEqual(fs.readFileSync(source));
+        expect(fs.existsSync(path.join(dataDir.TMP_DIR, "restore"))).toBe(false);
+        expect(db.log()).toContain("the last step is a copy rather than a rename");
+        expect(db.log()).toContain("copied into place in");
+    });
+
+    it("puts the previous database back when the restored one will not attach", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database it had");
+        fs.writeFileSync(`${document}-shm`, "shared memory of the database it had");
+        db.attach.mockImplementation(() => {
+            throw new Error("SQLITE_CANTOPEN");
+        });
+
+        await expect(restoreDatabase({ path: validDatabase(), fileName: "backup.db", consumable: false }))
+            .rejects.toMatchObject({ reason: "swap-failed", message: "SQLITE_CANTOPEN" });
+
+        expect(fs.readFileSync(document, "utf-8")).toBe("the database it had");
+        expect(db.attach).toHaveBeenCalledTimes(2);
+        expect(db.open).not.toHaveBeenCalled();
+        expect(db.log()).toContain("the database has sidecar files");
+        expect(db.log()).toContain("the previous database is back in place");
+        // Re-attaching failed as well; that is reported, and the reason the restore failed still stands.
+        expect(db.log()).toContain("the database could not be re-opened after the failed restore: SQLITE_CANTOPEN");
+        expect(getRestoreProgress()).toMatchObject({ stage: "failed", reason: "swap-failed" });
+    });
+
+    it("re-attaches to an empty slot when there was no database to put back", async () => {
+        const db = attachedDatabase();
+        db.attach.mockImplementationOnce(() => {
+            throw new Error("SQLITE_CANTOPEN");
+        });
+
+        await expect(restoreDatabase({ path: validDatabase(), fileName: "backup.db", consumable: false }))
+            .rejects.toMatchObject({ reason: "swap-failed" });
+
+        expect(db.log()).toContain("nothing had been set aside yet, so there is nothing to put back");
+        expect(db.log()).toContain("re-attached to the previous database");
+    });
+
+    it("leaves the marker for the next start when the previous database cannot be put back either", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database it had");
+        const { renameSync } = fs;
+        vi.spyOn(fs, "renameSync").mockImplementation((from, to) => {
+            if (to === document) {
+                throw Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" });
+            }
+            renameSync(from, to);
+        });
+
+        await expect(restoreDatabase({ path: validDatabase(), fileName: "backup.db", consumable: false }))
+            .rejects.toMatchObject({ reason: "swap-failed", message: "EPERM: operation not permitted" });
+
+        expect(db.log()).toContain("the exchange failed, putting the previous database back");
+        expect(db.log()).toContain("the previous database could not be put back, leaving it to the next start");
+        // What the next start needs to undo it: the marker, and the database it set aside.
+        expect(fs.existsSync(`${document}.restore-in-progress`)).toBe(true);
+        expect(fs.readFileSync(`${document}.pre-restore`, "utf-8")).toBe("the database it had");
+    });
+
+    it("puts the previous database back when the restored one will not open", async () => {
+        const db = attachedDatabase();
+        fs.writeFileSync(document, "the database it had");
+        // Not an Error: a rejection is quoted as it was given.
+        db.open.mockRejectedValue("the migration could not proceed");
+
+        await expect(restoreDatabase({ path: validDatabase(), fileName: "backup.db", consumable: false }))
+            .rejects.toMatchObject({ reason: "migration-failed", message: "the migration could not proceed" });
+
+        expect(fs.readFileSync(document, "utf-8")).toBe("the database it had");
+        expect(db.announce).not.toHaveBeenCalled();
+        expect(db.adopt).not.toHaveBeenCalled();
+        expect(db.log()).toContain("failed at the 'migrating' step");
+    });
+
+    it("reports a wrong passphrase by the reason the container gave, so the screen can ask again", async () => {
+        const db = attachedDatabase();
+        const backup = await containerOf(validDatabase(), "hunter2");
+
+        await expect(restoreDatabase({ path: backup, fileName: "b.tnbackup", consumable: false, passphrase: "wrong" }))
+            .rejects.toMatchObject({ name: "RestoreFailure", reason: "wrong-passphrase-or-damaged-header" });
+
+        expect(db.detach).not.toHaveBeenCalled();
+        expect(getRestoreProgress()).toMatchObject({ stage: "failed", reason: "wrong-passphrase-or-damaged-header" });
+    });
+
+    it("refuses a backup that is not there, without guessing at whether it was locked", async () => {
+        const db = attachedDatabase();
+
+        await expect(restoreDatabase({ path: path.join(tempRoot, "gone.db"), fileName: "gone.db", consumable: false }))
+            .rejects.toMatchObject({ reason: "not-a-database" });
+
+        expect(db.log()).toContain("failed at the 'staging' step");
     });
 });

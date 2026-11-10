@@ -36,7 +36,7 @@ export interface Options {
     allowExternalLinks?: boolean;
     /** If set, hides the right-side button corresponding to go to selected note. */
     hideGoToSelectedNoteButton?: boolean;
-    /** If set, hides all right-side buttons in the autocomplete dropdown */
+    /** If set, hides the go-to and clear buttons, leaving only the expand button. */
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;

@@ -5,7 +5,8 @@ import {
     Paragraph,
     Table,
     TableColumnResize,
-    TableSelection
+    TableSelection,
+    TableUtils
 } from "ckeditor5";
 import type { ClassicEditor, ModelElement } from "ckeditor5";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from "vitest";
@@ -13,7 +14,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished }
 import { createTestEditor } from "../../test/editor-kit.js";
 import { cellAt, modelTable, selectCells } from "../../test/table-kit.js";
 import type { CellSpec } from "../../test/table-kit.js";
-import { equalizeWidths } from "./table_distribute_columns.js";
+import { equalizeWidths, getTableWidthBasis } from "./table_distribute_columns.js";
 import TableContextMenu from "./table_context_menu.js";
 import TriliumTableScroll, { REFERENCE_WIDTH_PROPERTY } from "./table_scroll.js";
 
@@ -30,6 +31,24 @@ describe("equalizeWidths", () => {
     it("gives the rounding remainder to the last column of the range", () => {
         expect(equalizeWidths([10, 20, 40, 30], { first: 0, last: 2 }))
             .toEqual([23.33, 23.33, 23.34, 30]);
+    });
+});
+
+describe("getTableWidthBasis", () => {
+    it("has no width for a figure that has left the document", async () => {
+        const editor = await createTestEditor(PLUGINS);
+        setModelData(editor.model, `${modelTable([["a", "b"]])}<paragraph>foo</paragraph>`);
+        const table = firstTable(editor);
+        const domFigure = renderedFigure(editor);
+        expect(getTableWidthBasis(editor, table, domFigure)).toBeGreaterThan(0);
+
+        // `TableColumnBar` keeps the figure of a resize, which can end after the table is deleted.
+        editor.model.change((writer) => {
+            writer.remove(table);
+        });
+
+        expect(domFigure.isConnected).toBe(false);
+        expect(getTableWidthBasis(editor, table, domFigure)).toBeNull();
     });
 });
 
@@ -138,6 +157,16 @@ describe("DistributeTableColumnsCommand", () => {
 
             expect(storedWidths(editor)).toEqual(["100px", "150px", "150px"]);
             expect(firstTable(editor).getAttribute("tableWidth")).toBe("400px");
+        });
+
+        it("keeps the widths when run in the change block that moves the selection out", () => {
+            setModelData(editor.model, resizedTable([["a", "b"]], ["20%", "80%"])
+                + "<paragraph>foo</paragraph>");
+            selectCells(editor, [0, 0], [0, 1]);
+
+            executeLeavingTable(editor);
+
+            expect(storedWidths(editor)).toEqual(["20%", "80%"]);
         });
 
         it("measures the rendered columns when the stored widths mix units", () => {
@@ -251,6 +280,34 @@ describe("DistributeTableColumnsCommand", () => {
             expect(firstTable(editor).hasAttribute("tableWidth")).toBe(false);
         });
 
+        it("measures the rendered rows while a new row is not rendered yet", () => {
+            setModelData(editor.model, modelTable([["a", LONG_TEXT, "c"]]));
+            const shares = renderedShares(editor, 0);
+            selectCells(editor, [0, 0], [0, 1]);
+
+            editor.model.change(() => {
+                editor.plugins.get(TableUtils).insertRows(firstTable(editor), { at: 1 });
+                editor.execute(COMMAND);
+            });
+
+            expectDistributed(editor, shares);
+        });
+
+        it("changes nothing while a new column at an edge is not rendered yet", () => {
+            for (const at of [0, 2]) {
+                setModelData(editor.model, modelTable([["a", "b"]]));
+                selectCells(editor, [0, 0], [0, 1]);
+
+                editor.model.change(() => {
+                    editor.plugins.get(TableUtils).insertColumns(firstTable(editor), { at });
+                    editor.execute(COMMAND);
+                });
+
+                expect(storedWidths(editor), `column at ${at}`).toEqual([]);
+                expect(firstTable(editor).hasAttribute("tableWidth")).toBe(false);
+            }
+        });
+
         it("changes nothing while the editable has no width to relate the table to", () => {
             setModelData(editor.model, modelTable([["a", "b"]]));
             selectCells(editor, [0, 0], [0, 1]);
@@ -288,6 +345,31 @@ function firstTable(editor: ClassicEditor): ModelElement {
 
 function storedWidths(editor: ClassicEditor): string[] {
     return getTableColumnsWidths(firstTable(editor));
+}
+
+/** The DOM figure of the first table. */
+function renderedFigure(editor: ClassicEditor): HTMLElement {
+    const viewFigure = editor.editing.mapper.toViewElement(firstTable(editor));
+    const domFigure = viewFigure && editor.editing.view.domConverter.mapViewToDom(viewFigure);
+    if (!(domFigure instanceof HTMLElement)) {
+        throw new Error("The table is not rendered.");
+    }
+    return domFigure;
+}
+
+/**
+ * Runs the command in the change block that moves the selection into the paragraph after the
+ * table, where the command still has the `isEnabled` of the selection in the table.
+ */
+function executeLeavingTable(editor: ClassicEditor) {
+    const paragraph = editor.model.document.getRoot()?.getChild(1);
+    if (!paragraph?.is("element", "paragraph")) {
+        throw new Error("No paragraph follows the table.");
+    }
+    editor.model.change((writer) => {
+        writer.setSelection(paragraph, 0);
+        editor.execute(COMMAND);
+    });
 }
 
 function percentages(widths: string[]): number[] {

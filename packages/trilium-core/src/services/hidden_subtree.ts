@@ -396,23 +396,12 @@ function getExpectedParentIds(noteId: string, subtree: HiddenSubtreeItem): strin
             expectedParents.push(parentId);
         }
 
-        if (item.children) {
-            for (const child of item.children) {
-                traverse(child, item.id);
-            }
+        for (const child of item.children ?? []) {
+            traverse(child, item.id);
         }
     }
 
-    // Start traversal from root
-    if (subtree.id === noteId) {
-        expectedParents.push("root");
-    }
-
-    if (subtree.children) {
-        for (const child of subtree.children) {
-            traverse(child, subtree.id);
-        }
-    }
+    traverse(subtree, "root");
 
     return expectedParents;
 }
@@ -536,7 +525,7 @@ function checkHiddenSubtreeRecursively(
         } else if (item.targetNoteId) {
             attrs.push({ type: "relation", name: "template", value: LBTPL_NOTE_LAUNCHER });
             attrs.push({ type: "relation", name: "target", value: item.targetNoteId });
-        } else if (!item.enforceDeleted) {
+        } else {
             throw new Error(`No action defined for launcher ${JSON.stringify(item)}`);
         }
     }
@@ -615,9 +604,10 @@ function checkHiddenSubtreeRecursively(
                 isInheritable: attr.isInheritable
             }).save();
         } else if (attr.name === "docName") {
-            if (existingAttribute.value !== attr.value) {
-                log.info(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${attr.value}"`);
-                existingAttribute.value = attr.value ?? "";
+            const value = attr.value ?? "";
+            if (existingAttribute.value !== value) {
+                log.info(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${value}"`);
+                existingAttribute.value = value;
                 existingAttribute.save();
             }
         }

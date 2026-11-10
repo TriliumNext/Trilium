@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getLinkPreviewVideoId, getVideoAspectRatio, LINK_EMBED_CARD_IMAGE_PLACEHOLDER,
-    LINK_PREVIEW_DATA_ATTRIBUTES, readLinkPreviewData, readVideoEmbedBox, renderLinkEmbedHtml,
+    getLinkPreviewPlayer, getLinkPreviewVideoId, getVideoAspectRatio,
+    LINK_EMBED_CARD_IMAGE_PLACEHOLDER, LINK_PREVIEW_DATA_ATTRIBUTES, type LinkPreviewData,
+    readLinkPreviewData, readMediaEmbedBox, renderLinkEmbedBoxHtml, renderLinkEmbedHtml,
     renderLinkMentionHtml
 } from "./link_embed_markup.js";
 
-const OPTIONS = { playVideoLabel: "Play \"video\"" };
+const OPTIONS = { playVideoLabel: "Play \"video\"", playAudioLabel: "Play audio" };
 const VIDEO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
 describe("readLinkPreviewData", () => {
@@ -37,27 +38,77 @@ describe("readLinkPreviewData", () => {
     });
 });
 
-describe("readVideoEmbedBox", () => {
+describe("readMediaEmbedBox", () => {
+    it("reads an audio file as Compact or Resizable, Compact when saved as Small", () => {
+        const read = (attributes: Record<string, string>) =>
+            readMediaEmbedBox((name) => attributes[name], { type: "audio" });
+
+        expect(read({ "data-box-size": "compact" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "resizable" }))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
+        expect(read({ "data-box-size": "small" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "full" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+    });
+
     it("reads the box size and the title, Full and untitled for a video saved before", () => {
         const read = (attributes: Record<string, string>) =>
-            readVideoEmbedBox((name) => attributes[name]);
+            readMediaEmbedBox((name) => attributes[name], { type: "youtube", videoId: "id" });
 
+        expect(read({ "data-box-size": "resizable" }))
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
         expect(read({ "data-box-size": "medium" }))
-            .toEqual({ boxSize: "medium", isTitleHidden: false });
+            .toEqual({ boxSize: "resizable", isTitleHidden: false });
         expect(read({ "data-box-size": "full", "data-hide-title": "true" }))
             .toEqual({ boxSize: "full", isTitleHidden: true });
         expect(read({ "data-box-size": "tiny" }))
+            .toEqual({ boxSize: "compact", isTitleHidden: false });
+        expect(read({ "data-box-size": "expandable" }))
             .toEqual({ boxSize: "full", isTitleHidden: false });
         expect(read({})).toEqual({ boxSize: "full", isTitleHidden: true });
     });
 });
 
+describe("renderLinkEmbedBoxHtml", () => {
+    it("renders a video at Compact as a mention, and anything else as its preview", () => {
+        const options = { playVideoLabel: "Play", playAudioLabel: "Play" };
+        const video = { url: VIDEO_URL, embedType: "youtube", title: "Clip" };
+        const audio = { url: "https://example.com/a.mp3", embedType: "audio", title: "Song" };
+        const render = (data: LinkPreviewData, boxSize: string) =>
+            renderLinkEmbedBoxHtml(data, (name) => (name === "data-box-size" ? boxSize : null), options);
+
+        expect(render(video, "compact")).toBe(renderLinkMentionHtml(video, options));
+        expect(render(video, "resizable")).toBe(renderLinkEmbedHtml(video, options));
+        expect(render(audio, "compact")).toBe(renderLinkEmbedHtml(audio, options));
+        const card = { url: "https://example.com/page", embedType: "opengraph", title: "Page" };
+        expect(render(card, "compact")).toBe(renderLinkEmbedHtml(card, options));
+    });
+});
+
 describe("getLinkPreviewVideoId", () => {
-    it("gives the ID of a video that plays, and nothing for a card or a page", () => {
+    it("gives the ID of a video that plays, and nothing for a card, a page or a file", () => {
         expect(getLinkPreviewVideoId({ url: VIDEO_URL, embedType: "youtube" })).toBe("dQw4w9WgXcQ");
         expect(getLinkPreviewVideoId({ url: VIDEO_URL })).toBe("dQw4w9WgXcQ");
         expect(getLinkPreviewVideoId({ url: VIDEO_URL, embedType: "opengraph" })).toBeNull();
+        expect(getLinkPreviewVideoId({ url: VIDEO_URL, embedType: "video" })).toBeNull();
         expect(getLinkPreviewVideoId({ url: "https://example.com", embedType: "youtube" }))
+            .toBeNull();
+    });
+});
+
+describe("getLinkPreviewPlayer", () => {
+    it("plays a YouTube video, or a video or audio file at an http(s) URL", () => {
+        expect(getLinkPreviewPlayer({ url: VIDEO_URL, embedType: "youtube" }))
+            .toEqual({ type: "youtube", videoId: "dQw4w9WgXcQ" });
+        expect(getLinkPreviewPlayer({ url: "https://example.com/a.mp4", embedType: "video" }))
+            .toEqual({ type: "video" });
+        expect(getLinkPreviewPlayer({ url: "http://nas/a", embedType: "audio" }))
+            .toEqual({ type: "audio" });
+        expect(getLinkPreviewPlayer({ url: "javascript:alert(1)", embedType: "video" }))
+            .toBeNull();
+        expect(getLinkPreviewPlayer({ url: "https://example.com/a.mp4", embedType: "opengraph" }))
             .toBeNull();
     });
 });
@@ -127,6 +178,36 @@ describe("renderLinkEmbedHtml", () => {
         expect(render("9/16")).toMatch(
             /^<div class="link-embed-video" style="--video-aspect-ratio:0\.5625"><button /);
         expect(render("9/16\"><script>")).toMatch(/^<div class="link-embed-video"><button /);
+    });
+
+    it("draws a video file as a facade that plays its URL, with its thumbnail and shape", () => {
+        expect(renderLinkEmbedHtml({
+            url: "https://example.com/a&b.mp4",
+            embedType: "video",
+            image: "api/attachments/abc/image/a.jpg",
+            aspectRatio: "4/3"
+        }, OPTIONS)).toBe(
+            `<div class="link-embed-video" style="--video-aspect-ratio:${4 / 3}">`
+            + `<button type="button" class="link-embed-video-facade"`
+            + ` data-media-url="https://example.com/a&amp;b.mp4"`
+            + ` aria-label="Play &quot;video&quot;" title="Play &quot;video&quot;">`
+            + `<img class="link-embed-video-thumbnail" src="api/attachments/abc/image/a.jpg"`
+            + ` alt="" loading="lazy" draggable="false">`
+            + `<span class="link-embed-video-file-play bx bx-play" aria-hidden="true">`
+            + `</span></button></div>`);
+    });
+
+    it("draws an audio file as a play button named by its title, else its file name", () => {
+        const render = (title?: string) => renderLinkEmbedHtml({
+            url: "https://example.com/music/Song%201.mp3", embedType: "audio", title
+        }, OPTIONS);
+
+        expect(render("<Song>")).toBe(
+            `<div class="link-embed-audio"><button type="button" class="link-embed-audio-facade"`
+            + ` data-media-url="https://example.com/music/Song%201.mp3" aria-label="Play audio"`
+            + ` title="Play audio"><span class="link-embed-audio-play" aria-hidden="true"></span>`
+            + `<span class="link-embed-audio-title">&lt;Song&gt;</span></button></div>`);
+        expect(render()).toContain(`<span class="link-embed-audio-title">Song 1.mp3</span>`);
     });
 
     it("draws a card for a video URL stored as a card, and for an embed that is no video", () => {

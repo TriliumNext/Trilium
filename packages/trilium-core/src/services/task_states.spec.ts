@@ -5,13 +5,15 @@ import {
     TASK_STATES_CONTAINER_ID,
     type TaskStateDef
 } from "@triliumnext/commons";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
+import type { ProcessedIconPack } from "./icon_packs.js";
+import noteService from "./notes.js";
 import { createTaskStateNote, generateTaskStateCss, getTaskStates } from "./task_states.js";
 
 let counter = 0;
@@ -80,6 +82,18 @@ describe("task_states (real DB)", () => {
             // The seeded anchors and valid defaults survive the validation pass.
             expect(states.some((s) => s.id === NONE_STATE_ID)).toBe(true);
             expect(states.some((s) => s.id === DONE_STATE_ID)).toBe(true);
+        });
+
+        it("reads a state note without labels as empty values and falls back when nothing is valid", () => {
+            const bare = getContext().init(() => noteService.createNewNote({
+                parentNoteId: TASK_STATES_CONTAINER_ID, title: "bare", type: "doc", content: "",
+                ignoreForbiddenParents: true
+            }).note);
+            expect(getTaskStates().some((s) => s.id === bare.noteId)).toBe(false);
+
+            const container = becca.getNoteOrThrow(TASK_STATES_CONTAINER_ID);
+            vi.spyOn(container, "getChildNotes").mockReturnValueOnce([ bare ]);
+            expect(getTaskStates()).toBe(DEFAULT_TASK_STATES);
         });
 
         it("falls back to DEFAULT_TASK_STATES when the container note is missing", () => {
@@ -270,6 +284,24 @@ describe("task_states (real DB)", () => {
             // The state exists and is valid, but its icon does not map to a manifest
             // glyph, so generateTaskStateCss produces no rule for it.
             expect(css).not.toContain(`[data-trilium-task-state="noicon"]`);
+        });
+
+        it("resolves icons against the matching pack only and names a user pack's font family", () => {
+            getContext().init(() => createTaskStateNote(
+                customState({ name: "userpack", markdownSymbol: "u", icon: "my my-star" })
+            ));
+            getContext().init(() => createTaskStateNote(
+                customState({ name: "oneword", markdownSymbol: "o", icon: "bx" })
+            ));
+            const pack = (prefix: string, builtin: boolean): ProcessedIconPack => ({
+                prefix, builtin, manifest: { icons: { "my-star": { glyph: "\\e001", terms: [] } } },
+                manifestNoteId: "m", fontMime: "font/woff2", fontAttachmentId: `${prefix}Font`, title: prefix, icon: ""
+            });
+
+            const css = generateTaskStateCss([ pack("other", true), pack("my", false) ]);
+            expect(css).toContain(`[data-trilium-task-state="userpack"]`);
+            expect(css).toContain(`--task-state-glyph-font-family: "trilium-icon-pack-my"`);
+            expect(css).not.toContain(`[data-trilium-task-state="oneword"]`);
         });
     });
 });

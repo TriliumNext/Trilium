@@ -1,4 +1,6 @@
-import { Autoformat, ClassicEditor, Paragraph, Typing, _setModelData as setData } from 'ckeditor5';
+import {
+	Autoformat, ClassicEditor, Paragraph, Typing, _getModelData as getData, _setModelData as setData
+} from 'ckeditor5';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Side-effect import: declares the `math` key on EditorConfig used by the editor configs below.
@@ -85,6 +87,7 @@ describe( 'AutoformatMath', () => {
 
 			vi.advanceTimersByTime( 50 );
 			expect( showUI ).not.toHaveBeenCalled();
+			expect( getData( editor.model ) ).toBe( '<paragraph>$$ []</paragraph>' );
 		} );
 	} );
 

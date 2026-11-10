@@ -1,8 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import becca_service from "../../becca/becca_service";
+import type { Request } from "../../http_interface";
 import * as cls from "../../services/context";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
+import autocompleteRoute from "./autocomplete";
 
 /**
  * Drives the shared core autocomplete routes through {@link CoreApiTester} (no Express),
@@ -222,6 +225,26 @@ describe("Autocomplete API (core)", () => {
             const noteIds = noteIdsOf(res.body);
             expect(noteIds).toEqual(expect.arrayContaining([ png, webp, jpg ]));
             expect(noteIds).not.toContain(svg);
+        });
+
+        it("rejects a limit or a filter that is not a string, and ignores a blank filter", async () => {
+            const call = (query: Record<string, unknown>) => () => autocompleteRoute.getAutocomplete({ query } as unknown as Request);
+            expect(call({ query: "x", limit: [ "1" ] })).toThrow("Invalid limit.");
+            expect(call({ query: "x", filter: [ "#a" ] })).toThrow("Invalid filter data type.");
+
+            const unfiltered = await api.get<AutocompleteResult[]>("/api/autocomplete", { query: { query: "" } });
+            const blank = await api.get<AutocompleteResult[]>("/api/autocomplete", { query: { query: "", filter: "   " } });
+            expect(blank.body).toEqual(unfiltered.body);
+        });
+
+        it("falls back to the default icon for a recent note without one", async () => {
+            const { noteId } = await createTextNote(api, { title: "Iconless recent" });
+            await api.post("/api/recent-notes", { body: { noteId, notePath: `root/${noteId}` } });
+            vi.spyOn(becca_service, "getNoteTitleAndIcon").mockReturnValue({ title: "Iconless recent" });
+
+            const res = await api.get<AutocompleteResult[]>("/api/autocomplete", { query: { query: "" } });
+
+            expect(res.body.find((r) => r.notePath === `root/${noteId}`)?.icon).toBe("bx bx-note");
         });
 
         it("400s when the query param is missing", async () => {

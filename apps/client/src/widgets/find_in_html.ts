@@ -10,7 +10,7 @@ import MergedFind, {
 import { watchEmbedFindTargets } from "./type_widgets/text/content_embed_tools";
 
 // The content of an embed searches itself, and its title row is not searched.
-const EMBED_EXCLUSION = [ ".include-note-wrapper", ".include-note-wrapper *" ];
+const EMBED_EXCLUSION = [ ".include-note-wrapper" ];
 
 /** "Search in note" in the rendered content of a note, such as a read-only text note. */
 export default class FindInHtml {
@@ -177,16 +177,22 @@ export class HtmlFindTarget implements FindTarget {
 
 }
 
-/** Searches the rendered content of a note, whose embeds search their own content. */
+/**
+ * Searches the rendered content of a note, or of an embed box, whose embeds search their own
+ * content.
+ */
 export class HtmlNoteFindTarget extends HtmlFindTarget implements HostFindTarget {
 
     constructor(root: HTMLElement) {
         super(root, EMBED_EXCLUSION);
     }
 
+    /** The embeds in the content that no other embed in it holds. */
     getEmbeds() {
-        return [ ...this.root.querySelectorAll<HTMLElement>(".include-note") ]
-            .filter((embed) => !embed.parentElement?.closest(".include-note"));
+        return [ ...this.root.querySelectorAll<HTMLElement>(".include-note") ].filter((embed) => {
+            const outer = embed.parentElement?.closest(".include-note");
+            return !outer || !this.root.contains(outer);
+        });
     }
 
     countMatchesBefore(embed: HTMLElement) {

@@ -222,7 +222,7 @@ export class SqlService {
             results = results.concat(subResults);
         }
 
-        return (results as T[] | null) || [];
+        return results as T[];
     }
 
     /**
@@ -268,6 +268,7 @@ export class SqlService {
     }
 
     iterateRows<T>(query: string, params: Params = []): IterableIterator<T> {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -286,7 +287,7 @@ export class SqlService {
         const map: Record<K, V> = {} as Record<K, V>;
         const results = this.getRawRows<[K, V]>(query, params);
 
-        for (const row of results || []) {
+        for (const row of results) {
             map[row[0]] = row[1];
         }
 
@@ -322,6 +323,7 @@ export class SqlService {
     }
 
     executeMany(query: string, params: Params) {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -346,6 +348,7 @@ export class SqlService {
     }
 
     executeScript(query: string) {
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }
@@ -361,6 +364,7 @@ export class SqlService {
         const startTimestamp = Date.now();
         let result;
 
+        /* v8 ignore next 3 -- LOG_ALL_QUERIES is a compile-time debug switch, always false */
         if (LOG_ALL_QUERIES) {
             console.log(query);
         }

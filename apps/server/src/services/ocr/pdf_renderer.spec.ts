@@ -1,3 +1,4 @@
+import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockRender = vi.fn();
@@ -11,11 +12,14 @@ vi.mock("@hyzyla/pdfium", () => ({
     PDFiumLibrary: { init: mockInit }
 }));
 
-// Avoid reading the real 4 MB wasm from disk.
+// Avoid reading the real 4 MB wasm from disk. Nothing exists unless a test places it.
+const existingFiles = new Set<string>();
+const mockReadFileSync = vi.fn((file: string) => Buffer.from(`wasm from ${file}`));
+
 vi.mock("fs", () => ({
     default: {
-        existsSync: () => false,
-        readFileSync: () => Buffer.from("wasm-bytes")
+        existsSync: (file: string) => existingFiles.has(file),
+        readFileSync: mockReadFileSync
     }
 }));
 
@@ -37,6 +41,7 @@ let MAX_RENDER_PIXELS: number;
 beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
+    existingFiles.clear();
     mockGetOriginalSize.mockReturnValue({ originalWidth: 612, originalHeight: 792 });
     mockRender.mockResolvedValue({ data: new Uint8Array(16), width: 2, height: 2 });
     mockLoadDocument.mockImplementation(async () => ({ getPage: mockGetPage, destroy: mockDestroy }));
@@ -64,6 +69,22 @@ describe("PdfRenderer", () => {
         expect(mockRender.mock.calls[0][0]).toMatchObject({ scale: 2, render: "bitmap", colorSpace: "BGRA" });
         expect(page).toEqual({ data: new Uint8Array(16), width: 2, height: 2 });
         expect(mockDestroy).toHaveBeenCalledOnce();
+    });
+
+    it("reads the wasm the build copied beside the assets, else the one in node_modules", async () => {
+        const decode = (buffer: ArrayBuffer) => new TextDecoder().decode(buffer);
+        const lastWasm = () => decode((mockInit.mock.lastCall as unknown as [ { wasmBinary: ArrayBuffer } ])[0].wasmBinary);
+
+        await renderer.renderPage(pdf, 1);
+        expect(lastWasm()).toMatch(/^wasm from .*pdfium\.wasm$/);
+        expect(lastWasm()).not.toContain("trilium-resources");
+
+        vi.resetModules();
+        const productionPath = path.join("/tmp/trilium-resources", "pdfium.wasm");
+        existingFiles.add(productionPath);
+        const { default: bundled } = await import("./pdf_renderer.js");
+        await bundled.renderPage(pdf, 1);
+        expect(lastWasm()).toBe(`wasm from ${productionPath}`);
     });
 
     it("loads the library once and reuses it across pages", async () => {

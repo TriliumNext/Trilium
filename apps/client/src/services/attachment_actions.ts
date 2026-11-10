@@ -32,16 +32,63 @@ export interface AttachmentActionOptions {
     isReadOnly?: boolean;
 }
 
+/** The actions on an attachment, by what they do. */
+export interface LinkedAttachmentActions {
+    /** The actions that leave the attachment unchanged. */
+    view: AttachmentAction[];
+    /** Replacing or renaming the attachment. */
+    change: AttachmentAction[];
+    /** Compressing the attachment, for an image. */
+    image: AttachmentAction[];
+    /** Deleting the attachment. */
+    deletion: AttachmentAction[];
+    /** Converting the attachment into a note. */
+    conversion: AttachmentAction[];
+}
+
 /**
  * The actions on `attachment`, in the groups a menu separates with a divider. The attachment page
  * and the context menu of an attachment link both list them.
  */
 export function getAttachmentActionGroups(
     attachment: FAttachment,
-    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+    options: AttachmentActionOptions = {}
 ): AttachmentAction[][] {
-    const viewActions = getViewActions(attachment, copyReference);
-    return isReadOnly ? [ viewActions ] : [ viewActions, ...getEditActionGroups(attachment) ];
+    const { view, change, image, deletion, conversion } =
+        getLinkedAttachmentActions(attachment, options);
+    return [ view, [ ...change, ...deletion ], [ ...image, ...conversion ] ]
+        .filter((group) => group.length > 0);
+}
+
+/**
+ * The actions on `attachment` by what they do, for the menu of a link to it or of an embed of
+ * it, which lists deleting and converting the attachment apart from the others. A note shown
+ * read-only has only the actions that leave the attachment unchanged.
+ */
+export function getLinkedAttachmentActions(
+    attachment: FAttachment,
+    { copyReference, isReadOnly = false }: AttachmentActionOptions = {}
+): LinkedAttachmentActions {
+    const view = getViewActions(attachment, copyReference);
+    if (isReadOnly) {
+        return { view, change: [], image: [], deletion: [], conversion: [] };
+    }
+
+    return {
+        view,
+        change: getChangeActions(attachment),
+        image: getImageActions(attachment),
+        deletion: [ {
+            title: t("attachments_actions.delete_attachment"),
+            icon: "bx bx-trash destructive-action-icon",
+            run: () => deleteAttachment(attachment)
+        } ],
+        conversion: [ {
+            title: t("attachments_actions.convert_attachment_into_note"),
+            icon: "bx bx-note",
+            run: () => convertAttachmentToNote(attachment)
+        } ]
+    };
 }
 
 /** The actions that leave the attachment unchanged. */
@@ -81,46 +128,34 @@ function getViewActions(
     ];
 }
 
-/** The actions that change, delete or convert the attachment, in their groups. */
-function getEditActionGroups(attachment: FAttachment): AttachmentAction[][] {
-    const { attachmentId, mime } = attachment;
-
+/** The actions that replace or rename the attachment. */
+function getChangeActions(attachment: FAttachment): AttachmentAction[] {
     return [
-        [
-            {
-                title: t("attachments_actions.upload_new_revision"),
-                icon: "bx bx-upload",
-                run: () => pickFile((file) => uploadNewRevision(attachment, file))
-            },
-            {
-                title: t("attachments_actions.rename_attachment"),
-                icon: "bx bx-rename",
-                run: () => renameAttachment(attachment)
-            },
-            {
-                title: t("attachments_actions.delete_attachment"),
-                icon: "bx bx-trash destructive-action-icon",
-                run: () => deleteAttachment(attachment)
-            }
-        ],
-        [
-            // A link preview's pictures are left out: the server already sized them.
-            ...(attachment.role === "image" ? [ {
-                title: t("compress-image-menu"),
-                icon: "bx bx-collapse-alt",
-                run: () => void showImageCompressionDialog({
-                    type: "attachment",
-                    attachmentId,
-                    mime
-                })
-            } ] : []),
-            {
-                title: t("attachments_actions.convert_attachment_into_note"),
-                icon: "bx bx-note",
-                run: () => convertAttachmentToNote(attachment)
-            }
-        ]
+        {
+            title: t("attachments_actions.upload_new_revision"),
+            icon: "bx bx-upload",
+            run: () => pickFile((file) => uploadNewRevision(attachment, file))
+        },
+        {
+            title: t("attachments_actions.rename_attachment"),
+            icon: "bx bx-rename",
+            run: () => renameAttachment(attachment)
+        }
     ];
+}
+
+/** Compressing the attachment, for an image. */
+function getImageActions({ attachmentId, mime, role }: FAttachment): AttachmentAction[] {
+    // A link preview's pictures are left out: the server already sized them.
+    if (role !== "image") {
+        return [];
+    }
+
+    return [ {
+        title: t("compress-image-menu"),
+        icon: "bx bx-collapse-alt",
+        run: () => void showImageCompressionDialog({ type: "attachment", attachmentId, mime })
+    } ];
 }
 
 export function getOpenExternallyAction({ attachmentId, mime }: FAttachment): AttachmentAction {

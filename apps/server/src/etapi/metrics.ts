@@ -225,19 +225,21 @@ function collectMetrics(): MetricsData {
 
 function register(router: Router): void {
     eu.route(router, "get", "/etapi/metrics", (req: Request, res: Response, next: NextFunction) => {
+        const format = (req.query.format as string)?.toLowerCase() || 'prometheus';
+        if (format !== 'json' && format !== 'prometheus') {
+            throw new eu.EtapiError(400, "INVALID_FORMAT", "Supported formats: 'prometheus' (default), 'json'");
+        }
+
         try {
             const metrics = collectMetrics();
-            const format = (req.query.format as string)?.toLowerCase() || 'prometheus';
 
             if (format === 'json') {
                 res.status(200).json(metrics);
-            } else if (format === 'prometheus') {
+            } else {
                 const prometheusText = formatPrometheusMetrics(metrics);
                 res.status(200)
                     .set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
                     .send(prometheusText);
-            } else {
-                throw new eu.EtapiError(400, "INVALID_FORMAT", "Supported formats: 'prometheus' (default), 'json'");
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';

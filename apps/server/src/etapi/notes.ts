@@ -105,8 +105,7 @@ function register(router: Router) {
         // Validate MIME type for image notes (check both current and new type/mime)
         const effectiveType = req.body.type ?? note.type;
         const effectiveMime = req.body.mime ?? note.mime;
-        const normalizedEffectiveMime = typeof effectiveMime === "string" ? effectiveMime.toLowerCase() : effectiveMime;
-        if (effectiveType === "image" && normalizedEffectiveMime && !normalizedEffectiveMime.startsWith("image/")) {
+        if (effectiveType === "image" && typeof effectiveMime === "string" && effectiveMime && !effectiveMime.toLowerCase().startsWith("image/")) {
             throw new eu.EtapiError(400, "INVALID_MIME_FOR_IMAGE", `MIME type '${effectiveMime}' is not allowed for image notes. MIME must start with 'image/'.`);
         }
 
@@ -223,8 +222,7 @@ function parseSearchParams(req: Request) {
         ancestorNoteId: parseString(req.query["ancestorNoteId"]),
         ancestorDepth: parseString(req.query["ancestorDepth"]), // e.g. "eq5"
         orderBy: parseString(req.query["orderBy"]),
-        // TODO: Check why the order direction was provided as a number, but it's a string everywhere else.
-        orderDirection: parseOrderDirection(req.query, "orderDirection") as unknown as string,
+        orderDirection: parseOrderDirection(req.query, "orderDirection"),
         limit: parseInteger(req.query, "limit"),
         debug: parseBoolean(req.query, "debug")
     };
@@ -267,13 +265,11 @@ function parseOrderDirection(obj: any, name: string) {
         return undefined;
     }
 
-    const integer = parseInt(obj[name]);
-
     if (!["asc", "desc"].includes(obj[name])) {
         throw new eu.EtapiError(400, SEARCH_PARAM_ERROR, `Cannot parse order direction value '${obj[name]}, allowed values are 'asc' and 'desc'.`);
     }
 
-    return integer;
+    return obj[name];
 }
 
 function parseInteger(obj: any, name: string) {

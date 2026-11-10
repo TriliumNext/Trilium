@@ -6,13 +6,15 @@ import type FNote from "../../../entities/fnote";
 import type { ViewScope } from "../../../services/link";
 import AudioPreview from "./Audio";
 import { loadsEagerly, type MediaEnvironment } from "./media_environment";
-import { getMediaSource } from "./media_source";
+import { getMediaSource, type MediaSource } from "./media_source";
 import MediaProxy from "./MediaProxy";
 import VideoPreview from "./Video";
 
 interface MediaPreviewProps {
     /** The media to play: an audio/video file note, or an attachment with such a mime type. */
-    entity: FNote | FAttachment;
+    entity?: FNote | FAttachment;
+    /** The media to play without an {@link entity}, such as the media file at the URL of a link preview. */
+    source?: MediaSource;
     environment?: MediaEnvironment;
     /** The tab showing the media; only a detail view has one. Enables siblings, play mode and the OS session. */
     noteContext?: NoteContext;
@@ -27,17 +29,26 @@ interface MediaPreviewProps {
  * i.e. a collection tile or an attachment list) the player is replaced by a {@link MediaProxy} placeholder
  * until the user clicks its play button — only then is a media element created, and it starts playing right
  * away. Everywhere else the player mounts immediately, ready to play.
+ *
+ * A video on another site waits behind the placeholder, which shows its thumbnail, in every environment;
+ * audio on another site mounts a player that loads nothing before it plays.
  */
-export default function MediaPreview({ entity, environment = "standalone", noteContext, ownerNote, viewScope, isVisible }: MediaPreviewProps) {
-    const eager = loadsEagerly(environment);
+export default function MediaPreview({
+    entity, source: givenSource, environment = "standalone", noteContext, ownerNote, viewScope,
+    isVisible
+}: MediaPreviewProps) {
+    const source = givenSource ?? (entity ? getMediaSource(entity) : undefined);
+    const eager = loadsEagerly(environment) && !(source?.isExternal && source.kind === "video");
     const [ activated, setActivated ] = useState(eager);
-    const source = getMediaSource(entity);
 
+    if (!source) {
+        return null;
+    }
     if (!activated) {
         return <MediaProxy source={source} onActivate={() => setActivated(true)} />;
     }
 
-    const props = {
+    const playerProps = {
         entity,
         source,
         environment,
@@ -49,7 +60,7 @@ export default function MediaPreview({ entity, environment = "standalone", noteC
         autoPlay: !eager
     };
 
-    return source.mime.startsWith("video/")
-        ? <VideoPreview {...props} />
-        : <AudioPreview {...props} />;
+    return source.kind === "video"
+        ? <VideoPreview {...playerProps} />
+        : <AudioPreview {...playerProps} />;
 }

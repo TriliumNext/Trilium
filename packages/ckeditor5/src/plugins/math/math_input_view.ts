@@ -156,8 +156,6 @@ export default class MathInputView extends View {
 		}
 
 		const initial = this.value ?? '';
-		/* v8 ignore next 3 -- a freshly templated textarea is empty and `value` starts null, so
-		   these are always already equal on first render */
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
@@ -168,7 +166,6 @@ export default class MathInputView extends View {
 
 	// Loads the MathLive library dynamically
 	private async _loadMathLive(): Promise<void> {
-		/* v8 ignore start -- the catch is only reached if the bundled MathLive import itself fails */
 		try {
 			await import( 'mathlive' );
 			await customElements.whenDefined( 'math-field' );
@@ -176,7 +173,7 @@ export default class MathInputView extends View {
 				return;
 			}
 			const MathfieldClass = customElements.get( 'math-field' ) as any;
-			/* v8 ignore next -- defensive: whenDefined() resolved, so the element is registered */
+			/* v8 ignore else -- defensive: whenDefined() resolved, so the element is registered */
 			if ( MathfieldClass ) {
 				if ( !MathInputView._configured ) {
 					MathfieldClass.soundsDirectory = null;
@@ -188,16 +185,17 @@ export default class MathInputView extends View {
 					MathfieldClass.locale = this._mathLiveLocale;
 				}
 			}
+			/* v8 ignore else -- render() sets the element, and a destroyed view returns above */
 			if ( this.element && !this._destroyed ) {
 				this._initMathField( true );
 			}
 		} catch {
 			const c = this.element?.querySelector( '.ck-mathlive-container' );
+			/* v8 ignore else -- render() builds the container whenever it calls _loadMathLive() */
 			if ( c ) {
 				c.textContent = this._unavailableLabel;
 			}
 		}
-		/* v8 ignore stop */
 	}
 
 	// Initializes the <math-field> element

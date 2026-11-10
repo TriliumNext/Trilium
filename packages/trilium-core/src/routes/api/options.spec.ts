@@ -1,6 +1,7 @@
 import type { UserFont } from "@triliumnext/commons";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import becca from "../../becca/becca";
 import * as i18n from "../../services/i18n";
 import optionService from "../../services/options";
 import { getConfig, initConfig } from "../../services/config";
@@ -323,5 +324,31 @@ describe("Options API (core)", () => {
         const entry = res.body.find((font) => font.noteId === noteId);
         expect(entry?.title).toBe("Iosevka");
         expect(entry?.blobId).toBeTruthy();
+    });
+
+    it("leaves out a font it cannot read and names one without a blob by an empty id", async () => {
+        const lockedId = await createFontNote("Locked font");
+        const blobless = becca.getNoteOrThrow(await createFontNote("Blobless font"));
+        vi.spyOn(becca.getNoteOrThrow(lockedId), "isContentAvailable").mockReturnValue(false);
+        const blobId = blobless.blobId;
+        blobless.blobId = undefined;
+        try {
+            const res = await api.get<UserFont[]>("/api/options/user-fonts");
+            expect(res.body.some((font) => font.noteId === lockedId)).toBe(false);
+            expect(res.body.find((font) => font.noteId === blobless.noteId)?.blobId).toBe("");
+        } finally {
+            blobless.blobId = blobId;
+        }
+    });
+
+    it("reports no password when none is set", async () => {
+        const getOptionMap = optionService.getOptionMap.bind(optionService);
+        vi.spyOn(optionService, "getOptionMap").mockImplementation(() => {
+            const { passwordVerificationHash: _, ...rest } = getOptionMap();
+            return rest as ReturnType<typeof getOptionMap>;
+        });
+
+        const res = await api.get<Record<string, string>>("/api/options");
+        expect(res.body.isPasswordSet).toBe("false");
     });
 });

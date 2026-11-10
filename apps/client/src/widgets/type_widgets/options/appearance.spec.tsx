@@ -81,9 +81,28 @@ describe("the layout orientation", () => {
         expect(host.querySelector(".orientation-illustration")).toBeNull();
     });
 
-    it("comes with the edited notes setting", () => {
+    it("comes with the edited notes setting, on a phone too", () => {
         open();
         expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
+
+        mocks.mobile = true;
+        open();
+        expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
+    });
+});
+
+describe("the note title style", () => {
+    it("marks the stored style, and falls back to the large title", () => {
+        const activeChoice = () => [ ...host.querySelectorAll(".tn-segmented-choice .active") ]
+            .map(button => button.textContent?.trim())
+            .find(text => text?.startsWith("theme.note_title_style_"));
+
+        open();
+        expect(activeChoice()).toBe("theme.note_title_style_large");
+
+        mocks.stored.noteTitleStyle = "compact";
+        open();
+        expect(activeChoice()).toBe("theme.note_title_style_compact");
     });
 });
 

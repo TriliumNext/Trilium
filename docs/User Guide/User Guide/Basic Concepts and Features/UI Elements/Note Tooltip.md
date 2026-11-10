@@ -11,6 +11,7 @@ The following information is displayed:
     *   Holding <kbd>Ctrl</kbd> pressed while clicking the title will open in a new tab instead of the current one.
 *   A snippet of the content will be displayed as well.
 *   A button to [quickly edit](../Navigation/Quick%20edit.md) the note in a popup.
+    *   For a link to blocks of the note the link is in, the <span class="tn-icon bx bx-up-arrow"></span> _Jump to block_ button takes its place, or _Jump to heading_ for a heading, and scrolls to them without leaving the note.
 
 For a link to an [attachment](../Notes/Attachments.md), the tooltip shows the attachment instead: its title after the path of the note that owns it, a line giving its size (for example _Attachment • 20.59 MiB_), a preview of its content where one is available, and the quick edit button opening the attachment.
 

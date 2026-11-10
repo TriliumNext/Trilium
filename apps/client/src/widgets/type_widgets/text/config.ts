@@ -1,23 +1,28 @@
 import {
-    type AttachmentUploadHost, type ContentEmbedHost, type EditorConfig, getCkLocale,
-    type IconPickerRequest, type LinkDialogRequest, type LinkEmbedHost, SnippetDefinition,
-    type TextTransformationConfig, type YouTubeVideoRequest
+    type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
+    type EditorConfig, getCkLocale,
+    type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
+    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import i18next from "i18next";
 
 import type { CommandMappings, CommandNames } from "../../../components/app_context.js";
+import { openInCurrentNoteContext } from "../../../components/note_context.js";
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import { buildReferenceConfig, type ReferenceSource } from "../../../services/block_reference.js";
 import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboard_ext.js";
-import { getUploadBoxSize } from "../../../services/content_renderer.js";
+import { getEmbedContentInfo, getUploadBoxDefaults } from "../../../services/content_renderer.js";
 import { prompt } from "../../../services/dialog.js";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features.js";
+import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
 import linkService from "../../../services/link.js";
 import { detectEmbedType, fetchMetadata, renderEmbedPreview, renderMentionPreview, unresolvedMetadata } from "../../../services/link_embed.js";
+import { captureVideoThumbnail } from "../../../services/media_thumbnail.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
@@ -35,7 +40,9 @@ import diffAiResponse from "./ai_diff.js";
 import { buildChildNoteHost, type ChildNoteParent } from "./child_note.js";
 import { createColorMenuHost } from "./color_menu.js";
 import { buildFontColorConfig, buildTableColorConfig } from "./color_palette.js";
-import { createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view.js";
+import {
+    createEmojiList, createNoteMentionList, createSlashCommandList, openSlashCommandMenu
+} from "./mention_list_view.js";
 import { getShownToolbarIsland } from "./mobile_editor_toolbar.js";
 import { buildQuoteTransformation, resolveQuoteSetting } from "./quotes.js";
 import { buildCustomTransformations, parseCustomReplacements } from "./replacements.js";
@@ -81,8 +88,10 @@ export interface BuildEditorOptions {
     showIconPicker?: (request: IconPickerRequest) => (() => void) | null;
     /** Shows the link dialog, as `internalLink.showDialog` does. */
     showLinkDialog?: (request: LinkDialogRequest) => (() => void) | null;
-    /** Asks for the address of a YouTube video, as `youtubeVideo.showPrompt` does. */
-    showYouTubeVideoPrompt?: (request: YouTubeVideoRequest) => (() => void) | null;
+    /** Shows the Include note dialog, as `contentEmbed.pickNote` does. */
+    showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
+    /** Asks for the address of media to embed, as `insertMedia.showPrompt` does. */
+    showInsertMediaPrompt?: (request: InsertMediaRequest) => (() => void) | null;
     /** The note that the block and tab references the editor copies point to. */
     referenceSource?: ReferenceSource;
     /**
@@ -93,8 +102,9 @@ export interface BuildEditorOptions {
 }
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
-export type ContentEmbedHandlers =
-    Omit<ContentEmbedHost, "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml">;
+export type ContentEmbedHandlers = Omit<ContentEmbedHost,
+    "pickNote" | "inlineLanguages" | "renderInlinePreview" | "sanitizeHtml"
+    | "captureVideoThumbnail" | "getEmbedContentInfo">;
 
 export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfig> {
     // `undefined` when the AI features are off or no LLM provider is configured. Decided once:
@@ -128,12 +138,23 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             samples: SAMPLE_DIAGRAMS
         },
         contentEmbed: {
-            pickNote: bindHostCommand(opts, "addIncludeNoteToText"),
+            pickNote: (request) => opts.showContentEmbedDialog?.(request) ?? null,
             inlineLanguages: SOURCE_EMBED_TYPES.map((type) => type.language),
             renderInlinePreview: (language, source, container) => {
                 void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
             },
             sanitizeHtml: sanitizeNoteContentHtml,
+            // The embed has rendered by the time the editor asks, so the cache holds its content.
+            getEmbedContentInfo: ({ noteId, attachmentId }) => {
+                const entity = attachmentId
+                    ? froca.attachments[attachmentId]
+                    : noteId && froca.getNoteFromCache(noteId);
+                return entity ? getEmbedContentInfo(entity) : null;
+            },
+            captureVideoThumbnail: async (preview) => {
+                const noteId = opts.getNoteId?.();
+                return noteId ? await captureVideoThumbnail(preview.url, noteId) : null;
+            },
             ...bindContentEmbedHandlers(opts.getContentEmbedHandlers)
         },
         image: {
@@ -223,9 +244,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         link: {
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS,
-            // linkEmbedDisplayDropdown is the same Display dropdown the link-preview widget toolbar
-            // shows: on a native link it reads "Plain link" and converts to a preview shape.
-            toolbar: ["linkPreview", "copyLinkUrl", "|", "editLink", "linkProperties", "unlink", "|", "linkEmbedDisplayDropdown"]
+            toolbar: LINK_TOOLBAR
         },
         bookmark: {
             toolbar: [
@@ -282,12 +301,13 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         getNoteId: opts.getNoteId,
         attachmentUpload: buildAttachmentUploadHost(opts.getComponentId),
         internalLink: { showDialog: (request) => opts.showLinkDialog?.(request) ?? null },
-        // The link dialog's note suggestions render in the page's body.
+        linkMenu: buildLinkMenuHost(),
+        // The note suggestions of the link and Include note dialogs render in the page's body.
         hostedBalloon: { keepOpenSelector: FLOATING_LAYER_SELECTOR },
         childNote: buildChildNoteHost(() => opts.getChildNoteParent?.()),
         markdownImport: { open: bindHostCommand(opts, "pasteMarkdownIntoText") },
         inlineIcon: { showPicker: (request) => opts.showIconPicker?.(request) ?? null },
-        youtubeVideo: { showPrompt: (request) => opts.showYouTubeVideoPrompt?.(request) ?? null },
+        insertMedia: { showPrompt: (request) => opts.showInsertMediaPrompt?.(request) ?? null },
         ...(opts.referenceSource && buildReferenceConfig(opts.referenceSource)),
         imageToDrawing: {
             async convert(src) {
@@ -305,6 +325,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             removeCommands: ["bulletedList", "numberedList", ...getDisabledExperimentalCommands()],
             list: createSlashCommandList
         },
+        ...(options.get("textNoteSlashCommandsEnabled") === "true" && {
+            blockDragHandle: { openInsertMenu: openSlashCommandMenu }
+        }),
         snippets: {
             definitions: opts.templates
         },
@@ -446,7 +469,7 @@ function bindContentEmbedHandlers(
         loadInline: (...args) => getHandlers()?.loadInline(...args),
         flushInline: () => getHandlers()?.flushInline(),
         loadUnknown: (...args) => getHandlers()?.loadUnknown(...args),
-        loadVideo: (...args) => getHandlers()?.loadVideo(...args),
+        loadMedia: (...args) => getHandlers()?.loadMedia(...args),
         focusAttachment: (attachmentId) => getHandlers()?.focusAttachment(attachmentId),
         getAttachmentHref: async (attachmentId) =>
             (await getHandlers()?.getAttachmentHref(attachmentId)) ?? null,
@@ -483,7 +506,30 @@ function buildAttachmentUploadHost(getComponentId?: () => string | undefined): A
             return sent;
         },
         getLocalUpload: server.getLocalUpload,
-        getEmbedBoxSize: getUploadBoxSize
+        getEmbedBox: getUploadBoxDefaults
+    };
+}
+
+/**
+ * What the menu of the toolbar of a link to a note takes from the app: the entries of its context
+ * menu, and opening the note in place.
+ */
+function buildLinkMenuHost(): LinkMenuHost {
+    return {
+        describeNoteLink(href, element, run) {
+            const { notePath = "", viewScope = {} } = linkService.parseNavigationStateFromUrl(href);
+            return linkContextMenu.getLinkToolbarEntries(notePath, viewScope, element, run);
+        },
+        openNote(href, element) {
+            const { notePath, viewScope } = linkService.parseNavigationStateFromUrl(href);
+            if (notePath) {
+                openInCurrentNoteContext({ target: element }, notePath, viewScope);
+            }
+        },
+        downloadAttachment(href) {
+            const { notePath = "", viewScope = {} } = linkService.parseNavigationStateFromUrl(href);
+            void linkContextMenu.downloadLinkedAttachment(notePath, viewScope);
+        }
     };
 }
 
@@ -492,7 +538,7 @@ function buildLinkEmbedHost(getNoteId?: () => string | undefined): LinkEmbedHost
     return {
         async fetchMetadata(url) {
             // The pictures of a preview are stored as attachments of the note being edited, so
-            // without a note the URL stays a plain link, as for any preview that cannot be built.
+            // without a note the URL stays a text link, as for any preview that cannot be built.
             const noteId = getNoteId?.();
             return noteId ? await fetchMetadata(url, noteId) : unresolvedMetadata(url);
         },

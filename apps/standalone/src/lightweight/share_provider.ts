@@ -37,7 +37,7 @@ export function registerShareProvider() {
 
     initShare({
         sql: {
-            getRawRows: (query, params = []) => getSql().getRawRows(query, params),
+            getRawRows: <T>(query: string, params: string[] = []) => getSql().getRawRows(query, params) as T[],
             getRow: (query, params = []) => getSql().getRow(query, params),
             getColumn: (query, params = []) => getSql().getColumn(query, params)
         },

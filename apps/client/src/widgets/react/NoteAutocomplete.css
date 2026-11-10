@@ -11,7 +11,8 @@
 
 /* One class, so the next theme's input-group rules override these. */
 .go-to-selected-note-button,
-.input-clearer-button {
+.input-clearer-button,
+.note-autocomplete-expand-button {
     cursor: pointer;
 }
 
@@ -27,14 +28,18 @@
 
 .input-group > .go-to-selected-note-button {
     padding-inline: 4px 3px;
+}
 
-    &.disabled,
-    &.disabled:hover {
-        cursor: inherit;
-        color: var(--button-disabled-text-color) !important;
-        background-color: var(--button-disabled-background-color) !important;
-        text-decoration: none;
-    }
+/* The arrow of the Next theme's combo boxes, in forms.css, drawn in the button's color. */
+.note-autocomplete-expand-button::before {
+    content: "";
+    width: 15px;
+    height: 20px;
+    background-color: currentColor;
+    mask-image: var(--select-arrow-svg, url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='transparent' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/></svg>"));
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: 15px 20px;
 }
 
 /*
@@ -67,6 +72,18 @@
     }
 }
 
+:is(.note-autocomplete-menu, .slash-command-menu) .dropdown-item > span:not([class]) {
+    --note-suggestion-line: 1lh;
+    align-items: flex-start;
+}
+
+:is(.note-autocomplete-menu, .slash-command-menu) .dropdown-item > span:not([class]) > .tn-icon {
+    display: inline-flex;
+    align-items: center;
+    height: var(--note-suggestion-line);
+    translate: none;
+}
+
 .note-autocomplete-menu .dropdown-item {
     /* Outranks Bootstrap's `nowrap`, so a long note path wraps within the list's width. */
     white-space: normal;
@@ -76,23 +93,6 @@
     .note-suggestion-text {
         flex: 1 1 auto;
         min-width: 0;
-    }
-
-    /*
-     * The icon stands beside the title's first line, not in the middle of a row its badges make
-     * taller: the row aligns its parts to the top, and the icon centers its glyph in a box one line
-     * tall, as the title's line is.
-     */
-    > span:not([class]) {
-        --note-suggestion-line: 1lh;
-        align-items: flex-start;
-
-        > .tn-icon {
-            display: inline-flex;
-            align-items: center;
-            height: var(--note-suggestion-line);
-            translate: none;
-        }
     }
 
     /*
@@ -316,15 +316,28 @@
 }
 
 /*
- * The `/` list of the text and Markdown editors, at a width that fits all but the longest
- * descriptions, and given more height than a list usually is: it is long, and the query only
- * narrows it.
+ * The `/` list of the text and Markdown editors, and the menus of the same commands that the block
+ * handle opens, at a width that fits all but the longest descriptions, and given more height than
+ * a list usually is: it is long, and the query only narrows it.
  */
-.note-autocomplete-menu.slash-command-menu {
+.dropdown-menu.slash-command-menu {
     width: 350px;
     max-width: calc(100vw - 10px);
+}
 
-    > .tn-menu-scroll {
+/* Outranks the width that menus.css gives the content of a submenu. */
+body.desktop .dropdown-submenu > .dropdown-menu.slash-command-menu {
+    min-width: unset;
+    max-width: calc(100vw - 10px);
+}
+
+.dropdown-menu.slash-command-menu {
+    > :is(.tn-menu-scroll, .tn-menu-filterable) {
         max-height: var(--ck-mention-list-max-height);
+    }
+
+    .dropdown-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }

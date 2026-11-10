@@ -272,6 +272,37 @@ describe("Anytype importer — integration", () => {
         expect(odd.getChildNotes()[0]?.getAttachments()).toHaveLength(0);
     });
 
+    it("stores a bookmark's preview picture as its cover image", async () => {
+        const pixelPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+        const page = JSON.stringify({
+            sbType: "Page",
+            snapshot: {
+                data: {
+                    blocks: [
+                        { id: "page1", childrenIds: [ "header", "bm" ] },
+                        { id: "header", childrenIds: [ "title" ] },
+                        { id: "title", text: { text: "", style: "Title" } },
+                        { id: "bm", bookmark: { url: "https://example.com/post", imageHash: "cover-cid" } }
+                    ],
+                    details: { id: "page1", name: "Links", resolvedLayout: 0 }
+                }
+            }
+        });
+
+        const importRoot = await importAnytype({
+            "objects/page1.pb.json": page,
+            "filesObjects/cover.pb.json": fileObjectJson("cover-cid", "cover", "png", "image/png", "files\\cover.png"),
+            "files/cover.png": pixelPng
+        });
+
+        const note = importRoot.getChildNotes()[0];
+        const [ cover ] = note?.getAttachments() ?? [];
+        expect(cover?.role).toBe("coverImage");
+        expect(cover?.title).toMatch(/\.png$/);
+        expect(decodeUtf8(note?.getContent() ?? "")).toContain(
+            `data-image="api/attachments/${cover?.attachmentId}/image/`);
+    });
+
     it("drops a bookmark's favicon placeholder when the export has no bytes for it", async () => {
         // The card references a favicon file id, but no filesObjects/files entry backs it — the importer drops
         // the data-favicon attribute rather than leaving a bare id that would render as a broken image.
@@ -972,6 +1003,22 @@ describe("Anytype importer — integration", () => {
         expect(collection.getChildNotes()).toHaveLength(0);
     });
 
+    it("imports a collection's file member of an unknown type as a generic binary file", async () => {
+        const fileCid = "bafyreiunknowntype";
+        const unknownFile = JSON.stringify({ sbType: "FileObject", snapshot: { data: { details: {
+            id: fileCid, name: "blob", source: "files\\blob.zzunknown"
+        } } } });
+        const importRoot = await importAnytype({
+            "objects/coll.pb.json": collectionObject("coll", "Docs", [ fileCid ], []),
+            "filesObjects/f1.pb.json": unknownFile,
+            "files/blob.zzunknown": Buffer.from("bytes")
+        });
+
+        const [ fileNote ] = importRoot.getChildNotes()[0]?.getChildNotes() ?? [];
+        expect(fileNote?.type).toBe("file");
+        expect(fileNote?.mime).toBe("application/octet-stream");
+    });
+
     it("imports an image object that's a collection member as an image note", async () => {
         const imgCid = "bafyreiimagemember";
         const importRoot = await importAnytype({
@@ -1250,6 +1297,29 @@ describe("Anytype importer — integration", () => {
         const fileNote = children.find((n) => n.type === "file");
         expect(fileNote?.mime).toBe("application/pdf");
         expect(decodeUtf8(fileNote?.getContent() ?? "")).toBe("%PDF-1.4 scoped");
+    });
+
+    it("leaves out a file of a collection-scoped export whose bytes are missing", async () => {
+        const ctx = "bafyreicollectioncontext";
+        const importRoot = await importAnytype(
+            {
+                "objects/m1.pb.json": memberObject("m1", { createdInContext: ctx }),
+                "filesObjects/f1.pb.json": fileObjectJson("bafyreigone", "report", "pdf", "application/pdf", "files\\report.pdf")
+            },
+            "Ordered collection.zip"
+        );
+
+        expect(importRoot.getChildNotes().map((n) => n.title)).toEqual([ "Untitled" ]);
+    });
+
+    it("imports a page whose details carry no id", async () => {
+        const page = JSON.stringify({ sbType: "Page", snapshot: { data: {
+            blocks: [ { id: "anon", childrenIds: [] } ], details: { name: "Anonymous", layout: 0 }
+        } } });
+
+        const importRoot = await importAnytype({ "objects/anon.pb.json": page });
+
+        expect(importRoot.getChildNotes().map((n) => n.title)).toEqual([ "Anonymous" ]);
     });
 
     it("does not duplicate a member page's inline file as a separate collection member", async () => {

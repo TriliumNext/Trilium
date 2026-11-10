@@ -1,8 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import eventService from "../../services/events";
+import { getLog } from "../../services/log";
 import { getSql } from "../../services/sql/index";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
@@ -154,8 +156,12 @@ describe("Branches API (core)", () => {
             const notAnArray = await api.put(`/api/branches/move-to/${parent.branchId}`, {
                 body: { branchIds: child.branchId }
             });
+            const notAString = await api.put(`/api/branches/move-to/${parent.branchId}`, {
+                body: { branchIds: [ 42 ] }
+            });
 
-            expect([ missingBranch.status, missingTarget.status, notAnArray.status ]).toEqual([ 400, 400, 400 ]);
+            expect([ missingBranch.status, missingTarget.status, notAnArray.status, notAString.status ])
+                .toEqual([ 400, 400, 400, 400 ]);
             expect(getBranchRow(child.branchId)?.isDeleted).toBe(0);
         });
 
@@ -170,6 +176,19 @@ describe("Branches API (core)", () => {
             );
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
+        });
+
+        it("reorders a branch before a sibling that has siblings above it", async () => {
+            const parent = await createTextNote(api, { title: "Reorder of three" });
+            const first = await createTextNote(api, { parentNoteId: parent.noteId, title: "First" });
+            const second = await createTextNote(api, { parentNoteId: parent.noteId, title: "Second" });
+            const third = await createTextNote(api, { parentNoteId: parent.noteId, title: "Third" });
+
+            const res = await api.put(`/api/branches/${third.branchId}/move-before/${second.branchId}`);
+            expect(res.status).toBe(200);
+            expect(becca.getNoteOrThrow(parent.noteId).getChildBranches()
+                .sort((a, b) => a.notePosition - b.notePosition)
+                .map((branch) => branch.branchId)).toEqual([ first.branchId, third.branchId, second.branchId ]);
         });
 
         it("reorders a branch after a sibling", async () => {
@@ -259,6 +278,36 @@ describe("Branches API (core)", () => {
             const collapse = await api.put(`/api/branches/${branchId}/expanded/0`);
             expect(collapse.status).toBe(204);
             expect(getBranchRow(branchId)?.isExpanded).toBe(0);
+        });
+
+        it("announces the change of a known branch only", async () => {
+            const { branchId } = await createTextNote(api, { title: "Announced expansion" });
+            const emit = vi.spyOn(eventService, "emit");
+            const error = vi.spyOn(getLog(), "error");
+
+            try {
+                expect((await api.put("/api/branches/missingBranch123/expanded/1")).status).toBe(204);
+                expect(emit.mock.calls.filter(([ type ]) => type === eventService.ENTITY_CHANGED)).toEqual([]);
+
+                expect((await api.put(`/api/branches/${branchId}/expanded/1`)).status).toBe(204);
+                expect(emit).toHaveBeenCalledWith(eventService.ENTITY_CHANGED, {
+                    entityName: "branches", entity: becca.getBranchOrThrow(branchId)
+                });
+                expect(error).not.toHaveBeenCalled();
+            } finally {
+                emit.mockRestore();
+                error.mockRestore();
+            }
+        });
+
+        it("leaves the root branch alone and expands nothing below an unknown branch", async () => {
+            const root = await api.put("/api/branches/none_root/expanded/0");
+            expect(root.status).toBe(204);
+            expect(getBranchRow("none_root")?.isExpanded).toBe(1);
+
+            const subtree = await api.put<{ branchIds: string[] }>("/api/branches/missingBranch123/expanded-subtree/1");
+            expect(subtree.status).toBe(200);
+            expect(subtree.body.branchIds).toEqual([]);
         });
 
         it("expands every descendant of a subtree, once per branch", async () => {
@@ -408,6 +457,15 @@ describe("Branches API (core)", () => {
             expect(res.body.count).toBe(2);
             expect(getBranchRow(a.branchId)?.prefix).toBe("batch");
             expect(getBranchRow(b.branchId)?.prefix).toBe("batch");
+        });
+
+        it("clears the prefix of a batch when given an empty one", async () => {
+            const a = await createTextNote(api, { title: "Batch clear" });
+            await api.put("/api/branches/set-prefix-batch", { body: { branchIds: [ a.branchId ], prefix: "x" } });
+
+            const res = await api.put("/api/branches/set-prefix-batch", { body: { branchIds: [ a.branchId ], prefix: " " } });
+            expect(res.status).toBe(200);
+            expect(getBranchRow(a.branchId)?.prefix).toBeNull();
         });
 
         it("400s when branchIds is not an array", async () => {

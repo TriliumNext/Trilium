@@ -114,4 +114,14 @@ describe("match_quality", () => {
             expect(q?.matchedTokenCount).toBe(3);
         });
     });
+
+    describe("classifyContentMatch edge cases", () => {
+        it("matches nothing for empty tokens, and ranks repeated words too far apart as single words", () => {
+            expect(classifyContentMatch([ "" ], [ "alpha" ])).toBeNull();
+
+            const filler = Array.from({ length: 15 }, () => "filler");
+            expect(classifyContentMatch([ "alpha", "beta" ], [ "alpha", "alpha", ...filler, "beta" ]))
+                .toEqual({ tier: "exact_word", matchedTokenCount: 2, inOrder: false });
+        });
+    });
 });

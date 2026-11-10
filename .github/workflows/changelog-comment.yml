@@ -1,0 +1,125 @@
+# Posts what a pull_request run of changelog.yml found as a comment on the pull
+# request. This workflow holds a write-capable token: it checks nothing out and
+# runs nothing from the pull request, and reads the artifact as untrusted text.
+name: Changelog comment
+
+on:
+  workflow_run:
+    workflows:
+      - Changelog
+    types: [completed]
+
+permissions:
+  actions: read # Read the artifacts of the run that triggered this one
+  pull-requests: write
+
+jobs:
+  comment:
+    name: Comment on the pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.repository == vars.REPO_MAIN && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled' }}
+    steps:
+      - name: Download the problems
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: changelog-lint
+          path: lint
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A pull request can edit the workflow that writes these files, so the
+      # number it claims is only trusted once the pull request is confirmed to
+      # sit on the commit the run linted.
+      - name: Comment on the pull request
+        uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const read = (path) => {
+              try {
+                return fs.readFileSync(path, 'utf8');
+              } catch {
+                return undefined;
+              }
+            };
+
+            const claimed = Number(read('lint/changelog-pr-number')?.trim());
+            if (!Number.isSafeInteger(claimed) || claimed <= 0) {
+              core.info('The run recorded no pull request number.');
+              return;
+            }
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: claimed
+            });
+            if (pullRequest.head.sha !== process.env.HEAD_SHA) {
+              core.info(`Pull request #${claimed} has moved past ${process.env.HEAD_SHA}.`);
+              return;
+            }
+
+            let problems = [];
+            try {
+              const parsed = JSON.parse(read('lint/changelog-lint.json') ?? '[]');
+              problems = Array.isArray(parsed) ? parsed : [];
+            } catch {
+              problems = [];
+            }
+            // Backticks and line breaks would break out of the list, and an @ would mention someone.
+            const clean = (text) => String(text).replace(/[`\r\n]/g, ' ').replace(/@/g, '@​').slice(0, 400);
+
+            const marker = '<!-- changelog-lint -->';
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: claimed
+            });
+            const existing = comments.find((comment) =>
+              comment.user.type === 'Bot' && comment.body.includes(marker));
+
+            let body;
+            if (process.env.CONCLUSION === 'success') {
+              if (!existing) {
+                return;
+              }
+              body = `${marker}\n✅ The changelog entries are well defined now.`;
+            } else {
+              const list = problems.slice(0, 50)
+                .map(({ file, message }) => `- \`${clean(file)}\`: ${clean(message)}`)
+                .join('\n');
+              const more = problems.length > 50 ? `\n- …and ${problems.length - 50} more` : '';
+              body = [
+                marker,
+                '### Changelog entries need attention',
+                '',
+                list ? list + more : 'The changelog lint failed before it could list the problems.',
+                '',
+                'A fix or an improvement needs an `area` from `AREAS` in `scripts/release-notes.mts`;'
+                  + ' see `.changelog/README.md`, and run `pnpm changelog:lint` to check.',
+                '',
+                `[Workflow run](${process.env.RUN_URL})`
+              ].join('\n');
+            }
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: claimed,
+                body
+              });
+            }

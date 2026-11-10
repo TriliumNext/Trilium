@@ -282,7 +282,7 @@ export async function processContent(images: Image[], note: BNote, content: stri
     const dom = parse(rewrittenContent);
 
     // Get the content inside the body tag and serialize it
-    rewrittenContent = dom.innerHTML ?? "";
+    rewrittenContent = dom.innerHTML;
 
     return rewrittenContent;
 }
@@ -332,8 +332,7 @@ function renderLinkPreview(
         [ "data-site-name", metadata.siteName ],
         [ "data-image", metadata.image ]
     ] as const)
-        .filter(([ , value ]) => value)
-        .map(([ name, value ]) => ` ${name}="${escapeHtml(value ?? "")}"`)
+        .flatMap(([ name, value ]) => value ? [ ` ${name}="${escapeHtml(value)}"` ] : [])
         .join("");
     return `<${tagName} class="${className}"${attributes}></${tagName}>`;
 }

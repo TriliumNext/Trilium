@@ -100,13 +100,6 @@ export default class ServerLogService extends FileBasedLogService {
 
             const filePath = path.join(dataDir.LOG_DIR, file);
 
-            // Security: Verify path stays within LOG_DIR
-            const resolvedPath = path.resolve(filePath);
-            const resolvedLogDir = path.resolve(dataDir.LOG_DIR);
-            if (!resolvedPath.startsWith(resolvedLogDir + path.sep)) {
-                continue;
-            }
-
             try {
                 const stats = await fs.promises.stat(filePath);
                 logFiles.push({ name: file, mtime: stats.mtime });
@@ -119,12 +112,8 @@ export default class ServerLogService extends FileBasedLogService {
     }
 
     protected override async deleteLogFile(fileName: string): Promise<void> {
-        const filePath = path.join(dataDir.LOG_DIR, fileName);
-
-        // Security: Verify path stays within LOG_DIR
-        const resolvedPath = path.resolve(filePath);
-        const resolvedLogDir = path.resolve(dataDir.LOG_DIR);
-        if (!resolvedPath.startsWith(resolvedLogDir + path.sep)) {
+        const filePath = resolveLogFile(dataDir.LOG_DIR, fileName);
+        if (!filePath) {
             return;
         }
 
@@ -183,6 +172,15 @@ const STATUS_STYLES: Record<string, Style> = {
     "4": [ "bold", "yellow" ],
     "5": [ "bold", "red" ]
 };
+
+/** The path of `fileName` inside `logDir`, or `null` when the name resolves anywhere else. */
+export function resolveLogFile(logDir: string, fileName: string): string | null {
+    const filePath = path.join(logDir, fileName);
+    const relative = path.relative(path.resolve(logDir), path.resolve(filePath));
+    const isOutside = relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+    const isInside = relative !== "" && !isOutside;
+    return isInside ? filePath : null;
+}
 
 const HTTP_REQUEST = /^(Slow )?(\d{3}) (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) (\S+)/;
 const SLOW_QUERY = /^(Slow (?:recursive )?query)( took \d+ms)(?:(: )(.+))?/;

@@ -16,7 +16,7 @@ test("displays note settings", async ({ page, context }) => {
     await app.goto();
     await app.goToNoteInNewTab("Sample mindmap");
 
-    await app.currentNoteSplit.locator("me-tpc").filter({ hasText: "Hello world" }).click({ force: true });
+    await app.currentNoteSplit.locator(".me-tpc").filter({ hasText: "Hello world" }).click({ force: true });
     const nodePanel = app.currentNoteSplit.locator(".mind-map-node-panel");
     await expect(nodePanel).toBeVisible();
 });

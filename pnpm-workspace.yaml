@@ -38,12 +38,12 @@ overrides:
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.72"
+  "@ai-sdk/provider-utils": "5.0.75"
   # The Codex provider runs the adapter against the user's own `codex` (CODEX_PATH), so the
   # 300-400 MB native Codex build the adapter depends on is never used.
   "@agentclientprotocol/codex-acp>@openai/codex": "-"
   "zod": "4.6.7"
-  "mermaid": "12.2.0"
+  "mermaid": "12.3.0"
   "preact": "11.1.1"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"

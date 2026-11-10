@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {note, NoteBuilder} from "../test/becca_mocking.js";
 import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
@@ -6,26 +6,84 @@ import BNote from "../becca/entities/bnote.js";
 import tree from "./tree.js";
 import {buildNote} from "../test/becca_easy_mocking.js";
 import { getContext } from "./context.js";
+import noteService from "./notes.js";
+import { getSql } from "./sql/index.js";
 
-vi.mock("./sql.js", () => {
-    return {
-        default: {
-            transactional: (cb: Function) => {
-                cb();
-            },
-            execute: () => {},
-            replace: () => {},
-            getMap: () => {}
+describe("Tree (real DB)", () => {
+    function createNote(parentNoteId: string, title: string, type: "text" | "launcher" = "text") {
+        return getContext().init(() => noteService.createNewNote({
+            parentNoteId, title, content: type === "text" ? "<p></p>" : "", type
+        }));
+    }
+
+    function activeBranchesOf(noteId: string) {
+        return getSql().getRows<{ parentNoteId: string; prefix: string | null }>(
+            "SELECT parentNoteId, prefix FROM branches WHERE noteId = ? AND isDeleted = 0", [ noteId ]);
+    }
+
+    it("rejects a 'none' parent, a virtual parent and a launcher parent", () => {
+        const { note: child } = createNote("root", "tree-child");
+        const { note: launcher } = createNote("root", "tree-launcher", "launcher");
+        const { note: virtualParent } = createNote("root", "tree-virtual");
+        Object.defineProperty(virtualParent, "isVirtual", { value: true });
+
+        expect(tree.validateParentChild("none", child.noteId).message).toContain("'none'");
+        expect(tree.validateParentChild(virtualParent.noteId, child.noteId).message)
+            .toContain("cannot receive children");
+        expect(tree.validateParentChild(launcher.noteId, child.noteId)).toMatchObject({
+            success: false, message: "Launcher note cannot have any children."
+        });
+        expect(tree.validateParentChild("_lbBookmarks", child.noteId).success).toBe(true);
+        // A missing child cannot close a cycle.
+        expect(tree.validateParentChild("root", "missingNote123").success).toBe(true);
+    });
+
+    it("throws when sorting a missing note and ignores it when sorting if needed", () => {
+        expect(() => getContext().init(() => tree.sortNotes("missingNote123"))).toThrow("Unable to find note");
+        expect(() => tree.sortNotesIfNeeded("missingNote123")).not.toThrow();
+    });
+
+    it("setNoteToParent moves, removes and re-prefixes branches", () => {
+        const { note: parentA } = createNote("root", "tree-parent-a");
+        const { note: parentB } = createNote("root", "tree-parent-b");
+        const { note: child } = createNote(parentA.noteId, "tree-moved");
+        getContext().init(() => {
+            const branch = becca.getBranchFromChildAndParent(child.noteId, parentA.noteId);
+            if (!branch) throw new Error("missing branch");
+            branch.prefix = "p";
+            branch.save();
+        });
+
+        // A branch with the prefix moves to the new parent.
+        getContext().init(() => tree.setNoteToParent(child.noteId, "p", parentB.noteId));
+        expect(activeBranchesOf(child.noteId)).toStrictEqual([ { parentNoteId: parentB.noteId, prefix: "p" } ]);
+
+        // An existing branch to the parent gets the new prefix.
+        getContext().init(() => tree.setNoteToParent(child.noteId, "q", parentB.noteId));
+        expect(activeBranchesOf(child.noteId)).toStrictEqual([ { parentNoteId: parentB.noteId, prefix: "q" } ]);
+
+        // Without a branch to the parent, one is created.
+        getContext().init(() => tree.setNoteToParent(child.noteId, "r", parentA.noteId));
+        expect(activeBranchesOf(child.noteId)).toHaveLength(2);
+
+        // An empty parent removes the branch with the prefix; without such a branch nothing happens.
+        getContext().init(() => tree.setNoteToParent(child.noteId, "r", ""));
+        getContext().init(() => tree.setNoteToParent(child.noteId, "none-such", ""));
+        expect(activeBranchesOf(child.noteId)).toStrictEqual([ { parentNoteId: parentB.noteId, prefix: "q" } ]);
+    });
+
+    it("setNoteToParent rejects a missing parent, a missing note and a deleted note", () => {
+        const { note } = createNote("root", "tree-deleted");
+        expect(() => tree.setNoteToParent(note.noteId, "x", "missingNote123")).toThrow("missing parent");
+        expect(() => tree.setNoteToParent("missingNote123", "x", "root")).toThrow("Cannot find note");
+        // The note is still in becca while its deletion is in progress.
+        note.isBeingDeleted = true;
+        try {
+            expect(() => tree.setNoteToParent(note.noteId, "x", "root")).toThrow("which is deleted");
+        } finally {
+            note.isBeingDeleted = false;
         }
-    };
-});
-
-vi.mock("./sql_init.js", () => {
-    const mock = {
-        initializeDb: () => {},
-        dbReady: Promise.resolve()
-    };
-    return { default: mock, ...mock };
+    });
 });
 
 describe("Tree", () => {
@@ -465,5 +523,35 @@ describe("Tree", () => {
         });
         expect(orders[0]).toStrictEqual(orders[1]);
         expect(orders[0].slice(0, 4)).toStrictEqual(["Week 1", "Week 10", "Week 11", "Week 12"]);
+    });
+
+    it("sorts by dateModified, keeps _hidden last and sorts titles with their prefix", () => {
+        const note = buildNote({
+            "children": [
+                { id: "_hidden", title: "a hidden" },
+                { title: "late" },
+                { title: "early" }
+            ],
+            "#sorted": "dateModified"
+        });
+        const [ , late, early ] = note.children;
+        late.dateModified = "2024-02-01 00:00:00.000+0000";
+        early.dateModified = "2024-01-01 00:00:00.000+0000";
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(note.noteId);
+        });
+        expect(note.children.map((child) => child.title)).toStrictEqual([ "early", "late", "a hidden" ]);
+        expect(becca.getBranchFromChildAndParent("_hidden", note.noteId)?.notePosition).toBe(999_999_999);
+
+        const prefixed = buildNote({ "children": [ { title: "a" }, { title: "b" } ], "#sorted": "" });
+        const [ a, b ] = prefixed.children;
+        const branchOfA = becca.getBranchFromChildAndParent(a.noteId, prefixed.noteId);
+        if (branchOfA) {
+            branchOfA.prefix = "z";
+        }
+        getContext().init(() => {
+            tree.sortNotesIfNeeded(prefixed.noteId);
+        });
+        expect(prefixed.children).toStrictEqual([ b, a ]);
     });
 });

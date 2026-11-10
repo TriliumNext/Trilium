@@ -100,4 +100,16 @@ describe("replaceBlockRangeContent", () => {
             + `<ol reversed start="1"><li>1</li></ol>`
         );
     });
+
+    it("keeps a bulleted list unnumbered, around whitespace or text the edit adds", () => {
+        const bullets = `<ul><li><p data-trilium-block-id="a">A</p></li><li><p>B</p></li></ul>`;
+
+        expect(replaceBlockRangeContent(bullets, "a",
+            `\n<ul><li><p data-trilium-block-id="a">New</p></li></ul>\n`)).toBe(
+            `<ul><li><p data-trilium-block-id="a">New</p></li><li><p>B</p></li></ul>`
+        );
+        expect(replaceBlockRangeContent(bullets, "a", "Plain text")).toBe(
+            `Plain text<ul><li><p>B</p></li></ul>`
+        );
+    });
 });

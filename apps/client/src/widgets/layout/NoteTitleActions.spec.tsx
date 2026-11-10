@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
+import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
@@ -17,7 +18,7 @@ vi.mock("../NoteDetail", () => ({
     getExtendedWidgetType: async () => "text",
     checkFullHeight: () => true
 }));
-vi.mock("./NoteTypeSwitcher", () => ({ default: () => null }));
+vi.mock("./NoteTypeSwitcher", () => ({ default: () => <div className="note-type-switcher-stub" /> }));
 vi.mock("./PinnedAttachments", () => ({ default: () => null }));
 
 describe("NoteTitleActions", () => {
@@ -45,5 +46,23 @@ describe("NoteTitleActions", () => {
 
         await act(async () => { await parent.handleEvent("toggleRibbonTabPromotedAttributes", { ntxId: "ntx-split-2" }); });
         expect(expanded()).toBe("true");
+    });
+
+    it("carries the note type switcher with the large title only, the compact one has it in a bar", () => {
+        const noteContext = new NoteContext("ntx-compact");
+        noteContext.viewScope = { viewMode: "default" };
+        const render = () => renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <NoteContextContext.Provider value={noteContext}>
+                    <NoteTitleActions />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        ).querySelector(".title-actions .note-type-switcher-stub");
+
+        options.set("noteTitleStyle", "large");
+        expect(render()).not.toBeNull();
+
+        options.set("noteTitleStyle", "compact");
+        expect(render()).toBeNull();
     });
 });

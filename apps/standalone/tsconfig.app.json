@@ -1,26 +1,24 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "dom",
-      "dom.iterable"
-    ],
-    "skipLibCheck": true,
-    "types": [
-      "vite/client"
-    ],
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "rootDir": "src",
+    "outDir": "out-tsc/app",
+    "tsBuildInfoFile": "out-tsc/app.tsbuildinfo"
   },
-  "include": [
-    "src/**/*",
-    "../client/src/**/*"
-  ],
+  "include": ["src/*.ts", "src/services/capacitor_*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
-    "src/**/*.test.ts",
-    "../client/src/**/*.spec.ts",
-    "../client/src/**/*.test.ts"
+    "src/sw.ts",
+    "src/local-server-worker.ts",
+    "src/test_setup.ts",
+    "src/test_environment_worker.ts"
+  ],
+  "references": [
+    { "path": "../client/tsconfig.app.json" },
+    { "path": "../../packages/commons/tsconfig.lib.json" }
   ]
 }

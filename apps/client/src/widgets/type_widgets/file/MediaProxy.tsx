@@ -6,23 +6,33 @@ import Icon from "../../react/Icon";
 import type { MediaSource } from "./media_source";
 
 /**
- * Stands in for the player in a lazy preview: a play button over the media's icon. No media element exists
- * until it is clicked, which is the point — a collection of media notes would otherwise have every one of
- * them streaming from the server at once, just to show a tile.
+ * Stands in for the player in a lazy preview: a play button over the media's icon, or over the poster of a
+ * video that has one. No media element exists until it is clicked, which is the point — a collection of
+ * media notes would otherwise have every one of them streaming from the server at once, just to show a tile.
  */
 export default function MediaProxy({ source, onActivate }: { source: MediaSource, onActivate: () => void }) {
-    const isVideo = source.mime.startsWith("video/");
+    const isVideo = source.kind === "video";
 
     return (
-        <div className="media-proxy no-link-navigation">
-            {/* Not bx-movie-play: its play glyph would double up with the button in front of it. */}
-            <Icon icon={isVideo ? "bx bx-movie" : "bx bx-music"} className="media-proxy-icon" />
+        <div className={`media-proxy no-link-navigation ${source.poster ? "has-poster" : ""}`}>
+            {source.poster
+                ? <img className="media-proxy-poster" src={source.poster} alt="" draggable={false} />
+                // Not bx-movie-play: its play glyph would double up with the button in front of it.
+                : <Icon icon={isVideo ? "bx bx-movie" : "bx bx-music"} className="media-proxy-icon" />}
             <ActionButton
                 className="media-proxy-play"
                 icon="bx bx-play"
-                text={t("media.activate", { title: source.title })}
+                text={getPlayLabel(source)}
                 onClick={onActivate}
             />
         </div>
     );
+}
+
+/** The label of the play button: the title of a note, or the kind of media on another site. */
+function getPlayLabel(source: MediaSource) {
+    if (source.isExternal) {
+        return source.kind === "video" ? t("link_embed.play_video") : t("link_embed.play_audio");
+    }
+    return t("media.activate", { title: source.title });
 }

@@ -213,6 +213,25 @@ describe("CaptureWindow", () => {
         expect(h.windows[1].destroy).toHaveBeenCalledOnce();
     });
 
+    it("logs failures that are not errors, and leaves a page that closed while finishing", async () => {
+        h.pageCalls["run(captureMicrophone)"] = () => Promise.reject("frame detached");
+        h.windows.length = 0;
+        const capture = new CaptureWindow({ onLost: vi.fn() });
+        expect(await capture.start("port" as never)).toEqual([ "system" ]);
+        expect(h.log.error).toHaveBeenCalledWith(
+            "Transcription: microphone unavailable: frame detached");
+
+        const [ window ] = h.windows;
+        h.pageCalls["finishCapture()"] = () => {
+            window.destroyed = true;
+            return Promise.reject("page gone");
+        };
+        await capture.stop();
+        expect(h.log.error).toHaveBeenCalledWith(
+            "Transcription: finishing the capture failed: page gone");
+        expect(window.destroy).not.toHaveBeenCalled();
+    });
+
     it("closes a page that does not finish in time, and one that is already gone", async () => {
         const { capture, window } = await startCapture();
         h.pageCalls["finishCapture()"] = () => new Promise(() => {});

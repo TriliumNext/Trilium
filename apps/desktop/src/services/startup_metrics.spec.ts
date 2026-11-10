@@ -1,3 +1,4 @@
+import path from "path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (...args: unknown[]) => void;
@@ -31,7 +32,7 @@ vi.mock("fs", () => ({
     }
 }));
 
-const METRICS_PATH = ["/tmp/trilium-data/log", "startup-metrics.log"].join(process.platform === "win32" ? "\\" : "/");
+const METRICS_PATH = path.join("/tmp/trilium-data/log", "startup-metrics.log");
 
 describe("startup metrics", () => {
     let metrics: typeof import("./startup_metrics.js");

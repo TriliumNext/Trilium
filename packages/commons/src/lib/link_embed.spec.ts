@@ -4,6 +4,8 @@ import {
     type BlockChildLike,
     chooseLinkPreviewKind,
     extractYouTubeVideoId,
+    getMediaFileTitle,
+    getMediaFileTypeOfUrl,
     isHttpUrl,
     isLocalPreviewImageSrc,
     isUrlAloneInBlock,
@@ -11,8 +13,50 @@ import {
     safeHostname,
     safeLinkPreviewHref,
     safeLinkPreviewImageSrc,
+    toAspectRatio,
     YOUTUBE_REGEX
 } from "./link_embed.js";
+
+describe("getMediaFileTypeOfUrl", () => {
+    it("names a video or an audio file by the extension of its path, in any case", () => {
+        expect([
+            "https://example.com/a.MP4", "http://nas.local:8096/movies/b.webm?token=x#t=10",
+            "https://example.com/c.mkv", "https://example.com/d.mp3", "https://example.com/e.Opus"
+        ].map(getMediaFileTypeOfUrl)).toEqual([ "video", "video", "video", "audio", "audio" ]);
+    });
+
+    it("names nothing for another extension, a query alone, or no web address", () => {
+        expect([
+            "https://example.com/page.html", "https://example.com/watch?file=a.mp4",
+            "https://example.com/mp4", "ftp://example.com/a.mp4", "not a url"
+        ].map(getMediaFileTypeOfUrl)).toEqual(Array(5).fill(null));
+    });
+});
+
+describe("getMediaFileTitle", () => {
+    it("is the decoded file name, else the host", () => {
+        expect(getMediaFileTitle("https://example.com/music/My%20Song.mp3?x=1")).toBe("My Song.mp3");
+        expect(getMediaFileTitle("https://example.com/")).toBe("example.com");
+        expect(getMediaFileTitle("https://example.com/%E0.mp3")).toBe("example.com");
+    });
+});
+
+describe("toAspectRatio", () => {
+    it("is the simplest ratio that whole-pixel sizes round from", () => {
+        expect([ [ 1920, 1080 ], [ 200, 113 ], [ 1080, 1920 ], [ 640, 480 ], [ 853, 480 ] ]
+            .map(([ width, height ]) => toAspectRatio(width, height)))
+            .toEqual([ "16/9", "16/9", "9/16", "4/3", "16/9" ]);
+        expect([ toAspectRatio(0, 1080), toAspectRatio(1.5, 2), toAspectRatio("16", 9) ])
+            .toEqual([ undefined, undefined, undefined ]);
+    });
+
+    it("is no ratio with a term past four digits, however large the sizes", () => {
+        expect([ toAspectRatio(1, 20000), toAspectRatio(20000, 1) ])
+            .toEqual([ undefined, undefined ]);
+        expect([ toAspectRatio(1, 2 ** 48), toAspectRatio(2 ** 48, 1) ])
+            .toEqual([ undefined, undefined ]);
+    });
+});
 
 describe("extractYouTubeVideoId", () => {
     it("extracts the id from a standard watch URL", () => {
@@ -246,19 +290,19 @@ describe("chooseLinkPreviewKind", () => {
 
     it("gives a URL left alone on its own line a block preview, keyed by the URL", () => {
         // An embeddable URL becomes a player; anything else becomes a card.
-        expect(chooseLinkPreviewKind("youtube", leftAloneOnItsOwnLine)).toBe("embed");
-        expect(chooseLinkPreviewKind("opengraph", leftAloneOnItsOwnLine)).toBe("card");
+        expect(chooseLinkPreviewKind("youtube", leftAloneOnItsOwnLine)).toBe("embedLink");
+        expect(chooseLinkPreviewKind("opengraph", leftAloneOnItsOwnLine)).toBe("cardLink");
     });
 
     it("keeps every other placement inline, embeddable or not", () => {
         for (const embedType of ["youtube", "opengraph"]) {
             // Text either side of it: a block preview cannot go mid-sentence.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, urlAloneInBlock: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, urlAloneInBlock: false })).toBe("iconAndTextLink");
             // Inside a list, table, quote or heading.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, blockIsStandalone: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, blockIsStandalone: false })).toBe("iconAndTextLink");
             // The caret is still in the block, so the user may yet type on that line — the URL has
             // not been *left* alone, it merely happens to be alone right now.
-            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, caretLeftBlock: false })).toBe("mention");
+            expect(chooseLinkPreviewKind(embedType, { ...leftAloneOnItsOwnLine, caretLeftBlock: false })).toBe("iconAndTextLink");
         }
     });
 });

@@ -154,7 +154,7 @@ const fakeBrowserWindowClass = Object.assign(FakeBrowserWindow, {
     }
 });
 
-const fakeShell = { openExternal: vi.fn(() => Promise.resolve()) };
+const fakeShell = { openExternal: vi.fn(() => Promise.resolve()), showItemInFolder: vi.fn() };
 const fakeGlobalShortcut = {
     register: vi.fn((_shortcut: string, _cb: Handler) =>
         (state.registerResults.length ? state.registerResults.shift() : true))
@@ -695,6 +695,36 @@ describe("window service", () => {
         });
     });
 
+    describe("export reveal", () => {
+        it("reveals a completed export download, and leaves other downloads alone", async () => {
+            await windowService.createExtraWindow("#export");
+            const session = state.windows[state.windows.length - 1].webContents.session;
+            const willDownload = session.on.mock.calls.find(([ event ]) => event === "will-download")?.[1] as
+                ((event: unknown, item: unknown) => void) | undefined;
+            expect(willDownload).toBeDefined();
+
+            function download(url: string) {
+                const done: Handler[] = [];
+                const item = {
+                    getURL: () => url,
+                    getSavePath: () => "/downloads/note.html",
+                    once: vi.fn((_event: string, cb: Handler) => { done.push(cb); })
+                };
+                willDownload?.({}, item);
+                return { item, finish: (finalState: string) => { for (const cb of done) cb({}, finalState); } };
+            }
+
+            fakeShell.showItemInFolder.mockClear();
+            download("trilium-app://app/api/branches/abc/export/single/html/1.0/123").finish("cancelled");
+            expect(fakeShell.showItemInFolder).not.toHaveBeenCalled();
+            download("trilium-app://app/api/branches/abc/export/single/html/1.0/123").finish("completed");
+            expect(fakeShell.showItemInFolder).toHaveBeenCalledExactlyOnceWith("/downloads/note.html");
+
+            const attachment = download("trilium-app://app/api/attachments/abc/download");
+            expect(attachment.item.once).not.toHaveBeenCalled();
+        });
+    });
+
     describe("setupSpellcheckForSession WeakSet guard", () => {
         it("loads the session once and skips it on subsequent windows sharing it", async () => {
             state.optionBools = { spellCheckEnabled: true };
@@ -935,6 +965,10 @@ describe("window service", () => {
 
             expect(await fireHandle("read-clipboard-text", makeEvent())).toBe("text");
             expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("<b>html</b>");
+            expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("");
+
+            // An HTML flavour that does not come back as a Blob reads as empty.
+            electronSurface.clipboard.read.mockResolvedValueOnce([ new FakeClipboardItem({ "text/html": "<b>raw</b>" }) ]);
             expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("");
         });
 

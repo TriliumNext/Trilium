@@ -398,7 +398,7 @@ export function registerRoutes(router: BrowserRouter): void {
 }
 
 /** The request as `apiRoute` hands it over: the Express-like wrapper, not the raw {@link BrowserRequest}. */
-function bootstrapRoute(req: { query: Record<string, string | undefined> }): BootstrapDefinition {
+function bootstrapRoute(req: Request): BootstrapDefinition {
     const assetPath = ".";
 
     const isDbInitialized = sql_init.isDbInitialized();

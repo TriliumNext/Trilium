@@ -25,13 +25,20 @@ It asserts all 9 package.jsons match, that the metainfo `<release>` is the versi
 
 ## The recipe (order is load-bearing)
 
+`pnpm chore:release` (`scripts/release.mts`) runs this whole table interactively — lint, version
+suggestion, note draft + `!!!meta.json` registration, consume + commit, bump + commit, pre-flight,
+tag, push, then merging the tag into `stable` from a detached temporary worktree. Each step skips
+what is already done, so rerun it after a failure; `--dry-run` prints instead of mutating. Prefer it
+to the manual steps; they stay documented for debugging and hotfixes.
+
 | # | Step | Command / file | Gotcha |
 |---|------|----------------|--------|
-| 1 | Write release notes | create `docs/Release Notes/Release Notes/v<X.Y.Z>.md` | filename = tag incl. `v`; publish hard-fails without it (`release.yml:155`) |
+| 1 | Write release notes | `pnpm chore:release-notes v<X.Y.Z> --unlisted` drafts `docs/Release Notes/Release Notes/v<X.Y.Z>.md` from closed issues, new languages and `.changelog/` entries; edit it by hand from there | filename = tag incl. `v`; publish hard-fails without it (`release.yml:155`); rerunning needs `--force` and overwrites hand edits |
+| 1b | Consume the entries | `pnpm chore:release-notes consume v<X.Y.Z>` | deletes the listed `.changelog/` entries (an rc/beta moves them to `.changelog/pre-release/` so the final release lists them again); run it once the note is final |
 | 2 | Bump ROOT only | edit `package.json` `version` | do NOT hand-edit the other package.jsons |
 | 3 | Propagate | `pnpm chore:update-version` | rewrites 8 package.jsons from root, and regenerates the metainfo `<releases>` Flathub displays; never the reverse |
 | 4 | Pre-flight | `npx tsx .claude/skills/cutting-a-release/scripts/preflight-release-check.mts v<X.Y.Z>` | catches the 4 files CI never checks, a stale metainfo `<release>` + a missing notes file |
-| 5 | Commit | `chore(release): prepare for v<X.Y.Z>` | stage every changed package.json, the metainfo + the new release-notes md |
+| 5 | Commit | `chore(release): prepare for v<X.Y.Z>` | stage every changed package.json, the metainfo, the new release-notes md + the deleted `.changelog/` entries |
 | 6 | Tag (`v`-prefixed) | `git tag v<X.Y.Z>` | `release.yml` only fires on `v*` |
 | 7 | Push commit + tag | `git push && git push --tags` | |
 | 8 | Watch CI, then download + smoke-test the GitHub release | — | see [references/ci-pipeline.md](references/ci-pipeline.md) to map a red job |
@@ -44,7 +51,7 @@ The upstream doc (`docs/Developer Guide/Developer Guide/Building/Releasing a new
 |---|---|---|
 | npm script | `chore:update-version` (`package.json:38`) | `chore:ci-update-nightly-version` (`package.json:34`) |
 | Use for | **releases — manual, this skill** | CI nightlies only |
-| Invoked by | you | `nightly.yml:75`, `main-docker.yml:163` |
+| Invoked by | you | `nightly.yml:75`, `main-docker.yml:178` |
 | Reads root version? | yes (`update-version.ts:28`) | yes, then mutates it |
 | Writes root? | **no** | **yes** (`update-nightly-version.ts:47`) |
 | Files written | **9**: apps server/client/standalone/desktop/edit-docs + packages commons/pdfjs-viewer/trilium-core, + the Flathub metainfo (`update-version.ts:31,35,44`) | **6**: root + apps server/client/standalone/desktop + pdfjs-viewer (`update-nightly-version.ts:50,55`) |

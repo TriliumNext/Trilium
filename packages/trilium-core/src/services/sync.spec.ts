@@ -1,6 +1,7 @@
 import type { EntityChange, EntityChangeRecord } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import consistencyChecks from "./consistency_checks.js";
 import contentHashService from "./content_hash.js";
@@ -9,12 +10,13 @@ import entityChangesService from "./entity_changes.js";
 import getInstanceId from "./instance_id.js";
 import notes from "./notes.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
 import setupService from "./setup.js";
 import sqlInit from "./sql_init.js";
-import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS } from "./sync.js";
+import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS, serializeSyncRequestBody } from "./sync.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
 import { encodeBase64 } from "./utils/binary.js";
@@ -154,6 +156,49 @@ describe("sync service", () => {
         expect(events.indexOf("fetch:2")).toBeGreaterThan(events.indexOf("apply"));
     });
 
+    it("sizes pull batches for desktop, the standalone build and a mobile blob size limit", async () => {
+        const content = "x".repeat(6 * 1024 * 1024);
+        const platform = getPlatform();
+        const wasStandalone = platform.isStandalone;
+        const realGetOptionOrNull = options.getOptionOrNull.bind(options);
+
+        /** Pulls four 6 MB chunks and returns how many chunks each applied batch held. */
+        async function pullBatchSizes(isStandalone: boolean, maxBlobContentSize: string) {
+            Object.assign(platform, { isStandalone });
+            vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+                name === "syncMaxBlobContentSize" ? maxBlobContentSize : realGetOptionOrNull(name));
+            changedIdx = 0;
+            config.changed = [ 0, 1, 2, 3 ].map((i) => ({
+                entityChanges: [ { entityChange: { entityName: "notes", entityId: `batch${i}` }, entity: { content } } ],
+                lastEntityChangeId: i + 1,
+                outstandingPullCount: 3 - i
+            }));
+            config.changed.push({ entityChanges: [], lastEntityChangeId: 4, outstandingPullCount: 0 });
+            const sizes: number[] = [];
+            let lastWasApply = false;
+            config.onChanged = () => { lastWasApply = false; };
+            vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {
+                if (lastWasApply) {
+                    sizes[sizes.length - 1]++;
+                } else {
+                    sizes.push(1);
+                }
+                lastWasApply = true;
+            });
+
+            try {
+                await expect(runSync()).resolves.toEqual({ success: true });
+            } finally {
+                Object.assign(platform, { isStandalone: wasStandalone });
+            }
+            return sizes;
+        }
+
+        expect(await pullBatchSizes(false, "0")).toEqual([ 4 ]);
+        expect(await pullBatchSizes(true, "0")).toEqual([ 3, 1 ]);
+        expect(await pullBatchSizes(true, "1048576")).toEqual([ 1, 1, 1, 1 ]);
+    });
+
     it("broadcasts pull progress after each applied batch", async () => {
         const prevInitialized = options.getOptionOrNull("initialized");
         cls.init(() => options.setOption("initialized", "true"));
@@ -267,6 +312,111 @@ describe("sync service", () => {
         await runSync();
 
         expect(Number(options.getOption("lastSyncedPull"))).toBe(20);
+    });
+
+    it("abandons a prefetched chunk quietly when applying the current batch fails", async () => {
+        const bigChange = { entityChange: { entityName: "notes", entityId: "pfFail" }, entity: { content: "x".repeat(33 * 1024 * 1024) } };
+        config.changed = [ { entityChanges: [ bigChange ], lastEntityChangeId: 1, outstandingPullCount: 1 } ];
+        const fetched: number[] = [];
+        config.onChanged = (i) => {
+            fetched.push(i);
+            if (i === 1) {
+                throw new Error("prefetch failed");
+            }
+        };
+        vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {
+            throw new Error("apply failed");
+        });
+
+        // Vitest fails the run on an unhandled rejection, which is what the prefetch would cause.
+        await expect(runSync()).resolves.toEqual({ success: false, message: "apply failed" });
+        expect(fetched).toEqual([ 0, 1 ]);
+    });
+
+    it("starts the next pull's progress from a fresh total after a pull fails", async () => {
+        const prevInitialized = options.getOptionOrNull("initialized");
+        cls.init(() => options.setOption("initialized", "true"));
+        const update = vi.spyOn(syncUpdateService, "updateEntities").mockImplementationOnce(() => {
+            throw new Error("apply failed");
+        });
+        const pullSpy = vi.spyOn(ws, "syncPullInProgress");
+
+        try {
+            config.changed = [ { entityChanges: [ pulledOptionChange() ], lastEntityChangeId: 1, outstandingPullCount: 50 } ];
+            await expect(runSync()).resolves.toMatchObject({ success: false, message: "apply failed" });
+            expect(syncService.getTotalPullCount()).toBeNull();
+
+            update.mockImplementation(() => {});
+            changedIdx = 0;
+            config.changed = [
+                { entityChanges: [ pulledOptionChange() ], lastEntityChangeId: 2, outstandingPullCount: 0 },
+                { entityChanges: [], lastEntityChangeId: 2, outstandingPullCount: 0 }
+            ];
+            await expect(runSync()).resolves.toEqual({ success: true });
+        } finally {
+            cls.init(() => options.setOption("initialized", prevInitialized ?? "true"));
+        }
+
+        expect(pullSpy.mock.calls).toEqual([ [ { pulled: 1, total: 1 } ] ]);
+    });
+
+    it("applies nothing from a server that reports no instance id, and keeps an unmoved cursor", async () => {
+        config.login = { instanceId: "", maxEntityChangeId: 100 };
+        config.changed = [
+            { entityChanges: [ { entityChange: ec({ entityName: "blobs", entityId: "bytesBlob" }), entity: { content: Uint8Array.of(1, 2) } } ], lastEntityChangeId: 7, outstandingPullCount: 0 },
+            { entityChanges: [], lastEntityChangeId: 7, outstandingPullCount: 0 }
+        ];
+        cls.init(() => options.setOption("lastSyncedPull", "7"));
+        const update = vi.spyOn(syncUpdateService, "updateEntities");
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+
+        expect(update).not.toHaveBeenCalled();
+        expect(options.getOption("lastSyncedPull")).toBe("7");
+    });
+
+    it("treats a missing blob size option as no limit", async () => {
+        const originalGetOptionOrNull = options.getOptionOrNull;
+        vi.spyOn(options, "getOptionOrNull").mockImplementation((name) => (
+            name === "syncMaxBlobContentSize" ? null : originalGetOptionOrNull(name)
+        ));
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+
+        const pullUrls = requestLog.filter((r) => r.url.includes("/api/sync/changed")).map((r) => r.url);
+        expect(pullUrls.length).toBeGreaterThan(0);
+        expect(pullUrls.every((u) => !u.includes("maxBlobContentSize"))).toBe(true);
+    });
+
+    it("records the sync cursors in the database alone while becca holds no options for them", async () => {
+        const pullOption = becca.options.lastSyncedPull;
+        const pushOption = becca.options.lastSyncedPush;
+        cls.init(() => {
+            options.setOption("lastSyncedPull", "999999");
+            notes.createNewNote({ parentNoteId: "root", title: "sync-cursor-push", content: "<p/>", type: "text" });
+        });
+        config.login = { instanceId: "REMOTE_INSTANCE", maxEntityChangeId: 7 };
+        config.changed = [ { entityChanges: [], lastEntityChangeId: 7, outstandingPullCount: 0 } ];
+        vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
+        const maxId = Number(syncService.getMaxEntityChangeId());
+        delete becca.options.lastSyncedPull;
+        delete becca.options.lastSyncedPush;
+        becca.loaded = false;
+
+        try {
+            await expect(runSync()).resolves.toEqual({ success: true });
+        } finally {
+            becca.loaded = true;
+            becca.options.lastSyncedPull = pullOption;
+            becca.options.lastSyncedPush = pushOption;
+        }
+
+        const stored = (name: string) => getSql().getValue<string>("SELECT value FROM options WHERE name = ?", [ name ]);
+        expect(Number(stored("lastSyncedPull"))).toBe(7);
+        expect(Number(stored("lastSyncedPush"))).toBe(maxId);
+        expect(pullOption.value).toBe("999999");
+        pullOption.value = stored("lastSyncedPull");
+        pushOption.value = stored("lastSyncedPush");
     });
 
     it("appends maxBlobContentSize to pull URLs when the option is set", async () => {
@@ -466,6 +616,20 @@ describe("sync service", () => {
             expect(entityChangesService.addEntityChangesForSector).toHaveBeenCalledWith("notes", "d");
             expect(syncService.getLastSyncError()).toContain("notes/c");
             expect(syncService.getLastSyncError()).not.toContain("notes/d");
+        });
+
+        it("reports a sector it gave up on once, while another sector is still being repaired", async () => {
+            // 'notes/e' starts diverging a round before 'notes/f', so it runs out of attempts first
+            // and keeps failing in the round that gives up on 'notes/f'.
+            vi.mocked(contentHashService.checkContentHashes)
+                .mockReturnValueOnce([ { entityName: "notes", sector: "e" } ])
+                .mockReturnValue([ { entityName: "notes", sector: "e" }, { entityName: "notes", sector: "f" } ]);
+            vi.spyOn(ws, "syncHashCheckFailed").mockImplementation(() => {});
+
+            await expect(runSync()).resolves.toMatchObject({ success: false, errorCode: "CONTENT_HASH_MISMATCH" });
+
+            expect(syncService.getLastSyncError()).toContain("notes/e, notes/f ");
+            expect(contentHashService.checkContentHashes).toHaveBeenCalledTimes(MAX_SECTOR_RESYNC_ATTEMPTS + 1);
         });
 
         it("stops a sync run that never converges instead of looping forever", async () => {
@@ -730,12 +894,75 @@ describe("estimateEntityChangeRecordSize", () => {
     });
 });
 
+describe("serializeSyncRequestBody", () => {
+    // Electron 45.2.3 aborts the process when `JSON.stringify` output reaches 268,173,323 characters.
+    const ELECTRON_STRINGIFY_LIMIT = 268_173_259;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps each JSON.stringify input under Electron's limit for a blob above it", () => {
+        const content = "A".repeat(ELECTRON_STRINGIFY_LIMIT + 1);
+        const blobRecord = (blobContent: string) => ({
+            entityChange: ec({ entityName: "blobs", entityId: "largeBlob" }),
+            entity: { blobId: "largeBlob", content: blobContent }
+        });
+        const stringify = JSON.stringify;
+        const expectedLength = stringify({ entities: [ blobRecord("") ], instanceId: "desktop" }).length + content.length;
+
+        vi.spyOn(JSON, "stringify").mockImplementation((...args: Parameters<typeof JSON.stringify>) => {
+            const inputLength = measureStrings(args[0]);
+            if (inputLength > ELECTRON_STRINGIFY_LIMIT) {
+                throw new Error(`Electron aborts the process on JSON.stringify of ${inputLength} characters`);
+            }
+            return stringify(...args);
+        });
+
+        const body = serializeSyncRequestBody({ entities: [ blobRecord(content) ], instanceId: "desktop" });
+
+        expect(body.length).toBe(expectedLength);
+    });
+
+    it("produces the same JSON as JSON.stringify", () => {
+        const base64 = "QUJD+/9=".repeat(256 * 1024);
+        const body = {
+            entities: [
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "a", content: base64 } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "b", content: `${base64}"\n\\` } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "c", content: base64.slice(1) } },
+                { entityChange: ec({ isErased: true }), entity: { content: null, missing: undefined } },
+                { entityChange: ec({}), entity: { title: "short \"quoted\"", list: [ 1, undefined, base64 ] } }
+            ],
+            instanceId: "desktop"
+        };
+
+        expect(serializeSyncRequestBody(body)).toBe(JSON.stringify(body));
+        expect(serializeSyncRequestBody(undefined)).toBe("");
+    });
+});
+
 function pulledOptionChange(): { entityChange: EntityChange; entity: undefined } {
     // An options change with no entity row -> applied as a no-op by updateEntities.
     return {
         entityChange: ec({ entityName: "options", entityId: "sync_spec_noop_opt" }),
         entity: undefined
     };
+}
+
+/** Sums the lengths of every string in `value`, keys included: a lower bound on its JSON length. */
+function measureStrings(value: unknown): number {
+    if (typeof value === "string") {
+        return value.length;
+    }
+    if (value === null || typeof value !== "object") {
+        return 0;
+    }
+    let length = 0;
+    for (const [ key, child ] of Object.entries(value)) {
+        length += key.length + measureStrings(child);
+    }
+    return length;
 }
 
 function ec(overrides: Partial<EntityChange>): EntityChange {

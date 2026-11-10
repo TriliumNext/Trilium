@@ -1,10 +1,14 @@
 // Side-effect import: declares the `math` key on EditorConfig used by the editor config below.
 import './math.js';
 
-import { ClassicEditor, Bold, Paragraph, Typing, _getModelData as getData, _setModelData as setData } from 'ckeditor5';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+	BalloonPanelView, ClassicEditor, Bold, ContextualBalloon, Paragraph, Typing,
+	_getModelData as getData, _setModelData as setData
+} from 'ckeditor5';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 
 import Math from './math.js';
+import MathUI from './math_ui.js';
 import { getBalloonPositionData } from './utils.js';
 
 const INLINE = 'mathtex-inline';
@@ -149,13 +153,23 @@ describe( 'getBalloonPositionData', () => {
 		await editor.destroy();
 	} );
 
+	const { defaultPositions } = BalloonPanelView;
+	const belowThenAbove = [
+		defaultPositions.southArrowNorth,
+		defaultPositions.southArrowNorthWest,
+		defaultPositions.southArrowNorthEast,
+		defaultPositions.northArrowSouth,
+		defaultPositions.northArrowSouthWest,
+		defaultPositions.northArrowSouthEast
+	];
+
 	it( 'targets the DOM element of a selected equation widget', () => {
 		setData( editor.model, `<paragraph>[<${ INLINE } equation="x^2" type="script" display="false"></${ INLINE }>]</paragraph>` );
 
 		const { target, positions } = getBalloonPositionData( editor );
 
 		expect( target ).toBeInstanceOf( HTMLElement );
-		expect( positions ).toHaveLength( 3 );
+		expect( positions ).toEqual( belowThenAbove );
 	} );
 
 	it( 'targets the selection range when no widget is selected', () => {
@@ -164,7 +178,23 @@ describe( 'getBalloonPositionData', () => {
 		const { target, positions } = getBalloonPositionData( editor );
 
 		expect( target ).toBeInstanceOf( Range );
-		expect( positions ).toHaveLength( 3 );
+		expect( positions ).toEqual( belowThenAbove );
+	} );
+
+	it( 'opens the form above the equation only when it does not fit below', () => {
+		onTestFinished( () => document.body.style.removeProperty( 'padding-top' ) );
+		const balloon = editor.plugins.get( ContextualBalloon );
+		setData(
+			editor.model,
+			`<paragraph>[<${ INLINE } equation="x^2" type="script" display="false"></${ INLINE }>]</paragraph>`
+		);
+
+		editor.plugins.get( MathUI )._showUI();
+		expect( balloon.view.position ).toMatch( /^arrow_n/ );
+
+		document.body.style.paddingTop = `${ window.innerHeight - 150 }px`;
+		balloon.updatePosition();
+		expect( balloon.view.position ).toMatch( /^arrow_s/ );
 	} );
 
 	it( 'throws when the view selection has no range at all', () => {

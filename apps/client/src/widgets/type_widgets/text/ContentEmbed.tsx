@@ -16,7 +16,8 @@ import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoItems from "../../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
-import { HtmlFindTarget } from "../../find_in_html";
+import { HtmlNoteFindTarget } from "../../find_in_html";
+import MergedFind from "../../merged_find";
 import ScrollableLabel from "../../react/ScrollableLabel";
 import {
     DISPLAY_MODE_OPTIONS, type DisplayMode, resolveDisplayMode
@@ -49,8 +50,8 @@ export interface ContentEmbedProps {
     notePath?: string;
     viewScope?: ViewScope;
     /**
-     * Opens the menu of the title row of content that shows no note, such as a video. Without it,
-     * that title row has no menu.
+     * Opens the menu of the title row of content that shows no note, such as a video, and of the
+     * content itself for the types in `MENU_CONTENT_TYPES`. Without it, the embed has no menu.
      */
     openMenu?: (origin: LinkMenuOrigin) => void;
     /** Whether the embed shows only some blocks of its note, from a block reference. */
@@ -59,7 +60,7 @@ export interface ContentEmbedProps {
     isFocusedOnMount?: boolean;
 }
 
-export interface TinyContentEmbedProps {
+export interface CompactContentEmbedProps {
     icon: string;
     /** The link to the embedded note or attachment, shown as the title. */
     title: HTMLElement;
@@ -92,8 +93,9 @@ export default function ContentEmbed({
     const hasBackdrop = !isContentActive && !isDraggedOver
         && !DIRECT_CONTENT_TYPES.has(contentType);
     const hasFullscreen = !isExcerpt && !OWN_FULLSCREEN_CONTENT_TYPES.has(contentType)
-        && (boxSize === "medium" || boxSize === "full");
+        && (boxSize === "resizable" || boxSize === "full");
     const openTitleMenu = notePath ? getNoteMenu(notePath, viewScope) : openMenu;
+    const openContentMenu = MENU_CONTENT_TYPES.has(contentType) ? openMenu : undefined;
     const toggleExpanded = () => {
         setIsExpanded(!isOpen);
         setIsRevealed(false);
@@ -110,7 +112,7 @@ export default function ContentEmbed({
     // While an editor in the content is open, the target of the editor searches instead.
     useEffect(() => {
         if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return;
-        return registerEmbedFindTarget(content, new HtmlFindTarget(content));
+        return registerEmbedFindTarget(content, new MergedFind(new HtmlNoteFindTarget(content)));
     }, [ content, contentType ]);
 
     // The stylesheet hides the corner resize handle of an embed that the text editor marks.
@@ -192,13 +194,19 @@ export default function ContentEmbed({
             </div>}
             <div
                 ref={bodyRef}
-                className={clsx("include-note-body", isContentActive && "active")}
+                className={clsx(
+                    "include-note-body",
+                    boxSize === "compact" && "compact-content",
+                    isContentActive && "active"
+                )}
             >
                 <div
                     ref={contentRef}
                     className={`include-note-content type-${contentType}`}
                     hidden={isExpandable && !isOpen}
                     tabIndex={-1}
+                    onContextMenu={openContentMenu
+                        && ((e) => openEmbedMenuOnRightClick(e, openContentMenu))}
                 >
                     {hasFullscreen && (
                         <div className="include-note-fullscreen-controls">
@@ -226,8 +234,13 @@ export default function ContentEmbed({
                         onClick={(e) => {
                             const content = contentRef.current;
                             if (!content) return;
-                            getFocusTargetAt(content, e.clientX, e.clientY)
-                                .focus({ preventScroll: true });
+                            const target = getFocusTargetAt(content, e.clientX, e.clientY);
+                            target.focus({ preventScroll: true });
+                            // A button acts on the click that activates the box; a link only
+                            // takes the focus.
+                            if (target instanceof HTMLButtonElement) {
+                                target.click();
+                            }
                         }}
                     />
                 )}
@@ -236,14 +249,17 @@ export default function ContentEmbed({
     );
 }
 
-/** A tiny embed: a single row with an icon, the title and the actions, and no content. */
-export function TinyContentEmbed({
+/**
+ * A Compact embed of content that Compact does not render: a single row with an icon, the title
+ * and the actions.
+ */
+export function CompactContentEmbed({
     icon, title, description, notePath, viewScope, actions
-}: TinyContentEmbedProps) {
+}: CompactContentEmbedProps) {
     const openMenu = getNoteMenu(notePath, viewScope);
     return (
         <div
-            className="include-note-title-row"
+            className="include-note-title-row title-only"
             onContextMenu={(e) => openMenuOnRightClick(e, openMenu)}
         >
             <Icon className="include-note-icon" icon={icon} />
@@ -271,21 +287,20 @@ interface ContentEmbedErrorProps {
 
 /**
  * The box of an embed that cannot show its content, such as a missing note or an embed of an
- * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Tiny and
- * Expandable boxes, which show only a row.
+ * unknown kind: `text` in a placeholder at the height of the box size, or a small one in Compact
+ * and Expandable boxes, which show only a row.
  */
 export function ContentEmbedError({ boxSize, icon, text }: ContentEmbedErrorProps) {
-    const hasBoxHeight = boxSize !== "tiny" && boxSize !== "expandable";
-    const isRoomy = hasBoxHeight && boxSize !== "small";
+    const hasBoxHeight = boxSize !== "compact" && boxSize !== "expandable";
 
     return (
         <div className={clsx("include-note-error", hasBoxHeight && "include-note-box-height")}>
-            <NoItems icon={icon} text={text} size={isRoomy ? "normal" : "small"} />
+            <NoItems icon={icon} text={text} size={hasBoxHeight ? "normal" : "small"} />
         </div>
     );
 }
 
-/** The buttons of a tiny embed of a note: "Quick edit" and "Open in new tab". */
+/** The buttons of a Compact embed of a note: "Quick edit" and "Open in new tab". */
 export function getNoteActions(notePath: string): ContentEmbedAction[] {
     return [
         {
@@ -492,10 +507,13 @@ const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
 const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
 
 /** The content types that take the first click themselves, with no backdrop over them. */
-const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock", "videoEmbed" ]);
+const DIRECT_CONTENT_TYPES = new Set([ "extendedCodeBlock", "mediaEmbed" ]);
 
 /** The content types with a fullscreen control of their own, such as a video player. */
-const OWN_FULLSCREEN_CONTENT_TYPES = new Set([ "videoEmbed" ]);
+const OWN_FULLSCREEN_CONTENT_TYPES = new Set([ "mediaEmbed" ]);
+
+/** The content types whose right click opens the menu of the embed, having no menu of their own. */
+const MENU_CONTENT_TYPES = new Set([ "mediaEmbed" ]);
 
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that
@@ -659,6 +677,21 @@ function openMenuOnRightClick(
     e.preventDefault();
     e.stopPropagation();
     openMenu(e);
+}
+
+/**
+ * Opens `openMenu` at the pointer for a right click on the content of the embed. The menu reads
+ * the embed from its origin, so the origin targets the `.include-note` around the content.
+ */
+function openEmbedMenuOnRightClick(e: MouseEvent, openMenu: (origin: LinkMenuOrigin) => void) {
+    const embed = e.currentTarget instanceof Element
+        ? e.currentTarget.closest(".include-note")
+        : null;
+    if (!embed) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    openMenu({ pageX: e.pageX, pageY: e.pageY, target: embed });
 }
 
 function MoreActionsButton({ openMenu }: { openMenu: (origin: LinkMenuOrigin) => void }) {

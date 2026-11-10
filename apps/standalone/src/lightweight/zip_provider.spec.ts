@@ -6,12 +6,12 @@ import BrowserZipProvider from "./zip_provider.js";
 
 const provider = new BrowserZipProvider();
 
-function makeZip(files: Record<string, string>): Uint8Array {
+function makeZip(files: Record<string, string>): Uint8Array<ArrayBuffer> {
     const entries: Record<string, Uint8Array> = {};
     for (const [name, content] of Object.entries(files)) {
         entries[name] = strToU8(content);
     }
-    return zipSync(entries);
+    return new Uint8Array(zipSync(entries));
 }
 
 async function readAll(source: ZipSource, encoding?: string): Promise<Record<string, string>> {
@@ -36,7 +36,7 @@ async function readNames(buffer: Uint8Array, encoding?: string): Promise<string[
  * offset stays valid (the file name is not covered by the CRC or the recorded sizes). An entry given no
  * `nameBytes` is left exactly as fflate wrote it, so one archive can mix both conventions.
  */
-function makeLegacyZip(entries: { placeholder: string; nameBytes?: number[] }[]): Uint8Array {
+function makeLegacyZip(entries: { placeholder: string; nameBytes?: number[] }[]): Uint8Array<ArrayBuffer> {
     const zip = zipSync(Object.fromEntries(entries.map(({ placeholder }) => [placeholder, strToU8("x")])));
     const byPlaceholder = new Map(
         entries.flatMap((e) => (e.nameBytes ? [[e.placeholder, e.nameBytes] as const] : []))
@@ -247,8 +247,9 @@ describe("BrowserZipProvider.detectFilenameEncoding", () => {
             return new RealTextDecoder(label, opts);
         } as unknown as typeof TextDecoder;
         try {
-            const zip = makeZip({ [String.fromCharCode(0xfe)]: "x" });
-            expect(await provider.detectFilenameEncoding(zip)).toBe("utf-8");
+            // Without the stub these bytes detect as GBK; skipping it moves on to the next candidate.
+            const zip = makeLegacyZip([{ placeholder: "AB.txt", nameBytes: GBK_NAME_BYTES }]);
+            expect(await provider.detectFilenameEncoding(zip)).toBe("shift_jis");
         } finally {
             globalThis.TextDecoder = RealTextDecoder;
         }
@@ -446,7 +447,7 @@ function patchCentralHeader(zip: Uint8Array, patch: (view: DataView, offset: num
  * saturated, and the real values sit in the entry's ZIP64 extra field and the ZIP64 end record.
  * The archive comment is `commentLength` spaces.
  */
-function makeZip64(name: string, content: string, commentLength = 0): Uint8Array {
+function makeZip64(name: string, content: string, commentLength = 0): Uint8Array<ArrayBuffer> {
     const nameBytes = strToU8(name);
     const data = strToU8(content);
     const SATURATED = 0xffffffff;

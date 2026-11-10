@@ -258,7 +258,7 @@ async function scrollToAnnotation(annotationId: string | undefined, pageNumber: 
     const app = window.PDFViewerApplication;
     if (!app) return;
 
-    const rect = annotationId ? await findAnnotationRect(annotationId, pageNumber) : null;
+    const rect = annotationId ? await findAnnotationRect(app, annotationId, pageNumber) : null;
     // In single-page scroll mode the viewer holds only the current page's element, so the page
     // is turned to before its element is measured.
     app.pdfViewer.currentPageNumber = pageNumber;
@@ -287,10 +287,11 @@ async function scrollToAnnotation(annotationId: string | undefined, pageNumber: 
  * An annotation edited in this session is read from `annotationStorage`, which holds where it is
  * now and is keyed by the editor's id, with `id` naming the document annotation it edits.
  */
-async function findAnnotationRect(annotationId: string, pageNumber: number): Promise<number[] | null> {
-    const app = window.PDFViewerApplication;
-    if (!app) return null;
-
+async function findAnnotationRect(
+    app: NonNullable<Window["PDFViewerApplication"]>,
+    annotationId: string,
+    pageNumber: number
+): Promise<number[] | null> {
     const storage: any = app.pdfDocument.annotationStorage;
     for (const [ id, serialized ] of storage?.serializable?.map ?? []) {
         if (id === annotationId || serialized.id === annotationId) {

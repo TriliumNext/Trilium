@@ -244,6 +244,16 @@ describe("bootstrap", () => {
         await vi.waitFor(() => expect(stuck.unregister).toHaveBeenCalled());
         expect(reloadSpy).not.toHaveBeenCalled();
 
+        // Where the WebView has no service worker support at all, there is nothing to remove.
+        setServiceWorker(undefined);
+        mocks.installNativeRequestBridge.mockClear();
+        await runBootstrap();
+        await vi.waitFor(() => expect(mocks.installNativeRequestBridge).toHaveBeenCalled());
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(console.warn).not.toHaveBeenCalled();
+        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(document.body.innerHTML).toBe("");
+
         // Where the registrations cannot be listed (WebKit on capacitor://), startup carries on.
         setServiceWorker({
             controller: null, register: vi.fn(), ready: Promise.resolve(),

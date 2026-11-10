@@ -21,7 +21,7 @@ export type HighlightName = keyof typeof PRIORITIES;
 export const HIGHLIGHT_ROOT_ATTRIBUTE = "data-highlight-root";
 
 export interface MatchOptions {
-    /** Selectors of the elements whose own text is not searched. */
+    /** Selectors of the elements under the root whose subtree is not searched. */
     exclude?: string[];
     /** The maximum number of matches to return. */
     limit?: number;
@@ -94,12 +94,23 @@ export function removeHighlights(name: HighlightName, ranges: Iterable<Range>) {
  * a code block taller than the view.
  */
 export function scrollRangeIntoView(range: Range) {
-    for (let element = range.startContainer.parentElement; element; element = element.parentElement) {
-        if (!isScrollable(element)) continue;
+    scrollRectIntoView(range.startContainer.parentElement, () => range.getBoundingClientRect());
+}
 
-        const target = range.getBoundingClientRect();
-        const box = element.getBoundingClientRect();
-        element.scrollBy({
+/**
+ * Scrolls `element` and its ancestors that scroll, innermost first, so that the rectangle that
+ * `getRect()` returns in client coordinates sits in the middle of each.
+ */
+export function scrollRectIntoView(
+    element: Element | null,
+    getRect: () => Pick<DOMRectReadOnly, "left" | "top" | "width" | "height">
+) {
+    for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+        if (!isScrollable(ancestor)) continue;
+
+        const target = getRect();
+        const box = ancestor.getBoundingClientRect();
+        ancestor.scrollBy({
             left: target.left + target.width / 2 - (box.left + box.width / 2),
             top: target.top + target.height / 2 - (box.top + box.height / 2)
         });
@@ -139,10 +150,14 @@ function findRanges(root: HTMLElement, options: MatchOptions, getOffsets: (text:
 }
 
 function getTextNodes(root: HTMLElement, excluded: string) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => node.parentElement?.matches(excluded)
-            ? NodeFilter.FILTER_REJECT
-            : NodeFilter.FILTER_ACCEPT
+    // A rejected element skips its subtree. The walker never visits `root` or its ancestors.
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+            if (!(node instanceof Element)) {
+                return NodeFilter.FILTER_ACCEPT;
+            }
+            return node.matches(excluded) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+        }
     });
 
     const nodes: Text[] = [];

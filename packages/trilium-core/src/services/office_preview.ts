@@ -2,6 +2,7 @@ import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS } from "@triliumnext/commons";
 
 import { ValidationError } from "../errors.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
+import { getZipProvider } from "./zip_provider.js";
 
 /**
  * Conversion is CPU-bound and runs on the main thread (or the standalone service worker),
@@ -43,12 +44,14 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
         throw new ValidationError(`Office document is too large to preview (${buffer.byteLength} bytes).`);
     }
 
-    if (mime === XLSX_MIME) {
+    // A file labeled as a workbook without being one (a DOCX, say) opens in exceljs as an
+    // empty workbook, so only a package holding `xl/workbook.xml` takes the spreadsheet
+    // pipeline. Anything else, or a workbook exceljs fails to parse, goes to officeparser.
+    if (mime === XLSX_MIME && await isSpreadsheetPackage(buffer)) {
         try {
             return await convertXlsxToHtml(buffer, options);
         } catch {
-            // Not a workbook exceljs can read (e.g. a mislabeled or exotic file) —
-            // fall through and let officeparser have a go at it.
+            // Fall through to officeparser.
         }
     }
 
@@ -74,6 +77,22 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
     // fallback arm is unreachable unless the library breaks its own contract.
     /* v8 ignore next */
     return typeof value === "string" ? value : "";
+}
+
+/**
+ * Reports whether `buffer` is a zip holding `xl/workbook.xml`, the part exceljs reads a
+ * workbook from. Only the central directory is read; no entry is decompressed.
+ */
+async function isSpreadsheetPackage(buffer: Uint8Array): Promise<boolean> {
+    let hasWorkbook = false;
+    try {
+        await getZipProvider().readZipFile(buffer, async ({ fileName }) => {
+            hasWorkbook ||= fileName === "xl/workbook.xml";
+        });
+    } catch {
+        return false;
+    }
+    return hasWorkbook;
 }
 
 /**

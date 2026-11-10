@@ -1,4 +1,5 @@
 import becca from "../../../becca/becca.js";
+import { saveLinks } from "../../../services/notes.js";
 import * as becca_easy_mocking from "../../../test/becca_easy_mocking.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +12,11 @@ const findResultsMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../../services/notes.js", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../../services/notes.js")>();
-    return { ...actual, default: { createNewNote: vi.fn() } };
+    return {
+        ...actual,
+        default: { createNewNote: vi.fn() },
+        saveLinks: vi.fn((_note: unknown, content: string | Uint8Array) => ({ forceFrontendReload: false, content }))
+    };
 });
 
 vi.mock("../../../services/search/services/search.js", async (importOriginal) => {
@@ -58,6 +63,17 @@ describe("note_tools — write tools return post-write content", () => {
                 title: note.title,
                 content: "new code"
             });
+        });
+
+        it("stores the content as link scanning rewrote it", () => {
+            const note = buildNote({ id: "code2", type: "code", mime: "text/plain", content: "old" });
+            withMutableContent(note, "old");
+            vi.mocked(saveLinks).mockReturnValueOnce({ forceFrontendReload: true, content: "rewritten" });
+
+            const result = getTool("set_note_content").execute({ noteId: "code2", content: "new code" });
+
+            expect(note.setContent).toHaveBeenLastCalledWith("rewritten", { forceFrontendReload: true });
+            expect(result).toMatchObject({ success: true, content: "rewritten" });
         });
 
         it("returns Markdown for text notes (HTML round-trip)", () => {

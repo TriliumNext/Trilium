@@ -19,7 +19,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -72,11 +72,13 @@ jobs:
         # win-signing runner exits 0 without running anything, so the steps below have to
         # reach it through the same shell the build uses.
         shell: ${{ matrix.os.shell }}
+    env:
+      PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN: "false"
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -142,12 +144,39 @@ jobs:
           name: release-server-linux-${{ matrix.arch }}
           path: upload/*.*
 
+  build_docker:
+    name: Build Docker images
+    needs:
+      - sanity-check
+    uses: ./.github/workflows/main-docker.yml
+    with:
+      release: true
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+  publish_docker:
+    name: Publish Docker images
+    needs:
+      - make-electron
+      - build_server
+      - build_docker
+    uses: ./.github/workflows/docker-publish.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+
   publish_release:
     name: Publish release
     runs-on: ubuntu-latest
     needs:
       - make-electron
       - build_server
+      - publish_docker
     steps:
       - run: mkdir upload
 

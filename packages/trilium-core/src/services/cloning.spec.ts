@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
 import type BBranch from "../becca/entities/bbranch.js";
@@ -376,6 +376,41 @@ describe("cloning service (real DB)", () => {
             // Already under the parent, which validateParentChild() rejects.
             const res = cloningService.cloneNoteBefore(existing.note.noteId, branchIdOf(existing));
             expect(res.success).toBe(false);
+        });
+    });
+
+    describe("edge cases", () => {
+        it("fails when the parent id names an Object.prototype key that is not a note", () => {
+            const { note } = createNote("root");
+
+            expect(cloningService.cloneNoteToParentNote(note.noteId, "toString").message)
+                .toContain("parent note could not be found");
+            expect(cloningService.ensureNoteIsPresentInParent(note.noteId, "toString").message)
+                .toBe("Can't find parent note.");
+        });
+
+        it("ensureNoteIsPresentInParent propagates a validation failure", () => {
+            const { note } = createNote("root");
+
+            const res = cloningService.ensureNoteIsPresentInParent(note.noteId, note.noteId);
+            expect(res).toMatchObject({ success: false, message: "Moving/cloning note here would create cycle." });
+        });
+
+        it("refuses to clone next to the hidden branch or a branch without a live note or parent", () => {
+            const { note, branch } = createNote("root");
+            const hiddenBranch = becca.getBranchFromChildAndParent("_hidden", "root");
+            if (!hiddenBranch) throw new Error("missing hidden branch");
+
+            expect(cloningService.cloneNoteAfter(note.noteId, hiddenBranch.branchId ?? "").message)
+                .toContain("hidden branch");
+            expect(cloningService.cloneNoteAfter("missingNote123", branch.branchId ?? "").message)
+                .toContain("'missingNote123' is deleted");
+            expect(cloningService.cloneNoteAfter(note.noteId, "none_root").message)
+                .toContain("Parent note 'none'");
+
+            vi.spyOn(becca, "getNote").mockReturnValueOnce(null);
+            expect(cloningService.cloneNoteAfter(note.noteId, branch.branchId ?? "").message)
+                .toBe("Can't clone into a search note");
         });
     });
 });

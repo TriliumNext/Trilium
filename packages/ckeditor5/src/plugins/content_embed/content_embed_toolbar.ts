@@ -1,4 +1,4 @@
-import { VIDEO_EMBED_CLASS } from "@triliumnext/commons";
+import { MEDIA_EMBED_CLASS } from "@triliumnext/commons";
 import {
     BalloonPanelView, isWidget, Plugin, type PositioningFunction, type ViewDocumentSelection,
     type ViewElement, WidgetToolbarRepository
@@ -9,15 +9,13 @@ import {
 } from "../link_embed/link_embed_toolbar.js";
 import type { ResizeAnchor } from "../resizable_widgets/resizable_widgets.js";
 import ContentEmbed, {
-    CONVERT_EMBED_TO_LINK_COMMAND,
     CONTENT_EMBED_MENU,
     CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     DISPLAY_MODE_BUTTONS,
     DISPLAY_MODES,
     getEmbedAnchor,
     TOGGLE_CAPTION_COMMAND_NAME,
-    TOGGLE_EDITABLE_COMMAND_NAME,
-    TOGGLE_TITLE_COMMAND_NAME
+    TOGGLE_EDITABLE_COMMAND_NAME
 } from "./content_embed.js";
 import ContentEmbedBoxSizeDropdown, {
     CONTENT_EMBED_BOX_SIZE_DROPDOWN
@@ -43,17 +41,17 @@ export default class ContentEmbedToolbar extends Plugin {
         const widgetToolbarRepository = editor.plugins.get(WidgetToolbarRepository);
         const getAnchor = () => {
             const selection = editor.editing.view.document.selection;
-            const embed = findRelatedEmbed(selection) ?? findRelatedVideo(selection);
+            const embed = findRelatedEmbed(selection) ?? findRelatedMedia(selection);
             const modelEmbed = embed && editor.editing.mapper.toModelElement(embed);
             return modelEmbed ? getEmbedAnchor(modelEmbed) : "center";
         };
 
-        // A video has the copy and display items of a link preview, and the menu of an embed.
-        widgetToolbarRepository.register("videoEmbed", {
+        // Media has the copy and display items of a link preview, and the menu of an embed.
+        widgetToolbarRepository.register("mediaEmbed", {
             items: [ "linkEmbedCopyUrl", "|", "linkEmbedDisplayDropdown", CONTENT_EMBED_MENU ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",
             positions: getToolbarPositions(getAnchor),
-            getRelatedElement: findRelatedVideo
+            getRelatedElement: findRelatedMedia
         });
 
         widgetToolbarRepository.register("contentEmbed", {
@@ -63,11 +61,9 @@ export default class ContentEmbedToolbar extends Plugin {
                 ...DISPLAY_MODES.map((mode) => DISPLAY_MODE_BUTTONS[mode]),
                 CONTENT_EMBED_TOOLS,
                 EXTENDED_CODE_BLOCK_COPY_BUTTON,
+                TOGGLE_CAPTION_COMMAND_NAME,
                 CONTENT_EMBED_BOX_SIZE_DROPDOWN,
                 CONTENT_EMBED_POSITION_DROPDOWN,
-                TOGGLE_TITLE_COMMAND_NAME,
-                TOGGLE_CAPTION_COMMAND_NAME,
-                CONVERT_EMBED_TO_LINK_COMMAND,
                 CONTENT_EMBED_MENU
             ],
             balloonClassName: "ck-toolbar-container include-note-toolbar",
@@ -83,9 +79,9 @@ function findRelatedEmbed(selection: ViewDocumentSelection) {
     return findRelatedWidget(selection, isContentEmbedWidget);
 }
 
-/** The video embed that the selection is on or in the caption of, with a toolbar of its own. */
-function findRelatedVideo(selection: ViewDocumentSelection) {
-    return findRelatedWidget(selection, isVideoEmbedWidget);
+/** The media embed that the selection is on or in the caption of, with a toolbar of its own. */
+function findRelatedMedia(selection: ViewDocumentSelection) {
+    return findRelatedWidget(selection, isMediaEmbedWidget);
 }
 
 /** The widget that `matches()` and that `selection` is on or inside, or `null`. */
@@ -109,11 +105,11 @@ function findRelatedWidget(
 
 function isContentEmbedWidget(element: ViewElement): boolean {
     return isWidget(element) && element.hasClass("include-note")
-        && !element.hasClass(VIDEO_EMBED_CLASS);
+        && !element.hasClass(MEDIA_EMBED_CLASS);
 }
 
-function isVideoEmbedWidget(element: ViewElement): boolean {
-    return isWidget(element) && element.hasClass(VIDEO_EMBED_CLASS);
+function isMediaEmbedWidget(element: ViewElement): boolean {
+    return isWidget(element) && element.hasClass(MEDIA_EMBED_CLASS);
 }
 
 /**

@@ -646,6 +646,7 @@ function markerFor(document: string): string {
  * nothing threw — a process killed mid-swap leaves its last step as the last thing in the log.
  */
 function report(stage: RestoreStage): void {
+    /* v8 ignore else -- restoreDatabase() sets progress before any report() */
     if (progress) {
         // The position belonged to the step that has just ended, and would otherwise be read as this
         // one's — a step with nothing to report showing the last one's bar, frozen where it stopped.
@@ -657,6 +658,7 @@ function report(stage: RestoreStage): void {
 
 /** The step the restore had reached, for saying where it was when something went wrong. */
 function progressStage(): RestoreStage | "unknown" {
+    /* v8 ignore next -- called only after restoreDatabase() has set progress */
     return progress?.stage ?? "unknown";
 }
 

@@ -2,6 +2,8 @@ import type { EmojiSuggestion, MentionFeedObjectItem, MentionHostedList, Mention
 import clsx from "clsx";
 import type { ComponentChildren } from "preact";
 
+import contextMenu from "../../../menus/context_menu";
+import { buildInsertMenuItems, keepEditorFocused } from "../../../menus/text_editor_context_menu";
 import { AutocompleteList } from "../../react/FormAutocomplete";
 import { type CommandEntry, CommandMentionList, createHostedList, NoteMentionList } from "../../react/NoteAutocomplete";
 import { type ChildNoteParent, createChildNote, openChildNote } from "./child_note";
@@ -94,6 +96,35 @@ export function createSlashCommandList(editor: HostEditor): MentionHostedList {
             onPick={({ definition }) => state.commit(toSlashCommandItem(definition))}
         />
     ));
+}
+
+/**
+ * Opens the `/` palette's entries that insert or wrap content as a menu below `handle`, with a
+ * filter at its top, for the editor config's `blockDragHandle.openInsertMenu`, and calls `onClose`
+ * once the menu is closed.
+ */
+export function openSlashCommandMenu(editor: HostEditor, handle: HTMLElement, onClose: () => void) {
+    // A click on the handle of the open menu only closes the menu.
+    if (contextMenu.dismissedByLastPress) {
+        onClose();
+        return;
+    }
+
+    const palette = editor.plugins.get("TriliumSlashCommands") as TriliumSlashCommands;
+    const editorFocus = keepEditorFocused(editor);
+    void contextMenu.show({
+        anchor: handle,
+        items: buildInsertMenuItems(palette.search(""), (definition) => palette.run(definition)),
+        filterable: true,
+        focusFilter: true,
+        className: "slash-command-menu",
+        selectMenuItemHandler: () => {},
+        onShow: editorFocus.onShow,
+        onHide: () => {
+            editorFocus.onHide?.();
+            onClose();
+        }
+    });
 }
 
 /**

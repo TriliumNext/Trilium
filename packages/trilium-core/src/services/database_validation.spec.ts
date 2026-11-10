@@ -74,6 +74,10 @@ describe("validating a candidate database", () => {
         expect(validateDatabase(candidate({ tables: [ "options", "notes" ] }))).toMatchObject({
             valid: false, rejection: "not-a-trilium-database", message: expect.stringContaining("branches, blobs")
         });
+
+        expect(validateDatabase(candidate({ tables: [ "options", "notes", "branches" ] }))).toMatchObject({
+            valid: false, rejection: "not-a-trilium-database", message: expect.stringContaining("the blobs table.")
+        });
     });
 
     it("refuses one left behind by a setup that never finished", () => {

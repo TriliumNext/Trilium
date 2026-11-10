@@ -35,7 +35,7 @@ export default class FetchRequestProvider implements RequestProvider {
 
         let body: string | undefined;
         if (opts.body) {
-            body = typeof opts.body === "object" ? JSON.stringify(opts.body) : opts.body;
+            body = typeof opts.body === "string" ? opts.body : JSON.stringify(opts.body);
         }
 
         const controller = new AbortController();
@@ -57,7 +57,7 @@ export default class FetchRequestProvider implements RequestProvider {
 
             if ([200, 201, 204].includes(response.status)) {
                 const text = await response.text();
-                return text.trim() ? JSON.parse(text) : null;
+                return text.trim() ? JSON.parse(text) : null as T;
             }
             const text = await response.text();
             let errorMessage: string;
@@ -130,11 +130,12 @@ export default class FetchRequestProvider implements RequestProvider {
 
         try {
             const response = await fetch(validated, {
+                method: opts.method,
                 headers: opts.headers,
                 signal: controller.signal
             });
 
-            return await readCappedResponse(response, opts.maxBytes);
+            return await readCappedResponse(response, opts.maxBytes, opts.prefixLength);
         } finally {
             clearTimeout(timeoutId);
         }

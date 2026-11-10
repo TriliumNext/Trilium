@@ -779,6 +779,42 @@ describe("setupContextMenu (browser)", () => {
         expect(copyHtml).toHaveBeenCalledWith("<table><tr><td>a1</td></tr></table>", "a1");
     });
 
+    it("copies, cuts and pastes in the code editor of an embed through the browser", async () => {
+        const execCommand = stubExecCommand();
+        Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: {
+                read: vi.fn(async () => [
+                    { types: [ "text/plain" ], getType: async () => ({ text: async () => "hi" }) }
+                ])
+            }
+        });
+
+        try {
+            // The text editor has the whole embed selected while its code editor has the focus.
+            const editorRoot = codeEditable();
+            const editor = fakeEditor(editorRoot, "<pre>whole block</pre>", "whole block");
+            const wrapper = editorRoot.appendChild(document.createElement("div"));
+            wrapper.setAttribute("data-cke-ignore-events", "true");
+            const line = codeLine(wrapper.appendChild(codeEditable()));
+            setSelection(line, "<span>code</span>", "code");
+
+            const rows = await menuFor(line);
+            await run(rows, "electron_context_menu.copy");
+            expect(copyHtml).toHaveBeenCalledWith("<span>code</span>", "code");
+            await run(rows, "electron_context_menu.cut");
+            expect(execCommand).toHaveBeenCalledWith("cut");
+            await run(rows, "electron_context_menu.paste");
+            await vi.waitFor(() =>
+                expect(execCommand).toHaveBeenCalledWith("insertText", false, "hi"));
+            expect(editor.getSelectedHtml).not.toHaveBeenCalled();
+            expect(editor.execute).not.toHaveBeenCalled();
+            expect(editor.capturePasteTarget).not.toHaveBeenCalled();
+        } finally {
+            delete (navigator as { clipboard?: unknown }).clipboard;
+        }
+    });
+
     it("offers paste in a secure context and routes it through the editor's pipeline", async () => {
         const flavor = (type: string) => ({
             text: async () => type === "text/html" ? "<b>hi</b>" : "hi"

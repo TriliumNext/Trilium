@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { createRef, render as preactRender } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +16,11 @@ vi.mock("../../services/note_autocomplete", async (importOriginal) => ({
     getNoteSuggestions,
     getCommandSuggestions,
     createNoteFromSuggestion
+}));
+
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/i18n")>()),
+    t: (key: string) => key
 }));
 
 import appContext from "../../components/app_context";
@@ -42,7 +50,8 @@ async function render(props: NoteAutocompleteProps = {}) {
 
 /** The classes of the buttons after the input, in document order. */
 function buttonClasses(container: HTMLElement) {
-    return [ ...container.querySelectorAll(".input-group > a") ].map((button) => button.className);
+    return [ ...container.querySelectorAll(".input-group > a, .input-group > button") ]
+        .map((button) => button.className);
 }
 
 describe("NoteAutocomplete", () => {
@@ -62,16 +71,24 @@ describe("NoteAutocomplete", () => {
         expect((await render()).input.hasAttribute("tabindex")).toBe(false);
     });
 
-    it("places the buttons after the input in the plugin's order, as the options allow", async () => {
-        expect(buttonClasses((await render()).container)).toEqual([
-            "input-group-text go-to-selected-note-button bx bx-arrow-to-right disabled",
-            "input-group-text input-clearer-button bx bxs-tag-x"
-        ]);
+    it("places the expand button last, and the note's buttons only for a note", async () => {
+        const goTo = "input-group-text go-to-selected-note-button bx bx-arrow-to-right";
+        const clear = "input-group-text input-clearer-button bx bxs-tag-x";
+        const expand = "input-group-text note-autocomplete-expand-button";
+        const { noteId } = buildNote({ title: "Target" });
+        const classesOf = async (props: NoteAutocompleteProps) =>
+            buttonClasses((await render(props)).container);
 
-        const withoutGoTo = buttonClasses((await render({ opts: { hideGoToSelectedNoteButton: true } })).container);
-        expect(withoutGoTo).toEqual([ "input-group-text input-clearer-button bx bxs-tag-x" ]);
+        expect(await classesOf({})).toEqual([ expand ]);
+        expect(await classesOf({ noteId })).toEqual([ goTo, clear, expand ]);
+        expect(await classesOf({ noteId, opts: { hideGoToSelectedNoteButton: true } }))
+            .toEqual([ clear, expand ]);
+        expect(await classesOf({ noteId, opts: { hideAllButtons: true } })).toEqual([ expand ]);
+        expect(await classesOf({ noteId, readOnly: true })).toEqual([ goTo, clear ]);
 
-        expect(buttonClasses((await render({ opts: { hideAllButtons: true } })).container)).toEqual([]);
+        // A list in the host's container is always shown, and its query can be cleared at any time.
+        const host = document.createElement("div");
+        expect(await classesOf({ container: { current: host } })).toEqual([ clear ]);
     });
 
     it("shows the title of the note given, and enables going to it", async () => {
@@ -81,7 +98,6 @@ describe("NoteAutocomplete", () => {
         expect(input.value).toBe("Target");
         expect(input.dataset.notePath).toBe(note.noteId);
         const goTo = container.querySelector(".go-to-selected-note-button");
-        expect(goTo?.classList.contains("disabled")).toBe(false);
         expect(goTo?.getAttribute("href")).toBe(`#${note.noteId}`);
     });
 
@@ -90,7 +106,8 @@ describe("NoteAutocomplete", () => {
 
         expect(input.value).toBe("query");
         expect(input.dataset.notePath).toBe("");
-        expect(container.querySelector(".go-to-selected-note-button")?.getAttribute("href")).toBe("#");
+        const noteButtons = ".go-to-selected-note-button, .input-clearer-button";
+        expect(container.querySelector(noteButtons)).toBeNull();
     });
 
     it("reports typing, and the selected note id on blur", async () => {
@@ -204,7 +221,7 @@ describe("NoteAutocomplete's suggestion list", () => {
             { notePath: "root/c", noteTitle: "Gamma", highlightedNotePathTitle: "Gamma", utcDateVisited: daysAgo(40) }
         ]);
         const input = await mount();
-        await act(async () => { input.focus(); });
+        await act(async () => { button(".note-autocomplete-expand-button").click(); });
         await settle();
 
         const menu = document.querySelector(".note-autocomplete-menu .tn-menu-scroll");
@@ -287,7 +304,7 @@ describe("NoteAutocomplete's suggestion list", () => {
             { notePath: "root/c", highlightedNotePathTitle: "T", highlightedContentSnippet: "some <b>matched</b> content" } as Suggestion
         ]);
         const input = await mount();
-        await type(input, "x");
+        await type(input, "xy");
 
         expect(rows().map((row) => row.querySelector(".tn-icon")?.className)).toEqual([
             "bx bx-file-find tn-icon", "bx bx-plus tn-icon", "bx bx-subdirectory-right tn-icon", "bx bx-link-external tn-icon", "bx bx-note tn-icon"
@@ -299,7 +316,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const onChange = vi.fn();
         const noteIdChanged = vi.fn();
         const input = await mount({ onChange, noteIdChanged });
-        await type(input, "b");
+        await type(input, "be");
         await press(input, "ArrowDown");
         expect(rows()[1].classList.contains("tn-menu-active")).toBe(true);
 
@@ -317,7 +334,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         HTMLElement.prototype.scrollIntoView = scrollIntoView;
         try {
             const input = await mount();
-            await type(input, "b");
+            await type(input, "be");
             scrollIntoView.mockClear();
 
             await act(async () => {
@@ -336,7 +353,7 @@ describe("NoteAutocomplete's suggestion list", () => {
 
     it("keeps the keyboard's row when the list moves under a pointer that does not", async () => {
         const input = await mount();
-        await type(input, "b");
+        await type(input, "be");
         const hoverAt = async (row: HTMLElement, type: string, clientY: number) => {
             await act(async () => {
                 row.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: 10, clientY }));
@@ -364,7 +381,7 @@ describe("NoteAutocomplete's suggestion list", () => {
     it("leaves a second Enter in the same task to the host", async () => {
         const onChange = vi.fn();
         const input = await mount({ onChange });
-        await type(input, "b");
+        await type(input, "be");
         await press(input, "ArrowDown");
 
         const prevented: boolean[] = [];
@@ -422,35 +439,71 @@ describe("NoteAutocomplete's suggestion list", () => {
     it("searches on the first keystroke, and paces the rest of a burst", async () => {
         const input = await mount();
 
-        for (const term of [ "a", "al", "alp" ]) {
+        for (const term of [ "al", "alp", "alph" ]) {
             await act(async () => {
                 input.value = term;
                 input.dispatchEvent(new Event("input", { bubbles: true }));
             });
         }
         // No timer has run, so the debounce of `FormAutocomplete` would not have searched yet.
-        expect(queries()).toEqual([ "a" ]);
+        expect(queries()).toEqual([ "al" ]);
 
         await settle();
-        expect(queries()).toEqual([ "a", "alp" ]);
+        expect(queries()).toEqual([ "al", "alph" ]);
     });
 
-    it("lists the recent notes when an empty field gets focus, and waits for typing in a filled one", async () => {
+    it("opens on two characters typed, not on focus or one, then follows the text", async () => {
         const input = await mount();
         await act(async () => { input.focus(); });
         await settle();
-        expect(queries().at(-1)).toBe("");
-        expect(rows()).toHaveLength(2);
-
-        await type(input, "a");
-        await press(input, "Enter");
-        await act(async () => { input.blur(); });
-        getNoteSuggestions.mockClear();
-
-        await act(async () => { input.focus(); });
-        await settle();
+        await type(input, " a ");
         expect(queries()).toEqual([]);
         expect(rows()).toHaveLength(0);
+
+        await type(input, "al");
+        expect(queries()).toEqual([ "al" ]);
+        expect(rows()).toHaveLength(2);
+
+        // An empty field lists the recently visited notes.
+        await type(input, "");
+        expect(queries()).toEqual([ "al", "" ]);
+        expect(rows()).toHaveLength(2);
+    });
+
+    it("opens and closes from the expand button, keeping the focus in the field", async () => {
+        const input = await mount();
+        const expand = button(".note-autocomplete-expand-button");
+        // A named button outside the Tab order, as the field opens the list with the arrow keys.
+        expect(expand.tagName).toBe("BUTTON");
+        expect(expand.getAttribute("type")).toBe("button");
+        expect(expand.title).toBe("note_autocomplete.suggestions");
+        expect(expand.tabIndex).toBe(-1);
+        expect(expand.getAttribute("aria-expanded")).toBe("false");
+
+        const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        expand.dispatchEvent(mouseDown);
+        expect(mouseDown.defaultPrevented).toBe(true);
+
+        await act(async () => { expand.click(); });
+        await settle();
+        expect(queries()).toEqual([ "" ]);
+        expect(rows()).toHaveLength(2);
+        expect(document.activeElement).toBe(input);
+        expect(expand.getAttribute("aria-expanded")).toBe("true");
+
+        await act(async () => { expand.click(); });
+        await settle();
+        expect(rows()).toHaveLength(0);
+        expect(document.activeElement).toBe(input);
+        expect(expand.getAttribute("aria-expanded")).toBe("false");
+
+        // A filled field lists the suggestions for its text, the note it names highlighted.
+        await type(input, "Beta");
+        await press(input, "Escape");
+        await act(async () => { expand.click(); });
+        await settle();
+        expect(queries().at(-1)).toBe("Beta");
+        expect(rows()[1].classList.contains("tn-menu-active")).toBe(true);
     });
 
     it("lists the recent notes through the handle, with the callbacks of the latest render", async () => {
@@ -462,7 +515,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         });
         const input = container.querySelector("input");
         if (!input) throw new Error("no input rendered");
-        await type(input, "a");
+        await type(input, "al");
         await press(input, "Enter");
 
         const latestOnTextChange = vi.fn();
@@ -552,12 +605,12 @@ describe("NoteAutocomplete's suggestion list", () => {
         const onChange = vi.fn();
         const noteIdChanged = vi.fn();
         const input = await mount({ opts: { isCommandPalette: true }, onChange, noteIdChanged });
-        await type(input, ">");
+        await type(input, ">c");
         await press(input, "Enter");
 
         expect(onChange).toHaveBeenCalledWith(commands[0]);
         expect(noteIdChanged).not.toHaveBeenCalled();
-        expect(input.value).toBe(">");
+        expect(input.value).toBe(">c");
         expect(input.dataset.notePath).toBe("");
         expect(rows()).toHaveLength(0);
     });
@@ -577,18 +630,26 @@ describe("NoteAutocomplete's suggestion list", () => {
         expect(document.activeElement).toBe(input);
     });
 
-    it("lists the suggestions for the text given", async () => {
+    it("lists the suggestions for the text given only into the host's container", async () => {
         const onTextChange = vi.fn();
         const input = await mount({ text: "  al ", onTextChange });
         await settle();
 
         expect(input.value).toBe("al");
         expect(onTextChange).toHaveBeenCalledWith("al");
-        expect(queries().at(-1)).toBe("al");
-        expect(rows()).toHaveLength(2);
+        expect(queries()).toEqual([]);
+        expect(rows()).toHaveLength(0);
+
+        const host = document.createElement("div");
+        document.body.append(host);
+        await mount({ text: "al", container: { current: host } });
+        await settle();
+        expect(queries()).toEqual([ "al" ]);
+        expect(host.querySelectorAll(".dropdown-item")).toHaveLength(3);
+        host.remove();
     });
 
-    it("sets the text through the handle at once, with its note selected, and lists it", async () => {
+    it("sets the text and its note through the handle at once, and focuses the field", async () => {
         const handleRef = createRef<NoteAutocompleteHandle>();
         const input = await mount({ handleRef });
         input.blur();
@@ -601,9 +662,14 @@ describe("NoteAutocomplete's suggestion list", () => {
         await settle();
 
         expect(input.dataset.notePath).toBe("root/x/b");
-        expect(queries().at(-1)).toBe("Beta");
-        expect(rows()).toHaveLength(2);
         expect(document.activeElement).not.toBe(input);
+
+        // As a dialog does once shown.
+        await act(async () => { handleRef.current?.focus(); });
+        await settle();
+        expect(document.activeElement).toBe(input);
+        expect(queries()).toEqual([]);
+        expect(rows()).toHaveLength(0);
     });
 
     function button(selector: string) {
@@ -617,7 +683,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const noteIdChanged = vi.fn();
         const onTextChange = vi.fn();
         const input = await mount({ onChange, noteIdChanged, onTextChange });
-        await type(input, "a");
+        await type(input, "al");
         await press(input, "Enter");
 
         await act(async () => { button(".input-clearer-button").click(); });
@@ -1010,7 +1076,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const noteIdChanged = vi.fn();
         const onTextChange = vi.fn();
         const input = await mount({ handleRef, onChange, noteIdChanged, onTextChange });
-        await type(input, "a");
+        await type(input, "al");
         await press(input, "Enter");
         for (const callback of [ onChange, noteIdChanged, onTextChange ]) callback.mockClear();
 
@@ -1033,7 +1099,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         if (!group) throw new Error("no input group rendered");
         group.getBoundingClientRect = () => DOMRect.fromRect({ width: 720, height: 30 });
         input.getBoundingClientRect = () => DOMRect.fromRect({ width: 600, height: 30 });
-        await type(input, "a");
+        await type(input, "al");
 
         expect(document.querySelector<HTMLElement>(".note-autocomplete-menu")?.style.width).toBe("720px");
     });
@@ -1042,7 +1108,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const frame = document.createElement("div");
         frame.getBoundingClientRect = () => DOMRect.fromRect({ width: 680, height: 30 });
         const input = await mount({ anchorRef: { current: frame } });
-        await type(input, "a");
+        await type(input, "al");
 
         expect(document.querySelector<HTMLElement>(".note-autocomplete-menu")?.style.width).toBe("680px");
     });
@@ -1054,7 +1120,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         });
         const input = (modal as HTMLElement | null)?.querySelector("input");
         if (!modal || !input) throw new Error("no input rendered");
-        await type(input, "a");
+        await type(input, "al");
 
         const menu = document.querySelector(".note-autocomplete-menu");
         expect(menu).not.toBe(null);
@@ -1066,11 +1132,11 @@ describe("NoteAutocomplete's suggestion list", () => {
         const group = input.closest(".input-group");
         if (!group) throw new Error("no input group rendered");
         group.getBoundingClientRect = () => DOMRect.fromRect({ width: 320, height: 30 });
-        await type(input, "a");
+        await type(input, "al");
         expect(document.querySelector<HTMLElement>(".note-autocomplete-menu")?.style.width).toBe("500px");
 
         group.getBoundingClientRect = () => DOMRect.fromRect({ width: 640, height: 30 });
-        await type(input, "al");
+        await type(input, "alp");
         expect(document.querySelector<HTMLElement>(".note-autocomplete-menu")?.style.width).toBe("640px");
     });
 
@@ -1079,7 +1145,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const group = input.closest(".input-group");
         if (!group) throw new Error("no input group rendered");
         group.getBoundingClientRect = () => DOMRect.fromRect({ width: 320, height: 30 });
-        await type(input, "a");
+        await type(input, "al");
 
         const menu = document.querySelector<HTMLElement>(".note-autocomplete-menu");
         expect(menu).not.toBeNull();
@@ -1089,7 +1155,7 @@ describe("NoteAutocomplete's suggestion list", () => {
     it("picks a clicked note", async () => {
         const noteIdChanged = vi.fn();
         const input = await mount({ noteIdChanged });
-        await type(input, "a");
+        await type(input, "al");
 
         await act(async () => { rows()[0].click(); });
         expect(noteIdChanged).toHaveBeenCalledWith("a");
@@ -1100,7 +1166,7 @@ describe("NoteAutocomplete's suggestion list", () => {
         const onChange = vi.fn();
         const noteIdChanged = vi.fn();
         const input = await mount({ onChange, noteIdChanged });
-        await type(input, "a");
+        await type(input, "al");
         await press(input, "Enter");
 
         await type(input, "");
@@ -1112,7 +1178,7 @@ describe("NoteAutocomplete's suggestion list", () => {
 
     it("closes on Escape, and stays closed in a read-only field", async () => {
         const input = await mount();
-        await type(input, "a");
+        await type(input, "al");
         await press(input, "Escape");
         expect(rows()).toHaveLength(0);
 
@@ -1350,5 +1416,50 @@ describe("filterCommandEntries with aliases", () => {
         expect(ids("r")).toEqual([ "rule", "table", "code" ]);
         expect(ids("GRID")).toEqual([ "table" ]);
         expect(ids("tline")).toEqual([ "toc" ]);
+    });
+});
+
+describe("the slash command menu", () => {
+    beforeEach(() => {
+        document.head.innerHTML = [ "../../stylesheets/menus.css", "NoteAutocomplete.css" ]
+            .map((file) => `<style>${readFileSync(join(__dirname, file), "utf8")}</style>`)
+            .join("");
+        document.body.className = "desktop";
+    });
+
+    afterEach(() => {
+        document.head.innerHTML = "";
+        document.body.className = "";
+    });
+
+    it("is as wide as a menu when it opens as a submenu", () => {
+        const menu = `<div class="dropdown-menu slash-command-menu"></div>`;
+        document.body.innerHTML = `${menu}<div class="dropdown-submenu">${menu}</div>`;
+        const widths = (element: Element) => {
+            const { width, minWidth, maxWidth } = getComputedStyle(element);
+            return { width, minWidth, maxWidth };
+        };
+
+        const menus = document.querySelectorAll(".slash-command-menu");
+        const [ top, submenu ] = Array.from(menus, widths);
+        expect(top.width).toBe("350px");
+        expect(submenu).toEqual({ width: top.width, minWidth: "unset", maxWidth: top.maxWidth });
+    });
+
+    it("puts the icon of a row beside the first line of its title, in a submenu too", () => {
+        const row = "<li class=\"dropdown-item\"><span><span class=\"bx bx-table tn-icon\"></span>"
+            + "<span class=\"tn-menu-gap\"></span><div>Table<div class=\"description\">Grid</div>"
+            + "</div></span></li>";
+        const menu = `<div class="dropdown-menu slash-command-menu">${row}</div>`;
+        document.body.innerHTML = `${menu}<div class="dropdown-submenu">${menu}</div>`;
+
+        const rows = document.querySelectorAll(".dropdown-item > span");
+        expect(rows).toHaveLength(2);
+        for (const row of rows) {
+            const icon = row.querySelector(".tn-icon");
+            expect(icon).not.toBeNull();
+            expect(getComputedStyle(row).alignItems).toBe("flex-start");
+            expect(icon && getComputedStyle(icon).display).toBe("inline-flex");
+        }
     });
 });

@@ -1,6 +1,5 @@
 :where(:root) {
-    --tabs-focus-border-color: var(--link-color, var(--ck-color-focus-border));
-    --tabs-focus-button-icon-color: var(--main-background-color, var(--ck-color-base-background));
+    --tabs-focus-border-color: var(--input-focus-outline-color, var(--ck-color-focus-border));
 }
 
 /* Saved HTML without a marked tab, such as a preview or a printout, reads as a sequence of titled
@@ -156,12 +155,6 @@
 
 .ck-editor__editable .trilium-tabs.ck-widget.trilium-tabs--focused {
     outline: var(--ck-widget-outline-thickness, 3px) solid var(--tabs-focus-border-color);
-
-    & > .ck-widget__type-around {
-        --ck-color-widget-type-around-button-hover: var(--tabs-focus-border-color);
-        --ck-color-widget-type-around-button-active: var(--tabs-focus-border-color);
-        --ck-color-widget-type-around-button-icon: var(--tabs-focus-button-icon-color);
-    }
 }
 
 .ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-panel {

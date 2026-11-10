@@ -130,6 +130,12 @@ describe("Attributes API (core)", () => {
             const del = await api.delete(`/api/notes/${other.noteId}/attributes/${attrId}`);
             expect(del.status).toBe(400);
         });
+
+        it("is a no-op when deleting an attribute that does not exist", async () => {
+            const { noteId } = await createTextNote(api);
+            const del = await api.delete(`/api/notes/${noteId}/attributes/missingAttr123`);
+            expect(del.status).toBe(204);
+        });
     });
 
     describe("updateNoteAttribute", () => {
@@ -267,6 +273,27 @@ describe("Attributes API (core)", () => {
             expect(byName.change).toBe("updated");
             expect(byName.added).toBe("new");
             expect(attrs.body.some((a) => a.name === "drop")).toBe(false);
+        });
+
+        it("keeps unchanged attributes in place, defaults a missing value, links relations and keeps auto-links", async () => {
+            const { noteId } = await createTextNote(api);
+            const target = await createTextNote(api, { title: "Bulk relation target" });
+            const internalLink = await api.put(`/api/notes/${noteId}/relations/internalLink/to/${target.noteId}`);
+            expect(internalLink.status).toBe(200);
+            const payload = [
+                { type: "label", name: "flag", isInheritable: false },
+                { type: "relation", name: "linked", value: target.noteId, isInheritable: false }
+            ];
+
+            await api.put(`/api/notes/${noteId}/attributes`, { body: payload });
+            const first = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+            await api.put(`/api/notes/${noteId}/attributes`, { body: payload });
+            const second = await api.get<AttrRow[]>(`/api/notes/${noteId}/attributes`);
+
+            expect(second.body).toEqual(first.body);
+            expect(second.body.map((a) => [ a.name, a.value ])).toEqual(expect.arrayContaining([
+                [ "flag", "" ], [ "linked", target.noteId ], [ "internalLink", target.noteId ]
+            ]));
         });
 
         it("skips relations whose target note does not exist", async () => {

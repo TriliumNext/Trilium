@@ -2,7 +2,7 @@
   "keyboard_actions": {
     "back-in-note-history": "履歴内の前のノートに移動",
     "forward-in-note-history": "履歴内の次のノートに移動",
-    "open-jump-to-note-dialog": "「ノートへ移動」 ダイアログを開く",
+    "open-jump-to-note-dialog": "「ノートに移動」 ダイアログを開く",
     "scroll-to-active-note": "ノートツリーをアクティブなノートまでスクロールする",
     "search-in-subtree": "アクティブなノートのサブツリー内でノートを検索する",
     "expand-subtree": "現在のノートのサブツリーを展開",
@@ -335,10 +335,11 @@
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
-    "broken-block-reference": "参照が壊れています",
+    "broken-block-reference": "リンク切れ",
     "play-video": "動画を再生",
     "content-not-available": "このコンテンツは利用できません。",
-    "untitled-block": "ブロック"
+    "untitled-block": "ブロック",
+    "play-audio": "音声を再生"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",

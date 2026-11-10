@@ -1,4 +1,6 @@
+import { ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
+
 import etapiMetrics from "../../etapi/metrics.js";
 
 type MetricsData = ReturnType<typeof etapiMetrics.collectMetrics>;
@@ -156,7 +158,7 @@ function getMetrics(req: Request, res: Response): string | MetricsData {
         res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
         return prometheusText;
     } else {
-        throw new Error("Supported formats: 'prometheus' (default), 'json'");
+        throw new ValidationError("Supported formats: 'prometheus' (default), 'json'");
     }
 }
 

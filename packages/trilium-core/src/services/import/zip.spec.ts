@@ -1619,3 +1619,131 @@ describe("Obsidian vault detection", () => {
         expect(importedNote?.title).toBe("MyVault");
     });
 });
+
+describe("edge cases of the archive's shape", () => {
+    /** A Trilium export entry of an HTML note, with `extra` spread over it. */
+    function htmlMeta(noteId: string, title: string, extra: Record<string, unknown> = {}) {
+        return {
+            noteId, title, type: "text", mime: "text/html", format: "html",
+            dataFileName: `${title}.html`, attributes: [], attachments: [], ...extra
+        };
+    }
+
+    it("imports a file the metadata does not list, beside a note that declares no attachments", async () => {
+        const { attachments: _, ...withoutAttachments } = htmlMeta("strayHost001", "Host");
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify({ formatVersion: 2, appVersion: "0.0.0", files: [ withoutAttachments ] }),
+            "Host.html": "<p>host</p>",
+            "Stray.txt": "stray"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-stray-file");
+
+        const titles = rootNote.getChildNotes().map((n) => n.title);
+        expect(titles).toContain("Host");
+        expect(titles).toContain("Stray.txt");
+    });
+
+    it("creates unprotected notes under a protected import root while no protected session is open", async () => {
+        const holder = await getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root", title: "Protected holder", content: "", type: "text"
+        }).note);
+        holder.isProtected = true;
+        const zipBuffer = await createZipBuffer({ "Folder/Note.md": "Body" });
+        const taskContext = TaskContext.getInstance("import-protected-root", "importNotes", { textImportedAsText: true });
+
+        try {
+            const imported = await getContext().init(() => zip.importZip(taskContext, zipBuffer, holder));
+            const note = imported.getChildNotes()[0];
+
+            expect(imported.title).toBe("Folder");
+            expect(imported.isProtected).toBe(false);
+            expect(note?.title).toBe("Note");
+            expect(note?.isProtected).toBe(false);
+        } finally {
+            holder.isProtected = false;
+        }
+    });
+
+    it("detects the type of plain entries without import options, and of code when asked to", async () => {
+        const zipBuffer = await createZipBuffer({ "data.zzunknown": "x", "other.txt": "y" });
+        const bare = TaskContext.getInstance("import-no-options", "importNotes", null);
+        const rootNote = becca.getNoteOrThrow("root");
+        await getContext().init(() => zip.importZip(bare, zipBuffer, rootNote));
+        const data = rootNote.getChildNotes().find((n) => n.title === "data.zzunknown");
+        expect(data?.type).toBe("file");
+        expect(data?.mime).toBe("application/octet-stream");
+
+        const codeZip = await createZipBuffer({ "Script.mjs": "run();" });
+        const { importedNote } = await testImportBuffer(codeZip, "import-code-option", { codeImportedAsCode: true });
+        expect(importedNote.type).toBe("code");
+        expect(importedNote.mime).toBe("text/javascript");
+    });
+
+    it("keeps a preview picture that points at a note rather than an attachment", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [ htmlMeta("faviconHost01", "Favicon host", {
+                dirFileName: "Favicon host", children: [ htmlMeta("faviconSib001", "Sibling") ]
+            }) ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Favicon host.html": `<section class="link-embed" data-favicon="Favicon host/Sibling.html"></section>`,
+            "Favicon host/Sibling.html": "<p>sibling</p>"
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer, "import-favicon-note");
+
+        expect(importedNote.getContent().toString()).toContain(`data-favicon="Favicon host/Sibling.html"`);
+    });
+
+    it("imports a relation map whose entry lists no attributes, and a note cloned twice into one folder once", async () => {
+        const shared = htmlMeta("twiceCloned01", "Shared");
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [
+                { noteId: "bareRelMap001", title: "Bare map", type: "relationMap", mime: "application/json", dataFileName: "Bare map.json", attachments: [] },
+                htmlMeta("twiceFolder01", "Twice folder", {
+                    dirFileName: "Twice folder",
+                    children: [
+                        { ...shared, dataFileName: "Shared.html" },
+                        { ...shared, isClone: true, dataFileName: "Shared.clone.html" },
+                        { ...shared, isClone: true, dataFileName: "Shared.clone_1.html" }
+                    ]
+                })
+            ]
+        };
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Bare map.json": JSON.stringify({ notes: [] }),
+            "Twice folder.html": "<p>folder</p>",
+            "Twice folder/Shared.html": "<p>shared</p>",
+            "Twice folder/Shared.clone.html": "<p>clone</p>",
+            "Twice folder/Shared.clone_1.html": "<p>clone</p>"
+        });
+
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-twice-cloned");
+        const map = rootNote.getChildNotes().find((n) => n.title === "Bare map");
+        const folder = rootNote.getChildNotes().find((n) => n.title === "Twice folder");
+
+        expect(map?.getContent().toString()).toBe(JSON.stringify({ notes: [] }));
+        expect(folder?.getChildNotes().map((n) => n.title)).toEqual([ "Shared" ]);
+    });
+
+    it("finds a vault by the shallowest of several .obsidian folders", async () => {
+        const onObsidianVault = vi.fn().mockResolvedValue(becca.getNoteOrThrow("root"));
+        const buffer = await createZipBuffer({
+            "Vault/Sub/.obsidian/app.json": "{}",
+            "Vault/.obsidian/app.json": "{}",
+            "Vault/.obsidian/types.json": "{}",
+            "Vault/Note.md": "# Note"
+        });
+
+        await testImportBuffer(buffer, "obsidian-several", { textImportedAsText: true }, { onObsidianVault });
+
+        expect(onObsidianVault).toHaveBeenCalled();
+    });
+});

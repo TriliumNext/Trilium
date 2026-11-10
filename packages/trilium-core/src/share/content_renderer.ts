@@ -1,14 +1,15 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
     BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
-    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter,
-    getAttachmentEmbedHref, getDrawingPictureTitle, getEmbedKey, getLinkPreviewVideoId,
-    getNestedEmbedOptions, getNoteEmbedHref, getVideoAspectRatio, isHttpUrl, isImageAttachmentRole,
-    MIME_TYPE_AUTO, type MimeType, normalizeMimeTypeForCKEditor, readLinkPreviewData,
-    readVideoEmbedBox, renderLinkEmbedHtml,
-    renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes, SHARE_CODE_PREVIEW_THEMES,
-    resolveBlockReference, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight,
-    sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
+    CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
+    getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
+    getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
+    type LinkPreviewPlayer, MIME_TYPE_AUTO, type MimeType, normalizeEmbedBox,
+    normalizeMimeTypeForCKEditor, readDrawingFrame, readLinkPreviewData, readMediaEmbedBox,
+    renderLinkEmbedBoxHtml,
+    renderLinkMentionHtml, resolveBlockReference, resolveContentEmbed, resolveEnabledMimeTypes,
+    SHARE_CODE_PREVIEW_THEMES, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
+    shouldSyntaxHighlight, sliceToBlockReference, VIDEO_ASPECT_RATIO_PROPERTY
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -32,6 +33,7 @@ import { getLog } from "../services/log.js";
 import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as task_states from "../services/task_states.js";
+import { decodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { buildFrocaPayload, buildFrocaRows } from "./froca_payload.js";
 import { getShareProvider } from "./share_provider.js";
@@ -629,7 +631,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
     // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
     // them. The share theme adds the click-to-play behavior of a video.
-    const previewOptions = { playVideoLabel: t("content_renderer.play-video") };
+    const previewOptions = {
+        playVideoLabel: t("content_renderer.play-video"),
+        playAudioLabel: t("content_renderer.play-audio")
+    };
     for (const mentionEl of document.querySelectorAll("span.link-mention")) {
         const data = readLinkPreviewData((name) => mentionEl.getAttribute(name));
         if (data) {
@@ -640,9 +645,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     for (const embedEl of document.querySelectorAll("section.link-embed")) {
         const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
         if (data) {
-            embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
-            if (getLinkPreviewVideoId(data)) {
-                setVideoBox(embedEl, getVideoAspectRatio(data));
+            embedEl.innerHTML = renderLinkEmbedBoxHtml(
+                data, (name) => embedEl.getAttribute(name), previewOptions);
+            const player = getLinkPreviewPlayer(data);
+            if (player) {
+                setMediaBox(embedEl, player, getVideoAspectRatio(data));
                 moveBoxToCaptionedFigure(embedEl);
             }
         }
@@ -667,6 +674,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     // The links of an embedded note, which `getContent()` processed with that note as their host.
     const embeddedLinks = new Set<HTMLElement>();
     for (const embedEl of document.querySelectorAll(".include-note")) {
+        normalizeEmbedBox(embedEl);
         const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
         if (!embed) continue;
 
@@ -674,7 +682,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             const attachment = getAttachment(embed.attachmentId);
             if (!attachment) {
                 replaceWithUnavailable(embedEl, parseOpts);
-            } else if (embed.asLink) {
+            } else if (isEmbedShownAsLink(embed, getEmbedContentType(attachment))) {
                 const link = renderAttachmentLink(embed.attachmentId, attachment);
                 embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             } else {
@@ -699,7 +707,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         }
 
         // The link-processing passes below resolve the reference link to the shared note.
-        if (embed.asLink) {
+        if (isEmbedShownAsLink(embed, getEmbedContentType(embeddedNote))) {
             const href = utils.escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
             const title = utils.escapeHtml(embeddedNote.title);
             const link = `<a class="reference-link" href="${href}">${title}</a>`;
@@ -794,11 +802,12 @@ function replaceWithUnavailable(embedEl: HTMLElement, parseOpts: Partial<Options
 }
 
 /**
- * Writes the box size and the shape of a video on its section, which the share theme sizes it by,
- * as `applyVideoEmbeds()` does for the app's read-only view. An older video is Full.
+ * Writes the box size and the shape of a video, or the box size of an audio file, on its section,
+ * which the share theme sizes it by, as `applyMediaEmbeds()` does for the app's read-only view. An
+ * older YouTube video is Full.
  */
-function setVideoBox(section: HTMLElement, aspectRatio: number | null) {
-    const { boxSize } = readVideoEmbedBox((name) => section.getAttribute(name));
+function setMediaBox(section: HTMLElement, player: LinkPreviewPlayer, aspectRatio: number | null) {
+    const { boxSize } = readMediaEmbedBox((name) => section.getAttribute(name), player);
     section.setAttribute("data-box-size", boxSize);
     if (aspectRatio) {
         const style = section.getAttribute("style")?.replace(/;\s*$/, "");
@@ -832,15 +841,17 @@ function moveBoxToCaptionedFigure(element: HTMLElement) {
 
 /**
  * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
- * its note keeps of it, at the size of the picture, and anything else, or a drawing without a
- * picture, as the attachment link that `handleAttachmentLink` then resolves.
+ * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
+ * anything else, or a drawing without a picture, as the attachment link that
+ * `handleAttachmentLink` then resolves.
  */
 function renderAttachmentEmbed(
     attachmentId: string,
     attachment: BAttachment | SAttachment,
     getNote: GetNoteFunction
 ) {
-    const image = attachment.mime === CANVAS_ATTACHMENT_MIME
+    const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
+    const image = isDrawing
         ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
         : attachment;
     if (!image?.attachmentId || !isImageAttachmentRole(image.role)) {
@@ -848,7 +859,42 @@ function renderAttachmentEmbed(
     }
 
     const src = `api/attachments/${image.attachmentId}/image/${encodeURIComponent(image.title)}`;
-    return `<img src="${src}" alt="${utils.escapeHtml(attachment.title)}">`;
+    const alt = utils.escapeHtml(attachment.title);
+    const naturalWidth = isDrawing ? getDrawingNaturalWidth(attachment) : null;
+    if (naturalWidth === null) {
+        return `<img src="${src}" alt="${alt}">`;
+    }
+    const style = `--canvas-drawing-natural-width:${naturalWidth}px`;
+    return `<div class="canvas-drawing-box" style="${style}">`
+        + `<img class="canvas-drawing-picture" src="${src}" alt="${alt}"></div>`;
+}
+
+/**
+ * The width on screen of the frame of the canvas drawing in `attachment`, in pixels, which its
+ * picture shows. `null` for a drawing saved without a frame, whose picture shows all of it.
+ */
+function getDrawingNaturalWidth(attachment: BAttachment | SAttachment) {
+    try {
+        const content = decodeUtf8(attachment.getContent() ?? "");
+        const frame = readDrawingFrame((JSON.parse(content) as { frame?: unknown }).frame);
+        return frame ? Math.round(frame.width * frame.scale * 100) / 100 : null;
+    } catch (e) {
+        const { attachmentId } = attachment;
+        getLog().error(`Cannot read the frame of the canvas drawing '${attachmentId}': ${e}`);
+        return null;
+    }
+}
+
+/**
+ * The kind of content that decides the box of an embed of `entity`: `audio` for an audio file,
+ * otherwise the type of a note or `file` for an attachment.
+ */
+function getEmbedContentType(entity: SNote | BNote | BAttachment | SAttachment): string {
+    const isFile = "type" in entity ? entity.type === "file" : entity.role === "file";
+    if (isFile && entity.mime?.startsWith("audio/")) {
+        return "audio";
+    }
+    return ("type" in entity ? entity.type : undefined) ?? "file";
 }
 
 /** The reference link to an attachment, which `handleAttachmentLink` then resolves. */

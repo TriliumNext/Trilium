@@ -23,6 +23,7 @@ import filesRoute from "./api/files.js";
 // API routes
 import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
+import mediaProxyRoute from "./api/media_proxy.js";
 import metricsRoute from "./api/metrics.js";
 import ocrRoute from "./api/ocr.js";
 import onenoteImportRoute from "./api/onenote_import.js";
@@ -40,8 +41,6 @@ import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
-// page routes
-import setupRoute from "./setup.js";
 
 const GET = "get",
     PST = "post",
@@ -59,7 +58,6 @@ function register(app: express.Application) {
     asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login, null);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     asyncRoute(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword, null);
-    route(GET, "/setup", [], setupRoute.setupPage);
 
     // A user's setup link, opened before they have a password and so without a session. Both take
     // the token in the body, which, unlike the URL, stays out of the request log.
@@ -124,6 +122,11 @@ function register(app: express.Application) {
 
     apiRoute(PST, "/api/attachments/:attachmentId/save-to-tmp-dir", filesRoute.saveAttachmentToTmpDir);
     apiRoute(PST, "/api/attachments/:attachmentId/upload-modified-file", filesRoute.uploadModifiedFileToAttachment);
+
+    // Node only: standalone reads third-party files with the page's `fetch`, under CORS.
+    apiRoute(PST, "/api/link-embed/media-proxy", mediaProxyRoute.createProxy);
+    asyncRoute(GET, "/api/link-embed/media-proxy/:token", [auth.checkApiAuthOrElectron],
+        mediaProxyRoute.streamProxy, null);
 
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);

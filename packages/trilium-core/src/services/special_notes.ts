@@ -248,17 +248,13 @@ function resetLauncher(noteId: string) {
     const note = becca.getNote(noteId);
 
     if (note?.isLaunchBarConfig()) {
-        if (note) {
-            if (noteId === "_lbRoot" || noteId === "_lbMobileRoot") {
-                // deleting hoisted notes are not allowed, so we just reset the children
-                for (const childNote of note.getChildNotes()) {
-                    childNote.deleteNote();
-                }
-            } else {
-                note.deleteNote();
+        if (noteId === "_lbRoot" || noteId === "_lbMobileRoot") {
+            // deleting hoisted notes are not allowed, so we just reset the children
+            for (const childNote of note.getChildNotes()) {
+                childNote.deleteNote();
             }
         } else {
-            getLog().info(`Note ${noteId} has not been found and cannot be reset.`);
+            note.deleteNote();
         }
     } else {
         getLog().info(`Note ${noteId} is not a resettable launcher note.`);

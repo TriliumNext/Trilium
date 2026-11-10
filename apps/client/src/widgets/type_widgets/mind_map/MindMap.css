@@ -46,16 +46,16 @@
  * canvas to sit on instead. Only nodes carrying a background of their own get one, so that the
  * lines keep running under plain nodes as they did.
  */
-.mind-map-container me-tpc[style*="background"] {
+.mind-map-container .me-tpc[style*="background"] {
     position: relative;
 }
 
-.mind-map-container me-tpc[style*="background"]::before {
+.mind-map-container .me-tpc[style*="background"]::before {
     content: "";
     position: absolute;
     inset: 0;
     /* Below the node's own background, but still above the lines, which are outside the stacking
-       context that the node's `me-parent` / `me-root` establishes. */
+       context that the node's `.me-parent` / `.me-root` establishes. */
     z-index: -1;
     border-radius: inherit;
     background-color: var(--bgcolor);
@@ -77,11 +77,11 @@
  * every node does have is a line of text and an end to it, so the dot follows the text as a mark
  * upon it.
  */
-.mind-map-container me-tpc[data-has-memo] {
+.mind-map-container .me-tpc[data-has-memo] {
     position: relative;
 }
 
-.mind-map-container me-tpc[data-has-memo]::after {
+.mind-map-container .me-tpc[data-has-memo]::after {
     content: "";
     position: absolute;
     top: calc(50% - 2.5px);
@@ -101,7 +101,7 @@
     --memo-dot-end: calc(var(--main-radius, 20px) * .5);
 }
 
-.mind-map-container me-root > me-tpc[data-has-memo]::after {
+.mind-map-container .me-root > .me-tpc[data-has-memo]::after {
     --memo-dot-end: calc(var(--root-radius, 30px) * .5);
 }
 
@@ -110,11 +110,11 @@
  * has no cap for the dot to sit in: there the dot follows the text just past where the node ends.
  * No further than that — the expander of a node that has children begins seven pixels out.
  *
- * Everything below a branch is a child — `me-children` nests within itself all the way down — and
- * it is nested within `me-main` as well, so this has to be said after the branch's own share above
+ * Everything below a branch is a child — `.me-children` nests within itself all the way down — and
+ * it is nested within `.me-main` as well, so this has to be said after the branch's own share above
  * rather than left to a selector to tell them apart.
  */
-.mind-map-container me-children me-tpc[data-has-memo]::after {
+.mind-map-container .me-children .me-tpc[data-has-memo]::after {
     --memo-dot-end: -5px;
 }
 

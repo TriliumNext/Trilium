@@ -1,9 +1,10 @@
 import type { ZipArchive, ZipEntry } from "@triliumnext/core/src/services/zip_provider.js";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import fs, { mkdtempSync, rmSync, writeFileSync } from "fs";
+import type { FileHandle } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { PassThrough } from "stream";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
 import NodejsZipProvider from "./zip_provider.js";
 
@@ -161,6 +162,21 @@ describe("NodejsZipProvider", () => {
             expect(() => archive.append("later", { name: "later.txt" })).toThrow();
             await expect(capacityOf(archive)()).rejects.toBeTruthy();
         });
+
+        it("rejects a caller already waiting for capacity when archiver errors", async () => {
+            const archive = provider.createZipArchive();
+            const { sink } = pipeToBuffer(archive);
+            archive.append(new Uint8Array(65 * 1024 * 1024), { name: "big.bin" });
+            const capacity = capacityOf(archive)();
+
+            // Appending once finalize() has closed the queue is the error archiver can be made to raise.
+            // archiver never settles that finalize() once it has errored, so it is not awaited.
+            void archive.finalize();
+            archive.append("late", { name: "late.txt" });
+
+            await expect(capacity).rejects.toThrow("queue closed");
+            sink.destroy();
+        });
     });
 
     describe("bytes after the central directory", () => {
@@ -304,12 +320,105 @@ describe("NodejsZipProvider", () => {
             expect(Buffer.compare(fromPath["pixel.png"], fromBytes["pixel.png"])).toBe(0);
         });
 
+        it("writes an archive to a file stream that reports when it has finished", async () => {
+            const path = join(dir, `written-${zipCounter++}.zip`);
+            const { destination, waitForFinish } = provider.createFileStream(path);
+            const archive = provider.createZipArchive();
+            archive.pipe(destination);
+            archive.append("alpha", { name: "a.txt" });
+            const finished = waitForFinish();
+            await archive.finalize();
+            await finished;
+
+            expect((await readPath(path))["a.txt"].toString("utf-8")).toBe("alpha");
+
+            const failing = provider.createFileStream(join(dir, "missing-dir", "x.zip"));
+            await expect(failing.waitForFinish()).rejects.toThrow(/ENOENT/);
+        });
+
+        it("leaves a file too short to hold an end-of-central-directory record to yauzl to reject", async () => {
+            const path = join(dir, `tiny-${zipCounter++}.zip`);
+            writeFileSync(path, "PK");
+
+            await expect(readPath(path)).rejects.toThrow(/end of central directory record signature not found/i);
+        });
+
+        it("closes the file and rethrows when its size cannot be read", async () => {
+            const close = vi.fn(async () => undefined);
+            const open = vi.spyOn(fs.promises, "open").mockResolvedValue({
+                stat: async () => {
+                    throw new Error("EIO: i/o error, fstat");
+                },
+                close
+            } as unknown as FileHandle);
+
+            try {
+                await expect(provider.detectFilenameEncoding({ path: join(dir, "unreadable.zip") }))
+                    .rejects.toThrow("EIO: i/o error, fstat");
+                expect(close).toHaveBeenCalledOnce();
+            } finally {
+                open.mockRestore();
+            }
+        });
+
         it("detects the same filename encoding from a path as from the bytes", async () => {
             const buffer = await buildZip([{ name: "plain.txt", content: "x" }]);
             const path = join(dir, `encoding-${zipCounter++}.zip`);
             writeFileSync(path, buffer);
 
             expect(await provider.detectFilenameEncoding({ path })).toBe(await provider.detectFilenameEncoding(buffer));
+        });
+    });
+
+    describe("filename encoding", () => {
+        it("asks chardet about names not flagged UTF-8, and falls back to UTF-8 without an answer", async () => {
+            const detect = vi.fn((_sample: Buffer): string | null => "Shift_JIS");
+            vi.doMock("chardet", () => ({ default: { detect } }));
+            vi.resetModules();
+
+            try {
+                const { default: Provider } = await import("./zip_provider.js");
+                const isolated = new Provider();
+                const named = await buildZip([ { name: "plain.txt", content: "x" } ]);
+
+                expect(await isolated.detectFilenameEncoding(named)).toBe("Shift_JIS");
+                expect(detect.mock.calls[0][0].toString("latin1")).toBe("plain.txt");
+
+                detect.mockClear();
+                expect(await isolated.detectFilenameEncoding(await buildZip([]))).toBe("utf-8");
+                expect(detect).not.toHaveBeenCalled();
+
+                detect.mockReturnValueOnce(null);
+                expect(await isolated.detectFilenameEncoding(named)).toBe("utf-8");
+
+                detect.mockImplementationOnce(() => {
+                    throw new Error("chardet failed");
+                });
+                expect(await isolated.detectFilenameEncoding(named)).toBe("utf-8");
+            } finally {
+                vi.doUnmock("chardet");
+                vi.resetModules();
+            }
+        });
+
+        it("reads names flagged UTF-8 as UTF-8, whatever encoding was detected for the rest", async () => {
+            const zip = await buildZip([ { name: "café.txt", content: "x" } ]);
+            const names: string[] = [];
+            await provider.readZipFile(zip, async (entry) => {
+                names.push(entry.fileName);
+            }, "Shift_JIS");
+
+            expect(names).toEqual([ "café.txt" ]);
+            expect(await provider.detectFilenameEncoding(zip)).toBe("utf-8");
+        });
+
+        it("reads names as UTF-8 when the detected encoding is one TextDecoder does not know", async () => {
+            const names: string[] = [];
+            await provider.readZipFile(await buildZip([ { name: "plain.txt", content: "x" } ]), async (entry) => {
+                names.push(entry.fileName);
+            }, "x-no-such-encoding");
+
+            expect(names).toEqual([ "plain.txt" ]);
         });
     });
 });

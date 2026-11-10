@@ -41,7 +41,7 @@ describe("AutoLinkToMention", () => {
         expect(mention?.getAttribute("title")).toBe(META.title);
     });
 
-    it("leaves the plain link untouched when the metadata could not be resolved, and says why", async () => {
+    it("leaves the text link untouched when the metadata could not be resolved, and says why", async () => {
         const url = "https://blocked.example.com/article";
         fetchMetadata.mockResolvedValueOnce({ url, embedType: "opengraph", title: "blocked.example.com", unresolved: true });
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -75,7 +75,7 @@ describe("AutoLinkToMention", () => {
         expect(editor.getData()).toContain(`<a href="${url}">${url}</a>`);
 
         // Inserting a preview by hand is unaffected by the option: only auto-detection is gated.
-        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "card" });
+        await editor.execute(LINK_EMBED_COMMAND, { url, mode: "cardLink" });
         expect(findElement(editor, "linkEmbed")?.getAttribute("url")).toBe(url);
     });
 
@@ -132,9 +132,23 @@ describe("AutoLinkToMention", () => {
             expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
             expect(embed?.getAttribute("embedType")).toBe("youtube");
             expect(embed?.getAttribute("title")).toBe(META.title);
-            expect(embed?.getAttribute("boxSize")).toBe("medium");
+            expect(embed?.getAttribute("boxSize")).toBe("resizable");
             expect(embed?.getAttribute("aspectRatio")).toBe("9/16");
             expect(embed?.getAttribute("customWidth")).toBe("11.3em");
+        });
+
+        it("turns a URL after empty lines into a player and drops the lines", async () => {
+            embeddable(VIDEO_URL);
+
+            const emptyLines = "<softBreak></softBreak><softBreak></softBreak>";
+            autoLinkIn(editor, urlLeftAloneOnItsOwnLine(`${emptyLines}${VIDEO_URL}`), VIDEO_URL);
+            await flushFetch();
+
+            expect(findElement(editor, "linkMention")).toBeUndefined();
+            const root = editor.model.document.getRoot();
+            expect(root?.getChild(0)?.is("element", "contentEmbed")).toBe(true);
+            expect(findElement(editor, "contentEmbed")?.getAttribute("url")).toBe(VIDEO_URL);
+            expect(findElement(editor, "softBreak")).toBeUndefined();
         });
 
         it("keeps the URL inline while the caret is still on its line, embeddable or not", async () => {
@@ -148,12 +162,22 @@ describe("AutoLinkToMention", () => {
             expect(findElement(editor, "linkMention")?.getAttribute("url")).toBe(VIDEO_URL);
         });
 
-        it("keeps the URL inline when text sits beside it on the line", async () => {
-            autoLinkIn(editor, `<paragraph>See ${PLAIN_URL}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL);
-            await flushFetch();
+        it("keeps the URL inline beside text or another element, or below text", async () => {
+            const lines = [
+                `See ${PLAIN_URL}`,
+                `See<softBreak></softBreak>${PLAIN_URL}`,
+                `${PLAIN_URL}<linkMention url="https://example.com/other"></linkMention>`
+            ];
+            for (const line of lines) {
+                autoLinkIn(
+                    editor, `<paragraph>${line}</paragraph><paragraph>[]</paragraph>`, PLAIN_URL
+                );
+                await flushFetch();
 
-            expect(findElement(editor, "linkEmbed")).toBeUndefined();
-            expect(findElement(editor, "linkMention")).toBeDefined();
+                expect(findElement(editor, "linkEmbed"), line).toBeUndefined();
+                const mention = findElement(editor, "linkMention");
+                expect(mention?.getAttribute("url"), line).toBe(PLAIN_URL);
+            }
         });
 
         it("keeps the URL inline inside a list item, a quote and a heading", async () => {

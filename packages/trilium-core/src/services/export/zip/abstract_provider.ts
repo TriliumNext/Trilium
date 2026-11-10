@@ -124,7 +124,7 @@ export abstract class ZipExportProvider {
  * for one spelling of a format exactly as it does for the other.
  */
 function pictureExtensionFor(mime: string): string | null {
-    const normalized = mime?.trim().toLowerCase() ?? "";
+    const normalized = mime.trim().toLowerCase();
 
     return isAcceptedImageMime(normalized) ? imageExtensionForMime(normalized) : null;
 }

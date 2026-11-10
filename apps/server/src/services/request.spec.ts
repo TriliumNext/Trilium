@@ -112,6 +112,12 @@ const { state, fakeHttp, fakeHttps, makeResponse, HttpProxyAgent, HttpsProxyAgen
         };
     });
 
+const safeFetch = vi.hoisted(() => vi.fn());
+
+vi.mock("./safe_fetch.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./safe_fetch.js")>(),
+    safeFetch
+}));
 vi.mock("http", () => fakeHttp);
 vi.mock("https", () => fakeHttps);
 vi.mock("http-proxy-agent", () => ({ HttpProxyAgent }));
@@ -234,9 +240,12 @@ describe("NodeRequestProvider.exec", () => {
             res.emitEnd();
         };
 
-        await provider.exec(baseOpts({ method: "POST", body: "raw-string" }));
+        await provider.exec(baseOpts({ method: "POST", body: "raw-string", auth: { password: "secret" } }));
         expect(state.requests[0].endPayload).toBe("raw-string");
         expect(state.requests[0].opts.headers["Cookie"]).toBe("");
+        // Credentials without a TOTP token send no trilium-totp header.
+        expect(state.requests[0].opts.headers["trilium-cred"]).toBe(Buffer.from("dummy:secret").toString("base64"));
+        expect(state.requests[0].opts.headers).not.toHaveProperty("trilium-totp");
     });
 
     it("rejects on a request error", async () => {
@@ -639,5 +648,36 @@ describe("NodeRequestProvider.getImage", () => {
 
         expect(() => response.emitError(new Error("net::ERR_CONNECTION_RESET"))).not.toThrow();
         await expect(promise).rejects.toThrow(/ERR_CONNECTION_RESET/);
+    });
+});
+
+describe("NodeRequestProvider.fetchResource", () => {
+    it("asks with the method and headers it is given", async () => {
+        const url = "https://example.com/clip.mp4";
+        const headers = { "User-Agent": "TriliumNotes" };
+        safeFetch.mockResolvedValue(new Response(null));
+
+        await new NodeRequestProvider().fetchResource(url, {
+            method: "HEAD", maxBytes: 0, headers
+        });
+
+        expect(safeFetch).toHaveBeenCalledExactlyOnceWith(url, { method: "HEAD", headers });
+    });
+});
+
+describe("NodeRequestProvider.fetchApi", () => {
+    it("allows private addresses only when asked, with no deadline and no redirects", async () => {
+        const response = new Response("{}");
+        safeFetch.mockResolvedValue(response);
+        const init = { method: "POST", body: "{}" };
+
+        const result = await new NodeRequestProvider()
+            .fetchApi("http://localhost:11434/api/chat", init, { allowPrivateNetwork: true });
+        expect(result).toBe(response);
+        expect(safeFetch).toHaveBeenLastCalledWith("http://localhost:11434/api/chat", init, {
+            allowPrivateNetwork: true,
+            timeoutMs: null,
+            maxRedirects: 0
+        });
     });
 });

@@ -24,6 +24,7 @@ let lastAcceptedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastAcceptedEntityChangeSyncId = window.glob.maxEntityChangeSyncIdAtLoad ?? 0;
 let lastProcessedEntityChangeId = window.glob.maxEntityChangeIdAtLoad ?? 0;
 let lastPingTs: number;
+let unansweredPingSince: number | null = null;
 let frontendUpdateDataQueue: EntityChange[] = [];
 
 function sendOutgoing(message: object): boolean {
@@ -86,6 +87,8 @@ export async function dispatchMessage(message: WebSocketMessage) {
     // Process the message
     if (messageType === "ping") {
         lastPingTs = Date.now();
+        unansweredPingSince = null;
+        toastService.closePersistent("lost-websocket-connection");
 
         // The backend expires the protected session with a one-shot `reload-frontend` broadcast;
         // if the connection was down at that moment, the client would keep showing decrypted
@@ -142,6 +145,8 @@ function logRows(entityChanges: EntityChange[]) {
 
 async function executeFrontendUpdate(entityChanges: EntityChange[]) {
     lastPingTs = Date.now();
+    unansweredPingSince = null;
+    toastService.closePersistent("lost-websocket-connection");
 
     if (entityChanges.length > 0) {
         logRows(entityChanges);
@@ -320,7 +325,10 @@ async function sendPing() {
         return;
     }
 
-    if (Date.now() - lastPingTs > 30000) {
+    const now = Date.now();
+    const isConnectionLost = unansweredPingSince !== null && now - unansweredPingSince > 30000;
+
+    if (isConnectionLost) {
         console.warn(utils.now(), "Lost websocket connection to the backend");
         toastService.showPersistent({
             id: "lost-websocket-connection",
@@ -331,17 +339,27 @@ async function sendPing() {
     }
 
     if (ws.readyState === ws.OPEN) {
-        toastService.closePersistent("lost-websocket-connection");
+        if (!isConnectionLost) {
+            toastService.closePersistent("lost-websocket-connection");
+        }
+        if (unansweredPingSince === null) {
+            unansweredPingSince = now;
+        }
         ws.send(
             JSON.stringify({
                 type: "ping",
                 lastEntityChangeId: lastAcceptedEntityChangeId
             })
         );
-    } else if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
-        console.log(utils.now(), "WS closed or closing, trying to reconnect");
+    } else {
+        if (unansweredPingSince === null) {
+            unansweredPingSince = now;
+        }
+        if (ws.readyState === ws.CLOSED || ws.readyState === ws.CLOSING) {
+            console.log(utils.now(), "WS closed or closing, trying to reconnect");
 
-        ws = connectWebSocket();
+            ws = connectWebSocket();
+        }
     }
 }
 

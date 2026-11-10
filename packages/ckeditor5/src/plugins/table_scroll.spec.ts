@@ -11,7 +11,7 @@ import {
     TableCaption,
     TableColumnResize
 } from "ckeditor5";
-import type { ClassicEditor, ModelElement } from "ckeditor5";
+import type { ClassicEditor, Editor, ModelElement } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
@@ -193,6 +193,21 @@ describe("a table with content wider than the editable", () => {
         expect(domFigure(fixed).classList.contains("ck-table-overflowing")).toBe(false);
     });
 
+    it("measures a table that arrives during a composition once it is rendered", () => {
+        const domRoot = editor.editing.view.getDomRoot();
+        // The renderer leaves the DOM as it is until the composition ends.
+        domRoot?.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true }));
+        setModelData(editor.model, modelTable([["a", LONG_WORD]]));
+        const viewFigure = editor.editing.mapper.toViewElement(firstTable(editor));
+        expect(editor.editing.view.document.isComposing).toBe(true);
+        expect(domRoot?.querySelector("figure.table")).toBeNull();
+        expect(viewFigure?.hasClass("ck-table-overflowing")).toBe(false);
+
+        domRoot?.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+        editor.editing.view.forceRender();
+        expectContentScrolling(editor);
+    });
+
     it("gets the reference width back once the content fits", () => {
         setReferenceWidth("1200px");
         setEditableWidth(editor, 1500);
@@ -311,7 +326,35 @@ describe("the edge fades of a scrolling table", () => {
             .toBeCloseTo(table.offsetWidth - figure.clientWidth - 100, 0);
         expect(fadeClasses(table)).toContain("scroll-fade-start");
     });
+
+    it("leaves the scrolling tables that a widget draws to their own editor", async () => {
+        const editor = await createTestEditor([ ...PLUGINS, EmbeddedEditorWidget ]);
+        setEditableWidth(editor, 400);
+        setModelData(editor.model, "<embeddedEditor></embeddedEditor>"
+            + modelTable([ [ "a", "b" ] ], 'tableWidth="150%"'));
+        const embed = editor.editing.view.getDomRoot()?.querySelector(".embed");
+        const embeddedFigure = embed?.querySelector("figure.ck-table-overflowing");
+        expect(embeddedFigure).toBeInstanceOf(HTMLElement);
+        expect(embeddedFigure?.scrollWidth).toBeGreaterThan(embeddedFigure?.clientWidth ?? NaN);
+        expect(embed?.querySelectorAll(".scroll-fade")).toHaveLength(0);
+        expect(fadeClasses(domTable(domFigure(editor)))).toContain("scroll-fade-end");
+    });
 });
+
+/** A widget that shows the scrolling table of an editor of its own, as an embedded note does. */
+function EmbeddedEditorWidget(editor: Editor) {
+    editor.model.schema.register("embeddedEditor", { inheritAllFrom: "$blockObject" });
+    editor.conversion.for("editingDowncast").elementToElement({
+        model: "embeddedEditor",
+        view: (_element, { writer }) => writer.createContainerElement("div", { class: "embed" },
+            writer.createUIElement("div", undefined, function (domDocument) {
+                const domElement = this.toDomElement(domDocument);
+                domElement.innerHTML = '<figure class="table ck-table-overflowing"><table><tbody>'
+                    + `<tr><td>${LONG_WORD}</td></tr></tbody></table></figure>`;
+                return domElement;
+            }))
+    });
+}
 
 /** Loads the stylesheet of the editor for the tests of the enclosing `describe`. */
 function useEditorStylesheet() {

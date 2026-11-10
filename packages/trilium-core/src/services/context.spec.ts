@@ -205,3 +205,16 @@ describe("context", () => {
         });
     });
 });
+
+describe("context registration", () => {
+    it("refuses to be read before it is initialized, or initialized twice", async () => {
+        vi.resetModules();
+        const fresh = await import("./context.js");
+        const context = getContext();
+
+        expect(() => fresh.getContext()).toThrow("Context not initialized");
+        fresh.initContext(context);
+        expect(fresh.getContext()).toBe(context);
+        expect(() => fresh.initContext(context)).toThrow("Context already initialized");
+    });
+});

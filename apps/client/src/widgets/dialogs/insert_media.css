@@ -1,0 +1,35 @@
+.insert-media-balloon {
+    padding: 8px;
+    /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
+    width: 34rem;
+    max-width: calc(100vw - 2rem);
+    font-size: 1rem;
+    line-height: var(--bs-body-line-height);
+    white-space: normal;
+    text-align: start;
+
+    .insert-media-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+}
+
+:is(.modal.insert-media-dialog, .insert-media-balloon) {
+    .tn-card-description {
+        color: inherit;
+        opacity: .7;
+    }
+
+    @container (min-width: 501px) {
+        .insert-media-url {
+            display: grid;
+            grid-template-columns: minmax(8em, max-content) minmax(0, 1fr);
+            row-gap: 4px;
+
+            > .form-field-error {
+                grid-column: 2;
+            }
+        }
+    }
+}

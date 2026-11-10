@@ -12,19 +12,16 @@ import { Tooltip } from "bootstrap";
  * manager is destroyed with a fade queued).
  *
  * Patch `dispose` once per module load to leave harmless placeholders behind
- * so the stale transitionend handler falls through cleanly. Guarded so this
- * file can be imported alongside the client's own copy of the patch in
- * `apps/client/src/widgets/react/hooks.tsx` without double-wrapping.
+ * so the stale transitionend handler falls through cleanly. A flag on the
+ * prototype skips the patch when this module is evaluated again, as on a hot
+ * reload.
  */
 {
     const proto = Tooltip.prototype as unknown as {
         dispose(): void;
         __contentHintManagerDisposePatched?: true;
     };
-    /* v8 ignore next -- the "already-patched" branch is unreachable in a
-       single-process test run: the module loads exactly once and the flag is
-       unset. The guard exists so the client's own copy of the patch (see
-       `apps/client/src/widgets/react/hooks.tsx`) can co-exist with this one. */
+    /* v8 ignore else -- the flag is set only by an earlier evaluation of this module */
     if (!proto.__contentHintManagerDisposePatched) {
         const originalDispose = proto.dispose;
         const disposedPlaceholder = {
@@ -313,11 +310,7 @@ export class ContentHintManager {
         // pushes (e.g. hover + caret driving the same handle with the same
         // title) free.
         if (this._currentElement === targetElement) {
-            /* v8 ignore next -- if we're in this branch, either both are the
-               same non-null element (then `_currentTooltip` is truthy and `top`
-               is defined) or both are null (then the outer `_render` was called
-               on an already-empty state, which no live code path does — pushes
-               always precede a same-element render). */
+            /* v8 ignore else -- the top here is already shown with its tooltip */
             if (this._currentTooltip && top) {
                 if (top.content !== this._currentContent) {
                     this._currentTooltip.setContent({ ".tooltip-inner": top.content });
@@ -438,11 +431,7 @@ export class ContentHintManager {
             this._pendingHideCleanup = null;
             // If we're still the current popup (no interrupting push landed)
             // then dispose ourselves and reset state.
-            /* v8 ignore next -- the false branch (currentTooltip changed while
-               the fade was in flight) is defensively unreachable: every
-               interruption path (`_render` on a push, `destroy`) first calls
-               `_cancelPendingHide`, which removes this listener before it can
-               fire. Kept for safety if a new interruption path forgets to. */
+            /* v8 ignore else -- _render() and destroy() remove this listener first */
             if (this._currentTooltip === tooltip) {
                 tooltip.dispose();
                 this._currentTooltip = null;

@@ -219,7 +219,14 @@ async function acquire(): Promise<PooledWorker | null> {
         return null;
     }
 
-    const free = idle.pop();
+    let free = idle.pop();
+
+    // Node closes a dead worker's channel and reports its exit in separate callbacks, so an idle
+    // worker can already be disconnected before `forgetIdle` runs. Its place is freed here instead.
+    while (free && !free.worker.connected) {
+        started--;
+        free = idle.pop();
+    }
 
     if (free) {
         return free;
@@ -261,6 +268,20 @@ function release(worker: PooledWorker) {
     idle.push(worker);
     // Nothing was waiting for it, so this may well have been the last image of a run.
     scheduleShutdown();
+}
+
+/**
+ * Removes a worker that died while idle, so its place goes to a fresh process instead of the next
+ * image being sent into a closed channel. A busy worker is not in `idle`; its death fails its image,
+ * and `compressInWorker` retires it.
+ */
+function forgetIdle(worker: PooledWorker) {
+    const index = idle.indexOf(worker);
+
+    if (index !== -1) {
+        idle.splice(index, 1);
+        started--;
+    }
 }
 
 /**
@@ -402,6 +423,7 @@ function spawn(): PooledWorker | null {
                     + `${pooled.pending ? " while working on an image" : " while idle"}`);
             readiness.died?.(new Error(`Image worker exited with code ${code ?? signal}.`));
             pooled.failed?.(new Error(`Image worker exited with code ${code ?? signal}.`));
+            forgetIdle(pooled);
         });
         // Never a reason for the pool to be what holds this process open; both handles count.
         pooled.worker.unref();

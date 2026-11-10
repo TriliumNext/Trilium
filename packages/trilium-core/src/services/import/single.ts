@@ -165,6 +165,7 @@ async function importSpreadsheet(taskContext: TaskContext<"importNotes">, file: 
     // Dynamically import the exceljs-backed parser so exceljs only loads when an `.xlsx` is
     // actually imported, keeping it out of the core barrel (and the standalone/browser bundle).
     const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    /* v8 ignore next -- an uploaded .xlsx always arrives as bytes; only text formats arrive as strings */
     const buffer = typeof file.buffer === "string" ? Buffer.from(file.buffer) : file.buffer;
     const workbook = await parseXlsxToWorkbook(buffer);
 

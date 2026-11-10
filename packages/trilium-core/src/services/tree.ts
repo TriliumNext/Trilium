@@ -191,6 +191,7 @@ function sortNotes(
 
         for (const note of notes) {
             const branch = note.getParentBranches().find((b) => b.parentNoteId === parentNoteId);
+            /* v8 ignore next -- `getChildNotes()` is built from these branches */
             if (!branch) {
                 continue;
             }
