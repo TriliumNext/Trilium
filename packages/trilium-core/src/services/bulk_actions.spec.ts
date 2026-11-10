@@ -8,6 +8,7 @@ import bulkActionService from "./bulk_actions.js";
 import cloningService from "./cloning.js";
 import config from "./config.js";
 import { getContext } from "./context.js";
+import { getLog } from "./log.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
@@ -336,6 +337,26 @@ describe("bulk_actions service (real DB)", () => {
             // A clone is created under the target while the originals remain.
             expect(becca.getBranchFromChildAndParent(note.note.noteId, target.note.noteId)).not.toBeNull();
             expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+        });
+
+        it("logs a refused move of a single-parent note", () => {
+            const note = createNote("root");
+            const info = vi.spyOn(getLog(), "info");
+
+            try {
+                getContext().init(() =>
+                    bulkActionService.executeActions(
+                        [ { name: "moveNote", targetParentNoteId: note.note.noteId } ],
+                        [ note.note.noteId ]
+                    )
+                );
+
+                expect(info).toHaveBeenCalledWith(expect.stringContaining(
+                    `Moving/cloning note ${note.note.noteId} to ${note.note.noteId} failed`));
+                expect(becca.getBranchFromChildAndParent(note.note.noteId, "root")).not.toBeNull();
+            } finally {
+                info.mockRestore();
+            }
         });
 
         it("leaves the note in place when the clone is refused", () => {
