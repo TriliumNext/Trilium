@@ -229,4 +229,37 @@ describe("FetchRequestProvider.fetchResource", () => {
         await expect(provider.fetchResource("https://example.com/p", { maxBytes: 10 }))
             .rejects.toThrow(/Failed to fetch/);
     });
+
+    it("aborts a request still waiting after five seconds", async () => {
+        vi.useFakeTimers();
+        let signal: AbortSignal | undefined;
+        vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => new Promise<Response>((_resolve, reject) => {
+            signal = init?.signal ?? undefined;
+            signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        }));
+
+        const rejection = expect(provider.fetchResource("https://example.com/slow", { maxBytes: 10 }))
+            .rejects.toThrow("aborted");
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(signal?.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await rejection;
+        expect(signal?.aborted).toBe(true);
+    });
+});
+
+describe("FetchRequestProvider.fetchApi", () => {
+    it("calls the validated URL with the init it is given, and refuses a bad one", async () => {
+        const response = new Response("{}");
+        const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+        const init = { method: "POST", body: "{}" };
+
+        await expect(provider.fetchApi("https://api.example.com/v1/chat", init, { allowPrivateNetwork: false }))
+            .resolves.toBe(response);
+        expect(spy).toHaveBeenCalledWith("https://api.example.com/v1/chat", init);
+
+        await expect(provider.fetchApi("file:///etc/passwd", {}, { allowPrivateNetwork: false }))
+            .rejects.toThrow(/http and https/);
+        expect(spy).toHaveBeenCalledTimes(1);
+    });
 });

@@ -190,6 +190,51 @@ describe("StandaloneLogService file handling", () => {
     });
 });
 
+describe("StandaloneLogService.getLogContents", () => {
+    it("serves the pending entries alone, or nothing for a file it cannot read back", async () => {
+        const internal = internalsOf(new StandaloneLogService());
+        const service = internal as unknown as StandaloneLogService;
+        (internal as unknown as { todaysMidnight: Date }).todaysMidnight = new Date();
+        internal.writeEntry("pending\n");
+        expect(service.getLogContents()).toBe("pending\n");
+
+        installOpfs({ createSyncAccessHandle: async () => makeSyncHandle() });
+        await internal.openLogFile("trilium-2000-01-01.log");
+        expect(service.getLogContents()).toBeNull();
+    });
+});
+
+describe("StandaloneLogService opening a file", () => {
+    it("gives up when no directory could be set up", async () => {
+        const createSyncAccessHandle = vi.fn(async () => makeSyncHandle());
+        installOpfs({ createSyncAccessHandle });
+        const internal = internalsOf(new StandaloneLogService());
+        vi.spyOn(internal, "ensureLogDirectory").mockResolvedValue(undefined);
+
+        await internal.openLogFile("trilium-2024-01-15.log");
+
+        expect(createSyncAccessHandle).not.toHaveBeenCalled();
+        expect(internal.currentFile).toBeNull();
+    });
+
+    it("closes a handle that arrives after the file was closed", async () => {
+        const handle = makeSyncHandle();
+        const pending: { deliver?: (value: unknown) => void } = {};
+        installOpfs({ createSyncAccessHandle: () => new Promise((resolve) => { pending.deliver = resolve; }) });
+        const internal = internalsOf(new StandaloneLogService());
+        await internal.ensureLogDirectory();
+
+        const open = internal.openLogFile("trilium-2024-01-15.log");
+        await vi.waitFor(() => expect(pending.deliver).toBeDefined());
+        internal.closeLogFile();
+        pending.deliver?.(handle);
+        await open;
+
+        expect(handle.close).toHaveBeenCalledOnce();
+        expect(internal.currentFile).toBeNull();
+    });
+});
+
 describe("StandaloneLogService when the log file is held elsewhere", () => {
     afterEach(() => {
         vi.useRealTimers();
@@ -261,6 +306,34 @@ describe("StandaloneLogService when the log file is held elsewhere", () => {
         await vi.advanceTimersByTimeAsync(120_000);
         expect(opfs.attempts()).toBe(attemptsAfterClose);
         expect(internal.currentFile).toBeNull();
+    });
+
+    it("does not retry again when the file is closed while a retry is in flight", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        let attempts = 0;
+        let refuse: (error: Error) => void = () => {};
+        installOpfs({
+            createSyncAccessHandle: () => {
+                attempts++;
+                if (attempts <= 3) {
+                    return Promise.reject(new Error("locked"));
+                }
+                return new Promise((_resolve, reject) => { refuse = reject; });
+            }
+        });
+        const internal = internalsOf(new StandaloneLogService());
+
+        const open = internal.openLogFile("trilium-2024-07-01.log");
+        await vi.advanceTimersByTimeAsync(1_000);
+        await open;
+        await vi.advanceTimersByTimeAsync(1_000);
+        expect(attempts).toBe(4);
+
+        internal.closeLogFile();
+        refuse(new Error("locked"));
+        await vi.advanceTimersByTimeAsync(120_000);
+        expect(attempts).toBe(4);
     });
 });
 

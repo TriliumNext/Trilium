@@ -112,6 +112,15 @@ describe("what a start runs with", () => {
         expect(files.has("security.json")).toBe(true);
     });
 
+    it("opens the file in the origin's private filesystem when no root is given", async () => {
+        vi.stubGlobal("navigator", { storage: { getDirectory: getRoot } });
+
+        const store = await acquireSecuritySettings();
+
+        expect(store.isWritable).toBe(true);
+        expect(files.has("security.json")).toBe(true);
+    });
+
     it("is what the file says, once something agreed to it", async () => {
         const store = await acquireSecuritySettings({ getRoot });
 

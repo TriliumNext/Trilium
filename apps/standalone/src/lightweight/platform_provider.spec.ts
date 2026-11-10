@@ -11,6 +11,7 @@ describe("StandalonePlatformProvider", () => {
         const provider = new StandalonePlatformProvider("");
         expect(provider.isElectron).toBe(false);
         expect(provider.isStandalone).toBe(true);
+        expect(provider.getDatabasePath()).toBeNull();
     });
 
     it.each([

@@ -85,6 +85,7 @@ async function loadShareThemeExportAssets(
 
     const files = new Map<string, string | Uint8Array>([ [ "icon-color.svg", iconColorSvg ] ]);
     for (const [ index, file ] of themeFiles.entries()) {
+        /* v8 ignore next -- `split()` returns at least one element, so `at(-1)` is never undefined */
         files.set(`assets/${file.split("/").at(-1) ?? file}`, themeContents[index]);
     }
     for (const [ index, file ] of translationFiles.entries()) {

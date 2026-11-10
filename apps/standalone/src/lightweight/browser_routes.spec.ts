@@ -150,6 +150,39 @@ describe("registerRoutes (real wiring)", () => {
         expect(res.headers["Accept-Ranges"]).toBe("bytes");
     });
 
+    // The share routes load their subsystem on the first request, so only a dispatch proves the
+    // lazy import resolves and the reply reaches the router already formatted.
+    it("serves the share routes, adding the slash to a bare /share", async () => {
+        const bare = await router.dispatch("GET", "http://localhost/share");
+        expect(bare.status).toBe(302);
+        expect(bare.headers.location).toBe("../share/");
+
+        const missing = await router.dispatch("GET", "http://localhost/share/api/notes/noSuchNote", undefined, {
+            accept: "application/json"
+        });
+        expect(missing.status).toBe(404);
+        expect(missing.headers.location).toBeUndefined();
+    });
+
+    it("hands a share route the request's headers, which carry its credentials", async () => {
+        const noteId = cls.init(() => {
+            const note = noteService.createNewNote({
+                parentNoteId: "_share",
+                title: "Guarded",
+                type: "text",
+                content: "<p>guarded</p>"
+            }).note;
+            note.setLabel("shareCredentials", "user:secret");
+            return note.noteId;
+        });
+        const url = `http://localhost/share/api/notes/${noteId}`;
+
+        expect((await router.dispatch("GET", url)).status).toBe(401);
+        const allowed = await router.dispatch("GET", url, undefined, { authorization: `Basic ${btoa("user:secret")}` });
+        expect(allowed.status).toBe(200);
+        expect((parseJson(allowed.body) as { noteId: string }).noteId).toBe(noteId);
+    });
+
     it("returns the setup payload when the database is not initialized", async () => {
         vi.spyOn(sql_init, "isDbInitialized").mockReturnValue(false);
         const data = parseJson((await router.dispatch("GET", "http://localhost/bootstrap")).body) as Record<string, unknown>;
@@ -182,6 +215,13 @@ describe("route wrapper branches (via controlled handlers)", () => {
                 res.set("A", "1").setHeader("B", "2").removeHeader("A").status(206).send("body");
             });
             route("get", "/t/r-sendstatus", [], (_req: unknown, res: MockRes) => { res.sendStatus(204); });
+            route("get", "/t/r-redirect", [], (_req: unknown, res: MockRes) => { res.redirect("../elsewhere"); });
+            route("get", "/t/r-problem", [], (_req: unknown, res: MockRes) => {
+                res.setHeader("content-type", "application/problem+json").json({ title: "nope" });
+            });
+            route("get", "/t/r-header", [], (req: { get(name: string): string | undefined }) => ({
+                header: req.get("X-Trilium-Test")
+            }));
             route("get", "/t/r-stream", [], (_req: unknown, res: MockRes) => { res.write("chunk1"); res.write("chunk2"); res.end(); });
             route("get", "/t/r-customrh", [], () => ({ x: 1 }), (_req: unknown, res: { setHeader(n: string, v: string): void; result: unknown }, result: unknown) => {
                 res.setHeader("X-Custom", "y");
@@ -210,6 +250,8 @@ describe("route wrapper branches (via controlled handlers)", () => {
         status(c: number): MockRes;
         send(b: unknown): MockRes;
         sendStatus(c: number): MockRes;
+        redirect(url: string): void;
+        json(b: unknown): MockRes;
         write(c: string): boolean;
         end(): MockRes;
     }
@@ -262,6 +304,21 @@ describe("route wrapper branches (via controlled handlers)", () => {
 
         expect((await router.dispatch("GET", "http://localhost/t/r-sendstatus")).status).toBe(204);
         expect(text((await router.dispatch("GET", "http://localhost/t/r-stream")).body)).toBe("chunk1chunk2");
+
+        const redirect = await router.dispatch("GET", "http://localhost/t/r-redirect");
+        expect(redirect.status).toBe(302);
+        expect(redirect.headers.Location).toBe("../elsewhere");
+
+        // A type the handler chose survives json(), whatever case it was written in.
+        const problem = await router.dispatch("GET", "http://localhost/t/r-problem");
+        expect(problem.headers).toEqual({ "content-type": "application/problem+json" });
+        expect(parseJson(problem.body)).toEqual({ title: "nope" });
+    });
+
+    it("reads request headers case-insensitively through req.get()", async () => {
+        const router = buildRouter();
+        const res = await router.dispatch("GET", "http://localhost/t/r-header", undefined, { "x-trilium-test": "42" });
+        expect(parseJson(res.body)).toEqual({ header: "42" });
     });
 
     it("invokes a custom result handler that sets a header", async () => {

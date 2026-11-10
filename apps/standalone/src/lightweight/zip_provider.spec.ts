@@ -247,8 +247,9 @@ describe("BrowserZipProvider.detectFilenameEncoding", () => {
             return new RealTextDecoder(label, opts);
         } as unknown as typeof TextDecoder;
         try {
-            const zip = makeZip({ [String.fromCharCode(0xfe)]: "x" });
-            expect(await provider.detectFilenameEncoding(zip)).toBe("utf-8");
+            // Without the stub these bytes detect as GBK; skipping it moves on to the next candidate.
+            const zip = makeLegacyZip([{ placeholder: "AB.txt", nameBytes: GBK_NAME_BYTES }]);
+            expect(await provider.detectFilenameEncoding(zip)).toBe("shift_jis");
         } finally {
             globalThis.TextDecoder = RealTextDecoder;
         }

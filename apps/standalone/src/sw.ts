@@ -346,7 +346,9 @@ async function streamBackupDownload(url) {
     let streamController: ReadableStreamDefaultController<Uint8Array> | null = null;
     const requestMore = () => {
         while (streamController && outstanding < MAX_CHUNKS_IN_FLIGHT
+            /* v8 ignore start -- @preserve: desiredSize is null only on an errored stream, and neither pull() nor a chunk handler reaches requestMore() after controller.error(). */
             && (streamController.desiredSize ?? 0) > 0) {
+            /* v8 ignore stop */
             outstanding++;
             port.postMessage({ type: "pull" });
         }

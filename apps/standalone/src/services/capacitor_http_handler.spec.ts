@@ -185,6 +185,29 @@ describe("capacitorHttpHandler", () => {
             expect(capacitorHttp).toHaveBeenCalledTimes(2);
         });
 
+        it("treats a ping that throws as unavailable and probes again once the retry delay passes", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            try {
+                const capacitorHttp = vi.fn().mockResolvedValue({ status: 200, headers: {}, data: "ok" });
+                installCapacitor({ capacitorHttp, platform: "android" });
+                const fetchMock = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+                vi.stubGlobal("fetch", fetchMock);
+
+                await capacitorHttpHandler({ method: "GET", url: "https://x", headers: {} });
+                await capacitorHttpHandler({ method: "GET", url: "https://x", headers: {} });
+                expect(fetchMock).toHaveBeenCalledTimes(1);
+
+                // The previous service worker can still own fetches right after an update, so a
+                // failed probe expires instead of pinning the plugin transport for the session.
+                vi.advanceTimersByTime(15_000);
+                await capacitorHttpHandler({ method: "GET", url: "https://x", headers: {} });
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(capacitorHttp).toHaveBeenCalledTimes(3);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it("falls back to the plugin transport when the proxy reports an internal error", async () => {
             const capacitorHttp = vi.fn().mockResolvedValue({ status: 200, headers: {}, data: "via plugin" });
             installCapacitor({ capacitorHttp, platform: "android" });

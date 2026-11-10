@@ -534,6 +534,7 @@ export default defineConfig(() => ({
                 "**/playwright.config.ts",
                 // Test harness, not product code.
                 "**/test_setup.ts",
+                "**/test_environment_worker.ts",
                 // Thin re-export entry (forwards the client desktop entry).
                 "**/desktop.ts",
                 // The web-worker entry boots @triliumnext/core (and a second SQLite
@@ -547,10 +548,11 @@ export default defineConfig(() => ({
             // which are ambiguous in this monorepo and get attributed to whichever project wins
             // the match. Anchor to the repo root so every path is unambiguous.
             reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
-            // Threshold globs match paths relative to the root, `src`.
+            // Threshold globs match paths relative to the root, `src`; `**` does not cross `..`, so
+            // the second glob covers this app's own files and not core's.
             thresholds: {
                 "../../../packages/trilium-core/src/share/**": FULL_COVERAGE,
-                "lightweight/share_provider.ts": FULL_COVERAGE
+                "**/*.{ts,tsx}": FULL_COVERAGE
             }
         },
         server: {

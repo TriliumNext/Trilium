@@ -344,3 +344,34 @@ describe("BridgedRequestProvider.fetchResource", () => {
         }
     });
 });
+
+describe("BridgedRequestProvider.fetchResource without a body", () => {
+    it("answers empty bytes whether or not the type is read by its prefix", async () => {
+        for (const prefixLength of [ undefined, () => 5 ]) {
+            const provider = new BridgedRequestProvider();
+            const promise = provider.fetchResource("https://example.com/empty", { maxBytes: 10, prefixLength });
+
+            respond({ status: 204, headers: {} });
+
+            await expect(promise).resolves.toEqual({ status: 204, ok: true, contentType: "", bytes: new Uint8Array(0) });
+        }
+    });
+});
+
+describe("BridgedRequestProvider.fetchApi", () => {
+    it("goes around the bridge to the WebView's fetch, after validating the URL", async () => {
+        const response = new Response("{}");
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+        const provider = new BridgedRequestProvider();
+        const init = { method: "POST", body: "{}" };
+
+        await expect(provider.fetchApi("https://api.example.com/v1/chat", init, { allowPrivateNetwork: true }))
+            .resolves.toBe(response);
+        expect(fetchSpy).toHaveBeenCalledWith("https://api.example.com/v1/chat", init);
+        expect(postSpy).not.toHaveBeenCalled();
+
+        await expect(provider.fetchApi("file:///etc/passwd", {}, { allowPrivateNetwork: true }))
+            .rejects.toThrow(/http and https/);
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+});

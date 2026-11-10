@@ -245,6 +245,10 @@ afterEach(() => vi.unstubAllGlobals());
 describe("which database is the live one", () => {
     it("is the original name until a restore says otherwise", async () => {
         await expect(readCurrentDatabaseName()).resolves.toBe(DEFAULT_DATABASE_NAME);
+
+        // A pointer left blank names nothing, so it is read the same way.
+        pointer = " \n";
+        await expect(readCurrentDatabaseName()).resolves.toBe(DEFAULT_DATABASE_NAME);
     });
 
     it("is whatever the last restore wrote down", async () => {
@@ -284,6 +288,18 @@ describe("restoring from a picked backup", () => {
         // Closed, then written down, then opened: the pointer is what makes the swap, and nothing
         // opens until it has been made.
         expect(acted).toEqual([ "close", `open:${CANDIDATE_NAME}` ]);
+        expect(pointer).toBe(CANDIDATE_NAME);
+    });
+
+    it("adds a slot to a pool whose slots are all spoken for", async () => {
+        const { files, pool } = fakePool();
+        const { target } = fakeTarget(pool);
+        pool.getCapacity = () => files.size;
+        const addCapacity = vi.spyOn(pool, "addCapacity");
+
+        await restoreDatabase(target, new Blob([ databaseBytes() ]));
+
+        expect(addCapacity).toHaveBeenCalledExactlyOnceWith(1);
         expect(pointer).toBe(CANDIDATE_NAME);
     });
 
@@ -571,6 +587,65 @@ describe("a backup that cannot be restored", () => {
 
         // Nothing to take back, so nothing was let go of either.
         expect(handles.paused).toBe(0);
+        expect(pointer).toBeUndefined();
+    });
+
+    it("reports the closed handle when the live database cannot be reopened to recover from it", async () => {
+        const { pool, handles } = fakePool();
+        const { target, acted } = fakeTarget(pool, {
+            beforeOpen: (dbName) => {
+                if (dbName === DEFAULT_DATABASE_NAME) {
+                    throw new Error("database is locked");
+                }
+            }
+        });
+        let imports = 0;
+        pool.importDb = async () => {
+            imports++;
+            throw closedAccessHandle();
+        };
+
+        await expect(restoreDatabase(target, new Blob([ databaseBytes() ])))
+            .rejects.toMatchObject({ reason: "restore-failed", message: "AccessHandle is closed" });
+
+        expect(imports).toBe(1);
+        expect(handles).toMatchObject({ paused: 1, unpaused: 1 });
+        expect(acted).toContain(`open-failed:${DEFAULT_DATABASE_NAME}`);
+        expect(pointer).toBeUndefined();
+    });
+
+    it("carries the container's own reason for a wrong passphrase, and imports nothing", async () => {
+        const { files, pool } = fakePool();
+        const { target } = fakeTarget(pool);
+        const backup = await containerOf(databaseBytes(), { passphrase: "hunter2" });
+
+        await expect(restoreDatabase(target, backup, { passphrase: "hunter3" }))
+            .rejects.toMatchObject({ name: "RestoreFailure", reason: "wrong-passphrase-or-damaged-header" });
+        expect(files.has(CANDIDATE_NAME)).toBe(false);
+        expect(pointer).toBeUndefined();
+    });
+
+    it("reports a failure that is not an Error by its string form", async () => {
+        const { pool } = fakePool();
+        const { target } = fakeTarget(pool);
+        pool.importDb = async () => {
+            throw "the pool is full";
+        };
+
+        await expect(restoreDatabase(target, new Blob([ databaseBytes() ])))
+            .rejects.toMatchObject({ reason: "restore-failed", message: "the pool is full" });
+    });
+
+    it("still reports the verdict when the candidate it had imported will not unlink", async () => {
+        const { pool, answers } = fakePool();
+        const { target } = fakeTarget(pool);
+        answers.options.dbVersion = "99999";
+        pool.unlink = () => {
+            throw new Error("no such entry");
+        };
+
+        await expect(restoreDatabase(target, new Blob([ databaseBytes() ])))
+            .rejects.toMatchObject({ reason: "database-too-new" });
         expect(pointer).toBeUndefined();
     });
 
