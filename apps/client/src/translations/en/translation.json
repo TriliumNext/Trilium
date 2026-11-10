@@ -2002,7 +2002,8 @@
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "launcher bar is on the left (default)",
     "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width.",
-    "edited_notes_expanded": "Expand \"Notes edited on this day\" on day notes"
+    "edited_notes_expanded": "Expand \"Notes edited on this day\" on day notes",
+    "edited_notes_include_llm_chats": "Include AI chats in \"Notes edited on this day\""
   },
   "ui-performance": {
     "title": "Performance",

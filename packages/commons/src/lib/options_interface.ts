@@ -274,6 +274,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     /** When the app is launched automatically at login, start it minimized to the tray instead of showing a window. Requires {@link launchOnStartup} and the tray icon. */
     hideOnAutoStart: boolean;
     editedNotesOpenInRibbon: boolean;
+    /** Whether "Notes edited on this day" on a day note lists AI chat (`llmChat`) notes. */
+    editedNotesIncludeLlmChats: boolean;
     codeBlockWordWrap: boolean;
     codeBlockTabWidth: number;
     codeNoteTabWidth: number;
