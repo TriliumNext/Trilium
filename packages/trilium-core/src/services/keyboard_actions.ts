@@ -580,7 +580,7 @@ function getDefaultKeyboardActions() {
             friendlyName: t("keyboard_action_names.follow-link-under-cursor"),
             actionName: "followLinkUnderCursor",
             iconClass: "bx bx-link-external",
-            defaultShortcuts: ["CommandOrControl+Enter"],
+            defaultShortcuts: ["Alt+Enter"],
             description: t("keyboard_actions.follow-link-under-cursor"),
             scope: "text-detail"
         },

@@ -1,5 +1,5 @@
 import { DEFAULT_TASK_STATES, DONE_STATE_NAME, isAnchorState, NONE_STATE_NAME, type TaskStateDef } from "@triliumnext/commons";
-import { Command, ListEditing, MouseObserver, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
+import { Command, getCode, ListEditing, MouseObserver, parseKeystroke, Plugin, TodoList, type Editor, type EventInfo, type ModelElement, type UpcastConversionApi, type UpcastConversionData, type UpcastElementEvent, type ViewDocumentKeyDownEvent, type ViewDocumentMouseDownEvent, type ViewElement } from "ckeditor5";
 
 import { onTodoRowSplit } from "../todo_list_uncheck_on_enter.js";
 import { ContentHintManager, type HintHandle } from "../../content_hint_manager.js";
@@ -14,6 +14,7 @@ const TOOLTIP_DWELL_MS = 200;
 
 export const TASK_STATE_ATTRIBUTE = "taskState";
 const TODO_LIST_CHECKED_ATTRIBUTE = "todoListChecked";
+const ITEM_TOGGLE_KEYSTROKE = parseKeystroke("Ctrl+Enter");
 
 /**
  * The ordered task states. Includes the built-in `none`/`done` anchors — those
@@ -133,6 +134,18 @@ export default class TodoListMultistateEditing extends Plugin {
                 data.preventDefault();
             }
         });
+
+        // On a link or a note reference, Ctrl+Enter is left to the app's `followLinkUnderCursor`
+        // shortcut, which databases created before Alt+Enter became its default still bind to it.
+        // Stopping the view event keeps `TodoListEditing` from also toggling the item.
+        this.listenTo<ViewDocumentKeyDownEvent>(viewDocument, "keydown", (evt, data) => {
+            const selection = editor.model.document.selection;
+            if (getCode(data) === ITEM_TOGGLE_KEYSTROKE
+                && (selection.hasAttribute("linkHref")
+                    || selection.getSelectedElement()?.is("element", "reference"))) {
+                evt.stop();
+            }
+        }, { priority: "highest" });
 
         editor.keystrokes.set(STATE_CYCLE_SHORTCUT, (_data, cancel) => {
             const command = editor.commands.get("setTaskState");
