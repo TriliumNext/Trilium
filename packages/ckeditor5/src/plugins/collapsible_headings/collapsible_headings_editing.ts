@@ -7,7 +7,7 @@ import { BLOCK_ID } from "../block_reference/block_reference_editing.js";
 import HiddenBlocks from "../hidden_blocks.js";
 import { CLASSES, COLLAPSED_DATA_ATTRIBUTE, HEADING_COLLAPSED } from "./constants.js";
 import {
-    getCollapsedSections, getSection, getSectionLevel, hasSection
+    getCollapsedSections, getSection, getSectionLevel, hasSection, isHeadingName
 } from "./heading_sections.js";
 
 /**
@@ -34,6 +34,7 @@ export default class CollapsibleHeadingsEditing extends Plugin {
         editor.plugins.get(HiddenBlocks).register({
             attribute: HEADING_COLLAPSED,
             canCollapse: hasSection,
+            getSection,
             getCollapsedSections,
             expand: (writer, owner) => writer.removeAttribute(HEADING_COLLAPSED, owner)
         });
@@ -115,7 +116,7 @@ export default class CollapsibleHeadingsEditing extends Plugin {
                 _evt: unknown, data: { item: ModelItem }, conversionApi: DowncastConversionApi
             ) => {
                 const item = data.item;
-                if (!item.is("element") || !/^heading[1-6]$/.test(item.name)) {
+                if (!item.is("element") || !isHeadingName(item.name)) {
                     return;
                 }
                 const viewElement = conversionApi.mapper.toViewElement(item) as ViewElement;

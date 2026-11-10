@@ -14,7 +14,7 @@ import {
     createHeadingsEditor, findBlock, getDomBlock, getRoot, outline
 } from "../../test/headings-kit.js";
 import BlockDragHandle from "./block_drag_handle.js";
-import { HIDDEN_BLOCK_CLASS } from "./hidden_blocks.js";
+import { HIDDEN_BLOCK_CLASS, type HiddenBlocksProvider } from "./hidden_blocks.js";
 import MoveBlockUpDownPlugin from "./move_block_updown.js";
 
 /** `intro`, a collapsed `Alpha` with `a1` and `a2` under it, then `Beta` with `b1` under it. */
@@ -93,6 +93,20 @@ describe("HiddenBlocks", () => {
             expect(list?.classList.contains(HIDDEN_BLOCK_CLASS)).toBe(true);
         });
 
+        it("leaves the editing view alone while the same blocks stay hidden", () => {
+            setModelData(editor.model, DOCUMENT.replace("intro", "intro[]"));
+            const plugin = editor.plugins.get("HiddenBlocks") as unknown as {
+                markedHidden: Set<unknown>;
+            };
+            const marked = plugin.markedHidden;
+
+            editor.execute("enter");
+            editor.execute("undo");
+
+            expect(plugin.markedHidden).toBe(marked);
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
+        });
+
         it("hides the sections of nested collapsed headings, and in any container", () => {
             setModelData(editor.model,
                 "<heading2 headingCollapsed=\"true\">Top</heading2><paragraph>t1</paragraph>" +
@@ -122,17 +136,45 @@ describe("HiddenBlocks", () => {
 
         it("does no work on typing, nor on any change of a note without collapsed headings", () => {
             setModelData(editor.model, "<heading2>Alpha[]</heading2><paragraph>a1</paragraph>");
-            const collect = spyOnCollect(editor);
+            const sections = spyOnSections(editor);
 
             editor.execute("insertText", { text: "x" });
             editor.execute("enter");
-            expect(collect).not.toHaveBeenCalled();
+            expect(sections).not.toHaveBeenCalled();
 
             editor.execute("undo");
             editor.execute("toggleHeadingCollapse");
-            collect.mockClear();
+            sections.mockClear();
             editor.execute("insertText", { text: "y" });
+            expect(sections).not.toHaveBeenCalled();
+        });
+
+        it("finds the hidden blocks once per change of blocks, and not for inline elements", () => {
+            setModelData(editor.model, DOCUMENT.replace("intro", "intro[]"));
+            const collect = spyOnPlugin(editor, "collect");
+
+            editor.execute("enter");
+            expect(collect).toHaveBeenCalledTimes(1);
+
+            collect.mockClear();
+            editor.execute("shiftEnter");
             expect(collect).not.toHaveBeenCalled();
+            expect(outline(editor)).toBe("intro, paragraph, ▸Alpha, (a1), (a2), Beta, b1");
+        });
+
+        it("checks the selection after a change only when it is in hidden blocks", () => {
+            setModelData(editor.model, DOCUMENT.replace("b1", "b1[]"));
+            const showSelection = spyOnPlugin(editor, "showSelection");
+
+            editor.execute("insertText", { text: "x" });
+            expect(showSelection).not.toHaveBeenCalled();
+
+            // A range from a shown block into a hidden one.
+            editor.model.change((writer) => writer.setSelection(writer.createRange(
+                writer.createPositionAt(findBlock(editor, "intro"), 0),
+                writer.createPositionAt(findBlock(editor, "a1"), 1))));
+            expect(showSelection).toHaveBeenCalledTimes(1);
+            expect(outline(editor)).toBe("intro, Alpha, a1, a2, Beta, b1x");
         });
     });
 
@@ -305,6 +347,18 @@ describe("HiddenBlocks", () => {
             expect(outline(editor)).toBe("intro, ▸Alpha, (a1)");
         });
 
+        it("measures the caret line for up and down only next to hidden blocks", () => {
+            setModelData(editor.model, DOCUMENT.replace("b1", "b[]1"));
+            const isOnEdgeLine = spyOnPlugin(editor, "isOnEdgeLine");
+
+            expect(press("ArrowUp")).toBe(false);
+            expect(isOnEdgeLine).not.toHaveBeenCalled();
+
+            setModelData(editor.model, DOCUMENT.replace("Alpha", "Alpha[]"));
+            expect(press("ArrowDown")).toBe(true);
+            expect(isOnEdgeLine).toHaveBeenCalledTimes(1);
+        });
+
         it("leaves the arrow keys alone inside a block and next to visible blocks", () => {
             setModelData(editor.model, DOCUMENT.replace("b1", "b[]1"));
 
@@ -414,6 +468,10 @@ describe("HiddenBlocks", () => {
             hiddenBlocks.revealAroundDomNode(s1());
             expect(outline(editor)).toBe("▸Top, t1, ▸Sub, s1, Next");
             expect(s1().getBoundingClientRect().height).toBeGreaterThan(0);
+
+            // A heading converted again keeps its class.
+            editor.editing.reconvertItem(findBlock(editor, "Sub"));
+            expect(isRevealedClass("Sub")).toBe(true);
 
             // Another jump to the same place, or to a shown block, renders nothing.
             const render = vi.spyOn(editor.editing.view, "forceRender");
@@ -672,15 +730,23 @@ describe("HiddenBlocks in a long note", () => {
         expect(hidden?.length).toBe(50 * 99);
         expect(elapsed, `${elapsed} ms`).toBeLessThan(500);
 
-        const collect = spyOnCollect(editor);
+        const sections = spyOnSections(editor);
         editor.model.change((writer) => writer.setSelection(headings[0], "end"));
         editor.execute("insertText", { text: "x" });
-        expect(collect).not.toHaveBeenCalled();
+        expect(sections).not.toHaveBeenCalled();
     });
 });
 
-/** A spy on the walk of `HiddenBlocks` over the whole document. */
-function spyOnCollect(editor: ClassicEditor) {
-    const hiddenBlocks = editor.plugins.get("HiddenBlocks") as unknown as { collectIn(): void };
-    return vi.spyOn(hiddenBlocks, "collectIn");
+/** A spy on the walks of `HiddenBlocks` over the sections of collapsed headings. */
+function spyOnSections(editor: ClassicEditor) {
+    const hiddenBlocks = editor.plugins.get("HiddenBlocks") as unknown as {
+        providers: [ HiddenBlocksProvider ];
+    };
+    return vi.spyOn(hiddenBlocks.providers[0], "getSection");
+}
+
+/** A spy on a private method of `HiddenBlocks`. */
+function spyOnPlugin(editor: ClassicEditor, method: "collect" | "isOnEdgeLine" | "showSelection") {
+    const plugin = editor.plugins.get("HiddenBlocks") as unknown as Record<string, () => void>;
+    return vi.spyOn(plugin, method);
 }

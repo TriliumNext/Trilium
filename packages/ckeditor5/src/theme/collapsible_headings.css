@@ -32,10 +32,12 @@
         font-style: normal;
         font-weight: normal;
         cursor: pointer;
+        /* Unlike `opacity: 0`, `visibility: hidden` keeps the arrow out of hit tests. */
+        visibility: hidden;
         opacity: 0;
         transform: translateY(-50%) rotate(var(--_arrow-rotation));
         transition: opacity 150ms ease, transform 150ms ease, background-color 150ms ease,
-            color 150ms ease;
+            color 150ms ease, visibility 150ms;
     }
 
     /* Firefox before 120 has no `lh` unit. */
@@ -45,19 +47,29 @@
         }
     }
 
+    /* Keeps the arrow out of the accessible name of the heading. */
+    @supports (content: "x" / "") {
+        &::after {
+            content: "\ea50" / "";
+        }
+    }
+
     &.trilium-heading-selected::after,
     &:focus-visible::after {
+        visibility: visible;
         opacity: 0.45;
     }
 
     /* A tap on a touch screen leaves the pointer where it was. */
     @media (hover: hover) {
         &.trilium-heading-hovered::after {
+            visibility: visible;
             opacity: 0.45;
         }
     }
 
     &.trilium-temporarily-expanded::after {
+        visibility: visible;
         opacity: 0.75;
     }
 
@@ -67,6 +79,7 @@
         --_arrow-rotation: 0deg;
 
         &::after {
+            visibility: visible;
             opacity: 0.75;
         }
 

@@ -4,6 +4,14 @@ import { ELEMENTS as FOOTNOTE_ELEMENTS } from "../footnotes/constants.js";
 import type { CollapsedSection } from "../hidden_blocks.js";
 import { HEADING_COLLAPSED } from "./constants.js";
 
+/** The level of each heading element, by name. */
+const HEADING_LEVELS = new Map([ 1, 2, 3, 4, 5, 6 ].map((level) => [ `heading${level}`, level ]));
+
+/** Whether elements named `name` are headings. */
+export function isHeadingName(name: string) {
+    return HEADING_LEVELS.has(name);
+}
+
 /**
  * The level of `node` when it is a heading that owns a section, else `null`. A heading in a list
  * item belongs to the list.
@@ -12,8 +20,7 @@ export function getSectionLevel(node: ModelNode): number | null {
     if (!node.is("element") || node.hasAttribute("listItemId")) {
         return null;
     }
-    const match = /^heading([1-6])$/.exec(node.name);
-    return match ? Number(match[1]) : null;
+    return HEADING_LEVELS.get(node.name) ?? null;
 }
 
 /**

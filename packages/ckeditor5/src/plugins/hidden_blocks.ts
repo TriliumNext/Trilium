@@ -1,11 +1,11 @@
 import "../theme/hidden_blocks.css";
 
 import {
-    type ClipboardInputEventData, type DeleteEventData, type DifferItem, env, type EventInfo,
-    type Mapper, type ModelElement, type ModelNode, type ModelPosition, type ModelRange,
-    type ModelWriter, Plugin, priorities, type ViewDocumentClipboardInputEvent,
-    type ViewDocumentDeleteEvent, type ViewDocumentDragStartEvent, type ViewDowncastWriter,
-    type ViewElement, type ViewRange
+    type ClipboardInputEventData, type DeleteEventData, type DifferItem, type DowncastInsertEvent,
+    env, type EventInfo, type Mapper, type ModelDocumentFragment, type ModelElement,
+    type ModelNode, type ModelPosition, type ModelRange, type ModelWriter, Plugin, priorities,
+    type ViewDocumentClipboardInputEvent, type ViewDocumentDeleteEvent,
+    type ViewDocumentDragStartEvent, type ViewDowncastWriter, type ViewElement, type ViewRange
 } from "ckeditor5";
 
 import FindReveal from "./find_reveal.js";
@@ -29,6 +29,8 @@ export interface HiddenBlocksProvider {
     readonly attribute: string;
     /** Whether `owner` has blocks to hide. */
     canCollapse(owner: ModelElement): boolean;
+    /** The blocks that `owner` hides while it is collapsed. */
+    getSection(owner: ModelElement): ModelElement[];
     /** The sections of the collapsed owners among the children of `parent`, in document order. */
     getCollapsedSections(parent: ModelElement): CollapsedSection[];
     /** Shows the blocks of `owner` for good. */
@@ -46,19 +48,28 @@ export default class HiddenBlocks extends Plugin {
     private readonly providers: HiddenBlocksProvider[] = [];
     /** The elements with a collapse attribute, with their provider. Can have stale entries. */
     private readonly collapsedOwners = new Map<ModelElement, HiddenBlocksProvider>();
+    /** Counts the additions to `collapsedOwners`. A cache made before an addition is stale. */
+    private ownersAdded = 0;
     /** The blocks hidden in the model, reveals left out, as of the end of the last change. */
     private hiddenInModel: HiddenMap = new Map();
-    /** The elements that the last change inserted. */
-    private lastInserted = new Set<ModelNode | null>();
-    /** The blocks hidden in the editing view, for the document version they were found for. */
-    private hiddenCache: { version: number; hidden: HiddenMap } | null = null;
+    /** The blocks hidden in the model, reveals left out. */
+    private modelCache: HiddenCache | null = null;
+    /** The blocks hidden in the editing view while some owners show for the moment. */
+    private revealedCache: HiddenCache | null = null;
     /** The owners that Search in note shows for the moment. */
     private findRevealed = new Set<ModelElement>();
     /** The owners that a jump shows until they are toggled, edited or loaded again. */
     private readonly jumpRevealed = new Set<ModelElement>();
     private markedHidden = new Set<ViewElement>();
     private markedRevealed = new Set<ViewElement>();
+    /** The hidden blocks that `markedHidden` was found for. */
+    private markedFor: HiddenMap = new Map();
+    /** The owners that `markedRevealed` was found for. */
+    private markedOwners: ReadonlySet<ModelElement> = NOTHING_REVEALED;
     private isViewStale = false;
+    private isRevealChanged = false;
+    /** Whether an element with a class from `syncView()` was converted again since. */
+    private isMarkLost = false;
     private isSelectionChanged = false;
     /** True for the microtask in which Search in note closes and puts the caret on its match. */
     private isFindClosing = false;
@@ -84,6 +95,14 @@ export default class HiddenBlocks extends Plugin {
             this.isSelectionChanged = true;
         });
         viewDocument.registerPostFixer((writer) => this.syncView(writer));
+        // An element converted again gets a view element without the classes.
+        this.listenTo<DowncastInsertEvent>(editor.editing.downcastDispatcher, "insert",
+            (_evt, { item }) => {
+                const element = item as ModelElement;
+                if (this.markedFor.has(element) || this.markedOwners.has(element)) {
+                    this.isMarkLost = true;
+                }
+            }, { priority: "lowest" });
 
         // The capture phase runs before `Widget`, which selects a widget next to the caret.
         this.listenTo<ViewDocumentDeleteEvent>(viewDocument, "delete", (evt, data) => {
@@ -107,7 +126,8 @@ export default class HiddenBlocks extends Plugin {
 
     /** Whether `node` is hidden in the editing view, as a hidden block or inside one. */
     isHidden(node: ModelNode): boolean {
-        return isInOrUnder(node, this.getHidden());
+        const hidden = this.getHidden();
+        return hidden.size > 0 && isInOrUnder(node, hidden);
     }
 
     /**
@@ -185,7 +205,7 @@ export default class HiddenBlocks extends Plugin {
      */
     private fixCollapsedOwners(writer: ModelWriter): boolean {
         const changes = this.editor.model.document.differ.getChanges();
-        if (!changes.some(isBlockChange)) {
+        if (!this.hasBlockChange(changes)) {
             return false;
         }
 
@@ -201,19 +221,17 @@ export default class HiddenBlocks extends Plugin {
     }
 
     private expandNewlyHidden(writer: ModelWriter, changes: DifferItem[]) {
-        const inserted = new Set<ModelNode | null>();
+        const inserted = getInsertedElements(changes);
         const collapsed = new Set<ModelNode | null>();
         for (const change of changes) {
-            if (change.type === "insert" && change.name !== "$text") {
-                inserted.add(change.position.nodeAfter);
-            } else if (change.type === "attribute" && change.attributeNewValue
+            if (change.type === "attribute" && change.attributeNewValue
                 && this.isCollapseAttribute(change.attributeKey)) {
                 collapsed.add(change.range.start.nodeAfter);
             }
         }
 
         const owners = new Map<ModelElement, HidingOwner>();
-        for (const [ block, hidingOwner ] of this.collect(NOTHING_REVEALED)) {
+        for (const [ block, hidingOwner ] of this.getModelHidden()) {
             const { owner } = hidingOwner;
             const isAllowed = isInOrUnder(block, this.hiddenInModel) || collapsed.has(owner)
                 || (isInOrUnder(block, inserted) && isInOrUnder(owner, inserted));
@@ -229,55 +247,59 @@ export default class HiddenBlocks extends Plugin {
 
     /**
      * Keeps the blocks that the model hides for the next change, after a change of blocks. A
-     * change of text hides nothing new, so the blocks hidden in the editing view stay valid. Then
-     * checks a selection that the change moved.
+     * change of text or of inline elements hides nothing new, so the cached blocks stay valid.
+     * Then checks a selection that the change moved into hidden blocks, once the change is done.
      */
     private updateHiddenInModel() {
         const document = this.editor.model.document;
         const changes = document.differ.getChanges();
-        this.lastInserted = new Set(changes.map((change) => (
-            change.type === "insert" && change.name !== "$text" ? change.position.nodeAfter : null
-        )));
-        if (changes.some(isBlockChange)) {
-            this.hiddenInModel = this.collect(NOTHING_REVEALED);
-            this.hiddenCache = null;
+        if (this.hasBlockChange(changes)) {
+            this.hiddenInModel = this.getModelHidden();
+            this.revealedCache = null;
             this.isViewStale = true;
-        } else if (this.hiddenCache) {
-            this.hiddenCache.version = document.version;
+        } else {
+            for (const cache of [ this.modelCache, this.revealedCache ]) {
+                if (cache) {
+                    cache.version = document.version;
+                }
+            }
         }
 
-        if (this.isSelectionChanged && this.collapsedOwners.size) {
-            this.queueSelectionCheck();
+        if (this.isSelectionChanged && this.collapsedOwners.size
+            && this.getSelectionNodes().some((node) => isInOrUnder(node, this.hiddenInModel))) {
+            const inserted = getInsertedElements(changes);
+            this.editor.model.enqueueChange({ isUndoable: false },
+                (writer) => this.showSelection(writer, inserted));
         }
         this.isSelectionChanged = false;
     }
 
-    /** Checks the selection once the current change is done. */
-    private queueSelectionCheck() {
-        this.editor.model.enqueueChange({ isUndoable: false },
-            (writer) => this.showSelection(writer));
+    /** The blocks at the ends of the selection, and the element it selects. */
+    private getSelectionNodes(): ModelElement[] {
+        const selection = this.editor.model.document.selection;
+        const last = selection.getLastPosition() as ModelPosition;
+        const nodes = [ (selection.getFirstPosition() as ModelPosition).parent as ModelElement ];
+        const selected = selection.getSelectedElement();
+        if (selected) {
+            nodes.push(selected);
+        }
+        // A range can end right after hidden blocks, as one that takes a collapsed section does.
+        if (!selection.isCollapsed && !this.isAfterHiddenRun(last)) {
+            nodes.push(last.parent as ModelElement);
+        }
+        return nodes;
     }
 
     /**
      * Expands the owners that hide an end of the selection, or the element it selects. The caret
      * goes to the end of the outermost owner instead while Search in note closes, which puts the
-     * caret on its match, and when the owner came with the last change, as a pasted or dropped
-     * collapsed heading does, which leaves the caret after it.
+     * caret on its match, and when the owner is one of the `inserted` elements of the last change,
+     * as a pasted or dropped collapsed heading is, which leaves the caret after it.
      */
-    private showSelection(writer: ModelWriter) {
-        const selection = this.editor.model.document.selection;
+    private showSelection(writer: ModelWriter, inserted: ReadonlySet<ModelNode | null>) {
         const owners = new Map<ModelElement, HidingOwner>();
-        const last = selection.getLastPosition() as ModelPosition;
-        const nodes = [
-            (selection.getFirstPosition() as ModelPosition).parent as ModelElement,
-            selection.getSelectedElement()
-        ];
-        // A range can end right after hidden blocks, as one that takes a collapsed section does.
-        if (!selection.isCollapsed && !this.isAfterHiddenRun(last)) {
-            nodes.push(last.parent as ModelElement);
-        }
-        for (const node of nodes) {
-            if (node && isInOrUnder(node, this.hiddenInModel)) {
+        for (const node of this.getSelectionNodes()) {
+            if (isInOrUnder(node, this.hiddenInModel)) {
                 for (const hidingOwner of this.getOwnersAround(node)) {
                     owners.set(hidingOwner.owner, hidingOwner);
                 }
@@ -285,7 +307,7 @@ export default class HiddenBlocks extends Plugin {
         }
 
         const [ outermost ] = owners.values();
-        const isArrived = !!outermost && isInOrUnder(outermost.owner, this.lastInserted);
+        const isArrived = !!outermost && isInOrUnder(outermost.owner, inserted);
         if (outermost && (this.isFindClosing || isArrived)) {
             writer.setSelection(outermost.owner, "end");
             return;
@@ -297,8 +319,8 @@ export default class HiddenBlocks extends Plugin {
 
     /**
      * Puts a class on the view elements of each hidden block, and on each owner whose blocks show
-     * for the moment. Runs only after a change of blocks or of the reveals, and puts the classes
-     * back on view elements that were converted again.
+     * for the moment. Runs only after a change of the hidden blocks or of the reveals, and after
+     * an element with one of these classes was converted again.
      */
     private syncView(writer: ViewDowncastWriter): boolean {
         if (!this.isViewStale) {
@@ -306,9 +328,19 @@ export default class HiddenBlocks extends Plugin {
         }
         this.isViewStale = false;
 
+        const hiddenBlocks = this.getHidden();
+        if (!this.isRevealChanged && !this.isMarkLost
+            && hasSameKeys(hiddenBlocks, this.markedFor)) {
+            return false;
+        }
+        this.isRevealChanged = false;
+        this.isMarkLost = false;
+        this.markedFor = hiddenBlocks;
+        this.markedOwners = this.getRevealed();
+
         const mapper = this.editor.editing.mapper;
         const hidden = new Set<ViewElement>();
-        for (const block of this.getHidden().keys()) {
+        for (const block of hiddenBlocks.keys()) {
             let element = mapper.toViewElement(block);
             while (element) {
                 hidden.add(element);
@@ -316,7 +348,7 @@ export default class HiddenBlocks extends Plugin {
             }
         }
         const revealed = new Set<ViewElement>();
-        for (const owner of this.getRevealed()) {
+        for (const owner of this.markedOwners) {
             revealed.add(mapper.toViewElement(owner) as ViewElement);
         }
 
@@ -387,20 +419,17 @@ export default class HiddenBlocks extends Plugin {
             return;
         }
 
-        let start = selection.focus as ModelPosition;
-        if (move.isVertical) {
-            const block = start.parent as ModelElement;
-            if (!this.isOnEdgeLine(start, block, move.isForward)) {
-                return;
-            }
-            start = model.createPositionAt(block, move.isForward ? "end" : 0);
-        }
-
+        const focus = selection.focus as ModelPosition;
+        const block = focus.parent as ModelElement;
+        const start = move.isVertical
+            ? model.createPositionAt(block, move.isForward ? "end" : 0)
+            : focus;
         const probe = model.createSelection(start);
         const direction = move.isForward ? "forward" : "backward";
         model.modifySelection(probe, { direction, unit: move.unit });
         const hiddenNode = this.findHiddenNode(probe.getFirstRange() as ModelRange);
-        if (!hiddenNode) {
+        // `isOnEdgeLine()` reads the layout, so it comes last.
+        if (!hiddenNode || (move.isVertical && !this.isOnEdgeLine(focus, block, move.isForward))) {
             return;
         }
 
@@ -558,8 +587,9 @@ export default class HiddenBlocks extends Plugin {
 
     /** Applies a change of the reveals to the editing view. */
     private refreshView() {
-        this.hiddenCache = null;
+        this.revealedCache = null;
         this.isViewStale = true;
+        this.isRevealChanged = true;
         this.editor.editing.view.forceRender();
     }
 
@@ -610,15 +640,34 @@ export default class HiddenBlocks extends Plugin {
 
     /** The blocks hidden in the editing view. */
     private getHidden(): HiddenMap {
-        const version = this.editor.model.document.version;
-        if (this.hiddenCache?.version !== version) {
-            this.hiddenCache = { version, hidden: this.collect(this.getRevealed()) };
+        const revealed = this.getRevealed();
+        if (!revealed.size) {
+            return this.getModelHidden();
         }
-        return this.hiddenCache.hidden;
+        this.revealedCache = this.getCached(this.revealedCache, revealed);
+        return this.revealedCache.hidden;
+    }
+
+    /** The blocks hidden in the model, reveals left out. */
+    private getModelHidden(): HiddenMap {
+        this.modelCache = this.getCached(this.modelCache, NOTHING_REVEALED);
+        return this.modelCache.hidden;
+    }
+
+    /** `cache` while it is valid, or else the hidden blocks found again. */
+    private getCached(cache: HiddenCache | null, revealed: ReadonlySet<ModelElement>): HiddenCache {
+        const version = this.editor.model.document.version;
+        const isValid = cache?.version === version && cache.ownersAdded === this.ownersAdded;
+        return cache && isValid
+            ? cache
+            : { version, ownersAdded: this.ownersAdded, hidden: this.collect(revealed) };
     }
 
     /** The owners whose blocks show for the moment. Forgets those expanded or removed since. */
-    private getRevealed(): Set<ModelElement> {
+    private getRevealed(): ReadonlySet<ModelElement> {
+        if (!this.findRevealed.size && !this.jumpRevealed.size) {
+            return NOTHING_REVEALED;
+        }
         const revealed = new Set<ModelElement>();
         for (const owners of [ this.findRevealed, this.jumpRevealed ]) {
             for (const owner of owners) {
@@ -634,39 +683,23 @@ export default class HiddenBlocks extends Plugin {
         return revealed;
     }
 
-    /** The hidden blocks of the document, leaving out those of the owners in `revealed`. */
+    /**
+     * The hidden blocks of the document, leaving out those of the owners in `revealed`. A block in
+     * nested sections maps to the outer owner.
+     */
     private collect(revealed: ReadonlySet<ModelElement>): HiddenMap {
         const hidden: HiddenMap = new Map();
-        if (this.getCollapsedOwners().size) {
-            for (const root of this.editor.model.document.getRoots()) {
-                this.collectIn(root, revealed, hidden);
+        for (const [ owner, provider ] of this.getCollapsedOwners()) {
+            // A hidden owner adds nothing: its section is inside the section that hides it.
+            if (revealed.has(owner) || hidden.has(owner)) {
+                continue;
+            }
+            const hidingOwner = { owner, provider };
+            for (const block of provider.getSection(owner)) {
+                hidden.set(block, hidingOwner);
             }
         }
         return hidden;
-    }
-
-    private collectIn(
-        parent: ModelElement,
-        revealed: ReadonlySet<ModelElement>,
-        hidden: HiddenMap
-    ) {
-        for (const provider of this.providers) {
-            for (const { owner, blocks } of provider.getCollapsedSections(parent)) {
-                // The blocks of an owner hidden by an owner before it are hidden already.
-                if (revealed.has(owner) || hidden.has(owner)) {
-                    continue;
-                }
-                const hidingOwner = { owner, provider };
-                for (const block of blocks) {
-                    hidden.set(block, hidingOwner);
-                }
-            }
-        }
-        for (const child of parent.getChildren()) {
-            if (child.is("element") && !this.holdsText(child)) {
-                this.collectIn(child, revealed, hidden);
-            }
-        }
     }
 
     /** The collapsed owners in the document. Forgets those expanded or removed since. */
@@ -689,7 +722,7 @@ export default class HiddenBlocks extends Plugin {
                 const provider = this.providers.find(
                     ({ attribute }) => attribute === change.attributeKey);
                 if (provider) {
-                    this.collapsedOwners.set(owner, provider);
+                    this.addCollapsedOwner(owner, provider);
                 }
             }
         }
@@ -698,7 +731,7 @@ export default class HiddenBlocks extends Plugin {
     private addCollapsedOwnersIn(element: ModelElement) {
         for (const provider of this.providers) {
             if (element.hasAttribute(provider.attribute)) {
-                this.collapsedOwners.set(element, provider);
+                this.addCollapsedOwner(element, provider);
             }
         }
         if (!this.holdsText(element)) {
@@ -708,8 +741,25 @@ export default class HiddenBlocks extends Plugin {
         }
     }
 
+    private addCollapsedOwner(owner: ModelElement, provider: HiddenBlocksProvider) {
+        this.collapsedOwners.set(owner, provider);
+        this.ownersAdded++;
+    }
+
     private isCollapseAttribute(key: string) {
         return this.providers.some(({ attribute }) => attribute === key);
+    }
+
+    /** Whether `changes` insert, remove or change a block, not only text or inline elements. */
+    private hasBlockChange(changes: DifferItem[]) {
+        const schema = this.editor.model.schema;
+        return changes.some((change) => {
+            if (change.type !== "attribute") {
+                return !schema.isInline(change.name);
+            }
+            const node = change.range.start.nodeAfter;
+            return !!node?.is("element") && !schema.isInline(node);
+        });
     }
 
     /** Whether elements named like `element` contain text, and so no blocks. */
@@ -733,6 +783,13 @@ interface HidingOwner {
 /** The hidden blocks, each with the owner that hides it. */
 type HiddenMap = Map<ModelElement, HidingOwner>;
 
+/** Hidden blocks, for the document version and the count of added owners they were found for. */
+interface HiddenCache {
+    version: number;
+    ownersAdded: number;
+    hidden: HiddenMap;
+}
+
 interface ArrowMove {
     isForward: boolean;
     isVertical: boolean;
@@ -746,11 +803,15 @@ interface DomPosition {
 
 const NOTHING_REVEALED: ReadonlySet<ModelElement> = new Set();
 
-/** Whether `change` inserts, removes or changes an element, as opposed to only text. */
-function isBlockChange(change: DifferItem) {
-    return change.type === "attribute"
-        ? !!change.range.start.nodeAfter?.is("element")
-        : change.name !== "$text";
+/** The elements that `changes` inserted. */
+function getInsertedElements(changes: DifferItem[]) {
+    const inserted = new Set<ModelNode | null>();
+    for (const change of changes) {
+        if (change.type === "insert" && change.name !== "$text") {
+            inserted.add(change.position.nodeAfter);
+        }
+    }
+    return inserted;
 }
 
 /** The first or the last of the hidden blocks in a row with `block`. */
@@ -766,12 +827,31 @@ function getRunEdge(
     return edge;
 }
 
+/** Whether `a` and `b` have the same keys. */
+function hasSameKeys(a: ReadonlyMap<unknown, unknown>, b: ReadonlyMap<unknown, unknown>) {
+    if (a.size !== b.size) {
+        return false;
+    }
+    for (const key of a.keys()) {
+        if (!b.has(key)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /** Whether `node` or one of its ancestors is in `nodes`. */
 function isInOrUnder(
     node: ModelNode,
     nodes: ReadonlySet<unknown> | ReadonlyMap<unknown, unknown>
 ) {
-    return node.getAncestors({ includeSelf: true }).some((ancestor) => nodes.has(ancestor));
+    for (let current: ModelNode | ModelDocumentFragment | null = node; current;
+        current = current.parent) {
+        if (nodes.has(current)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { _setModelData as setModelData, Essentials, Paragraph } from "ckeditor5";
 import { afterEach, describe, expect, it, onTestFinished } from "vitest";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import {
@@ -70,9 +70,14 @@ describe("applyCollapsedHeadings", () => {
         return heading;
     }
 
+    /** `heading`, located by its accessible name, which leaves the arrow out. */
+    function locate(heading: HTMLElement) {
+        return page.getByRole("heading", { name: heading.textContent ?? "", exact: true });
+    }
+
     /** Clicks the arrow of `heading`, at the end of its first line. */
     async function clickArrow(heading: HTMLElement) {
-        await userEvent.click(heading, { position: { x: heading.offsetWidth - 6, y: 6 } });
+        await userEvent.click(locate(heading), { position: { x: heading.offsetWidth - 6, y: 6 } });
     }
 
     it("hides the sections saved as collapsed, with an arrow on their headings", () => {
@@ -87,7 +92,7 @@ describe("applyCollapsedHeadings", () => {
         render();
         const heading = getHeading("A");
 
-        await userEvent.click(heading, { position: { x: 4, y: 6 } });
+        await userEvent.click(locate(heading), { position: { x: 4, y: 6 } });
         expect(read()).toContain("▸A^, (a1)");
 
         // The pointer stays on the arrow, which shows. `Sub` hides its own section.
@@ -115,15 +120,15 @@ describe("applyCollapsedHeadings", () => {
         render();
         const heading = getHeading("A");
 
-        await userEvent.hover(heading, { position: { x: 4, y: 6 } });
+        await userEvent.hover(locate(heading), { position: { x: 4, y: 6 } });
         expect([ ...heading.classList ]).toContain("trilium-heading-hovered");
         expect([ ...heading.classList ]).not.toContain("trilium-heading-arrow-hovered");
 
-        await userEvent.hover(heading, { position: { x: heading.offsetWidth - 6, y: 6 } });
+        await userEvent.hover(locate(heading), { position: { x: heading.offsetWidth - 6, y: 6 } });
         expect([ ...heading.classList ]).toContain("trilium-heading-arrow-hovered");
 
         const empty = getHeading("E");
-        await userEvent.hover(empty, { position: { x: empty.offsetWidth - 6, y: 6 } });
+        await userEvent.hover(locate(empty), { position: { x: empty.offsetWidth - 6, y: 6 } });
         expect([ ...heading.classList ]).not.toContain("trilium-heading-hovered");
         expect([ ...empty.classList ]).not.toContain("trilium-heading-hovered");
 

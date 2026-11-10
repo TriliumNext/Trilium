@@ -2,7 +2,7 @@ import {
     _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor
 } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 
 import {
     createHeadingsEditor, findBlock, getDomBlock, outline
@@ -25,6 +25,11 @@ describe("CollapsibleHeadingsUI", () => {
         return getDomBlock(editor, findBlock(editor, text));
     }
 
+    /** The heading named `text`, located by its accessible name, which leaves the arrow out. */
+    function locate(text: string) {
+        return page.getByRole("heading", { name: text, exact: true });
+    }
+
     /** A point on the arrow of `heading`, at the end of its first line. */
     function arrowOf(heading: HTMLElement) {
         return { x: heading.offsetWidth - 6, y: 6 };
@@ -33,19 +38,19 @@ describe("CollapsibleHeadingsUI", () => {
     it("toggles a heading on a press on its arrow, and leaves the caret where it is", async () => {
         const beta = getHeading("Beta");
 
-        await userEvent.click(beta, { position: arrowOf(beta) });
+        await userEvent.click(locate("Beta"), { position: arrowOf(beta) });
         expect(outline(editor)).toBe("intro, ▸Alpha, (a1), ▸Beta, (b1), Gamma");
         expect(getModelData(editor.model)).toContain("<paragraph>in[]tro</paragraph>");
 
-        await userEvent.click(getHeading("Alpha"), { position: arrowOf(getHeading("Alpha")) });
+        await userEvent.click(locate("Alpha"), { position: arrowOf(getHeading("Alpha")) });
         expect(outline(editor)).toBe("intro, Alpha, a1, ▸Beta, (b1), Gamma");
     });
 
     it("leaves a press on the text or on a heading without a section to the editor", async () => {
         const gamma = getHeading("Gamma");
 
-        await userEvent.click(getHeading("Beta"), { position: { x: 4, y: 6 } });
-        await userEvent.click(gamma, { position: arrowOf(gamma) });
+        await userEvent.click(locate("Beta"), { position: { x: 4, y: 6 } });
+        await userEvent.click(locate("Gamma"), { position: arrowOf(gamma) });
 
         expect(outline(editor)).toBe("intro, ▸Alpha, (a1), Beta, b1, Gamma");
         expect(getModelData(editor.model)).toContain("<heading2>Gamma[]</heading2>");
@@ -54,20 +59,32 @@ describe("CollapsibleHeadingsUI", () => {
     it("shows the arrow of the heading under the pointer, and fills it on the arrow", async () => {
         const beta = getHeading("Beta");
 
-        await userEvent.hover(beta, { position: { x: 4, y: 6 } });
+        await userEvent.hover(locate("Beta"), { position: { x: 4, y: 6 } });
         expect([ ...beta.classList ]).toContain("trilium-heading-hovered");
         expect([ ...beta.classList ]).not.toContain("trilium-heading-arrow-hovered");
 
-        await userEvent.hover(beta, { position: arrowOf(beta) });
+        await userEvent.hover(locate("Beta"), { position: arrowOf(beta) });
         expect([ ...beta.classList ]).toContain("trilium-heading-arrow-hovered");
 
-        await userEvent.hover(getHeading("Gamma"), { position: { x: 4, y: 6 } });
+        await userEvent.hover(locate("Gamma"), { position: { x: 4, y: 6 } });
         expect([ ...beta.classList ]).not.toContain("trilium-heading-hovered");
         expect([ ...getHeading("Gamma").classList ]).not.toContain("trilium-heading-hovered");
 
-        await userEvent.hover(beta, { position: { x: 4, y: 6 } });
+        await userEvent.hover(locate("Beta"), { position: { x: 4, y: 6 } });
         await userEvent.hover(document.body, { position: { x: 1, y: 1 } });
         expect([ ...beta.classList ]).not.toContain("trilium-heading-hovered");
+    });
+
+    it("keeps hidden arrows out of hit tests, and arrows out of heading names", async () => {
+        const beta = getHeading("Beta");
+        const arrow = (heading: HTMLElement) => getComputedStyle(heading, "::after");
+        expect(arrow(beta).visibility).toBe("hidden");
+        expect(arrow(getHeading("Alpha")).visibility).toBe("visible");
+
+        await userEvent.hover(locate("Beta"), { position: { x: 4, y: 6 } });
+        await expect.poll(() => arrow(beta).visibility).toBe("visible");
+        // The empty alternative text of the glyph.
+        expect(arrow(beta).content).toMatch(/ \/ ""$/);
     });
 
     it("leaves the arrow alone while a button is held, as in a drag that selects text", () => {
