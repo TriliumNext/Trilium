@@ -72,6 +72,11 @@ export async function initializeServerCore() {
                     // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
                     entity_changes.recalculateMaxEntityChangeId();
                 });
+            },
+            onSavepointRollback() {
+                void import("@triliumnext/core").then(({ entity_changes }) => {
+                    entity_changes.recalculateMaxEntityChangeId();
+                });
             }
         },
         crypto: new NodejsCryptoProvider(),

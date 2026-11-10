@@ -1,4 +1,4 @@
-import { becca, BNote, checkImageAttachments, cls, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
+import { becca, BNote, checkImageAttachments, cls, entity_changes as entityChangesService, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
@@ -334,6 +334,7 @@ function register(router: Router) {
                 updatedCount++;
             } catch (err) {
                 cls.set("entityChangeIds", previousEntityChangeIds);
+                entityChangesService.recalculateMaxEntityChangeId();
                 note.blobId = originalBlobId;
                 note.utcDateModified = originalUtcDateModified;
                 note.dateModified = originalDateModified;

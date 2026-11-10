@@ -17,6 +17,7 @@ export interface SqlServiceParams {
     provider: DatabaseProvider;
     onTransactionRollback: () => void;
     onTransactionCommit: () => void;
+    onSavepointRollback?: () => void;
     isReadOnly: boolean;
 }
 
@@ -414,6 +415,8 @@ export class SqlService {
             console.warn("Got error ", e);
             if (!this.dbConnection.inTransaction) {
                 this.params.onTransactionRollback();
+            } else {
+                this.params.onSavepointRollback?.();
             }
             throw e;
         }

@@ -525,6 +525,9 @@ describe("etapi/notes/bulk-update", () => {
             const allEntityChanges = sentMessages.flatMap((m) => m.data?.entityChanges || []);
             expect(allEntityChanges.some((c: any) => c.entityId === noteId1)).toBe(true);
             expect(allEntityChanges.some((c: any) => c.entityId === noteId2)).toBe(false);
+
+            const maxChangeIdInDb = (realSql as any).getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes");
+            expect(entity_changes.getMaxEntityChangeId()).toBe(maxChangeIdInDb);
         } finally {
             spy.mockRestore();
             (realSql as any).params = originalParams;
