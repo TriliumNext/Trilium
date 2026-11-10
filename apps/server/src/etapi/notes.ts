@@ -1,5 +1,5 @@
 import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
-import { becca } from "@triliumnext/core";
+import { becca, BNote } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
@@ -164,6 +164,138 @@ function register(router: Router) {
         void noteService.asyncPostProcessContent(note, req.body);
 
         return res.sendStatus(204);
+    });
+
+    eu.route(router, "post", "/etapi/notes/bulk-update", (req, res, next) => {
+        const { items } = req.body || {};
+        const skipFts = req.query.skipFts === "true" || req.query.skipFts === "1";
+        const atomic = req.query.atomic === "true" || req.query.atomic === "1";
+
+        if (!Array.isArray(items)) {
+            throw new eu.EtapiError(400, "INVALID_BODY", "Request body must contain an 'items' array.");
+        }
+
+        if (items.length === 0) {
+            return res.json({ total: 0, updated: 0, failed: 0, errors: [] });
+        }
+
+        if (items.length > 1000) {
+            throw new eu.EtapiError(400, "BATCH_TOO_LARGE", "Maximum batch size is 1,000 items per request.");
+        }
+
+        if (atomic) {
+            // Validate all items before mutating to prevent partial updates and keep cache clean
+            for (const item of items) {
+                const { noteId, content } = item || {};
+
+                if (!noteId || typeof content !== "string") {
+                    throw new eu.EtapiError(400, "INVALID_ITEM", "Item must contain 'noteId' and 'content' string.");
+                }
+
+                const note = becca.getNote(noteId);
+                if (!note) {
+                    throw new eu.EtapiError(404, "NOTE_NOT_FOUND", `Note '${noteId}' not found.`);
+                }
+
+                if (note.isProtected) {
+                    throw new eu.EtapiError(
+                        400,
+                        "NOTE_IS_PROTECTED",
+                        `Note '${noteId}' is protected and cannot be modified through ETAPI.`
+                    );
+                }
+            }
+
+            const modifiedNotes: Array<{
+                note: BNote;
+                originalBlobId: string | undefined;
+                originalUtcDateModified: string | undefined;
+                originalDateModified: string | undefined;
+            }> = [];
+
+            try {
+                for (const item of items) {
+                    const note = becca.getNoteOrThrow(item.noteId);
+                    modifiedNotes.push({
+                        note,
+                        originalBlobId: note.blobId,
+                        originalUtcDateModified: note.utcDateModified,
+                        originalDateModified: note.dateModified
+                    });
+
+                    noteService.saveRevisionIfNeeded(note);
+                    note.setContent(item.content);
+
+                    if (!skipFts) {
+                        void noteService.asyncPostProcessContent(note, item.content);
+                    }
+                }
+            } catch (err) {
+                for (const { note, originalBlobId, originalUtcDateModified, originalDateModified } of modifiedNotes) {
+                    note.blobId = originalBlobId;
+                    note.utcDateModified = originalUtcDateModified;
+                    note.dateModified = originalDateModified;
+                }
+                throw err;
+            }
+
+            return res.json({
+                total: items.length,
+                updated: items.length,
+                failed: 0,
+                errors: []
+            });
+        }
+
+        // Non-atomic mode: process each item, collecting errors for failed items
+        const errors: Array<{ noteId: string; error: string }> = [];
+        let updatedCount = 0;
+
+        for (const item of items) {
+            const { noteId, content } = item || {};
+
+            if (!noteId || typeof content !== "string") {
+                errors.push({
+                    noteId: noteId || "unknown",
+                    error: "Item must contain 'noteId' string and 'content' string."
+                });
+                continue;
+            }
+
+            const note = becca.getNote(noteId);
+            if (!note) {
+                errors.push({ noteId, error: `Note '${noteId}' not found.` });
+                continue;
+            }
+
+            if (note.isProtected) {
+                errors.push({
+                    noteId,
+                    error: `Note '${noteId}' is protected and cannot be modified through ETAPI.`
+                });
+                continue;
+            }
+
+            try {
+                noteService.saveRevisionIfNeeded(note);
+                note.setContent(content);
+
+                if (!skipFts) {
+                    void noteService.asyncPostProcessContent(note, content);
+                }
+
+                updatedCount++;
+            } catch (err: any) {
+                errors.push({ noteId, error: err.message || "Failed to update note content." });
+            }
+        }
+
+        return res.json({
+            total: items.length,
+            updated: updatedCount,
+            failed: errors.length,
+            errors
+        });
     });
 
     eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/export", (req, res, next) => {
