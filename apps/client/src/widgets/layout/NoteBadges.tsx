@@ -32,8 +32,8 @@ import { SnippetBadge } from "./SnippetBadge";
 export default function NoteBadges() {
     return (
         <div className="note-badges">
-            <CollaboratorsBadge />
             <SaveStatusBadge />
+            <CollaboratorsBadge />
             <ReadOnlyBadge />
             <OfficePreviewBadge />
             <ShareBadge />
