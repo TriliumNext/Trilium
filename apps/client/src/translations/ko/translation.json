@@ -1898,7 +1898,11 @@
     "layout-horizontal-title": "수평",
     "layout-vertical-description": "실행 표시줄이 왼쪽에 표시됩니다(기본값)",
     "layout-horizontal-description": "실행 표시줄은 탭 바 아래에 배치되고, 탭 바는 전체 너비로 표시됩니다.",
-    "edited_notes_expanded": "일별 노트에서 \"이날 편집한 노트\" 펼치기"
+    "edited_notes_expanded": "일별 노트에서 \"이날 편집한 노트\" 펼치기",
+    "note_title_style": "노트 제목",
+    "note_title_style_description": "간결한 제목은 노트 위쪽 표시줄에만 나타나 콘텐츠를 표시할 공간이 더 넓어집니다. 생성일과 수정일은 표시되지 않습니다.",
+    "note_title_style_large": "크게",
+    "note_title_style_compact": "간결하게"
   },
   "ui-performance": {
     "title": "성능",
@@ -4487,7 +4491,10 @@
       "delete-all-tabs": "모든 탭 삭제",
       "compact": "간결",
       "resizable": "크기 조절 가능",
-      "default": "기본값"
+      "default": "기본값",
+      "collapse-or-expand-the-section-of-a-heading": "제목의 섹션 접기 또는 펼치기",
+      "section-collapsed": "섹션이 접혔습니다",
+      "section-expanded": "섹션이 펼쳐졌습니다"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -5036,6 +5043,8 @@
       "embed": "임베드",
       "block": "블록"
     },
-    "block_count_other": "블록 {{count}}개"
+    "block_count_other": "블록 {{count}}개",
+    "collapse_section": "섹션 접기",
+    "expand_section": "섹션 펼치기"
   }
 }
