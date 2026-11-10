@@ -97,7 +97,9 @@ To replace an include with a link to the included note, choose _Convert to link_
 
 ## Includes inside an included note
 
-The includes of an included note show in boxes of their own too, read-only, however deeply they nest. An include of a note that is already shown around it shows as a link to that note instead, so the chain ends there. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
+The includes of an included note show as _Compact_ boxes, whatever their own box size: a row with the icon and title of the note, and buttons to open it, but not its content. This keeps a note that includes notes which include further notes, such as a journal built from templates, quick to open. Opening the included note shows its own includes at the box size they were given.
+
+An include of a note that is already shown around it shows as a link to that note instead. For example, if note _A_ includes note _B_ and _B_ includes _A_, opening _A_ shows _B_ in a box, and inside that box a link back to _A_.
 
 ## Missing notes and attachments
 

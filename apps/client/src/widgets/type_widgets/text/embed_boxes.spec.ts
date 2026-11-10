@@ -53,7 +53,8 @@ describe("prepareEmbedBoxes", () => {
         }, true);
 
         // The passes between the two calls read the box sizes of this version.
-        expect(noteEmbed.getAttribute("data-box-size")).toBe("resizable");
+        expect(noteEmbed.getAttribute("data-box-size")).toBe("compact");
+        expect(attachmentEmbed.getAttribute("data-box-size")).toBe("compact");
         expect(loadEmbeddedNote).not.toHaveBeenCalled();
 
         await loadBoxes();
@@ -68,6 +69,26 @@ describe("prepareEmbedBoxes", () => {
             "att1", expect.anything(), undefined, { seenNoteIds: shownNoteIds, isNested: true }
         ] ]);
         expect(vi.mocked(loadEmbeddedAttachment).mock.calls[0][1][0]).toBe(attachmentEmbed);
+    });
+
+    it("shows the embeds of the content of another embed as a title row alone", async () => {
+        const html = `<figure class="include-note" data-note-id="noteA" data-box-size="small"`
+            + ` style="--include-note-height:20em"></figure>`
+            + `<figure class="include-note" data-attachment-id="att1"`
+            + ` data-box-size="full"></figure>`;
+
+        const topLevel = buildContent(html);
+        await prepareEmbedBoxes(topLevel, { seenNoteIds: new Set() })();
+        expect([ ...topLevel.children ].map((embed) => embed.getAttribute("data-box-size")))
+            .toEqual([ "resizable", "full" ]);
+
+        const nested = buildContent(html);
+        await prepareEmbedBoxes(nested, { seenNoteIds: new Set() }, true)();
+        expect([ ...nested.children ].map((embed) => embed.getAttribute("data-box-size")))
+            .toEqual([ "compact", "compact" ]);
+        expect(vi.mocked(loadEmbeddedNote).mock.lastCall?.[1][0]).toBe(nested.children[0]);
+        expect(vi.mocked(loadEmbeddedAttachment).mock.lastCall?.[1][0])
+            .toBe(nested.children[1]);
     });
 
     it("links to the notes and attachments shown around it, so that a cycle stops", async () => {
