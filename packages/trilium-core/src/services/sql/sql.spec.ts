@@ -548,7 +548,10 @@ describe("SqlService (real DB)", () => {
 
                 expect(() => sql.transactional(() => {
                     getContext().set("entityChangeIds", [10, 11]);
-                    sql.recordSavepointWrite("notes", "n1");
+                    sql.transactional(() => {
+                        sql.recordSavepointWrite("notes", "n1");
+                    });
+                    sql.recordSavepointWrite("notes", "n2");
                     throw new Error("failed inside savepoint");
                 })).toThrow("failed inside savepoint");
 
@@ -556,7 +559,10 @@ describe("SqlService (real DB)", () => {
             });
 
             expect(onTransactionRollback).not.toHaveBeenCalled();
-            expect(onSavepointRollback).toHaveBeenCalledWith([{ entityName: "notes", entityId: "n1" }]);
+            expect(onSavepointRollback).toHaveBeenCalledWith([
+                { entityName: "notes", entityId: "n1" },
+                { entityName: "notes", entityId: "n2" }
+            ]);
         });
     });
 });

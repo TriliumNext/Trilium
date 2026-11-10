@@ -475,7 +475,12 @@ export class SqlService {
     /** A released savepoint's writes become part of the enclosing one, which can still roll back. */
     private releaseSavepointFrame(frame: SavepointFrame) {
         this.savepointFrames.pop();
-        this.savepointFrames.at(-1)?.writes.push(...frame.writes);
+        const parentFrame = this.savepointFrames.at(-1);
+        if (parentFrame) {
+            for (const write of frame.writes) {
+                parentFrame.writes.push(write);
+            }
+        }
     }
 
     /**
