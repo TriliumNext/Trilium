@@ -1,7 +1,7 @@
-import { becca } from "@triliumnext/core";
+import { becca, note_service as noteService } from "@triliumnext/core";
 import type { Application } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import config from "../../src/services/config.js";
 import { createNote, login } from "./utils.js";
@@ -130,6 +130,84 @@ describe("etapi/notes/bulk-update", () => {
             .auth(USER, token, { type: "basic" })
             .expect(200);
         expect(get.text).toStrictEqual(initialContent);
+    });
+
+    it("rolls back all updates and restores in-memory cache when atomic=true and a runtime error occurs", async () => {
+        const noteId1 = await createNote(app, token);
+        const noteId2 = await createNote(app, token);
+
+        const initialContent1 = (await supertest(app)
+            .get(`/etapi/notes/${noteId1}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200)).text;
+
+        const initialContent2 = (await supertest(app)
+            .get(`/etapi/notes/${noteId2}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200)).text;
+
+        let callCount = 0;
+        const spy = vi.spyOn(noteService, "saveRevisionIfNeeded").mockImplementation((note) => {
+            callCount++;
+            if (callCount === 2) {
+                throw new Error("Simulated runtime failure on second item");
+            }
+        });
+
+        try {
+            await supertest(app)
+                .post("/etapi/notes/bulk-update?atomic=true")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId: noteId1, content: "<p>Mutated content 1 that must roll back</p>" },
+                        { noteId: noteId2, content: "<p>Mutated content 2</p>" }
+                    ]
+                })
+                .expect(500);
+
+            // Verify in-memory Becca entity for note 1 was restored
+            const beccaNote1 = becca.getNoteOrThrow(noteId1);
+            expect(beccaNote1.getContent()).toStrictEqual(initialContent1);
+
+            // Verify SQLite DB was rolled back
+            const get1 = await supertest(app)
+                .get(`/etapi/notes/${noteId1}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get1.text).toStrictEqual(initialContent1);
+
+            const get2 = await supertest(app)
+                .get(`/etapi/notes/${noteId2}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get2.text).toStrictEqual(initialContent2);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("handles multiple updates to the same note within one batch", async () => {
+        const noteId = await createNote(app, token);
+
+        const response = await supertest(app)
+            .post("/etapi/notes/bulk-update")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                items: [
+                    { noteId, content: "<p>Intermediate content</p>" },
+                    { noteId, content: "<p>Final content</p>" }
+                ]
+            })
+            .expect(200);
+
+        expect(response.body.updated).toStrictEqual(2);
+
+        const get = await supertest(app)
+            .get(`/etapi/notes/${noteId}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200);
+        expect(get.text).toStrictEqual("<p>Final content</p>");
     });
 
     it("refuses to update protected notes", async () => {

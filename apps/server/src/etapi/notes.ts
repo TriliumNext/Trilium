@@ -1,5 +1,4 @@
-import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
-import { becca, BNote } from "@triliumnext/core";
+import { becca, BNote, checkImageAttachments, type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
@@ -166,7 +165,7 @@ function register(router: Router) {
         return res.sendStatus(204);
     });
 
-    eu.route(router, "post", "/etapi/notes/bulk-update", (req, res, next) => {
+    eu.route(router, "post", "/etapi/notes/bulk-update", (req, res) => {
         const { items } = req.body || {};
         const skipFts = req.query.skipFts === "true" || req.query.skipFts === "1";
         const atomic = req.query.atomic === "true" || req.query.atomic === "1";
@@ -206,37 +205,49 @@ function register(router: Router) {
                 }
             }
 
-            const modifiedNotes: Array<{
-                note: BNote;
-                originalBlobId: string | undefined;
-                originalUtcDateModified: string | undefined;
-                originalDateModified: string | undefined;
-            }> = [];
+            const originalNoteStates = new Map<
+                string,
+                {
+                    note: BNote;
+                    originalBlobId: string | undefined;
+                    originalUtcDateModified: string | undefined;
+                    originalDateModified: string | undefined;
+                }
+            >();
+            const postProcessNotes = new Map<string, { note: BNote; content: string }>();
 
             try {
                 for (const item of items) {
                     const note = becca.getNoteOrThrow(item.noteId);
-                    modifiedNotes.push({
-                        note,
-                        originalBlobId: note.blobId,
-                        originalUtcDateModified: note.utcDateModified,
-                        originalDateModified: note.dateModified
-                    });
+                    if (!originalNoteStates.has(note.noteId)) {
+                        originalNoteStates.set(note.noteId, {
+                            note,
+                            originalBlobId: note.blobId,
+                            originalUtcDateModified: note.utcDateModified,
+                            originalDateModified: note.dateModified
+                        });
+                    }
 
                     noteService.saveRevisionIfNeeded(note);
                     note.setContent(item.content);
 
-                    if (!skipFts) {
-                        void noteService.asyncPostProcessContent(note, item.content);
+                    if (skipFts) {
+                        checkImageAttachments(note, item.content);
+                    } else {
+                        postProcessNotes.set(note.noteId, { note, content: item.content });
                     }
                 }
             } catch (err) {
-                for (const { note, originalBlobId, originalUtcDateModified, originalDateModified } of modifiedNotes) {
+                for (const { note, originalBlobId, originalUtcDateModified, originalDateModified } of originalNoteStates.values()) {
                     note.blobId = originalBlobId;
                     note.utcDateModified = originalUtcDateModified;
                     note.dateModified = originalDateModified;
                 }
                 throw err;
+            }
+
+            for (const { note, content } of postProcessNotes.values()) {
+                void noteService.asyncPostProcessContent(note, content);
             }
 
             return res.json({
@@ -249,6 +260,7 @@ function register(router: Router) {
 
         // Non-atomic mode: process each item, collecting errors for failed items
         const errors: Array<{ noteId: string; error: string }> = [];
+        const postProcessNotes = new Map<string, { note: BNote; content: string }>();
         let updatedCount = 0;
 
         for (const item of items) {
@@ -280,14 +292,20 @@ function register(router: Router) {
                 noteService.saveRevisionIfNeeded(note);
                 note.setContent(content);
 
-                if (!skipFts) {
-                    void noteService.asyncPostProcessContent(note, content);
+                if (skipFts) {
+                    checkImageAttachments(note, content);
+                } else {
+                    postProcessNotes.set(note.noteId, { note, content });
                 }
 
                 updatedCount++;
-            } catch (err: any) {
-                errors.push({ noteId, error: err.message || "Failed to update note content." });
+            } catch (err) {
+                errors.push({ noteId, error: err instanceof Error ? err.message : "Failed to update note content." });
             }
+        }
+
+        for (const { note, content } of postProcessNotes.values()) {
+            void noteService.asyncPostProcessContent(note, content);
         }
 
         return res.json({
