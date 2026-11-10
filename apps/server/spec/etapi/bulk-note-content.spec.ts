@@ -78,6 +78,39 @@ describe("etapi/notes/bulk-update", () => {
         expect(get.text).toStrictEqual(content);
     });
 
+    it("safely handles non-image note types with skipFts=true", async () => {
+        const createRes = await supertest(app)
+            .post("/etapi/create-note")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                parentNoteId: "root",
+                title: "Code Note",
+                type: "code",
+                mime: "application/javascript",
+                content: "console.log('hello');"
+            })
+            .expect(201);
+
+        const codeNoteId = createRes.body.note.noteId;
+        const newCode = "console.log('updated');";
+
+        const response = await supertest(app)
+            .post("/etapi/notes/bulk-update?skipFts=true")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                items: [ { noteId: codeNoteId, content: newCode } ]
+            })
+            .expect(200);
+
+        expect(response.body.updated).toStrictEqual(1);
+
+        const get = await supertest(app)
+            .get(`/etapi/notes/${codeNoteId}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200);
+        expect(get.text).toStrictEqual(newCode);
+    });
+
     it("handles partial failure when atomic=false (default)", async () => {
         const noteId = await createNote(app, token);
         const validContent = "<p>Valid note updated</p>";

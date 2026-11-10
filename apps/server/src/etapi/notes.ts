@@ -8,6 +8,16 @@ import type { ValidatorMap } from "./etapi-interface.js";
 import mappers from "./mappers.js";
 import v from "./validators.js";
 
+function shouldCheckImageAttachments(note: BNote): boolean {
+    return (
+        note.type === "text" ||
+        note.isMarkdown() ||
+        note.type === "spreadsheet" ||
+        note.type === "canvas" ||
+        note.type === "mindMap"
+    );
+}
+
 function register(router: Router) {
     eu.route(router, "get", "/etapi/notes", (req, res, next) => {
         const { search } = req.query;
@@ -232,7 +242,9 @@ function register(router: Router) {
                     note.setContent(item.content);
 
                     if (skipFts) {
-                        checkImageAttachments(note, item.content);
+                        if (shouldCheckImageAttachments(note)) {
+                            checkImageAttachments(note, item.content);
+                        }
                     } else {
                         postProcessNotes.set(note.noteId, { note, content: item.content });
                     }
@@ -293,7 +305,9 @@ function register(router: Router) {
                 note.setContent(content);
 
                 if (skipFts) {
-                    checkImageAttachments(note, content);
+                    if (shouldCheckImageAttachments(note)) {
+                        checkImageAttachments(note, content);
+                    }
                 } else {
                     postProcessNotes.set(note.noteId, { note, content });
                 }
