@@ -87,7 +87,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ selectedNodes, setSelectedNodes ] = useState<NodeObj[]>([]);
-
+    const loadedNoteIdRef = useRef<string | undefined>(undefined);
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -110,7 +110,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
             };
         },
         onContentChange: (content) => {
-            let newContent: MindElixirData;
+            let newContent: MindElixirData | undefined;
 
             if (content) {
                 try {
@@ -125,7 +125,10 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                 // its own for any empty name it is given.
                 newContent = VanillaMindElixir.new(t("mind-map.new-topic"));
             }
-            apiRef.current?.init(newContent!);
+            if (!apiRef.current || !newContent) return;
+
+            loadMapData(apiRef.current, newContent, loadedNoteIdRef.current !== note?.noteId);
+            loadedNoteIdRef.current = note?.noteId;
         }
     });
 
@@ -481,4 +484,35 @@ function createOverlayElement() {
     const overlayEl = document.createElement("div");
     overlayEl.className = "mind-map-overlay";
     return overlayEl;
+}
+
+/**
+ * Loads a note's content into the map. `init()` runs only once per instance, so a map that already
+ * holds content is patched with `diffRefresh()`, which keeps unchanged nodes and the view. A change
+ * of note or of `direction` redraws the whole map instead, and a change of note also centers it.
+ * The undo history is cleared so that undo cannot revert the content that was loaded.
+ *
+ * @param isOtherNote whether the content belongs to a different note than the map currently shows.
+ */
+export function loadMapData(mind: VanillaMindElixir, data: MindElixirData, isOtherNote: boolean) {
+    if (!mind.nodeData) {
+        void mind.init(data);
+        return;
+    }
+
+    const isNewDirection = data.direction !== undefined && data.direction !== mind.direction;
+    if (data.direction !== undefined) {
+        mind.direction = data.direction;
+    }
+
+    if (isOtherNote || isNewDirection) {
+        mind.refresh(data);
+    } else {
+        mind.diffRefresh(data);
+    }
+    mind.clearHistory?.();
+
+    if (isOtherNote) {
+        mind.toCenter();
+    }
 }

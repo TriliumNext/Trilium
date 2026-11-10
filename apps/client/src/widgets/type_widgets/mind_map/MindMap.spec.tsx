@@ -3,7 +3,7 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import i18next from "i18next";
-import { DARK_THEME, type default as MindElixirInstance, THEME as LIGHT_THEME } from "mind-elixir";
+import { DARK_THEME, type default as MindElixirInstance, type MindElixirData, THEME as LIGHT_THEME } from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { renderInto } from "../../../test/render";
 import englishTranslation from "../../../translations/en/translation.json";
 
-import { buildTheme, localizeBuiltLabels, MindElixir, renameOverlayLabel, sanitizeMindMapData } from "./MindMap.js";
+import { buildTheme, loadMapData, localizeBuiltLabels, MindElixir, renameOverlayLabel, sanitizeMindMapData } from "./MindMap.js";
 
 interface FakeMap {
     destroyed: boolean;
@@ -285,6 +285,62 @@ describe("renameOverlayLabel", () => {
         renameOverlayLabel(label, "Rezumat");
         expect(label.textContent).toBe("Rezumat");
         expect([ label.style.left, label.style.top ]).toEqual([ "", "" ]);
+    });
+});
+
+describe("loadMapData", () => {
+    const DATA = { nodeData: { id: "root", topic: "Root" }, direction: 1 } as MindElixirData;
+
+    function fakeMind(loaded: boolean, direction = 1) {
+        return {
+            nodeData: loaded ? { id: "old", topic: "Old" } : undefined,
+            direction,
+            init: vi.fn(),
+            refresh: vi.fn(),
+            diffRefresh: vi.fn(),
+            clearHistory: vi.fn(),
+            toCenter: vi.fn()
+        };
+    }
+    const asMind = (mind: ReturnType<typeof fakeMind>) => mind as unknown as MindElixirInstance;
+
+    it("initializes a map that holds nothing yet", () => {
+        const mind = fakeMind(false);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.init).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
+        expect(mind.refresh).not.toHaveBeenCalled();
+    });
+
+    it("patches new content of the same note into the map, keeping the view", () => {
+        const mind = fakeMind(true);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.init).not.toHaveBeenCalled();
+        expect(mind.diffRefresh).toHaveBeenCalledWith(DATA);
+        expect(mind.refresh).not.toHaveBeenCalled();
+        expect(mind.toCenter).not.toHaveBeenCalled();
+        expect(mind.clearHistory).toHaveBeenCalledOnce();
+    });
+
+    it("redraws and centers a map that now shows another note", () => {
+        const mind = fakeMind(true);
+        loadMapData(asMind(mind), DATA, true);
+
+        expect(mind.refresh).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
+        expect(mind.toCenter).toHaveBeenCalledOnce();
+        expect(mind.clearHistory).toHaveBeenCalledOnce();
+    });
+
+    it("redraws the whole map when the content changes its direction", () => {
+        const mind = fakeMind(true, 0);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.direction).toBe(1);
+        expect(mind.refresh).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
     });
 });
 
