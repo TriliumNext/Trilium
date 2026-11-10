@@ -294,6 +294,7 @@ describe("loadMapData", () => {
     function fakeMind(loaded: boolean, direction = 1) {
         return {
             nodeData: loaded ? { id: "old", topic: "Old" } : undefined,
+            pluginsInitialized: loaded,
             direction,
             init: vi.fn(),
             refresh: vi.fn(),
@@ -332,6 +333,48 @@ describe("loadMapData", () => {
         expect(mind.diffRefresh).not.toHaveBeenCalled();
         expect(mind.toCenter).toHaveBeenCalledOnce();
         expect(mind.clearHistory).toHaveBeenCalledOnce();
+    });
+
+    describe("on a real map", () => {
+        // Mind Elixir reads these at construction and in `init()`; jsdom has neither.
+        beforeAll(() => {
+            window.matchMedia ??= (() => ({ matches: false, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+            if (!("fonts" in document)) {
+                Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() } });
+            }
+        });
+
+        async function buildRealMap() {
+            const { default: RealMindElixir } = await vi.importActual<typeof import("mind-elixir")>("mind-elixir");
+            const el = document.createElement("div");
+            document.body.appendChild(el);
+            return new RealMindElixir({ el });
+        }
+        const map = (topic: string) => ({
+            nodeData: { id: "root", topic: "Root", children: [ { id: "a", topic } ] }
+        }) as MindElixirData;
+        const topics = (mind: MindElixirInstance) =>
+            Array.from(mind.nodes.querySelectorAll(".me-tpc"), (topic) => topic.textContent);
+
+        it("draws new content of the same note, patching only what changed", async () => {
+            const mind = await buildRealMap();
+            loadMapData(mind, map("Before"), true);
+            await vi.waitFor(() => expect(mind.diffRefresh).toBeTypeOf("function"));
+            const root = mind.nodes.querySelector(".me-root .me-tpc");
+
+            loadMapData(mind, map("After"), false);
+
+            expect(topics(mind)).toEqual([ "Root", "After" ]);
+            expect(mind.nodes.querySelector(".me-root .me-tpc")).toBe(root);
+        });
+
+        it("draws content that arrives while the map is still being set up", async () => {
+            const mind = await buildRealMap();
+            loadMapData(mind, map("Before"), true);
+
+            expect(() => loadMapData(mind, map("After"), false)).not.toThrow();
+            expect(topics(mind)).toEqual([ "Root", "After" ]);
+        });
     });
 
     it("redraws the whole map when the content changes its direction", () => {
