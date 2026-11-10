@@ -1,12 +1,27 @@
-import { getBackup, getLog, utils, ValidationError } from "@triliumnext/core";
+import { becca_loader, getBackup, getLog, getSql, utils, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import fs from "fs";
 import path from "path";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+// The database a rebuild reads lives in a temporary directory, so the spec never writes to the
+// shared test data directory.
+vi.mock("../../services/data_dir.js", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../services/data_dir.js")>();
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+    const root = mkdtempSync(join(tmpdir(), "trilium-database-route-spec-"));
+
+    return { ...original, default: { ...original.default, DOCUMENT_PATH: join(root, "document.db") } };
+});
 
 import anonymizationService from "../../services/anonymization.js";
 import dataDir from "../../services/data_dir.js";
+import sqlInit from "../../services/sql_init.js";
 import databaseRoute from "./database.js";
+
+afterAll(() => fs.rmSync(path.dirname(dataDir.DOCUMENT_PATH), { recursive: true, force: true }));
 
 function fakeRes() {
     const calls: { status?: number; body?: unknown; download?: unknown[] } = {};
@@ -175,6 +190,30 @@ describe("Database API", () => {
                 expect(() => databaseRoute.deleteAnonymizedDatabase({ query: { filePath } } as unknown as Request))
                     .toThrow(ValidationError);
             }
+            // No path at all is refused the same way.
+            expect(() => databaseRoute.deleteAnonymizedDatabase({ query: {} } as unknown as Request))
+                .toThrow("Not an anonymized database.");
         });
+    });
+
+    it("rebuilds the integration test database from the file at the document path, then reloads", async () => {
+        const fixture = Buffer.from("SQLite format 3\0 a stand-in for the fixture");
+        fs.writeFileSync(dataDir.DOCUMENT_PATH, fixture);
+        const steps: string[] = [];
+        const rebuild = vi.spyOn(getSql(), "rebuildFromBuffer").mockImplementation(() => {
+            steps.push("rebuild");
+        });
+        vi.spyOn(sqlInit, "initializeDb").mockImplementation(() => {
+            steps.push("initialize");
+        });
+        vi.spyOn(becca_loader, "load").mockImplementation(() => {
+            steps.push("load");
+        });
+
+        await databaseRoute.rebuildIntegrationTestDatabase();
+
+        expect(Buffer.from(rebuild.mock.calls[0][0])).toEqual(fixture);
+        expect(steps).toEqual([ "rebuild", "initialize", "load" ]);
+        vi.restoreAllMocks();
     });
 });
