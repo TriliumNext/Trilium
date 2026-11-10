@@ -8,7 +8,7 @@ const SELECTION_GROUP = "collab-selection";
 
 /**
  * Shows where the other editors of a session have their selection: a caret labeled with the name
- * of the user, and a highlight over a selected range, both in the user's avatar color. They are
+ * of the user, and a highlight over each selected range, both in the user's avatar color. They are
  * markers without operations, so they follow the edits around them and never reach the other
  * editors or the saved note.
  */
@@ -56,11 +56,20 @@ export default class PeerCursors {
     }
 
     /** Shows the selection of a peer, or hides its cursor when there is no range to show. */
-    show(peerId: string, range: ModelRange | undefined, isBackward: boolean) {
-        this.editor.model.enqueueChange({ isUndoable: false }, (writer) => {
-            const caret = range && (isBackward ? range.start : range.end);
-            this.setMarker(writer, `${CARET_GROUP}:${peerId}`, caret && writer.createRange(caret));
-            this.setMarker(writer, `${SELECTION_GROUP}:${peerId}`, range?.isCollapsed ? undefined : range);
+    show(peerId: string, ranges: ModelRange[], isBackward: boolean) {
+        const { model } = this.editor;
+        model.enqueueChange({ isUndoable: false }, (writer) => {
+            // The caret is an inline element, which belongs only where text can be typed. A
+            // selection of table cells or of an image ends between blocks.
+            const focus = isBackward ? ranges[0]?.start : ranges.at(-1)?.end;
+            const caret = focus && model.schema.checkChild(focus, "$text") ? writer.createRange(focus) : undefined;
+            this.setMarker(writer, `${CARET_GROUP}:${peerId}`, caret);
+
+            const selected = ranges.filter((range) => !range.isCollapsed);
+            const shown = [ ...model.markers.getMarkersGroup(`${SELECTION_GROUP}:${peerId}`) ].length;
+            for (let i = 0; i < Math.max(selected.length, shown); i++) {
+                this.setMarker(writer, `${SELECTION_GROUP}:${peerId}:${i}`, selected[i]);
+            }
         });
     }
 
@@ -69,7 +78,7 @@ export default class PeerCursors {
         model.enqueueChange({ isUndoable: false }, (writer) => {
             for (const group of [ CARET_GROUP, SELECTION_GROUP ]) {
                 for (const marker of [ ...model.markers.getMarkersGroup(group) ]) {
-                    if (isRemoved(marker.name.slice(group.length + 1))) {
+                    if (isRemoved(getPeerId(marker.name))) {
                         writer.removeMarker(marker);
                     }
                 }
@@ -92,7 +101,12 @@ export default class PeerCursors {
 
     /** The peer a cursor belongs to. Only the peers of the session get a cursor. */
     private getPeer(markerName: string) {
-        return this.peers.get(markerName.slice(markerName.indexOf(":") + 1)) as CollabPeer;
+        return this.peers.get(getPeerId(markerName)) as CollabPeer;
     }
 
+}
+
+/** The peer in the name of a marker, which is `group:peerId` with the index of the range after it. */
+function getPeerId(markerName: string) {
+    return markerName.split(":")[1] as string;
 }

@@ -331,13 +331,26 @@ describe("Collaboration", () => {
             expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.7-0.7" });
         });
 
+        it("keeps one caret for a user who types at it", async () => {
+            const { network, first, second } = await joinTwo();
+            select(first, [ 0, 5 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+
+            // The text arrives before the selection that follows it.
+            first.execute("insertText", { text: "abc" });
+            network.drain();
+            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.8-0.8" });
+            expect(second.editing.view.getDomRoot()?.querySelectorAll(".collab-caret")).toHaveLength(1);
+        });
+
         it("highlights a selected range, with the caret at the end the user extends", async () => {
             const { network, first, second } = await joinTwo();
 
             select(first, [ 0, 0 ], [ 0, 5 ], true);
             vi.advanceTimersByTime(SELECTION_DELAY);
             network.drain();
-            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.0-0.0", "collab-selection:1": "0.0-0.5" });
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.0-0.0", "collab-selection:1:0": "0.0-0.5" });
             const highlight = second.editing.view.getDomRoot()?.querySelector<HTMLElement>(".collab-selection");
             expect(highlight?.textContent).toBe("Hello");
             expect(highlight?.style.getPropertyValue("--collab-hue")).toBe("100");
@@ -345,13 +358,45 @@ describe("Collaboration", () => {
             select(first, [ 0, 6 ], [ 0, 11 ]);
             vi.advanceTimersByTime(SELECTION_DELAY);
             network.drain();
-            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.11-0.11", "collab-selection:1": "0.6-0.11" });
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.11-0.11", "collab-selection:1:0": "0.6-0.11" });
 
             select(first, [ 0, 2 ]);
             vi.advanceTimersByTime(SELECTION_DELAY);
             network.drain();
             expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.2-0.2" });
-            expect(cursorsOf(second)).not.toHaveProperty("collab-selection:1");
+            expect(cursorsOf(second)).not.toHaveProperty("collab-selection:1:0");
+        });
+
+        it("highlights each selected table cell, without a caret between the cells", async () => {
+            useFakeTimers();
+            const network = new Network();
+            const table = "<figure class=\"table\"><table><tbody><tr><td>a1</td><td>b1</td><td>c1</td></tr>"
+                + "<tr><td>a2</td><td>b2</td><td>c2</td></tr></tbody></table></figure>";
+            const first = await network.addEditor("writer1", table);
+            const second = await network.addEditor("writer2", "");
+            network.drain();
+
+            // The selection of a row is one range around each of its cells.
+            const { model } = first;
+            model.change((writer) => writer.setSelection([ 0, 1, 2 ].map((cell) => model.createRange(
+                model.createPositionFromPath(root(first), [ 0, 1, cell ]),
+                model.createPositionFromPath(root(first), [ 0, 1, cell + 1 ])
+            ))));
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+
+            const dom = second.editing.view.getDomRoot();
+            expect(cursorsOf(second)).toEqual({
+                "collab-selection:1:0": "0.1.0-0.1.1", "collab-selection:1:1": "0.1.1-0.1.2", "collab-selection:1:2": "0.1.2-0.1.3"
+            });
+            expect(Array.from(dom?.querySelectorAll(".collab-selection") ?? [], (cell) => cell.textContent)).toEqual([ "a2", "b2", "c2" ]);
+            expect(Array.from(dom?.querySelectorAll("tr") ?? [], (row) => row.children.length)).toEqual([ 3, 3 ]);
+
+            // A selection with fewer ranges drops the highlights it no longer has.
+            select(first, [ 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 2 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.0.0.0.2-0.0.0.0.2", "collab-selection:1:0": "0.0.0.0.0-0.0.0.0.2" });
         });
 
         it("sends the selection once the server has every edit, and again when it came too late", async () => {
@@ -403,7 +448,7 @@ describe("Collaboration", () => {
             selection([]);
             expect(cursorsOf(second)).toEqual({});
             selection([ { start: [ 0, 1 ], end: [ 0, 3 ] } ]);
-            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.3-0.3", "collab-selection:1": "0.1-0.3" });
+            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.3-0.3", "collab-selection:1:0": "0.1-0.3" });
             selection([ { start: [ 9, 9 ], end: [ 9, 9 ] } ]);
             expect(cursorsOf(second)).toEqual({});
 

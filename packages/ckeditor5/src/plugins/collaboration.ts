@@ -408,15 +408,15 @@ export default class Collaboration extends Plugin {
             for (const operation of [ ...this.inFlight, ...this.pending ]) {
                 ranges = ranges.flatMap((range) => range.getTransformedByOperation(operation));
             }
-            const range = ranges.find((candidate) => candidate.root === root);
-            if (range) {
+            ranges = ranges.filter((range) => range.root === root);
+            for (const range of ranges) {
                 // A path that leads nowhere throws here, not where the position is created.
                 range.start.getAncestors();
                 range.end.getAncestors();
             }
-            this.cursors.show(peerId, range, selection.isBackward);
+            this.cursors.show(peerId, ranges, selection.isBackward);
         } catch {
-            this.cursors.show(peerId, undefined, false);
+            this.cursors.show(peerId, [], false);
         }
     }
 
