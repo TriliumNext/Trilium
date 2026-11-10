@@ -7,7 +7,8 @@ import { defaultClientConditions, defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 import {
-    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    stripUniverHyphenation
 } from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
@@ -203,7 +204,8 @@ let plugins: any = [
         targets: clientAssets.map((asset) => ({
             src: `../../client/src/${asset}/**/*`,
             dest: asset,
-            rename: { stripBase: 3 }
+            rename: { stripBase: 3 },
+            ...(asset === "stylesheets" && { transform: flattenCssNesting })
         })),
         // Enable watching in development
         ...(isDev && {

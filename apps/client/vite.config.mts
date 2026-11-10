@@ -6,7 +6,8 @@ import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 import {
-    narrowThirdPartySelectors, shareTheme, stripUniverEmojiData, stripUniverHyphenation
+    flattenCssNesting, narrowThirdPartySelectors, shareTheme, stripUniverEmojiData,
+    stripUniverHyphenation
 } from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
@@ -35,7 +36,8 @@ if (isDev) {
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,
                 dest: asset,
-                rename: { stripBase: 2 }
+                rename: { stripBase: 2 },
+                ...(asset === "stylesheets" && { transform: flattenCssNesting })
             }))
         }),
         viteStaticCopy({
