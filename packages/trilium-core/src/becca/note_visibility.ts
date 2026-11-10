@@ -19,9 +19,9 @@ export const SHARED_WITH_ME_NOTE_ID = "_sharedWithMe";
 
 /**
  * What one member sees of the Becca. Admins and system scopes have no view: they read the Becca
- * as it is. A member sees `root`, the `_` system notes, the notes they own and every note below a
- * note shared with them or with one of their groups. Owning a note grants nothing below it, as in
- * `permission_service`.
+ * as it is. A member sees `root`, the `_` system notes, and every note at or below a note they own
+ * or a note shared with them or with one of their groups, as in `permission_service`. The owner of
+ * a note therefore sees what others add below it.
  */
 export class NoteView {
     readonly notes: Record<string, BNote>;
@@ -199,8 +199,11 @@ function hasMembers(version: number) {
 
 function collectVisibleNoteIds(becca: Becca, userId: string) {
     const visible = new Set<string>([ "root" ]);
+    const pending: string[] = [];
     for (const [ noteId, note ] of Object.entries(becca.allNotes)) {
-        if (noteId.startsWith("_") || note.ownerId === userId) {
+        if (note.ownerId === userId) {
+            pending.push(noteId);
+        } else if (noteId.startsWith("_")) {
             visible.add(noteId);
         }
     }
@@ -211,9 +214,9 @@ function collectVisibleNoteIds(becca: Becca, userId: string) {
             AND (userId = ? OR groupId IN (SELECT groupId FROM user_group_members WHERE userId = ?))`,
         [ userId, userId ]
     );
+    pending.push(...grantedNoteIds.filter((noteId) => noteId in becca.allNotes));
 
     const descended = new Set<string>();
-    const pending = grantedNoteIds.filter((noteId) => noteId in becca.allNotes);
     while (pending.length) {
         const noteId = pending.pop() as string;
         if (descended.has(noteId)) {

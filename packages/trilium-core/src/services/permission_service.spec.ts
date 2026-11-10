@@ -176,6 +176,25 @@ describe("permission_service", () => {
 
             expect(cls.init(() => permissionService.canUserWriteNote(childId, guestId))).toBe(true);
         });
+
+        it("gives the owner of a note full access to what others add below it", () => {
+            const parentId = newEntityId();
+            const childId = newEntityId();
+            const grandchildId = newEntityId();
+            const guestId = newEntityId();
+            insertUser(guestId, 0);
+            insertNote(parentId, userId);
+            insertNote(childId, guestId);
+            insertNote(grandchildId, guestId);
+            insertBranch(childId, parentId);
+            insertBranch(grandchildId, childId);
+
+            for (const noteId of [ childId, grandchildId ]) {
+                expect(cls.init(() => permissionService.canUserAccessNote(noteId, userId))).toBe(true);
+                expect(cls.init(() => permissionService.canUserWriteNote(noteId, userId))).toBe(true);
+            }
+            expect(cls.init(() => permissionService.canUserAccessNote(parentId, guestId))).toBe(false);
+        });
     });
 
     describe("getPermissionsForNote", () => {

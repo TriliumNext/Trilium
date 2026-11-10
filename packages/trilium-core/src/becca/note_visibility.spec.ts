@@ -128,6 +128,20 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         expect(asUser(f.daveId, () => becca.getNote(f.project.noteId))).toBeNull();
     });
 
+    it("shows the owner of a note what others add below it", () => {
+        const { added, addedChild } = cls.initAsSystem(() => {
+            const added = createNote(f.teamDoc.noteId, f.daveId, "vis added by dave");
+            return { added, addedChild: createNote(added.noteId, f.daveId, "vis added below by dave") };
+        });
+
+        asUser(f.bobId, () => {
+            expect(becca.getNote(added.noteId)).toBe(added);
+            expect(becca.getNote(addedChild.noteId)).toBe(addedChild);
+            expect(f.teamDoc.getChildNotes().map((note) => note.noteId)).toContain(added.noteId);
+        });
+        expect(asUser(f.aliceId, () => becca.getNote(added.noteId))).toBeNull();
+    });
+
     it("hides the branches and attributes of notes a member cannot see", () => {
         asUser(f.aliceId, () => {
             const secretBranch = becca.getBranchFromChildAndParent(f.secret.noteId, f.bobHome.noteId);

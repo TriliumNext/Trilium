@@ -31,17 +31,27 @@ function cacheKey(noteId: string, userId: string) {
     return `${noteId}\0${userId}`;
 }
 
-// Collects permissions from the note and all its ancestors across every branch (handles clones).
-function collectAncestorPermissions(noteId: string, userId: string): PermissionRow[] {
-    return getSql().getRows<PermissionRow>(
-        `WITH RECURSIVE ancestors(noteId) AS (
+// The note and all its ancestors across every branch (handles clones), bound to the note's ID.
+const ANCESTORS_CTE = `WITH RECURSIVE ancestors(noteId) AS (
              SELECT ?
              UNION
              SELECT b.parentNoteId
                FROM branches b
                JOIN ancestors a ON b.noteId = a.noteId
               WHERE b.isDeleted = 0 AND b.parentNoteId != 'none'
-         )
+         )`;
+
+function isOwnedByUserOrBelowOwned(noteId: string, userId: string): boolean {
+    return !!getSql().getValue<number>(
+        `${ANCESTORS_CTE}
+         SELECT 1 FROM notes WHERE noteId IN ancestors AND isDeleted = 0 AND ownerId = ? LIMIT 1`,
+        [noteId, userId]
+    );
+}
+
+function collectAncestorPermissions(noteId: string, userId: string): PermissionRow[] {
+    return getSql().getRows<PermissionRow>(
+        `${ANCESTORS_CTE}
          SELECT ${PERMISSION_COLS}
            FROM note_permissions
           WHERE noteId IN ancestors
@@ -69,6 +79,12 @@ function getEffectivePermission(noteId: string, userId: string): EffectivePermis
     const key = cacheKey(noteId, userId);
     if (permCache.has(key)) {
         return permCache.get(key)!;
+    }
+
+    if (isOwnedByUserOrBelowOwned(noteId, userId)) {
+        const result = { canRead: true, canWrite: true };
+        permCache.set(key, result);
+        return result;
     }
 
     const rows = collectAncestorPermissions(noteId, userId);

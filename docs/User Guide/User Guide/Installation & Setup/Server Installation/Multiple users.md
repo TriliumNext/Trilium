@@ -13,7 +13,7 @@ Multiple users are available on a server installation only. The desktop applicat
 
 *   The **primary admin** is the account the server creates on its own, named `admin`. It signs in with the instance password, together with the [second factor](Multi-factor%20authentication%20with%20TOTP.md) or [OpenID Connect](Signing%20in%20with%20OpenID%20Connect.md) if those are set up. It can't be deleted or lose its admin rights.
 *   An **administrator** sees every note on the server and manages the users.
-*   A **user** sees their own notes and the notes others have given them access to.
+*   A **user** sees their own notes (including what others add inside them) and the notes others have given them access to.
 
 A server that has never had a second user behaves as before: the login screen asks for the password alone, and the note tree is unchanged. To add users, see <a class="reference-link" href="Multiple%20users/Managing%20users.md">Managing users</a>; for what they do next, see <a class="reference-link" href="Multiple%20users/Signing%20in%20as%20a%20user.md">Signing in as a user</a>.
 
