@@ -1,8 +1,8 @@
-# Collaborative editing of text notes (OT on CKEditor 5)
+# Collaborative editing of notes (OT on CKEditor 5 and CodeMirror 6)
 
-Status: implemented for text notes on a server with users, with cursors and presence. The other note types and the items under [Open work](#open-work) are not built.
+Status: implemented for text and code notes on a server with users, with cursors and presence. The other note types and the items under [Open work](#open-work) are not built.
 
-**Goal:** several users edit one text note at the same time on a multi-user server. The server only orders and relays edits; it never interprets the document, and saving keeps using the existing blob path.
+**Goal:** several users edit one note at the same time on a multi-user server. The server only orders and relays edits; it never interprets the document, and saving keeps using the existing blob path.
 
 **Why OT and not a CRDT (Yjs):** CKEditor 5 is built on OT and ships the transform functions in its open-source engine, including the hard ones for split, merge and move. A Yjs binding would need a model ↔ Y.XmlFragment mapping, a second persisted state next to the blob, and reconciliation with every write that bypasses the editor (ETAPI, scripts, import, sync). OT's one drawback, the need for a central server, does not apply: multi-user mode has one.
 
@@ -11,19 +11,20 @@ Status: implemented for text notes on a server with users, with cursors and pres
 | Part | File |
 |---|---|
 | Message types (`CollabClientMessage`, `CollabServerMessage`, `CollabSnapshot`) | `packages/commons/src/lib/collaboration.ts` |
-| Session registry, pure logic without imports | `packages/trilium-core/src/services/collaboration_sessions.ts` |
+| Session registry, pure logic | `packages/commons/src/lib/collaboration_sessions.ts`, a subpath module outside the barrel |
 | Wiring to the messaging provider and the access check | `packages/trilium-core/src/services/collaboration.ts`, called from `ws.init()` |
 | User of a connection, disconnect notification | `getClientUserId()` / `onClientDisconnected()` on `MessagingProvider`, implemented by `WebSocketMessagingProvider` only |
 | Editor side: queues, transformation, snapshots, hashes, sending the selection | `Collaboration` plugin, `packages/ckeditor5/src/plugins/collaboration.ts` |
 | Cursors of the other editors | `PeerCursors`, `packages/ckeditor5/src/plugins/collaboration_cursors.ts`, styled by `theme/collaboration.css` |
 | Avatars of the other users in the title row | `CollaboratorsBadge` in `NoteBadges.tsx`, fed through the `collaborators` context data |
-| Client glue: joining, message dispatch, who saves | `apps/client/src/widgets/type_widgets/text/collaboration.ts`, used by `EditableText.tsx` |
+| Code editor side | `CodeCollaboration` and the `peerCursors` field, `packages/codemirror/src/collaboration.ts` and `collaboration_cursors.ts` |
+| Client glue: joining, message dispatch, who saves | `apps/client/src/services/collaboration.ts`, used by `EditableText.tsx` and `Code.tsx` through the `CollabEditor` interface |
 
-The plugin spec (`collaboration.spec.ts` in `packages/ckeditor5`) runs real editors against the real `CollaborationSessions` over an in-memory network with random delivery, including the Trilium editor build. The registry has no imports so that spec can load it.
+The editor specs (`collaboration.spec.ts` in `packages/ckeditor5` and in `packages/codemirror`) run real editors against the real `CollaborationSessions` over an in-memory network with random delivery, including the Trilium editor build. The registry lives in commons so those specs can load it; it stays out of the barrel, which the client imports.
 
 ## Protocol
 
-One session per note, in memory. `version` counts the accepted batches since the session or its last reset started; `epoch` changes on every reset so older messages are dropped.
+One session per note, in memory. A session has an editor kind, `text` (CKEditor) or `code` (CodeMirror), which the join names and `EDITOR_KINDS` in core checks against the type of the note: operations, snapshots and selections are opaque to the server and only an editor of the same kind understands them. `version` counts the accepted batches since the session or its last reset started; `epoch` changes on every reset so older messages are dropped.
 
 - **Editing.** An editor sends `collab-ops { baseVersion, ops }` with one batch in flight at a time. The server accepts it only when `baseVersion` is the current version, then broadcasts it to every member; the sender takes its own batch back as the acknowledgement. Otherwise it answers `collab-rejected`, and the editor, which has by then received and transformed over the batches it missed, sends again. The server never transforms.
 - **Receiving.** The editor transforms the batch over its in-flight and pending operations with `transformOperationSets()` (`useRelations: false`, `forceWeakRemove: false`), keeps the transformed local operations, and applies the remote ones in a non-local, non-undoable batch. Undo of local edits keeps working through CKEditor's own history transformation.
@@ -35,6 +36,14 @@ One session per note, in memory. `version` counts the accepted batches since the
 - **Presence.** After every join and leave the server sends each member `collab-peers`: the other members with their user and avatar hue. A user with the note open twice is two peers; the badge shows them once.
 - **Cursors.** A selection is paths, which only mean the same in the same model. So an editor sends `collab-selection` when it is settled, with its version, and the server relays it only while that version is current; otherwise it answers `collab-selection-rejected` and the editor sends again. The receiver holds that version plus its own unacknowledged operations, and transforms the ranges over them (`getTransformedByOperation()`). The cursor is two markers without operations, `collab-caret:<peerId>` and `collab-selection:<peerId>`, because `markerToElement` and `markerToHighlight` cannot both convert one marker. They follow later edits as live ranges, are dropped on a reset, and never reach the saved note.
 - **Reconnecting.** The server drops a member when its connection closes. The client rejoins on every WebSocket open and takes the snapshot of the others, losing what it had not sent.
+
+## Code notes
+
+`CodeCollaboration` speaks the same protocol with `@codemirror/collab` doing the rebasing: `sendableUpdates()` is the batch, and every accepted batch, the editor's own included, goes through `receiveUpdates()`. The snapshot is the text, a selection is offsets, and `collab()` is taken out of its compartment and put back to start a session over. The session version counts batches while `collab()` counts updates, so the adapter keeps its own version.
+
+Flat text converges: 40 random runs of three editors with insertions, deletions, undo and redo end equal without a single reset. A change set also carries the length of the document it applies to, so most divergence fails on the next batch and asks for a reset by itself; the hash only catches a divergence of the same length.
+
+The component is shared: `EditableCode` joins a session for `noteType === "code"`, which is every note stored as a code note. That includes Markdown notes (`Markdown.tsx`, a code note with a Markdown MIME type shown in a `SplitEditor`) and the SQL console. Mermaid notes have a type of their own and pass `noteType="mermaid"`, so they stay out.
 
 ## What the spike measured
 
@@ -65,7 +74,7 @@ Three stock editors, 30 random edits per run, 300 runs per cell; the columns are
 
 | Type | Approach |
 |---|---|
-| Code, Mermaid, Markdown | OT via `@codemirror/collab` (same central-server model) |
+| Mermaid | `CodeCollaboration` as for code notes: add the type to `EDITOR_KINDS` and lift the `noteType === "code"` check, then verify the preview and the split |
 | Canvas (Excalidraw) | Per element, newest `version` wins (unverified: whether 0.18 exports `reconcileElements`) |
 | Relation map | Newest wins per box position; relations are already attributes |
 | Mind map (mind-elixir) | Per node, newest wins, from its `operation` events; moves need a cycle check |

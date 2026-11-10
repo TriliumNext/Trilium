@@ -28,12 +28,12 @@ For administrators, the tree keeps its usual shape. Every user's _My notes_ is i
 
 ## Editing a note together
 
-When several users have the same [text note](../../Note%20Types/Text.md) open, they edit it together: what one of them types appears for the others as they type, with a cursor showing where each of them is. The other note types are not edited together yet. See <a class="reference-link" href="Multiple%20users/Editing%20notes%20together.md">Editing notes together</a> for the status of each note type.
+When several users have the same [text](../../Note%20Types/Text.md), [code](../../Note%20Types/Code.md) or [Markdown](../../Note%20Types/Markdown.md) note open, they edit it together: what one of them types appears for the others as they type, with a cursor showing where each of them is. The other note types are not edited together yet. See <a class="reference-link" href="Multiple%20users/Editing%20notes%20together.md">Editing notes together</a> for the status of each note type.
 
 ## Limitations
 
-*   _Can view_ prevents editing only in the editor of a text note: anyone with access to a note can still change it in other ways.
-*   Only text notes are edited together. For the other note types, the last save replaces the earlier ones.
+*   _Can view_ prevents editing only in the editor of a text, code or Markdown note: anyone with access to a note can still change it in other ways.
+*   Only text, code and Markdown notes are edited together. For the other note types, the last save replaces the earlier ones.
 *   The <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>, the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, saved searches and AI chats are shared by all users.
 *   On a note shared with them, a user doesn't get the labels the owner set on the notes above it, such as an icon or a sort order, nor the definitions from a template they can't see.
 *   Changes made by one user don't always show for others right away.

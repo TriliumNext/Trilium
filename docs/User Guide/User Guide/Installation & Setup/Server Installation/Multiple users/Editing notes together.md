@@ -2,15 +2,15 @@
 On a server with [multiple users](../Multiple%20users.md), several people can have the same note open at once. Whether they then edit it together, each seeing the changes of the others as they are made, depends on the type of the note.
 
 > [!IMPORTANT]
-> Editing together is under development, like the rest of the support for multiple users, and is available for text notes only.
+> Editing together is under development, like the rest of the support for multiple users, and is available for text, code and Markdown notes only.
 
 ## Status per note type
 
 | Note type | Edited together | When two users change it at the same time |
 | --- | --- | --- |
 | <a class="reference-link" href="../../../Note%20Types/Text.md">Text</a> | Yes | Both changes are kept, and each user sees the other's as they type. |
-| <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> | No | The last save replaces the earlier ones. |
-| <a class="reference-link" href="../../../Note%20Types/Markdown.md">Markdown</a> | No | The last save replaces the earlier ones. |
+| <a class="reference-link" href="../../../Note%20Types/Code.md">Code</a> | Yes | Both changes are kept, and each user sees the other's as they type. |
+| <a class="reference-link" href="../../../Note%20Types/Markdown.md">Markdown</a> | Yes | Both changes are kept, and each user sees the other's as they type. |
 | <a class="reference-link" href="../../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> | No | The last save replaces the earlier ones. |
 | <a class="reference-link" href="../../../Note%20Types/Canvas.md">Canvas</a> | No | The last save replaces the earlier ones. |
 | <a class="reference-link" href="../../../Note%20Types/Mind%20Map.md">Mind Map</a> | No | The last save replaces the earlier ones. |
@@ -21,9 +21,9 @@ On a server with [multiple users](../Multiple%20users.md), several people can ha
 
 For the types that are not edited together, the note is saved as a whole a moment after each change. A user who has the note open receives what someone else saved, unless they have changes of their own that are not saved yet; in that case their next save replaces it.
 
-## Text notes
+## Text, code and Markdown notes
 
-When several users have the same text note open, what one of them types appears for the others as they type, and each user's undo only takes back their own changes.
+When several users have the same text, code or Markdown note open, what one of them types appears for the others as they type, and each user's undo only takes back their own changes.
 
 *   Each of the other users has a cursor in the text, in the color of their avatar and labeled with their name. What they have selected is highlighted in the same color.
 *   The avatars of the other users are shown next to the title of the note for as long as they have it open.
@@ -32,7 +32,7 @@ When several users have the same text note open, what one of them types appears 
 ### Limitations
 
 *   [Protected notes](../../../Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.md) are not edited together.
-*   A text note shown in [read-only mode](../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) doesn't follow the changes as they are typed. It shows them once they are saved.
-*   A note edited inside another note is not edited together, even when it is a text note.
+*   A note shown in [read-only mode](../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) doesn't follow the changes as they are typed. It shows them once they are saved.
+*   A note edited inside another note is not edited together, even when it is a note of one of these types.
 *   If the editors end up with different content, the note is reloaded from one of them. The others keep what was already there, but can lose the last thing they typed and their undo history.
 *   Editing together needs the server: the desktop application and the in-browser version have a single user.

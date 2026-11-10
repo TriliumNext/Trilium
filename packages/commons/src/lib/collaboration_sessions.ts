@@ -1,12 +1,15 @@
 import type {
-    CollabClientMessage, CollabPeer, CollabSelection, CollabServerMessage, CollabSnapshot
-} from "@triliumnext/commons";
+    CollabClientMessage, CollabEditorKind, CollabPeer, CollabServerMessage
+} from "./collaboration.js";
 
 /** What a session needs from the instance, so the sessions can run without a transport. */
 export interface CollaborationHost {
     send(clientId: string, message: CollabServerMessage): void;
-    /** Who the user is and what they can do in a session of the note, or `null` when they cannot join one. */
-    getAccess(noteId: string, userId: string | undefined): CollaborationAccess | null;
+    /**
+     * Who the user is and what they can do in a session of the note, or `null` when they cannot
+     * join one with an editor of this kind.
+     */
+    getAccess(noteId: string, userId: string | undefined, kind: CollabEditorKind): CollaborationAccess | null;
 }
 
 export interface CollaborationAccess {
@@ -28,13 +31,14 @@ interface Member {
 
 interface Session {
     noteId: string;
+    kind: CollabEditorKind;
     epoch: number;
     version: number;
     /** The accepted batches after version `logStart`, oldest first. */
     log: unknown[][];
     logStart: number;
     /** The newest model an editor reported, which an editor that joins starts from. */
-    snapshot?: { version: number; snapshot: CollabSnapshot };
+    snapshot?: { version: number; snapshot: unknown };
     /** The editors in the session, in the order they joined. */
     members: Map<string, Member>;
     /** The editors that wait for a snapshot to join. */
@@ -48,10 +52,14 @@ interface Session {
 }
 
 /**
- * The collaborative editing sessions of the text notes, one per note that is open in an editor.
- * A session orders the operation batches of its editors and relays them; it never reads them. The
- * editors transform their own operations (`Collaboration` in `packages/ckeditor5`), and the note
- * is saved by one of them through the regular route.
+ * The collaborative editing sessions of the notes, one per note that is open in an editor. A
+ * session orders the operation batches of its editors and relays them; it never reads them. The
+ * editors transform their own operations (`Collaboration` in `packages/ckeditor5`,
+ * `CodeCollaboration` in `packages/codemirror`), and the note is saved by one of them through
+ * the regular route.
+ *
+ * The server runs it (`collaboration.ts` in `@triliumnext/core`). It lives here, outside the
+ * barrel of this package, so that the specs of the editors run against it.
  */
 export class CollaborationSessions {
 
@@ -66,7 +74,7 @@ export class CollaborationSessions {
         const key = `${clientId}:${message.memberId}`;
 
         if (message.type === "collab-join") {
-            this.join(clientId, userId, message.noteId, message.memberId);
+            this.join(clientId, userId, message.noteId, message.memberId, message.kind);
             return;
         }
 
@@ -110,9 +118,12 @@ export class CollaborationSessions {
         }
     }
 
-    private join(clientId: string, userId: string | undefined, noteId: string, memberId: string) {
-        const access = this.host.getAccess(noteId, userId);
-        if (!access) {
+    private join(
+        clientId: string, userId: string | undefined, noteId: string, memberId: string, kind: CollabEditorKind
+    ) {
+        const access = this.host.getAccess(noteId, userId, kind);
+        // An editor of another kind would not understand the operations of the session.
+        if (!access || (this.sessions.get(noteId)?.kind ?? kind) !== kind) {
             this.host.send(clientId, { type: "collab-denied", noteId, memberId });
             return;
         }
@@ -120,7 +131,7 @@ export class CollaborationSessions {
         let session = this.sessions.get(noteId);
         if (!session) {
             session = {
-                noteId, epoch: 1, version: 0, log: [], logStart: 0,
+                noteId, kind, epoch: 1, version: 0, log: [], logStart: 0,
                 members: new Map(), waiting: new Map(), hashes: new Map(), peerCount: 0
             };
             this.sessions.set(noteId, session);
@@ -214,10 +225,10 @@ export class CollaborationSessions {
     private receiveSnapshot(
         session: Session,
         member: Member,
-        message: { version: number; authoritative: boolean; snapshot: CollabSnapshot }
+        message: { version: number; authoritative: boolean; snapshot: unknown }
     ) {
         const { snapshot, version } = message;
-        if (!member.canWrite || !Array.isArray(snapshot?.main) || !Array.isArray(snapshot.graveyard)) {
+        if (!member.canWrite || snapshot === undefined || snapshot === null) {
             return;
         }
 
@@ -226,7 +237,7 @@ export class CollaborationSessions {
                 return;
             }
             this.restart(session);
-            session.snapshot = { version: 0, snapshot: { main: snapshot.main, graveyard: [] } };
+            session.snapshot = { version: 0, snapshot };
             for (const other of session.members.values()) {
                 this.send(session, other, {
                     type: "collab-reset",
@@ -289,7 +300,7 @@ export class CollaborationSessions {
     }
 
     /** Relays a selection to the other editors, which hold the model it was made in. */
-    private receiveSelection(session: Session, member: Member, version: number, selection: CollabSelection) {
+    private receiveSelection(session: Session, member: Member, version: number, selection: unknown) {
         if (version !== session.version) {
             this.send(session, member, { type: "collab-selection-rejected", epoch: session.epoch });
             return;

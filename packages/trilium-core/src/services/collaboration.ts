@@ -1,7 +1,8 @@
-import { type CollabClientMessage, getAvatarHues } from "@triliumnext/commons";
+import { type CollabClientMessage, type CollabEditorKind, getAvatarHues } from "@triliumnext/commons";
+import { CollaborationSessions } from "@triliumnext/commons/src/lib/collaboration_sessions";
 
 import becca from "../becca/becca.js";
-import { CollaborationSessions } from "./collaboration_sessions.js";
+
 import type { MessagingProvider } from "./messaging/types.js";
 import permissionService from "./permission_service.js";
 import userService from "./user_service.js";
@@ -30,10 +31,19 @@ export function initCollaboration(provider: MessagingProvider) {
         sessions.handleMessage(clientId, provider.getClientUserId?.(clientId), message);
 }
 
-/** A user joins the session of a text note they can read, unless the note is protected. */
-function getNoteAccess(noteId: string, userId: string | undefined) {
+/** The kind of editor that edits the notes of a type together. */
+const EDITOR_KINDS: Partial<Record<string, CollabEditorKind>> = {
+    text: "text",
+    code: "code"
+};
+
+/**
+ * A user joins the session of a note they can read with the editor of its type, unless the note
+ * is protected.
+ */
+function getNoteAccess(noteId: string, userId: string | undefined, kind: CollabEditorKind) {
     const note = becca.allNotes[noteId];
-    if (!userId || !note || note.type !== "text" || note.isProtected) {
+    if (!userId || !note || EDITOR_KINDS[note.type] !== kind || note.isProtected) {
         return null;
     }
     // The connection has no scope of its own, so the rights are read for the user by name.

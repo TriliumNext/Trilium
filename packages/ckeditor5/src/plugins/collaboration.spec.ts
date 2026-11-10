@@ -1,13 +1,11 @@
 import type { CollabClientMessage, CollabPeer, CollabServerMessage } from "@triliumnext/commons";
+import { CollaborationSessions } from "@triliumnext/commons/src/lib/collaboration_sessions";
 import {
     _getModelData, _setModelData, Bold, type ClassicEditor, Essentials, Heading, Italic, List, type ModelRange,
     Paragraph, Table
 } from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
-// The sessions are the server half of the protocol. The module has no imports of its own, so the
-// editors here run against the real one.
-import { CollaborationSessions } from "../../../trilium-core/src/services/collaboration_sessions.js";
 import { createTestEditor, createTestEditorOf } from "../../test/editor-kit.js";
 import { registerTestCleanup } from "../../test/globals-test-kit.js";
 import { ClassicEditor as TriliumEditor } from "../index.js";

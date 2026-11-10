@@ -1,17 +1,28 @@
 /**
- * The messages of a collaborative editing session of one text note. The server orders and relays
- * the operations of the editors and never reads them, so operations and model nodes travel as the
- * JSON that CKEditor produces.
+ * The messages of a collaborative editing session of one note. The server orders and relays the
+ * operations of the editors and never reads them: operations, snapshots and selections travel as
+ * the JSON of the editor that produces them, which only an editor of the same kind understands.
  *
  * A session numbers its accepted operation batches: `version` is the number of batches accepted
  * since the session, or its last reset, started. `epoch` changes with every reset, so a message
  * from before a reset can be told apart and dropped.
  */
 
-/** The model of an editor: the nodes of its main root and the ones the session deleted. */
-export interface CollabSnapshot {
+/**
+ * The editor of a session: `text` is CKEditor on a text note, `code` is CodeMirror on a code
+ * note. Every editor of a session is of the same kind.
+ */
+export type CollabEditorKind = "text" | "code";
+
+/** The model of a text editor: the nodes of its main root and the ones the session deleted. */
+export interface CollabTextSnapshot {
     main: unknown[];
     graveyard: unknown[];
+}
+
+/** The content of a code editor. */
+export interface CollabCodeSnapshot {
+    doc: string;
 }
 
 /** Another editor of the session, as its cursor and the list of who is editing show it. */
@@ -24,10 +35,15 @@ export interface CollabPeer {
     avatarHue: number;
 }
 
-/** The selection of an editor: its ranges as paths in the main root, and where the caret is. */
-export interface CollabSelection {
+/** The selection of a text editor: its ranges as paths in the main root, and where the caret is. */
+export interface CollabTextSelection {
     ranges: { start: number[]; end: number[] }[];
     isBackward: boolean;
+}
+
+/** The selection of a code editor: its ranges as offsets, each from its anchor to the caret. */
+export interface CollabCodeSelection {
+    ranges: { anchor: number; head: number }[];
 }
 
 /** Identifies the session and the editor in it. A window can show one note in several editors. */
@@ -38,6 +54,7 @@ interface CollabAddress {
 
 export type CollabClientMessage = CollabAddress & ({
     type: "collab-join";
+    kind: CollabEditorKind;
 } | {
     type: "collab-leave";
 } | {
@@ -52,7 +69,7 @@ export type CollabClientMessage = CollabAddress & ({
     epoch: number;
     version: number;
     authoritative: boolean;
-    snapshot: CollabSnapshot;
+    snapshot: unknown;
 } | {
     /** A hash of the content at `version`, which the server compares between the editors. */
     type: "collab-hash";
@@ -67,7 +84,7 @@ export type CollabClientMessage = CollabAddress & ({
     type: "collab-selection";
     epoch: number;
     version: number;
-    selection: CollabSelection;
+    selection: unknown;
 } | {
     /** The editor could not apply the operations of another one, and asks for a reset. */
     type: "collab-error";
@@ -82,7 +99,7 @@ export type CollabServerMessage = CollabAddress & ({
     type: "collab-joined";
     epoch: number;
     version: number;
-    snapshot?: CollabSnapshot;
+    snapshot?: unknown;
     batches: unknown[][];
     canWrite: boolean;
 } | {
@@ -113,7 +130,7 @@ export type CollabServerMessage = CollabAddress & ({
      */
     type: "collab-reset";
     epoch: number;
-    snapshot?: CollabSnapshot;
+    snapshot?: unknown;
 } | {
     /** Whether this editor is the one that saves the note. */
     type: "collab-saver";
@@ -127,9 +144,38 @@ export type CollabServerMessage = CollabAddress & ({
     type: "collab-selection";
     epoch: number;
     peerId: string;
-    selection: CollabSelection;
+    selection: unknown;
 } | {
     /** The selection was for an older version. The editor sends it again once it caught up. */
     type: "collab-selection-rejected";
     epoch: number;
 });
+
+/** What the host passes to put an editor in the session of a note. */
+export interface CollabEditorSession {
+    noteId: string;
+    /** Identifies this editor among the ones that share a connection to the server. */
+    memberId: string;
+    send(message: CollabClientMessage): void;
+    /** Called when the editor starts or stops being the one that saves the note. */
+    onSaverChange?(isSaver: boolean): void;
+    /** Called when an editor joins or leaves the session, with the other editors in it. */
+    onPeersChange?(peers: CollabPeer[]): void;
+}
+
+/** The part of an editor that edits a note together with the others, whatever its kind. */
+export interface CollabEditor {
+    /** Whether the editor is in a session, or on its way into one. */
+    readonly isActive: boolean;
+    /** Whether this editor is the one that saves the note. */
+    readonly isSaver: boolean;
+    /** The note of the session the editor is in. */
+    readonly noteId: string | undefined;
+    /** Joins the session of a note. The editor is read-only until the server answers. */
+    start(session: CollabEditorSession): void;
+    stop(): void;
+    /** Joins the session again after the connection to the server was lost. */
+    rejoin(): void;
+    /** Handles a message of the server. Messages for another editor or session are ignored. */
+    receive(message: CollabServerMessage): void;
+}

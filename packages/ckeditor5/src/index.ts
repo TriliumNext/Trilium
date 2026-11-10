@@ -31,7 +31,6 @@ export type {
 } from "./plugins/content_embed/content_embed.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { ChildNoteHost } from "./plugins/child_note.js";
-export type { CollaborationSession } from "./plugins/collaboration.js";
 export {
     getAnchorNames, getHeadings, getLinkAtSelection, replaceLinkAtSelection
 } from "./plugins/internallink.js";

@@ -110,7 +110,7 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
-    /** Published by the text editor: the other editors that have the note open in a session. */
+    /** Published by the editor of the note: the other editors that have it open in a session. */
     collaborators: CollabPeer[];
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;

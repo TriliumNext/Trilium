@@ -20,6 +20,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import appContext from "../../../components/app_context";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
+import {
+    isCollaboratingOn, isSavedByAnotherEditor, startCollaboration, stopCollaboration
+} from "../../../services/collaboration";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -39,9 +42,6 @@ import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
-import {
-    isCollaboratingOn, isSavedByAnotherEditor, startCollaboration, stopCollaboration
-} from "./collaboration";
 import type { ContentEmbedHandlers } from "./config";
 import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
 import { useEmbedEditors } from "./editable_embed";
@@ -128,7 +128,7 @@ export default function EditableText({
                 // The editor is still being built, so there is nothing to save.
                 return;
             }
-            if (isSavedByAnotherEditor(editor)) {
+            if (isSavedByAnotherEditor(editor.plugins.get("Collaboration"))) {
                 return;
             }
 
@@ -155,12 +155,12 @@ export default function EditableText({
             if (editor && note) {
                 setEditorNoteId(editor, note.noteId);
             }
-            if (editor && note && isCollaboratingOn(editor, note.noteId)) {
+            if (editor && note && isCollaboratingOn(editor.plugins.get("Collaboration"), note.noteId)) {
                 // The session holds the content, and the saved one that arrives here trails it.
                 return;
             }
             if (editor) {
-                stopCollaboration(editor);
+                stopCollaboration(editor.plugins.get("Collaboration"));
             }
             editor?.setData(newContent);
             if (editor && note) {
@@ -192,7 +192,7 @@ export default function EditableText({
     /** Edits the whole note together with the other editors that have it open. */
     function collaborate(editor: CKTextEditor) {
         if (block === undefined) {
-            startCollaboration(editor, note, {
+            startCollaboration(editor.plugins.get("Collaboration"), note, {
                 onBecomeSaver: () => spacedUpdate.scheduleUpdate(),
                 onPeersChange: (peers) => noteContext?.setContextData("collaborators", peers)
             });

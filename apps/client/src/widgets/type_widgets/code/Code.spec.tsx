@@ -29,6 +29,15 @@ vi.mock("./CodeMirror", async (importOriginal) => {
     };
 });
 
+// The sessions need a server, so the specs watch what the editor asks of them.
+const collaboration = vi.hoisted(() => ({
+    isCollaboratingOn: vi.fn(() => false),
+    isSavedByAnotherEditor: vi.fn(() => false),
+    startCollaboration: vi.fn(),
+    stopCollaboration: vi.fn()
+}));
+vi.mock("../../../services/collaboration", () => collaboration);
+
 // The `/` list of a Markdown editor loads the task states from the `_taskStates` subtree.
 vi.mock("../../../services/task_states", () => ({ getTaskStateDefinitions: async () => [] }));
 
@@ -59,6 +68,8 @@ describe("EditableCode", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        collaboration.startCollaboration.mockClear();
+        collaboration.stopCollaboration.mockClear();
     });
 
     it("reports each note loaded into a hidden editor", async () => {
@@ -74,6 +85,31 @@ describe("EditableCode", () => {
             if (container) render(show(noteB, onContentChanged), container);
         });
         await vi.waitFor(() => expect(onContentChanged).toHaveBeenLastCalledWith("# Note B"));
+    });
+
+    it("edits each note it shows together with its other editors, and leaves when it goes", async () => {
+        const onContentChanged = vi.fn();
+        let container: HTMLElement | undefined;
+        await act(async () => { container = renderInto(show(noteA, onContentChanged)); });
+        await vi.waitFor(() => expect(collaboration.startCollaboration).toHaveBeenCalledTimes(1));
+        const [ editor, note, callbacks ] = collaboration.startCollaboration.mock.calls[0] ?? [];
+        expect(note).toBe(noteA);
+        expect(callbacks).toMatchObject({ onBecomeSaver: expect.any(Function), onPeersChange: expect.any(Function) });
+
+        // Another note takes the editor out of the session of the first one.
+        collaboration.stopCollaboration.mockClear();
+        await act(async () => {
+            if (container) render(show(noteB, onContentChanged), container);
+        });
+        await vi.waitFor(() => expect(collaboration.startCollaboration).toHaveBeenCalledTimes(2));
+        expect(collaboration.stopCollaboration).toHaveBeenCalledExactlyOnceWith(editor);
+        expect(collaboration.startCollaboration.mock.calls[1]?.slice(0, 2)).toEqual([ editor, noteB ]);
+
+        collaboration.stopCollaboration.mockClear();
+        await act(async () => {
+            if (container) render(null, container);
+        });
+        expect(collaboration.stopCollaboration).toHaveBeenCalledExactlyOnceWith(editor);
     });
 
     it("reports a load into a visible editor once", async () => {

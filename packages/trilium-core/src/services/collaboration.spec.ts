@@ -24,7 +24,8 @@ describe("collaboration over the messaging provider", () => {
         return { provider, sent, disconnect: (clientId: string) => disconnectHandlers.map((handler) => handler(clientId)) };
     }
 
-    const join = (noteId: string): CollabClientMessage => ({ type: "collab-join", noteId, memberId: "m" });
+    const join = (noteId: string, kind: "text" | "code" = "text"): CollabClientMessage =>
+        ({ type: "collab-join", noteId, memberId: "m", kind });
 
     it("lets a user join the session of a text note they can see, with their right to write", () => {
         const adminId = cls.init(() => userService.getAdminUserId());
@@ -57,7 +58,15 @@ describe("collaboration over the messaging provider", () => {
         expect(joined(strangerId)).toEqual([ [ strangerId, "collab-denied", false ] ]);
         expect(joined("anonymous")).toEqual([ [ "anonymous", "collab-denied", false ] ]);
         expect(joined(ownerId, "missing-note")).toEqual([ [ ownerId, "collab-denied", false ] ]);
-        expect(joined(ownerId, createNote("code"))).toEqual([ [ ownerId, "collab-denied", false ] ]);
+        // A code note is edited with the code editor, and a note of another type with none.
+        const codeNoteId = createNote("code");
+        expect(joined(ownerId, codeNoteId)).toEqual([ [ ownerId, "collab-denied", false ] ]);
+        sent.length = 0;
+        handle(ownerId, join(codeNoteId, "code"));
+        expect(summarize()).toEqual([ [ ownerId, "collab-joined", true ], [ ownerId, "collab-saver", false ] ]);
+        sent.length = 0;
+        handle(ownerId, join(noteId, "code"));
+        expect(summarize()).toEqual([ [ ownerId, "collab-denied", false ] ]);
 
         // Once the writers are gone, the reader that waited for their content joins without it.
         disconnect(adminId);

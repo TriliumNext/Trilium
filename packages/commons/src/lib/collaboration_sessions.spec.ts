@@ -1,4 +1,4 @@
-import type { CollabClientMessage, CollabServerMessage } from "@triliumnext/commons";
+import type { CollabClientMessage, CollabServerMessage } from "./collaboration.js";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { CollaborationSessions } from "./collaboration_sessions.js";
@@ -16,8 +16,8 @@ describe("CollaborationSessions", () => {
         access = { writer: { canWrite: true }, other: { canWrite: true }, reader: { canWrite: false } };
         sessions = new CollaborationSessions({
             send: (clientId, message) => sent.push({ ...message, clientId }),
-            getAccess: (_noteId, userId) => {
-                const userAccess = userId ? access[userId] : undefined;
+            getAccess: (_noteId, userId, kind) => {
+                const userAccess = userId && kind !== "code" ? access[userId] : undefined;
                 return userId && userAccess
                     ? { ...userAccess, user: { userId, username: userId.toUpperCase(), avatarHue: 7 } }
                     : null;
@@ -32,7 +32,9 @@ describe("CollaborationSessions", () => {
     function send(clientId: string, message: Record<string, unknown> & { type: CollabClientMessage["type"] }) {
         const before = sent.length;
         const userId = clientId.replace(/\d+$/, "");
-        sessions.handleMessage(clientId, userId, { noteId: "note", memberId: "m", ...message } as CollabClientMessage);
+        sessions.handleMessage(
+            clientId, userId, { noteId: "note", memberId: "m", kind: "text", ...message } as CollabClientMessage
+        );
         return withoutPeers(sent.slice(before)).map(({ noteId: _noteId, memberId: _memberId, ...rest }) => rest);
     }
 
@@ -55,6 +57,8 @@ describe("CollaborationSessions", () => {
             { clientId: "writer", type: "collab-saver", isSaver: true }
         ]);
         expect(send("stranger", { type: "collab-join" })).toEqual([ { clientId: "stranger", type: "collab-denied" } ]);
+        // The host turns down an editor of a kind the note is not edited with.
+        expect(send("other", { type: "collab-join", kind: "code" })).toEqual([ { clientId: "other", type: "collab-denied" } ]);
         expect(sent.every((message) => message.noteId === "note" && message.memberId === "m")).toBe(true);
     });
 
@@ -112,7 +116,7 @@ describe("CollaborationSessions", () => {
         expect(send("other", { type: "collab-snapshot", epoch: 1, version: 1, authoritative: true, snapshot })).toEqual([]);
         expect(send("writer", { type: "collab-snapshot", epoch: 1, version: 1, authoritative: true, snapshot })).toEqual([
             { clientId: "writer", type: "collab-reset", epoch: 2 },
-            { clientId: "other", type: "collab-reset", epoch: 2, snapshot: { main: snapshot.main, graveyard: [] } }
+            { clientId: "other", type: "collab-reset", epoch: 2, snapshot }
         ]);
         expect(send("other", { type: "collab-ops", epoch: 2, baseVersion: 0, ops: [ "c" ] })).toHaveLength(2);
 

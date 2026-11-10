@@ -1,23 +1,12 @@
 import type {
-    CollabClientMessage, CollabPeer, CollabSelection, CollabServerMessage, CollabSnapshot
+    CollabClientMessage, CollabEditor, CollabEditorSession, CollabPeer, CollabServerMessage, CollabTextSelection,
+    CollabTextSnapshot
 } from "@triliumnext/commons";
 import {
     type ModelRootElement, type ModelWriter, type Operation, OperationFactory, Plugin, transformOperationSets
 } from "ckeditor5";
 
 import PeerCursors from "./collaboration_cursors.js";
-
-/** What the host passes to put the editor in the session of a note. */
-export interface CollaborationSession {
-    noteId: string;
-    /** Identifies this editor among the ones that share a connection to the server. */
-    memberId: string;
-    send(message: CollabClientMessage): void;
-    /** Called when the editor starts or stops being the one that saves the note. */
-    onSaverChange?(isSaver: boolean): void;
-    /** Called when an editor joins or leaves the session, with the other editors in it. */
-    onPeersChange?(peers: CollabPeer[]): void;
-}
 
 type Outgoing = CollabClientMessage extends infer M ? M extends unknown ? Omit<M, "noteId" | "memberId"> : never : never;
 
@@ -41,7 +30,7 @@ const SELECTION_DELAY = 100;
  *
  * Each editor also sends its selection, which the others show as a cursor (`PeerCursors`).
  */
-export default class Collaboration extends Plugin {
+export default class Collaboration extends Plugin implements CollabEditor {
 
     static get pluginName() {
         return "Collaboration" as const;
@@ -50,7 +39,7 @@ export default class Collaboration extends Plugin {
     /** Whether this editor is the one that saves the note. */
     isSaver = false;
 
-    private session?: CollaborationSession;
+    private session?: CollabEditorSession;
     private state: "idle" | "joining" | "joined" | "resetting" = "idle";
     private canWrite = false;
     private epoch = 0;
@@ -110,7 +99,7 @@ export default class Collaboration extends Plugin {
     }
 
     /** Joins the session of a note. The editor is read-only until the server answers. */
-    start(session: CollaborationSession) {
+    start(session: CollabEditorSession) {
         this.stop();
         this.session = session;
         this.join();
@@ -148,10 +137,10 @@ export default class Collaboration extends Plugin {
             this.setPeers(message.peers);
         } else if (message.type === "collab-joined") {
             this.canWrite = message.canWrite;
-            this.restart(message.epoch, message.snapshot, message.batches);
+            this.restart(message.epoch, message.snapshot as CollabTextSnapshot | undefined, message.batches);
             this.version = message.version;
         } else if (message.type === "collab-reset") {
-            this.restart(message.epoch, message.snapshot, []);
+            this.restart(message.epoch, message.snapshot as CollabTextSnapshot | undefined, []);
         } else if (message.epoch !== this.epoch || this.state === "joining") {
             // The message belongs to a session that was reset since.
         } else if (message.type === "collab-snapshot-request" && message.authoritative) {
@@ -172,7 +161,7 @@ export default class Collaboration extends Plugin {
         } else if (message.type === "collab-rejected") {
             this.sendInFlight();
         } else if (message.type === "collab-selection") {
-            this.showSelection(message.peerId, message.selection);
+            this.showSelection(message.peerId, message.selection as CollabTextSelection);
         } else if (message.type === "collab-selection-rejected") {
             this.scheduleSelection();
         } else {
@@ -185,7 +174,7 @@ export default class Collaboration extends Plugin {
         this.leave();
         this.state = "joining";
         this.updateLock();
-        this.send({ type: "collab-join" });
+        this.send({ type: "collab-join", kind: "text" });
     }
 
     private leave() {
@@ -209,7 +198,7 @@ export default class Collaboration extends Plugin {
     }
 
     /** Starts at version 0 of an epoch, from the snapshot or else from the content of the editor. */
-    private restart(epoch: number, snapshot: CollabSnapshot | undefined, batches: unknown[][]) {
+    private restart(epoch: number, snapshot: CollabTextSnapshot | undefined, batches: unknown[][]) {
         const model = this.editor.model;
         this.epoch = epoch;
         this.version = 0;
@@ -394,7 +383,7 @@ export default class Collaboration extends Plugin {
     }
 
     /** Shows the selection of another editor, which is given in the model of the current version. */
-    private showSelection(peerId: string, selection: CollabSelection) {
+    private showSelection(peerId: string, selection: CollabTextSelection) {
         if (!this.cursors.has(peerId)) {
             return;
         }
@@ -426,7 +415,7 @@ export default class Collaboration extends Plugin {
         this.suspend();
     }
 
-    private takeSnapshot(): CollabSnapshot {
+    private takeSnapshot(): CollabTextSnapshot {
         const model = this.editor.model;
         const { graveyard } = model.document;
         const sessionGraveyard = model.createRange(
@@ -448,7 +437,7 @@ export default class Collaboration extends Plugin {
     }
 
     /** Replaces the model with the one of another editor. */
-    private loadSnapshot(snapshot: CollabSnapshot) {
+    private loadSnapshot(snapshot: CollabTextSnapshot) {
         const model = this.editor.model;
         const { graveyard } = model.document;
         const root = getMainRoot(this.editor);
@@ -499,7 +488,7 @@ export default class Collaboration extends Plugin {
 
     /** Sends a message of the session, which every caller is in. */
     private send(message: Outgoing) {
-        const session = this.session as CollaborationSession;
+        const session = this.session as CollabEditorSession;
         session.send({ ...message, noteId: session.noteId, memberId: session.memberId } as CollabClientMessage);
     }
 

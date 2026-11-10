@@ -576,7 +576,7 @@ describe("WebSocket transport", () => {
         const payload = JSON.parse(lastSocket.sent.at(-1)!);
         expect(payload).toMatchObject({ type: "log-error", error: "socket-error" });
 
-        const join = { type: "collab-join", noteId: "note", memberId: "member" } as const;
+        const join = { type: "collab-join", noteId: "note", memberId: "member", kind: "text" } as const;
         expect(ws.sendCollaborationMessage(join)).toBe(true);
         expect(JSON.parse(lastSocket.sent.at(-1)!)).toEqual(join);
     });

@@ -134,7 +134,7 @@ describe("ws service (real DB)", () => {
         await handler("client-1", { type: "log-info", info: "i" });
         await handler("client-1", { type: "ping" });
         await handler("client-1", { type: "totally-unknown" });
-        await handler("client-1", { type: "collab-join", noteId: "root", memberId: "m" });
+        await handler("client-1", { type: "collab-join", noteId: "root", memberId: "m", kind: "text" });
 
         expect(sentToClient).toContainEqual({ clientId: "client-1", message: { type: "ping", protectedSessionAvailable: false } });
         // This provider does not know the user of a connection, so it carries no sessions.
