@@ -18,7 +18,7 @@ vi.mock("../NoteDetail", () => ({
     getExtendedWidgetType: async () => "text",
     checkFullHeight: () => true
 }));
-vi.mock("./NoteTypeSwitcher", () => ({ default: () => null }));
+vi.mock("./NoteTypeSwitcher", () => ({ default: () => <div className="note-type-switcher-stub" /> }));
 vi.mock("./PinnedAttachments", () => ({ default: () => null }));
 
 describe("NoteTitleActions", () => {
@@ -48,20 +48,21 @@ describe("NoteTitleActions", () => {
         expect(expanded()).toBe("true");
     });
 
-    it("marks the compact title style, which floats the note type switcher over the content", () => {
+    it("carries the note type switcher with the large title only, the compact one has it in a bar", () => {
         const noteContext = new NoteContext("ntx-compact");
+        noteContext.viewScope = { viewMode: "default" };
         const render = () => renderInto(
             <ParentComponent.Provider value={new Component()}>
                 <NoteContextContext.Provider value={noteContext}>
                     <NoteTitleActions />
                 </NoteContextContext.Provider>
             </ParentComponent.Provider>
-        ).querySelector(".title-actions");
+        ).querySelector(".title-actions .note-type-switcher-stub");
 
         options.set("noteTitleStyle", "large");
-        expect(render()?.classList.contains("compact-title")).toBe(false);
+        expect(render()).not.toBeNull();
 
         options.set("noteTitleStyle", "compact");
-        expect(render()?.classList.contains("compact-title")).toBe(true);
+        expect(render()).toBeNull();
     });
 });

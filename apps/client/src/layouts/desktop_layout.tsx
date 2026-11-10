@@ -23,6 +23,7 @@ import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteActions from "../widgets/layout/NoteActions.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
@@ -138,6 +139,7 @@ export default class DesktopLayout {
                                                                 .child(<SearchResult />)
                                                                 .child(<ScrollPadding />)
                                                         )
+                                                        .child(<NoteTypeSwitcherBar />)
                                                         .child(new FindWidget())
                                                         .child(...this.customWidgets.get("note-detail-pane"))
                                                 )

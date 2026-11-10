@@ -1,7 +1,6 @@
 import "./NoteTitleActions.css";
 
 import { EditedNotesResponse } from "@triliumnext/commons";
-import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
@@ -25,12 +24,12 @@ export default function NoteTitleActions() {
     const [ noteTitleStyle ] = useTriliumOption("noteTitleStyle");
 
     return (
-        <div className={clsx("title-actions", noteTitleStyle === "compact" && "compact-title")}>
+        <div className="title-actions">
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
             {isDefaultView && note && <PinnedAttachments note={note} />}
             <EditedNotes />
-            {isDefaultView && <NoteTypeSwitcher note={note} />}
+            {isDefaultView && noteTitleStyle !== "compact" && <NoteTypeSwitcher note={note} />}
         </div>
     );
 }

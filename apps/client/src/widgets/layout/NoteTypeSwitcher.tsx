@@ -57,6 +57,22 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
 }
 
 /**
+ * The switcher of the compact note title (`noteTitleStyle` option), mounted at the foot of the note
+ * split rather than above the content, so that it reads as a toolbar and not as part of the note.
+ */
+export function NoteTypeSwitcherBar() {
+    const { note, viewScope } = useNoteContext();
+    const [ noteTitleStyle ] = useTriliumOption("noteTitleStyle");
+    const isDefaultView = !viewScope?.viewMode || viewScope.viewMode === "default";
+
+    return (
+        <div className="note-type-switcher-bar">
+            {noteTitleStyle === "compact" && isDefaultView && <NoteTypeSwitcher note={note} />}
+        </div>
+    );
+}
+
+/**
  * The pills offering what the note can become. Their dropdowns are built from the menu the note
  * tree inserts notes from, so that both offer the same note types and templates, grouped the same
  * way and with the same filter.
