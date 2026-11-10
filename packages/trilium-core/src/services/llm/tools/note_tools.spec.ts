@@ -313,6 +313,37 @@ describe("note_tools — write tools return post-write content", () => {
         });
     });
 
+    describe("disableVersioning label", () => {
+        function setup(disabled: boolean) {
+            const note = buildNote({ id: "ver1", type: "code", mime: "text/plain", content: "a\nb" });
+            withMutableContent(note, "a\nb");
+            note.isLabelTruthy = vi.fn((name: string) => disabled && name === "disableVersioning") as typeof note.isLabelTruthy;
+            return note;
+        }
+
+        const calls: Array<[string, Record<string, unknown>]> = [
+            ["set_note_content", { content: "new" }],
+            ["append_to_note", { content: "more" }],
+            ["edit_note_content", { edits: [{ oldText: "a", newText: "z" }] }]
+        ];
+
+        for (const [tool, args] of calls) {
+            it(`${tool} skips the revision when the note disables versioning`, () => {
+                const note = setup(true);
+                const result = getTool(tool).execute({ noteId: "ver1", ...args });
+                expect(result).toMatchObject({ success: true });
+                expect(note.saveRevision).not.toHaveBeenCalled();
+                expect(note.setContent).toHaveBeenCalled();
+            });
+
+            it(`${tool} still saves a revision otherwise`, () => {
+                const note = setup(false);
+                getTool(tool).execute({ noteId: "ver1", ...args });
+                expect(note.saveRevision).toHaveBeenCalledWith({ source: "llm" });
+            });
+        }
+    });
+
     describe("create_note", () => {
         it("returns the created note's content", async () => {
             buildNote({ id: "parent1", title: "Parent" });

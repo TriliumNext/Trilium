@@ -15,6 +15,14 @@ import { z } from "zod";
 import { applyTextEdits, getContentPreview, getLlmNote, getLlmParentNotes, getNoteContentForLlm, getNoteMeta, getSvgImageError, isExcludedFromLlm, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
+/** Mirrors the `disableVersioning` guard used by the regular note-save path. */
+function saveLlmRevision(note: BNote) {
+    if (note.isLabelTruthy("disableVersioning")) {
+        return;
+    }
+    note.saveRevision({ source: "llm" });
+}
+
 export const noteTools = defineTools({
     search_notes: {
         description: [
@@ -143,7 +151,7 @@ export const noteTools = defineTools({
             }
             const mimeChanged = newMime !== note.mime;
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             if (typeChanged || mimeChanged) {
                 note.type = newType;
                 note.mime = newMime;
@@ -197,7 +205,7 @@ export const noteTools = defineTools({
                 newContent = existingContent + (existingContent.endsWith("\n") ? "" : "\n") + content;
             }
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             note.setContent(newContent);
             scanWrittenContent(note);
             return {
@@ -262,7 +270,7 @@ export const noteTools = defineTools({
                 return { error: svgError };
             }
 
-            note.saveRevision({ source: "llm" });
+            saveLlmRevision(note);
             note.setContent(result.content);
             scanWrittenContent(note);
             return {
