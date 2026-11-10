@@ -6,6 +6,7 @@
     --title-actions-padding-start: var(--content-margin-inline);
     --title-actions-padding-end: var(--content-margin-inline);
 
+    position: relative;
     display: flex;
     width: 100%;
     max-width: var(--max-content-width);
@@ -19,6 +20,19 @@
 
     &:not(:empty) {
         padding-block: 0.75em;
+    }
+
+    &.compact-title > .note-type-switcher {
+        position: absolute;
+        /* Clears the first line of the text editor below, which holds its placeholder. */
+        top: calc(100% + 2.5em);
+        inset-inline: var(--title-actions-padding-start) var(--title-actions-padding-end);
+        z-index: 1;
+        pointer-events: none;
+
+        > * {
+            pointer-events: auto;
+        }
     }
 
     .edited-notes {

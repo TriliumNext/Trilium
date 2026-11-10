@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
+import options from "../../services/options";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
@@ -45,5 +46,22 @@ describe("NoteTitleActions", () => {
 
         await act(async () => { await parent.handleEvent("toggleRibbonTabPromotedAttributes", { ntxId: "ntx-split-2" }); });
         expect(expanded()).toBe("true");
+    });
+
+    it("marks the compact title style, which floats the note type switcher over the content", () => {
+        const noteContext = new NoteContext("ntx-compact");
+        const render = () => renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <NoteContextContext.Provider value={noteContext}>
+                    <NoteTitleActions />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        ).querySelector(".title-actions");
+
+        options.set("noteTitleStyle", "large");
+        expect(render()?.classList.contains("compact-title")).toBe(false);
+
+        options.set("noteTitleStyle", "compact");
+        expect(render()?.classList.contains("compact-title")).toBe(true);
     });
 });

@@ -1,6 +1,7 @@
 import "./NoteTitleActions.css";
 
 import { EditedNotesResponse } from "@triliumnext/commons";
+import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
@@ -11,7 +12,7 @@ import server from "../../services/server";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
 import { PromotedAttributesContent, usePromotedAttributeData } from "../PromotedAttributes";
 import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsible";
-import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
+import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
 import { NewNoteLink } from "../react/NoteLink";
 import SearchDefinition from "../search/SearchDefinition";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
@@ -21,9 +22,10 @@ export default function NoteTitleActions() {
     const { note, ntxId, componentId, noteContext, viewScope } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
     const isDefaultView = !viewScope?.viewMode || viewScope.viewMode === "default";
+    const [ noteTitleStyle ] = useTriliumOption("noteTitleStyle");
 
     return (
-        <div className="title-actions">
+        <div className={clsx("title-actions", noteTitleStyle === "compact" && "compact-title")}>
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
             {isDefaultView && note && <PinnedAttachments note={note} />}
