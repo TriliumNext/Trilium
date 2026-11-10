@@ -329,4 +329,130 @@ describe("etapi/notes/bulk-update", () => {
             .expect(200);
         expect(emptyResp.body.total).toStrictEqual(0);
     });
+
+    it("rejects oversized content upfront without scheduling pictures for deletion", async () => {
+        const noteId = await createNote(app, token);
+        const attRes = await supertest(app)
+            .post("/etapi/attachments")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                ownerId: noteId,
+                role: "image",
+                mime: "image/png",
+                title: "existing.png",
+                content: "image-data"
+            })
+            .expect(201);
+
+        const attachmentId = attRes.body.attachmentId;
+        const attachment = becca.getAttachmentOrThrow(attachmentId);
+        expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+
+        const core = await import("@triliumnext/core");
+        const spy = vi.spyOn(core, "exceedsBlobContentLimit").mockReturnValue(true);
+
+        try {
+            const res = await supertest(app)
+                .post("/etapi/notes/bulk-update?skipFts=true")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId, content: "<p>Text omitting the image</p>" }
+                    ]
+                })
+                .expect(200);
+
+            expect(res.body.failed).toBe(1);
+            expect(res.body.errors[0].error).toContain("Content exceeds maximum blob length");
+
+            // Attachment must NOT have been scheduled for deletion
+            expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("rejects oversized content upfront with 400 in atomic mode", async () => {
+        const noteId = await createNote(app, token);
+        const core = await import("@triliumnext/core");
+        const spy = vi.spyOn(core, "exceedsBlobContentLimit").mockReturnValue(true);
+
+        try {
+            await supertest(app)
+                .post("/etapi/notes/bulk-update?atomic=true")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId, content: "<p>Huge content</p>" }
+                    ]
+                })
+                .expect(400);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("rolls back database and attachment changes for individual failed item in atomic=false", async () => {
+        const noteId1 = await createNote(app, token);
+        const noteId2 = await createNote(app, token);
+
+        const attRes = await supertest(app)
+            .post("/etapi/attachments")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                ownerId: noteId2,
+                role: "image",
+                mime: "image/png",
+                title: "existing.png",
+                content: "image-data"
+            })
+            .expect(201);
+
+        const attachmentId = attRes.body.attachmentId;
+        const attachment = becca.getAttachmentOrThrow(attachmentId);
+        expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+
+        const initialContent2 = (await supertest(app)
+            .get(`/etapi/notes/${noteId2}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200)).text;
+
+        const spy = vi.spyOn(noteService, "saveRevisionIfNeeded").mockImplementation((note) => {
+            if (note.noteId === noteId2) {
+                throw new Error("Simulated disk error on note 2");
+            }
+        });
+
+        try {
+            const res = await supertest(app)
+                .post("/etapi/notes/bulk-update?skipFts=true")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId: noteId1, content: "<p>Note 1 updated successfully</p>" },
+                        { noteId: noteId2, content: "<p>Text omitting the image</p>" }
+                    ]
+                })
+                .expect(200);
+
+            expect(res.body.updated).toBe(1);
+            expect(res.body.failed).toBe(1);
+
+            const get1 = await supertest(app)
+                .get(`/etapi/notes/${noteId1}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get1.text).toBe("<p>Note 1 updated successfully</p>");
+
+            const get2 = await supertest(app)
+                .get(`/etapi/notes/${noteId2}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get2.text).toBe(initialContent2);
+
+            expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+        } finally {
+            spy.mockRestore();
+        }
+    });
 });

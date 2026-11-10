@@ -1,7 +1,8 @@
-import { becca, BNote, checkImageAttachments, type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
+import { becca, BNote, checkImageAttachments, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
+import sql from "../services/sql.js";
 import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
@@ -202,6 +203,14 @@ function register(router: Router) {
                         `Note '${noteId}' is protected and cannot be modified through ETAPI.`
                     );
                 }
+
+                if (exceedsBlobContentLimit(content)) {
+                    throw new eu.EtapiError(
+                        400,
+                        "CONTENT_TOO_LARGE",
+                        `Content for note '${noteId}' exceeds maximum blob length of ${MAX_BLOB_CONTENT_LENGTH} bytes.`
+                    );
+                }
             }
 
             const originalNoteStates = new Map<
@@ -292,23 +301,42 @@ function register(router: Router) {
                 continue;
             }
 
+            if (exceedsBlobContentLimit(content)) {
+                errors.push({
+                    noteId,
+                    error: `Content exceeds maximum blob length of ${MAX_BLOB_CONTENT_LENGTH} bytes.`
+                });
+                continue;
+            }
+
+            const originalBlobId = note.blobId;
+            const originalUtcDateModified = note.utcDateModified;
+            const originalDateModified = note.dateModified;
+
             try {
-                let finalContent = content;
-                let forceFrontendReload = false;
+                sql.transactional(() => {
+                    let finalContent = content;
+                    let forceFrontendReload = false;
 
-                if (skipFts) {
-                    if (shouldCheckImageAttachments(note)) {
-                        ({ content: finalContent, forceFrontendReload } = checkImageAttachments(note, finalContent));
+                    if (skipFts) {
+                        if (shouldCheckImageAttachments(note)) {
+                            ({ content: finalContent, forceFrontendReload } = checkImageAttachments(note, finalContent));
+                        }
+                    } else {
+                        postProcessNotes.set(note.noteId, { note, content });
                     }
-                } else {
-                    postProcessNotes.set(note.noteId, { note, content });
-                }
 
-                noteService.saveRevisionIfNeeded(note);
-                note.setContent(finalContent, { forceFrontendReload });
+                    noteService.saveRevisionIfNeeded(note);
+                    note.setContent(finalContent, { forceFrontendReload });
+                });
 
                 updatedCount++;
             } catch (err) {
+                note.blobId = originalBlobId;
+                note.utcDateModified = originalUtcDateModified;
+                note.dateModified = originalDateModified;
+                postProcessNotes.delete(note.noteId);
+
                 errors.push({ noteId, error: err instanceof Error ? err.message : "Failed to update note content." });
             }
         }
