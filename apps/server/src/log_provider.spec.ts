@@ -4,7 +4,7 @@ import { styleText } from "node:util";
 import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import ServerLogService, { colorizeLogEntry, TRILIUM_LOGO } from "./log_provider.js";
+import ServerLogService, { colorizeLogEntry, resolveLogFile, TRILIUM_LOGO } from "./log_provider.js";
 import config, { LOGGING_DEFAULT_RETENTION_DAYS } from "./services/config.js";
 import dataDir from "./services/data_dir.js";
 
@@ -276,6 +276,19 @@ describe("ServerLogService log files", () => {
 
         expect(unlink).toHaveBeenCalledOnce();
         expect(path.resolve(String(unlink.mock.calls[0][0]))).toBe(path.resolve(dataDir.LOG_DIR, "trilium-2024-01-01.log"));
+    });
+
+    it("resolves a log file inside the log directory, including one at a filesystem root", () => {
+        const root = path.parse(path.resolve(dataDir.LOG_DIR)).root;
+        const logDir = path.join(root, "var", "log");
+
+        expect(resolveLogFile(logDir, "trilium-2024-01-01.log")).toBe(path.join(logDir, "trilium-2024-01-01.log"));
+        expect(resolveLogFile(root, "trilium-2024-01-01.log")).toBe(path.join(root, "trilium-2024-01-01.log"));
+
+        expect(resolveLogFile(logDir, path.join("..", "document.db"))).toBeNull();
+        expect(resolveLogFile(logDir, path.join("..", "log-other", "x.log"))).toBeNull();
+        expect(resolveLogFile(logDir, ".")).toBeNull();
+        expect(resolveLogFile(root, "..")).toBeNull();
     });
 
     it("keeps logs for the configured number of days, or the default when unset or zero", () => {
