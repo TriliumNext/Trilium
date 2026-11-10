@@ -4,6 +4,8 @@ import os from "os";
 import path from "path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AcpToolCallUpdate } from "./acp_agent.js";
+
 vi.mock("@triliumnext/core", () => ({
     getLog: () => ({ info: vi.fn(), error: vi.fn() }),
     // buildSystemPrompt reads the workspace task states; none in this unit test.
@@ -60,6 +62,10 @@ class FakeAcpClient {
     static lagLeft = 0;
     /** An error `session/new` fails with, when set. */
     static sessionFailure: Error | undefined;
+    /** The model state `session/new` reports, when set; `null` reports none. */
+    static sessionModels: Record<string, unknown> | null | undefined;
+    /** A `session/update` the agent sends while it answers `session/new`, when set. */
+    static notifyOnSessionNew: Record<string, unknown> | undefined;
     /** Runs while session/prompt is answered, as the agent's own notifications and requests do. */
     static onPrompt: ((client: FakeAcpClient) => Promise<void>) | undefined;
 
@@ -92,7 +98,13 @@ class FakeAcpClient {
         if (method === "session/new") {
             if (FakeAcpClient.sessionFailure) throw FakeAcpClient.sessionFailure;
             if (!FakeAcpClient.signedIn || FakeAcpClient.lagLeft-- > 0) throw new FakeAcpError(-32000, "Authentication required");
-            return { sessionId: "sess-1", models: { currentModelId: "gpt-6-luna[medium]", availableModels: REMOTE_MODELS } } as T;
+            if (FakeAcpClient.notifyOnSessionNew) {
+                this.onNotification?.("session/update", { sessionId: "sess-1", update: FakeAcpClient.notifyOnSessionNew });
+            }
+            const models = FakeAcpClient.sessionModels === undefined
+                ? { currentModelId: "gpt-6-luna[medium]", availableModels: REMOTE_MODELS }
+                : FakeAcpClient.sessionModels ?? undefined;
+            return { sessionId: "sess-1", models } as T;
         }
         if (method === "session/prompt") {
             await FakeAcpClient.onPrompt?.(this);
@@ -153,6 +165,8 @@ beforeEach(() => {
     FakeAcpClient.accountLag = 0;
     FakeAcpClient.lagLeft = 0;
     FakeAcpClient.sessionFailure = undefined;
+    FakeAcpClient.sessionModels = undefined;
+    FakeAcpClient.notifyOnSessionNew = undefined;
     FakeAcpClient.onPrompt = undefined;
 });
 
@@ -248,6 +262,47 @@ describe("CodexAgentProvider", () => {
         await provider.generateTitle("plan my week");
         expect(pooled?.requests.filter(r => r.method === "session/set_model").at(-1)?.params).toEqual({ sessionId: "sess-1", modelId: "gpt-6-luna[low]" });
     });
+
+    it("titles on a lead model without levels by its id, and on Codex's own default without a catalog", async () => {
+        const titleModelFor = async (sessionModels: Record<string, unknown> | null) => {
+            resetAcpAgentStateForTests();
+            resetCodexCatalogForTests();
+            FakeAcpClient.sessionModels = sessionModels;
+            const provider = new CodexAgentProvider();
+            const chunks = await collect(provider.chatChunks([{ role: "user", content: "hi" }], {}));
+            expect(chunks.at(-1)?.type).toBe("done");
+            await provider.generateTitle("plan my week");
+            return FakeAcpClient.current?.requests.filter(r => r.method === "session/set_model").map(r => (r.params as { modelId?: string }).modelId);
+        };
+
+        expect(await titleModelFor({ availableModels: [ { modelId: "codex-mini", name: "Codex Mini" } ] })).toEqual([ "codex-mini" ]);
+        expect(await titleModelFor({ currentModelId: "gpt-6-luna[medium]", availableModels: [] })).toEqual([]);
+        expect(await titleModelFor(null)).toEqual([]);
+    });
+
+    it("ignores what the agent announces while the catalog is probed", async () => {
+        FakeAcpClient.notifyOnSessionNew = { sessionUpdate: "available_commands_update", availableCommands: [ { name: "review" } ] };
+        const models = await new CodexAgentProvider().listModels();
+        expect(models.map(m => m.id)).toEqual([ "default", "gpt-6-luna", "gpt-5.6-terra", "gpt-5.5" ]);
+    });
+
+    it("hides only the adapter's MCP startup calls, and shows a search without an id by its query", () => {
+        class ExposedCodexAgent extends CodexAgentProvider {
+            isInternal(update: AcpToolCallUpdate) {
+                return this.isInternalToolCall(update);
+            }
+
+            describeBuiltIn(update: AcpToolCallUpdate) {
+                return this.describeBuiltInTool(update);
+            }
+        }
+        const provider = new ExposedCodexAgent();
+        expect(provider.isInternal({ sessionUpdate: "tool_call", toolCallId: "mcp_startup.trilium" })).toBe(true);
+        expect(provider.isInternal({ sessionUpdate: "tool_call", toolCallId: "exec-1" })).toBe(false);
+        expect(provider.isInternal({ sessionUpdate: "tool_call" })).toBe(false);
+        expect(provider.describeBuiltIn({ sessionUpdate: "tool_call", kind: "search", rawInput: { type: "webSearch", query: "kernel" } }))
+            .toEqual({ toolName: "web_search", toolInput: { query: "kernel" } });
+    });
 });
 
 describe("buildCodexModelList", () => {
@@ -283,6 +338,15 @@ describe("buildCodexModelList", () => {
     it("keeps a model without a level in its id as it is", () => {
         expect(buildCodexModelList({ availableModels: [{ modelId: "codex-mini", name: "Codex Mini" }] })[1])
             .toEqual({ id: "codex-mini", name: "Codex Mini", pricing: { input: 0, output: 0 }, isSubscription: true });
+        // An unnamed model goes by its id; Codex's own default entry and one without an id are not listed again.
+        expect(buildCodexModelList({ availableModels: [{ modelId: "default", name: "Default" }, { modelId: "" }, { modelId: "codex-mini" }] }).map(m => [ m.id, m.name ]))
+            .toEqual([ [ "default", "Default" ], [ "codex-mini", "codex-mini" ] ]);
+    });
+
+    it("lists and pre-selects only the default entry for a catalog with no models", () => {
+        const models = buildCodexModelList({});
+        expect(models.map(m => m.id)).toEqual([ "default" ]);
+        expect([...new CodexAgentProvider().recommendedModelIds(models)]).toEqual([ "default" ]);
     });
 });
 
@@ -511,6 +575,51 @@ describe("CodexAgentProvider web search", () => {
         expect(searching.filter(c => c.type === "citation")).toEqual([
             { type: "citation", citation: { title: "Vremea \u00een Sibiu", url: "https://www.celsium.ro/vremea-sibiu" } }
         ]);
+    });
+});
+
+describe("CodexAgentProvider hook outside a chat turn", () => {
+    class ExposedCodexAgent extends CodexAgentProvider {
+        describeBuiltIn(update: AcpToolCallUpdate) {
+            return this.describeBuiltInTool(update);
+        }
+    }
+    const WEB_SEARCH_OFF = { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "Web search is turned off for this chat." } };
+    const announced = (toolCallId: string) => ({ sessionUpdate: "tool_call", toolCallId, kind: "search", rawInput: { type: "webSearch", query: "" } });
+
+    async function launchedHook() {
+        const provider = new ExposedCodexAgent();
+        await collect(provider.chatChunks([{ role: "user", content: "hi" }], {}));
+        const hook = getAcpHookEndpointUrlMock.mock.calls.at(-1)?.[1];
+        if (!hook) {
+            throw new Error("the provider registered no hook");
+        }
+        return { provider, hook };
+    }
+
+    it("takes a search's results without keeping them, and shows a page opened by a result id without its URL", async () => {
+        const { provider, hook } = await launchedHook();
+        expect(await hook({
+            hook_event_name: "PostToolUse", session_id: "sess-1", tool_name: "webrun",
+            tool_response: [ { type: "input_text", text: "Kernel (https://www.kernel.org/)\nciteturn1search0" } ]
+        })).toEqual({});
+
+        // With no session, or a session no turn runs in, the result id cannot be looked up.
+        const open = { hook_event_name: "PreToolUse", tool_name: "webrun", tool_input: { open: [ { ref_id: "turn1search0" } ] } };
+        expect(await hook({ ...open, tool_use_id: "web-1" })).toEqual(WEB_SEARCH_OFF);
+        expect(await hook({ ...open, tool_use_id: "web-2", session_id: "sess-1" })).toEqual(WEB_SEARCH_OFF);
+        expect(provider.describeBuiltIn(announced("web-1"))).toEqual({ toolName: "read_web_page", toolInput: {} });
+        expect(provider.describeBuiltIn(announced("web-2"))).toEqual({ toolName: "read_web_page", toolInput: {} });
+    });
+
+    it("forgets the oldest recorded call once more than 200 have not finished", async () => {
+        const { provider, hook } = await launchedHook();
+        for (let i = 0; i <= 200; i++) {
+            await hook({ hook_event_name: "PreToolUse", tool_name: "webrun", tool_use_id: `web-${i}`, tool_input: { search_query: [ { q: `query ${i}` } ] } });
+        }
+        expect(provider.describeBuiltIn(announced("web-0"))).toEqual({ toolName: "web_search", toolInput: {} });
+        expect(provider.describeBuiltIn(announced("web-1"))).toEqual({ toolName: "web_search", toolInput: { query: "query 1" } });
+        expect(provider.describeBuiltIn(announced("web-200"))).toEqual({ toolName: "web_search", toolInput: { query: "query 200" } });
     });
 });
 

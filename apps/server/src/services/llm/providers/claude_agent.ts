@@ -173,13 +173,9 @@ export class ClaudeAgentProvider implements LlmProvider {
      * left out of the pre-selected set entirely.
      */
     recommendedModelIds(models: ModelInfo[]): Set<string> {
-        const idsByBase = new Map<string, string[]>();
-        for (const model of models) {
-            const base = baseModelId(model.id);
-            idsByBase.set(base, [...(idsByBase.get(base) ?? []), model.id]);
-        }
-        const bases = anthropicRecommendedIds([...idsByBase.keys()].map(id => ({ id, name: id })));
-        return new Set([...bases].flatMap(base => idsByBase.get(base) ?? []));
+        const ids = models.map(model => model.id);
+        const bases = anthropicRecommendedIds([...new Set(ids.map(baseModelId))].map(id => ({ id, name: id })));
+        return new Set(ids.filter(id => bases.has(baseModelId(id))));
     }
 
     /**
@@ -362,14 +358,16 @@ export class ClaudeAgentProvider implements LlmProvider {
 
             // Only reuse a warm session when the transcript still matches what
             // it last saw (`resume`), so an edited history reseeds as before.
-            const warm = config.chatNoteId && resume
-                ? takeWarmSession(config.chatNoteId, fingerprint)
-                : undefined;
-            let session = warm?.sessionId === resume ? warm : undefined;
-            if (warm && !session) {
-                // Right chat, wrong conversation — retire it rather than reply
-                // into the wrong session.
-                closeSession(config.chatNoteId ?? "", warm);
+            let session: ClaudeSession | undefined;
+            if (config.chatNoteId && resume) {
+                const warm = takeWarmSession(config.chatNoteId, fingerprint);
+                if (warm?.sessionId === resume) {
+                    session = warm;
+                } else if (warm) {
+                    // Right chat, wrong conversation — retire it rather than reply
+                    // into the wrong session.
+                    closeSession(config.chatNoteId, warm);
+                }
             }
 
             if (session) {
@@ -738,10 +736,12 @@ export class ClaudeAgentProvider implements LlmProvider {
             if (approvalsOf) {
                 options.permissionMode = "default";
                 options.canUseTool = askBeforeNoteTool(approvalsOf);
+            /* v8 ignore start -- chatChunks() is the only caller that enables note tools, and it always passes approvalsOf */
             } else {
                 // Bare server prefix auto-allows every tool from that server.
                 allowedTools.push("mcp__trilium");
             }
+            /* v8 ignore stop */
         }
 
         options.allowedTools = allowedTools;

@@ -61,6 +61,12 @@ vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (impor
 const spawnMock = vi.hoisted(() => vi.fn());
 vi.mock("child_process", () => ({ spawn: spawnMock }));
 
+// Records the sessions the provider keeps warm, so a test can reach one.
+vi.mock("./claude_session_pool.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("./claude_session_pool.js")>();
+    return { ...actual, rememberSession: vi.fn(actual.rememberSession) };
+});
+
 const { buildSeededPrompt, buildSubscriptionModelList, ClaudeAgentProvider, hashTranscript, resetAgentCwdForTests, resetSubscriptionModelCacheForTests, TITLE_TIMEOUT_MS } = await import("./claude_agent.js");
 const { MAX_WARM_SESSIONS, Pushable, releaseSession, rememberSession: rememberWarmSession, resetClaudeSessionPoolForTests } = await import("./claude_session_pool.js");
 const { buildTitlePrompt, MAX_TITLES_PER_SESSION } = await import("./transcript.js");
@@ -367,6 +373,56 @@ describe("ClaudeAgentProvider.chatChunks", () => {
         expect(second.some(chunk => chunk.type === "status")).toBe(false);
         const pushed = pushedMessages(call.prompt).map(m => (m.message.content[0] as { text: string }).text);
         expect(pushed).toEqual(["first question", "second question"]);
+    });
+
+    it("keeps a session whose first messages carry no session id warm under the id that arrives later", async () => {
+        const provider = new ClaudeAgentProvider();
+        const config = { chatNoteId: "note-late-id" };
+        scriptAgentSession([
+            [{ ...textDelta("first reply"), session_id: undefined }, successResult("sess-L")],
+            [textDelta("second reply"), successResult("sess-L")]
+        ]);
+
+        await collect(provider.chatChunks([{ role: "user", content: "first question" }], config));
+        const second = await collect(provider.chatChunks([
+            { role: "user", content: "first question" },
+            { role: "assistant", content: "first reply" },
+            { role: "user", content: "second question" }
+        ], config));
+
+        expect(queryMock).toHaveBeenCalledTimes(1);
+        expect(second).toContainEqual({ type: "text", content: "second reply" });
+    });
+
+    it("retires a warm session that holds another conversation, and resumes the chat's own in a new one", async () => {
+        const provider = new ClaudeAgentProvider();
+        const config = { chatNoteId: "note-stale" };
+        scriptAgent([textDelta("first reply"), successResult("sess-A")]);
+        await collect(provider.chatChunks([{ role: "user", content: "first question" }], config));
+
+        const warm = vi.mocked(rememberWarmSession).mock.calls.filter(([ chatNoteId ]) => chatNoteId === "note-stale").at(-1)?.[1];
+        if (!warm) {
+            throw new Error("the turn kept no warm session");
+        }
+        expect(warm.sessionId).toBe("sess-A");
+        // The warm session now answers for another conversation than the one the chat last saw.
+        warm.sessionId = "sess-other";
+        closeMock.mockClear();
+
+        scriptAgent([textDelta("second reply"), successResult("sess-A")]);
+        const second = await collect(provider.chatChunks([
+            { role: "user", content: "first question" },
+            { role: "assistant", content: "first reply" },
+            { role: "user", content: "second question" }
+        ], config));
+
+        // Retired before the new session starts, not only once the new one replaces it.
+        expect(warm.closed).toBe(true);
+        expect(closeMock).toHaveBeenCalledOnce();
+        expect(queryMock).toHaveBeenCalledTimes(2);
+        expect(closeMock.mock.invocationCallOrder[0]).toBeLessThan(queryMock.mock.invocationCallOrder[1]);
+        expect(queryMock.mock.calls[1][0].options.resume).toBe("sess-A");
+        expect(second).toContainEqual({ type: "text", content: "second reply" });
     });
 
     it("reseeds a fresh session from the transcript when the history diverged", async () => {
@@ -1473,6 +1529,11 @@ describe("buildSubscriptionModelList", () => {
         const [variant] = buildSubscriptionModelList([{ value: "sonnet[1m]", resolvedModel: "claude-sonnet-5[1m]" }], prices);
         expect(variant).toMatchObject({ id: "claude-sonnet-5[1m]", contextWindow: 1000000, isDefault: true });
     });
+
+    it("lists nothing for a catalog that holds only the default alias", () => {
+        expect(buildSubscriptionModelList([], prices)).toEqual([]);
+        expect(buildSubscriptionModelList([{ value: "default", resolvedModel: "claude-sonnet-5" }], prices)).toEqual([]);
+    });
 });
 
 describe("ClaudeAgentProvider.listModels", () => {
@@ -1507,6 +1568,21 @@ describe("ClaudeAgentProvider.listModels", () => {
         expect(typeof prompt).not.toBe("string");
         expect(prompt[Symbol.asyncIterator]).toBeTypeOf("function");
         expect(options.maxTurns).toBe(1);
+    });
+
+    it("prices the models the probe listed, and names them in the usage of a turn that runs on one", async () => {
+        scriptSupportedModels([{ value: "claude-fable-9", displayName: "Claude Fable 9" }]);
+        const provider = new ClaudeAgentProvider();
+        // The price table has never heard of it, so only the probe makes it a subscription model.
+        expect(provider.getModelPricing("claude-fable-9")).toBeUndefined();
+        await provider.listModels();
+        expect(provider.getModelPricing("claude-fable-9")).toEqual({ input: 0, output: 0 });
+        expect(provider.getModelPricing("no-such-model")).toBeUndefined();
+
+        scriptAgent([successResult()]);
+        const chunks = await collect(provider.chatChunks([{ role: "user", content: "hi" }], { model: "claude-fable-9" }));
+        const usage = chunks.find(c => c.type === "usage");
+        expect(usage?.type === "usage" ? usage.usage.model : undefined).toBe("Claude Fable 9");
     });
 
     it("serves the cached list on the next call without re-spawning", async () => {

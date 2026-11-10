@@ -139,6 +139,8 @@ describe("webrun calls", () => {
             .toEqual({ toolName: "read_web_page", toolInput: { url: "https://www.celsium.ro/vremea-sibiu" } });
         // A result this turn never saw has no URL to show; its id means nothing to the user.
         expect(describeWebrunInput({ open: [ { ref_id: "turn9search9" } ] }, urlOf)).toEqual({ toolName: "read_web_page", toolInput: {} });
+        // Without a way to look results up, only a URL is shown.
+        expect(describeWebrunInput({ open: [ { ref_id: "turn2search0" } ] })).toEqual({ toolName: "read_web_page", toolInput: {} });
     });
 
     it("finds a call webrun could not run, by the message it answers with", () => {
