@@ -259,6 +259,39 @@ describe("downloadImages (real DB)", () => {
         }
     });
 
+    it("mends the note itself once its pictures arrive, without the post-processing pass", async () => {
+        vi.useFakeTimers();
+        const postProcess = vi.spyOn(noteService, "asyncPostProcessContent").mockResolvedValue();
+
+        try {
+            const url = freshUrl();
+            const content = `<p><img src="${url}"></p>`;
+            const note = createNote(content);
+
+            withDownloads(true, () => downloadImages(note.noteId, content));
+            await vi.advanceTimersByTimeAsync(10_000);
+
+            const [ attachment ] = note.getAttachments();
+            const mended = `<p><img src="api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}"></p>`;
+            expect(String(note.getContent())).toBe(mended);
+            expect(postProcess).toHaveBeenCalledWith(expect.objectContaining({ noteId: note.noteId }), mended);
+
+            // A picture deleted before the pass leaves its address as it was.
+            const otherUrl = freshUrl();
+            const otherContent = `<p><img src="${otherUrl}"></p>`;
+            const other = createNote(otherContent);
+            withDownloads(true, () => downloadImages(other.noteId, otherContent));
+            await vi.advanceTimersByTimeAsync(1_000);
+            const [ deleted ] = other.getAttachments();
+            getContext().init(() => deleted.markAsDeleted());
+            await vi.advanceTimersByTimeAsync(10_000);
+            expect(String(other.getContent())).toBe(otherContent);
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        }
+    });
+
     it("logs a picture that could not be kept, and a note gone by the time it is mended", async () => {
         vi.useFakeTimers();
         const error = vi.spyOn(getLog(), "error");

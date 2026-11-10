@@ -244,7 +244,6 @@ export function downloadImages(noteId: string, content: string) {
 
             cls.getContext().init(() => {
                 getSql().transactional(() => {
-                const imageNotes = becca.getNotes(Object.values(imageUrlToAttachmentIdMapping), true);
                     const log = getLog();
 
                 const origNote = becca.getNote(noteId);
@@ -262,11 +261,11 @@ export function downloadImages(noteId: string, content: string) {
                     return;
                 }
 
-                for (const url in imageUrlToAttachmentIdMapping) {
-                    const imageNote = imageNotes.find((note) => note.noteId === imageUrlToAttachmentIdMapping[url]);
+                    for (const [ url, attachmentId ] of Object.entries(imageUrlToAttachmentIdMapping)) {
+                        const attachment = becca.getAttachment(attachmentId);
 
-                    if (imageNote) {
-                        updatedContent = replaceUrl(updatedContent, url, imageNote);
+                        if (attachment) {
+                            updatedContent = replaceUrl(updatedContent, url, attachment);
                     }
                 }
 
