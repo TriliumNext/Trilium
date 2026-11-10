@@ -1486,6 +1486,16 @@ describe("Search", () => {
             expect(searchService.validateSearchQuery("#a AND (#b")).toBe("Did not find matching right parenthesis.");
         });
 
+        it("ignores an empty or blank quoted token instead of failing the search", () => {
+            rootNote.child(note("Alpha")).child(note("Beta"));
+            const noteIdsOf = (query: string) => searchService.searchNotes(query).map((found) => found.noteId).sort();
+
+            expect(noteIdsOf(`alpha ""`)).toEqual(noteIdsOf("alpha"));
+            expect(noteIdsOf(`alpha " "`)).toEqual(noteIdsOf("alpha"));
+            expect(noteIdsOf(`""`)).toEqual(noteIdsOf(""));
+            expect(searchService.validateSearchQuery(`""`)).toBeNull();
+        });
+
         it("searches from the root when hoisted inside the hidden subtree", () => {
             rootNote.child(note("Europe"));
             vi.spyOn(hoistedNoteService, "isHoistedInHiddenSubtree").mockReturnValue(true);

@@ -472,11 +472,12 @@ function validateSearchQuery(query: string): string | null {
 
     try {
         parseQueryToExpression(query || "", searchContext);
+    /* v8 ignore start -- parse() records what getExpression() throws, and nothing else in it throws on any query */
     } catch (e: unknown) {
-        // The parser reads past the end of a query cut short after `note.labels` and the like, so a
-        // validator that let the throw out would fail on the very text it exists to describe.
+        // A validator that let a throw out would fail on the very text it exists to describe.
         return e instanceof Error ? e.message : String(e);
     }
+    /* v8 ignore stop */
 
     return searchContext.getError();
 }

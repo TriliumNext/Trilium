@@ -27,7 +27,10 @@ import OrExp from "../expressions/or.js";
 import { removeDiacritic } from "../../utils/index.js";
 
 function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leadingOperator?: string) {
-    const tokens: string[] = _tokens.map((t) => removeDiacritic(t.token));
+    // An empty quoted token (`""`) asks for nothing, and the content expressions refuse one.
+    const tokens: string[] = _tokens
+        .map((t) => removeDiacritic(t.token))
+        .filter((token) => token.trim().length > 0);
 
     searchContext.highlightedTokens.push(...tokens);
 
