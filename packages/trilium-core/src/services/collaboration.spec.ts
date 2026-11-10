@@ -1,6 +1,7 @@
 import type { CollabClientMessage, WebSocketMessage } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
+import becca from "../becca/becca.js";
 import { initCollaboration } from "./collaboration.js";
 import * as cls from "./context.js";
 import type { MessagingProvider } from "./messaging/types.js";
@@ -32,8 +33,8 @@ describe("collaboration over the messaging provider", () => {
         const ownerId = cls.init(() => userService.createUser("collab-owner-spec", null, false));
         const readerId = cls.init(() => userService.createUser("collab-reader-spec", null, false));
         const strangerId = cls.init(() => userService.createUser("collab-stranger-spec", null, false));
-        const createNote = (type: "text" | "code" | "mermaid" | "canvas", isProtected = false) => cls.init(() => noteService.createNewNote({
-            parentNoteId: "root", ownerId, title: "shared", content: "", type, isProtected
+        const createNote = (type: "text" | "code" | "mermaid" | "canvas") => cls.init(() => noteService.createNewNote({
+            parentNoteId: "root", ownerId, title: "shared", content: "", type
         }).note.noteId);
         const noteId = createNote("text");
         cls.init(() => permissionService.setUserAccess(noteId, readerId, false));
@@ -103,6 +104,14 @@ describe("collaboration over the messaging provider", () => {
         cls.init(() => permissionService.revokeUserAccess(noteId, readerId));
         collaboration.recheckUser(readerId);
         expect(summarize()).toEqual([ [ readerId, "collab-denied", false ] ]);
+
+        // A protected note has no session, and neither has a user who was deleted since they
+        // signed in, even for a note they own.
+        const protectedNoteId = createNote("text");
+        becca.getNoteOrThrow(protectedNoteId).isProtected = true;
+        expect(joined(ownerId, protectedNoteId)).toEqual([ [ ownerId, "collab-denied", false ] ]);
+        cls.init(() => userService.deleteUser(ownerId));
+        expect(joined(ownerId)).toEqual([ [ ownerId, "collab-denied", false ] ]);
     });
 
     it("turns down every editor on a provider that does not know the user of a connection", () => {

@@ -71,6 +71,7 @@ function getNoteAccess(noteId: string, userId: string | undefined, kind: CollabE
     }
     return {
         canWrite: permissionService.canUserWriteNote(noteId, userId),
-        user: { userId, username: user.username, avatarHue: getAvatarHues(users).get(userId) ?? 0 }
+        // Every listed user has a hue.
+        user: { userId, username: user.username, avatarHue: getAvatarHues(users).get(userId) as number }
     };
 }
