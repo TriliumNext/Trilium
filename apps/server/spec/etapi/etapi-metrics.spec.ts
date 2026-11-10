@@ -60,28 +60,35 @@ describe("etapi/metrics", () => {
         const response = await supertest(app)
             .get("/etapi/metrics?format=xml")
             .auth(USER, token, { "type": "basic"})
-            .expect(500);
-        expect(response.body.message).toContain("prometheus");
+            .expect(400);
+        expect(response.body).toMatchObject({
+            code: "INVALID_FORMAT",
+            message: "Supported formats: 'prometheus' (default), 'json'"
+        });
     });
 
     it("reports a failure to collect the metrics, whatever was thrown", async () => {
         const instance = getSql();
         const getValue = instance.getValue.bind(instance);
+        let thrown: unknown;
         const failing = vi.spyOn(instance, "getValue").mockImplementation((query, params) => {
             if (query === "SELECT COUNT(*) FROM notes") {
-                throw "database is locked";
+                throw thrown;
             }
             return getValue(query, params);
         });
         try {
-            const response = await supertest(app)
-                .get("/etapi/metrics")
-                .auth(USER, token, { "type": "basic"})
-                .expect(500);
-            expect(response.body).toMatchObject({
-                code: "METRICS_ERROR",
-                message: "Failed to collect metrics: Unknown error"
-            });
+            for (const [ error, message ] of [
+                [ new Error("database is locked"), "Failed to collect metrics: database is locked" ],
+                [ "database is locked", "Failed to collect metrics: Unknown error" ]
+            ]) {
+                thrown = error;
+                const response = await supertest(app)
+                    .get("/etapi/metrics")
+                    .auth(USER, token, { "type": "basic"})
+                    .expect(500);
+                expect(response.body).toMatchObject({ code: "METRICS_ERROR", message });
+            }
         } finally {
             failing.mockRestore();
         }
