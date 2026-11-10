@@ -111,6 +111,8 @@ Content added by a newer version of Trilium, which this version cannot show, app
 
 If a [shared note](../../Advanced%20Usage/Sharing.md) contains one or more included notes, they will be displayed in the content of the note as if they were part of the note itself. An include resized narrower than the note keeps its width and its position. On a narrow screen, an include with a position other than _Align center_ takes the full width. The caption of an include is shown under the included content. A _Compact_ include is shown as a link to the included note instead, and so is an include that would show a note already shown around it, such as a note that includes itself. The same goes for a printed or exported note.
 
+An included video or audio file, whether a note or an attachment, plays in the browser's player.
+
 For this to work, the included notes must also be shared. However, they can still be hidden from the note tree via `#shareHiddenFromTree`.
 
 An include whose note or attachment is missing or not shared shows _This content is not available_ in its place, and so does content added by a newer version of Trilium.

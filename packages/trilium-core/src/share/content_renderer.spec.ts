@@ -830,6 +830,40 @@ describe("content_renderer", () => {
             expect(content).not.toContain("embedGone");
         });
 
+        it("plays an embedded video or audio file, and an included video note", () => {
+            const embed = (attribute: string) =>
+                `<figure class="include-note" ${attribute}>&nbsp;</figure>`;
+            buildShareNote({
+                id: "clipNote1", type: "file", mime: "video/webm", title: "Clip", content: ""
+            });
+            const note = buildShareNote({
+                content: embed(`data-attachment-id="mediaVid1"`)
+                    + embed(`data-attachment-id="mediaAud1"`)
+                    + embed(`data-note-id="clipNote1"`),
+                attachments: [
+                    { id: "mediaVid1", role: "file", mime: "video/mp4", title: "a \"clip\".mp4" },
+                    { id: "mediaAud1", role: "file", mime: "audio/mpeg", title: "song.mp3" }
+                ]
+            });
+
+            const html = getContent(note).content as string;
+            const document = parse(html);
+
+            const players = document.querySelectorAll(".include-note > .media-player")
+                .map((player) => [
+                    player.tagName, player.getAttribute("src"), player.getAttribute("aria-label"),
+                    player.hasAttribute("controls"), player.getAttribute("preload"),
+                    player.hasAttribute("playsinline")
+                ]);
+            expect(players).toEqual([
+                [ "VIDEO", "api/attachments/mediaVid1/download", "a \"clip\".mp4", true,
+                    "metadata", true ],
+                [ "AUDIO", "api/attachments/mediaAud1/download", "song.mp3", true,
+                    "metadata", false ],
+                [ "VIDEO", "api/notes/clipNote1/view", "Clip", true, "metadata", true ]
+            ]);
+        });
+
         it("shows all of a drawing whose frame cannot be read, and logs it", () => {
             const drawing = (id: string) => [
                 { id, role: "file", mime: CANVAS_ATTACHMENT_MIME, title: "Canvas.excalidraw" },
@@ -2107,6 +2141,8 @@ describe("content_renderer pages", () => {
             .toBe(`<iframe class="pdf-view" src="api/notes/pdfNote/view"></iframe>`);
         expect(file("zipNote", "application/zip"))
             .toContain(`location.href='api/notes/zipNote/download'`);
+        expect(file("audioNote", "audio/ogg")).toMatch(
+            /^<audio class="media-player" src="api\/notes\/audioNote\/view" controls /);
         expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
         const spreadsheet = render({ id: "sheetNote", type: "spreadsheet", content: "{}" });
         expect(spreadsheet.isAppView).toBe(true);

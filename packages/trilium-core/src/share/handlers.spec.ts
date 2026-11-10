@@ -6,7 +6,7 @@ import { getCrypto } from "../services/encryption/crypto.js";
 import scriptService from "../services/script.js";
 import SearchResult from "../services/search/search_result.js";
 import searchService from "../services/search/services/search.js";
-import { encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
+import { decodeUtf8, encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
 import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote } from "../test/shaca_mocking.js";
 import {
@@ -267,6 +267,46 @@ describe("share handlers", () => {
         const pdf = view("pdfFile");
         expect(pdf).toMatchObject({ status: 200, body: "%PDF" });
         expect(pdf.headers).not.toHaveProperty("Content-Security-Policy");
+    });
+
+    it("answers a range of a viewed note or a downloaded attachment, for media players", () => {
+        buildShareTree([
+            {
+                id: "clipNote", type: "file", mime: "video/mp4", content: "0123456789",
+                attachments: [ { id: "clipAttachment", role: "file", mime: "audio/mpeg" } ]
+            }
+        ]);
+        stubAttachmentContent("clipAttachment", encodeUtf8("abcdef"));
+        const view = (range?: string) => request("/share/api/notes/:noteId/view", {
+            params: { noteId: "clipNote" }, headers: range ? { range } : {}
+        });
+        const download = (range: string) => request("/share/api/attachments/:attachmentId/download", {
+            params: { attachmentId: "clipAttachment" }, headers: { range }
+        });
+
+        const whole = view();
+        expect(whole).toMatchObject({ status: 200, body: "0123456789" });
+        expect(whole.headers).toMatchObject({ "Accept-Ranges": "bytes", "Content-Type": "video/mp4" });
+        expect(whole.headers).not.toHaveProperty("Content-Range");
+
+        const slice = view("bytes=2-4");
+        expect(slice.status).toBe(206);
+        expect(decodeUtf8(slice.body as Uint8Array)).toBe("234");
+        expect(slice.headers).toMatchObject({ "Content-Range": "bytes 2-4/10" });
+
+        const tail = download("bytes=4-");
+        expect(tail.status).toBe(206);
+        expect(decodeUtf8(tail.body as Uint8Array)).toBe("ef");
+        expect(tail.headers).toMatchObject({
+            "Content-Range": "bytes 4-5/6", "Content-Type": "audio/mpeg"
+        });
+
+        expect(download("bytes=9-")).toMatchObject({
+            status: 416, headers: { "Content-Range": "bytes */6" }
+        });
+
+        stubAttachmentContent("clipAttachment", undefined);
+        expect(download("bytes=0-")).toMatchObject({ status: 200, body: undefined });
     });
 
     it("locks a raw SVG note down with a content security policy, but not raw HTML", () => {

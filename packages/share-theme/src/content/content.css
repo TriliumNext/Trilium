@@ -24,6 +24,17 @@ iframe.pdf-view {
     height: 800px;
 }
 
+#content :is(video, audio).media-player {
+    display: block;
+    width: 100%;
+}
+
+#content video.media-player {
+    max-height: 70vh;
+    border-radius: 8px;
+    background: #000;
+}
+
 /* The inline code of the app, `style.css`. */
 .ck-content code:not(pre code) {
     padding: 0.1em 0.35em;

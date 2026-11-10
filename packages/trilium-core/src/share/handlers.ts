@@ -4,12 +4,15 @@ import ejs from "ejs";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
+import { type ByteRange, parseRangeHeader } from "../routes/partial_content.js";
 import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
 import * as sanitize from "../services/sanitizer.js";
-import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
+import {
+    decodeBase64, decodeUtf8, encodeUtf8, wrapStringOrBuffer
+} from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { readShareTemplate, renderNoteContent } from "./content_renderer.js";
 import {
@@ -317,20 +320,16 @@ function downloadNote(req: ShareRequest): ShareReply {
     };
 }
 
-/** Used for PDF viewing. */
+/** Used for PDF viewing and for the player of a video or audio file. */
 function viewNote(req: ShareRequest): ShareReply {
     const note = checkNoteContentAccess(req.params.noteId ?? "", req);
 
-    return {
-        status: 200,
-        headers: {
-            ...noIndexHeaders(note),
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Content-Type": note.mime,
-            ...utils.getInlineContentHeaders(note.mime)
-        },
-        body: note.getContent()
-    };
+    return replyWithRanges(req, note.getContent(), {
+        ...noIndexHeaders(note),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": note.mime,
+        ...utils.getInlineContentHeaders(note.mime)
+    });
 }
 
 function getImage(req: ShareRequest): ShareReply {
@@ -364,15 +363,45 @@ function downloadAttachment(req: ShareRequest): ShareReply {
     const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
     const filename = utils.formatDownloadTitle(attachment.title, null, attachment.mime);
 
+    return replyWithRanges(req, attachment.getContent(), {
+        ...noIndexHeaders(attachment.note),
+        "Content-Disposition": utils.getContentDisposition(filename),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": attachment.mime
+    });
+}
+
+/**
+ * Answers with `content`, or with the slice of it that the `Range` header asks for, which a media
+ * element needs to seek and Safari needs to play a video at all.
+ */
+function replyWithRanges(
+    req: ShareRequest, content: string | Uint8Array | undefined, headers: Record<string, string>
+): ShareReply {
+    const rangeHeader = req.getHeader("range");
+    const bytes = wrapStringOrBuffer(content ?? "");
+    const rangeHeaders = { ...headers, "Accept-Ranges": "bytes" };
+
+    let range: ByteRange | null;
+    try {
+        range = parseRangeHeader(rangeHeader, bytes.byteLength);
+    } catch {
+        return {
+            status: 416,
+            headers: { ...rangeHeaders, "Content-Range": `bytes */${bytes.byteLength}` },
+            body: ""
+        };
+    }
+
+    if (!range) {
+        return { status: 200, headers: rangeHeaders, body: content };
+    }
+
+    const { start, end } = range;
     return {
-        status: 200,
-        headers: {
-            ...noIndexHeaders(attachment.note),
-            "Content-Disposition": utils.getContentDisposition(filename),
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Content-Type": attachment.mime
-        },
-        body: attachment.getContent()
+        status: 206,
+        headers: { ...rangeHeaders, "Content-Range": `bytes ${start}-${end}/${bytes.byteLength}` },
+        body: bytes.subarray(start, end + 1)
     };
 }
 

@@ -730,7 +730,8 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         replaceEmbedContent(embedEl, embeddedContent.childNodes);
     }
 
-    result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
+    result.isEmpty = document.textContent?.trim().length === 0
+        && document.querySelectorAll("img, video, audio").length === 0;
 
     if (!result.isEmpty) {
         // Process attachment links.
@@ -840,16 +841,23 @@ function moveBoxToCaptionedFigure(element: HTMLElement) {
 }
 
 /**
- * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
- * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
- * anything else, or a drawing without a picture, as the attachment link that
- * `handleAttachmentLink` then resolves.
+ * What an embedded attachment shows: a picture as an image, a video or audio file as a player, a
+ * canvas drawing as the picture that its note keeps of it, in a box that the share theme sizes as
+ * the app sizes the drawing, and anything else, or a drawing without a picture, as the attachment
+ * link that `handleAttachmentLink` then resolves.
  */
 function renderAttachmentEmbed(
     attachmentId: string,
     attachment: BAttachment | SAttachment,
     getNote: GetNoteFunction
 ) {
+    const player = attachment.role === "file"
+        ? renderMediaPlayer(`api/attachments/${attachmentId}/download`, attachment)
+        : null;
+    if (player) {
+        return player;
+    }
+
     const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
     const image = isDrawing
         ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
@@ -1306,12 +1314,38 @@ function renderImage(result: Result, note: SNote | BNote) {
 }
 
 function renderFile(note: SNote | BNote, result: Result) {
+    const player = renderMediaPlayer(`api/notes/${note.noteId}/view`, note);
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
         result.isFullHeight = true;
+    } else if (player) {
+        result.content = player;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
+}
+
+/**
+ * A native player for the video or audio file of `entity` at `src`, or `null` for a file of
+ * another type. Until the visitor presses play, the player reads only the file's metadata.
+ */
+function renderMediaPlayer(src: string, entity: { mime: string; title: string }) {
+    const tag = getMediaTag(entity.mime);
+    if (!tag) {
+        return null;
+    }
+
+    const label = utils.escapeHtml(entity.title);
+    const playsInline = tag === "video" ? " playsinline" : "";
+    return `<${tag} class="media-player" src="${src}" controls preload="metadata"${playsInline}`
+        + ` aria-label="${label}"></${tag}>`;
+}
+
+function getMediaTag(mime: string) {
+    if (mime.startsWith("video/")) {
+        return "video";
+    }
+    return mime.startsWith("audio/") ? "audio" : null;
 }
 
 function renderSpreadsheet(result: Result) {
