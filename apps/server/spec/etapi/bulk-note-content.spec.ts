@@ -111,6 +111,54 @@ describe("etapi/notes/bulk-update", () => {
         expect(get.text).toStrictEqual(newCode);
     });
 
+    it("rewrites copied attachment references and saves rewritten content when skipFts=true", async () => {
+        const sourceNoteId = await createNote(app, token);
+        const targetNoteId = await createNote(app, token);
+
+        const attRes = await supertest(app)
+            .post("/etapi/attachments")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                ownerId: sourceNoteId,
+                role: "image",
+                mime: "image/png",
+                title: "photo.png",
+                content: "fake-png-content"
+            })
+            .expect(201);
+
+        const foreignAttId = attRes.body.attachmentId;
+        const originalContentWithForeignAtt = `<p><img src="api/attachments/${foreignAttId}/image/photo.png"></p>`;
+
+        const response = await supertest(app)
+            .post("/etapi/notes/bulk-update?skipFts=true")
+            .auth(USER, token, { type: "basic" })
+            .send({
+                items: [ { noteId: targetNoteId, content: originalContentWithForeignAtt } ]
+            })
+            .expect(200);
+
+        expect(response.body.updated).toStrictEqual(1);
+
+        const targetGet = await supertest(app)
+            .get(`/etapi/notes/${targetNoteId}/content`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200);
+
+        // Foreign attachment ID must have been rewritten to the newly copied local attachment
+        expect(targetGet.text).not.toContain(foreignAttId);
+        expect(targetGet.text).toMatch(/api\/attachments\/[a-zA-Z0-9_]+\/image/);
+
+        // Verify the copied attachment exists under targetNote
+        const targetAttsRes = await supertest(app)
+            .get(`/etapi/notes/${targetNoteId}/attachments`)
+            .auth(USER, token, { type: "basic" })
+            .expect(200);
+
+        expect(targetAttsRes.body).toHaveLength(1);
+        expect(targetGet.text).toContain(targetAttsRes.body[0].attachmentId);
+    });
+
     it("handles partial failure when atomic=false (default)", async () => {
         const noteId = await createNote(app, token);
         const validContent = "<p>Valid note updated</p>";

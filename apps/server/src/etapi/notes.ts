@@ -227,16 +227,19 @@ function register(router: Router) {
                         });
                     }
 
-                    noteService.saveRevisionIfNeeded(note);
-                    note.setContent(item.content);
+                    let finalContent = item.content;
+                    let forceFrontendReload = false;
 
                     if (skipFts) {
                         if (shouldCheckImageAttachments(note)) {
-                            checkImageAttachments(note, item.content);
+                            ({ content: finalContent, forceFrontendReload } = checkImageAttachments(note, finalContent));
                         }
                     } else {
                         postProcessNotes.set(note.noteId, { note, content: item.content });
                     }
+
+                    noteService.saveRevisionIfNeeded(note);
+                    note.setContent(finalContent, { forceFrontendReload });
                 }
             } catch (err) {
                 for (const { note, originalBlobId, originalUtcDateModified, originalDateModified } of originalNoteStates.values()) {
@@ -290,16 +293,19 @@ function register(router: Router) {
             }
 
             try {
-                noteService.saveRevisionIfNeeded(note);
-                note.setContent(content);
+                let finalContent = content;
+                let forceFrontendReload = false;
 
                 if (skipFts) {
                     if (shouldCheckImageAttachments(note)) {
-                        checkImageAttachments(note, content);
+                        ({ content: finalContent, forceFrontendReload } = checkImageAttachments(note, finalContent));
                     }
                 } else {
                     postProcessNotes.set(note.noteId, { note, content });
                 }
+
+                noteService.saveRevisionIfNeeded(note);
+                note.setContent(finalContent, { forceFrontendReload });
 
                 updatedCount++;
             } catch (err) {
