@@ -1,8 +1,12 @@
 import type { Request, Response } from "express";
+import fs from "fs";
 import { styleText } from "node:util";
-import { describe, expect, it, vi } from "vitest";
+import path from "path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import ServerLogService, { colorizeLogEntry, TRILIUM_LOGO } from "./log_provider.js";
+import config, { LOGGING_DEFAULT_RETENTION_DAYS } from "./services/config.js";
+import dataDir from "./services/data_dir.js";
 
 describe("colorizeLogEntry", () => {
     const ts = paint("gray", "12:34:56.789");
@@ -20,6 +24,11 @@ describe("colorizeLogEntry", () => {
                 + `${paint("cyan", "/api/x")} with 1 bytes took 1ms`
             );
         }
+
+        // An informational status has no colour of its own.
+        expect(colorizeLogEntry("101 GET /ws with 0 bytes took 1ms", "12:34:56.789")).toBe(
+            `${ts} 101 ${paint([ "bold", "blueBright" ], "GET")} ${paint("cyan", "/ws")} with 0 bytes took 1ms`
+        );
     });
 
     it("colours slow SQL queries, with and without the statement", () => {
@@ -169,6 +178,26 @@ describe("ServerLogService request logging", () => {
             writeEntry.mockRestore();
         }
     });
+
+    it("marks a request that took 10ms or more as slow", () => {
+        const log = new ServerLogService();
+        const writes: string[] = [];
+        const writeEntry = vi
+            .spyOn(log as unknown as { writeEntry(entry: string): void }, "writeEntry")
+            .mockImplementation((entry: string) => void writes.push(entry));
+        const req = { url: "/api/tree", method: "GET" } as unknown as Request;
+        const res = { statusCode: 200, locals: {} } as unknown as Response;
+
+        try {
+            log.request(req, res, 9);
+            log.request(req, res, 10);
+
+            expect(writes[0]).toMatch(/ 200 GET \/api\/tree with \? bytes took 9ms/);
+            expect(writes[1]).toMatch(/ Slow 200 GET \/api\/tree with \? bytes took 10ms/);
+        } finally {
+            writeEntry.mockRestore();
+        }
+    });
 });
 
 function logRequest(log: ServerLogService, url: string, logSummary?: string) {
@@ -181,3 +210,92 @@ function logRequest(log: ServerLogService, url: string, logSummary?: string) {
 function paint(format: Parameters<typeof styleText>[0], text: string) {
     return styleText(format, text, { validateStream: false });
 }
+
+describe("ServerLogService log files", () => {
+    /** The protected file operations `FileBasedLogService` drives rotation and cleanup through. */
+    interface LogFileOps {
+        readLogFile(fileName: string): string | null;
+        listLogFiles(): Promise<{ name: string; mtime: Date }[]>;
+        deleteLogFile(fileName: string): Promise<void>;
+        getRetentionDays(): number;
+    }
+
+    function fileOps() {
+        return new ServerLogService() as unknown as LogFileOps;
+    }
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("reads a missing log file as null", () => {
+        expect(fileOps().readLogFile("trilium-1999-01-01.log")).toBeNull();
+    });
+
+    it("ends the open log stream once, and drops entries written after it closed", () => {
+        const log = new ServerLogService();
+        const internals = log as unknown as {
+            logFile: fs.WriteStream | undefined;
+            closeLogFile(): void;
+            writeEntry(entry: string): void;
+        };
+        const stream = internals.logFile;
+        expect(stream).toBeDefined();
+        const end = vi.spyOn(stream as fs.WriteStream, "end");
+        const write = vi.spyOn(stream as fs.WriteStream, "write");
+
+        internals.closeLogFile();
+        internals.closeLogFile();
+        internals.writeEntry("after close");
+
+        expect(end).toHaveBeenCalledOnce();
+        expect(write).not.toHaveBeenCalled();
+        expect(internals.logFile).toBeUndefined();
+    });
+
+    it("lists only Trilium's daily log files that can be stat'ed", async () => {
+        const ops = fileOps();
+        const mtime = new Date(2024, 0, 1);
+        vi.spyOn(fs.promises, "readdir").mockResolvedValue([
+            "trilium-2024-01-01.log", "notes.txt", "trilium-2024-01-02.log.bak", "trilium-2024-01-03.log"
+        ] as never);
+        vi.spyOn(fs.promises, "stat").mockImplementation(async (filePath) => {
+            if (String(filePath).endsWith("trilium-2024-01-03.log")) {
+                throw new Error("EACCES");
+            }
+            return { mtime } as fs.Stats;
+        });
+
+        expect(await ops.listLogFiles()).toEqual([ { name: "trilium-2024-01-01.log", mtime } ]);
+    });
+
+    it("deletes a file inside the log directory, and refuses a name that escapes it", async () => {
+        const ops = fileOps();
+        const unlink = vi.spyOn(fs.promises, "unlink").mockResolvedValue();
+
+        await ops.deleteLogFile("trilium-2024-01-01.log");
+        await ops.deleteLogFile(path.join("..", "document.db"));
+
+        expect(unlink).toHaveBeenCalledOnce();
+        expect(path.resolve(String(unlink.mock.calls[0][0]))).toBe(path.resolve(dataDir.LOG_DIR, "trilium-2024-01-01.log"));
+    });
+
+    it("keeps logs for the configured number of days, or the default when unset or zero", () => {
+        const ops = fileOps();
+        const original = config.Logging.retentionDays;
+
+        try {
+            config.Logging.retentionDays = 14;
+            expect(ops.getRetentionDays()).toBe(14);
+
+            config.Logging.retentionDays = -1;
+            expect(ops.getRetentionDays()).toBe(-1);
+
+            config.Logging.retentionDays = 0;
+            expect(ops.getRetentionDays()).toBe(LOGGING_DEFAULT_RETENTION_DAYS);
+
+            (config.Logging as { retentionDays: number | undefined }).retentionDays = undefined;
+            expect(ops.getRetentionDays()).toBe(LOGGING_DEFAULT_RETENTION_DAYS);
+        } finally {
+            config.Logging.retentionDays = original;
+        }
+    });
+});

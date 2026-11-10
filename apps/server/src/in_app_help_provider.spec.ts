@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // in_app_help_provider is loaded during boot (setup.ts), so vi.mock can't
 // intercept "fs" — spy on the real (shared) fs.readFileSync instead.
 import NodejsInAppHelpProvider, { getHelpAssetDir } from "./in_app_help_provider.js";
+import { RESOURCE_DIR } from "./services/resource_dir.js";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -58,5 +59,31 @@ describe("NodejsInAppHelpProvider", () => {
 
         readFile.mockRejectedValue(new Error("ENOENT"));
         expect(await provider.getHelpAsset("User Guide/missing.png")).toBeNull();
+    });
+});
+
+describe("help content and asset directory", () => {
+    it("returns an empty bundle when the content file cannot be read", () => {
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(fs, "readFileSync").mockImplementation(() => {
+            throw new Error("ENOENT");
+        });
+
+        expect(new NodejsInAppHelpProvider().getHelpContent()).toEqual({});
+    });
+
+    it("serves assets from the Markdown export in a checkout and from the bundled copy otherwise", async () => {
+        expect(path.resolve(getHelpAssetDir())).toBe(path.resolve(RESOURCE_DIR, "../../../../docs/User Guide"));
+
+        vi.resetModules();
+        vi.doMock("./services/utils.js", () => ({ isDev: false }));
+        vi.doMock("./services/resource_dir.js", () => ({ RESOURCE_DIR: path.join("packaged", "assets") }));
+        vi.doMock("./services/asset_path.js", () => ({ assetUrlFragment: "assets/v1" }));
+        vi.doMock("@triliumnext/core", () => ({ InAppHelpProvider: class {} }));
+
+        const packaged = await import("./in_app_help_provider.js");
+
+        expect(packaged.getHelpAssetDir()).toBe(path.join("packaged", "assets", "help"));
+        expect(new packaged.default().getHelpAssetBase()).toBe("assets/v1/help");
     });
 });
