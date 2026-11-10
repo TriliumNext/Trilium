@@ -8,16 +8,6 @@ import type { ValidatorMap } from "./etapi-interface.js";
 import mappers from "./mappers.js";
 import v from "./validators.js";
 
-function shouldCheckImageAttachments(note: BNote): boolean {
-    return (
-        note.type === "text" ||
-        note.isMarkdown() ||
-        note.type === "spreadsheet" ||
-        note.type === "canvas" ||
-        note.type === "mindMap"
-    );
-}
-
 function register(router: Router) {
     eu.route(router, "get", "/etapi/notes", (req, res, next) => {
         const { search } = req.query;
@@ -454,3 +444,13 @@ function parseInteger(obj: any, name: string) {
 export default {
     register
 };
+
+function shouldCheckImageAttachments(note: BNote): boolean {
+    return (
+        note.type === "text" ||
+        note.isMarkdown() ||
+        note.type === "spreadsheet" ||
+        note.type === "canvas" ||
+        note.type === "mindMap"
+    );
+}
