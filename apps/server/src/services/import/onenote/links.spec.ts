@@ -1,5 +1,5 @@
 import { parse } from "node-html-parser";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import converter from "./converter.js";
 import { extractPageId, type LinkTarget, rewritePageLinks } from "./links.js";
@@ -84,6 +84,46 @@ describe("rewritePageLinks", () => {
         expect(paragraph?.querySelectorAll("a")).toHaveLength(1); // only the reference link remains
         expect(out).not.toContain("onedrive");
         expect(paragraph?.textContent).toBe("Go to Second page."); // "( )" wrapper cleaned up
+    });
+
+    it("skips anchors without an href and onenote: links that carry no page-id", () => {
+        const html = `<p><a name="bookmark">Anchor</a> <a href="onenote:#Section&section-id={4d9d9af6-7f91-4f16-956a-8bf2c330f6ab}&end">Section</a></p>`;
+        const resolve = vi.fn(resolveSecondPage());
+
+        expect(rewritePageLinks(html, resolve)).toBe(html);
+        expect(resolve).not.toHaveBeenCalled();
+    });
+
+    it("drops a web-view link that directly follows the reference link, with no parentheses to strip", () => {
+        const html = `<p>See ${internalLink("Second page")}<a href="https://onedrive.live.com/x?wd=${SECOND_PAGE_GUID}">Web view</a> now</p>`;
+        const paragraph = parse(rewritePageLinks(html, resolveSecondPage())).querySelector("p");
+
+        expect(paragraph?.querySelectorAll("a").map((a) => a.getAttribute("href"))).toEqual(["#root/noteABC123"]);
+        expect(paragraph?.textContent).toBe("See Second page now");
+    });
+
+    it("drops a parenthesized web-view link but keeps text that is not a wrapper", () => {
+        const html = `<p>${internalLink("Second page")} [<a href="https://onedrive.live.com/x?wd=${SECOND_PAGE_GUID}">Web view</a>]</p>`;
+        const paragraph = parse(rewritePageLinks(html, resolveSecondPage())).querySelector("p");
+
+        expect(paragraph?.querySelectorAll("a")).toHaveLength(1);
+        expect(paragraph?.textContent).toBe("Second page []");
+    });
+
+    it("keeps a following link that is not the same page's web view", () => {
+        const siblings = [
+            // An existing Trilium internal link, even one naming the same GUID.
+            `<a href="#root/other?ref=${SECOND_PAGE_GUID}">Other</a>`,
+            // A link with no href at all.
+            `<a name="anchor">Anchor</a>`,
+            // A web link to a different page.
+            `<a href="https://onedrive.live.com/x?wd=00000000-0000-0000-0000-000000000000">Web view</a>`
+        ];
+        for (const sibling of siblings) {
+            const out = rewritePageLinks(`<p>${internalLink("Second page")} (${sibling})</p>`, resolveSecondPage());
+            expect(parse(out).querySelectorAll("a")).toHaveLength(2);
+            expect(out).toContain(sibling);
+        }
     });
 
     it("keeps the web-view link when the internal link is a plain (non-matching) link", () => {

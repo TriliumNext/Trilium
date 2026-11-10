@@ -109,4 +109,11 @@ describe("createGraphTokenProvider", () => {
         await expect(getAccessToken()).resolves.toBe("new-access");
         expect(refresh).toHaveBeenCalledTimes(2);
     });
+
+    it("folds a non-Error refresh failure into the same sign-in-again message", async () => {
+        const { getAccessToken, refresh } = setup({ accessToken: "stale", refreshToken: "r", expiresAt: Date.now() - 1000 });
+        refresh.mockRejectedValueOnce("network unreachable");
+
+        await expect(getAccessToken()).rejects.toThrow("The OneNote connection could not be refreshed (network unreachable). Please sign in again.");
+    });
 });
