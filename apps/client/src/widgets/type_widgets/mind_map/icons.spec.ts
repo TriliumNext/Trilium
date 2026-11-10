@@ -15,14 +15,14 @@ const uncheckedWindow = window as unknown as { glob: { iconRegistry?: unknown } 
  */
 function buildNode(...icons: string[]) {
     const container = document.createElement("div");
-    container.innerHTML = `<me-tpc><span class="text">Topic</span>`
-        + `<span class="icons">${icons.map((icon) => `<span>${icon}</span>`).join("")}</span></me-tpc>`;
+    container.innerHTML = `<div class="me-tpc"><span class="text">Topic</span>`
+        + `<span class="icons">${icons.map((icon) => `<span>${icon}</span>`).join("")}</span></div>`;
     return container;
 }
 
 /** Every icon of the node, in the order they are worn — the one moved ahead of the text included. */
 function icons(container: HTMLElement) {
-    return [ ...container.querySelectorAll<HTMLElement>(`me-tpc > .${LEAD_ICON_CLASS}, me-tpc > .icons > span`) ];
+    return [ ...container.querySelectorAll<HTMLElement>(`.me-tpc > .${LEAD_ICON_CLASS}, .me-tpc > .icons > span`) ];
 }
 
 describe("renderIconClasses", () => {
@@ -90,7 +90,7 @@ describe("renderIconClasses", () => {
 
         // The first is a child of the node itself now, standing before its text; the others stay in
         // the wrapper Mind Elixir put them in, which is where its exporter looks for them.
-        expect([ ...(container.querySelector("me-tpc")?.children ?? []) ].map((child) => child.className))
+        expect([ ...(container.querySelector(".me-tpc")?.children ?? []) ].map((child) => child.className))
             .toEqual([ `bx bx-star ${LEAD_ICON_CLASS}`, "text", "icons" ]);
         expect(container.querySelectorAll(".icons > span")).toHaveLength(2);
     });
@@ -110,7 +110,7 @@ describe("renderIconClasses", () => {
 
     it("leaves a node with no text of its own — nothing to lead — as it is", () => {
         const container = document.createElement("div");
-        container.innerHTML = `<me-tpc><span class="icons"><span>bx bx-star</span></span></me-tpc>`;
+        container.innerHTML = `<div class="me-tpc"><span class="icons"><span>bx bx-star</span></span></div>`;
 
         renderIconClasses(container);
 
@@ -145,7 +145,7 @@ describe("renderExportedIcons", () => {
      * which the test environment does of its own accord.
      */
     function buildLaidOutNode(...iconTexts: string[]) {
-        const nodes = document.createElement("me-nodes");
+        const nodes = Object.assign(document.createElement("div"), { className: "me-nodes" });
         const container = buildNode(...iconTexts);
         nodes.appendChild(container);
         renderIconClasses(container);
@@ -153,7 +153,7 @@ describe("renderExportedIcons", () => {
         // Each icon 12 wide on a line of 20, the node itself 100 across the map and 40 down it. The
         // walk out to the map adds the two up, so the icons hang off the node and the node off the
         // map, as they would be laid out.
-        const topic = container.querySelector("me-tpc");
+        const topic = container.querySelector(".me-tpc");
         lay(topic, nodes, { offsetLeft: 100, offsetTop: 40 });
         for (const [ index, icon ] of icons(container).entries()) {
             lay(icon, topic, { offsetLeft: index * 12, offsetTop: 0, offsetWidth: 12, offsetHeight: 20 });

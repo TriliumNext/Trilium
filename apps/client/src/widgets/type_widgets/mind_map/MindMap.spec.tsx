@@ -3,7 +3,7 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import i18next from "i18next";
-import { DARK_THEME, MindElixirInstance, THEME as LIGHT_THEME } from "mind-elixir";
+import { DARK_THEME, type default as MindElixirInstance, type MindElixirData, THEME as LIGHT_THEME } from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { renderInto } from "../../../test/render";
 import englishTranslation from "../../../translations/en/translation.json";
 
-import { buildTheme, localizeBuiltLabels, MindElixir, renameOverlayLabel, sanitizeMindMapData } from "./MindMap.js";
+import { buildTheme, loadMapData, localizeBuiltLabels, MindElixir, renameOverlayLabel, sanitizeMindMapData } from "./MindMap.js";
 
 interface FakeMap {
     destroyed: boolean;
@@ -29,7 +29,7 @@ vi.mock("mind-elixir", async (importOriginal) => {
 
     /** Records each instance built, whether it was destroyed, and when it was laid out. */
     class FakeMindElixir {
-        nodes = document.createElement("me-nodes");
+        nodes = Object.assign(document.createElement("div"), { className: "me-nodes" });
         currentNodes = [];
         theme = { name: "Latte" };
         listeners = new Map<string, Set<() => void>>();
@@ -55,7 +55,7 @@ vi.mock("mind-elixir", async (importOriginal) => {
         getData() { return {}; }
         /** As the map does: lays out the root, draws the branches and centers itself. */
         init() {
-            this.nodes.replaceChildren(document.createElement("me-root"));
+            this.nodes.replaceChildren(Object.assign(document.createElement("div"), { className: "me-root" }));
             this.linkDiv();
             this.toCenter();
         }
@@ -236,7 +236,7 @@ describe("localizeBuiltLabels", () => {
         const mind = fakeMind({
             // The library hands a summary it has just built straight to the editor, through the
             // instance — which is the moment the name is replaced in.
-            createSummary: function () { this.editSummary(built); },
+            createSummary: function (this: MindElixirInstance) { this.editSummary(built); },
             editSummary: (summary) => void edited.push(summary)
         });
         localizeBuiltLabels(mind);
@@ -285,6 +285,105 @@ describe("renameOverlayLabel", () => {
         renameOverlayLabel(label, "Rezumat");
         expect(label.textContent).toBe("Rezumat");
         expect([ label.style.left, label.style.top ]).toEqual([ "", "" ]);
+    });
+});
+
+describe("loadMapData", () => {
+    const DATA = { nodeData: { id: "root", topic: "Root" }, direction: 1 } as MindElixirData;
+
+    function fakeMind(loaded: boolean, direction = 1) {
+        return {
+            nodeData: loaded ? { id: "old", topic: "Old" } : undefined,
+            pluginsInitialized: loaded,
+            direction,
+            init: vi.fn(),
+            refresh: vi.fn(),
+            diffRefresh: vi.fn(),
+            clearHistory: vi.fn(),
+            toCenter: vi.fn()
+        };
+    }
+    const asMind = (mind: ReturnType<typeof fakeMind>) => mind as unknown as MindElixirInstance;
+
+    it("initializes a map that holds nothing yet", () => {
+        const mind = fakeMind(false);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.init).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
+        expect(mind.refresh).not.toHaveBeenCalled();
+    });
+
+    it("patches new content of the same note into the map, keeping the view", () => {
+        const mind = fakeMind(true);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.init).not.toHaveBeenCalled();
+        expect(mind.diffRefresh).toHaveBeenCalledWith(DATA);
+        expect(mind.refresh).not.toHaveBeenCalled();
+        expect(mind.toCenter).not.toHaveBeenCalled();
+        expect(mind.clearHistory).toHaveBeenCalledOnce();
+    });
+
+    it("redraws and centers a map that now shows another note", () => {
+        const mind = fakeMind(true);
+        loadMapData(asMind(mind), DATA, true);
+
+        expect(mind.refresh).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
+        expect(mind.toCenter).toHaveBeenCalledOnce();
+        expect(mind.clearHistory).toHaveBeenCalledOnce();
+    });
+
+    describe("on a real map", () => {
+        // Mind Elixir reads these at construction and in `init()`; jsdom has neither.
+        beforeAll(() => {
+            window.matchMedia ??= (() => ({ matches: false, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+            if (!("fonts" in document)) {
+                Object.defineProperty(document, "fonts", { value: { ready: Promise.resolve() } });
+            }
+        });
+
+        async function buildRealMap() {
+            const { default: RealMindElixir } = await vi.importActual<typeof import("mind-elixir")>("mind-elixir");
+            const el = document.createElement("div");
+            document.body.appendChild(el);
+            return new RealMindElixir({ el });
+        }
+        const map = (topic: string) => ({
+            nodeData: { id: "root", topic: "Root", children: [ { id: "a", topic } ] }
+        }) as MindElixirData;
+        const topics = (mind: MindElixirInstance) =>
+            Array.from(mind.nodes.querySelectorAll(".me-tpc"), (topic) => topic.textContent);
+
+        it("draws new content of the same note, patching only what changed", async () => {
+            const mind = await buildRealMap();
+            loadMapData(mind, map("Before"), true);
+            await vi.waitFor(() => expect(mind.diffRefresh).toBeTypeOf("function"));
+            const root = mind.nodes.querySelector(".me-root .me-tpc");
+
+            loadMapData(mind, map("After"), false);
+
+            expect(topics(mind)).toEqual([ "Root", "After" ]);
+            expect(mind.nodes.querySelector(".me-root .me-tpc")).toBe(root);
+        });
+
+        it("draws content that arrives while the map is still being set up", async () => {
+            const mind = await buildRealMap();
+            loadMapData(mind, map("Before"), true);
+
+            expect(() => loadMapData(mind, map("After"), false)).not.toThrow();
+            expect(topics(mind)).toEqual([ "Root", "After" ]);
+        });
+    });
+
+    it("redraws the whole map when the content changes its direction", () => {
+        const mind = fakeMind(true, 0);
+        loadMapData(asMind(mind), DATA, false);
+
+        expect(mind.direction).toBe(1);
+        expect(mind.refresh).toHaveBeenCalledWith(DATA);
+        expect(mind.diffRefresh).not.toHaveBeenCalled();
     });
 });
 

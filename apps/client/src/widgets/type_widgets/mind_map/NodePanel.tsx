@@ -1,7 +1,7 @@
 import "./NodePanel.css";
 
 import { parseMindMapNoteLink } from "@triliumnext/commons";
-import type { MindElixirInstance, NodeObj, TagObj } from "mind-elixir";
+import type { default as MindElixirInstance, NodeObj, TagObj } from "mind-elixir";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";

@@ -1,6 +1,6 @@
 import "./MapContextMenu.css";
 
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import contextMenu from "../../../menus/context_menu";
