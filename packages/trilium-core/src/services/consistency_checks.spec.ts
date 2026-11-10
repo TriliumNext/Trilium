@@ -376,6 +376,9 @@ describe("Consistency checks over a corrupted database", () => {
             plantBranch("CC_br_noblob_text", "CC_NOBLOB_TEXT", "root");
             plantNote("CC_NOBLOB_PROT", { isProtected: 1, blobId: "CC_missing3" });
             plantBranch("CC_br_noblob_prot", "CC_NOBLOB_PROT", "root");
+            insertRow("blobs", { blobId: "CC_nullblob1", content: null, dateModified: "2026-01-01 00:00:00", utcDateModified: "2026-01-01 00:00:00Z" });
+            plantNote("CC_NULL_TEXT", { blobId: "CC_nullblob1" });
+            plantBranch("CC_br_null_text", "CC_NULL_TEXT", "root");
             insertRow("blobs", { blobId: "CC_nullblob2", content: null, dateModified: "2026-01-01 00:00:00", utcDateModified: "2026-01-01 00:00:00Z" });
             plantNote("CC_NULL_JSON", { type: "code", mime: "application/json", blobId: "CC_nullblob2" });
             plantBranch("CC_br_null_json", "CC_NULL_JSON", "root");
@@ -443,6 +446,7 @@ describe("Consistency checks over a corrupted database", () => {
         const contentOf = (noteId: string) => sql().getValue("SELECT content FROM blobs JOIN notes USING (blobId) WHERE noteId = ?", [ noteId ]);
         expect(sql().getValue("SELECT blobId FROM notes WHERE noteId = 'CC_NOBLOB_PROT'")).toBe("CC_missing3");
         expect(String(contentOf("CC_NULL_JSON"))).toBe("{}");
+        expect(contentOf("CC_NULL_TEXT")).toBe("");
         expect(contentOf("CC_NOBLOB_TEXT")).toBe("");
         expect(String(contentOf("CC_NOBLOB_JSON"))).toBe("{}");
         const jsonBlobId = sql().getValue<string>("SELECT blobId FROM notes WHERE noteId = 'CC_NOBLOB_JSON'");
@@ -453,7 +457,7 @@ describe("Consistency checks over a corrupted database", () => {
         info.mockClear();
         await getContext().init(() => consistency_checks.runOnDemandChecks(true));
         const repeated = info.mock.calls.map(([ message ]) => String(message))
-            .filter((message) => /CC_NOBLOB_TEXT|CC_NOBLOB_JSON/.test(message));
+            .filter((message) => /CC_NULL_TEXT|CC_NOBLOB_TEXT|CC_NOBLOB_JSON/.test(message));
         expect(repeated).toEqual([]);
         expect(exists("revisions", "revisionId", "CC_rev")).toBe(false);
         expect(exists("attachments", "attachmentId", "CC_att_noblob")).toBe(false);

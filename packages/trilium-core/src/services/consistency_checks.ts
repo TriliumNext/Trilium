@@ -553,9 +553,7 @@ class ConsistencyChecks {
                         const blankContent = getBlankContent(mime);
                         if (!note) return;
 
-                        if (blankContent) {
-                            note.setContent(blankContent);
-                        }
+                        note.setContent(blankContent);
 
                         this.reloadNeeded = true;
 
