@@ -455,4 +455,79 @@ describe("etapi/notes/bulk-update", () => {
             spy.mockRestore();
         }
     });
+
+    it("preserves successful items' entity changes and sends updates to clients when an individual item fails in atomic=false with real transaction hooks", async () => {
+        const noteId1 = await createNote(app, token);
+        const noteId2 = await createNote(app, token);
+
+        const { getSql, ws, cls, becca_loader, entity_changes } = await import("@triliumnext/core");
+        const { initMessaging } = await import("@triliumnext/core/src/services/messaging/index.js");
+        const realSql = getSql();
+
+        const originalParams = (realSql as any).params;
+        const sentMessages: any[] = [];
+        const mockMessaging = {
+            sendMessageToAllClients: (msg: any) => {
+                sentMessages.push(msg);
+            },
+            sendMessageToClient: () => true,
+            setClientMessageHandler: () => {}
+        };
+        initMessaging(mockMessaging as any);
+        ws.init();
+
+        // Real transaction hooks matching core_init.ts
+        const realCommit = () => {
+            ws.sendTransactionEntityChangesToAllClients();
+        };
+        const realRollback = () => {
+            const entityChangeIds = cls.getAndClearEntityChangeIds();
+            if (entityChangeIds.length > 0) {
+                becca_loader.load();
+            }
+            entity_changes.recalculateMaxEntityChangeId();
+        };
+
+        (realSql as any).params = {
+            ...originalParams,
+            onTransactionCommit: realCommit,
+            onTransactionRollback: realRollback
+        };
+
+        const spy = vi.spyOn(noteService, "saveRevisionIfNeeded").mockImplementation((note) => {
+            if (note.noteId === noteId2) {
+                throw new Error("Simulated disk error on note 2");
+            }
+        });
+
+        try {
+            const res = await supertest(app)
+                .post("/etapi/notes/bulk-update")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId: noteId1, content: "<p>Note 1 updated</p>" },
+                        { noteId: noteId2, content: "<p>Note 2 failed</p>" }
+                    ]
+                })
+                .expect(200);
+
+            expect(res.body.updated).toBe(1);
+            expect(res.body.failed).toBe(1);
+
+            const get1 = await supertest(app)
+                .get(`/etapi/notes/${noteId1}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get1.text).toBe("<p>Note 1 updated</p>");
+
+            expect(sentMessages.length).toBeGreaterThan(0);
+            const allEntityChanges = sentMessages.flatMap((m) => m.data?.entityChanges || []);
+            expect(allEntityChanges.some((c: any) => c.entityId === noteId1)).toBe(true);
+            expect(allEntityChanges.some((c: any) => c.entityId === noteId2)).toBe(false);
+        } finally {
+            spy.mockRestore();
+            (realSql as any).params = originalParams;
+        }
+    });
 });

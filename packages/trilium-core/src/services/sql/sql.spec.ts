@@ -530,6 +530,24 @@ describe("SqlService (real DB)", () => {
             await expect(getContext().init(() => sql.transactionalAsync(async () => "nested"))).resolves.toBe("nested");
             expect(onTransactionCommit).not.toHaveBeenCalled();
         });
+
+        it("does not report a rollback while an outer transaction is still open", () => {
+            const onTransactionRollback = vi.fn();
+            const sql = buildService({
+                inTransaction: true,
+                transaction: (cb: any) => {
+                    const fn = () => cb();
+                    fn.deferred = () => cb();
+                    return fn;
+                }
+            }, false, () => {}, onTransactionRollback);
+
+            expect(() => sql.transactional(() => {
+                throw new Error("failed inside savepoint");
+            })).toThrow("failed inside savepoint");
+
+            expect(onTransactionRollback).not.toHaveBeenCalled();
+        });
     });
 });
 
@@ -545,7 +563,7 @@ function fakeStatement(): Statement {
     return statement;
 }
 
-function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, onTransactionCommit = () => {}) {
+function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, onTransactionCommit = () => {}, onTransactionRollback = () => {}) {
     const provider: DatabaseProvider = {
         loadFromFile: () => {},
         loadFromMemory: () => {},
@@ -559,5 +577,5 @@ function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, 
         close: () => {},
         ...overrides
     };
-    return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback: () => {} }, getLog());
+    return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback }, getLog());
 }

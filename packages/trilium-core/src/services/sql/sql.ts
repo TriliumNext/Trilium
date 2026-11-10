@@ -412,7 +412,9 @@ export class SqlService {
             return ret as T;
         } catch (e) {
             console.warn("Got error ", e);
-            this.params.onTransactionRollback();
+            if (!this.dbConnection.inTransaction) {
+                this.params.onTransactionRollback();
+            }
             throw e;
         }
     }

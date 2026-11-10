@@ -1,4 +1,4 @@
-import { becca, BNote, checkImageAttachments, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
+import { becca, BNote, checkImageAttachments, cls, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
@@ -312,6 +312,7 @@ function register(router: Router) {
             const originalBlobId = note.blobId;
             const originalUtcDateModified = note.utcDateModified;
             const originalDateModified = note.dateModified;
+            const previousEntityChangeIds = [...(cls.get<number[]>("entityChangeIds") || [])];
 
             try {
                 sql.transactional(() => {
@@ -332,6 +333,7 @@ function register(router: Router) {
 
                 updatedCount++;
             } catch (err) {
+                cls.set("entityChangeIds", previousEntityChangeIds);
                 note.blobId = originalBlobId;
                 note.utcDateModified = originalUtcDateModified;
                 note.dateModified = originalDateModified;
