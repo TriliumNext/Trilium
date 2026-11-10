@@ -165,12 +165,12 @@ function setExpanded(req: Request<{ branchId: string, expanded: string }>) {
 
         if (branch) {
             branch.isExpanded = !!expanded;
-        }
 
-        eventService.emit(eventService.ENTITY_CHANGED, {
-            entityName: "branches",
-            entity: branch
-        });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "branches",
+                entity: branch
+            });
+        }
     }
 }
 

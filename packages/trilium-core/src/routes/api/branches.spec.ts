@@ -1,8 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import eventService from "../../services/events";
+import { getLog } from "../../services/log";
 import { getSql } from "../../services/sql/index";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
@@ -276,6 +278,26 @@ describe("Branches API (core)", () => {
             const collapse = await api.put(`/api/branches/${branchId}/expanded/0`);
             expect(collapse.status).toBe(204);
             expect(getBranchRow(branchId)?.isExpanded).toBe(0);
+        });
+
+        it("announces the change of a known branch only", async () => {
+            const { branchId } = await createTextNote(api, { title: "Announced expansion" });
+            const emit = vi.spyOn(eventService, "emit");
+            const error = vi.spyOn(getLog(), "error");
+
+            try {
+                expect((await api.put("/api/branches/missingBranch123/expanded/1")).status).toBe(204);
+                expect(emit.mock.calls.filter(([ type ]) => type === eventService.ENTITY_CHANGED)).toEqual([]);
+
+                expect((await api.put(`/api/branches/${branchId}/expanded/1`)).status).toBe(204);
+                expect(emit).toHaveBeenCalledWith(eventService.ENTITY_CHANGED, {
+                    entityName: "branches", entity: becca.getBranchOrThrow(branchId)
+                });
+                expect(error).not.toHaveBeenCalled();
+            } finally {
+                emit.mockRestore();
+                error.mockRestore();
+            }
         });
 
         it("leaves the root branch alone and expands nothing below an unknown branch", async () => {
