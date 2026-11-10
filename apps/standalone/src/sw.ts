@@ -1,4 +1,13 @@
 // public/sw.js
+declare const self: ServiceWorkerGlobalScope;
+
+/** What a tab's local bridge answers a `LOCAL_FETCH` with (see `local-bridge.ts`). */
+interface LocalFetchReply {
+    type: "LOCAL_FETCH_RESPONSE" | "NOT_LEADER";
+    id: string;
+    response: { status?: number; headers?: Record<string, string>; body?: ArrayBuffer };
+}
+
 const VERSION = "localserver-v1.4";
 const STATIC_CACHE = `static-${VERSION}`;
 
@@ -111,11 +120,12 @@ async function networkFirst(request) {
 // a worker), so every tab's API traffic has to reach that specific tab. This is
 // a cache: the service worker is evicted when idle and loses it, so a miss falls
 // back to probing the open tabs.
-let leaderClientId = null;
+let leaderClientId: string | null = null;
 
 self.addEventListener("message", (event) => {
     if (event.data?.type === "LEADER_ANNOUNCE" && event.source) {
-        leaderClientId = event.source.id;
+        // Pages announce through `navigator.serviceWorker.controller`, so the source is a window.
+        leaderClientId = (event.source as WindowClient).id;
     }
 });
 
@@ -133,7 +143,7 @@ function isMainAppWindow(client) {
 async function findLeader(candidates) {
     for (const candidate of candidates) {
         const channel = new MessageChannel();
-        const replied = new Promise((resolve) => {
+        const replied = new Promise<{ isLeader?: boolean } | null>((resolve) => {
             const timeout = setTimeout(() => resolve(null), 1_000);
             channel.port1.onmessage = (event) => {
                 clearTimeout(timeout);
@@ -157,7 +167,6 @@ async function findLeader(candidates) {
  * window — which replies NOT_LEADER if it is not the one, leaving the caller to retry.
  */
 async function findLeaderClient() {
-    // @ts-expect-error - self.clients is valid in service worker context
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     const candidates = all.filter(isMainAppWindow);
 
@@ -182,7 +191,6 @@ async function findLeaderClient() {
  * forwarder would report as whatever the static host says. This says so instead.
  */
 async function answerShareRequest(request, clientId) {
-    // @ts-expect-error - self.clients is valid in service worker context
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
 
     if (!all.some(isMainAppWindow)) {
@@ -237,7 +245,7 @@ async function forwardToClientLocalServer(request, _clientId, deadline = Date.no
     const id = crypto.randomUUID();
     const channel = new MessageChannel();
 
-    const responsePromise = new Promise((resolve, reject) => {
+    const responsePromise = new Promise<LocalFetchReply | undefined>((resolve, reject) => {
         // Long enough for a request the worker answers late because it is deep inside one
         // synchronous stretch of work (a VACUUM of a multi-gigabyte database blocks it for well
         // over a minute), and just short of the ~5 minutes Chromium gives a fetch event before
@@ -449,3 +457,5 @@ self.addEventListener("fetch", (event) => {
     // Default
     event.respondWith(fetch(event.request));
 });
+
+export {};

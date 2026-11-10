@@ -47,14 +47,13 @@ function reportStartupPhase(phase: string) {
     self.postMessage({ type: "STARTUP_PROGRESS", phase });
 }
 
-self.onerror = (message, source, lineno, colno, error) => {
+self.addEventListener("error", (event) => {
     reportEscapedError(
         "Uncaught error",
-        `${message}\n  at ${source}:${lineno}:${colno}`,
-        error?.stack || new Error().stack
+        `${event.message}\n  at ${event.filename}:${event.lineno}:${event.colno}`,
+        event.error?.stack || new Error().stack
     );
-    return false;
-};
+});
 
 self.onunhandledrejection = (event) => {
     const reason = event.reason;
@@ -409,7 +408,8 @@ async function initialize(): Promise<void> {
                     logService.info(`[Worker] Reconciling i18next locale to "${dbLocale}" from DB`);
                     // `changeLanguage` rebuilds the hidden subtree, and committing that writes
                     // entity change ids into the execution context, so it needs one open.
-                    await coreModule.getContext().init(() => coreModule.i18n.changeLanguage(dbLocale));
+                    const { getContext, i18n } = coreModule;
+                    await getContext().init(() => i18n.changeLanguage(dbLocale));
                 }
             } else {
                 logService.info("[Worker] Database not initialized, skipping becca load (will be loaded during DB initialization)");

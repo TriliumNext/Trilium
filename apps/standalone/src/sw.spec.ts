@@ -27,9 +27,7 @@ async function loadSw(): Promise<Record<string, EventHandler>> {
     vi.spyOn(self, "addEventListener").mockImplementation((type: string, handler: EventListenerOrEventListenerObject) => {
         handlers[type] = handler as EventHandler;
     });
-    // sw.ts is a side-effect-only service worker script (no exports); importing it
-    // runs its addEventListener registrations, which the spy above captures.
-    // @ts-expect-error - sw.ts has no module exports
+    // Importing sw.ts runs its addEventListener registrations, which the spy above captures.
     await import("./sw.js");
     return handlers;
 }
@@ -481,7 +479,8 @@ describe("forwardToClientLocalServer", () => {
 
         // The retry must carry the body, not fail on an already-consumed request.
         await vi.waitFor(() => expect(leader.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "LOCAL_FETCH" }), expect.anything()));
-        const forwarded = leader.postMessage.mock.calls.find(([msg]) => msg?.type === "LOCAL_FETCH")?.[0];
+        const forwarded = leader.postMessage.mock.calls.find(([msg]) => msg?.type === "LOCAL_FETCH")?.[0] as
+            { request?: { body?: ArrayBuffer } } | undefined;
         expect(new TextDecoder().decode(forwarded?.request?.body)).toBe("body");
 
         channels.at(-1)?.port1.onmessage?.({ data: { type: "LOCAL_FETCH_RESPONSE", id: "uuid-1", response: { status: 200, headers: {}, body: null } } } as unknown);

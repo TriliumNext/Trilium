@@ -72,12 +72,14 @@ describe("BridgedRequestProvider.exec", () => {
     it("adds auth, multi-page and serialized-body fields", async () => {
         const provider = new BridgedRequestProvider();
         const promise = provider.exec({
+            proxy: null,
+            timeout: 0,
             method: "POST",
             url: "http://x",
             auth: { password: "pw", totpToken: "123456" },
             body: { a: 1 },
             paging: { pageCount: 2, pageIndex: 0, requestId: "r" }
-        } as ExecOpts);
+        });
 
         const posted = lastPosted();
         expect(posted.request.headers["trilium-cred"]).toBe(btoa("dummy:pw"));

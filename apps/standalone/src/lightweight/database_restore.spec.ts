@@ -1,7 +1,6 @@
 import type { SAHPoolUtil } from "@sqlite.org/sqlite-wasm";
 import { writeBackupContainer } from "@triliumnext/backup-container";
 import fs from "fs";
-import fsp from "fs/promises";
 import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +23,7 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-standalone-resto
  * Bytes that start the way SQLite does, page size and all: the reader checks the header of what it
  * unwraps, and the service checks the header of what it is given.
  */
-function databaseBytes(size = 8192): Uint8Array {
+function databaseBytes(size = 8192): Uint8Array<ArrayBuffer> {
     const bytes = new Uint8Array(size);
     bytes.set(Uint8Array.from("SQLite format 3\0", (c) => c.charCodeAt(0)));
     // Page size, big-endian: 4096.
@@ -38,7 +37,6 @@ function databaseBytes(size = 8192): Uint8Array {
 /** Wraps `payload` the way a backup does, using the writer the backup service itself uses. */
 async function containerOf(payload: Uint8Array, options: { passphrase?: string; compress?: boolean } = {}) {
     const filePath = path.join(tempRoot, `backup-${Math.random().toString(36).slice(2)}.tnbackup`);
-    fs.writeFileSync(filePath, "");
 
     await writeBackupContainer(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a Node stream over the bytes.
@@ -51,40 +49,6 @@ async function containerOf(payload: Uint8Array, options: { passphrase?: string; 
             // instrumentation, which is a test timeout and then a stray swap polluting the next
             // test. The reader derives with whatever the header records, so a cheap cost changes
             // nothing about what is being tested.
-            scrypt: { log2N: 10, r: 8, p: 1 },
-            plaintextSize: payload.length,
-            patchHeader: async (offset, data) => {
-                const handle = await fsp.open(filePath, "r+");
-                try {
-                    await handle.write(data, 0, data.length, offset);
-                } finally {
-                    await handle.close();
-                }
-            }
-        }
-    );
-
-    return new Blob([ fs.readFileSync(filePath) ]);
-}
-
-/**
- * The same, written front to back the way the standalone download writes one: no digest patched in
- * afterwards, and the plaintext size recorded, which is what makes its total length predictable.
- */
-async function streamedContainerOf(
-    payload: Uint8Array,
-    options: { passphrase?: string; compress?: boolean } = {}
-) {
-    const filePath = path.join(tempRoot, `streamed-${Math.random().toString(36).slice(2)}.tnbackup`);
-
-    await writeBackupContainer(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a Node stream over the bytes.
-        (await import("stream")).Readable.from([ Buffer.from(payload) ]) as any,
-        fs.createWriteStream(filePath),
-        {
-            streamed: true,
-            compress: options.compress ?? false,
-            passphrase: options.passphrase,
             scrypt: { log2N: 10, r: 8, p: 1 },
             plaintextSize: payload.length
         }
@@ -442,7 +406,7 @@ describe("a backup that cannot be restored", () => {
         const original = databaseBytes();
         // Compresses to far less than the plaintext size the header records, so measuring the file
         // against that size would condemn a complete backup.
-        const whole = await streamedContainerOf(original, { compress: true });
+        const whole = await containerOf(original, { compress: true });
         expect(whole.size).toBeLessThan(original.length);
 
         await restoreDatabase(target, whole);
@@ -453,7 +417,7 @@ describe("a backup that cannot be restored", () => {
     it("refuses a streamed container the file is too small to hold, without reading it", async () => {
         const { pool, files } = fakePool();
         const { target } = fakeTarget(pool);
-        const whole = await streamedContainerOf(databaseBytes());
+        const whole = await containerOf(databaseBytes());
 
         await expect(restoreDatabase(target, whole.slice(0, whole.size - 64)))
             .rejects.toMatchObject({ reason: "backup-incomplete" });

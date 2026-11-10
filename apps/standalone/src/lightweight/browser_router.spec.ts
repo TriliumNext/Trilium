@@ -1,7 +1,7 @@
 import { getContext } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BrowserRouter, createRouter, type UploadedFile } from "./browser_router.js";
+import { type BrowserRequest, BrowserRouter, createRouter, type UploadedFile } from "./browser_router.js";
 import { dbLock } from "./db_lock.js";
 
 const RAW_RESPONSE = Symbol.for("RAW_RESPONSE");
@@ -154,13 +154,13 @@ describe("BrowserRouter body parsing", () => {
         const buffer = await request.arrayBuffer();
 
         const router = new BrowserRouter();
-        let req: { body?: unknown; file?: { originalname: string; mimetype: string; buffer: Uint8Array } } | undefined;
+        let req: BrowserRequest | undefined;
         router.post("/u", (r) => { req = r; return {}; });
         await router.dispatch("POST", "http://localhost/u", buffer, { "content-type": contentType });
 
         expect(req?.body).toEqual({ title: "hello" });
         expect(typeof req?.file?.originalname).toBe("string");
-        expect(req?.file && Array.from(req.file.buffer)).toEqual([1, 2, 3]);
+        expect(req?.file?.buffer && Array.from(req.file.buffer)).toEqual([1, 2, 3]);
     });
 
     it("takes a posted File's fields, and reads its bytes only for a route that does not read it in place", async () => {

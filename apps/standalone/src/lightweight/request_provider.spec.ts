@@ -77,7 +77,7 @@ describe("FetchRequestProvider.exec", () => {
 
     it("serializes object bodies as JSON and passes string bodies through", async () => {
         const spy = mockFetch({ status: 200, text: async () => "{}" });
-        await provider.exec({ method: "POST", url: `${location.origin}/x`, body: { a: 1 } } as ExecOpts);
+        await provider.exec({ proxy: null, timeout: 0, method: "POST", url: `${location.origin}/x`, body: { a: 1 } });
         expect(lastInit(spy).body).toBe(JSON.stringify({ a: 1 }));
 
         spy.mockClear();

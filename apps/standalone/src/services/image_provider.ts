@@ -4,7 +4,8 @@
  * Images are saved as-is without resizing.
  */
 
-import type { ImageCompressionOutcome, ImageCompressionPlan, ImageFormat, ImageProvider, ImageShrink, PreviewResizeOutcome, ProcessedImage } from "@triliumnext/core";
+import type { ImageCompressionOutcome, ImageFormat, ImageProvider, ImageShrink, ProcessedImage } from "@triliumnext/core";
+import type { ImageCompressionPlan, PreviewResizeOutcome } from "@triliumnext/core/src/services/image_provider.js";
 import { inspectImage, UNKNOWN_FORMAT } from "@triliumnext/core/src/services/image_inspect.js";
 
 /**
