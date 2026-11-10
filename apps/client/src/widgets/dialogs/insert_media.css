@@ -3,7 +3,7 @@
     /* Keeps the card wider than the 500px at which Card.css stacks its rows. */
     width: 34rem;
     max-width: calc(100vw - 2rem);
-    font-size: var(--main-font-size);
+    font-size: 1rem;
     line-height: var(--bs-body-line-height);
     white-space: normal;
     text-align: start;

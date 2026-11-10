@@ -2,7 +2,7 @@
     /* A tooltip is appended to `<body>`, so it competes with dialogs in the root stacking context:
        Bootstrap's modal is at 1055, the app's dialogs up to 3000 and the context menu at 2500. */
     z-index: 9999 !important;
-    font-size: var(--main-font-size) !important;
+    font-size: 1rem !important;
 
     &.show {
         opacity: 1;

@@ -145,7 +145,7 @@ body.desktop .options-section:not(.tn-no-card) {
 
 .options-section-description {
     color: var(--muted-text-color);
-    font-size: 13px;
+    font-size: .8rem;
     margin-top: 0;
     margin-bottom: 16px;
 }

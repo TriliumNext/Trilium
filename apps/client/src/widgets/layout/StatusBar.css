@@ -19,7 +19,8 @@
 
         > .breadcrumb {
             flex-grow: 1;
-            --icon-button-size: 23px;
+            /* Resolved against the `.9rem` that `Breadcrumb.css` gives each `.icon-action`: 23px at 16px. */
+            --icon-button-size: 1.6em;
         }
 
         > .actions-row {
@@ -236,7 +237,7 @@
 
 .similar-notes-widget > .similar-notes-wrapper {
     /* The font size of the links with the highest similarity score */
-    font-size: 17px;
+    font-size: 1.05rem;
 }
 
 .similar-notes-wrapper {

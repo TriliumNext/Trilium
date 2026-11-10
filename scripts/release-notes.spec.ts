@@ -4,9 +4,10 @@ import {
     AREA_NAMES, areaOf, AREAS, categorize, type ChangelogEntry, cleanTitle, collectClosings,
     collectItems, type Commit, compatibilityItems, escapeMarkdown, findNewLanguages, type Issue,
     isNightlyOnly, isShippedSeparately, languageName, lintChangelogEntry, markdownToHtml,
-    needsEntry, type NoteItem, parseChangelogEntry, parseClosingReferences, parseCommits,
-    parseDisplayLocales, parseNumstat, parseProtocolVersions, parsePullRequestNumber,
-    type PullRequest, rankContributors, renderReleaseNote, renderSection, splitExplanations,
+    needsEntry, NIGHTLY_COMMENT_MARKER, nightlyComment, type NoteItem, parseChangelogEntry,
+    parseClosingReferences, parseCommits, parseDisplayLocales, parseNumstat,
+    parseProtocolVersions, parsePullRequestNumber, type PullRequest, rankContributors,
+    renderReleaseNote, renderSection, selectNightlyFixes, splitExplanations,
     stripAreaPrefix, unreleasedNotice,
     renderHighlights, lintOverview,
 } from "./release-notes.mjs";
@@ -668,6 +669,41 @@ describe("unreleasedNotice", () => {
         expect(notice.section).toBe("Note");
         expect(notice.text).toContain("since v0.107.0");
         expect(notice.text).toContain("`abc1234` of 2026-11-08");
+    });
+});
+
+describe("selectNightlyFixes", () => {
+    it("keeps the closed issues that ship with the app", () => {
+        const issue = (number: number, fields: Partial<Issue> = {}): Issue => ({
+            number, title: `Issue ${number}`, state: "CLOSED", labels: [],
+            url: `https://github.com/TriliumNext/Trilium/issues/${number}`, ...fields
+        });
+        const closing = (number: number, subject = `fix(tree): one (closes #${number})`) =>
+            ({ issue: number, date: number, subjects: [ subject ], contributors: [] });
+        const issues = new Map([
+            [ 1, issue(1) ],
+            [ 2, issue(2, { state: "OPEN" }) ],
+            [ 3, issue(3, { url: "https://github.com/TriliumNext/Trilium/pull/3" }) ],
+            [ 4, issue(4, { labels: [ "web-clipper" ] }) ],
+            [ 5, issue(5) ],
+            [ 7, issue(7) ]
+        ]);
+
+        expect(selectNightlyFixes([
+            closing(1), closing(2), closing(3), closing(4),
+            closing(5, "fix(web-clipper): one (closes #5)"), closing(6), closing(7)
+        ], issues).map((selected) => selected.number)).toEqual([ 1, 7 ]);
+    });
+});
+
+describe("nightlyComment", () => {
+    it("links the nightly release and names the build", () => {
+        const comment =
+            nightlyComment("TriliumNext/Trilium", { hash: "abc1234", date: "2026-11-10" });
+        expect(comment.startsWith(NIGHTLY_COMMENT_MARKER)).toBe(true);
+        expect(comment)
+            .toContain("(https://github.com/TriliumNext/Trilium/releases/tag/nightly)");
+        expect(comment).toContain("of 2026-11-10 (commit `abc1234`)");
     });
 });
 

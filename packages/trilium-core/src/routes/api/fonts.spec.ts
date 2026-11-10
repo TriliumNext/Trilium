@@ -45,6 +45,8 @@ describe("Fonts API", () => {
         });
 
         const { body } = getCss();
+        // The client sizes `<html>` from `--main-font-size`, so it cannot be declared on `body`.
+        expect(body).toMatch(/^html:root \{/);
         expect(body).toContain("--main-font-size:");
         expect(body).toContain("--tree-font-size:");
         // 'system' is expanded to a font stack, 'theme' is omitted entirely

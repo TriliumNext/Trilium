@@ -16,6 +16,7 @@ import {
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
+import { Features, transform } from "lightningcss";
 import {
     build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
     type ResolvedConfig, type Rollup, type ViteDevServer
@@ -130,6 +131,26 @@ export function narrowThirdPartySelectors(): Plugin {
         enforce: "pre",
         transform: (code, id) => narrowSelectorsSource(code, id)
     };
+}
+
+/**
+ * Flattens CSS nesting in a stylesheet copied by `viteStaticCopy`, for the browsers without
+ * nesting support. Only stylesheets that a module imports go through Vite's lightningcss
+ * transformer; `style.css` and the theme stylesheets are linked at runtime and copied as-is.
+ * Returns files other than `.css` unchanged.
+ */
+export function flattenCssNesting(content: string, filename: string): string {
+    if (!filename.endsWith(".css")) {
+        return content;
+    }
+
+    const { code } = transform({
+        filename,
+        code: Buffer.from(content),
+        include: Features.Nesting,
+        errorRecovery: true
+    });
+    return code.toString();
 }
 
 /**

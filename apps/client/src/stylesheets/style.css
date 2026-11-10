@@ -77,6 +77,8 @@ html {
     /* Chrome on Android sizes `vh` without its toolbar, which leaves the page that much to scroll. */
     height: 100dvh;
     overscroll-behavior: none;
+    /* On the root, so that `rem` units follow the interface font size too. */
+    font-size: var(--main-font-size);
 }
 
 /* iOS 26 gives a web app added to the home screen a dynamic viewport short by the status bar until
@@ -97,7 +99,6 @@ body {
     background-color: var(--main-background-color);
     color: var(--main-text-color);
     font-family: var(--main-font-family);
-    font-size: var(--main-font-size);
 
     --native-titlebar-foreground: var(--main-text-color);
     --native-titlebar-darwin-x-offset: 10;
@@ -2331,7 +2332,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 }
 
 #launcher-pane .launcher-button {
-    font-size: 150%;
+    font-size: 24px;
     /* Matches the `line-height: 1` boxicons gives an icon-only launcher, so an icon in a child
        span, as in a dropdown launcher, centers the same way. */
     line-height: 1;

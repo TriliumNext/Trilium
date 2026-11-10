@@ -10,6 +10,7 @@ import {
     buildShareThemeManifest,
     checkHostedGroups,
     ENGINE_RENDER_ENTRY,
+    flattenCssNesting,
     LANGUAGE_DETECTOR_PACKAGE,
     narrowSelectorsSource,
     readLoaderTable,
@@ -373,4 +374,80 @@ function patternLoaders(): { locale: string; source: string }[] {
 
 function pascalCaseLocale(locale: string): string {
     return locale.split("-").filter(Boolean).map((part) => part[0].toUpperCase() + part.slice(1)).join("");
+}
+
+describe("flattenCssNesting", () => {
+    it("flattens nested rules and leaves the rest of the stylesheet alone", () => {
+        const flattened = flattenCssNesting([
+            "@import url(./forms.css);",
+            ".a { color: red; &:hover { color: blue; } .b { margin: 0; } @media (width >= 600px) { padding: 0; } }",
+            "@media (prefers-color-scheme: dark) { .c { & .d { color: white; } } }"
+        ].join("\n"), "style.css");
+
+        expect(flattened).toContain("@import");
+        expect(flattened).toContain(".a:hover");
+        expect(flattened).toContain(".a .b");
+        expect(flattened).toContain(".c .d");
+        expect(flattened).toContain("(width >= 600px)");
+        expect(findNestedRules(flattened)).toEqual([]);
+    });
+
+    it("leaves files other than stylesheets untouched", () => {
+        const source = "const nested = \".a { &:hover {} }\";";
+        expect(flattenCssNesting(source, "theme.ts")).toBe(source);
+    });
+
+    it("leaves no nesting in any of the client's static stylesheets", () => {
+        const dir = join(__dirname, "src/stylesheets");
+        const files = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((file) => file.endsWith(".css"));
+        expect(files).toContain("style.css");
+
+        for (const file of files) {
+            const source = readFileSync(join(dir, file), "utf8");
+            expect(findNestedRules(flattenCssNesting(source, file)), file).toEqual([]);
+        }
+        expect(findNestedRules(readFileSync(join(dir, "style.css"), "utf8")).length).toBeGreaterThan(0);
+    });
+});
+
+/** Returns the selector of every style rule opened inside another style rule. */
+function findNestedRules(css: string): string[] {
+    const nested: string[] = [];
+    const blocks: ("style" | "at")[] = [];
+    let prelude = "";
+    let quote: string | null = null;
+
+    for (let i = 0; i < css.length; i++) {
+        const char = css[i];
+        if (quote) {
+            if (char === "\\") i++;
+            else if (char === quote) quote = null;
+            continue;
+        }
+        if (char === "/" && css[i + 1] === "*") {
+            i = css.indexOf("*/", i + 2) + 1;
+            continue;
+        }
+        if (char === "\"" || char === "'") {
+            quote = char;
+        } else if (char === "{") {
+            const selector = prelude.trim();
+            const isAtRule = selector.startsWith("@") || blocks.at(-1) === "at" && /^[\d.]+%|^(from|to)\b/.test(selector);
+            if (!isAtRule && blocks.includes("style")) {
+                nested.push(selector);
+            }
+            blocks.push(isAtRule ? "at" : "style");
+            prelude = "";
+            continue;
+        } else if (char === "}") {
+            blocks.pop();
+            prelude = "";
+            continue;
+        } else if (char === ";") {
+            prelude = "";
+            continue;
+        }
+        prelude += char;
+    }
+    return nested;
 }

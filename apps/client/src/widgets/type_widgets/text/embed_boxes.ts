@@ -35,7 +35,8 @@ export interface EmbedBoxContext {
  * embeds of a kind that this version does not know and, while {@link hasSourceEmbedBoxes},
  * diagrams, extended code blocks and media. Otherwise diagrams draw in place. An embed of a
  * note or attachment in `context.seenNoteIds` becomes a reference link to it instead. While
- * `isNested`, `container` is the content of another box, out of the page.
+ * `isNested`, `container` is the content of another box, out of the page, and its notes and
+ * attachments show as Compact boxes, a title row without their content.
  *
  * The passes over the rest of the content run before the call, so that they leave the content
  * of the boxes alone.
@@ -86,6 +87,11 @@ function prepareContentEmbeds(
         const { attachmentId, noteId, block } = embed.dataset;
         const id = attachmentId || noteId;
         if (!id) continue;
+        // Each box would render the embeds of its own content, so a few levels of notes that
+        // include the same notes render the same content many times over.
+        if (isNested) {
+            embed.dataset.boxSize = "compact";
+        }
 
         if (seenNoteIds.has(getEmbedKey(id, block))) {
             loads.push(async () => {

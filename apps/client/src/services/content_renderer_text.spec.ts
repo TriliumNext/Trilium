@@ -557,7 +557,7 @@ describe("Embed boxes", () => {
     const figure = (noteId: string) =>
         `<figure class="include-note" data-note-id="${noteId}"></figure>`;
 
-    it("shows the embeds of a box in boxes, and links to the notes shown around them", async () => {
+    it("shows the embeds of a box as title rows, and links to the notes shown around them", async () => {
         // A box shows its content in its wrapper, as `ContentEmbed` does once it mounts.
         const mountBox = vi.spyOn(content_renderer, "mountInteractiveWidget")
             .mockImplementation(async (vnode, container) => {
@@ -588,14 +588,17 @@ describe("Embed boxes", () => {
             });
 
             expect(wrapper.textContent).toContain("Child body");
-            expect(wrapper.textContent).toContain("Grandchild body");
+            expect(wrapper.textContent).not.toContain("Grandchild body");
             expect(mountBox).toHaveBeenCalledTimes(2);
-            // The grandchild links to the child and itself, the child to the parent.
+            const grandchildBox = mountBox.mock.calls[0][0].props as Record<string, unknown>;
+            expect(grandchildBox.notePath).toBe("boxGrandchild");
+            expect(grandchildBox.content).toBeUndefined();
+            expect(wrapper.querySelector("figure.include-note[data-note-id=boxGrandchild]")
+                ?.getAttribute("data-box-size")).toBe("compact");
             expect([ ...wrapper.querySelectorAll("a.reference-link") ]
                 .map((referenceLink) => referenceLink.getAttribute("href")))
-                .toEqual([ "#root/boxChild", "#root/boxGrandchild", "#root/boxParent" ]);
-            // The passes over the content of the child leave the content of its boxes alone.
-            expect(wrapper.querySelectorAll("pre .copy-button")).toHaveLength(1);
+                .toEqual([ "#root/boxParent" ]);
+            expect(wrapper.querySelector("pre")).toBeNull();
         } finally {
             wrapper.remove();
             mountBox.mockRestore();
