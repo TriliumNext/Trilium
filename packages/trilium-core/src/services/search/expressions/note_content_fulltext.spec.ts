@@ -326,6 +326,15 @@ describe("operator semantics", () => {
         expect(run(detached, "!=", [ "anything" ], true)).toBe(false);
     });
 
+    it("does not let the attribute pass of a flat-text negation take back a body match", () => {
+        const note = createNote("<p>plain body under a dark night</p>", { labels: [ [ "color", "blue" ] ] });
+
+        expect(run(note, "!=", [ "body" ], true)).toBe(false);
+        expect(run(note, "!=", [ "dark", "night" ], true)).toBe(false);
+        expect(run(note, "!=", [ "green" ], true)).toBe(true);
+        expect(run(note, "=", [ "blue" ], true)).toBe(true);
+    });
+
     it("records no content match for a token without any words", () => {
         const note = createNote("<p>wow!!!</p>");
         const searchContext = new SearchContext();

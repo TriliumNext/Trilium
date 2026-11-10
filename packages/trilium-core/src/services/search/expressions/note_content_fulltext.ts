@@ -102,6 +102,8 @@ class NoteContentFulltextExp extends Expression {
         }
 
         const resultNoteSet = new NoteSet();
+        // The notes whose content findInText() matched against, whatever the outcome.
+        const readNoteIds = new Set<string>();
 
         // Search through notes with content, reading only those of `inputNoteSet`.
         for (const row of getSql().iterateRows<SearchRow>(`
@@ -111,16 +113,18 @@ class NoteContentFulltextExp extends Expression {
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}
                   AND noteId IN (SELECT value FROM json_each(?))`, [ inputNoteSet.toSqlParam() ])) {
-            this.findInText(row, inputNoteSet, resultNoteSet, searchContext);
+            this.readContent(row, inputNoteSet, resultNoteSet, searchContext, readNoteIds);
         }
 
-        this.findInVirtualNotes(inputNoteSet, resultNoteSet, searchContext);
+        this.findInVirtualNotes(inputNoteSet, resultNoteSet, searchContext, readNoteIds);
 
         // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
         if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
             for (const note of inputNoteSet.notes) {
-                // Skip if already found or doesn't exist
-                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in becca.notes)) {
+                // Skip if already found or doesn't exist. A negation needs the body as well as the
+                // attributes to miss, so a note whose body findInText() rejected stays out.
+                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in becca.notes)
+                    || (this.operator === "!=" && readNoteIds.has(note.noteId))) {
                     continue;
                 }
 
@@ -235,7 +239,7 @@ class NoteContentFulltextExp extends Expression {
      * only reaches them when it opts into hidden notes or scopes itself to the subtree — which is
      * why this pass does not change what an ordinary search finds.
      */
-    findInVirtualNotes(inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext) {
+    findInVirtualNotes(inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext, readNoteIds: Set<string>) {
         for (const noteId in becca.notes) {
             const note = becca.notes[noteId];
 
@@ -250,7 +254,14 @@ class NoteContentFulltextExp extends Expression {
             }
 
             // Virtual notes are never protected — nothing about them is user data.
-            this.findInText({ noteId, type: note.type, mime: note.mime, content, isProtected: false }, inputNoteSet, resultNoteSet, searchContext);
+            this.readContent({ noteId, type: note.type, mime: note.mime, content, isProtected: false }, inputNoteSet, resultNoteSet, searchContext, readNoteIds);
+        }
+    }
+
+    /** Runs {@link findInText} and adds the note to `readNoteIds` when its content was matched against. */
+    private readContent(row: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext, readNoteIds: Set<string>) {
+        if (this.findInText(row, inputNoteSet, resultNoteSet, searchContext) !== undefined) {
+            readNoteIds.add(row.noteId);
         }
     }
 
