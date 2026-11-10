@@ -195,6 +195,9 @@ describe("preferences and pass-through reads", () => {
         const stored = readThroughPatch("pdfjs.preferences");
         expect(typeof stored).toBe("string");
         expect(() => JSON.parse(stored ?? "")).not.toThrow();
+
+        // The same holds for the view history of a note that has none saved yet.
+        expect(readThroughPatch("pdfjs.history")).toBe("{}");
     });
 });
 

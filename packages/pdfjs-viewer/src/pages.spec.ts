@@ -32,6 +32,21 @@ describe("page reporting", () => {
         });
     });
 
+    it("waits for pdf.js to initialise the pages when no document is open yet", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const app = window.PDFViewerApplication;
+        const pdfDocument = app?.pdfDocument;
+        if (!app || !pdfDocument) throw new Error("viewer not installed");
+        (app as any).pdfDocument = null;
+
+        setupPdfPages();
+        expect(viewer.messagesOfType("pdfjs-viewer-page-info")).toHaveLength(0);
+
+        app.pdfDocument = pdfDocument;
+        viewer.eventBus.dispatch("pagesinit", { source: null });
+        expect(viewer.lastMessageOfType("pdfjs-viewer-page-info")?.totalPages).toBe(2);
+    });
+
     it("re-reports once pdf.js has initialised the pages", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         setupPdfPages();

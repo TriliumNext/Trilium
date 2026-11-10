@@ -41,13 +41,11 @@ export async function extractAndSendToc() {
     }
 }
 
-function convertOutlineToToc(outline: any[], level = 0, outlineMap?: Map<string, any>, parentId = ""): any[] {
+function convertOutlineToToc(outline: any[], level: number, outlineMap: Map<string, any>, parentId = ""): any[] {
     return outline.map((item, index) => {
         const id = parentId ? `${parentId}-${index}` : `pdf-outline-${index}`;
 
-        if (outlineMap) {
-            outlineMap.set(id, item);
-        }
+        outlineMap.set(id, item);
 
         return {
             title: item.title,

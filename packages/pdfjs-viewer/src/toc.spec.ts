@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { allFeaturesPdf, barePdf } from "./test/fixture_pdf";
+import { allFeaturesPdf, barePdf, buildPdf } from "./test/fixture_pdf";
 import { InstalledViewer, installViewerApp, uninstallViewerApp } from "./test/viewer_app";
 import { extractAndSendToc, setupActiveHeadingTracking, setupScrollToHeading } from "./toc";
 
@@ -183,3 +183,99 @@ describe("active heading tracking", () => {
     });
 });
 
+
+/**
+ * Outline entries in the other shapes pdf.js reports: a named destination, one that names
+ * nothing, a `/Fit` destination without a y coordinate, and a link to a URL with no
+ * destination at all.
+ */
+function mixedDestinationsPdf() {
+    return buildPdf([
+        "<< /Type /Catalog /Pages 2 0 R /Outlines 4 0 R "
+            + "/Dests << /intro [3 0 R /XYZ 0 500 0] >> >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>",
+        "<< /Type /Outlines /First 5 0 R /Last 8 0 R /Count 4 >>",
+        "<< /Title (Named) /Parent 4 0 R /Dest /intro /Next 6 0 R >>",
+        "<< /Title (Missing) /Parent 4 0 R /Dest /missing /Prev 5 0 R /Next 7 0 R >>",
+        "<< /Title (Fit) /Parent 4 0 R /Dest [3 0 R /Fit] /Prev 6 0 R /Next 8 0 R >>",
+        "<< /Title (Link) /Parent 4 0 R /A << /S /URI /URI (https://example.com) >> /Prev 7 0 R >>"
+    ]);
+}
+
+describe("outlines with named or partial destinations", () => {
+    let viewer: InstalledViewer;
+
+    afterEach(() => {
+        vi.useRealTimers();
+        uninstallViewerApp();
+    });
+
+    it("resolves named destinations and skips the entries that lead nowhere", async () => {
+        viewer = await installViewerApp(mixedDestinationsPdf());
+        await extractAndSendToc();
+        setupScrollToHeading();
+
+        expect(viewer.lastMessageOfType("pdfjs-viewer-toc").data.map((item: any) => item.title))
+            .toEqual([ "Named", "Missing", "Fit", "Link" ]);
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-1" });
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-3" });
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
+        await vi.waitFor(() => expect(viewer.pdfLinkService.goToDestination).toHaveBeenCalled());
+
+        // Only "Named" leads anywhere: "Missing" resolves to nothing and "Link" has no destination.
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(viewer.pdfLinkService.goToDestination).toHaveBeenCalledOnce();
+        const [ dest ] = viewer.pdfLinkService.goToDestination.mock.calls[0];
+        expect(dest[3]).toBe(500);
+    });
+
+    it("places a destination without a y coordinate at the bottom of its page", async () => {
+        vi.useFakeTimers();
+        viewer = await installViewerApp(mixedDestinationsPdf(), { 0: { offsetTop: 0, clientHeight: 800 } });
+        await extractAndSendToc();
+        setupActiveHeadingTracking();
+
+        // "Named" sits at screen y=300 and "Fit", taken as y=0, at the bottom of the page, y=800.
+        viewer.scrollTo(800);
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-2");
+
+        viewer.scrollTo(300);
+        viewer.eventBus.dispatch("pagechanging", { source: null, pageNumber: 1 });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(viewer.lastMessageOfType("pdfjs-viewer-active-heading")?.headingId).toBe("pdf-outline-0");
+    });
+
+    it("logs a destination pdf.js fails to resolve", async () => {
+        viewer = await installViewerApp(mixedDestinationsPdf());
+        await extractAndSendToc();
+        setupScrollToHeading();
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.spyOn(viewer.pdfDocument, "getDestination").mockRejectedValue(new Error("boom"));
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
+        await vi.waitFor(() => expect(error).toHaveBeenCalled());
+
+        expect(viewer.pdfLinkService.goToDestination).not.toHaveBeenCalled();
+    });
+});
+
+describe("before the outline is extracted", () => {
+    afterEach(() => uninstallViewerApp());
+
+    it("ignores a request to scroll to a heading", async () => {
+        // A fresh module, so no earlier test has left an outline behind.
+        vi.resetModules();
+        const toc = await import("./toc");
+        const viewer = await installViewerApp(allFeaturesPdf());
+        toc.setupScrollToHeading();
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-heading", headingId: "pdf-outline-0" });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        expect(viewer.pdfLinkService.goToDestination).not.toHaveBeenCalled();
+    });
+});

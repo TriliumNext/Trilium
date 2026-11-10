@@ -455,9 +455,20 @@ describe("scrolling to an annotation", () => {
         viewer = await installViewerApp(allFeaturesPdf(), PAGES);
         await setupPdfAnnotations();
         const app = window.PDFViewerApplication;
-        editedInSession([ [ "pdfjs_internal_editor_0", { id: "17R", pageIndex: 1, deleted: true } ] ]);
+        editedInSession([
+            [ "pdfjs_internal_editor_0", { id: "17R", pageIndex: 1, deleted: true } ],
+            [ "pdfjs_internal_editor_1", { id: null, pageIndex: 0 } ]
+        ]);
 
         viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "17R", pageNumber: 2 });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(2));
+
+        // An editor pdf.js has not given a rectangle yet.
+        viewer.sendFromParent({
+            type: "trilium-scroll-to-annotation", annotationId: "pdfjs_internal_editor_1", pageNumber: 1
+        });
+        await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(1));
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", pageNumber: 2 });
         await vi.waitFor(() => expect(app?.pdfViewer.currentPageNumber).toBe(2));
 
         viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "99R", pageNumber: 1 });
@@ -493,5 +504,24 @@ describe("scrolling to an annotation", () => {
 
         pagesLoaded();
         await vi.waitFor(() => expect(viewer.scrollRequests).toHaveBeenCalled());
+    });
+
+    it("drops a scroll whose viewer is torn down before the initial view settles", async () => {
+        viewer = await installViewerApp(allFeaturesPdf(), PAGES);
+        const app = window.PDFViewerApplication;
+        if (!app) throw new Error("viewer not installed");
+        let pagesLoaded = () => {};
+        (app.pdfViewer as any).pagesPromise = new Promise<void>((resolve) => { pagesLoaded = resolve; });
+        trackInitialView(app);
+        await setupPdfAnnotations();
+
+        viewer.sendFromParent({ type: "trilium-scroll-to-annotation", annotationId: "18R", pageNumber: 2 });
+        delete window.PDFViewerApplication;
+        viewer.eventBus.dispatch("documentinit", { source: null });
+        pagesLoaded();
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(viewer.scrollRequests).not.toHaveBeenCalled();
+        expect(app.pdfViewer.currentPageNumber).toBe(1);
     });
 });

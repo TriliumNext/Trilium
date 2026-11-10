@@ -138,6 +138,37 @@ describe("downloading an attachment", () => {
         expect(click).not.toHaveBeenCalled();
     });
 
+    it("names the download after its id when pdf.js lists no filename for it", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        const anchors = captureDownload();
+        vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:fixture");
+        vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+        await setupPdfAttachments();
+        vi.spyOn(viewer.pdfDocument, "getAttachments")
+            .mockResolvedValueOnce(new Map([ [ "notes.txt", { filename: "Renamed.txt" } ] ]) as never)
+            .mockResolvedValueOnce(null as never);
+
+        viewer.sendFromParent({ type: "trilium-download-attachment", id: "notes.txt" });
+        await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(1));
+        viewer.sendFromParent({ type: "trilium-download-attachment", id: "notes.txt" });
+        await vi.waitFor(() => expect(click).toHaveBeenCalledTimes(2));
+
+        expect(anchors.map((anchor) => anchor.download)).toEqual([ "Renamed.txt", "notes.txt" ]);
+    });
+
+    it("logs and starts no download when reading the attachment fails", async () => {
+        viewer = await installViewerApp(allFeaturesPdf());
+        captureDownload();
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+        await setupPdfAttachments();
+        vi.spyOn(viewer.pdfDocument, "getAttachmentContent").mockRejectedValue(new Error("boom"));
+
+        viewer.sendFromParent({ type: "trilium-download-attachment", id: "notes.txt" });
+        await vi.waitFor(() => expect(error).toHaveBeenCalled());
+
+        expect(click).not.toHaveBeenCalled();
+    });
+
     it("ignores download requests from another origin", async () => {
         viewer = await installViewerApp(allFeaturesPdf());
         captureDownload();
