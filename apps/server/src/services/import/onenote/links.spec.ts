@@ -126,6 +126,18 @@ describe("rewritePageLinks", () => {
         }
     });
 
+    it("keeps a second internal link to the same page that follows a reference link", () => {
+        const html = `<p>See ${internalLink("Second page")} and ${internalLink("read it again")}.</p>`;
+        const paragraph = parse(rewritePageLinks(html, resolveSecondPage())).querySelector("p");
+        const anchors = paragraph?.querySelectorAll("a") ?? [];
+
+        expect(anchors.map((a) => [a.getAttribute("href"), a.getAttribute("class") ?? null, a.textContent])).toEqual([
+            ["#root/noteABC123", "reference-link", "Second page"],
+            ["#root/noteABC123", null, "read it again"]
+        ]);
+        expect(paragraph?.textContent).toBe("See Second page and read it again.");
+    });
+
     it("keeps the web-view link when the internal link is a plain (non-matching) link", () => {
         const html = `<p>Go to ${internalLink("click here")} (<a href="https://onedrive.live.com/x?wd=target(${SECOND_PAGE_GUID})">Web view</a>).</p>`;
         const out = rewritePageLinks(html, resolveSecondPage());
