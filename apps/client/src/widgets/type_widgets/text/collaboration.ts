@@ -1,7 +1,18 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CollabPeer } from "@triliumnext/commons";
+
 import type FNote from "../../../entities/fnote";
 import { randomString } from "../../../services/utils";
-import { sendCollaborationMessage, subscribeToConnection, subscribeToMessages } from "../../../services/ws";
+import {
+    sendCollaborationMessage, subscribeToConnection, subscribeToMessages
+} from "../../../services/ws";
+
+interface CollaborationCallbacks {
+    /** The editor now saves the note, and holds changes the previous saver may not have saved. */
+    onBecomeSaver(): void;
+    /** An editor joined or left the session; `peers` are the others in it. */
+    onPeersChange(peers: CollabPeer[]): void;
+}
 
 /** The editors that are in a session, which the messages of the server are handed to. */
 const editors = new Set<CKTextEditor>();
@@ -12,7 +23,11 @@ let isListening = false;
  * several users. In a session the content comes from the other editors of the note, and only the
  * editor the server picks saves it (see `isSavedByAnotherEditor()`).
  */
-export function startCollaboration(editor: CKTextEditor, note: FNote, onBecomeSaver: () => void) {
+export function startCollaboration(
+    editor: CKTextEditor,
+    note: FNote,
+    { onBecomeSaver, onPeersChange }: CollaborationCallbacks
+) {
     if (!window.glob.currentUser || note.isProtected) {
         return;
     }
@@ -27,7 +42,8 @@ export function startCollaboration(editor: CKTextEditor, note: FNote, onBecomeSa
             if (isSaver) {
                 onBecomeSaver();
             }
-        }
+        },
+        onPeersChange
     });
 }
 

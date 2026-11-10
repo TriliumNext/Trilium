@@ -1,4 +1,4 @@
-import type { CollabClientMessage, CollabServerMessage } from "@triliumnext/commons";
+import type { CollabClientMessage, CollabPeer, CollabServerMessage } from "@triliumnext/commons";
 import {
     _getModelData, _setModelData, Bold, type ClassicEditor, Essentials, Heading, Italic, List, type ModelRange,
     Paragraph, Table
@@ -16,6 +16,7 @@ import Collaboration from "./collaboration.js";
 const PLUGINS = [ Essentials, Paragraph, Bold, Italic, Heading, List, Table, Collaboration ];
 const NOTE_ID = "note";
 const HASH_DELAY = 500;
+const SELECTION_DELAY = 100;
 
 const INITIAL_DATA = [
     "<h2>Title</h2>",
@@ -191,11 +192,12 @@ describe("Collaboration", () => {
 
             vi.advanceTimersByTime(HASH_DELAY);
             expect(first.isReadOnly).toBe(false);
-            network.deliver("up", "writer1");
-            network.deliver("up", "writer2");
-            network.deliver("down", "writer1");
+            while (!first.isReadOnly && network.deliverRandom()) {
+                // The server compares the hashes and asks the saver for its model.
+            }
             // The saver does not change until the server has given its model to the others.
             expect(first.isReadOnly).toBe(true);
+            expect(network.count("collab-reset")).toBe(0);
             network.drain();
 
             expect(network.count("collab-reset")).toBe(2);
@@ -277,6 +279,169 @@ describe("Collaboration", () => {
         });
     });
 
+    describe("cursors", () => {
+        /** The cursors an editor shows, as the marker of each with its range in the model. */
+        function cursorsOf(editor: ClassicEditor) {
+            return Object.fromEntries(Array.from(editor.model.markers, (marker) => [
+                marker.name, `${marker.getStart().path.join(".")}-${marker.getEnd().path.join(".")}`
+            ]));
+        }
+
+        function select(editor: ClassicEditor, start: number[], end = start, backward = false) {
+            const { model } = editor;
+            model.change((writer) => writer.setSelection(model.createRange(
+                model.createPositionFromPath(root(editor), start), model.createPositionFromPath(root(editor), end)
+            ), { backward }));
+        }
+
+        async function joinTwo() {
+            useFakeTimers();
+            const network = new Network();
+            const first = await network.addEditor("writer1", "<p>Hello world</p>");
+            const second = await network.addEditor("writer2", "");
+            network.drain();
+            // Each editor sends where it is to the one that joined.
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            return { network, first, second };
+        }
+
+        it("shows the caret of another editor with the name and color of its user", async () => {
+            const { network, first, second } = await joinTwo();
+            expect(network.peers.get("writer1")).toEqual([ "writer2" ]);
+            expect(network.peers.get("writer2")).toEqual([ "writer1" ]);
+
+            select(first, [ 0, 5 ]);
+            expect(cursorsOf(second)).not.toHaveProperty("collab-caret:1", "0.5-0.5");
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.5-0.5" });
+            expect(cursorsOf(first)).not.toHaveProperty("collab-caret:1");
+
+            const caret = second.editing.view.getDomRoot()?.querySelector<HTMLElement>(".collab-caret");
+            expect(caret?.dataset.username).toBe("writer1");
+            expect(caret?.style.getPropertyValue("--collab-hue")).toBe("100");
+            expect(caret?.previousSibling?.textContent?.replaceAll("\u2060", "")).toBe("Hello");
+            // The cursor is not content: it is neither saved nor sent to anyone.
+            expect(second.getData()).toBe("<p>Hello world</p>");
+            expect(network.count("collab-ops")).toBe(0);
+
+            // The caret follows the text typed before it.
+            typeAt(second, [ 0, 0 ], ">>");
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.7-0.7" });
+        });
+
+        it("highlights a selected range, with the caret at the end the user extends", async () => {
+            const { network, first, second } = await joinTwo();
+
+            select(first, [ 0, 0 ], [ 0, 5 ], true);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.0-0.0", "collab-selection:1": "0.0-0.5" });
+            const highlight = second.editing.view.getDomRoot()?.querySelector<HTMLElement>(".collab-selection");
+            expect(highlight?.textContent).toBe("Hello");
+            expect(highlight?.style.getPropertyValue("--collab-hue")).toBe("100");
+
+            select(first, [ 0, 6 ], [ 0, 11 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.11-0.11", "collab-selection:1": "0.6-0.11" });
+
+            select(first, [ 0, 2 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.2-0.2" });
+            expect(cursorsOf(second)).not.toHaveProperty("collab-selection:1");
+        });
+
+        it("sends the selection once the server has every edit, and again when it came too late", async () => {
+            const { network, first, second } = await joinTwo();
+
+            // The selection waits for the acknowledgement of the text typed with it.
+            typeAt(first, [ 0, 5 ], "!");
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            expect(network.sent.at(-1)?.type).toBe("collab-ops");
+            network.drain();
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.6-0.6" });
+
+            // A selection that reaches the server after a batch of another editor is refused.
+            select(first, [ 0, 0 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            typeAt(second, [ 0, 6 ], "?");
+            network.deliver("up", "writer2");
+            network.drain();
+            expect(network.count("collab-selection-rejected")).toBe(1);
+            expect(cursorsOf(second)).not.toMatchObject({ "collab-caret:1": "0.0-0.0" });
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.drain();
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.0-0.0" });
+        });
+
+        it("places a selection behind the edits the server has not accepted yet", async () => {
+            const { network, first, second } = await joinTwo();
+
+            select(first, [ 0, 5 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            network.deliver("up", "writer1");
+            // The second editor types before the caret, which was sent without knowing of it.
+            typeAt(second, [ 0, 0 ], "> ");
+            network.deliver("down", "writer2");
+            expect(cursorsOf(second)).toMatchObject({ "collab-caret:1": "0.7-0.7" });
+        });
+
+        it("hides the cursor of an editor that left, sent no range or one that leads nowhere", async () => {
+            const { network, first, second } = await joinTwo();
+            const plugin = second.plugins.get("Collaboration");
+            const selection = (ranges: { start: number[]; end: number[] }[]) => plugin.receive({
+                type: "collab-selection", noteId: NOTE_ID, memberId: "writer2", epoch: network.epoch, peerId: "1",
+                selection: { ranges, isBackward: false }
+            });
+            expect(cursorsOf(second)).toHaveProperty("collab-caret:1");
+
+            selection([]);
+            expect(cursorsOf(second)).toEqual({});
+            selection([ { start: [ 0, 1 ], end: [ 0, 3 ] } ]);
+            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.3-0.3", "collab-selection:1": "0.1-0.3" });
+            selection([ { start: [ 9, 9 ], end: [ 9, 9 ] } ]);
+            expect(cursorsOf(second)).toEqual({});
+
+            // A list of peers that still names the editor keeps its cursor, and a stranger gets none.
+            selection([ { start: [ 0, 1 ], end: [ 0, 1 ] } ]);
+            const peer = { peerId: "1", userId: "writer1", username: "writer1", avatarHue: 100 };
+            plugin.receive({ type: "collab-peers", noteId: NOTE_ID, memberId: "writer2", peers: [ peer ] });
+            plugin.receive({
+                type: "collab-selection", noteId: NOTE_ID, memberId: "writer2", epoch: network.epoch, peerId: "9",
+                selection: { ranges: [ { start: [ 0, 2 ], end: [ 0, 2 ] } ], isBackward: false }
+            });
+            expect(cursorsOf(second)).toEqual({ "collab-caret:1": "0.1-0.1" });
+
+            first.plugins.get("Collaboration").stop();
+            network.drain();
+            expect(network.peers.get("writer2")).toEqual([]);
+            expect(cursorsOf(second)).toEqual({});
+
+            // An editor outside a session has nobody to tell where it is.
+            const sent = network.sent.length;
+            select(first, [ 0, 3 ]);
+            vi.advanceTimersByTime(SELECTION_DELAY);
+            expect(network.sent).toHaveLength(sent);
+        });
+
+        it("drops the cursors on a reset, and shows them again from what the editors send", async () => {
+            const { network, first, second } = await joinTwo();
+            expect(cursorsOf(second)).toHaveProperty("collab-caret:1");
+
+            second.plugins.get("Collaboration").receive({
+                type: "collab-reset", noteId: NOTE_ID, memberId: "writer2", epoch: network.epoch,
+                snapshot: { main: [ { name: "paragraph", children: [ { data: "Hello world" } ] } ], graveyard: [] }
+            });
+            expect(cursorsOf(second)).toEqual({});
+            expect(first.getData()).toBe("<p>Hello world</p>");
+        });
+    });
+
     it("ends with the same model in every editor after random concurrent edits", async () => {
         useFakeTimers();
         const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -333,6 +498,8 @@ class Network {
     readonly sent: CollabClientMessage[] = [];
     readonly received: CollabServerMessage[] = [];
     readonly saverChanges: string[] = [];
+    /** The names of the other editors, as each editor was last told. */
+    readonly peers = new Map<string, string[]>();
     epoch = 1;
     version = 0;
 
@@ -340,10 +507,13 @@ class Network {
     private wires = new Map<string, (CollabClientMessage | CollabServerMessage)[]>();
     private sessions = new CollaborationSessions({
         send: (clientId, message) => this.wire("down", clientId).push(message),
-        getAccess: (_noteId, userId) => (userId === "stranger" ? null : { canWrite: userId === "writer" })
+        getAccess: (_noteId, userId = "") => (userId.startsWith("stranger") ? null : {
+            canWrite: userId.startsWith("writer"),
+            user: { userId, username: userId, avatarHue: 100 * Number(userId.at(-1)) }
+        })
     });
 
-    /** Creates an editor with the content and joins it. The name without its digits is the user. */
+    /** Creates an editor with the content and joins it. Its name is also its user. */
     async addEditor(id: string, data: string, create = () => createTestEditor(PLUGINS, { initialData: data })) {
         const editor = await create();
         this.editors.set(id, editor);
@@ -356,7 +526,8 @@ class Network {
             noteId: NOTE_ID,
             memberId: id,
             send: (message: CollabClientMessage) => this.send(id, message),
-            onSaverChange: (isSaver: boolean) => this.saverChanges.push(`${id}:${isSaver}`)
+            onSaverChange: (isSaver: boolean) => this.saverChanges.push(`${id}:${isSaver}`),
+            onPeersChange: (peers: CollabPeer[]) => this.peers.set(id, peers.map((peer) => peer.username))
         };
     }
 
@@ -383,7 +554,7 @@ class Network {
             throw new Error(`Nothing to deliver ${direction} for ${id}.`);
         }
         if (direction === "up") {
-            this.sessions.handleMessage(id, id.replace(/\d+$/, ""), message as CollabClientMessage);
+            this.sessions.handleMessage(id, id, message as CollabClientMessage);
             return;
         }
 

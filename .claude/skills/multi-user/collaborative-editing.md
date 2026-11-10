@@ -1,6 +1,6 @@
 # Collaborative editing of text notes (OT on CKEditor 5)
 
-Status: MVP implemented for text notes on a server with users. Cursors, the other note types and the items under [Open work](#open-work) are not built.
+Status: implemented for text notes on a server with users, with cursors and presence. The other note types and the items under [Open work](#open-work) are not built.
 
 **Goal:** several users edit one text note at the same time on a multi-user server. The server only orders and relays edits; it never interprets the document, and saving keeps using the existing blob path.
 
@@ -14,7 +14,9 @@ Status: MVP implemented for text notes on a server with users. Cursors, the othe
 | Session registry, pure logic without imports | `packages/trilium-core/src/services/collaboration_sessions.ts` |
 | Wiring to the messaging provider and the access check | `packages/trilium-core/src/services/collaboration.ts`, called from `ws.init()` |
 | User of a connection, disconnect notification | `getClientUserId()` / `onClientDisconnected()` on `MessagingProvider`, implemented by `WebSocketMessagingProvider` only |
-| Editor side: queues, transformation, snapshots, hashes | `Collaboration` plugin, `packages/ckeditor5/src/plugins/collaboration.ts` |
+| Editor side: queues, transformation, snapshots, hashes, sending the selection | `Collaboration` plugin, `packages/ckeditor5/src/plugins/collaboration.ts` |
+| Cursors of the other editors | `PeerCursors`, `packages/ckeditor5/src/plugins/collaboration_cursors.ts`, styled by `theme/collaboration.css` |
+| Avatars of the other users in the title row | `CollaboratorsBadge` in `NoteBadges.tsx`, fed through the `collaborators` context data |
 | Client glue: joining, message dispatch, who saves | `apps/client/src/widgets/type_widgets/text/collaboration.ts`, used by `EditableText.tsx` |
 
 The plugin spec (`collaboration.spec.ts` in `packages/ckeditor5`) runs real editors against the real `CollaborationSessions` over an in-memory network with random delivery, including the Trilium editor build. The registry has no imports so that spec can load it.
@@ -30,6 +32,8 @@ One session per note, in memory. `version` counts the accepted batches since the
 - **Divergence.** CKEditor's transformations do not always converge (see below). A settled editor sends `collab-hash` of its content 500 ms after the last batch; the server compares the hashes of one version. On a mismatch, or when an editor reports `collab-error` because a batch did not apply, the server asks the saver for an authoritative snapshot and sends `collab-reset`: a new epoch at version 0, the saver's model for everyone, undo stacks cleared. Unacknowledged edits of the other editors are lost.
 - **Saving.** The saver is the writer that has been in the session the longest (`collab-saver`). It saves through the normal spaced update; the others skip their saves (`isSavedByAnotherEditor()`) and ignore the saved content that comes back (`isCollaboratingOn()`). An editor that becomes the saver schedules a save.
 - **Access.** `collab-join` is refused unless `permission_service.canUserAccessNote()` passes and the note is an unprotected text note. Operations and snapshots are accepted only from members with `canUserWriteNote()`; the others follow along with a read-only editor. A snapshot from a reader is never used, since it becomes the content of everyone else.
+- **Presence.** After every join and leave the server sends each member `collab-peers`: the other members with their user and avatar hue. A user with the note open twice is two peers; the badge shows them once.
+- **Cursors.** A selection is paths, which only mean the same in the same model. So an editor sends `collab-selection` when it is settled, with its version, and the server relays it only while that version is current; otherwise it answers `collab-selection-rejected` and the editor sends again. The receiver holds that version plus its own unacknowledged operations, and transforms the ranges over them (`getTransformedByOperation()`). The cursor is two markers without operations, `collab-caret:<peerId>` and `collab-selection:<peerId>`, because `markerToElement` and `markerToHighlight` cannot both convert one marker. They follow later edits as live ranges, are dropped on a reset, and never reach the saved note.
 - **Reconnecting.** The server drops a member when its connection closes. The client rejoins on every WebSocket open and takes the snapshot of the others, losing what it had not sent.
 
 ## What the spike measured
@@ -54,7 +58,6 @@ Three stock editors, 30 random edits per run, 300 runs per cell; the columns are
 ## Open work
 
 - **Trilium's plugins under load.** Only a smoke test covers the full editor build. Run the random spec on it and look at plugins with post-fixers (`registerPostFixer` under `packages/ckeditor5/src/plugins`) and at marker operations for local-only markers leaking into the stream.
-- **Cursors and presence.** Markers without operations (`usingOperation: false`) rendered with `markerToHighlight` / `markerToElement`, sent over a new message.
 - **Writes outside the session** (ETAPI, a script, an import, sync, a note edited inside another note) do not reach the editors; the saver's next save overwrites them. The session should end and the editors reload.
 - **Attachments edited by a member that is not the saver** are not saved, since its whole save is skipped.
 - **Desktop and standalone** have no sessions: their providers do not know the user of a connection, and a join is refused.

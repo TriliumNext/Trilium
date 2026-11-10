@@ -192,8 +192,10 @@ export default function EditableText({
     /** Edits the whole note together with the other editors that have it open. */
     function collaborate(editor: CKTextEditor) {
         if (block === undefined) {
-            // The editor that takes over the saving holds changes the previous one may not have saved.
-            startCollaboration(editor, note, () => spacedUpdate.scheduleUpdate());
+            startCollaboration(editor, note, {
+                onBecomeSaver: () => spacedUpdate.scheduleUpdate(),
+                onPeersChange: (peers) => noteContext?.setContextData("collaborators", peers)
+            });
         }
     }
 

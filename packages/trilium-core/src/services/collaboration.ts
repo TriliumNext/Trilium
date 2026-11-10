@@ -1,9 +1,10 @@
-import type { CollabClientMessage } from "@triliumnext/commons";
+import { type CollabClientMessage, getAvatarHues } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
 import { CollaborationSessions } from "./collaboration_sessions.js";
 import type { MessagingProvider } from "./messaging/types.js";
 import permissionService from "./permission_service.js";
+import userService from "./user_service.js";
 
 /**
  * Runs the sessions over the messaging provider, and returns the handler of their messages. Only
@@ -39,5 +40,13 @@ function getNoteAccess(noteId: string, userId: string | undefined) {
     if (!permissionService.canUserAccessNote(noteId, userId)) {
         return null;
     }
-    return { canWrite: permissionService.canUserWriteNote(noteId, userId) };
+    const users = userService.listUsers();
+    const user = users.find((candidate) => candidate.userId === userId);
+    if (!user) {
+        return null;
+    }
+    return {
+        canWrite: permissionService.canUserWriteNote(noteId, userId),
+        user: { userId, username: user.username, avatarHue: getAvatarHues(users).get(userId) ?? 0 }
+    };
 }

@@ -1,5 +1,11 @@
-import type { CollabClientMessage, CollabServerMessage, CollabSnapshot } from "@triliumnext/commons";
-import { type ModelRootElement, type ModelWriter, type Operation, OperationFactory, Plugin, transformOperationSets } from "ckeditor5";
+import type {
+    CollabClientMessage, CollabPeer, CollabSelection, CollabServerMessage, CollabSnapshot
+} from "@triliumnext/commons";
+import {
+    type ModelRootElement, type ModelWriter, type Operation, OperationFactory, Plugin, transformOperationSets
+} from "ckeditor5";
+
+import PeerCursors from "./collaboration_cursors.js";
 
 /** What the host passes to put the editor in the session of a note. */
 export interface CollaborationSession {
@@ -9,6 +15,8 @@ export interface CollaborationSession {
     send(message: CollabClientMessage): void;
     /** Called when the editor starts or stops being the one that saves the note. */
     onSaverChange?(isSaver: boolean): void;
+    /** Called when an editor joins or leaves the session, with the other editors in it. */
+    onPeersChange?(peers: CollabPeer[]): void;
 }
 
 type Outgoing = CollabClientMessage extends infer M ? M extends unknown ? Omit<M, "noteId" | "memberId"> : never : never;
@@ -17,6 +25,9 @@ const READ_ONLY_LOCK = "collaboration";
 
 /** How long the editor waits after the last batch before it reports the hash of its content. */
 const HASH_DELAY = 500;
+
+/** How long the editor waits after its selection moved before it sends it. */
+const SELECTION_DELAY = 100;
 
 /**
  * Edits a note together with the other editors that have it open. The server orders the operation
@@ -27,6 +38,8 @@ const HASH_DELAY = 500;
  * The transformations of CKEditor do not always converge, so the editors report a hash of their
  * content, and the server resets the session from one editor when two hashes differ or when an
  * editor cannot apply a batch.
+ *
+ * Each editor also sends its selection, which the others show as a cursor (`PeerCursors`).
  */
 export default class Collaboration extends Plugin {
 
@@ -55,9 +68,14 @@ export default class Collaboration extends Plugin {
     private isApplying = false;
     private isSnapshotRequested = false;
     private hashTimer?: ReturnType<typeof setTimeout>;
+    private cursors!: PeerCursors;
+    /** Whether the selection changed since the editor sent it, or the server did not relay it. */
+    private isSelectionDirty = false;
+    private selectionTimer?: ReturnType<typeof setTimeout>;
 
     init() {
         const model = this.editor.model;
+        this.cursors = new PeerCursors(this.editor);
 
         model.on("applyOperation", (_event, [ operation ]: [ Operation ]) => {
             // A post-fixer adds its operations to the batch it fixes, so the ones that follow
@@ -68,6 +86,12 @@ export default class Collaboration extends Plugin {
             }
         }, { priority: "lowest" });
         model.document.on("change", () => this.flush());
+        // An edit elsewhere moves the selection too, which the other editors work out themselves.
+        model.document.selection.on("change:range", (_event, { directChange }) => {
+            if (directChange && this.isActive) {
+                this.scheduleSelection();
+            }
+        });
     }
 
     override destroy() {
@@ -120,6 +144,8 @@ export default class Collaboration extends Plugin {
             this.leave();
         } else if (message.type === "collab-saver") {
             this.setSaver(message.isSaver);
+        } else if (message.type === "collab-peers") {
+            this.setPeers(message.peers);
         } else if (message.type === "collab-joined") {
             this.canWrite = message.canWrite;
             this.restart(message.epoch, message.snapshot, message.batches);
@@ -145,6 +171,10 @@ export default class Collaboration extends Plugin {
             this.receiveBatch(message.ops, message.isOwn);
         } else if (message.type === "collab-rejected") {
             this.sendInFlight();
+        } else if (message.type === "collab-selection") {
+            this.showSelection(message.peerId, message.selection);
+        } else if (message.type === "collab-selection-rejected") {
+            this.scheduleSelection();
         } else {
             this.isSnapshotRequested = true;
             this.sendSnapshotWhenSettled();
@@ -160,6 +190,8 @@ export default class Collaboration extends Plugin {
 
     private leave() {
         clearTimeout(this.hashTimer);
+        clearTimeout(this.selectionTimer);
+        this.setPeers([]);
         this.state = "idle";
         this.inFlight = [];
         this.pending = [];
@@ -204,6 +236,9 @@ export default class Collaboration extends Plugin {
         this.editor.commands.get("redo")?.clearStack();
         this.state = "joined";
         this.updateLock();
+        // The cursors pointed into the content that was replaced, and nobody has this selection yet.
+        this.cursors.clear();
+        this.scheduleSelection();
     }
 
     private receiveBatch(ops: unknown[], isOwn: boolean) {
@@ -223,6 +258,9 @@ export default class Collaboration extends Plugin {
         this.sendSnapshotWhenSettled();
         clearTimeout(this.hashTimer);
         this.hashTimer = setTimeout(() => this.sendHash(), HASH_DELAY);
+        if (this.isSelectionDirty) {
+            this.scheduleSelection();
+        }
     }
 
     /** Transforms a batch of another editor over the local operations, and those over the batch. */
@@ -313,6 +351,72 @@ export default class Collaboration extends Plugin {
                 version: this.version,
                 hash: hashNodes(this.takeSnapshot().main)
             });
+        }
+    }
+
+    private setPeers(peers: CollabPeer[]) {
+        const hasNewPeer = peers.some((peer) => !this.cursors.has(peer.peerId));
+        this.cursors.setPeers(peers);
+        this.session?.onPeersChange?.(peers);
+        if (hasNewPeer) {
+            // An editor that just joined has not seen the selection yet.
+            this.scheduleSelection();
+        }
+    }
+
+    /** Sends the selection once it has stopped moving and the editor is settled. */
+    private scheduleSelection() {
+        this.isSelectionDirty = true;
+        clearTimeout(this.selectionTimer);
+        this.selectionTimer = setTimeout(() => this.sendSelection(), SELECTION_DELAY);
+    }
+
+    private sendSelection() {
+        // The paths only mean the same to the other editors in the model of a version. An editor
+        // that is not settled sends once its last batch is acknowledged.
+        if (!this.isSettled) {
+            return;
+        }
+        const selection = this.editor.model.document.selection;
+        const root = getMainRoot(this.editor);
+        this.isSelectionDirty = false;
+        this.send({
+            type: "collab-selection",
+            epoch: this.epoch,
+            version: this.version,
+            selection: {
+                ranges: Array.from(selection.getRanges())
+                    .filter((range) => range.root === root)
+                    .map((range) => ({ start: [ ...range.start.path ], end: [ ...range.end.path ] })),
+                isBackward: selection.isBackward
+            }
+        });
+    }
+
+    /** Shows the selection of another editor, which is given in the model of the current version. */
+    private showSelection(peerId: string, selection: CollabSelection) {
+        if (!this.cursors.has(peerId)) {
+            return;
+        }
+        const model = this.editor.model;
+        const root = getMainRoot(this.editor);
+        try {
+            let ranges = selection.ranges.map(({ start, end }) => model.createRange(
+                model.createPositionFromPath(root, start), model.createPositionFromPath(root, end)
+            ));
+            // This editor is ahead of that version by its own unacknowledged operations.
+            for (const operation of [ ...this.inFlight, ...this.pending ]) {
+                ranges = ranges.flatMap((range) => range.getTransformedByOperation(operation));
+            }
+            const range = ranges.find((candidate) => candidate.root === root);
+            if (range) {
+                // A path that leads nowhere throws here, not where the position is created.
+                range.start.getAncestors();
+                range.end.getAncestors();
+            }
+            this.cursors.show(peerId, range, selection.isBackward);
+        } catch {
+            this.cursors.show(peerId, undefined, false);
         }
     }
 

@@ -25,12 +25,14 @@ import {
     useTriliumEvent, useTriliumOption
 } from "../react/hooks";
 import Icon from "../react/Icon";
+import UserAvatar from "../react/UserAvatar";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 import { SnippetBadge } from "./SnippetBadge";
 
 export default function NoteBadges() {
     return (
         <div className="note-badges">
+            <CollaboratorsBadge />
             <SaveStatusBadge />
             <ReadOnlyBadge />
             <OfficePreviewBadge />
@@ -40,6 +42,28 @@ export default function NoteBadges() {
             <SnippetBadge />
             <TemplateBadge />
             <ActiveContentBadges />
+        </div>
+    );
+}
+
+/** The avatars of the other users who are editing the note at the moment. */
+export function CollaboratorsBadge() {
+    const { noteContext } = useNoteContext();
+    const collaborators = useGetContextDataFrom(noteContext, "collaborators") ?? [];
+    // A user who has the note open twice shows once.
+    const users = [ ...new Map(collaborators.map((peer) => [ peer.userId, peer ])).values() ];
+    if (!users.length) {
+        return;
+    }
+
+    const names = users.map((user) => user.username).join(", ");
+    return (
+        <div className="collaborators-badge" role="group" aria-label={t("breadcrumb_badges.collaborators", { names })}>
+            {users.map((user) => (
+                <span key={user.userId} title={user.username}>
+                    <UserAvatar username={user.username} hue={user.avatarHue} />
+                </span>
+            ))}
         </div>
     );
 }

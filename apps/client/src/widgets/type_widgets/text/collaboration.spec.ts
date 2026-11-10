@@ -57,20 +57,22 @@ describe("collaboration of the text editor", () => {
     it("joins the session of the note on an instance with users, unless the note is protected", () => {
         const { editor, plugin } = buildEditor();
         const onBecomeSaver = vi.fn();
+        const onPeersChange = vi.fn();
+        const callbacks = { onBecomeSaver, onPeersChange };
 
-        collaboration.startCollaboration(editor, note(true), onBecomeSaver);
+        collaboration.startCollaboration(editor, note(true), callbacks);
         window.glob.currentUser = undefined;
-        collaboration.startCollaboration(editor, note(), onBecomeSaver);
+        collaboration.startCollaboration(editor, note(), callbacks);
         expect(plugin.start).not.toHaveBeenCalled();
         expect(collaboration.isCollaboratingOn(editor, "note")).toBe(false);
         expect(collaboration.isSavedByAnotherEditor(editor)).toBe(false);
 
         window.glob.currentUser = { userId: "user", username: "user", isAdmin: false, avatarHue: 0 };
-        collaboration.startCollaboration(editor, note(), onBecomeSaver);
+        collaboration.startCollaboration(editor, note(), callbacks);
         const session = plugin.start.mock.calls[0]?.[0] as unknown as {
             noteId: string; memberId: string; send: unknown; onSaverChange(isSaver: boolean): void;
         };
-        expect(session).toMatchObject({ noteId: "note", send: sendCollaborationMessage });
+        expect(session).toMatchObject({ noteId: "note", send: sendCollaborationMessage, onPeersChange });
         expect(session.memberId).toHaveLength(10);
         expect(collaboration.isCollaboratingOn(editor, "note")).toBe(true);
         expect(collaboration.isCollaboratingOn(editor, "other")).toBe(false);
@@ -90,7 +92,7 @@ describe("collaboration of the text editor", () => {
         const second = buildEditor();
         const third = buildEditor();
         for (const { editor } of [ first, second, third ]) {
-            collaboration.startCollaboration(editor, note(), vi.fn());
+            collaboration.startCollaboration(editor, note(), { onBecomeSaver: vi.fn(), onPeersChange: vi.fn() });
         }
         expect(messageHandlers).toHaveLength(1);
         expect(connectionHandlers).toHaveLength(1);

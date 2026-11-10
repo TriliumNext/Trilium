@@ -1,10 +1,17 @@
-import type { CollabClientMessage, CollabServerMessage, CollabSnapshot } from "@triliumnext/commons";
+import type {
+    CollabClientMessage, CollabPeer, CollabSelection, CollabServerMessage, CollabSnapshot
+} from "@triliumnext/commons";
 
 /** What a session needs from the instance, so the sessions can run without a transport. */
 export interface CollaborationHost {
     send(clientId: string, message: CollabServerMessage): void;
-    /** What the user can do in a session of the note, or `null` when they cannot join one. */
-    getAccess(noteId: string, userId: string | undefined): { canWrite: boolean } | null;
+    /** Who the user is and what they can do in a session of the note, or `null` when they cannot join one. */
+    getAccess(noteId: string, userId: string | undefined): CollaborationAccess | null;
+}
+
+export interface CollaborationAccess {
+    canWrite: boolean;
+    user: Omit<CollabPeer, "peerId">;
 }
 
 /** The number of versions whose content hash a session keeps to compare the editors. */
@@ -15,6 +22,8 @@ interface Member {
     clientId: string;
     memberId: string;
     canWrite: boolean;
+    /** How the other editors of the session see this one. */
+    peer: CollabPeer;
 }
 
 interface Session {
@@ -34,6 +43,8 @@ interface Session {
     /** The member whose model the pending reset takes. Nothing is accepted until it answers. */
     resetAuthority?: string;
     saver?: string;
+    /** The number of editors that have joined, which names the next one. */
+    peerCount: number;
 }
 
 /**
@@ -80,6 +91,8 @@ export class CollaborationSessions {
             this.receiveOps(session, member, message.baseVersion, message.ops);
         } else if (message.type === "collab-hash") {
             this.receiveHash(session, message.version, message.hash);
+        } else if (message.type === "collab-selection") {
+            this.receiveSelection(session, member, message.version, message.selection);
         } else if (message.type === "collab-error") {
             this.startReset(session);
         }
@@ -108,12 +121,18 @@ export class CollaborationSessions {
         if (!session) {
             session = {
                 noteId, epoch: 1, version: 0, log: [], logStart: 0,
-                members: new Map(), waiting: new Map(), hashes: new Map()
+                members: new Map(), waiting: new Map(), hashes: new Map(), peerCount: 0
             };
             this.sessions.set(noteId, session);
         }
 
-        const member: Member = { key: `${clientId}:${memberId}`, clientId, memberId, canWrite: access.canWrite };
+        const member: Member = {
+            key: `${clientId}:${memberId}`,
+            clientId,
+            memberId,
+            canWrite: access.canWrite,
+            peer: { ...access.user, peerId: String(++session.peerCount) }
+        };
         session.members.delete(member.key);
         session.waiting.delete(member.key);
         this.admit(session, member);
@@ -136,6 +155,7 @@ export class CollaborationSessions {
             type: "collab-joined", epoch: session.epoch, version: session.version, batches: [], canWrite: member.canWrite
         });
         this.updateSaver(session);
+        this.sendPeers(session);
         if (member.canWrite && session.members.size > 1) {
             this.startReset(session);
         }
@@ -156,6 +176,7 @@ export class CollaborationSessions {
             session.resetAuthority = undefined;
         }
         this.updateSaver(session);
+        this.sendPeers(session);
 
         if (!getWriters(session).length) {
             // Nobody is left to provide a snapshot, so the waiting editors start from the saved content.
@@ -249,6 +270,7 @@ export class CollaborationSessions {
         }
         session.waiting.clear();
         this.updateSaver(session);
+        this.sendPeers(session);
     }
 
     private receiveHash(session: Session, version: number, hash: string) {
@@ -263,6 +285,30 @@ export class CollaborationSessions {
             }
         } else if (known !== hash) {
             this.startReset(session);
+        }
+    }
+
+    /** Relays a selection to the other editors, which hold the model it was made in. */
+    private receiveSelection(session: Session, member: Member, version: number, selection: CollabSelection) {
+        if (version !== session.version) {
+            this.send(session, member, { type: "collab-selection-rejected", epoch: session.epoch });
+            return;
+        }
+        for (const other of session.members.values()) {
+            if (other !== member) {
+                this.send(session, other, {
+                    type: "collab-selection", epoch: session.epoch, peerId: member.peer.peerId, selection
+                });
+            }
+        }
+    }
+
+    /** Tells every editor who the others are. */
+    private sendPeers(session: Session) {
+        const members = [ ...session.members.values() ];
+        for (const member of members) {
+            const peers = members.filter((other) => other !== member).map((other) => other.peer);
+            this.send(session, member, { type: "collab-peers", peers });
         }
     }
 

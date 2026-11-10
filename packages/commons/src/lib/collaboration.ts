@@ -14,6 +14,22 @@ export interface CollabSnapshot {
     graveyard: unknown[];
 }
 
+/** Another editor of the session, as its cursor and the list of who is editing show it. */
+export interface CollabPeer {
+    /** Identifies the editor in the session. A user with the note open twice is two peers. */
+    peerId: string;
+    userId: string;
+    username: string;
+    /** The user's hue on the color wheel, from `getAvatarHues()`. */
+    avatarHue: number;
+}
+
+/** The selection of an editor: its ranges as paths in the main root, and where the caret is. */
+export interface CollabSelection {
+    ranges: { start: number[]; end: number[] }[];
+    isBackward: boolean;
+}
+
 /** Identifies the session and the editor in it. A window can show one note in several editors. */
 interface CollabAddress {
     noteId: string;
@@ -43,6 +59,15 @@ export type CollabClientMessage = CollabAddress & ({
     epoch: number;
     version: number;
     hash: string;
+} | {
+    /**
+     * The selection of the editor in the model of `version`, which the editor holds once all its
+     * operations are acknowledged. The server relays it only while that version is current.
+     */
+    type: "collab-selection";
+    epoch: number;
+    version: number;
+    selection: CollabSelection;
 } | {
     /** The editor could not apply the operations of another one, and asks for a reset. */
     type: "collab-error";
@@ -93,4 +118,18 @@ export type CollabServerMessage = CollabAddress & ({
     /** Whether this editor is the one that saves the note. */
     type: "collab-saver";
     isSaver: boolean;
+} | {
+    /** The other editors of the session, sent each time one joins or leaves. */
+    type: "collab-peers";
+    peers: CollabPeer[];
+} | {
+    /** The selection of another editor, in the model of the current version. */
+    type: "collab-selection";
+    epoch: number;
+    peerId: string;
+    selection: CollabSelection;
+} | {
+    /** The selection was for an older version. The editor sends it again once it caught up. */
+    type: "collab-selection-rejected";
+    epoch: number;
 });

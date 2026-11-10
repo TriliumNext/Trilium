@@ -42,8 +42,12 @@ describe("collaboration over the messaging provider", () => {
         const joined = (clientId: string, joinedNoteId = noteId) => {
             sent.length = 0;
             handle(clientId, join(joinedNoteId));
-            return sent.map(({ clientId: target, message }) => [ target, message.type, "canWrite" in message && message.canWrite ]);
+            return summarize();
         };
+        /** What was sent, without the lists of peers that follow every join and leave. */
+        const summarize = () => sent
+            .filter(({ message }) => message.type !== "collab-peers")
+            .map(({ clientId, message }) => [ clientId, message.type, "canWrite" in message && message.canWrite ]);
 
         expect(joined(ownerId)).toEqual([ [ ownerId, "collab-joined", true ], [ ownerId, "collab-saver", false ] ]);
         // The owner is asked for its content on behalf of each editor that joins after it.
@@ -59,8 +63,14 @@ describe("collaboration over the messaging provider", () => {
         disconnect(adminId);
         sent.length = 0;
         disconnect(ownerId);
-        expect(sent.map(({ clientId, message }) => [ clientId, message.type, "canWrite" in message && message.canWrite ]))
-            .toEqual([ [ readerId, "collab-joined", false ] ]);
+        expect(summarize()).toEqual([ [ readerId, "collab-joined", false ] ]);
+
+        // The reader that follows the owner sees them by name, in the color of their avatar.
+        handle(ownerId, join(noteId));
+        const peers = sent.findLast(({ clientId, message }) => clientId === readerId && message.type === "collab-peers");
+        expect(peers?.message).toMatchObject({
+            peers: [ { userId: ownerId, username: "collab-owner-spec", avatarHue: expect.any(Number) } ]
+        });
     });
 
     it("turns down every editor on a provider that does not know the user of a connection", () => {
