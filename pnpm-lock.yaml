@@ -567,8 +567,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       paper:
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.0
+        version: 0.17.0
       paperjs-offset:
         specifier: 2.2.2
         version: 2.2.2
@@ -9383,8 +9383,8 @@ packages:
   pako@2.0.3:
     resolution: {integrity: sha512-WjR1hOeg+kki3ZIOjaf4b5WVcay1jaliKSYiEaB1XzwhMQZJxRdQRv0V31EKBYlxb4T7SK3hjfc/jxyU64BoSw==}
 
-  paper@0.16.0:
-    resolution: {integrity: sha512-MVkNFA40Afe1HbOJfP1i/WBGrEBfo3e8qO/wniNyQbN5RdW+A5JpLxNCYaUk7aFCV1KMDSErmk7ri6tyJ8bJQA==}
+  paper@0.17.0:
+    resolution: {integrity: sha512-AWHQVUNScPN/swbCg0wwb2bTerMieraol76Fpn1s+7Zw7R6mMyI0QltMkj/XOS3Jv+9785q0p4eLsYggn63ZQw==}
     engines: {node: '>=8.0.0'}
 
   paperjs-offset@2.2.2:
@@ -21524,7 +21524,7 @@ snapshots:
 
   pako@2.0.3: {}
 
-  paper@0.16.0: {}
+  paper@0.17.0: {}
 
   paperjs-offset@2.2.2: {}
 
