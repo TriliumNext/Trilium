@@ -219,14 +219,16 @@ const CKEDITOR_REWRITES: SelectorRewrite[] = [
     // A blurred editor shows its selection in the same color as a focused one.
     {
         from: "&.ck-blurred ::selection {\n"
-            + "    background: var(--ck-color-editable-blur-selection, #d9d9d9);\n  }",
+            + "    background: var(--ck-color-editable-blur-selection, "
+            + "var(--ck-editor-editable-blurred-selection-background));\n  }",
         to: "",
         count: 1
     },
     // The icon's `svg *` rule reads its stroke from this variable.
     {
-        from: "& svg * {\n    stroke: var(--ck-color-widget-blurred-border);\n  }",
-        to: "--ck-color-widget-type-around-button-icon: var(--ck-color-widget-blurred-border);",
+        from: "& svg * {\n    stroke: var(--ck-widget-type-around-button-blurred-icon-color);\n  }",
+        to: "--ck-color-widget-type-around-button-icon: "
+            + "var(--ck-widget-type-around-button-blurred-icon-color);",
         count: 1
     }
 ];

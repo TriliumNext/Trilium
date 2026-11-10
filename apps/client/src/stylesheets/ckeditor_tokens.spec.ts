@@ -34,7 +34,7 @@ describe("global CKEditor token overrides", () => {
 
     it("on body reach the tokens CKEditor composes from them", () => {
         const toolbar = staleTokens(rootTokens, new Set([ "--ck-color-base-border" ]));
-        expect(toolbar.get("--ck-toolbar-border")).toBe("--ck-color-base-border");
+        expect(toolbar.get("--ck-toolbar-border-color")).toBe("--ck-color-base-border");
 
         const problems: string[] = [];
         for (const block of ours.filter((b) => matchesEvery(b.stack[0], BODY_ELEMENT))) {
@@ -64,8 +64,9 @@ describe("global CKEditor token overrides", () => {
         const caption = ckeditor.filter((block) => block.stack.some((prelude) =>
             prelude === "@keyframes ck-table-caption-highlight"
                 || prelude.startsWith(".ck-content .table > figcaption")));
+        // `var(--new, var(--legacy))` reads the legacy name only while `--new` is undeclared.
         const colors = new Set(caption.flatMap((block) =>
-            [ ...block.decls.values() ].flatMap(({ value }) => references(value))));
+            [ ...block.decls.values() ].flatMap(({ value }) => references(value).slice(0, 1))));
         const declared = new Set(ours
             .filter((block) => matchesEvery(block.stack[0], ROOT_ELEMENT))
             .flatMap((block) => [ ...block.decls.keys() ]));

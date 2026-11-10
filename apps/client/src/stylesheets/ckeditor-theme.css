@@ -10,8 +10,8 @@ html:root {
     --ck-color-text: var(--main-text-color);
     --ck-color-shadow-drop: var(--main-background-color);
     --ck-color-shadow-inner: var(--main-background-color);
-    --ck-content-color-table-caption-text: var(--main-text-color);
-    --ck-content-color-table-caption-background: var(--accented-background-color);
+    --ck-content-table-caption-text-color: var(--main-text-color);
+    --ck-content-table-caption-background-color: var(--accented-background-color);
     --ck-color-table-caption-highlighted-background: var(--accented-background-color);
 
     /* -- Overrides the default .ck-button class colors. ---------------------------------------- */
