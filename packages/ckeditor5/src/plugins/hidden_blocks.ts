@@ -87,7 +87,7 @@ export default class HiddenBlocks extends Plugin {
 
         // The capture phase runs before `Widget`, which selects a widget next to the caret.
         this.listenTo<ViewDocumentDeleteEvent>(viewDocument, "delete", (evt, data) => {
-            this.expandBeforeDelete(evt, data);
+            this.deleteAtHiddenRun(evt, data);
         }, { context: "$capture", priority: "high" });
         addEditingKeydownCapture(this, (event) => this.moveOverHiddenRun(event));
         this.listenTo<ViewDocumentDragStartEvent>(viewDocument, "dragstart", () => {
@@ -110,9 +110,15 @@ export default class HiddenBlocks extends Plugin {
         return isInOrUnder(node, this.getHidden());
     }
 
-    /** The owner that hides `block` in the editing view, or `null`. */
-    getOwner(block: ModelElement): ModelElement | null {
-        return this.getHidden().get(block)?.owner ?? null;
+    /**
+     * A test for whether a block is one of the hidden blocks, answered as of now: later changes do
+     * not change its answers. A change that moves several blocks reads the blocks that move
+     * together from it, since each move can hide or show blocks.
+     */
+    getHiddenSnapshot(): (block: ModelNode) => boolean {
+        // `getHidden()` replaces its map on a change instead of changing it.
+        const hidden = this.getHidden();
+        return (block) => hidden.has(block as ModelElement);
     }
 
     /** The blocks hidden right after `block`, which move with it. */
@@ -323,10 +329,12 @@ export default class HiddenBlocks extends Plugin {
     }
 
     /**
-     * Expands the owners of the hidden blocks that a delete from a caret reaches, and deletes
-     * nothing. The next press works on the shown blocks.
+     * Keeps a delete from a caret out of the hidden blocks it reaches. When the block right after
+     * the hidden blocks is empty, the delete removes that block: Backspace in it, or Delete before
+     * the hidden blocks. Otherwise the delete expands the owners of the hidden blocks and deletes
+     * nothing, and the next press works on the shown blocks.
      */
-    private expandBeforeDelete(evt: EventInfo, data: DeleteEventData) {
+    private deleteAtHiddenRun(evt: EventInfo, data: DeleteEventData) {
         const model = this.editor.model;
         const selection = model.document.selection;
         if (!selection.isCollapsed || !this.collapsedOwners.size) {
@@ -342,6 +350,23 @@ export default class HiddenBlocks extends Plugin {
 
         data.preventDefault();
         evt.stop();
+        const isForward = data.direction === "forward";
+        const blockAfterRun = (isForward
+            ? getRunEdge(hiddenNode, this.getHidden(), "nextSibling").nextSibling
+            : (selection.focus as ModelPosition).parent) as ModelElement | null;
+        if (blockAfterRun && blockAfterRun.isEmpty && this.holdsText(blockAfterRun)) {
+            // Backspace removes the block of the caret, which goes before the hidden blocks.
+            const target = isForward ? null : this.getRangePastRun(hiddenNode, false);
+            model.change((writer) => {
+                // Undo restores the selection of the first operation, so the removal goes first.
+                writer.remove(blockAfterRun);
+                if (target) {
+                    writer.setSelection(target);
+                }
+            });
+            this.editor.editing.view.scrollToTheSelection();
+            return;
+        }
         model.enqueueChange({ isUndoable: false }, (writer) => {
             for (const { owner, provider } of this.getOwnersAround(hiddenNode)) {
                 provider.expand(writer, owner);

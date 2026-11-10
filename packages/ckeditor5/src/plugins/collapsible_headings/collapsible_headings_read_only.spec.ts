@@ -1,5 +1,5 @@
 import { _setModelData as setModelData, Essentials, Paragraph } from "ckeditor5";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -34,10 +34,13 @@ describe("applyCollapsedHeadings", () => {
         container?.remove();
     });
 
-    function render(html = CONTENT) {
+    function render(html = CONTENT, tabIndex?: number) {
         container = document.createElement("div");
         container.className = "ck-content";
         container.style.setProperty("padding", "0 24px");
+        if (tabIndex !== undefined) {
+            container.tabIndex = tabIndex;
+        }
         container.innerHTML = html;
         document.body.prepend(container);
         dispose = applyCollapsedHeadings(container);
@@ -132,6 +135,48 @@ describe("applyCollapsedHeadings", () => {
         expect(container.querySelector(".trilium-heading-hovered")).toBe(null);
     });
 
+    it("lets Tab reach a heading with blocks under it, and Enter or Space toggle it", async () => {
+        render();
+        expect([ "A", "E", "Listed" ].map((text) => getHeading(text).tabIndex))
+            .toEqual([ 0, -1, -1 ]);
+        dispose();
+        container.remove();
+
+        // The headings take the tab index of the content, so Tab goes from it to them and not to
+        // the controls before it, as the launcher bar is in the app.
+        const control = document.createElement("button");
+        onTestFinished(() => control.remove());
+        render(CONTENT, 100);
+        document.body.prepend(control);
+        const heading = getHeading("A");
+        const press = (target: Element, init: KeyboardEventInit) => {
+            const event = new KeyboardEvent("keydown", {
+                bubbles: true, cancelable: true, ...init
+            });
+            target.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        container.focus();
+        await userEvent.tab();
+        expect(document.activeElement).toBe(heading);
+        await userEvent.tab();
+        expect(document.activeElement).toBe(getHeading("B"));
+        await userEvent.tab({ shift: true });
+        await userEvent.keyboard("{Enter}");
+        expect(read()).toContain("A^, a1, ▸Sub^, (s1)");
+        // The heading with the keyboard focus shows its arrow.
+        await expect.poll(() => getComputedStyle(heading, "::after").opacity).toBe("0.45");
+
+        await userEvent.keyboard(" ");
+        expect(read()).toContain("▸A^, (a1)");
+
+        // Other keys, keys with Ctrl, and keys on other elements do nothing.
+        expect(press(heading, { key: "a" })).toBe(false);
+        expect(press(heading, { key: "Enter", ctrlKey: true })).toBe(false);
+        expect(press(container.querySelector("p") as Element, { key: "Enter" })).toBe(false);
+        expect(read()).toContain("▸A^, (a1)");
+    });
+
     it("expands the headings that hide an element, at every level", () => {
         render();
 
@@ -151,11 +196,13 @@ describe("applyCollapsedHeadings", () => {
         expect(selection.toString()).toContain("intro");
     });
 
-    it("stops answering the pointer once disposed", async () => {
+    it("stops answering the pointer and the keyboard once disposed", async () => {
         render();
         dispose();
 
         await clickArrow(getHeading("A"));
+        getHeading("A").dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
 
         expect(read()).toContain("▸A^, (a1)");
     });

@@ -13,7 +13,7 @@ The collapsed state is saved with the note, so a heading stays collapsed when th
 
 *   Pressing <kbd>Enter</kbd> at the end of a collapsed heading adds a new heading of the same level below the hidden content.
 *   The arrow keys move the cursor past the hidden content.
-*   <kbd>Backspace</kbd> right below a collapsed heading's content, or <kbd>Delete</kbd> at the end of a collapsed heading, expands the heading instead of deleting the hidden content.
+*   <kbd>Backspace</kbd> right below a collapsed heading's content, or <kbd>Delete</kbd> at the end of a collapsed heading, expands the heading instead of deleting the hidden content. If the line right below the hidden content is empty, either key deletes that empty line instead.
 *   Dragging a collapsed heading by its drag handle moves its hidden content along with it.
 *   A collapsed heading expands when content is added to its section, for example by pasting or by dropping a block under it.
 *   _Search in note_, the table of contents and links to a block show hidden content when they lead to it, without expanding the heading.
@@ -21,6 +21,8 @@ The collapsed state is saved with the note, so a heading stays collapsed when th
 ## Read-only notes
 
 The arrow also works in notes shown read-only (see <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>), but there the changes are not saved: the note shows its saved state again when it is reopened.
+
+To use the keyboard there, press <kbd>Tab</kbd> to move to a heading that has content under it, then <kbd>Enter</kbd> or <kbd>Space</kbd> to collapse or expand it.
 
 ## Limitations
 

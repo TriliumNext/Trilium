@@ -45,7 +45,8 @@
         }
     }
 
-    &.trilium-heading-selected::after {
+    &.trilium-heading-selected::after,
+    &:focus-visible::after {
         opacity: 0.45;
     }
 

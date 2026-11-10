@@ -149,12 +149,54 @@ describe("HiddenBlocks", () => {
         });
 
         it("expands without deleting on Delete at the end of a collapsed heading", async () => {
-            setModelData(editor.model, DOCUMENT.replace("Alpha", "Alpha[]"));
+            editor.model.schema.register("footnoteSection", { inheritAllFrom: "$blockObject" });
+            editor.conversion.elementToElement({ model: "footnoteSection", view: "section" });
+            const collapsed = "<heading2 headingCollapsed=\"true\">Alpha[]</heading2>" +
+                "<paragraph>a1</paragraph>";
+            const cases = [
+                [ DOCUMENT.replace("Alpha", "Alpha[]"), "intro, Alpha, a1, a2, Beta, b1" ],
+                // Nothing after the hidden blocks, or the footnotes: an empty block without text.
+                [ collapsed, "Alpha, a1" ],
+                [ `${collapsed}<footnoteSection></footnoteSection>`, "Alpha, a1, footnoteSection" ]
+            ];
+            for (const [ modelData, expected ] of cases) {
+                setModelData(editor.model, modelData);
+                editor.editing.view.focus();
+
+                await userEvent.keyboard("{Delete}");
+
+                expect(outline(editor)).toBe(expected);
+            }
+        });
+
+        it("deletes an empty block after a collapsed section with either key", async () => {
+            const withEmpty = DOCUMENT.replace("<heading2>Beta",
+                "<heading2></heading2><heading2>Beta");
+            const inEmpty = withEmpty.replace("<heading2></heading2>", "<heading2>[]</heading2>");
+            const result = DOCUMENT.replace("Alpha", "Alpha[]");
+            setModelData(editor.model, inEmpty);
             editor.editing.view.focus();
 
-            await userEvent.keyboard("{Delete}");
+            await userEvent.keyboard("{Backspace}");
+            expect(getModelData(editor.model)).toBe(result);
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
 
-            expect(outline(editor)).toBe("intro, Alpha, a1, a2, Beta, b1");
+            // Undo puts back the block and the caret in it.
+            editor.execute("undo");
+            expect(getModelData(editor.model)).toBe(inEmpty);
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), heading2, Beta, b1");
+
+            setModelData(editor.model, withEmpty.replace("Alpha", "Alpha[]"));
+            await userEvent.keyboard("{Delete}");
+            expect(getModelData(editor.model)).toBe(result);
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
+
+            // The blocks under the removed block join the section, which then expands.
+            setModelData(editor.model, DOCUMENT.replace("<heading2>Beta",
+                "<heading2>[]</heading2><paragraph>c1</paragraph><heading2>Beta"));
+            await userEvent.keyboard("{Backspace}");
+            expect(outline(editor)).toBe("intro, Alpha, a1, a2, c1, Beta, b1");
+            expect(getModelData(editor.model)).toContain("Alpha[]</heading2>");
         });
 
         it("expands for a hidden widget at the edge of the section", async () => {
@@ -459,6 +501,27 @@ describe("HiddenBlocks", () => {
             editor.execute("moveBlockDown");
 
             expect(outline(editor)).toBe("Alpha, a1, p, ▸Beta, (b1)");
+        });
+
+        it("moves several selected blocks down in order, each with its own hidden blocks", () => {
+            setModelData(editor.model,
+                "<heading2 headingCollapsed=\"true\">[A</heading2><paragraph>a</paragraph>" +
+                "<heading2>B]</heading2><paragraph>b</paragraph><heading2>C</heading2>");
+
+            editor.execute("moveBlockDown");
+
+            expect(outline(editor)).toBe("b, ▸A, (a), B, C");
+        });
+
+        it("moves several selected blocks up without the block after them", () => {
+            setModelData(editor.model,
+                "<heading2 headingCollapsed=\"true\">P</heading2><paragraph>p</paragraph>" +
+                "<heading2>[S</heading2><paragraph>s]</paragraph><paragraph>t</paragraph>");
+
+            editor.execute("moveBlockUp");
+
+            // The paragraph left behind joins the collapsed section, which expands.
+            expect(outline(editor)).toBe("S, s, P, p, t");
         });
     });
 

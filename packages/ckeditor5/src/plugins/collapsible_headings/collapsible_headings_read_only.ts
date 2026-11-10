@@ -7,8 +7,9 @@ import { CLASSES, COLLAPSED_DATA_ATTRIBUTE } from "./constants.js";
 
 /**
  * Makes the headings of `container`, saved content shown outside an editor, collapsible. The
- * sections of the headings saved as collapsed start hidden, and a click on the arrow at the end of
- * a heading toggles it. A toggle changes classes only, so the saved state stays as it was.
+ * sections of the headings saved as collapsed start hidden. A click on the arrow at the end of a
+ * heading toggles it, and so do Enter and Space on a heading that Tab reaches. A toggle changes
+ * classes only, so the saved state stays as it was.
  *
  * Returns a function that removes the listeners. The module imports only types from CKEditor.
  */
@@ -19,10 +20,16 @@ export function applyCollapsedHeadings(container: HTMLElement) {
     for (const heading of headings) {
         heading.classList.add(CLASSES.sectionHeading);
     }
+    // The headings share the tab index of the container, so that Tab reaches them right after it.
+    const tabIndex = String(Math.max(container.tabIndex, 0));
     const parents = new Set<Element>();
     for (const heading of headings) {
+        const canCollapse = hasSection(heading);
         const isCollapsed = heading.getAttribute(COLLAPSED_DATA_ATTRIBUTE) === "true";
-        heading.classList.toggle(CLASSES.collapsed, isCollapsed && hasSection(heading));
+        heading.classList.toggle(CLASSES.collapsed, isCollapsed && canCollapse);
+        if (canCollapse) {
+            heading.setAttribute("tabindex", tabIndex);
+        }
         parents.add(heading.parentElement as HTMLElement);
     }
     for (const parent of parents) {
@@ -47,8 +54,17 @@ export function applyCollapsedHeadings(container: HTMLElement) {
     const onClick = (event: MouseEvent) => {
         const heading = getArrowHeading(event);
         if (heading) {
-            heading.classList.toggle(CLASSES.collapsed);
-            syncParent(heading.parentElement as HTMLElement);
+            toggle(heading);
+        }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+        const target = event.target as Element;
+        const isToggleKey = (event.key === "Enter" || event.key === " ")
+            && !event.ctrlKey && !event.altKey && !event.metaKey;
+        if (isToggleKey && target.classList.contains(CLASSES.sectionHeading)) {
+            // Keeps Space from scrolling the page.
+            event.preventDefault();
+            toggle(target);
         }
     };
     const onMouseMove = (event: MouseEvent) => {
@@ -59,11 +75,13 @@ export function applyCollapsedHeadings(container: HTMLElement) {
 
     container.addEventListener("mousedown", onMouseDown);
     container.addEventListener("click", onClick);
+    container.addEventListener("keydown", onKeyDown);
     container.addEventListener("mousemove", onMouseMove);
     container.addEventListener("mouseleave", onMouseLeave);
     return () => {
         container.removeEventListener("mousedown", onMouseDown);
         container.removeEventListener("click", onClick);
+        container.removeEventListener("keydown", onKeyDown);
         container.removeEventListener("mousemove", onMouseMove);
         container.removeEventListener("mouseleave", onMouseLeave);
     };
@@ -109,6 +127,12 @@ export function isOnHeadingArrow(heading: Element, clientX: number) {
 
 /** The heading that hides each hidden block. */
 const hiders = new WeakMap<Element, Element>();
+
+/** Collapses or expands `heading`. */
+function toggle(heading: Element) {
+    heading.classList.toggle(CLASSES.collapsed);
+    syncParent(heading.parentElement as HTMLElement);
+}
 
 /** Hides the children of `parent` that collapsed headings hide, and shows the others. */
 function syncParent(parent: Element) {

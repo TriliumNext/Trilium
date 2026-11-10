@@ -155,20 +155,25 @@ export function isFromEditable(editor: Editor, event: Event) {
 
 abstract class MoveBlockUpDownCommand extends Command {
 
-	abstract getSibling(selectedBlock: ModelElement): ModelNode | null;
+	/** The node that `selectedBlock` moves past. `isHidden` tells which blocks are hidden. */
+	abstract getSibling(selectedBlock: ModelElement, isHidden: IsHidden): ModelNode | null;
     abstract get offset(): "before" | "after";
 
 	override refresh() {
 		const blocks = this.getSelectedBlocks(this.editor.model.document.selection);
-		this.isEnabled = blocks.length > 0 && blocks.every(block => !!this.getSibling(block));
+		const isHidden = this.getHiddenSnapshot();
+		this.isEnabled = blocks.length > 0
+			&& blocks.every(block => !!this.getSibling(block, isHidden));
 	}
 
 	override execute() {
 		const model = this.editor.model;
 		const selection = model.document.selection;
 		const selectedBlocks = this.getSelectedBlocks(selection);
+		// A move can hide or show blocks, so the moves read the hidden blocks as they are now.
+		const isHidden = this.getHiddenSnapshot();
 		const isEnabled = selectedBlocks.length > 0
-			&& selectedBlocks.every(block => !!this.getSibling(block));
+			&& selectedBlocks.every(block => !!this.getSibling(block, isHidden));
 
 		if (!isEnabled) {
 			return;
@@ -189,12 +194,12 @@ abstract class MoveBlockUpDownCommand extends Command {
 		model.change((writer) => {
 			// Move blocks
 			for (const block of movingBlocks) {
-				const sibling = this.getSibling(block);
+				const sibling = this.getSibling(block, isHidden);
 				/* v8 ignore else -- isEnabled already ensures every block has a sibling */
 				if (sibling) {
 					const range = model.createRange(
 						model.createPositionBefore(block),
-						model.createPositionAfter(this.getUnitEnd(block))
+						model.createPositionAfter(getUnitEnd(block, isHidden))
 					);
 					writer.move(range, sibling, this.offset);
 				}
@@ -244,12 +249,9 @@ abstract class MoveBlockUpDownCommand extends Command {
 			&& !this.getHiddenBlocks()?.isHidden(blk));
 	}
 
-	/**
-	 * The last block that moves with `block`: the last of the blocks hidden after it, such as the
-	 * section of a collapsed heading, or the block itself.
-	 */
-	getUnitEnd(block: ModelNode): ModelNode {
-		return this.getHiddenBlocks()?.getHiddenRunAfter(block as ModelElement).at(-1) ?? block;
+	/** Whether a block is hidden, as of now. Without `HiddenBlocks`, no block is. */
+	getHiddenSnapshot(): IsHidden {
+		return this.getHiddenBlocks()?.getHiddenSnapshot() ?? isNeverHidden;
 	}
 
 	getHiddenBlocks() {
@@ -260,10 +262,13 @@ abstract class MoveBlockUpDownCommand extends Command {
 
 class MoveBlockUpCommand extends MoveBlockUpDownCommand {
 
-    /** The block to move before: the previous one, or the block that hides it. */
-    getSibling(selectedBlock: ModelElement) {
-        const previous = selectedBlock.previousSibling;
-        return previous && (this.getHiddenBlocks()?.getOwner(previous as ModelElement) ?? previous);
+    /** The block to move before: the previous one, or the shown block before the hidden ones. */
+    getSibling(selectedBlock: ModelElement, isHidden: IsHidden) {
+        let previous = selectedBlock.previousSibling;
+        while (previous && isHidden(previous)) {
+            previous = previous.previousSibling;
+        }
+        return previous;
     }
 
     get offset() {
@@ -275,15 +280,32 @@ class MoveBlockUpCommand extends MoveBlockUpDownCommand {
 class MoveBlockDownCommand extends MoveBlockUpDownCommand {
 
 	/** The block to move after: the next one, or the last of the blocks hidden after it. */
-	getSibling(selectedBlock: ModelElement) {
-		const next = this.getUnitEnd(selectedBlock).nextSibling;
-		return next && this.getUnitEnd(next);
+	getSibling(selectedBlock: ModelElement, isHidden: IsHidden) {
+		const next = getUnitEnd(selectedBlock, isHidden).nextSibling;
+		return next && getUnitEnd(next, isHidden);
 	}
 
 	/** @override */
 	get offset() {
 		return "after" as const;
 	}
+}
+
+/** Whether a block is hidden, so that it moves with the shown block before it. */
+type IsHidden = (node: ModelNode) => boolean;
+
+const isNeverHidden: IsHidden = () => false;
+
+/**
+ * The last node that moves with `node`: the last of the hidden blocks right after it, such as the
+ * section of a collapsed heading, or `node` itself.
+ */
+function getUnitEnd(node: ModelNode, isHidden: IsHidden): ModelNode {
+	let end = node;
+	while (end.nextSibling && isHidden(end.nextSibling)) {
+		end = end.nextSibling;
+	}
+	return end;
 }
 
 function scrollToSelection(editor: Editor) {
