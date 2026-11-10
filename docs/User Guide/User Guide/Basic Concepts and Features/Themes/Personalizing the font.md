@@ -7,7 +7,7 @@ The font can be personalized for the following areas of the application:
 
 *   Interface text, for most of the UI (menus, toolbars, dialogs).
 *   <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>.
-*   Document text, for the actual content of the notes (especially for <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes).
+*   Document text, for the actual content of the notes (especially for <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes), including the rows of a <a class="reference-link" href="../../Collections/Table.md">Table</a> collection.
 *   Monospace text, e.g. for <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes and <a class="reference-link" href="../../Note%20Types/Text/Developer-specific%20formatting/Code%20blocks.md">Code blocks</a>.
 
 Each area also has its own _Size_. The note tree and document sizes are relative to the interface size, so changing the interface size moves them along with it.
