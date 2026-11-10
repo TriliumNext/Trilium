@@ -408,13 +408,15 @@ body:not(.math-loaded) .math-tex {
     text-align: right;
 }
 
-.ck-content details.include-note-expandable {
+#content details.include-note-expandable {
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+
     & > summary {
         display: flex;
         align-items: center;
         gap: .4em;
-        border: 1px solid var(--background-active);
-        border-radius: 8px;
         padding: .4em .75em;
         font-weight: 600;
         cursor: pointer;
@@ -434,11 +436,28 @@ body:not(.math-loaded) .math-tex {
     }
 
     &[open] > summary {
-        margin-bottom: .75em;
+        border-bottom: 1px solid var(--main-border-color);
 
         & > .bx-chevron-right {
             transform: rotate(90deg);
         }
+    }
+
+    & > :not(summary) {
+        margin-inline: .75em;
+    }
+
+    & > summary + * {
+        margin-top: .75em;
+    }
+
+    & > :last-child:not(summary) {
+        margin-bottom: .75em;
+    }
+
+    & > .media-player {
+        margin: 0;
+        border-radius: 0;
     }
 }
 
