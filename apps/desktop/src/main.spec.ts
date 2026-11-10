@@ -470,6 +470,31 @@ describe("main() bootstrap", () => {
         expect(h.appendSwitch).toHaveBeenCalledWith("lang", "de");
     });
 
+    it("enables the Secret portal key provider only inside Flatpak", async () => {
+        setPlatform("linux");
+        process.env.FLATPAK_ID = "org.triliumnotes.Trilium";
+        try {
+            await (await importMain()).main();
+            expect(h.appendSwitch).toHaveBeenCalledWith(
+                "enable-features", "GlobalShortcutsPortal,SecretPortalKeyProviderUseForEncryption");
+        } finally {
+            delete process.env.FLATPAK_ID;
+        }
+    });
+
+    it("ignores Squirrel handling when launched with no arguments", async () => {
+        const originalArgv = process.argv;
+        setPlatform("win32");
+        process.argv = [ "trilium.exe" ];
+        try {
+            await (await importMain()).main();
+            expect(h.spawn).not.toHaveBeenCalled();
+            expect(exitSpy).not.toHaveBeenCalled();
+        } finally {
+            process.argv = originalArgv;
+        }
+    });
+
     it("hands a Squirrel installer event to Update.exe and exits", async () => {
         const originalArgv = process.argv;
         const originalExecPath = process.execPath;
@@ -693,6 +718,13 @@ describe("app event handlers", () => {
             h.mainWindow = mainWindow;
             await activate?.();
             expect(h.showAndFocusWindow).toHaveBeenLastCalledWith(mainWindow);
+
+            // Neither a focused nor a main window → nothing to reveal.
+            h.mainWindow = null;
+            h.showAndFocusWindow.mockClear();
+            await activate?.();
+            expect(h.showAndFocusWindow).not.toHaveBeenCalled();
+            expect(h.createMainWindow).toHaveBeenCalledTimes(2);
         });
 
         it("starts hidden only when the tray can reveal the window", async () => {
@@ -748,6 +780,19 @@ describe("app event handlers", () => {
             const { setupTriliumAppProtocol } = await import("./protocol.js");
             const appPromise = vi.mocked(setupTriliumAppProtocol).mock.lastCall?.[0];
             await expect(appPromise).rejects.toThrow("server exploded");
+        });
+
+        it("wraps a non-Error server failure for the protocol handler", async () => {
+            h.isDbInitialized = true;
+            h.startServer = () => Promise.reject("port taken");
+            const { main } = await importMain();
+            const mainPromise = main();
+            await h.appOn.get("ready")?.();
+
+            await expect(mainPromise).rejects.toBe("port taken");
+            const { setupTriliumAppProtocol } = await import("./protocol.js");
+            const appPromise = vi.mocked(setupTriliumAppProtocol).mock.lastCall?.[0];
+            await expect(appPromise).rejects.toThrow(new Error("port taken"));
         });
 
         it("creates the main window while the server is still starting", async () => {

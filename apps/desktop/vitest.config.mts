@@ -41,7 +41,13 @@ export default defineConfig(() => ({
             // every path is unambiguous.
             reporter: ["text", "html", ["lcov", { projectRoot: resolve(__dirname, "../..") }]],
             include: ["src/**/*.{ts,tsx}"],
-            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
+            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+            thresholds: {
+                lines: 100,
+                statements: 100,
+                functions: 100,
+                branches: 100
+            }
         }
     }
 }));

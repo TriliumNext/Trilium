@@ -8,7 +8,8 @@ type Handler = (...args: unknown[]) => unknown;
 
 const state = vi.hoisted(() => ({
     userData: "",
-    displays: [ { workArea: { x: 0, y: 0, width: 1920, height: 1080 } } ]
+    displays: [ { workArea: { x: 0, y: 0, width: 1920, height: 1080 } } ],
+    logError: vi.fn()
 }));
 
 vi.mock("electron", () => ({
@@ -16,7 +17,7 @@ vi.mock("electron", () => ({
     screen: { getAllDisplays: () => state.displays }
 }));
 
-vi.mock("@triliumnext/core", () => ({ getLog: () => ({ error: vi.fn() }) }));
+vi.mock("@triliumnext/core", () => ({ getLog: () => ({ error: state.logError }) }));
 
 const { createWindowStateKeeper } = await import("./window_state.js");
 
@@ -78,6 +79,14 @@ describe("createWindowStateKeeper", () => {
 
         writeState({ x: 1.5, y: 0, width: -3, height: "tall" });
         expect({ ...createWindowStateKeeper(DEFAULTS) }).toMatchObject({ x: undefined, y: undefined, width: 1200, height: 800 });
+
+        writeState(null);
+        expect({ ...createWindowStateKeeper(DEFAULTS) }).toMatchObject({ x: undefined, y: undefined, width: 1200, height: 800 });
+    });
+
+    it("keeps a saved size without a position, leaving the placement to the OS", () => {
+        writeState({ x: 10, width: 900, height: 600 });
+        expect({ ...createWindowStateKeeper(DEFAULTS) }).toMatchObject({ x: undefined, y: undefined, width: 900, height: 600 });
     });
 
     it("restores the bounds a previous release wrote, displayBounds included", () => {
@@ -164,5 +173,19 @@ describe("createWindowStateKeeper", () => {
         win.fire("close");
         win.fire("closed");
         expect(readState().width).toBe(1000);
+    });
+
+    it("logs, without throwing, when the state cannot be saved", () => {
+        // A file where the user data directory should be makes the write fail.
+        const blocker = path.join(state.userData, "blocker");
+        fs.writeFileSync(blocker, "");
+        state.userData = blocker;
+        state.logError.mockClear();
+        const win = new FakeWindow();
+        createWindowStateKeeper(DEFAULTS).manage(win as never);
+
+        win.fire("close");
+        expect(() => win.fire("closed")).not.toThrow();
+        expect(state.logError).toHaveBeenCalledWith(expect.stringContaining("Could not save the window state"));
     });
 });

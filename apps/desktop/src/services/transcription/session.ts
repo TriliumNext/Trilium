@@ -192,6 +192,7 @@ export class RecordingSession {
                 }
             }
         }).catch((e) => this.log.error(`Transcription failed: ${e}`)).finally(() => {
+            /* v8 ignore next -- `enqueue()` counts the source before it queues */
             this.queued.set(source, (this.queued.get(source) ?? 1) - 1);
             this.updatePending();
         });
@@ -295,7 +296,9 @@ export class PortCapture implements AudioCapture {
     readonly ended: Promise<void>;
     private port: MessagePortMain | null = null;
     private onSamples: SamplesListener | null = null;
+    /* v8 ignore start -- a placeholder the constructor replaces before anything can call it */
     private markEnded = () => {};
+    /* v8 ignore stop */
 
     constructor() {
         this.ended = new Promise((resolve) => {

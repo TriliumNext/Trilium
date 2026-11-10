@@ -75,5 +75,12 @@ describe("setupResourceDownloads", () => {
         await fetch("https://example.com/model.onnx", init);
         expect(whenReady).toHaveBeenCalledOnce();
         expect(netFetch).toHaveBeenCalledExactlyOnceWith("https://example.com/model.onnx", init);
+
+        // Once ready, it fetches straight away.
+        vi.clearAllMocks();
+        isReady.mockReturnValue(true);
+        await fetch("https://example.com/model.onnx", init);
+        expect(whenReady).not.toHaveBeenCalled();
+        expect(netFetch).toHaveBeenCalledOnce();
     });
 });

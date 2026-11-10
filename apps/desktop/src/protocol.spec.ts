@@ -582,6 +582,27 @@ describe("trilium-app protocol dispatcher", () => {
         expect(closeCount).toBe(1);
     });
 
+    it("signals 'close' once when the body is cancelled before the fetch abort", async () => {
+        const app = express();
+        let closeCount = 0;
+        app.get("/sse", (_req, res) => {
+            res.setHeader("Content-Type", "text/event-stream");
+            res.flushHeaders();
+            res.on("close", () => { closeCount++; });
+            res.write("a\n");
+        });
+
+        const ac = new AbortController();
+        const response = await dispatch(app, new Request("trilium-app://app/sse", { signal: ac.signal }));
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("expected a streaming body");
+        await reader.read();
+
+        await reader.cancel();
+        ac.abort();
+        expect(closeCount).toBe(1);
+    });
+
     it("serialises object and primitive response payloads to bytes", async () => {
         // Express always stringifies objects/primitives before they reach the
         // mock's buffer, so force the buffered branch to read a raw object /

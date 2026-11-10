@@ -143,6 +143,14 @@ describe("backup passphrase storage", () => {
         expect(h.errors.join()).not.toContain("hunter2");
     });
 
+    it("logs a non-Error decryption failure as text", async () => {
+        await passphrase.storeBackupPassphrase("hunter2");
+        h.decrypt.mockRejectedValueOnce("keyring daemon gone");
+
+        expect(await passphrase.getBackupPassphrase()).toBeNull();
+        expect(h.errors.join()).toContain("keyring daemon gone");
+    });
+
     it("takes on a restored backup's password, and drops the old one when it brings none", async () => {
         // The passphrase is not in the database, so a restore replaces every option saying how this
         // instance backs up and leaves the password those options are carried out with. Kept, the
@@ -277,6 +285,17 @@ describe("IPC handlers", () => {
         expect(await invoke("backup-passphrase-set", "hunter2")).toBe("unavailable");
         expect(await invoke("backup-passphrase-set", "")).toBe("unavailable");
         expect(h.showMessageBox).not.toHaveBeenCalled();
+    });
+
+    it("reports unavailable when the keyring goes away while the user confirms", async () => {
+        h.showMessageBox.mockImplementationOnce(async () => {
+            // Linux falls back to its hard-coded key, which is no keyring at all.
+            h.keyTag = "v10";
+            return { response: 1 };
+        });
+
+        expect(await invoke("backup-passphrase-set", "hunter2")).toBe("unavailable");
+        expect(h.fileStore.size).toBe(0);
     });
 
     it("never asks when the OS rotates its key under a backup, which runs unattended", async () => {

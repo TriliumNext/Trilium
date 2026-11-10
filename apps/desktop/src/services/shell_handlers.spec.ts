@@ -39,10 +39,15 @@ vi.mock("child_process", () => ({ execFile: h.execFile, spawn: h.spawn }));
 
 vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
-    return { ...actual, getLog: () => ({ info: vi.fn(), error: h.logError }) };
+    return {
+        ...actual,
+        getBackup: vi.fn(actual.getBackup),
+        getLog: () => ({ info: vi.fn(), error: h.logError })
+    };
 });
 
-const { setupShellHandlers } = await import("./shell.js");
+const { getBackup } = await import("@triliumnext/core");
+const { getConfiguredOpenRoots, setupShellHandlers } = await import("./shell.js");
 const dataDirs = (await import("@triliumnext/server/src/services/data_dir.js")).default;
 
 const DATA_DIR = dataDirs.TRILIUM_DATA_DIR;
@@ -122,6 +127,20 @@ describe("setupShellHandlers", () => {
         });
     });
 
+    describe("configured roots", () => {
+        it("drops the backup directory when the backup service is not initialized yet", () => {
+            const notInitialized = () => {
+                throw new Error("Backup service not initialized.");
+            };
+            vi.mocked(getBackup).mockImplementationOnce(notInitialized).mockImplementationOnce(notInitialized);
+
+            expect(getConfiguredOpenRoots()).toEqual([ null, dataDirs.RESOURCES_DIR ]);
+            fireHandle("open-path", dataFile);
+            expect(h.openPath).toHaveBeenCalledWith(path.resolve(dataFile));
+            expect(getBackup).toHaveBeenCalledTimes(2);
+        });
+    });
+
     describe("show-item-in-folder", () => {
         it("reveals a file inside the sandbox", () => {
             fireOn("show-item-in-folder", dataFile);
@@ -167,6 +186,14 @@ describe("setupShellHandlers", () => {
             fireHandle("open-file-url", pathToFileURL(tmpFile).href);
             fireHandle("open-file-url", pathToFileURL(unicodeDir).href);
             expect(h.openPath).toHaveBeenCalledTimes(2);
+            expect(h.openExternal).not.toHaveBeenCalled();
+        });
+
+        it("keeps openPath for a path that does not exist on Windows", () => {
+            setPlatform("win32");
+            const missing = path.join(TMP_DIR, "shell-handlers-missing");
+            fireHandle("open-file-url", pathToFileURL(missing).href);
+            expect(h.openPath).toHaveBeenCalledWith(missing);
             expect(h.openExternal).not.toHaveBeenCalled();
         });
 
