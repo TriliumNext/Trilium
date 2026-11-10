@@ -366,9 +366,57 @@ describe("etapi/notes/bulk-update", () => {
             expect(res.body.errors[0].error).toContain("Content exceeds maximum blob length");
 
             // Attachment must NOT have been scheduled for deletion
-            expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+            const reloadedAtt = becca.getAttachmentOrThrow(attachmentId);
+            expect(reloadedAtt.utcDateScheduledForErasureSince).toBeNull();
+
+            const { getSql } = await import("@triliumnext/core");
+            const dbRow = (getSql() as any).getRow("SELECT utcDateScheduledForErasureSince FROM attachments WHERE attachmentId = ?", [attachmentId]);
+            expect(dbRow?.utcDateScheduledForErasureSince).toBeNull();
         } finally {
             spy.mockRestore();
+        }
+    });
+
+    it("preserves previous pending post-processing when the same note succeeds then fails in atomic=false", async () => {
+        const noteId1 = await createNote(app, token);
+        const postProcessSpy = vi.spyOn(noteService, "asyncPostProcessContent");
+
+        let calls = 0;
+        const spy = vi.spyOn(noteService, "saveRevisionIfNeeded").mockImplementation((note) => {
+            if (note.noteId === noteId1 && ++calls > 1) {
+                throw new Error("Simulated failure on second update of note 1");
+            }
+        });
+
+        try {
+            const firstContent = "<p>First successful content</p>";
+            const res = await supertest(app)
+                .post("/etapi/notes/bulk-update")
+                .auth(USER, token, { type: "basic" })
+                .send({
+                    items: [
+                        { noteId: noteId1, content: firstContent },
+                        { noteId: noteId1, content: "<p>Second failing content</p>" }
+                    ]
+                })
+                .expect(200);
+
+            expect(res.body.updated).toBe(1);
+            expect(res.body.failed).toBe(1);
+
+            const get1 = await supertest(app)
+                .get(`/etapi/notes/${noteId1}/content`)
+                .auth(USER, token, { type: "basic" })
+                .expect(200);
+            expect(get1.text).toBe(firstContent);
+
+            expect(postProcessSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ noteId: noteId1 }),
+                firstContent
+            );
+        } finally {
+            spy.mockRestore();
+            postProcessSpy.mockRestore();
         }
     });
 
@@ -450,7 +498,12 @@ describe("etapi/notes/bulk-update", () => {
                 .expect(200);
             expect(get2.text).toBe(initialContent2);
 
-            expect(attachment.utcDateScheduledForErasureSince).toBeNull();
+            const reloadedAtt = becca.getAttachmentOrThrow(attachmentId);
+            expect(reloadedAtt.utcDateScheduledForErasureSince).toBeNull();
+
+            const { getSql } = await import("@triliumnext/core");
+            const dbRow = (getSql() as any).getRow("SELECT utcDateScheduledForErasureSince FROM attachments WHERE attachmentId = ?", [attachmentId]);
+            expect(dbRow?.utcDateScheduledForErasureSince).toBeNull();
         } finally {
             spy.mockRestore();
         }

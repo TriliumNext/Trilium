@@ -313,6 +313,7 @@ function register(router: Router) {
             const originalUtcDateModified = note.utcDateModified;
             const originalDateModified = note.dateModified;
             const previousEntityChangeIds = [...(cls.get<number[]>("entityChangeIds") || [])];
+            const previousPostProcessNote = postProcessNotes.get(note.noteId);
 
             try {
                 sql.transactional(() => {
@@ -338,7 +339,11 @@ function register(router: Router) {
                 note.blobId = originalBlobId;
                 note.utcDateModified = originalUtcDateModified;
                 note.dateModified = originalDateModified;
-                postProcessNotes.delete(note.noteId);
+                if (previousPostProcessNote) {
+                    postProcessNotes.set(note.noteId, previousPostProcessNote);
+                } else {
+                    postProcessNotes.delete(note.noteId);
+                }
 
                 errors.push({ noteId, error: err instanceof Error ? err.message : "Failed to update note content." });
             }
