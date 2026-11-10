@@ -90,6 +90,16 @@ describe("etapi/patch-note", () => {
         await expectNoteToMatch({ type: "text", mime: "text/html" });
     });
 
+    it("refuses a MIME type that is not a string", async () => {
+        const response = await supertest(app)
+            .patch(`/etapi/notes/${createdNoteId}`)
+            .auth("etapi", token, { "type": "basic"})
+            .send({ mime: 5 })
+            .expect(400);
+        expect(response.body.code).toStrictEqual("PROPERTY_VALIDATION_ERROR");
+        await expectNoteToMatch({ type: "text", mime: "text/html" });
+    });
+
     it("rejects turning a note into an image with a non-image MIME", async () => {
         const response = await supertest(app)
             .patch(`/etapi/notes/${createdNoteId}`)

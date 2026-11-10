@@ -133,6 +133,16 @@ describe("etapi/note-history", () => {
                 .expect(200);
             const change = response.body.find((c: { noteId: string }) => c.noteId === noteId);
             expect(change?.title).toStrictEqual("secret title");
+
+            // A title that decrypts to nothing is masked rather than shown empty.
+            cls.init(() => sql.execute("UPDATE notes SET title = ? WHERE noteId = ?",
+                [protected_session.default.encrypt(""), noteId]));
+            const emptied = await supertest(app)
+                .get("/etapi/notes/history")
+                .auth(USER, token, { "type": "basic" })
+                .expect(200);
+            const emptiedChange = emptied.body.find((c: { noteId: string }) => c.noteId === noteId);
+            expect([ emptiedChange?.title, emptiedChange?.current_title ]).toStrictEqual([ "[protected]", "[protected]" ]);
         } finally {
             protected_session.resetDataKey();
             cls.init(() => sql.execute("UPDATE notes SET isProtected = 0 WHERE noteId = ?", [noteId]));

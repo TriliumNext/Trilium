@@ -1,5 +1,6 @@
+import { getSql } from "@triliumnext/core";
 import { Application } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import supertest from "supertest";
 import { login } from "./utils.js";
 import config from "../../src/services/config.js";
@@ -61,6 +62,29 @@ describe("etapi/metrics", () => {
             .auth(USER, token, { "type": "basic"})
             .expect(500);
         expect(response.body.message).toContain("prometheus");
+    });
+
+    it("reports a failure to collect the metrics, whatever was thrown", async () => {
+        const instance = getSql();
+        const getValue = instance.getValue.bind(instance);
+        const failing = vi.spyOn(instance, "getValue").mockImplementation((query, params) => {
+            if (query === "SELECT COUNT(*) FROM notes") {
+                throw "database is locked";
+            }
+            return getValue(query, params);
+        });
+        try {
+            const response = await supertest(app)
+                .get("/etapi/metrics")
+                .auth(USER, token, { "type": "basic"})
+                .expect(500);
+            expect(response.body).toMatchObject({
+                code: "METRICS_ERROR",
+                message: "Failed to collect metrics: Unknown error"
+            });
+        } finally {
+            failing.mockRestore();
+        }
     });
 
     it("should fail without authentication", async() => {

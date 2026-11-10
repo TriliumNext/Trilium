@@ -122,6 +122,45 @@ describe("Files API", () => {
             expect(() => cls.init(() => filesRoute.uploadModifiedFileToAttachment(req))).toThrow(ValidationError);
         });
 
+        it("rejects an upload without a file path", () => {
+            for (const filePath of [ undefined, "", 42 ]) {
+                expect(() => cls.init(() => filesRoute.uploadModifiedFileToNote(
+                    fileReq({ noteId }, undefined, {}, { filePath })
+                ))).toThrow("Missing or invalid file path.");
+            }
+        });
+
+        it("refuses a tracked temp file that a file name carried out of the temp directory", () => {
+            const note = becca.getNoteOrThrow(noteId);
+            const fileName = vi.spyOn(note, "getFileName").mockReturnValue("x/../../escaped.txt");
+            let tmpFilePath = "";
+            try {
+                tmpFilePath = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId }))).tmpFilePath;
+                expect(path.dirname(tmpFilePath)).toBe(path.dirname(path.resolve(dataDirs.TMP_DIR)));
+
+                expect(() => cls.init(() => filesRoute.uploadModifiedFileToNote(
+                    fileReq({ noteId }, undefined, {}, { filePath: tmpFilePath })
+                ))).toThrow(/is outside the temporary directory\.$/);
+            } finally {
+                fileName.mockRestore();
+                if (tmpFilePath) {
+                    fs.rmSync(tmpFilePath, { force: true });
+                }
+            }
+        });
+
+        it("refuses to save an attachment that has no ID", () => {
+            const attachment = becca.getAttachmentOrThrow(attachmentId);
+            const withoutId = Object.assign(Object.create(Object.getPrototypeOf(attachment)), attachment, { attachmentId: undefined });
+            const lookup = vi.spyOn(becca, "getAttachmentOrThrow").mockReturnValue(withoutId);
+            try {
+                const req = fileReq({ attachmentId }) as unknown as Request<{ attachmentId: string }>;
+                expect(() => cls.init(() => filesRoute.saveAttachmentToTmpDir(req))).toThrow("Missing attachment ID.");
+            } finally {
+                lookup.mockRestore();
+            }
+        });
+
         it("removes the temp files when the process exits", () => {
             const { tmpFilePath } = cls.init(() => filesRoute.saveNoteToTmpDir(fileReq({ noteId })));
             const cleanup = process.listeners("exit").find((listener) => listener.name === "removeTemporaryFiles");

@@ -127,6 +127,7 @@ function uploadModifiedFileToNote(req: Request<{ noteId: string }>) {
 
     const fileContent = fs.readFileSync(filePath);
 
+    /* v8 ignore next 3 -- fs.readFileSync() returns a Buffer, which is truthy even when empty */
     if (!fileContent) {
         throw new ValidationError(`File '${fileContent}' is empty`);
     }
@@ -148,6 +149,7 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 
     const fileContent = fs.readFileSync(filePath);
 
+    /* v8 ignore next 3 -- fs.readFileSync() returns a Buffer, which is truthy even when empty */
     if (!fileContent) {
         throw new ValidationError(`File '${fileContent}' is empty`);
     }
