@@ -16,6 +16,8 @@ const h = vi.hoisted(() => {
         killed = false;
         /** What the channel reports to `send`'s callback; set to fail the next send. */
         sendError: Error | null = null;
+        /** Whether the IPC channel is open; cleared by an `exit`, as Node closes a dead child's. */
+        connected = true;
         channel = { unref() {} };
         private handlers = new Map<string, Handler[]>();
 
@@ -30,12 +32,18 @@ const h = vi.hoisted(() => {
         }
 
         emit(event: string, ...args: unknown[]) {
-            (this.handlers.get(event) ?? []).forEach((handler) => handler(...args));
+            if (event === "exit") {
+                this.connected = false;
+            }
+
+            for (const handler of this.handlers.get(event) ?? []) {
+                handler(...args);
+            }
         }
 
         send(message: unknown, callback?: (error: Error | null) => void) {
             this.sent.push(message);
-            callback?.(this.sendError);
+            callback?.(this.connected ? this.sendError : new Error("Channel closed"));
 
             return true;
         }
@@ -470,6 +478,81 @@ describe("worker pool failure semantics", () => {
         await expect(image).rejects.toThrow("Image worker exited with code SIGKILL.");
         expect(h.logs).toContain(
             `Image Compression Tool: worker ${killed.pid} exited unexpectedly with code SIGKILL while working on an image`);
+    });
+
+    describe("a worker that dies while idle", () => {
+        const NO_GAIN = { compressed: false, reason: "no-gain" };
+
+        /** Runs one image to completion on a pool of one worker, leaving that worker idle. */
+        async function idleWorker(pool: typeof import("./image_worker_pool.js")) {
+            h.cores = 1;
+
+            const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+
+            await flush();
+
+            const child = h.forked[0];
+
+            child.emit("message", { trace: "loaded and listening" });
+            await flush();
+            answer(child, 0, { outcome: NO_GAIN, logs: [] });
+            await expect(image).resolves.toEqual(NO_GAIN);
+
+            return child;
+        }
+
+        it("is replaced by a fresh worker for the next image", async () => {
+            const pool = await import("./image_worker_pool.js");
+            const dead = await idleWorker(pool);
+
+            dead.emit("exit", null, "SIGKILL");
+
+            const next = pool.compressInWorker(BYTES, REQUEST, 1024);
+
+            await flush();
+            expect(dead.sent).toHaveLength(1);
+            expect(h.forked).toHaveLength(2);
+
+            const fresh = h.forked[1];
+
+            fresh.emit("message", { trace: "loaded and listening" });
+            await flush();
+            answer(fresh, 0, { outcome: NO_GAIN, logs: [] });
+            await expect(next).resolves.toEqual(NO_GAIN);
+        });
+
+        it("is passed over once its channel has closed, and its late exit frees no extra place", async () => {
+            const pool = await import("./image_worker_pool.js");
+            const dead = await idleWorker(pool);
+
+            // Node closes the channel and reports the exit in separate callbacks.
+            dead.connected = false;
+
+            const next = pool.compressInWorker(BYTES, REQUEST, 1024);
+
+            await flush();
+            expect(dead.sent).toHaveLength(1);
+            expect(h.forked).toHaveLength(2);
+
+            const fresh = h.forked[1];
+
+            fresh.emit("message", { trace: "loaded and listening" });
+            await flush();
+
+            // With one worker allowed and the fresh one busy, the next image queues for it.
+            dead.emit("exit", null, "SIGKILL");
+
+            const queued = pool.compressInWorker(BYTES, REQUEST, 1024);
+
+            await flush();
+            expect(h.forked).toHaveLength(2);
+
+            answer(fresh, 0, { outcome: NO_GAIN, logs: [] });
+            await expect(next).resolves.toEqual(NO_GAIN);
+            await flush();
+            answer(fresh, 1, { outcome: NO_GAIN, logs: [] });
+            await expect(queued).resolves.toEqual(NO_GAIN);
+        });
     });
 });
 
