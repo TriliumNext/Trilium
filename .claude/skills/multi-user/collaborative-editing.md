@@ -1,6 +1,6 @@
 # Collaborative editing of notes (OT on CKEditor 5 and CodeMirror 6)
 
-Status: implemented for text and code notes on a server with users, with cursors and presence. The other note types and the items under [Open work](#open-work) are not built.
+Status: implemented for text, code and Mermaid notes on a server with users, with cursors and presence. The other note types and the items under [Open work](#open-work) are not built.
 
 **Goal:** several users edit one note at the same time on a multi-user server. The server only orders and relays edits; it never interprets the document, and saving keeps using the existing blob path.
 
@@ -43,7 +43,11 @@ One session per note, in memory. A session has an editor kind, `text` (CKEditor)
 
 Flat text converges: 40 random runs of three editors with insertions, deletions, undo and redo end equal without a single reset. A change set also carries the length of the document it applies to, so most divergence fails on the next batch and asks for a reset by itself; the hash only catches a divergence of the same length.
 
-The component is shared: `EditableCode` joins a session for `noteType === "code"`, which is every note stored as a code note. That includes Markdown notes (`Markdown.tsx`, a code note with a Markdown MIME type shown in a `SplitEditor`) and the SQL console. Mermaid notes have a type of their own and pass `noteType="mermaid"`, so they stay out.
+The component is shared: `EditableCode` joins a session for `noteType` `code` and `mermaid`, and `EDITOR_KINDS` maps both note types to the `code` kind. A code note includes Markdown notes (`Markdown.tsx`, a code note with a Markdown MIME type shown in a `SplitEditor`) and the SQL console.
+
+A write that bypasses the session reaches a code editor through its saver: the saver's own saves are not echoed back to it, so content that arrives there was written by something else, and it types it in for everyone (`onContentChange` in `Code.tsx`). The sample diagrams of an empty Mermaid note depend on this, since `NoteContentSwitcher` saves them straight to the note. The text editor does not do this yet.
+
+Every editor of a Mermaid note still saves the SVG attachment of the diagram it renders (`SvgSplitEditor.tsx`), so the same picture is posted once per editor.
 
 ## What the spike measured
 
@@ -67,14 +71,13 @@ Three stock editors, 30 random edits per run, 300 runs per cell; the columns are
 ## Open work
 
 - **Trilium's plugins under load.** Only a smoke test covers the full editor build. Run the random spec on it and look at plugins with post-fixers (`registerPostFixer` under `packages/ckeditor5/src/plugins`) and at marker operations for local-only markers leaking into the stream.
-- **Writes outside the session** (ETAPI, a script, an import, sync, a note edited inside another note) do not reach the editors; the saver's next save overwrites them. The session should end and the editors reload.
+- **Writes outside the session** (ETAPI, a script, an import, sync, a note edited inside another note) do not reach the editors of a text note; the saver's next save overwrites them. Code editors take them in through the saver (see above), unless the saver has unsaved changes at that moment.
 - **Attachments edited by a member that is not the saver** are not saved, since its whole save is skipped.
 - **Desktop and standalone** have no sessions: their providers do not know the user of a connection, and a join is refused.
 - **Other note types**, each through its own adapter on the same session channel:
 
 | Type | Approach |
 |---|---|
-| Mermaid | `CodeCollaboration` as for code notes: add the type to `EDITOR_KINDS` and lift the `noteType === "code"` check, then verify the preview and the split |
 | Canvas (Excalidraw) | Per element, newest `version` wins (unverified: whether 0.18 exports `reconcileElements`) |
 | Relation map | Newest wins per box position; relations are already attributes |
 | Mind map (mind-elixir) | Per node, newest wins, from its `operation` events; moves need a cycle check |

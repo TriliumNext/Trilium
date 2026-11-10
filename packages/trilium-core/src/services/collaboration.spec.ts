@@ -32,7 +32,7 @@ describe("collaboration over the messaging provider", () => {
         const ownerId = cls.init(() => userService.createUser("collab-owner-spec", null, false));
         const readerId = cls.init(() => userService.createUser("collab-reader-spec", null, false));
         const strangerId = cls.init(() => userService.createUser("collab-stranger-spec", null, false));
-        const createNote = (type: "text" | "code", isProtected = false) => cls.init(() => noteService.createNewNote({
+        const createNote = (type: "text" | "code" | "mermaid" | "canvas", isProtected = false) => cls.init(() => noteService.createNewNote({
             parentNoteId: "root", ownerId, title: "shared", content: "", type, isProtected
         }).note.noteId);
         const noteId = createNote("text");
@@ -67,6 +67,13 @@ describe("collaboration over the messaging provider", () => {
         sent.length = 0;
         handle(ownerId, join(noteId, "code"));
         expect(summarize()).toEqual([ [ ownerId, "collab-denied", false ] ]);
+        // The source of a Mermaid diagram is edited in the code editor too.
+        sent.length = 0;
+        handle(ownerId, join(createNote("mermaid"), "code"));
+        handle(ownerId, join(createNote("canvas"), "code"));
+        expect(summarize()).toEqual([
+            [ ownerId, "collab-joined", true ], [ ownerId, "collab-saver", false ], [ ownerId, "collab-denied", false ]
+        ]);
 
         // Once the writers are gone, the reader that waited for their content joins without it.
         disconnect(adminId);

@@ -34,7 +34,8 @@ export function initCollaboration(provider: MessagingProvider) {
 /** The kind of editor that edits the notes of a type together. */
 const EDITOR_KINDS: Partial<Record<string, CollabEditorKind>> = {
     text: "text",
-    code: "code"
+    code: "code",
+    mermaid: "code"
 };
 
 /**

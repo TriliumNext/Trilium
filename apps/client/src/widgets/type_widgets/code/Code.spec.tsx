@@ -5,8 +5,11 @@ import { useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
+import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
+import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
 import search from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
@@ -70,6 +73,8 @@ describe("EditableCode", () => {
         vi.restoreAllMocks();
         collaboration.startCollaboration.mockClear();
         collaboration.stopCollaboration.mockClear();
+        collaboration.isCollaboratingOn.mockReturnValue(false);
+        collaboration.isSavedByAnotherEditor.mockReturnValue(false);
     });
 
     it("reports each note loaded into a hidden editor", async () => {
@@ -110,6 +115,88 @@ describe("EditableCode", () => {
             if (container) render(null, container);
         });
         expect(collaboration.stopCollaboration).toHaveBeenCalledExactlyOnceWith(editor);
+    });
+
+    it("joins a session for a Mermaid note, and for no other type that borrows the editor", async () => {
+        let editor: VanillaCodeMirror | null = null;
+        const showAs = (note: FNote, noteType: "mermaid" | "canvas") => (
+            <ParentComponent.Provider value={parent}>
+                <EditableCode
+                    note={note} ntxId="ntx" parentComponent={parent} noteType={noteType}
+                    noteContext={undefined} viewScope={undefined}
+                    editorRef={(view) => { editor = view; }}
+                />
+            </ParentComponent.Provider>
+        );
+        const text = () => (editor as VanillaCodeMirror | null)?.getText();
+        const mermaid = buildNote({ type: "mermaid", title: "Diagram", content: "graph TD" });
+        const canvas = buildNote({ type: "canvas", title: "Drawing", content: "{}" });
+
+        await act(async () => { renderInto(showAs(mermaid, "mermaid")); });
+        await vi.waitFor(() => expect(collaboration.startCollaboration).toHaveBeenCalledTimes(1));
+        expect(collaboration.startCollaboration.mock.calls[0]?.[1]).toBe(mermaid);
+
+        await act(async () => { renderInto(showAs(canvas, "canvas")); });
+        await vi.waitFor(() => expect(text()).toBe("{}"));
+        expect(collaboration.startCollaboration).toHaveBeenCalledTimes(1);
+    });
+
+    it("types in what was saved past the session as its saver, and ignores what the saver saved", async () => {
+        stubVisibility(true);
+        const events = new Component();
+        const note = buildNote({ ...markdown, title: "Shared", content: "first" });
+        let editor: VanillaCodeMirror | null = null;
+        const text = () => (editor as VanillaCodeMirror | null)?.getText();
+        const reads: string[] = [];
+        /** Reports a save of the note by something else, which reads back as `content`. */
+        const saveElsewhere = async (content: string) => {
+            note.getBlob = async () => {
+                reads.push(content);
+                return new FBlob({
+                    blobId: `blob-${content}`, content, contentLength: content.length, dateModified: "", utcDateModified: ""
+                });
+            };
+            const loadResults = new LoadResults([]);
+            loadResults.addNoteContent(note.noteId, "elsewhere");
+            await act(async () => {
+                await events.handleEvent("entitiesReloaded", { loadResults });
+            });
+        };
+
+        await act(async () => {
+            renderInto(
+                <ParentComponent.Provider value={events}>
+                    <EditableCode
+                        note={note} ntxId="ntx" parentComponent={events}
+                        noteContext={undefined} viewScope={undefined}
+                        editorRef={(view) => { editor = view; }}
+                    />
+                </ParentComponent.Provider>
+            );
+        });
+        await vi.waitFor(() => expect(text()).toBe("first"));
+        expect(collaboration.startCollaboration).toHaveBeenCalledTimes(1);
+
+        // Without a session, the editor loads what was saved and joins again.
+        await saveElsewhere("second");
+        await vi.waitFor(() => expect(text()).toBe("second"));
+        expect(collaboration.startCollaboration).toHaveBeenCalledTimes(2);
+
+        // What the saver of the session saved already reached this editor through the session.
+        collaboration.isCollaboratingOn.mockReturnValue(true);
+        collaboration.isSavedByAnotherEditor.mockReturnValue(true);
+        collaboration.stopCollaboration.mockClear();
+        await saveElsewhere("by the saver");
+        await vi.waitFor(() => expect(reads).toContain("by the saver"));
+        await act(async () => { await Promise.resolve(); });
+        expect(text()).toBe("second");
+
+        // The saver receives only what was written past the session, and types it in.
+        collaboration.isSavedByAnotherEditor.mockReturnValue(false);
+        await saveElsewhere("a sample diagram");
+        await vi.waitFor(() => expect(text()).toBe("a sample diagram"));
+        expect(collaboration.startCollaboration).toHaveBeenCalledTimes(2);
+        expect(collaboration.stopCollaboration).not.toHaveBeenCalled();
     });
 
     it("reports a load into a visible editor once", async () => {

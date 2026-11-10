@@ -132,12 +132,12 @@ export function EditableCode({
         { view: VanillaCodeMirror; collaboration: CodeCollaboration } | undefined
     >(undefined);
     /**
-     * The side of the editor that edits a code note together with the other users, a Markdown
-     * note included. The editor of a Mermaid note, which reuses this component, has none.
+     * The side of the editor that edits the note together with the other users: a code note,
+     * which a Markdown note is too, or a Mermaid note.
      */
     function getCollaboration() {
         const view = editorRef.current;
-        if (!view || noteType !== "code") return undefined;
+        if (!view || (noteType !== "code" && noteType !== "mermaid")) return undefined;
         if (collaborationRef.current?.view !== view) {
             collaborationRef.current = { view, collaboration: new CodeCollaboration(view) };
         }
@@ -156,8 +156,15 @@ export function EditableCode({
             const codeEditor = editorRef.current;
             if (!codeEditor) return;
             const collaboration = getCollaboration();
-            // The session holds the content, and the saved one that arrives here trails it.
-            if (collaboration && isCollaboratingOn(collaboration, note.noteId)) return;
+            if (collaboration && isCollaboratingOn(collaboration, note.noteId)) {
+                // The session holds the content, and what its saver saved trails it. The saver
+                // itself only receives what was written past the session, such as a sample
+                // diagram, and types it in for everyone.
+                if (!isSavedByAnotherEditor(collaboration) && codeEditor.getText() !== (content ?? "")) {
+                    codeEditor.setText(content ?? "");
+                }
+                return;
+            }
             if (collaboration) stopCollaboration(collaboration);
             codeEditor.setText(content ?? "");
             // `setText()` loads a hidden editor without an update, so its listener reports nothing.
