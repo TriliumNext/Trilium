@@ -2332,7 +2332,7 @@ pre.code-embed-editor > .cm-editor:not(.cm-focused) {
 }
 
 #launcher-pane .launcher-button {
-    font-size: 150%;
+    font-size: 24px;
     /* Matches the `line-height: 1` boxicons gives an icon-only launcher, so an icon in a child
        span, as in a dropdown launcher, centers the same way. */
     line-height: 1;
