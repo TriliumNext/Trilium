@@ -127,6 +127,7 @@ describe("Script API (core)", () => {
                 const note = becca.getNoteOrThrow(noteId);
                 note.title = "written by the script";
                 note.save();
+                note.setContent("written by the script");
                 throw new Error("boom");
             });
             const logError = vi.spyOn(getLog(), "error");
@@ -135,6 +136,8 @@ describe("Script API (core)", () => {
 
             expect(res.status).toBe(500);
             expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe(before);
+            expect(becca.getNoteOrThrow(noteId).title).toBe(before);
+            expect(becca.getNoteOrThrow(noteId).getContent()).toBe("return 0;");
             expect(logError).toHaveBeenCalledWith(expect.stringContaining("boom"));
             expect(res.body).toEqual({ message: "boom", noteId });
         });

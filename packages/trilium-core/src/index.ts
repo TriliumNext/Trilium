@@ -6,6 +6,8 @@ import LogService, { getLog, initLog } from "./services/log";
 import BackupService, { initBackup, type BackupOptionsService } from "./services/backup";
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
+import entityChangesService from "./services/entity_changes";
+import { restoreAfterSavepointRollback } from "./becca/becca_loader";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
 import { initRequest, RequestProvider } from "./services/request";
 import { initTranslations, TranslationProvider } from "./services/i18n";
@@ -245,7 +247,17 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
         // resolve dbReady, which triggers the becca load that injects virtual subtrees.
         initInAppHelp(inAppHelp);
     }
-    await initSql(new SqlService(dbConfig, getLog()));
+    await initSql(new SqlService({
+        ...dbConfig,
+        // Handled here rather than by each platform, and synchronously, because the outer
+        // transaction carries on and later work in it must already see the restored cache.
+        onSavepointRollback(writes) {
+            restoreAfterSavepointRollback(writes);
+            // Change IDs handed out inside the savepoint were rolled back with it.
+            entityChangesService.recalculateMaxEntityChangeId();
+            dbConfig.onSavepointRollback?.(writes);
+        }
+    }, getLog()));
     initSchema(schema);
     initImageProvider(image);
     if (getDemoArchive) {

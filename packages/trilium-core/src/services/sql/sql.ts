@@ -13,12 +13,30 @@ const PARAM_LIMIT = 100;
  */
 type StatementMode = "row" | "raw" | "pluck";
 
+/** An entity whose row was written inside a savepoint. */
+export interface SavepointWrite {
+    entityName: string;
+    entityId: string;
+}
+
 export interface SqlServiceParams {
     provider: DatabaseProvider;
     onTransactionRollback: () => void;
     onTransactionCommit: () => void;
-    onSavepointRollback?: () => void;
+    /**
+     * Called when a nested `transactional()` (a savepoint) rolls back while the outer transaction
+     * stays open. `writes` lists every entity written inside the savepoint, including writes of
+     * savepoints nested in it that had been released, so that cached copies can be brought back
+     * in line with the rows SQLite restored.
+     */
+    onSavepointRollback?: (writes: SavepointWrite[]) => void;
     isReadOnly: boolean;
+}
+
+interface SavepointFrame {
+    writes: SavepointWrite[];
+    /** How many entity change IDs the context held when the savepoint opened. */
+    entityChangeIdCount: number;
 }
 
 export class SqlService {
@@ -26,6 +44,11 @@ export class SqlService {
     private dbConnection: DatabaseProvider;
     private statementCache: Record<string, Statement> = {};
     private params: Omit<SqlServiceParams, "provider">;
+    /**
+     * Open savepoints, innermost last. `transactional()` is synchronous, so savepoints open and
+     * close strictly in stack order on the one connection.
+     */
+    private savepointFrames: SavepointFrame[] = [];
 
     constructor({ provider, ...restParams }: SqlServiceParams,
         private log: LogService
@@ -402,8 +425,14 @@ export class SqlService {
     }
 
     transactional<T>(func: (statement: Statement) => T) {
+        const frame = this.dbConnection.inTransaction ? this.openSavepointFrame() : null;
+
         try {
             const ret = (this.dbConnection.transaction(func) as any).deferred();
+
+            if (frame) {
+                this.releaseSavepointFrame(frame);
+            }
 
             if (!this.dbConnection.inTransaction) {
                 // i.e. transaction was really committed (and not just savepoint released)
@@ -413,12 +442,61 @@ export class SqlService {
             return ret as T;
         } catch (e) {
             console.warn("Got error ", e);
+
+            if (frame) {
+                this.savepointFrames.pop();
+            }
+
             if (!this.dbConnection.inTransaction) {
                 this.params.onTransactionRollback();
-            } else {
-                this.params.onSavepointRollback?.();
+            } else if (frame) {
+                this.dropEntityChangeIdsSince(frame.entityChangeIdCount);
+                this.params.onSavepointRollback?.(frame.writes);
             }
             throw e;
+        }
+    }
+
+    /**
+     * Records that an entity's row was written, so that if the innermost open savepoint rolls back,
+     * its cached copy can be restored. Does nothing outside a savepoint: a failed outermost
+     * transaction is handled by `onTransactionRollback`.
+     */
+    recordSavepointWrite(entityName: string, entityId: string) {
+        this.savepointFrames.at(-1)?.writes.push({ entityName, entityId });
+    }
+
+    private openSavepointFrame(): SavepointFrame {
+        const frame = { writes: [], entityChangeIdCount: this.getEntityChangeIds()?.length ?? 0 };
+        this.savepointFrames.push(frame);
+        return frame;
+    }
+
+    /** A released savepoint's writes become part of the enclosing one, which can still roll back. */
+    private releaseSavepointFrame(frame: SavepointFrame) {
+        this.savepointFrames.pop();
+        this.savepointFrames.at(-1)?.writes.push(...frame.writes);
+    }
+
+    /**
+     * Forgets the entity change IDs recorded since a savepoint opened. SQLite has rolled their rows
+     * back, so they must not reach clients when the outer transaction commits; the ones recorded
+     * before the savepoint belong to work that succeeded and are kept.
+     */
+    private dropEntityChangeIdsSince(count: number) {
+        const entityChangeIds = this.getEntityChangeIds();
+
+        if (entityChangeIds && entityChangeIds.length > count) {
+            entityChangeIds.length = count;
+        }
+    }
+
+    private getEntityChangeIds() {
+        try {
+            return getContext().get<number[]>("entityChangeIds");
+        } catch {
+            // No execution context (e.g. a bare script); nothing has been recorded to drop.
+            return undefined;
         }
     }
 
