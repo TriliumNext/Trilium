@@ -25,6 +25,23 @@ describe("convertOfficeToHtml", () => {
 
         expect(await convertOfficeToHtml(rtf, XLSX_MIME)).toContain("World");
     });
+
+    it("hands a DOCX labeled as a workbook to officeparser instead of rendering an empty sheet", async () => {
+        const html = await convertOfficeToHtml(buildDocx("Hello from Word"), XLSX_MIME);
+
+        expect(html).toContain("Hello from Word");
+        expect(html).not.toContain("Empty spreadsheet.");
+    });
+
+    it("renders a workbook without sheets through the spreadsheet pipeline", async () => {
+        expect(await convertOfficeToHtml(buildXlsx("<sheets/>"), XLSX_MIME)).toBe("<p>Empty spreadsheet.</p>");
+    });
+
+    it("hands a workbook that exceljs cannot parse to officeparser", async () => {
+        const conversion = convertOfficeToHtml(buildXlsx("<sheets>"), XLSX_MIME);
+
+        await expect(conversion).resolves.not.toContain("Empty spreadsheet.");
+    });
 });
 
 /** Builds the smallest DOCX package officeparser reads: one paragraph holding `text`. */
@@ -44,5 +61,23 @@ function buildDocx(text: string) {
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:body><w:p><w:r><w:t>${text}</w:t></w:r></w:p></w:body>
 </w:document>`)
+    });
+}
+
+/** Builds a spreadsheet package whose `xl/workbook.xml` holds `sheets` as its sheet list. */
+function buildXlsx(sheets: string) {
+    return zipSync({
+        "[Content_Types].xml": strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+</Types>`),
+        "_rels/.rels": strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`),
+        "xl/workbook.xml": strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${sheets}</workbook>`)
     });
 }
