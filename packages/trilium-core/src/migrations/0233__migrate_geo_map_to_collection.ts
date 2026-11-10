@@ -1,5 +1,5 @@
-import { adminBecca } from "../becca/becca.js";
-import becca_loader from "../becca/becca_loader.js";
+import becca from "../becca/becca";
+import becca_loader from "../becca/becca_loader";
 import { getContext } from "../services/context";
 import hidden_subtree from "../services/hidden_subtree";
 
@@ -10,7 +10,7 @@ export default () => {
         // Ensure the geomap template is generated.
         hidden_subtree.checkHiddenSubtree(true);
 
-        for (const note of Object.values(adminBecca.notes)) {
+        for (const note of Object.values(becca.notes)) {
             if (note.type as string !== "geoMap") {
                 continue;
             }

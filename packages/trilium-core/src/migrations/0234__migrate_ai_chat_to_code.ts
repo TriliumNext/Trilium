@@ -1,12 +1,12 @@
-import { adminBecca } from "../becca/becca.js";
-import becca_loader from "../becca/becca_loader.js";
+import becca from "../becca/becca";
+import becca_loader from "../becca/becca_loader";
 import { getContext } from "../services/context";
 
 export default () => {
     getContext().init(() => {
         becca_loader.load();
 
-        for (const note of Object.values(adminBecca.notes)) {
+        for (const note of Object.values(becca.notes)) {
             if (note.type as string !== "aiChat") {
                 continue;
             }

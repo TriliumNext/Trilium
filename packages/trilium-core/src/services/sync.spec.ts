@@ -679,7 +679,7 @@ describe("sync service", () => {
         expect([null, ...Array.from({ length: 0 })]).toContain(syncService.getTotalPullCount());
     });
 
-    it("startSyncTimer schedules periodic and kickoff syncs once becca is loaded", async () => {
+    it("startSyncTimer schedules periodic and kickoff syncs once becca is loaded, which run as the instance", async () => {
         // Mock the timer functions so no real sync is ever scheduled (which would
         // fire during later tests). beccaLoaded is already resolved in the bootstrap,
         // so its `.then` callback runs on the microtask queue.
@@ -692,6 +692,20 @@ describe("sync service", () => {
 
         expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60000);
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
+
+        const scopes: boolean[] = [];
+        vi.spyOn(syncOptions, "isSyncSetup").mockImplementation(() => {
+            scopes.push(cls.isSystem());
+            return false;
+        });
+        const periodic = setIntervalSpy.mock.calls.find(([, delay]) => delay === 60000)?.[0];
+        const kickoff = setTimeoutSpy.mock.calls.find(([, delay]) => delay === 5000)?.[0];
+        expect(periodic).toBeTypeOf("function");
+        expect(kickoff).toBeTypeOf("function");
+        (periodic as () => void)();
+        (kickoff as () => void)();
+
+        await vi.waitFor(() => expect(scopes).toEqual([ true, true ]));
     });
 });
 

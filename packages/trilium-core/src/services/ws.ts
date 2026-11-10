@@ -1,6 +1,6 @@
 import { type EntityChange, type SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
@@ -48,19 +48,19 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
     // only when that fails, try to load from the database
     const sql = getSql();
     if (entityChange.entityName === "attributes") {
-        entityChange.entity = getBecca().getAttribute(entityChange.entityId);
+        entityChange.entity = becca.getAttribute(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM attributes WHERE attributeId = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "branches") {
-        entityChange.entity = getBecca().getBranch(entityChange.entityId);
+        entityChange.entity = becca.getBranch(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM branches WHERE branchId = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "notes") {
-        entityChange.entity = getBecca().getNote(entityChange.entityId);
+        entityChange.entity = becca.getNote(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM notes WHERE noteId = ?`, [entityChange.entityId]);
@@ -79,7 +79,7 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
     } else if (entityChange.entityName === "note_reordering") {
         entityChange.positions = {};
 
-        const parentNote = getBecca().getNote(entityChange.entityId);
+        const parentNote = becca.getNote(entityChange.entityId);
 
         if (parentNote) {
             for (const childBranch of parentNote.getChildBranches()) {
@@ -89,13 +89,13 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
             }
         }
     } else if (entityChange.entityName === "options") {
-        entityChange.entity = getBecca().getOption(entityChange.entityId);
+        entityChange.entity = becca.getOption(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(/*sql*/`SELECT * FROM options WHERE name = ?`, [entityChange.entityId]);
         }
     } else if (entityChange.entityName === "attachments") {
-        entityChange.entity = getBecca().getAttachment(entityChange.entityId);
+        entityChange.entity = becca.getAttachment(entityChange.entityId);
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(
@@ -153,7 +153,7 @@ function buildFrontendUpdateMessage(entityChangeIds: number[]): WebSocketMessage
 
     // sort entity changes since froca expects "referential order", i.e. referenced entities should already exist
     // in froca.
-    // Froca needs this since it is an incomplete copy, it can't create "skeletons" like getBecca().
+    // Froca needs this since it is an incomplete copy, it can't create "skeletons" like becca.
     entityChanges.sort((a, b) => ORDERING[a.entityName] - ORDERING[b.entityName]);
 
     for (const entityChange of entityChanges) {
@@ -222,7 +222,7 @@ function reloadFroca(reason: string) {
     sendMessageToAllClients({ type: "reload-froca", reason });
 }
 
-/** Has the user's open clients reload froca, after something changed what their Becca holds. */
+/** Has the user's open clients reload froca, after something changed which notes they can see. */
 function reloadFrocaForUser(userId: string, reason: string) {
     messagingProvider?.sendMessageToUserClients?.(userId, { type: "reload-froca", reason });
 }

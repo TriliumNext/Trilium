@@ -7,7 +7,7 @@ import type {
 } from "@triliumnext/commons";
 import type { Response } from "../http_interface";
 
-import { getContext } from "./context.js";
+import { initAsSystem } from "./context.js";
 import dateUtils from "./utils/date.js";
 
 type BackupType = "daily" | "weekly" | "monthly";
@@ -71,7 +71,7 @@ export default abstract class BackupService {
      * Default implementation runs inside an execution context.
      */
     regularBackup(): void {
-        getContext().init(() => {
+        initAsSystem(() => {
             this.runScheduledBackups().catch(err => {
                 console.error("[Backup] Error running scheduled backups:", err);
             });

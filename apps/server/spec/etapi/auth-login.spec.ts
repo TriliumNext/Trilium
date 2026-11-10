@@ -1,8 +1,8 @@
-import { cls, options } from "@triliumnext/core";
+import { cls, options, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import { Application } from "express";
 import supertest from "supertest";
 import { generateConfig, Totp } from "time2fa";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import config from "../../src/services/config.js";
 import recoveryCodeService from "../../src/services/encryption/recovery_codes.js";
@@ -20,13 +20,26 @@ describe("etapi/auth/login", () => {
         app = await buildApp();
     });
 
-    it("issues a token for the correct password", async () => {
-        const response = await supertest(app)
-            .post(LOGIN_URL)
-            .send({ password: CORRECT_PASSWORD, tokenName: "test" })
-            .expect(201);
+    it("issues a token for the correct password, checked by the instance itself", async () => {
+        const verifiedAsSystem: boolean[] = [];
+        const verifyPassword = passwordEncryptionService.verifyPassword;
+        const spy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockImplementation((password) => {
+            verifiedAsSystem.push(cls.isSystem());
+            return verifyPassword(password);
+        });
 
-        expect(response.body.authToken).toBeTruthy();
+        try {
+            const response = await supertest(app)
+                .post(LOGIN_URL)
+                .send({ password: CORRECT_PASSWORD, tokenName: "test" })
+                .expect(201);
+
+            expect(response.body.authToken).toBeTruthy();
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(verifiedAsSystem).toEqual([ true ]);
     });
 
     // verifyPassword is async; this guards that a wrong password is rejected and the

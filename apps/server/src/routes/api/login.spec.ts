@@ -57,6 +57,7 @@ describe("Login (sync) API", () => {
         // session must be regenerated (fixation protection) before being marked as logged in
         expect(regenerateCalled).toBe(true);
         expect(req.session.loggedIn).toBe(true);
+        expect(req.session.isSyncPeer).toBe(true);
     });
 });
 

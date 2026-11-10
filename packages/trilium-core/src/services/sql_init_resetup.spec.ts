@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import * as cls from "./context.js";
+import hiddenSubtree from "./hidden_subtree.js";
 import {
     enterSetupMode,
     hasExistingData,
@@ -68,7 +69,21 @@ describe("createDatabaseForSync on a partially set-up database", () => {
         expect(sqlInit.schemaExists()).toBe(true);
         expect(sqlInit.isDbInitialized()).toBe(false);
 
-        await cls.init(() => sqlInit.createInitialDatabase(true, "en"));
+        // The subtree check without arguments is the one that builds the system notes for the new document.
+        const subtreeScopes: boolean[] = [];
+        const checkHiddenSubtree = hiddenSubtree.checkHiddenSubtree;
+        const subtreeSpy = vi.spyOn(hiddenSubtree, "checkHiddenSubtree").mockImplementation((...args) => {
+            if (args.length === 0) {
+                subtreeScopes.push(cls.isSystem());
+            }
+            return checkHiddenSubtree(...args);
+        });
+        try {
+            await cls.init(() => sqlInit.createInitialDatabase(true, "en"));
+        } finally {
+            subtreeSpy.mockRestore();
+        }
+        expect(subtreeScopes).toEqual([ true ]);
 
         // A pristine new document: initialized, root note present, no leftovers.
         expect(sqlInit.isDbInitialized()).toBe(true);

@@ -1,7 +1,7 @@
 import type { BranchRow } from "@triliumnext/commons";
 import type { EntityChange } from "@triliumnext/commons";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
 import noteTypesService from "../services/note_types.js";
 import { hashedBlobId, randomString } from "../services/utils/index.js";
@@ -82,7 +82,7 @@ class ConsistencyChecks {
             for (const parentNoteId of childToParents[noteId]) {
                 if (path.includes(parentNoteId)) {
                     if (this.autoFix) {
-                        const branch = getBecca().getBranchFromChildAndParent(noteId, parentNoteId);
+                        const branch = becca.getBranchFromChildAndParent(noteId, parentNoteId);
                         if (branch) {
                             branch.markAsDeleted("cycle-autofix");
                             logFix(`Branch '${branch.branchId}' between child '${noteId}' and parent '${parentNoteId}' has been deleted since it was causing a tree cycle.`);
@@ -147,7 +147,7 @@ class ConsistencyChecks {
                     AND notes.noteId IS NULL`,
             ({ branchId, noteId }) => {
                 if (this.autoFix) {
-                    const branch = getBecca().getBranch(branchId);
+                    const branch = becca.getBranch(branchId);
                     if (!branch) {
                         return;
                     }
@@ -173,7 +173,7 @@ class ConsistencyChecks {
             ({ branchId, parentNoteId }) => {
                 if (this.autoFix) {
                     // Delete the old branch and recreate it with root as parent.
-                    const oldBranch = getBecca().getBranch(branchId);
+                    const oldBranch = becca.getBranch(branchId);
                     if (!oldBranch) {
                         return;
                     }
@@ -183,7 +183,7 @@ class ConsistencyChecks {
 
                     let message = `Branch '${branchId}' was missing parent note '${parentNoteId}', so it was deleted. `;
 
-                    const note = getBecca().getNote(noteId);
+                    const note = becca.getNote(noteId);
                     if (!note) {
                         return;
                     }
@@ -218,7 +218,7 @@ class ConsistencyChecks {
                     AND notes.noteId IS NULL`,
             ({ attributeId, noteId }) => {
                 if (this.autoFix) {
-                    const attribute = getBecca().getAttribute(attributeId);
+                    const attribute = becca.getAttribute(attributeId);
                     if (!attribute) {
                         return;
                     }
@@ -243,7 +243,7 @@ class ConsistencyChecks {
                     AND notes.noteId IS NULL`,
             ({ attributeId, noteId }) => {
                 if (this.autoFix) {
-                    const attribute = getBecca().getAttribute(attributeId);
+                    const attribute = becca.getAttribute(attributeId);
                     if (!attribute) {
                         return;
                     }
@@ -278,7 +278,7 @@ class ConsistencyChecks {
                     AND attachments.isDeleted = 0`,
             ({ attachmentId, ownerId }) => {
                 if (this.autoFix) {
-                    const attachment = getBecca().getAttachment(attachmentId);
+                    const attachment = becca.getAttachment(attachmentId);
                     if (!attachment) {
                         return;
                     }
@@ -311,7 +311,7 @@ class ConsistencyChecks {
                     AND branches.isDeleted = 0`,
             ({ branchId, noteId }) => {
                 if (this.autoFix) {
-                    const branch = getBecca().getBranch(branchId);
+                    const branch = becca.getBranch(branchId);
                     if (!branch) return;
                     branch.markAsDeleted();
 
@@ -335,7 +335,7 @@ class ConsistencyChecks {
         `,
             ({ branchId, parentNoteId }) => {
                 if (this.autoFix) {
-                    const branch = getBecca().getBranch(branchId);
+                    const branch = becca.getBranch(branchId);
                     if (!branch) {
                         return;
                     }
@@ -404,7 +404,7 @@ class ConsistencyChecks {
                         [noteId, parentNoteId]
                     );
 
-                    const branches = branchIds.map((branchId) => getBecca().getBranch(branchId));
+                    const branches = branchIds.map((branchId) => becca.getBranch(branchId));
 
                     // it's not necessarily "original" branch, it's just the only one which will survive
                     const origBranch = branches[0];
@@ -441,7 +441,7 @@ class ConsistencyChecks {
                     AND attachments.isDeleted = 0`,
             ({ attachmentId, noteId }) => {
                 if (this.autoFix) {
-                    const attachment = getBecca().getAttachment(attachmentId);
+                    const attachment = becca.getAttachment(attachmentId);
                     if (!attachment) return;
                     attachment.markAsDeleted();
 
@@ -467,7 +467,7 @@ class ConsistencyChecks {
                     AND type NOT IN (${noteTypesStr})`,
             ({ noteId, type }) => {
                 if (this.autoFix) {
-                    const note = getBecca().getNote(noteId);
+                    const note = becca.getNote(noteId);
                     if (!note) return;
                     note.type = "file"; // file is a safe option to recover notes if the type is not known
                     note.save();
@@ -548,7 +548,7 @@ class ConsistencyChecks {
                         AND content IS NULL`,
                 ({ noteId, type, mime }) => {
                     if (this.autoFix) {
-                        const note = getBecca().getNote(noteId);
+                        const note = becca.getNote(noteId);
                         const blankContent = getBlankContent(false, type, mime);
                         if (!note) return;
 
@@ -623,7 +623,7 @@ class ConsistencyChecks {
                         [parentNoteId]
                     );
 
-                    const branches = branchIds.map((branchId) => getBecca().getBranch(branchId));
+                    const branches = branchIds.map((branchId) => becca.getBranch(branchId));
 
                     for (const branch of branches) {
                         if (!branch) continue;
@@ -657,7 +657,7 @@ class ConsistencyChecks {
                     AND value = ''`,
             ({ attributeId }) => {
                 if (this.autoFix) {
-                    const relation = getBecca().getAttribute(attributeId);
+                    const relation = becca.getAttribute(attributeId);
                     if (!relation) return;
                     relation.markAsDeleted();
 
@@ -680,7 +680,7 @@ class ConsistencyChecks {
                     AND type != 'relation'`,
             ({ attributeId, type }) => {
                 if (this.autoFix) {
-                    const attribute = getBecca().getAttribute(attributeId);
+                    const attribute = becca.getAttribute(attributeId);
                     if (!attribute) return;
                     attribute.type = "label";
                     attribute.save();
@@ -704,7 +704,7 @@ class ConsistencyChecks {
                     AND notes.isDeleted = 1`,
             ({ attributeId, noteId }) => {
                 if (this.autoFix) {
-                    const attribute = getBecca().getAttribute(attributeId);
+                    const attribute = becca.getAttribute(attributeId);
                     if (!attribute) return;
                     attribute.markAsDeleted();
 
@@ -728,7 +728,7 @@ class ConsistencyChecks {
                     AND notes.isDeleted = 1`,
             ({ attributeId, targetNoteId }) => {
                 if (this.autoFix) {
-                    const attribute = getBecca().getAttribute(attributeId);
+                    const attribute = becca.getAttribute(attributeId);
                     if (!attribute) return;
                     attribute.markAsDeleted();
 
@@ -995,10 +995,10 @@ function runEntityChangesChecks() {
 
 function startConsistencyChecks() {
     sqlInit.dbReady.then(() => {
-        setInterval(cls.wrap(runPeriodicChecks), 60 * 60 * 1000);
+        setInterval(cls.wrapAsSystem(runPeriodicChecks), 60 * 60 * 1000);
 
         // kickoff checks soon after startup (to not block the initial load)
-        setTimeout(cls.wrap(runPeriodicChecks), 4 * 1000);
+        setTimeout(cls.wrapAsSystem(runPeriodicChecks), 4 * 1000);
     });
 }
 

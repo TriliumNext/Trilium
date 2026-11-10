@@ -5,7 +5,8 @@ const h = vi.hoisted(() => ({
     saveAttachment: vi.fn(),
     setContent: vi.fn(),
     getContent: vi.fn(),
-    transactions: 0
+    transactions: 0,
+    systemScopes: 0
 }));
 
 vi.mock("@triliumnext/core", () => ({
@@ -16,7 +17,12 @@ vi.mock("@triliumnext/core", () => ({
         })
     },
     binary_utils: { decodeUtf8: (content: string) => content },
-    cls: { init: <T>(callback: () => T) => callback() },
+    cls: {
+        initAsSystem: <T>(callback: () => T) => {
+            h.systemScopes++;
+            return callback();
+        }
+    },
     getSql: () => ({
         transactional: <T>(callback: () => T) => {
             h.transactions++;
@@ -33,6 +39,7 @@ const STARTED_AT = Date.UTC(2026, 9, 13, 14, 30);
 beforeEach(() => {
     vi.clearAllMocks();
     h.transactions = 0;
+    h.systemScopes = 0;
     h.saveAttachment.mockReturnValue({ attachmentId: "transcript1" });
     h.getContent.mockReturnValue("");
 });
@@ -66,6 +73,8 @@ describe("AttachmentSink", () => {
             { source: "system", offsetMs: 3000, text: "Yes." }
         ]);
         expect(h.transactions).toBe(3);
+        // The recorder runs in the desktop app, which has no users, so it writes as the instance.
+        expect(h.systemScopes).toBe(h.transactions);
     });
 
     it("keeps the speaker names stored in the attachment, which a rename writes meanwhile", () => {

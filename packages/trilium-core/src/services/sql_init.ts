@@ -5,7 +5,7 @@ import { getLog } from "./log";
 import { getBackup } from "./backup";
 import optionService from "./options";
 import eventService from "./events";
-import { getContext } from "./context";
+import { initAsSystem } from "./context";
 import config from "./config";
 import BNote from "../becca/entities/bnote";
 import BBranch from "../becca/entities/bbranch";
@@ -17,7 +17,6 @@ import passwordService from "./encryption/password";
 import dateUtils from "./utils/date";
 import { newEntityId } from "./utils/index";
 import { SqlService } from "./sql/sql";
-import { evictIdle } from "../becca/becca_cache.js";
 import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 
 export const dbReady = deferred<void>();
@@ -163,7 +162,7 @@ function optimize() {
 }
 
 function initializeDb() {
-    getContext().init(initDbConnection);
+    initAsSystem(initDbConnection);
 
     dbReady.then(() => {
         getBackup().scheduleBackups();
@@ -172,8 +171,6 @@ function initializeDb() {
         setTimeout(() => optimize(), 60 * 60 * 1000);
 
         setInterval(() => optimize(), 10 * 60 * 60 * 1000);
-
-        setInterval(() => evictIdle(), 5 * 60 * 1000);
     });
 }
 
@@ -246,7 +243,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // Check hidden subtree.
     // This ensures the existence of system templates, for the demo content.
     console.log("Checking hidden subtree at first start.");
-    getContext().init(() => {
+    initAsSystem(() => {
         getSql().transactional(() => hidden_subtree.checkHiddenSubtree());
     });
 

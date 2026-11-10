@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import ValueExtractor from "./value_extractor.js";
-import { getBecca } from "../../becca/becca.js";
+import becca from "../../becca/becca.js";
 import SearchContext from "./search_context.js";
 import { note } from "../../test/becca_mocking.js";
 
@@ -16,7 +16,7 @@ beforeAll(() => {
 
 describe("Value extractor", () => {
     beforeEach(() => {
-        getBecca().reset();
+        becca.reset();
     });
 
     it("simple title extraction", async () => {

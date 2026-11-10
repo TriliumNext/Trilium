@@ -1,6 +1,7 @@
+import { becca, cls } from "@triliumnext/core";
 import type { Application } from "express";
 import supertest from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import buildApp from "../../src/app.js";
 import sql from "../../src/services/sql.js";
@@ -31,6 +32,24 @@ describe("etapi/cls-context", () => {
         );
 
         expect(componentIds).toEqual(["etapi"]);
+    });
+
+    it("acts for the instance, since a token is not tied to a user", async () => {
+        const seen: boolean[] = [];
+        const getNote = becca.getNote.bind(becca);
+        const spy = vi.spyOn(becca, "getNote").mockImplementation((noteId) => {
+            seen.push(cls.isSystem());
+            return getNote(noteId);
+        });
+
+        try {
+            await supertest(app).get("/etapi/notes/root").auth("etapi", token, { type: "basic" }).expect(200);
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(seen.length).toBeGreaterThan(0);
+        expect(seen.every(Boolean)).toBe(true);
     });
 
     it("does not carry a context over from a request that failed", async () => {

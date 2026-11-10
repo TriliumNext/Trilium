@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import { getContext } from "./context.js";
 import optionService from "./options.js";
 import { getSql } from "./sql/index.js";
@@ -40,13 +40,13 @@ describe("options service (real DB)", () => {
             const getRowSpy = vi.spyOn(getSql(), "getRow").mockImplementation(() => {
                 throw new Error("DB is not initialized");
             });
-            const wasLoaded = getBecca().loaded;
-            getBecca().loaded = false;
+            const wasLoaded = becca.loaded;
+            becca.loaded = false;
 
             try {
                 expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
             } finally {
-                getBecca().loaded = wasLoaded;
+                becca.loaded = wasLoaded;
                 getRowSpy.mockRestore();
             }
         });
@@ -59,15 +59,15 @@ describe("options service (real DB)", () => {
                 query.includes("sqlite_master") ? null : originalGetValue(query, params)
             );
             const getRowSpy = vi.spyOn(sql, "getRow");
-            const wasLoaded = getBecca().loaded;
-            getBecca().loaded = false;
+            const wasLoaded = becca.loaded;
+            becca.loaded = false;
 
             try {
                 expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
                 expect(getValueSpy).toHaveBeenCalledWith(expect.stringContaining("sqlite_master"));
                 expect(getRowSpy).not.toHaveBeenCalled();
             } finally {
-                getBecca().loaded = wasLoaded;
+                becca.loaded = wasLoaded;
                 getValueSpy.mockRestore();
                 getRowSpy.mockRestore();
             }
@@ -134,9 +134,9 @@ describe("options service (real DB)", () => {
                 optionService.createOption(localName as any, "local-value", false);
             });
 
-            expect(getBecca().getOption(syncedName)?.value).toBe("synced-value");
-            expect(getBecca().getOption(syncedName)?.isSynced).toBe(true);
-            expect(getBecca().getOption(localName)?.isSynced).toBe(false);
+            expect(becca.getOption(syncedName)?.value).toBe("synced-value");
+            expect(becca.getOption(syncedName)?.isSynced).toBe(true);
+            expect(becca.getOption(localName)?.isSynced).toBe(false);
 
             expect(readFromDb(syncedName)).toBe("synced-value");
             expect(readFromDb(localName)).toBe("local-value");
@@ -160,7 +160,7 @@ describe("options service (real DB)", () => {
             getContext().init(() => optionService.setOption(name as any, "created-by-set"));
 
             expect(optionService.getOption(name as any)).toBe("created-by-set");
-            expect(getBecca().getOption(name)?.isSynced).toBe(false);
+            expect(becca.getOption(name)?.isSynced).toBe(false);
             expect(readFromDb(name)).toBe("created-by-set");
         });
 
@@ -171,13 +171,13 @@ describe("options service (real DB)", () => {
             const name = "searchEnableFuzzyMatching";
             getContext().init(() => {
                 getSql().execute("DELETE FROM options WHERE name = ?", [name]);
-                delete getBecca().options[name];
+                delete becca.options[name];
             });
 
             getContext().init(() => optionService.setOption(name as any, "true"));
 
             // Must be recreated as synced, not silently downgraded to local-only.
-            expect(getBecca().getOption(name)?.isSynced).toBe(true);
+            expect(becca.getOption(name)?.isSynced).toBe(true);
             const row = getSql().getRowOrNull<{ isSynced: number }>(
                 "SELECT isSynced FROM options WHERE name = ?",
                 [name]

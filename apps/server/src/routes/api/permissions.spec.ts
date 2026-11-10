@@ -1,12 +1,14 @@
 import type { NoteAccessResponse } from "@triliumnext/commons";
-import { cls, getSql, note_service, permission_service, user_homes, user_service } from "@triliumnext/core";
+import { cls, ForbiddenError, getSql, note_service, permission_service, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import sqlInit from "../../services/sql_init.js";
 import permissionsRoute from "./permissions.js";
 
+/** Builds the request and, as `internalRoute` does, puts the session's user in CLS. Call it inside `cls.init()`. */
 function req<P extends Record<string, string>>(body: Record<string, unknown> = {}, params = {} as P, session: Record<string, unknown> = {}) {
+    cls.set("userId", session.userId);
     return { body, params, session } as unknown as Request<P>;
 }
 
@@ -45,9 +47,8 @@ describe("Permissions API", () => {
     });
 
     describe("listPermissions", () => {
-        it("returns 403 without admin session", () => {
-            const result = cls.init(() => permissionsRoute.listPermissions(req({}, { noteId: "root" })));
-            expect(Array.isArray(result) && result[0]).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => cls.init(() => permissionsRoute.listPermissions(req({}, { noteId: "root" })))).toThrow(ForbiddenError);
         });
 
         it("returns permissions for a note as admin", () => {
@@ -58,9 +59,8 @@ describe("Permissions API", () => {
     });
 
     describe("createPermission", () => {
-        it("returns 403 without admin session", () => {
-            const result = cls.init(() => permissionsRoute.createPermission(req({ noteId: "root", userId: guestId })));
-            expect(Array.isArray(result) && result[0]).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => cls.init(() => permissionsRoute.createPermission(req({ noteId: "root", userId: guestId })))).toThrow(ForbiddenError);
         });
 
         it("returns 400 when noteId is missing", () => {
@@ -92,9 +92,8 @@ describe("Permissions API", () => {
     });
 
     describe("deletePermission", () => {
-        it("returns 403 without admin session", () => {
-            const result = cls.init(() => permissionsRoute.deletePermission(req({}, { permissionId: "fake" })));
-            expect(Array.isArray(result) && result[0]).toBe(403);
+        it("refuses a request without a user", () => {
+            expect(() => cls.init(() => permissionsRoute.deletePermission(req({}, { permissionId: "fake" })))).toThrow(ForbiddenError);
         });
 
         it("revokes an existing permission", () => {
@@ -162,7 +161,7 @@ describe("Permissions API", () => {
             const noteId = `noteAccessGuarded${Date.now()}`;
             insertNote(noteId, ownerId);
 
-            expect(statusOf(getAccess(noteId, {}))).toBe(403);
+            expect(() => getAccess(noteId, {})).toThrow(ForbiddenError);
             expect(statusOf(getAccess(noteId, { userId: guestId }))).toBe(403);
             expect(statusOf(setAccess(noteId, guestId, false, { userId: guestId }))).toBe(403);
             expect(statusOf(removeAccess(noteId, guestId, { userId: guestId }))).toBe(403);

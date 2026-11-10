@@ -1,4 +1,4 @@
-import { getBecca } from "../becca/becca.js";
+import becca from "../becca/becca.js";
 import * as cls from "./context.js";
 
 function getHoistedNoteId() {
@@ -14,7 +14,7 @@ function isHoistedInHiddenSubtree() {
         return true;
     }
 
-    const hoistedNote = getBecca().getNote(hoistedNoteId);
+    const hoistedNote = becca.getNote(hoistedNoteId);
 
     if (!hoistedNote) {
         throw new Error(`Cannot find hoisted note '${hoistedNoteId}'`);
@@ -24,12 +24,12 @@ function isHoistedInHiddenSubtree() {
 }
 
 function getWorkspaceNote() {
-    const hoistedNote = getBecca().getNote(getHoistedNoteId());
+    const hoistedNote = becca.getNote(getHoistedNoteId());
 
     if (hoistedNote && (hoistedNote.isRoot() || hoistedNote.hasLabel("workspace"))) {
         return hoistedNote;
     } else {
-        return getBecca().getRoot();
+        return becca.getRoot();
     }
 }
 

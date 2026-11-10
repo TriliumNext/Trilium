@@ -121,6 +121,7 @@ async function loginSync(req: Request) {
     });
 
     req.session.loggedIn = true;
+    req.session.isSyncPeer = true;
 
     return {
         instanceId: getInstanceId(),

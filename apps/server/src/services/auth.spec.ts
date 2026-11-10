@@ -219,7 +219,7 @@ describe("Auth", () => {
             const res = makeRes();
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy }
+                    session: { loggedIn: true, userId: "u", lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy }
                 }),
                 res as never,
                 vi.fn()
@@ -232,7 +232,7 @@ describe("Auth", () => {
             const destroyErr = vi.fn((cb: (err?: Error) => void) => cb(new Error("boom")));
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy: destroyErr }
+                    session: { loggedIn: true, userId: "u", lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy: destroyErr }
                 }),
                 makeRes() as never,
                 vi.fn()
@@ -248,7 +248,7 @@ describe("Auth", () => {
             const nextOk = vi.fn();
             auth.checkAuth(
                 makeReq({
-                    session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true } },
+                    session: { loggedIn: true, userId: "u", lastAuthState: { totpEnabled: false, ssoEnabled: true } },
                     oidc: { isAuthenticated: () => true }
                 }),
                 makeRes() as never,
@@ -281,7 +281,7 @@ describe("Auth", () => {
             const next = vi.fn();
             // save() flushes the loggedIn:false flip before handoff; invoke its callback so next() runs.
             const save = vi.fn((cb: (err?: unknown) => void) => cb());
-            const session = { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: true }, save };
+            const session = { loggedIn: true, userId: "u", lastAuthState: { totpEnabled: false, ssoEnabled: true }, save };
             auth.checkAuth(
                 makeReq({ session, oidc: { isAuthenticated: () => false } }),
                 res as never,
@@ -302,7 +302,7 @@ describe("Auth", () => {
             vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
             const next = vi.fn();
             auth.checkAuth(
-                makeReq({ session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false } } }),
+                makeReq({ session: { loggedIn: true, userId: "u", lastAuthState: { totpEnabled: false, ssoEnabled: false } } }),
                 makeRes() as never,
                 next
             );
@@ -351,8 +351,60 @@ describe("Auth", () => {
 
             // logged in -> next
             const next3 = vi.fn();
-            auth.checkApiAuth(makeReq({ session: { loggedIn: true } }), makeRes() as never, next3);
+            auth.checkApiAuth(makeReq({ session: { loggedIn: true, userId: "u" } }), makeRes() as never, next3);
             expect(next3).toHaveBeenCalled();
+        });
+
+        it("treats a logged-in session with no user as logged out, unless it is a sync peer's", () => {
+            for (const check of [ auth.checkApiAuth, auth.checkApiAuthOrElectron ]) {
+                const refused = makeRes();
+                const refusedNext = vi.fn();
+                check(makeReq({ session: { loggedIn: true } }), refused as never, refusedNext);
+                expect(refused.statusCode).toBe(401);
+                expect(refusedNext).not.toHaveBeenCalled();
+
+                for (const session of [ { loggedIn: true, userId: "u" }, { loggedIn: true, isSyncPeer: true } ]) {
+                    const next = vi.fn();
+                    check(makeReq({ session }), makeRes() as never, next);
+                    expect(next).toHaveBeenCalled();
+                }
+            }
+
+            // A page load takes the logged-out path, which serves the login screen, instead of
+            // treating the auth-state change as a logged-in session's.
+            vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+            vi.spyOn(openID, "isOpenIDEnabled").mockReturnValue(false);
+            const destroy = vi.fn();
+            const next = vi.fn();
+            auth.checkAuth(
+                makeReq({ session: { loggedIn: true, lastAuthState: { totpEnabled: false, ssoEnabled: false }, destroy } }),
+                makeRes() as never,
+                next
+            );
+            expect(destroy).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalled();
+        });
+
+        it("isSystemRequest trusts the desktop renderer, no authentication, setup and a sync peer, not a session alone", () => {
+            expect(auth.isSystemRequest(makeReq({ session: { loggedIn: true } }))).toBe(false);
+            expect(auth.isSystemRequest(makeReq({ session: { loggedIn: true, isSyncPeer: true } }))).toBe(true);
+
+            const electronReq = makeReq();
+            markAsInternalElectronRequest(electronReq as object);
+            expect(auth.isSystemRequest(electronReq)).toBe(true);
+
+            const dbSpy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(false);
+            expect(auth.isSystemRequest(makeReq())).toBe(true);
+            dbSpy.mockRestore();
+
+            config.General.noAuthentication = true;
+            refreshAuth();
+            try {
+                expect(auth.isSystemRequest(makeReq())).toBe(true);
+            } finally {
+                config.General.noAuthentication = false;
+                refreshAuth();
+            }
         });
 
         it("checkAppInitialized always calls next", () => {
@@ -479,7 +531,11 @@ describe("Auth", () => {
         it("checkCredentials calls next when async verification succeeds", async () => {
             vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
             vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(true);
-            vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true as never);
+            let verifiedAsSystem: boolean | undefined;
+            vi.spyOn(passwordEncryptionService, "verifyPassword").mockImplementation(async () => {
+                verifiedAsSystem = cls.isSystem();
+                return true as never;
+            });
 
             const cred = Buffer.from("user:correctpass").toString("base64");
             const next = vi.fn();
@@ -487,6 +543,8 @@ describe("Auth", () => {
             await auth.checkCredentials(makeReq({ headers: { "trilium-cred": cred } }), makeRes() as never, next);
 
             expect(next).toHaveBeenCalled();
+            // Nobody is signed in yet, so the instance checks its own password.
+            expect(verifiedAsSystem).toBe(true);
         });
 
         it("checkCredentials requires a valid second factor when TOTP is enabled", async () => {

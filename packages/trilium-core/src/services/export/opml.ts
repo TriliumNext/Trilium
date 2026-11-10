@@ -1,6 +1,6 @@
 import type { Response } from "../../http_interface";
 
-import { getBecca } from "../../becca/becca.js";
+import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type TaskContext from "../task_context.js";
 import { getContentDisposition } from "../utils/index.js";
@@ -9,7 +9,7 @@ function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, res: 
     const note = branch.getNote();
 
     function exportNoteInner(branchId: string) {
-        const branch = getBecca().getBranch(branchId);
+        const branch = becca.getBranch(branchId);
         if (!branch) {
             throw new Error("Unable to find branch.");
         }

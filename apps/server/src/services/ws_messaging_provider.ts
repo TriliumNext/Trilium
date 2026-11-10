@@ -4,6 +4,7 @@ import type { IncomingMessage, Server as HttpServer } from "http";
 import type express from "express";
 import { WebSocket, WebSocketServer } from "ws";
 
+import { isSignedIn } from "./auth.js";
 import config from "./config.js";
 import { randomString } from "./utils.js";
 
@@ -54,7 +55,7 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
         this.webSocketServer = new WebSocketServer({
             verifyClient: (info, done) => {
                 sessionParser(info.req as express.Request, {} as express.Response, () => {
-                    const allowed = (info.req as any).session.loggedIn || (config.General && config.General.noAuthentication);
+                    const allowed = isSignedIn((info.req as any).session) || (config.General && config.General.noAuthentication);
 
                     if (!allowed) {
                         getLog().error("WebSocket connection not allowed: session is not logged in.");
