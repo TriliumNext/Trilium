@@ -125,14 +125,7 @@ function uploadModifiedFileToNote(req: Request<{ noteId: string }>) {
 
     note.saveRevision();
 
-    const fileContent = fs.readFileSync(filePath);
-
-    /* v8 ignore next 3 -- fs.readFileSync() returns a Buffer, which is truthy even when empty */
-    if (!fileContent) {
-        throw new ValidationError(`File '${fileContent}' is empty`);
-    }
-
-    note.setContent(fileContent);
+    note.setContent(fs.readFileSync(filePath));
 }
 
 function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) {
@@ -147,14 +140,7 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
 
     attachment.getNote().saveRevision();
 
-    const fileContent = fs.readFileSync(filePath);
-
-    /* v8 ignore next 3 -- fs.readFileSync() returns a Buffer, which is truthy even when empty */
-    if (!fileContent) {
-        throw new ValidationError(`File '${fileContent}' is empty`);
-    }
-
-    attachment.setContent(fileContent);
+    attachment.setContent(fs.readFileSync(filePath));
 }
 
 export default {

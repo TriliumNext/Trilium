@@ -79,6 +79,10 @@ describe("Files API", () => {
             fs.writeFileSync(tmpFilePath, "edited-on-disk");
             cls.init(() => filesRoute.uploadModifiedFileToNote(fileReq({ noteId }, undefined, {}, { filePath: tmpFilePath })));
             expect(becca.getNoteOrThrow(noteId).getContent()).toBe("edited-on-disk");
+
+            fs.writeFileSync(tmpFilePath, "");
+            cls.init(() => filesRoute.uploadModifiedFileToNote(fileReq({ noteId }, undefined, {}, { filePath: tmpFilePath })));
+            expect(becca.getNoteOrThrow(noteId).getContent()).toBe("");
         });
 
         it("saves an attachment to a temp file then uploads it back", () => {
