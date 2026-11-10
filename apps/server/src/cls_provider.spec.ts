@@ -158,6 +158,44 @@ describe("AsyncLocalStorageExecutionContext", () => {
             expect(onceCount).toBe(1);
             expect(emitter.listenerCount("finish")).toBe(0);
         });
+
+        it("wraps each listener once however often the emitter is bound", () => {
+            const emitter = new EventEmitter();
+            bindEmitter(emitter);
+            expect(() => bindEmitter(emitter)).not.toThrow();
+            let calls = 0;
+            const listener = () => { calls += 1; };
+
+            emitter.on("close", listener);
+            emitter.emit("close");
+            expect(calls).toBe(1);
+
+            // A listener that was never added removes nothing.
+            emitter.removeListener("close", () => {});
+            expect(emitter.listenerCount("close")).toBe(1);
+
+            emitter.removeListener("close", listener);
+            expect(emitter.listenerCount("close")).toBe(0);
+        });
+
+        it("hands a non-function listener to the original method, and skips methods the emitter lacks", () => {
+            const emitter = new EventEmitter();
+            bindEmitter(emitter);
+
+            // The original `on()` rejects it with Node's own error rather than the wrapper failing.
+            expect(() => emitter.on("close", "not a function" as unknown as () => void))
+                .toThrow(/"listener" argument must be of type function/);
+
+            const added: string[] = [];
+            const partial = {
+                on(event: string) { added.push(event); }
+            };
+            bindEmitter(partial as unknown as EventEmitter);
+            partial.on("close");
+
+            expect(added).toEqual([ "close" ]);
+            expect(Object.keys(partial)).toEqual([ "on" ]);
+        });
     });
 
     it("drops the active context on reset(), and starts clean on the next init()", () => {

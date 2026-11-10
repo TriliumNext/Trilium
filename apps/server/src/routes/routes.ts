@@ -38,8 +38,6 @@ import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, shareTargetMiddlewareWithErrorHandling, uploadMiddlewareWithErrorHandling } from "./route_api.js";
-// page routes
-import setupRoute from "./setup.js";
 
 const GET = "get",
     PST = "post",
@@ -56,7 +54,6 @@ function register(app: express.Application) {
     asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login, null);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     asyncRoute(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword, null);
-    route(GET, "/setup", [], setupRoute.setupPage);
 
     // Restoring a backup, which only the setup screen offers: `checkAppNotInitialized` is what keeps
     // it from ever running against a live database, since before the database exists there is no

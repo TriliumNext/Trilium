@@ -7,6 +7,7 @@ import becca from "../becca/becca.js";
 import becca_loader from "../becca/becca_loader.js";
 import { MIGRATIONS } from "../migrations/migrations.js";
 import appInfo from "./app_info.js";
+import { getBackup } from "./backup.js";
 import { getContext } from "./context.js";
 import { OLDEST_SUPPORTED_DB_VERSION } from "./database_validation.js";
 import dataEncryption from "./encryption/data_encryption.js";
@@ -203,5 +204,28 @@ describe("Migration guards", () => {
         expect(crash).toHaveBeenCalledOnce();
         expect(crash.mock.calls[0][0]).toContain(String(base + 2));
         expect(getSql().getValue("SELECT value FROM options WHERE name = 'dbVersion'")).toBe(String(base));
+    });
+
+    it("backs up before migrating, under a dedicated name for a 0.60 database", async () => {
+        mockPlatform({ TRILIUM_INTEGRATION_TEST: "" });
+        const backupNow = vi.spyOn(getBackup(), "backupNow").mockResolvedValue("backup.db");
+        const base = appInfo.dbVersion;
+        const added = { version: base + 1, sql: "SELECT 1" };
+        MIGRATIONS.push(added);
+        appInfo.dbVersion = base + 1;
+        try {
+            await migrateIfNecessary();
+        } finally {
+            MIGRATIONS.splice(MIGRATIONS.indexOf(added), 1);
+        }
+        expect(backupNow).toHaveBeenCalledExactlyOnceWith("before-migration");
+        expect(getSql().getValue("SELECT value FROM options WHERE name = 'dbVersion'")).toBe(String(base + 1));
+
+        // A failed backup stops the migration before it touches the database.
+        backupNow.mockRejectedValueOnce(crashed);
+        setDbVersion("214");
+        await expect(migrateIfNecessary()).rejects.toBe(crashed);
+        expect(backupNow).toHaveBeenLastCalledWith("before-migration-v060");
+        expect(getSql().getValue("SELECT value FROM options WHERE name = 'dbVersion'")).toBe("214");
     });
 });

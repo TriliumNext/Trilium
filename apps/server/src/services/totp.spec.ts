@@ -216,6 +216,16 @@ describe("totp", () => {
         expect(mockValidate).not.toHaveBeenCalled();
     });
 
+    it("verifyTOTP rejects every code and records nothing when no secret is set", () => {
+        cls.init(() => {
+            totpEncryption.resetTotpSecret();
+            options.setOption("totpLastUsedStep", "");
+        });
+        expect(cls.init(() => totp.verifyTOTP("123456"))).toBe(false);
+        expect(mockValidate).not.toHaveBeenCalled();
+        expect(options.getOption("totpLastUsedStep")).toBe("");
+    });
+
     it("validateTOTP delegates to Hotp.validate when a secret is set", () => {
         cls.init(() => {
             totp.setSecret(SECRET);

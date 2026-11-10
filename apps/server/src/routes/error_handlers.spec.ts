@@ -1,10 +1,76 @@
-import { describe, expect, it } from "vitest";
+import { getLog, NotFoundError } from "@triliumnext/core";
+import express from "express";
+import supertest from "supertest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
+import errorHandlers, {
     describeError,
     extractOAuthErrorDetail,
     isLogoutFormNavigation
 } from "./error_handlers.js";
+
+describe("registered error handlers", () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    function buildApp() {
+        const app = express();
+        app.get("/csrf", (_req, _res, next) => next(Object.assign(new Error("invalid csrf token"), { code: "EBADCSRFTOKEN" })));
+        app.get("/missing", (_req, _res, next) => next(new NotFoundError("Note 'x' not found.")));
+        app.get("/broken", (_req, _res, next) => next(Object.assign(new TypeError("fetch failed"), {
+            cause: Object.assign(new Error("getaddrinfo ENOTFOUND idp.example"), { code: "ENOTFOUND" })
+        })));
+        app.get("/string", (_req, _res, next) => next("plain string"));
+        app.post("/logout", (_req, _res, next) => next(new Error("provider down")));
+        errorHandlers.register(app);
+        return app;
+    }
+
+    it("turns a CSRF failure into a 403 and logs the token prefix it carried", async () => {
+        const error = vi.spyOn(getLog(), "error");
+        const app = buildApp();
+
+        const withToken = await supertest(app).get("/csrf").set("x-csrf-token", "abcdefghijkl").expect(403);
+        expect(withToken.body).toEqual({ message: "Invalid CSRF token" });
+        expect(error).toHaveBeenCalledWith("Invalid CSRF token on GET /csrf (token prefix: abcdefgh)");
+
+        await supertest(app).get("/csrf").expect(403);
+        expect(error).toHaveBeenCalledWith("Invalid CSRF token on GET /csrf");
+    });
+
+    it("answers with the status of an HttpError and 500 for anything else", async () => {
+        const info = vi.spyOn(getLog(), "info");
+        const app = buildApp();
+
+        expect((await supertest(app).get("/missing").expect(404)).body).toEqual({ message: "Note 'x' not found." });
+        expect(info).toHaveBeenCalledWith("404 GET /missing");
+
+        expect((await supertest(app).get("/nowhere").expect(404)).body)
+            .toEqual({ message: "Router not found for request GET /nowhere" });
+
+        expect((await supertest(app).get("/string").expect(500)).body).toEqual({ message: "Unknown Error" });
+        expect(info).toHaveBeenCalledWith("500 GET /string");
+    });
+
+    it("logs the cause chain of an error whose message hides the reason", async () => {
+        const error = vi.spyOn(getLog(), "error");
+
+        const res = await supertest(buildApp()).get("/broken").expect(500);
+
+        expect(res.body).toEqual({ message: "fetch failed" });
+        expect(error).toHaveBeenCalledWith(
+            "Error on GET /broken: fetch failed ← caused by: getaddrinfo ENOTFOUND idp.example [ENOTFOUND]");
+    });
+
+    it("sends a failed logout form back into the app, and answers an API logout with the error", async () => {
+        const app = buildApp();
+
+        const form = await supertest(app).post("/logout").type("form").set("Accept", "text/html").send("x=1").expect(302);
+        expect(form.headers.location).toBe(".");
+
+        const api = await supertest(app).post("/logout").set("Accept", "application/json").send({}).expect(500);
+        expect(api.body).toEqual({ message: "provider down" });
+    });
+});
 
 describe("isLogoutFormNavigation", () => {
     const request = (accept: string) => ({

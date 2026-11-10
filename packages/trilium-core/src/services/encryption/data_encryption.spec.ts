@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { getLog } from "../log.js";
 import { concat2, decodeUtf8, encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import { getCrypto } from "./crypto.js";
 import dataEncryption from "./data_encryption.js";
@@ -106,13 +107,28 @@ describe("data_encryption", () => {
         });
     });
 
-    describe("payloads too short for a digest", () => {
-        it("rejects a plaintext shorter than the 4-byte digest it should start with", () => {
+    describe("digest check", () => {
+        /** Encrypts `plainText` as stored, without the SHA-1 digest prefix `encrypt()` adds. */
+        function encryptRaw(plainText: Uint8Array) {
             const iv = new Uint8Array(16);
             const cipher = getCrypto().createCipheriv("aes-128-cbc", KEY, iv);
-            const encrypted = concat2(cipher.update(Uint8Array.of(1, 2)), cipher.final());
+            return encodeBase64(concat2(iv, concat2(cipher.update(plainText), cipher.final())));
+        }
 
-            expect(dataEncryption.decrypt(KEY, encodeBase64(concat2(iv, encrypted)))).toBe(false);
+        it("rejects a plaintext shorter than the 4-byte digest it should start with", () => {
+            expect(dataEncryption.decrypt(KEY, encryptRaw(Uint8Array.of(1, 2)))).toBe(false);
+        });
+
+        it("rejects a payload whose digest does not match, and decryptString reports it", () => {
+            const payload = encodeUtf8("tampered");
+            expect(Array.from(getCrypto().createHash("sha1", payload).slice(0, 4))).not.toEqual([ 0, 0, 0, 0 ]);
+            const cipherText = encryptRaw(concat2(new Uint8Array(4), payload));
+            const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            expect(dataEncryption.decrypt(KEY, cipherText)).toBe(false);
+            expect(() => dataEncryption.decryptString(KEY, cipherText)).toThrow("Could not decrypt string.");
+            expect(error).toHaveBeenCalledOnce();
+            error.mockRestore();
         });
     });
 
@@ -125,23 +141,6 @@ describe("data_encryption", () => {
 
         it("returns null when the ciphertext is null", () => {
             expect(dataEncryption.decryptString(KEY, null as unknown as string)).toBeNull();
-        });
-
-        it("throws when the content cannot be decrypted to a valid payload", () => {
-            // Garbage that base64-decodes but cannot be a valid AES block / digest.
-            const garbage = dataEncryption.encrypt(KEY, "tampered");
-            // Flip a character in the base64 body to corrupt the payload while keeping
-            // it valid base64 of a 16-aligned length.
-            const corrupted = garbage.slice(0, -2) + (garbage.endsWith("A=") ? "B=" : "A=");
-
-            expect(() => {
-                const out = dataEncryption.decryptString(OTHER_KEY, corrupted);
-                // If it didn't throw, it must at least not have recovered the original.
-                if (out !== null) {
-                    expect(out).not.toBe("tampered");
-                    throw new Error("Could not decrypt string.");
-                }
-            }).toThrow();
         });
     });
 });

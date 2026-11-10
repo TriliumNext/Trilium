@@ -116,6 +116,7 @@ export function inkmlToSvg(inkml: string): string | null {
     }
 
     const { minX, minY, maxX, maxY } = boundingBox(traces);
+    /* v8 ignore next 3 -- parseTraces keeps only traces with at least one finite coordinate pair, so the box is always finite. */
     if (!Number.isFinite(minX)) {
         return null;
     }
@@ -179,7 +180,7 @@ function parseTraces(root: HTMLElement, brushes: Map<string, Brush>): Trace[] {
         if (ref.startsWith("#")) {
             ref = ref.slice(1);
         }
-        const coords = parseCoords(el.textContent ?? "");
+        const coords = parseCoords(el.textContent);
         if (coords.length > 0) {
             traces.push({ coords, brush: brushes.get(ref) ?? DEFAULT_BRUSH });
         }

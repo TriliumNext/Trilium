@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type OAuthProviderConfig, pollDeviceToken, requestDeviceCode } from "./oauth.js";
+import oauth, { type OAuthProviderConfig, pollDeviceToken, requestDeviceCode } from "./oauth.js";
 
 const CONFIG: OAuthProviderConfig = {
     authorizeEndpoint: "https://login.example.com/authorize",
@@ -24,6 +25,89 @@ function sentBody(call = 0): URLSearchParams {
 
 afterEach(() => {
     fetchMock.mockReset();
+});
+
+describe("authorization code flow", () => {
+    it("generates a fresh PKCE pair whose challenge is the S256 hash of the verifier", () => {
+        const first = oauth.generatePkce();
+        const second = oauth.generatePkce();
+
+        expect(first.verifier).toMatch(/^[A-Za-z0-9_-]{43}$/);
+        expect(first.challenge).toBe(createHash("sha256").update(first.verifier).digest("base64url"));
+        expect(second.verifier).not.toBe(first.verifier);
+    });
+
+    it("generates a random 128-bit hex state", () => {
+        const state = oauth.generateState();
+        expect(state).toMatch(/^[0-9a-f]{32}$/);
+        expect(oauth.generateState()).not.toBe(state);
+    });
+
+    it("builds the authorization URL with the PKCE challenge, state and redirect URI", () => {
+        const url = new URL(oauth.buildAuthorizationUrl(CONFIG, {
+            redirectUri: "http://127.0.0.1:5000/callback",
+            state: "state-1",
+            challenge: "challenge-1"
+        }));
+
+        expect(`${url.origin}${url.pathname}`).toBe(CONFIG.authorizeEndpoint);
+        expect(Object.fromEntries(url.searchParams)).toEqual({
+            client_id: "client-123",
+            response_type: "code",
+            redirect_uri: "http://127.0.0.1:5000/callback",
+            response_mode: "query",
+            scope: CONFIG.scopes,
+            state: "state-1",
+            code_challenge: "challenge-1",
+            code_challenge_method: "S256"
+        });
+    });
+
+    it("exchanges the code together with the verifier for tokens", async () => {
+        fetchMock.mockResolvedValue(jsonResponse(200, { access_token: "access-token", expires_in: 3600, token_type: "Bearer" }));
+
+        const tokens = await oauth.exchangeCodeForToken(CONFIG, { code: "code-1", verifier: "verifier-1", redirectUri: "http://127.0.0.1:5000/callback" });
+
+        expect(fetchMock).toHaveBeenCalledWith(CONFIG.tokenEndpoint, expect.objectContaining({ method: "POST" }));
+        expect(Object.fromEntries(sentBody())).toEqual({
+            client_id: "client-123",
+            grant_type: "authorization_code",
+            code: "code-1",
+            code_verifier: "verifier-1",
+            redirect_uri: "http://127.0.0.1:5000/callback",
+            scope: CONFIG.scopes
+        });
+        expect(tokens.access_token).toBe("access-token");
+    });
+
+    it("refreshes the access token with the refresh token", async () => {
+        fetchMock.mockResolvedValue(jsonResponse(200, { access_token: "renewed", expires_in: 3600, token_type: "Bearer" }));
+
+        const tokens = await oauth.refreshAccessToken(CONFIG, { refreshToken: "refresh-1" });
+
+        expect(Object.fromEntries(sentBody())).toEqual({
+            client_id: "client-123",
+            grant_type: "refresh_token",
+            refresh_token: "refresh-1",
+            scope: CONFIG.scopes
+        });
+        expect(tokens.access_token).toBe("renewed");
+    });
+
+    it("rejects a token response that is an error or carries no access token", async () => {
+        fetchMock.mockResolvedValue(jsonResponse(400, { error: "invalid_grant", error_description: "The refresh token has expired." }));
+        await expect(oauth.refreshAccessToken(CONFIG, { refreshToken: "stale" }))
+            .rejects.toThrow("OAuth token request failed: The refresh token has expired.");
+
+        fetchMock.mockResolvedValue(jsonResponse(400, { error: "invalid_grant" }));
+        await expect(oauth.exchangeCodeForToken(CONFIG, { code: "used", verifier: "v", redirectUri: "r" }))
+            .rejects.toThrow("OAuth token request failed: invalid_grant");
+
+        // A 200 without an access token is not a usable answer either.
+        fetchMock.mockResolvedValue(jsonResponse(200, { token_type: "Bearer" }));
+        await expect(oauth.exchangeCodeForToken(CONFIG, { code: "c", verifier: "v", redirectUri: "r" }))
+            .rejects.toThrow("OAuth token request failed: HTTP 200");
+    });
 });
 
 describe("requestDeviceCode", () => {

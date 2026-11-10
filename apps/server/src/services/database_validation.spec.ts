@@ -3,7 +3,26 @@ import Database from "better-sqlite3";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+
+/** What the next opening throws instead of opening, when a test sets it. */
+const { openFailure } = vi.hoisted(() => ({ openFailure: { next: undefined as unknown } }));
+
+vi.mock("better-sqlite3", async (importOriginal) => {
+    const actual = await importOriginal<{ default: new (...args: unknown[]) => unknown }>();
+
+    function OpenOrFail(...args: unknown[]) {
+        if (openFailure.next !== undefined) {
+            const failure = openFailure.next;
+            openFailure.next = undefined;
+            throw failure;
+        }
+
+        return new actual.default(...args);
+    }
+
+    return { default: OpenOrFail };
+});
 
 import { validateDatabaseFile } from "./database_validation.js";
 
@@ -17,6 +36,9 @@ const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-db-validation-sp
 let counter = 0;
 
 afterAll(() => fs.rmSync(tempRoot, { recursive: true, force: true }));
+afterEach(() => {
+    openFailure.next = undefined;
+});
 
 /** A database with the tables and options a Trilium document has, and nothing else. */
 function triliumDatabase(options: Record<string, string>, tables = [ "options", "notes", "branches", "blobs" ]) {
@@ -102,5 +124,30 @@ describe("opening a candidate database on this platform", () => {
         fs.writeFileSync(filePath, damaged);
 
         expect(validateDatabaseFile(filePath)).toMatchObject({ valid: false, rejection: "damaged-database" });
+    });
+
+    it("refuses a database whose header is all there is, which the driver opens but cannot read", () => {
+        expect(validateDatabaseFile(fileWith("SQLite format 3\0"))).toMatchObject({
+            valid: false,
+            rejection: "damaged-database",
+            message: expect.stringMatching(/^The database could not be read: /)
+        });
+    });
+
+    it("refuses a database the driver will not open, quoting why", () => {
+        const filePath = triliumDatabase(CURRENT);
+
+        openFailure.next = new Error("SQLITE_CANTOPEN: unable to open database file");
+        expect(validateDatabaseFile(filePath)).toEqual({
+            valid: false,
+            rejection: "not-a-database",
+            message: "The database could not be opened: SQLITE_CANTOPEN: unable to open database file"
+        });
+
+        // A driver that throws something other than an Error is quoted as it threw it.
+        openFailure.next = "the file is locked";
+        expect(validateDatabaseFile(filePath)).toMatchObject({
+            message: "The database could not be opened: the file is locked"
+        });
     });
 });

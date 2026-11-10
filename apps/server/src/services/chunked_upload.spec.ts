@@ -1,17 +1,25 @@
 import type { Request } from "express";
 import fs from "fs";
+import fsp from "fs/promises";
 import os from "os";
 import path from "path";
 import { Readable } from "stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type ChunkedUpload, type ChunkedUploadConfig, createChunkedUpload } from "./chunked_upload.js";
+import {
+    type ChunkedUpload,
+    type ChunkedUploadConfig,
+    createChunkedUpload,
+    DEFAULT_CHUNK_SIZE
+} from "./chunked_upload.js";
 
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-chunked-upload-spec-"));
 const opened: ChunkedUpload<unknown>[] = [];
 
 afterEach(() => {
-    opened.splice(0).forEach((upload) => upload.stop());
+    for (const upload of opened.splice(0)) {
+        upload.stop();
+    }
     fs.rmSync(tempRoot, { recursive: true, force: true });
     fs.mkdirSync(tempRoot, { recursive: true });
     vi.restoreAllMocks();
@@ -200,6 +208,36 @@ describe("chunked upload: the offset rule", () => {
 });
 
 describe("chunked upload: starting and ending a session", () => {
+    it("refuses a request with no body, and names an upload that was given no name", async () => {
+        const { upload, completed } = uploadService({ chunkSize: undefined });
+
+        await expect(upload.begin({} as Request)).rejects.toThrow(/positive integer/);
+
+        const { uploadId, chunkSize } = await upload.begin({ body: { totalBytes: 4 } } as unknown as Request);
+        // Nothing configured, so the client is told the default size to send.
+        expect(chunkSize).toBe(DEFAULT_CHUNK_SIZE);
+        await upload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)));
+        await upload.finish(sessionRequest(uploadId));
+
+        expect(completed[0]).toMatchObject({ fileName: "upload", metadata: {} });
+    });
+
+    it("refuses an upload the disk has no room for before it takes a place, and admits one that fits", async () => {
+        const { upload } = uploadService({ maxTotalBytes: Number.MAX_SAFE_INTEGER, requireFreeSpace: true });
+
+        // Free space is read from the directory the uploads go into. Where that cannot be measured
+        // the upload is taken as fitting, since the check exists to explain a refusal, not to cause one.
+        fs.rmSync(path.join(tempRoot, "uploads"), { recursive: true, force: true });
+        const unmeasured = await upload.begin(beginRequest(2 ** 52));
+        await upload.abort(sessionRequest(unmeasured.uploadId));
+
+        await expect(upload.begin(beginRequest(2 ** 52)))
+            .rejects.toThrow(/^The upload needs 4503599627370496 bytes and only \d+ are free\.$/);
+        expect(upload.activeSessions()).toBe(0);
+
+        await expect(upload.begin(beginRequest(8))).resolves.toMatchObject({ totalBytes: 8 });
+    });
+
     it("refuses a size that is missing, not a whole number, or above the limit", async () => {
         const { upload } = uploadService({ maxTotalBytes: 100 });
 
@@ -289,6 +327,37 @@ describe("chunked upload: starting and ending a session", () => {
 });
 
 describe("chunked upload: an upload that is no longer there", () => {
+    it("remembers only the most recent endings, so the record cannot grow without bound", async () => {
+        const { upload } = uploadService({ whenAtCapacity: "supersede" });
+        const replaced: string[] = [];
+        for (let i = 0; i < 18; i++) {
+            replaced.push((await upload.begin(beginRequest(8))).uploadId);
+        }
+
+        // Seventeen were superseded and sixteen are remembered: the first has been forgotten, and
+        // reads as an upload this process no longer knows rather than as one another took over.
+        await expect(upload.status(sessionRequest(replaced[0]))).rejects.toMatchObject({
+            message: expect.stringContaining("No such upload"),
+            statusCode: 404
+        });
+        await expect(upload.status(sessionRequest(replaced[1]))).rejects.toMatchObject({
+            message: expect.stringContaining("Another upload took over"),
+            statusCode: 410
+        });
+    });
+
+    it("counts a partial file that has vanished as nothing received, and keeps the session", async () => {
+        const { upload } = uploadService();
+        const { uploadId } = await upload.begin(beginRequest(8));
+        await upload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)));
+
+        // Something outside the upload removed its directory, the partial file with it.
+        fs.rmSync(path.join(tempRoot, "uploads", "spec"), { recursive: true, force: true });
+
+        await expect(upload.chunk(chunkRequest(uploadId, 4, Buffer.alloc(4)))).rejects.toMatchObject({ code: "ENOENT" });
+        expect((await upload.status(sessionRequest(uploadId))).receivedBytes).toBe(0);
+    });
+
     it("lets a new upload take the place of one that is in the way, where it is configured to", async () => {
         const { upload } = uploadService({ whenAtCapacity: "supersede" });
         const abandoned = await upload.begin(beginRequest(8));
@@ -463,6 +532,56 @@ describe("chunked upload: sweeping", () => {
         expect(fs.existsSync(path.join(directory, "abandoned.part"))).toBe(false);
         // The live session is not swept along with it.
         expect(fs.existsSync(partialPath(tempRoot, uploadId))).toBe(true);
+    });
+});
+
+describe("chunked upload: housekeeping in the background", () => {
+    it("sweeps expired sessions on its own timer, with nobody asking", async () => {
+        vi.useFakeTimers();
+        try {
+            const { upload } = uploadService({ sessionTtlMs: 1000 });
+            const { uploadId } = await upload.begin(beginRequest(8));
+            await upload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)));
+
+            // The sweeper runs every five minutes; the session expired long before its first turn.
+            await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+            await vi.waitFor(() => expect(fs.existsSync(partialPath(tempRoot, uploadId))).toBe(false));
+
+            await expect(upload.status(sessionRequest(uploadId))).rejects.toThrow(/No such upload/);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("carries on when a file it is tidying away will not go", async () => {
+        const discarded = { count: 0 };
+        const { upload } = uploadService({
+            onSessionDiscarded: () => discarded.count++,
+            onComplete: async () => { throw new Error("not a database"); }
+        });
+        const aborted = await upload.begin(beginRequest(8));
+        const refused = await upload.begin(beginRequest(4)).catch((e: unknown) => e);
+        expect(String(refused)).toMatch(/already in progress/);
+
+        const rm = vi.spyOn(fsp, "rm").mockRejectedValue(new Error("EBUSY: resource busy or locked"));
+
+        // Dropping a session still ends it, and still tells the consumer so.
+        await expect(upload.abort(sessionRequest(aborted.uploadId))).resolves.toBeUndefined();
+        expect(discarded.count).toBe(1);
+        expect(upload.activeSessions()).toBe(0);
+
+        // A consumer that refused the file is what the caller hears about, not the cleanup after it.
+        rm.mockRestore();
+        const { uploadId } = await upload.begin(beginRequest(4));
+        await upload.chunk(chunkRequest(uploadId, 0, Buffer.alloc(4)));
+        vi.spyOn(fsp, "rm").mockRejectedValue(new Error("EBUSY: resource busy or locked"));
+        await expect(upload.finish(sessionRequest(uploadId))).rejects.toThrow("not a database");
+        expect(discarded.count).toBe(2);
+
+        // A sweep that finds a file it cannot delete leaves it and finishes.
+        fs.writeFileSync(path.join(tempRoot, "uploads", "spec", "stuck.part"), "left behind");
+        await expect(upload.sweep()).resolves.toBeUndefined();
+        expect(fs.existsSync(path.join(tempRoot, "uploads", "spec", "stuck.part"))).toBe(true);
     });
 });
 

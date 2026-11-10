@@ -2,11 +2,12 @@ import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/c
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "./context.js";
+import { getCrypto } from "./encryption/crypto.js";
 import events from "./events.js";
 import notes from "./notes.js";
 import { getSql } from "./sql/index.js";
 import syncUpdateService from "./sync_update.js";
-import { encodeBase64 } from "./utils/binary.js";
+import { decodeBase64, encodeBase64 } from "./utils/binary.js";
 import dateUtils from "./utils/date.js";
 import ws from "./ws.js";
 
@@ -221,17 +222,41 @@ describe("sync_update service (real DB)", () => {
         // The decode pool reuses one scratch buffer across blobs on platforms with an in-place
         // decoder. A longer blob followed by a shorter one exercises the case where stale bytes
         // from the previous decode sit beyond the new content's end in the same buffer.
+        // The Node crypto provider has no `base64DecodeInto`, so one is installed for this test.
         const longContent = "long-blob-content-".repeat(50);
         const shortContent = "tiny";
+        const provider = getCrypto();
+        const ownDecoder = Object.getOwnPropertyDescriptor(provider, "base64DecodeInto");
+        const realDecodeInto = provider.base64DecodeInto?.bind(provider);
+        const targets: Uint8Array[] = [];
+        provider.base64DecodeInto = (base64, target) => {
+            targets.push(target);
+            if (realDecodeInto) {
+                return realDecodeInto(base64, target);
+            }
+            const bytes = decodeBase64(base64);
+            target.set(bytes);
+            return bytes.length;
+        };
 
-        apply([
-            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_a" }), entity: blobRow("su_blob_pool_a", encodeBase64(longContent)) },
-            { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_b" }), entity: blobRow("su_blob_pool_b", encodeBase64(shortContent)) }
-        ]);
+        try {
+            apply([
+                { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_a" }), entity: blobRow("su_blob_pool_a", encodeBase64(longContent)) },
+                { entityChange: buildEC({ entityName: "blobs", entityId: "su_blob_pool_b" }), entity: blobRow("su_blob_pool_b", encodeBase64(shortContent)) }
+            ]);
+        } finally {
+            if (ownDecoder) {
+                Object.defineProperty(provider, "base64DecodeInto", ownDecoder);
+            } else {
+                Reflect.deleteProperty(provider, "base64DecodeInto");
+            }
+        }
 
         const a = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_a"]);
         const b = getSql().getValue<Buffer | Uint8Array>("SELECT content FROM blobs WHERE blobId = ?", ["su_blob_pool_b"]);
 
+        expect(targets).toHaveLength(2);
+        expect(targets[1]).toBe(targets[0]);
         expect(Buffer.from(a ?? []).toString()).toBe(longContent);
         expect(Buffer.from(b ?? []).toString()).toBe(shortContent);
     });

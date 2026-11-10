@@ -276,4 +276,49 @@ describe("PDFProcessor", () => {
         expect(result.text.split("\n\n")).toHaveLength(50);
         expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining("page cap reached"));
     });
+
+    it("keeps a scanned page's own sparse text when OCR finds nothing on it or fails", async () => {
+        const processor = new PDFProcessor();
+        mockExtractText.mockResolvedValue({ totalPages: 2, text: [ "Page 1 header", "Page 2 header" ] });
+        mockRecognize.mockResolvedValue({ text: "", confidence: 0 });
+        mockRenderPage
+            .mockImplementationOnce(async () => renderedPage())
+            .mockRejectedValueOnce(new Error("broken page"));
+
+        const result = await processor.extractText(buffer);
+
+        expect(result.text).toBe("Page 1 header\n\nPage 2 header");
+        expect(result.confidence).toBe(0.99);
+        expect(result.language).toBe("eng");
+        expect(result.failedPageCount).toBe(1);
+    });
+
+    it("keeps the embedded text of scanned pages past the OCR cap, and of pages it has none for", async () => {
+        const processor = new PDFProcessor();
+        // pdf.js can report fewer page texts than pages; the missing ones read as empty.
+        const text = [ ...Array(51).fill(""), "Late stamp" ];
+        mockExtractText.mockResolvedValue({ totalPages: 53, text });
+        mockRecognize.mockResolvedValue({ text: "p", confidence: 0.9 });
+
+        const result = await processor.extractText(buffer, { language: "eng" });
+
+        expect(mockRenderPage).toHaveBeenCalledTimes(50);
+        const pages = result.text.split("\n\n");
+        expect(pages).toHaveLength(51);
+        expect(pages[50]).toBe("Late stamp");
+        expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining("skipped 3 further scanned page(s)"));
+    });
+
+    it("treats a page reporting no size as Letter-sized", async () => {
+        const processor = new PDFProcessor();
+        mockGetViewport.mockReturnValue({ width: 0, height: 0 });
+        mockExtractText.mockResolvedValue({ totalPages: 1, text: [ "Header only" ] });
+        mockRecognize.mockResolvedValue({ text: "scanned body", confidence: 0.9 });
+
+        // Against a zero area any text would count as dense; Letter keeps the usual threshold.
+        const result = await processor.extractText(buffer, { language: "eng" });
+
+        expect(mockRenderPage).toHaveBeenCalledOnce();
+        expect(result.text).toBe("scanned body");
+    });
 });

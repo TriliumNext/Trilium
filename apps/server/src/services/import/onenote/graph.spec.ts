@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../safe_fetch.js", () => ({ safeFetch: vi.fn() }));
 
 import { safeFetch } from "../../safe_fetch.js";
-import { backoffDelayMs, ENCRYPTED_SECTION_ERROR_CODE, extractGraphErrorDetail, getAccount, getPageContent, getResource, getThrottleStats, GraphRequestError, isEncryptedSectionError, listPages, resetThrottleGate, resetThrottleStats, retryAfterMs, sanitizeGraphUrl, setThrottleListener } from "./graph.js";
+import { backoffDelayMs, ENCRYPTED_SECTION_ERROR_CODE, extractGraphErrorDetail, getAccount, getPageContent, getResource, getThrottleStats, GraphRequestError, isEncryptedSectionError, listNotebooks, listPages, parsePageContent, resetThrottleGate, resetThrottleStats, retryAfterMs, sanitizeGraphUrl, setThrottleListener } from "./graph.js";
 
 const safeFetchMock = vi.mocked(safeFetch);
 
@@ -325,6 +325,152 @@ describe("failed Graph requests", () => {
         await expect(getResource(token, url)).rejects.toThrow(
             `Failed to fetch OneNote resource (HTTP 502) from ${url}`
         );
+    });
+});
+
+describe("successful Graph reads", () => {
+    afterEach(() => {
+        safeFetchMock.mockReset();
+    });
+
+    /** Answers each requested URL from `routes`, failing the test on an unexpected request. */
+    function serve(routes: Record<string, unknown>) {
+        safeFetchMock.mockImplementation(async (url) => {
+            const key = String(url);
+            if (!(key in routes)) {
+                throw new Error(`Unexpected Graph request: ${key}`);
+            }
+            return graphResponse(200, JSON.stringify(routes[key]));
+        });
+    }
+
+    it("falls back to the user principal name, then to placeholders, for the account", async () => {
+        serve({ "https://graph.microsoft.com/v1.0/me": { displayName: "Ada", mail: "ada@example.com", userPrincipalName: "ada@corp" } });
+        await expect(getAccount(token)).resolves.toEqual({ name: "Ada", email: "ada@example.com" });
+
+        serve({ "https://graph.microsoft.com/v1.0/me": { userPrincipalName: "ada@corp" } });
+        await expect(getAccount(token)).resolves.toEqual({ name: "ada@corp", email: "ada@corp" });
+
+        serve({ "https://graph.microsoft.com/v1.0/me": {} });
+        await expect(getAccount(token)).resolves.toEqual({ name: "Unknown", email: "" });
+    });
+
+    it("builds the notebook tree, following section groups and pagination only where they exist", async () => {
+        const notebooksUrl = "https://graph.microsoft.com/v1.0/me/onenote/notebooks?$select=id,displayName,createdDateTime,lastModifiedDateTime,sectionGroupsUrl&$expand=sections($select=id,displayName,createdDateTime,lastModifiedDateTime),sectionGroups($select=id)&$orderby=displayName";
+        const groupQuery = "$select=id,displayName,createdDateTime,lastModifiedDateTime,sectionGroupsUrl&$expand=sections($select=id,displayName,createdDateTime,lastModifiedDateTime),sectionGroups($select=id)";
+        const nb1Groups = "https://graph.microsoft.com/v1.0/me/onenote/notebooks/nb1/sectionGroups";
+        const nestedGroups = "https://graph.microsoft.com/v1.0/me/onenote/sectionGroups/g1/sectionGroups?$top=50";
+        serve({
+            [notebooksUrl]: {
+                value: [
+                    {
+                        id: "nb1",
+                        displayName: "Work",
+                        createdDateTime: "2020-01-01T00:00:00Z",
+                        lastModifiedDateTime: "2021-01-01T00:00:00Z",
+                        sectionGroupsUrl: nb1Groups,
+                        sections: [{ id: "s1", displayName: "Inbox", createdDateTime: "2020-02-01T00:00:00Z" }],
+                        sectionGroups: [{ id: "g1" }]
+                    },
+                    // Lists a section group but carries no URL to follow it by.
+                    { id: "nb2", displayName: "Orphan", sectionGroups: [{ id: "gx" }] }
+                ],
+                "@odata.nextLink": "https://graph.microsoft.com/v1.0/me/onenote/notebooks?$skiptoken=2"
+            },
+            "https://graph.microsoft.com/v1.0/me/onenote/notebooks?$skiptoken=2": {
+                value: [{ id: "nb3", displayName: "Empty", sections: [], sectionGroups: [] }]
+            },
+            [`${nb1Groups}?${groupQuery}`]: {
+                value: [{ id: "g1", displayName: "Projects", sectionGroupsUrl: nestedGroups, sections: [{ id: "s2", displayName: "Alpha" }], sectionGroups: [{ id: "g2" }] }]
+            },
+            [`${nestedGroups}&${groupQuery}`]: {
+                value: [{ id: "g2", displayName: "Archive" }]
+            }
+        });
+
+        const notebooks = await listNotebooks(token);
+
+        expect(notebooks).toEqual([
+            {
+                id: "nb1",
+                title: "Work",
+                createdDateTime: "2020-01-01T00:00:00Z",
+                lastModifiedDateTime: "2021-01-01T00:00:00Z",
+                sections: [{ id: "s1", title: "Inbox", createdDateTime: "2020-02-01T00:00:00Z", lastModifiedDateTime: undefined }],
+                sectionGroups: [{
+                    id: "g1",
+                    title: "Projects",
+                    createdDateTime: undefined,
+                    lastModifiedDateTime: undefined,
+                    sections: [{ id: "s2", title: "Alpha", createdDateTime: undefined, lastModifiedDateTime: undefined }],
+                    sectionGroups: [{ id: "g2", title: "Archive", createdDateTime: undefined, lastModifiedDateTime: undefined, sections: [], sectionGroups: [] }]
+                }]
+            },
+            { id: "nb2", title: "Orphan", createdDateTime: undefined, lastModifiedDateTime: undefined, sections: [], sectionGroups: [] },
+            { id: "nb3", title: "Empty", createdDateTime: undefined, lastModifiedDateTime: undefined, sections: [], sectionGroups: [] }
+        ]);
+        // Two notebook pages plus one request per section-group level; nb2 and nb3 cost nothing extra.
+        expect(safeFetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    it("maps pages with title, level and page-id fallbacks, tolerating a page without a value array", async () => {
+        const pagesUrl = "https://graph.microsoft.com/v1.0/me/onenote/sections/sec-1/pages?$select=id,title,createdDateTime,lastModifiedDateTime,level,links&$orderby=order&pagelevel=true";
+        serve({
+            [pagesUrl]: {
+                value: [
+                    { id: "p1", title: "First", level: 1, createdDateTime: "2020-01-01T00:00:00Z", links: { oneNoteClientUrl: { href: "onenote:https://x/a.one#First&page-id={EB2C4F67-8D3F-4FDB-A93B-32D6B3BA780D}&end" } } },
+                    { id: "p2", title: "", links: {} }
+                ],
+                "@odata.nextLink": "https://graph.microsoft.com/v1.0/next"
+            },
+            "https://graph.microsoft.com/v1.0/next": {}
+        });
+
+        await expect(listPages(token, "sec-1")).resolves.toEqual([
+            { id: "p1", title: "First", level: 1, createdDateTime: "2020-01-01T00:00:00Z", lastModifiedDateTime: undefined, pageId: "eb2c4f67-8d3f-4fdb-a93b-32d6b3ba780d" },
+            { id: "p2", title: "Untitled", level: 0, createdDateTime: undefined, lastModifiedDateTime: undefined, pageId: undefined }
+        ]);
+    });
+
+    it("returns page content split into HTML and InkML", async () => {
+        safeFetchMock.mockResolvedValue(graphResponse(200, "  <html><body><p>Plain</p></body></html>\n"));
+
+        await expect(getPageContent(token, "page-1")).resolves.toEqual({ html: "<html><body><p>Plain</p></body></html>", inkml: "" });
+        expect(safeFetchMock.mock.calls[0]?.[0]).toBe("https://graph.microsoft.com/v1.0/me/onenote/pages/page-1/content?includeInkML=true");
+    });
+
+    it("downloads a resource with its content type, defaulting to octet-stream when none is sent", async () => {
+        const url = "https://graph.microsoft.com/v1.0/users('jane@example.com')/onenote/resources/res-1/$value";
+        safeFetchMock.mockResolvedValueOnce(graphResponse(200, "PNGDATA", { "Content-Type": "image/png" }));
+        const image = await getResource(token, url);
+        expect(image.contentType).toBe("image/png");
+        expect(new TextDecoder().decode(image.content)).toBe("PNGDATA");
+
+        safeFetchMock.mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3]), { status: 200 }) as unknown as Awaited<ReturnType<typeof safeFetch>>);
+        const file = await getResource(token, url);
+        expect(file).toEqual({ content: new Uint8Array([1, 2, 3]), contentType: "application/octet-stream" });
+    });
+});
+
+describe("parsePageContent", () => {
+    it("ignores multipart parts that are neither HTML nor InkML, and parts without headers", () => {
+        const raw = [
+            "--boundary",
+            "Content-Type: text/html",
+            "",
+            "<p>Body</p>",
+            "--boundary",
+            "Content-Type: image/png",
+            "",
+            "binary",
+            "--boundary",
+            "Content-Type: application/inkml+xml",
+            "",
+            "<ink/>",
+            "--boundary--"
+        ].join("\r\n");
+
+        expect(parsePageContent(raw)).toEqual({ html: "<p>Body</p>", inkml: "<ink/>" });
     });
 });
 

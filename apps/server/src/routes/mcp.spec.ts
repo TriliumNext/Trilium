@@ -1,10 +1,79 @@
-import { options as optionService } from "@triliumnext/core";
+import { getLog, options as optionService } from "@triliumnext/core";
 import express from "express";
 import supertest from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const mcp = vi.hoisted(() => ({
+    createMcpServer: vi.fn(),
+    handleRequest: vi.fn(),
+    closeTransport: vi.fn(async () => {})
+}));
+
+vi.mock("../services/mcp/mcp_server.js", () => ({ createMcpServer: mcp.createMcpServer }));
+vi.mock("@modelcontextprotocol/sdk/server/streamableHttp.js", () => ({
+    StreamableHTTPServerTransport: class {
+        handleRequest = mcp.handleRequest;
+        close = mcp.closeTransport;
+    }
+}));
+
 import etapiTokenService from "../services/etapi_tokens.js";
-import { createMcpRateLimiter, resolveMcpAccess } from "./mcp.js";
+import { createMcpRateLimiter, register, resolveMcpAccess } from "./mcp.js";
+
+describe("MCP request handling", () => {
+    beforeEach(() => {
+        vi.spyOn(optionService, "getOptionOrNull").mockReturnValue("true");
+        vi.spyOn(etapiTokenService, "isValidAuthHeader").mockReturnValue(true);
+    });
+    afterEach(() => {
+        vi.restoreAllMocks();
+        mcp.createMcpServer.mockReset();
+        mcp.handleRequest.mockReset();
+    });
+
+    function buildMcpApp() {
+        const app = express();
+        register(app);
+        return app;
+    }
+
+    it("turns a request without a valid token away before setting anything up", async () => {
+        vi.spyOn(etapiTokenService, "isValidAuthHeader").mockReturnValue(false);
+
+        const res = await supertest(buildMcpApp()).post("/mcp").expect(401);
+
+        expect(res.body.error).toContain("ETAPI token");
+        expect(mcp.createMcpServer).not.toHaveBeenCalled();
+    });
+
+    it("answers 500 when the MCP server cannot be set up", async () => {
+        const error = vi.spyOn(getLog(), "error");
+        mcp.createMcpServer.mockRejectedValue(new Error("tools failed"));
+
+        const res = await supertest(buildMcpApp()).post("/mcp").set("Authorization", "Bearer t").expect(500);
+
+        expect(res.body).toEqual({ error: "Internal MCP error" });
+        expect(error).toHaveBeenCalledWith("MCP request error: Error: tools failed");
+    });
+
+    it("keeps the response the transport already sent when it fails afterwards, and closes both ends", async () => {
+        const error = vi.spyOn(getLog(), "error");
+        const server = { connect: vi.fn(async () => {}), close: vi.fn(async () => {}) };
+        mcp.createMcpServer.mockResolvedValue(server);
+        mcp.handleRequest.mockImplementation(async (_req: express.Request, res: express.Response) => {
+            res.status(202).end("accepted");
+            throw new Error("stream broke");
+        });
+
+        const res = await supertest(buildMcpApp()).post("/mcp").set("Authorization", "Bearer t").expect(202);
+
+        expect(res.text).toBe("accepted");
+        expect(error).toHaveBeenCalledWith("MCP request error: Error: stream broke");
+        await vi.waitFor(() => expect(server.close).toHaveBeenCalledOnce());
+        expect(server.connect).toHaveBeenCalledOnce();
+        expect(mcp.closeTransport).toHaveBeenCalled();
+    });
+});
 
 describe("resolveMcpAccess", () => {
     it("denies everything with 403 while MCP is disabled, token or not", () => {

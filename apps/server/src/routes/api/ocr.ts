@@ -6,8 +6,7 @@ import { becca } from "@triliumnext/core";
 import ocrService from "../../services/ocr/ocr_service.js";
 
 function getMinConfidenceThreshold(): number {
-    const minConfidence = options.getOption('ocrMinConfidence') ?? 0;
-    return parseFloat(minConfidence);
+    return parseFloat(options.getOption('ocrMinConfidence'));
 }
 
 /**
