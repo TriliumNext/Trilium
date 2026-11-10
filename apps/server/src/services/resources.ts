@@ -350,6 +350,8 @@ export class ResourceManager {
 
     private getDirectory(definition: ResourceDefinition) {
         const directory = this.directories.get(definition.id);
+        /* v8 ignore next 3 -- register() fills `directories` alongside `definitions`, and every caller
+           reaches here with a definition from getDefinition() or from that registered list. */
         if (!directory) {
             throw new Error(`The resource ${definition.id} is not registered.`);
         }

@@ -1,4 +1,5 @@
 import type { ResourceDownloadProgress } from "@triliumnext/commons";
+import { ws } from "@triliumnext/core";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import http from "node:http";
@@ -7,7 +8,18 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type ResourceDefinition, type ResourceFile, ResourceManager } from "./resources.js";
+/** Where the shared manager this module exports keeps its resources, away from the test data directory. */
+const { sharedResourcesDir } = await vi.hoisted(async () => {
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    return { sharedResourcesDir: join(tmpdir(), `trilium-shared-resources-${process.pid}`) };
+});
+
+vi.mock("./data_dir.js", () => ({ default: { RESOURCES_DIR: sharedResourcesDir } }));
+
+import resourceManager, {
+    downloadFile, type ResourceDefinition, type ResourceFile, ResourceManager
+} from "./resources.js";
 
 const MODEL = Buffer.alloc(300_000, "m");
 const TOKENS = Buffer.from("a\nb\nc\n");
@@ -460,6 +472,126 @@ describe("ResourceManager", () => {
             .toThrow(/outside its directory/);
         expect(() => manager.getPath("test.unknown")).toThrow();
         expect(() => manager.startDownload([ "test.unknown" ])).toThrow();
+    });
+    it("notices a file deleted after it was installed", async () => {
+        manager.register(defineModel());
+        manager.startDownload([ "test.model" ]);
+        expect((await waitForEnd()).status).toBe("succeeded");
+
+        fs.rmSync(path.join(resourceDirectory(), "tokens.txt"));
+
+        expect(manager.getPath("test.model")).toBeNull();
+    });
+
+    it("credits a CC-BY-4.0 resource with that license's text", async () => {
+        manager.register({ ...defineModel(), license: "CC-BY-4.0" });
+        manager.startDownload([ "test.model" ]);
+        expect((await waitForEnd()).status).toBe("succeeded");
+
+        const notice = fs.readFileSync(path.join(resourceDirectory(), "NOTICE.txt"), "utf8");
+        expect(notice).toContain("License: CC-BY-4.0, https://creativecommons.org/licenses/by/4.0/");
+        expect(notice).toContain("Creative Commons Attribution 4.0 International License");
+    });
+
+    it("reports a failure that is not an Error by what was thrown", async () => {
+        const failing = new ResourceManager(baseDir, (progress) => broadcasts.push(progress), {
+            fetch: () => Promise.reject("offline")
+        });
+        failing.register(defineModel());
+
+        failing.startDownload([ "test.model" ]);
+        const failed = await waitForEnd();
+
+        expect(failed).toMatchObject({ status: "failed", error: "offline" });
+    });
+
+    it("reports no download for resources other than the one being fetched", async () => {
+        manager.register(defineModel({ tokensUrl: "/stall" }), defineModel({ id: "test.idle" }));
+        const running = manager.startDownload([ "test.model" ]);
+        await waitFor(() => stalled.length > 0);
+
+        expect((await manager.getStatus([ "test.idle" ])).download).toBeNull();
+        expect((await manager.getStatus([ "test.model" ])).download?.downloadId).toBe(running.downloadId);
+
+        manager.cancelDownload(running.downloadId);
+        expect((await waitForEnd()).status).toBe("canceled");
+    });
+
+    it("lists nothing foreign before its directory exists, and measures the space where it will be", async () => {
+        const notYet = new ResourceManager(path.join(baseDir, "not-yet"), () => {});
+        const status = await notYet.getStatus();
+        expect(status.foreign).toEqual([]);
+        expect(status.freeBytes).toBeGreaterThan(0);
+
+        // Neither the directory nor its parent exists, so there is nowhere to measure.
+        const nowhere = new ResourceManager(path.join(baseDir, "missing", "resources"), () => {});
+        expect((await nowhere.getStatus()).freeBytes).toBeNull();
+    });
+
+    it("counts a link in its directory as taking no space, without following it", async () => {
+        const target = path.join(baseDir, "elsewhere");
+        fs.mkdirSync(target);
+        fs.writeFileSync(path.join(target, "big.bin"), Buffer.alloc(500));
+        // A junction needs no privileges on Windows; elsewhere the type is ignored and a symlink is made.
+        fs.symlinkSync(target, path.join(baseDir, "link"), "junction");
+
+        const { foreign } = await manager.getStatus();
+
+        expect(foreign?.find(({ name }) => name === "link")).toMatchObject({ kind: "unknown", size: 0 });
+        expect(foreign?.find(({ name }) => name === "elsewhere")).toMatchObject({ size: 500 });
+    });
+
+    it("broadcasts the progress of the shared manager to every client", async () => {
+        const send = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+        resourceManager.setFetch(() => Promise.reject(new Error("offline")));
+        resourceManager.register(defineModel({ id: "test.shared" }));
+
+        try {
+            resourceManager.startDownload([ "test.shared" ]);
+            await waitFor(() => send.mock.calls.some(([ message ]) =>
+                message.type === "resource-download" && message.download.status === "failed"));
+            expect(send).toHaveBeenCalledWith(expect.objectContaining({
+                type: "resource-download",
+                download: expect.objectContaining({ resourceIds: [ "test.shared" ], error: "offline" })
+            }));
+        } finally {
+            send.mockRestore();
+            fs.rmSync(sharedResourcesDir, { recursive: true, force: true });
+        }
+    });
+});
+
+describe("downloadFile", () => {
+    const content = Buffer.from("hello world");
+    const target: ResourceFile = {
+        path: "hello.txt",
+        url: "https://example.com/hello.txt",
+        size: content.length,
+        sha256: sha256(content)
+    };
+
+    it("refuses a resumed answer that carries no Content-Range, discarding the kept bytes", async () => {
+        const destination = path.join(baseDir, "hello.txt");
+        fs.writeFileSync(`${destination}.partial`, content.subarray(0, 5));
+        const fetchRange = vi.fn(async () => new Response(content.subarray(5), { status: 206 }));
+
+        await expect(downloadFile(target, destination, new AbortController().signal, () => {}, { fetch: fetchRange }))
+            .rejects.toThrow(/hello\.txt/);
+        expect(fetchRange).toHaveBeenCalledWith(target.url, expect.objectContaining({ headers: { Range: "bytes=5-" } }));
+        expect(fs.existsSync(`${destination}.partial`)).toBe(false);
+        expect(fs.existsSync(destination)).toBe(false);
+    });
+
+    it("stops a body that runs past the file's size before writing the excess", async () => {
+        const destination = path.join(baseDir, "hello.txt");
+        const oversized = vi.fn(async () => new Response(Buffer.concat([ content, content ])));
+        const progress: number[] = [];
+
+        await expect(downloadFile(target, destination, new AbortController().signal, (bytes) => progress.push(bytes),
+            { fetch: oversized })).rejects.toThrow(/hello\.txt/);
+        expect(progress).toEqual([]);
+        expect(fs.existsSync(`${destination}.partial`)).toBe(false);
+        expect(fs.existsSync(destination)).toBe(false);
     });
 });
 

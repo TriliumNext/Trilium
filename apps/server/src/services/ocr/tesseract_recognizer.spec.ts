@@ -261,6 +261,32 @@ describe("TesseractRecognizer", () => {
             expect(result.text).toBe("kept\nalso-kept");
         });
 
+        it("reads past blocks, paragraphs and lines that carry nothing beneath them", async () => {
+            mockOptions.getOption.mockReturnValue("0.5");
+            mockWorker.recognize.mockResolvedValue({
+                data: {
+                    text: "word",
+                    confidence: 90,
+                    blocks: [
+                        { paragraphs: null },
+                        { paragraphs: [
+                            { lines: null },
+                            { lines: [
+                                { text: "", words: null },
+                                { text: "word", words: [ { text: "word", confidence: 90 } ] }
+                            ] }
+                        ] }
+                    ]
+                }
+            });
+
+            const result = await recognizer.recognize(image, "eng");
+
+            expect(result.text).toBe("word");
+            expect(result.confidence).toBeCloseTo(0.9);
+            expect(mockLog.info).toHaveBeenCalledWith(expect.stringContaining("1 words kept out of 1 total words"));
+        });
+
         it("returns empty text and no confidence when no word passes the threshold", async () => {
             mockOptions.getOption.mockReturnValue("0.99");
             mockWorker.recognize.mockResolvedValue({

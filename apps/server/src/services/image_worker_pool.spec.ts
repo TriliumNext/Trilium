@@ -1,5 +1,5 @@
 import type { ImageCompressionRequest } from "@triliumnext/core/src/services/image_provider.js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The pool's failure semantics, with the processes themselves faked out: what separates "this
@@ -14,6 +14,8 @@ const h = vi.hoisted(() => {
         pid: number;
         sent: unknown[] = [];
         killed = false;
+        /** What the channel reports to `send`'s callback; set to fail the next send. */
+        sendError: Error | null = null;
         channel = { unref() {} };
         private handlers = new Map<string, Handler[]>();
 
@@ -33,7 +35,7 @@ const h = vi.hoisted(() => {
 
         send(message: unknown, callback?: (error: Error | null) => void) {
             this.sent.push(message);
-            callback?.(null);
+            callback?.(this.sendError);
 
             return true;
         }
@@ -49,15 +51,23 @@ const h = vi.hoisted(() => {
 
     const forked: InstanceType<typeof FakeChild>[] = [];
     const forkOptions: { serialization?: string; execArgv?: string[] }[] = [];
+    const logs: string[] = [];
 
     return {
         forked,
         forkOptions,
+        logs,
+        /** Which of the worker entry candidates exist; by default only the TypeScript source. */
+        exists: (file: string) => file.endsWith("image_worker.ts"),
+        forkError: null as Error | null,
         // What the fake machine has; individual tests shrink these to watch the pool follow.
         cores: 8,
         memoryBytes: 32 * 1024 * 1024 * 1024,
         fork(file: string, options: { serialization?: string; execArgv?: string[] }) {
             void file;
+            if (this.forkError) {
+                throw this.forkError;
+            }
             forkOptions.push(options);
 
             const child = new FakeChild(4000 + forked.length);
@@ -69,9 +79,14 @@ const h = vi.hoisted(() => {
     };
 });
 
-vi.mock("node:child_process", () => ({ fork: h.fork }));
+vi.mock("node:child_process", () => ({
+    fork: (file: string, options: { serialization?: string; execArgv?: string[] }) => h.fork(file, options)
+}));
 vi.mock("node:os", () => ({ availableParallelism: () => h.cores, totalmem: () => h.memoryBytes }));
-vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info() {}, error() {} }) }));
+vi.mock("node:fs", () => ({ existsSync: (file: string) => h.exists(file) }));
+vi.mock("@triliumnext/core", () => ({
+    getLog: () => ({ info: (message: string) => h.logs.push(message), error() {} })
+}));
 
 const REQUEST: ImageCompressionRequest = {
     resize: true,
@@ -94,6 +109,9 @@ beforeEach(() => {
     vi.resetModules();
     h.forked.length = 0;
     h.forkOptions.length = 0;
+    h.logs.length = 0;
+    h.exists = (file: string) => file.endsWith("image_worker.ts");
+    h.forkError = null;
     h.cores = 8;
     h.memoryBytes = 32 * 1024 * 1024 * 1024;
 });
@@ -261,4 +279,201 @@ describe("worker pool failure semantics", () => {
             delete versions.electron;
         }
     });
+    it("compresses in this process when no worker entry point exists, saying so once", async () => {
+        h.exists = () => false;
+        const pool = await import("./image_worker_pool.js");
+
+        expect(pool.compressionConcurrency()).toBe(1);
+        await expect(pool.compressInWorker(BYTES, REQUEST, 1024)).resolves.toBeNull();
+        await expect(pool.compressInWorker(BYTES, REQUEST, 1024)).resolves.toBeNull();
+
+        expect(h.forked).toHaveLength(0);
+        expect(h.logs).toEqual([
+            "Image Compression Tool: compressing in this process because no worker entry point was found."
+        ]);
+    });
+
+    it("starts a bundled worker without this process's loader flags, and a source one with them", async () => {
+        h.exists = (file) => file.endsWith("image_worker.cjs");
+        const bundled = await import("./image_worker_pool.js");
+        void bundled.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+        expect(h.forkOptions[0].execArgv).toEqual([ "--max-old-space-size=2048" ]);
+
+        vi.resetModules();
+        h.exists = (file) => file.endsWith("image_worker.ts");
+        const fromSource = await import("./image_worker_pool.js");
+        void fromSource.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+        expect(h.forkOptions[1].execArgv).toEqual([ ...process.execArgv, "--max-old-space-size=2048" ]);
+    });
+
+    it("compresses in this process when a worker cannot even be forked", async () => {
+        h.forkError = new Error("spawn EMFILE");
+        const pool = await import("./image_worker_pool.js");
+
+        await expect(pool.compressInWorker(BYTES, REQUEST, 1024)).resolves.toBeNull();
+        expect(h.logs).toContain(
+            "Image Compression Tool: compressing in this process because they could not be started (spawn EMFILE).");
+    });
+
+    it("reuses a free worker, hands it straight to an image queued for it, and traces when asked", async () => {
+        vi.stubEnv("TRILIUM_IMAGE_WORKER_DEBUG", "1");
+        h.cores = 1;
+        const pool = await import("./image_worker_pool.js");
+
+        try {
+            const first = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+            const child = h.forked[0];
+            child.emit("message", { trace: "loaded and listening" });
+            await flush();
+
+            const queued = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+            answer(child, 0, { outcome: { compressed: false, reason: "no-gain" }, logs: [ "decoded in 5ms" ] });
+            await expect(first).resolves.toEqual({ compressed: false, reason: "no-gain" });
+            await flush();
+
+            // The queued image went to the same process the moment it came free.
+            expect(child.sent).toHaveLength(2);
+            // A response without an outcome is read as no worker answer at all.
+            answer(child, 1, { logs: [] });
+            await expect(queued).resolves.toBeNull();
+
+            // Now idle, the worker takes the next image without a new process being started.
+            const third = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+            expect(h.forked).toHaveLength(1);
+            answer(child, 2, { outcome: { compressed: false, reason: "no-gain" }, logs: [] });
+            await expect(third).resolves.toEqual({ compressed: false, reason: "no-gain" });
+
+            expect(h.logs).toContain("Image Compression Tool: loaded and listening");
+            expect(h.logs).toContain("decoded in 5ms");
+            expect(h.logs.some((line) => line.includes("sending image #1 (3 bytes) to worker 4000"))).toBe(true);
+            expect(h.logs.some((line) => line.includes("worker 4000 answered image #1"))).toBe(true);
+        } finally {
+            vi.unstubAllEnvs();
+        }
+    });
+
+    it("fails an image its worker reports an error for, and retires that worker", async () => {
+        const pool = await import("./image_worker_pool.js");
+        const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+        const child = h.forked[0];
+        child.emit("message", { trace: "loaded and listening" });
+        await flush();
+
+        answer(child, 0, { error: "Maximum memory usage exceeded", logs: [] });
+
+        await expect(image).rejects.toThrow("Maximum memory usage exceeded");
+        expect(child.killed).toBe(true);
+    });
+
+    it("fails an image whose message the channel would not take", async () => {
+        const pool = await import("./image_worker_pool.js");
+        const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+        const child = h.forked[0];
+        child.sendError = new Error("Channel closed");
+        child.emit("message", { trace: "loaded and listening" });
+
+        await expect(image).rejects.toThrow("Channel closed");
+    });
+
+    it("gives up on workers when the first one errors before it speaks", async () => {
+        const pool = await import("./image_worker_pool.js");
+        const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+
+        h.forked[0].emit("error", "spawn UNKNOWN\n    at ChildProcess.spawn");
+
+        await expect(image).resolves.toBeNull();
+        expect(h.logs).toContain("Image Compression Tool: worker 4000 errored: spawn UNKNOWN");
+        expect(h.logs).toContain(
+            "Image Compression Tool: compressing in this process because they do not work here (spawn UNKNOWN).");
+    });
+
+    describe("deadlines", () => {
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("gives up on a worker that does not come up in time, and on workers with it", async () => {
+            const pool = await import("./image_worker_pool.js");
+            const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+
+            vi.advanceTimersByTime(30 * 1000);
+
+            await expect(image).resolves.toBeNull();
+            expect(h.logs).toContain(
+                "Image Compression Tool: worker 4000 did not come up within 30000ms; giving up on it");
+            expect(h.forked[0].killed).toBe(true);
+        });
+
+        it("fails an image whose worker stops answering", async () => {
+            const pool = await import("./image_worker_pool.js");
+            const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+            h.forked[0].emit("message", { trace: "loaded and listening" });
+            await flush();
+
+            vi.advanceTimersByTime(15 * 60 * 1000);
+
+            await expect(image).rejects.toThrow("Image worker did not answer in time.");
+            expect(h.logs.some((line) => line.startsWith("Image Compression Tool: worker 4000 did not answer for image #")))
+                .toBe(true);
+        });
+    });
+
+    it("tells a worker it stopped apart from one that died while idle", async () => {
+        const pool = await import("./image_worker_pool.js");
+
+        /** Runs one image to completion, leaving its worker idle in the pool. */
+        async function runOne() {
+            const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+            await flush();
+            const child = h.forked[h.forked.length - 1];
+            child.emit("spawn");
+            child.emit("message", { trace: "loaded and listening" });
+            await flush();
+            answer(child, child.sent.length - 1, { outcome: { compressed: false, reason: "no-gain" }, logs: [] });
+            await image;
+            return child;
+        }
+
+        const stopped = await runOne();
+        pool.shutdownImageWorkers();
+        expect(stopped.killed).toBe(true);
+        stopped.emit("exit", null, "SIGTERM");
+        expect(h.logs).toContain("Image Compression Tool: worker 4000 stopped");
+
+        const died = await runOne();
+        expect(died.pid).toBe(4001);
+        died.emit("exit", null, "SIGKILL");
+        expect(h.logs).toContain("Image Compression Tool: worker 4001 exited unexpectedly with code SIGKILL while idle");
+        expect(h.logs.some((line) => /^Image Compression Tool: worker 4000 online in \d+ms$/.test(line))).toBe(true);
+
+        // Killed by a signal mid-image, the worker takes only that image with it.
+        const image = pool.compressInWorker(BYTES, REQUEST, 1024);
+        await flush();
+        const killed = h.forked[h.forked.length - 1];
+        killed.emit("message", { trace: "loaded and listening" });
+        await flush();
+        killed.emit("exit", null, "SIGKILL");
+        await expect(image).rejects.toThrow("Image worker exited with code SIGKILL.");
+        expect(h.logs).toContain(
+            `Image Compression Tool: worker ${killed.pid} exited unexpectedly with code SIGKILL while working on an image`);
+    });
 });
+
+/** Answers the `index`th image sent to `child` with `response`. */
+function answer(child: (typeof h.forked)[number], index: number, response: Record<string, unknown>) {
+    child.emit("message", { id: (child.sent[index] as { id: number }).id, ...response });
+}

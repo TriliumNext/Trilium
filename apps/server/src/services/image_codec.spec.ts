@@ -1,10 +1,11 @@
 import { inspectImage } from "@triliumnext/core/src/services/image_inspect.js";
 import type { ImageCompressionRequest, ImageFormat } from "@triliumnext/core/src/services/image_provider.js";
+import { estimateJpegQuality } from "@triliumnext/core/src/services/jpeg_quality.js";
 import { Jimp } from "jimp";
 import * as UPNG from "upng-js";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { compressImageBytes, planFromBytes } from "./image_codec.js";
+import { compressImageBytes, detectSvg, planFromBytes } from "./image_codec.js";
 
 /**
  * The header-level planning on real encoder output: what an image's own bytes say about whether
@@ -98,5 +99,57 @@ describe("settling an already-compressed image from its header", () => {
         // smaller each time, so the size guard never stops it, and quality erodes run by run.
         expect(planFromBytes(JPEG_FORMAT, reencodedJpeg.buffer, request())).toEqual({ verdict: "skip", reason: "no-gain" });
         expect(planFromBytes(PNG_FORMAT, quantizedPng.buffer, request())).toEqual({ verdict: "skip", reason: "no-gain" });
+    });
+});
+
+/**
+ * A JPEG carrying the stray `00 E1` segment some phone cameras write after JFIF. The decoder skips
+ * it, but the header walks in `inspectImage` and `estimateJpegQuality` stop there, so neither the
+ * dimensions nor the quality can be read off the header.
+ */
+function withMalformedApp1(jpeg: Uint8Array): Uint8Array {
+    // SOI is two bytes, and the APP0 (JFIF) segment after it states its own length.
+    const afterApp0 = 4 + ((jpeg[4] << 8) | jpeg[5]);
+    const result = new Uint8Array(jpeg.byteLength + 6);
+    result.set(jpeg.subarray(0, afterApp0));
+    result.set([ 0x00, 0xe1, 0x00, 0x04, 0xaa, 0xbb ], afterApp0);
+    result.set(jpeg.subarray(afterApp0), afterApp0 + 6);
+    return result;
+}
+
+describe("a JPEG whose header cannot be read", () => {
+    it("is decoded to settle its size, and left alone when it needs nothing", async () => {
+        const malformed = withMalformedApp1(jpegAt95);
+        // The premises: the header reveals nothing, but the bytes still decode.
+        expect(inspectImage(malformed)).toMatchObject({ format: "jpg", width: null, height: null });
+        expect(estimateJpegQuality(malformed)).toBeNull();
+
+        const keepWidth = request({ jpegHandling: "keep", widthOnly: true });
+        expect(planFromBytes(JPEG_FORMAT, malformed, keepWidth)).toMatchObject({
+            verdict: "proceed",
+            declared: { width: null }
+        });
+        expect(await compressImageBytes(malformed, keepWidth)).toEqual({ compressed: false, reason: "no-gain" });
+    });
+
+    it("is scaled at a high fallback quality when its own quality cannot be read", async () => {
+        const outcome = await compressImageBytes(
+            withMalformedApp1(jpegAt95), request({ jpegHandling: "keep", maxWidthHeight: 100 }));
+
+        if (!outcome.compressed) {
+            throw new Error("expected the scaled image to be smaller");
+        }
+        const decoded = await Jimp.fromBuffer(Buffer.from(outcome.buffer));
+        expect([ decoded.bitmap.width, decoded.bitmap.height ]).toEqual([ 100, 75 ]);
+        expect(Math.abs((estimateJpegQuality(outcome.buffer) ?? 0) - 92)).toBeLessThanOrEqual(2);
+    });
+});
+
+describe("detectSvg", () => {
+    it("rejects a buffer holding nothing but whitespace, or nothing at all", () => {
+        expect(detectSvg(new TextEncoder().encode(" \t\r\n"))).toBeNull();
+        expect(detectSvg(new Uint8Array(0))).toBeNull();
+        expect(detectSvg(new TextEncoder().encode("\n<svg xmlns=\"http://www.w3.org/2000/svg\"/>")))
+            .toEqual({ ext: "svg", mime: "image/svg+xml" });
     });
 });
