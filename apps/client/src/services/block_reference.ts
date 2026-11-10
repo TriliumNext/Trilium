@@ -55,6 +55,8 @@ export interface BlockReferenceMenuItems {
 export interface BlockHandleMenuActions {
     /** The items that insert blocks, list items or table rows, shown first, before a separator. */
     insertItems?: MenuItem<CommandNames>[];
+    /** Collapses or expands the section of a heading, after the insert items. */
+    sectionItem?: MenuItem<CommandNames> | null;
     /** Puts the selected blocks on the clipboard and deletes them, first in the copy items. */
     cutBlocks?: () => void;
     /** Puts the selected blocks on the clipboard, before the reference items. */
@@ -113,6 +115,7 @@ export function buildReferenceConfig(
                 const shareLink = note && getNoteShareLink(note);
                 openBlockHandleMenu(origin, blocks, {
                     insertItems: buildInsertItems(editor, blocks),
+                    sectionItem: buildSectionMenuItem(editor, blocks),
                     ...getClipboardActions(editor),
                     copyReference: () => void copy(copyBlockReference),
                     copyShareLink: shareLink
@@ -142,8 +145,8 @@ export function openBlockHandleMenu(
     origin: MouseEvent | HTMLElement,
     blocks: readonly ModelElement[],
     {
-        insertItems, cutBlocks, copyBlocks, copyReference, copyShareLink, aiItem, sortItem,
-        deleteBlocks, openHelpPage
+        insertItems, sectionItem, cutBlocks, copyBlocks, copyReference, copyShareLink, aiItem,
+        sortItem, deleteBlocks, openHelpPage
     }: BlockHandleMenuActions,
     editor?: CKTextEditor | null,
     onClose?: () => void
@@ -154,9 +157,14 @@ export function openBlockHandleMenu(
         return;
     }
 
-    const items: MenuItem<CommandNames>[] = [ getBlocksHeader(blocks, openHelpPage) ];
+    const items: MenuItem<CommandNames>[] = [
+        getBlocksHeader(getShownBlocks(blocks, editor), openHelpPage)
+    ];
     if (insertItems?.length) {
         items.push(...insertItems, { kind: "separator" });
+    }
+    if (sectionItem) {
+        items.push(sectionItem, { kind: "separator" });
     }
     if (cutBlocks) {
         items.push({ title: t("block_handle_menu.cut"), uiIcon: "bx bx-cut", handler: cutBlocks });
@@ -383,6 +391,39 @@ export function revealHighlightedBlocks(container: HTMLElement) {
     const viewportTop = container.getBoundingClientRect().top + container.clientTop;
     const margin = Math.max(0, (container.clientHeight - height) / 2);
     container.scrollTop += top - viewportTop - margin;
+}
+
+/** `blocks` without those hidden in a collapsed section, which the menu does not count. */
+function getShownBlocks(blocks: readonly ModelElement[], editor: CKTextEditor | null | undefined) {
+    const hiddenBlocks = editor?.plugins.has("HiddenBlocks")
+        ? editor.plugins.get("HiddenBlocks")
+        : null;
+    return hiddenBlocks ? blocks.filter((block) => !hiddenBlocks.isHidden(block)) : blocks;
+}
+
+/**
+ * _Collapse section_ or _Expand section_ for `blocks` when they show as one heading with blocks
+ * under it, else `null`.
+ */
+function buildSectionMenuItem(
+    editor: CKTextEditor | null | undefined,
+    blocks: readonly ModelElement[]
+): MenuItem<CommandNames> | null {
+    const command = editor?.commands.get("toggleHeadingCollapse");
+    if (!editor || !command?.isEnabled || getShownBlocks(blocks, editor).length !== 1) {
+        return null;
+    }
+
+    return {
+        title: command.value
+            ? t("block_handle_menu.expand_section")
+            : t("block_handle_menu.collapse_section"),
+        uiIcon: command.value ? "bx bx-expand-vertical" : "bx bx-collapse-vertical",
+        handler: () => {
+            editor.execute("toggleHeadingCollapse");
+            editor.editing.view.focus();
+        }
+    };
 }
 
 /**

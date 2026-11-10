@@ -428,7 +428,7 @@ export class ToggleListCollapseCommand extends Command {
 }
 
 /** `MouseObserver` covers mousedown/up/over/out, but not the moves the hover feedback needs. */
-class MouseMoveObserver extends DomEventObserver<"mousemove"> {
+export class MouseMoveObserver extends DomEventObserver<"mousemove"> {
 
     public readonly domEventType = ["mousemove"] as const;
 
@@ -438,7 +438,7 @@ class MouseMoveObserver extends DomEventObserver<"mousemove"> {
 
 }
 
-type ViewDocumentMouseMoveEvent = {
+export type ViewDocumentMouseMoveEvent = {
     name: "mousemove";
     args: [data: ViewDocumentDomEventData<MouseEvent>];
 };

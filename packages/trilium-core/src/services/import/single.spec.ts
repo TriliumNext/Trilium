@@ -98,6 +98,16 @@ describe("processNoteContent", () => {
         expect(content).toContain("Child");
     });
 
+    it("safe import preserves data-trilium-collapsed on headings", async () => {
+        const html = `<h2 data-trilium-collapsed="true">Heading</h2><p>Text under it.</p>`;
+        const { importedNote } = await testImport(
+            "collapsed-heading.html", "text/html", Buffer.from(html), { safeImport: true });
+
+        const content = importedNote.getContent().toString();
+        expect(content).toContain(`<h2 data-trilium-collapsed="true">Heading</h2>`);
+        expect(content).toContain("Text under it.");
+    });
+
     it("safe import preserves the block ids of a text note", async () => {
         const html = `<p data-trilium-block-id="p1">Text</p>`;
         const { importedNote } = await testImport(

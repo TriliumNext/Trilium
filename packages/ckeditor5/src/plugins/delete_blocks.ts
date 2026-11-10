@@ -53,7 +53,7 @@ export class CopyBlocksCommand extends Command {
         const { isBackward } = model.document.selection;
         const ranges = Array.from(model.document.selection.getRanges());
         // `refresh()` enables the command only with a selected block.
-        const range = getDraggedRange(model) as ModelRange;
+        const range = getDraggedRange(this.editor) as ModelRange;
         const selection = model.createSelection(range);
         const dataTransfer = new ViewDataTransfer(new DataTransfer());
         // The step that a native copy runs, so that the `clipboardOutput` listeners apply.
@@ -84,7 +84,7 @@ export class DeleteBlocksCommand extends Command {
     override execute(range?: ModelRange) {
         const model = this.editor.model;
         // `refresh()` enables the command only with a selected block.
-        const deleted = range ?? getDraggedRange(model) as ModelRange;
+        const deleted = range ?? getDraggedRange(this.editor) as ModelRange;
 
         model.change((writer) => {
             const selection = model.createSelection(deleted);

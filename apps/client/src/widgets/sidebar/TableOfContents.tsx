@@ -176,6 +176,10 @@ export function useActiveHeading<T extends RawHeading>({ headings, scrollingCont
 
             for (const heading of headingsRef.current) {
                 const headingEl = getHeadingElement(heading);
+                // A heading in a collapsed section has no place on the page.
+                if (headingEl && !headingEl.checkVisibility({ visibilityProperty: true })) {
+                    continue;
+                }
 
                 if (headingEl && headingEl.getBoundingClientRect().top <= activeLineY) {
                     activeHeading = heading;

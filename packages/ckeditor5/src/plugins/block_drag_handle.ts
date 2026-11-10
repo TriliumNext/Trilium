@@ -244,7 +244,7 @@ export default class BlockDragHandle extends Plugin {
         const isShown = (this.isHovered || this.isMenuOpen) && !this.isDragging
             && !!this.buttonView?.isVisible;
         const mapper = this.editor.editing.mapper;
-        const targets = (isShown ? getDraggedBlocks(this.editor.model) : [])
+        const targets = (isShown ? getDraggedBlocks(this.editor) : [])
             .map((block) => mapper.toViewElement(block))
             .filter((element) => element !== undefined);
         const previous = this.targets;
@@ -349,7 +349,7 @@ export default class BlockDragHandle extends Plugin {
     private startDrag(domEvent: DragEvent) {
         const editor = this.editor;
         const dragDrop = editor.plugins.get(DragDrop);
-        const range = getDraggedRange(editor.model);
+        const range = getDraggedRange(editor);
         if (!dragDrop.isEnabled || !range) {
             domEvent.preventDefault();
             return;
@@ -438,10 +438,12 @@ function clamp(value: number, min: number, max: number) {
 }
 
 /**
- * The range that the handle drags: the selected blocks, widened over the limit elements and the
- * containers that they cover whole.
+ * The range that the handle drags: the selected blocks with the blocks hidden after them, such as
+ * the section of a collapsed heading, widened over the limit elements and the containers that
+ * they cover whole.
  */
-export function getDraggedRange(model: Model) {
+export function getDraggedRange(editor: Editor) {
+    const model = editor.model;
     const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
     const firstBlock = blocks.at(0);
     // The outermost block that holds the last one, so that a collapsible moves whole even when
@@ -452,16 +454,19 @@ export function getDraggedRange(model: Model) {
         return null;
     }
 
-    const range = model.createRange(
+    let range = model.createRange(
         model.createPositionBefore(firstBlock),
         model.createPositionAfter(lastBlock)
     );
+    if (editor.plugins.has("HiddenBlocks")) {
+        range = editor.plugins.get("HiddenBlocks").widenOverHiddenRun(range);
+    }
     return widenToWholeContainers(model, widenToCommonLimit(model, range));
 }
 
 /** The outermost elements of the range that the handle drags, which it tints. */
-export function getDraggedBlocks(model: Model): ModelElement[] {
-    const range = getDraggedRange(model);
+export function getDraggedBlocks(editor: Editor): ModelElement[] {
+    const range = getDraggedRange(editor);
     return range
         ? Array.from(range.getItems({ shallow: true }))
             .filter((item): item is ModelElement => item.is("element"))

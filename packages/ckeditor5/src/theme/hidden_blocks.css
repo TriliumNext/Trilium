@@ -1,0 +1,15 @@
+/* A box of no height in place, rather than `display: none`: the drop target search of CKEditor
+ * measures the boxes of the blocks, and caret moves across hidden content stay fast. */
+.ck-content.ck-editor__editable .trilium-hidden-block {
+    display: flow-root !important;
+    float: none !important;
+    margin-block: 0 !important;
+    border-block-width: 0 !important;
+    padding-block: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    contain: layout paint !important;
+    content-visibility: hidden !important;
+}

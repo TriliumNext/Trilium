@@ -1,6 +1,7 @@
 import { resolveBlockReference } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import "../../theme/block_reference.css";
+import { revealCollapsedHeadings } from "../collapsible_headings/collapsible_headings_read_only.js";
 import { CLASSES as TAB_CLASSES } from "../tabs/constants.js";
 import { getTabTitle, revealTab } from "../tabs/tabs_read_only.js";
 
@@ -119,7 +120,7 @@ function getScrollContainer(element: Element) {
     return element.ownerDocument.scrollingElement ?? element.ownerDocument.documentElement;
 }
 
-/** Opens the `<details>` and shows the tabs that enclose `element`. */
+/** Opens the `<details>`, shows the tabs and expands the collapsed headings that hide `element`. */
 function reveal(element: Element) {
     let details = element.closest("details");
     while (details) {
@@ -127,6 +128,7 @@ function reveal(element: Element) {
         details = details.parentElement?.closest("details") ?? null;
     }
     revealTab(element);
+    revealCollapsedHeadings(element);
 }
 
 function getElementsInRange(range: Range, parent: Node): Element[] {
