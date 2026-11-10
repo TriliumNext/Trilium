@@ -14,6 +14,7 @@
 | Insert <a class="reference-link" href="Math%20Equations.md">Math Equations</a> | Ctrl + M | ⌘+ M |
 | Move blocks (lists, paragraphs, etc.) up, or in a [table](Tables.md) the rows | Alt+↑ | ⌥+↑ |
 | Move blocks (lists, paragraphs, etc.) down, or in a [table](Tables.md) the rows | Alt+↓ | ⌥+↓ |
+| Collapse or expand a [heading](Collapsible%20headings.md) or a [list item](Lists.md) | Ctrl+Alt+Enter | ⌘+⌥+Enter |
 | Move the selected content to another column of a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
 | Move the current column of a multicolumn layout | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
 | Add a column after or before the current one in a multicolumn layout | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |

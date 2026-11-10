@@ -192,7 +192,10 @@ abstract class MoveBlockUpDownCommand extends Command {
 				const sibling = this.getSibling(block);
 				/* v8 ignore else -- isEnabled already ensures every block has a sibling */
 				if (sibling) {
-					const range = model.createRangeOn(block);
+					const range = model.createRange(
+						model.createPositionBefore(block),
+						model.createPositionAfter(this.getUnitEnd(block))
+					);
 					writer.move(range, sibling, this.offset);
 				}
 			}
@@ -235,15 +238,32 @@ abstract class MoveBlockUpDownCommand extends Command {
 			resolved.push(el);
 		}
 
-		// Deduplicate adjacent duplicates (e.g., nested selections resolving to same block)
-		return resolved.filter((blk, idx) => idx === 0 || blk !== resolved[idx - 1]);
+		// Deduplicate adjacent duplicates (e.g., nested selections resolving to same block). A
+		// selected hidden block moves with the block that hides it.
+		return resolved.filter((blk, idx) => (idx === 0 || blk !== resolved[idx - 1])
+			&& !this.getHiddenBlocks()?.isHidden(blk));
+	}
+
+	/**
+	 * The last block that moves with `block`: the last of the blocks hidden after it, such as the
+	 * section of a collapsed heading, or the block itself.
+	 */
+	getUnitEnd(block: ModelNode): ModelNode {
+		return this.getHiddenBlocks()?.getHiddenRunAfter(block as ModelElement).at(-1) ?? block;
+	}
+
+	getHiddenBlocks() {
+		const plugins = this.editor.plugins;
+		return plugins.has('HiddenBlocks') ? plugins.get('HiddenBlocks') : null;
 	}
 }
 
 class MoveBlockUpCommand extends MoveBlockUpDownCommand {
 
+    /** The block to move before: the previous one, or the block that hides it. */
     getSibling(selectedBlock: ModelElement) {
-        return selectedBlock.previousSibling;
+        const previous = selectedBlock.previousSibling;
+        return previous && (this.getHiddenBlocks()?.getOwner(previous as ModelElement) ?? previous);
     }
 
     get offset() {
@@ -254,9 +274,10 @@ class MoveBlockUpCommand extends MoveBlockUpDownCommand {
 
 class MoveBlockDownCommand extends MoveBlockUpDownCommand {
 
-	/** @override */
+	/** The block to move after: the next one, or the last of the blocks hidden after it. */
 	getSibling(selectedBlock: ModelElement) {
-		return selectedBlock.nextSibling;
+		const next = this.getUnitEnd(selectedBlock).nextSibling;
+		return next && this.getUnitEnd(next);
 	}
 
 	/** @override */

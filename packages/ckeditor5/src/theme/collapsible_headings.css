@@ -1,0 +1,88 @@
+:where(:root) {
+    --text-editor-heading-arrow-color: var(--text-editor-collapsible-list-arrow-color,
+        currentColor);
+    --text-editor-heading-arrow-hover-color: var(--text-editor-collapsible-list-arrow-hover-color,
+        currentColor);
+    --text-editor-heading-arrow-hover-background: var(
+        --text-editor-collapsible-list-arrow-hover-background, rgba(128, 128, 128, 0.25));
+}
+
+.ck-content .trilium-section-heading {
+    --_arrow-size: 1.1em;
+    --_arrow-gap: 0.3em;
+    --_arrow-rotation: 90deg;
+
+    position: relative;
+    padding-inline-end: calc(var(--_arrow-size) + var(--_arrow-gap));
+
+    /* The `lh` and `em` of the arrow must be those of the heading, so it sets no font size. */
+    &::after {
+        content: "\ea50";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        inset-inline-end: 0;
+        top: 0.5lh;
+        border-radius: 50%;
+        width: var(--_arrow-size);
+        height: var(--_arrow-size);
+        color: var(--text-editor-heading-arrow-color);
+        font-family: boxicons;
+        font-style: normal;
+        font-weight: normal;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(-50%) rotate(var(--_arrow-rotation));
+        transition: opacity 150ms ease, transform 150ms ease, background-color 150ms ease,
+            color 150ms ease;
+    }
+
+    /* Firefox before 120 has no `lh` unit. */
+    @supports not (top: 1lh) {
+        &::after {
+            top: 0.65em;
+        }
+    }
+
+    &.trilium-heading-selected::after {
+        opacity: 0.45;
+    }
+
+    /* A tap on a touch screen leaves the pointer where it was. */
+    @media (hover: hover) {
+        &.trilium-heading-hovered::after {
+            opacity: 0.45;
+        }
+    }
+
+    &.trilium-temporarily-expanded::after {
+        opacity: 0.75;
+    }
+
+    .ck-editor__editable
+        &:where([data-trilium-collapsed="true"]:not(.trilium-temporarily-expanded)),
+    &.trilium-heading-collapsed {
+        --_arrow-rotation: 0deg;
+
+        &::after {
+            opacity: 0.75;
+        }
+
+        &:dir(rtl) {
+            --_arrow-rotation: 180deg;
+        }
+    }
+
+    @media (hover: hover) {
+        &.trilium-heading-arrow-hovered::after {
+            color: var(--text-editor-heading-arrow-hover-color);
+            background-color: var(--text-editor-heading-arrow-hover-background);
+            opacity: 1;
+        }
+    }
+}
+
+.ck-content .trilium-heading-section-hidden {
+    display: none !important;
+}
