@@ -38,6 +38,7 @@ describe("LogService (base)", () => {
         const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
         service.banner(undefined);
+        service.banner("   ");
         expect(logSpy).not.toHaveBeenCalled();
 
         // Single short word: exercises the no-wrap path.
