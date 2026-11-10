@@ -85,7 +85,7 @@ export function mapByNoteType(note: BNote, content: string | Uint8Array, format:
 
             extension = "html";
             mime = "text/html";
-        } else if (format === "markdown") {
+        } else {
             payload = mdService.toMarkdown(content);
             extension = "md";
             mime = "text/x-markdown";

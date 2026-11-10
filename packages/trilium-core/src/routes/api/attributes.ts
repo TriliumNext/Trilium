@@ -53,11 +53,12 @@ function updateNoteAttribute(req: Request<{ noteId: string }>) {
         });
     }
 
+    /* v8 ignore else -- a new relation without a target returns early above, and an existing
+       relation reaches here only with its own, non-empty target */
     if (attribute.type === "label" || body.value.trim()) {
         attribute.value = body.value;
     } else {
         // relations should never have empty target
-        /* v8 ignore next -- unreachable: BAttribute.validate() rejects relations with an empty/non-existing target, so an empty-valued relation can never be persisted and re-fetched here */
         attribute.markAsDeleted();
     }
 
@@ -231,6 +232,7 @@ function deleteRelation(req: Request) {
 
     if (attributeId) {
         const attribute = becca.getAttribute(attributeId);
+        /* v8 ignore else -- the ID comes from the non-deleted rows, which becca always holds */
         if (attribute) {
             attribute.markAsDeleted();
         }

@@ -2,11 +2,13 @@ import type { EntityChange } from "@triliumnext/commons";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import dateUtils from "./utils/date.js";
 import entityChangesService from "./entity_changes.js";
 import events from "./events.js";
 import getInstanceId from "./instance_id.js";
 import { getContext } from "./context.js";
+import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
 
 let counter = 0;
@@ -262,4 +264,81 @@ describe("entity_changes service (real DB)", () => {
             expect(unsyncedBlobs).toBe(0);
         });
     });
+
+    describe("edge cases", () => {
+        it("leaves the cached max id alone when the insert reports no row id", () => {
+            const max = entityChangesService.getMaxEntityChangeId();
+            vi.spyOn(getSql(), "replace").mockReturnValueOnce(null);
+
+            getContext().init(() => entityChangesService.putEntityChange(buildEntityChange()));
+
+            expect(entityChangesService.getMaxEntityChangeId()).toBe(max);
+        });
+
+        it("re-records a stored blob, and does nothing for a missing one", () => {
+            const note = createNote();
+            const before = readRow("blobs", note.blobId ?? "");
+            const max = entityChangesService.getMaxEntityChangeId();
+
+            getContext().init(() => {
+                entityChangesService.putBlobEntityChange(note.blobId ?? "");
+                entityChangesService.putBlobEntityChange("noSuchBlob");
+            });
+
+            const after = readRow("blobs", note.blobId ?? "");
+            expect(after?.hash).toBe(before?.hash);
+            expect(after?.changeId).not.toBe(before?.changeId);
+            expect(readRow("blobs", "noSuchBlob")).toBeNull();
+            expect(entityChangesService.getMaxEntityChangeId()).toBe(max + 1);
+        });
+
+        it("re-queues the notes using the blobs of a re-queued blob sector", () => {
+            const note = createNote();
+            const blobId = note.blobId ?? "";
+            const before = readRow("notes", note.noteId);
+
+            getContext().init(() => entityChangesService.addEntityChangesForSector("blobs", blobId.charAt(0)));
+
+            expect(readRow("notes", note.noteId)?.changeId).not.toBe(before?.changeId);
+        });
+
+        it("keeps an erased change of an existing entity and stamps entities without a date", () => {
+            const erasedNote = createNote();
+            const undatedNote = createNote();
+            const originalGetEntity = becca.getEntity.bind(becca);
+            vi.spyOn(becca, "getEntity").mockImplementation((entityName, entityId) => (
+                entityId === undatedNote.noteId
+                    ? { generateHash: () => "undatedHash", getUtcDateChanged: () => undefined } as unknown as ReturnType<typeof becca.getEntity>
+                    : originalGetEntity(entityName, entityId)
+            ));
+            getContext().init(() => entityChangesService.putEntityChange(
+                buildEntityChange({ entityId: erasedNote.noteId, hash: "erasedHash", isErased: true })
+            ));
+            const startedAt = dateUtils.utcNowDateTime();
+
+            getContext().init(() => entityChangesService.fillAllEntityChanges());
+
+            expect(readRow("notes", erasedNote.noteId)).toMatchObject({ hash: "erasedHash", isErased: 1 });
+            const undated = readRow("notes", undatedNote.noteId);
+            expect(undated?.hash).toBe("undatedHash");
+            expect((undated?.utcDateChanged ?? "") >= startedAt).toBe(true);
+
+            vi.restoreAllMocks();
+            getContext().init(() => {
+                getSql().execute("DELETE FROM entity_changes WHERE entityName = 'notes' AND entityId IN (?, ?)", [ erasedNote.noteId, undatedNote.noteId ]);
+                entityChangesService.fillAllEntityChanges();
+            });
+            expect(readRow("notes", erasedNote.noteId)?.isErased).toBe(0);
+        });
+    });
 });
+
+function createNote() {
+    counter++;
+    return getContext().init(() => noteService.createNewNote({
+        parentNoteId: "root",
+        title: `ec-spec-note-${counter}`,
+        content: `<p>entity changes ${counter}</p>`,
+        type: "text"
+    }).note);
+}

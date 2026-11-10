@@ -13,7 +13,7 @@ interface ServeResult {
 }
 
 /** Serves `content` through the real handler, capturing what it wrote to the response. */
-function serve(content: string | Uint8Array, range?: string, etag?: string, maxOpenRangeLength?: number): ServeResult {
+function serve(content: string | Uint8Array, range?: string | string[], etag?: string, maxOpenRangeLength?: number): ServeResult {
     const captured: ServeResult = { status: 200, headers: {}, body: "", byteLength: 0 };
 
     const res = {
@@ -68,6 +68,11 @@ describe("serveContentWithRanges", () => {
         expect(res.headers["Content-Length"]).toBe("4");
         // A slice must not be cached as though it were the whole file.
         expect(res.headers["Cache-Control"]).toBe("no-cache");
+
+        // A header repeated on the wire arrives as an array; the first one is answered.
+        const repeated = serve(CONTENT, [ "bytes=1-2", "bytes=5-6" ]);
+        expect(repeated.status).toBe(206);
+        expect(repeated.body).toBe("12");
     });
 
     it("handles the open-ended, suffix and single-byte forms a player uses to probe", () => {

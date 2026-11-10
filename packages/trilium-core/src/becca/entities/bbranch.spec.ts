@@ -97,6 +97,22 @@ describe("BBranch (real DB)", () => {
             expect(note.isDeleted).toBe(true);
         });
 
+        it("leaves a child alone whose branch is missing from becca", () => {
+            const parent = createNote("root");
+            const child = createNote(parent.note.noteId);
+            const key = `${child.note.noteId}-${parent.note.noteId}`;
+            delete becca.childParentToBranch[key];
+
+            try {
+                const deleted = getContext().init(() => parent.branch.deleteBranch());
+
+                expect(deleted).toBe(true);
+                expect(child.branch.isDeleted).toBe(false);
+            } finally {
+                becca.childParentToBranch[key] = child.branch;
+            }
+        });
+
         it("deletes attached attachments together with the note", () => {
             const { note, branch } = createNote("root");
 
@@ -181,6 +197,32 @@ describe("BBranch (real DB)", () => {
                 // Restore the becca map so subsequent assertions/teardown are consistent.
                 becca.childParentToBranch[key] = savedBranch;
             }
+        });
+    });
+
+    describe("init and beforeSaving without a parent note", () => {
+        it("registers a top-level branch once, however often it is initialized", () => {
+            const { note } = createNote("root");
+            const branch = new BBranch({ branchId: "bbrTopLevel", noteId: note.noteId, parentNoteId: "none", notePosition: 0 });
+            branch.init();
+
+            expect(note.getParentBranches().filter((b) => b === branch)).toHaveLength(1);
+            expect(note.getParentNotes().map((n) => n.noteId)).toEqual([ "root" ]);
+
+            note.parentBranches = note.parentBranches.filter((b) => b !== branch);
+            delete becca.branches.bbrTopLevel;
+            delete becca.childParentToBranch[`${note.noteId}-none`];
+        });
+
+        it("places a branch without a parent note at position 10", () => {
+            const branch = new BBranch();
+            branch.noteId = "bbrLoose";
+            branch.parentNoteId = "none";
+
+            (branch as unknown as { beforeSaving(): void }).beforeSaving();
+
+            expect(branch.notePosition).toBe(10);
+            expect(branch.branchId).toBe("none_bbrLoose");
         });
     });
 

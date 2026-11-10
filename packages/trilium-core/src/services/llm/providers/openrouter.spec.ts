@@ -183,6 +183,16 @@ describe("OpenRouterProvider model listing", () => {
         await expect(new OpenRouterProvider("sk-or").listModels()).rejects.toThrow(/Unexpected \/models response shape/);
     });
 
+    it("takes a listed model without an architecture for a chat model, and prices an unlisted one from the base table", async () => {
+        stubListing(fetchMock, { data: [ { id: "acme/plain", name: "Acme: Plain", pricing: { prompt: "0.000001", completion: "0.000002" } } ] });
+        const provider = new OpenRouterProvider("sk-or");
+        const models = await provider.listModels();
+
+        expect(models.map(m => m.id)).toEqual([ "acme/plain" ]);
+        expect(provider.getModelPricing("acme/plain")).toEqual({ input: 1, output: 2 });
+        expect(provider.getModelPricing("acme/unlisted")).toBeUndefined();
+    });
+
     it("lists through a base URL override", async () => {
         stubListing(fetchMock);
         await new OpenRouterProvider("sk-or", "https://gateway.example/v1").listModels();
@@ -228,6 +238,10 @@ describe("OpenRouterProvider turn report", () => {
             .toBeCloseTo(0.0015, 10);
         expect((await provider.describeTurn([ step("openrouter/auto", 0.0012), step("openrouter/auto") ], "openrouter/auto", noStoredName)).cost)
             .toBeUndefined();
+
+        // A step without OpenRouter's usage, or without metadata at all, went unbilled too.
+        const unreported = { response: { modelId: "openrouter/auto" }, providerMetadata: undefined } as never;
+        expect((await provider.describeTurn([ unreported ], "openrouter/auto", noStoredName)).cost).toBeUndefined();
     });
 
     it("names the model a router picked: from the stored selection, else from the listing, else by its id", async () => {

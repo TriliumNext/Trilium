@@ -151,8 +151,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             : attachmentMeta.title;
     }
 
-    function getAttachmentMeta(parentNoteMeta: NoteMeta, dataFileName: string) {
-        for (const noteMeta of parentNoteMeta.children || []) {
+    function getAttachmentMeta(parentNoteMeta: NoteMeta, children: NoteMeta[], dataFileName: string) {
+        for (const noteMeta of children) {
             for (const attachmentMeta of noteMeta.attachments || []) {
                 if (attachmentMeta.dataFileName === dataFileName) {
                     return {
@@ -189,12 +189,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             segment = unescapeHtml(segment);
             parent = cursor;
-            if (parent.children) {
-                cursor = parent.children.find((file) => file.dataFileName === segment || file.dirFileName === segment);
-            }
+            const children = cursor.children;
+            cursor = children.find((file) => file.dataFileName === segment || file.dirFileName === segment);
 
             if (!cursor) {
-                return getAttachmentMeta(parent, segment);
+                return getAttachmentMeta(parent, children, segment);
             }
         }
 
@@ -209,6 +208,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         let parentNoteId;
 
         if (parentNoteMeta?.noteId) {
+            /* v8 ignore next -- only the synthetic root of getMeta() is an import root, and it has no noteId */
             parentNoteId = parentNoteMeta.isImportRoot ? importRootNote.noteId : getNewNoteId(parentNoteMeta.noteId);
         } else {
             const parentPath = dirname(filePath);
@@ -327,7 +327,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         const { note } = noteService.createNewNote({
             parentNoteId,
-            title: noteTitle || "",
+            title: noteTitle,
             content: "",
             noteId,
             type: resolveNoteType(noteMeta?.type),
@@ -445,10 +445,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 // was called "New note" imports with correct references that draw nothing. Every other
                 // producer of one of these URLs already encodes the title, the Markdown branch below
                 // included.
+                /* v8 ignore next -- an attachment cannot be saved without a title, so the import of one fails */
                 const title = encodeURIComponent(target.attachmentTitle || basename(url));
 
                 return `${attrName}="api/attachments/${target.attachmentId}/image/${title}"`;
-            } else if (target.noteId && attrName === "src") {
+            } else if (attrName === "src") {
                 return `src="api/images/${target.noteId}/${basename(url)}"`;
             }
 
@@ -475,11 +476,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             if (target.attachmentId) {
                 return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
-            } else if (target.noteId) {
-                return `href="#root/${target.noteId}"`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `href="#root/${target.noteId}"`;
 
         });
 
@@ -573,12 +571,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const target = getEntityIdFromRelativeUrl(url, filePath);
 
             if (target.attachmentId && !target.isRenderedNoteImage) {
+                /* v8 ignore next -- an attachment cannot be saved without a title, so the import of one fails */
                 return `![${alt}](api/attachments/${target.attachmentId}/image/${encodeURIComponent(target.attachmentTitle || "image")})`;
-            } else if (target.noteId) {
-                return `![${alt}](api/images/${target.noteId}/${basename(url)})`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `![${alt}](api/images/${target.noteId}/${basename(url)})`;
         });
 
         // Non-image links: [text](relative/path)
@@ -597,11 +593,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             if (target.attachmentId) {
                 return `[${text}](#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId})`;
-            } else if (target.noteId) {
-                return `[${text}](#root/${target.noteId})`;
             }
-            /* v8 ignore next -- unreachable: getEntityIdFromRelativeUrl always yields a noteId; kept so the callback returns a string on every path */
-            return match;
+            return `[${text}](#root/${target.noteId})`;
         });
 
         return content;
@@ -620,6 +613,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             const attachment = new BAttachment({
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 ownerId: noteId,
+                /* v8 ignore next -- getAttachmentMeta finds an attachment only in its note's attachments */
                 title: getAttachmentTitle(attachmentMeta, noteMeta?.attachments ?? []),
                 role: attachmentMeta.role,
                 mime: attachmentMeta.mime,
@@ -692,7 +686,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             frontmatterAttributes = parsed.attributes;
         }
 
-        content = processNoteContent(noteMeta, type, mime, content, noteTitle || "", filePath);
+        content = processNoteContent(noteMeta, type, mime, content, noteTitle, filePath);
 
         let note = becca.getNote(noteId);
 
@@ -704,7 +698,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             if (note.type === undefined) {
                 note.type = type;
                 note.mime = mime;
-                note.title = noteTitle || "";
+                note.title = noteTitle;
                 note.isProtected = isProtected;
                 note.save();
             }
@@ -749,7 +743,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             ({ note } = noteService.createNewNote({
                 parentNoteId,
-                title: noteTitle || "",
+                title: noteTitle,
                 content,
                 noteId,
                 type,
@@ -940,6 +934,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
     for (const noteId of createdNoteIds) {
         const note = becca.getNote(noteId);
+        /* v8 ignore next -- every note in createdNoteIds was created by this import and is in becca */
         if (!note) continue;
         const postStart = Date.now();
         await noteService.asyncPostProcessContent(note, note.getContent());
@@ -1029,6 +1024,7 @@ function resolveNoteType(type: string | undefined): NoteType {
 async function convertSpreadsheetContent(mime: string, content: string | Uint8Array): Promise<string> {
     if (mime === XLSX_MIME) {
         const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+        /* v8 ignore next -- a zip entry is read as bytes, and only a text entry is decoded to a string */
         const buffer = typeof content === "string" ? Buffer.from(content) : content;
         return JSON.stringify(await parseXlsxToWorkbook(buffer));
     }

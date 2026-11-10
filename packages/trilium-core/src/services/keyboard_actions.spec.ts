@@ -17,6 +17,7 @@ import * as cls from "./context.js";
 import keyboardActions from "./keyboard_actions.js";
 import options from "./options.js";
 import { getPlatform, initPlatform } from "./platform.js";
+import * as utils from "./utils/index.js";
 
 function upsertOption(name: string, value: string) {
     cls.init(() => {
@@ -41,14 +42,22 @@ describe("keyboard_actions service", () => {
     });
 
     it("zoomIn is bound to the plus key as well as equals, so it works on non-US layouts", () => {
-        const actions = keyboardActions.getDefaultKeyboardActions();
-        const zoomIn = actions.find((a) => "actionName" in a && a.actionName === "zoomIn");
-        const shortcuts = (zoomIn && "defaultShortcuts" in zoomIn && zoomIn.defaultShortcuts) || [];
+        const shortcutsOf = (actionName: string) => {
+            const action = keyboardActions.getDefaultKeyboardActions()
+                .find((a) => "actionName" in a && a.actionName === actionName);
+            return (action && "defaultShortcuts" in action && action.defaultShortcuts) || [];
+        };
 
-        // Electron-only action: present with both bindings under Electron, empty otherwise.
-        if (shortcuts.length > 0) {
-            expect(shortcuts.some((s) => s.endsWith("+Plus"))).toBe(true);
-            expect(shortcuts.some((s) => s.endsWith("+="))).toBe(true);
+        vi.spyOn(utils, "isElectron").mockReturnValue(false);
+        expect(shortcutsOf("zoomIn")).toEqual([]);
+
+        vi.spyOn(utils, "isElectron").mockReturnValue(true);
+        vi.spyOn(utils, "isMac").mockReturnValue(false);
+        expect(shortcutsOf("zoomIn")).toEqual([ "Ctrl+=", "Ctrl+Plus" ]);
+        // The other desktop-only bindings come with it.
+        for (const actionName of [ "openNewTab", "closeActiveTab", "reopenLastTab", "activateNextTab",
+            "activatePreviousTab", "openDevTools", "findInText", "zoomOut", "zoomReset" ]) {
+            expect(shortcutsOf(actionName).length, actionName).toBeGreaterThan(0);
         }
     });
 

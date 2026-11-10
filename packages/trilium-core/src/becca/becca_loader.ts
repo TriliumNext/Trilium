@@ -367,9 +367,7 @@ function branchDeleted(branchId: string) {
     }
 
     delete becca.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
-    if (branch.branchId) {
-        delete becca.branches[branch.branchId];
-    }
+    delete becca.branches[branchId];
 
     dropOrphanedSkeleton(childNote);
     dropOrphanedSkeleton(parentNote);

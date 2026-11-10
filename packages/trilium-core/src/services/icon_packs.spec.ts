@@ -425,3 +425,78 @@ describe("Listing icon packs", () => {
         }
     });
 });
+
+describe("Rejecting malformed icon packs", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function packNote(overrides: Parameters<typeof buildNote>[0] = {}) {
+        return buildNote({
+            "title": "Custom pack",
+            "type": "text",
+            "content": JSON.stringify(manifest),
+            "attachments": [ defaultAttachment ],
+            "#iconPack": "custom",
+            ...overrides
+        });
+    }
+
+    it("logs and skips a pack without a usable font, prefix or valid prefix", () => {
+        const errorSpy = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const unsavedFont = packNote();
+        for (const attachment of unsavedFont.getAttachmentsByRole("file")) {
+            attachment.attachmentId = undefined;
+        }
+
+        expect(processIconPack(packNote({ attachments: [] }))).toBeUndefined();
+        expect(processIconPack(unsavedFont)).toBeUndefined();
+        expect(processIconPack(packNote({ "#iconPack": "" }))).toBeUndefined();
+        expect(processIconPack(packNote({ "#iconPack": "bad prefix" }))).toBeUndefined();
+
+        const messages = errorSpy.mock.calls.map(([ message ]) => String(message));
+        expect(messages).toHaveLength(4);
+        expect(messages[0]).toContain("missing WOFF/WOFF2/TTF attachment");
+        expect(messages[1]).toContain("missing WOFF/WOFF2/TTF attachment");
+        expect(messages[2]).toContain("missing 'iconPack' label");
+        expect(messages[3]).toContain("invalid 'iconPack' prefix");
+    });
+
+    it("lists a valid custom pack after the built-in ones and drops a broken one", () => {
+        const wasLoaded = becca.loaded;
+        vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        vi.spyOn(search, "searchNotes").mockReturnValue([ packNote(), packNote({ content: "not json" }) ]);
+        becca.loaded = true;
+        try {
+            expect(getIconPacks().map(p => [ p.prefix, p.builtin ])).toStrictEqual([
+                [ "bx", true ], [ "cke", true ], [ "tn-brand", true ], [ "custom", false ]
+            ]);
+        } finally {
+            becca.loaded = wasLoaded;
+        }
+    });
+
+    it("writes an empty glyph for an icon without one and abbreviates a long list of skipped keys", () => {
+        const warnSpy = vi.spyOn(getLog(), "warn").mockImplementation(() => {});
+        const icons: Record<string, { glyph?: string; terms: string[] }> = { "custom-blank": { terms: [ "blank" ] } };
+        for (let i = 0; i < 12; i++) {
+            icons[`bad key ${i}`] = { glyph: "x", terms: [] };
+        }
+        const pack = processIconPack(packNote({ content: JSON.stringify({ icons }) }));
+        expect(pack).toBeDefined();
+        const css = pack && generateCss(pack, "/font");
+
+        expect(css).toContain(`.custom.custom-blank::before { content: ""; }`);
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Skipping 12 icons"));
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("'bad key 9', …)"));
+    });
+
+    it("returns no CSS for a manifest without an icon map", () => {
+        const errorSpy = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const pack = processIconPack(packNote({ content: JSON.stringify({ icons: null }) }));
+        expect(pack).toBeDefined();
+
+        expect(pack && generateCss(pack, "/font")).toBeNull();
+        expect(errorSpy).toHaveBeenCalledOnce();
+    });
+});

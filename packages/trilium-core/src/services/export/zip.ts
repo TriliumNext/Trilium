@@ -148,6 +148,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             baseFileName = baseFileName.substr(0, 200);
         }
 
+        /* v8 ignore next 3 -- every caller passes a parent meta with a note path */
         if (!parentMeta.notePath) {
             throw new Error("Missing parent note path.");
         }
@@ -221,7 +222,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
         const attachments = note.getAttachments().filter(isReadable);
         meta.attachments = attachments
-            .toSorted((a, b) => ((a.attachmentId ?? "").localeCompare(b.attachmentId ?? "", "en") ?? 1))
+            .toSorted((a, b) => String(a.attachmentId).localeCompare(String(b.attachmentId), "en"))
             .map((attachment) => {
                 const attMeta: AttachmentMeta = {
                     attachmentId: attachment.attachmentId,
@@ -257,6 +258,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const childExistingNames = {};
 
             for (const childBranch of childBranches) {
+                /* v8 ignore next 3 -- becca holds a branch for every child of a note it holds */
                 if (!childBranch) {
                     continue;
                 }
@@ -297,6 +299,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 continue;
             }
 
+            /* v8 ignore next 3 -- an ancestor of the target has children, so it has a directory */
             if (meta.dirFileName) {
                 url += `${encodeURIComponent(meta.dirFileName)}/`;
             }
@@ -323,7 +326,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         const targetMeta = noteIdToMeta[targetNoteId];
         const attachmentTitle = getImageAttachmentTitle(targetMeta?.type);
         const attachmentMeta = targetMeta && attachmentTitle
-            ? (targetMeta.attachments || []).find((attMeta) => attMeta.title === attachmentTitle)
+            ? targetMeta.attachments?.find((attMeta) => attMeta.title === attachmentTitle)
             : undefined;
 
         // Falls back to the note's own data file when the attachment was never generated.
@@ -374,6 +377,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         function findAttachment(targetAttachmentId: string) {
             let url;
 
+            /* v8 ignore next -- only a clone has no attachment list, and its content links to no attachment */
             const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === targetAttachmentId);
             if (attachmentMeta) {
                 // easy job here, because attachment will be in the same directory as the note's data file.
@@ -399,6 +403,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
 
         if (note?.isVirtual && typeof content === "string") {
+            /* v8 ignore next -- createNoteMeta records the assets of every virtual note it exports */
             content = referenceAssetsAsAttachments(note.noteId, content, noteIdToVirtualAssets[note.noteId] ?? []);
         }
 
@@ -415,6 +420,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     }
 
     async function saveNote(noteMeta: NoteMeta, filePathPrefix: string) {
+        /* v8 ignore next 3 -- createNoteMeta sets the id and title of every meta */
         if (!noteMeta.noteId || noteMeta.title === undefined) {
             throw new Error("Missing note meta.");
         }
@@ -426,6 +432,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             content = prepareContent(noteMeta.title, content, noteMeta, undefined);
 
+            /* v8 ignore next -- the content of a clone is the HTML written above */
             archive.append(typeof content === "string" ? content : new Uint8Array(content), {
                 name: filePathPrefix + noteMeta.dataFileName
             });
@@ -434,9 +441,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
 
         const note = becca.getNote(noteMeta.noteId);
+        /* v8 ignore next 3 -- the meta was built from this note in becca */
         if (!note) {
             throw new Error("Unable to find note.");
         }
+        /* v8 ignore next 3 -- a note in becca is saved, so it has a modification date */
         if (!note.utcDateModified) {
             throw new Error("Unable to find modification date.");
         }
@@ -468,7 +477,10 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
         taskContext.increaseProgressCount();
 
-        for (const attachmentMeta of noteMeta.attachments || []) {
+        /* v8 ignore next -- createNoteMeta gives every note it exports a list of attachments */
+        const attachmentMetas = noteMeta.attachments || [];
+        for (const attachmentMeta of attachmentMetas) {
+            /* v8 ignore next 3 -- every exported attachment has an id */
             if (!attachmentMeta.attachmentId) {
                 continue;
             }
@@ -502,7 +514,9 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 archive.append("", { name: `${directoryPath}/`, date: dateUtils.parseDateTime(note.utcDateModified) });
             }
 
-            for (const childMeta of noteMeta.children || []) {
+            /* v8 ignore next -- the enclosing check found children */
+            const childMetas = noteMeta.children || [];
+            for (const childMeta of childMetas) {
                 await saveNote(childMeta, `${directoryPath}/`);
             }
         }
@@ -522,39 +536,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
     provider.prepareMeta(metaFile);
 
-    try {
-        for (const noteMeta of Object.values(noteIdToMeta)) {
-            // filter out relations which are not inside this export
-            noteMeta.attributes = (noteMeta.attributes || []).filter((attr) => {
-                if (attr.type !== "relation") {
-                    return true;
-                } else if (attr.value in noteIdToMeta) {
-                    return true;
-                } else if (attr.value === "root" || attr.value?.startsWith("_")) {
-                    // relations to "named" noteIds can be preserved
-                    return true;
-                }
-                return false;
-            });
-        }
-
-        if (!rootMeta) {
-            // corner case of disabled export for exported note
-            if ("sendStatus" in res) {
-                res.sendStatus(400);
+    for (const noteMeta of Object.values(noteIdToMeta)) {
+        // filter out relations which are not inside this export
+        noteMeta.attributes = noteMeta.attributes?.filter((attr) => {
+            if (attr.type !== "relation") {
+                return true;
+            } else if (attr.value in noteIdToMeta) {
+                return true;
+            } else if (attr.value === "root" || attr.value?.startsWith("_")) {
+                // relations to "named" noteIds can be preserved
+                return true;
             }
-            return;
-        }
-    } catch (e: unknown) {
-        const message = `Export failed with error: ${e instanceof Error ? e.message : String(e)}`;
-        log.error(message);
-        taskContext.reportError(message);
-
-        if ("sendStatus" in res) {
-            res.removeHeader("Content-Disposition");
-            res.removeHeader("Content-Type");
-            res.status(500).send(message);
-        }
+            return false;
+        });
     }
 
     const note = branch.getNote();
@@ -569,7 +563,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     // drains each appended blob as it is added, so memory stays bounded instead of
     // buffering the whole export. Trade-off: a failure while reading content mid-
     // export can no longer produce a clean HTTP error (bytes are already on the
-    // wire); the validation that can fail cleanly runs in the try/catch above.
+    // wire); the validation that can fail cleanly runs in createNoteMeta() above.
     archive.pipe(res);
 
     const metaFileJson = JSON.stringify(metaFile, null, "\t");

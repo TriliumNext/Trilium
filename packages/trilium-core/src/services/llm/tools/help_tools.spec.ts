@@ -152,6 +152,20 @@ describe("help_tools", () => {
             ]);
         });
 
+        it("stops the outline ten levels below the guide's root", () => {
+            type Level = Parameters<typeof buildNote>[0];
+            let deepest: Level = { id: "_help_level12", title: "Level 12", content: "" };
+            for (let level = 11; level >= 1; level--) {
+                deepest = { id: `_help_level${level}`, title: `Level ${level}`, content: "", children: [ deepest ] };
+            }
+            buildNote({ id: "_help", title: "User Guide", content: "", children: [ deepest ] });
+
+            const result = getTool("get_help_toc").execute({}) as { pageCount: number; toc: string };
+
+            expect(result.pageCount).toBe(10);
+            expect(result.toc.split("\n").at(-1)).toBe(`${"  ".repeat(9)}Level 10 (_help_level10)`);
+        });
+
         it("returns an error when the help subtree is absent", () => {
             expect(getTool("get_help_toc").execute({}))
                 .toEqual({ error: "The built-in User Guide is not available in this installation." });

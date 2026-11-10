@@ -48,6 +48,11 @@ describe("Markdown export", () => {
         }
     });
 
+    it("names an unknown language after the last part of its tag", () => {
+        expect(markdownExportService.toMarkdown(`<pre><code class="language-text-x-madeup">x</code></pre>`))
+            .toBe("```madeup\nx\n```");
+    });
+
     it("removes auto tag for code blocks", () => {
         const html = trimIndentation`\
             <pre><code class="language-text-x-trilium-auto">Hello
@@ -1032,6 +1037,11 @@ describe("Markdown export", () => {
                 ===! "Next"
 
                     y`);
+        });
+
+        it("keeps the title lines of a tabs block that holds no text at all", () => {
+            expect(markdownExportService.toMarkdown(tabs(tab("", ""), tab("", ""))))
+                .toBe(`=== ""\n\n=== ""`);
         });
 
         it("drops the tab alignment, which MkDocs content tabs cannot express", () => {

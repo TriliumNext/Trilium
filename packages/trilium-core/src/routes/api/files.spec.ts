@@ -381,6 +381,14 @@ describe("Files API (core)", () => {
             const res = await api.put(`/api/notes/${noteId}/file`);
             expect(res.body).toEqual({ uploaded: false, message: "Missing file." });
             expect(becca.getNoteOrThrow(noteId).getContent().toString()).toBe("original");
+
+            expect((await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "text/plain", title: "kept.txt", content: "kept-data" }
+            })).status).toBe(204);
+            const { attachmentId } = (await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`)).body[0];
+            const attachmentRes = await api.put(`/api/attachments/${attachmentId}/file`);
+            expect(attachmentRes.body).toEqual({ uploaded: false, message: "Missing file." });
+            expect(becca.getAttachmentOrThrow(attachmentId).getContent().toString()).toBe("kept-data");
         });
     });
 
@@ -446,6 +454,19 @@ describe("Files API (core)", () => {
             const res = await api.get(`/api/notes/${noteId}/open-partial`, { headers: { range: "bytes=99-120" } });
             expect(res.status).toBe(416);
             expect(res.headers["Content-Range"]).toBe("bytes */10");
+        });
+
+        it("401s for a protected note without an active protected session", async () => {
+            const note = becca.getNoteOrThrow(await createMediaNote());
+            note.isProtected = true;
+
+            try {
+                const res = await api.get(`/api/notes/${note.noteId}/open-partial`);
+                expect(res.status).toBe(401);
+                expect(bodyOf(res.body)).not.toContain(PAYLOAD);
+            } finally {
+                note.isProtected = false;
+            }
         });
 
         it("404s for a missing note or attachment", async () => {

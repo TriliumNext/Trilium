@@ -150,6 +150,7 @@ function buildInlineIconFilter() {
         replacement(_content, node) {
             // Written from the class alone, so an icon leaves in the form it is stored in and the
             // placeholder injected above never reaches the file.
+            /* v8 ignore next -- the filter matched an element by its class, so the attribute is there */
             const classNames = "getAttribute" in node ? node.getAttribute("class") ?? "" : "";
 
             return `<span class="${escapeHtml(classNames)}"></span>`;
@@ -530,6 +531,7 @@ function buildTabPanelFilter(): Rule {
 
 /** The title lines of a tabs block, tab or title that holds no text; `null` for any other node. */
 function blankTabsReplacement(node: Node): string | null {
+    /* v8 ignore next 3 -- Turnish calls blankReplacement for elements only */
     if (!isElement(node)) {
         return null;
     }

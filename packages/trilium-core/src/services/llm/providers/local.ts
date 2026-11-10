@@ -299,6 +299,7 @@ function resolveEndpoint(kind: LocalProviderKind, baseURL: string | undefined): 
         return endpointFromUrl(baseURL);
     } catch (e) {
         if (!fallback) {
+            /* v8 ignore next -- `new URL()` and the protocol check above throw only `Error`s */
             throw new Error(`Invalid base URL "${baseURL}": ${e instanceof Error ? e.message : String(e)}`);
         }
         getLog().error(`${kind}: invalid base URL "${baseURL}" (${e}), falling back to ${fallback}`);

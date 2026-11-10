@@ -10,6 +10,8 @@ import OrExp from "../../search/expressions/or.js";
 import OrderByAndLimitExp from "../../search/expressions/order_by_and_limit.js";
 import PropertyComparisonExp from "../../search/expressions/property_comparison.js";
 import SearchContext from "../../search/search_context.js";
+import handleParens from "./handle_parens.js";
+import lex from "./lex.js";
 import { default as parseInternal, type ParseOpts } from "./parse.js";
 
 describe("Parser", () => {
@@ -381,6 +383,71 @@ describe("Invalid expressions", () => {
         });
 
         expect(searchContext.error).toEqual('Relation can be compared only with property, e.g. ~relation.title=hello in ""');
+    });
+});
+
+describe("Parser on lexed queries", () => {
+    function parseQuery(query: string) {
+        const searchContext = new SearchContext();
+        searchContext.originalQuery = query;
+        const { fulltextTokens, expressionTokens, leadingOperator } = lex(query);
+        const expression = parseInternal({
+            fulltextTokens,
+            expressionTokens: handleParens(expressionTokens),
+            searchContext,
+            leadingOperator
+        });
+
+        return { expression, error: searchContext.getError() };
+    }
+
+    it("reports malformed note properties", () => {
+        expect(parseQuery("#a and note title").error).toBe('Expected "." to separate field path');
+        expect(parseQuery("note.content foo").error).toBe('After content expected operator, but got "foo" in "note.content foo"');
+        expect(parseQuery("note.labels x = y").error).toBe('Expected "." to separate field path, got "x" in "note.labels x = y"');
+        expect(parseQuery("note.relations x = y").error).toBe('Expected "." to separate field path, got "x" in "note.relations x = y"');
+        expect(parseQuery("note.text = x").error).toBe('Virtual attribute "note.text" supports only *=* operator, instead given "=" in "note.text = x"');
+        expect(parseQuery("note.title = #abc").error).toContain("note.title = #abc");
+
+        for (const query of [ "note.parents.foo = x", "note.children.foo = x", "note.ancestors.foo = x", "note.links.foo = x", "~rel.foo = x", "note.foo = x" ]) {
+            expect(parseQuery(query).error).toBe(`Unrecognized note property "foo" in "${query}"`);
+        }
+    });
+
+    it("elides the query around an error far from either end", () => {
+        const padding = "x".repeat(30);
+        const query = `#${padding} and note.foo = ${padding}`;
+
+        expect(parseQuery(query).error).toBe(`Unrecognized note property "foo" in "...${padding.slice(-10)} and note.foo = ${padding.slice(0, 16)}..."`);
+    });
+
+    it("quotes the whole query when the tokens carry no positions", () => {
+        const searchContext = new SearchContext();
+        searchContext.originalQuery = "note.foo";
+        parseInternal({
+            fulltextTokens: [],
+            expressionTokens: [ { token: "note" }, { token: "." }, { token: "foo" } ],
+            searchContext
+        });
+
+        expect(searchContext.getError()).toBe('Unrecognized note property "foo" in "note.foo"');
+    });
+
+    it("reports misplaced orderBy and not, and quoted text after an expression", () => {
+        expect(parseQuery("(#a orderby note.title)").error).toBe("orderBy can appear only on the top expression level");
+        expect(parseQuery("#a and not #b").error).toBe("not keyword should be followed by sub-expression in parenthesis, got #b instead");
+        expect(parseQuery(`#a "note.x"`).error).not.toBeNull();
+    });
+
+    it("accepts an empty group, an empty negated group, a bare limit and a date offset", () => {
+        expect(parseQuery("#a and ()").error).toBeNull();
+        expect(parseQuery("#a and not ()").error).toBeNull();
+        expect(parseQuery("#year > year-1").error).toBeNull();
+        expect(parseQuery("#year = year and #b").error).toBeNull();
+
+        const { expression, error } = parseQuery("#a limit 2");
+        expect(error).toBeNull();
+        expect(expectExpression(expectExpression(expression, AndExp).subExpressions[2], OrderByAndLimitExp).limit).toBe(2);
     });
 });
 

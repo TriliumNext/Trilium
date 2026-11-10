@@ -205,6 +205,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
             // resolving to "[missing attachment]" once the attachment is gone. These links are stored
             // as `<a href="#root/{ownerId}?viewMode=attachments&attachmentId={attachmentId}">` (the `&`
             // may be HTML-encoded as `&amp;`), which we collapse to a plain note link `#root/{noteId}`.
+            /* v8 ignore next -- an attachment that can be converted was loaded from the database, so it has an ID */
             if (attachmentId) {
                 fixedContent = fixedContent.replace(
                     new RegExp(`href="[^"]*attachmentId=${escapeRegExp(attachmentId)}[^"]*"`, "g"),

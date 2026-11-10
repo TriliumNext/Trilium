@@ -481,6 +481,7 @@ class NoteContentFulltextExp extends Expression {
 
         // Apply content size limits for phrase matching
         const limitedText = validateAndPreprocessContent(searchText);
+        /* v8 ignore next 3 -- findInText() only calls this with non-empty content, which is never null here */
         if (!limitedText) {
             return false;
         }
@@ -488,6 +489,7 @@ class NoteContentFulltextExp extends Expression {
         const words = limitedText.toLowerCase().split(/\s+/);
 
         // Only skip phrase matching for truly extreme word counts that could crash the system
+        /* v8 ignore next 4 -- validateAndPreprocessContent() caps the word count; only text past its 100 MB size cut gets here */
         if (words.length > FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT) {
             console.error(`Phrase matching skipped due to extreme word count that could cause system instability: ${words.length} words`);
             return false;

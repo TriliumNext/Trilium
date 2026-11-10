@@ -263,6 +263,10 @@ describe("LocalProvider", () => {
             await expect(new LocalProvider("ollama").listModels()).rejects.toThrow(/ECONNREFUSED/);
             // A dead host must not be reported as "no listing endpoint found".
             expect(fetchMock).toHaveBeenCalledTimes(1);
+
+            fetchMock.mockRejectedValue("offline");
+            await expect(new LocalProvider("ollama").listModels())
+                .rejects.toThrow("Could not reach http://localhost:11434/api/tags: offline");
         });
 
         it("sends the key on the probe when the endpoint is behind a gateway", async () => {

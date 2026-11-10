@@ -2,7 +2,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import type BNote from "../becca/entities/bnote.js";
 import { getContext } from "./context.js";
+import imageService from "./image.js";
 import { downloadImages, downloadPictureToAttachment, storeLinkPreviewPictures } from "./image_download.js";
+import { getLog } from "./log.js";
 import noteService from "./notes.js";
 import optionService from "./options.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
@@ -257,6 +259,33 @@ describe("downloadImages (real DB)", () => {
         }
     });
 
+    it("logs a picture that could not be kept, and a note gone by the time it is mended", async () => {
+        vi.useFakeTimers();
+        const error = vi.spyOn(getLog(), "error");
+
+        try {
+            const note = createNote("<p>x</p>");
+            const unsaved = freshUrl();
+            vi.spyOn(imageService, "saveImageToAttachment").mockReturnValueOnce({ attachmentId: undefined, title: "x.png" });
+            withDownloads(true, () => downloadImages(note.noteId, `<p><img src="${unsaved}"></p>`));
+            await vi.advanceTimersByTimeAsync(10_000);
+
+            const gone = freshUrl();
+            withDownloads(true, () => downloadImages("missingNoteOfTheSpec", `<p><img src="${gone}"></p>`));
+            await vi.advanceTimersByTimeAsync(10_000);
+
+            const lines = error.mock.calls.map(([ line ]) => String(line));
+            expect(lines).toEqual(expect.arrayContaining([
+                `Download of '${unsaved}' for note '${note.noteId}' failed due to no attachment ID.`,
+                expect.stringMatching(new RegExp(`^Download of '${gone}' for note 'missingNoteOfTheSpec' failed with error`)),
+                "Cannot find note 'missingNoteOfTheSpec' to replace image link."
+            ]));
+        } finally {
+            vi.useRealTimers();
+            vi.restoreAllMocks();
+        }
+    });
+
     it("asks once for an address that appears twice before the first answer arrives", async () => {
         const note = createNote("<p>x</p>");
         const url = freshUrl();
@@ -405,6 +434,30 @@ describe("storeLinkPreviewPictures (real DB)", () => {
 
         expect(note.getAttachments()).toHaveLength(0);
         expect(String(note.getContent())).toContain(`data-favicon="data:image/png;base64,AAAA"`);
+    });
+
+    it("leaves an inline picture in place when it cannot be stored, and names one of a card with no address", async () => {
+        const icon = `data:image/png;base64,${PIXEL_PNG.toString("base64")}`;
+        const failing = createNote(card("https://example.com/page", icon));
+        const info = vi.spyOn(getLog(), "info");
+        vi.spyOn(imageService, "saveImageToAttachment").mockImplementationOnce(() => {
+            throw new Error("disk full");
+        });
+
+        try {
+            await getContext().init(() => storeLinkPreviewPictures(failing));
+
+            expect(String(failing.getContent())).toContain(`data-favicon="${icon}"`);
+            expect(info).toHaveBeenCalledWith(
+                `Could not store an inline preview picture of note '${failing.noteId}': Error: disk full`);
+        } finally {
+            vi.restoreAllMocks();
+        }
+
+        const addressless = createNote(`<span class="link-mention" data-favicon="${icon}"></span>`);
+        await getContext().init(() => storeLinkPreviewPictures(addressless));
+        expect(addressless.getAttachments().map((a) => a.role)).toEqual([ "favicon" ]);
+        expect(String(addressless.getContent())).not.toContain("base64");
     });
 
     it("drops nothing and keeps going when a picture cannot be had", async () => {

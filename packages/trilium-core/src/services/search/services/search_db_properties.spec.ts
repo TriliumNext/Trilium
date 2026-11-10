@@ -1,7 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import becca from "../../../becca/becca.js";
 import { getContext } from "../../context.js";
+import { getLog } from "../../log.js";
 import noteService from "../../notes.js";
+import { getSql } from "../../sql/index.js";
 import sql_init from "../../sql_init.js";
 import searchService from "./search.js";
 
@@ -79,5 +82,29 @@ describe("search on database-backed note properties", () => {
         // ValueExtractor sets the same flag for orderBy, which is why that path always worked.
         const ordered = searchService.searchNotes("note.title *=* DbPropsProbe orderBy note.contentSize desc");
         expect(ordered).toHaveLength(1);
+    });
+    it("skips and logs rows whose note is missing from becca or has no content blob", () => {
+        const [ detached, blobless ] = [ "DbPropsDetached", "DbPropsBlobless" ].map((title) => getContext().init(() => {
+            const { note } = noteService.createNewNote({
+                parentNoteId: "root", title, type: "text", mime: "text/html", content: "<p>first</p>"
+            });
+            note.saveAttachment({ role: "file", mime: "text/plain", title: "a.txt", content: `${title} attachment` });
+            note.saveRevision();
+            note.setContent(`<p>${title} second</p>`);
+            return note;
+        }));
+        delete becca.notes[detached.noteId];
+        getSql().execute("DELETE FROM blobs WHERE blobId = ?", [ blobless.blobId ]);
+        const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+        try {
+            expect(searchService.searchNotes("note.title *=* DbPropsBlobless AND note.contentSize >= 0")).toHaveLength(0);
+            const messages = error.mock.calls.map(([ message ]) => String(message));
+            expect(messages).toContain(`Note '${detached.noteId}' not found in becca.`);
+            expect(messages).toContain(`Did not find a '${blobless.noteId}' in the noteBlobs.`);
+        } finally {
+            becca.notes[detached.noteId] = detached;
+            error.mockRestore();
+        }
     });
 });

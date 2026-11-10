@@ -319,4 +319,10 @@ describe("readWebPage", () => {
         expect(await tool.execute?.({ url: "http://169.254.169.254/" }, { toolCallId: "1", messages: [], context: {} }))
             .toEqual({ error: "URLs pointing to private/internal networks are not allowed" });
     });
+
+    it("hands the model a failure that is not an Error as its text", async () => {
+        fetchResourceMock.mockRejectedValueOnce("socket hang up");
+        expect(await createReadWebPageTool().execute?.({ url: "https://a.example/" }, { toolCallId: "1", messages: [], context: {} }))
+            .toEqual({ error: "socket hang up" });
+    });
 });

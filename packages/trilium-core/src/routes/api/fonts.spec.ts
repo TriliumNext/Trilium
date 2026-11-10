@@ -54,6 +54,19 @@ describe("Fonts API", () => {
         expect(body).toContain("--monospace-font-family:");
     });
 
+    it("leaves every family that follows the theme to the theme", () => {
+        cls.init(() => {
+            optionService.setOption("overrideThemeFonts", "true");
+            for (const option of [ "mainFontFamily", "treeFontFamily", "detailFontFamily", "monospaceFontFamily" ] as const) {
+                optionService.setOption(option, "theme");
+            }
+        });
+
+        const { body } = getCss();
+        expect(body).toContain("--main-font-size:");
+        expect(body).not.toContain("-font-family:");
+    });
+
     it("expands every family when all are set to 'system'", () => {
         cls.init(() => {
             optionService.setOption("overrideThemeFonts", "true");

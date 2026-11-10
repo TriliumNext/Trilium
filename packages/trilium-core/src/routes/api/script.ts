@@ -76,6 +76,7 @@ function getBundlesWithLabel(label: string, value?: string) {
     for (const note of notes) {
         const bundle = scriptService.getScriptBundleForFrontend(note);
 
+        /* v8 ignore next -- a root frontend script note always yields a bundle */
         if (bundle) {
             bundles.push(bundle);
         }
@@ -123,6 +124,7 @@ function getRelationBundles(req: Request<{ noteId: string, relationName: string 
 
         const bundle = scriptService.getScriptBundleForFrontend(note);
 
+        /* v8 ignore next -- a root frontend script note always yields a bundle */
         if (bundle) {
             bundles.push(bundle);
         }

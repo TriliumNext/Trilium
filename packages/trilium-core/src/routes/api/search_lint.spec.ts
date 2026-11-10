@@ -47,5 +47,6 @@ describe("Search lint (core)", () => {
         const res = await api.post("/api/search/lint", { body: {} });
 
         expect(res.status).toBe(400);
+        expect((await api.post("/api/search/lint")).status).toBe(400);
     });
 });

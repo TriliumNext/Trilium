@@ -30,14 +30,11 @@ class NoteFlatTextExp extends Expression {
 
         // Cache normalized titles to avoid redundant normalize+getNoteTitle calls
         const titleCache = new Map<string, string>();
-        const getNormalizedTitle = (noteId: string, parentNoteId: string): string => {
-            const key = `${noteId}-${parentNoteId}`;
+        const getNormalizedTitle = (note: BNote, parentNoteId: string): string => {
+            const key = `${note.noteId}-${parentNoteId}`;
             let cached = titleCache.get(key);
             if (cached === undefined) {
-                const note = becca.notes[noteId];
-                cached = note
-                    ? normalizedTitleUnder(note, parentNoteId, becca.getBranchFromChildAndParent(noteId, parentNoteId)?.prefix)
-                    : normalizeSearchText(becca_service.getNoteTitle(noteId, parentNoteId));
+                cached = normalizedTitleUnder(note, parentNoteId, becca.getBranchFromChildAndParent(note.noteId, parentNoteId)?.prefix);
                 titleCache.set(key, cached);
             }
             return cached;
@@ -92,7 +89,7 @@ class NoteFlatTextExp extends Expression {
             }
 
             for (const parentNote of note.parents) {
-                const title = getNormalizedTitle(note.noteId, parentNote.noteId);
+                const title = getNormalizedTitle(note, parentNote.noteId);
 
                 // Use Set for O(1) lookup instead of Array.includes() which is O(n)
                 const foundTokenSet = new Set<string>(foundAttrTokens);
@@ -120,12 +117,10 @@ class NoteFlatTextExp extends Expression {
         // The flat text already matched, so we know the token is present.
         if (this.tokens.length === 1 && searchContext.autocomplete) {
             for (const note of candidateNotes) {
-                if (!resultNoteSet.hasNoteId(note.noteId)) {
-                    const notePath = note.getBestNotePath();
-                    if (notePath) {
-                        executionContext.noteIdToNotePath[note.noteId] = notePath;
-                        resultNoteSet.add(note);
-                    }
+                const notePath = note.getBestNotePath();
+                if (notePath) {
+                    executionContext.noteIdToNotePath[note.noteId] = notePath;
+                    resultNoteSet.add(note);
                 }
             }
             return resultNoteSet;

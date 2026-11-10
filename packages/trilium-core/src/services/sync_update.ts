@@ -110,9 +110,7 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
             updateContext.updated[remoteEC.entityName].push(remoteEC.entityId);
         }
 
-        if (!localEC || localECIsOlderOrSameAsRemote || localEC.hash !== remoteEC.hash || localEC.isErased !== remoteEC.isErased) {
-            entityChangesService.putEntityChangeWithInstanceId(remoteEC, instanceId);
-        }
+        entityChangesService.putEntityChangeWithInstanceId(remoteEC, instanceId);
 
         return true;
     } else if ((localEC.hash !== remoteEC.hash || localEC.isErased !== remoteEC.isErased) && !localECIsOlderOrSameAsRemote) {

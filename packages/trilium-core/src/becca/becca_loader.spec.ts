@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getContext } from "../services/context.js";
 import eventService from "../services/events.js";
+import { getLog } from "../services/log.js";
 import noteService from "../services/notes.js";
 import { getSql } from "../services/sql/index.js";
+import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../services/virtual_notes.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
 import beccaLoader, { load, reload } from "./becca_loader.js";
 import BAttribute from "./entities/battribute.js";
+import BBranch from "./entities/bbranch.js";
 import BNote from "./entities/bnote.js";
 
 let counter = 0;
@@ -290,6 +293,119 @@ describe("becca_loader", () => {
             expect(note.getSearchableTitle().normalized).toBe("renamed vienna");
             expect(note.getSearchableTitle().words).toEqual([ "renamed", "vienna" ]);
             expect(note.getFlatText()).toContain("renamed vienna");
+        });
+    });
+
+    describe("updates and deletions of entities missing from becca", () => {
+        it("skips the cache invalidation of notes that are not loaded", () => {
+            const emitChanged = (entityName: string, entity: Record<string, string>) =>
+                eventService.emit(eventService.ENTITY_CHANGED, { entityName, entity });
+
+            expect(() => {
+                emitChanged("notes", { noteId: "ldrGhostNote" });
+                emitChanged("branches", { branchId: "ldrGhostBranch", noteId: "ldrGhostNote", parentNoteId: "ldrGhostParent" });
+                emitChanged("attributes", { attributeId: "ldrGhostAttr", noteId: "ldrGhostNote" });
+            }).not.toThrow();
+            expect(becca.getNote("ldrGhostNote")).toBeNull();
+        });
+
+        it("deletes a branch whose parent note is no longer loaded", () => {
+            const child = createNote("root");
+            const branch = new BBranch({ branchId: "ldrOrphanBranch", noteId: child.noteId, parentNoteId: "ldrGonePar", notePosition: 10 });
+            delete becca.notes.ldrGonePar;
+
+            eventService.emit(eventService.ENTITY_DELETED, { entityName: "branches", entityId: "ldrOrphanBranch", entity: branch });
+
+            expect(becca.branches.ldrOrphanBranch).toBeUndefined();
+            expect(child.parentBranches).not.toContain(branch);
+        });
+    });
+
+    describe("virtual subtree injection", () => {
+        const reloadBecca = () => getContext().init(() => load());
+
+        afterEach(() => {
+            for (const namespace of [ "_vldr", "_brokenStr", "_brokenNoStack" ]) {
+                unregisterVirtualNoteProvider(namespace);
+            }
+            getSql().execute("DELETE FROM branches WHERE branchId = 'vldrSkeletonBranch'");
+            reloadBecca();
+        });
+
+        it("fills skeletons in place, places repeated items once per parent and survives broken providers", () => {
+            const anchor = createNote("root");
+            getSql().execute(
+                "INSERT INTO branches (branchId, noteId, parentNoteId, notePosition, prefix, isExpanded, isDeleted, utcDateModified) VALUES ('vldrSkeletonBranch', '_vldrSkel', ?, 50, NULL, 0, 0, '2024-01-01 00:00:00.000Z')",
+                [ anchor.noteId ]
+            );
+            registerVirtualNoteProvider({
+                namespace: "_vldr",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [
+                    {
+                        id: "_vldr",
+                        title: "Root",
+                        type: "text",
+                        attributes: [ { type: "label", name: "vldrFlag" }, { type: "label", name: "vldrFlag", value: "second" } ],
+                        children: [
+                            { id: "_vldrChild", title: "Child", type: "text" },
+                            { id: "_vldrChild", title: "Same place again", type: "text" }
+                        ]
+                    },
+                    { id: "_vldrSkel", title: "Skeleton", type: "text" }
+                ],
+                getContent: () => null
+            });
+            const stackless = new Error("no stack here");
+            stackless.stack = undefined;
+            registerVirtualNoteProvider({
+                namespace: "_brokenStr", parentNoteId: "root", getContent: () => null,
+                getSubtree: () => { throw "plain string failure"; }
+            });
+            registerVirtualNoteProvider({
+                namespace: "_brokenNoStack", parentNoteId: "root", getContent: () => null,
+                getSubtree: () => { throw stackless; }
+            });
+            const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            reloadBecca();
+
+            const skeleton = becca.getNoteOrThrow("_vldrSkel");
+            expect(skeleton.isVirtual).toBe(true);
+            expect(skeleton.title).toBe("Skeleton");
+            expect(skeleton.getParentBranches().map((b) => b.branchId)).toContain("vldrSkeletonBranch");
+
+            const child = becca.getNoteOrThrow("_vldrChild");
+            expect(child.getParentBranches()).toHaveLength(1);
+            expect(child.title).toBe("Child");
+            expect(becca.getNoteOrThrow("_vldr").getOwnedLabels("vldrFlag").map((l) => [ l.attributeId, l.value ])).toEqual([
+                [ "v__vldr_lvldrFlag", "" ],
+                [ "v__vldr_lvldrFlag_1", "second" ]
+            ]);
+
+            const messages = error.mock.calls.map(([ message ]) => String(message));
+            expect(messages.some((m) => m.endsWith("'_brokenStr' failed, skipping: plain string failure"))).toBe(true);
+            expect(messages.some((m) => m.endsWith("'_brokenNoStack' failed, skipping: no stack here"))).toBe(true);
+        });
+
+        it("places the injected roots after children whose branch or position is missing", () => {
+            const anchor = createNote("root");
+            const originalGetChildBranches = BNote.prototype.getChildBranches;
+            vi.spyOn(BNote.prototype, "getChildBranches").mockImplementation(function (this: BNote) {
+                return this.noteId === anchor.noteId
+                    ? [ null, { notePosition: undefined } ] as unknown as BBranch[]
+                    : originalGetChildBranches.call(this);
+            });
+            registerVirtualNoteProvider({
+                namespace: "_vldr",
+                parentNoteId: anchor.noteId,
+                getSubtree: () => [ { id: "_vldr", title: "Root", type: "text" } ],
+                getContent: () => null
+            });
+
+            reloadBecca();
+
+            expect(becca.branches[`${anchor.noteId}__vldr`]?.notePosition).toBe(10);
         });
     });
 

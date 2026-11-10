@@ -279,7 +279,7 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.dayjs = dayjs;
     this.xml2js = xml2js;
     this.htmlParser = htmlParser;
-    this.getInstanceName = () => (config.General ? config.General.instanceName : null);
+    this.getInstanceName = () => config.General.instanceName;
     this.getNote = (noteId) => becca.getNote(noteId);
     this.getBranch = (branchId) => becca.getBranch(branchId);
     this.getAttribute = (attributeId) => becca.getAttribute(attributeId);
@@ -289,7 +289,6 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.getEtapiTokens = () => becca.getEtapiTokens();
     this.getOption = (optionName) => becca.getOption(optionName);
     this.getOptions = () => optionsService.getOptions();
-    this.getAttribute = (attributeId) => becca.getAttribute(attributeId);
 
     this.htmlToMarkdown = (html) => markdownExport.toMarkdown(html);
     this.markdownToHtml = (markdown) => markdownImport.renderToHtml(markdown, "");
@@ -487,10 +486,8 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
             launcherNote.setRelation("target", opts.targetNoteId);
         } else if (opts.type === "script") {
             launcherNote.setRelation("script", opts.scriptNoteId);
-        } else if (opts.type === "customWidget") {
-            launcherNote.setRelation("widget", opts.widgetNoteId);
         } else {
-            throw new Error(`Unrecognized launcher type '${opts.type}'`);
+            launcherNote.setRelation("widget", opts.widgetNoteId);
         }
 
         if (opts.keyboardShortcut) {

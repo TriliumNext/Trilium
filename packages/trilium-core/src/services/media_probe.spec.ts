@@ -46,12 +46,61 @@ describe("probeMedia", () => {
             .toEqual({ type: "video" });
     });
 
+    it("reads boxes of a 64-bit size or of one running to the end, and stops at a broken one", () => {
+        const ftyp = box("ftyp", text("isom"), new Uint8Array(4));
+        const moov = box("moov", trak("vide", 1280, 720));
+        const largeMoov = concat(Uint8Array.of(0, 0, 0, 1), text("moov"),
+            Uint8Array.of(0, 0, 0, 0, 0, 0, 0, moov.length + 8), moov.subarray(8));
+        const openMoov = concat(Uint8Array.of(0, 0, 0, 0), moov.subarray(4));
+
+        expect(probeMedia(concat(ftyp, largeMoov), "")).toEqual({ type: "video", aspectRatio: "16/9" });
+        expect(probeMedia(concat(ftyp, openMoov), "")).toEqual({ type: "video", aspectRatio: "16/9" });
+        // A 64-bit size cut off, and a size smaller than the box header: nothing past them is read.
+        expect(probeMedia(concat(ftyp, Uint8Array.of(0, 0, 0, 1), text("moov"), new Uint8Array(4)), "audio/mp4"))
+            .toEqual({ type: "audio" });
+        expect(probeMedia(concat(ftyp, Uint8Array.of(0, 0, 0, 4), text("moov"), moov), "video/mp4"))
+            .toEqual({ type: "video" });
+    });
+
+    it("reads a track whose header or handler is cut short as neither video nor sound", () => {
+        const shortTrack = box("trak", box("tkhd", new Uint8Array(20)), box("mdia", box("hdlr", text("vide"))));
+        const bareTrack = box("trak", box("tkhd", new Uint8Array(20)));
+
+        expect(probeMedia(mp4(shortTrack, bareTrack, box("trak")), "video/mp4")).toEqual({ type: "video" });
+        expect(probeMedia(mp4(shortTrack, bareTrack, box("trak")), "audio/mp4")).toEqual({ type: "audio" });
+    });
+
+    it("falls back to the media type for a Matroska file whose tracks it cannot reach", () => {
+        // An element of unknown size before any segment runs to the end, so no segment follows.
+        expect(probeMedia(matroska(Uint8Array.of(0xEC, 0xFF)), "audio/webm")).toEqual({ type: "audio" });
+        // Media data before the tracks, and a segment with no tracks at all.
+        expect(probeMedia(webmSegment(ebml([ 0x1F, 0x43, 0xB6, 0x75 ]), ebml([ 0x16, 0x54, 0xAE, 0x6B ],
+            trackEntry(1))), "")).toEqual({ type: "video" });
+        expect(probeMedia(webmSegment(ebml([ 0xEC ], new Uint8Array(2))), "audio/webm"))
+            .toEqual({ type: "audio" });
+        // Tracks of neither kind, such as subtitles.
+        expect(probeMedia(webm(trackEntry(17)), "video/webm")).toEqual({ type: "video" });
+        // An element id or size it cannot read: a zero byte, an id longer than four bytes, and one
+        // running past the end of the bytes.
+        for (const broken of [ [ 0x00 ], [ 0x01, 0x02 ], [ 0x40 ], [ 0x81, 0x00 ] ]) {
+            expect(probeMedia(matroska(Uint8Array.from(broken)), "audio/webm")).toEqual({ type: "audio" });
+        }
+    });
+
+    it("reads a WebM video whose track says nothing of its size, past elements that are not tracks", () => {
+        expect(probeMedia(webm(ebml([ 0xEC ], new Uint8Array(1)), trackEntry(1)), ""))
+            .toEqual({ type: "video" });
+    });
+
     it("trusts the media type of any other file, except a playlist, and nothing else", () => {
         expect(probeMedia(text("garbage"), "video/quicktime")).toEqual({ type: "video" });
         expect(probeMedia(text("garbage"), "audio/x-wav")).toEqual({ type: "audio" });
         expect(probeMedia(text("#EXTM3U"), "audio/x-mpegurl")).toBeNull();
         expect(probeMedia(text("PK"), "application/octet-stream")).toBeNull();
         expect(probeMedia(new Uint8Array(), "")).toBeNull();
+        // An Ogg stream of no codec it knows, and a lone byte that starts an MPEG frame header.
+        expect(probeMedia(concat(text("OggS"), text("\u0000Speex")), "")).toBeNull();
+        expect(probeMedia(Uint8Array.of(0xFF), "")).toBeNull();
     });
 });
 
@@ -99,6 +148,19 @@ function webm(...entries: Uint8Array[]) {
         Uint8Array.from([ 0x18, 0x53, 0x80, 0x67, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]),
         ebml([ 0x15, 0x49, 0xA9, 0x66 ]),
         ebml([ 0x16, 0x54, 0xAE, 0x6B ], ...entries)
+    );
+}
+
+/** A file of the Matroska header followed by `elements`, with no segment of its own. */
+function matroska(...elements: Uint8Array[]) {
+    return concat(ebml([ 0x1A, 0x45, 0xDF, 0xA3 ], ebml([ 0x42, 0x82 ], text("webm"))), ...elements);
+}
+
+/** A WebM file whose segment, of unknown size, holds `elements`. */
+function webmSegment(...elements: Uint8Array[]) {
+    return matroska(
+        Uint8Array.from([ 0x18, 0x53, 0x80, 0x67, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]),
+        ...elements
     );
 }
 

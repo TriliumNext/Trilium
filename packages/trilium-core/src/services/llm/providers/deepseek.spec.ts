@@ -294,6 +294,11 @@ describe("DeepSeekProvider reasoning effort", () => {
         const legacy = await requestBody({ model: "deepseek-chat", reasoningEffort: "max" });
         expect(legacy).not.toHaveProperty("thinking");
         expect(legacy).not.toHaveProperty("reasoning_effort");
+
+        // A chat without a model runs the provider's default, `deepseek-chat`, which has no levels.
+        const unnamed = await requestBody({ reasoningEffort: "max" });
+        expect(unnamed).toMatchObject({ model: "deepseek-chat" });
+        expect(unnamed).not.toHaveProperty("thinking");
     });
 });
 

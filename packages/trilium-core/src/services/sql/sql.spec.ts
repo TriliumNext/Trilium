@@ -1,9 +1,10 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { getContext } from "../context.js";
 import { getLog } from "../log.js";
 import { getSql } from "./index.js";
 import { SqlService, type SqlServiceParams } from "./sql.js";
+import type { DatabaseProvider, Statement } from "./types.js";
 
 // Standalone runs core in a Web Worker, whose scope has `self`; the Node server suite has none.
 const isBrowserRuntime = typeof self !== "undefined";
@@ -273,6 +274,14 @@ describe("SqlService (real DB)", () => {
             expect(getSql().getColumn<string>("SELECT paramId FROM param_list")).toEqual(["only"]);
         });
 
+        it("splits more than 30000 ids into several inserts without truncating in between", () => {
+            const ids = Array.from({ length: 30005 }, (_, i) => `big${i}`);
+            getSql().fillParamList(ids);
+
+            expect(getSql().getValue<number>("SELECT COUNT(*) FROM param_list")).toBe(30005);
+            expect(getSql().getValue<number>("SELECT COUNT(*) FROM param_list WHERE paramId IN ('big0', 'big30004')")).toBe(2);
+        });
+
         it("accepts a Set as input", () => {
             getSql().fillParamList(new Set(["s1", "s2"]));
             expect(
@@ -435,4 +444,114 @@ describe("SqlService (real DB)", () => {
             }
         });
     });
+
+    describe("with a stand-in provider", () => {
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("refuses to detach where the provider cannot, or while a transaction is open", () => {
+            expect(() => buildService({ detach: undefined }).detachConnection())
+                .toThrow("does not support detaching");
+
+            const detach = vi.fn();
+            expect(() => buildService({ detach, inTransaction: true }).detachConnection())
+                .toThrow("middle of a transaction");
+            expect(detach).not.toHaveBeenCalled();
+        });
+
+        it("logs and skips writes on a read-only database, but still runs reads", () => {
+            const prepared: string[] = [];
+            const sql = buildService({ prepare: (query) => { prepared.push(query); return fakeStatement(); } }, true);
+            const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+
+            for (const query of [ "UPDATE t SET a = 1", "INSERT INTO t VALUES (1)", "DELETE FROM t" ]) {
+                expect(sql.execute(query)).toEqual({ changes: 0, lastInsertRowid: 0 });
+            }
+            sql.execute("SELECT 1");
+
+            expect(error).toHaveBeenCalledTimes(3);
+            expect(prepared).toEqual([ "SELECT 1" ]);
+        });
+
+        it("returns empty results from every reader once the connection is closed", () => {
+            const sql = buildService({
+                prepare: () => { throw new Error("The database connection is not open"); }
+            });
+            vi.spyOn(console, "log").mockImplementation(() => {});
+
+            expect(sql.insert("t", { a: 1 })).toBeNull();
+            expect(sql.getRowOrNull("SELECT 1")).toBeNull();
+            expect(sql.getRawRows("SELECT 1")).toEqual([]);
+            expect(sql.getRawRowsBulk([ "a" ], "FROM t")).toEqual([]);
+            expect(sql.getMap("SELECT a, b FROM t")).toEqual({});
+        });
+
+        it("logs and skips a null record on insert and upsert", () => {
+            const prepare = vi.fn(() => fakeStatement());
+            const sql = buildService({ prepare });
+            const error = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+            const nullRecord = null as unknown as Record<string, unknown>;
+
+            expect(sql.insert("t", nullRecord)).toBeUndefined();
+            expect(sql.upsert("t", "id", nullRecord)).toBeUndefined();
+            expect(error).toHaveBeenCalledTimes(2);
+            expect(prepare).not.toHaveBeenCalled();
+        });
+
+        it("logs slow queries, naming recursive ones without their text, unless disabled", () => {
+            const sql = buildService({});
+            const info = vi.spyOn(getLog(), "info").mockImplementation(() => {});
+            let now = 0;
+            vi.spyOn(Date, "now").mockImplementation(() => (now += 25));
+
+            getContext().init(() => {
+                sql.execute("WITH RECURSIVE x AS (SELECT 1) SELECT * FROM x");
+                sql.execute("SELECT   slow\n  FROM t");
+                sql.disableSlowQueryLogging(() => sql.execute("SELECT quiet"));
+            });
+
+            expect(info.mock.calls).toEqual([
+                [ "Slow recursive query took 25ms." ],
+                [ "Slow query took 25ms: SELECT slow FROM t" ]
+            ]);
+        });
+
+        it("does not report a commit while an outer transaction is still open", async () => {
+            const onTransactionCommit = vi.fn();
+            const sql = buildService({ inTransaction: true }, false, onTransactionCommit);
+
+            await expect(getContext().init(() => sql.transactionalAsync(async () => "nested"))).resolves.toBe("nested");
+            expect(onTransactionCommit).not.toHaveBeenCalled();
+        });
+    });
 });
+
+function fakeStatement(): Statement {
+    const statement: Statement = {
+        run: () => ({ changes: 1, lastInsertRowid: 1 }),
+        get: () => undefined,
+        all: () => [],
+        iterate: () => [][Symbol.iterator](),
+        raw: () => statement,
+        pluck: () => statement
+    };
+    return statement;
+}
+
+function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, onTransactionCommit = () => {}) {
+    const provider: DatabaseProvider = {
+        loadFromFile: () => {},
+        loadFromMemory: () => {},
+        loadFromBuffer: () => {},
+        backup: () => {},
+        detach: () => {},
+        prepare: () => fakeStatement(),
+        transaction: () => ({ deferred: () => {} }),
+        inTransaction: false,
+        exec: () => {},
+        close: () => {},
+        ...overrides
+    };
+    return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback: () => {} }, getLog());
+}

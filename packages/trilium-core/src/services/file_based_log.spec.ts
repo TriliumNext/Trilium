@@ -21,6 +21,8 @@ class MemoryLogService extends FileBasedLogService {
     failingDeletes = new Set<string>();
     fileList: LogFileInfo[] = [];
     listShouldThrow = false;
+    closeShouldThrow = false;
+    cleanupShouldReject = false;
 
     protected get eol(): string {
         return this.eolValue;
@@ -32,7 +34,9 @@ class MemoryLogService extends FileBasedLogService {
         this.currentFile = fileName;
         this.files[fileName] ??= [];
     }
-    protected override closeLogFile(): void {}
+    protected override closeLogFile(): void {
+        if (this.closeShouldThrow) throw new Error("close failed");
+    }
     protected override writeEntry(entry: string): void {
         this.files[this.currentFile].push(entry);
     }
@@ -49,6 +53,9 @@ class MemoryLogService extends FileBasedLogService {
     }
     protected override getRetentionDays(): number {
         return this.retentionDays;
+    }
+    protected override cleanupOldLogFiles(): Promise<void> {
+        return this.cleanupShouldReject ? Promise.reject(new Error("cleanup failed")) : super.cleanupOldLogFiles();
     }
 
     // Wrappers exposing protected helpers for direct coverage.
@@ -116,11 +123,15 @@ describe("FileBasedLogService (shared logic)", () => {
         await log.initialize();
         log.error(new Error("boom"));
         log.error("plain failure");
+        const stackless = new Error("no stack here");
+        stackless.stack = undefined;
+        log.error(stackless);
 
         const contents = log.getLogContents() ?? "";
         expect(contents).toContain("ERROR: ");
         expect(contents).toContain("boom");
         expect(contents).toContain("plain failure");
+        expect(contents).toContain("ERROR: no stack here");
     });
 
     it("warn() writes a WARNING: entry, with the stack of an Error", async () => {
@@ -153,6 +164,16 @@ describe("FileBasedLogService (shared logic)", () => {
         await log.callRotate();
         expect(log.currentFile).toBe(before); // same calendar day -> same name
         expect(log.files[before]).toBeDefined();
+    });
+
+    it("swallows failures of the background rotation and cleanup", async () => {
+        await log.initialize();
+        log.cleanupShouldReject = true;
+        await expect(log.callRotate()).resolves.toBeUndefined();
+
+        log.closeShouldThrow = true;
+        expect(log.callCheckDateAndRotate(DAY_MS + 1)).toBe(1);
+        await Promise.resolve();
     });
 
     it("formatTime pads hours and the three millisecond magnitudes", () => {

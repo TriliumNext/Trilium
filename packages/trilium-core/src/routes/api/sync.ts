@@ -198,7 +198,7 @@ function getChanged(req: Request) {
             break;
         }
 
-        // rows fetched from entity_changes always carry an id
+        /* v8 ignore next -- rows fetched from entity_changes always carry an id */
         fetchCursor = entityChanges[entityChanges.length - 1].id ?? fetchCursor;
 
         const foreignEntityChanges = entityChanges.filter((ec) => ec.instanceId !== clientInstanceId);
@@ -218,7 +218,7 @@ function getChanged(req: Request) {
         entityChangeRecords.push(...records);
 
         if (records.length > 0) {
-            // rows fetched from entity_changes always carry an id
+            /* v8 ignore next -- rows fetched from entity_changes always carry an id */
             lastEntityChangeId = records[records.length - 1].entityChange.id ?? lastEntityChangeId;
         }
 

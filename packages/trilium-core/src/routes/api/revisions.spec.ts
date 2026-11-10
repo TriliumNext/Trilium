@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca";
+import BNote from "../../becca/entities/bnote";
 import * as cls from "../../services/context";
 import { getSql } from "../../services/sql/index";
 import { unwrapStringOrBuffer } from "../../services/utils/binary";
@@ -239,6 +240,23 @@ describe("Revisions API (core)", () => {
             expect(res.body.some((note) => note.noteId === "root")).toBe(true);
         });
 
+        it("returns a null path for a note that hangs nowhere in the tree", async () => {
+            const orphan = cls.getContext().init(() => new BNote({
+                noteId: "orphanEdited1", title: "Orphan", type: "text", mime: "text/html", blobId: "",
+                dateCreated: "1999-01-01 10:00:00.000+0000", dateModified: "1999-01-01 10:00:00.000+0000"
+            }).save());
+
+            try {
+                const res = await api.get<Array<{ noteId: string; notePath: string[] | null }>>(
+                    "/api/edited-notes/1999-01-01"
+                );
+                expect(res.body.find((note) => note.noteId === orphan.noteId)?.notePath).toBeNull();
+            } finally {
+                delete becca.notes[orphan.noteId];
+                getSql().execute("DELETE FROM notes WHERE noteId = ?", [ orphan.noteId ]);
+            }
+        });
+
         it("narrows results to the hoisted subtree", async () => {
             const parent = await createTextNote(api, { title: "Hoisted parent" });
             const child = await createTextNote(api, { parentNoteId: parent.noteId, title: "Hoisted child" });
@@ -291,6 +309,15 @@ describe("Revisions API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.type).toBe("file");
             expect(res.body.content.length).toBeLessThanOrEqual(10000);
+        });
+
+        it("leaves out the content of a binary file revision", async () => {
+            const revisionId = await createTypedRevision("file", "application/octet-stream", "bytes");
+
+            const res = await api.get<{ content?: string; type: string }>(`/api/revisions/${revisionId}`);
+            expect(res.status).toBe(200);
+            expect(res.body.type).toBe("file");
+            expect(res.body.content).toBeUndefined();
         });
 
         it("base64-encodes the content of an image revision", async () => {
@@ -364,6 +391,15 @@ describe("Revisions API (core)", () => {
             // no-op — the case the button guards against, answered rather than refused.
             expect(await eraseExcess()).toBe(0);
             expect(revisionIdsOf(noteId).length).toBe(1);
+        });
+
+        it("skips deleted notes", async () => {
+            const { noteId } = await createTextNote(api, { title: "Excess deleted" });
+            const del = await api.delete(`/api/notes/${noteId}`, { query: { taskId: "excess-deleted", last: "true" } });
+            expect(del.status).toBe(204);
+            expect(becca.getNote(noteId)).toBeNull();
+
+            expect(await eraseExcess()).toBe(0);
         });
 
         it("purges the content the erased snapshots held, rather than leaving it for later", async () => {
@@ -478,6 +514,23 @@ describe("Revisions API (core)", () => {
             // The restored content rewrites attachment references to the new attachment ids.
             const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
             expect(blob.body.content).toContain("attachments/");
+        });
+
+        it("restores a binary revision together with its attachments", async () => {
+            const { noteId } = await createTextNote(api, { title: "Binary with attachment" });
+            await api.put(`/api/notes/${noteId}/type`, { body: { type: "file", mime: "application/octet-stream" } });
+            cls.getContext().init(() => becca.getNoteOrThrow(noteId).setContent(new Uint8Array([ 1, 2, 3 ])));
+            await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: "text/plain", title: "kept.txt", content: "kept" }
+            });
+            const snapshot = await api.post<{ revisionId: string }>(`/api/notes/${noteId}/revision`, { body: {} });
+
+            const restore = await api.post(`/api/revisions/${snapshot.body.revisionId}/restore`);
+            expect(restore.status).toBe(204);
+
+            const attachments = await api.get<Array<{ title: string }>>(`/api/notes/${noteId}/attachments`);
+            expect(attachments.body.map((attachment) => attachment.title)).toEqual([ "kept.txt" ]);
+            expect([ ...new Uint8Array(becca.getNoteOrThrow(noteId).getContent() as Uint8Array) ]).toEqual([ 1, 2, 3 ]);
         });
     });
 

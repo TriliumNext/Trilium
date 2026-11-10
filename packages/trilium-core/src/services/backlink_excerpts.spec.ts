@@ -39,6 +39,22 @@ describe("findExcerpts", () => {
     });
 });
 
+describe("findExcerpts with empty elements", () => {
+    it("quotes an empty link and steps over empty neighbors", () => {
+        expect(findExcerpts(`<p><a href="#root/excEmpty"></a></p>`, "excEmpty")).toEqual([
+            `<div class="ck-content backlink-excerpt"><p><a href="#root/excEmpty" class="backlink-link"></a></p></div>`
+        ]);
+
+        const long = "x".repeat(300);
+        const [ excerpt ] = findExcerpts(
+            `<div><p></p><p><a href="#root/excGap">gap</a></p><p></p><p>${long}</p></div>`, "excGap");
+        expect(excerpt).toBe(
+            `<div class="ck-content backlink-excerpt"><p></p><p><a href="#root/excGap" class="backlink-link">gap</a></p>` +
+            `<p></p>${"x".repeat(197)}…</div>`
+        );
+    });
+});
+
 describe("findLlmChatExcerpts", () => {
     it("quotes the assistant prose around the wiki-link, links titled and text escaped", () => {
         buildNote({ id: "excTarget", title: "Chat target" });
@@ -127,6 +143,8 @@ describe("findLlmChatExcerpts", () => {
         ]);
 
         expect(findLlmChatExcerpts(quiet, "excQuiet")).toEqual([]);
+        expect(findLlmChatExcerpts(chatContent([ null, "text", { role: "assistant", content: [ null, "text" ] } ]), "excQuiet"))
+            .toEqual([]);
         expect(findLlmChatExcerpts("not JSON at all", "excQuiet")).toEqual([]);
         expect(findLlmChatExcerpts(`{"messages": "not an array"}`, "excQuiet")).toEqual([]);
     });
@@ -187,6 +205,18 @@ describe("findMindMapExcerpts", () => {
         }), "excMapUnnamed");
 
         expect(excerpts[0]).toContain(`>The note itself</a>`);
+    });
+
+    it("names a node after the raw ID of an unknown note, skipping unnamed ancestors", () => {
+        const excerpts = findMindMapExcerpts(mapContent({
+            topic: "Root",
+            children: [ { children: [ { topic: "", hyperLink: "#root/excMapUnknown" } ] } ]
+        }), "excMapUnknown");
+
+        expect(excerpts).toEqual([
+            `<div class="ck-content backlink-excerpt">Root › ` +
+            `<a class="backlink-link" href="#root/excMapUnknown">excMapUnknown</a></div>`
+        ]);
     });
 
     it("drops the root end of a long trail rather than the node itself", () => {

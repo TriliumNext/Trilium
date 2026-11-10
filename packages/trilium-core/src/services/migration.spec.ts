@@ -2,13 +2,17 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import becca from "../becca/becca.js";
 import becca_loader from "../becca/becca_loader.js";
+import { MIGRATIONS } from "../migrations/migrations.js";
+import appInfo from "./app_info.js";
 import { getContext } from "./context.js";
+import { OLDEST_SUPPORTED_DB_VERSION } from "./database_validation.js";
 import dataEncryption from "./encryption/data_encryption.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import notesService from "./notes.js";
+import { getPlatform } from "./platform.js";
 import protectedSessionService from "./protected_session.js";
 import { getSql } from "./sql/index.js";
 import TaskContext from "./task_context.js";
@@ -114,4 +118,90 @@ describe("Migration", () => {
             });
         });
     }, 120_000);
+});
+
+describe("Migration guards", () => {
+    const crashed = new Error("crashed");
+    let originalVersion = "";
+
+    beforeEach(() => {
+        originalVersion = getSql().getValue<string>("SELECT value FROM options WHERE name = 'dbVersion'");
+    });
+
+    afterEach(() => {
+        setDbVersion(originalVersion);
+        appInfo.dbVersion = Number(originalVersion);
+        vi.restoreAllMocks();
+    });
+
+    function setDbVersion(version: string) {
+        getSql().execute("UPDATE options SET value = ? WHERE name = 'dbVersion'", [ version ]);
+    }
+
+    function mockPlatform(env: Record<string, string> = {}) {
+        const platform = getPlatform();
+        const realGetEnv = platform.getEnv.bind(platform);
+        vi.spyOn(platform, "getEnv").mockImplementation((key) => env[key] ?? realGetEnv(key));
+        return vi.spyOn(platform, "crash").mockImplementation(() => {
+            throw crashed;
+        });
+    }
+
+    async function migrateIfNecessary() {
+        const migration = (await import("./migration.js")).default;
+        await getContext().init(() => migration.migrateIfNecessary());
+    }
+
+    it("refuses a database whose version is missing, too new or too old", async () => {
+        const crash = mockPlatform();
+
+        setDbVersion("not-a-number");
+        crash.mockImplementationOnce(() => {});
+        await migrateIfNecessary();
+        expect(crash).toHaveBeenCalledTimes(1);
+
+        setDbVersion(String(appInfo.dbVersion + 1));
+        await expect(migrateIfNecessary()).rejects.toBe(crashed);
+
+        setDbVersion(String(OLDEST_SUPPORTED_DB_VERSION - 1));
+        await expect(migrateIfNecessary()).rejects.toBe(crashed);
+        expect(crash).toHaveBeenCalledTimes(3);
+    });
+
+    it("opens a newer database when told to ignore the version, and holds back when migration is manual", async () => {
+        const crash = mockPlatform({ TRILIUM_IGNORE_DB_VERSION: "true", TRILIUM_MANUAL_DB_MIGRATION: "true" });
+
+        setDbVersion(String(appInfo.dbVersion + 1));
+        await migrateIfNecessary();
+        expect(crash).not.toHaveBeenCalled();
+
+        setDbVersion(String(appInfo.dbVersion - 1));
+        crash.mockImplementationOnce(() => {});
+        await migrateIfNecessary();
+        expect(crash).toHaveBeenCalledOnce();
+        expect(getSql().getValue("SELECT value FROM options WHERE name = 'dbVersion'")).toBe(String(appInfo.dbVersion - 1));
+    });
+
+    it("skips a failing migration marked ignoreErrors and stops at the first other failure", async () => {
+        const crash = mockPlatform();
+        crash.mockImplementation(() => {});
+        const base = appInfo.dbVersion;
+        const failing = [
+            { version: base + 1, sql: "THIS IS NOT SQL", ignoreErrors: true },
+            { version: base + 2, sql: "THIS IS NOT SQL EITHER" },
+            { version: base + 3, sql: "SELECT 1" }
+        ];
+        MIGRATIONS.push(...failing);
+        appInfo.dbVersion = base + 3;
+        try {
+            await migrateIfNecessary();
+        } finally {
+            MIGRATIONS.splice(MIGRATIONS.length - failing.length, failing.length);
+        }
+
+        // The ignored failure lets the next migration run; the one after the crash never does.
+        expect(crash).toHaveBeenCalledOnce();
+        expect(crash.mock.calls[0][0]).toContain(String(base + 2));
+        expect(getSql().getValue("SELECT value FROM options WHERE name = 'dbVersion'")).toBe(String(base));
+    });
 });

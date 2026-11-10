@@ -205,4 +205,25 @@ describe("scheduler", () => {
         expect(executeNoteNoException).toHaveBeenCalledWith(malformed, expect.anything());
         expect(executeNoteNoException).not.toHaveBeenCalledWith(wrongInstance, expect.anything());
     });
+
+    it("runs a script only on its named instance and at its named hours", async () => {
+        config.General.instanceName = "main";
+        vi.setSystemTime(new Date(2026, 0, 1, 5, 0, 0));
+
+        const labelled = (instances: string[], hours: string[]) => {
+            const note = buildBackendScript();
+            note.getLabelValues = (name) => (name === "runOnInstance" ? instances : name === "runAtHour" ? hours : []);
+            return note;
+        };
+        const onThisInstance = labelled([ "main" ], []);
+        const atThisHour = labelled([], [ "5" ]);
+        const atAnotherHour = labelled([ "main" ], [ "6" ]);
+        getNotesWithLabel.mockReturnValue([ onThisInstance, atThisHour, atAnotherHour ]);
+
+        startScheduler();
+        await settleDbReady();
+        await vi.advanceTimersByTimeAsync(10 * SECOND);
+
+        expect(executeNoteNoException.mock.calls.map(([ note ]) => note)).toEqual([ onThisInstance, atThisHour ]);
+    });
 });

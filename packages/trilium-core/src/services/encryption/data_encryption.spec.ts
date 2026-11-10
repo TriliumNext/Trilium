@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeUtf8, encodeBase64, encodeUtf8 } from "../utils/binary.js";
+import { concat2, decodeUtf8, encodeBase64, encodeUtf8 } from "../utils/binary.js";
+import { getCrypto } from "./crypto.js";
 import dataEncryption from "./data_encryption.js";
 
 // The global server spec setup (apps/server/spec/setup.ts) calls initializeCore,
@@ -102,6 +103,16 @@ describe("data_encryption", () => {
                 expect(dataEncryption.decrypt(KEY, value), value).toEqual(encodeUtf8(value));
                 expect(dataEncryption.decrypt(KEY, encodeUtf8(value)), value).toEqual(encodeUtf8(value));
             }
+        });
+    });
+
+    describe("payloads too short for a digest", () => {
+        it("rejects a plaintext shorter than the 4-byte digest it should start with", () => {
+            const iv = new Uint8Array(16);
+            const cipher = getCrypto().createCipheriv("aes-128-cbc", KEY, iv);
+            const encrypted = concat2(cipher.update(Uint8Array.of(1, 2)), cipher.final());
+
+            expect(dataEncryption.decrypt(KEY, encodeBase64(concat2(iv, encrypted)))).toBe(false);
         });
     });
 

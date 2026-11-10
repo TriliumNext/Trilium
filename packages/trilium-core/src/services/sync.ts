@@ -357,7 +357,7 @@ async function pullChanges(syncContext: SyncContext) {
                 // and count only this session's work.
                 const alreadyPulled = sqlInit.isDbInitialized()
                     ? 0
-                    : getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1") ?? 0;
+                    : getSql().getValue<number>("SELECT COUNT(1) FROM entity_changes WHERE isSynced = 1");
                 totalPullCount = alreadyPulled + resp.entityChanges.length + outstandingPullCount;
             }
 
@@ -408,6 +408,7 @@ async function pullChanges(syncContext: SyncContext) {
         });
 
         if (batch.length > 0) {
+            /* v8 ignore next -- the first response of a pull sets totalPullCount to at least its own length */
             if (totalPullCount) {
                 ws.syncPullInProgress({
                     pulled: Math.max(0, totalPullCount - outstandingPullCount),
@@ -528,6 +529,7 @@ async function pushChanges(syncContext: SyncContext) {
 
         lastSyncedPush = entityChangesRecords[entityChangesRecords.length - 1].entityChange.id;
 
+        /* v8 ignore next -- the pushed records are rows of entity_changes, which always carry an id */
         if (lastSyncedPush) {
             setLastSyncedPush(lastSyncedPush);
         }

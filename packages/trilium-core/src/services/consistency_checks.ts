@@ -184,6 +184,7 @@ class ConsistencyChecks {
                     let message = `Branch '${branchId}' was missing parent note '${parentNoteId}', so it was deleted. `;
 
                     const note = becca.getNote(noteId);
+                    /* v8 ignore if -- becca still holds the branch's child note, a skeleton if its row is missing */
                     if (!note) {
                         return;
                     }
@@ -658,12 +659,14 @@ class ConsistencyChecks {
             ({ attributeId }) => {
                 if (this.autoFix) {
                     const relation = becca.getAttribute(attributeId);
+                    /* v8 ignore start -- the broken-reference check above already deletes these, since no note has an empty ID */
                     if (!relation) return;
                     relation.markAsDeleted();
 
                     this.reloadNeeded = true;
 
                     logFix(`Removed relation '${relation.attributeId}' of name '${relation.name}' with empty target.`);
+                    /* v8 ignore stop */
                 } else {
                     logError(`Relation '${attributeId}' has empty target.`);
                 }

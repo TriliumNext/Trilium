@@ -276,6 +276,7 @@ function loadNeededInfoFromDatabase() {
 
         if (isNoteRevision) {
             const note = becca.notes[noteId];
+            /* v8 ignore next -- the content-length loop above set revisionCount to 0 for every note in noteBlobs */
             note.revisionCount = (note.revisionCount ?? 0) + 1;
         }
     }
@@ -394,21 +395,7 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     searchContext.enableFuzzyMatching = originalFuzzyMatching;
 
     if (!noteSet.sorted) {
-        ranked.sort((a, b) => {
-            if (a.score > b.score) {
-                return -1;
-            } else if (a.score < b.score) {
-                return 1;
-            }
-
-            // if score does not decide then sort results by depth of the note.
-            // This is based on the assumption that more important results are closer to the note root.
-            if (a.notePathArray.length === b.notePathArray.length) {
-                return a.notePathTitle < b.notePathTitle ? -1 : 1;
-            }
-
-            return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
-        });
+        ranked.sort(compareByScoreThenDepth);
     }
 
     return ranked;
@@ -422,36 +409,10 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
     const additionalFuzzyResults = fuzzyResults.filter(result => !exactNoteIds.has(result.noteId));
 
     // Sort exact results by score (best exact matches first)
-    exactResults.sort((a, b) => {
-        if (a.score > b.score) {
-            return -1;
-        } else if (a.score < b.score) {
-            return 1;
-        }
-
-        // if score does not decide then sort results by depth of the note.
-        if (a.notePathArray.length === b.notePathArray.length) {
-            return a.notePathTitle < b.notePathTitle ? -1 : 1;
-        }
-
-        return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
-    });
+    exactResults.sort(compareByScoreThenDepth);
 
     // Sort fuzzy results by score (best fuzzy matches first)
-    additionalFuzzyResults.sort((a, b) => {
-        if (a.score > b.score) {
-            return -1;
-        } else if (a.score < b.score) {
-            return 1;
-        }
-
-        // if score does not decide then sort results by depth of the note.
-        if (a.notePathArray.length === b.notePathArray.length) {
-            return a.notePathTitle < b.notePathTitle ? -1 : 1;
-        }
-
-        return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
-    });
+    additionalFuzzyResults.sort(compareByScoreThenDepth);
 
     // CRITICAL: Always put exact matches before fuzzy matches, regardless of scores
     return [...exactResults, ...additionalFuzzyResults];
@@ -785,9 +746,8 @@ function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenI
                 continue;
             }
 
-            const attrName = attr.name?.toLowerCase() || "";
-            const attrValue = attr.value?.toLowerCase() || "";
-            const attrType = attr.type || "";
+            const attrName = attr.name.toLowerCase();
+            const attrValue = attr.value.toLowerCase();
 
             // Check if any search token matches the attribute name or value
             const normalizedName = normalizePreservingLength(attrName);
@@ -797,10 +757,10 @@ function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenI
 
             if (hasMatch) {
                 matchingAttributes.push({
-                    name: attr.name || "",
+                    name: attr.name,
                     // One line per attribute: the lines are joined with newlines, which become `<br>`.
-                    value: (attr.value || "").replace(/\s*[\r\n]+\s*/g, " "),
-                    type: attrType
+                    value: attr.value.replace(/\s*[\r\n]+\s*/g, " "),
+                    type: attr.type
                 });
             }
         }
@@ -812,18 +772,11 @@ function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenI
         // Limit to 4 lines maximum, similar to content snippet logic
         const lines: string[] = [];
         for (const attr of matchingAttributes.slice(0, 4)) {
-            let line = "";
             if (attr.type === "label") {
-                line = attr.value ? `#${attr.name}="${attr.value}"` : `#${attr.name}`;
-            } else if (attr.type === "relation") {
+                lines.push(attr.value ? `#${attr.name}="${attr.value}"` : `#${attr.name}`);
+            } else {
                 // For relations, show the target note title if possible
-                const targetNote = attr.value ? becca.notes[attr.value] : null;
-                const targetTitle = targetNote ? targetNote.title : attr.value;
-                line = `~${attr.name}="${targetTitle}"`;
-            }
-
-            if (line) {
-                lines.push(line);
+                lines.push(`~${attr.name}="${becca.notes[attr.value]?.title ?? attr.value}"`);
             }
         }
 
@@ -1034,6 +987,24 @@ export default {
     extractAttributeSnippet,
     highlightSearchResults
 };
+
+/**
+ * Orders results best score first. A tie goes to the shallower note, on the assumption that more
+ * important notes sit closer to the root, and then to the note path title.
+ */
+function compareByScoreThenDepth(a: SearchResult, b: SearchResult) {
+    if (a.score > b.score) {
+        return -1;
+    } else if (a.score < b.score) {
+        return 1;
+    }
+
+    if (a.notePathArray.length === b.notePathArray.length) {
+        return a.notePathTitle < b.notePathTitle ? -1 : 1;
+    }
+
+    return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
+}
 
 /** Widens a legacy `string[]` (all plain) or a structured token-info list to token infos. */
 function toTokenInfos(tokens: HighlightedTokenInfo[] | string[]): HighlightedTokenInfo[] {

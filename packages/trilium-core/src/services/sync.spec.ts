@@ -1,6 +1,7 @@
 import type { EntityChange, EntityChangeRecord } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import consistencyChecks from "./consistency_checks.js";
 import contentHashService from "./content_hash.js";
@@ -269,6 +270,84 @@ describe("sync service", () => {
         expect(Number(options.getOption("lastSyncedPull"))).toBe(20);
     });
 
+    it("abandons a prefetched chunk quietly when applying the current batch fails", async () => {
+        const bigChange = { entityChange: { entityName: "notes", entityId: "pfFail" }, entity: { content: "x".repeat(33 * 1024 * 1024) } };
+        config.changed = [ { entityChanges: [ bigChange ], lastEntityChangeId: 1, outstandingPullCount: 1 } ];
+        const fetched: number[] = [];
+        config.onChanged = (i) => {
+            fetched.push(i);
+            if (i === 1) {
+                throw new Error("prefetch failed");
+            }
+        };
+        vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {
+            throw new Error("apply failed");
+        });
+
+        // Vitest fails the run on an unhandled rejection, which is what the prefetch would cause.
+        await expect(runSync()).resolves.toEqual({ success: false, message: "apply failed" });
+        expect(fetched).toEqual([ 0, 1 ]);
+    });
+
+    it("applies nothing from a server that reports no instance id, and keeps an unmoved cursor", async () => {
+        config.login = { instanceId: "", maxEntityChangeId: 100 };
+        config.changed = [
+            { entityChanges: [ { entityChange: ec({ entityName: "blobs", entityId: "bytesBlob" }), entity: { content: Uint8Array.of(1, 2) } } ], lastEntityChangeId: 7, outstandingPullCount: 0 },
+            { entityChanges: [], lastEntityChangeId: 7, outstandingPullCount: 0 }
+        ];
+        cls.init(() => options.setOption("lastSyncedPull", "7"));
+        const update = vi.spyOn(syncUpdateService, "updateEntities");
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+
+        expect(update).not.toHaveBeenCalled();
+        expect(options.getOption("lastSyncedPull")).toBe("7");
+    });
+
+    it("treats a missing blob size option as no limit", async () => {
+        const originalGetOptionOrNull = options.getOptionOrNull;
+        vi.spyOn(options, "getOptionOrNull").mockImplementation((name) => (
+            name === "syncMaxBlobContentSize" ? null : originalGetOptionOrNull(name)
+        ));
+
+        await expect(runSync()).resolves.toEqual({ success: true });
+
+        const pullUrls = requestLog.filter((r) => r.url.includes("/api/sync/changed")).map((r) => r.url);
+        expect(pullUrls.length).toBeGreaterThan(0);
+        expect(pullUrls.every((u) => !u.includes("maxBlobContentSize"))).toBe(true);
+    });
+
+    it("records the sync cursors in the database alone while becca holds no options for them", async () => {
+        const pullOption = becca.options.lastSyncedPull;
+        const pushOption = becca.options.lastSyncedPush;
+        cls.init(() => {
+            options.setOption("lastSyncedPull", "999999");
+            notes.createNewNote({ parentNoteId: "root", title: "sync-cursor-push", content: "<p/>", type: "text" });
+        });
+        config.login = { instanceId: "REMOTE_INSTANCE", maxEntityChangeId: 7 };
+        config.changed = [ { entityChanges: [], lastEntityChangeId: 7, outstandingPullCount: 0 } ];
+        vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const maxId = Number(syncService.getMaxEntityChangeId());
+        delete becca.options.lastSyncedPull;
+        delete becca.options.lastSyncedPush;
+        becca.loaded = false;
+
+        try {
+            await expect(runSync()).resolves.toEqual({ success: true });
+        } finally {
+            becca.loaded = true;
+            becca.options.lastSyncedPull = pullOption;
+            becca.options.lastSyncedPush = pushOption;
+        }
+
+        const stored = (name: string) => getSql().getValue<string>("SELECT value FROM options WHERE name = ?", [ name ]);
+        expect(Number(stored("lastSyncedPull"))).toBe(7);
+        expect(Number(stored("lastSyncedPush"))).toBe(maxId);
+        expect(pullOption.value).toBe("999999");
+        pullOption.value = stored("lastSyncedPull");
+        pushOption.value = stored("lastSyncedPush");
+    });
+
     it("appends maxBlobContentSize to pull URLs when the option is set", async () => {
         // A single non-empty batch then an empty one so the pull loop terminates.
         config.changed = [
@@ -466,6 +545,20 @@ describe("sync service", () => {
             expect(entityChangesService.addEntityChangesForSector).toHaveBeenCalledWith("notes", "d");
             expect(syncService.getLastSyncError()).toContain("notes/c");
             expect(syncService.getLastSyncError()).not.toContain("notes/d");
+        });
+
+        it("reports a sector it gave up on once, while another sector is still being repaired", async () => {
+            // 'notes/e' starts diverging a round before 'notes/f', so it runs out of attempts first
+            // and keeps failing in the round that gives up on 'notes/f'.
+            vi.mocked(contentHashService.checkContentHashes)
+                .mockReturnValueOnce([ { entityName: "notes", sector: "e" } ])
+                .mockReturnValue([ { entityName: "notes", sector: "e" }, { entityName: "notes", sector: "f" } ]);
+            vi.spyOn(ws, "syncHashCheckFailed").mockImplementation(() => {});
+
+            await expect(runSync()).resolves.toMatchObject({ success: false, errorCode: "CONTENT_HASH_MISMATCH" });
+
+            expect(syncService.getLastSyncError()).toContain("notes/e, notes/f ");
+            expect(contentHashService.checkContentHashes).toHaveBeenCalledTimes(MAX_SECTOR_RESYNC_ATTEMPTS + 1);
         });
 
         it("stops a sync run that never converges instead of looping forever", async () => {

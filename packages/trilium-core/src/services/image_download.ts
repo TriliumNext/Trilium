@@ -138,6 +138,7 @@ async function downloadImage(noteId: string, imageUrl: string) {
         const imageBuffer = new Uint8Array(await request.getImage(unescapedUrl));
 
         const parsedUrl = url.parse(unescapedUrl);
+        /* v8 ignore next -- an http(s) URL, checked above, always parses with a pathname */
         const title = basename(parsedUrl.pathname || "");
 
         // Given a context of its own, as the link rewrite below is: the download resumes long

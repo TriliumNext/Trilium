@@ -126,6 +126,20 @@ describe("Attachments API (core)", () => {
             expect(res.body.map((a) => a.title).sort()).toEqual([ "First", "Second" ]);
         });
 
+        it("returns no siblings for an attachment owned by a revision", async () => {
+            const { noteId } = await createTextNote(api, { title: "Revision owner" });
+            await saveAttachment(noteId, { title: "Copied into the revision" });
+            const revision = await api.post<{ revisionId: string }>(`/api/notes/${noteId}/revision`, { body: {} });
+            const revisionAttachmentId = getSql().getValue<string>(
+                "SELECT attachmentId FROM attachments WHERE ownerId = ?", [ revision.body.revisionId ]
+            );
+            expect(revisionAttachmentId).toBeTruthy();
+
+            const res = await api.get<AttachmentPojo[]>(`/api/attachments/${revisionAttachmentId}/all`);
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([]);
+        });
+
         it("returns the attachment blob", async () => {
             const { noteId } = await createTextNote(api, { title: "Blob owner" });
             const saved = await saveAttachment(noteId, {
@@ -314,6 +328,31 @@ describe("Attachments API (core)", () => {
             expect(saved.attachmentId).toBeTruthy();
             expect(saved.role).toBe("file");
             expect(saved.mime).toBe("text/plain");
+        });
+
+        it("updates the attachment matched by title or id, and ignores an unknown matchBy", async () => {
+            const { noteId } = await createTextNote(api, { title: "Match owner" });
+            const original = await saveAttachment(noteId, { title: "Matched", content: "v1" });
+
+            const byTitle = await api.post(`/api/notes/${noteId}/attachments`, {
+                query: { matchBy: "title" },
+                body: { role: "file", mime: "text/plain", title: "Matched", content: "v2" }
+            });
+            expect(byTitle.status).toBe(204);
+            const byId = await api.post(`/api/notes/${noteId}/attachments`, {
+                query: { matchBy: "attachmentId" },
+                body: { attachmentId: original.attachmentId, role: "file", mime: "text/plain", title: "Renamed", content: "v3" }
+            });
+            expect(byId.status).toBe(204);
+            const unknown = await api.post(`/api/notes/${noteId}/attachments`, {
+                query: { matchBy: "bogus" },
+                body: { attachmentId: original.attachmentId, role: "file", mime: "text/plain", title: "Again", content: "v4" }
+            });
+            expect(unknown.status).toBe(204);
+
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            // Each save matched the existing attachment and replaced its content, so no other one appeared.
+            expect(list.body.map((a) => a.attachmentId)).toEqual([ original.attachmentId ]);
         });
 
         it("404s when saving an attachment on a missing note", async () => {

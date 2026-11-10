@@ -41,6 +41,10 @@ describe("SearchResult", () => {
             expect(result.score).toBe(0);
         });
 
+        it("names no title segment for an empty path", () => {
+            expect(new SearchResult([]).noteTitleSegment).toBe("");
+        });
+
         it("returns the last path segment as noteId for a deeper path", () => {
             const parent = note("Parent");
             const child = note("Child");
@@ -197,6 +201,33 @@ describe("SearchResult", () => {
             result.addScoreForStrings(["zzz"], "alpha", 1, false);
 
             expect(result.score).toBe(0);
+        });
+
+        it("skips a token that normalizes to nothing", () => {
+            const target = note("alpha");
+            rootNote.child(target);
+            const score = (tokens: string[]) => {
+                const result = resultFor(target);
+                result.computeScore("alpha", tokens, false);
+                return result.score;
+            };
+
+            expect(score([ "", "alpha" ])).toBe(score([ "alpha" ]));
+        });
+    });
+
+    describe("computeScore - diacritics in a word match", () => {
+        function score(title: string, query: string) {
+            const target = note(title);
+            rootNote.child(target);
+            const result = resultFor(target);
+            result.computeScore(query, query.split(" "), false);
+            return result.score;
+        }
+
+        it("rewards the spelling with the query's diacritics, on either side", () => {
+            expect(score("Le café noir", "café noir")).toBeGreaterThan(score("Le café noir", "cafe noir"));
+            expect(score("Le cafe noir", "cafe noir")).toBeGreaterThan(score("Le cafe noir", "café noir"));
         });
     });
 
