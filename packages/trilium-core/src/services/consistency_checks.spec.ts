@@ -490,6 +490,37 @@ describe("Consistency checks over a corrupted database", () => {
         expect(info).toHaveBeenCalledWith(expect.stringContaining("All consistency checks passed with no errors detected"));
     });
 
+    it("gives up on a tree cycle whose branch is missing from becca instead of retrying forever", async () => {
+        getContext().init(() => {
+            plantNote("CC_CY2A");
+            plantNote("CC_CY2B");
+            plantBranch("CC_br_cy2a_root", "CC_CY2A", "root");
+            plantBranch("CC_br_cy2a_cy2b", "CC_CY2A", "CC_CY2B");
+            plantBranch("CC_br_cy2b_cy2a", "CC_CY2B", "CC_CY2A");
+            consistency_checks.runEntityChangesChecks();
+        });
+        const send = vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {});
+        const info = vi.spyOn(getLog(), "info");
+        const getRows = sql().getRows.bind(sql());
+        let cycleChecks = 0;
+        vi.spyOn(sql(), "getRows").mockImplementation((query: string, params?: unknown[]) => {
+            if (query.includes("SELECT noteId, parentNoteId FROM branches") && ++cycleChecks > 20) {
+                throw new Error("tree cycle check did not terminate");
+            }
+            return getRows(query, params as never);
+        });
+
+        await getContext().init(() => consistency_checks.runOnDemandChecks(true));
+        expect(cycleChecks).toBe(1);
+        expect(info).toHaveBeenCalledWith(expect.stringContaining("Consistency error: Tree cycle detected at parent-child relationship: 'CC_CY2A' - 'CC_CY2B'"));
+        expect(send).toHaveBeenCalledWith({ type: "consistency-checks-failed" });
+
+        vi.mocked(sql().getRows).mockRestore();
+        getContext().init(() => becca_loader.reload("cycle branches known to becca"));
+        await getContext().init(() => consistency_checks.runOnDemandChecks(true));
+        expect(isLive("branches", "branchId", "CC_br_cy2a_cy2b") && isLive("branches", "branchId", "CC_br_cy2b_cy2a")).toBe(false);
+    });
+
     it("runs the entity change checks alone and on a schedule", async () => {
         getContext().init(() => insertRow("options", { name: "CC_option2", value: "1", isSynced: 1, utcDateModified: "2026-01-01 00:00:00Z" }));
         getContext().init(() => consistency_checks.runEntityChangesChecks());

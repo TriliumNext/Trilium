@@ -81,12 +81,11 @@ class ConsistencyChecks {
 
             for (const parentNoteId of childToParents[noteId]) {
                 if (path.includes(parentNoteId)) {
-                    if (this.autoFix) {
-                        const branch = becca.getBranchFromChildAndParent(noteId, parentNoteId);
-                        if (branch) {
-                            branch.markAsDeleted("cycle-autofix");
-                            logFix(`Branch '${branch.branchId}' between child '${noteId}' and parent '${parentNoteId}' has been deleted since it was causing a tree cycle.`);
-                        }
+                    // Without the cached branch nothing is deleted, so retrying would find the same cycle forever.
+                    const branch = this.autoFix ? becca.getBranchFromChildAndParent(noteId, parentNoteId) : null;
+                    if (branch) {
+                        branch.markAsDeleted("cycle-autofix");
+                        logFix(`Branch '${branch.branchId}' between child '${noteId}' and parent '${parentNoteId}' has been deleted since it was causing a tree cycle.`);
 
                         return true;
                     }
