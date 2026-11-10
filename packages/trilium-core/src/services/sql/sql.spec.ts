@@ -450,6 +450,12 @@ describe("SqlService (real DB)", () => {
             vi.restoreAllMocks();
         });
 
+        it("serializes through the provider where it can, and refuses where it cannot", () => {
+            const bytes = Uint8Array.of(1, 2, 3);
+            expect(buildService({ serialize: () => bytes }).serialize()).toBe(bytes);
+            expect(() => buildService({}).serialize()).toThrow("does not support serialization");
+        });
+
         it("refuses to detach where the provider cannot, or while a transaction is open", () => {
             expect(() => buildService({ detach: undefined }).detachConnection())
                 .toThrow("does not support detaching");

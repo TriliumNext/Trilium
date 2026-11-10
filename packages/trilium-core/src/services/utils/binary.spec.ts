@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { getCrypto } from "../encryption/crypto.js";
 import {
     concat2,
     decodeBase64,
+    decodeBase64Into,
     decodeUtf8,
     encodeBase64,
     encodeUtf8,
@@ -156,6 +158,29 @@ describe("binary utils", () => {
             const bytes = new Uint8Array(100_000);
             for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 31 + 7) & 0xff;
             expect(Array.from(decodeBase64(encodeBase64(bytes)))).toEqual(Array.from(bytes));
+        });
+    });
+
+    describe("decodeBase64Into", () => {
+        it("decodes through the provider's in-place decoder, and returns null without one", () => {
+            const provider = getCrypto();
+            const target = new Uint8Array(8);
+            const decodeInto = vi.fn((base64: string, into: Uint8Array) => {
+                into.set(decodeBase64(base64));
+                return 6;
+            });
+
+            try {
+                Object.defineProperty(provider, "base64DecodeInto", { value: decodeInto, configurable: true });
+                expect(decodeBase64Into("Zm9vYmFy", target)).toBe(6);
+                expect(decodeInto).toHaveBeenCalledWith("Zm9vYmFy", target);
+                expect(decodeUtf8(target.subarray(0, 6))).toBe("foobar");
+
+                Object.defineProperty(provider, "base64DecodeInto", { value: undefined, configurable: true });
+                expect(decodeBase64Into("Zm9vYmFy", target)).toBeNull();
+            } finally {
+                Reflect.deleteProperty(provider, "base64DecodeInto");
+            }
         });
     });
 

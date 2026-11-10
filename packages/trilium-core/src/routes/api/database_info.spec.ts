@@ -24,4 +24,21 @@ describe("database info", () => {
         expect(info.noteCount).toBeLessThan(Object.keys(becca.notes).length);
         expect(info.attachmentCount).toBeGreaterThanOrEqual(0);
     });
+
+    it("reports the path the platform gives, and none where it has no path or no way to tell", () => {
+        const platform = getPlatform();
+        const filePathWith = (getDatabasePath: (() => string | null) | undefined) => {
+            Object.defineProperty(platform, "getDatabasePath", { value: getDatabasePath, configurable: true });
+            try {
+                return databaseInfoRoute.getDatabaseInfo().filePath;
+            } finally {
+                Reflect.deleteProperty(platform, "getDatabasePath");
+            }
+        };
+
+        expect(filePathWith(() => "/data/document.db")).toBe("/data/document.db");
+        expect(filePathWith(() => null)).toBeNull();
+        expect(filePathWith(undefined)).toBeNull();
+        expect(typeof platform.getDatabasePath).toBe("function");
+    });
 });

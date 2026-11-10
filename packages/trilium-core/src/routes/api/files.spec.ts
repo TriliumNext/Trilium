@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
+import { getPlatform } from "../../services/platform.js";
 import protectedSessionService from "../../services/protected_session";
 import { getSql } from "../../services/sql/index.js";
 import { encodeUtf8 } from "../../services/utils/binary";
@@ -446,6 +447,31 @@ describe("Files API (core)", () => {
             expect(res.status).toBe(206);
             expect(bodyOf(res.body)).toBe("89");
             expect(res.headers["Content-Range"]).toBe("bytes 8-9/10");
+        });
+
+        it("caps an open-ended range on the standalone build only", async () => {
+            const total = 8 * 1024 * 1024 + 10;
+            const res = await api.post<{ note: { noteId: string } }>("/api/notes/root/children?target=into", {
+                body: { title: "movie.mp4", type: "file", mime: "video/mp4", content: "x".repeat(total) }
+            });
+            expect(res.status).toBe(200);
+            const url = `/api/notes/${res.body.note.noteId}/open-partial`;
+            const platform = getPlatform();
+            const wasStandalone = platform.isStandalone;
+
+            try {
+                Object.assign(platform, { isStandalone: true });
+                const capped = await api.get(url, { headers: { range: "bytes=0-" } });
+                expect(capped.status).toBe(206);
+                expect(capped.headers["Content-Range"]).toBe(`bytes 0-${8 * 1024 * 1024 - 1}/${total}`);
+
+                Object.assign(platform, { isStandalone: false });
+                const whole = await api.get(url, { headers: { range: "bytes=0-" } });
+                expect(whole.status).toBe(206);
+                expect(whole.headers["Content-Range"]).toBe(`bytes 0-${total - 1}/${total}`);
+            } finally {
+                Object.assign(platform, { isStandalone: wasStandalone });
+            }
         });
 
         it("416s on a range past the end of the content", async () => {

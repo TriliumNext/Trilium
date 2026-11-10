@@ -10,6 +10,7 @@ import entityChangesService from "./entity_changes.js";
 import getInstanceId from "./instance_id.js";
 import notes from "./notes.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import { fakeRequestProvider } from "../test/request_provider.js";
 import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
@@ -153,6 +154,49 @@ describe("sync service", () => {
         expect(events.indexOf("apply")).toBeGreaterThan(events.indexOf("fetch:1"));
         expect(events.filter((e) => e === "apply")).toHaveLength(2);
         expect(events.indexOf("fetch:2")).toBeGreaterThan(events.indexOf("apply"));
+    });
+
+    it("sizes pull batches for desktop, the standalone build and a mobile blob size limit", async () => {
+        const content = "x".repeat(6 * 1024 * 1024);
+        const platform = getPlatform();
+        const wasStandalone = platform.isStandalone;
+        const realGetOptionOrNull = options.getOptionOrNull.bind(options);
+
+        /** Pulls four 6 MB chunks and returns how many chunks each applied batch held. */
+        async function pullBatchSizes(isStandalone: boolean, maxBlobContentSize: string) {
+            Object.assign(platform, { isStandalone });
+            vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+                name === "syncMaxBlobContentSize" ? maxBlobContentSize : realGetOptionOrNull(name));
+            changedIdx = 0;
+            config.changed = [ 0, 1, 2, 3 ].map((i) => ({
+                entityChanges: [ { entityChange: { entityName: "notes", entityId: `batch${i}` }, entity: { content } } ],
+                lastEntityChangeId: i + 1,
+                outstandingPullCount: 3 - i
+            }));
+            config.changed.push({ entityChanges: [], lastEntityChangeId: 4, outstandingPullCount: 0 });
+            const sizes: number[] = [];
+            let lastWasApply = false;
+            config.onChanged = () => { lastWasApply = false; };
+            vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {
+                if (lastWasApply) {
+                    sizes[sizes.length - 1]++;
+                } else {
+                    sizes.push(1);
+                }
+                lastWasApply = true;
+            });
+
+            try {
+                await expect(runSync()).resolves.toEqual({ success: true });
+            } finally {
+                Object.assign(platform, { isStandalone: wasStandalone });
+            }
+            return sizes;
+        }
+
+        expect(await pullBatchSizes(false, "0")).toEqual([ 4 ]);
+        expect(await pullBatchSizes(true, "0")).toEqual([ 3, 1 ]);
+        expect(await pullBatchSizes(true, "1048576")).toEqual([ 1, 1, 1, 1 ]);
     });
 
     it("broadcasts pull progress after each applied batch", async () => {
