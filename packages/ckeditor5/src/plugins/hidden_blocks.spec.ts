@@ -482,8 +482,10 @@ describe("HiddenBlocks", () => {
             // A toggle hides the section again; the caret in a section expands it for good.
             editor.plugins.get("CollapsibleHeadingsEditing").toggle(findBlock(editor, "Sub"));
             expect(outline(editor)).toBe("▸Top, t1, ▸Sub, (s1), Next");
+            expect(isRevealedClass("Top")).toBe(true);
             editor.model.change((writer) => writer.setSelection(findBlock(editor, "t1"), 0));
             expect(outline(editor)).toBe("Top, t1, ▸Sub, (s1), Next");
+            expect(isRevealedClass("Top")).toBe(false);
 
             hiddenBlocks.revealAroundDomNode(document.body);
             expect(outline(editor)).toBe("Top, t1, ▸Sub, (s1), Next");

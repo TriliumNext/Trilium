@@ -67,7 +67,6 @@ export default class HiddenBlocks extends Plugin {
     /** The owners that `markedRevealed` was found for. */
     private markedOwners: ReadonlySet<ModelElement> = NOTHING_REVEALED;
     private isViewStale = false;
-    private isRevealChanged = false;
     /** Whether an element with a class from `syncView()` was converted again since. */
     private isMarkLost = false;
     private isSelectionChanged = false;
@@ -328,15 +327,15 @@ export default class HiddenBlocks extends Plugin {
         }
         this.isViewStale = false;
 
-        const hiddenBlocks = this.getHidden();
-        if (!this.isRevealChanged && !this.isMarkLost
-            && hasSameKeys(hiddenBlocks, this.markedFor)) {
+        const revealedOwners = this.getRevealed();
+        const hiddenBlocks = this.getHidden(revealedOwners);
+        if (!this.isMarkLost && hasSameKeys(hiddenBlocks, this.markedFor)
+            && hasSameKeys(revealedOwners, this.markedOwners)) {
             return false;
         }
-        this.isRevealChanged = false;
         this.isMarkLost = false;
         this.markedFor = hiddenBlocks;
-        this.markedOwners = this.getRevealed();
+        this.markedOwners = revealedOwners;
 
         const mapper = this.editor.editing.mapper;
         const hidden = new Set<ViewElement>();
@@ -589,7 +588,6 @@ export default class HiddenBlocks extends Plugin {
     private refreshView() {
         this.revealedCache = null;
         this.isViewStale = true;
-        this.isRevealChanged = true;
         this.editor.editing.view.forceRender();
     }
 
@@ -638,9 +636,8 @@ export default class HiddenBlocks extends Plugin {
         return owners;
     }
 
-    /** The blocks hidden in the editing view. */
-    private getHidden(): HiddenMap {
-        const revealed = this.getRevealed();
+    /** The blocks hidden in the editing view, leaving out those of the owners in `revealed`. */
+    private getHidden(revealed = this.getRevealed()): HiddenMap {
         if (!revealed.size) {
             return this.getModelHidden();
         }
@@ -827,8 +824,11 @@ function getRunEdge(
     return edge;
 }
 
-/** Whether `a` and `b` have the same keys. */
-function hasSameKeys(a: ReadonlyMap<unknown, unknown>, b: ReadonlyMap<unknown, unknown>) {
+/** Whether `a` and `b` have the same keys, which for a set are its members. */
+function hasSameKeys(
+    a: ReadonlySet<unknown> | ReadonlyMap<unknown, unknown>,
+    b: ReadonlySet<unknown> | ReadonlyMap<unknown, unknown>
+) {
     if (a.size !== b.size) {
         return false;
     }

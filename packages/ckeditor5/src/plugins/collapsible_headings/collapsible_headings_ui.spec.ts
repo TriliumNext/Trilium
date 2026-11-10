@@ -81,7 +81,10 @@ describe("CollapsibleHeadingsUI", () => {
         expect(arrow(beta).visibility).toBe("hidden");
         expect(arrow(getHeading("Alpha")).visibility).toBe("visible");
 
-        await userEvent.hover(locate("Beta"), { position: { x: 4, y: 6 } });
+        // The hover rule needs `(hover: hover)`, so the arrow is shown with the caret instead.
+        editor.editing.view.focus();
+        await expect.poll(() => editor.editing.view.document.isFocused).toBe(true);
+        editor.model.change((writer) => writer.setSelection(findBlock(editor, "Beta"), 1));
         await expect.poll(() => arrow(beta).visibility).toBe("visible");
         // The empty alternative text of the glyph.
         expect(arrow(beta).content).toMatch(/ \/ ""$/);
