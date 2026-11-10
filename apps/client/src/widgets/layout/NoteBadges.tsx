@@ -60,7 +60,7 @@ export function CollaboratorsBadge() {
     return (
         <div className="collaborators-badge" role="group" aria-label={t("breadcrumb_badges.collaborators", { names })}>
             {users.map((user) => (
-                <span key={user.userId} title={user.username}>
+                <span key={user.userId} className="collaborator" title={user.username}>
                     <UserAvatar username={user.username} hue={user.avatarHue} />
                 </span>
             ))}

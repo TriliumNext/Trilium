@@ -54,7 +54,7 @@
             box-shadow: 0 0 0 2px var(--main-background-color);
         }
 
-        > span + span {
+        .collaborator + .collaborator {
             margin-inline-start: -5px;
         }
     }
