@@ -1,6 +1,6 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    attachmentIcon, BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
     CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
     getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
     getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
@@ -410,8 +410,13 @@ export function preparePageContent(
     const slugs = utils.slugifyHeadings(unnamed.map((element) => element.innerHTML),
         document.querySelectorAll("[id]").map((element) => element.id));
     let slugIndex = 0;
-    const headings = elements.map((element) => {
+    const headings = elements.flatMap((element) => {
         const slug = element.id || slugs[slugIndex++];
+        // A heading of an Expandable embed starts hidden, so it gets an ID for links but no entry.
+        if (element.closest(`.${EXPANDABLE_EMBED_CLASS}`)) {
+            element.setAttribute("id", slug);
+            return [];
+        }
         const text = element.text.replace(/\s+/g, " ").trim();
         const html = sanitize.sanitizeHtmlCustom(element.innerHTML, HEADING_FORMATTING)
             .replace(/\s+/g, " ").trim();
@@ -687,7 +692,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
                 embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             } else {
                 const html = renderAttachmentEmbed(embed.attachmentId, attachment, getNote);
-                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes);
+                const title = embed.boxSize === "expandable" ? {
+                    icon: `tn-icon ${attachmentIcon(attachment.role, attachment.mime)}`,
+                    text: attachment.title
+                } : null;
+                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes, title);
             }
             continue;
         }
@@ -727,7 +736,10 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         for (const linkEl of embeddedContent.querySelectorAll("a")) {
             embeddedLinks.add(linkEl);
         }
-        replaceEmbedContent(embedEl, embeddedContent.childNodes);
+        const title = embed.boxSize === "expandable"
+            ? { icon: embeddedNote.getIcon(), text: embeddedNote.title }
+            : null;
+        replaceEmbedContent(embedEl, embeddedContent.childNodes, title);
     }
 
     result.isEmpty = document.textContent?.trim().length === 0
@@ -780,12 +792,33 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     }
 }
 
-/** Puts `content` in an embed, followed by the embed's caption, as the app does. */
-function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
+/**
+ * Puts `content` in an embed, followed by the embed's caption, as the app does. With a `title`,
+ * the content goes in a closed `<details>` that shows the title, the share page's form of an
+ * Expandable embed; the caption after it shows under the title until the content is opened.
+ */
+function replaceEmbedContent(
+    embedEl: HTMLElement, content: ParsedNode[], title: { icon: string; text: string } | null
+) {
     const caption = embedEl.childNodes.find((child) =>
         child instanceof HTMLElement && child.tagName === "FIGCAPTION");
-    embedEl.set_content(caption ? [ ...content, caption ] : content);
+    let shown = content;
+    if (title) {
+        const details = new HTMLElement("details", {}, `class="${EXPANDABLE_EMBED_CLASS}"`);
+        details.set_content([
+            ...parse(`<summary class="include-note-summary">`
+                + `<span class="tn-icon bx bx-chevron-right" aria-hidden="true"></span>`
+                + `<span class="${utils.escapeHtml(title.icon)}" aria-hidden="true"></span>`
+                + `${utils.escapeHtml(title.text)}</summary>`).childNodes,
+            ...content
+        ]);
+        shown = [ details ];
+    }
+    embedEl.set_content(caption ? [ ...shown, caption ] : shown);
 }
+
+/** The class of the `<details>` that holds the content of an Expandable embed. */
+const EXPANDABLE_EMBED_CLASS = "include-note-expandable";
 
 /**
  * Replaces an embed that cannot show its content with a message that tells nothing about it: the

@@ -4,7 +4,7 @@ import {
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
-import { parse } from "node-html-parser";
+import { type HTMLElement, parse } from "node-html-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as iconPackService from "../services/icon_packs.js";
@@ -862,6 +862,53 @@ describe("content_renderer", () => {
                     "metadata", false ],
                 [ "VIDEO", "api/notes/clipNote1/view", "Clip", true, "metadata", true ]
             ]);
+        });
+
+        it("shows an Expandable embed closed, under its title, with the caption after it", () => {
+            buildShareNote({ id: "foldNote1", title: "Folded <note>", content: "<h2>Inside</h2>" });
+            const note = buildShareNote({
+                content: `<figure class="include-note" data-attachment-id="foldVid1"`
+                    + ` data-box-size="expandable">&nbsp;<figcaption>A clip</figcaption></figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1"`
+                    + ` data-box-size="expandable">&nbsp;</figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1">&nbsp;</figure>`,
+                attachments: [
+                    { id: "foldVid1", role: "file", mime: "video/mp4", title: "clip.mp4" }
+                ]
+            });
+
+            const document = parse(getContent(note).content as string);
+
+            const [ video, folded, open ] = document.querySelectorAll("figure.include-note");
+            expect(video.childNodes.map((child) => (child as HTMLElement).tagName))
+                .toEqual([ "DETAILS", "FIGCAPTION" ]);
+            const summary = (details: HTMLElement) => {
+                const element = details.querySelector("details.include-note-expandable > summary");
+                return [
+                    element?.querySelectorAll(".tn-icon").map((icon) => icon.getAttribute("class")),
+                    element?.text
+                ];
+            };
+            expect(summary(video)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-video" ], "clip.mp4"
+            ]);
+            expect(video.querySelector("details > video.media-player") !== null).toBe(true);
+            expect(video.querySelector("details")?.hasAttribute("open")).toBe(false);
+            expect(summary(folded)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-note" ], "Folded <note>"
+            ]);
+            expect(folded.querySelector("details > h2")?.text).toBe("Inside");
+            expect(open.querySelector("details") === null).toBe(true);
+            expect(open.querySelector("h2")?.text).toBe("Inside");
+
+            const page = preparePageContent(document.toString(), {
+                imageAlt: "", headingLinkLabel: ""
+            });
+            expect(page.headings.map(({ slug }) => slug)).toEqual([ "inside-1" ]);
+            const pageDocument = parse(page.content);
+            expect(pageDocument.querySelectorAll("h2").map((heading) => [
+                heading.id, heading.querySelector(".toc-anchor") !== null
+            ])).toEqual([ [ "inside", false ], [ "inside-1", true ] ]);
         });
 
         it("shows all of a drawing whose frame cannot be read, and logs it", () => {

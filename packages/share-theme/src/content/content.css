@@ -408,6 +408,40 @@ body:not(.math-loaded) .math-tex {
     text-align: right;
 }
 
+.ck-content details.include-note-expandable {
+    & > summary {
+        display: flex;
+        align-items: center;
+        gap: .4em;
+        border: 1px solid var(--background-active);
+        border-radius: 8px;
+        padding: .4em .75em;
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &:hover {
+            background: var(--background-highlight);
+        }
+
+        & > .bx-chevron-right {
+            transition: transform .15s;
+        }
+    }
+
+    &[open] > summary {
+        margin-bottom: .75em;
+
+        & > .bx-chevron-right {
+            transform: rotate(90deg);
+        }
+    }
+}
+
 .ck-content figure.captioned-content-embed > section.link-embed {
     margin: 0;
     width: auto;

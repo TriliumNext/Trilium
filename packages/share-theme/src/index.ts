@@ -159,8 +159,15 @@ function setupTabs() {
         });
     }
 
-    // The browser does not scroll to a fragment inside a hidden panel.
-    const showFragment = () => revealFragment(location.hash)?.scrollIntoView();
+    // The browser does not scroll to a fragment inside a hidden panel or a closed `<details>`.
+    const showFragment = () => {
+        const target = revealFragment(location.hash);
+        for (let details = target?.closest("details"); details;
+            details = details.parentElement?.closest("details")) {
+            details.open = true;
+        }
+        target?.scrollIntoView();
+    };
     showFragment();
     window.addEventListener("hashchange", showFragment);
 }
