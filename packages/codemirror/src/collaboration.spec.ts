@@ -110,6 +110,15 @@ describe("CodeCollaboration", () => {
             network.drain();
             expect(text(second)).toBe("content!");
 
+            // The server has the editor join again when the access of its user changed.
+            const joins = () => network.sent.filter((message) => message.type === "collab-join").length;
+            const before = joins();
+            second.collaboration.receive({ type: "collab-rejoin", noteId: NOTE_ID, memberId: "writer2" });
+            expect(joins()).toBe(before + 1);
+            expect(second.view.state.readOnly).toBe(true);
+            network.drain();
+            expect(second.view.state.readOnly).toBe(false);
+
             first.collaboration.stop();
             network.drain();
             expect(network.saverChanges).toEqual([ "writer1:true", "writer2:true" ]);

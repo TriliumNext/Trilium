@@ -578,7 +578,7 @@ describe("WebSocket transport", () => {
 
         const join = { type: "collab-join", noteId: "note", memberId: "member", kind: "text" } as const;
         expect(ws.sendCollaborationMessage(join)).toBe(true);
-        expect(JSON.parse(lastSocket.sent.at(-1)!)).toEqual(join);
+        expect(JSON.parse(lastSocket.sent.at(-1) ?? "")).toEqual(join);
     });
 
     it("sendOutgoing returns false (no message sent) when the socket is not open and no IPC bridge exists", async () => {

@@ -98,6 +98,8 @@ export default class CodeCollaboration implements CollabEditor {
         if (message.type === "collab-denied") {
             this.session = undefined;
             this.leave();
+        } else if (message.type === "collab-rejoin") {
+            this.join();
         } else if (message.type === "collab-saver") {
             this.setSaver(message.isSaver);
         } else if (message.type === "collab-peers") {

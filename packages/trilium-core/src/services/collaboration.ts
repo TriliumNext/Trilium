@@ -7,18 +7,28 @@ import type { MessagingProvider } from "./messaging/types.js";
 import permissionService from "./permission_service.js";
 import userService from "./user_service.js";
 
+/** What the instance does with the sessions it runs. */
+export interface Collaboration {
+    handleMessage(clientId: string, message: CollabClientMessage): void;
+    /** Reads again what a user can do in their sessions, after their access to notes changed. */
+    recheckUser(userId: string): void;
+}
+
 /**
- * Runs the sessions over the messaging provider, and returns the handler of their messages. Only
- * a provider that knows the user of each connection can carry them, which leaves out the desktop
- * window and the standalone app: there, an editor that asks to join is turned down.
+ * Runs the sessions over the messaging provider. Only a provider that knows the user of each
+ * connection can carry them, which leaves out the desktop window and the standalone app: there,
+ * an editor that asks to join is turned down.
  */
-export function initCollaboration(provider: MessagingProvider) {
+export function initCollaboration(provider: MessagingProvider): Collaboration {
     if (!provider.getClientUserId || !provider.onClientDisconnected) {
-        return (clientId: string, message: CollabClientMessage) => {
-            if (message.type === "collab-join") {
-                const { noteId, memberId } = message;
-                provider.sendMessageToClient(clientId, { type: "collab-denied", noteId, memberId });
-            }
+        return {
+            handleMessage(clientId, message) {
+                if (message.type === "collab-join") {
+                    const { noteId, memberId } = message;
+                    provider.sendMessageToClient(clientId, { type: "collab-denied", noteId, memberId });
+                }
+            },
+            recheckUser() {}
         };
     }
 
@@ -27,8 +37,11 @@ export function initCollaboration(provider: MessagingProvider) {
         getAccess: getNoteAccess
     });
     provider.onClientDisconnected((clientId) => sessions.handleDisconnect(clientId));
-    return (clientId: string, message: CollabClientMessage) =>
-        sessions.handleMessage(clientId, provider.getClientUserId?.(clientId), message);
+    return {
+        handleMessage: (clientId, message) =>
+            sessions.handleMessage(clientId, provider.getClientUserId?.(clientId), message),
+        recheckUser: (userId) => sessions.recheckUser(userId)
+    };
 }
 
 /** The kind of editor that edits the notes of a type together. */

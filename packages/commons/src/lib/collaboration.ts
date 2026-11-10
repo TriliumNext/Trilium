@@ -105,6 +105,9 @@ export type CollabServerMessage = CollabAddress & ({
 } | {
     type: "collab-denied";
 } | {
+    /** What the user can do in the session changed. The editor joins again to take it up. */
+    type: "collab-rejoin";
+} | {
     /** An accepted batch. For the editor that sent it, `isOwn` makes it the acknowledgement. */
     type: "collab-ops";
     epoch: number;

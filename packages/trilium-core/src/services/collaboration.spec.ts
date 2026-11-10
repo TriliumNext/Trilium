@@ -39,7 +39,8 @@ describe("collaboration over the messaging provider", () => {
         cls.init(() => permissionService.setUserAccess(noteId, readerId, false));
 
         const { provider, sent, disconnect } = buildProvider();
-        const handle = initCollaboration(provider);
+        const collaboration = initCollaboration(provider);
+        const handle = collaboration.handleMessage;
         const joined = (clientId: string, joinedNoteId = noteId) => {
             sent.length = 0;
             handle(clientId, join(joinedNoteId));
@@ -51,9 +52,9 @@ describe("collaboration over the messaging provider", () => {
             .map(({ clientId, message }) => [ clientId, message.type, "canWrite" in message && message.canWrite ]);
 
         expect(joined(ownerId)).toEqual([ [ ownerId, "collab-joined", true ], [ ownerId, "collab-saver", false ] ]);
-        // The owner is asked for its content on behalf of each editor that joins after it.
+        // The owner is asked for its content once, on behalf of the editors that join after it.
         expect(joined(readerId)).toEqual([ [ ownerId, "collab-snapshot-request", false ] ]);
-        expect(joined(adminId)).toEqual([ [ ownerId, "collab-snapshot-request", false ] ]);
+        expect(joined(adminId)).toEqual([]);
 
         expect(joined(strangerId)).toEqual([ [ strangerId, "collab-denied", false ] ]);
         expect(joined("anonymous")).toEqual([ [ "anonymous", "collab-denied", false ] ]);
@@ -87,11 +88,28 @@ describe("collaboration over the messaging provider", () => {
         expect(peers?.message).toMatchObject({
             peers: [ { userId: ownerId, username: "collab-owner-spec", avatarHue: expect.any(Number) } ]
         });
+
+        // A reader who is given the right to write joins again to take it up, and one whose
+        // access is removed is turned out of the session.
+        sent.length = 0;
+        collaboration.recheckUser(readerId);
+        expect(summarize()).toEqual([]);
+        cls.init(() => permissionService.setUserAccess(noteId, readerId, true));
+        collaboration.recheckUser(readerId);
+        expect(summarize()).toEqual([ [ readerId, "collab-rejoin", false ] ]);
+
+        handle(readerId, join(noteId));
+        sent.length = 0;
+        cls.init(() => permissionService.revokeUserAccess(noteId, readerId));
+        collaboration.recheckUser(readerId);
+        expect(summarize()).toEqual([ [ readerId, "collab-denied", false ] ]);
     });
 
     it("turns down every editor on a provider that does not know the user of a connection", () => {
         const { provider, sent } = buildProvider();
-        const handle = initCollaboration({ ...provider, getClientUserId: undefined });
+        const collaboration = initCollaboration({ ...provider, getClientUserId: undefined });
+        const handle = collaboration.handleMessage;
+        collaboration.recheckUser("anyone");
 
         handle("client", join("root"));
         handle("client", { type: "collab-leave", noteId: "root", memberId: "m" });

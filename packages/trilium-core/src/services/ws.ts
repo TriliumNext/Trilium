@@ -1,7 +1,7 @@
 import { type EntityChange, type SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
-import { initCollaboration } from "./collaboration.js";
+import { type Collaboration, initCollaboration } from "./collaboration.js";
 import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
@@ -11,11 +11,13 @@ import { getMessagingProvider, MessagingProvider } from "./messaging/index.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 
 let messagingProvider!: MessagingProvider;
+let collaboration: Collaboration | undefined;
 let lastSyncedPush: number;
 
 function init() {
     messagingProvider = getMessagingProvider();
-    const handleCollaborationMessage = initCollaboration(messagingProvider);
+    const sessions = initCollaboration(messagingProvider);
+    collaboration = sessions;
 
     messagingProvider.setClientMessageHandler(async (clientId, message: any) => {
         const log = getLog();
@@ -28,7 +30,7 @@ function init() {
                 messagingProvider.sendMessageToClient(clientId, buildPingMessage());
             });
         } else if (typeof message.type === "string" && message.type.startsWith("collab-")) {
-            handleCollaborationMessage(clientId, message);
+            sessions.handleMessage(clientId, message);
         } else {
             log.error("Unrecognized message: ");
             log.error(message);
@@ -229,6 +231,8 @@ function reloadFroca(reason: string) {
 /** Has the user's open clients reload froca, after something changed which notes they can see. */
 function reloadFrocaForUser(userId: string, reason: string) {
     messagingProvider?.sendMessageToUserClients?.(userId, { type: "reload-froca", reason });
+    // The editors of the user are in sessions with the access they had when they joined.
+    collaboration?.recheckUser(userId);
 }
 
 function setLastSyncedPush(entityChangeId: number) {

@@ -1,7 +1,7 @@
 import type { CollabClientMessage, CollabServerMessage } from "./collaboration.js";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { CollaborationSessions } from "./collaboration_sessions.js";
+import { CollaborationSessions, LOG_LIMIT } from "./collaboration_sessions.js";
 
 type Sent = CollabServerMessage & { clientId: string };
 
@@ -175,6 +175,74 @@ describe("CollaborationSessions", () => {
         send("other", { type: "collab-leave" });
         expect(peersOf("writer")).toEqual([ { peerId: "3", userId: "reader", username: "READER", avatarHue: 7 } ]);
         expect(peersOf("reader")).toEqual([ writer ]);
+    });
+
+    it("turns out an editor whose user lost access, and has one whose right to write changed join again", () => {
+        joinTwoWriters();
+        send("reader", { type: "collab-join" });
+        send("writer", { type: "collab-snapshot", epoch: 1, version: 0, authoritative: false, snapshot });
+        const recheck = (userId: string) => {
+            const before = sent.length;
+            sessions.recheckUser(userId);
+            return withoutPeers(sent.slice(before)).map(({ clientId, type }) => ({ clientId, type }));
+        };
+
+        expect(recheck("other")).toEqual([]);
+        expect(recheck("nobody")).toEqual([]);
+
+        access.other = { canWrite: false };
+        expect(recheck("other")).toEqual([ { clientId: "other", type: "collab-rejoin" } ]);
+        // The editor is out of the session until it joins again, so what it still sends is dropped.
+        expect(send("other", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "late" ] })).toEqual([]);
+        send("other", { type: "collab-join" });
+        send("writer", { type: "collab-snapshot", epoch: 1, version: 0, authoritative: false, snapshot });
+        expect(send("other", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "as reader" ] })).toEqual([]);
+
+        // The saver that loses its access hands the saving on with it.
+        access.other = { canWrite: true };
+        recheck("other");
+        send("other", { type: "collab-join" });
+        send("writer", { type: "collab-snapshot", epoch: 1, version: 0, authoritative: false, snapshot });
+        Reflect.deleteProperty(access, "writer");
+        expect(recheck("writer")).toEqual([
+            { clientId: "writer", type: "collab-denied" },
+            { clientId: "other", type: "collab-saver" }
+        ]);
+        expect(send("writer", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "gone" ] })).toEqual([]);
+    });
+
+    it("asks for a snapshot once it holds many batches, and drops the ones before it", () => {
+        send("writer", { type: "collab-join" });
+        const requests = () => sent.filter((message) => message.type === "collab-snapshot-request").length;
+        for (let version = 0; version < LOG_LIMIT + 2; version++) {
+            send("writer", { type: "collab-ops", epoch: 1, baseVersion: version, ops: [ version ] });
+        }
+        // The request is made once, and again only after it was answered.
+        expect(requests()).toBe(1);
+
+        send("writer", {
+            type: "collab-snapshot", epoch: 1, version: LOG_LIMIT + 1, authoritative: false, snapshot
+        });
+        send("other", { type: "collab-join" });
+        expect(requests()).toBe(2);
+        const joined = send("writer", {
+            type: "collab-snapshot", epoch: 1, version: LOG_LIMIT + 1, authoritative: false, snapshot
+        });
+        expect(joined).toEqual([ {
+            clientId: "other", type: "collab-joined", epoch: 1, version: LOG_LIMIT + 2, snapshot,
+            batches: [ [ LOG_LIMIT + 1 ] ], canWrite: true
+        } ]);
+    });
+
+    it("asks the writers that are left when the one that was asked for a snapshot leaves", () => {
+        joinTwoWriters();
+        send("reader", { type: "collab-join" });
+        const before = sent.length;
+        sessions.handleDisconnect("writer");
+        expect(withoutPeers(sent.slice(before)).map(({ clientId, type }) => ({ clientId, type }))).toEqual([
+            { clientId: "other", type: "collab-saver" },
+            { clientId: "other", type: "collab-snapshot-request" }
+        ]);
     });
 
     it("takes the content of a writer that joins readers, and of the saved note once the writers left", () => {

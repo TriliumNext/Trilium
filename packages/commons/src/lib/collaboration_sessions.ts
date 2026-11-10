@@ -20,6 +20,12 @@ export interface CollaborationAccess {
 /** The number of versions whose content hash a session keeps to compare the editors. */
 const KEPT_HASHES = 20;
 
+/**
+ * The number of batches a session keeps before it asks for a snapshot, which lets it drop them.
+ * An editor that joins needs the batches accepted after the snapshot it starts from.
+ */
+export const LOG_LIMIT = 500;
+
 interface Member {
     key: string;
     clientId: string;
@@ -46,6 +52,8 @@ interface Session {
     hashes: Map<number, string>;
     /** The member whose model the pending reset takes. Nothing is accepted until it answers. */
     resetAuthority?: string;
+    /** Whether the writers were asked for a snapshot that has not arrived yet. */
+    isSnapshotRequested: boolean;
     saver?: string;
     /** The number of editors that have joined, which names the next one. */
     peerCount: number;
@@ -118,6 +126,29 @@ export class CollaborationSessions {
         }
     }
 
+    /**
+     * Reads again what a user can do in their sessions, after their access to notes changed. An
+     * editor that lost its access is turned out, and one whose right to write changed joins again.
+     */
+    recheckUser(userId: string) {
+        for (const session of [ ...this.sessions.values() ]) {
+            const members = [ ...session.members.values(), ...session.waiting.values() ]
+                .filter((member) => member.peer.userId === userId);
+            if (!members.length) {
+                continue;
+            }
+
+            const access = this.host.getAccess(session.noteId, userId, session.kind);
+            const changed = members.filter((member) => access?.canWrite !== member.canWrite);
+            for (const member of changed) {
+                this.send(session, member, { type: access ? "collab-rejoin" : "collab-denied" });
+            }
+            if (changed.length) {
+                this.remove(session, changed.map((member) => member.key));
+            }
+        }
+    }
+
     private join(
         clientId: string, userId: string | undefined, noteId: string, memberId: string, kind: CollabEditorKind
     ) {
@@ -132,7 +163,7 @@ export class CollaborationSessions {
         if (!session) {
             session = {
                 noteId, kind, epoch: 1, version: 0, log: [], logStart: 0,
-                members: new Map(), waiting: new Map(), hashes: new Map(), peerCount: 0
+                members: new Map(), waiting: new Map(), hashes: new Map(), isSnapshotRequested: false, peerCount: 0
             };
             this.sessions.set(noteId, session);
         }
@@ -152,11 +183,8 @@ export class CollaborationSessions {
     private admit(session: Session, member: Member) {
         const writers = getWriters(session);
         if (writers.length) {
-            // Only an editor that can write is asked, since its model becomes the content of others.
             session.waiting.set(member.key, member);
-            for (const writer of writers) {
-                this.send(session, writer, { type: "collab-snapshot-request", epoch: session.epoch, authoritative: false });
-            }
+            this.requestSnapshot(session);
             return;
         }
 
@@ -188,6 +216,11 @@ export class CollaborationSessions {
         }
         this.updateSaver(session);
         this.sendPeers(session);
+        // The editor that left may have been the one to answer.
+        session.isSnapshotRequested = false;
+        if (session.waiting.size) {
+            this.requestSnapshot(session);
+        }
 
         if (!getWriters(session).length) {
             // Nobody is left to provide a snapshot, so the waiting editors start from the saved content.
@@ -219,6 +252,23 @@ export class CollaborationSessions {
             this.send(session, other, {
                 type: "collab-ops", epoch: session.epoch, version: session.version, isOwn: other === member, ops
             });
+        }
+        if (session.log.length >= LOG_LIMIT) {
+            this.requestSnapshot(session);
+        }
+    }
+
+    /**
+     * Asks the writers for their model, once. Only an editor that can write is asked, since its
+     * model becomes the content of others.
+     */
+    private requestSnapshot(session: Session) {
+        if (session.isSnapshotRequested) {
+            return;
+        }
+        for (const writer of getWriters(session)) {
+            session.isSnapshotRequested = true;
+            this.send(session, writer, { type: "collab-snapshot-request", epoch: session.epoch, authoritative: false });
         }
     }
 
@@ -252,6 +302,7 @@ export class CollaborationSessions {
         if (session.resetAuthority) {
             return;
         }
+        session.isSnapshotRequested = false;
         const isUsable = Number.isInteger(version)
             && version >= (session.snapshot?.version ?? session.logStart)
             && version <= session.version;
@@ -341,6 +392,7 @@ export class CollaborationSessions {
         session.snapshot = undefined;
         session.hashes.clear();
         session.resetAuthority = undefined;
+        session.isSnapshotRequested = false;
     }
 
     /** The editor that saves the note is the writer that has been in the session the longest. */

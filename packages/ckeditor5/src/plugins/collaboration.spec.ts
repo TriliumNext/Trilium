@@ -164,6 +164,15 @@ describe("Collaboration", () => {
             network.drain();
             expect(second.getData()).toBe("<p>Hello!</p>");
 
+            // The server has the editor join again when the access of its user changed.
+            const joins = () => network.sent.filter((message) => message.type === "collab-join").length;
+            const before = joins();
+            first.plugins.get("Collaboration").receive({ type: "collab-rejoin", noteId: NOTE_ID, memberId: "writer1" });
+            expect(joins()).toBe(before + 1);
+            expect(first.isReadOnly).toBe(true);
+            network.drain();
+            expect(first.isReadOnly).toBe(false);
+
             // Without a session there is nothing to join again.
             second.plugins.get("Collaboration").stop();
             second.plugins.get("Collaboration").stop();
