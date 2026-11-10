@@ -100,6 +100,22 @@ describe("becca_loader", () => {
             expect(Array.isArray(created.children)).toBe(true);
         });
 
+        it("registers a newly synced option under its name", () => {
+            expect(becca.getOption("loaderSyncedOption")).toBeNull();
+
+            eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
+                entityName: "options",
+                entityRow: { name: "loaderSyncedOption", value: "synced", isSynced: true, utcDateModified: "2024-01-01 00:00:00.000Z" }
+            });
+
+            try {
+                expect(becca.getOption("loaderSyncedOption")?.value).toBe("synced");
+                expect(Object.keys(becca.options)).not.toContain("undefined");
+            } finally {
+                delete becca.options.loaderSyncedOption;
+            }
+        });
+
         it("ignores synced rows for entity names outside the handled set", () => {
             // "blobs" is a valid entity but not in the becca_loader handled list,
             // so neither the create/update branch nor post-processing should run.
