@@ -13,6 +13,13 @@ describe("shouldShowInlineTitle", () => {
         expect(shouldShowInlineTitle(textNote, "text", viewScope)).toBe(true);
         expect(shouldShowInlineTitle(codeNote, "code", viewScope)).toBe(false);
     });
+
+    it("leaves text notes to the title row when the compact title style is chosen", () => {
+        const textNote = buildNote({ title: "Note", type: "text" });
+
+        expect(shouldShowInlineTitle(textNote, "text", viewScope, "large")).toBe(true);
+        expect(shouldShowInlineTitle(textNote, "text", viewScope, "compact")).toBe(false);
+    });
 });
 
 describe("observeTitleInView", () => {

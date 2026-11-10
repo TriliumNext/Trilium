@@ -106,6 +106,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeBlockThemeDark: string;
     textNoteEditorType: string;
     layoutOrientation: string;
+    /** How a text note shows its title: `large` above the content, or `compact` in the title row only. */
+    noteTitleStyle: "large" | "compact";
     allowedHtmlTags: string;
     /** JSON: what the Content Manager's cleanup tool was last set to erase — see `CleanupToolOptions`. */
     cleanupToolOptions: string;

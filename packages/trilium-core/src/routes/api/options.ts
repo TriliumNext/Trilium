@@ -143,6 +143,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteHtmlSupportEnabled",
     "clipboardImageEmbedEnabled",
     "layoutOrientation",
+    "noteTitleStyle",
     "backgroundEffects",
     "allowedHtmlTags",
     "cleanupToolOptions",

@@ -23,6 +23,8 @@ Note types that take the entirety of the screen, such as <a class="reference-li
 
 Under the note title, the <a class="reference-link" href="New%20note%20type%20switcher.md">New note type switcher</a> appears if the note is empty.
 
+To use the fixed title bar for text notes as well, go to <a class="reference-link" href="../UI%20Elements/Options.md">Options</a> → _Appearance_ → _User Interface_ and set _Note title_ to _Compact_. The title then stays in the fixed title bar and the content starts right below it; the creation and modification dates are not shown. The setting applies to the current device only.
+
 <figure class="image"><img style="aspect-ratio:899/122;" src="Title_image.png" width="899" height="122"><figcaption>The <em>Inline title</em>, which is displayed at the top of the note and can be scrolled past.</figcaption></figure><figure class="image"><img style="aspect-ratio:910/104;" src="1_Title_image.png" width="910" height="104"><figcaption>The fixed title bar. The title only appears after scrolling past the <em>Inline title</em>.</figcaption></figure>
 
 ### Editing the title
