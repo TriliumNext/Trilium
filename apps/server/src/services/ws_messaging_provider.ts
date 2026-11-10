@@ -50,6 +50,7 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
     private webSocketServer!: WebSocketServer;
     private clientMap = new Map<string, ClientEntry>();
     private clientMessageHandler?: ClientMessageHandler;
+    private disconnectHandlers: ((clientId: string) => void)[] = [];
 
     attachToHttpServer(httpServer: HttpServer, sessionParser: express.RequestHandler) {
         this.webSocketServer = new WebSocketServer({
@@ -82,7 +83,7 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
                 // exception and crashes the whole process. Log and drop the connection instead.
                 // https://github.com/TriliumNext/Trilium/issues/9598
                 console.error("WebSocket connection error:", error);
-                this.clientMap.delete(id);
+                this.removeClient(id);
             });
 
             ws.on("message", (messageJson) => {
@@ -102,7 +103,7 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
             });
 
             ws.on("close", () => {
-                this.clientMap.delete(id);
+                this.removeClient(id);
             });
         });
 
@@ -110,6 +111,23 @@ export default class WebSocketMessagingProvider implements HttpAttachableMessagi
             // https://github.com/zadam/trilium/issues/3374#issuecomment-1341053765
             console.log(error);
         });
+    }
+
+    private removeClient(id: string) {
+        if (!this.clientMap.delete(id)) {
+            return;
+        }
+        for (const handler of this.disconnectHandlers) {
+            handler(id);
+        }
+    }
+
+    getClientUserId(clientId: string): string | undefined {
+        return this.clientMap.get(clientId)?.userId;
+    }
+
+    onClientDisconnected(handler: (clientId: string) => void): void {
+        this.disconnectHandlers.push(handler);
     }
 
     /**

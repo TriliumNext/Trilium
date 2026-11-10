@@ -1,3 +1,4 @@
+import type { CollabServerMessage } from "./collaboration.js";
 import type { LlmStreamChunk } from "./llm_api.js";
 import type { ResourceDownloadProgress } from "./resources.js";
 
@@ -130,7 +131,7 @@ type AllTaskDefinitions =
     | TaskDefinition<"importNotes">
     | TaskDefinition<"importAttachments">;
 
-export type WebSocketMessage = AllTaskDefinitions | {
+export type WebSocketMessage = AllTaskDefinitions | CollabServerMessage | {
     type: "ping",
     /**
      * Live protected-session state of the backend, present on server→client pings. Lets the client

@@ -1,13 +1,16 @@
 import "./code.css";
 
-import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
+import { CodeCollaboration, default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
 import { NoteType } from "@triliumnext/commons";
 import { Ref } from "preact";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import { CommandListenerData } from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import {
+    isCollaboratingOn, isSavedByAnotherEditor, startCollaboration, stopCollaboration
+} from "../../../services/collaboration";
 import { t } from "../../../services/i18n";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import utils from "../../../services/utils";
@@ -125,14 +128,44 @@ export function EditableCode({
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
     const [ customRequestHandler ] = useNoteLabel(note, "customRequestHandler");
     const mime = useNoteProperty(note, "mime");
+    const collaborationRef = useRef<
+        { view: VanillaCodeMirror; collaboration: CodeCollaboration } | undefined
+    >(undefined);
+    /**
+     * The side of the editor that edits the note together with the other users: a code note,
+     * which a Markdown note is too, or a Mermaid note.
+     */
+    function getCollaboration() {
+        const view = editorRef.current;
+        if (!view || (noteType !== "code" && noteType !== "mermaid")) return undefined;
+        if (collaborationRef.current?.view !== view) {
+            collaborationRef.current = { view, collaboration: new CodeCollaboration(view) };
+        }
+        return collaborationRef.current.collaboration;
+    }
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteType,
         noteContext,
-        getData: () => ({ content: editorRef.current?.getText() ?? "" }),
+        getData: () => {
+            const collaboration = getCollaboration();
+            if (collaboration && isSavedByAnotherEditor(collaboration)) return undefined;
+            return { content: editorRef.current?.getText() ?? "" };
+        },
         onContentChange: (content) => {
             const codeEditor = editorRef.current;
             if (!codeEditor) return;
+            const collaboration = getCollaboration();
+            if (collaboration && isCollaboratingOn(collaboration, note.noteId)) {
+                // The session holds the content, and what its saver saved trails it. The saver
+                // itself only receives what was written past the session, such as a sample
+                // diagram, and types it in for everyone.
+                if (!isSavedByAnotherEditor(collaboration) && codeEditor.getText() !== (content ?? "")) {
+                    codeEditor.setText(content ?? "");
+                }
+                return;
+            }
+            if (collaboration) stopCollaboration(collaboration);
             codeEditor.setText(content ?? "");
             // `setText()` loads a hidden editor without an update, so its listener reports nothing.
             if (!codeEditor.dom.checkVisibility()) {
@@ -140,6 +173,12 @@ export function EditableCode({
             }
             codeEditor.setMimeType(note.mime);
             codeEditor.clearHistory();
+            if (collaboration) {
+                startCollaboration(collaboration, note, {
+                    onBecomeSaver: () => spacedUpdate.scheduleUpdate(),
+                    onPeersChange: (peers) => noteContext?.setContextData("collaborators", peers)
+                });
+            }
 
             // Jump to the first search match when navigated from search results.
             consumeSearchTerms(noteContext, ntxId);
@@ -147,6 +186,11 @@ export function EditableCode({
         dataSaved,
         updateInterval
     });
+
+    // The editor leaves the session while it can still be told to, before it is destroyed.
+    useLayoutEffect(() => () => {
+        if (collaborationRef.current) stopCollaboration(collaborationRef.current.collaboration);
+    }, []);
 
     useSearchTermsConsumer(note, noteContext, ntxId);
 

@@ -1,4 +1,4 @@
-import { WebSocketMessage } from "@triliumnext/commons";
+import { type CollabClientMessage, WebSocketMessage } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type { EntityChange } from "../server_types.js";
@@ -13,6 +13,7 @@ import utils, { getErrorMessage, isPreAuthScreen } from "./utils.js";
 
 type MessageHandler = (message: WebSocketMessage) => void;
 let messageHandlers: MessageHandler[] = [];
+const connectionHandlers: (() => void)[] = [];
 
 let ws: WebSocket;
 // In Electron desktop, messaging goes over Chromium IPC (no TCP socket,
@@ -60,6 +61,16 @@ function logInfo(message: string) {
 
 window.logError = logError;
 window.logInfo = logInfo;
+
+/** Registers a handler that runs each time the WebSocket connects, the first time included. */
+export function subscribeToConnection(connectionHandler: () => void) {
+    connectionHandlers.push(connectionHandler);
+}
+
+/** Sends a message of a collaborative editing session, and returns whether it could be sent. */
+export function sendCollaborationMessage(message: CollabClientMessage) {
+    return sendOutgoing(message);
+}
 
 export function subscribeToMessages(messageHandler: MessageHandler) {
     messageHandlers.push(messageHandler);
@@ -304,7 +315,12 @@ function connectWebSocket() {
 
     // use wss for secure messaging
     const ws = new WebSocket(webSocketUri);
-    ws.onopen = () => console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+    ws.onopen = () => {
+        console.debug(utils.now(), `Connected to server ${webSocketUri} with WebSocket`);
+        for (const connectionHandler of connectionHandlers) {
+            connectionHandler();
+        }
+    };
     ws.onmessage = handleWebSocketMessage;
     // we're not handling ws.onclose here because reconnection is done in sendPing()
 
