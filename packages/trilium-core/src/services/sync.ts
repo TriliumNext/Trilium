@@ -300,6 +300,15 @@ async function doLogin(): Promise<SyncContext> {
 }
 
 async function pullChanges(syncContext: SyncContext) {
+    try {
+        await pullChangeBatches(syncContext);
+    } finally {
+        // A failed pull must not hand its total to the next one, whose progress would start from it.
+        totalPullCount = null;
+    }
+}
+
+async function pullChangeBatches(syncContext: SyncContext) {
     const log = getLog();
     const maxBatchBytes = getMaxPullBatchBytes();
     const maxBlobContentSize = getMaxBlobContentSize();
@@ -427,8 +436,6 @@ async function pullChanges(syncContext: SyncContext) {
     }
 
     log.info("Finished pull");
-
-    totalPullCount = null;
 }
 
 async function fetchChangesChunk(syncContext: SyncContext, cursor: number, maxBlobContentSize: number): Promise<ChangesResponse> {

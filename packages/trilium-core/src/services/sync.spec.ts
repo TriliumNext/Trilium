@@ -289,6 +289,33 @@ describe("sync service", () => {
         expect(fetched).toEqual([ 0, 1 ]);
     });
 
+    it("starts the next pull's progress from a fresh total after a pull fails", async () => {
+        const prevInitialized = options.getOptionOrNull("initialized");
+        cls.init(() => options.setOption("initialized", "true"));
+        const update = vi.spyOn(syncUpdateService, "updateEntities").mockImplementationOnce(() => {
+            throw new Error("apply failed");
+        });
+        const pullSpy = vi.spyOn(ws, "syncPullInProgress");
+
+        try {
+            config.changed = [ { entityChanges: [ pulledOptionChange() ], lastEntityChangeId: 1, outstandingPullCount: 50 } ];
+            await expect(runSync()).resolves.toMatchObject({ success: false, message: "apply failed" });
+            expect(syncService.getTotalPullCount()).toBeNull();
+
+            update.mockImplementation(() => {});
+            changedIdx = 0;
+            config.changed = [
+                { entityChanges: [ pulledOptionChange() ], lastEntityChangeId: 2, outstandingPullCount: 0 },
+                { entityChanges: [], lastEntityChangeId: 2, outstandingPullCount: 0 }
+            ];
+            await expect(runSync()).resolves.toEqual({ success: true });
+        } finally {
+            cls.init(() => options.setOption("initialized", prevInitialized ?? "true"));
+        }
+
+        expect(pullSpy.mock.calls).toEqual([ [ { pulled: 1, total: 1 } ] ]);
+    });
+
     it("applies nothing from a server that reports no instance id, and keeps an unmoved cursor", async () => {
         config.login = { instanceId: "", maxEntityChangeId: 100 };
         config.changed = [
