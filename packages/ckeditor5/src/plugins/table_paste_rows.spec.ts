@@ -81,6 +81,22 @@ describe("TablePasteRows", () => {
         expect(selectedCellTexts(editor)).toEqual(["plain", ""]);
     });
 
+    it("inserts rows only once when the paste inserts content more than once", () => {
+        setModelData(editor.model, modelTable([ [ "1[]1", "12" ] ]));
+        let nested = false;
+        editor.model.on("insertContent", () => {
+            if (nested) {
+                return;
+            }
+            nested = true;
+            editor.model.insertContent(editor.model.change((writer) => writer.createText("more")));
+        }, { priority: "low" });
+
+        editor.execute(BELOW, { html: "", text: "plain" });
+
+        expect(tableData(editor)).toBe(modelTable([ [ "11", "12" ], [ "plainmore", "" ] ]));
+    });
+
     it("keeps the new rows out of a block of rows joined by a merged cell", () => {
         const block = (...rows: string[][]) => modelTable([
             [{ contents: "a", rowspan: 2 }, "b"],
