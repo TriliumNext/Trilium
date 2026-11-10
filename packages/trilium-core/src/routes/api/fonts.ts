@@ -15,8 +15,8 @@ function getFontCss(req: Request, res: Response) {
 
     const optionsMap = optionService.getOptionMap();
 
-    // using body to be more specific than themes' :root
-    let style = "body {";
+    // `html:root` outranks the themes' `:root` and `html`, and `--main-font-size` must reach `<html>`.
+    let style = "html:root {";
     style += getFontFamily(optionsMap);
     style += getFontSize(optionsMap);
     style += "}";

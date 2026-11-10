@@ -4,7 +4,7 @@
     width: 34rem;
     max-width: calc(100vw - 2rem);
     /* Overrides the text styles inherited from CKEditor's `ck-reset_all`. */
-    font-size: var(--main-font-size);
+    font-size: 1rem;
     line-height: var(--bs-body-line-height);
     white-space: normal;
     text-align: start;
