@@ -1182,7 +1182,11 @@
     "color_scheme_switcher_dark": "ダークモード",
     "color_scheme_switcher_hint": "クリックして配色を切り替えます。",
     "color_scheme_switcher_unsupported": "現在のテーマは配色の変更に対応していません。",
-    "edited_notes_expanded": "日ノートで \"この日に編集されたノート\" を展開"
+    "edited_notes_expanded": "日ノートで \"この日に編集されたノート\" を展開",
+    "note_title_style": "ノートのタイトル",
+    "note_title_style_description": "コンパクトなタイトルはノート上部のバーにのみ表示されるため、コンテンツの表示領域を広く確保できます。作成日や更新日は表示されません。",
+    "note_title_style_large": "大きめ",
+    "note_title_style_compact": "コンパクト"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vimキーバインド",
