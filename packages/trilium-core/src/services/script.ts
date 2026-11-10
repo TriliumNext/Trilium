@@ -220,9 +220,9 @@ export function getScriptBundle(note: BNote, root: boolean = true, scriptEnv: st
         const childBundle = getScriptBundle(child, false, scriptEnv, includedNoteIds);
 
         if (childBundle) {
-            /* v8 ignore next -- a bundle built here always carries its note */
-            if (childBundle.note) {
-                modules.push(childBundle.note);
+            // An HTML child only contributes markup; it defines no module to pass as a parameter.
+            if (child.isJavaScript() || child.isJsx()) {
+                modules.push(child);
             }
             bundle.script += childBundle.script;
             bundle.html += childBundle.html;

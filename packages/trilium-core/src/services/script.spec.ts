@@ -536,6 +536,25 @@ describe("script bundles with child modules", () => {
         expect(bundle?.allNotes?.map((n) => n.title)).toEqual([ "New note", "markup" ]);
     });
 
+    it("runs a script whose children include HTML, passing only script children as modules", () => {
+        const parent = buildNote({
+            type: "code",
+            mime: "application/javascript;env=backend",
+            content: "return typeof markup + ':' + helper.value;",
+            children: [
+                { title: "markup", type: "file", mime: "text/html", content: "<b>child html</b>" },
+                { title: "helper", type: "code", mime: "application/javascript;env=backend", content: "module.exports = { value: 7 };" }
+            ]
+        });
+
+        const bundle = getScriptBundle(parent, true, "backend");
+        expect(bundle?.html).toBe("<b>child html</b>");
+        expect(bundle?.script).toContain("function(exports, module, require, api, helper)");
+        getContext().init(() => {
+            expect(scriptService.executeNote(parent, {})).toBe("undefined:7");
+        });
+    });
+
     it("returns a stub bundle for a note that is already part of the bundle", () => {
         const note = buildNote({ type: "code", mime: "application/javascript;env=backend", content: "return 1;" });
 
