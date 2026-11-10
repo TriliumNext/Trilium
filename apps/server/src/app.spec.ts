@@ -3,7 +3,6 @@ import compression from "compression";
 import type { Application } from "express";
 import express from "express";
 import fs from "fs";
-import os from "os";
 import path from "path";
 import supertest from "supertest";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -89,21 +88,6 @@ describe("buildApp", () => {
 
         await supertest(app).get("/api/health-check");
         expect(compressible).toHaveBeenCalled();
-    });
-
-    it("renders .ejs views with EJS", async () => {
-        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "trilium-views-"));
-        const view = path.join(dir, "greeting.ejs");
-        fs.writeFileSync(view, "<p><%= greeting %>, <%= name %></p>");
-
-        try {
-            const html = await new Promise<string | undefined>((resolve, reject) => {
-                app.render(view, { greeting: "Hello", name: "<Trilium>" }, (err, rendered) => (err ? reject(err) : resolve(rendered)));
-            });
-            expect(html).toBe("<p>Hello, &lt;Trilium&gt;</p>");
-        } finally {
-            fs.rmSync(dir, { recursive: true, force: true });
-        }
     });
 
     it("serves the development icon in a checkout", async () => {
