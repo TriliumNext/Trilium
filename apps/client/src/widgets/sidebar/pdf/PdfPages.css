@@ -49,7 +49,7 @@
 }
 
 .pdf-page-number {
-    font-size: 12px;
+    font-size: .75rem;
     margin-top: 4px;
     color: var(--main-text-color);
     background-color: var(--accented-background-color);
@@ -59,7 +59,7 @@
 
 .pdf-page-loading {
     color: var(--muted-text-color);
-    font-size: 11px;
+    font-size: .7rem;
 }
 
 .no-pages {

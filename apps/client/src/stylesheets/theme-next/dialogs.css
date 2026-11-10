@@ -327,11 +327,11 @@ body.desktop .jump-to-note-dialog .input-group {
 }
 
 .help-dialog .card-body h5 {
-    font-size: 20px;
+    font-size: 1.25rem;
 }
 
 .help-dialog .card-body h6 {
-    font-size: 15px;
+    font-size: .95rem;
     padding-bottom: 0.5em;
 }
 

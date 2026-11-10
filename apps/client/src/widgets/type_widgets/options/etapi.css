@@ -16,5 +16,5 @@
     flex: 1 1 auto;
     margin: 0;
     color: var(--muted-text-color);
-    font-size: 13px;
+    font-size: .8rem;
 }

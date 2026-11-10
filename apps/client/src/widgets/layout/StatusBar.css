@@ -236,7 +236,7 @@
 
 .similar-notes-widget > .similar-notes-wrapper {
     /* The font size of the links with the highest similarity score */
-    font-size: 17px;
+    font-size: 1.05rem;
 }
 
 .similar-notes-wrapper {

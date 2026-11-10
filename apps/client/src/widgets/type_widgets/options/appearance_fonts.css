@@ -113,7 +113,7 @@ body.mobile .modal.font-picker-modal {
         overflow: auto;
 
         .dropdown-item {
-            font-size: 14px;
+            font-size: .875rem;
 
             /* Each row names a family the browser has to resolve to lay the row out, and the list
                runs to every family the device has. Skipping the rows out of view keeps that off the
@@ -148,13 +148,13 @@ body.mobile .modal.font-picker-modal {
     label {
         font-weight: 500;
         color: var(--muted-text-color);
-        font-size: 12px;
+        font-size: .75rem;
         text-transform: uppercase;
     }
 
     .font-size-description {
         color: var(--muted-text-color);
-        font-size: 12px;
+        font-size: .75rem;
     }
 }
 
@@ -189,7 +189,7 @@ body.mobile .modal.font-picker-modal {
     label {
         font-weight: 500;
         color: var(--muted-text-color);
-        font-size: 12px;
+        font-size: .75rem;
         text-transform: uppercase;
     }
 }
