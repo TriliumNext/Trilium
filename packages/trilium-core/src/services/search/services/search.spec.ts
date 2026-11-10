@@ -1580,6 +1580,23 @@ describe("Search", () => {
                 .toBe(`~author="Target"\n~authorOld="${gone.note.noteId}"`);
         });
 
+        it("leaves out a definition when the note holds the attribute it defines", () => {
+            const parent = note("Parent")
+                .label("label:origin", "promoted,single,boolean", true)
+                .label("relation:source", "promoted,single", true);
+            const child = note("Child").label("origin", "true");
+            const other = note("Other").label("source");
+            rootNote.child(parent);
+            parent.child(child).child(other);
+
+            expect(searchService.extractAttributeSnippet(child.note.noteId, [ "origin" ]))
+                .toBe(`#origin="true"`);
+            expect(searchService.extractAttributeSnippet(parent.note.noteId, [ "origin" ]))
+                .toBe(`#label:origin="promoted,single,boolean"`);
+            expect(searchService.extractAttributeSnippet(other.note.noteId, [ "source" ]))
+                .toBe(`#source\n#relation:source="promoted,single"`);
+        });
+
         it("cuts a long snippet at a line, at a word or mid-word", () => {
             const lines = note("Lines").label("topic1", "x".repeat(30)).label("topic2", "y".repeat(30));
             const words = note("Words").label("topic", "word ".repeat(20).trim());

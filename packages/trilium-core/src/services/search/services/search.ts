@@ -740,10 +740,18 @@ function extractAttributeSnippet(noteId: string, searchTokens: HighlightedTokenI
         }
 
         const matchingAttributes: Array<{name: string, value: string, type: string}> = [];
+        const heldAttributes = new Set(attributes
+            .filter((attr) => !attr.isDefinition())
+            .map((attr) => `${attr.type}:${attr.name}`));
 
         // Look for attributes that match the search tokens
         for (const attr of attributes) {
             if (attr.type === "label" && SNIPPET_HIDDEN_LABELS.has(attr.name)) {
+                continue;
+            }
+
+            // The attribute's own line already shows what its definition sets up.
+            if (attr.isDefinition() && heldAttributes.has(attr.name)) {
                 continue;
             }
 
