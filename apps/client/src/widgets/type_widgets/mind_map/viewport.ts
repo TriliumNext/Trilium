@@ -1,4 +1,4 @@
-import type { MindElixirInstance } from "mind-elixir";
+import type { default as MindElixirInstance } from "mind-elixir";
 
 /** A point of the map, in the map's own coordinates — the ones a node is laid out in. */
 export interface MapPoint {

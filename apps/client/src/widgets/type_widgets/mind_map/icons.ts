@@ -52,7 +52,7 @@ export function renderIconClasses(container: HTMLElement) {
 function leadWithFirstIcon(container: HTMLElement) {
     let moved = false;
 
-    for (const topic of container.querySelectorAll<HTMLElement>("me-tpc")) {
+    for (const topic of container.querySelectorAll<HTMLElement>(".me-tpc")) {
         // One already at the front is this same pass having run before, the node not having been
         // rendered since; moving again would take the second icon along with it.
         if (topic.querySelector(`:scope > .${LEAD_ICON_CLASS}`)) continue;
@@ -109,7 +109,7 @@ export interface ExportedIcon {
  * are left behind it, being invisible.
  */
 export async function renderExportedIcons(nodes: HTMLElement): Promise<ExportedIcon[]> {
-    const worn = nodes.querySelectorAll<HTMLElement>(`me-tpc > .${LEAD_ICON_CLASS}, me-tpc > .icons > span`);
+    const worn = nodes.querySelectorAll<HTMLElement>(`.me-tpc > .${LEAD_ICON_CLASS}, .me-tpc > .icons > span`);
 
     const drawn = await Promise.all(Array.from(worn, async (element) => {
         const placement = measureIcon(element, nodes);
@@ -176,7 +176,7 @@ function measureIcon(element: HTMLElement, nodes: HTMLElement) {
  * walks it for everything else it writes out — so that what is measured here lands in the same
  * coordinates as the layers it is written into.
  */
-function offsetWithin(element: HTMLElement, ancestor: HTMLElement) {
+export function offsetWithin(element: HTMLElement, ancestor: HTMLElement) {
     let offsetLeft = 0;
     let offsetTop = 0;
 

@@ -3,7 +3,7 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import i18next from "i18next";
-import { DARK_THEME, MindElixirInstance, THEME as LIGHT_THEME } from "mind-elixir";
+import { DARK_THEME, type default as MindElixirInstance, THEME as LIGHT_THEME } from "mind-elixir";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -29,7 +29,7 @@ vi.mock("mind-elixir", async (importOriginal) => {
 
     /** Records each instance built, whether it was destroyed, and when it was laid out. */
     class FakeMindElixir {
-        nodes = document.createElement("me-nodes");
+        nodes = Object.assign(document.createElement("div"), { className: "me-nodes" });
         currentNodes = [];
         theme = { name: "Latte" };
         listeners = new Map<string, Set<() => void>>();
@@ -55,7 +55,7 @@ vi.mock("mind-elixir", async (importOriginal) => {
         getData() { return {}; }
         /** As the map does: lays out the root, draws the branches and centers itself. */
         init() {
-            this.nodes.replaceChildren(document.createElement("me-root"));
+            this.nodes.replaceChildren(Object.assign(document.createElement("div"), { className: "me-root" }));
             this.linkDiv();
             this.toCenter();
         }
@@ -236,7 +236,7 @@ describe("localizeBuiltLabels", () => {
         const mind = fakeMind({
             // The library hands a summary it has just built straight to the editor, through the
             // instance — which is the moment the name is replaced in.
-            createSummary: function () { this.editSummary(built); },
+            createSummary: function (this: MindElixirInstance) { this.editSummary(built); },
             editSummary: (summary) => void edited.push(summary)
         });
         localizeBuiltLabels(mind);

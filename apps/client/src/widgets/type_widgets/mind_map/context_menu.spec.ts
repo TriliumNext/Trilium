@@ -1,5 +1,5 @@
 import i18next from "i18next";
-import type { MindElixirInstance, NodeObj, Topic } from "mind-elixir";
+import type { default as MindElixirInstance, NodeObj, Topic } from "mind-elixir";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { MenuCommandItem } from "../../../menus/context_menu";
@@ -132,7 +132,7 @@ describe("runNodeMenuCommand", () => {
 describe("findArrowTarget", () => {
     /** A node as the map builds it: a topic carrying its object, with an icon inside it. */
     function buildTopic() {
-        const topic = document.createElement("me-tpc");
+        const topic = Object.assign(document.createElement("div"), { className: "me-tpc" });
         (topic as unknown as Topic).nodeObj = CHILD;
         topic.innerHTML = `<span class="mind-map-lead-icon bx bx-star"></span>Node`;
         return topic;
@@ -150,7 +150,7 @@ describe("findArrowTarget", () => {
 
     it("finds nothing beside a node, or on a topic standing for none", () => {
         expect(findArrowTarget(document.createElement("div"))).toBeNull();
-        expect(findArrowTarget(document.createElement("me-tpc"))).toBeNull();
+        expect(findArrowTarget(Object.assign(document.createElement("div"), { className: "me-tpc" }))).toBeNull();
         expect(findArrowTarget(null)).toBeNull();
     });
 });
