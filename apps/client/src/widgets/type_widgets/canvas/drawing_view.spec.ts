@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getBoundedView, getCenteredView, getZoomToFitView } from "./drawing_view";
+import {
+    applyDrawingView, type DrawingView, getBoundedView, getCenteredView, getFrame, getFrameView,
+    getFrameViewAt, getWidenedFrame, getZoomToFitView, takeAppliedView
+} from "./drawing_view";
 
 interface Box {
     x: number;
@@ -10,6 +13,7 @@ interface Box {
 }
 
 vi.mock("@excalidraw/excalidraw", () => ({
+    CaptureUpdateAction: { NEVER: "never" },
     getCommonBounds: (elements: Box[]) => [
         Math.min(...elements.map(({ x }) => x)),
         Math.min(...elements.map(({ y }) => y)),
@@ -50,6 +54,48 @@ describe("getBoundedView", () => {
         expect(bound([ rectangle, IMAGE ], 0.25, 0, 0)).toBeNull();
         expect(bound([], 0.25, 0, 0)).toBeNull();
         expect(bound([ IMAGE ], 0.25, 0, 0, 0)).toBeNull();
+    });
+});
+
+describe("getFrame", () => {
+    it("is the box in scene units at its scale, to thousandths, and gives the view back", () => {
+        const view = { zoom: { value: 2 }, scrollX: -100.0004, scrollY: 50 } as never;
+        const frame = getFrame(view, 1000, 500);
+        expect(frame).toEqual({ x: 100, y: -50, width: 500, height: 250, scale: 2 });
+        expect(getFrameView(frame)).toEqual({ zoom: { value: 2 }, scrollX: -100, scrollY: 50 });
+    });
+
+    it("fills a box of another width with the frame, within Excalidraw's zoom limits", () => {
+        const frame = { x: 100, y: -50, width: 500, height: 250, scale: 2 };
+        expect(getFrameViewAt(frame, 800))
+            .toEqual({ zoom: { value: 1.6 }, scrollX: -100, scrollY: 50 });
+        expect(getFrameViewAt(frame, 1000)).toEqual(getFrameView(frame));
+        expect(getFrameViewAt(frame, 10).zoom.value).toBe(0.1);
+        expect(getFrameViewAt(frame, 100_000).zoom.value).toBe(30);
+    });
+
+    it("widens around its center at its scale", () => {
+        const frame = { x: 100, y: -50, width: 500, height: 250, scale: 2 };
+        expect(getWidenedFrame(frame, 1400))
+            .toEqual({ x: 0, y: -50, width: 700, height: 250, scale: 2 });
+        expect(getWidenedFrame(frame, 600))
+            .toEqual({ x: 200, y: -50, width: 300, height: 250, scale: 2 });
+    });
+});
+
+describe("applyDrawingView", () => {
+    it("shows the view, which counts as applied once", () => {
+        const updateScene = vi.fn();
+        const api = { updateScene } as never;
+        const view = { zoom: { value: 2 }, scrollX: 1, scrollY: 2 } as DrawingView;
+
+        applyDrawingView(api, view);
+        expect(updateScene).toHaveBeenCalledExactlyOnceWith({
+            appState: view, captureUpdate: "never"
+        });
+        expect(takeAppliedView(api, { ...view, scrollX: 3 })).toBe(false);
+        expect(takeAppliedView(api, { ...view })).toBe(true);
+        expect(takeAppliedView(api, { ...view })).toBe(false);
     });
 });
 

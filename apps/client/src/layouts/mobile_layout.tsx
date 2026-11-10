@@ -14,6 +14,7 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
@@ -91,6 +92,7 @@ export default class MobileLayout {
                                                 .child(<SearchResult />)
                                                 .child(<ScrollPadding />)
                                         )
+                                        .child(<NoteTypeSwitcherBar />)
                                         .child(<MobileEditorToolbar />)
                                         .child(new FindWidget())
                                 )

@@ -15,6 +15,7 @@ To access the AI assistant:
 *   Look for _AI assistant_ or any of the _AI_\-prefixed quick commands in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 *   Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>.
 *   Select a text and choose the _AI assistant_ option in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20contextual%20menu.md">Note contextual menu</a>.
+*   Click or right-click the drag handle to the left of a paragraph and choose _AI assistant_, see <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>. It offers the same items as the toolbar button, and works on the blocks that the handle shades. If the assistant is already open, it starts over on these blocks, and a response you have not inserted is dropped.
 
 ## What the assistant works on
 
@@ -23,6 +24,7 @@ To access the AI assistant:
 | Text is selected | The selection. |
 | Nothing is selected, and you pick a quick action | The paragraph the cursor is in. |
 | Nothing is selected, and you type your own prompt | Nothing, the response is new content written at the cursor. |
+| You open the assistant from the menu of the drag handle | The whole blocks that the handle shades, even when only part of their text is selected. |
 
 In all cases the assistant also sends the text before and after the target, so that the model can tell what it is writing into: asked to _Continue writing_ or to summarize, a model that can only see the selected words is guessing at the document around them. This surrounding text is context only, it is never rewritten.
 

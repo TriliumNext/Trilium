@@ -9,6 +9,10 @@
 
 1.  \[…\]
 
+## 🔄 Compatibility
+
+1.  \[…\]
+
 ## 🚨 Breaking changes
 
 1.  \[…\]

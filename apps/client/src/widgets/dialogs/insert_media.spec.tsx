@@ -77,7 +77,7 @@ describe("InsertMediaBalloon", () => {
         expect(showError).toHaveBeenCalledOnce();
     });
 
-    it("focuses the field, and inserts only a web address", async () => {
+    it("explains what it embeds, focuses the field, and inserts only a web address", async () => {
         let container = document.body;
         await act(async () => {
             container = renderInto(<InsertMediaBalloon onInsert={onInsert} />);
@@ -85,6 +85,8 @@ describe("InsertMediaBalloon", () => {
         const form = container.querySelector("form");
         const field = container.querySelector<HTMLInputElement>(".insert-media-url input");
         if (!form || !field) throw new Error("The balloon has no form.");
+        expect(form.querySelector(".tn-card-description")?.textContent)
+            .toBe("youtube_video.description");
         expect(document.activeElement).toBe(field);
         expect(insertButton(container)?.disabled).toBe(true);
         expect(errorOf(container)).toBeUndefined();

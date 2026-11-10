@@ -53,6 +53,12 @@ export const SYSTEM_MONOSPACE_FONT_STACK = [
     "monospace"
 ].join(",");
 
+/**
+ * The generic `monospace` family named twice. Browsers draw a lone `monospace` at their smaller
+ * monospace default size (13px instead of 16px); a second family in the list turns that off.
+ */
+export const MONOSPACE_FONT_FAMILY = "monospace, monospace";
+
 export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActionNames> {
     openNoteContexts: string;
     lastDailyBackupDate: string;
@@ -100,6 +106,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeBlockThemeDark: string;
     textNoteEditorType: string;
     layoutOrientation: string;
+    /** How a text note shows its title: `large` above the content, or `compact` in the title row only. */
+    noteTitleStyle: "large" | "compact";
     allowedHtmlTags: string;
     /** JSON: what the Content Manager's cleanup tool was last set to erase — see `CleanupToolOptions`. */
     cleanupToolOptions: string;

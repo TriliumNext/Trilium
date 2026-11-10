@@ -86,6 +86,7 @@ function setupTextNote() {
     $try(setupInPageLinks);
     $try(() => enhanceLinkPreviews(document.body));
     $try(setupTableScroll);
+    $try(setupDrawingPictures);
     $try(setupStickyTableHeaders);
     $try(setupListItemAlignment);
     $try(setupTabs);
@@ -117,6 +118,20 @@ function setupTableScroll() {
     applyTableScroll(content);
     for (const embed of content.querySelectorAll(".include-note")) {
         applyTableScroll(embed);
+    }
+}
+
+/**
+ * Keeps the picture of each drawing canvas centered in its box, which `content.css` sizes by the
+ * width the page writes on it and which crops the picture where the page is narrower.
+ */
+function setupDrawingPictures() {
+    for (const box of document.querySelectorAll<HTMLElement>("#content .canvas-drawing-box")) {
+        const center = () => {
+            box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2;
+        };
+        center();
+        new ResizeObserver(center).observe(box);
     }
 }
 

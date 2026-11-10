@@ -28,6 +28,10 @@ body.dark-theme {
 
     :root .ck.ck-color-grid__tile[style*="--tn-color"] {
         background-color: transparent !important;
+
+        &:hover:not(.ck-on, .ck-disabled) {
+            background-color: var(--icon-button-hover-background) !important;
+        }
     }
 
     :root .ck.ck-color-grid__tile[style*="--tn-background"]::before {

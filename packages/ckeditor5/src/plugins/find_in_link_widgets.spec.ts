@@ -166,6 +166,33 @@ describe("FindInLinkWidgets", () => {
         expect(title.childNodes).toHaveLength(1);
     });
 
+    it("searches again after the host draws a link title over its wrapped matches", () => {
+        let redrawTitle = () => {};
+        editor.config.set("referenceLink", {
+            renderTitle: (element: HTMLElement) => {
+                redrawTitle = () => {
+                    element.textContent = "Reference match";
+                };
+                redrawTitle();
+            }
+        });
+        setModelData(
+            editor.model,
+            '<paragraph><reference href="#root/ref"></reference></paragraph>'
+        );
+        const editingRoot = editor.editing.view.getDomRoot();
+        editor.execute("find", "match");
+        expect(matchTexts(editingRoot, "a.reference-link")).toEqual([ "match" ]);
+
+        // The host draws the title in place of the wrapped one, as when its note finishes loading.
+        redrawTitle();
+        expect(matchTexts(editingRoot, "a.reference-link")).toEqual([]);
+        editor.execute("find", "Ref");
+
+        expect(matchTexts(editingRoot, "a.reference-link")).toEqual([ "Ref" ]);
+        expect(editingRoot?.querySelector("a.reference-link")?.textContent).toBe("Reference match");
+    });
+
     it("matches only the text that each link widget displays", () => {
         setModelData(
             editor.model,

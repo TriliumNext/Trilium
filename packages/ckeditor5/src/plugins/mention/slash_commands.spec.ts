@@ -117,6 +117,18 @@ describe("matchSlashCommands", () => {
         expect(matchSlashCommands(definitions, "line").map((d) => d.id)).toEqual([ "toc" ]);
     });
 
+    it("ranks an exact title or alias match above every prefix match", () => {
+        const entries: SlashCommandDefinition[] = [
+            { id: "layout", title: "2 columns layout", icon: "" },
+            { id: "heading", title: "Heading 2", icon: "", aliases: [ "2" ] },
+            { id: "code", title: "Code", icon: "" },
+            { id: "codeBlock", title: "Code block", icon: "" }
+        ];
+
+        expect(matchSlashCommands(entries, "2").map((d) => d.id)).toEqual([ "heading", "layout" ]);
+        expect(matchSlashCommands(entries.slice().reverse(), "code").map((d) => d.id)).toEqual([ "code", "codeBlock" ]);
+    });
+
     it("matches case-insensitively and ignores surrounding whitespace", () => {
         expect(matchSlashCommands(definitions, "  BLOCK ").map((d) => d.id)).toEqual([ "quote", "codeBlock" ]);
     });
@@ -201,6 +213,16 @@ describe("TriliumSlashCommands", () => {
             // Trilium reserves heading1 for the note title, so it is absent from the options.
             expect(defaults.slice(0, 3)).toEqual([ "paragraph", "heading2", "heading3" ]);
             expect(defaults).not.toContain("heading1");
+        });
+
+        it("offers the heading for a bare level number, ahead of the layout with that many columns", () => {
+            const entries = [ ...buildDefaultSlashCommands(editor), ...buildTriliumSlashCommands(editor) ];
+
+            for (const level of [ "2", "3" ]) {
+                const ids = matchSlashCommands(entries, level).map((definition) => definition.id);
+                expect(ids[0]).toBe(`heading${level}`);
+                expect(ids).toContain(`multicolumn-layout-${level}`);
+            }
         });
 
         // The configured titles are English message ids, and CKEditor's own catalogs translate them
@@ -793,7 +815,7 @@ describe("buildTriliumSlashCommands", () => {
                 name: "Canvas.excalidraw", type: "application/vnd.excalidraw+json"
             }) ],
             asEmbed: true,
-            boxSize: "medium",
+            boxSize: "resizable",
             hideTitle: true,
             editable: true,
             quiet: true,

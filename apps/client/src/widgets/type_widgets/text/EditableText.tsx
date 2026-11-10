@@ -221,13 +221,16 @@ export default function EditableText({
         editor.editing.view.focus();
     });
 
+    // An embed in the content of an embed links to this note rather than showing it again.
+    const seenNoteIds = new Set([ note.noteId ]);
     const contentEmbedHandlers: ContentEmbedHandlers = {
         loadNote(noteId, wrapper, boxSize, embedBlock, onEmbedBlockChange) {
             void loadEmbeddedNote(noteId, $(wrapper), boxSize, {
                 noteEditor: embedNoteEditor,
                 histories,
                 block: embedBlock,
-                onBlockChange: onEmbedBlockChange
+                onBlockChange: onEmbedBlockChange,
+                seenNoteIds
             });
         },
         loadAttachment(attachmentId, wrapper, boxSize) {
@@ -238,7 +241,8 @@ export default function EditableText({
             void loadEmbeddedAttachment(attachmentId, $(wrapper), boxSize, {
                 attachmentEditor: embedAttachmentEditor,
                 histories,
-                isFocused
+                isFocused,
+                seenNoteIds
             });
         },
         loadInline(source, wrapper, boxSize, options) {
@@ -250,8 +254,8 @@ export default function EditableText({
         loadUnknown(wrapper, boxSize) {
             void loadUnknownEmbed(wrapper, boxSize);
         },
-        loadMedia(preview, wrapper) {
-            void loadMediaEmbed(preview, wrapper, { hasMenu: true });
+        loadMedia(preview, wrapper, boxSize) {
+            void loadMediaEmbed(preview, wrapper, { boxSize, hasMenu: true });
         },
         focusAttachment(attachmentId) {
             focusedAttachmentIdRef.current = attachmentId;
@@ -391,7 +395,7 @@ export default function EditableText({
     useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
         refreshEmbeddedNote(containerRef.current, noteId, {
-            noteEditor: embedNoteEditor, histories
+            noteEditor: embedNoteEditor, histories, seenNoteIds
         });
     });
 

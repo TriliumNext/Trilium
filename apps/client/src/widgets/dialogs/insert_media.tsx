@@ -134,7 +134,7 @@ function useInsertMediaForm() {
         url,
         reset: () => setText(""),
         body: (
-            <Card>
+            <Card description={t("youtube_video.description")}>
                 <OptionCardSection
                     className="insert-media-url"
                     name="insert-media-url"

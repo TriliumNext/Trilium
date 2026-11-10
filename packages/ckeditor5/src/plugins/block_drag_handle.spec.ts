@@ -186,6 +186,9 @@ describe("BlockDragHandle", () => {
 
         document.dispatchEvent(new Event("scroll"));
         window.dispatchEvent(new Event("resize"));
+        // The editable grows without focus too, as when an embed renders.
+        getBlock(editor, 0).style.setProperty("height", "60px");
+        await resizeObserved(getEditable(editor));
         expect(requestAnimationFrame).not.toHaveBeenCalled();
 
         editor.editing.view.focus();
@@ -780,6 +783,21 @@ function placeInScrollingContainer(editor: ClassicEditor) {
         above: above.getBoundingClientRect(),
         below: below.getBoundingClientRect()
     };
+}
+
+/**
+ * Waits until the browser has run the resize observer callbacks for `element`. It runs them in the
+ * order the observers were created, so the callbacks of observers created before this call run
+ * first. The promise resolves in a later task, so the test changes no layout during the callbacks.
+ */
+function resizeObserved(element: HTMLElement) {
+    return new Promise<void>((resolve) => {
+        const observer = new ResizeObserver(() => {
+            observer.disconnect();
+            setTimeout(resolve);
+        });
+        observer.observe(element);
+    });
 }
 
 /** Waits until the browser has drawn two frames, so that a scroll and its listeners have run. */

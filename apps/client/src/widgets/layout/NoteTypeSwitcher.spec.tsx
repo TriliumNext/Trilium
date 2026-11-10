@@ -8,12 +8,15 @@ import NoteContext, { type SaveState } from "../../components/note_context.js";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu.js";
 import type { TreeCommandNames } from "../../menus/tree_context_menu.js";
 import attributes from "../../services/attributes.js";
+import options from "../../services/options.js";
 import type { NoteTypeData } from "../../services/note_types.js";
 import server from "../../services/server.js";
 import { buildNote } from "../../test/easy-froca.js";
 import { noteSavedDataStore } from "../react/NoteStore.js";
 import { NoteContextContext, ParentComponent } from "../react/react_utils.js";
-import NoteTypeSwitcher, { codeLanguageItems, NoteTypeBadges, toSwitcherItems, useNoteTypeData } from "./NoteTypeSwitcher.js";
+import NoteTypeSwitcher, {
+    codeLanguageItems, NoteTypeBadges, NoteTypeSwitcherBar, toSwitcherItems, useNoteTypeData
+} from "./NoteTypeSwitcher.js";
 
 vi.mock("../../services/i18n.js", () => ({
     t: (key: string) => key
@@ -29,6 +32,27 @@ afterEach(() => {
         container = undefined;
     }
     vi.restoreAllMocks();
+});
+
+describe("NoteTypeSwitcherBar", () => {
+    it("carries the switcher of the compact title, in the note's default view only", () => {
+        vi.spyOn(server, "get").mockResolvedValue({ templateNoteIds: [], newTemplateNoteIds: [] });
+        buildNote({ id: "_templates", title: "Templates" });
+        const note = buildNote({ id: "barNote", title: "Note", type: "text" });
+        noteSavedDataStore.set("barNote", "");
+        const noteContext = new NoteContext("bar-ntx");
+        noteContext.noteId = note.noteId;
+        const switcherIn = (style: string, viewMode: "default" | "source") => {
+            options.set("noteTitleStyle", style);
+            noteContext.viewScope = { viewMode };
+            return mount(<NoteContextContext.Provider value={noteContext}><NoteTypeSwitcherBar /></NoteContextContext.Provider>)
+                .querySelector(".note-type-switcher-bar > .note-type-switcher");
+        };
+
+        expect(switcherIn("compact", "default")).not.toBeNull();
+        expect(switcherIn("large", "default")).toBeNull();
+        expect(switcherIn("compact", "source")).toBeNull();
+    });
 });
 
 describe("NoteTypeSwitcher", () => {

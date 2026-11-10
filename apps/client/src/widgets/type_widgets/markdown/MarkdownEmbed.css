@@ -6,18 +6,11 @@
     max-height: none;
 }
 
-.include-note:is([data-box-size="small"], [data-box-size="medium"], [data-box-size="expandable"])
+.include-note:is([data-box-size="resizable"], [data-box-size="expandable"])
     > .include-note-wrapper > .include-note-body > .include-note-content:has(
         > .rendered-content > .markdown-embed > .markdown-embed-content.fills-box
     ) {
     height: var(--include-note-height, 20em);
-}
-
-.include-note[data-box-size="small"] > .include-note-wrapper > .include-note-body
-    > .include-note-content:has(
-        > .rendered-content > .markdown-embed > .markdown-embed-content.fills-box
-    ) {
-    height: var(--include-note-height, 10em);
 }
 
 .include-note-content > .rendered-content:has(> .markdown-embed),

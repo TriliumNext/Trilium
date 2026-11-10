@@ -111,7 +111,14 @@ export async function main() {
 
         // Enable global shortcuts in Flatpak
         // the app runs in a Wayland session.
-        app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
+        const features = [ "GlobalShortcutsPortal" ];
+        // The Flatpak sandbox has no access to the Secret Service, so `safeStorage` encrypts
+        // with the per-app key of the Secret portal. Data encrypted this way needs the flag
+        // kept on.
+        if (process.env.FLATPAK_ID) {
+            features.push("SecretPortalKeyProviderUseForEncryption");
+        }
+        app.commandLine.appendSwitch("enable-features", features.join(","));
     }
 
     // Quit when all windows are closed, except on macOS. There, it's common

@@ -38,7 +38,7 @@ export default function MoveToDialog() {
 
         const branchId = await froca.getBranchId(parentNoteId, noteId);
         if (branchId) {
-            moveNotesTo(movedBranchIds, branchId);
+            moveNotesTo(movedBranchIds, branchId, notePath);
         }
     }
 
@@ -69,9 +69,9 @@ export default function MoveToDialog() {
     )
 }
 
-async function moveNotesTo(movedBranchIds: string[] | undefined, parentBranchId: string) {
+async function moveNotesTo(movedBranchIds: string[] | undefined, parentBranchId: string, parentNotePath: string) {
     if (movedBranchIds) {
-        await branches.moveToParentNote(movedBranchIds, parentBranchId);
+        await branches.moveToParentNote(movedBranchIds, parentBranchId, undefined, parentNotePath);
     }
 
     const parentBranch = froca.getBranch(parentBranchId);

@@ -1,6 +1,9 @@
-import { getCommonBounds } from "@excalidraw/excalidraw";
+import { CaptureUpdateAction, getCommonBounds } from "@excalidraw/excalidraw";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { AppState, NormalizedZoomValue } from "@excalidraw/excalidraw/types";
+import type {
+    AppState, ExcalidrawImperativeAPI, NormalizedZoomValue
+} from "@excalidraw/excalidraw/types";
+import type { DrawingFrame } from "@triliumnext/commons";
 
 /** Excalidraw's zoom limits, from its own zoom buttons. */
 export const MIN_ZOOM = 0.1;
@@ -9,6 +12,98 @@ export const MAX_ZOOM = 30;
 export const ZOOM_STEP = 0.1;
 
 export type DrawingView = Pick<AppState, "zoom" | "scrollX" | "scrollY">;
+
+/** The view of `appState`: its zoom and scroll. */
+export function getDrawingView({ zoom, scrollX, scrollY }: DrawingView): DrawingView {
+    return { zoom, scrollX, scrollY };
+}
+
+/** Whether `a` and `b` are the same view, to a millionth. */
+export function isSameView(a: DrawingView, b: DrawingView) {
+    return isClose(a.zoom.value, b.zoom.value)
+        && isClose(a.scrollX, b.scrollX)
+        && isClose(a.scrollY, b.scrollY);
+}
+
+/** Whether `a` and `b` are the same frame, to a millionth. */
+export function isSameFrame(a: DrawingFrame, b: DrawingFrame) {
+    return isClose(a.x, b.x) && isClose(a.y, b.y) && isClose(a.width, b.width)
+        && isClose(a.height, b.height) && isClose(a.scale, b.scale);
+}
+
+/** The frame of a box `width` by `height` pixels that shows `view`, to thousandths. */
+export function getFrame(view: DrawingView, width: number, height: number): DrawingFrame {
+    const scale = view.zoom.value;
+    return {
+        x: round(-view.scrollX),
+        y: round(-view.scrollY),
+        width: round(width / scale),
+        height: round(height / scale),
+        scale: round(scale)
+    };
+}
+
+/** The view that shows `frame` at its scale. */
+export function getFrameView(frame: DrawingFrame): DrawingView {
+    return {
+        zoom: { value: frame.scale as NormalizedZoomValue },
+        scrollX: -frame.x,
+        scrollY: -frame.y
+    };
+}
+
+/** `frame` widened or narrowed to `width` pixels at its scale, around its center. */
+export function getWidenedFrame(frame: DrawingFrame, width: number): DrawingFrame {
+    const frameWidth = width / frame.scale;
+    return {
+        ...frame,
+        x: round(frame.x + (frame.width - frameWidth) / 2),
+        width: round(frameWidth)
+    };
+}
+
+/** The least a drawing shrinks to, as a fraction of the scale it was drawn at. */
+export const MIN_FRAME_SCALE = 0.75;
+
+/** The view that fills a box `width` pixels wide with `frame`, within Excalidraw's zoom limits. */
+export function getFrameViewAt(frame: DrawingFrame, width: number): DrawingView {
+    const zoom = Math.min(Math.max(width / frame.width, MIN_ZOOM), MAX_ZOOM);
+    return {
+        zoom: { value: zoom as NormalizedZoomValue },
+        scrollX: -frame.x,
+        scrollY: -frame.y
+    };
+}
+
+/**
+ * The shapes that Excalidraw's export takes the size of: those outside frames, and the frames,
+ * which clip what they hold.
+ */
+export function getRootElements(elements: readonly ExcalidrawElement[]) {
+    const frameIds = new Set(elements
+        .filter((element) => element.type === "frame" || element.type === "magicframe")
+        .map((element) => element.id));
+    return elements.filter((element) => !element.frameId || !frameIds.has(element.frameId));
+}
+
+const appliedViews = new WeakMap<ExcalidrawImperativeAPI, DrawingView>();
+
+/**
+ * Shows `view` in `api` as a move of Trilium's own, such as a fit or a pan to a search result,
+ * which {@link takeAppliedView} tells from a move by the user.
+ */
+export function applyDrawingView(api: ExcalidrawImperativeAPI, view: DrawingView) {
+    appliedViews.set(api, view);
+    api.updateScene({ appState: view, captureUpdate: CaptureUpdateAction.NEVER });
+}
+
+/** Whether `view` is the last one applied to `api`, which is then forgotten. */
+export function takeAppliedView(api: ExcalidrawImperativeAPI, view: DrawingView) {
+    const applied = appliedViews.get(api);
+    if (!applied || !isSameView(applied, view)) return false;
+    appliedViews.delete(api);
+    return true;
+}
 
 /** The width that panels cover at the left and the right edge of a drawing. */
 export interface CoveredSides {
@@ -145,4 +240,14 @@ function centerView(
 function clampScroll(scroll: number, min: number, max: number, size: number) {
     if (size >= max - min) return size / 2 - (min + max) / 2;
     return -Math.min(Math.max(-scroll, min), max - size);
+}
+
+function isClose(a: number, b: number) {
+    return Math.abs(a - b) < EPSILON;
+}
+
+/** `value` to thousandths, never negative zero. */
+function round(value: number) {
+    const rounded = Math.round(value * 1000) / 1000;
+    return rounded === 0 ? 0 : rounded;
 }

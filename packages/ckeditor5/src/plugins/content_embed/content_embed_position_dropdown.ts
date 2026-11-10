@@ -11,7 +11,7 @@ export const CONTENT_EMBED_POSITION_DROPDOWN = "contentEmbedPositionDropdown";
 /**
  * The toolbar dropdown that sets where an embed is placed in the text, with the rows and icons of
  * the image position dropdown. Shown for content whose tools opt in to positions and do not hide
- * it.
+ * it, with the positions that the box size of the embed can take.
  */
 export default class ContentEmbedPositionDropdown extends Plugin {
 
@@ -33,6 +33,7 @@ export default class ContentEmbedPositionDropdown extends Plugin {
             const dropdown = createPositionDropdown(editor, locale, {
                 commandName: POSITION_COMMAND_NAME,
                 label: t("Box position"),
+                offeredProperty: "positions",
                 groups: [
                     {
                         label: t("Break text"),

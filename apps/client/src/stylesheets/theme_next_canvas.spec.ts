@@ -120,6 +120,30 @@ describe("Next theme of the drawing's properties panel", () => {
     });
 });
 
+describe("Next theme of the drawing's pickers and library", () => {
+    afterEach(() => {
+        document.head.innerHTML = "";
+        document.body.innerHTML = "";
+    });
+
+    it("paints them on the background of the panel's cards in both color schemes", () => {
+        loadStyles();
+        const getBackgrounds = (theme: string) => {
+            document.body.innerHTML = `<div class="excalidraw theme--${theme}">
+                <div data-radix-popper-content-wrapper><div class="Island"></div></div>
+                <div data-radix-popper-content-wrapper><div class="picker"></div></div>
+                <div class="Island sidebar default-sidebar"></div>
+            </div>`;
+            return [ "[data-radix-popper-content-wrapper] > .Island", ".picker", ".sidebar" ]
+                .map((selector) => document.querySelector(selector))
+                .map((element) => element && getComputedStyle(element).backgroundColor);
+        };
+
+        expect(getBackgrounds("light")).toEqual(Array(3).fill("rgb(7, 8, 9)"));
+        expect(getBackgrounds("dark")).toEqual(Array(3).fill("rgb(7, 8, 9)"));
+    });
+});
+
 /** The variables of the Next theme, which its color schemes set. */
 const THEME_VARIABLES = `:root {
     --dropdown-border-color: rgb(1, 2, 3);
@@ -131,13 +155,18 @@ const THEME_VARIABLES = `:root {
     --card-background-color: rgb(10, 11, 12);
 }`;
 
-function renderPanels({ hasStroke = false } = {}) {
-    const groups = getGroups(hasStroke);
+/** Loads the Next theme's variables and canvas stylesheet, then Excalidraw's own stylesheet. */
+function loadStyles() {
     const entry = createRequire(import.meta.url).resolve("@excalidraw/excalidraw");
     const excalidrawStyles = readFileSync(join(dirname(entry), "..", "prod", "index.css"), "utf8");
     const themeStyles = readFileSync(join(__dirname, "theme-next/notes/canvas.css"), "utf8");
     document.head.innerHTML = `<style>${THEME_VARIABLES}</style><style>${themeStyles}</style>
         <style>${excalidrawStyles}</style>`;
+}
+
+function renderPanels({ hasStroke = false } = {}) {
+    const groups = getGroups(hasStroke);
+    loadStyles();
     document.body.innerHTML = `<div class="excalidraw">
         <div class="Island App-menu__left">${groups}</div>
         <div class="App-bottom-bar">

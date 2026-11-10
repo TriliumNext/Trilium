@@ -11,7 +11,7 @@ import { scrollRectIntoView } from "../../../services/highlight_matches";
 import { escapeRegExp } from "../../../services/utils";
 import type { FindOptions, FindTarget } from "../../merged_find";
 import { DEFAULT_SIDEBAR, SEARCH_TAB } from "./CanvasEmbedTools";
-import { type DrawingView, getBoundedView } from "./drawing_view";
+import { applyDrawingView, type DrawingView, getBoundedView, isSameView } from "./drawing_view";
 
 /** The colors of Excalidraw's search matches in each theme. */
 export const MATCH_COLORS = {
@@ -246,10 +246,7 @@ export function attachExcalidraw(
             const { zoom, scrollX, scrollY } = api.getAppState();
             return { zoom, scrollX, scrollY };
         },
-        setView: (view) => api.updateScene({
-            appState: view,
-            captureUpdate: CaptureUpdateAction.NEVER
-        }),
+        setView: (view) => applyDrawingView(api, view),
         showMatches: (matches, current) => {
             // `CanvasDrawing.css` shows the canvas of the matches while the focus is elsewhere.
             root?.toggleAttribute(FIND_MATCHES_ATTRIBUTE, matches.length > 0);
@@ -435,11 +432,4 @@ function getRotation(element: ExcalidrawElement) {
     const centerX = element.x + element.width / 2;
     const centerY = element.y + element.height / 2;
     return `rotate(${element.angle * 180 / Math.PI} ${centerX} ${centerY})`;
-}
-
-function isSameView(a: DrawingView, b: DrawingView) {
-    const isClose = (x: number, y: number) => Math.abs(x - y) < 1e-6;
-    return isClose(a.zoom.value, b.zoom.value)
-        && isClose(a.scrollX, b.scrollX)
-        && isClose(a.scrollY, b.scrollY);
 }

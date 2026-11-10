@@ -66,7 +66,6 @@ export class TablePasteRowsCommand extends Command {
         const tableUtils = editor.plugins.get(TableUtils);
         const cells = tableUtils.getSelectionAffectedTableCells(model.document.selection);
         const table = cells[0]?.findAncestor("table");
-        /* v8 ignore next 3 -- defensive: disabled whenever the selection is outside a table */
         if (!table) {
             return;
         }

@@ -72,6 +72,18 @@
     }
 }
 
+:is(.note-autocomplete-menu, .slash-command-menu) .dropdown-item > span:not([class]) {
+    --note-suggestion-line: 1lh;
+    align-items: flex-start;
+}
+
+:is(.note-autocomplete-menu, .slash-command-menu) .dropdown-item > span:not([class]) > .tn-icon {
+    display: inline-flex;
+    align-items: center;
+    height: var(--note-suggestion-line);
+    translate: none;
+}
+
 .note-autocomplete-menu .dropdown-item {
     /* Outranks Bootstrap's `nowrap`, so a long note path wraps within the list's width. */
     white-space: normal;
@@ -81,23 +93,6 @@
     .note-suggestion-text {
         flex: 1 1 auto;
         min-width: 0;
-    }
-
-    /*
-     * The icon stands beside the title's first line, not in the middle of a row its badges make
-     * taller: the row aligns its parts to the top, and the icon centers its glyph in a box one line
-     * tall, as the title's line is.
-     */
-    > span:not([class]) {
-        --note-suggestion-line: 1lh;
-        align-items: flex-start;
-
-        > .tn-icon {
-            display: inline-flex;
-            align-items: center;
-            height: var(--note-suggestion-line);
-            translate: none;
-        }
     }
 
     /*

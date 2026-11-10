@@ -14,7 +14,7 @@ import { type ExecOpts, initRequest, type RequestProvider } from "./request.js";
 import { getSql } from "./sql/index.js";
 import setupService from "./setup.js";
 import sqlInit from "./sql_init.js";
-import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS } from "./sync.js";
+import syncService, { estimateEntityChangeRecordSize, MAX_SECTOR_RESYNC_ATTEMPTS, MAX_SYNC_ROUNDS, serializeSyncRequestBody } from "./sync.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
 import { encodeBase64 } from "./utils/binary.js";
@@ -716,12 +716,75 @@ describe("estimateEntityChangeRecordSize", () => {
     });
 });
 
+describe("serializeSyncRequestBody", () => {
+    // Electron 45.2.3 aborts the process when `JSON.stringify` output reaches 268,173,323 characters.
+    const ELECTRON_STRINGIFY_LIMIT = 268_173_259;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("keeps each JSON.stringify input under Electron's limit for a blob above it", () => {
+        const content = "A".repeat(ELECTRON_STRINGIFY_LIMIT + 1);
+        const blobRecord = (blobContent: string) => ({
+            entityChange: ec({ entityName: "blobs", entityId: "largeBlob" }),
+            entity: { blobId: "largeBlob", content: blobContent }
+        });
+        const stringify = JSON.stringify;
+        const expectedLength = stringify({ entities: [ blobRecord("") ], instanceId: "desktop" }).length + content.length;
+
+        vi.spyOn(JSON, "stringify").mockImplementation((...args: Parameters<typeof JSON.stringify>) => {
+            const inputLength = measureStrings(args[0]);
+            if (inputLength > ELECTRON_STRINGIFY_LIMIT) {
+                throw new Error(`Electron aborts the process on JSON.stringify of ${inputLength} characters`);
+            }
+            return stringify(...args);
+        });
+
+        const body = serializeSyncRequestBody({ entities: [ blobRecord(content) ], instanceId: "desktop" });
+
+        expect(body.length).toBe(expectedLength);
+    });
+
+    it("produces the same JSON as JSON.stringify", () => {
+        const base64 = "QUJD+/9=".repeat(256 * 1024);
+        const body = {
+            entities: [
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "a", content: base64 } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "b", content: `${base64}"\n\\` } },
+                { entityChange: ec({ entityName: "blobs" }), entity: { blobId: "c", content: base64.slice(1) } },
+                { entityChange: ec({ isErased: true }), entity: { content: null, missing: undefined } },
+                { entityChange: ec({}), entity: { title: "short \"quoted\"", list: [ 1, undefined, base64 ] } }
+            ],
+            instanceId: "desktop"
+        };
+
+        expect(serializeSyncRequestBody(body)).toBe(JSON.stringify(body));
+        expect(serializeSyncRequestBody(undefined)).toBe("");
+    });
+});
+
 function pulledOptionChange(): { entityChange: EntityChange; entity: undefined } {
     // An options change with no entity row -> applied as a no-op by updateEntities.
     return {
         entityChange: ec({ entityName: "options", entityId: "sync_spec_noop_opt" }),
         entity: undefined
     };
+}
+
+/** Sums the lengths of every string in `value`, keys included: a lower bound on its JSON length. */
+function measureStrings(value: unknown): number {
+    if (typeof value === "string") {
+        return value.length;
+    }
+    if (value === null || typeof value !== "object") {
+        return 0;
+    }
+    let length = 0;
+    for (const [ key, child ] of Object.entries(value)) {
+        length += key.length + measureStrings(child);
+    }
+    return length;
 }
 
 function ec(overrides: Partial<EntityChange>): EntityChange {

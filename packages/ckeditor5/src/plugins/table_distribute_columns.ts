@@ -30,7 +30,6 @@ export class DistributeTableColumnsCommand extends Command {
 
     override execute() {
         const target = this.findTarget();
-        /* v8 ignore next 3 -- defensive: disabled without a target */
         if (!target) {
             return;
         }
@@ -193,7 +192,6 @@ function measureColumnWidths(
     columnCount: number
 ): number[] | null {
     const edges = measureColumnEdges(editor, table, columnCount);
-    /* v8 ignore next 3 -- defensive: the first and the last boundary always have a cell edge */
     if (!edges) {
         return null;
     }
@@ -222,7 +220,6 @@ export function measureColumnEdges(
     for (const slot of new TableWalker(table)) {
         const viewCell = editor.editing.mapper.toViewElement(slot.cell);
         const domCell = viewCell && editor.editing.view.domConverter.mapViewToDom(viewCell);
-        /* v8 ignore next 3 -- defensive: every model cell of a rendered table maps to a DOM cell */
         if (!(domCell instanceof HTMLElement)) {
             continue;
         }
@@ -236,7 +233,6 @@ export function measureColumnEdges(
         ? samples.reduce((sum, value) => sum + value, 0) / samples.length
         : null);
     const firstEdge = measured[0];
-    /* v8 ignore next 3 -- defensive: the first and the last boundary always have a cell edge */
     if (firstEdge === null || measured[columnCount] === null) {
         return null;
     }
@@ -287,7 +283,6 @@ function measureTableWidthShare(editor: Editor, table: ModelElement): string | n
  */
 export function getTableWidthBasis(editor: Editor, table: ModelElement, domFigure: HTMLElement) {
     const domParent = domFigure.parentElement;
-    /* v8 ignore next 3 -- defensive: a rendered table is inside the editable */
     if (!domParent) {
         return null;
     }

@@ -37,7 +37,7 @@ This is the reason the provider list is grouped this way, and why Trilium pre-se
 
 A run of the <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> sends a different set than a chat message. For quick actions, it sends it the moment you pick an action, there is no send button to reconsider at. For the free-form _Ask AI_, there is a dedicated send button and model selector.
 
-*   **The passage you selected**, or the paragraph the cursor is in when you pick a quick action without selecting anything.
+*   **The passage you selected**, or the paragraph the cursor is in when you pick a quick action without selecting anything. Opened from the menu of the drag handle, the assistant sends the whole blocks that the handle shades instead.
 *   **Up to 1500 characters of the note on each side of that passage**, as plain text. The assistant is told this is context only and must not be rewritten, but it is sent regardless of whether you selected it: a run on a single sentence still transmits the paragraphs around it.
 *   **Where the note sits**: its title and the titles of its parents, as a breadcrumb.
 *   **Trilium's writing-assistant instructions**, which describe the formatting it may produce.

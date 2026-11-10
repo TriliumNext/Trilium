@@ -38,9 +38,10 @@ import showIcon from 'boxicons/svg/regular/bx-show.svg?raw';
 import dockLeftIcon from 'boxicons/svg/solid/bxs-dock-left.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import {
-	CAPTIONED_CONTENT_EMBED_CLASS, encodeBlockParameter, EXTENDED_CODE_BLOCK_CLASS,
-	getLinkPreviewPlayer, getMediaEmbedBoxSizes, getMediaEmbedClasses, type LinkPreviewData,
-	normalizeMimeTypeForCKEditor, parseBlockRange
+	BOX_SIZES, type BoxSize, CAPTIONED_CONTENT_EMBED_CLASS, EMBED_HEIGHT_PROPERTY,
+	encodeBlockParameter, EXCERPT_BOX_SIZE, EXTENDED_CODE_BLOCK_CLASS, getLinkPreviewPlayer,
+	getMediaEmbedBoxSizes, getMediaEmbedClasses, INLINE_BOX_SIZES, type LinkPreviewData,
+	normalizeMimeTypeForCKEditor, parseBlockRange, readBoxSize
 } from '@triliumnext/commons';
 import HostedBalloon from '../../hosted_balloon.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
@@ -54,14 +55,14 @@ import ContentEmbedInlineSource, {
 	type InlineEmbedSource, isExtendedCodeBlock, isInlineSourceEmbed
 } from './inline_source.js';
 import ContentEmbedMedia, {
-	getMediaPreview, getMediaShapeAttributes, getVideoMediumWidth, isAudioEmbed, isMediaEmbed,
-	isVideoEmbed
+	getMediaPreview, getMediaShapeAttributes, getVideoDefaultWidth, isAudioEmbed, isMediaEmbed
 } from './media_embed.js';
 import './nested_editor_events.js';
 import UnknownContentEmbed from './unknown_embed.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
+export const DEFAULT_BOX_SIZE_COMMAND_NAME = 'contentEmbedDefaultBoxSize';
 export const CONVERT_LINK_TO_EMBED_COMMAND = 'convertLinkToEmbed';
 export const CONVERT_EMBED_TO_LINK_COMMAND = 'convertEmbedToLink';
 export const TOGGLE_CAPTION_COMMAND_NAME = 'toggleContentEmbedCaption';
@@ -75,16 +76,6 @@ export const DELETE_COMMAND_NAME = 'deleteContentEmbed';
 export const CONTENT_EMBED_DISPLAY_MODE_SEPARATOR = 'contentEmbedDisplayModeSeparator';
 /** The toolbar button that opens the context menu of an embed whose title is hidden. */
 export const CONTENT_EMBED_MENU = 'contentEmbedMenu';
-
-export const BOX_SIZES = [ 'tiny', 'small', 'medium', 'full', 'expandable' ] as const;
-
-export type BoxSizeValue = typeof BOX_SIZES[number];
-
-/**
- * The box sizes of an embed that keeps its source in the note, which has no title for Tiny and
- * Expandable to show.
- */
-export const INLINE_BOX_SIZES: readonly BoxSizeValue[] = [ 'small', 'medium', 'full' ];
 
 /** What content with display modes shows: its source, its rendering, or both side by side. */
 export const DISPLAY_MODES = [ 'source', 'split', 'preview' ] as const;
@@ -115,8 +106,13 @@ export type PositionValue = typeof POSITIONS[number];
 /** The positions that an embed saves as `data-position`. Centered, the default, saves nothing. */
 const SAVED_POSITIONS: unknown[] = [ 'left', 'right', 'wrap-left', 'wrap-right' ];
 
-/** The box sizes that can be resized. Tiny and Full fit their content. */
-const RESIZABLE_BOX_SIZES: unknown[] = [ 'small', 'medium', 'expandable' ];
+/** The box sizes that a position places in the text. Compact and Full fit their content. */
+const POSITIONED_BOX_SIZES: unknown[] = [ 'resizable', 'expandable' ];
+
+/** The positions of an Expandable embed, which takes the full width: the text breaks around it. */
+const BREAK_TEXT_POSITIONS: readonly PositionValue[] = [ 'left', 'center', 'right' ];
+
+const NO_POSITIONS: readonly PositionValue[] = [];
 
 /** The least size that an embed can be resized to, in `em`. */
 export const MIN_EMBED_SIZE = { width: 10, height: 3 };
@@ -166,12 +162,16 @@ export interface ContentEmbedState {
 	isEditableToggleable: boolean;
 	/** What the content shows, for content that has display modes, otherwise `null`. */
 	displayMode: DisplayModeValue | null;
-	boxSize: BoxSizeValue | null;
+	boxSize: BoxSize | null;
+	/** Whether the embed is at the box a new embed of its content starts with, or that is unknown. */
+	isDefaultBoxSize: boolean;
 	/** Where the embed is placed in the text, for content that has positions, otherwise `null`. */
 	position: PositionValue | null;
+	/** The positions the embed can take, none for a box size that is not placed in the text. */
+	positions: readonly PositionValue[];
 	/** Whether the embed has a title row, which an embed of a source has not. */
 	isTitleSupported: boolean;
-	/** Whether the title shows, which a Tiny or an Expandable embed always does. */
+	/** Whether the title shows, which a Compact or an Expandable embed always does. */
 	isTitleShown: boolean;
 	isTitleToggleable: boolean;
 	/** Whether the embed can have a caption, which an embed of a source cannot. */
@@ -193,14 +193,12 @@ export interface ContentEmbedState {
  * @param t the editor's translation function.
  * @param size the box size; an unrecognized one has no label and is returned as-is.
  */
-export function getBoxSizeLabel(t: (message: string) => string, size: BoxSizeValue): string {
+export function getBoxSizeLabel(t: (message: string) => string, size: BoxSize): string {
 	switch (size) {
-		case 'tiny':
-			return t('Tiny');
-		case 'small':
-			return t('Small');
-		case 'medium':
-			return t('Medium');
+		case 'compact':
+			return t('Compact');
+		case 'resizable':
+			return t('Resizable');
 		case 'full':
 			return t('Full');
 		case 'expandable':
@@ -229,6 +227,8 @@ export default class ContentEmbed extends Plugin {
 	declare public isSelectedEmbedEditable: boolean;
 	/** Whether the selected embed keeps its source in the note, and so has no title or caption. */
 	declare public isSelectedEmbedInline: boolean;
+	/** The box sizes that the selected embed can take, or all of them. */
+	declare public selectedEmbedBoxSizes: readonly BoxSize[];
 
 	static get requires() {
 		return [
@@ -249,6 +249,7 @@ export default class ContentEmbed extends Plugin {
 		this.set( 'selectedEmbedTools', null );
 		this.set( 'isSelectedEmbedEditable', false );
 		this.set( 'isSelectedEmbedInline', false );
+		this.set( 'selectedEmbedBoxSizes', BOX_SIZES );
 	}
 
 	init() {
@@ -258,6 +259,7 @@ export default class ContentEmbed extends Plugin {
 			const embed = getSelectedContentEmbed( this.editor );
 			this.isSelectedEmbedEditable = !!embed?.getAttribute( 'editable' );
 			this.isSelectedEmbedInline = !!embed && isInlineSourceEmbed( embed );
+			this.selectedEmbedBoxSizes = getEmbedBoxSizes( embed );
 		}, { priority: 'high' } );
 	}
 
@@ -310,15 +312,17 @@ export default class ContentEmbed extends Plugin {
 			return null;
 		}
 
-		const isTitleToggleable = isEmbedTitleToggleable( embed );
+		const isTitleToggleable = isEmbedTitleToggleable( editor, embed );
 		return {
 			isEditable: !!embed.getAttribute( 'editable' ),
 			isEditableToggleable: isEmbedEditableToggleable( editor, embed ),
 			displayMode: hasEmbedDisplayModes( editor, embed )
 				? getEmbedDisplayMode( editor, embed )
 				: null,
-			boxSize: embed.getAttribute( 'boxSize' ) as BoxSizeValue | undefined ?? null,
+			boxSize: embed.getAttribute( 'boxSize' ) as BoxSize | undefined ?? null,
+			isDefaultBoxSize: isDefaultEmbedBox( editor, embed ),
 			position: hasEmbedPositions( editor, embed ) ? getEmbedPosition( embed ) : null,
+			positions: getEmbedPositions( editor, embed ),
 			isTitleSupported: hasTitleRow( embed ),
 			isTitleShown: !isTitleToggleable || !embed.getAttribute( 'hideTitle' ),
 			isTitleToggleable,
@@ -360,7 +364,7 @@ export default class ContentEmbed extends Plugin {
 	 * The box sizes, with the labels the toolbar gives them: those of the embed that `domElement`
 	 * is part of, or all of them.
 	 */
-	getBoxSizes( domElement?: Element ): { value: BoxSizeValue; label: string }[] {
+	getBoxSizes( domElement?: Element ): { value: BoxSize; label: string }[] {
 		const embed = domElement ? getContentEmbedAt( this.editor, domElement ) : null;
 		return getEmbedBoxSizes( embed )
 			.map( value => ( { value, label: getBoxSizeLabel( this.editor.t, value ) } ) );
@@ -476,6 +480,7 @@ class ContentEmbedUI extends Plugin {
 				} );
 
 				// Shown only for content that has display modes.
+				/* v8 ignore else -- `ContentEmbedEditing` adds the command before any button */
 				if ( command ) {
 					buttonView.bind( 'isOn' ).to( command, 'value', value => value === mode );
 					buttonView.bind( 'isEnabled' ).to( command );
@@ -532,11 +537,11 @@ class ContentEmbedEditing extends Plugin {
 		return 'ContentEmbedEditing' as const;
 	}
 
-	/** The captions that were hidden or that a Tiny box size removed, by embed. */
+	/** The captions that were hidden or that a Compact box size removed, by embed. */
 	private readonly savedCaptions = new WeakMap<ModelElement, unknown>();
 
-	/** The embeds whose saved caption a Tiny box size removed. */
-	private readonly tinyEmbeds = new WeakSet<ModelElement>();
+	/** The embeds whose saved caption a Compact box size removed. */
+	private readonly compactEmbeds = new WeakSet<ModelElement>();
 
 	/** Listens to the window for frames in embeds that take or give back the focus. */
 	private readonly windowEmitter = new ( DomEmitterMixin() )();
@@ -548,19 +553,22 @@ class ContentEmbedEditing extends Plugin {
 		const editor = this.editor;
 		editor.plugins.get( ResizableWidgets ).register( 'contentEmbed', {
 			propertyPrefix: '--include-note',
-			isWidthResizable: true,
+			// An Expandable embed takes the full width.
+			isWidthResizable: embed => embed.getAttribute( 'boxSize' ) === 'resizable',
 			// A video takes its height from its width, and an audio file from its controls.
 			isHeightResizable: embed => !isMediaEmbed( embed ),
 			getAnchor: getEmbedAnchor,
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
 			minHeight: MIN_EMBED_SIZE.height,
-			isResizable: embed => RESIZABLE_BOX_SIZES.includes( embed.getAttribute( 'boxSize' ) )
+			isResizable: embed => POSITIONED_BOX_SIZES.includes( embed.getAttribute( 'boxSize' ) )
 		} );
 
 		const commands = editor.commands;
 		commands.add( COMMAND_NAME, new InsertContentEmbedCommand( editor ) );
 		commands.add( BOX_SIZE_COMMAND_NAME, new ContentEmbedBoxSizeCommand( editor ) );
+		commands.add(
+			DEFAULT_BOX_SIZE_COMMAND_NAME, new ContentEmbedDefaultBoxSizeCommand( editor ) );
 		commands.add( CONVERT_LINK_TO_EMBED_COMMAND, new ConvertLinkToEmbedCommand( editor ) );
 		commands.add( CONVERT_EMBED_TO_LINK_COMMAND, new ConvertEmbedToLinkCommand( editor ) );
 		commands.add( TOGGLE_CAPTION_COMMAND_NAME, new ToggleContentEmbedCaptionCommand( editor ) );
@@ -573,7 +581,7 @@ class ContentEmbedEditing extends Plugin {
 		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
 		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
-		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
+		editor.model.document.registerPostFixer( writer => this.fixTitleOnlyEmbeds( writer ) );
 		this.markEmbedOfSelectedCaption();
 
 		restoreRendererFocusOnInput( this );
@@ -588,7 +596,7 @@ class ContentEmbedEditing extends Plugin {
 	/** Keeps a copy of `caption`, for `embed` to show again. */
 	saveCaption( embed: ModelElement, caption: ModelElement ) {
 		this.savedCaptions.set( embed, caption.toJSON() );
-		this.tinyEmbeds.delete( embed );
+		this.compactEmbeds.delete( embed );
 	}
 
 	/** A copy of the caption last saved for `embed`, or `null`. */
@@ -597,9 +605,9 @@ class ContentEmbedEditing extends Plugin {
 		return json ? ModelElement.fromJSON( json ) : null;
 	}
 
-	/** A copy of the caption that a Tiny box size removed from `embed`, or `null`. */
-	takeTinyCaption( embed: ModelElement ): ModelElement | null {
-		return this.tinyEmbeds.delete( embed ) ? this.getSavedCaption( embed ) : null;
+	/** A copy of the caption that the Compact box size removed from `embed`, or `null`. */
+	takeCompactCaption( embed: ModelElement ): ModelElement | null {
+		return this.compactEmbeds.delete( embed ) ? this.getSavedCaption( embed ) : null;
 	}
 
 	_defineSchema() {
@@ -648,9 +656,16 @@ class ContentEmbedEditing extends Plugin {
 					? { attachmentId }
 					: { noteId: viewElement.getAttribute( 'data-note-id' ), ...( block ? { block } : {} ) };
 
+				const box = readBoxSize(
+					viewElement.getAttribute( 'data-box-size' ), BOX_SIZES, 'resizable' );
+				const legacyHeight = box.height && !viewElement.getStyle( EMBED_HEIGHT_PROPERTY )
+					? { [ SIZE_ATTRIBUTES.height ]: box.height }
+					: {};
+
 				return modelWriter.createElement( 'contentEmbed', {
 					...embedded,
-					boxSize: viewElement.getAttribute( 'data-box-size' ),
+					boxSize: box.boxSize,
+					...legacyHeight,
 					...getFlagsOfView( viewElement ),
 					...getDisplayModeOfView( viewElement ),
 					...getPositionOfView( viewElement ),
@@ -746,9 +761,11 @@ class ContentEmbedEditing extends Plugin {
 					// directly from the converter (rather than observing the DOM attribute) so the
 					// content is only rebuilt on a genuine box-size change — not whenever CKEditor
 					// re-applies unrelated attributes (e.g. `draggable` while selecting the widget).
-					// A player takes its size from the stylesheet, and a redraw stops the video.
+					// A player takes its size from the stylesheet, and a redraw stops the video,
+					// unless Compact puts it away or brings it back.
 					const embed = data.item as ModelElement;
-					if ( !isMediaEmbed( embed ) ) {
+					const isCompactChange = oldBoxSize === 'compact' || newBoxSize === 'compact';
+					if ( !isMediaEmbed( embed ) || isCompactChange ) {
 						reloadEmbeddedContent( editor, viewElement, embed, newBoxSize );
 					}
 				}
@@ -924,7 +941,7 @@ class ContentEmbedEditing extends Plugin {
 			} );
 			const converted = api.convertItem( element, data.modelCursor );
 			const modelRange = converted.modelRange;
-			/* v8 ignore next 3 -- the default element converter gives every element a range */
+			// `PictureEditing` converts a `<picture>` in an image into that image, with no range.
 			if ( !modelRange ) {
 				return;
 			}
@@ -973,10 +990,11 @@ class ContentEmbedEditing extends Plugin {
 	}
 
 	/**
-	 * Removes the caption of every Tiny embed that a change touched, keeping a copy for when
-	 * the embed gets a larger box size.
+	 * Shows the title of, and removes the caption of, every Compact embed that shows a title only
+	 * and that a change touched, keeping a copy of the caption for when the embed gets a larger
+	 * box size. An embed whose content the host has not loaded yet keeps both.
 	 */
-	private removeTinyCaptions( writer: ModelWriter ) {
+	private fixTitleOnlyEmbeds( writer: ModelWriter ) {
 		const embeds = new Set<ModelElement>();
 		for ( const change of this.editor.model.document.differ.getChanges() ) {
 			if ( change.type === 'attribute' && change.attributeKey === 'boxSize' ) {
@@ -990,10 +1008,17 @@ class ContentEmbedEditing extends Plugin {
 
 		let isChanged = false;
 		for ( const embed of embeds ) {
+			if ( isTitleOnlyEmbed( this.editor, embed ) !== true ) {
+				continue;
+			}
+			if ( embed.hasAttribute( 'hideTitle' ) ) {
+				writer.removeAttribute( 'hideTitle', embed );
+				isChanged = true;
+			}
 			const caption = getCaption( embed );
-			if ( caption && embed.getAttribute( 'boxSize' ) === 'tiny' ) {
+			if ( caption ) {
 				this.saveCaption( embed, caption );
-				this.tinyEmbeds.add( embed );
+				this.compactEmbeds.add( embed );
 				writer.remove( caption );
 				isChanged = true;
 			}
@@ -1019,38 +1044,21 @@ class InsertContentEmbedCommand extends Command {
 }
 
 class ContentEmbedBoxSizeCommand extends Command {
-	declare value: BoxSizeValue | null;
+	declare value: BoxSize | null;
 
 	/**
-	 * Sets the box size of the selected embed and resets its height. Tiny and Full reset the
-	 * width too, and Medium sets the width of a Medium video. Tiny takes the caption away, and a
-	 * larger size shows it again.
+	 * Sets the box size of the selected embed. Compact and Full fit their content, so they take
+	 * a resized width and height away, and Expandable takes the full width, so it takes the width
+	 * away; Resizable keeps both. Compact takes the caption of an embed that shows a title only
+	 * away, and a larger size shows it again.
 	 */
-	override execute( options: { value: BoxSizeValue } ) {
+	override execute( options: { value: BoxSize } ) {
 		const editor = this.editor;
 		const embedElement = getSelectedContentEmbed( editor );
 
 		if ( embedElement && getEmbedBoxSizes( embedElement ).includes( options.value ) ) {
 			editor.model.change( writer => {
-				const wasTiny = embedElement.getAttribute( 'boxSize' ) === 'tiny';
-				writer.setAttribute( 'boxSize', options.value, embedElement );
-				writer.removeAttribute( SIZE_ATTRIBUTES.height, embedElement );
-				if ( !RESIZABLE_BOX_SIZES.includes( options.value ) ) {
-					writer.removeAttribute( SIZE_ATTRIBUTES.width, embedElement );
-				} else if ( isVideoEmbed( embedElement ) ) {
-					writer.setAttribute( SIZE_ATTRIBUTES.width,
-						getVideoMediumWidth( getMediaPreview( embedElement ) ), embedElement );
-				}
-
-				if ( options.value === 'tiny' ) {
-					writer.setSelection( embedElement, 'on' );
-				} else if ( wasTiny && !getCaption( embedElement ) ) {
-					const caption = editor.plugins.get( ContentEmbedEditing )
-						.takeTinyCaption( embedElement );
-					if ( caption ) {
-						writer.append( caption, embedElement );
-					}
-				}
+				setEmbedBoxSize( editor, writer, embedElement, options.value );
 			} );
 		}
 	}
@@ -1059,11 +1067,70 @@ class ContentEmbedBoxSizeCommand extends Command {
 		const embedElement = getSelectedContentEmbed( this.editor );
 
 		this.isEnabled = !!embedElement;
-		this.value = embedElement?.getAttribute( 'boxSize' ) as BoxSizeValue | null ?? null;
+		this.value = embedElement?.getAttribute( 'boxSize' ) as BoxSize | null ?? null;
 	}
 }
 
-/** Shows or hides the caption of the selected embed. A Tiny embed has none. */
+/**
+ * Puts the selected embed back at the box a new embed of its content starts with: its box size,
+ * no resized height, and the width of a new video or none.
+ */
+class ContentEmbedDefaultBoxSizeCommand extends Command {
+	constructor( editor: Editor ) {
+		super( editor );
+		// The host loads the content after the embed renders, which changes nothing in the model.
+		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
+	}
+
+	override refresh() {
+		const embed = getSelectedContentEmbed( this.editor );
+		this.isEnabled = !!embed && !isDefaultEmbedBox( this.editor, embed );
+	}
+
+	override execute() {
+		const editor = this.editor;
+		const embed = getSelectedContentEmbed( editor );
+		const box = embed && getDefaultEmbedBox( editor, embed );
+		if ( !embed || !box ) {
+			return;
+		}
+
+		editor.model.change( writer => {
+			setEmbedBoxSize( editor, writer, embed, box.boxSize );
+			writer.removeAttribute( SIZE_ATTRIBUTES.height, embed );
+			if ( box.width ) {
+				writer.setAttribute( SIZE_ATTRIBUTES.width, box.width, embed );
+			} else {
+				writer.removeAttribute( SIZE_ATTRIBUTES.width, embed );
+			}
+		} );
+	}
+}
+
+/** Sets the box size of `embed` to `value`, with the sizes and the caption that `value` keeps. */
+function setEmbedBoxSize(
+	editor: Editor, writer: ModelWriter, embed: ModelElement, value: BoxSize
+) {
+	const wasCompact = embed.getAttribute( 'boxSize' ) === 'compact';
+	writer.setAttribute( 'boxSize', value, embed );
+	if ( value !== 'resizable' ) {
+		writer.removeAttribute( SIZE_ATTRIBUTES.width, embed );
+	}
+	if ( value === 'compact' || value === 'full' ) {
+		writer.removeAttribute( SIZE_ATTRIBUTES.height, embed );
+	}
+
+	if ( value === 'compact' ) {
+		writer.setSelection( embed, 'on' );
+	} else if ( wasCompact && !getCaption( embed ) ) {
+		const caption = editor.plugins.get( ContentEmbedEditing ).takeCompactCaption( embed );
+		if ( caption ) {
+			writer.append( caption, embed );
+		}
+	}
+}
+
+/** Shows or hides the caption of the selected embed. A Compact embed has none. */
 export class ToggleContentEmbedCaptionCommand extends Command {
 	declare value: boolean;
 
@@ -1105,7 +1172,7 @@ export class ToggleContentEmbedCaptionCommand extends Command {
 }
 
 /**
- * Shows or hides the title row of the selected embed. A Tiny or an Expandable embed always
+ * Shows or hides the title row of the selected embed. A Compact or an Expandable embed always
  * shows it.
  */
 export class ToggleContentEmbedTitleCommand extends Command {
@@ -1115,7 +1182,7 @@ export class ToggleContentEmbedTitleCommand extends Command {
 	override refresh() {
 		const embed = getSelectedContentEmbed( this.editor );
 
-		this.isEnabled = !!embed && isEmbedTitleToggleable( embed );
+		this.isEnabled = !!embed && isEmbedTitleToggleable( this.editor, embed );
 		this.value = !embed?.getAttribute( 'hideTitle' );
 	}
 
@@ -1164,7 +1231,6 @@ export class SetContentEmbedCodeViewCommand extends Command {
 		language, tabWidth, indentWithTabs, wrapLines, lineNumbers
 	}: ContentEmbedCodeView ) {
 		const embed = getSelectedContentEmbed( this.editor );
-		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
 		if ( !embed ) {
 			return;
 		}
@@ -1228,9 +1294,12 @@ export class ContentEmbedDisplayModeCommand extends Command {
 export class ContentEmbedPositionCommand extends Command {
 	/** The position of the selected embed, or `null`. */
 	declare value: PositionValue | null;
+	/** The positions that the selected embed can take, as its box size allows, or none. */
+	declare positions: readonly PositionValue[];
 
 	constructor( editor: Editor ) {
 		super( editor );
+		this.set( 'positions', NO_POSITIONS );
 		// Content declares its positions once it renders, which changes nothing in the model.
 		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
 	}
@@ -1240,11 +1309,16 @@ export class ContentEmbedPositionCommand extends Command {
 
 		this.isEnabled = !!embed && hasEmbedPositions( this.editor, embed );
 		this.value = embed && this.isEnabled ? getEmbedPosition( embed ) : null;
+		this.positions = embed ? getEmbedPositions( this.editor, embed ) : NO_POSITIONS;
 	}
 
 	override execute( { value }: { value: PositionValue } ) {
 		const embed = getSelectedContentEmbed( this.editor );
 		if ( !embed ) {
+			return;
+		}
+
+		if ( !getEmbedPositions( this.editor, embed ).includes( value ) ) {
 			return;
 		}
 
@@ -1292,9 +1366,14 @@ function toggleSelectedEmbedFlag( editor: Editor, flag: EmbedFlag ) {
 class ConvertLinkToEmbedCommand extends Command {
 	/**
 	 * @param options.domElement the link, as the editing view renders it.
-	 * @param options.boxSize the size of the embed, `medium` when not given.
+	 * @param options.boxSize the size of the embed, Resizable when not given.
+	 * @param options.hideTitle whether the embed starts with its title hidden.
 	 */
-	override execute( { domElement, boxSize }: { domElement: HTMLElement; boxSize?: string } ) {
+	override execute( { domElement, boxSize, hideTitle }: {
+		domElement: HTMLElement;
+		boxSize?: BoxSize;
+		hideTitle?: boolean;
+	} ) {
 		const editor = this.editor;
 		const link = getLinkToEmbed( editor, domElement );
 		if ( !link ) {
@@ -1305,7 +1384,8 @@ class ConvertLinkToEmbedCommand extends Command {
 		editor.model.change( writer => {
 			const embed = writer.createElement( 'contentEmbed', {
 				...embedded,
-				boxSize: boxSize ?? 'medium'
+				boxSize: boxSize ?? 'resizable',
+				...( hideTitle ? { hideTitle: true } : {} )
 			} );
 			const range = writer.createRangeOn( reference );
 			editor.model.insertObject( embed, range, null, { setSelection: 'on' } );
@@ -1364,7 +1444,6 @@ export class DeleteContentEmbedCommand extends Command {
 
 	override execute() {
 		const embed = getSelectedContentEmbed( this.editor );
-		/* v8 ignore next 3 -- the command is enabled only while an embed is selected */
 		if ( !embed ) {
 			return;
 		}
@@ -1457,10 +1536,75 @@ export function isContentEmbed(
 	return !!node?.is( 'element', 'contentEmbed' );
 }
 
-/** Whether the title of `embed` can be hidden: a Tiny or an Expandable one always shows it. */
-function isEmbedTitleToggleable( embed: ModelElement ) {
-	const boxSize = embed.getAttribute( 'boxSize' );
-	return boxSize !== 'tiny' && boxSize !== 'expandable' && hasTitleRow( embed );
+/**
+ * Whether the title of `embed` can be hidden: an Expandable embed, and a Compact one that shows
+ * a title only, always show it.
+ */
+function isEmbedTitleToggleable( editor: Editor, embed: ModelElement ) {
+	return embed.getAttribute( 'boxSize' ) !== 'expandable' && hasTitleRow( embed )
+		&& isTitleOnlyEmbed( editor, embed ) === false;
+}
+
+/**
+ * Whether `embed` shows its title row only, as a Compact embed of content other than audio does:
+ * `true` or `false` once known, `null` for a note or an attachment the host has not loaded yet.
+ */
+function isTitleOnlyEmbed( editor: Editor, embed: ModelElement ): boolean | null {
+	if ( embed.getAttribute( 'boxSize' ) !== 'compact' ) {
+		return false;
+	}
+	if ( isMediaEmbed( embed ) ) {
+		return !isAudioEmbed( embed );
+	}
+
+	const host = editor.config.get( 'contentEmbed' );
+	if ( !host?.getEmbedContentInfo ) {
+		return true;
+	}
+	const info = getEmbedContentInfo( editor, embed );
+	return info ? !info.hasCompactContent : null;
+}
+
+/** What the host knows of the note or attachment `embed` shows, or `null` until it loads it. */
+function getEmbedContentInfo( editor: Editor, embed: ModelElement ): EmbedContentInfo | null {
+	const noteId = embed.getAttribute( 'noteId' ) as string | undefined;
+	const attachmentId = embed.getAttribute( 'attachmentId' ) as string | undefined;
+	if ( !noteId && !attachmentId ) {
+		return null;
+	}
+	return editor.config.get( 'contentEmbed' )
+		?.getEmbedContentInfo?.( { noteId, attachmentId } ) ?? null;
+}
+
+/**
+ * The box that a new embed of the content of `embed` starts with: its box size and, for a video,
+ * its width. `null` while the host has not loaded a note or an attachment.
+ */
+function getDefaultEmbedBox(
+	editor: Editor, embed: ModelElement
+): { boxSize: BoxSize; width: string | null } | null {
+	if ( isMediaEmbed( embed ) ) {
+		return isAudioEmbed( embed )
+			? { boxSize: 'compact', width: null }
+			: { boxSize: 'resizable', width: getVideoDefaultWidth( getMediaPreview( embed ) ) };
+	}
+	if ( isInlineSourceEmbed( embed ) ) {
+		return { boxSize: isExtendedCodeBlock( editor, embed ) ? 'full' : 'resizable', width: null };
+	}
+	if ( embed.hasAttribute( 'block' ) ) {
+		return { boxSize: EXCERPT_BOX_SIZE, width: null };
+	}
+
+	const info = getEmbedContentInfo( editor, embed );
+	return info ? { boxSize: info.defaultBoxSize, width: null } : null;
+}
+
+/** Whether `embed` is at the box a new embed of its content starts with, or that box is unknown. */
+function isDefaultEmbedBox( editor: Editor, embed: ModelElement ) {
+	const box = getDefaultEmbedBox( editor, embed );
+	return !box || ( embed.getAttribute( 'boxSize' ) === box.boxSize
+		&& !embed.hasAttribute( SIZE_ATTRIBUTES.height )
+		&& ( embed.getAttribute( SIZE_ATTRIBUTES.width ) ?? null ) === box.width );
 }
 
 /** Whether `embed` has a title row: an embed of a source has none. */
@@ -1479,7 +1623,7 @@ function isEmbedEditableToggleable( editor: Editor, embed: ModelElement ) {
 }
 
 /** The box sizes that `embed` can take, or all of them without an embed. */
-export function getEmbedBoxSizes( embed: ModelElement | null ): readonly BoxSizeValue[] {
+export function getEmbedBoxSizes( embed: ModelElement | null ): readonly BoxSize[] {
 	if ( !embed ) {
 		return BOX_SIZES;
 	}
@@ -1516,13 +1660,31 @@ export function toDisplayMode( value: unknown ): DisplayModeValue | null {
  * a source when its content opts in to it.
  */
 function hasEmbedPositions( editor: Editor, embed: ModelElement ) {
-	return !isInlineSourceEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions;
+	return POSITIONED_BOX_SIZES.includes( embed.getAttribute( 'boxSize' ) )
+		&& ( !isInlineSourceEmbed( embed ) || !!getEmbedTools( editor, embed )?.hasPositions );
 }
 
-/** Where `embed` is placed in the text: its saved position, or centered. */
+/**
+ * The positions that `embed` can take: every one for a Resizable embed, those that break the
+ * text for an Expandable one, which takes the full width, and none for the other box sizes.
+ */
+function getEmbedPositions( editor: Editor, embed: ModelElement ): readonly PositionValue[] {
+	if ( !hasEmbedPositions( editor, embed ) ) {
+		return NO_POSITIONS;
+	}
+	return embed.getAttribute( 'boxSize' ) === 'expandable' ? BREAK_TEXT_POSITIONS : POSITIONS;
+}
+
+/**
+ * Where `embed` is placed in the text: its saved position, when its box size can take it, or
+ * centered. The saved position stays on the embed for the box sizes that can take it.
+ */
 function getEmbedPosition( embed: ModelElement ): PositionValue {
-	const position = embed.getAttribute( 'position' );
-	return SAVED_POSITIONS.includes( position ) ? position as PositionValue : 'center';
+	const position = embed.getAttribute( 'position' ) as PositionValue | undefined;
+	const positions = embed.getAttribute( 'boxSize' ) === 'expandable'
+		? BREAK_TEXT_POSITIONS
+		: POSITIONS;
+	return position && positions.includes( position ) ? position : 'center';
 }
 
 /**
@@ -1537,9 +1699,9 @@ export function getEmbedAnchor( embed: ModelElement ): ResizeAnchor {
 	return position === 'right' || position === 'wrap-right' ? 'right' : 'center';
 }
 
-/** Whether `embed` can have a caption now. A Tiny embed has none. */
+/** Whether `embed` can have a caption now. A Compact embed that shows a title only has none. */
 function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
-	return embed.getAttribute( 'boxSize' ) !== 'tiny' && hasCaptionSupport( embed )
+	return isTitleOnlyEmbed( editor, embed ) !== true && hasCaptionSupport( embed )
 		&& editor.model.schema.checkChild( embed, 'caption' );
 }
 
@@ -1690,8 +1852,8 @@ export function getDisplayModeOfView(
 
 /** The `data-position` attribute of `element`, when it is not centered. */
 export function getPositionAttributes( element: ModelElement ): Record<string, string> {
-	const position = getEmbedPosition( element );
-	return position === 'center' ? {} : { 'data-position': position };
+	const position = element.getAttribute( 'position' );
+	return SAVED_POSITIONS.includes( position ) ? { 'data-position': position as string } : {};
 }
 
 /** The position in the `data-position` attribute of a saved embed, when not centered. */
@@ -1867,7 +2029,7 @@ function loadEmbeddedContent(
 		return;
 	}
 	if ( isMediaEmbed( element ) ) {
-		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper );
+		editor.plugins.get( ContentEmbedMedia ).load( element, wrapper, boxSize );
 		return;
 	}
 
@@ -2183,8 +2345,8 @@ export interface ContentEmbedHost {
 	sanitizeHtml( html: string ): string;
 	/** Fills `wrapper` with the placeholder of an embed of an unknown kind. */
 	loadUnknown( wrapper: HTMLElement, boxSize: string | undefined ): void;
-	/** Fills `wrapper` with the player of the media of a link preview. */
-	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement ): void;
+	/** Fills `wrapper` with the player of the media of a link preview, in a box of `boxSize`. */
+	loadMedia( preview: LinkPreviewData, wrapper: HTMLElement, boxSize: string | undefined ): void;
 	/**
 	 * Captures the picture of a frame of the video file of a link preview and stores it as the
 	 * thumbnail of the preview, resolving to its URL and the shape of the video, or to `null`
@@ -2202,6 +2364,21 @@ export interface ContentEmbedHost {
 	 * returns whether it did.
 	 */
 	enter( embed: HTMLElement, edge: EmbedEdge ): boolean;
+	/**
+	 * What the host knows of the note or attachment that an embed shows, from its content type,
+	 * or `null` until the host has loaded it.
+	 */
+	getEmbedContentInfo(
+		embedded: { noteId?: string; attachmentId?: string }
+	): EmbedContentInfo | null;
+}
+
+/** What the content type of a note or an attachment decides about the box of its embed. */
+export interface EmbedContentInfo {
+	/** The box size that a new embed of the content starts at. */
+	defaultBoxSize: BoxSize;
+	/** Whether a Compact embed renders the content, as it plays audio, rather than its title. */
+	hasCompactContent: boolean;
 }
 
 /** A toolbar separator that shows only while `isVisible`, as the items on both sides do. */

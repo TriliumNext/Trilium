@@ -5,7 +5,8 @@ import {
     getAttachedFileMime, getContentRendererGroup, getDrawingPictureTitle,
     getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
     MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, MEETING_RECORDING_ICON, MEETING_RECORDING_LABEL,
-    MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+    MERMAID_ATTACHMENT_MIME, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink,
+    readDrawingFrame
 } from "./notes.js";
 import { NoteType } from "./rows.js";
 
@@ -69,6 +70,21 @@ describe("getImageAttachmentTitle", () => {
 describe("getDrawingPictureTitle", () => {
     it("titles the picture of a canvas drawing after the attachment of the drawing", () => {
         expect(getDrawingPictureTitle("drawing1")).toBe("drawing1.svg");
+    });
+});
+
+describe("readDrawingFrame", () => {
+    it("reads a frame with a size and a scale, and nothing else", () => {
+        const frame = { x: 1, y: 2, width: 3, height: 4, scale: 0.5 };
+        expect(readDrawingFrame(frame)).toEqual(frame);
+        expect(readDrawingFrame({ ...frame, extra: true })).toEqual(frame);
+        const malformed = [
+            null, undefined, "frame", { x: 1, y: 2 }, { ...frame, width: 0 },
+            { ...frame, scale: -1 }, { ...frame, x: "1" }, { ...frame, height: NaN }
+        ];
+        for (const value of malformed) {
+            expect(readDrawingFrame(value)).toBeNull();
+        }
     });
 });
 

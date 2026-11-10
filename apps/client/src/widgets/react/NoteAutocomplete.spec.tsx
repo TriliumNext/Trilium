@@ -1420,16 +1420,19 @@ describe("filterCommandEntries with aliases", () => {
 });
 
 describe("the slash command menu", () => {
+    beforeEach(() => {
+        document.head.innerHTML = [ "../../stylesheets/menus.css", "NoteAutocomplete.css" ]
+            .map((file) => `<style>${readFileSync(join(__dirname, file), "utf8")}</style>`)
+            .join("");
+        document.body.className = "desktop";
+    });
+
     afterEach(() => {
         document.head.innerHTML = "";
         document.body.className = "";
     });
 
     it("is as wide as a menu when it opens as a submenu", () => {
-        document.head.innerHTML = [ "../../stylesheets/menus.css", "NoteAutocomplete.css" ]
-            .map((file) => `<style>${readFileSync(join(__dirname, file), "utf8")}</style>`)
-            .join("");
-        document.body.className = "desktop";
         const menu = `<div class="dropdown-menu slash-command-menu"></div>`;
         document.body.innerHTML = `${menu}<div class="dropdown-submenu">${menu}</div>`;
         const widths = (element: Element) => {
@@ -1441,5 +1444,22 @@ describe("the slash command menu", () => {
         const [ top, submenu ] = Array.from(menus, widths);
         expect(top.width).toBe("350px");
         expect(submenu).toEqual({ width: top.width, minWidth: "unset", maxWidth: top.maxWidth });
+    });
+
+    it("puts the icon of a row beside the first line of its title, in a submenu too", () => {
+        const row = "<li class=\"dropdown-item\"><span><span class=\"bx bx-table tn-icon\"></span>"
+            + "<span class=\"tn-menu-gap\"></span><div>Table<div class=\"description\">Grid</div>"
+            + "</div></span></li>";
+        const menu = `<div class="dropdown-menu slash-command-menu">${row}</div>`;
+        document.body.innerHTML = `${menu}<div class="dropdown-submenu">${menu}</div>`;
+
+        const rows = document.querySelectorAll(".dropdown-item > span");
+        expect(rows).toHaveLength(2);
+        for (const row of rows) {
+            const icon = row.querySelector(".tn-icon");
+            expect(icon).not.toBeNull();
+            expect(getComputedStyle(row).alignItems).toBe("flex-start");
+            expect(icon && getComputedStyle(icon).display).toBe("inline-flex");
+        }
     });
 });

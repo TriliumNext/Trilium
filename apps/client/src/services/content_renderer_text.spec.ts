@@ -9,10 +9,12 @@ import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
+import { buildNote } from "../test/easy-froca";
+import { loadEmbeddedNote } from "../widgets/type_widgets/text/utils";
 import content_renderer from "./content_renderer";
 import froca from "./froca";
+import link from "./link";
 import server from "./server";
-import { buildNote } from "../test/easy-froca";
 
 // `applyInlineMermaid` dynamically imports "mermaid"; provide a controllable
 // stub whose behavior we tune per-test via the shared `mermaidRenderImpl` hook.
@@ -123,14 +125,17 @@ describe("Text content renderer", () => {
         expect(embed.querySelectorAll("figcaption")).toHaveLength(1);
     });
 
-    it("renders a Tiny embed as a link, without rendering what it shows", async () => {
-        const embeddedNote = buildNote({ title: "Tiny note", content: "<p>Not rendered.</p>" });
+    it("renders a Compact embed as a link, unless it is audio, whose controls it renders", async () => {
+        const embeddedNote = buildNote({ title: "Compact note", content: "<p>Not rendered.</p>" });
+        const song = buildNote({ title: "Song", type: "file", mime: "audio/mpeg" });
         const owner = buildNote({
-            title: "Tiny owner",
+            title: "Compact owner",
             content: `<figure class="include-note" data-note-id="${embeddedNote.noteId}"`
-                + ` data-box-size="tiny"><figcaption>Tiny caption</figcaption></figure>`
+                + ` data-box-size="compact"><figcaption>Compact caption</figcaption></figure>`
                 + `<figure class="include-note" data-attachment-id="tinyPic" data-box-size="tiny">`
                 + "</figure>"
+                + `<figure class="include-note" data-note-id="${song.noteId}" data-box-size="compact"`
+                + ` data-hide-title="true"></figure>`
         });
         new FAttachment(froca, {
             attachmentId: "tinyPic",
@@ -143,17 +148,20 @@ describe("Text content renderer", () => {
             utcDateScheduledForErasureSince: "",
             contentLength: 0
         });
-        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent");
+        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent")
+            .mockResolvedValue({ $renderedContent: $("<div class=\"player\">"), type: "audio" } as never);
 
         try {
             const contentEl = document.createElement("div");
             await renderText(owner, $(contentEl));
 
-            expect(getRenderedContent).not.toHaveBeenCalled();
-            expect(contentEl.querySelector(".include-note")).toBeNull();
+            expect(getRenderedContent.mock.calls.map(([ entity ]) => entity)).toEqual([ song ]);
+            const boxes = contentEl.querySelectorAll(".include-note");
+            expect([ ...boxes ].map((box) => box.getAttribute("data-box-size"))).toEqual([ "compact" ]);
+            expect(boxes[0]?.querySelector(".player")).not.toBeNull();
             expect(contentEl.querySelector("img")).toBeNull();
             expect(contentEl.textContent).not.toContain("Not rendered.");
-            expect(contentEl.textContent).not.toContain("Tiny caption");
+            expect(contentEl.textContent).not.toContain("Compact caption");
             const links = Array.from(contentEl.querySelectorAll("a.reference-link"));
             expect(links.map((link) => link.getAttribute("href"))).toEqual([
                 `#root/${embeddedNote.noteId}`,
@@ -545,6 +553,57 @@ describe("Nested embeds (single-level display vs recursive print)", () => {
     });
 });
 
+describe("Embed boxes", () => {
+    const figure = (noteId: string) =>
+        `<figure class="include-note" data-note-id="${noteId}"></figure>`;
+
+    it("shows the embeds of a box in boxes, and links to the notes shown around them", async () => {
+        // A box shows its content in its wrapper, as `ContentEmbed` does once it mounts.
+        const mountBox = vi.spyOn(content_renderer, "mountInteractiveWidget")
+            .mockImplementation(async (vnode, container) => {
+                const { content } = vnode.props as { content?: HTMLElement };
+                if (content) container.append(content);
+            });
+        const createLink = vi.spyOn(link, "createLink").mockResolvedValue($("<a>"));
+        buildNote({
+            id: "boxChild",
+            title: "Child",
+            content: `<p>Child body</p>${figure("boxGrandchild")}${figure("boxParent")}`
+        });
+        buildNote({
+            id: "boxGrandchild",
+            title: "Grandchild",
+            content: `<p>Grandchild body</p><pre><code class="language-javascript">a;</code></pre>`
+                + `${figure("boxChild")}${figure("boxGrandchild")}`
+        });
+        buildNote({ id: "boxParent", title: "Parent", content: figure("boxChild") });
+        const wrapper = document.createElement("div");
+        wrapper.className = "include-note-wrapper";
+        document.body.append(wrapper);
+
+        try {
+            // As the editor of the parent note loads the box of the child.
+            await loadEmbeddedNote("boxChild", $(wrapper), "full", {
+                seenNoteIds: new Set([ "boxParent" ])
+            });
+
+            expect(wrapper.textContent).toContain("Child body");
+            expect(wrapper.textContent).toContain("Grandchild body");
+            expect(mountBox).toHaveBeenCalledTimes(2);
+            // The grandchild links to the child and itself, the child to the parent.
+            expect([ ...wrapper.querySelectorAll("a.reference-link") ]
+                .map((referenceLink) => referenceLink.getAttribute("href")))
+                .toEqual([ "#root/boxChild", "#root/boxGrandchild", "#root/boxParent" ]);
+            // The passes over the content of the child leave the content of its boxes alone.
+            expect(wrapper.querySelectorAll("pre .copy-button")).toHaveLength(1);
+        } finally {
+            wrapper.remove();
+            mountBox.mockRestore();
+            createLink.mockRestore();
+        }
+    });
+});
+
 describe("renderContentEmbeds via postProcessRichContent", () => {
     it("warns and skips an include-note section whose note cannot be found", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -590,9 +649,11 @@ describe("Embeds of an unknown kind", () => {
         const boxes = emptyUnknownEmbeds(container);
 
         expect(boxes).toEqual([ container.firstElementChild ]);
+        // A box size saved by an older version reads as the size it became, at its height.
         expect(container.innerHTML).toBe(`<section data-trilium-embed="note-card"`
-            + ` data-box-size="small" data-trilium-block-id="b1"`
-            + ` class="include-note unknown-content-embed"></section><p>Text</p>`);
+            + ` data-box-size="resizable" data-trilium-block-id="b1"`
+            + ` class="include-note unknown-content-embed" style="--include-note-height:10em">`
+            + `</section><p>Text</p>`);
     });
 
     it("show no fallback in rendered content", async () => {

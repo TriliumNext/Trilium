@@ -153,7 +153,6 @@ export default class CollapsibleListItems extends Plugin {
     /** Add or remove the view-only "temporarily expanded" class on the collapsed item's `<li>`. */
     private _applyFindReveal(block: ModelElement, reveal: boolean) {
         const viewItem = this.editor.editing.mapper.toViewElement(block)?.findAncestor("li");
-        /* v8 ignore next 3 -- defensive: a rendered collapsed ancestor always maps to its <li>. */
         if (!viewItem) {
             return;
         }
@@ -374,7 +373,6 @@ export default class CollapsibleListItems extends Plugin {
                     }
                 } else if (entry.type === "attribute" && (entry.attributeKey === "listIndent" || entry.attributeKey === "listItemId")) {
                     const node = entry.range.start.nodeAfter;
-                    /* v8 ignore next -- defensive: the differ always reports a list block-attribute change with the affected block as range.start.nodeAfter, so `node` is never null here (the falsy branch is unreachable from any model operation). */
                     if (node && node.is("element") && node.hasAttribute("listItemId")) {
                         changedBlocks.add(node);
                     }
@@ -522,15 +520,9 @@ function getListBlockFromViewListItem(editor: Editor, viewItem: ViewElement): Mo
     if (isListBlock(modelPosition.nodeAfter)) {
         return modelPosition.nodeAfter;
     }
-    // To-do case: the position landed inside the block; walk up to the enclosing list item. A
-    // view <li> at offset 0 always maps either to a node-after that is a list block (handled
-    // above) or to a model position whose parent is the list-item block itself (to-do lists), so
-    // the very first iteration always finds `listItemId` and returns (the to-do tests exercise
-    // this). The loop's continuation, its no-listItemId branch, and the trailing `return null` are
-    // defensive only — kept in case CKEditor's view->model mapping ever changes shape — and are
-    // unreachable from any current model/view state, so the whole walk is excluded from coverage.
+    // To-do case: the position landed inside the block; walk up to the enclosing list item. The
+    // `<li>` of a footnote is in no list item.
     let ancestor: typeof modelPosition.parent | null = modelPosition.parent;
-    /* v8 ignore start -- defensive walk-up; the first iteration always resolves the list item (see above). */
     while (ancestor && ancestor.is("element")) {
         if (ancestor.hasAttribute("listItemId")) {
             return ancestor;
@@ -538,7 +530,6 @@ function getListBlockFromViewListItem(editor: Editor, viewItem: ViewElement): Mo
         ancestor = ancestor.parent;
     }
     return null;
-    /* v8 ignore stop */
 }
 
 /** Whether the list item has nested (deeper-indented) items, i.e. there is anything to collapse. */

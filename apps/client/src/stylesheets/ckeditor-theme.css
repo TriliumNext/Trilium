@@ -138,6 +138,15 @@ html:root {
     }
 }
 
+/* Outranks the focus ring and shadow of nested editables in `ckeditor5.css`. */
+:root .ck-content :is(.image, .table, .include-note) > figcaption.ck-editor__nested-editable {
+    &:is(.ck-editor__nested-editable_focused, :focus) {
+        border-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+}
+
 div.ck.ck-dialog {
     --ck-color-dialog-background: var(--modal-background-color, var(--main-background-color));
 

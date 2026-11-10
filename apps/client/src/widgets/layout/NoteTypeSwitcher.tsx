@@ -40,8 +40,7 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
     const currentNoteType = useNoteProperty(note, "type");
     const currentNoteTypeData = NOTE_TYPES.find(t => t.type === currentNoteType);
 
-    // Code notes fill the pane with their editor and carry no inline title, so the switcher has
-    // nowhere to sit above them.
+    // Code notes fill the pane with their editor, so the switcher has nowhere to sit above them.
     return (currentNoteType === "text" &&
         <div
             className="note-type-switcher"
@@ -53,6 +52,22 @@ export default function NoteTypeSwitcher({ note }: { note?: FNote | null }) {
                     <NoteTypeBadges noteId={note.noteId} />
                 </>
             )}
+        </div>
+    );
+}
+
+/**
+ * The switcher of the compact note title (`noteTitleStyle` option), mounted at the foot of the note
+ * split rather than above the content, so that it reads as a toolbar and not as part of the note.
+ */
+export function NoteTypeSwitcherBar() {
+    const { note, viewScope } = useNoteContext();
+    const [ noteTitleStyle ] = useTriliumOption("noteTitleStyle");
+    const isDefaultView = !viewScope?.viewMode || viewScope.viewMode === "default";
+
+    return (
+        <div className="note-type-switcher-bar">
+            {noteTitleStyle === "compact" && isDefaultView && <NoteTypeSwitcher note={note} />}
         </div>
     );
 }

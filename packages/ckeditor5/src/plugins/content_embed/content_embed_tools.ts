@@ -310,7 +310,8 @@ function getButtonFace(tool: ContentEmbedTool) {
  */
 function addKeystrokes(dropdown: DropdownView, children: ContentEmbedTool[]) {
     /* v8 ignore next -- `addListToDropdown()` creates `listView` before this runs. */
-    const buttons = [ ...dropdown.listView?.items ?? [] ]
+    const items = dropdown.listView?.items ?? [];
+    const buttons = [ ...items ]
         .filter(item => item instanceof ListItemView)
         .map(item => item.children.first);
     for (const [ index, button ] of buttons.entries()) {

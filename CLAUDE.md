@@ -253,7 +253,8 @@ follow-up. Before reporting the work done: `node .claude/skills/writing-document
 --diff` (plus `impact "<feature name>"` for names the diff cannot know) lists the pages that mention the
 changed UI strings and the help pages wired from the touched components; read every hit and edit what
 describes an affordance that changed; a feature no page covers gets a page (`docs.mjs new`). Then
-`docs.mjs sync` and `docs.mjs check`. Release notes are the maintainer's at release time — not on a branch.
+`docs.mjs sync` and `docs.mjs check`. The release note itself is the maintainer's at release time; what a
+change contributes to it is a changelog entry (below).
 
 Two traps this catches:
 
@@ -263,6 +264,39 @@ Two traps this catches:
 - **A capability gate has a blast radius.** Widening one (a note type added to a list a widget switches
   on) can surface panels, bars and menu entries the change never mentioned. Grep the gate's other readers
   and say what else now appears.
+
+### A user-facing change gets a changelog entry
+
+The release note is built from `.changelog/*.md` files, one per change a user can notice, so **a fix or
+feature that reaches users adds its entry in the same commit**. Skip it for internal changes, for a fix to
+something introduced since the last release, and for a fix whose closed issue's title already reads as the
+entry (closed issues are listed without one).
+
+1. `pnpm changelog:new <slug>` prints the path of a new file; replace its whole template, comments
+   included, with only the keys that apply.
+2. `type`: `fix` or `improvement` for most changes. `area` is required for both, one of the names the
+   template lists (`AREAS` in `scripts/release-notes.mts`), e.g. `Text editor`, `Search`, `Tree`.
+3. `closes: [N]` when the commit closes an issue. It only links: the issue is still closed by
+   `(closes #N)` in the commit subject. Leave it out for a discussion or an idea.
+4. `credits` names only an outside contributor whose code is the change. **Never credit the reporter** of
+   the bug or the author of the idea, and leave it out when the maintainers wrote the change.
+5. The body is one line, past tense for a fix, describing what the user saw, not the code: "Typing `/2`
+   in the slash command menu suggested the column layout before the heading", not "Rank exact alias
+   matches first".
+6. `pnpm changelog:lint`, then commit the entry with the code.
+
+```markdown
+---
+type: fix
+area: Text editor
+---
+
+Typing `/2` to `/4` in the slash command menu suggested the column layout before the heading of that level.
+```
+
+Full format, `notable` and the other types: `.changelog/README.md`. `pnpm chore:release-notes <version>
+--unlisted` lists the fixes and features that slipped through without one. Entries are public before the
+release: the nightly release body lists them as the next note will (`pnpm chore:release-notes unreleased`).
 
 ## Recipes
 

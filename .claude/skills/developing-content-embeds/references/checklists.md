@@ -36,8 +36,12 @@ box writes on its content as `type-<contentType>`. Every list below keys on it.
   `MAX_ATTACHED_CODE_SIZE` for code files.
 
 **The box** (`apps/client/src/widgets/type_widgets/text/ContentEmbed.tsx`):
-- `SEARCHABLE_CONTENT_TYPES`: Search in note searches the preview with an `HtmlFindTarget`.
-- `DIRECT_CONTENT_TYPES`: no backdrop; the first click goes to the content.
+- `SEARCHABLE_CONTENT_TYPES`: Search in note searches the preview with a `MergedFind` over an
+  `HtmlNoteFindTarget`, which leaves the boxes nested in it to their own targets.
+- `DIRECT_CONTENT_TYPES`: no backdrop; the first click goes to the content. Other types keep
+  the backdrop until the content has the focus: a click on it focuses what is under the pointer
+  and also clicks it when it is a `<button>` (the ⋮ of an embed inside an included note), never a
+  link.
 - `OWN_FULLSCREEN_CONTENT_TYPES`: no fullscreen button on the box.
 - `MENU_CONTENT_TYPES`: a right click on the content opens the ⋮ menu.
 
@@ -69,7 +73,7 @@ height of its own (`type-pdf`, `type-webView`).
   `contentType`, `load()`, `renderPreview()`. Any other inline language becomes an extended code
   block (`getInlineEmbedType()`).
 - Derived from it: the editor's `inlineLanguages` and `renderInlinePreview` (`buildConfig()` in
-  `text/config.ts`), `isSelfUpdatingType()`, and `applySourceEmbeds()` in `ReadOnlyText.tsx`.
+  `text/config.ts`), `isSelfUpdatingType()`, and `prepareSourceEmbeds()` in `text/embed_boxes.ts`.
 - Not derived: the content type lists above, and the paths that match `language-mermaid` by name.
   A new language shows as a plain code block in each until it gets its own branch:
   - `rewriteMermaidDiagramsInContainer()` / `applyInlineMermaid()` (`content_renderer_text.ts`):
@@ -79,7 +83,7 @@ height of its own (`type-pdf`, `type-webView`).
   - Markdown import: `markdown_renderer.ts` keeps only `mermaid` as a fence language and turns
     another unknown one into auto-detect. Export maps languages through `rewriteLanguageTag()`
     (`services/export/markdown.ts`).
-- `applySourceEmbeds()` sets the default size (code Full, else Medium), allows only Small, Medium
+- `prepareSourceEmbeds()` sets the default size (code Full, else Medium), allows only Small, Medium
   and Full, forces `hideTitle`, and copies only the `data-*` attributes it lists. A new attribute
   goes there, in `getEmbedCodeView()` (`content_renderer_text.ts`) and in `CODE_VIEW_ATTRIBUTES`
   (`apps/client/src/test/content_embed.ts`).

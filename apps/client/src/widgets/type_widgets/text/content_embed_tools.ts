@@ -1,4 +1,5 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
+import { EMBED_HEIGHT_PROPERTY } from "@triliumnext/commons";
 import type { RefObject } from "preact";
 import { flushSync } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -93,6 +94,11 @@ export interface ContentEmbedToolProvider {
  * `leaveFullscreen` once it has the new size.
  */
 export type ContentEmbedEvent = "fullscreenChangeStart" | "enterFullscreen" | "leaveFullscreen";
+
+/** Whether `element` is in a content box that is shown fullscreen. */
+export function isInFullscreen(element: Element | null) {
+    return !!element && !!document.fullscreenElement?.contains(element);
+}
 
 /** The editor in an embed, as the caret of the text editor around the embed enters it. */
 export interface EmbedCaretTarget {
@@ -273,11 +279,11 @@ export function showContentEmbedFullscreen(element: Element | null) {
 
 /**
  * Whether `embed` can go fullscreen while it has no title row, which holds a button for it: a
- * Medium or Full box with its title hidden. Its content then offers the button.
+ * Resizable or Full box with its title hidden. Its content then offers the button.
  */
 export function needsFullscreenButton(embed: HTMLElement | null | undefined) {
     const { hideTitle, boxSize } = embed?.dataset ?? {};
-    return hideTitle === "true" && (boxSize === "medium" || boxSize === "full");
+    return hideTitle === "true" && (boxSize === "resizable" || boxSize === "full");
 }
 
 /**
@@ -372,6 +378,33 @@ export function useContentEmbedAttribute(
         outsideEmbed: initial,
         attributes: [ name ],
         read: (embed) => embed.getAttribute(name)
+    });
+}
+
+/**
+ * Whether the user is resizing the embed that contains `ref` with its handle: the editor's
+ * `ResizableWidgets` plugin marks the embed `ck-widget_resizing` for the drag.
+ */
+export function useContentEmbedResizing(ref: RefObject<HTMLElement | null>) {
+    return useEmbedState(ref, {
+        initial: false,
+        outsideEmbed: false,
+        attributes: [ "class" ],
+        read: (embed) => embed.classList.contains("ck-widget_resizing")
+    });
+}
+
+/**
+ * The width and the height that the embed that contains `ref` was resized to, as one string that
+ * follows their changes, such as an undo of a resize. `null` until the content is in the embed.
+ */
+export function useContentEmbedSize(ref: RefObject<HTMLElement | null>) {
+    return useEmbedState<string | null>(ref, {
+        initial: null,
+        outsideEmbed: null,
+        attributes: [ "style" ],
+        read: (embed) => [ "--include-note-width", EMBED_HEIGHT_PROPERTY ]
+            .map((name) => embed.style.getPropertyValue(name)).join(" ")
     });
 }
 

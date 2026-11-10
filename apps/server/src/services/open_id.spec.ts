@@ -1,6 +1,9 @@
 import { cls, getLog, options } from "@triliumnext/core";
-import type { NextFunction, Request as ExpressRequest, RequestHandler, Response as ExpressResponse } from "express";
+import express, { type Express, type NextFunction, type Request as ExpressRequest, type RequestHandler, type Response as ExpressResponse } from "express";
+import { auth } from "express-openid-connect";
 import { generateKeyPairSync, type KeyObject, sign } from "node:crypto";
+import type { Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import { authorizationCodeGrant, ClientSecretBasic, ClientSecretPost, type CustomFetch, customFetch, discovery } from "openid-client";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -860,6 +863,58 @@ describe("open_id", () => {
             });
         });
     });
+
+    /**
+     * Cover for #11234 and #12301: with the tokens inline, the callback's response headers outgrew
+     * the 4 KB default `proxy_buffer_size` of nginx, which answered 502 after the code was already
+     * redeemed.
+     */
+    describe("OIDC session storage", () => {
+        it("keeps the tokens in the sessions table and the session ID in the cookie", async () => {
+            const { sessionStore } = await import("../routes/session_parser.js");
+            const harness = await startOidcHarness(sessionStore as never);
+            try {
+                const { status, cookies } = await harness.login();
+                expect(status).toBe(302);
+
+                const appSession = cookies.find((cookie) => cookie.startsWith("appSession="));
+                expect(appSession?.length).toBeLessThan(200);
+                expect(cookies.join("").length).toBeLessThan(1024);
+
+                const sessionId = appSession?.split(";")[0].slice("appSession=".length);
+                const stored = sql.getValue<string>(
+                    "SELECT data FROM sessions WHERE id = ?", sessionId
+                );
+                expect(stored).toContain("id_token");
+
+                expect(await harness.isAuthenticated(cookieHeader(cookies))).toBe(true);
+            } finally {
+                await harness.close();
+            }
+        });
+
+        it("logs out and clears a cookie in the old inline format", async () => {
+            const inline = await startOidcHarness(undefined);
+            const { sessionStore } = await import("../routes/session_parser.js");
+            const stored = await startOidcHarness(sessionStore as never);
+            try {
+                const { cookies } = await inline.login();
+                const inlineCookie = cookieHeader(cookies);
+                expect(inlineCookie.length).toBeGreaterThan(1024);
+
+                const response = await fetch(`${stored.appUrl}/whoami`, {
+                    headers: { cookie: inlineCookie }
+                });
+                expect(await response.json()).toBe(false);
+                const appSession = response.headers.getSetCookie()
+                    .find((cookie) => cookie.startsWith("appSession="));
+                expect(appSession).toMatch(/^appSession=;.*Expires=Thu, 01 Jan 1970/);
+            } finally {
+                await inline.close();
+                await stored.close();
+            }
+        });
+    });
 });
 
 /**
@@ -885,11 +940,14 @@ describe("createReactiveOidcMiddleware", () => {
         });
         const generateOAuthConfig = vi.fn((endSessionSupported: boolean) => ({ endSessionSupported }) as never);
         const isConfigured = vi.fn(() => configured);
+        const sessionStore = { get() {}, set() {}, destroy() {} } as never;
+        const loadSessionStore = vi.fn().mockResolvedValue(sessionStore);
 
         const middleware = createReactiveOidcMiddleware({
             isConfigured,
             probeDiscovery,
             generateOAuthConfig,
+            loadSessionStore,
             buildAuth
         });
 
@@ -900,6 +958,7 @@ describe("createReactiveOidcMiddleware", () => {
             probeDiscovery,
             generateOAuthConfig,
             isConfigured,
+            sessionStore,
             setConfigured: (value: boolean) => { configured = value; }
         };
     }
@@ -935,7 +994,7 @@ describe("createReactiveOidcMiddleware", () => {
         const { req, res, next } = await run(t.middleware);
 
         expect(t.probeDiscovery).toHaveBeenCalledOnce();
-        expect(t.generateOAuthConfig).toHaveBeenCalledWith(false, PROBED_ISSUER, "RS256");
+        expect(t.generateOAuthConfig).toHaveBeenCalledWith(false, PROBED_ISSUER, "RS256", t.sessionStore);
         expect(t.buildAuth).toHaveBeenCalledOnce();
         expect(t.oidcHandler).toHaveBeenCalledWith(req, res, expect.any(Function));
         // The wrapper must hand off to the OIDC handler and NOT call next() itself — calling it again
@@ -972,12 +1031,12 @@ describe("createReactiveOidcMiddleware", () => {
         // a sign-in the library itself may well complete.
         await run(t.middleware);
         expect(t.oidcHandler).toHaveBeenCalledOnce();
-        expect(t.generateOAuthConfig).toHaveBeenLastCalledWith(false, PROBED_ISSUER, "RS256");
+        expect(t.generateOAuthConfig).toHaveBeenLastCalledWith(false, PROBED_ISSUER, "RS256", t.sessionStore);
 
         // Once discovery recovers, the real algorithm takes effect without a restart...
         await run(t.middleware);
         expect(t.probeDiscovery).toHaveBeenCalledTimes(2);
-        expect(t.generateOAuthConfig).toHaveBeenLastCalledWith(true, PROBED_ISSUER, "EdDSA");
+        expect(t.generateOAuthConfig).toHaveBeenLastCalledWith(true, PROBED_ISSUER, "EdDSA", t.sessionStore);
 
         // ...and that build, made from a document that was actually read, is the one that gets cached.
         await run(t.middleware);
@@ -1012,7 +1071,7 @@ describe("createReactiveOidcMiddleware", () => {
 
         await run(t.middleware);
 
-        expect(t.generateOAuthConfig).toHaveBeenCalledWith(true, "https://sso.example.com/application/o/trilium-app/", "EdDSA");
+        expect(t.generateOAuthConfig).toHaveBeenCalledWith(true, "https://sso.example.com/application/o/trilium-app/", "EdDSA", t.sessionStore);
     });
 
     // This is the regression the whole change exists to fix: with the old startup-only mount, flipping
@@ -1369,4 +1428,109 @@ function signEdDsaJwt(privateKey: KeyObject, claims: Record<string, unknown>) {
     const signingInput = `${encode({ alg: "EdDSA", typ: "JWT", kid: "ed25519-1" })}.${encode(claims)}`;
     const signature = sign(null, Buffer.from(signingInput), privateKey).toString("base64url");
     return `${signingInput}.${signature}`;
+}
+
+/**
+ * Starts a stub Ed25519-signing provider and an app running the real express-openid-connect with
+ * Trilium's config, both on loopback ports. `afterCallback` is dropped so the round-trip needs no
+ * enrolled account.
+ */
+async function startOidcHarness(sessionStore: Parameters<typeof openID.generateOAuthConfig>[3]) {
+    const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+    const jwk = {
+        ...publicKey.export({ format: "jwk" }), kid: "ed25519-1", alg: "EdDSA", use: "sig"
+    };
+    let nonce = "";
+
+    const provider = express();
+    provider.use(express.urlencoded({ extended: false }));
+    const providerServer = await listen(provider);
+    const issuer = `http://127.0.0.1:${(providerServer.address() as AddressInfo).port}`;
+    provider.get("/.well-known/openid-configuration", (_req, res) => {
+        res.json({
+            issuer,
+            authorization_endpoint: `${issuer}/authorize`,
+            token_endpoint: `${issuer}/token`,
+            jwks_uri: `${issuer}/jwks`,
+            response_types_supported: [ "code" ],
+            subject_types_supported: [ "public" ],
+            id_token_signing_alg_values_supported: [ "EdDSA" ]
+        });
+    });
+    provider.get("/jwks", (_req, res) => {
+        res.json({ keys: [ jwk ] });
+    });
+    provider.get("/authorize", (req, res) => {
+        nonce = String(req.query.nonce);
+        const state = String(req.query.state);
+        res.redirect(`${String(req.query.redirect_uri)}?code=auth-code&state=${state}`);
+    });
+    provider.post("/token", (_req, res) => {
+        const now = Math.floor(Date.now() / 1000);
+        const claims = {
+            iss: issuer,
+            sub: "4b6f1c2e-9d3a-4f7e-8b21-6a0c5d9e3f12",
+            aud: "client-id",
+            iat: now,
+            exp: now + 3600
+        };
+        const profile = { name: "Jane Doe", email: "jane.doe@example.org" };
+        res.json({
+            token_type: "Bearer",
+            expires_in: 3600,
+            id_token: signEdDsaJwt(privateKey, { ...claims, ...profile, nonce }),
+            access_token: signEdDsaJwt(privateKey, { ...claims, scope: "openid profile email" }),
+            refresh_token: signEdDsaJwt(privateKey, { ...claims, exp: now + 2592000 })
+        });
+    });
+
+    const app = express();
+    const appServer = await listen(app);
+    const appUrl = `http://127.0.0.1:${(appServer.address() as AddressInfo).port}`;
+    setOauthConfig(true);
+    mfa.oauthBaseUrl = appUrl;
+    mfa.oauthClientSecret = "client-secret-long-enough-to-derive-keys";
+    const oauthConfig = openID.generateOAuthConfig(false, issuer, "EdDSA", sessionStore);
+    app.use(auth({ ...oauthConfig, afterCallback: undefined }));
+    app.get("/whoami", (req, res) => {
+        res.json(req.oidc.isAuthenticated());
+    });
+
+    return {
+        appUrl,
+        async login() {
+            const authenticate = await fetch(`${appUrl}/authenticate`, { redirect: "manual" });
+            const authorize = await fetch(authenticate.headers.get("location") ?? "", {
+                redirect: "manual"
+            });
+            const callback = await fetch(authorize.headers.get("location") ?? "", {
+                redirect: "manual",
+                headers: { cookie: cookieHeader(authenticate.headers.getSetCookie()) }
+            });
+            return { status: callback.status, cookies: callback.headers.getSetCookie() };
+        },
+        async isAuthenticated(cookie: string) {
+            const response = await fetch(`${appUrl}/whoami`, { headers: { cookie } });
+            return await response.json() as boolean;
+        },
+        async close() {
+            for (const server of [ appServer, providerServer ]) {
+                await new Promise((resolve) => server.close(resolve));
+            }
+        }
+    };
+}
+
+function listen(app: Express) {
+    return new Promise<Server>((resolve) => {
+        const server = app.listen(0, "127.0.0.1", () => resolve(server));
+    });
+}
+
+/** Turns `Set-Cookie` values into a `Cookie` request header, leaving out cookies being cleared. */
+function cookieHeader(setCookies: string[]) {
+    return setCookies
+        .map((cookie) => cookie.split(";")[0])
+        .filter((pair) => !pair.endsWith("="))
+        .join("; ");
 }

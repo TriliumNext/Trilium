@@ -292,7 +292,7 @@ function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
         return;
     }
 
-    /* v8 ignore next 3 -- `_catalog()` drops every definition that has neither `execute` nor a registered `commandName`, so one or the other is always present here */
+    /* v8 ignore else -- only catalog entries run, and each sets `execute` or `commandName` */
     if (definition.commandName) {
         editor.execute(definition.commandName);
     }
@@ -301,6 +301,7 @@ function runSlashCommand(editor: Editor, definition: SlashCommandDefinition) {
 /**
  * Ranks `definitions` against what the user typed after the `/`.
  *
+ * An exact title or alias match sorts first, so `/2` offers "Heading 2" before "2 columns layout".
  * Prefix matches sort above substring matches so that `/co` offers "Code block" before "Table of
  * contents", and title matches above alias matches so an entry is found by its own name first.
  * Ordering within a tier is the catalog order, which is deliberate: the defaults come first and the
@@ -320,14 +321,16 @@ export function matchSlashCommands(definitions: SlashCommandDefinition[], query:
         const aliases = (definition.aliases ?? []).map((alias) => alias.toLowerCase());
         let rank: number | null = null;
 
-        if (title.startsWith(needle)) {
+        if (title === needle || aliases.includes(needle)) {
             rank = 0;
-        } else if (aliases.some((alias) => alias.startsWith(needle))) {
+        } else if (title.startsWith(needle)) {
             rank = 1;
-        } else if (title.includes(needle)) {
+        } else if (aliases.some((alias) => alias.startsWith(needle))) {
             rank = 2;
-        } else if (aliases.some((alias) => alias.includes(needle))) {
+        } else if (title.includes(needle)) {
             rank = 3;
+        } else if (aliases.some((alias) => alias.includes(needle))) {
+            rank = 4;
         }
 
         if (rank !== null) {
@@ -964,7 +967,7 @@ function buildHeadingSlashCommands(editor: Editor): SlashCommandDefinition[] {
             id: option.model,
             title: t(option.title),
             description: editor.locale.t("Turn the current block into a heading."),
-            aliases: [ "title", option.model.replace("heading", "h") ],
+            aliases: [ "title", option.model.replace("heading", "h"), option.model.replace("heading", "") ],
             icon: icons[option.model] ?? IconHeading2,
             willWrap: true,
             // `heading` takes the level as an argument, so it cannot use `commandName`.
@@ -1023,8 +1026,10 @@ function pickFiles(accept: string, onPick: (files: File[]) => void) {
     input.style.display = "none";
 
     input.addEventListener("change", () => {
-        /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
-        onPick(Array.from(input.files ?? []));
+        onPick(Array.from(
+            /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
+            input.files ?? []
+        ));
         input.remove();
     }, { once: true });
 

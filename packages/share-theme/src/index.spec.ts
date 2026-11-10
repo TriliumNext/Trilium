@@ -136,6 +136,33 @@ describe("share theme entry", () => {
         expect(panel.scrollIntoView).toHaveBeenCalledTimes(2);
     });
 
+    it("keeps the picture of a drawing canvas centered in the box that crops it", () => {
+        let resize = () => {};
+        vi.stubGlobal("ResizeObserver", class {
+            constructor(callback: () => void) {
+                resize = callback;
+            }
+            observe() {}
+            disconnect() {}
+        });
+        document.body.className = "type-text";
+        document.body.innerHTML = `<div id="content"><section class="include-note">`
+            + `<div class="canvas-drawing-box" style="--canvas-drawing-natural-width:900px">`
+            + `<img class="canvas-drawing-picture" src="a.svg"></div></section></div>`;
+        const box = document.querySelector<HTMLElement>(".canvas-drawing-box");
+        expect(box).not.toBeNull();
+        const size = { scrollWidth: 900, clientWidth: 600 };
+        Object.defineProperty(box, "scrollWidth", { get: () => size.scrollWidth });
+        Object.defineProperty(box, "clientWidth", { get: () => size.clientWidth });
+
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+        expect(box?.scrollLeft).toBe(150);
+
+        size.clientWidth = 700;
+        resize();
+        expect(box?.scrollLeft).toBe(100);
+    });
+
     it("shows the linked blocks once the page is shown, after the tabs and diagrams", async () => {
         let drawDiagrams = () => {};
         mocks.setupMermaid.mockReturnValueOnce(new Promise<void>((resolve) => {

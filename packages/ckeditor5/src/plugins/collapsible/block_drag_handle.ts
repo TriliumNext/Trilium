@@ -88,7 +88,7 @@ export default class BlockDragHandle {
         const target = this.findDropTarget(e.clientX, e.clientY, state.root);
         const dom = target ? this.getDom(target.model) : null;
         if (!target || !dom || !state.indicator) {
-            /* v8 ignore next -- past the movement threshold the indicator has always been created */
+            /* v8 ignore else -- past the movement threshold the indicator always exists */
             if (state.indicator) state.indicator.style.display = "none";
             return;
         }

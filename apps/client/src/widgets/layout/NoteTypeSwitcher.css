@@ -6,6 +6,30 @@
     }
 }
 
+.component.note-type-switcher-bar {
+    contain: none;
+}
+
+.note-type-switcher-bar {
+    padding: 10px 24px;
+
+    body.mobile & {
+        padding-inline: 8px;
+    }
+
+    body.mobile &:has(~ .classic-toolbar-outer-container.visible) {
+        padding-bottom: calc(10px + var(--mobile-toolbar-clearance));
+    }
+
+    &:not(:has(> .note-type-switcher > *)) {
+        display: none;
+    }
+
+    > .note-type-switcher {
+        top: 0;
+    }
+}
+
 .note-type-switcher {
     --badge-radius: 12px;
 

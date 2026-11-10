@@ -1,7 +1,18 @@
-import { _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
+import {
+    _setModelData as setModelData,
+    ClassicEditor,
+    Essentials,
+    Image,
+    ImageResize,
+    Paragraph,
+    Widget
+} from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
+import { registerTestCleanup } from "../../../test/globals-test-kit.js";
+import { ContentHintManager } from "../../content_hint_manager.js";
+import ContentEmbed from "../content_embed/content_embed.js";
 import CollapsibleEditing from "./collapsible_editing.js";
 
 /**
@@ -114,6 +125,28 @@ describe("collapsible summary hints", () => {
         expect(() => editor.editing.view.forceRender()).not.toThrow();
     });
 
+    it("gives no hint to the titles inside an embedded note", async () => {
+        const createHandle = vi.spyOn(ContentHintManager.prototype, "createHandle");
+        registerTestCleanup(() => createHandle.mockRestore());
+        const embedEditor = await createTestEditor(
+            [Essentials, Paragraph, Widget, ContentEmbed, CollapsibleEditing],
+            { contentEmbed: { loadNote: renderEmbeddedCollapsible } }
+        );
+
+        embedEditor.setData(
+            "<details><summary>Own</summary><p>body</p></details>" +
+            "<figure class=\"include-note\" data-note-id=\"included\"></figure>"
+        );
+
+        const domRoot = embedEditor.editing.view.getDomRoot();
+        const own = domRoot?.querySelector(":scope > details > summary");
+        const embedded = domRoot?.querySelector(".include-note-wrapper summary");
+        const hinted = createHandle.mock.calls.map(([element]) => element);
+        expect(embedded).toBeInstanceOf(HTMLElement);
+        expect(hinted).toContain(own);
+        expect(hinted).not.toContain(embedded);
+    });
+
     it("skips all hint wiring when content hints are switched off", async () => {
         await editor.destroy();
         await createEditor({ contentHintsEnabled: false });
@@ -151,4 +184,32 @@ describe("collapsible summary hints", () => {
         // A second destroy from the kit's afterEach must stay harmless.
         vi.restoreAllMocks();
     });
+
+    it("tears down cleanly when an image resizer renders after the root is detached", async () => {
+        const imageEditor = await createTestEditor([
+            Essentials, Paragraph, Image, ImageResize, CollapsibleEditing
+        ]);
+        imageEditor.setData(
+            "<details><summary>Title</summary><p>body</p></details>" +
+            `<figure class="image"><img src="${PIXEL_PNG}"></figure>`
+        );
+        const imageRoot = imageEditor.editing.view.getDomRoot();
+        await vi.waitFor(() => {
+            expect(imageRoot?.querySelector(".ck-widget__resizer")).toBeInstanceOf(HTMLElement);
+        });
+
+        // WidgetResize loads before CollapsibleEditing, so its destroy() changes the view after the
+        // editor UI has detached the editing root.
+        await expect(imageEditor.destroy()).resolves.toBeUndefined();
+    });
 });
+
+/** A 1x1 PNG that loads, so ImageResize attaches its resizer. */
+const PIXEL_PNG = "data:image/png;base64," +
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+/** `contentEmbed.loadNote` stub: renders an included note that contains a collapsible. */
+function renderEmbeddedCollapsible(_noteId: string, wrapper: HTMLElement): void {
+    wrapper.innerHTML =
+        "<details class=\"trilium-collapsible\"><summary>Included</summary><p>inner</p></details>";
+}

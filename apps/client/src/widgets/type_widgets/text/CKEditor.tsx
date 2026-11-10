@@ -5,7 +5,7 @@ import {
     type InsertMediaRequest, type LinkAtSelection, type LinkDialogRequest, type LinkDisplayMode,
     onTextEditorError, PopupEditor, replaceLinkAtSelection, SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { type BoxSize, DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { createPortal, HTMLAttributes, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
@@ -18,8 +18,6 @@ import IconPicker from "../../react/IconPicker";
 import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
 import { buildConfig, BuildEditorOptions, type ContentEmbedHandlers } from "./config";
-
-export type BoxSize = "tiny" | "small" | "medium" | "full" | "expandable";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -52,7 +50,8 @@ export interface CKEditorApi {
     ): Promise<void>;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
-    addContentEmbed(noteId: string, boxSize?: BoxSize): void;
+    /** Inserts an embed of the note at the selection, untitled when `hideTitle`. */
+    addContentEmbed(noteId: string, boxSize?: BoxSize, options?: { hideTitle?: boolean }): void;
     addImage(noteId: string): Promise<void>;
 }
 
@@ -294,7 +293,7 @@ export default function CKEditor({
                 }
             });
         },
-        addContentEmbed(noteId, boxSize) {
+        addContentEmbed(noteId, boxSize, options) {
             const editor = editorRef.current;
             if (!editor) return;
 
@@ -304,7 +303,8 @@ export default function CKEditor({
                 editor?.model.insertContent(
                     writer.createElement("contentEmbed", {
                         noteId,
-                        boxSize
+                        boxSize,
+                        ...(options?.hideTitle ? { hideTitle: true } : {})
                     })
                 );
             });

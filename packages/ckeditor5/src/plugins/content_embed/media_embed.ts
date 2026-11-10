@@ -18,8 +18,8 @@ import {
 import { SIZE_ATTRIBUTES } from "../resizable_widgets/resizable_widgets.js";
 import { getPositionAttributes, getPositionOfView } from "./content_embed.js";
 
-/** The height of a Medium video, in em, as a Medium embed is high. */
-const VIDEO_MEDIUM_HEIGHT = 20;
+/** The height of a new video, in em, as high as a Resizable box starts. */
+const VIDEO_DEFAULT_HEIGHT = 20;
 /** The shape of the player of a video that stores none. */
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 
@@ -72,9 +72,14 @@ export default class ContentEmbedMedia extends Plugin {
         this.editor.model.schema.extend("contentEmbed", { allowAttributes: PREVIEW_FIELDS });
     }
 
-    /** Has the host render the player of `embed` into `wrapper`. */
-    load(embed: ModelElement, wrapper: HTMLElement) {
-        this.editor.config.get("contentEmbed")?.loadMedia?.(getMediaPreview(embed), wrapper);
+    /** Has the host render the player of `embed` into `wrapper`, in a box of `boxSize`. */
+    load(
+        embed: ModelElement,
+        wrapper: HTMLElement,
+        boxSize = embed.getAttribute("boxSize") as string | undefined
+    ) {
+        this.editor.config.get("contentEmbed")?.loadMedia?.(
+            getMediaPreview(embed), wrapper, boxSize);
     }
 
     /**
@@ -83,7 +88,6 @@ export default class ContentEmbedMedia extends Plugin {
      */
     private reloadThumbnail(embed: ModelElement, api: DowncastConversionApi) {
         const viewElement = api.mapper.toViewElement(embed);
-        /* v8 ignore next -- converted after the embed itself, so always mapped */
         const dom = viewElement && this.editor.editing.view.domConverter.mapViewToDom(viewElement);
         const wrapper = dom?.querySelector<HTMLElement>(":scope > .include-note-wrapper");
         const isPlaying = [ ...wrapper?.querySelectorAll("video, audio") ?? [] ]
@@ -95,7 +99,7 @@ export default class ContentEmbedMedia extends Plugin {
 
     /**
      * Sets the thumbnail that the host captures of the video of `embed`, and its shape when it
-     * stores none, in `batch`, unless the embed has left the document by then. A Medium video
+     * stores none, in `batch`, unless the embed has left the document by then. A video
      * still at the default width gets the width of that shape.
      */
     private async captureThumbnail(embed: ModelElement, batch: Batch) {
@@ -118,10 +122,10 @@ export default class ContentEmbedMedia extends Plugin {
             const { aspectRatio } = thumbnail;
             if (aspectRatio && !embed.hasAttribute("aspectRatio")) {
                 writer.setAttribute("aspectRatio", aspectRatio, embed);
-                if (embed.getAttribute("boxSize") === "medium"
-                    && embed.getAttribute(SIZE_ATTRIBUTES.width) === getVideoMediumWidth({})) {
+                if (embed.getAttribute("boxSize") === "resizable"
+                    && embed.getAttribute(SIZE_ATTRIBUTES.width) === getVideoDefaultWidth({})) {
                     writer.setAttribute(
-                        SIZE_ATTRIBUTES.width, getVideoMediumWidth({ aspectRatio }), embed);
+                        SIZE_ATTRIBUTES.width, getVideoDefaultWidth({ aspectRatio }), embed);
                 }
             }
         });
@@ -130,7 +134,8 @@ export default class ContentEmbedMedia extends Plugin {
 
 /**
  * Creates an untitled embed that plays the media of the link preview with the fields
- * `attributes`: a video Medium, an audio file Small. A video file without a thumbnail gets one.
+ * `attributes`: a video Resizable at its default width, an audio file Compact. A video file
+ * without a thumbnail gets one.
  */
 export function createMediaEmbed(writer: ModelWriter, attributes: Record<string, unknown>) {
     const isAudio = attributes.embedType === "audio";
@@ -140,10 +145,11 @@ export function createMediaEmbed(writer: ModelWriter, attributes: Record<string,
         ...Object.fromEntries(fields),
         hideTitle: true,
         ...(isAudio
-            ? { boxSize: "small" }
+            ? { boxSize: "compact" }
             : {
-                boxSize: "medium",
-                [SIZE_ATTRIBUTES.width]: getVideoMediumWidth(attributes as Partial<LinkPreviewData>)
+                boxSize: "resizable",
+                [SIZE_ATTRIBUTES.width]:
+                    getVideoDefaultWidth(attributes as Partial<LinkPreviewData>)
             })
     });
     if (attributes.embedType === "video" && !attributes.image) {
@@ -170,7 +176,7 @@ export function createChangedMediaEmbed(
     if (isAudioEmbed(embed) !== isAudioEmbed(replacement)) {
         delete kept.boxSize;
         delete kept[width];
-    } else if (kept[width] === getVideoMediumWidth(getMediaPreview(embed))) {
+    } else if (kept[width] === getVideoDefaultWidth(getMediaPreview(embed))) {
         delete kept[width];
     } else {
         writer.removeAttribute(width, replacement);
@@ -183,10 +189,10 @@ export function createChangedMediaEmbed(
     return replacement;
 }
 
-/** The width of the video of `preview` at Medium: 20em high, in the shape of the video. */
-export function getVideoMediumWidth(preview: Pick<LinkPreviewData, "aspectRatio">) {
+/** The width of a new video of `preview`: 20em high, in the shape of the video. */
+export function getVideoDefaultWidth(preview: Pick<LinkPreviewData, "aspectRatio">) {
     const aspectRatio = getVideoAspectRatio(preview) ?? DEFAULT_ASPECT_RATIO;
-    return `${Math.round(VIDEO_MEDIUM_HEIGHT * aspectRatio * 10) / 10}em`;
+    return `${Math.round(VIDEO_DEFAULT_HEIGHT * aspectRatio * 10) / 10}em`;
 }
 
 /** The style that gives the view of `embed` the shape of its video, when it stores one. */

@@ -90,10 +90,11 @@ export default class TriliumMentionUI extends Plugin {
         clickOutsideHandler({
             emitter: this._domEmitter,
             activator: () => this.isListShown,
-            /* v8 ignore next -- `clickOutsideHandler` only calls `contextElements()` once the activator reported the list showing, so its element is never null */
             contextElements: () => {
                 const element = this._open?.hostedList.element;
-                return element ? [ element ] : [];
+                return element
+                    ? [ element ]
+                    : /* v8 ignore next -- called only while `isListShown` is true */ [];
             },
             callback: () => this._hide()
         });
@@ -138,7 +139,7 @@ export default class TriliumMentionUI extends Plugin {
 
         this._hide();
 
-        /* v8 ignore next -- Escape only reaches here while the list is open, and the list and the marker always come and go together, so there is always a start */
+        /* v8 ignore else -- an open list always has the mention marker, so there is a start */
         if (start) {
             this._clearDismissal();
             this._dismissedAt = ModelLivePosition.fromPosition(start, "toPrevious");

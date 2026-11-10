@@ -171,6 +171,22 @@ describe("collapsible Enter and ArrowDown", () => {
             );
         });
 
+        it("leaves a wrapped title to the browser while the caret is above its last line", () => {
+            const wrapped = " and more".repeat(40);
+            setModelData(
+                editor.model,
+                "<details open=\"true\"><summary>Title[]" + wrapped + "</summary>" +
+                "<paragraph>body</paragraph></details>"
+            );
+            syncDomSelection();
+
+            const event = fireDomKey("ArrowDown");
+
+            expect(event.defaultPrevented).toBe(false);
+            expect(getModelData(editor.model))
+                .toContain("<summary>Title[]" + wrapped + "</summary>");
+        });
+
         it("does nothing when there is nowhere to go", () => {
             setModelData(editor.model, "<details><summary>Title[]</summary><paragraph>body</paragraph></details>");
             syncDomSelection();

@@ -174,7 +174,7 @@ class LinkEmbedLinkButton extends Plugin {
                 tooltip: locale.t("Open link in new tab")
             });
 
-            /* v8 ignore next -- LinkEmbedEditing always registers CHANGE_LINK_DISPLAY_COMMAND (this plugin requires LinkEmbed), so the no-command branch is unreachable */
+            /* v8 ignore else -- LinkEmbedEditing, loaded by LinkEmbed, registers the command */
             if (command) {
                 button.bind("isEnabled").to(command, "url", url => !!url);
                 button.bind("href").to(command, "url", url => url ?? undefined);
@@ -257,7 +257,7 @@ export class LinkEmbedPreviewButtonView extends ButtonView {
             }
         });
 
-        /* v8 ignore next -- ButtonView always builds a template, and extendTemplate() above would have thrown otherwise, so the no-template branch is unreachable */
+        /* v8 ignore else -- ButtonView always builds a template, which extendTemplate() needs */
         if (this.template) {
             this.template.tag = "a";
         }

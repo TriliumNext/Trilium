@@ -181,6 +181,7 @@ function getWidthFactor(anchor: ResizeAnchor, element: HTMLElement) {
 
 /** The width inside the padding of the parent of `element`. */
 function getContainerWidth(element: HTMLElement) {
+    /* v8 ignore next -- the pressed handle is in the document, so its widget has a parentElement */
     const parent = element.parentElement ?? document.documentElement;
     const style = getComputedStyle(parent);
     return parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);

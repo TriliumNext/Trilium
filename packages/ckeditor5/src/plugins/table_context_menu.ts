@@ -122,6 +122,11 @@ export default class TableContextMenu extends Plugin {
             const selection = editor.model.document.selection;
             const cells = tableUtils.getSelectionAffectedTableCells(selection);
             const [ cell ] = cells;
+            // The command inserts nothing when it runs with the selection outside a table.
+            if (!cell) {
+                return;
+            }
+
             let { row, column } = tableUtils.getCellLocation(cell);
             if (direction === "above" || direction === "below") {
                 const { first, last } = tableUtils.getRowIndexes(cells);
@@ -194,7 +199,6 @@ export class TableMultiInsertCommand extends Command {
         const selection = this.editor.model.document.selection;
         const cells = tableUtils.getSelectionAffectedTableCells(selection);
         const table = cells[0]?.findAncestor("table");
-        /* v8 ignore next 3 -- defensive: disabled whenever the selection is outside a table */
         if (!table) {
             return;
         }
@@ -231,7 +235,6 @@ export class DeleteTableCommand extends Command {
 
     execute() {
         const table = findSelectionTable(this.editor);
-        /* v8 ignore next 3 -- defensive: disabled whenever the selection is outside a table */
         if (!table) {
             return;
         }
@@ -306,7 +309,6 @@ export class SelectTableCommand extends Command {
 
     execute() {
         const table = findSelectionTable(this.editor);
-        /* v8 ignore next 3 -- defensive: disabled whenever the selection is outside a table */
         if (!table) {
             return;
         }

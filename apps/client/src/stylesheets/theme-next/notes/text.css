@@ -1329,10 +1329,8 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     color: var(--main-text-color);
 }
 
-/* The states of the `.tn-input-field` text box in forms.css, with the outline drawn inside. */
+/* The backgrounds of the `.tn-input-field` text box in forms.css. */
 :root .ck-content :is(.image, .table, .include-note) > figcaption.ck-editor__nested-editable {
-    outline: 3px solid transparent;
-    outline-offset: 3px;
     border-color: transparent;
 
     &:hover {
@@ -1341,14 +1339,7 @@ html .note-detail-editable-text > :first-child:not(figure, .include-note, hr) {
     }
 
     &:is(.ck-editor__nested-editable_focused, :focus) {
-        box-shadow: none;
-        outline: 3px solid var(--input-focus-outline-color);
-        outline-offset: -3px;
-        border-color: transparent;
         background: var(--input-focus-background) !important;
-        transition:
-            outline-color 50ms linear,
-            outline-offset 200ms ease-out;
     }
 }
 

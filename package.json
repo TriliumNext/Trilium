@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.106.1",
+  "version": "0.107.0",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -34,7 +34,11 @@
     "electron:build": "pnpm desktop:build",
     "electron:start": "pnpm desktop:start",
     "electron:start-prod": "pnpm desktop:start-prod",
+    "changelog:lint": "node --experimental-strip-types ./scripts/release-notes.mts lint",
+    "changelog:new": "node --experimental-strip-types ./scripts/release-notes.mts new",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
+    "chore:release": "node --experimental-strip-types ./scripts/release.mts",
+    "chore:release-notes": "node --experimental-strip-types ./scripts/release-notes.mts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
     "chore:update-electron-locales": "tsx ./scripts/update-electron-locales.ts",
@@ -102,5 +106,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.17.0"
+  "packageManager": "pnpm@12.18.0"
 }

@@ -16,7 +16,7 @@ overrides:
   '@lezer/common': 1.5.5
   '@lezer/highlight': 1.2.5
   '@lezer/lr': 1.4.12
-  '@ai-sdk/provider-utils': 5.0.74
+  '@ai-sdk/provider-utils': 5.0.75
   '@agentclientprotocol/codex-acp>@openai/codex': '-'
   zod: 4.6.7
   mermaid: 12.3.0
@@ -201,8 +201,8 @@ importers:
         specifier: 1.8.0
         version: 1.8.0
       '@fullcalendar/rrule':
-        specifier: 7.1.3
-        version: 7.1.3(rrule@2.8.1)(temporal-polyfill@1.0.6)
+        specifier: 7.1.4
+        version: 7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -282,11 +282,11 @@ importers:
         specifier: 1.52.0
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
-        specifier: 7.1.3
-        version: 7.1.3(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        specifier: 7.1.4
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       gridstack:
-        specifier: 14.0.0
-        version: 14.0.0
+        specifier: 14.1.0
+        version: 14.1.0
       i18next:
         specifier: 26.7.1
         version: 26.7.1(typescript@6.0.3)
@@ -339,8 +339,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
       terra-draw:
         specifier: 1.39.0
         version: 1.39.0
@@ -465,8 +465,8 @@ importers:
         specifier: 6.0.5
         version: 6.0.5
       electron:
-        specifier: 45.2.2
-        version: 45.2.2(supports-color@7.2.0)
+        specifier: 45.2.3
+        version: 45.2.3(supports-color@7.2.0)
       gifenc:
         specifier: 1.0.3
         version: 1.0.3
@@ -527,8 +527,8 @@ importers:
         specifier: workspace:*
         version: link:../desktop
       electron:
-        specifier: 45.2.2
-        version: 45.2.2(supports-color@7.2.0)
+        specifier: 45.2.3
+        version: 45.2.3(supports-color@7.2.0)
       typedoc:
         specifier: 0.28.20
         version: 0.28.20(typescript@6.0.3)
@@ -567,8 +567,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       paper:
-        specifier: 0.16.0
-        version: 0.16.0
+        specifier: 0.17.0
+        version: 0.17.0
       paperjs-offset:
         specifier: 2.2.2
         version: 2.2.2
@@ -619,17 +619,17 @@ importers:
         specifier: 2.5.0
         version: 2.5.0
       '@ai-sdk/anthropic':
-        specifier: 4.0.96
-        version: 4.0.96(zod@4.6.7)
+        specifier: 4.0.97
+        version: 4.0.97(zod@4.6.7)
       '@ai-sdk/deepseek':
-        specifier: 3.0.79
-        version: 3.0.79(zod@4.6.7)
+        specifier: 3.0.80
+        version: 3.0.80(zod@4.6.7)
       '@ai-sdk/google':
-        specifier: 4.0.111
-        version: 4.0.111(zod@4.6.7)
+        specifier: 4.0.112
+        version: 4.0.112(zod@4.6.7)
       '@ai-sdk/openai':
-        specifier: 4.0.108
-        version: 4.0.108(zod@4.6.7)
+        specifier: 4.0.109
+        version: 4.0.109(zod@4.6.7)
       '@anthropic-ai/claude-agent-sdk':
         specifier: ^0.3.207
         version: 0.3.318(@anthropic-ai/sdk@0.124.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.2(supports-color@7.2.0)(zod@4.6.7))(zod@4.6.7)
@@ -641,10 +641,10 @@ importers:
         version: 1.32.2(supports-color@7.2.0)(zod@4.6.7)
       '@openrouter/ai-sdk-provider':
         specifier: 3.1.0
-        version: 3.1.0(ai@7.0.162(zod@4.6.7))(zod@4.6.7)
+        version: 3.1.0(ai@7.0.163(zod@4.6.7))(zod@4.6.7)
       ai:
-        specifier: 7.0.162
-        version: 7.0.162(zod@4.6.7)
+        specifier: 7.0.163
+        version: 7.0.163(zod@4.6.7)
       better-sqlite3:
         specifier: 13.0.3
         version: 13.0.3
@@ -788,8 +788,8 @@ importers:
         specifier: 8.5.0
         version: 8.5.0(encoding@0.1.13)(supports-color@7.2.0)
       openid-client:
-        specifier: 6.8.8
-        version: 6.8.8
+        specifier: 6.8.9
+        version: 6.8.9
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -884,8 +884,8 @@ importers:
         specifier: 1.52.0
         version: 1.52.0(preact-render-to-string@6.8.2)
       fullcalendar:
-        specifier: 7.1.3
-        version: 7.1.3(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6)
+        specifier: 7.1.4
+        version: 7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8)
       i18next:
         specifier: 26.7.1
         version: 26.7.1(typescript@6.0.3)
@@ -932,8 +932,8 @@ importers:
         specifier: 6.7.1
         version: 6.7.1
       temporal-polyfill:
-        specifier: 1.0.6
-        version: 1.0.6
+        specifier: 1.0.8
+        version: 1.0.8
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.4
@@ -1236,8 +1236,8 @@ importers:
         specifier: workspace:*
         version: link:../commons
       '@typescript/vfs':
-        specifier: 1.6.5
-        version: 1.6.5(supports-color@8.1.1)(typescript@6.0.3)
+        specifier: 1.6.6
+        version: 1.6.6(supports-color@8.1.1)(typescript@6.0.3)
       codemirror-lang-elixir:
         specifier: 4.0.1
         version: 4.0.1
@@ -1387,23 +1387,23 @@ importers:
   packages/trilium-core:
     dependencies:
       '@ai-sdk/anthropic':
-        specifier: 4.0.96
-        version: 4.0.96(zod@4.6.7)
+        specifier: 4.0.97
+        version: 4.0.97(zod@4.6.7)
       '@ai-sdk/deepseek':
-        specifier: 3.0.79
-        version: 3.0.79(zod@4.6.7)
+        specifier: 3.0.80
+        version: 3.0.80(zod@4.6.7)
       '@ai-sdk/google':
-        specifier: 4.0.111
-        version: 4.0.111(zod@4.6.7)
+        specifier: 4.0.112
+        version: 4.0.112(zod@4.6.7)
       '@ai-sdk/openai':
-        specifier: 4.0.108
-        version: 4.0.108(zod@4.6.7)
+        specifier: 4.0.109
+        version: 4.0.109(zod@4.6.7)
       '@braintree/sanitize-url':
         specifier: 7.1.2
         version: 7.1.2
       '@openrouter/ai-sdk-provider':
         specifier: 3.1.0
-        version: 3.1.0(ai@7.0.162(zod@4.6.7))(zod@4.6.7)
+        version: 3.1.0(ai@7.0.163(zod@4.6.7))(zod@4.6.7)
       '@triliumnext/codemirror':
         specifier: workspace:*
         version: link:../codemirror
@@ -1420,8 +1420,8 @@ importers:
         specifier: workspace:*
         version: link:../turndown-plugin-gfm
       ai:
-        specifier: 7.0.162
-        version: 7.0.162(zod@4.6.7)
+        specifier: 7.0.163
+        version: 7.0.163(zod@4.6.7)
       chardet:
         specifier: 2.2.0
         version: 2.2.0
@@ -1444,8 +1444,8 @@ importers:
         specifier: 3.0.2
         version: 3.0.2
       node-html-parser:
-        specifier: 9.0.5
-        version: 9.0.5
+        specifier: 9.0.7
+        version: 9.0.7
       officeparser:
         specifier: 8.5.0
         version: 8.5.0(encoding@0.1.13)(supports-color@8.1.1)
@@ -1496,8 +1496,8 @@ importers:
         specifier: 21.0.4
         version: 21.0.4
       turndown:
-        specifier: 7.2.4
-        version: 7.2.4
+        specifier: 7.2.5
+        version: 7.2.5
       turnish:
         specifier: 1.13.0
         version: 1.13.0
@@ -1541,44 +1541,44 @@ packages:
       '@modelcontextprotocol/server':
         optional: true
 
-  '@ai-sdk/anthropic@4.0.96':
-    resolution: {integrity: sha512-eq6rKebpYwvOmFkvhbgrQ7J+TtPsGk3KoEDr+Hu0R1EANm562CAly4s0zaCAQW7Xzw1261oWhOnU8zYLPRxzhA==}
+  '@ai-sdk/anthropic@4.0.97':
+    resolution: {integrity: sha512-LqCxnaKd4FsKChgBiS26Dgu1kC35jVeuH9OclhRJ6/Hg56kmJSbKlwu6Om6cfCmLgDUiIbn2r3w4um6bz7BivQ==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/deepseek@3.0.79':
-    resolution: {integrity: sha512-mUiZXlcVdDT8GOuqu0NadbK0RWLrhGk/mRJGwKS7ZK5dLT9fOCqkURlezCU28NDGN2sawNHaQLbyHaWS9LtrPA==}
+  '@ai-sdk/deepseek@3.0.80':
+    resolution: {integrity: sha512-loRNoZ2Dbp+rc8D5CaoQLDk2xesRC+47RcfsH3AQUGxauk1k+0lXq7XPid71uGm6An2+7WdpPdIpCG+SUHQq/A==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/gateway@4.0.135':
-    resolution: {integrity: sha512-gnMpZP42WIhy24fpnbbtV7SBqEhYY8ZSMsfgoNRh5r41D1HwnJTm1k7d4uYSIpiaEb5J8IPTHVSzwgWmGoSFEA==}
+  '@ai-sdk/gateway@4.0.136':
+    resolution: {integrity: sha512-P851NL80P85Ee6MhblRuuCzNlQdOYU5rKmdt/Wuo5dMtkzvIHhyVZY9wtfKG3wBJUUoxHxWKsI2aR6O75o8diA==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/google@4.0.111':
-    resolution: {integrity: sha512-od/9ubTtYKEA/XVmla44fMZse3uB962VS8HiwZDhC0SxjWLGKKNcJW8vo3P8O40Fl/L0tZofPzi1t8NknY1f6w==}
+  '@ai-sdk/google@4.0.112':
+    resolution: {integrity: sha512-z6w+Nlbwrc4/gQ9SDdUc26aFh4/L4DsFrtF3vycOaAd5SpZkbvq07E9aFe5KNMJVXM01VD+uiz6Hrm8G8wfghw==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/openai@4.0.108':
-    resolution: {integrity: sha512-XmCnCVnahoFs9VUWsSzn4LyONdDkFivBVs5t7YUWi74giDRwh8VRX4hnk/BtBKEhiBNGRQd80/QTWlf6GsVtng==}
+  '@ai-sdk/openai@4.0.109':
+    resolution: {integrity: sha512-N20L44ztSicqEWpB0LfV54Ee1iq6IjGfOFTcRfeTD/bRH0v/VDI1uHve7RFOhP2oi1eAluliBhgmurplaOBuVw==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/provider-utils@5.0.74':
-    resolution: {integrity: sha512-42R/bzs520oy3PMj8FI1KGegjLEjaUsNcaEltb6yxN0KnmhihWvlgMb19pEF8CKKqv6Bq6+qMVji8mtyrMubSQ==}
+  '@ai-sdk/provider-utils@5.0.75':
+    resolution: {integrity: sha512-k4yAsFliGZwoTpyTpm3ptxwIeaPvRh5vGh/UWoqDiLLXKoyz4zuBGS7p3ygf8to5Bh4fAOHynotLBsWLIYdu2A==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
 
-  '@ai-sdk/provider@4.0.35':
-    resolution: {integrity: sha512-yBz6fmLS8MSCIzy7NiHEUAq56ZLD4ZA1GR6bpXBxgbwUacP1La7LuwAr/xy9jSzthem4F8Xu2OrhvU/JrE9fYA==}
+  '@ai-sdk/provider@4.0.36':
+    resolution: {integrity: sha512-GqvWZSZdBelCGughlBdOoupT258rgM3YMbaLAS9WSZJ0vlt8c9vm3My+ZT31mYhiReMCMCF2qF2axnGbILpk1A==}
     engines: {node: '>=22'}
 
   '@aklinker1/rollup-plugin-visualizer@5.12.0':
@@ -2855,22 +2855,22 @@ packages:
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@full-ui/headless-calendar@7.1.3':
-    resolution: {integrity: sha512-CFomIp87osqY65Hlu2c0e2ZnofBe9tKOO8IoPzIfSPVDK/+aGz4Itj6mLu4xPjIvzRDQiopcVzYlip6u1bvYxw==}
+  '@full-ui/headless-calendar@7.1.4':
+    resolution: {integrity: sha512-b0o9zsbJKpeM+e5eh27paqfDseQgMQkOy4jjp+nCLABmUQWn2kJ+vV3QdSNXL/9R7S+SwN6Ky21p1hDYvDdgUg==}
     peerDependencies:
-      temporal-polyfill: ^1.0.1
+      temporal-polyfill: ^1.0.7
 
-  '@fullcalendar/core@7.1.3':
-    resolution: {integrity: sha512-DLGXqX7CnuUQHH679FgE6+jc927wa708ydIcnfVx372IOK/OiDZjqc+IBwuKnu2EyqleCooDoAnUAcvXBhHosA==}
+  '@fullcalendar/core@7.1.4':
+    resolution: {integrity: sha512-Pkjagkqa4U9n2PemmdjrejmgrbiN6UyeP0pd0qKSjnvPDZzMJGPJvQ00sgm67KL0FAyQSnKMy0odSz9yv6s2XA==}
     peerDependencies:
-      '@full-ui/headless-calendar': 7.1.3
-      temporal-polyfill: ^1.0.1
+      '@full-ui/headless-calendar': 7.1.4
+      temporal-polyfill: ^1.0.7
 
-  '@fullcalendar/rrule@7.1.3':
-    resolution: {integrity: sha512-nCNDtkyttYCJtdnL7MQK1FaCfjfU0D1brmlFRYGIRvEquy9iYqPgENvdIWoB6RUpgqUuEinGN9UJTBZ022JuUA==}
+  '@fullcalendar/rrule@7.1.4':
+    resolution: {integrity: sha512-XuU6iQk3jBKrlk7VjF1luCZWi3sq2n3RUbYAkKcLQ7CDU4lMnH2mRc3oa/EMJ07TNkU+LWi4rggQPDkGd8SF/Q==}
     peerDependencies:
       rrule: ^2.6.0
-      temporal-polyfill: ^1.0.1
+      temporal-polyfill: ^1.0.7
 
   '@gerrit0/mini-shiki@3.23.0':
     resolution: {integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==}
@@ -5049,8 +5049,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@typescript/vfs@1.6.5':
-    resolution: {integrity: sha512-gobLHQLmvQGJInFk31NvgMd1uYzRXsd8qgnOssyLD055R2QPnw1ubRbBQ4+T+5qC7IQVuYXdvNDE2G7tMDVHgw==}
+  '@typescript/vfs@1.6.6':
+    resolution: {integrity: sha512-gXw0+tpchiQUjTcbnNIPnyLFIhbwJ7M1VaxLQ1vXhjQxtTBK3sdDLY1ih0jxCu1I5K3V0dDxq8CkVZtIMspC3A==}
     peerDependencies:
       typescript: '*'
 
@@ -5549,8 +5549,8 @@ packages:
     resolution: {integrity: sha512-TQf59BsZnytt8GdJKLPfUZ54g/iaUL2OWDSFCCvMOhsHduDQxO8xC4PNeyIkVcA5KwL2phPSv0douC0fgWzmnA==}
     engines: {node: '>= 20'}
 
-  ai@7.0.162:
-    resolution: {integrity: sha512-NPzL6/GmjjPwhzM1kGP9O60TfJ3uXV4Z4A/ztljxcJFAmRAFAjgk5mAHaikk3sE8NQo4NbRCiS+DgHinE2d0sQ==}
+  ai@7.0.163:
+    resolution: {integrity: sha512-nm8+qn36NQXO4Hjfj7SlbcNRhUyNXKtdoS9xhXr/z92lvdGFuPkzHmA2tFzhaUQy13IitNYrcw2QSNpEJC/iSA==}
     engines: {node: '>=22'}
     peerDependencies:
       zod: 4.6.7
@@ -6914,8 +6914,8 @@ packages:
     resolution: {integrity: sha512-j9ETcBGJaXxAY/b6UBpR7LZfjdU4BAO+yvr4ifqHEdyuc3UNCy91PDGkWKY5UQ4coHNYfnwFggrqD6QPeFGAlg==}
     engines: {node: '>=8.0.0'}
 
-  electron@45.2.2:
-    resolution: {integrity: sha512-hxSYRX1YeijdPg4lDwXnDb3eB33zRsitd6DhwA7ElgLXjzHOqIERYKspGo8uhRkzI2KinIZhkuELVwq9+MyX4g==}
+  electron@45.2.3:
+    resolution: {integrity: sha512-Vurzu5UOA5nTGT4LqIwXD16QFGrOZdiXxF+1UP4KNsAOo/YtDcT3/u0jhP4WSwNJ0iLrLDi85hzBJ0arnGDhyw==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -7481,10 +7481,10 @@ packages:
     engines: {node: '>=0.6'}
     deprecated: This package is no longer supported.
 
-  fullcalendar@7.1.3:
-    resolution: {integrity: sha512-Mn8VNqLX80C93UFh0s9aKqhHUSh0BwK8pczyQ+nNDKutJeM0/SVLkJoizTfX9sdmwGiS6+hkAHAg9YC10Us0gg==}
+  fullcalendar@7.1.4:
+    resolution: {integrity: sha512-RLaHmd8rkoIha1QHVana64v/Dq5rGFft5Yo25sp48D5isoCR2et5OZ+VOPdjvW/CSfa12WYlOqAz94yTt4728A==}
     peerDependencies:
-      temporal-polyfill: ^1.0.1
+      temporal-polyfill: ^1.0.7
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
@@ -7626,8 +7626,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  gridstack@14.0.0:
-    resolution: {integrity: sha512-jkoGugExoCUHNbC3IMQEHUtf3+quii8BI+tTsP8h0bpHjf3Jr3KdCUbHpmqGz3VVHEb5tqciL6foBLum8/32FQ==}
+  gridstack@14.1.0:
+    resolution: {integrity: sha512-nF6asbGVnIJH7N9pa+DCaSBGAoEvTNS7jYHUJfcNN+5bTD3a4pLEKvGia7W/6NbjiJWms9e3Zih1YuU4coT3QA==}
 
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
@@ -8243,6 +8243,9 @@ packages:
 
   jose@6.2.12:
     resolution: {integrity: sha512-9NiFmJEex0sy2Dk58j2UGBSHgUs2ypF9eZSu4L6vjOX3Dp96Sw1F3uL+H+D1sx02jZZdzUT0HgvCy59CuvXcWw==}
+
+  jose@6.2.15:
+    resolution: {integrity: sha512-qdF6ewcZARtef63fJ9AKKZPgxw+t7USH6HLXYcD4CrdmSvDp79rpJSPFEKc90QBeGS63u1KQtN2MZQHC0yDIzA==}
 
   jotai-scope@0.7.2:
     resolution: {integrity: sha512-Gwed97f3dDObrO43++2lRcgOqw4O2sdr4JCjP/7eHK1oPACDJ7xKHGScpJX9XaflU+KBHXF+VhwECnzcaQiShg==}
@@ -9156,8 +9159,8 @@ packages:
   node-html-parser@6.1.13:
     resolution: {integrity: sha512-qIsTMOY4C/dAa5Q5vsobRpOOvPfC4pB61UVW2uSwZNUp0QU/jCekTal1vMmbO0DgdHeLUJpv/ARmDqErVxA3Sg==}
 
-  node-html-parser@9.0.5:
-    resolution: {integrity: sha512-LpUc74Ax3L6AsxTEqoep0GDqCBbsPjtn74sYaiazxGXfwhe6iqD4E5sHTJFCU+wBxVMX+Dd7mvLim0QM1vsvpw==}
+  node-html-parser@9.0.7:
+    resolution: {integrity: sha512-0Io6nKYNN2e+QSoJFxU991Z8kX4H2Ogy3l14Ow0XxR2Wonk9l5qBonx1dYO97UyVfYJ1U9H0WHZOIZW6q5KPrA==}
 
   node-mocks-http@1.18.1:
     resolution: {integrity: sha512-hPMOLJZzhgT4i/zbYpfy1P2ulAlHtzFcrEGxPh/4pDRegCY3+p2sxDhQm1fxte5EgI/RwDx+NNW7v8kJcyxtMg==}
@@ -9311,8 +9314,8 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
-  openid-client@6.8.8:
-    resolution: {integrity: sha512-ZsucJA5Ad04Uv7YN4ql+s4GXNmb9uAYQwyJTsJx7CH/MX3JZioLE2pVKi1SC+YrbSLA4Px3Gi30dMjgOZtb6pA==}
+  openid-client@6.8.9:
+    resolution: {integrity: sha512-6mXMRNJxDOf6BflEWLXul1UwzLFz++9Ofz1PYwPwwsJsyXBsbfkO+Jo255SW1qnFNLYz4EJWHz42X4OJJrya/g==}
 
   opentype.js@2.0.0:
     resolution: {integrity: sha512-kCyjv6xdDY1W/jLWZ/L3QhhTlKUqDZMQ5+Jdlw12b3dXkKNpYBqqlMMj0YDQPShWFTMwgZI1hG14kN3XUDSg/A==}
@@ -9380,8 +9383,8 @@ packages:
   pako@2.0.3:
     resolution: {integrity: sha512-WjR1hOeg+kki3ZIOjaf4b5WVcay1jaliKSYiEaB1XzwhMQZJxRdQRv0V31EKBYlxb4T7SK3hjfc/jxyU64BoSw==}
 
-  paper@0.16.0:
-    resolution: {integrity: sha512-MVkNFA40Afe1HbOJfP1i/WBGrEBfo3e8qO/wniNyQbN5RdW+A5JpLxNCYaUk7aFCV1KMDSErmk7ri6tyJ8bJQA==}
+  paper@0.17.0:
+    resolution: {integrity: sha512-AWHQVUNScPN/swbCg0wwb2bTerMieraol76Fpn1s+7Zw7R6mMyI0QltMkj/XOS3Jv+9785q0p4eLsYggn63ZQw==}
     engines: {node: '>=8.0.0'}
 
   paperjs-offset@2.2.2:
@@ -10614,14 +10617,14 @@ packages:
     resolution: {integrity: sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==}
     engines: {node: '>=6.0.0'}
 
-  temporal-polyfill@1.0.6:
-    resolution: {integrity: sha512-tYyEry1HLGUDbm2356W3iYD0OZdo7rlP7h98Zr/EnjqLZQwTAfcBDUvJnJbfA15v/vQad57hJZScG5O0W2oKEA==}
+  temporal-polyfill@1.0.8:
+    resolution: {integrity: sha512-RCCGa0GddT099XG49ijdD0tDf86L8vfuZun1+JyJiO4Y2NP9PACQsG0OnvNPXwVLisdvhr/zqL2nhKQmXXx08A==}
 
   temporal-spec@1.0.1:
     resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
 
-  temporal-utils@1.0.3:
-    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+  temporal-utils@1.0.4:
+    resolution: {integrity: sha512-4mAcgbWlaxe+gn23gk8g0iHxCVGVOhKzSCfF5HM3lfvH8BdT+/pBmH/R/E4CrIse+koUgs8ThkPzCLnui6Fi8w==}
 
   terminal-size@4.0.1:
     resolution: {integrity: sha512-avMLDQpUI9I5XFrklECw1ZEUPJhqzcwSWsyyI8blhRLT+8N1jLJWLWWYQpB2q2xthq8xDvjZPISVh53T/+CLYQ==}
@@ -10807,8 +10810,8 @@ packages:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
-  turndown@7.2.4:
-    resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
+  turndown@7.2.5:
+    resolution: {integrity: sha512-EKZvCCFHh8sWttpAMs10U6niZFJ2cpz8LkCPlylxoG4JcHF50J7EHnnBW3AY1qXtUMu7kDjCp7dnggB1sIbqEQ==}
     engines: {node: '>=18', npm: '>=9'}
 
   turnish@1.13.0:
@@ -11695,47 +11698,47 @@ snapshots:
     dependencies:
       zod: 4.6.7
 
-  '@ai-sdk/anthropic@4.0.96(zod@4.6.7)':
+  '@ai-sdk/anthropic@4.0.97(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       zod: 4.6.7
 
-  '@ai-sdk/deepseek@3.0.79(zod@4.6.7)':
+  '@ai-sdk/deepseek@3.0.80(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       zod: 4.6.7
 
-  '@ai-sdk/gateway@4.0.135(zod@4.6.7)':
+  '@ai-sdk/gateway@4.0.136(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       '@vercel/oidc': 3.2.0
       zod: 4.6.7
 
-  '@ai-sdk/google@4.0.111(zod@4.6.7)':
+  '@ai-sdk/google@4.0.112(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       zod: 4.6.7
 
-  '@ai-sdk/openai@4.0.108(zod@4.6.7)':
+  '@ai-sdk/openai@4.0.109(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       zod: 4.6.7
 
-  '@ai-sdk/provider-utils@5.0.74(zod@4.6.7)':
+  '@ai-sdk/provider-utils@5.0.75(zod@4.6.7)':
     dependencies:
-      '@ai-sdk/provider': 4.0.35
+      '@ai-sdk/provider': 4.0.36
       '@standard-schema/spec': 1.1.0
       '@workflow/serde': 4.1.0
       eventsource-parser: 3.1.1
       undici: 7.29.1
       zod: 4.6.7
 
-  '@ai-sdk/provider@4.0.35':
+  '@ai-sdk/provider@4.0.36':
     dependencies:
       json-schema: 0.4.0
 
@@ -13736,21 +13739,21 @@ snapshots:
       '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
-  '@full-ui/headless-calendar@7.1.3(temporal-polyfill@1.0.6)':
+  '@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8)':
     dependencies:
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/core@7.1.3(@full-ui/headless-calendar@7.1.3(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)':
+  '@fullcalendar/core@7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.3(temporal-polyfill@1.0.6)
-      temporal-polyfill: 1.0.6
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      temporal-polyfill: 1.0.8
 
-  '@fullcalendar/rrule@7.1.3(rrule@2.8.1)(temporal-polyfill@1.0.6)':
+  '@fullcalendar/rrule@7.1.4(rrule@2.8.1)(temporal-polyfill@1.0.8)':
     dependencies:
-      '@full-ui/headless-calendar': 7.1.3(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.3(@full-ui/headless-calendar@7.1.3(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       rrule: 2.8.1
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
 
   '@gerrit0/mini-shiki@3.23.0':
     dependencies:
@@ -14590,9 +14593,9 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 29.0.1
 
-  '@openrouter/ai-sdk-provider@3.1.0(ai@7.0.162(zod@4.6.7))(zod@4.6.7)':
+  '@openrouter/ai-sdk-provider@3.1.0(ai@7.0.163(zod@4.6.7))(zod@4.6.7)':
     dependencies:
-      ai: 7.0.162(zod@4.6.7)
+      ai: 7.0.163(zod@4.6.7)
       zod: 4.6.7
 
   '@oxc-project/types@0.149.0': {}
@@ -15883,7 +15886,7 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@typescript/vfs@1.6.5(supports-color@8.1.1)(typescript@6.0.3)':
+  '@typescript/vfs@1.6.6(supports-color@8.1.1)(typescript@6.0.3)':
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       typescript: 6.0.3
@@ -16825,11 +16828,11 @@ snapshots:
 
   agent-base@9.0.0: {}
 
-  ai@7.0.162(zod@4.6.7):
+  ai@7.0.163(zod@4.6.7):
     dependencies:
-      '@ai-sdk/gateway': 4.0.135(zod@4.6.7)
-      '@ai-sdk/provider': 4.0.35
-      '@ai-sdk/provider-utils': 5.0.74(zod@4.6.7)
+      '@ai-sdk/gateway': 4.0.136(zod@4.6.7)
+      '@ai-sdk/provider': 4.0.36
+      '@ai-sdk/provider-utils': 5.0.75(zod@4.6.7)
       zod: 4.6.7
 
   ajv-formats@3.0.1:
@@ -18206,7 +18209,7 @@ snapshots:
     optionalDependencies:
       linkedom: 0.18.13
       temml: 0.13.5
-      turndown: 7.2.4
+      turndown: 7.2.5
     transitivePeerDependencies:
       - canvas
 
@@ -18431,7 +18434,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron@45.2.2(supports-color@7.2.0):
+  electron@45.2.3(supports-color@7.2.0):
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0(supports-color@7.2.0)
@@ -19007,7 +19010,7 @@ snapshots:
       joi: 17.13.9
       jose: 6.2.12
       on-headers: 1.1.0
-      openid-client: 6.8.8
+      openid-client: 6.8.9
       url-join: 4.0.1
       util-promisify: 3.0.0
     transitivePeerDependencies:
@@ -19354,12 +19357,12 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.7.1
 
-  fullcalendar@7.1.3(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.6):
+  fullcalendar@7.1.4(preact-render-to-string@6.8.2)(temporal-polyfill@1.0.8):
     dependencies:
-      '@full-ui/headless-calendar': 7.1.3(temporal-polyfill@1.0.6)
-      '@fullcalendar/core': 7.1.3(@full-ui/headless-calendar@7.1.3(temporal-polyfill@1.0.6))(temporal-polyfill@1.0.6)
+      '@full-ui/headless-calendar': 7.1.4(temporal-polyfill@1.0.8)
+      '@fullcalendar/core': 7.1.4(@full-ui/headless-calendar@7.1.4(temporal-polyfill@1.0.8))(temporal-polyfill@1.0.8)
       preact: 11.1.1(preact-render-to-string@6.8.2)
-      temporal-polyfill: 1.0.6
+      temporal-polyfill: 1.0.8
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -19509,7 +19512,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  gridstack@14.0.0: {}
+  gridstack@14.1.0: {}
 
   hachure-fill@0.5.2: {}
 
@@ -20205,6 +20208,8 @@ snapshots:
   jose@5.9.6: {}
 
   jose@6.2.12: {}
+
+  jose@6.2.15: {}
 
   jotai-scope@0.7.2(jotai@2.11.0(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -21275,7 +21280,7 @@ snapshots:
       css-select: 5.2.2
       he: 1.2.0
 
-  node-html-parser@9.0.5:
+  node-html-parser@9.0.7:
     dependencies:
       css-select: 5.2.2
       entities: 8.1.0
@@ -21445,9 +21450,9 @@ snapshots:
 
   opener@1.5.2: {}
 
-  openid-client@6.8.8:
+  openid-client@6.8.9:
     dependencies:
-      jose: 6.2.12
+      jose: 6.2.15
       oauth4webapi: 3.8.8
 
   opentype.js@2.0.0: {}
@@ -21519,7 +21524,7 @@ snapshots:
 
   pako@2.0.3: {}
 
-  paper@0.16.0: {}
+  paper@0.17.0: {}
 
   paperjs-offset@2.2.2: {}
 
@@ -22968,14 +22973,14 @@ snapshots:
       rimraf: 2.6.3
     optional: true
 
-  temporal-polyfill@1.0.6:
+  temporal-polyfill@1.0.8:
     dependencies:
       temporal-spec: 1.0.1
-      temporal-utils: 1.0.3
+      temporal-utils: 1.0.4
 
   temporal-spec@1.0.1: {}
 
-  temporal-utils@1.0.3: {}
+  temporal-utils@1.0.4: {}
 
   terminal-size@4.0.1: {}
 
@@ -23160,7 +23165,7 @@ snapshots:
 
   tunnel@0.0.6: {}
 
-  turndown@7.2.4:
+  turndown@7.2.5:
     dependencies:
       '@mixmark-io/domino': 2.2.0
 

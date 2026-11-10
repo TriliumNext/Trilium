@@ -132,7 +132,7 @@ describe("AutoLinkToMention", () => {
             expect(embed?.getAttribute("url")).toBe(VIDEO_URL);
             expect(embed?.getAttribute("embedType")).toBe("youtube");
             expect(embed?.getAttribute("title")).toBe(META.title);
-            expect(embed?.getAttribute("boxSize")).toBe("medium");
+            expect(embed?.getAttribute("boxSize")).toBe("resizable");
             expect(embed?.getAttribute("aspectRatio")).toBe("9/16");
             expect(embed?.getAttribute("customWidth")).toBe("11.3em");
         });
