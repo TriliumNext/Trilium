@@ -1,6 +1,7 @@
 import { type EntityChange, type SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
+import { initCollaboration } from "./collaboration.js";
 import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import protectedSessionService from "./protected_session.js";
@@ -14,6 +15,7 @@ let lastSyncedPush: number;
 
 function init() {
     messagingProvider = getMessagingProvider();
+    const handleCollaborationMessage = initCollaboration(messagingProvider);
 
     messagingProvider.setClientMessageHandler(async (clientId, message: any) => {
         const log = getLog();
@@ -25,6 +27,8 @@ function init() {
             await syncMutexService.doExclusively(() => {
                 messagingProvider.sendMessageToClient(clientId, buildPingMessage());
             });
+        } else if (typeof message.type === "string" && message.type.startsWith("collab-")) {
+            handleCollaborationMessage(clientId, message);
         } else {
             log.error("Unrecognized message: ");
             log.error(message);

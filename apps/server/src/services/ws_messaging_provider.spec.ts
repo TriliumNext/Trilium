@@ -174,6 +174,24 @@ describe("WebSocketMessagingProvider", () => {
             expect(provider.sendMessageToClient("client-id", { type: "ping" } as any)).toBe(false);
         });
 
+        it("knows the user of a connection, and tells once when the connection goes away", () => {
+            const { server } = init();
+            const onDisconnected = vi.fn();
+            provider.onClientDisconnected(onDisconnected);
+
+            const ws = makeSocket();
+            server.emit("connection", ws, { session: { userId: "user-1" } });
+            expect(provider.getClientUserId("client-id")).toBe("user-1");
+            expect(provider.getClientUserId("unknown")).toBeUndefined();
+
+            // A connection that fails also closes, which must not count twice.
+            vi.spyOn(console, "error").mockImplementation(() => undefined);
+            ws.emit("error", new Error("boom"));
+            ws.emit("close");
+            expect(onDisconnected).toHaveBeenCalledExactlyOnceWith("client-id");
+            expect(provider.getClientUserId("client-id")).toBeUndefined();
+        });
+
         it("ignores incoming messages when no handler is registered", async () => {
             const { server } = init();
             const ws = makeSocket();

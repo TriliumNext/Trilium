@@ -402,8 +402,11 @@ describe("WebSocket transport", () => {
         // ws: scheme derived from non-https origin + host + pathname
         expect(lastSocket.url.startsWith("ws:")).toBe(true);
 
-        // onopen just logs (debug) and onmessage dispatches a parsed message
+        // onopen logs (debug) and tells the subscribers, and onmessage dispatches a parsed message
+        const onConnection = vi.fn();
+        ws.subscribeToConnection(onConnection);
         lastSocket.onopen?.();
+        expect(onConnection).toHaveBeenCalledOnce();
         const handled: string[] = [];
         ws.subscribeToMessages((m) => handled.push((m as any).type));
         lastSocket.onmessage?.({ data: JSON.stringify({ type: "ping" }) } as MessageEvent<string>);
@@ -572,6 +575,10 @@ describe("WebSocket transport", () => {
         ws.logError("socket-error");
         const payload = JSON.parse(lastSocket.sent.at(-1)!);
         expect(payload).toMatchObject({ type: "log-error", error: "socket-error" });
+
+        const join = { type: "collab-join", noteId: "note", memberId: "member" } as const;
+        expect(ws.sendCollaborationMessage(join)).toBe(true);
+        expect(JSON.parse(lastSocket.sent.at(-1)!)).toEqual(join);
     });
 
     it("sendOutgoing returns false (no message sent) when the socket is not open and no IPC bridge exists", async () => {

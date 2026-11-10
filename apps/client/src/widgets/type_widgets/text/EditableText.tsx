@@ -39,6 +39,9 @@ import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { InlineSourceSaves, useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
+import {
+    isCollaboratingOn, isSavedByAnotherEditor, startCollaboration, stopCollaboration
+} from "./collaboration";
 import type { ContentEmbedHandlers } from "./config";
 import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
 import { useEmbedEditors } from "./editable_embed";
@@ -125,6 +128,9 @@ export default function EditableText({
                 // The editor is still being built, so there is nothing to save.
                 return;
             }
+            if (isSavedByAnotherEditor(editor)) {
+                return;
+            }
 
             inlineSourceSaves.flush();
             const attachments = attachmentSaves.collect();
@@ -149,9 +155,17 @@ export default function EditableText({
             if (editor && note) {
                 setEditorNoteId(editor, note.noteId);
             }
+            if (editor && note && isCollaboratingOn(editor, note.noteId)) {
+                // The session holds the content, and the saved one that arrives here trails it.
+                return;
+            }
+            if (editor) {
+                stopCollaboration(editor);
+            }
             editor?.setData(newContent);
             if (editor && note) {
                 applyPendingAttachmentChanges(editor, note.noteId, pendingAttachmentChangesRef);
+                collaborate(editor);
             }
             if (editor) {
                 onContentShown?.();
@@ -174,6 +188,14 @@ export default function EditableText({
     });
     const templates = useTemplates();
     const [ editorRebuildKey, setEditorRebuildKey ] = useState(0);
+
+    /** Edits the whole note together with the other editors that have it open. */
+    function collaborate(editor: CKTextEditor) {
+        if (block === undefined) {
+            // The editor that takes over the saving holds changes the previous one may not have saved.
+            startCollaboration(editor, note, () => spacedUpdate.scheduleUpdate());
+        }
+    }
 
     /** Saves what the model holds, then builds a new editor from the saved content. */
     async function reloadEditor() {
@@ -609,6 +631,7 @@ export default function EditableText({
                     }
                     editor.setData(contentRef.current);
                     if (contentNoteIdRef.current) {
+                        collaborate(editor);
                         onContentShown?.();
                     }
                     parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
