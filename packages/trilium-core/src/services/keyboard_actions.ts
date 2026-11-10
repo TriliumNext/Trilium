@@ -926,13 +926,12 @@ function getDefaultKeyboardActions() {
 function getKeyboardActions() {
     const actions: KeyboardShortcut[] = JSON.parse(JSON.stringify(getDefaultKeyboardActions()));
 
-    /* v8 ignore start -- no default action pre-defines effectiveShortcuts, so the seeding never runs */
     for (const action of actions) {
-        if ("effectiveShortcuts" in action && action.effectiveShortcuts) {
+        if ("actionName" in action && !action.effectiveShortcuts) {
+            /* v8 ignore next -- every default action defines `defaultShortcuts` */
             action.effectiveShortcuts = action.defaultShortcuts ? action.defaultShortcuts.slice() : [];
         }
     }
-    /* v8 ignore stop */
 
     const log = getLog();
     for (const option of optionService.getOptions()) {

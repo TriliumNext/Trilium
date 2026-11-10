@@ -41,6 +41,18 @@ describe("keyboard_actions service", () => {
         expect(actions.some((a) => "actionName" in a && a.actionName === "jumpToNote")).toBe(true);
     });
 
+    it("getKeyboardActions gives an action with no stored shortcuts its defaults", () => {
+        vi.spyOn(options, "getOptions").mockReturnValue([]);
+
+        const jumpToNote = keyboardActions.getKeyboardActions()
+            .find((a) => "actionName" in a && a.actionName === "jumpToNote");
+
+        expect(jumpToNote && "effectiveShortcuts" in jumpToNote && jumpToNote.effectiveShortcuts)
+            .toEqual(jumpToNote && "defaultShortcuts" in jumpToNote && jumpToNote.defaultShortcuts);
+        expect(jumpToNote && "defaultShortcuts" in jumpToNote && jumpToNote.defaultShortcuts?.length)
+            .toBeGreaterThan(0);
+    });
+
     it("zoomIn is bound to the plus key as well as equals, so it works on non-US layouts", () => {
         const shortcutsOf = (actionName: string) => {
             const action = keyboardActions.getDefaultKeyboardActions()
