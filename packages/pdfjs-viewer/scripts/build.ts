@@ -50,7 +50,7 @@ async function main() {
     // build requires browsers only a few months old (Chrome 145+/Safari 26.2+).
     // Keep in sync with the legacy viewer vendored by scripts/update-viewer.ts.
     const pdfjsDir = dirname(require.resolve("pdfjs-dist/package.json"));
-    for (const directory of [ "cmaps", "standard_fonts" ]) {
+    for (const directory of [ "cmaps", "iccs", "standard_fonts" ]) {
         build.copy("/" + relative(build.rootDir, join(pdfjsDir, directory)), join("web", directory));
     }
     const pdfjsBuildDir = join(pdfjsDir, "legacy", "build");

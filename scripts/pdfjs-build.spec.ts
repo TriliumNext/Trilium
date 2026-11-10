@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { createRequire } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -20,6 +20,7 @@ beforeAll(() => {
 describe("PDF.js build assets", () => {
     it.each([
         [ "cmaps", "Adobe-GB1-UCS2.bcmap" ],
+        [ "iccs", "CGATS001Compat-v2-micro.icc" ],
         [ "standard_fonts", "LiberationSans-Regular.ttf" ]
     ])("packages %s at the viewer's configured resource path", (directory, resource) => {
         const source = join(pdfjsDir, directory);
