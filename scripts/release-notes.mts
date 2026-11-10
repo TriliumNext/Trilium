@@ -27,6 +27,7 @@
  *
  *   pnpm chore:release-notes v0.107.0 [--from v0.106.0] [--stdout] [--force] [--unlisted]
  *   pnpm chore:release-notes unreleased [--from v0.106.0]
+ *   pnpm chore:release-notes announce-nightly --from <commit> [--dry-run]
  *   pnpm chore:release-notes consume v0.107.0
  *   pnpm changelog:new <slug>
  *   pnpm changelog:lint
@@ -34,7 +35,9 @@
  * `--unlisted` reports the fixes and features that neither close an issue nor come with an entry,
  * leaving out fixes that only change code written since the previous release. `unreleased` prints
  * the same note for the changes since the previous release, without the template's preamble and
- * empty sections, for the body of the nightly release (`nightly.yml`). `consume` runs in the
+ * empty sections, for the body of the nightly release (`nightly.yml`). `announce-nightly` comments
+ * on each issue closed by the commits after `<commit>` that the nightly build now carries.
+ * `consume` runs in the
  * release commit, once the note is final: it deletes the entries, or moves them to
  * `.changelog/pre-release/` for an rc or beta version, so that the final release lists them again.
  */
@@ -272,20 +275,8 @@ export function main(
 
     const base = from
         ?? git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*", "HEAD").trim();
-    const commits = parseCommits(
-        git("log", "--reverse", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", `${base}..HEAD`));
     const github = new GitHub(repository);
-
-    const pullRequests = github.fetchPullRequests(commits.flatMap((commit) => {
-        const number = parsePullRequestNumber(commit.subject);
-        return number ? [ number ] : [];
-    }));
-    const authors = github.fetchCommitAuthors(commits
-        .filter((commit) => parseClosingReferences(`${commit.subject}\n${commit.body}`).length > 0
-            && !parsePullRequestNumber(commit.subject))
-        .map((commit) => commit.hash));
-
-    const closings = collectClosings(commits, pullRequests, authors);
+    const { commits, pullRequests, closings } = readClosings(`${base}..HEAD`, github);
     const issues = github.fetchIssues(closings.map((closing) => closing.issue));
     const languages = collectNewLanguages(base, commits, issues, github);
     const collected =
@@ -350,6 +341,53 @@ export function main(
             console.error(`  ${commit.hash.slice(0, 10)} ${commit.subject}`);
         }
     }
+}
+
+/**
+ * Comments on each issue closed by the commits from `from` to `HEAD`, unless an earlier run
+ * already did, to say that the nightly build built from `HEAD` carries the change.
+ */
+export function announceNightlyFixes(
+    { from, dryRun, repository }: { from: string; dryRun: boolean; repository: string }
+) {
+    try {
+        git("merge-base", "--is-ancestor", from, "HEAD");
+    } catch {
+        console.error(`${from} is not an ancestor of HEAD; no issue is announced.`);
+        return;
+    }
+
+    const github = new GitHub(repository);
+    const { closings } = readClosings(`${from}..HEAD`, github);
+    const fixes = selectNightlyFixes(closings, github.fetchIssues(closings.map((c) => c.issue)));
+    const [ hash, date ] = git("log", "-1", "--format=%h %cs", "HEAD").trim().split(" ");
+    const body = nightlyComment(repository, { hash, date });
+    for (const issue of fixes) {
+        if (github.hasComment(issue.number, NIGHTLY_COMMENT_MARKER)) {
+            console.error(`  #${issue.number} was already announced`);
+        } else if (dryRun) {
+            console.error(`  would announce #${issue.number}: ${issue.title}`);
+        } else {
+            github.postComment(issue.number, body);
+            console.error(`  announced #${issue.number}: ${issue.title}`);
+        }
+    }
+    console.error(`${fixes.length} issues closed since ${from.slice(0, 10)}.`);
+}
+
+/** Reads the commits of `range` and the issues they close, directly or through their PRs. */
+function readClosings(range: string, github: GitHub) {
+    const commits = parseCommits(
+        git("log", "--reverse", "--format=%H%x1f%ct%x1f%s%x1f%b%x1e", range));
+    const pullRequests = github.fetchPullRequests(commits.flatMap((commit) => {
+        const number = parsePullRequestNumber(commit.subject);
+        return number ? [ number ] : [];
+    }));
+    const authors = github.fetchCommitAuthors(commits
+        .filter((commit) => parseClosingReferences(`${commit.subject}\n${commit.body}`).length > 0
+            && !parsePullRequestNumber(commit.subject))
+        .map((commit) => commit.hash));
+    return { commits, pullRequests, closings: collectClosings(commits, pullRequests, authors) };
 }
 
 function collectNewLanguages(base: string, commits: Commit[], issues: Map<number, Issue>,
@@ -850,6 +888,29 @@ export function unreleasedNotice(base: string, head: { hash: string; date: strin
         details: [],
         credits: []
     };
+}
+
+/** Identifies the comment `announceNightlyFixes` posts, so that an issue gets it once. */
+export const NIGHTLY_COMMENT_MARKER = "<!-- nightly-fix -->";
+
+/**
+ * Picks the issues a nightly build announces: closed issues, not pull requests, of the app
+ * rather than of a product released on its own. A reopened issue is left out.
+ */
+export function selectNightlyFixes(closings: Closing[], issues: Map<number, Issue>): Issue[] {
+    return closings.flatMap((closing) => {
+        const issue = issues.get(closing.issue);
+        return issue && issue.state === "CLOSED" && !/\/pull\/\d+$/.test(issue.url)
+            && !isShippedSeparately(closing.subjects, issue.labels) ? [ issue ] : [];
+    });
+}
+
+/** The comment that tells an issue's participants which nightly build carries its change. */
+export function nightlyComment(repository: string, head: { hash: string; date: string }) {
+    return `${NIGHTLY_COMMENT_MARKER}\n`
+        + "The change that closed this issue is available in the "
+        + `[nightly build](https://github.com/${repository}/releases/tag/nightly) `
+        + `of ${head.date} (commit \`${head.hash}\`), and will ship with the next release.`;
 }
 
 /**
@@ -1581,6 +1642,25 @@ class GitHub {
         return result;
     }
 
+    /** Tells whether a comment on an issue contains `text`. */
+    hasComment(issue: number, text: string) {
+        return this.rest([ "--paginate", "--jq", ".[].body",
+            `repos/${this.owner}/${this.name}/issues/${issue}/comments` ]).includes(text);
+    }
+
+    postComment(issue: number, body: string) {
+        this.rest([ "--method", "POST", "-f", `body=${body}`,
+            `repos/${this.owner}/${this.name}/issues/${issue}/comments` ]);
+    }
+
+    private rest(args: string[]) {
+        return execFileSync("gh", [ "api", ...args ], {
+            encoding: "utf-8",
+            stdio: [ "ignore", "pipe", "inherit" ],
+            maxBuffer: 64 * 1024 * 1024
+        });
+    }
+
     /** Runs one aliased field per key, in batches, and returns the non-null results. */
     private query<T>(keys: T[], field: (key: T) => string): any[] {
         const unique = [ ...new Set(keys) ];
@@ -1649,11 +1729,18 @@ if (process.argv[1] === SCRIPT_PATH) {
                 unreleased: true,
                 repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
             });
+        } else if (args[0] === "announce-nightly" && fromIndex >= 0 && args[fromIndex + 1]) {
+            announceNightlyFixes({
+                from: args[fromIndex + 1],
+                dryRun: args.includes("--dry-run"),
+                repository: process.env.GITHUB_REPOSITORY || DEFAULT_REPOSITORY
+            });
         } else if (!version || !/^v\d/.test(version)) {
             throw new Error([
                 "Usage: release-notes.mts <version, e.g. v0.107.0> [--from <tag>]",
                 "           [--stdout] [--force] [--unlisted]",
                 "       release-notes.mts unreleased [--from <tag>]",
+                "       release-notes.mts announce-nightly --from <commit> [--dry-run]",
                 "       release-notes.mts consume <version>",
                 "       release-notes.mts lint [--json <file>] [--release]",
                 "       release-notes.mts new <slug>"

@@ -232,6 +232,10 @@ jobs:
     name: Publish the changes since the last release
     needs: [nightly-electron, nightly-mobile, nightly-server]
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -261,3 +265,26 @@ jobs:
           body_path: ${{ runner.temp }}/nightly-body.md
           tag_name: nightly
           name: Nightly Build
+
+      - name: Find the previous complete nightly
+        id: previous
+        if: >-
+          ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+          && needs.nightly-electron.result == 'success'
+          && needs.nightly-mobile.result == 'success'
+          && needs.nightly-server.result == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow nightly.yml \
+            --branch main --status success --limit 50 \
+            --json headSha,event \
+            --jq '[.[] | select(.event == "schedule" or .event == "workflow_dispatch")][0].headSha // ""')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Announce the fixes on their issues
+        if: ${{ steps.previous.outputs.sha != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_SHA: ${{ steps.previous.outputs.sha }}
+        run: node --experimental-strip-types scripts/release-notes.mts announce-nightly --from "$PREVIOUS_SHA"
