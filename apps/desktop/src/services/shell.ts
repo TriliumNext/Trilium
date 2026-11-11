@@ -177,6 +177,115 @@ export function validateOpenFileUrl(input: unknown): string {
 
 //#endregion
 
+//#region executables — refused by open-path, confirmed by open-file-url
+
+/**
+ * Extensions the OS runs, or hands to an interpreter, when the file is opened with its default
+ * verb. Windows ones count on every platform because Wine registers handlers for them.
+ */
+const EXECUTABLE_EXTENSIONS = new Set([
+    // Windows
+    ".exe", ".com", ".bat", ".cmd", ".ps1", ".psm1", ".psd1", ".ps1xml", ".vbs", ".vbe", ".js",
+    ".jse", ".wsf", ".wsh", ".wsc", ".sct", ".hta", ".msc", ".msi", ".msp", ".mst", ".msix",
+    ".msixbundle", ".appx", ".appxbundle", ".appinstaller", ".scr", ".pif", ".cpl", ".lnk", ".url",
+    ".website", ".reg", ".inf", ".scf", ".chm", ".jar", ".application", ".appref-ms", ".gadget",
+    ".diagcab", ".settingcontent-ms", ".library-ms", ".search-ms", ".xll", ".xbap",
+    // macOS
+    ".app", ".command", ".tool", ".terminal", ".pkg", ".mpkg", ".workflow", ".action", ".scpt",
+    ".scptd", ".applescript", ".fileloc", ".inetloc", ".webloc",
+    // Linux
+    ".desktop", ".flatpakref"
+]);
+
+/**
+ * True when opening `filePath` with its default verb would run it: its extension is one of
+ * `EXECUTABLE_EXTENSIONS` or, on Windows, one listed in `PATHEXT`.
+ */
+export function hasExecutableExtension(filePath: string): boolean {
+    const extension = path.extname(filePath).toLowerCase();
+    if (!extension) {
+        return false;
+    }
+
+    if (EXECUTABLE_EXTENSIONS.has(extension)) {
+        return true;
+    }
+
+    const pathExt = process.platform === "win32" ? process.env.PATHEXT : undefined;
+    return !!pathExt && pathExt.toLowerCase().split(";").includes(extension);
+}
+
+/**
+ * True when opening `filePath` would run it: {@link hasExecutableExtension}, or, outside Windows,
+ * a regular file with an execute bit set, which macOS's `open` runs in Terminal.
+ *
+ * `open-path` checks the extension only, because a data directory on a FAT or NTFS mount marks
+ * every file executable and would refuse every attachment.
+ */
+export function isExecutablePath(filePath: string): boolean {
+    if (hasExecutableExtension(filePath)) {
+        return true;
+    }
+
+    if (process.platform === "win32") {
+        return false;
+    }
+
+    try {
+        const stat = fs.statSync(filePath);
+        return stat.isFile() && (stat.mode & 0o111) !== 0;
+    } catch {
+        return false;
+    }
+}
+
+/** Set while a confirmation is shown, so a script cannot stack dialogs to wear the user down. */
+let confirmingExecutable = false;
+
+/**
+ * Opens `filePath` only after the user confirms it in a native dialog, which the renderer can
+ * neither answer nor suppress. The dialog defaults to Cancel, and a canceled open reports no error.
+ */
+async function confirmAndOpenExecutable(filePath: string, window: electron.BrowserWindow | null): Promise<string> {
+    if (confirmingExecutable) {
+        return "open-file-url: a confirmation is already open";
+    }
+
+    confirmingExecutable = true;
+    try {
+        const options: electron.MessageBoxOptions = {
+            type: "warning",
+            buttons: [ t("open-executable-dialog.cancel"), t("open-executable-dialog.open") ],
+            defaultId: 0,
+            cancelId: 0,
+            noLink: true,
+            title: t("open-executable-dialog.title"),
+            message: t("open-executable-dialog.message", { name: path.basename(filePath) }),
+            detail: t("open-executable-dialog.detail", { path: filePath })
+        };
+        const { response } = window
+            ? await electron.dialog.showMessageBox(window, options)
+            : await electron.dialog.showMessageBox(options);
+
+        return response === 1 ? await openFileUrlPath(filePath) : "";
+    } finally {
+        confirmingExecutable = false;
+    }
+}
+
+/** Opens a path from a `file:` link, resolving to an empty string or to the reason it failed. */
+function openFileUrlPath(filePath: string): Promise<string> {
+    if (shouldOpenViaProtocolHandler(filePath)) {
+        return electron.shell.openExternal(url.pathToFileURL(filePath).href)
+            .then(() => "")
+            .catch((e) => coreUtils.safeExtractMessageAndStackFromError(e)[0]);
+    }
+
+    return electron.shell.openPath(filePath);
+}
+
+//#endregion
+
 //#region download-url — same-origin lock
 
 /**
@@ -256,6 +365,9 @@ export function setupShellHandlers() {
         try {
             const resolved = validateOpenPath(filePath, dataDirs.TRILIUM_DATA_DIR, dataDirs.TMP_DIR,
                 ...getConfiguredOpenRoots());
+            if (hasExecutableExtension(resolved)) {
+                throw new Error(`open-path: refusing to open an executable file: ${resolved}`);
+            }
             return electron.shell.openPath(resolved);
         } catch (e) {
             getLog().error(`open-path failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
@@ -275,17 +387,15 @@ export function setupShellHandlers() {
         }
     });
 
-    electron.ipcMain.handle("open-file-url", (_event, fileUrl: string) => {
+    electron.ipcMain.handle("open-file-url", (event, fileUrl: string) => {
         try {
             const filePath = validateOpenFileUrl(fileUrl);
 
-            if (shouldOpenViaProtocolHandler(filePath)) {
-                return electron.shell.openExternal(url.pathToFileURL(filePath).href)
-                    .then(() => "")
-                    .catch((e) => coreUtils.safeExtractMessageAndStackFromError(e));
+            if (isExecutablePath(filePath)) {
+                return confirmAndOpenExecutable(filePath, electron.BrowserWindow.fromWebContents(event.sender));
             }
 
-            return electron.shell.openPath(filePath);
+            return openFileUrlPath(filePath);
         } catch (e) {
             getLog().error(`open-file-url failed: ${coreUtils.safeExtractMessageAndStackFromError(e)}`);
             return coreUtils.safeExtractMessageAndStackFromError(e);

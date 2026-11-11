@@ -111,8 +111,12 @@ describe("share theme entry", () => {
         document.body.className = "type-text";
         document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab"`
             + ` data-tab-previous-label="Back" data-tab-next-label="On">`
-            + `<blockquote><figure class="include-note"></figure></blockquote></div>`;
-        const panel = { scrollIntoView: vi.fn() };
+            + `<blockquote><figure class="include-note"></figure></blockquote>`
+            + `<details id="outer"><details id="inner"><h2 id="heading"></h2></details></details>`
+            + `</div>`;
+        const panel = document.getElementById("heading");
+        if (!panel) throw new Error("No heading");
+        panel.scrollIntoView = vi.fn();
         mocks.revealFragment.mockReturnValue(panel);
 
         document.dispatchEvent(new Event("DOMContentLoaded"));
@@ -131,7 +135,13 @@ describe("share theme entry", () => {
             scrollLabels: { start: "Back", end: "On" }
         });
         expect(panel.scrollIntoView).toHaveBeenCalledOnce();
+        expect([ "outer", "inner" ].map((id) =>
+            (document.getElementById(id) as HTMLDetailsElement | null)?.open))
+            .toEqual([ true, true ]);
 
+        mocks.revealFragment.mockReturnValue(null);
+        window.dispatchEvent(new Event("hashchange"));
+        mocks.revealFragment.mockReturnValue(panel);
         window.dispatchEvent(new Event("hashchange"));
         expect(panel.scrollIntoView).toHaveBeenCalledTimes(2);
     });

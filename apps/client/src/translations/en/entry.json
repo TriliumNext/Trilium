@@ -25,7 +25,8 @@
     "password-confirmation": "Password confirmation",
     "button": "Set password",
     "password-too-short": "Password must be at least {{length}} characters long.",
-    "passwords-dont-match": "The entered passwords don't match."
+    "passwords-dont-match": "The entered passwords don't match.",
+    "desktop-description": "This Trilium desktop app has no password yet, so it can't be opened from a browser. In the desktop app, go to Options → Password & Auth and set a password, then reload this page to log in."
   },
   "setup": {
     "heading": "Get started with Trilium",

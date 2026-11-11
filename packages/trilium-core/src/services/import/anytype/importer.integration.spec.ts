@@ -877,6 +877,19 @@ describe("Anytype importer — integration", () => {
         expect(member.getOwnedLabelValue("mydate")).toBe(day);
     });
 
+    it("disables dangerous property labels under safe import", async () => {
+        const runKey = "6a3e330acafa6953a4661c7a";
+        const importRoot = await importAnytype({
+            "objects/coll.pb.json": collectionObject("coll", "Scripts", ["m1"], [runKey]),
+            "objects/m1.pb.json": memberObject("m1", { [runKey]: "frontendStartup" }),
+            "relations/run.pb.json": relationObject(runKey, "Run", 1)
+        });
+
+        const row = importRoot.getChildNotes()[0].getChildNotes()[0];
+        expect(row.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+        expect(row.hasOwnedLabel("run")).toBe(false);
+    });
+
     it("imports date, date-time and checkbox columns with correctly typed definitions and values", async () => {
         // Verbatim relation keys and member values from "My custom collection".
         const dateKey = "6a3e330acafa6953a4661c6b";

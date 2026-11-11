@@ -5,6 +5,9 @@ import "./ReadOnlyText.css";
 import "@triliumnext/ckeditor5";
 
 import {
+    applyCollapsedHeadings
+} from "@triliumnext/ckeditor5/src/plugins/collapsible_headings/collapsible_headings_read_only.js";
+import {
     applyListItemAlignment
 } from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
 import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scroll_read_only.js";
@@ -89,6 +92,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
                 ntxId={ntxId}
                 dir={isRtl ? "rtl" : "ltr"}
                 contentRef={readOnlyContentRef}
+                canCollapseHeadings
             />
         </>
     );
@@ -111,6 +115,11 @@ interface ReadOnlyTextContentProps {
      * keeping the last drawing while the next renders, instead of in an embed box each.
      */
     isChanging?: boolean;
+    /**
+     * Whether the headings can be collapsed, starting from their saved state. A toggle is not
+     * saved and lasts until `html` renders again.
+     */
+    canCollapseHeadings?: boolean;
 }
 
 /**
@@ -120,7 +129,8 @@ interface ReadOnlyTextContentProps {
  * whenever `html` changes.
  */
 export function ReadOnlyTextContent({
-    html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false
+    html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false,
+    canCollapseHeadings = false
 }: ReadOnlyTextContentProps) {
     const hasEmbedBoxes = hasSourceEmbedBoxes(isChanging);
     const contentRef = useSyncedRef(externalContentRef);
@@ -174,17 +184,19 @@ export function ReadOnlyTextContent({
         const disposeTabTitles = [ ...tabTitles ]
             .filter((title) => title.hasChildNodes())
             .map((title) => mountScrollableLabel(title));
+        const disposeHeadings = canCollapseHeadings ? applyCollapsedHeadings(container) : undefined;
         setupImageOpening(container, true);
 
         return () => {
             disposeTableScroll();
             disposeStickyTableHeaders();
             disposeTabs();
+            disposeHeadings?.();
             for (const dispose of disposeTabTitles) {
                 dispose();
             }
         };
-    }, [ html, noteId, ntxId, contentRef, isChanging ]);
+    }, [ html, noteId, ntxId, contentRef, isChanging, canCollapseHeadings ]);
 
     useEffect(() => {
         if (!contentRef.current) return;

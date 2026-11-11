@@ -144,6 +144,19 @@ describe("Obsidian importer — integration", () => {
         expect(labelNames).toContain("anothertag");
     });
 
+    it("disables dangerous front matter labels and tags under safe import", async () => {
+        const importRoot = await importObsidian({
+            "Note.md": "---\nrun: frontendStartup\ntags:\n  - widget\nfirst: kept\n---\nThe body."
+        });
+
+        const note = importRoot.getChildNotes().find((n) => n.title === "Note");
+        expect(note?.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+        expect(note?.hasOwnedLabel("disabled:widget")).toBe(true);
+        expect(note?.hasOwnedLabel("run")).toBe(false);
+        expect(note?.hasOwnedLabel("widget")).toBe(false);
+        expect(note?.getOwnedLabelValue("first")).toBe("kept");
+    });
+
     it("maps Obsidian special front matter keys: tags → labels, aliases → #alias, dropping cssclasses/publish/permalink", async () => {
         const importRoot = await importObsidian({
             "Note.md": "---\ntags:\n  - Book\n  - Reading List\naliases:\n  - Alt name\ncssclasses:\n  - foo\npublish: true\npermalink: /x\nfirst: First value\n---\nBody."

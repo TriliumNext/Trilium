@@ -1,6 +1,7 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import * as cls from "./context.js";
 import { getCrypto } from "./encryption/crypto.js";
 import events from "./events.js";
@@ -305,7 +306,97 @@ describe("sync_update service (real DB)", () => {
     it("throws on a note_reordering change missing its body", () => {
         expect(() => apply([{ entityChange: buildEC({ entityName: "note_reordering", entityId: "su_no_reorder" }), entity: undefined }])).toThrow(/Empty note_reordering body/);
     });
+
+    describe("identifiers from the peer (GHSA-7cq2-8qmh-7x7c)", () => {
+        const EXFIL_SELECT = "SELECT 'su_exfil', value, 1, '2026-01-01 00:00:00.000Z' FROM options WHERE name = ? /*";
+
+        it("skips a change for a table that is not a synced entity, and applies the rest of the batch", () => {
+            const noteId = createNote();
+
+            expect(() => apply([
+                { entityChange: buildEC({ entityName: "su_no_such_table", entityId: "su_probe" }), entity: { anycol: "x" } as unknown as EntityRow },
+                { entityChange: buildEC({ entityId: noteId, hash: "changed" }), entity: rowWith(noteId, { title: "after-bad-table" }) }
+            ])).not.toThrow();
+
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("after-bad-table");
+            expect(entityChangeCount("su_no_such_table")).toBe(0);
+        });
+
+        it("skips a row carrying a column the table does not have, and applies the rest of the batch", () => {
+            const victimId = createNote();
+            const victimTitle = getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [victimId]);
+            const noteId = createNote();
+
+            expect(() => apply([
+                { entityChange: buildEC({ entityId: victimId, hash: "changed" }), entity: rowWith(victimId, { title: "bad-column", su_evil_col: "x" }) },
+                { entityChange: buildEC({ entityId: noteId, hash: "changed" }), entity: rowWith(noteId, { title: "after-bad-column" }) }
+            ])).not.toThrow();
+
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [victimId])).toBe(victimTitle);
+            expect(localHash("notes", victimId)).not.toBe("changed");
+            expect(getSql().getValue("SELECT title FROM notes WHERE noteId = ?", [noteId])).toBe("after-bad-column");
+        });
+
+        it("does not run SQL smuggled in through the entity name", () => {
+            const entityName = `options (name, value, isSynced, utcDateModified) ${EXFIL_SELECT}`;
+
+            apply([{ entityChange: buildEC({ entityName, entityId: "su_exfil_table" }), entity: { x: "documentSecret" } as unknown as EntityRow }]);
+
+            expect(getSql().getRowOrNull("SELECT 1 FROM options WHERE name = 'su_exfil'")).toBeNull();
+            expect(entityChangeCount(entityName)).toBe(0);
+        });
+
+        it("does not run SQL smuggled in through a column name", () => {
+            const column = `name, value, isSynced, utcDateModified) ${EXFIL_SELECT}`;
+
+            apply([{ entityChange: buildEC({ entityName: "options", entityId: "su_exfil_column" }), entity: { [column]: "documentSecret" } as unknown as EntityRow }]);
+
+            expect(getSql().getRowOrNull("SELECT 1 FROM options WHERE name = 'su_exfil'")).toBeNull();
+            expect(entityChangeCount("options", "su_exfil_column")).toBe(0);
+        });
+
+        it("still applies a genuine row of every synced entity type", () => {
+            const noteId = createNote("su-genuine");
+            const now = dateUtils.utcNowDateTime();
+            const { attributeId, attachmentId, revisionId } = cls.init(() => {
+                const note = becca.getNoteOrThrow(noteId);
+                const attribute = note.addLabel("suGenuine", "before");
+                const attachment = note.saveAttachment({ role: "file", mime: "text/plain", title: "su-genuine.txt", content: "x" });
+                const revision = note.saveRevision();
+                const sql = getSql();
+                sql.execute("INSERT INTO etapi_tokens (etapiTokenId, name, tokenHash, utcDateCreated, utcDateModified) VALUES ('su_token', 'before', 'h', ?, ?)", [now, now]);
+                sql.execute("INSERT INTO recent_notes (noteId, notePath, utcDateCreated) VALUES (?, 'root/before', ?)", [noteId, now]);
+                sql.execute("INSERT INTO options (name, value, isSynced, utcDateModified) VALUES ('suGenuineOption', 'before', 1, ?)", [now]);
+                return { attributeId: attribute.attributeId, attachmentId: attachment.attachmentId, revisionId: revision.revisionId };
+            });
+
+            const cases: [entityName: string, primaryKey: string, entityId: string, column: string][] = [
+                ["notes", "noteId", noteId, "title"],
+                ["attributes", "attributeId", attributeId, "value"],
+                ["attachments", "attachmentId", attachmentId, "title"],
+                ["revisions", "revisionId", revisionId, "title"],
+                ["etapi_tokens", "etapiTokenId", "su_token", "name"],
+                ["recent_notes", "noteId", noteId, "notePath"],
+                ["options", "name", "suGenuineOption", "value"]
+            ];
+
+            apply(cases.map(([entityName, primaryKey, entityId, column]) => {
+                const row = getSql().getRow<EntityRow>(`SELECT * FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]);
+                return { entityChange: buildEC({ entityName, entityId, hash: "changed" }), entity: { ...row, [column]: "after" } as EntityRow };
+            }));
+
+            for (const [entityName, primaryKey, entityId, column] of cases) {
+                expect(getSql().getValue(`SELECT ${column} FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]), entityName).toBe("after");
+            }
+        });
+    });
 });
+
+function entityChangeCount(entityName: string, entityId?: string): number {
+    return entityId === undefined
+        ? getSql().getValue<number>("SELECT COUNT(*) FROM entity_changes WHERE entityName = ?", [entityName]) ?? 0
+        : getSql().getValue<number>("SELECT COUNT(*) FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? 0;
+}
 
 function localChangeId(entityName: string, entityId: string): string {
     return getSql().getValue<string>("SELECT changeId FROM entity_changes WHERE entityName = ? AND entityId = ?", [entityName, entityId]) ?? "";

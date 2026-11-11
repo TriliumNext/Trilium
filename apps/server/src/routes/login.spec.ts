@@ -7,10 +7,17 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 import { cls, events, initMessaging, options, password as passwordService, user_service } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
+import { markAsInternalElectronRequest } from "../services/electron_request.js";
 import openID from "../services/open_id.js";
 import totp from "../services/totp.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { revokeUserSessions, type SQLiteSessionStore } from "./session_parser.js";
+
+const desktop = vi.hoisted(() => ({ isElectron: false }));
+vi.mock("../services/utils.js", async (orig) => ({
+    ...await orig<typeof import("../services/utils.js")>(),
+    get isElectron() { return desktop.isElectron; }
+}));
 
 let app: Application;
 let sessionStore: SQLiteSessionStore;
@@ -46,11 +53,16 @@ describe("createLoginRateLimiter", () => {
 describe("set-password handlers", () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        desktop.isElectron = false;
     });
 
-    function setPasswordWith(body: Record<string, unknown>) {
+    function setPasswordWith(body: Record<string, unknown>, opts: { internal?: boolean } = {}) {
+        const req = { body } as ExpressRequest;
+        if (opts.internal) {
+            markAsInternalElectronRequest(req);
+        }
         const res = { redirect: vi.fn() };
-        const result = loginRoute.setPassword({ body } as ExpressRequest, res as unknown as ExpressResponse);
+        const result = loginRoute.setPassword(req, res as unknown as ExpressResponse);
         return { result, res };
     }
 
@@ -81,6 +93,22 @@ describe("set-password handlers", () => {
         await expect(setPasswordWith({ password1: " abc ", password2: "abc" }).result)
             .rejects.toThrow("Password must be at least 4 characters long.");
         expect(setPassword).not.toHaveBeenCalled();
+    });
+
+    it("refuses a desktop password sent over the network, but not from the desktop app", async () => {
+        desktop.isElectron = true;
+        vi.spyOn(passwordService, "isPasswordSet").mockReturnValue(false);
+        const setPassword = vi.spyOn(passwordService, "setPassword").mockResolvedValue({ success: true });
+
+        const network = setPasswordWith({ password1: "secret", password2: "secret" });
+        await expect(network.result).rejects.toMatchObject({ statusCode: 403 });
+        expect(network.res.redirect).not.toHaveBeenCalled();
+        expect(setPassword).not.toHaveBeenCalled();
+
+        const renderer = setPasswordWith({ password1: "secret", password2: "secret" }, { internal: true });
+        await renderer.result;
+        expect(setPassword).toHaveBeenCalledWith("secret");
+        expect(renderer.res.redirect).toHaveBeenCalledWith("login");
     });
 
     it("stores the trimmed password and redirects to the login page", async () => {

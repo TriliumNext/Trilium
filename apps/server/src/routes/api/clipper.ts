@@ -164,7 +164,7 @@ async function createFile(req: Request) {
         title,
         content: Buffer.from(dataUrl.substring(header[0].length), "base64"),
         type: "file",
-        mime: header[1]
+        mime: EXECUTABLE_MIMES.has(header[1].toLowerCase()) ? "application/octet-stream" : header[1]
     });
 
     note.setLabel("clipType", "file");
@@ -221,10 +221,31 @@ async function storeTabFavicon(note: BNote, pageUrl: string, dataUrl: unknown) {
     return await storeFavicon(note.noteId, pageUrl, bytes);
 }
 
+/**
+ * MIME types Trilium runs as a script or renders as a page (`BNote.isJavaScript()`,
+ * `BNote.isHtml()`, `BNote.isJsx()`). A clipped file with one of them is stored as opaque bytes.
+ */
+const EXECUTABLE_MIMES = new Set([
+    "application/javascript",
+    "application/x-javascript",
+    "text/javascript",
+    "text/jsx",
+    "text/html",
+    "application/xhtml+xml"
+]);
+
+/**
+ * The labels the extension sets. The desktop clipper is unauthenticated, so any other name,
+ * such as `#run` or `#widget`, is dropped.
+ */
+const CLIPPER_LABELS = new Set([ "pageDescription", "pageAuthor", "publishedDate", "modifiedDate" ]);
+
 /** Sets each label the extension sends, replacing the value a previous clipping set. */
 function setLabels(note: BNote, labels: Record<string, string> | undefined) {
     for (const labelName in labels) {
-        note.setLabel(labelName, sanitizeLabelValue(labels[labelName]));
+        if (CLIPPER_LABELS.has(labelName)) {
+            note.setLabel(labelName, sanitizeLabelValue(labels[labelName]));
+        }
     }
 }
 

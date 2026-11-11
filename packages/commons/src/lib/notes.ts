@@ -217,7 +217,9 @@ export const MEETING_RECORDING_ICON = "bx bx-conversation";
  * a recorded meeting by {@link MEETING_RECORDING_ICON}, and a calendar event by
  * {@link CALENDAR_EVENT_ICON}.
  * `iconClass` stays an argument rather than being read here because the share tree
- * narrows it to the prefixes an icon pack supplies.
+ * narrows it to the prefixes an icon pack supplies. An `iconClass` or `workspaceIconClass` that is
+ * not a list of {@link CSS_CLASS_NAME_PATTERN} class names is ignored, because callers put the
+ * result into HTML without escaping it.
  */
 export function getNoteIcon({
     noteId, type, mime, iconClass, workspaceIconClass, isFolder, getLabelValue
@@ -231,9 +233,9 @@ export function getNoteIcon({
     /** One of the note's labels, inherited ones included, as every note entity resolves them. */
     getLabelValue: (name: string) => string | null;
 }) {
-    if (iconClass) {
+    if (iconClass && isCssClassList(iconClass)) {
         return iconClass;
-    } else if (workspaceIconClass) {
+    } else if (workspaceIconClass && isCssClassList(workspaceIconClass)) {
         return workspaceIconClass;
     } else if (noteId === "root") {
         return "bx bx-home-alt-2";
@@ -273,6 +275,19 @@ export function getNoteIcon({
     }
 
     return NOTE_TYPE_ICONS[type];
+}
+
+/**
+ * The characters a CSS class name can hold without escaping: letters, digits, `-`, `_` and any
+ * code point at or above U+0080. Icon classes and icon pack prefixes are interpolated into HTML
+ * attributes and CSS selectors, so a value outside this set is rejected rather than escaped.
+ */
+export const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-￿-]+$/;
+
+/** Whether `value` is a whitespace-separated list of {@link CSS_CLASS_NAME_PATTERN} class names. */
+function isCssClassList(value: string) {
+    const classNames = value.split(/\s+/).filter(Boolean);
+    return classNames.length > 0 && classNames.every((name) => CSS_CLASS_NAME_PATTERN.test(name));
 }
 
 /**

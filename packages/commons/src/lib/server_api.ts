@@ -1157,6 +1157,12 @@ export type BootstrapDefinition = {
      */
     passwordSet?: boolean;
     /**
+     * Whether the password can be set only from the desktop app. `true` alongside
+     * `passwordSet: false` when a browser reaches a desktop instance, which refuses
+     * `POST /set-password` from the network.
+     */
+    setPasswordInDesktopApp?: boolean;
+    /**
      * Whether the current session is authenticated. `false` only in the pre-auth
      * window when a password is set but the user hasn't logged in (web/server only),
      * which the client uses to render the login screen. Omitted (treated as logged

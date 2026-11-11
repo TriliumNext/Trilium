@@ -17,6 +17,8 @@ Apart from using the UI, it is also possible to quickly insert headings using th
 *   `#####` for Heading 5
 *   `######` for Heading 6
 
+A heading can be collapsed to hide the content under it, see <a class="reference-link" href="Collapsible%20headings.md">Collapsible headings</a>.
+
 ## Font size
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:363/249;" src="General formatting_image.png" width="363" height="249"></figure>

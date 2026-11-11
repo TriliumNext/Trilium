@@ -11,7 +11,7 @@ import { getLog } from "@triliumnext/core";
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import port from "../services/port.js";
 import openID from "../services/open_id.js";
-import { isDev, isMac, supportsBackgroundMaterial } from "../services/utils.js";
+import { isDev, isElectron, isMac, supportsBackgroundMaterial } from "../services/utils.js";
 import totp from "../services/totp.js";
 import { generateCsrfToken } from "./csrf_protection.js";
 
@@ -100,6 +100,7 @@ export function bootstrap(req: Request, res: Response) {
         res.send({
             ...commonItems,
             passwordSet: false,
+            setPasswordInDesktopApp: isElectron,
             hasNativeTitleBar: false,
             hasBackgroundEffects: false,
             isMainWindow: true

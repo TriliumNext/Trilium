@@ -4,7 +4,7 @@ import {
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
-import { parse } from "node-html-parser";
+import { type HTMLElement, parse } from "node-html-parser";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as iconPackService from "../services/icon_packs.js";
@@ -828,6 +828,87 @@ describe("content_renderer", () => {
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);
             expect(content).toContain("report.pdf");
             expect(content).not.toContain("embedGone");
+        });
+
+        it("plays an embedded video or audio file, and an included video note", () => {
+            const embed = (attribute: string) =>
+                `<figure class="include-note" ${attribute}>&nbsp;</figure>`;
+            buildShareNote({
+                id: "clipNote1", type: "file", mime: "video/webm", title: "Clip", content: ""
+            });
+            const note = buildShareNote({
+                content: embed(`data-attachment-id="mediaVid1"`)
+                    + embed(`data-attachment-id="mediaAud1"`)
+                    + embed(`data-note-id="clipNote1"`),
+                attachments: [
+                    { id: "mediaVid1", role: "file", mime: "video/mp4", title: "a \"clip\".mp4" },
+                    { id: "mediaAud1", role: "file", mime: "audio/mpeg", title: "song.mp3" }
+                ]
+            });
+
+            const html = getContent(note).content as string;
+            const document = parse(html);
+
+            const players = document.querySelectorAll(".include-note > .media-player")
+                .map((player) => [
+                    player.tagName, player.getAttribute("src"), player.getAttribute("aria-label"),
+                    player.hasAttribute("controls"), player.getAttribute("preload"),
+                    player.hasAttribute("playsinline")
+                ]);
+            expect(players).toEqual([
+                [ "VIDEO", "api/attachments/mediaVid1/download", "a \"clip\".mp4", true,
+                    "metadata", true ],
+                [ "AUDIO", "api/attachments/mediaAud1/download", "song.mp3", true,
+                    "metadata", false ],
+                [ "VIDEO", "api/notes/clipNote1/view", "Clip", true, "metadata", true ]
+            ]);
+        });
+
+        it("shows an Expandable embed closed, under its title, with the caption after it", () => {
+            buildShareNote({ id: "foldNote1", title: "Folded <note>", content: "<h2>Inside</h2>" });
+            const note = buildShareNote({
+                content: `<figure class="include-note" data-attachment-id="foldVid1"`
+                    + ` data-box-size="expandable">&nbsp;<figcaption>A clip</figcaption></figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1"`
+                    + ` data-box-size="expandable">&nbsp;</figure>`
+                    + `<figure class="include-note" data-note-id="foldNote1">&nbsp;</figure>`,
+                attachments: [
+                    { id: "foldVid1", role: "file", mime: "video/mp4", title: "clip.mp4" }
+                ]
+            });
+
+            const document = parse(getContent(note).content as string);
+
+            const [ video, folded, open ] = document.querySelectorAll("figure.include-note");
+            expect(video.childNodes.map((child) => (child as HTMLElement).tagName))
+                .toEqual([ "DETAILS", "FIGCAPTION" ]);
+            const summary = (details: HTMLElement) => {
+                const element = details.querySelector("details.include-note-expandable > summary");
+                return [
+                    element?.querySelectorAll(".tn-icon").map((icon) => icon.getAttribute("class")),
+                    element?.text
+                ];
+            };
+            expect(summary(video)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-video" ], "clip.mp4"
+            ]);
+            expect(video.querySelector("details > video.media-player") !== null).toBe(true);
+            expect(video.querySelector("details")?.hasAttribute("open")).toBe(false);
+            expect(summary(folded)).toEqual([
+                [ "tn-icon bx bx-chevron-right", "tn-icon bx bx-note" ], "Folded <note>"
+            ]);
+            expect(folded.querySelector("details > h2")?.text).toBe("Inside");
+            expect(open.querySelector("details") === null).toBe(true);
+            expect(open.querySelector("h2")?.text).toBe("Inside");
+
+            const page = preparePageContent(document.toString(), {
+                imageAlt: "", headingLinkLabel: ""
+            });
+            expect(page.headings.map(({ slug }) => slug)).toEqual([ "inside-1" ]);
+            const pageDocument = parse(page.content);
+            expect(pageDocument.querySelectorAll("h2").map((heading) => [
+                heading.id, heading.querySelector(".toc-anchor") !== null
+            ])).toEqual([ [ "inside", false ], [ "inside-1", true ] ]);
         });
 
         it("shows all of a drawing whose frame cannot be read, and logs it", () => {
@@ -2107,6 +2188,8 @@ describe("content_renderer pages", () => {
             .toBe(`<iframe class="pdf-view" src="api/notes/pdfNote/view"></iframe>`);
         expect(file("zipNote", "application/zip"))
             .toContain(`location.href='api/notes/zipNote/download'`);
+        expect(file("audioNote", "audio/ogg")).toMatch(
+            /^<audio class="media-player" src="api\/notes\/audioNote\/view" controls /);
         expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
         const spreadsheet = render({ id: "sheetNote", type: "spreadsheet", content: "{}" });
         expect(spreadsheet.isAppView).toBe(true);

@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
     spawn: vi.fn(),
     fromWebContents: vi.fn<() => { id: number } | null>(() => ({ id: 1 })),
     showOpenDialog: vi.fn<(...args: unknown[]) => Promise<{ canceled: boolean; filePaths: string[] }>>(),
+    showMessageBox: vi.fn<(...args: unknown[]) => Promise<{ response: number }>>(),
     logError: vi.fn()
 }));
 
@@ -26,7 +27,7 @@ vi.mock("electron", () => ({
             handle: (channel: string, fn: Handler) => h.handle.set(channel, fn)
         },
         BrowserWindow: { fromWebContents: h.fromWebContents },
-        dialog: { showOpenDialog: h.showOpenDialog },
+        dialog: { showOpenDialog: h.showOpenDialog, showMessageBox: h.showMessageBox },
         shell: {
             openExternal: h.openExternal,
             openPath: h.openPath,
@@ -56,6 +57,7 @@ let tmpFile: string;
 let dataFile: string;
 let tmpDir: string;
 let unicodeDir: string;
+let executables: string[];
 
 function setPlatform(platform: NodeJS.Platform) {
     Object.defineProperty(process, "platform", { value: platform, configurable: true });
@@ -73,6 +75,11 @@ beforeAll(() => {
     unicodeDir = path.join(TMP_DIR, "shell-handlers-资料");
     fs.mkdirSync(tmpDir, { recursive: true });
     fs.mkdirSync(unicodeDir, { recursive: true });
+    executables = [ "report.bat", "Report.CMD", "run.ps1", "app.lnk", "page.hta", "x.desktop", "x.command" ]
+        .map((name) => path.join(TMP_DIR, `shell-handlers-${name}`));
+    for (const file of executables) {
+        fs.writeFileSync(file, "");
+    }
     setupShellHandlers();
 });
 
@@ -81,6 +88,9 @@ afterAll(() => {
     fs.rmSync(dataFile, { force: true });
     fs.rmSync(tmpDir, { force: true, recursive: true });
     fs.rmSync(unicodeDir, { force: true, recursive: true });
+    for (const file of executables) {
+        fs.rmSync(file, { force: true });
+    }
     setPlatform(realPlatform);
 });
 
@@ -125,6 +135,31 @@ describe("setupShellHandlers", () => {
             expect(result).toBeTruthy();
             expect(h.openPath).not.toHaveBeenCalled();
         });
+
+        it("refuses a file that would run as a program, on every platform", () => {
+            for (const platform of [ "win32", "darwin", "linux" ] as const) {
+                setPlatform(platform);
+                for (const file of executables) {
+                    expect(String(fireHandle("open-path", file)), file).toMatch(/refusing to open an executable/);
+                }
+            }
+            expect(h.openPath).not.toHaveBeenCalled();
+            expect(h.showMessageBox).not.toHaveBeenCalled();
+        });
+
+        it("refuses an extension Windows lists in PATHEXT", () => {
+            setPlatform("win32");
+            vi.stubEnv("PATHEXT", ".COM;.EXE;.TRILIUMTEST");
+            const file = path.join(TMP_DIR, "shell-handlers-x.triliumtest");
+            fs.writeFileSync(file, "");
+            try {
+                expect(String(fireHandle("open-path", file))).toMatch(/refusing to open an executable/);
+                expect(h.openPath).not.toHaveBeenCalled();
+            } finally {
+                fs.rmSync(file, { force: true });
+                vi.unstubAllEnvs();
+            }
+        });
     });
 
     describe("configured roots", () => {
@@ -155,9 +190,52 @@ describe("setupShellHandlers", () => {
 
     describe("open-file-url", () => {
         it("opens a valid file: URL", () => {
-            const url = process.platform === "win32" ? "file:///C:/Windows/notepad.exe" : "file:///etc/hosts";
+            const url = process.platform === "win32" ? "file:///C:/Windows/win.ini" : "file:///etc/hosts";
             fireHandle("open-file-url", url);
             expect(h.openPath).toHaveBeenCalled();
+            expect(h.showMessageBox).not.toHaveBeenCalled();
+        });
+
+        it("asks before opening a program, and opens nothing when the user cancels", async () => {
+            h.showMessageBox.mockResolvedValueOnce({ response: 0 });
+            expect(await fireHandle("open-file-url", pathToFileURL(executables[0]).href)).toBe("");
+            expect(h.openPath).not.toHaveBeenCalled();
+
+            const [ window, options ] = h.showMessageBox.mock.calls[0] as [ unknown, { defaultId: number; cancelId: number; message: string } ];
+            expect(window).toEqual({ id: 1 });
+            expect(options).toMatchObject({ defaultId: 0, cancelId: 0 });
+            expect(options.message).toContain("shell-handlers-report.bat");
+        });
+
+        it("opens a program once the user confirms", async () => {
+            h.showMessageBox.mockResolvedValueOnce({ response: 1 });
+            await fireHandle("open-file-url", pathToFileURL(executables[1]).href);
+            expect(h.openPath).toHaveBeenCalledWith(executables[1]);
+        });
+
+        it("refuses a second program while the first confirmation is still open", async () => {
+            let answer: (value: { response: number }) => void = () => {};
+            h.showMessageBox.mockReturnValueOnce(new Promise((resolve) => { answer = resolve; }));
+            const first = fireHandle("open-file-url", pathToFileURL(executables[0]).href);
+            expect(await fireHandle("open-file-url", pathToFileURL(executables[2]).href)).toMatch(/already/);
+            answer({ response: 1 });
+            await first;
+            expect(h.showMessageBox).toHaveBeenCalledOnce();
+            expect(h.openPath).toHaveBeenCalledOnce();
+            expect(h.openPath).toHaveBeenCalledWith(executables[0]);
+        });
+
+        it.runIf(process.platform !== "win32")("asks before opening a file marked executable", async () => {
+            const file = path.join(TMP_DIR, "shell-handlers-binary");
+            fs.writeFileSync(file, "", { mode: 0o755 });
+            try {
+                h.showMessageBox.mockResolvedValueOnce({ response: 0 });
+                await fireHandle("open-file-url", pathToFileURL(file).href);
+                expect(h.showMessageBox).toHaveBeenCalledOnce();
+                expect(h.openPath).not.toHaveBeenCalled();
+            } finally {
+                fs.rmSync(file, { force: true });
+            }
         });
 
         it("returns an error message for a non-file URL", () => {

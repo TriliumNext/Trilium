@@ -212,6 +212,7 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
     /* v8 ignore next -- the protected branch needs a protected import root with an active protected session, which the in-memory test DB has no way to set up */
     const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     const shrinkImages = !!taskContext.data?.shrinkImages;
+    const safeImport = !!taskContext.data?.safeImport;
 
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: t("notion_import.root-title"), content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
@@ -251,7 +252,7 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
         // Carry the page's own database property values over (file columns become attachments, the rest
         // labels); relations are deferred to the second pass, once every target note exists. A file column
         // also returns reference-links, prepended to the body so its files are reachable from the content.
-        const fileLinks = applyOwnedProperties(note, page, resources);
+        const fileLinks = applyOwnedProperties(note, page, resources, safeImport);
         const body = fileLinks + page.content;
 
         // Attachments hang off the note, so this must run after creation; it returns the content with the
@@ -272,7 +273,7 @@ function createNotes(importRootNote: BNote, pages: ParsedPage[], resources: Map<
             note.setContent(finalContent);
         }
 
-        applyRelationProperties(note, page, resolveTarget);
+        applyRelationProperties(note, page, resolveTarget, safeImport);
 
         // Preserve Notion's original timestamps. Must run after the content save above, which would
         // otherwise re-stamp the modification date with "now".

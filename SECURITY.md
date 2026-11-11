@@ -57,7 +57,7 @@ Vulnerabilities that require a user to inject malicious content into their own n
 #### Published (Shared) Note Content
 A shared note is published by its owner, and the share view renders it as it was authored, raw HTML included. Script running on a page you publish is not an escalation of anything: Trilium supports it deliberately, through the `~shareJs` relation, which loads a JavaScript note of your choosing into the share page, and through `~shareTemplate` for the page around it.
 
-Reports that reduce to "a note's own HTML or JavaScript executes for visitors to the page publishing it" are therefore out of scope, however the content was written (editor, ETAPI, sync). Content arriving through the importers and the web clipper is sanitized on write, independently of this.
+Reports that reduce to "a note's own HTML or JavaScript executes for visitors to the page publishing it" are therefore out of scope, however the content was written (editor, ETAPI, sync). Content arriving through the importers and the web clipper is sanitized on write, independently of this: its HTML is cleaned, a safe import disables the attributes that run code, and the clipper keeps only the labels the extension sets and stores a clipped script or web page as an opaque file.
 
 What crosses out of the published page remains **in scope**: disclosing notes that were never shared, bypassing `#shareCredentials` or `#shareHiddenFromTree`, or reaching the authenticated session of someone who merely visited. So does a defect in how the share renderer itself builds markup, such as a value escaping the attribute it was placed in; we fix those as correctness bugs even where the value was the publisher's own.
 

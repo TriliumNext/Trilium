@@ -79,7 +79,7 @@ export default class BlockReference extends Plugin {
         if (dragHandle) {
             dragHandle.isMenuOpen = true;
         }
-        openHandleMenu(origin, getDraggedBlocks(editor.model), () => {
+        openHandleMenu(origin, getDraggedBlocks(editor), () => {
             if (dragHandle) {
                 dragHandle.isMenuOpen = false;
             }

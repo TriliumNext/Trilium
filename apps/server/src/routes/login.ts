@@ -1,11 +1,13 @@
-import { getLog, password as passwordService, user_service, ValidationError } from "@triliumnext/core";
+import { ForbiddenError, getLog, password as passwordService, user_service, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
 import rateLimit from "express-rate-limit";
 
 import { verifyLoginCredentials } from "../services/auth.js";
+import { isInternalElectronRequest } from "../services/electron_request.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
 import openID from '../services/open_id.js';
 import totp from '../services/totp.js';
+import { isElectron } from "../services/utils.js";
 
 function loginPage(req: Request, res: Response) {
     // The login screen is served by the SPA at the root now (driven by the bootstrap
@@ -24,6 +26,12 @@ function setPasswordPage(req: Request, res: Response) {
 }
 
 async function setPassword(req: Request, res: Response) {
+    // A desktop instance takes its first password only from the app (`/api/password/change`),
+    // so a client on the network cannot claim a knowledge base that has none.
+    if (isElectron && !isInternalElectronRequest(req)) {
+        throw new ForbiddenError("Set the password in the Trilium desktop app.");
+    }
+
     if (passwordService.isPasswordSet()) {
         throw new ValidationError("Password has been already set");
     }

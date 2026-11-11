@@ -28,6 +28,23 @@ async function main() {
 }
 
 export function App() {
+    if (window.glob?.setPasswordInDesktopApp) {
+        return (
+            <div class="setup-container set-password-container">
+                <SetupPage
+                    className="set-password"
+                    title={t("set_password.heading")}
+                    description={t("set_password.desktop-description")}
+                    illustration={<Icon icon="bx bx-lock-alt" className="illustration-icon" />}
+                />
+            </div>
+        );
+    }
+
+    return <SetPasswordForm />;
+}
+
+function SetPasswordForm() {
     const password1Ref = useRef<HTMLInputElement>(null);
     const [ password1, setPassword1 ] = useState("");
     const [ password2, setPassword2 ] = useState("");

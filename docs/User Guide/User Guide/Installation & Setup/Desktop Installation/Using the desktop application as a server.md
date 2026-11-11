@@ -5,6 +5,8 @@ For security reasons, this feature is **not enabled** by default. To enable it, 
 
 After enabling network access and restarting the application, you can access this web interface locally by navigating to [http://localhost:37840/login](http://localhost:37840/login).
 
+The web interface asks for a password to log in. If you haven't set one yet, set it in the desktop application under _Options_ → _Password & Auth_ first; for security reasons, the password can't be set from the browser.
+
 > [!NOTE]
 > The server embedded in the desktop application will only run as long as the desktop application itself is running. So closing the application will also close the server. To overcome this, you can try hiding the application in the system tray.
 

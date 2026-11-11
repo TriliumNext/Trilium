@@ -357,6 +357,23 @@ describe("clipper route handlers", () => {
             expect(note.hasLabel("pageUrl")).toBe(false);
         });
 
+        it("stores a script or a web page as an opaque file, and drops labels the extension never sends", async () => {
+            for (const mime of [ "application/javascript", "application/x-javascript", "text/javascript", "text/jsx", "text/html", "application/xhtml+xml" ]) {
+                const { noteId } = await createFile({
+                    title: "Clipped",
+                    dataUrl: `data:${mime};base64,${Buffer.from("window.__pwned = 1;").toString("base64")}`,
+                    labels: { run: "frontendStartup", widget: "", pageAuthor: "Ann" }
+                });
+
+                const note = becca.getNoteOrThrow(noteId);
+                expect(note.mime).toBe("application/octet-stream");
+                expect(note.isJavaScript()).toBe(false);
+                expect(note.hasLabel("run")).toBe(false);
+                expect(note.hasLabel("widget")).toBe(false);
+                expect(note.getLabelValue("pageAuthor")).toBe("Ann");
+            }
+        });
+
         it("rejects a file that is not a base64 data URL", async () => {
             await expect(createFile({ title: "x", dataUrl: "https://example.com/report.pdf" }))
                 .rejects.toThrow("The file must be sent as a base64 data URL.");
@@ -364,7 +381,7 @@ describe("clipper route handlers", () => {
         });
     });
 
-    it("creates a standalone note with labels", async () => {
+    it("creates a standalone note with the labels the extension sends", async () => {
         const result = await cls.init(() => clipperRoute.createNote({
             body: {
                 title: "Clipped",
@@ -374,13 +391,21 @@ describe("clipper route handlers", () => {
                 pageUrl: "https://example.com/page",
                 labels: {
                     source: "web",
-                    pageDescription: "Tom & <b>Jerry</b><script>alert(1)</script>"
+                    run: "frontendStartup",
+                    pageDescription: "Tom & <b>Jerry</b><script>alert(1)</script>",
+                    pageAuthor: "Ann",
+                    publishedDate: "2026-01-02",
+                    modifiedDate: "2026-01-03"
                 }
             }
         } as unknown as Request));
         const note = becca.getNoteOrThrow(result.noteId);
-        expect(note.getLabelValue("source")).toBe("web");
+        expect(note.hasLabel("source")).toBe(false);
+        expect(note.hasLabel("run")).toBe(false);
         expect(note.getLabelValue("pageDescription")).toBe("Tom & Jerry");
+        expect(note.getLabelValue("pageAuthor")).toBe("Ann");
+        expect(note.getLabelValue("publishedDate")).toBe("2026-01-02");
+        expect(note.getLabelValue("modifiedDate")).toBe("2026-01-03");
     });
 
     it("clips to the top level when there is no clipper inbox and no journal", async () => {

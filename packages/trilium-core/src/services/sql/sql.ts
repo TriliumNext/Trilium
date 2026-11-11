@@ -7,6 +7,8 @@ const LOG_ALL_QUERIES = false;
 // smaller values can result in better performance due to better usage of statement cache
 const PARAM_LIMIT = 100;
 
+const SQL_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 /**
  * The output shapes a prepared statement can return: rows as objects, rows as arrays (`raw`), or the
  * first column alone (`pluck`). Each sticks to the statement once set, so a reader always names one.
@@ -91,6 +93,8 @@ export class SqlService {
             return;
         }
 
+        assertIdentifiers(tableName, ...keys);
+
         const columns = keys.join(", ");
         const questionMarks = keys.map((p) => "?").join(", ");
 
@@ -117,6 +121,8 @@ export class SqlService {
             this.log.error(`Can't upsert empty object into table ${tableName}`);
             return;
         }
+
+        assertIdentifiers(tableName, primaryKey, ...keys);
 
         const columns = keys.join(", ");
 
@@ -495,4 +501,16 @@ function disableSlowQueryLogging(disable: boolean) {
 
 function isSlowQueryLoggingDisabled() {
     return !!getContext().get("disableSlowQueryLogging");
+}
+
+/**
+ * Throws unless every name is a plain SQL identifier, since `insert()` and `upsert()` write table
+ * and column names into the statement text rather than binding them.
+ */
+function assertIdentifiers(...names: string[]) {
+    for (const name of names) {
+        if (!SQL_IDENTIFIER.test(name)) {
+            throw new Error(`'${name}' is not a valid SQL identifier.`);
+        }
+    }
 }

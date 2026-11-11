@@ -74,4 +74,17 @@ describe("set-password App", () => {
         form?.dispatchEvent(allowed);
         expect(allowed.defaultPrevented).toBe(false);
     });
+
+    it("points a browser on a desktop instance to the desktop app instead of offering the form", () => {
+        const glob = window.glob;
+        window.glob = { ...glob, setPasswordInDesktopApp: true };
+        try {
+            const c = renderInto(<App />);
+            expect(c.textContent).toContain("set_password.desktop-description");
+            expect(c.querySelector("form")).toBeNull();
+            expect(c.querySelector('input[type="password"]')).toBeNull();
+        } finally {
+            window.glob = glob;
+        }
+    });
 });

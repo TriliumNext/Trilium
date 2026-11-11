@@ -296,7 +296,10 @@ export interface ElectronShellApi {
      * (or a descendant). Anything else — absolute paths elsewhere on disk,
      * traversal attempts, UNC paths that don't normalize under those roots —
      * is rejected. Null bytes, empty strings, and non-existent files are also
-     * rejected.
+     * rejected, and so is a file whose extension makes the OS run it as a
+     * program (`.exe`, `.bat`, `.ps1`, `.lnk`, `.hta`, `.app`, `.command`,
+     * `.desktop`, an extension in `PATHEXT`, …): the file was written from a
+     * note, which chose its name and content.
      *
      * @param path A file in the Trilium data or tmp directory.
      * @returns An empty string on success, or an error message on failure.
@@ -341,7 +344,11 @@ export interface ElectronShellApi {
      * `file://` links inside note content, which routinely reference arbitrary
      * locations on disk (`file:///C:/Users/me/Documents/contract.pdf` and
      * similar). Equivalent to a browser following a `file:` link the user
-     * clicked. Treat clicks on attacker-influenced note content accordingly.
+     * clicked. A target that would run as a program — an executable extension
+     * as refused by {@link openPath}, or outside Windows a file with an
+     * execute bit — opens only after the user confirms it in a native dialog
+     * that defaults to Cancel. One such dialog is shown at a time; a cancel
+     * resolves to an empty string.
      *
      * @param fileUrl A `file:` URL with an empty hostname.
      * @returns An empty string on success, or an error message on failure.
