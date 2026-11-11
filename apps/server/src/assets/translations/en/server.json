@@ -547,6 +547,13 @@
     "clear-detail": "Backups already written keep the password they were made with, and can still be restored with it.\n\nIf you were not expecting to be asked, cancel — a note or a script may have requested this.",
     "clear-confirm": "Forget password"
   },
+  "open-executable-dialog": {
+    "title": "Open program",
+    "message": "Open \"{{- name}}\"?",
+    "detail": "{{- path}}\n\nThis file can run a program on your computer. Open it only if you created this link yourself and trust the file.",
+    "cancel": "Cancel",
+    "open": "Open"
+  },
   "security-dialog": {
     "enable-title": "Enable {{settingLabel}}",
     "enable-message": "Are you sure you want to enable {{settingLabel}}?",
