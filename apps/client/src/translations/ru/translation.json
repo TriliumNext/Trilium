@@ -259,7 +259,11 @@
     "color_scheme_switcher_light": "Светлый режим",
     "color_scheme_switcher_system": "Системный режим",
     "color_scheme_switcher_unsupported": "Текущая тема не поддерживает изменение цветовой схемы.",
-    "edited_notes_expanded": "Разворачивать \"Измененные в этот день заметки\" на заметках дня"
+    "edited_notes_expanded": "Разворачивать \"Измененные в этот день заметки\" на заметках дня",
+    "note_title_style": "Название заметки",
+    "note_title_style_description": "Компактное название отображается только в строке над заметкой, оставляя больше места для текста. Даты создания и изменения не отображаются.",
+    "note_title_style_large": "Большое",
+    "note_title_style_compact": "Компактное"
   },
   "tasks": {
     "due": {
@@ -1233,7 +1237,9 @@
   "note_tooltip": {
     "quick-edit": "Быстрое редактирование",
     "note-has-been-deleted": "Заметка удалена.",
-    "attachment-info": "Вложение • {{size}}"
+    "attachment-info": "Вложение • {{size}}",
+    "jump-to-block": "Перейти к блоку",
+    "jump-to-heading": "Перейти к заголовку"
   },
   "note_autocomplete": {
     "clear-text-field": "Очистить текстовое поле",
@@ -1295,11 +1301,12 @@
     "align_left": "Выравнивание по левому краю",
     "align_center": "Выравнивание по центру",
     "align_right": "Выравнивание по правому краю",
-    "delete": "Удалить",
+    "delete": "Удалить блок",
     "open_externally": "Открыть во внешнем",
     "copy_url": "Копировать адрес (URL)",
     "display_as": "Отображать как",
-    "edit": "Редактировать..."
+    "edit": "Редактировать...",
+    "include_size_default": "По умолчанию"
   },
   "image_context_menu": {
     "copy_image_to_clipboard": "Копировать изображение в буфер обмена",
@@ -1932,7 +1939,9 @@
     "search_placeholder": "Поиск шрифтов",
     "no_fonts_found": "Нет шрифтов, соответствующих тому, что вы ищете.",
     "document_preview_heading": "Черенки \"Пурпурного сердца\"",
-    "document_preview_body": "Отрезала 4 стебля ниже узла и поставила их в воду на подоконник; первые корни проросли через <strong>9 дней</strong>. В условиях <em>яркого солнечного света</em> растение сохраняет окраску, а в тени становится зелёным."
+    "document_preview_body": "Отрезала 4 стебля ниже узла и поставила их в воду на подоконник; первые корни проросли через <strong>9 дней</strong>. В условиях <em>яркого солнечного света</em> растение сохраняет окраску, а в тени становится зелёным.",
+    "installed-system-fonts": "Системные шрифты",
+    "family_draws_nothing": "{{family}} не может отображать текст на этом устройстве, поэтому шрифт не был изменен."
   },
   "max_content_width": {
     "max_width_unit": "пикселей",
@@ -2279,7 +2288,11 @@
     "image_size_hint": "Размер изображения можно изменить позже.",
     "missing_note": "Заметка с ID {{noteId}} отсутствует.",
     "missing_attachment": "Вложение с ID {{attachmentId}} отсутствует.",
-    "unknown_kind": "Это содержимое требует более новой версии Trilium."
+    "unknown_kind": "Это содержимое требует более новой версии Trilium.",
+    "size_compact": "Компактный",
+    "size_compact_description": "Одна строка: название и действия или элементы управления аудиофайлом.",
+    "size_resizable": "Изменяемый",
+    "size_resizable_description": "Блок, которой можно изменить до любого размера."
   },
   "execute_script": {
     "execute_script": "Выполнить скрипт",
@@ -4157,7 +4170,13 @@
       "add-new-tab": "Добавить новую вкладку",
       "copy-reference-to-this-tab": "Скопировать ссылку на эту вкладку",
       "delete-tab": "Удалить вкладку",
-      "delete-all-tabs": "Удалить все вкладки"
+      "delete-all-tabs": "Удалить все вкладки",
+      "compact": "Компактный",
+      "resizable": "Изменяемый",
+      "default": "По умолчанию",
+      "collapse-or-expand-the-section-of-a-heading": "Свернуть или развернуть раздел заголовка",
+      "section-collapsed": "Раздел свёрнут",
+      "section-expanded": "Раздел развёрнут"
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",
@@ -4962,7 +4981,8 @@
     "edit_excerpt": "Редактировать отрывок",
     "copy_share_link_one": "Копировать публичную ссылку",
     "copy_share_link_few": "Копировать публичную ссылку",
-    "copy_share_link_many": "Копировать публичную ссылку"
+    "copy_share_link_many": "Копировать публичную ссылку",
+    "copy_reference": "Копировать ссылку"
   },
   "record_meeting": {
     "note_title": "Встреча {{date}}",
@@ -5158,6 +5178,51 @@
     "title": "Вставить медиа",
     "button_insert": "Вставить медиа",
     "not_a_video": "Это не веб-адрес.",
-    "insert_failed": "Не удалось встроить медиа. Проверьте, что это адрес видео на YouTube, аудио или видео, а также проверьте соединение и повторите попытку."
+    "insert_failed": "Не удалось встроить медиа. Проверьте, что это адрес видео на YouTube, аудио или видео, а также проверьте соединение и повторите попытку.",
+    "description": "Введите адрес видео или аудио для встраивания: видео с YouTube или любое аудио или видео, доступное по протоколу HTTP или HTTPS."
+  },
+  "block_handle_menu": {
+    "block_count_one": "{{count}} блок",
+    "block_count_few": "{{count}} блока",
+    "block_count_many": "{{count}} блоков",
+    "insert_above": "Вставить сверху",
+    "insert_below": "Вставить снизу",
+    "insert_item_above": "Вставить элемент сверху",
+    "insert_item_below": "Вставить элемент снизу",
+    "insert_child_item": "Вставить дочерний элемент",
+    "cut": "Вырезать",
+    "copy": "Скопировать",
+    "delete": "Удалить",
+    "types": {
+      "paragraph": "Параграф",
+      "heading": "Заголовок {{level}}",
+      "list_item": "Элемент списка",
+      "todo_item": "Элемент списка задач",
+      "block_quote": "Блок цитаты",
+      "code_block": "Блок кода",
+      "table": "Таблица",
+      "image": "Изображение",
+      "horizontal_line": "Горизонтальная линия",
+      "page_break": "Разрыв страницы",
+      "admonition": "Замечание",
+      "collapsible": "Сворачиваемый блок",
+      "tabs": "Вкладки",
+      "columns": "Макет колонок",
+      "math": "Математическое уравнение",
+      "footnotes": "Сноски",
+      "footnote": "Сноска",
+      "included_note": "Вставленная заметка",
+      "excerpt": "Отрывок",
+      "attachment": "Вложение",
+      "drawing": "Холст для рисования",
+      "mermaid": "Диаграмма Mermaid",
+      "video": "Видео",
+      "audio": "Аудио",
+      "link_preview": "Предпросмотр ссылки",
+      "embed": "Встраивание",
+      "block": "Блок"
+    },
+    "collapse_section": "Свернуть раздел",
+    "expand_section": "Развернуть раздел"
   }
 }
