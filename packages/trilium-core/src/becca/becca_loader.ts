@@ -138,7 +138,7 @@ function injectVirtualSubtrees() {
             // notePositions don't collide.
             const basePosition = becca.allNotes[provider.parentNoteId]
                 .getAllChildBranches()
-                .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
+                .reduce((max, childBranch) => Math.max(max, childBranch.notePosition), 0);
 
             // Set before injecting: should injection throw mid-subtree, the already-injected
             // notes still need the target-relation backfill below.

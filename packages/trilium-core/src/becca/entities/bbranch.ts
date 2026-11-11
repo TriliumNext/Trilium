@@ -185,9 +185,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             }
 
             for (const childBranch of note.getAllChildBranches()) {
-                if (childBranch) {
-                    childBranch.deleteBranch(deleteId, taskContext);
-                }
+                childBranch.deleteBranch(deleteId, taskContext);
             }
 
             // first delete children and then parent - this will show up better in recent changes
@@ -238,10 +236,6 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
             if (this.parentNote) {
                 for (const childBranch of this.parentNote.getAllChildBranches()) {
-                    if (!childBranch) {
-                        continue;
-                    }
-
                     if (
                         maxNotePos < childBranch.notePosition &&
                         childBranch.noteId !== "_hidden" // hidden has a very large notePosition to always stay last
