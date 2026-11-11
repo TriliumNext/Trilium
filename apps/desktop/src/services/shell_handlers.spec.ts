@@ -207,9 +207,11 @@ describe("setupShellHandlers", () => {
             expect(options.message).toContain("shell-handlers-report.bat");
         });
 
-        it("opens a program once the user confirms", async () => {
+        it("opens a program once the user confirms, even without a parent window", async () => {
+            h.fromWebContents.mockReturnValueOnce(null);
             h.showMessageBox.mockResolvedValueOnce({ response: 1 });
             await fireHandle("open-file-url", pathToFileURL(executables[1]).href);
+            expect(h.showMessageBox.mock.calls[0]).toHaveLength(1);
             expect(h.openPath).toHaveBeenCalledWith(executables[1]);
         });
 
@@ -236,6 +238,13 @@ describe("setupShellHandlers", () => {
             } finally {
                 fs.rmSync(file, { force: true });
             }
+        });
+
+        it.runIf(process.platform !== "win32")("opens a missing file without asking", () => {
+            const file = path.join(TMP_DIR, "shell-handlers-missing");
+            fireHandle("open-file-url", pathToFileURL(file).href);
+            expect(h.showMessageBox).not.toHaveBeenCalled();
+            expect(h.openPath).toHaveBeenCalledWith(file);
         });
 
         it("returns an error message for a non-file URL", () => {
