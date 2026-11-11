@@ -127,6 +127,21 @@ describe("share handlers", () => {
         expect(request("/share/:shareId", { params: { shareId: "openNote" }, query: { raw: "" } }).body).toBe("<p>public body</p>");
     });
 
+    it("refuses a protected note's JSON, which carries its label values (GHSA-gmf6-2wph-f898)", () => {
+        buildShareTree([
+            { id: "lockedUp", content: "", isProtected: true, "#projectSecret": "TOPSECRET-123" },
+            { id: "openNote", content: "", "#projectSecret": "PUBLIC-456" }
+        ]);
+
+        const refused = request("/share/api/notes/:noteId", { params: { noteId: "lockedUp" } });
+        expect(refused.status).toBe(404);
+        expect(String(refused.body)).not.toContain("TOPSECRET");
+
+        const served = request("/share/api/notes/:noteId", { params: { noteId: "openNote" } });
+        expect(served.status).toBe(200);
+        expect(String(served.body)).toContain("PUBLIC-456");
+    });
+
     it("lists only the children visible in the tree in a note's JSON", () => {
         buildShareTree([ {
             id: "jsonParent",

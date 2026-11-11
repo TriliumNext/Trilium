@@ -195,7 +195,8 @@ function renderNote(note: SNote | undefined, req: ShareRequest): ShareReply {
 }
 
 function getNote(req: ShareRequest): ShareReply {
-    const note = checkNoteAccess(req.params.noteId ?? "", req);
+    // A protected note's labels are not encrypted, so its JSON would serve their values.
+    const note = checkNoteContentAccess(req.params.noteId ?? "", req);
 
     return jsonReply(200, note.getPojo(), noIndexHeaders(note));
 }
