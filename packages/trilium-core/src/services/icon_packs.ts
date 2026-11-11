@@ -1,4 +1,6 @@
-import { iconFontFaceOverrides, type IconFontMetrics, IconRegistry } from "@triliumnext/commons";
+import {
+    CSS_CLASS_NAME_PATTERN, iconFontFaceOverrides, type IconFontMetrics, IconRegistry
+} from "@triliumnext/commons";
 
 import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
@@ -24,13 +26,6 @@ const MIME_TO_CSS_FORMAT_MAPPINGS: Record<typeof PREFERRED_MIME_TYPE[number], st
     "font/woff2": "woff2"
 };
 
-/**
- * Character set a pack's prefix and each of its icon keys must match. Both are interpolated
- * into a CSS class selector, which takes letters, digits, `-`, `_` and any code point at or
- * above U+0080 unescaped. Anything else has to be rejected: a key holding `</style>` ends the
- * inline `<style>` element that `generateCss()` output is served in.
- */
-const CSS_CLASS_NAME_PATTERN = /^[a-zA-Z0-9_\u0080-\uFFFF-]+$/;
 const MAX_LOGGED_SKIPPED_KEYS = 10;
 
 export const MIME_TO_EXTENSION_MAPPINGS: Record<string, string> = {

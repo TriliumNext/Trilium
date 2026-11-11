@@ -99,6 +99,27 @@ describe("getNoteIcon", () => {
         expect(icon).toBe("bx bx-workspace");
     });
 
+    it("ignores an icon that is not a list of CSS class names", () => {
+        const markup = [
+            "x.png' onerror='alert(1)",
+            "x' onmouseover='alert(1)",
+            "\"><img src=x onerror=alert(1)>",
+            "bx bx-star</span><script>alert(1)</script>",
+            "x/y",
+            "bx bx-star:hover"
+        ];
+        for (const value of markup) {
+            expect(getNoteIcon(buildArgs({ iconClass: value })), value).toBe("bx bx-note");
+            expect(getNoteIcon(buildArgs({ workspaceIconClass: value })), value).toBe("bx bx-note");
+            expect(getNoteIcon(buildArgs({ iconClass: value, workspaceIconClass: "bx bx-ws" })), value)
+                .toBe("bx bx-ws");
+        }
+
+        for (const value of ["bx bx-star", "bxs-star", "  bx   bx-star ", "mdi mdi_home-2", "ic ic-é"]) {
+            expect(getNoteIcon(buildArgs({ iconClass: value })), value).toBe(value);
+        }
+    });
+
     it("returns the home icon for the root note", () => {
         const icon = getNoteIcon(buildArgs({ noteId: "root" }));
         expect(icon).toBe("bx bx-home-alt-2");
