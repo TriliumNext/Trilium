@@ -20,6 +20,7 @@ export * from "./lib/shared_constants.js";
 export * from "./lib/shared_types.js";
 export * from "./lib/share_hosting.js";
 export * from "./lib/ws_api.js";
+export * from "./lib/collaboration.js";
 export * from "./lib/attribute_names.js";
 export * from "./lib/search_syntax.js";
 export * from "./lib/sort_criteria.js";

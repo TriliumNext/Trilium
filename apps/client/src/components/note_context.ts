@@ -1,5 +1,6 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
+import type { CollabPeer } from "@triliumnext/commons";
 
 import type FNote from "../entities/fnote.js";
 import { closeActiveDialog } from "../services/dialog.js";
@@ -109,6 +110,8 @@ export interface NoteContextDataMap {
     saveState: {
         state: SaveState;
     };
+    /** Published by the editor of the note: the other editors that have it open in a session. */
+    collaborators: CollabPeer[];
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,

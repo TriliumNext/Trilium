@@ -63,6 +63,12 @@ export interface MessagingProvider {
      */
     sendMessageToUserClients?(userId: string, message: WebSocketMessage): void;
 
+    /** The user of a connection, for a transport whose connections belong to users. */
+    getClientUserId?(clientId: string): string | undefined;
+
+    /** Registers a handler that runs when a connection closes. */
+    onClientDisconnected?(handler: (clientId: string) => void): void;
+
     /**
      * Get the number of connected clients.
      */

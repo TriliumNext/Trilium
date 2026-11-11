@@ -67,6 +67,7 @@ import "./hosted_balloon.js";
 import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
 import "./plugins/child_note.js";
+import "./plugins/collaboration.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/content_embed/content_embed_caret.js";
 import "./plugins/delete_blocks.js";

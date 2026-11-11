@@ -6,6 +6,7 @@ import { Autoformat, AutoLink, BlockQuote, BlockToolbar, Bold, CKFinderUploadAda
 import type { Plugin } from "ckeditor5";
 import AdaptiveColors from "./plugins/adaptive_colors.js";
 import ChildNotePlugin from "./plugins/child_note.js";
+import Collaboration from "./plugins/collaboration.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import UploadimagePlugin from "./plugins/uploadimage.js";
 import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
@@ -115,6 +116,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     IndentBlockShortcutPlugin,
     MarkdownImportPlugin,
     ContentEmbed,
+    Collaboration,
     BlockReference,
     InlineIcon,
     LinkEmbed,

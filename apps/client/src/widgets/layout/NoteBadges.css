@@ -44,6 +44,21 @@
     overflow: hidden;
     --badge-radius: 12px;
 
+    .collaborators-badge {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+
+        .user-avatar {
+            --user-avatar-size: 22px;
+            box-shadow: 0 0 0 2px var(--main-background-color);
+        }
+
+        .collaborator + .collaborator {
+            margin-inline-start: -5px;
+        }
+    }
+
     .ext-badge {
         &.temporarily-editable-badge {--color: var(--badge-temporaraily-editable-background-color)}
         &.read-only-badge {--color: var(--badge-read-only-background-color);}

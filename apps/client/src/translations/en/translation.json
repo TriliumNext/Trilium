@@ -4094,6 +4094,7 @@
     "empty_hide_archived_notes": "Hide archived notes"
   },
   "breadcrumb_badges": {
+    "collaborators": "Also editing this note: {{names}}",
     "read_only_explicit": "Read-only",
     "read_only_explicit_description": "This note has been manually set to read-only.\nClick to edit it temporarily.",
     "read_only_auto": "Auto read-only",
