@@ -245,6 +245,74 @@ describe("CollaborationSessions", () => {
         ]);
     });
 
+    it("ignores malformed messages, messages for notes without a session and unknown types", () => {
+        sessions.handleMessage("writer", "writer", { type: "collab-join", noteId: 1, memberId: "m" } as unknown as CollabClientMessage);
+        expect(send("writer", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "a" ] })).toEqual([]);
+        expect(sent).toEqual([]);
+
+        send("writer", { type: "collab-join" });
+        expect(send("writer", { type: "collab-unknown" as CollabClientMessage["type"], epoch: 1 })).toEqual([]);
+        // A reset with no writer to answer it does nothing.
+        send("reader", { type: "collab-join" });
+        sessions.handleDisconnect("writer");
+        expect(send("reader", { type: "collab-error", epoch: 2 })).toEqual([]);
+    });
+
+    it("leaves the sessions of other connections alone when one disconnects", () => {
+        send("writer", { type: "collab-join" });
+        sessions.handleMessage("other", "other", { type: "collab-join", noteId: "note2", memberId: "m", kind: "text" });
+        const before = sent.length;
+        sessions.handleDisconnect("other");
+        expect(sent.slice(before)).toEqual([]);
+        expect(send("writer", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "a" ] })).toHaveLength(1);
+    });
+
+    it("restarts the session for the waiting readers once its last member leaves", () => {
+        send("writer", { type: "collab-join" });
+        send("writer", { type: "collab-ops", epoch: 1, baseVersion: 0, ops: [ "a" ] });
+        send("reader", { type: "collab-join" });
+        const before = sent.length;
+        sessions.handleDisconnect("writer");
+        expect(withoutPeers(sent.slice(before))).toMatchObject([
+            { clientId: "reader", type: "collab-joined", epoch: 2, version: 0, batches: [] }
+        ]);
+    });
+
+    it("drops a snapshot while a reset is pending and one it cannot start a joining editor from", () => {
+        joinTwoWriters();
+        send("writer", { type: "collab-error", epoch: 1 });
+        expect(send("other", { type: "collab-snapshot", epoch: 1, version: 0, authoritative: false, snapshot })).toEqual([]);
+
+        // Version 5 was never reached, so the snapshot is not kept and the reader keeps waiting.
+        const note2 = { noteId: "note2" };
+        send("writer", { type: "collab-join", ...note2 });
+        send("reader", { type: "collab-join", ...note2 });
+        expect(send("writer", {
+            type: "collab-snapshot", epoch: 1, version: 5, authoritative: false, snapshot, ...note2
+        })).toEqual([]);
+    });
+
+    it("keeps the hashes of the latest versions only", () => {
+        joinTwoWriters();
+        for (let version = 0; version <= 20; version++) {
+            send("writer", { type: "collab-hash", epoch: 1, version, hash: "one" });
+        }
+        // The hash of version 0 was dropped, so a differing one is taken as the first.
+        expect(send("other", { type: "collab-hash", epoch: 1, version: 0, hash: "two" })).toEqual([]);
+        expect(send("other", { type: "collab-hash", epoch: 1, version: 20, hash: "two" })).toEqual([
+            { clientId: "writer", type: "collab-snapshot-request", epoch: 1, authoritative: true }
+        ]);
+    });
+
+    it("tells the saver it no longer saves when it joins again without the right to write", () => {
+        send("writer", { type: "collab-join" });
+        access.writer = { canWrite: false };
+        expect(send("writer", { type: "collab-join" })).toEqual([
+            { clientId: "writer", type: "collab-joined", epoch: 1, version: 0, batches: [], canWrite: false },
+            { clientId: "writer", type: "collab-saver", isSaver: false }
+        ]);
+    });
+
     it("takes the content of a writer that joins readers, and of the saved note once the writers left", () => {
         send("reader", { type: "collab-join" });
         expect(send("writer", { type: "collab-join" })).toEqual([
