@@ -4065,7 +4065,10 @@
       "delete-all-tabs": "すべてのタブを削除",
       "compact": "コンパクト",
       "resizable": "サイズ変更可能",
-      "default": "デフォルト"
+      "default": "デフォルト",
+      "collapse-or-expand-the-section-of-a-heading": "見出しセクションを折りたたむ、または展開",
+      "section-collapsed": "セクションは折りたたまれています",
+      "section-expanded": "セクションは展開されています"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -5040,6 +5043,8 @@
       "link_preview": "リンクプレビュー",
       "embed": "埋め込み",
       "block": "ブロック"
-    }
+    },
+    "collapse_section": "セクションを折りたたむ",
+    "expand_section": "セクションを展開"
   }
 }
