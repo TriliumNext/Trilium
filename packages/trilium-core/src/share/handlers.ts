@@ -4,6 +4,7 @@ import ejs from "ejs";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
+import type BNote from "../becca/entities/bnote.js";
 import { type ByteRange, parseRangeHeader } from "../routes/partial_content.js";
 import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
@@ -423,7 +424,8 @@ function searchInSubtree(req: ShareRequest): ShareReply {
         fuzzyAttributeSearch: false,
         ignoreHoistedNote: true,
         ancestorNoteId,
-        allowRegex: false
+        allowRegex: false,
+        noteFilter: readableBy(req)
     });
     const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
         .filter((result) => {
@@ -489,7 +491,9 @@ function searchNotes(req: ShareRequest): ShareReply {
         return jsonReply(400, { message: "'search' parameter is mandatory." });
     }
 
-    const searchContext = new SearchContext({ ancestorNoteId, allowRegex: false });
+    const searchContext = new SearchContext({
+        ancestorNoteId, allowRegex: false, noteFilter: readableBy(req)
+    });
     const searchResults = searchService.findResultsWithQuery(search, searchContext);
     const authorizedResults = searchResults
         // Apply the same per-note authorization as the direct content routes: drop protected
@@ -529,6 +533,24 @@ function searchNotes(req: ShareRequest): ShareReply {
     });
 
     return jsonReply(200, { results: filteredResults });
+}
+
+/**
+ * Decides which notes a share search can read for `req`: the shared ones that are not protected and
+ * whose credentials the request presents. Each note is decided once per search.
+ */
+function readableBy(req: ShareRequest) {
+    const decided = new Map<string, boolean>();
+
+    return (note: BNote) => {
+        let readable = decided.get(note.noteId);
+        if (readable === undefined) {
+            const sharedNote = shaca.notes[note.noteId];
+            readable = !!sharedNote && !sharedNote.isProtected && hasCredentialAccess(sharedNote, req);
+            decided.set(note.noteId, readable);
+        }
+        return readable;
+    };
 }
 
 /**

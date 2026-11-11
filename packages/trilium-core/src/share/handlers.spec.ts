@@ -2,7 +2,11 @@ import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import becca from "../becca/becca.js";
+import BAttribute from "../becca/entities/battribute.js";
+import BBranch from "../becca/entities/bbranch.js";
+import { getContext } from "../services/context.js";
 import { getCrypto } from "../services/encryption/crypto.js";
+import noteService from "../services/notes.js";
 import scriptService from "../services/script.js";
 import SearchResult from "../services/search/search_result.js";
 import searchService from "../services/search/services/search.js";
@@ -753,6 +757,65 @@ describe("share handlers", () => {
         becca.reset();
         expect(JSON.parse(String(bundle().body)))
             .toEqual({ message: "Note 'scriptNote' has no script to run." });
+    });
+
+    it("answers a search only from the notes the caller can read, wherever the query walks", () => {
+        becca.reset();
+        buildNote({
+            id: "root",
+            title: "root",
+            children: [
+                { id: "_hidden", title: "Hidden", children: [ {
+                    id: "_share",
+                    title: "Shared Notes",
+                    children: [
+                        { id: "publicPage", title: "Public page",
+                            children: [ { id: "sharedChild", title: "Shared child" } ] },
+                        { "id": "guardedPage", "title": "Guarded", "#shareCredentials": "root:hunter2" }
+                    ]
+                } ] },
+                { id: "personal", title: "Personal" },
+                { "id": "privateTemplate", "title": "Template", "#template": "", "#codename": "zanzibar" }
+            ]
+        });
+        const secret = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "personal", title: "Bank login", content: "password=Tr0ub4dor", type: "text"
+        }).note);
+        new BAttribute({ noteId: secret.noteId, type: "label", name: "pin", value: "1234" });
+        new BAttribute({ noteId: "publicPage", type: "relation", name: "ref", value: secret.noteId });
+        new BAttribute({ noteId: "publicPage", type: "relation", name: "template", value: "privateTemplate" });
+        new BBranch({ branchId: "personal_sharedChild", noteId: "sharedChild", parentNoteId: "personal" });
+        buildShareTree([
+            { id: "publicPage", title: "Public page", content: "",
+                children: [ { id: "sharedChild", title: "Shared child", content: "" } ] },
+            { "id": "guardedPage", "title": "Guarded", "content": "", "#shareCredentials": "root:hunter2" }
+        ]);
+        // createNewNote() emits an entity event that marks shaca unloaded.
+        shaca.loaded = true;
+        vi.spyOn(searchService, "buildSearchResultDetails").mockReturnValue([]);
+
+        const notes = (search: string) => (readJson("/share/api/notes",
+            { query: { ancestorNoteId: "publicPage", search } }).results as { noteId: string }[])
+            .map((result) => result.noteId);
+        const filter = (searchString: string) => readJson("/share/api/search",
+            { query: { ancestorNoteId: "publicPage", searchString } }).searchResultNoteIds as string[];
+        const fromRoot = "note.parents.parents.parents.children.children";
+        const queries = [
+            `${fromRoot}.title = "Bank login"`,
+            `${fromRoot}.content *=* "Tr0ub4dor"`,
+            `${fromRoot}.labels.pin = "1234"`,
+            `note.children.parents.title = "Personal"`,
+            `note.parents.children.title = "Guarded"`,
+            `note.links.title = "Bank login"`,
+            `~ref.content *=* "Tr0ub4dor"`,
+            `#codename`
+        ];
+
+        for (const readable of [ `note.parents.title = "Shared Notes"`, `note.children.title = "Shared child"` ]) {
+            expect([ notes(readable), filter(readable) ]).toEqual([ [ "publicPage" ], [ "publicPage" ] ]);
+        }
+        expect(Object.fromEntries(queries.map((query) => [ query, [ notes(query), filter(query) ] ])))
+            .toEqual(Object.fromEntries(queries.map((query) => [ query, [ [], [] ] ])));
     });
 
     it("reads a search string without running it, answering its error", () => {

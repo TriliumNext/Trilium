@@ -15,6 +15,7 @@ import {
     escapeHtml, escapeRegExp, normalizePreservingLength, stripTags, unescapeHtml
 } from "../../utils/index.js";
 import type Expression from "../expressions/expression.js";
+import NoteSet from "../note_set.js";
 import {
     ICON_TAG_RE, readIconClasses, readIconName
 } from "../expressions/note_content_fulltext_preprocessor.js";
@@ -334,7 +335,9 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 const RANK_SHORTLIST = 200;
 
 function performSearch(expression: Expression, searchContext: SearchContext, enableFuzzyMatching: boolean): SearchResult[] {
-    const allNoteSet = becca.getAllNoteSet();
+    const allNoteSet = searchContext.noteFilter
+        ? new NoteSet(searchContext.readable(becca.getAllNoteSet().notes))
+        : becca.getAllNoteSet();
 
     const noteIdToNotePath: Record<string, string[]> = {};
     const executionContext = {

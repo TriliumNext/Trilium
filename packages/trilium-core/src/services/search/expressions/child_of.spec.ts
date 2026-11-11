@@ -7,9 +7,9 @@ import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import ChildOfExp from "./child_of.js";
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
+import SearchContext from "../search_context.js";
 
-// SearchContext-like argument is unused by execute(), so we pass an empty object.
-const dummySearchContext = {} as any;
+const searchContext = new SearchContext({ ignoreHoistedNote: true });
 
 /** A stub sub-expression that records its inputs and returns a predetermined note set. */
 class StubExp extends Expression {
@@ -56,7 +56,7 @@ describe("ChildOfExp", () => {
         const exp = new ChildOfExp(new StubExp(new NoteSet([parent.note])));
         const input = new NoteSet([parent.note, child.note, sibling.note]);
 
-        expect(noteIds(exp.execute(input, {}, dummySearchContext))).toEqual([child.note.noteId]);
+        expect(noteIds(exp.execute(input, {}, searchContext))).toEqual([child.note.noteId]);
     });
 
     it("feeds the parents of the input set to the sub-expression", () => {
@@ -72,7 +72,7 @@ describe("ChildOfExp", () => {
         const exp = new ChildOfExp(stub);
 
         const executionContext = { marker: true };
-        exp.execute(new NoteSet([childA.note, childB.note]), executionContext, dummySearchContext);
+        exp.execute(new NoteSet([childA.note, childB.note]), executionContext, searchContext);
 
         // The sub-expression is invoked exactly once with the de-duplicated set of parents
         // (each child has "root"-less parents parentA/parentB respectively).
@@ -96,7 +96,7 @@ describe("ChildOfExp", () => {
         const exp = new ChildOfExp(new StubExp(new NoteSet([parent.note])));
         const input = new NoteSet([includedChild.note]);
 
-        expect(noteIds(exp.execute(input, {}, dummySearchContext))).toEqual([
+        expect(noteIds(exp.execute(input, {}, searchContext))).toEqual([
             includedChild.note.noteId
         ]);
     });
@@ -113,7 +113,7 @@ describe("ChildOfExp", () => {
         const exp = new ChildOfExp(new StubExp(new NoteSet([parentA.note, parentB.note])));
         const input = new NoteSet([child.note]);
 
-        const result = exp.execute(input, {}, dummySearchContext);
+        const result = exp.execute(input, {}, searchContext);
         // NoteSet.add de-duplicates, so the cloned child appears only once.
         expect(noteIds(result)).toEqual([child.note.noteId]);
         expect(result.notes).toHaveLength(1);
@@ -126,7 +126,7 @@ describe("ChildOfExp", () => {
         rootNote.child(parent);
 
         const exp = new ChildOfExp(new StubExp(new NoteSet()));
-        const result = exp.execute(new NoteSet([child.note]), {}, dummySearchContext);
+        const result = exp.execute(new NoteSet([child.note]), {}, searchContext);
 
         expect(result).toBeInstanceOf(NoteSet);
         expect(result.notes).toHaveLength(0);
@@ -140,7 +140,7 @@ describe("ChildOfExp", () => {
 
         // Parent is matched, but the input set contains only the parent (not its child).
         const exp = new ChildOfExp(new StubExp(new NoteSet([parent.note])));
-        const result = exp.execute(new NoteSet([parent.note]), {}, dummySearchContext);
+        const result = exp.execute(new NoteSet([parent.note]), {}, searchContext);
 
         expect(result.notes).toHaveLength(0);
     });
@@ -156,7 +156,7 @@ describe("ChildOfExp", () => {
 
         const exp = new ChildOfExp(boom);
 
-        expect(() => exp.execute(new NoteSet([child.note]), {}, dummySearchContext)).toThrow(
+        expect(() => exp.execute(new NoteSet([child.note]), {}, searchContext)).toThrow(
             "sub-expression failure"
         );
     });
