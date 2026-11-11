@@ -41,7 +41,37 @@ export function isLoopbackHost(host: string | undefined): boolean {
     }
     // Strip any :port and IPv6 brackets: "127.0.0.1:37742" → "127.0.0.1", "[::1]:37742" → "::1".
     const hostname = host.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
-    return hostname === "localhost" || hostname === "::1" || hostname.startsWith("127.");
+    return hostname === "localhost" || hostname === "::1" || LOOPBACK_IPV4.test(hostname);
+}
+
+/** A dotted IPv4 address in 127.0.0.0/8, matched whole so `127.0.0.1.attacker.example` fails. */
+const LOOPBACK_IPV4 = /^127(?:\.\d{1,3}){3}$/;
+
+/** URL schemes of the pages a browser extension runs in: Chromium, Firefox and Safari. */
+const EXTENSION_ORIGIN = /^(?:chrome-extension|moz-extension|safari-web-extension):\/\//;
+
+/**
+ * Whether an HTTP `Origin` header can come from the web clipper. The extension calls Trilium
+ * from its background page, which sends its own extension origin or none at all; local
+ * automation such as `curl` sends none. A web page always sends its own origin, or `null`
+ * from a sandboxed frame, on a cross-site POST.
+ */
+export function isBrowserExtensionOrigin(origin: string | undefined): boolean {
+    return origin === undefined || EXTENSION_ORIGIN.test(origin);
+}
+
+/**
+ * Refuses a request to the unauthenticated desktop clipper that a web page sent. An HTML form
+ * reaches `127.0.0.1` with a genuine loopback `Host`, so {@link desktopNetworkAccessGate}
+ * lets it through; its `Origin` header is what exposes it.
+ */
+export function requireExtensionOrigin(req: Request, res: Response, next: NextFunction): void {
+    if (!isBrowserExtensionOrigin(req.get("origin"))) {
+        res.status(403).type("text/plain").send("The web clipper accepts requests only from the browser extension.");
+        return;
+    }
+
+    next();
 }
 
 /**

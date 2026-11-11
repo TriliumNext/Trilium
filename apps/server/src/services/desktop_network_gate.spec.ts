@@ -26,7 +26,7 @@ vi.mock("./config.js", async (orig) => {
     };
 });
 
-import { desktopNetworkAccessGate, isLocalIntegrationPath, isLoopbackHost, shouldBlockDesktopWebRequest } from "./desktop_network_gate.js";
+import { desktopNetworkAccessGate, isBrowserExtensionOrigin, isLocalIntegrationPath, isLoopbackHost, shouldBlockDesktopWebRequest } from "./desktop_network_gate.js";
 import etapiTokenService from "./etapi_tokens.js";
 
 function makeRes() {
@@ -67,8 +67,20 @@ describe("isLoopbackHost", () => {
         for (const host of ["localhost", "localhost:37742", "127.0.0.1", "127.0.0.1:37742", "127.5.5.5", "[::1]", "[::1]:37742"]) {
             expect(isLoopbackHost(host)).toBe(true);
         }
-        for (const host of [undefined, "", "evil.example.com", "evil.example.com:37742", "192.168.1.9:37742", "localhost.evil.com"]) {
+        for (const host of [undefined, "", "evil.example.com", "evil.example.com:37742", "192.168.1.9:37742", "localhost.evil.com",
+            "127.0.0.1.attacker.example", "127.0.0.1.attacker.example:37742", "127.attacker.example", "127.0.0.1.nip.io"]) {
             expect(isLoopbackHost(host)).toBe(false);
+        }
+    });
+});
+
+describe("isBrowserExtensionOrigin", () => {
+    it("accepts a missing Origin and the extension schemes, and rejects web pages and opaque origins", () => {
+        for (const origin of [undefined, "chrome-extension://abcdef", "moz-extension://1234-5678", "safari-web-extension://ABCD"]) {
+            expect(isBrowserExtensionOrigin(origin)).toBe(true);
+        }
+        for (const origin of ["", "null", "https://attacker.example", "http://127.0.0.1:37840", "chrome-extension.attacker.example"]) {
+            expect(isBrowserExtensionOrigin(origin)).toBe(false);
         }
     });
 });
@@ -194,6 +206,23 @@ describe("desktopNetworkAccessGate wiring (real app)", () => {
         const res = await mcpPost("localhost:37740", createToken("mcp gate loopback spec"));
 
         expect(res.status).toBe(200);
+    });
+
+    it("refuses a clipper request from a web page or a rebound 127.-prefixed Host", async () => {
+        const formPost = (host: string, origin?: string) => {
+            const request = supertest(app).post("/api/clipper/notes").set("Host", host);
+            if (origin) {
+                request.set("Origin", origin);
+            }
+            return request.type("form").send({ title: "Injected by a web page", content: "<p>hello</p>" });
+        };
+
+        expect((await formPost("127.0.0.1:37840", "https://attacker.example")).status).toBe(403);
+        expect((await formPost("127.0.0.1:37840", "null")).status).toBe(403);
+        expect((await formPost("127.0.0.1.attacker.example:37840")).status).toBe(403);
+
+        expect((await formPost("127.0.0.1:37840", "chrome-extension://abcdef")).status).toBe(200);
+        expect((await formPost("localhost:37840")).status).toBe(200);
     });
 
     it("serves /mcp on a LAN Host once network access is enabled", async () => {
