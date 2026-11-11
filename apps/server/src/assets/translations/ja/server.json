@@ -608,5 +608,12 @@
   "open_custom": {
     "choose_application": "ファイルを開くアプリケーションを選択してください。",
     "applications_filter": "アプリケーション"
+  },
+  "open-executable-dialog": {
+    "title": "プログラムを開く",
+    "message": "\"{{- name}}\" を開きますか？",
+    "detail": "{{- path}}\n\nこのファイルは、お使いのコンピューター上でプログラムを実行する可能性があります。このリンクを自分で作成し、ファイルを信頼できる場合のみ開いてください。",
+    "cancel": "キャンセル",
+    "open": "開く"
   }
 }
