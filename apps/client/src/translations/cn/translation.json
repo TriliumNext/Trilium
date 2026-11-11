@@ -1499,7 +1499,11 @@
     "color_scheme_switcher_dark": "深色模式",
     "color_scheme_switcher_hint": "点击即可切换配色方案。",
     "color_scheme_switcher_unsupported": "当前主题不支持更改配色方案。",
-    "edited_notes_expanded": "在日记中展开「本日编辑的笔记」"
+    "edited_notes_expanded": "在日记中展开「本日编辑的笔记」",
+    "note_title_style": "笔记标题",
+    "note_title_style_description": "紧凑标题仅显示在笔记上方的栏中，为内容留出更多空间。不显示创建和修改日期。",
+    "note_title_style_large": "大",
+    "note_title_style_compact": "紧凑"
   },
   "zoom_factor": {
     "title": "缩放系数（仅桌面客户端有效）",
@@ -4077,7 +4081,10 @@
       "delete-all-tabs": "删除所有标签页",
       "compact": "紧凑",
       "resizable": "可调整大小",
-      "default": "默认"
+      "default": "默认",
+      "collapse-or-expand-the-section-of-a-heading": "折叠或展开标题所属的区块",
+      "section-collapsed": "区块已折叠",
+      "section-expanded": "区块已展开"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -5036,6 +5043,8 @@
       "link_preview": "链接预览",
       "embed": "嵌入",
       "block": "块"
-    }
+    },
+    "collapse_section": "折叠区块",
+    "expand_section": "展开区块"
   }
 }
