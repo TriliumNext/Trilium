@@ -66,6 +66,17 @@ describe("processNoteContent", () => {
         expect(importedNote.getOwnedLabelValues("tags")).toEqual(["Tag", "AnotherTag"]);
     });
 
+    it("disables dangerous front matter labels in a ZIP when safeImport is on", async () => {
+        const buffer = await createZipBuffer({
+            "Note.md": "---\nrun: frontendStartup\nfirst: kept\n---\nThe body."
+        });
+        const { importedNote } = await testImportBuffer(buffer, "import-frontmatter-zip-safe", { textImportedAsText: true, safeImport: true });
+
+        expect(importedNote.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+        expect(importedNote.hasOwnedLabel("run")).toBe(false);
+        expect(importedNote.getOwnedLabelValue("first")).toBe("kept");
+    });
+
     it("treats single MDX as Markdown in ZIP as text note", async () => {
         const { importedNote } = await testImport("mdx.zip");
         expect(importedNote.mime).toBe("text/mdx");

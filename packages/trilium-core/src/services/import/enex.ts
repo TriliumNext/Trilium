@@ -12,6 +12,7 @@ import { escapeHtml, md5 } from "../utils/index.js";
 import { decodeBase64 } from "../utils/binary.js";
 import type { File } from "./common.js";
 import { convertEnexContent, type EnexTask, rewriteEvernoteLinks } from "./enex_converter.js";
+import { importedAttributeName } from "./utils.js";
 import { sanitizeHtml } from "../sanitizer.js";
 
 /**
@@ -288,7 +289,7 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
 
         /* v8 ignore next -- the note object is created with an attributes array on <note>, so the [] fallback is unreachable */
         for (const attr of attributes || []) {
-            noteEntity.addAttribute(attr.type, attr.name, attr.value);
+            noteEntity.addAttribute(attr.type, importedAttributeName(attr.type, attr.name, taskContext.data?.safeImport), attr.value);
         }
 
         utcDateCreated = utcDateCreated || noteEntity.utcDateCreated;

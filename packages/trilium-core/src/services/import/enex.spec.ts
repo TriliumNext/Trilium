@@ -24,10 +24,14 @@ interface ImportOverrides {
     buffer?: string | Uint8Array;
     /** Import target, defaulting to `root`. */
     parentNote?: BNote;
+    /** Import options, under a task of their own because `getInstance` caches by task id. */
+    taskData?: Record<string, unknown>;
 }
 
-async function testImport(fileName: string, { originalname = fileName, buffer, parentNote }: ImportOverrides = {}) {
-    const taskContext = TaskContext.getInstance("import-enex", "importNotes", {});
+async function testImport(fileName: string, { originalname = fileName, buffer, parentNote, taskData }: ImportOverrides = {}) {
+    const taskContext = taskData
+        ? TaskContext.getInstance(`import-enex-${fileName}`, "importNotes", taskData)
+        : TaskContext.getInstance("import-enex", "importNotes", {});
     const rootNote = parentNote ?? becca.getNoteOrThrow("root");
 
     const importedNote = await getContext().init(() =>
@@ -312,6 +316,20 @@ describe("importEnex", () => {
 
         // With no <created>/<updated> the note keeps the date it was created with, for both timestamps.
         expect(note.utcDateModified).toBe(note.utcDateCreated);
+    });
+
+    it("disables dangerous tags and note attributes when safeImport is on", async () => {
+        const buffer = `<?xml version="1.0" encoding="UTF-8"?>
+<en-export><note><title>Tagged</title><content><![CDATA[<en-note>x</en-note>]]></content>
+<tag>widget</tag><tag>kept</tag><note-attributes><run>frontendStartup</run></note-attributes></note></en-export>`;
+        const { importedNote } = await testImport("Dangerous.enex", { buffer, taskData: { safeImport: true } });
+
+        const note = importedNote.getChildNotes().find(n => n.title === "Tagged");
+        expect(note?.hasOwnedLabel("disabled:widget")).toBe(true);
+        expect(note?.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+        expect(note?.hasOwnedLabel("widget")).toBe(false);
+        expect(note?.hasOwnedLabel("run")).toBe(false);
+        expect(note?.hasOwnedLabel("kept")).toBe(true);
     });
 
     it("keeps a non-.enex upload name as the root title and imports an export with no notes", async () => {

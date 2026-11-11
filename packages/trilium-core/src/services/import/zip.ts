@@ -22,6 +22,7 @@ import type TaskContext from "../task_context.js";
 import treeService from "../tree.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
+import { importedAttributeName } from "./utils.js";
 import { AttachmentMeta, AttributeMeta, NoteMeta } from "../../meta.js";
 import { isMarkdownCodeNote } from "../export/rewrite_links.js";
 import { sanitizeHtml } from "../sanitizer.js";
@@ -296,9 +297,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
                 attr.value = getNewNoteId(attr.value);
             }
 
-            if (taskContext.data?.safeImport && attributeService.isAttributeDangerous(attr.type, attr.name)) {
-                attr.name = `disabled:${attr.name}`;
-            }
+            attr.name = importedAttributeName(attr.type, attr.name, taskContext.data?.safeImport);
 
             if (taskContext.data?.safeImport) {
                 attr.name = sanitizeHtml(attr.name);
@@ -760,7 +759,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
             saveAttributes(note, noteMeta);
             for (const attribute of frontmatterAttributes) {
-                note.addLabel(attribute.name, attribute.value);
+                note.addLabel(importedAttributeName("label", attribute.name, taskContext.data?.safeImport), attribute.value);
             }
 
             trackFirstNote(note);

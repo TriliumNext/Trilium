@@ -9,7 +9,7 @@ import type { File } from "./common.js";
 import { extractFrontmatter } from "./frontmatter.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import importUtils from "./utils.js";
+import importUtils, { importedAttributeName } from "./utils.js";
 import { getNoteTitle } from "../utils/index.js";
 import { sanitizeHtml } from "../sanitizer.js";
 import { processStringOrBuffer } from "../utils/binary.js";
@@ -256,7 +256,7 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     });
 
     for (const attribute of attributes) {
-        note.addLabel(attribute.name, attribute.value);
+        note.addLabel(importedAttributeName("label", attribute.name, taskContext.data?.safeImport), attribute.value);
     }
 
     taskContext.increaseProgressCount();

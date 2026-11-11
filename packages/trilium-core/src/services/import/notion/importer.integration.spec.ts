@@ -530,6 +530,28 @@ describe("Notion importer — integration", () => {
         expect(note?.getOwnedLabelValue("textColumn")).toBe("Basic text");
     });
 
+    it("disables dangerous label and relation columns under safe import", async () => {
+        const fooId = "388c5eca1b8b80929a78da7c68154bd7";
+        const barId = "388c5eca1b8b80e5903ef480b0523eb1";
+        const propertyTable =
+            `<table class="properties"><tbody>` +
+            `<tr class="property-row property-row-text"><th>Share raw</th><td>true</td></tr>` +
+            `<tr class="property-row property-row-relation"><th>Render note</th><td><a href="Bar%20${barId}.html">Bar</a></td></tr>` +
+            `</tbody></table>`;
+        const importRoot = await importNotion({
+            [`Foo ${fooId}.html`]:
+                `<html><head><title>Foo</title></head><body><div id="${fooId}">${propertyTable}<div class="page-body"><p>x</p></div></div></body></html>`,
+            [`Bar ${barId}.html`]: pageHtml("Bar", barId)
+        });
+
+        const foo = importRoot.getChildNotes().find((n) => n.title === "Foo");
+        const bar = importRoot.getChildNotes().find((n) => n.title === "Bar");
+        expect(foo?.getOwnedLabelValue("disabled:shareRaw")).toBe("true");
+        expect(foo?.hasOwnedLabel("shareRaw")).toBe(false);
+        expect(foo?.getOwnedRelationValue("disabled:renderNote")).toBe(bar?.noteId);
+        expect(foo?.hasOwnedRelation("renderNote")).toBe(false);
+    });
+
     it("derives a camelCase attribute name from a text property's name and skips blank values", async () => {
         const id = "2c6c5eca1b8b80f7b9eaf4f396b755dc";
         const propertyTable =

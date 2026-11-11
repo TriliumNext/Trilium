@@ -151,6 +151,16 @@ describe("processNoteContent", () => {
         expect(importedNote.getOwnedAttributes().every((a) => a.type === "label")).toBe(true);
     });
 
+    it("disables dangerous front matter labels when safeImport is on", async () => {
+        const md = "---\nrun: frontendStartup\nShare raw: true\nfirst: kept\n---\nBody.";
+        const { importedNote } = await testImport("Dangerous.md", "text/markdown", Buffer.from(md), { safeImport: true });
+        expect(importedNote.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+        expect(importedNote.getOwnedLabelValue("disabled:shareRaw")).toBe("true");
+        expect(importedNote.hasOwnedLabel("run")).toBe(false);
+        expect(importedNote.hasOwnedLabel("shareRaw")).toBe(false);
+        expect(importedNote.getOwnedLabelValue("first")).toBe("kept");
+    });
+
     it("supports excalidraw note", async () => {
         const { importedNote } = await testImport("New note.excalidraw", "application/json");
         expect(importedNote.mime).toBe("application/json");
