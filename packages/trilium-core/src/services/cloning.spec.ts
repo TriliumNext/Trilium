@@ -7,6 +7,11 @@ import cloningService from "./cloning.js";
 import { getContext } from "./context.js";
 import noteService from "./notes.js";
 import { getSql } from "./sql/index.js";
+import userHomes from "./user_homes.js";
+import userService from "./user_service.js";
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
 
 let counter = 0;
 
@@ -411,6 +416,29 @@ describe("cloning service (real DB)", () => {
             vi.spyOn(becca, "getNote").mockReturnValueOnce(null);
             expect(cloningService.cloneNoteAfter(note.noteId, branch.branchId ?? "").message)
                 .toBe("Can't clone into a search note");
+        });
+
+        it.skipIf(isBrowserRuntime)("clones into a member's home through its virtual branch without saving that branch", async () => {
+            const memberId = getContext().init(() => userService.createUser("cloning-virtual-spec", null, false));
+            const home = getContext().init(() => userHomes.ensureUserHome(memberId, "cloning-virtual-spec"));
+            const folder = getContext().init(() => noteService.createNewNote({
+                parentNoteId: home.noteId, ownerId: memberId, title: "cloning-virtual-folder", content: "", type: "text"
+            }).note);
+            const note = getContext().init(() => noteService.createNewNote({
+                parentNoteId: folder.noteId, ownerId: memberId, title: "cloning-virtual-note", content: "", type: "text"
+            }).note);
+            const homeBranchId = `root_${home.noteId}`;
+
+            const res = await getContext().init(async () => {
+                getContext().set("userId", memberId);
+                const homeBranch = becca.getBranch(homeBranchId);
+                expect(homeBranch?.isVirtual).toBe(true);
+                return cloningService.cloneNoteToBranch(note.noteId, homeBranchId);
+            });
+
+            expect(res.success).toBe(true);
+            expect(becca.getBranchFromChildAndParent(note.noteId, home.noteId)).not.toBeNull();
+            expect(getSql().getValue("SELECT COUNT(*) FROM branches WHERE branchId = ?", [ homeBranchId ])).toBe(0);
         });
     });
 });

@@ -236,6 +236,37 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         expect(asUser(f.aliceId, () => becca.getNote(f.secret.noteId))).toBeNull();
     });
 
+    it("shows a member the attachments of revisions of notes they can see", () => {
+        const { visible, hidden } = cls.initAsSystem(() => ({
+            visible: revisionAttachmentIdOf(f.project),
+            hidden: revisionAttachmentIdOf(f.secret)
+        }));
+        const orphan = `visOrphan${Date.now()}`;
+        cls.initAsSystem(() => getSql().execute(
+            `INSERT INTO attachments (attachmentId, ownerId, role, mime, title, position, blobId, dateModified, utcDateModified, isDeleted)
+             VALUES (?, 'visNoSuchOwner', 'file', 'text/plain', 'orphan', 0, NULL, ?, ?, 0)`,
+            [ orphan, dateUtils.localNowDateTime(), dateUtils.utcNowDateTime() ]));
+
+        expect(asUser(f.aliceId, () => becca.getAttachments([ visible, hidden, orphan ]).map((attachment) => attachment.attachmentId)))
+            .toEqual([ visible ]);
+        expect(cls.initAsSystem(() => becca.getAttachments([ visible, hidden, orphan ])).length).toBe(3);
+    });
+
+    it("reads string keys only, and writes through to the whole Becca", () => {
+        asUser(f.bobId, () => {
+            expect(becca.canSeeNote(SHARED_WITH_ME_NOTE_ID)).toBe(false);
+            expect(Symbol.iterator in becca.notes).toBe(false);
+        });
+        asUser(f.aliceId, () => {
+            const key = `visWritten${Date.now()}`;
+            becca.notes[key] = f.secret;
+            expect(becca.allNotes[key]).toBe(f.secret);
+            expect(key in becca.notes).toBe(false);
+            delete becca.notes[key];
+            expect(key in becca.allNotes).toBe(false);
+        });
+    });
+
     it("finds only what a member can see", () => {
         const found = asUser(f.aliceId, () => searchService.searchNotes("vis").map((note) => note.noteId));
         expect(found).toContain(f.project.noteId);
@@ -244,6 +275,16 @@ describe.skipIf(isBrowserRuntime)("note visibility", () => {
         expect(found).not.toContain(f.template.noteId);
     });
 });
+
+/** Saves a revision of `note` with one attachment and returns the ID of the revision's copy of it. */
+function revisionAttachmentIdOf(note: BNote) {
+    note.saveAttachment({ role: "file", mime: "text/plain", title: "vis attachment", content: "x" });
+    const attachmentId = note.saveRevision().getAttachments()[0]?.attachmentId;
+    if (!attachmentId) {
+        throw new Error(`The revision of '${note.noteId}' has no attachment.`);
+    }
+    return attachmentId;
+}
 
 function createNote(parentNoteId: string, ownerId: string, title: string) {
     return noteService.createNewNote({ parentNoteId, ownerId, title, content: "", type: "text" }).note;

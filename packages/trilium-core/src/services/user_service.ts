@@ -256,6 +256,7 @@ function getSignedInUser(userId: string | undefined): CurrentUser | undefined {
         userId,
         username: user.username,
         isAdmin: !!user.isAdmin,
+        /* v8 ignore next -- `user` comes from `users`, so `getAvatarHues(users)` always has its hue. */
         avatarHue: getAvatarHues(users).get(userId) ?? 0
     };
 }

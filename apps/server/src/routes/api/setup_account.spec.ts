@@ -66,6 +66,12 @@ describe("Setup account API", () => {
         expect(statusOf(check(link.token))).toBe(404);
     });
 
+    it("treats a request without a body as an invalid link or missing fields", async () => {
+        const noBody = { body: undefined } as unknown as Request;
+        expect(statusOf(cls.init(() => setupAccountRoute.getSetupAccount(noBody)))).toBe(404);
+        expect(statusOf(await cls.init(() => setupAccountRoute.completeSetupAccount(noBody)))).toBe(400);
+    });
+
     it("validates the password before spending the link", async () => {
         const { link } = newUserWithLink();
 

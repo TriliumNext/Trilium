@@ -51,6 +51,16 @@ describe("Permissions API", () => {
             expect(() => cls.init(() => permissionsRoute.listPermissions(req({}, { noteId: "root" })))).toThrow(ForbiddenError);
         });
 
+        it("refuses non-admins on every admin-only route", () => {
+            const guest = { userId: guestId };
+            const statuses = cls.init(() => [
+                permissionsRoute.listPermissions(req({}, { noteId: "root" }, guest)),
+                permissionsRoute.createPermission(req({ noteId: "root", userId: guestId }, {}, guest)),
+                permissionsRoute.deletePermission(req({}, { permissionId: "fake" }, guest))
+            ].map((result) => (Array.isArray(result) ? result[0] : undefined)));
+            expect(statuses).toEqual([ 403, 403, 403 ]);
+        });
+
         it("returns permissions for a note as admin", () => {
             const noteId = "root";
             const result = cls.init(() => permissionsRoute.listPermissions(req({}, { noteId }, adminSession())));
@@ -71,6 +81,32 @@ describe("Permissions API", () => {
         it("returns 400 when neither userId nor groupId provided", () => {
             const result = cls.init(() => permissionsRoute.createPermission(req({ noteId: "root" }, {}, adminSession())));
             expect(Array.isArray(result) && result[0]).toBe(400);
+        });
+
+        it("rejects a userId or groupId that is not a non-empty string", () => {
+            for (const body of [ { userId: "  " }, { userId: 5 }, { groupId: "  " }, { groupId: 5 } ]) {
+                const result = cls.init(() => permissionsRoute.createPermission(req({ noteId: "note-perm-invalid", ...body }, {}, adminSession())));
+                expect(Array.isArray(result) && result[0]).toBe(400);
+            }
+        });
+
+        it("grants write access to a user or a group, with canWrite as a boolean or a string", () => {
+            const noteId = `note-perm-write-${Date.now()}`;
+            insertNote(noteId, adminSession().userId as string);
+            const groupId = `permWriteGroup${Date.now()}`;
+            const now = new Date().toISOString();
+            getSql().execute(
+                "INSERT INTO user_groups (groupId, name, dateCreated, utcDateModified) VALUES (?, ?, ?, ?)",
+                [ groupId, groupId, now, now ]
+            );
+
+            cls.init(() => permissionsRoute.createPermission(req({ noteId, userId: guestId, canWrite: true }, {}, adminSession())));
+            cls.init(() => permissionsRoute.createPermission(req({ noteId, groupId: ` ${groupId} `, canWrite: "true" }, {}, adminSession())));
+
+            expect(cls.init(() => permission_service.getPermissionsForNote(noteId))).toEqual(expect.arrayContaining([
+                expect.objectContaining({ userId: guestId, groupId: null, canWrite: 1 }),
+                expect.objectContaining({ userId: null, groupId, canWrite: 1 })
+            ]));
         });
 
         it("grants permission and returns permissionId", () => {

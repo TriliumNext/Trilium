@@ -281,6 +281,51 @@ describe("WebSocketMessagingProvider", () => {
         });
     });
 
+    describe("per-user delivery", () => {
+        function connectUsers() {
+            const { server } = init();
+            const sockets = {
+                alice: makeSocket(OPEN),
+                aliceClosed: makeSocket(CLOSED),
+                bob: makeSocket(OPEN),
+                anonymous: makeSocket(OPEN)
+            };
+            const requests: Record<keyof typeof sockets, unknown> = {
+                alice: { session: { userId: "alice" } },
+                aliceClosed: { session: { userId: "alice" } },
+                bob: { session: { userId: "bob" } },
+                anonymous: {}
+            };
+            for (const name of Object.keys(sockets) as (keyof typeof sockets)[]) {
+                randomStringMock.mockReturnValueOnce(name);
+                server.emit("connection", sockets[name], requests[name]);
+            }
+            return sockets;
+        }
+
+        it("sendMessageToUserClients sends only to the user's open connections", () => {
+            const sockets = connectUsers();
+
+            provider.sendMessageToUserClients("alice", { type: "ping" } as WebSocketMessage);
+
+            expect(sockets.alice.sent.map((data) => JSON.parse(data))).toEqual([ { type: "ping" } ]);
+            expect([ sockets.aliceClosed.sent, sockets.bob.sent, sockets.anonymous.sent ]).toEqual([ [], [], [] ]);
+        });
+
+        it("disconnectUserClients asks the user's open connections to reload and closes all of theirs", () => {
+            const sockets = connectUsers();
+
+            provider.disconnectUserClients("alice", "user deleted");
+
+            expect(sockets.alice.sent.map((data) => JSON.parse(data))).toEqual([
+                { type: "reload-frontend", reason: "user deleted" }
+            ]);
+            expect([ sockets.aliceClosed.sent, sockets.bob.sent, sockets.anonymous.sent ]).toEqual([ [], [], [] ]);
+            expect([ sockets.alice.closed, sockets.aliceClosed.closed ]).toEqual([ true, true ]);
+            expect([ sockets.bob.closed, sockets.anonymous.closed ]).toEqual([ false, false ]);
+        });
+    });
+
     describe("sendMessageToClient", () => {
         it("returns false for an unknown client", () => {
             init();

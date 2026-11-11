@@ -61,9 +61,11 @@ function getNoteAccess(req: Request<{ noteId: string }>) {
 
     const users = user_service.listUsers();
     const hues = getAvatarHues(users);
+    /* v8 ignore start -- `hues` is built from the same `users`, so every user has a hue */
     const toAccessUser = (user: UserRecord): NoteAccessUser => ({
         userId: user.userId, username: user.username, avatarHue: hues.get(user.userId) ?? 0
     });
+    /* v8 ignore stop */
     const usersById = new Map(users.map((user) => [ user.userId, user ]));
 
     const grants: NoteAccessGrant[] = [];

@@ -5,6 +5,7 @@ import { getBackup } from "./backup.js";
 import { getConfig } from "./config.js";
 import { getContext, isSystem } from "./context.js";
 import eventService from "./events.js";
+import { getLog } from "./log.js";
 import migrationService from "./migration.js";
 import { enterSetupMode, leaveSetupMode } from "./setup_mode.js";
 import { getSql } from "./sql/index.js";
@@ -231,6 +232,50 @@ describe("sql_init (real DB)", () => {
             );
             expect(adminUserId).toBe(nonAdminId);
         });
+    });
+});
+
+describe("seedAdminUser failures", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function fakeSql(getValue: (query: string) => string | null, execute: (query: string) => void) {
+        const executed: string[] = [];
+        const sql = {
+            getValue: vi.fn(getValue),
+            execute: vi.fn((query: string) => {
+                executed.push(query);
+                execute(query);
+            })
+        };
+        return { sql: sql as unknown as SqlService, executed };
+    }
+
+    it("logs and stops when no admin can be inserted or found", () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const { sql, executed } = fakeSql(() => null, () => {});
+
+        sqlInit.seedAdminUser(sql);
+
+        expect(logError).toHaveBeenCalledOnce();
+        expect(executed).toHaveLength(1);
+        expect(executed[0]).toContain("INSERT OR IGNORE INTO users");
+    });
+
+    it("tolerates missing tables and columns in the backfill but logs other errors", () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const { sql, executed } = fakeSql(() => "admin-spec", (query) => {
+            if (query.includes("UPDATE notes")) throw new Error("no such table: notes");
+            if (query.includes("UPDATE etapi_tokens")) throw new Error("no such column: userId");
+            if (query.includes("UPDATE entity_changes")) throw "disk I/O error";
+        });
+
+        sqlInit.seedAdminUser(sql);
+
+        expect(logError).toHaveBeenCalledOnce();
+        expect(logError.mock.calls[0][0]).toContain("entity_changes backfill: disk I/O error");
+        expect(executed.at(-1)).toContain("'adminUserId'");
     });
 });
 

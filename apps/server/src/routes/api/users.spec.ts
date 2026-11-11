@@ -1,7 +1,7 @@
 import type { CreateUserResponse, UserListItem } from "@triliumnext/commons";
 import { cls, becca, ForbiddenError, getSql, user_homes, user_service } from "@triliumnext/core";
 import type { Request } from "express";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import sqlInit from "../../services/sql_init.js";
 import usersRoute from "./users.js";
@@ -87,6 +87,24 @@ describe("Users API", () => {
             getSql().execute("UPDATE users SET isDeleted = 1 WHERE userId = ?", [otherAdminId]);
         });
 
+        it("refuses another admin demoting the primary admin, and rethrows unexpected errors", () => {
+            const otherAdminId = cls.init(() => user_service.createUser("demote-primary-spec", null, true));
+            const primaryId = adminSession().userId as string;
+
+            expect(statusOf(update(primaryId, { isAdmin: false }, { userId: otherAdminId }))).toBe(400);
+            expect(cls.init(() => user_service.isUserAdmin(primaryId))).toBe(true);
+
+            const failure = new Error("disk full");
+            vi.spyOn(user_service, "updateUser").mockImplementation(() => { throw failure; });
+            try {
+                expect(() => update(otherAdminId, { email: "x@example.com" })).toThrow(failure);
+            } finally {
+                vi.restoreAllMocks();
+            }
+
+            getSql().execute("UPDATE users SET isDeleted = 1 WHERE userId = ?", [otherAdminId]);
+        });
+
         it("renames, changes the email and promotes or demotes a user", () => {
             const memberId = cls.init(() => user_service.createUser("update-target-spec", "old@example.com", false));
             cls.init(() => user_homes.ensureUserHome(memberId, "update-target-spec"));
@@ -112,6 +130,21 @@ describe("Users API", () => {
     describe("createUser", () => {
         it("refuses a request without a user", () => {
             expect(() => cls.init(() => usersRoute.createUser(req({ username: "test" })))).toThrow(ForbiddenError);
+        });
+
+        it("refuses non-admins and rejects a missing body or a non-string email", () => {
+            const memberId = cls.init(() => user_service.createUser("create-member-spec", null, false));
+            const statusFor = (body: unknown, session: Record<string, unknown>) => cls.init(() => {
+                cls.set("userId", session.userId);
+                const result = usersRoute.createUser({ body, params: {}, session } as unknown as Request);
+                return Array.isArray(result) ? result[0] : undefined;
+            });
+
+            expect(statusFor({ username: "x" }, { userId: memberId })).toBe(403);
+            expect(statusFor(null, adminSession())).toBe(400);
+            expect(statusFor({ username: "email-spec", email: 5 }, adminSession())).toBe(400);
+
+            cls.init(() => user_service.deleteUser(memberId));
         });
 
         it("returns 400 when username is missing or blank", () => {
@@ -180,6 +213,22 @@ describe("Users API", () => {
 
             // Cleanup
             getSql().execute("UPDATE users SET isDeleted = 1 WHERE userId = ?", [secondAdminId]);
+        });
+
+        it("refuses non-admins and rethrows unexpected errors", () => {
+            const memberId = cls.init(() => user_service.createUser("delete-member-spec", null, false));
+            const result = cls.init(() => usersRoute.deleteUser(req({}, { userId: memberId }, { userId: memberId })));
+            expect(Array.isArray(result) && result[0]).toBe(403);
+
+            const failure = new Error("disk full");
+            vi.spyOn(user_service, "deleteUser").mockImplementation(() => { throw failure; });
+            try {
+                expect(() => cls.init(() => usersRoute.deleteUser(req({}, { userId: memberId }, adminSession())))).toThrow(failure);
+            } finally {
+                vi.restoreAllMocks();
+            }
+
+            cls.init(() => user_service.deleteUser(memberId));
         });
 
         it("returns 404 for a non-existent userId", () => {

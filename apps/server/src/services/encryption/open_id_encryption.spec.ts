@@ -38,6 +38,14 @@ describe("open_id_encryption", () => {
         expect(openIDEncryption.saveUser("other", "Bob", "bob@example.com")).toBe(false);
     });
 
+    it("saveUser falls back to the default username and no email when the provider gives neither", () => {
+        sql.execute("UPDATE users SET username = 'someone', email = 'x@example.com' WHERE isAdmin = 1 AND isDeleted = 0");
+
+        expect(openIDEncryption.saveUser("subject-123", "", "")).toBe(true);
+        expect(sql.getRow("SELECT username, email FROM users WHERE isAdmin = 1 AND isDeleted = 0"))
+            .toEqual({ username: "admin", email: null });
+    });
+
     it("verifySubjectIdentifier matches only the enrolled subject identifier", () => {
         // No account enrolled yet → nothing matches.
         expect(openIDEncryption.verifySubjectIdentifier("subject-123")).toBe(false);

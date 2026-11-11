@@ -75,6 +75,7 @@ function updateUser(req: Request<{ userId: string }>) {
         if (userId === caller.userId) {
             return [400, { message: "Cannot remove your own admin rights." }];
         }
+        /* v8 ignore next 3 -- the caller is a second active admin, so the count is at least 2 */
         if (countActiveAdmins() <= 1) {
             return [400, { message: "Cannot remove admin rights from the last admin account." }];
         }
@@ -105,6 +106,7 @@ function deleteUser(req: Request<{ userId: string }>) {
     const target = user_service.getUserById(userId);
     if (!target) return [404, { message: "User not found." }];
 
+    /* v8 ignore next 3 -- the caller is a second active admin, so the count is at least 2 */
     if (target.isAdmin && countActiveAdmins() <= 1) {
         return [400, { message: "Cannot delete the last admin account." }];
     }

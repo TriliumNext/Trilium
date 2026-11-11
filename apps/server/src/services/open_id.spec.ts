@@ -125,6 +125,23 @@ describe("open_id", () => {
         expect(status.email).toBe("alice@example.com");
     });
 
+    it("getOAuthStatus reports no name or email when no admin user exists", () => {
+        const adminIds = sql.getColumn<string>("SELECT userId FROM users WHERE isAdmin = 1 AND isDeleted = 0");
+        const setAdmin = (isAdmin: number) => cls.init(() => {
+            for (const userId of adminIds) {
+                sql.execute("UPDATE users SET isAdmin = ? WHERE userId = ?", [ isAdmin, userId ]);
+            }
+        });
+
+        setAdmin(0);
+        try {
+            const status = openID.getOAuthStatus();
+            expect([ status.name, status.email ]).toEqual([ null, null ]);
+        } finally {
+            setAdmin(1);
+        }
+    });
+
     it("getOAuthStatus surfaces the configured issuer details", () => {
         setOauthConfig(true);
         const status = openID.getOAuthStatus();

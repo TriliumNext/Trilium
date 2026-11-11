@@ -1,9 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ForbiddenError } from "../errors.js";
 import * as cls from "./context.js";
 import { getSql } from "./sql/index.js";
-import userService from "./user_service.js";
+import userService, { PrimaryAdminDemotionError } from "./user_service.js";
+
+const isBrowserRuntime = typeof window !== "undefined";
+if (isBrowserRuntime) {
+    vi.setConfig({ testTimeout: 60000, hookTimeout: 60000 });
+}
 
 describe("getCurrentUser", () => {
     it("looks up the user in CLS once per context, follows a change of user and refuses a missing one", () => {
@@ -52,5 +57,42 @@ describe("getSignedInUser", () => {
 
         expect(cls.init(() => userService.getSignedInUser(undefined))).toBeUndefined();
         expect(cls.init(() => userService.getSignedInUser("no-such-user"))).toBeUndefined();
+    });
+});
+
+describe("updateUser", () => {
+    it("updates a member, ignores an unknown user and keeps the primary admin an admin", () => {
+        cls.init(() => {
+            const adminId = userService.getAdminUserId();
+            const memberId = userService.createUser("update-user-spec", "a@example.com", false);
+
+            userService.updateUser(memberId, { isAdmin: true, email: null });
+            expect(userService.getUserById(memberId)).toMatchObject({ username: "update-user-spec", email: null, isAdmin: 1 });
+            userService.updateUser(memberId, { username: "update-user-renamed-spec", isAdmin: false });
+            expect(userService.getUserById(memberId)).toMatchObject({ username: "update-user-renamed-spec", isAdmin: 0 });
+
+            expect(() => userService.updateUser("no-such-user", { username: "ghost" })).not.toThrow();
+            expect(userService.getUserById("no-such-user")).toBeNull();
+
+            expect(() => userService.updateUser(adminId, { isAdmin: false })).toThrow(PrimaryAdminDemotionError);
+            expect(userService.isUserAdmin(adminId)).toBe(true);
+        });
+    });
+});
+
+describe("setup links and passwords", () => {
+    it("refuses an empty or spent link and accepts only a member's own password", async () => {
+        const memberId = cls.init(() => userService.createUser("verify-password-spec", null, false));
+        const link = cls.init(() => userService.createSetupLink(memberId));
+
+        expect(cls.init(() => userService.getUserBySetupToken(""))).toBeNull();
+        expect(await cls.init(() => userService.completeSetup("", "hunter22"))).toBe(false);
+        expect(await cls.init(() => userService.completeSetup(link.token, "hunter22"))).toBe(true);
+        expect(await cls.init(() => userService.completeSetup(link.token, "again"))).toBe(false);
+
+        expect(await cls.init(() => userService.verifyUserPassword("verify-password-spec", "hunter22")))
+            .toMatchObject({ userId: memberId, username: "verify-password-spec" });
+        expect(await cls.init(() => userService.verifyUserPassword("verify-password-spec", "wrong"))).toBeNull();
+        expect(await cls.init(() => userService.verifyUserPassword("no-such-username-spec", "hunter22"))).toBeNull();
     });
 });

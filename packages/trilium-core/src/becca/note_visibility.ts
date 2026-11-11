@@ -225,6 +225,7 @@ function collectVisibleNoteIds(becca: Becca, userId: string) {
 
         descended.add(noteId);
         visible.add(noteId);
+        /* v8 ignore next -- every pending note ID comes from becca.allNotes or a note's allChildren. */
         for (const child of becca.allNotes[noteId]?.allChildren ?? []) {
             pending.push(child.noteId);
         }

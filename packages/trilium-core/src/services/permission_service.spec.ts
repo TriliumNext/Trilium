@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cls from "./context.js";
+import { getLog } from "./log.js";
 import { getSql } from "./sql/index.js";
 import dateUtils from "./utils/date.js";
 import { newEntityId } from "./utils/index.js";
@@ -299,6 +300,36 @@ describe("permission_service", () => {
             cls.init(() => permissionService.revokeUserAccess(noteId, userId));
             expect(reload).toHaveBeenCalledWith(userId, expect.any(String));
             expect(cls.init(() => permissionService.canUserAccessNote(noteId, userId))).toBe(false);
+            reload.mockRestore();
+        });
+    });
+
+    describe("edge cases", () => {
+        it("denies a missing note and reads a write-only grant as read and write", () => {
+            expect(cls.init(() => permissionService.canUserAccessNote("noSuchNote", userId))).toBe(false);
+            expect(cls.init(() => permissionService.canUserWriteNote("noSuchNote", userId))).toBe(false);
+
+            const noteId = newEntityId();
+            insertNote(noteId, adminId);
+            const n = now();
+            getSql().execute(
+                `INSERT INTO note_permissions (permissionId, noteId, userId, groupId, canRead, canWrite, dateCreated, utcDateModified)
+                 VALUES (?, ?, ?, NULL, 0, 1, ?, ?)`,
+                [newEntityId(), noteId, userId, n, n]
+            );
+            expect(cls.init(() => permissionService.canUserAccessNote(noteId, userId))).toBe(true);
+            expect(cls.init(() => permissionService.canUserWriteNote(noteId, userId))).toBe(true);
+        });
+
+        it("warns and changes nothing when revoking an unknown permission", () => {
+            const warn = vi.spyOn(getLog(), "warn").mockImplementation(() => {});
+            const reload = vi.spyOn(ws, "reloadFrocaForUser").mockImplementation(() => {});
+
+            cls.init(() => permissionService.revokePermission("noSuchPermission"));
+
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining("noSuchPermission"));
+            expect(reload).not.toHaveBeenCalled();
+            warn.mockRestore();
             reload.mockRestore();
         });
     });

@@ -10,7 +10,7 @@ import config from "../services/config.js";
 import openID from "../services/open_id.js";
 import totp from "../services/totp.js";
 import loginRoute, { createLoginRateLimiter } from "./login.js";
-import { type SQLiteSessionStore } from "./session_parser.js";
+import { revokeUserSessions, type SQLiteSessionStore } from "./session_parser.js";
 
 let app: Application;
 let sessionStore: SQLiteSessionStore;
@@ -392,12 +392,14 @@ describe("Login Route test", () => {
     describe("Password change revokes sessions", () => {
         let originalHash: string;
         const disconnectAllClients = vi.fn();
+        const disconnectUserClients = vi.fn();
 
         beforeAll(() => {
             originalHash = cls.init(() => options.getOption("passwordVerificationHash"));
             initMessaging({
                 attachToHttpServer() {},
                 disconnectAllClients,
+                disconnectUserClients,
                 sendMessageToAllClients() {},
                 sendMessageToClient: () => false,
                 setClientMessageHandler() {}
@@ -418,6 +420,30 @@ describe("Login Route test", () => {
             expect((await getSessionFromCookie(cookie)).session?.loggedIn).toBe(true);
             return cookie;
         }
+
+        it("signs a member in with their own password, and logs out only that member on revocation", async () => {
+            // Signs the admin in first: once a member has a password, the admin needs a username too.
+            const adminCookie = await logIn();
+            const username = `login-member-${Date.now()}`;
+            const userId = cls.init(() => user_service.createUser(username, null, false));
+            try {
+                const { token } = cls.init(() => user_service.createSetupLink(userId));
+                expect(await cls.init(() => user_service.completeSetup(token, "member1234"))).toBe(true);
+
+                await supertest(app).post("/login").send({ username, password: ["member1234"] }).expect(401);
+                const res = await supertest(app).post("/login").send({ username, password: "member1234" }).expect(302);
+                const memberCookie = res.headers["set-cookie"][0];
+                expect((await getSessionFromCookie(memberCookie)).session?.userId).toBe(userId);
+
+                cls.init(() => revokeUserSessions(userId, "spec"));
+
+                expect((await getSessionFromCookie(memberCookie)).session).toBeFalsy();
+                expect((await getSessionFromCookie(adminCookie)).session?.loggedIn).toBe(true);
+                expect(disconnectUserClients).toHaveBeenCalledWith(userId, "spec");
+            } finally {
+                cls.init(() => user_service.deleteUser(userId));
+            }
+        });
 
         it("keeps sessions when an unrelated option changes", async () => {
             const cookie = await logIn();
