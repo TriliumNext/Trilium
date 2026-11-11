@@ -53,7 +53,8 @@ jobs:
         with:
           images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
+            type=raw,value=multiuser,enable=${{ github.ref == 'refs/heads/milestone/multi_user' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/milestone/multi_user' }}
             type=ref,event=tag
             type=sha
           flavor: |
@@ -108,13 +109,15 @@ jobs:
 
       - name: Inspect manifests
         run: |
-          REF_NAME="${GITHUB_REF#refs/heads/}"
-          REF_NAME="${REF_NAME#refs/tags/}"
-          echo "=== GHCR ==="
-          crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
-          echo ""
-          echo "=== DockerHub ==="
-          crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+          while IFS= read -r TAG; do
+            SUFFIX="${TAG#*:}"
+            [[ "${SUFFIX}" == sha-* ]] && continue
+            echo "=== GHCR: ${SUFFIX} ==="
+            crane manifest "${TAG}"
+            echo ""
+            echo "=== DockerHub: ${SUFFIX} ==="
+            crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${SUFFIX}"
+          done <<< "${{ steps.meta.outputs.tags }}"
 
   mirror_legacy:
     name: Mirror to legacy repository
