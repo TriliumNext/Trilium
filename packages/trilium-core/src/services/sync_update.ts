@@ -56,6 +56,11 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
         return; // can be undefined for options with isSynced=false
     }
 
+    if (remoteEC.entityName !== "note_reordering" && !entity_constructor.isEntityName(remoteEC.entityName)) {
+        getLog().error(`Skipping a synced change of unknown entity '${remoteEC.entityName}'.`);
+        return;
+    }
+
     const updated = remoteEC.entityName === "note_reordering"
         ? updateNoteReordering(remoteEC, remoteEntityRow, instanceId)
         : updateNormalEntity(remoteEC, remoteEntityRow, instanceId, updateContext);
@@ -102,6 +107,13 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
                 throw new Error(`Empty entity row for: ${JSON.stringify(remoteEC)}`);
             }
 
+            const columns = getColumns(remoteEC.entityName);
+            const unknownColumns = Object.keys(remoteEntityRow).filter((column) => !columns.has(column));
+            if (unknownColumns.length > 0) {
+                getLog().error(`Skipping a synced change of ${remoteEC.entityName} '${remoteEC.entityId}' with unknown columns ${JSON.stringify(unknownColumns)}.`);
+                return false;
+            }
+
             preProcessContent(remoteEC, remoteEntityRow);
 
             getSql().replace(remoteEC.entityName, remoteEntityRow);
@@ -122,6 +134,18 @@ function updateNormalEntity(incomingEC: EntityChange, remoteEntityRow: EntityRow
     }
 
     return false;
+}
+
+const columnsByTable = new Map<string, Set<string>>();
+
+/** Columns of an entity table, read from the schema so a synced row is checked against what this instance stores. */
+function getColumns(entityName: string): Set<string> {
+    let columns = columnsByTable.get(entityName);
+    if (!columns) {
+        columns = new Set(getSql().getColumn<string>("SELECT name FROM pragma_table_info(?)", [entityName]));
+        columnsByTable.set(entityName, columns);
+    }
+    return columns;
 }
 
 const BLOB_OWNING_ENTITIES = new Set(["notes", "attachments", "revisions"]);
