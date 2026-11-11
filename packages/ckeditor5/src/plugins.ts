@@ -50,6 +50,7 @@ import ImageEditingSource from "./plugins/image_editing_source.js";
 import ClipboardPageStyles from "./plugins/clipboard_page_styles.js";
 import ClipboardPlainTextIndent from "./plugins/clipboard_plain_text_indent.js";
 import PasteFromVsCode from "./plugins/paste_from_vscode.js";
+import PasteFromWps from "./plugins/paste_from_wps.js";
 import TriliumSnippets from "./plugins/snippets/snippets.js";
 import TriliumAiAssistant from "./plugins/ai_assistant/ai_assistant.js";
 
@@ -174,6 +175,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ClipboardPageStyles,
     ClipboardPlainTextIndent,
     PasteFromVsCode,
+    PasteFromWps,
     AdaptiveColors,
     TriliumSnippets,
     TriliumAiAssistant,
