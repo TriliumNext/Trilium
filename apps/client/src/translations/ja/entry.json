@@ -163,6 +163,7 @@
         "password-confirmation": "パスワードの確認",
         "button": "パスワードを設定",
         "password-too-short": "パスワードは {{length}} 文字以上である必要があります。",
-        "passwords-dont-match": "入力されたパスワードが一致しません。"
+        "passwords-dont-match": "入力されたパスワードが一致しません。",
+        "desktop-description": "この Trilium デスクトップアプリにはまだパスワードが設定されていないため、ブラウザから開くことはできません。デスクトップアプリで オプション → パスワードと認証（Password & Auth） の順に進んでパスワードを設定し、その後このページを再読み込みしてログインしてください。"
     }
 }
