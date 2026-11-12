@@ -785,8 +785,8 @@ importers:
         specifier: 2.5.0
         version: 2.5.0
       officeparser:
-        specifier: 8.5.0
-        version: 8.5.0(encoding@0.1.13)(supports-color@7.2.0)
+        specifier: 8.7.0
+        version: 8.7.0(encoding@0.1.13)(supports-color@7.2.0)
       openid-client:
         specifier: 6.8.9
         version: 6.8.9
@@ -1447,8 +1447,8 @@ importers:
         specifier: 9.0.7
         version: 9.0.7
       officeparser:
-        specifier: 8.5.0
-        version: 8.5.0(encoding@0.1.13)(supports-color@8.1.1)
+        specifier: 8.7.0
+        version: 8.7.0(encoding@0.1.13)(supports-color@8.1.1)
       sanitize-filename:
         specifier: 1.6.4
         version: 1.6.4
@@ -9250,8 +9250,8 @@ packages:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
     engines: {node: '>=12.20.0'}
 
-  officeparser@8.5.0:
-    resolution: {integrity: sha512-dLJCOVyzn/WHDXAN0CXmh2Ny+PxiCZz5yG2HVUm4TCvq17e+WwrqTkb2qfPgNmQc/ZomsK13Mj0BO2tjBJM1cg==}
+  officeparser@8.7.0:
+    resolution: {integrity: sha512-b7ewTsconjBwJVMAXNaki816b+2v3m4bJMsQi5Wzmu3VZlHXOvdWEdE0l4BfVMkXHB7mdAs3dr4e6zZKH5++Ng==}
     engines: {node: '>=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1'}
     hasBin: true
     peerDependencies:
@@ -21383,7 +21383,7 @@ snapshots:
 
   obug@3.0.0: {}
 
-  officeparser@8.5.0(encoding@0.1.13)(supports-color@7.2.0):
+  officeparser@8.7.0(encoding@0.1.13)(supports-color@7.2.0):
     dependencies:
       '@xmldom/xmldom': 0.9.12
       fflate: 0.8.3
@@ -21394,7 +21394,7 @@ snapshots:
       - encoding
       - supports-color
 
-  officeparser@8.5.0(encoding@0.1.13)(supports-color@8.1.1):
+  officeparser@8.7.0(encoding@0.1.13)(supports-color@8.1.1):
     dependencies:
       '@xmldom/xmldom': 0.9.12
       fflate: 0.8.3
