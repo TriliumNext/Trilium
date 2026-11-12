@@ -1,4 +1,5 @@
 import becca from "../../../becca/becca.js";
+import BAttribute from "../../../becca/entities/battribute.js";
 import { saveLinks } from "../../../services/notes.js";
 import * as becca_easy_mocking from "../../../test/becca_easy_mocking.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -314,13 +315,6 @@ describe("note_tools — write tools return post-write content", () => {
     });
 
     describe("disableVersioning label", () => {
-        function setup(disabled: boolean) {
-            const note = buildNote({ id: "ver1", type: "code", mime: "text/plain", content: "a\nb" });
-            withMutableContent(note, "a\nb");
-            note.isLabelTruthy = vi.fn((name: string) => disabled && name === "disableVersioning") as typeof note.isLabelTruthy;
-            return note;
-        }
-
         const calls: Array<[string, Record<string, unknown>]> = [
             ["set_note_content", { content: "new" }],
             ["append_to_note", { content: "more" }],
@@ -328,18 +322,30 @@ describe("note_tools — write tools return post-write content", () => {
         ];
 
         for (const [tool, args] of calls) {
-            it(`${tool} skips the revision when the note disables versioning`, () => {
-                const note = setup(true);
-                const result = getTool(tool).execute({ noteId: "ver1", ...args });
-                expect(result).toMatchObject({ success: true });
-                expect(note.saveRevision).not.toHaveBeenCalled();
-                expect(note.setContent).toHaveBeenCalled();
-            });
+            it(`${tool} snapshots only a note with no own or inherited #disableVersioning`, () => {
+                const codeNote = { type: "code" as const, mime: "text/plain", content: "a\nb" };
+                const owner = buildNote({ id: "ver-owner", ...codeNote, "#disableVersioning": "" });
+                buildNote({ id: "ver-parent", children: [ { id: "ver-heir", ...codeNote } ] });
+                new BAttribute({
+                    attributeId: "ver-parent-label",
+                    noteId: "ver-parent",
+                    type: "label",
+                    name: "disableVersioning",
+                    value: "",
+                    isInheritable: true
+                });
+                const heir = becca.getNoteOrThrow("ver-heir");
+                const plain = buildNote({ id: "ver-plain", ...codeNote });
 
-            it(`${tool} still saves a revision otherwise`, () => {
-                const note = setup(false);
-                getTool(tool).execute({ noteId: "ver1", ...args });
-                expect(note.saveRevision).toHaveBeenCalledWith({ source: "llm" });
+                for (const note of [ owner, heir, plain ]) {
+                    withMutableContent(note, "a\nb");
+                    expect(getTool(tool).execute({ noteId: note.noteId, ...args })).toMatchObject({ success: true });
+                    expect(note.setContent).toHaveBeenCalled();
+                }
+
+                expect(owner.saveRevision).not.toHaveBeenCalled();
+                expect(heir.saveRevision).not.toHaveBeenCalled();
+                expect(plain.saveRevision).toHaveBeenCalledWith({ source: "llm" });
             });
         }
     });

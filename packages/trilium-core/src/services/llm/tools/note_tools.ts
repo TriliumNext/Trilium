@@ -15,14 +15,6 @@ import { z } from "zod";
 import { applyTextEdits, getContentPreview, getLlmNote, getLlmParentNotes, getNoteContentForLlm, getNoteMeta, getSvgImageError, isExcludedFromLlm, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
-/** Mirrors the `disableVersioning` guard used by the regular note-save path. */
-function saveLlmRevision(note: BNote) {
-    if (note.isLabelTruthy("disableVersioning")) {
-        return;
-    }
-    note.saveRevision({ source: "llm" });
-}
-
 export const noteTools = defineTools({
     search_notes: {
         description: [
@@ -428,6 +420,17 @@ export const noteTools = defineTools({
         }
     }
 });
+
+/**
+ * Snapshots the note before a tool overwrites it, unless the note has `#disableVersioning`, own or
+ * inherited, as `saveRevisionIfNeeded()` does for the editor.
+ */
+function saveLlmRevision(note: BNote) {
+    if (note.isLabelTruthy("disableVersioning")) {
+        return;
+    }
+    note.saveRevision({ source: "llm" });
+}
 
 /** Records the `internalLink` relations of what a tool wrote, as `updateNoteData()` does for the editor. */
 function scanWrittenContent(note: BNote) {
