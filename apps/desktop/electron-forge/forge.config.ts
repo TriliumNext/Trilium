@@ -129,7 +129,13 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/maker-rpm",
             config: {
-                options: baseLinuxMakerConfigOptions
+                options: {
+                    ...baseLinuxMakerConfigOptions,
+                    // electron-installer-redhat's spec template with an absolute `%install` source
+                    // path, which works whether rpmbuild runs `%install` from `BUILD` or from
+                    // `BUILD/<name>-<version>-build` (RPM 4.20+).
+                    specTemplate: path.resolve(path.join(ELECTRON_FORGE_DIR, "rpm-spec.ejs"))
+                }
             }
         },
         {
