@@ -1503,7 +1503,11 @@
     "color_scheme_switcher_dark": "Modo oscuro",
     "color_scheme_switcher_hint": "Haga clic para cambiar el esquema de color.",
     "color_scheme_switcher_unsupported": "El tema actual no admite cambiar el esquema de color.",
-    "edited_notes_expanded": "Expandir «Notas editadas este día» en las notas diarias"
+    "edited_notes_expanded": "Expandir «Notas editadas este día» en las notas diarias",
+    "note_title_style": "Título de la nota",
+    "note_title_style_description": "El título compacto solo se muestra en la barra situada sobre la nota, lo que deja más espacio para el contenido. No se muestran las fechas de creación ni de modificación.",
+    "note_title_style_large": "Grande",
+    "note_title_style_compact": "Compacto"
   },
   "zoom_factor": {
     "title": "Factor de zoom (solo versión de escritorio)",
@@ -4464,7 +4468,10 @@
       "delete-all-tabs": "Eliminar todas las pestañas",
       "compact": "Compacto",
       "resizable": "Redimensionable",
-      "default": "Predeterminado"
+      "default": "Predeterminado",
+      "collapse-or-expand-the-section-of-a-heading": "Contraer o expandir la sección de un encabezado",
+      "section-collapsed": "Sección contraída",
+      "section-expanded": "Sección expandida"
     },
     "toolbar-groups": {
       "text-formatting": "Formato de texto",
@@ -5214,6 +5221,8 @@
       "link_preview": "Vista previa del enlace",
       "embed": "Incrustado",
       "block": "Bloque"
-    }
+    },
+    "collapse_section": "Contraer sección",
+    "expand_section": "Expandir sección"
   }
 }
