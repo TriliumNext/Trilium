@@ -16,6 +16,7 @@ import {
     type Marker,
     type Model,
     type ModelItem,
+    type ViewDowncastWriter,
     type ViewElement
 } from "ckeditor5";
 
@@ -95,15 +96,39 @@ export default class FindInLinkWidgets extends Plugin {
 
     /**
      * Replaces the class-on-the-whole-widget highlight `toWidget()` installs with one that wraps
-     * only the matching characters. The rendered title lives in a `ViewUIElement`, whose DOM the
-     * renderer and the mutation observer both skip, so the wrapper spans survive there.
+     * only the matching characters of a search. The rendered title lives in a `ViewUIElement`,
+     * whose DOM the renderer and the mutation observer both skip, so the wrapper spans survive
+     * there. Other highlights, such as the cursor of Vim mode, put their classes on the widget, as
+     * `toWidget()` does.
      */
     private _highlightMatchesInsteadOfWidget() {
-        const addHighlight = (element: ViewElement, descriptor: DowncastHighlightDescriptor) => {
-            this._unwrapMatches(element);
-            this._wrapMatches(element, descriptor);
+        const addHighlight = (
+            element: ViewElement, descriptor: DowncastHighlightDescriptor,
+            writer: ViewDowncastWriter
+        ) => {
+            if (isFindHighlight(descriptor)) {
+                this._unwrapMatches(element);
+                this._wrapMatches(element, descriptor);
+                return;
+            }
+            writer.addClass([ descriptor.classes ?? [] ].flat(), element);
+            for (const [ key, value ] of Object.entries(descriptor.attributes ?? {})) {
+                writer.setAttribute(key, value, element);
+            }
         };
-        const removeHighlight = (element: ViewElement) => this._unwrapMatches(element);
+        const removeHighlight = (
+            element: ViewElement, descriptor: DowncastHighlightDescriptor,
+            writer: ViewDowncastWriter
+        ) => {
+            if (isFindHighlight(descriptor)) {
+                this._unwrapMatches(element);
+                return;
+            }
+            writer.removeClass([ descriptor.classes ?? [] ].flat(), element);
+            for (const key of Object.keys(descriptor.attributes ?? {})) {
+                writer.removeAttribute(key, element);
+            }
+        };
 
         for (const widgetName of SEARCHABLE_WIDGETS) {
             this.editor.editing.downcastDispatcher.on<DowncastInsertEvent>(
@@ -275,6 +300,11 @@ type MarkedFindResult = FindResultType & { marker: Marker };
 
 function isWidgetResult(value: MarkedFindResult): boolean {
     return value.marker.name.startsWith("findResult:widget-");
+}
+
+/** Whether `descriptor` highlights a result of Find and replace, current or not. */
+function isFindHighlight(descriptor: DowncastHighlightDescriptor): boolean {
+    return !!descriptor.id?.startsWith("findResult");
 }
 
 const SEARCHABLE_WIDGETS = new Set([ "reference", "linkMention", "linkEmbed" ]);

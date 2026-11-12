@@ -1,12 +1,14 @@
 import type {
     ActionArgs, ActionArgsPartial, CodeMirrorV, ExParams, InputStateInterface, MotionArgs,
-    OperatorFn, Pos, Vim, vimActions, vimKey, vimState
+    OperatorFn, Pos, Vim, vimActions, vimKey, vimMotions, vimState
 } from "@replit/codemirror-vim-core";
-import type { ModelElement, ModelPosition } from "ckeditor5";
+import {
+    isHighSurrogateHalf, isLowSurrogateHalf, type ModelElement, type ModelPosition
+} from "ckeditor5";
 
 import VimAdapter, { getActiveAdapter, VimPosition } from "./vim_adapter.js";
-import { joinLine, openLine } from "./vim_editing.js";
-import { OBJECT_CHARACTER } from "./vim_lines.js";
+import { joinLine, openLine, setTypingFormatting } from "./vim_editing.js";
+import { OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import {
     cloneFragment, getRichContent, putLines, rememberRichContent, type RichContent
 } from "./vim_registers.js";
@@ -16,6 +18,7 @@ import {
 } from "./vim_structure.js";
 
 type Actions = vimActions;
+type Motions = vimMotions;
 type Operators = Record<string, OperatorFn>;
 type ExCommand = (cm: CodeMirrorV, params: ExParams) => void;
 type ExCommands = Record<string, ExCommand>;
@@ -24,6 +27,7 @@ type FoldArgs = { fold: FoldAction; isNested: boolean };
 /** The commands of the engine that the commands of Trilium build on. */
 interface BuiltIns {
     actions: Actions;
+    motions: Motions;
     operators: Operators;
     exCommands: ExCommands;
 }
@@ -34,6 +38,14 @@ const PROBE = "triliumProbe";
 
 /** The insert positions of `i`, `a`, `I`, `A` and `gI`, which enter a widget instead. */
 const WIDGET_INSERTS = new Set([ "inplace", "charAfter", "firstNonBlank", "bol", "eol" ]);
+
+/** The motions that find a character typed after them: `f`, `F`, `t`, `T`, `;` and `,`. */
+const CHARACTER_SEARCHES = [
+    "moveToCharacter", "moveTillCharacter", "repeatLastCharacterSearch"
+] as const;
+
+/** Whether a motion of the macro being played failed, which stops the rest of it, as in Vim. */
+let isMacroStopped = false;
 
 /** The keys that Trilium adds to the engine. `:mapclear` removes them, so they are added again. */
 const TRILIUM_KEYS: vimKey[] = [
@@ -47,6 +59,8 @@ const TRILIUM_KEYS: vimKey[] = [
     { keys: "zk", type: "motion", motion: "triliumHeading", motionArgs: { forward: false } },
     { keys: "]z", type: "motion", motion: "triliumSectionEdge", motionArgs: { forward: true } },
     { keys: "[z", type: "motion", motion: "triliumSectionEdge", motionArgs: { forward: false } },
+    { keys: "%", type: "motion", motion: "triliumPercent",
+        motionArgs: { inclusive: true, toJumplist: true, explicitRepeat: true } },
     { keys: "ap", type: "motion", motion: "triliumParagraphObject" },
     { keys: "ip", type: "motion", motion: "triliumParagraphObject",
         motionArgs: { textObjectInner: true } },
@@ -71,11 +85,12 @@ const TRILIUM_KEYS: vimKey[] = [
 export function installTriliumCommands(vim: Vim) {
     const builtIns = captureBuiltIns(vim);
     defineEditingCommands(vim, builtIns.actions, builtIns.operators);
-    defineMotions(vim);
+    defineMotions(vim, builtIns.motions);
     defineActions(vim);
     defineExCommands(vim, builtIns.exCommands);
     addTriliumKeys(vim);
     wrapRegisters(vim);
+    stopMacrosAtFailures(vim);
 }
 
 /** Adds the keys of Trilium, the ones `:mapclear` removes included. */
@@ -86,15 +101,20 @@ export function addTriliumKeys(vim: Vim) {
 }
 
 /**
- * The built-in actions, operators and Ex commands, read through commands that run against a
- * stand-in editor, since the engine only passes them to its commands as `this`.
+ * The built-in actions, motions, operators and Ex commands, read through commands that run against
+ * a stand-in editor, since the engine only passes them to its commands as `this`.
  */
 function captureBuiltIns(vim: Vim): BuiltIns {
     let actions: Actions | null = null;
+    let motions: Motions | null = null;
     let operators: Operators | null = null;
     let exCommands: ExCommands | null = null;
     vim.defineAction(PROBE, function (this: Actions) {
         actions = this;
+    });
+    vim.defineMotion(PROBE, function (this: Motions) {
+        motions = { ...this };
+        return null;
     });
     vim.defineOperator(PROBE, function (this: Operators) {
         operators = this;
@@ -103,18 +123,24 @@ function captureBuiltIns(vim: Vim): BuiltIns {
         exCommands = this;
     });
     vim._mapCommand({ keys: "<TriliumProbeAction>", type: "action", action: PROBE });
+    vim._mapCommand({ keys: "<TriliumProbeMotion>", type: "motion", motion: PROBE });
     vim._mapCommand({ keys: "<TriliumProbeOperator>", type: "operator", operator: PROBE });
 
     const probe = createProbeEditor();
     vim.handleKey(probe, "<TriliumProbeAction>", "user");
+    vim.handleKey(probe, "<TriliumProbeMotion>", "user");
     vim.maybeInitVimState_(probe).visualMode = true;
     vim.handleKey(probe, "<TriliumProbeOperator>", "user");
     vim.handleEx(probe, PROBE);
-    vim.unmap("<TriliumProbeAction>", undefined as unknown as string);
-    vim.unmap("<TriliumProbeOperator>", undefined as unknown as string);
+    for (const keys of [
+        "<TriliumProbeAction>", "<TriliumProbeMotion>", "<TriliumProbeOperator>"
+    ]) {
+        vim.unmap(keys, undefined as unknown as string);
+    }
     vim.getRegisterController().getRegister(":").setText("");
     return {
         actions: actions as unknown as Actions,
+        motions: motions as unknown as Motions,
         operators: operators as unknown as Operators,
         exCommands: exCommands as unknown as ExCommands
     };
@@ -148,8 +174,20 @@ function createProbeEditor(): CodeMirrorV {
 
 function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators) {
     const enterInsertMode = actions.enterInsertMode;
+    const toggleVisualMode = actions.toggleVisualMode;
     const change = operators.change;
     const remove = operators.delete;
+
+    // On an emoji, the engine starts the selection at its second half, from which `l` would move
+    // past the next character too.
+    vim.defineAction("toggleVisualMode", function (this: Actions, cm, actionArgs, state) {
+        toggleVisualMode.call(this, cm, actionArgs, state);
+        const head = state.sel.head;
+        const ch = toCharacterEdge(cm.getLine(head.line), head.ch, false);
+        if (state.visualMode && ch !== head.ch) {
+            state.sel.head = new VimPosition(head.line, ch);
+        }
+    });
 
     // `i` and `a` on a widget enter its caption or the editor in it, or open a line as `O` and `o`.
     vim.defineAction("enterInsertMode", function (this: Actions, cm, actionArgs, state) {
@@ -250,7 +288,8 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
         return new VimPosition(last - 1, firstNonBlank === -1 ? previous.length : firstNonBlank);
     });
 
-    // A change does nothing on a widget, and a change of whole lines keeps one empty line.
+    // A change does nothing on a widget, and a change of whole lines keeps one empty line. The new
+    // text takes the formatting of the text it replaces, as typing over a selection does.
     vim.defineOperator("change", function (this: Operators, cm, args, ranges, oldAnchor, newHead) {
         const adapter = cm as unknown as VimAdapter;
         const state = cm.state.vim;
@@ -265,7 +304,19 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
             changed = [ { anchor: new VimPosition(first, 0), head } ];
             adapter.setSelection(changed[0].anchor, head);
         }
-        return change.call(this, cm, args, changed, oldAnchor, newHead);
+        const [ start ] = [ changed[0].anchor, changed[0].head ]
+            .sort((a, b) => a.line - b.line || a.ch - b.ch);
+        const firstCharacter = args.linewise && !state.visualMode
+            ? new VimPosition(start.line, Math.max(adapter.getLine(start.line).search(/\S/), 0))
+            : start;
+        const position = adapter.toModelPosition(firstCharacter);
+        const node = position.textNode ?? position.nodeAfter;
+        const formatting = node?.is("$text") ? [ ...node.getAttributes() ] : null;
+        const result = change.call(this, cm, args, changed, oldAnchor, newHead);
+        if (formatting) {
+            setTypingFormatting(adapter.editor, formatting);
+        }
+        return result;
     });
 }
 
@@ -327,7 +378,73 @@ function putInline(adapter: VimAdapter, content: RichContent, isAfter: boolean, 
     adapter.setCursor(last.line, Math.max(last.ch - 1, 0));
 }
 
-function defineMotions(vim: Vim) {
+function defineMotions(vim: Vim, motions: Motions) {
+    // `{count}%` goes that far into the note, and `%` alone to the matching bracket.
+    vim.defineMotion("triliumPercent", (cm, head, motionArgs) => {
+        if (!motionArgs.repeatIsExplicit) {
+            return motions.moveToMatchedSymbol(cm, head);
+        }
+        if (motionArgs.repeat > 100) {
+            return null;
+        }
+        const line = Math.ceil(motionArgs.repeat * cm.lineCount() / 100) - 1;
+        motionArgs.linewise = true;
+        return new VimPosition(line, Math.max(cm.getLine(line).search(/\S/), 0));
+    });
+
+    // `h`, `l` and the operators on characters take an emoji or an accented letter as one. `h` and
+    // `l` stop the macro being played at the edge of the line, as in Vim.
+    vim.defineMotion("moveByCharacters", (cm, head, motionArgs, state, inputState) => {
+        const text = cm.getLine(head.line);
+        const isForward = !!motionArgs.forward;
+        let ch = head.ch;
+        for (let step = 0; step < motionArgs.repeat; step++) {
+            ch = toCharacterEdge(text, ch + (isForward ? 1 : -1), isForward);
+        }
+        const isAtEdge = isForward ? ch > Math.max(text.length - 1, 0) : head.ch <= 0;
+        if (isAtEdge && !state.visualMode && !inputState.operator) {
+            stopMacro(vim);
+        }
+        return new VimPosition(head.line, ch);
+    });
+
+    // `j`, `k` and the other line motions stop the macro being played at the first or last line.
+    vim.defineMotion("moveByLines", function (this: Motions, cm, head, motionArgs, state) {
+        const found = motions.moveByLines.call(this, cm, head, motionArgs, state);
+        if (motionArgs.repeat + (motionArgs.repeatOffset ?? 0) && found.line === head.line) {
+            stopMacro(vim);
+        }
+        return found;
+    });
+
+    // The engine keeps the second half of a character of two units, such as an emoji, as the
+    // character to find: the search starts after the character at the cursor, and the cursor goes
+    // to the first half of the character found.
+    for (const name of CHARACTER_SEARCHES) {
+        const search: (cm: CodeMirrorV, head: Pos, motionArgs: MotionArgs) => Pos | null =
+            motions[name];
+        vim.defineMotion(name, function (this: Motions, cm, head, motionArgs) {
+            const character = name === "repeatLastCharacterSearch"
+                ? vim.getVimGlobalState_().lastCharacterSearch.selectedCharacter
+                : motionArgs.selectedCharacter;
+            if (!isLowSurrogateHalf(character as string)) {
+                return search.call(this, cm, head, motionArgs);
+            }
+            const text = cm.getLine(head.line);
+            const start = isHighSurrogateHalf(text.charAt(head.ch))
+                ? new VimPosition(head.line, head.ch + 1)
+                : head;
+            const found = search.call(this, cm, start, motionArgs);
+            if (!found || found === start) {
+                return found && head;
+            }
+            const isOnCharacter = text.charAt(found.ch) === character
+                || (isHighSurrogateHalf(text.charAt(found.ch))
+                    && text.charAt(found.ch + 1) === character);
+            return isOnCharacter ? new VimPosition(found.line, found.ch - 1) : found;
+        });
+    }
+
     vim.defineMotion("moveByParagraph", (cm, head, motionArgs) =>
         findStructuralBlock(cm as unknown as VimAdapter, head, motionArgs.repeat,
             !!motionArgs.forward));
@@ -544,6 +661,26 @@ function isOnlyWidgets(adapter: VimAdapter, from: Pos, to: Pos): boolean {
         }
     }
     return true;
+}
+
+/** Skips the keys of a macro once one of its motions failed, until the next key of the user. */
+function stopMacrosAtFailures(vim: Vim) {
+    const handleKey = vim.handleKey.bind(vim);
+    vim.handleKey = (cm, key, origin) => {
+        if (origin !== "macro") {
+            isMacroStopped = false;
+        } else if (isMacroStopped) {
+            return true;
+        }
+        return handleKey(cm, key, origin);
+    };
+}
+
+/** Stops the macro being played, after a motion that cannot move. */
+function stopMacro(vim: Vim) {
+    if (vim.getVimGlobalState_().macroModeState.isPlaying) {
+        isMacroStopped = true;
+    }
 }
 
 /**

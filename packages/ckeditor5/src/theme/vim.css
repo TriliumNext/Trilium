@@ -15,6 +15,10 @@
         color: var(--text-editor-vim-cursor-color);
     }
 
+    .ck-vim-cursor.ck-widget * {
+        color: inherit;
+    }
+
     .ck-vim-cursor_empty {
         display: inline-block;
         width: 0.55em;

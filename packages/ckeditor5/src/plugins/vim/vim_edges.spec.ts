@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
-    press, typeText
+    press, setVimData, typeText
 } from "../../../test/vim-kit.js";
 import ContentEmbed from "../content_embed/content_embed.js";
 import ContentEmbedCaret from "../content_embed/content_embed_caret.js";
@@ -603,7 +603,84 @@ describe("Vim mode edge cases", () => {
             expect(getLines(editor)).toBe("ab");
         });
     });
+
+    describe("macros", () => {
+        it("stop at a motion that fails", async () => {
+            const editor = await createVimEditor(paragraphs("[]p1", "p2", "p3", "p4"));
+            press(editor, "qbA");
+            typeText(editor, "x");
+            press(editor, "<Esc>jq3G5@b");
+            expect(getLines(editor)).toBe("p1x|p2|p3x|p4x");
+            press(editor, "u");
+            expect(getLines(editor)).toBe("p1x|p2|p3|p4");
+            press(editor, "ggj");
+            expect(getCursor(editor)).toBe("1:0");
+
+            setVimData(editor, paragraphs("ab[]c"));
+            press(editor, "qchi");
+            typeText(editor, "-");
+            press(editor, "<Esc>q3@c");
+            expect(getLines(editor)).toBe("-a-bc");
+            press(editor, "$qdlq");
+            expect(getCursor(editor)).toBe("0:4");
+        });
+    });
+
+    describe("characters of two units", () => {
+        it("take an emoji and a letter with an accent as one character", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("[]a \u{1F604} b"));
+            press(editor, "ll~");
+            expect(getLines(editor)).toBe("a \u{1F604} b");
+            expect(getCursor(editor)).toBe("0:4");
+            press(editor, "h");
+            expect(getCursor(editor)).toBe("0:2");
+            press(editor, "hvly$p");
+            expect(getLines(editor)).toBe("a \u{1F604} b \u{1F604}");
+            expect(getCursor(editor)).toBe("0:7");
+            press(editor, "0f");
+            insertText(editor, "\u{1F604}");
+            expect(getCursor(editor)).toBe("0:2");
+            press(editor, ";");
+            expect(getCursor(editor)).toBe("0:7");
+            press(editor, "0t");
+            insertText(editor, "\u{1F604}");
+            expect(getCursor(editor)).toBe("0:1");
+            press(editor, "$T");
+            insertText(editor, "\u{1F604}");
+            expect(getCursor(editor)).toBe("0:4");
+            press(editor, "0f");
+            insertText(editor, "\u{1F389}");
+            press(editor, "dt");
+            insertText(editor, "\u{1F389}");
+            expect(getCursor(editor)).toBe("0:0");
+            expect(getLines(editor)).toBe("a \u{1F604} b \u{1F604}");
+
+            setVimData(editor, paragraphs("[]a\u{1F604} b"));
+            press(editor, "lvly$p");
+            expect(getLines(editor)).toBe("a\u{1F604} b\u{1F604} ");
+
+            setVimData(editor, paragraphs("caf[]"));
+            press(editor, "A");
+            typeText(editor, "é");
+            press(editor, "<Esc>");
+            expect(getCursor(editor)).toBe("0:3");
+            press(editor, "hl");
+            expect(getCursor(editor)).toBe("0:3");
+            press(editor, "x");
+            expect(getLines(editor)).toBe("caf");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+    });
 });
+
+/** Types `text` as an input method does, which Vim takes as keys outside Insert mode. */
+function insertText(editor: Editor, text: string) {
+    const view = editor.editing.view;
+    view.document.fire("insertText",
+        new ViewDocumentDomEventData(view, new Event("beforeinput"), { text }));
+}
 
 declare module "ckeditor5" {
     interface EditorConfig {

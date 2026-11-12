@@ -82,6 +82,7 @@ import ListItemAlignment from "./plugins/list_item_alignment.js";
 import ListItemInsert from "./plugins/list_item_insert.js";
 import TableIndent from "./plugins/table_indent.js";
 import TableContextMenu from "./plugins/table_context_menu.js";
+import TableExitCaret from "./plugins/table_exit_caret.js";
 import TableMove from "./plugins/table_move/table_move.js";
 import TablePasteRows from "./plugins/table_paste_rows.js";
 import TableSort from "./plugins/table_sort.js";
@@ -149,6 +150,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     ListItemInsert,
     TableIndent,
     TableContextMenu,
+    TableExitCaret,
     TableMove,
     TablePasteRows,
     TableSort,

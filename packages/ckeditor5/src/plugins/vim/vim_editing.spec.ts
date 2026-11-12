@@ -2,7 +2,8 @@ import type { Editor, ModelElement } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import {
-    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press, typeText
+    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press,
+    setVimData, typeText
 } from "../../../test/vim-kit.js";
 import {
     getWholeLines, isAtTwoStepBoundary, joinLine, openLine, replaceText
@@ -112,6 +113,28 @@ describe("Vim mode line editing", () => {
             expect(getContent(editor)).toBe(item("N1", "a") + item("X", "b"));
         });
 
+        it("moves the nested items of a removed item up one level", async () => {
+            const editor = await createVimEditor(item("Ship", "a") + item("[]Keep", "b")
+                + item("x", "c", 1) + item("x2", "d", 2) + item("y", "e", 1) + item("Write", "f"));
+            const lifted = item("Ship", "a") + item("x", "b") + item("x2", "c", 1)
+                + item("y", "d") + item("Write", "e");
+            press(editor, "dd");
+            expect(getContent(editor)).toBe(lifted);
+            press(editor, "udip");
+            expect(getContent(editor)).toBe(lifted);
+            press(editor, "u2dd");
+            expect(getContent(editor)).toBe(
+                item("Ship", "a") + item("x2", "b") + item("y", "c") + item("Write", "d"));
+
+            setVimData(editor, item("[]P1", "a") + item("P2", "a") + item("N1", "b", 1)
+                + item("N2", "c", 2));
+            press(editor, "2dd");
+            expect(getContent(editor)).toBe(item("N1", "a") + item("N2", "b", 1));
+            press(editor, "ujdd");
+            expect(getContent(editor)).toBe(
+                item("P1", "a") + item("N1", "b", 1) + item("N2", "c", 2));
+        });
+
         it("removes code lines", async () => {
             const editor = await createVimEditor(
                 `<codeBlock language="plaintext">a${SB}b${SB}[]c</codeBlock>`);
@@ -155,6 +178,45 @@ describe("Vim mode line editing", () => {
             expect(getContent(editor)).toBe(paragraphs("a"));
         });
 
+        it("types with the formatting of the text that it changes", async () => {
+            const editor = await createVimEditor(
+                "<paragraph>x <$text bold=\"true\">[]bold</$text> y</paragraph>");
+            press(editor, "ciw");
+            typeText(editor, "new");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(
+                "<paragraph>x <$text bold=\"true\">new</$text> y</paragraph>");
+
+            setVimData(editor, "<paragraph>by <$text bold=\"true\">[]March 3</$text></paragraph>");
+            press(editor, "cw");
+            typeText(editor, "May");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(
+                "<paragraph>by <$text bold=\"true\">May 3</$text></paragraph>");
+
+            setVimData(editor, "<paragraph><$text bold=\"true\">bo</$text>[]x</paragraph>");
+            press(editor, "s");
+            typeText(editor, "y");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(
+                "<paragraph><$text bold=\"true\">bo</$text>y</paragraph>");
+
+            setVimData(editor, "<paragraph><$text bold=\"true\">one []two</$text></paragraph>");
+            press(editor, "ciw");
+            typeText(editor, "six");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(
+                "<paragraph><$text bold=\"true\">one six</$text></paragraph>");
+
+            setVimData(editor, "<paragraph><$text bold=\"true\">b</$text></paragraph>"
+                + paragraphs("[]"));
+            press(editor, "cc");
+            typeText(editor, "c");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe(
+                "<paragraph><$text bold=\"true\">b</$text></paragraph>" + paragraphs("c"));
+        });
+
         it("keeps one line when Visual line mode changes several", async () => {
             const editor = await createVimEditor(paragraphs("[]a", "b", "c"));
             press(editor, "Vjc");
@@ -184,6 +246,72 @@ describe("Vim mode line editing", () => {
             expect(getLines(editor)).toBe("xyz");
             press(editor, "u");
             expect(getLines(editor)).toBe("abc");
+        });
+    });
+
+    describe("case operators", () => {
+        it("change the case of a whole line and leave the rest of the note", async () => {
+            const tabs = (title: string, panel: string) => `<tabs><tab><tabTitle>${title}`
+                + `</tabTitle><tabPanel>${paragraphs(panel)}</tabPanel></tab></tabs>`;
+            const places = [
+                paragraphs("[]Ab", "cd"),
+                paragraphs("cd", "[]Ab"),
+                `<heading2>[]Ab</heading2>${paragraphs("cd")}`,
+                item("[]Ab", "a") + item("cd", "b", 1) + paragraphs("ef"),
+                `<codeBlock language="plaintext">[]Ab${SB}cd</codeBlock>`,
+                paragraphs("x") + table([ [ "one" ], [ "two" ] ], [ [ "[]Ab" ], [ "four" ] ])
+                    + paragraphs("y"),
+                paragraphs("[]Ab") + table([ [ "one" ] ]) + paragraphs("y"),
+                `<blockQuote>${paragraphs("[]Ab")}</blockQuote>${table([ [ "one" ] ])}`,
+                paragraphs("x") + tabs("[]Ab", "p") + paragraphs("y"),
+                paragraphs("x") + tabs("T", "[]Ab") + paragraphs("y"),
+                details("[]Ab", paragraphs("body")) + paragraphs("y"),
+                "<multicolumnLayout columnRatios=\"1-1\"><multicolumnColumn>" + paragraphs("[]Ab")
+                    + "</multicolumnColumn><multicolumnColumn>" + paragraphs("c2")
+                    + "</multicolumnColumn></multicolumnLayout>" + paragraphs("y")
+            ];
+            const editor = await createVimEditor();
+            for (const place of places) {
+                for (const [ keys, text ] of [ [ "gUU", "AB" ], [ "guu", "ab" ], [ "g~~", "aB" ],
+                    [ "g??", "No" ], [ "VU", "AB" ], [ "Vu", "ab" ], [ "V~", "aB" ] ]) {
+                    setVimData(editor, place);
+                    const before = getContent(editor);
+                    press(editor, keys);
+                    expect(getContent(editor), `${keys} on ${place}`)
+                        .toBe(before.replace("Ab", text));
+                    press(editor, "u");
+                    expect(getContent(editor)).toBe(before);
+                }
+            }
+        });
+
+        it("change several lines, and keep the formatting of each character", async () => {
+            const editor = await createVimEditor(paragraphs("[]ab", "cd", "ef"));
+            press(editor, "gUj");
+            expect(getContent(editor)).toBe(paragraphs("AB", "CD", "ef"));
+
+            setVimData(editor, `<paragraph>[]ab${SB}cd</paragraph>`);
+            press(editor, "Vjg?");
+            expect(getContent(editor)).toBe(`<paragraph>no${SB}pq</paragraph>`);
+
+            setVimData(editor, "<paragraph>[]x <$text bold=\"true\">bo</$text>ld y</paragraph>");
+            press(editor, "gUU");
+            expect(getContent(editor)).toBe(
+                "<paragraph>X <$text bold=\"true\">BO</$text>LD Y</paragraph>");
+            press(editor, "wg~iw");
+            expect(getContent(editor)).toBe(
+                "<paragraph>X <$text bold=\"true\">bo</$text>ld Y</paragraph>");
+            press(editor, "0vlll~");
+            expect(getContent(editor)).toBe(
+                "<paragraph>x <$text bold=\"true\">BO</$text>ld Y</paragraph>");
+        });
+
+        it("change a word that ends with a longer upper case", async () => {
+            const editor = await createVimEditor(
+                "<paragraph>[]A<$text bold=\"true\">ß</$text></paragraph>");
+            press(editor, "gUU");
+            expect(getContent(editor)).toBe(
+                "<paragraph>A<$text bold=\"true\">SS</$text></paragraph>");
         });
     });
 

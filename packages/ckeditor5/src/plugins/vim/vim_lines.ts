@@ -1,4 +1,7 @@
-import type { Model, ModelElement, ModelNode, ModelPosition } from "ckeditor5";
+import {
+    isInsideCombinedSymbol, isInsideSurrogatePair, type Model, type ModelElement, type ModelNode,
+    type ModelPosition
+} from "ckeditor5";
 
 import { OPEN_ATTRIBUTE } from "../collapsible/constants.js";
 
@@ -345,6 +348,19 @@ export class LineIndex {
         }
         return isContainer;
     }
+}
+
+/**
+ * Column `ch` of `text`, or the edge of the character that it falls inside, as between the halves
+ * of an emoji or before a combining accent: its start, or with `isForward`, its end.
+ */
+export function toCharacterEdge(text: string, ch: number, isForward: boolean): number {
+    let edge = ch;
+    while (edge > 0 && edge < text.length
+        && (isInsideSurrogatePair(text, edge) || isInsideCombinedSymbol(text, edge))) {
+        edge += isForward ? 1 : -1;
+    }
+    return edge;
 }
 
 /** The offsets of the parts of `block` between its soft breaks. */

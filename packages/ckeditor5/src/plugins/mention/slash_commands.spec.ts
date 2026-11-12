@@ -744,6 +744,15 @@ describe("buildTriliumSlashCommands", () => {
         return found;
     }
 
+    it("offers the page break first for /page, and a child note for a new page", () => {
+        const catalog = buildTriliumSlashCommands(editor);
+        const ids = (query: string) => matchSlashCommands(catalog, query).map((entry) => entry.id);
+        expect(ids("page")[0]).toBe("page-break");
+        expect(ids("page")).toContain("child-note");
+        expect(ids("new page")[0]).toBe("child-note");
+        expect(ids("subpage")[0]).toBe("child-note");
+    });
+
     // One case per entry rather than a test each: the shape is identical, only the data differs.
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],

@@ -153,6 +153,21 @@ describe("TableContextMenu", () => {
             expect(caret()).toEqual({ row: 0, column: 3, isCollapsed: true, isEmpty: true });
         });
 
+        it("goes to the first cell of the row that Tab adds in the last cell", async () => {
+            setModelData(editor.model, `${modelTable([ [ "11", "12" ], [ "21", "2[]2" ] ])}`
+                + "<paragraph>after</paragraph>");
+            editor.editing.view.focus();
+            const event = new KeyboardEvent("keydown",
+                { key: "Tab", bubbles: true, cancelable: true });
+            Object.defineProperty(event, "keyCode", { value: 9 });
+            editor.editing.view.getDomRoot()?.dispatchEvent(event);
+            expect(caret()).toMatchObject({ row: 2, column: 0 });
+
+            await Promise.resolve();
+            editor.execute("insertTableRowAbove");
+            expect(caret()).toMatchObject({ row: 2, column: 0, isCollapsed: true, isEmpty: true });
+        });
+
         it("stays where it is when its own cell spans the new row", () => {
             setModelData(editor.model,
                 spannedTable([ [ { contents: "a[]", rowspan: 2 }, "b" ], [ "c" ] ]));

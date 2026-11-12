@@ -209,6 +209,20 @@ describe("Vim mode registers", () => {
             press(editor, "\"ayyj\"byy\"ap\"bp");
             expect(getLines(editor)).toBe("a|b|a|b");
         });
+
+        it("counts the lines yanked next to tables and widgets", async () => {
+            const cells = "<tableCell><paragraph>one</paragraph></tableCell>"
+                + "<tableCell><paragraph>two</paragraph></tableCell>";
+            const editor = await createVimEditor(quote("[]q")
+                + `<table><tableRow>${cells}</tableRow><tableRow>${cells}</tableRow></table>`
+                + HR + paragraphs("x"));
+            for (let line = 1; line <= 7; line++) {
+                press(editor, `${line}Gyy`);
+                expect(getStatus(editor).message?.text, `line ${line}`).toBe("1 lines yanked");
+            }
+            press(editor, "ggyj");
+            expect(getStatus(editor).message?.text).toBe("2 lines yanked");
+        });
     });
 
     describe("the clipboard registers", () => {

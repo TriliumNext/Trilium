@@ -12,10 +12,10 @@ import CollapsibleListItems from "../collapsible_list_items.js";
 import FindReveal from "../find_reveal.js";
 import HiddenBlocks from "../hidden_blocks.js";
 import {
-    getWholeLines, indentLines, isAtTwoStepBoundary, removeLines, replaceText
+    getWholeLines, indentLines, isAtTwoStepBoundary, removeLines, replaceText, rewriteLines
 } from "./vim_editing.js";
 import {
-    EVERYTHING_SHOWN, LineIndex, type LinePosition, type LineVisibility
+    EVERYTHING_SHOWN, LineIndex, type LinePosition, type LineVisibility, toCharacterEdge
 } from "./vim_lines.js";
 import { readRichContent, type RichContent } from "./vim_registers.js";
 import { SearchCursor, SearchHighlights } from "./vim_search.js";
@@ -174,8 +174,11 @@ export default class VimAdapter {
     private lastReadContent: { text: string; lines: RichContent; range: RichContent } | null = null;
     private isRevealing = false;
     private readonly bookmarks = new Set<Bookmark>();
-    /** The selection that the engine made last, and the range that it became in the model. */
-    private selected: { anchor: Pos; head: Pos; range: ModelRange } | null = null;
+    /**
+     * The selection that the engine made last, the range that it became in the model, which the
+     * editor can widen, as to a whole table, and the lines it was made in.
+     */
+    private selected: { anchor: Pos; head: Pos; range: ModelRange; index: LineIndex } | null = null;
     private readonly options: Record<string, unknown> = {
         firstLineNumber: 1, tabSize: 4, indentWithTabs: false
     };
@@ -301,6 +304,12 @@ export default class VimAdapter {
             const isEnd = !!this.state.vim?.visualMode && (which === "head" || which === "end");
             return new VimPosition(objectLine, isEnd ? 1 : 0);
         }
+        const selected = this.getEngineSelection();
+        if (selected) {
+            const [ start, end ] = order(selected.anchor, selected.head);
+            const ends = { head: selected.head, anchor: selected.anchor, start, end };
+            return new VimPosition(ends[which].line, ends[which].ch);
+        }
         let position: ModelPosition | null;
         switch (which) {
             case "anchor":
@@ -352,9 +361,8 @@ export default class VimAdapter {
      * since the editor can move its ends, as it moves the end of a range before a widget.
      */
     getSelection(): string {
-        const selected = this.selected;
-        const range = this.editor.model.document.selection.getFirstRange() as ModelRange;
-        if (selected?.range.isEqual(range)) {
+        const selected = this.getEngineSelection();
+        if (selected) {
             return this.getRange(selected.anchor, selected.head);
         }
         return this.somethingSelected()
@@ -379,8 +387,9 @@ export default class VimAdapter {
     // Editing
 
     /**
-     * Replaces the text from `from` to `to` with `text`. A caret inside the replaced text goes to
-     * the end of the new text. Returns the position after the new text.
+     * Replaces the text from `from` to `to` with `text`. Text with as many lines as the text it
+     * replaces changes in place, line by line. A caret inside the replaced text goes to the end of
+     * the new text. Returns the position after the new text.
      */
     replaceRange(text: string, from: Pos, to?: Pos): ModelPosition | null {
         if (this.editor.isReadOnly) {
@@ -395,15 +404,24 @@ export default class VimAdapter {
             return null;
         }
 
-        const clippedStart = this.clipPos(start);
-        const clippedEnd = this.clipPos(end);
+        const clippedStart = this.toCharacterEdge(this.clipPos(start), false);
+        const clippedEnd = this.toCharacterEdge(this.clipPos(end), true);
         const range = this.toModelRange(clippedStart, clippedEnd);
         const selection = this.editor.model.document.selection;
         const focus = selection.focus;
         const isCursorInside = selection.isCollapsed && !!focus
             && !focus.isBefore(range.start) && !focus.isAfter(range.end);
-        const newEnd = replaceText(this.editor, range, text,
-            this.readText(clippedStart, clippedEnd));
+        const oldText = this.readText(clippedStart, clippedEnd);
+        const lines = text.split("\n");
+        let newEnd: ModelPosition | null;
+        if (oldText && lines.length === oldText.split("\n").length) {
+            rewriteLines(this.editor, index, clippedStart, oldText, text);
+            const last = lines.length - 1;
+            const ch = (last ? 0 : clippedStart.ch) + lines[last].length;
+            newEnd = this.index().positionAt(clippedStart.line + last, ch);
+        } else {
+            newEnd = replaceText(this.editor, range, text, oldText);
+        }
         if (newEnd && isCursorInside) {
             this.editor.model.change((writer) => writer.setSelection(newEnd));
         }
@@ -812,9 +830,14 @@ export default class VimAdapter {
         };
     }
 
-    private select(anchor: Pos, head: Pos) {
+    private select(from: Pos, to: Pos) {
         const index = this.index();
         const model = this.editor.model;
+        // A collapsed cursor goes to the start of its character, and a range covers whole ones.
+        const isRange = from.line !== to.line || from.ch !== to.ch;
+        const isReversed = to.line < from.line || (to.line === from.line && to.ch < from.ch);
+        const anchor = this.toCharacterEdge(from, isRange && isReversed);
+        const head = this.toCharacterEdge(to, isRange && !isReversed);
         const entry = index.lines[head.line];
         const isObject = anchor.line === head.line && entry?.kind === "object";
         const anchorPosition = index.positionAt(anchor.line, anchor.ch);
@@ -833,8 +856,23 @@ export default class VimAdapter {
                 ), { backward: isBackward });
             });
             const range = model.document.selection.getFirstRange() as ModelRange;
-            this.selected = { anchor, head, range };
+            this.selected = { anchor, head, range, index: this.index() };
         });
+    }
+
+    /** The selection that the engine made last, while the editor keeps the range it became. */
+    private getEngineSelection() {
+        const selected = this.selected;
+        const range = this.editor.model.document.selection.getFirstRange();
+        const isKept = !!selected && !!range && selected.range.isEqual(range)
+            && selected.index === this.index();
+        return isKept ? selected : null;
+    }
+
+    /** `position`, or the edge of the character it falls inside, as `toCharacterEdge()` gives. */
+    private toCharacterEdge(position: Pos, isForward: boolean): Pos {
+        const ch = toCharacterEdge(this.getLine(position.line), position.ch, isForward);
+        return ch === position.ch ? position : new VimPosition(position.line, ch);
     }
 
     /**

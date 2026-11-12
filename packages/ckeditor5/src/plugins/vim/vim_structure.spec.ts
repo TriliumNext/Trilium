@@ -50,6 +50,27 @@ async function selectObject(data: string, line: number, keys: string) {
 }
 
 describe("Vim mode structure", () => {
+    describe("{count}%", () => {
+        it("goes that far into the note, and % without a count matches brackets", async () => {
+            const editor = await createVimEditor(
+                paragraphs("[]p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "··p9"));
+            press(editor, "50%");
+            expect(getCursor(editor)).toBe("4:0");
+            press(editor, "100%");
+            expect(getCursor(editor)).toBe("9:2");
+            press(editor, "1%");
+            expect(getCursor(editor)).toBe("0:0");
+            press(editor, "101%");
+            expect(getCursor(editor)).toBe("0:0");
+            press(editor, "d30%");
+            expect(getLines(editor)).toBe("p3|p4|p5|p6|p7|p8|  p9");
+
+            const brackets = await createVimEditor(paragraphs("[](a)"));
+            press(brackets, "%");
+            expect(getCursor(brackets)).toBe("0:2");
+        });
+    });
+
     describe("{ and }", () => {
         it("move block by block in body text, a container being one stop", async () => {
             const editor = await createVimEditor(
@@ -298,6 +319,17 @@ describe("Vim mode structure", () => {
     });
 
     describe("folds", () => {
+        it("keep the cursor on its line when a section above folds with the mouse", async () => {
+            const editor = await createVimEditor("<heading2>A</heading2>" + paragraphs("a1", "a2")
+                + "<heading2>C</heading2>" + paragraphs("[]c1"));
+            press(editor, "l");
+            const heading = editor.model.document.getRoot()?.getChild(0);
+            editor.model.change((writer) =>
+                writer.setAttribute("headingCollapsed", true, heading as never));
+            expect(getLines(editor)).toBe("A|C|c1");
+            expect(getCursor(editor)).toBe("2:1");
+        });
+
         it("collapse and expand sections", async () => {
             const editor = await createVimEditor(paragraphs("intro") + "<heading2>[]A</heading2>"
                 + paragraphs("a1")

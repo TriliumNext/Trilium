@@ -17,7 +17,7 @@ import VimAdapter, {
 import { getDigraph } from "./vim_digraphs.js";
 import { getLoadedVimEngine, loadVimEngine, runStartupCommands } from "./vim_engine.js";
 import { createJumpList } from "./vim_jumps.js";
-import { OBJECT_CHARACTER } from "./vim_lines.js";
+import { OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import { SEARCH_MARKER } from "./vim_search.js";
 import VimUndo from "./vim_undo.js";
 
@@ -613,7 +613,7 @@ class VimSession {
         const hasPendingKeys = input.keyBuffer.length > 0 || !!input.operator
             || !!input.registerName
             || input.prefixRepeat.length > 0 || input.motionRepeat.length > 0;
-        if (hasPendingKeys || vim.visualMode || vim.insertMode) {
+        if (hasPendingKeys || vim.visualMode || vim.insertMode || vim.insertModeReturn) {
             this.runKeys([ "<Esc>" ]);
             return true;
         }
@@ -726,7 +726,8 @@ class VimSession {
 
     private onOperationEnd() {
         const vim = this.vim;
-        if (!vim.insertMode && !vim.visualMode && !this.commandLine) {
+        // After `Ctrl+O`, Insert mode comes back where the cursor is, which can be past the end.
+        if (!vim.insertMode && !vim.visualMode && !vim.insertModeReturn && !this.commandLine) {
             this.keepCursorOnCharacter();
         }
         if (!this.commandLine) {
@@ -797,12 +798,13 @@ class VimSession {
         if (!vim.insertMode && this.adapter.getSelectedObjectLine() === null) {
             const head = vim.visualMode ? this.adapter.clipPos(vim.sel.head)
                 : this.adapter.getCursor();
-            const length = this.adapter.getLine(head.line).length;
-            const ch = Math.min(head.ch, Math.max(length - 1, 0));
+            const text = this.adapter.getLine(head.line);
+            const lastCh = Math.min(head.ch, Math.max(text.length - 1, 0));
+            const ch = toCharacterEdge(text, lastCh, false);
             const start = this.adapter.toModelPosition(new VimPosition(head.line, ch));
-            isEmpty = !length;
-            range = model.createRange(start,
-                isEmpty ? start : this.adapter.toModelPosition(new VimPosition(head.line, ch + 1)));
+            const end = new VimPosition(head.line, toCharacterEdge(text, ch + 1, true));
+            isEmpty = !text;
+            range = model.createRange(start, isEmpty ? start : this.adapter.toModelPosition(end));
         }
         const current = model.markers.get(
             isEmpty ? EMPTY_CURSOR_MARKER : CURSOR_MARKER)?.getRange();
@@ -908,7 +910,7 @@ class VimSession {
                 this.closeCommandLine = null;
                 this.updateStatus();
                 this.adapter.focus();
-                this.adapter.endReveal();
+                this.onOperationEnd();
             }
             options.onClose?.(element);
         };
@@ -918,14 +920,18 @@ class VimSession {
             if (options.onKeyDown?.(event, input.value, close)) {
                 return;
             }
-            if (event.key === "Enter") {
-                onEnter?.(input.value);
-            }
-            if (event.key === "Escape"
-                || (event.key === "Enter" && options.closeOnEnter !== false)) {
-                input.blur();
-                event.preventDefault();
-                close();
+            const isEnter = event.key === "Enter";
+            try {
+                // The command, or the operator that a search completes, runs as a key does.
+                if (isEnter && onEnter) {
+                    this.adapter.operation(() => onEnter(input.value));
+                }
+            } finally {
+                if (event.key === "Escape" || (isEnter && options.closeOnEnter !== false)) {
+                    input.blur();
+                    event.preventDefault();
+                    close();
+                }
             }
         });
         input.addEventListener("keyup", (event) => {

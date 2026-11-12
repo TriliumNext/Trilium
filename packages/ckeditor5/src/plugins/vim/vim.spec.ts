@@ -147,6 +147,16 @@ describe("Vim mode", () => {
             expect(getLines(editor)).toBe("abc\u{3B1}|\tZ\u{E4}\u{3B1}\u{E4}#\u{E0}|xyz");
         });
 
+        it("go back to Insert mode with Escape after Ctrl+O", async () => {
+            const editor = await createVimEditor(paragraphs("[]hello"));
+            press(editor, "A<C-o>");
+            expect(getStatus(editor)).toMatchObject({ mode: "normal", isOneCommand: true });
+            press(editor, "<Esc>");
+            expect(getStatus(editor)).toMatchObject({ mode: "insert", isOneCommand: false });
+            typeText(editor, "X");
+            expect(getLines(editor)).toBe("helloX");
+        });
+
         it("restore what Replace mode wrote over with Backspace", async () => {
             const editor = await createVimEditor(paragraphs("[]abc"));
             press(editor, "R");
@@ -215,6 +225,12 @@ describe("Vim mode", () => {
             expect(getMarkers(editor)).toEqual([ "vimCursor" ]);
         });
 
+        it("marks the whole character of the cursor", async () => {
+            const editor = await createVimEditor(paragraphs("[]\u{1F604}a"));
+            const range = editor.model.markers.get("vimCursor")?.getRange();
+            expect([ range?.start.offset, range?.end.offset ]).toEqual([ 0, 2 ]);
+        });
+
         it("puts a cursor that a click left past the end of a line on its last character",
             async () => {
             const editor = await createVimEditor(paragraphs("[]ab"));
@@ -266,6 +282,42 @@ describe("Vim mode", () => {
             press(editor, "<Esc>");
             expect(slot.querySelector(".ck-vim-command-line")).toBeNull();
             slot.remove();
+        });
+
+        it("completes an operator with a search, and closes", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("[]alpha beta gamma delta"));
+            press(editor, "yw");
+            press(editor, "d/gamma<CR>");
+            expect(getLines(editor)).toBe("gamma delta");
+            expect(getStatus(editor).commandLine).toBeNull();
+            press(editor, "P");
+            expect(getLines(editor)).toBe("alpha beta gamma delta");
+
+            press(editor, "0y/gamma<CR>");
+            expect(getStatus(editor)).toMatchObject({ mode: "normal", commandLine: null });
+            expect(editor.model.document.selection.isCollapsed).toBe(true);
+            press(editor, "$p");
+            expect(getLines(editor)).toBe("alpha beta gamma deltaalpha beta ");
+
+            press(editor, "u0c/gamma<CR>");
+            expect(getStatus(editor)).toMatchObject({ mode: "insert", commandLine: null });
+            typeText(editor, "X ");
+            press(editor, "<Esc>$d?gamma<CR>");
+            expect(getLines(editor)).toBe("X a");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("leaves the cursor on a character after an Ex command", async () => {
+            const editor = await createVimEditor(paragraphs("[]one two", "three four", "five six"));
+            press(editor, ":1,3normal Ax<CR>");
+            expect(getLines(editor)).toBe("one twox|three fourx|five sixx");
+            expect(getCursor(editor)).toBe("2:8");
+            press(editor, "u:1,3s/ /\\n/g<CR>");
+            expect(getLines(editor)).toBe("one|two|three|four|five|six");
+            const [ line, ch ] = getCursor(editor).split(":").map(Number);
+            expect(ch).toBeLessThan(getAdapter(editor).getLine(line).length);
         });
 
         it("runs the commands of Trilium through the host", async () => {

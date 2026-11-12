@@ -4,7 +4,7 @@ import {
 } from "ckeditor5";
 
 import HiddenBlocks from "../hidden_blocks.js";
-import type { LineIndex, LinePosition, TextLine } from "./vim_lines.js";
+import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
 
 /** The attributes whose boundary the caret steps over in two presses, as at the end of a link. */
 const TWO_STEP_ATTRIBUTES = [ "linkHref", "code" ];
@@ -65,8 +65,13 @@ export function removeLines(editor: Editor, index: LineIndex, first: number, las
             removal.element = getRemovalUnit(model.schema, removal.element, removedElements);
         }
     }
+    const lifts = getNestedItemLifts(removedElements);
 
     model.change((writer) => {
+        for (const [ block, levels ] of lifts) {
+            writer.setAttribute("listIndent", Number(block.getAttribute("listIndent")) - levels,
+                block);
+        }
         for (const removal of removals.reverse()) {
             if (!("element" in removal)) {
                 writer.remove(removal.range);
@@ -99,6 +104,41 @@ function getRemovalUnit(
 function isRemovedWhole(element: ModelElement, removed: Set<ModelElement>): boolean {
     return removed.has(element) || (element.childCount > 0 && [ ...element.getChildren() ]
         .every((child) => child.is("element") && isRemovedWhole(child, removed)));
+}
+
+/**
+ * The levels that the nested items of the list items in `removed` move up: one for each removed
+ * item they are nested in.
+ */
+function getNestedItemLifts(removed: Set<ModelElement>): Map<ModelElement, number> {
+    const lifts = new Map<ModelElement, number>();
+    for (const block of removed) {
+        if (!block.hasAttribute("listItemId") || !isWholeItem(block, removed)) {
+            continue;
+        }
+        const indent = Number(block.getAttribute("listIndent"));
+        for (let next = block.nextSibling; next?.is("element")
+            && Number(next.getAttribute("listIndent") ?? -1) > indent; next = next.nextSibling) {
+            if (!removed.has(next)) {
+                lifts.set(next, (lifts.get(next) ?? 0) + 1);
+            }
+        }
+    }
+    return lifts;
+}
+
+/** Whether `removed` holds every block of the list item of `block`. */
+function isWholeItem(block: ModelElement, removed: Set<ModelElement>): boolean {
+    const id = block.getAttribute("listItemId");
+    for (const direction of [ "previousSibling", "nextSibling" ] as const) {
+        for (let sibling = block[direction]; sibling?.is("element")
+            && sibling.getAttribute("listItemId") === id; sibling = sibling[direction]) {
+            if (!removed.has(sibling)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 /**
@@ -171,6 +211,92 @@ export function replaceText(
     return end;
 }
 
+/**
+ * Writes `text` over `oldText`, the text from `from`, which has as many lines: each line changes
+ * in its own block, and a changed character keeps the formatting of the character it replaces.
+ */
+export function rewriteLines(
+    editor: Editor, index: LineIndex, from: LinePosition, oldText: string, text: string
+) {
+    const oldLines = oldText.split("\n");
+    const lines = text.split("\n");
+    editor.model.change((writer) => {
+        for (let line = lines.length - 1; line >= 0; line--) {
+            const start = line ? 0 : from.ch;
+            rewriteLine(editor, writer, index, from.line + line, start, oldLines[line],
+                lines[line]);
+        }
+    });
+}
+
+function rewriteLine(
+    editor: Editor, writer: ModelWriter, index: LineIndex, line: number, start: number,
+    oldText: string, text: string
+) {
+    const rangeOf = (from: number, to: number) => writer.createRange(
+        index.positionAt(line, start + from), index.positionAt(line, start + to));
+    if (oldText === text) {
+        return;
+    }
+    if (oldText.length === text.length) {
+        for (const [ from, to ] of getChangedRuns(oldText, text).reverse()) {
+            rewriteText(writer, rangeOf(from, to), (offset, data) =>
+                text.slice(from + offset, from + offset + data.length));
+        }
+        return;
+    }
+    const changeCase = [ toUpperCase, toLowerCase ].find((change) => change(oldText) === text);
+    if (changeCase) {
+        rewriteText(writer, rangeOf(0, oldText.length), (_offset, data) => changeCase(data));
+    } else {
+        replaceText(editor, rangeOf(0, oldText.length), text, oldText);
+    }
+}
+
+/** The runs of characters that differ between `oldText` and `text`, objects left out. */
+function getChangedRuns(oldText: string, text: string): [ number, number ][] {
+    const runs: [ number, number ][] = [];
+    for (let ch = 0; ch < text.length; ch++) {
+        if (oldText[ch] === text[ch] || oldText[ch] === OBJECT_CHARACTER) {
+            continue;
+        }
+        const last = runs.at(-1);
+        if (last?.[1] === ch) {
+            last[1]++;
+        } else {
+            runs.push([ ch, ch + 1 ]);
+        }
+    }
+    return runs;
+}
+
+/**
+ * Writes the text that `getText` gives for each text node in `range` over it, with the formatting
+ * of that node. `offset` is where the node starts in `range`.
+ */
+function rewriteText(
+    writer: ModelWriter, range: ModelRange, getText: (offset: number, data: string) => string
+) {
+    const nodes = [ ...range.getItems() ].filter((item) => item.is("$textProxy"));
+    for (const node of nodes.reverse()) {
+        const offset = node.startOffset as number;
+        const data = getText(offset - range.start.offset, node.data);
+        if (data !== node.data) {
+            const position = writer.createPositionAt(node.parent as ModelElement, offset);
+            writer.remove(writer.createRange(position, position.getShiftedBy(node.data.length)));
+            writer.insertText(data, node.getAttributes(), position);
+        }
+    }
+}
+
+function toUpperCase(text: string) {
+    return text.toUpperCase();
+}
+
+function toLowerCase(text: string) {
+    return text.toLowerCase();
+}
+
 /** Inserts `lines` at `position`, with a line break between two of them. Returns where they end. */
 function insertLines(
     writer: ModelWriter, position: ModelPosition, lines: string[], attributes: [ string, unknown ][]
@@ -218,6 +344,20 @@ function isOnlyObjects(editor: Editor, range: ModelRange): boolean {
         hasObject = true;
     }
     return hasObject;
+}
+
+/** Gives the text typed at the caret `formatting` and nothing else. */
+export function setTypingFormatting(editor: Editor, formatting: [ string, unknown ][]) {
+    const selection = editor.model.document.selection;
+    const keys = new Set(formatting.map(([ key ]) => key));
+    editor.model.change((writer) => {
+        for (const [ key ] of selection.getAttributes()) {
+            if (!keys.has(key)) {
+                writer.removeSelectionAttribute(key);
+            }
+        }
+        writer.setSelectionAttribute(Object.fromEntries(formatting));
+    });
 }
 
 /** The formatting that text written at the start of `range` gets, as typed text would. */
