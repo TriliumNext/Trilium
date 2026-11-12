@@ -78,6 +78,7 @@ import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multist
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
 import CollapsibleListItems from "./plugins/collapsible_list_items.js";
 import CollapsibleHeadings from "./plugins/collapsible_headings/collapsible_headings.js";
+import HeadingLevelOne from "./plugins/heading_level_one.js";
 import ListItemAlignment from "./plugins/list_item_alignment.js";
 import ListItemInsert from "./plugins/list_item_insert.js";
 import TableIndent from "./plugins/table_indent.js";
@@ -144,6 +145,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     TodoListMultistate,
     CollapsibleListItems,
     CollapsibleHeadings,
+    HeadingLevelOne,
     ListItemAlignment,
     ListItemInsert,
     TableIndent,
