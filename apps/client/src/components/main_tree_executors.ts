@@ -9,6 +9,7 @@ import clipboard from "../services/clipboard.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import noteCreateService from "../services/note_create.js";
+import options from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import treeService from "../services/tree.js";
@@ -156,13 +157,26 @@ export default class MainTreeExecutors extends Component {
     protectSubtreeCommand({ node, noteId }: CommandListenerData<"protectSubtree">) {
         const targetNoteId = noteId ?? node?.data.noteId;
         if (!targetNoteId) return;
-        protectedSessionService.protectNote(targetNoteId, true, true);
+        // Protecting loses nothing, so a running session needs no confirmation.
+        if (protectedSessionHolder.isProtectedSessionAvailable()) {
+            protectedSessionService.protectNote(targetNoteId, true, true);
+            return;
+        }
+        this.#showProtectSubtreeDialog(targetNoteId, true);
     }
 
     unprotectSubtreeCommand({ node, noteId }: CommandListenerData<"unprotectSubtree">) {
         const targetNoteId = noteId ?? node?.data.noteId;
         if (!targetNoteId) return;
-        protectedSessionService.protectNote(targetNoteId, false, true);
+        this.#showProtectSubtreeDialog(targetNoteId, false);
+    }
+
+    #showProtectSubtreeDialog(noteId: string, protect: boolean) {
+        if (!options.is("isPasswordSet")) {
+            this.triggerCommand("showPasswordNotSet");
+            return;
+        }
+        this.triggerCommand("showProtectSubtreeDialog", { noteId, protect });
     }
 
     async duplicateSubtreeCommand({ selectedOrActiveBranchIds }: CommandListenerData<"duplicateSubtree">) {
