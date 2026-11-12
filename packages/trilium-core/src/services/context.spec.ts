@@ -9,15 +9,19 @@ import {
     getComponentId,
     getContext,
     getHoistedNoteId,
+    getUserId,
     ignoreEntityChangeIds,
     init,
+    initAsSystem,
     isEntityEventsDisabled,
     isMigrationRunning,
+    isSystem,
     putEntityChange,
     set,
     setMigrationRunning,
-    wrap
+    wrapAsSystem
 } from "./context.js";
+import { getPlatform } from "./platform.js";
 
 /**
  * The real `ExecutionContext` is installed by `initializeCore` (run once in the
@@ -146,27 +150,53 @@ describe("context", () => {
         });
     });
 
-    describe("wrap", () => {
-        it("returns a thunk that runs the callback inside an init scope", () => {
+    describe("system scopes", () => {
+        it("acts for the instance in a system scope and in the scopes it opens, and for nobody in a plain one", () => {
+            // Standalone has no users, so every scope there acts for the instance.
+            const inPlainScope = getPlatform().isStandalone;
+            expect(init(() => isSystem())).toBe(inPlainScope);
+
+            init(() => {
+                set("userId", "systemSpecMember");
+                expect(isSystem()).toBe(inPlainScope);
+
+                const returned = initAsSystem(() => {
+                    expect(isSystem()).toBe(true);
+                    expect(getUserId()).toBeUndefined();
+                    expect(init(() => isSystem())).toBe(true);
+                    return "system-result";
+                });
+
+                expect(returned).toBe("system-result");
+                expect(isSystem()).toBe(inPlainScope);
+                expect(getUserId()).toBe("systemSpecMember");
+            });
+        });
+    });
+
+    describe("wrapAsSystem", () => {
+        it("returns a thunk that runs the callback inside a system scope", () => {
             const callback = vi.fn(() => {
                 set("wrappedKey", "wrapped-value");
+                return isSystem();
             });
 
-            const thunk = wrap(callback);
+            const thunk = wrapAsSystem(callback);
             expect(callback).not.toHaveBeenCalled();
 
             thunk();
             expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveReturnedWith(true);
         });
 
         it("swallows errors thrown by the callback instead of propagating them", () => {
             const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-            const thunk = wrap(() => {
+            const thunk = wrapAsSystem(() => {
                 throw new Error("boom");
             });
 
-            // wrap catches the error internally; the thunk must not throw.
+            // wrapAsSystem catches the error internally; the thunk must not throw.
             expect(() => thunk()).not.toThrow();
             expect(logSpy).toHaveBeenCalledTimes(1);
             expect(logSpy.mock.calls[0][0]).toContain("boom");

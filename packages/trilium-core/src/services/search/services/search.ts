@@ -207,7 +207,7 @@ function loadNeededInfoFromDatabase() {
     };
     const attachmentContentLengths = getSql().getRows<AttachmentContentLengthsRow>(`
         SELECT
-            ownerId AS noteId,
+            attachments.ownerId AS noteId,
             attachments.blobId,
             LENGTH(content) AS length
         FROM attachments

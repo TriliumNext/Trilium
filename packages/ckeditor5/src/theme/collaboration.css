@@ -1,0 +1,40 @@
+.ck.ck-editor__editable {
+    & .collab-selection {
+        background-color: hsl(var(--collab-hue) 55% 45% / 0.25);
+    }
+
+    & .collab-caret {
+        position: relative;
+        display: inline-block;
+        width: 0;
+        height: 1em;
+        vertical-align: text-bottom;
+        pointer-events: none;
+        user-select: none;
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset-block: -0.1em;
+            inset-inline-start: -1px;
+            border-inline-start: 2px solid hsl(var(--collab-hue) 55% 45%);
+        }
+
+        &::after {
+            content: attr(data-username);
+            position: absolute;
+            inset-block-end: calc(100% + 0.1em);
+            inset-inline-start: -1px;
+            padding: 0 4px;
+            border-radius: 3px 3px 3px 0;
+            background-color: hsl(var(--collab-hue) 55% 45%);
+            color: white;
+            font-size: 11px;
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1.4;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+    }
+}

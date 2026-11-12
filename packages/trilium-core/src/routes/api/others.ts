@@ -1,4 +1,4 @@
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 
 import { RenderMarkdownResponse, ToMarkdownResponse } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";

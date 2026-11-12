@@ -4,7 +4,7 @@ import { existsSync, rmSync } from "fs";
 import http, { type Server } from "http";
 import type { AddressInfo } from "net";
 import request from "supertest";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 
 const readBack = vi.hoisted(() => ({
     error: undefined as Error | undefined,
@@ -25,6 +25,10 @@ vi.mock("fs/promises", async (importOriginal) => {
     };
 });
 
+import { refreshAuth } from "../services/auth.js";
+import config from "../services/config.js";
+import { markAsInternalElectronRequest } from "../services/electron_request.js";
+import sqlInit from "../services/sql_init.js";
 import {
     apiResultHandler,
     asyncRoute,
@@ -343,8 +347,50 @@ describe("internalRoute CLS wiring", () => {
             return { ok: true };
         }, apiResultHandler);
 
+        // The session and the desktop marker come from headers, standing in for express-session
+        // and the `trilium-app://` protocol handler.
+        const fakeSession: express.Handler = (req, _res, next) => {
+            const session = req.headers["x-spec-session"];
+            (req as unknown as { session: unknown }).session = typeof session === "string" ? JSON.parse(session) : undefined;
+            if (req.headers["x-spec-electron"]) {
+                markAsInternalElectronRequest(req);
+            }
+            next();
+        };
+        route("get", "/cls/actor", [fakeSession], () => ({
+            userId: cls.getUserId() ?? null,
+            isSystem: cls.isSystem()
+        }), apiResultHandler);
+
         app = express();
         app.use(router);
+    });
+
+    it("acts for the session's user, for the instance on a trusted request without one, and for nobody otherwise", async () => {
+        const actor = async (headers: Record<string, string>) => {
+            let call = request(app).get("/cls/actor");
+            for (const [name, value] of Object.entries(headers)) {
+                call = call.set(name, value);
+            }
+            return (await call.expect(200)).body;
+        };
+        const session = (value: object) => ({ "x-spec-session": JSON.stringify(value) });
+        // An initialized instance that requires authentication, where only those requests are trusted.
+        const dbSpy = vi.spyOn(sqlInit, "isDbInitialized").mockReturnValue(true);
+        const noAuthentication = config.General.noAuthentication;
+        config.General.noAuthentication = false;
+        refreshAuth();
+        onTestFinished(() => {
+            dbSpy.mockRestore();
+            config.General.noAuthentication = noAuthentication;
+            refreshAuth();
+        });
+
+        expect(await actor(session({ loggedIn: true, userId: "routeSpecUser" })))
+            .toEqual({ userId: "routeSpecUser", isSystem: false });
+        expect(await actor(session({ loggedIn: true, isSyncPeer: true }))).toEqual({ userId: null, isSystem: true });
+        expect(await actor({ "x-spec-electron": "1" })).toEqual({ userId: null, isSystem: true });
+        expect(await actor(session({ loggedIn: true }))).toEqual({ userId: null, isSystem: false });
     });
 
     it("seeds the context from the trilium-* headers", async () => {

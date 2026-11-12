@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 import BNote from "../../becca/entities/bnote";
 import * as cls from "../../services/context";
 import { getSql } from "../../services/sql/index";

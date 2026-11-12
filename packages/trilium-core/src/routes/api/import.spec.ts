@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 import enexImportService from "../../services/import/enex";
 import singleImportService from "../../services/import/single";
 import TaskContext from "../../services/task_context";

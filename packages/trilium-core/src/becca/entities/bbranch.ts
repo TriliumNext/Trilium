@@ -9,6 +9,7 @@ import TaskContext from "../../services/task_context.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
 import { getHoistedNoteId } from "../../services/context";
+import { invalidateNoteVisibility } from "../note_visibility.js";
 import { randomString } from "../../services/utils";
 
 /**
@@ -66,15 +67,16 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
     override init() {
         if (this.branchId) {
-            this.becca.branches[this.branchId] = this;
+            this.becca.allBranches[this.branchId] = this;
         }
 
-        this.becca.childParentToBranch[`${this.noteId}-${this.parentNoteId}`] = this;
+        this.becca.allChildParentToBranch[`${this.noteId}-${this.parentNoteId}`] = this;
+        invalidateNoteVisibility();
 
         const childNote = this.childNote;
 
-        if (!childNote.parentBranches.includes(this)) {
-            childNote.parentBranches.push(this);
+        if (!childNote.allParentBranches.includes(this)) {
+            childNote.allParentBranches.push(this);
         }
 
         if (this.noteId === "root") {
@@ -83,23 +85,29 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
         const parentNote = this.parentNote;
         if (parentNote) {
-            if (!childNote.parents.includes(parentNote)) {
-                childNote.parents.push(parentNote);
+            if (!childNote.allParents.includes(parentNote)) {
+                childNote.allParents.push(parentNote);
             }
 
-            if (!parentNote.children.includes(childNote)) {
-                parentNote.children.push(childNote);
+            if (!parentNote.allChildren.includes(childNote)) {
+                parentNote.allChildren.push(childNote);
             }
         }
     }
 
     get childNote(): BNote {
-        if (!(this.noteId in this.becca.notes)) {
+        // A virtual branch can lead to a note that exists only in a member's view, such as Shared with me.
+        const viewOnly = this.isVirtual && !(this.noteId in this.becca.allNotes) ? this.becca.notes[this.noteId] : undefined;
+        if (viewOnly) {
+            return viewOnly;
+        }
+
+        if (!(this.noteId in this.becca.allNotes)) {
             // entities can come out of order in sync/import, create skeleton which will be filled later
             this.becca.addNote(this.noteId, new BNote({ noteId: this.noteId }));
         }
 
-        return this.becca.notes[this.noteId];
+        return this.becca.allNotes[this.noteId];
     }
 
     getNote(): BNote {
@@ -108,16 +116,17 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
     /** @returns root branch will have undefined parent, all other branches have to have a parent note */
     get parentNote(): BNote | undefined {
-        if (!(this.parentNoteId in this.becca.notes) && this.parentNoteId !== "none") {
+        // A virtual branch can hang below a note that exists only in a member's view, such as Shared with me.
+        if (!(this.parentNoteId in this.becca.allNotes) && this.parentNoteId !== "none" && !this.isVirtual) {
             // entities can come out of order in sync/import, create skeleton which will be filled later
             this.becca.addNote(this.parentNoteId, new BNote({ noteId: this.parentNoteId }));
         }
 
-        return this.becca.notes[this.parentNoteId];
+        return this.becca.allNotes[this.parentNoteId] ?? this.becca.notes[this.parentNoteId];
     }
 
     override get isDeleted() {
-        return this.branchId == undefined || !(this.branchId in this.becca.branches);
+        return this.branchId == undefined || !(this.branchId in this.becca.allBranches);
     }
 
     /**
@@ -152,7 +161,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
         const note = this.getNote();
 
         if (!taskContext.noteDeletionHandlerTriggered) {
-            const parentBranches = note.getParentBranches();
+            const parentBranches = note.allParentBranches;
 
             if (parentBranches.length === 1 && parentBranches[0] === this) {
                 // needs to be run before branches and attributes are deleted and thus attached relations disappear
@@ -166,30 +175,30 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
         this.markAsDeleted(deleteId);
 
-        const notDeletedBranches = note.getStrongParentBranches();
+        // Every branch counts, including those the current scope cannot see: a member who removes
+        // their copy of a shared note leaves the note where its owner keeps it.
+        const notDeletedBranches = note.allParentBranches.filter((branch) => !branch.isWeak);
 
         if (notDeletedBranches.length === 0) {
-            for (const weakBranch of note.getParentBranches()) {
+            for (const weakBranch of note.allParentBranches) {
                 weakBranch.markAsDeleted(deleteId);
             }
 
-            for (const childBranch of note.getChildBranches()) {
-                if (childBranch) {
-                    childBranch.deleteBranch(deleteId, taskContext);
-                }
+            for (const childBranch of note.getAllChildBranches()) {
+                childBranch.deleteBranch(deleteId, taskContext);
             }
 
             // first delete children and then parent - this will show up better in recent changes
 
             getLog().info(`Deleting note '${note.noteId}'`);
 
-            this.becca.notes[note.noteId].isBeingDeleted = true;
+            this.becca.allNotes[note.noteId].isBeingDeleted = true;
 
             for (const attribute of note.getOwnedAttributes().slice()) {
                 attribute.markAsDeleted(deleteId);
             }
 
-            for (const relation of note.getTargetRelations()) {
+            for (const relation of note.allTargetRelations) {
                 relation.markAsDeleted(deleteId);
             }
 
@@ -226,11 +235,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             let maxNotePos = 0;
 
             if (this.parentNote) {
-                for (const childBranch of this.parentNote.getChildBranches()) {
-                    if (!childBranch) {
-                        continue;
-                    }
-
+                for (const childBranch of this.parentNote.getAllChildBranches()) {
                     if (
                         maxNotePos < childBranch.notePosition &&
                         childBranch.noteId !== "_hidden" // hidden has a very large notePosition to always stay last
@@ -255,7 +260,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
         super.beforeSaving();
 
-        this.becca.branches[this.branchId] = this;
+        this.becca.allBranches[this.branchId] = this;
     }
 
     getPojo() {

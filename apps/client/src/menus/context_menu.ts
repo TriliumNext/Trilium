@@ -1,7 +1,7 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import clsx from "clsx";
-import { h, JSX, render } from "preact";
+import { type ComponentChildren, h, JSX, render } from "preact";
 
 import note_tooltip from "../services/note_tooltip.js";
 import type { NotePresetId } from "../services/note_presets.js";
@@ -101,6 +101,8 @@ export interface MenuCommandItem<T> {
      * If not set, no icon is displayed and the item will appear shifted slightly to the left if there are other items with icons. To avoid this, use `bx bx-empty`.
      */
     uiIcon?: string;
+    /** An element drawn in the icon's slot in place of {@link uiIcon}, such as a user's avatar. */
+    leading?: ComponentChildren;
     /**
      * A smaller icon set over the bottom corner of {@link uiIcon}, which tells apart items that
      * share one. Drawn in a row of actions only.

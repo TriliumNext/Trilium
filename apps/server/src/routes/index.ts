@@ -1,10 +1,11 @@
-import { BootstrapDefinition } from "@triliumnext/commons";
-import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init } from "@triliumnext/core";
+import type { BootstrapDefinition, CurrentUser } from "@triliumnext/commons";
+import { attributes, BNote, getSharedBootstrapItems, options as optionService, password as passwordService, sql_init, user_homes, user_service } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
 import appPath from "../services/app_path.js";
 import assetPath from "../services/asset_path.js";
+import { isSignedIn } from "../services/auth.js";
 import config from "../services/config.js";
 import { getLog } from "@triliumnext/core";
 import { isInternalElectronRequest } from "../services/electron_request.js";
@@ -107,7 +108,7 @@ export function bootstrap(req: Request, res: Response) {
         return;
     }
 
-    if (!isElectronRenderer && !noAuthentication && !req.session.loggedIn) {
+    if (!isElectronRenderer && !noAuthentication && !isSignedIn(req.session)) {
         // Pre-auth window: a password is set but the user hasn't logged in. Skipped only
         // for the trusted desktop renderer, which doesn't gate on a web session; a browser
         // reaching the desktop's HTTP listener still logs in here. Serve a minimal payload
@@ -135,6 +136,7 @@ export function bootstrap(req: Request, res: Response) {
                 ssoIssuerName: openID.getSSOIssuerName(),
                 ssoIssuerIcon: openID.getSSOIssuerIcon(),
                 totpEnabled: totp.isTotpEnabled(),
+                usernameEnabled: user_service.hasUsersWithOwnPassword(),
                 ssoError,
                 ssoConnectionFailed
             },
@@ -182,8 +184,14 @@ export function bootstrap(req: Request, res: Response) {
             && isElectronRenderer
             && (supportsBackgroundMaterial || isMac)
             && !nativeTitleBarVisible,
-        isMainWindow: view === "mobile" ? true : !req.query.extraWindow
+        isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        currentUser: getCurrentUser(req.session.userId)
     } satisfies BootstrapDefinition);
+}
+
+function getCurrentUser(userId: string | undefined): CurrentUser | undefined {
+    const user = user_service.getSignedInUser(userId);
+    return user && userId ? { ...user, homeNoteId: user_homes.getTopLevelHomeNoteId(userId) } : user;
 }
 
 export function getView(req: Request): View {

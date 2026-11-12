@@ -33,7 +33,8 @@ function registerTool(server: McpServer, name: string, def: ToolDefinition, tool
         inputSchema: def.inputSchema,
         annotations: toolHints ? annotations : undefined
     }, (args: any): CallToolResult => {
-        const result = cls.init(() => {
+        // The MCP endpoint authenticates with an ETAPI token, which is not tied to a user.
+        const result = cls.initAsSystem(() => {
             cls.set("componentId", "mcp");
 
             return def.mutates

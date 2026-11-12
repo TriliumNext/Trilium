@@ -5,7 +5,7 @@ import { getLog } from "./log";
 import { getBackup } from "./backup";
 import optionService from "./options";
 import eventService from "./events";
-import { getContext } from "./context";
+import { initAsSystem } from "./context";
 import config from "./config";
 import BNote from "../becca/entities/bnote";
 import BBranch from "../becca/entities/bbranch";
@@ -14,6 +14,9 @@ import TaskContext from "./task_context";
 import BOption from "../becca/entities/boption";
 import migrationService from "./migration";
 import passwordService from "./encryption/password";
+import dateUtils from "./utils/date";
+import { newEntityId } from "./utils/index";
+import { SqlService } from "./sql/sql";
 import { isSetupRequested, leaveSetupMode } from "./setup_mode";
 
 export const dbReady = deferred<void>();
@@ -53,6 +56,63 @@ function isDbInitialized() {
     }
 }
 
+function tryExecute(sql: SqlService, query: string, params: unknown[], label: string) {
+    try {
+        sql.execute(query, params);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("no such table") || msg.includes("no such column")) {
+            return; // expected in minimal test fixtures
+        }
+        getLog().error(`seedAdminUser: unexpected error during ${label}: ${msg}`);
+    }
+}
+
+function seedAdminUser(sql: SqlService) {
+    const now = dateUtils.utcNowDateTime();
+
+    let adminUserId = sql.getValue<string | null>(
+        "SELECT userId FROM users WHERE isAdmin = 1 AND isDeleted = 0 LIMIT 1"
+    );
+
+    if (!adminUserId) {
+        adminUserId = newEntityId();
+        // OR IGNORE: a non-admin user named "admin" would conflict with the partial unique index.
+        sql.execute(
+            `INSERT OR IGNORE INTO users (userId, username, email, isAdmin, isDeleted, dateCreated, utcDateModified)
+             VALUES (?, 'admin', NULL, 1, 0, ?, ?)`,
+            [adminUserId, now, now]
+        );
+
+        const inserted = sql.getValue<string | null>(
+            "SELECT userId FROM users WHERE userId = ?", [adminUserId]
+        );
+        if (!inserted) {
+            // Insert was skipped; promote the existing "admin" username to admin role.
+            const existingId = sql.getValue<string | null>(
+                "SELECT userId FROM users WHERE username = 'admin' AND isDeleted = 0"
+            );
+            if (existingId) {
+                getLog().info("seedAdminUser: promoting existing 'admin' user to admin role.");
+                sql.execute(`UPDATE users SET isAdmin = 1, utcDateModified = ? WHERE userId = ?`, [now, existingId]);
+                adminUserId = existingId;
+            } else {
+                getLog().error("seedAdminUser: could not insert or find an admin user.");
+                return;
+            }
+        }
+    }
+
+    tryExecute(sql, `UPDATE notes          SET ownerId = ? WHERE ownerId IS NULL`, [adminUserId], "notes backfill");
+    tryExecute(sql, `UPDATE etapi_tokens   SET userId  = ? WHERE userId  IS NULL`, [adminUserId], "etapi_tokens backfill");
+    tryExecute(sql, `UPDATE entity_changes SET userId  = ? WHERE userId  IS NULL`, [adminUserId], "entity_changes backfill");
+
+    sql.execute(
+        `INSERT OR REPLACE INTO options (name, value, isSynced, utcDateModified) VALUES ('adminUserId', ?, 0, ?)`,
+        [adminUserId, now]
+    );
+}
+
 async function initDbConnection() {
     if (!isDbInitialized()) {
         return;
@@ -63,32 +123,19 @@ async function initDbConnection() {
     const sql = getSql();
     sql.execute('CREATE TEMP TABLE IF NOT EXISTS "param_list" (`paramId` TEXT NOT NULL PRIMARY KEY)');
 
-    sql.execute(`
-    CREATE TABLE IF NOT EXISTS "user_data"
-    (
-        tmpID INT,
-        username TEXT,
-        email TEXT,
-        userIDEncryptedDataKey TEXT,
-        userIDVerificationHash TEXT,
-        salt TEXT,
-        derivedKey TEXT,
-        isSetup TEXT DEFAULT "false",
-        UNIQUE (tmpID),
-        PRIMARY KEY (tmpID)
-    );`);
+    seedAdminUser(sql);
 
     dbReady.resolve();
 }
 
-function setDbAsInitialized() {
+async function setDbAsInitialized() {
     // A database is being brought up, so whatever asked for setup has had its answer.
     leaveSetupMode();
 
     if (!isDbInitialized()) {
         optionService.setOption("initialized", "true");
 
-        initDbConnection();
+        await initDbConnection();
 
         // Emit an event to notify that the database is now initialized
         eventService.emit(eventService.DB_INITIALIZED);
@@ -115,7 +162,7 @@ function optimize() {
 }
 
 function initializeDb() {
-    getContext().init(initDbConnection);
+    initAsSystem(initDbConnection);
 
     dbReady.then(() => {
         getBackup().scheduleBackups();
@@ -196,7 +243,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // Check hidden subtree.
     // This ensures the existence of system templates, for the demo content.
     console.log("Checking hidden subtree at first start.");
-    getContext().init(() => {
+    initAsSystem(() => {
         getSql().transactional(() => hidden_subtree.checkHiddenSubtree());
     });
 
@@ -240,7 +287,7 @@ async function createInitialDatabase(skipDemoDb?: boolean, locale?: string) {
     // the process, and the window that opens next comes up as the wizard all over again.
     leaveSetupMode();
 
-    initDbConnection();
+    await initDbConnection();
 
     // `initNotSyncedOptions(true, ...)` above already set the "initialized"
     // option, so `setDbAsInitialized` would short-circuit on its
@@ -322,4 +369,4 @@ function wipePartialSchema() {
     }
 }
 
-export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase };
+export default { isDbInitialized, createDatabaseForSync, setDbAsInitialized, schemaExists, getDbSize, initDbConnection, dbReady, initializeDb, createInitialDatabase, seedAdminUser };

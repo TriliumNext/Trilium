@@ -1,11 +1,10 @@
-import { ForbiddenError, password as passwordService, ValidationError } from "@triliumnext/core";
+import { ForbiddenError, getLog, password as passwordService, user_service, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
 import rateLimit from "express-rate-limit";
 
 import { verifyLoginCredentials } from "../services/auth.js";
 import { isInternalElectronRequest } from "../services/electron_request.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
-import { getLog } from "@triliumnext/core";
 import openID from '../services/open_id.js';
 import totp from '../services/totp.js';
 import { isElectron } from "../services/utils.js";
@@ -74,6 +73,9 @@ async function setPassword(req: Request, res: Response) {
  *             required:
  *               - password
  *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Empty, or the primary admin's username, signs in with the instance password.
  *               password:
  *                 type: string
  *               totpToken:
@@ -90,13 +92,29 @@ async function login(req: Request, res: Response) {
         return;
     }
 
+    const submittedUsername = typeof req.body.username === "string" ? req.body.username.trim() : "";
     const submittedPassword = req.body.password;
     const submittedTotpToken = req.body.totpToken;
 
-    const failedFactor = await verifyLoginCredentials(submittedPassword, submittedTotpToken);
-    if (failedFactor) {
-        sendLoginError(req, res, failedFactor);
-        return;
+    let userId: string;
+    if (isPrimaryAdminLogin(submittedUsername)) {
+        const failedFactor = await verifyLoginCredentials(submittedPassword, submittedTotpToken);
+        if (failedFactor) {
+            sendLoginError(req, res, failedFactor);
+            return;
+        }
+        userId = user_service.getAdminUserId();
+    } else {
+        // Users other than the primary admin have no second factor yet: the instance's TOTP is the
+        // admin's own device.
+        const user = typeof submittedPassword === "string"
+            ? await user_service.verifyUserPassword(submittedUsername, submittedPassword)
+            : null;
+        if (!user) {
+            sendLoginError(req, res, "password");
+            return;
+        }
+        userId = user.userId;
     }
 
     const rememberMe = req.body.rememberMe;
@@ -115,11 +133,25 @@ async function login(req: Request, res: Response) {
         };
 
         req.session.loggedIn = true;
+        req.session.userId = userId;
+
         // The client submits via fetch (following this redirect, which applies the new
         // session cookie) and then navigates to the app. The 302 also keeps the login
         // rate limiter skipping successful attempts (it only counts >= 400 responses).
         res.redirect('.');
     });
+}
+
+/**
+ * Whether a login is the primary admin's, who signs in with the instance password: their username,
+ * or no username while no other user has a password and the screen asks for none.
+ */
+function isPrimaryAdminLogin(username: string) {
+    if (!username) {
+        return !user_service.hasUsersWithOwnPassword();
+    }
+
+    return user_service.getUserById(user_service.getAdminUserId())?.username === username;
 }
 
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {

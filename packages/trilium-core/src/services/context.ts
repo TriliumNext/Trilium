@@ -1,5 +1,7 @@
 import { EntityChange } from "@triliumnext/commons";
 
+import { getPlatform } from "./platform.js";
+
 export interface ExecutionContext {
     init<T>(fn: () => T): T;
     get<T = any>(key: string): T | undefined;
@@ -19,10 +21,11 @@ export function getContext(): ExecutionContext {
     return ctx;
 }
 
-export function wrap(callback: (...args: any[]) => any) {
+/** Returns a thunk that runs `callback` in a system scope and logs what it throws, for a timer or a desktop menu action. */
+export function wrapAsSystem(callback: (...args: any[]) => any) {
     return () => {
         try {
-            getContext().init(callback);
+            initAsSystem(callback);
         } catch (e: any) {
             console.log(`Error occurred: ${e.message}: ${e.stack}`);
         }
@@ -51,6 +54,31 @@ export function getHoistedNoteId() {
 
 export function getComponentId() {
     return getContext().get("componentId");
+}
+
+export function getUserId(): string | undefined {
+    return getContext().get<string>("userId");
+}
+
+/**
+ * Runs `callback` in a new scope that acts for the instance itself rather than for a user: startup,
+ * timers, a sync peer, the desktop app. Scopes it opens inherit that, and a `userId` copied from an
+ * enclosing scope is dropped.
+ */
+export function initAsSystem<T>(callback: () => T): T {
+    return getContext().init(() => {
+        getContext().set("isSystem", true);
+        getContext().set("userId", undefined);
+        return callback();
+    });
+}
+
+/**
+ * Whether the scope acts for the instance itself, so that no user's access applies. A scope without
+ * a user is not a system scope unless it was opened as one, except on standalone, which has no users.
+ */
+export function isSystem(): boolean {
+    return getPlatform().isStandalone || !!getContext().get("isSystem");
 }
 
 export function isEntityEventsDisabled() {

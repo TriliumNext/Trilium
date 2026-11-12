@@ -1,4 +1,4 @@
-import { cls, options } from "@triliumnext/core";
+import { cls, options, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import { Application } from "express";
 import supertest from "supertest";
 import { generateConfig, Totp } from "time2fa";
@@ -20,13 +20,26 @@ describe("etapi/auth/login", () => {
         app = await buildApp();
     });
 
-    it("issues a token for the correct password", async () => {
-        const response = await supertest(app)
-            .post(LOGIN_URL)
-            .send({ password: CORRECT_PASSWORD, tokenName: "test" })
-            .expect(201);
+    it("issues a token for the correct password, checked by the instance itself", async () => {
+        const verifiedAsSystem: boolean[] = [];
+        const verifyPassword = passwordEncryptionService.verifyPassword;
+        const spy = vi.spyOn(passwordEncryptionService, "verifyPassword").mockImplementation((password) => {
+            verifiedAsSystem.push(cls.isSystem());
+            return verifyPassword(password);
+        });
 
-        expect(response.body.authToken).toBeTruthy();
+        try {
+            const response = await supertest(app)
+                .post(LOGIN_URL)
+                .send({ password: CORRECT_PASSWORD, tokenName: "test" })
+                .expect(201);
+
+            expect(response.body.authToken).toBeTruthy();
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(verifiedAsSystem).toEqual([ true ]);
     });
 
     it("answers 500 and issues no token when the credential check itself fails", async () => {

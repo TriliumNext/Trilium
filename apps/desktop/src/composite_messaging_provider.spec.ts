@@ -20,6 +20,7 @@ function makeFakeLeg() {
         dispose: vi.fn(),
         attachToHttpServer: vi.fn(),
         disconnectAllClients: vi.fn(),
+        disconnectUserClients: vi.fn(),
         /** Simulate an inbound message arriving on this transport. */
         emit(id: string, message: unknown) { void handler?.(id, message); }
     };
@@ -106,8 +107,11 @@ describe("CompositeMessagingProvider", () => {
         const { ipc, ws, composite } = build();
 
         composite.disconnectAllClients("restarting");
+        composite.disconnectUserClients("user1", "deleted");
 
         expect(ws.disconnectAllClients).toHaveBeenCalledWith("restarting");
         expect(ipc.disconnectAllClients).not.toHaveBeenCalled();
+        expect(ws.disconnectUserClients).toHaveBeenCalledWith("user1", "deleted");
+        expect(ipc.disconnectUserClients).not.toHaveBeenCalled();
     });
 });

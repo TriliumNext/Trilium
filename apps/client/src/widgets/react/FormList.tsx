@@ -143,6 +143,8 @@ export interface FormListItemOpts {
     iconSvg?: string;
     /** Extra class for the icon itself, e.g. to hang a marker off its corner. */
     iconClassName?: string;
+    /** An element drawn in the icon's slot in place of {@link icon}, such as a user's avatar. */
+    leading?: ComponentChildren;
     value?: string;
     title?: string;
     active?: boolean;
@@ -201,7 +203,7 @@ const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
 };
 
 export function FormListItem({
-    className, icon, iconSvg, iconClassName, value, title, active, disabled, checked, checkable,
+    className, icon, iconSvg, iconClassName, leading, value, title, active, disabled, checked, checkable,
     container, onClick, onMiddleClick, onContextMenu, selected, rtl, description,
     itemRef: externalItemRef, keyboardShortcut, shortcut, trailingText, trailingIcon, closeOnSelect,
     ...contentProps
@@ -240,7 +242,7 @@ export function FormListItem({
         if (!disabled) menu.setActive(level, id);
     }
 
-    const hasOwnIcon = !!iconSvg || (!!icon && icon !== EMPTY_ICON);
+    const hasOwnIcon = !!leading || !!iconSvg || (!!icon && icon !== EMPTY_ICON);
     if (checked) {
         if (hasOwnIcon) trailingIcon ??= CHECK_ICON;
         else icon = CHECK_ICON;
@@ -292,9 +294,9 @@ export function FormListItem({
         >
             {/* One classless span holds the row, as the rows of a menu are laid out. */}
             <span>
-                {iconSvg
+                {leading ?? (iconSvg
                     ? <SvgIcon svg={iconSvg} className={iconClassName} />
-                    : icon === null ? <span /> : <Icon icon={icon} className={iconClassName} />}
+                    : icon === null ? <span /> : <Icon icon={icon} className={iconClassName} />)}
                 {/* An element, not spaces: in a flex row, text merges with a plain title but is
                     trimmed before one boxed by `menuName()`, indenting the two kinds of row apart. */}
                 <span className="tn-menu-gap" />
@@ -911,9 +913,15 @@ export function FormListCustomItem({ children }: { children: ComponentChildren }
                     : undefined);
             }}
             // Only a click on what the row acts with closes the menu: one in the space around it,
-            // such as between the color picker's cells, picks nothing.
+            // such as between the color picker's cells, picks nothing, so it stops here before
+            // `Dropdown` closes its popup for a click inside.
             onClick={(e) => {
-                if (menu && actsOnClick(e.target, e.currentTarget)) menu.close();
+                if (!menu) return;
+                if (actsOnClick(e.target, e.currentTarget)) {
+                    menu.close();
+                } else {
+                    e.stopPropagation();
+                }
             }}
         >
             {children}

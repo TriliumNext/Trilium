@@ -6,6 +6,7 @@ import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
+import { invalidateNoteVisibility } from "./note_visibility.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import BAttribute from "./entities/battribute.js";
 import BBranch from "./entities/bbranch.js";
@@ -13,7 +14,7 @@ import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import { getSql } from "../services/sql";
-import { getContext } from "../services/context.js";
+import { initAsSystem } from "../services/context.js";
 import dateUtils from "../services/utils/date.js";
 import { getVirtualNoteProviders, type VirtualNoteProvider, type VirtualSubtreeItem } from "../services/virtual_notes.js";
 
@@ -22,13 +23,25 @@ export const beccaLoaded = new Promise<void>(async (res, rej) => {
     const { initStartupOptions } = await import("../services/options_init.js");
 
     dbReady.then(() => {
-        getContext().init(() => {
-            load();
-            getSql().transactional(() => initStartupOptions());
-            res();
-        });
+        loadAtStartup(initStartupOptions);
+        res();
     });
 });
+
+/** Loads becca and applies the startup options, as the instance, once the database is ready. */
+export function loadAtStartup(initStartupOptions: () => void) {
+    initAsSystem(() => {
+        load();
+        getSql().transactional(() => initStartupOptions());
+    });
+}
+
+function notesHasOwnerIdColumn(): boolean {
+    const cols = getSql().getColumn<string>(
+        "SELECT name FROM pragma_table_info('notes')"
+    );
+    return cols.includes("ownerId");
+}
 
 function load() {
     const start = Date.now();
@@ -41,8 +54,12 @@ function load() {
         // an object per row, and in one bulk read rather than a column at a time. Both
         // matter here: the load happens every run and blocks the app until it finishes.
 
+        // ownerId was added in migration 239; during the migration chain from older DBs the column
+        // may not exist yet. Detect at runtime so old JS migration modules (like 0220) can still call
+        // load() without crashing.
+        const noteColumns = notesHasOwnerIdColumn() ? [...NOTE_COLUMNS, "ownerId"] : NOTE_COLUMNS;
         const notesFrom = /*sql*/`FROM notes WHERE isDeleted = 0`;
-        for (const row of sql.getRawRowsBulk(NOTE_COLUMNS, notesFrom)) {
+        for (const row of sql.getRawRowsBulk(noteColumns, notesFrom)) {
             new BNote().update(row).init();
         }
 
@@ -73,8 +90,8 @@ function load() {
 
     injectVirtualSubtrees();
 
-    for (const noteId in becca.notes) {
-        becca.notes[noteId].sortParents();
+    for (const noteId in becca.allNotes) {
+        becca.allNotes[noteId].sortParents();
     }
 
     becca.loaded = true;
@@ -106,7 +123,7 @@ function injectVirtualSubtrees() {
     let injectedAny = false;
 
     for (const provider of getVirtualNoteProviders()) {
-        if (!(provider.parentNoteId in becca.notes)) {
+        if (!(provider.parentNoteId in becca.allNotes)) {
             // E.g. the first load during initial database creation, which happens before the
             // hidden subtree exists; the post-dbReady load will inject.
             log.info(`Virtual note provider '${provider.namespace}': anchor note '${provider.parentNoteId}' not present, skipping injection.`);
@@ -119,9 +136,9 @@ function injectVirtualSubtrees() {
 
             // Sort the injected roots after the anchor's persisted children so their
             // notePositions don't collide.
-            const basePosition = becca.notes[provider.parentNoteId]
-                .getChildBranches()
-                .reduce((max, childBranch) => Math.max(max, childBranch?.notePosition ?? 0), 0);
+            const basePosition = becca.allNotes[provider.parentNoteId]
+                .getAllChildBranches()
+                .reduce((max, childBranch) => Math.max(max, childBranch.notePosition), 0);
 
             // Set before injecting: should injection throw mid-subtree, the already-injected
             // notes still need the target-relation backfill below.
@@ -154,7 +171,7 @@ function validateVirtualSubtree(provider: VirtualNoteProvider, items: VirtualSub
 }
 
 function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, item: VirtualSubtreeItem, defaultPosition: number) {
-    let note = becca.notes[item.id];
+    let note = becca.allNotes[item.id];
 
     if (note && !note.isVirtual && note.type !== undefined) {
         // A persisted note still occupies this ID (e.g. rows predating the migration that
@@ -196,7 +213,7 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
 
     const branchId = `${parentNoteId}_${item.id}`;
 
-    if (!becca.branches[branchId]) {
+    if (!becca.allBranches[branchId]) {
         const branch = new BBranch({
             branchId,
             noteId: item.id,
@@ -220,7 +237,7 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
         // pathological names (e.g. "x" colliding with an explicit "x_1") cannot overwrite.
         const baseAttributeId = `v_${item.id}_${def.type.charAt(0)}${def.name}`;
         let attributeId = baseAttributeId;
-        for (let suffix = 1; becca.attributes[attributeId]; suffix++) {
+        for (let suffix = 1; becca.allAttributes[attributeId]; suffix++) {
             attributeId = `${baseAttributeId}_${suffix}`;
         }
 
@@ -248,17 +265,17 @@ function injectVirtualItem(provider: VirtualNoteProvider, parentNoteId: string, 
  * injection fixes both.
  */
 function backfillVirtualTargetRelations() {
-    for (const attributeId in becca.attributes) {
-        const attribute = becca.attributes[attributeId];
+    for (const attributeId in becca.allAttributes) {
+        const attribute = becca.allAttributes[attributeId];
 
         if (attribute.type !== "relation" || !attribute.value) {
             continue;
         }
 
-        const targetNote = becca.notes[attribute.value];
+        const targetNote = becca.allNotes[attribute.value];
 
-        if (targetNote?.isVirtual && !targetNote.targetRelations.includes(attribute)) {
-            targetNote.targetRelations.push(attribute);
+        if (targetNote?.isVirtual && !targetNote.allTargetRelations.includes(attribute)) {
+            targetNote.allTargetRelations.push(attribute);
         }
     }
 }
@@ -336,38 +353,40 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_DELETED, eventService.ENT
 });
 
 function noteDeleted(noteId: string) {
-    delete becca.notes[noteId];
+    delete becca.allNotes[noteId];
 
     becca.dirtyNoteSetCache();
+    invalidateNoteVisibility();
 }
 
 function branchDeleted(branchId: string) {
-    const branch = becca.branches[branchId];
+    const branch = becca.allBranches[branchId];
 
     if (!branch) {
         return;
     }
 
-    const childNote = becca.notes[branch.noteId];
+    const childNote = becca.allNotes[branch.noteId];
 
     if (childNote) {
-        childNote.parents = childNote.parents.filter((parent) => parent.noteId !== branch.parentNoteId);
-        childNote.parentBranches = childNote.parentBranches.filter((parentBranch) => parentBranch.branchId !== branch.branchId);
+        childNote.allParents = childNote.allParents.filter((parent) => parent.noteId !== branch.parentNoteId);
+        childNote.allParentBranches = childNote.allParentBranches.filter((parentBranch) => parentBranch.branchId !== branch.branchId);
 
-        if (childNote.parents.length > 0) {
+        if (childNote.allParents.length > 0) {
             // subtree notes might lose some inherited attributes
             childNote.invalidateSubTree();
         }
     }
 
-    const parentNote = becca.notes[branch.parentNoteId];
+    const parentNote = becca.allNotes[branch.parentNoteId];
 
     if (parentNote) {
-        parentNote.children = parentNote.children.filter((child) => child.noteId !== branch.noteId);
+        parentNote.allChildren = parentNote.allChildren.filter((child) => child.noteId !== branch.noteId);
     }
 
-    delete becca.childParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
-    delete becca.branches[branchId];
+    delete becca.allChildParentToBranch[`${branch.noteId}-${branch.parentNoteId}`];
+    invalidateNoteVisibility();
+    delete becca.allBranches[branchId];
 
     dropOrphanedSkeleton(childNote);
     dropOrphanedSkeleton(parentNote);
@@ -378,14 +397,14 @@ function branchDeleted(branchId: string) {
  * row can no longer arrive when the note was erased before becca was loaded.
  */
 function dropOrphanedSkeleton(note: BNote | undefined) {
-    if (note && note.title === undefined && !note.parentBranches.length && !note.children.length
+    if (note && note.title === undefined && !note.allParentBranches.length && !note.allChildren.length
         && !note.ownedAttributes.length) {
         noteDeleted(note.noteId);
     }
 }
 
 function noteUpdated(entityRow: NoteRow) {
-    const note = becca.notes[entityRow.noteId];
+    const note = becca.allNotes[entityRow.noteId];
 
     if (note) {
         // TODO, this wouldn't have worked in the original implementation since the variable was named __flatTextCache.
@@ -398,7 +417,7 @@ function noteUpdated(entityRow: NoteRow) {
 }
 
 function branchUpdated(branchRow: BranchRow) {
-    const childNote = becca.notes[branchRow.noteId];
+    const childNote = becca.allNotes[branchRow.noteId];
 
     if (childNote) {
         childNote.__flatTextCache = null;
@@ -409,7 +428,7 @@ function branchUpdated(branchRow: BranchRow) {
         childNote.invalidateSubTree();
     }
 
-    const parentNote = becca.notes[branchRow.parentNoteId];
+    const parentNote = becca.allNotes[branchRow.parentNoteId];
 
     if (parentNote) {
         parentNote.sortChildren();
@@ -417,13 +436,13 @@ function branchUpdated(branchRow: BranchRow) {
 }
 
 function attributeDeleted(attributeId: string) {
-    const attribute = becca.attributes[attributeId];
+    const attribute = becca.allAttributes[attributeId];
 
     if (!attribute) {
         return;
     }
 
-    const note = becca.notes[attribute.noteId];
+    const note = becca.allNotes[attribute.noteId];
 
     if (note) {
         // first invalidate and only then remove the attribute (otherwise invalidation wouldn't be complete)
@@ -435,14 +454,14 @@ function attributeDeleted(attributeId: string) {
 
         note.ownedAttributes = note.ownedAttributes.filter((attr) => attr.attributeId !== attribute.attributeId);
 
-        const targetNote = attribute.targetNote;
+        const targetNote = attribute.type === "relation" ? becca.allNotes[attribute.value] : undefined;
 
         if (targetNote) {
-            targetNote.targetRelations = targetNote.targetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
+            targetNote.allTargetRelations = targetNote.allTargetRelations.filter((rel) => rel.attributeId !== attribute.attributeId);
         }
     }
 
-    delete becca.attributes[attribute.attributeId];
+    delete becca.allAttributes[attribute.attributeId];
 
     const key = `${attribute.type}-${attribute.name.toLowerCase()}`;
 
@@ -452,8 +471,8 @@ function attributeDeleted(attributeId: string) {
 }
 
 function attributeUpdated(attributeRow: BAttribute) {
-    const attribute = becca.attributes[attributeRow.attributeId];
-    const note = becca.notes[attributeRow.noteId];
+    const attribute = becca.allAttributes[attributeRow.attributeId];
+    const note = becca.allNotes[attributeRow.noteId];
 
     if (note) {
         if (attribute.isAffectingSubtree || note.isInherited()) {
@@ -468,7 +487,7 @@ function noteReorderingUpdated(branchIdList: number[]) {
     const parentNoteIds = new Set();
 
     for (const branchId in branchIdList) {
-        const branch = becca.branches[branchId];
+        const branch = becca.allBranches[branchId];
 
         if (branch) {
             branch.notePosition = branchIdList[branchId];

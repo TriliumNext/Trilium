@@ -606,7 +606,7 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
             <FormListItem
                 key={index}
                 icon={item.uiIcon ?? "bx bx-empty"} iconSvg={item.uiIconSvg}
-                iconClassName={item.iconColorClass} description={item.description}
+                iconClassName={item.iconColorClass} leading={item.leading} description={item.description}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
                 className={item.className} closeOnSelect={false}
                 onClick={(e) => onSelect?.(item, e)}
@@ -632,8 +632,8 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     }
 
     const {
-        title, titleIcon, description, tooltip, uiIcon, uiIconSvg, iconColorClass, checked, enabled,
-        badges, className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
+        title, titleIcon, description, tooltip, uiIcon, uiIconSvg, leading, iconColorClass, checked,
+        enabled, badges, className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
         middleClickHandler, contextMenuHandler
     } = row;
     // Callers pass HTML: titles escaped with `escapeHtml()` or boxed by `menuName()`.
@@ -670,7 +670,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
         <FormListItem
             // An item with neither keeps no slot for an icon, as an all-text menu such as spelling fixes needs.
             icon={"uiIcon" in row || "checked" in row ? uiIcon : null} iconSvg={uiIconSvg}
-            iconClassName={iconColorClass} checked={checked} checkable={"checked" in row} disabled={enabled === false}
+            iconClassName={iconColorClass} leading={leading} checked={checked} checkable={"checked" in row} disabled={enabled === false}
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
             keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
             trailingIcon={trailingIcon} closeOnSelect={false}

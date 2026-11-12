@@ -73,24 +73,24 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
 
     override init() {
         if (this.attributeId) {
-            this.becca.attributes[this.attributeId] = this;
+            this.becca.allAttributes[this.attributeId] = this;
         }
 
-        if (!(this.noteId in this.becca.notes)) {
+        if (!(this.noteId in this.becca.allNotes)) {
             // entities can come out of order in sync, create skeleton which will be filled later
             this.becca.addNote(this.noteId, new BNote({ noteId: this.noteId }));
         }
 
-        this.becca.notes[this.noteId].ownedAttributes.push(this);
+        this.becca.allNotes[this.noteId].ownedAttributes.push(this);
 
         const key = `${this.type}-${this.name.toLowerCase()}`;
         this.becca.attributeIndex[key] ??= new Set();
         this.becca.attributeIndex[key].add(this);
 
-        const targetNote = this.targetNote;
+        const targetNote = this.type === "relation" ? this.becca.allNotes[this.value] : undefined;
 
         if (targetNote) {
-            targetNote.targetRelations.push(this);
+            targetNote.allTargetRelations.push(this);
         }
     }
 
@@ -130,7 +130,7 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     get note() {
-        return this.becca.notes[this.noteId];
+        return this.becca.allNotes[this.noteId];
     }
 
     get targetNote() {
@@ -140,7 +140,7 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     getNote() {
-        const note = this.becca.getNote(this.noteId);
+        const note = this.becca.allNotes[this.noteId];
 
         if (!note) {
             throw new Error(`Note '${this.noteId}' of attribute '${this.attributeId}', type '${this.type}', name '${this.name}' does not exist.`);
@@ -180,14 +180,14 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     }
 
     override get isDeleted() {
-        return !(this.attributeId in this.becca.attributes);
+        return !(this.attributeId in this.becca.allAttributes);
     }
 
     override beforeSaving(opts: SavingOpts = {}) {
         // Virtual notes (e.g. the in-app help) are not user-customizable, so no persisted
         // attribute may be attached to them. (Relations *pointing to* virtual notes from
         // regular notes are fine — this guards the owning note only.)
-        if (this.becca.notes[this.noteId]?.isVirtual) {
+        if (this.becca.allNotes[this.noteId]?.isVirtual) {
             throw new Error(`Cannot save attribute '${this.name}' for note '${this.noteId}': attributes of virtual notes cannot be modified.`);
         }
 
@@ -223,7 +223,7 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.normalizedName = normalize(this.name);
         this.normalizedValue = normalize(this.value);
 
-        this.becca.attributes[this.attributeId] = this;
+        this.becca.allAttributes[this.attributeId] = this;
     }
 
     getPojo() {

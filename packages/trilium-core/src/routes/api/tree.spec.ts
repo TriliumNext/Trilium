@@ -3,6 +3,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import permissionService from "../../services/permission_service";
+import userService from "../../services/user_service";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -66,18 +68,34 @@ describe("Tree API (core)", () => {
         getContext().init(() => load());
 
         try {
-            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean }[] }>("/api/tree/load", {
+            const res = await api.post<{ notes: { noteId: string; isContentWritable?: boolean; isVirtual?: boolean }[] }>("/api/tree/load", {
                 body: { noteIds: [ "root", "_vtreePage" ] }
             });
             const byId = new Map(res.body.notes.map((note) => [ note.noteId, note ]));
-            expect(byId.get("_vtreePage")?.isContentWritable).toBe(false);
+            expect(byId.get("_vtreePage")).toMatchObject({ isContentWritable: false, isVirtual: true });
             const root = byId.get("root");
             expect(root).toBeTruthy();
             expect(Object.hasOwn(root ?? {}, "isContentWritable")).toBe(false);
+            expect(Object.hasOwn(root ?? {}, "isVirtual")).toBe(false);
         } finally {
             unregisterVirtualNoteProvider("_vtree");
             getContext().init(() => load());
         }
+    });
+
+    it("names the users with access to a note, and only on that note", async () => {
+        const note = await createTextNote(api, { title: "tree-access-spec" });
+        const userId = getContext().init(() => userService.createUser("tree-access-user", null, false));
+        getContext().init(() => permissionService.setUserAccess(note.noteId, userId, false));
+
+        const res = await api.post<{ notes: { noteId: string; accessUsernames?: string[]; ownerId?: string | null }[] }>("/api/tree/load", {
+            body: { noteIds: [ "root", note.noteId ] }
+        });
+        const byId = new Map(res.body.notes.map((row) => [ row.noteId, row ]));
+        expect(byId.get(note.noteId)?.accessUsernames).toEqual([ "tree-access-user" ]);
+        // The owner tells the client whether the signed-in user can manage the access.
+        expect(byId.get(note.noteId)?.ownerId).toBe(getContext().init(() => userService.getAdminUserId()));
+        expect(Object.hasOwn(byId.get("root") ?? {}, "accessUsernames")).toBe(false);
     });
 
     describe("edge cases", () => {
@@ -127,5 +145,38 @@ describe("Tree API (core)", () => {
             const attrs = res.body.attributes as { attributeId?: string }[];
             expect(attrs.some((a) => a.attributeId === "ghostAttr123")).toBe(false);
         });
+    });
+});
+
+/** Standalone has no users, so every scope there acts for the instance and nothing is filtered. */
+const isBrowserRuntime = typeof self !== "undefined";
+
+describe.skipIf(isBrowserRuntime)("Tree API (core) for a member", () => {
+    let memberId: string;
+    let secretId: string;
+    let sharedId: string;
+
+    beforeAll(async () => {
+        api = CoreApiTester.build();
+        memberId = getContext().init(() => userService.createUser(`tree-member-${Date.now()}`, null, false));
+        secretId = (await createTextNote(api, { title: "tree member secret" })).noteId;
+        sharedId = (await createTextNote(api, { title: "tree member shared" })).noteId;
+        getContext().init(() => permissionService.setUserAccess(sharedId, memberId, false));
+    });
+
+    it("sends a member only the notes they can see, on every way the client loads them", async () => {
+        const session = { userId: memberId };
+        const noteIdsOf = (res: { body: TreeResponse }) => res.body.notes.map((note) => note.noteId);
+
+        const tree = await api.get<TreeResponse>("/api/tree", { session });
+        expect(noteIdsOf(tree)).toContain(sharedId);
+        expect(noteIdsOf(tree)).not.toContain(secretId);
+
+        const loaded = await api.post<TreeResponse>("/api/tree/load", { body: { noteIds: [ secretId, sharedId ] }, session });
+        expect(noteIdsOf(loaded)).toContain(sharedId);
+        expect(noteIdsOf(loaded)).not.toContain(secretId);
+
+        expect((await api.get(`/api/notes/${secretId}`, { session })).status).toBe(404);
+        expect((await api.get(`/api/notes/${sharedId}`, { session })).status).toBe(200);
     });
 });

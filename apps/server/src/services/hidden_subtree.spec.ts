@@ -124,7 +124,7 @@ describe("Hidden Subtree", () => {
 
         it("can restore names in all languages", async () => {
             const done = deferred<void>();
-            cls.wrap(async () => {
+            cls.wrapAsSystem(async () => {
                 for (const locale of LOCALES) {
                     if (locale.contentOnly) {
                         continue;

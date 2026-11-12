@@ -1,6 +1,6 @@
 "use strict";
 
-import becca from "../../becca/becca";
+import becca from "../../becca/becca.js";
 import keyboard_actions from "../../services/keyboard_actions";
 
 function getKeyboardActions() {

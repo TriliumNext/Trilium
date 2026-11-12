@@ -14,6 +14,7 @@ import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 import { getSql } from "../services/sql/index.js";
 import NoteSet from "../services/search/note_set.js";
+import { getNoteView, invalidateNoteVisibility } from "./note_visibility.js";
 
 /**
  * Becca is a backend cache of all notes, branches, and attributes.
@@ -22,10 +23,14 @@ import NoteSet from "../services/search/note_set.js";
 export default class Becca {
     loaded!: boolean;
 
-    notes!: Record<string, BNote>;
-    branches!: Record<string, BBranch>;
-    childParentToBranch!: Record<string, BBranch>;
-    attributes!: Record<string, BAttribute>;
+    /** Every note, whatever the current scope can see; for the Becca's own bookkeeping. */
+    allNotes!: Record<string, BNote>;
+    /** Every branch, whatever the current scope can see; for the Becca's own bookkeeping. */
+    allBranches!: Record<string, BBranch>;
+    /** Every branch by `<noteId>-<parentNoteId>`, whatever the current scope can see. */
+    allChildParentToBranch!: Record<string, BBranch>;
+    /** Every attribute, whatever the current scope can see; for the Becca's own bookkeeping. */
+    allAttributes!: Record<string, BAttribute>;
     /** Points from attribute type-name to its attributes, in insertion order. */
     attributeIndex!: Record<string, Set<BAttribute>>;
     options!: Record<string, BOption>;
@@ -51,16 +56,42 @@ export default class Becca {
         this.reset();
     }
 
+    /** What the current scope's user sees, or `null` when the scope sees every note. */
+    getView() {
+        return getNoteView(this);
+    }
+
+    /** The notes the current scope can see. Writes go to {@link allNotes}. */
+    get notes(): Record<string, BNote> {
+        return getNoteView(this)?.notes ?? this.allNotes;
+    }
+
+    /** The branches the current scope can see, both of whose notes it can see. */
+    get branches(): Record<string, BBranch> {
+        return getNoteView(this)?.branches ?? this.allBranches;
+    }
+
+    /** The branches the current scope can see, by `<noteId>-<parentNoteId>`. */
+    get childParentToBranch(): Record<string, BBranch> {
+        return getNoteView(this)?.childParentToBranch ?? this.allChildParentToBranch;
+    }
+
+    /** The attributes of the notes the current scope can see. */
+    get attributes(): Record<string, BAttribute> {
+        return getNoteView(this)?.attributes ?? this.allAttributes;
+    }
+
     reset() {
-        this.notes = {};
-        this.branches = {};
-        this.childParentToBranch = {};
-        this.attributes = {};
+        this.allNotes = {};
+        this.allBranches = {};
+        this.allChildParentToBranch = {};
+        this.allAttributes = {};
         this.attributeIndex = {};
         this.options = {};
         this.etapiTokens = {};
 
         this.dirtyNoteSetCache();
+        invalidateNoteVisibility();
 
         this.loaded = false;
     }
@@ -77,7 +108,7 @@ export default class Becca {
         }
 
         const key = `${type}-${name}`;
-        return Object.hasOwn(this.attributeIndex, key) ? Array.from(this.attributeIndex[key]) : [];
+        return Object.hasOwn(this.attributeIndex, key) ? this.visibleAttributes(Array.from(this.attributeIndex[key])) : [];
     }
 
     findAttributesWithPrefix(type: string, name: string): BAttribute[] {
@@ -90,18 +121,19 @@ export default class Becca {
             }
         }
 
-        return resArr.flat();
+        return this.visibleAttributes(resArr.flat());
     }
 
     decryptProtectedNotes() {
-        for (const note of Object.values(this.notes)) {
+        for (const note of Object.values(this.allNotes)) {
             note.decrypt();
         }
     }
 
     addNote(noteId: string, note: BNote) {
-        this.notes[noteId] = note;
+        this.allNotes[noteId] = note;
         this.dirtyNoteSetCache();
+        invalidateNoteVisibility();
     }
 
     getNote(noteId: string): BNote | null {
@@ -169,7 +201,7 @@ export default class Becca {
 
     getRevision(revisionId: string): BRevision | null {
         const row = getSql().getRow<RevisionRow | null>("SELECT * FROM revisions WHERE revisionId = ?", [revisionId]);
-        return row ? new BRevision(row) : null;
+        return row && this.canSeeNote(row.noteId) ? new BRevision(row) : null;
     }
 
     getRevisionOrThrow(revisionId: string): BRevision {
@@ -187,7 +219,9 @@ export default class Becca {
             JOIN blobs USING (blobId)
             WHERE attachmentId = ? AND isDeleted = 0`;
 
-        return getSql().getRows<AttachmentRow>(query, [attachmentId]).map((row) => new BAttachment(row))[0];
+        return getSql().getRows<AttachmentRow>(query, [attachmentId])
+            .filter((row) => this.canSeeAttachmentOwner(row.ownerId))
+            .map((row) => new BAttachment(row))[0] ?? null;
     }
 
     getAttachmentOrThrow(attachmentId: string): BAttachment {
@@ -199,7 +233,9 @@ export default class Becca {
     }
 
     getAttachments(attachmentIds: string[]): BAttachment[] {
-        return getSql().getManyRows<AttachmentRow>("SELECT * FROM attachments WHERE attachmentId IN (???) AND isDeleted = 0", attachmentIds).map((row) => new BAttachment(row));
+        return getSql().getManyRows<AttachmentRow>("SELECT * FROM attachments WHERE attachmentId IN (???) AND isDeleted = 0", attachmentIds)
+            .filter((row) => this.canSeeAttachmentOwner(row.ownerId))
+            .map((row) => new BAttachment(row));
     }
 
     getBlob(entity: { blobId?: string }): BBlob | null {
@@ -246,12 +282,12 @@ export default class Becca {
 
     getRecentNotesFromQuery(query: string, params: string[] = []): BRecentNote[] {
         const rows = getSql().getRows<BRecentNote>(query, params);
-        return rows.map((row) => new BRecentNote(row));
+        return rows.filter((row) => this.canSeeNote(row.noteId)).map((row) => new BRecentNote(row));
     }
 
     getRevisionsFromQuery(query: string, params: string[] = []): BRevision[] {
         const rows = getSql().getRows<RevisionRow>(query, params);
-        return rows.map((row) => new BRevision(row));
+        return rows.filter((row) => this.canSeeNote(row.noteId)).map((row) => new BRevision(row));
     }
 
     /** Should be called when the set of all non-skeleton notes changes (added/removed) */
@@ -284,7 +320,7 @@ export default class Becca {
                 ? process.memoryUsage().heapUsed
                 : null;
 
-            const allNoteSet = this.getAllNoteSet();
+            const allNoteSet = this.getUnfilteredNoteSet();
             const notes: BNote[] = [];
             const flatTexts: string[] = [];
             const noteIdToIdx = new Map<string, number>();
@@ -311,7 +347,7 @@ export default class Becca {
             for (const noteId of this.dirtyFlatTextNoteIds) {
                 const idx = noteIdToIdx.get(noteId);
                 if (idx !== undefined) {
-                    const note = this.notes[noteId];
+                    const note = this.allNotes[noteId];
                     if (note) {
                         flatTexts[idx] = note.getFlatText();
                     }
@@ -324,13 +360,39 @@ export default class Becca {
         return this.flatTextIndex;
     }
 
+    /** The note set search starts from, which holds the notes the current scope can see. */
     getAllNoteSet() {
+        const allNoteSet = this.getUnfilteredNoteSet();
+        return getNoteView(this)?.getAllNoteSet(allNoteSet) ?? allNoteSet;
+    }
+
+    /** Whether the current scope can see the note, which an admin or a system scope always can. */
+    canSeeNote(noteId: string) {
+        return getNoteView(this)?.canSeeNote(noteId) ?? true;
+    }
+
+    /** An attachment belongs to a note or to a revision, which the scope can see when it can see the revision's note. */
+    private canSeeAttachmentOwner(ownerId: string) {
+        if (!getNoteView(this) || ownerId in this.allNotes) {
+            return this.canSeeNote(ownerId);
+        }
+
+        const noteId = getSql().getValue<string | null>("SELECT noteId FROM revisions WHERE revisionId = ?", [ ownerId ]);
+        return !!noteId && this.canSeeNote(noteId);
+    }
+
+    private visibleAttributes(attributes: BAttribute[]) {
+        const view = getNoteView(this);
+        return view ? attributes.filter((attribute) => view.canSeeNote(attribute.noteId)) : attributes;
+    }
+
+    private getUnfilteredNoteSet() {
         // caching this since it takes 10s of milliseconds to fill this initial NoteSet for many notes
         if (!this.allNoteSetCache) {
             const allNotes: BNote[] = [];
 
-            for (const noteId in this.notes) {
-                const note = this.notes[noteId];
+            for (const noteId in this.allNotes) {
+                const note = this.allNotes[noteId];
 
                 // in the process of loading data sometimes we create "skeleton" note instances which are expected to be filled later
                 // in case of inconsistent data this might not work and search will then crash on these
@@ -368,4 +430,5 @@ export interface NotePojo {
     dateModified?: string;
     utcDateCreated: string;
     utcDateModified?: string;
+    ownerId?: string | null;
 }

@@ -229,14 +229,14 @@ describe("sync service", () => {
         // timer — NOT via setup.triggerSync(), which is the only other place that sets the flag.
         // If sync() itself doesn't set it on convergence, a resumed initial sync completes but
         // the DB stays uninitialized and the setup screen waits on "finalizing" forever.
-        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
 
         await expect(runSync()).resolves.toEqual({ success: true });
         expect(initSpy).toHaveBeenCalled();
     });
 
     it("does not mark the database as initialized when the sync fails", async () => {
-        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        const initSpy = vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
         config.loginThrows = new Error("kaboom");
 
         await expect(runSync()).resolves.toMatchObject({ success: false });
@@ -397,7 +397,7 @@ describe("sync service", () => {
         });
         config.login = { instanceId: "REMOTE_INSTANCE", maxEntityChangeId: 7 };
         config.changed = [ { entityChanges: [], lastEntityChangeId: 7, outstandingPullCount: 0 } ];
-        vi.spyOn(sqlInit, "setDbAsInitialized").mockImplementation(() => {});
+        vi.spyOn(sqlInit, "setDbAsInitialized").mockResolvedValue(undefined);
         const maxId = Number(syncService.getMaxEntityChangeId());
         delete becca.options.lastSyncedPull;
         delete becca.options.lastSyncedPush;
@@ -843,7 +843,7 @@ describe("sync service", () => {
         expect([null, ...Array.from({ length: 0 })]).toContain(syncService.getTotalPullCount());
     });
 
-    it("startSyncTimer schedules periodic and kickoff syncs once becca is loaded", async () => {
+    it("startSyncTimer schedules periodic and kickoff syncs once becca is loaded, which run as the instance", async () => {
         // Mock the timer functions so no real sync is ever scheduled (which would
         // fire during later tests). beccaLoaded is already resolved in the bootstrap,
         // so its `.then` callback runs on the microtask queue.
@@ -856,6 +856,20 @@ describe("sync service", () => {
 
         expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60000);
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 5000);
+
+        const scopes: boolean[] = [];
+        vi.spyOn(syncOptions, "isSyncSetup").mockImplementation(() => {
+            scopes.push(cls.isSystem());
+            return false;
+        });
+        const periodic = setIntervalSpy.mock.calls.find(([, delay]) => delay === 60000)?.[0];
+        const kickoff = setTimeoutSpy.mock.calls.find(([, delay]) => delay === 5000)?.[0];
+        expect(periodic).toBeTypeOf("function");
+        expect(kickoff).toBeTypeOf("function");
+        (periodic as () => void)();
+        (kickoff as () => void)();
+
+        await vi.waitFor(() => expect(scopes).toEqual([ true, true ]));
     });
 });
 

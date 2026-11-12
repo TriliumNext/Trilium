@@ -101,22 +101,45 @@ describe("open_id", () => {
         expect(openID.getSSOIssuerIcon()).toBe("");
     });
 
-    it("isUserSaved and getOAuthStatus read user_data", () => {
+    it("isUserSaved reflects oauth_enrollment and getOAuthStatus reads from users", () => {
+        expect(openID.isUserSaved()).toBe(false);
+
         cls.init(() => {
             sql.transactional(() => {
-                sql.execute("DELETE FROM user_data");
-                sql.upsert("user_data", "tmpID", {
-                    tmpID: 0,
-                    isSetup: "true",
-                    username: "Alice",
-                    email: "alice@example.com"
+                sql.execute(
+                    "UPDATE users SET username = 'Alice', email = 'alice@example.com' WHERE isAdmin = 1 AND isDeleted = 0"
+                );
+                sql.upsert("oauth_enrollment", "id", {
+                    id: 0,
+                    userIDVerificationHash: "hash",
+                    salt: "salt",
+                    derivedKey: "dk",
+                    userIDEncryptedDataKey: "edk"
                 });
             });
         });
+
         expect(openID.isUserSaved()).toBe(true);
         const status = openID.getOAuthStatus();
         expect(status.name).toBe("Alice");
         expect(status.email).toBe("alice@example.com");
+    });
+
+    it("getOAuthStatus reports no name or email when no admin user exists", () => {
+        const adminIds = sql.getColumn<string>("SELECT userId FROM users WHERE isAdmin = 1 AND isDeleted = 0");
+        const setAdmin = (isAdmin: number) => cls.init(() => {
+            for (const userId of adminIds) {
+                sql.execute("UPDATE users SET isAdmin = ? WHERE userId = ?", [ isAdmin, userId ]);
+            }
+        });
+
+        setAdmin(0);
+        try {
+            const status = openID.getOAuthStatus();
+            expect([ status.name, status.email ]).toEqual([ null, null ]);
+        } finally {
+            setAdmin(1);
+        }
     });
 
     it("getOAuthStatus surfaces the configured issuer details", () => {
@@ -127,7 +150,18 @@ describe("open_id", () => {
         expect(status.issuerIcon).toBe("icon.png");
     });
 
-    it("clearSavedUser empties user_data", () => {
+    it("clearSavedUser removes the oauth_enrollment row", () => {
+        cls.init(() => {
+            sql.transactional(() => {
+                sql.upsert("oauth_enrollment", "id", {
+                    id: 0,
+                    userIDVerificationHash: "hash",
+                    salt: "salt",
+                    derivedKey: "dk",
+                    userIDEncryptedDataKey: "edk"
+                });
+            });
+        });
         const result = cls.init(() => openID.clearSavedUser());
         expect(result.success).toBe(true);
         expect(openID.isUserSaved()).toBe(false);

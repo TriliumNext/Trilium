@@ -1,3 +1,4 @@
+import { cls } from "@triliumnext/core";
 import type { MenuItemConstructorOptions } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -262,7 +263,7 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
         sql_init: { ...actual.sql_init, dbReady: Promise.resolve() },
         isSetupRequested: () => state.isSetupRequested,
         keyboard_actions: { ...actual.keyboard_actions, getKeyboardActions: () => state.keyboardActions },
-        cls: { ...actual.cls, wrap: (fn: Handler) => fn },
+        cls: { ...actual.cls, wrapAsSystem: (fn: Handler) => (...args: unknown[]) => actual.cls.initAsSystem(() => fn(...args)) },
         events: {
             ...actual.events,
             DB_INITIALIZED: "DB_INITIALIZED",
@@ -785,8 +786,15 @@ describe("window service", () => {
             const trayCb = fakeGlobalShortcut.register.mock.calls[0][1] as Handler;
             const openCb = fakeGlobalShortcut.register.mock.calls[1][1] as Handler;
 
+            // The desktop app has no users, so a global shortcut acts for the instance.
+            const scopes: boolean[] = [];
+            mainWin.webContents.send.mockImplementation(() => {
+                scopes.push(cls.isSystem());
+            });
+
             mainWin.isMinimized.mockReturnValue(false);
             trayCb();
+            expect(scopes).toEqual([ true ]);
             expect(mainWin.focus).toHaveBeenCalled();
             expect(mainWin.webContents.send).toHaveBeenCalledWith("globalShortcut", "toggleTray");
 

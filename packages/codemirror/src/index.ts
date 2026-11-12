@@ -19,6 +19,7 @@ import {
     buildTypeCompletion, type ScriptApiContext, type TypeCompleter
 } from "./type_completion/index.js";
 
+export { default as CodeCollaboration } from "./collaboration.js";
 export { default as ColorThemes, type ThemeDefinition, type ThemeVariant, getThemeById } from "./color_themes.js";
 export {
     default as SharedHistory, type HostHistory, type HostHistoryStep

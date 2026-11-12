@@ -58,6 +58,7 @@ export function App() {
         <div class="setup-container login-container">
             <PasswordLogin
                 illustration={illustration}
+                usernameEnabled={config?.usernameEnabled ?? false}
                 totpEnabled={config?.totpEnabled ?? false}
                 initialError={error}
             />
@@ -65,14 +66,18 @@ export function App() {
     );
 }
 
-export function PasswordLogin({ illustration, totpEnabled, initialError }: {
+export function PasswordLogin({ illustration, usernameEnabled = false, totpEnabled, initialError }: {
     illustration: preact.ComponentChildren;
+    usernameEnabled?: boolean;
     totpEnabled: boolean;
     initialError: string | null;
 }) {
-    async function submit({ password, totpToken, rememberMe }: Credentials) {
+    async function submit({ username, password, totpToken, rememberMe }: Credentials) {
         try {
             const body = new URLSearchParams({ password });
+            if (username) {
+                body.set("username", username);
+            }
             if (totpEnabled) {
                 body.set("totpToken", totpToken);
             }
@@ -106,7 +111,7 @@ export function PasswordLogin({ illustration, totpEnabled, initialError }: {
                 return t(looksLikeRecoveryCode(totpToken) ? "login.incorrect-recovery-code" : "login.incorrect-totp");
             }
 
-            return t("login.incorrect-password");
+            return t(usernameEnabled ? "login.incorrect-username-or-password" : "login.incorrect-password");
         } catch {
             // fetch only rejects on network-level failures (server unreachable, DNS, etc.) —
             // not on HTTP error statuses — so this is a connection problem, not bad credentials.
@@ -119,6 +124,7 @@ export function PasswordLogin({ illustration, totpEnabled, initialError }: {
             className="login"
             title={t("login.heading")}
             illustration={illustration}
+            usernameEnabled={usernameEnabled}
             totpEnabled={totpEnabled}
             rememberMeEnabled
             submitLabel={t("login.button")}

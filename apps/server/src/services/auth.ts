@@ -1,5 +1,6 @@
 import { attributes, cls, isSetupAuthorized, isSetupAuthRequired, options, password as passwordService, password_encryption as passwordEncryptionService } from "@triliumnext/core";
 import type { NextFunction, Request, Response } from "express";
+import type { SessionData } from "express-session";
 
 import config from "./config.js";
 import { isInternalElectronRequest } from "./electron_request.js";
@@ -37,7 +38,7 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     if (isInternalElectronRequest(req) || noAuthentication) {
         next();
         return;
-    } else if (!req.session.loggedIn && !noAuthentication) {
+    } else if (!isSignedIn(req.session) && !noAuthentication) {
         // check redirectBareDomain option first
 
         // cannot use options.getOptionBool currently => it will throw an error on new installations
@@ -48,8 +49,9 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         // screen is served by the SPA at the root too, so an explicit login navigation
         // (GET /login redirects here with a `?login` marker) and SPA sub-requests such
         // as /bootstrap must fall through to it — otherwise enabling the option locks
-        // the owner out of the instance entirely (#10552).
-        const isBareRootRequest = req.path === "/" && req.query.login === undefined;
+        // the owner out of the instance entirely (#10552). A user's setup link lands on the root too.
+        const isBareRootRequest = req.path === "/" && req.query.login === undefined
+            && req.query.setupAccount === undefined;
 
         if (hasRedirectBareDomain && isBareRootRequest) {
             // Only redirect to the share page when a share root is actually configured.
@@ -137,6 +139,23 @@ function readSetupAuthToken(req: Request): string | undefined {
     return typeof token === "string" ? token : undefined;
 }
 
+/**
+ * Whether a request without a user acts for the instance itself: the desktop app's own renderer, an
+ * instance without authentication, an instance still being set up, or a sync peer.
+ */
+function isSystemRequest(req: Request): boolean {
+    return isInternalElectronRequest(req) || noAuthentication || !!req.session?.isSyncPeer
+        || mayPassAsUninitialized(req);
+}
+
+/**
+ * Whether a session belongs to someone signed in: a user, or a sync peer acting for the instance. A
+ * session marked `loggedIn` without either counts as logged out, so no request runs for nobody.
+ */
+export function isSignedIn(session: Partial<SessionData> | undefined): boolean {
+    return !!session?.loggedIn && (!!session.userId || !!session.isSyncPeer);
+}
+
 // for electron things which need network stuff
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
@@ -144,7 +163,7 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         return next();
     }
 
-    if (!req.session.loggedIn && !isInternalElectronRequest(req) && !noAuthentication) {
+    if (!isSignedIn(req.session) && !isInternalElectronRequest(req) && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -167,7 +186,7 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         return next();
     }
 
-    if (!req.session.loggedIn) {
+    if (!isSignedIn(req.session)) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
@@ -277,7 +296,7 @@ async function checkCredentials(req: Request, res: Response, next: NextFunction)
 
     // Middleware runs before the route opens a CLS context, and `verifyTOTP()` and
     // `verifyRecoveryCode()` write options when they accept a code.
-    const failedFactor = await cls.init(() => verifyLoginCredentials(password, totpToken));
+    const failedFactor = await cls.initAsSystem(() => verifyLoginCredentials(password, totpToken));
     if (failedFactor === "password") {
         res.setHeader("Content-Type", "text/plain").status(401).send("Incorrect password");
         getLog().warn(`Wrong password from ${req.ip}, rejecting.`);
@@ -331,5 +350,6 @@ export default {
     checkSetupAuth,
     checkApiAuthOrElectron,
     checkEtapiToken,
-    checkCredentials
+    checkCredentials,
+    isSystemRequest
 };

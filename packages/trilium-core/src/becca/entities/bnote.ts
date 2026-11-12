@@ -22,6 +22,21 @@ import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils/index.js";
 import { getVirtualNoteContent, isVirtualNoteContentWritable, setVirtualNoteContent } from "../../services/virtual_notes.js";
+import { invalidateNoteVisibility } from "../note_visibility.js";
+
+// ownerId exists only after migration 239. Saves that run during migrations 220-238
+// must skip it or the INSERT fails. Result is cached so the PRAGMA runs once per process.
+let ownerIdColExists: boolean | undefined;
+function ownerIdColumnExists(): boolean {
+    if (ownerIdColExists !== undefined) return ownerIdColExists;
+    try {
+        const cols = getSql().getColumn<string>("SELECT name FROM pragma_table_info('notes')");
+        ownerIdColExists = cols.includes("ownerId");
+        return ownerIdColExists;
+    } catch {
+        return false;
+    }
+}
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -76,15 +91,20 @@ class BNote extends AbstractBeccaEntity<BNote> {
     title!: string;
     type!: NoteType;
     mime!: string;
+    ownerId!: string | null;
     /** set during the deletion operation, before it is completed (removed from becca completely). */
     isBeingDeleted!: boolean;
     isDecrypted!: boolean;
 
     ownedAttributes!: BAttribute[];
-    parentBranches!: BBranch[];
-    parents!: BNote[];
-    children!: BNote[];
-    targetRelations!: BAttribute[];
+    /** Every parent branch, whatever the current scope can see; for the Becca's own bookkeeping. */
+    allParentBranches!: BBranch[];
+    /** Every parent, whatever the current scope can see; inheritance walks these. */
+    allParents!: BNote[];
+    /** Every child, whatever the current scope can see; for the Becca's own bookkeeping. */
+    allChildren!: BNote[];
+    /** Every relation that targets this note, whatever the current scope can see. */
+    allTargetRelations!: BAttribute[];
 
     __flatTextCache!: string | null;
     __searchableTitleCache: SearchableTitle | null = null;
@@ -112,10 +132,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     updateFromRow(row: Partial<NoteRow>) {
-        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified]);
+        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified, row.ownerId]);
     }
 
-    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified]: any) {
+    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId]: any) {
         // ------ Database persisted attributes ------
 
         this.noteId = noteId;
@@ -128,6 +148,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.dateModified = dateModified;
         this.utcDateCreated = utcDateCreated || dateUtils.utcNowDateTime();
         this.utcDateModified = utcDateModified;
+        if (this.ownerId !== undefined && this.ownerId !== (ownerId ?? null)) {
+            invalidateNoteVisibility();
+        }
+        this.ownerId = ownerId ?? null;
         this.isBeingDeleted = false;
 
         // ------ Derived attributes ------
@@ -143,22 +167,47 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     override init() {
-        this.parentBranches = [];
-        this.parents = [];
-        this.children = [];
-        this.ownedAttributes = [];
-        this.__attributeCache = null;
-        this.__isArchivedCache = null;
-        this.__inheritableAttributeCache = null;
-        this.targetRelations = [];
-
+        this.initRelations();
         this.becca.addNote(this.noteId, this);
-        this.__ancestorCache = null;
 
         this.contentSize = null;
         this.contentAndAttachmentsSize = null;
         this.contentAndAttachmentsAndRevisionsSize = null;
         this.revisionCount = null;
+    }
+
+    /** Starts the note with no parents, children or attributes, without registering it in the Becca. */
+    initRelations() {
+        this.allParentBranches = [];
+        this.allParents = [];
+        this.allChildren = [];
+        this.ownedAttributes = [];
+        this.allTargetRelations = [];
+        this.__attributeCache = null;
+        this.__isArchivedCache = null;
+        this.__inheritableAttributeCache = null;
+        this.__ancestorCache = null;
+    }
+
+    /** The parent branches the current scope can see. */
+    get parentBranches(): BBranch[] {
+        return this.becca.getView()?.parentBranchesOf(this) ?? this.allParentBranches;
+    }
+
+    /** The parents the current scope can see. */
+    get parents(): BNote[] {
+        return this.becca.getView()?.parentsOf(this) ?? this.allParents;
+    }
+
+    /** The children the current scope can see. */
+    get children(): BNote[] {
+        return this.becca.getView()?.childrenOf(this) ?? this.allChildren;
+    }
+
+    /** The relations targeting this note that belong to notes the current scope can see. */
+    get targetRelations(): BAttribute[] {
+        const view = this.becca.getView();
+        return view ? this.allTargetRelations.filter((relation) => view.canSeeNote(relation.noteId)) : this.allTargetRelations;
     }
 
     isContentAvailable() {
@@ -199,6 +248,13 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
     getChildBranches(): BBranch[] {
         return this.children.map((childNote) => this.becca.getBranchFromChildAndParent(childNote.noteId, this.noteId)) as BBranch[];
+    }
+
+    /** Every child branch, whatever the current scope can see; for the Becca's own bookkeeping. */
+    getAllChildBranches(): BBranch[] {
+        return this.allChildren
+            .map((childNote) => this.becca.allChildParentToBranch[`${childNote.noteId}-${this.noteId}`])
+            .filter((branch) => !!branch);
     }
 
     /**
@@ -370,7 +426,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
             // inheritable attrs on root are typically not intended to be applied to hidden subtree #3537
             if (this.noteId !== "root" && this.noteId !== "_hidden") {
-                for (const parentNote of this.parents) {
+                for (const parentNote of this.allParents) {
                     parentAttributes.push(...parentNote.__getInheritableAttributes(newPath));
                 }
             }
@@ -380,7 +436,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             for (const ownedAttr of parentAttributes) {
                 // parentAttributes so we process also inherited templates
                 if (ownedAttr.type === "relation" && ["template", "inherit"].includes(ownedAttr.name)) {
-                    const templateNote = this.becca.notes[ownedAttr.value];
+                    const templateNote = this.becca.allNotes[ownedAttr.value];
 
                     if (templateNote) {
                         templateAttributes.push(
@@ -623,7 +679,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     // will sort the parents so that the non-archived are first and archived at the end
     // this is done so that the non-archived paths are always explored as first when looking for note path
     sortParents() {
-        this.parentBranches.sort((a, b) => {
+        this.allParentBranches.sort((a, b) => {
             if (a.parentNote?.isArchived) {
                 return 1;
             } else if (a.parentNote?.isHiddenCompletely()) {
@@ -632,19 +688,19 @@ class BNote extends AbstractBeccaEntity<BNote> {
             return 0;
         });
 
-        this.parents = this.parentBranches.map((branch) => branch.parentNote).filter((note) => !!note) as BNote[];
+        this.allParents = this.allParentBranches.map((branch) => branch.parentNote).filter((note) => !!note) as BNote[];
     }
 
     sortChildren() {
-        if (this.children.length === 0) {
+        if (this.allChildren.length === 0) {
             return;
         }
 
-        const becca = this.becca;
+        const branches = this.becca.allChildParentToBranch;
 
-        this.children.sort((a, b) => {
-            const aBranch = becca.getBranchFromChildAndParent(a.noteId, this.noteId);
-            const bBranch = becca.getBranchFromChildAndParent(b.noteId, this.noteId);
+        this.allChildren.sort((a, b) => {
+            const aBranch = branches[`${a.noteId}-${this.noteId}`];
+            const bBranch = branches[`${b.noteId}-${this.noteId}`];
 
             return (aBranch?.notePosition || 0) - (bBranch?.notePosition || 0) || 0;
         });
@@ -654,7 +710,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         if (!this.__flatTextCache) {
             this.__flatTextCache = `${this.noteId} ${this.type} ${this.mime} `;
 
-            for (const branch of this.parentBranches) {
+            for (const branch of this.allParentBranches) {
                 if (branch.prefix) {
                     this.__flatTextCache += `${branch.prefix} `;
                 }
@@ -717,15 +773,15 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
         this.invalidateThisCache();
 
-        if (this.children.length || this.targetRelations.length) {
+        if (this.allChildren.length || this.allTargetRelations.length) {
             path = [...path, this.noteId];
         }
 
-        for (const childNote of this.children) {
+        for (const childNote of this.allChildren) {
             childNote.invalidateSubTree(path);
         }
 
-        for (const targetRelation of this.targetRelations) {
+        for (const targetRelation of this.allTargetRelations) {
             if (targetRelation.name === "template" || targetRelation.name === "inherit") {
                 const note = targetRelation.note;
 
@@ -745,7 +801,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     isInherited() {
-        return !!this.targetRelations.find((rel) => rel.name === "template" || rel.name === "inherit");
+        return !!this.allTargetRelations.find((rel) => rel.name === "template" || rel.name === "inherit");
     }
 
     getSubtreeNotesIncludingTemplated(): BNote[] {
@@ -909,12 +965,19 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.getOwnedAttributes().length;
     }
 
+    /** The ancestors the current scope can see. */
     getAncestors() {
+        const view = this.becca.getView();
+        const ancestors = this.getAllAncestors();
+        return view ? ancestors.filter((ancestor) => view.canSeeNote(ancestor.noteId)) : ancestors;
+    }
+
+    private getAllAncestors(): BNote[] {
         if (!this.__ancestorCache) {
             const noteIds = new Set();
             this.__ancestorCache = [];
 
-            for (const parent of this.parents) {
+            for (const parent of this.allParents) {
                 if (noteIds.has(parent.noteId)) {
                     continue;
                 }
@@ -922,7 +985,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
                 this.__ancestorCache.push(parent);
                 noteIds.add(parent.noteId);
 
-                for (const ancestorNote of parent.getAncestors()) {
+                for (const ancestorNote of parent.getAllAncestors()) {
                     if (!noteIds.has(ancestorNote.noteId)) {
                         this.__ancestorCache.push(ancestorNote);
                         noteIds.add(ancestorNote.noteId);
@@ -939,7 +1002,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     hasAncestor(ancestorNoteId: string): boolean {
-        for (const ancestorNote of this.getAncestors()) {
+        for (const ancestorNote of this.getAllAncestors()) {
             if (ancestorNote.noteId === ancestorNoteId) {
                 return true;
             }
@@ -979,7 +1042,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
         let minDistance = 999999;
 
-        for (const parent of this.parents) {
+        for (const parent of this.allParents) {
             minDistance = Math.min(minDistance, parent.getDistanceToAncestor(ancestorNoteId) + 1);
         }
 
@@ -1056,7 +1119,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         const notePaths = this.getAllNotePaths().map((path) => ({
             notePath: path,
             isInHoistedSubTree: isHoistedRoot || path.includes(hoistedNoteId),
-            isArchived: path.some((noteId) => this.becca.notes[noteId].isArchived),
+            isArchived: path.some((noteId) => this.becca.notes[noteId]?.isArchived),
             isHidden: path.includes("_hidden")
         }));
 
@@ -1080,7 +1143,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             return false;
         }
 
-        for (const parentNote of this.parents) {
+        for (const parentNote of this.allParents) {
             if (parentNote.noteId === "root") {
                 return false;
             } else if (parentNote.noteId === "_hidden") {
@@ -1316,7 +1379,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     override get isDeleted() {
         // isBeingDeleted is relevant only in the transition period when the deletion process has begun, but not yet
         // finished (note is still in becca)
-        return !(this.noteId in this.becca.notes) || this.isBeingDeleted;
+        return !(this.noteId in this.becca.allNotes) || this.isBeingDeleted;
     }
 
     saveRevision(opts: { description?: string; source?: RevisionSource } = {}): BRevision {
@@ -1516,7 +1579,8 @@ class BNote extends AbstractBeccaEntity<BNote> {
             dateCreated: this.dateCreated,
             dateModified: this.dateModified,
             utcDateCreated: this.utcDateCreated,
-            utcDateModified: this.utcDateModified
+            utcDateModified: this.utcDateModified,
+            ownerId: this.ownerId
         };
     }
 
@@ -1530,6 +1594,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
                 // updating protected note outside of protected session means we will keep original ciphertexts
                 delete pojo.title;
             }
+        }
+
+        if (!ownerIdColumnExists()) {
+            delete pojo.ownerId;
         }
 
         return pojo;

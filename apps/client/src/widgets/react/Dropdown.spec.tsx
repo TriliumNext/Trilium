@@ -117,6 +117,20 @@ describe("Dropdown", () => {
         expect(picked).toEqual([ "JavaScript" ]);
     });
 
+    it("draws a row's leading element in its icon slot, filtered or not", async () => {
+        const row = (title: string) => ({ title, leading: <span className="avatar">{title[0]}</span> });
+        const { toggle } = renderDropdown({ filterable: true, items: [ row("alice"), row("bob") ] }, null);
+        const firstChildren = () => [ ...popup()?.querySelectorAll("li.dropdown-item > span > :first-child") ?? [] ]
+            .map((element) => element.outerHTML);
+
+        click(toggle);
+        await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+        expect(firstChildren()).toEqual([ "<span class=\"avatar\">a</span>", "<span class=\"avatar\">b</span>" ]);
+
+        document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "b", bubbles: true, cancelable: true }));
+        await vi.waitFor(() => expect(firstChildren()).toEqual([ "<span class=\"avatar\">b</span>" ]));
+    });
+
     it("clears the filter from a button in place of its magnifier, and stays up with focus in the input", async () => {
         const { toggle } = renderDropdown({
             filterable: true, items: [ { title: "Python" }, { title: "JavaScript" } ]

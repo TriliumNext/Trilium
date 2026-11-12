@@ -43,6 +43,7 @@ interface ApiRequest {
     method: string;
     file?: unknown;
     originalUrl: string;
+    session?: { userId?: string };
     /** Express-style case-insensitive header accessor (used by e.g. the sync routes). */
     get(name: string): string | undefined;
 }
@@ -72,6 +73,8 @@ export interface RequestOptions {
      * update, import) be exercised in-process without a real multipart request.
      */
     file?: unknown;
+    /** The signed-in session, whose `userId` the route's scope acts for, as `internalRoute` does on the server. */
+    session?: { userId?: string };
 }
 
 function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
@@ -301,6 +304,7 @@ export class CoreApiTester {
                 method: upperMethod,
                 originalUrl: url.pathname + url.search,
                 file: opts.file,
+                session: opts.session,
                 get: (name: string) => lowerHeaders[name.toLowerCase()]
             };
 
@@ -350,4 +354,5 @@ function seedContext(req: ApiRequest) {
     ctx.set("componentId", req.get("trilium-component-id"));
     ctx.set("localNowDateTime", req.get("trilium-local-now-datetime"));
     ctx.set("hoistedNoteId", req.get("trilium-hoisted-note-id") || "root");
+    ctx.set("userId", req.session?.userId);
 }

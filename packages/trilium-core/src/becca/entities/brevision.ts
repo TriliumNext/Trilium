@@ -3,7 +3,6 @@
 import { ValidationError } from "../../errors.js";
 import protectedSessionService from "../../services/protected_session.js";
 import dateUtils from "../../services/utils/date";
-import becca from "../becca.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BAttachment from "./battachment.js";
 import type { AttachmentRow, NoteType, RevisionPojo, RevisionRow, RevisionSource } from "@triliumnext/commons";
@@ -76,7 +75,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     }
 
     getNote() {
-        return becca.notes[this.noteId];
+        return this.becca.allNotes[this.noteId];
     }
 
     /** @returns true if the note has string content (not binary) */
@@ -183,7 +182,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     }
 
     override beforeSaving() {
-        if (this.becca.notes[this.noteId]?.isVirtual) {
+        if (this.becca.allNotes[this.noteId]?.isVirtual) {
             throw new ValidationError(`Cannot save a revision of note '${this.noteId}': virtual notes have no revisions.`);
         }
 

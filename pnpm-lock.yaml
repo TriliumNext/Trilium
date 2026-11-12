@@ -1073,6 +1073,9 @@ importers:
       '@codemirror/autocomplete':
         specifier: 6.20.4
         version: 6.20.4
+      '@codemirror/collab':
+        specifier: 6.1.1
+        version: 6.1.1
       '@codemirror/commands':
         specifier: 6.11.1
         version: 6.11.1
@@ -2049,6 +2052,9 @@ packages:
 
   '@codemirror/autocomplete@6.20.4':
     resolution: {integrity: sha512-yF8RhOf2SXlg00+qtupzLhrglcas61boqaONiNcbPIebHCpJocpqTBA6dyrtUrQO47hqyTdeob/3XnYilT7TaQ==}
+
+  '@codemirror/collab@6.1.1':
+    resolution: {integrity: sha512-tkIn9Jguh98ie12dbBuba3lE8LHUkaMrIFuCVeVGhncSczFdKmX25vC12+58+yqQW5AXi3py6jWY0W+jelyglA==}
 
   '@codemirror/commands@6.11.1':
     resolution: {integrity: sha512-O/4hG3SC1YwcmQ0d2UVNDs+AsaNWd1iHVxbTeEBuqH+6bExAiPK3iS/BvpY6rZGURALv4ZD3sIgcCmRvw3ehBg==}
@@ -7425,7 +7431,7 @@ packages:
     resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
-      debug: '*'
+      debug: '>=3.2.7'
     peerDependenciesMeta:
       debug:
         optional: true
@@ -12716,6 +12722,10 @@ snapshots:
       '@codemirror/state': 6.7.6
       '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.5
+
+  '@codemirror/collab@6.1.1':
+    dependencies:
+      '@codemirror/state': 6.7.6
 
   '@codemirror/commands@6.11.1':
     dependencies:

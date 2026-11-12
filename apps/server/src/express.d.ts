@@ -31,6 +31,10 @@ export declare module "express-serve-static-core" {
 export declare module "express-session" {
     interface SessionData {
         loggedIn: boolean;
+        /** The userId of the authenticated user, set on login and cleared on logout. */
+        userId?: string;
+        /** Set by `/api/login/sync` for another instance of the document, which acts for the instance rather than a user. */
+        isSyncPeer?: true;
         lastAuthState: {
             totpEnabled: boolean;
             ssoEnabled: boolean;

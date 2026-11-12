@@ -295,6 +295,49 @@ describe("NoteContextMenu", () => {
         expect(submenu?.querySelector("li.dropdown-item:has(.bx-purchase-tag)")).toBeTruthy();
     });
 
+    it("offers the access dialog once others can sign in, but not for system notes or the home", async () => {
+        const accessItem = async (note: FNote) => {
+            const parentComponent = new Component();
+            const triggerCommand = vi.spyOn(parentComponent, "triggerCommand").mockImplementation(() => Promise.resolve());
+            const noteContext = new NoteContext("ntx-access");
+            noteContext.noteId = note.noteId;
+            noteContext.viewScope = { viewMode: "default" };
+            render((
+                <ParentComponent.Provider value={parentComponent}>
+                    <NoteContextContext.Provider value={noteContext}>
+                        <NoteContextMenu note={note} noteContext={noteContext} />
+                    </NoteContextContext.Provider>
+                </ParentComponent.Provider>
+            ), host);
+            host.querySelector<HTMLButtonElement>("button")?.click();
+            await vi.waitFor(() => expect(document.querySelector(".tn-popup li.dropdown-item")).toBeTruthy());
+            const item = document.querySelector<HTMLElement>(".tn-popup li.dropdown-item:has(.bx-user-plus)");
+            return { item, triggerCommand };
+        };
+
+        const note = buildNote({ title: "Project" });
+        note.ownerId = "olivia";
+        const { currentUser } = window.glob;
+        try {
+            window.glob.currentUser = undefined;
+            expect((await accessItem(note)).item).toBeNull();
+            render(null, host);
+
+            window.glob.currentUser = { userId: "olivia", username: "olivia", isAdmin: false, avatarHue: 0, homeNoteId: "home_olivia" };
+            expect((await accessItem(buildNote({ id: "_optionsAccess", title: "Options" }))).item).toBeNull();
+            render(null, host);
+            expect((await accessItem(buildNote({ id: "home_olivia", title: "olivia" }))).item).toBeNull();
+            render(null, host);
+
+            const { item, triggerCommand } = await accessItem(note);
+            expect(item?.textContent).toContain("note_actions.access");
+            await act(async () => item?.click());
+            expect(triggerCommand).toHaveBeenCalledWith("showNoteAccess", expect.objectContaining({ noteId: note.noteId }));
+        } finally {
+            window.glob.currentUser = currentUser;
+        }
+    });
+
     it("offers to export a help page, but not an options page", async () => {
         const isExportEnabled = async (note: FNote) => {
             const noteContext = new NoteContext("ntx-export");

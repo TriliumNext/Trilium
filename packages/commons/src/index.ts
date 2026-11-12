@@ -20,6 +20,7 @@ export * from "./lib/shared_constants.js";
 export * from "./lib/shared_types.js";
 export * from "./lib/share_hosting.js";
 export * from "./lib/ws_api.js";
+export * from "./lib/collaboration.js";
 export * from "./lib/attribute_names.js";
 export * from "./lib/search_syntax.js";
 export * from "./lib/sort_criteria.js";
@@ -42,6 +43,7 @@ export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // barrel is imported by virtually every client module. Import them via their subpath instead,
 // e.g. "@triliumnext/commons/src/lib/spreadsheet/render_to_html".
 export * from "./lib/backup_name.js";
+export * from "./lib/user_avatar.js";
 export * from "./lib/filesystem_name.js";
 export * from "./lib/electron_api_interface.js";
 export * from "./lib/security_settings.js";

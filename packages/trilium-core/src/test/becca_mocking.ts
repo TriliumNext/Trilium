@@ -8,7 +8,7 @@ import { randomString } from "../services/utils/index.js";
 import SearchResult from "../services/search/search_result.js";
 
 export function findNoteByTitle(searchResults: Array<SearchResult>, title: string): BNote | undefined {
-    return searchResults.map((sr) => becca.notes[sr.noteId]).find((note) => note.title === title);
+    return searchResults.map((sr) => becca.notes[sr.noteId]).find((note) => note?.title === title);
 }
 
 export class NoteBuilder {
