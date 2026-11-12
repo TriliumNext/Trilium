@@ -163,6 +163,7 @@
         "password-confirmation": "确认密码",
         "button": "设置密码",
         "password-too-short": "密码长度不能少于 {{length}} 个字符。",
-        "passwords-dont-match": "两次输入的密码不一致。"
+        "passwords-dont-match": "两次输入的密码不一致。",
+        "desktop-description": "此 Trilium 桌面应用尚未设置密码，因此无法从浏览器中打开。请在桌面应用中进入“选项 → 密码和身份认证”并设置密码，然后重新加载此页面以登录。"
     }
 }
