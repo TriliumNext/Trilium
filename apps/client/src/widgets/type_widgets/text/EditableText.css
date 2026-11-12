@@ -38,6 +38,7 @@ body.mobile .note-detail-editable-text {
 
 /* `:where(:not(.excalidraw *))` leaves out the UI of an embedded canvas drawing. */
 .note-detail-editable-text :where(:not(.excalidraw *)) {
+    &:is(h1) { font-size: 1.8em; }
     &:is(h2) { font-size: 1.6em; }
     &:is(h3) { font-size: 1.4em; }
     &:is(h4) { font-size: 1.2em; }
@@ -45,19 +46,21 @@ body.mobile .note-detail-editable-text {
     &:is(h6) { font-size: 1.0em; }
 
     body.heading-style-markdown & {
+        &:is(h1)::before { content: "#\2004"; }
         &:is(h2)::before { content: "##\2004"; }
         &:is(h3)::before { content: "###\2004"; }
         &:is(h4):not(.include-note-title)::before { content: "####\2004"; }
         &:is(h5)::before { content: "#####\2004"; }
         &:is(h6)::before { content: "######\2004"; }
 
-        &:is(h2, h3, h5, h6)::before,
+        &:is(h1, h2, h3, h5, h6)::before,
         &:is(h4):not(.include-note-title)::before {
             color: var(--muted-text-color);
         }
     }
 
     body.heading-style-underline & {
+        &:is(h1),
         &:is(h2),
         &:is(h3),
         &:is(h4):not(.include-note-title),
