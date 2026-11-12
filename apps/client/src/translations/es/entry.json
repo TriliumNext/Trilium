@@ -22,7 +22,8 @@
         "password-confirmation": "Confirmación de contraseña",
         "button": "Establecer contraseña",
         "password-too-short": "La contraseña debe tener al menos {{length}} caracteres.",
-        "passwords-dont-match": "Las contraseñas introducidas no coinciden."
+        "passwords-dont-match": "Las contraseñas introducidas no coinciden.",
+        "desktop-description": "Esta aplicación de escritorio de Trilium aún no tiene contraseña, por lo que no se puede abrir desde un navegador. En la aplicación de escritorio, vaya a Opciones → Contraseña y autenticación, establezca una contraseña y, a continuación, recargue esta página para iniciar sesión."
     },
     "setup": {
         "heading": "Primeros pasos con Trilium",
