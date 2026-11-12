@@ -1,0 +1,64 @@
+:where(:root) {
+    --text-editor-vim-cursor-background: var(--main-text-color, #000);
+    --text-editor-vim-cursor-color: var(--main-background-color, #fff);
+    --text-editor-vim-cursor-unfocused-outline-color: var(--muted-text-color, #808080);
+    --text-editor-vim-command-line-panel-background: var(--main-background-color, #fff);
+    --text-editor-vim-command-line-panel-border-color: var(--main-border-color, #ccc);
+}
+
+.ck.ck-editor__editable.ck-vim-command-mode {
+    caret-color: transparent;
+
+    .ck-vim-cursor {
+        border-radius: 1px;
+        background-color: var(--text-editor-vim-cursor-background);
+        color: var(--text-editor-vim-cursor-color);
+    }
+
+    .ck-vim-cursor_empty {
+        display: inline-block;
+        width: 0.55em;
+        height: 1.15em;
+        vertical-align: text-bottom;
+    }
+
+    &:not(.ck-focused) .ck-vim-cursor {
+        outline: 1px solid var(--text-editor-vim-cursor-unfocused-outline-color);
+        background-color: transparent;
+        color: inherit;
+    }
+}
+
+.ck-vim-command-line {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    font-family: var(--monospace-font-family, monospace);
+
+    .ck-vim-command-line__prefix {
+        white-space: pre;
+    }
+
+    .ck-vim-command-line__input,
+    .ck-vim-command-line__input:focus {
+        flex: 1;
+        margin: 0;
+        outline: none;
+        border: 0;
+        padding: 0;
+        min-width: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+    }
+}
+
+.ck-vim-command-line-panel {
+    display: flex;
+    position: fixed;
+    z-index: 1000;
+    border-top: 1px solid var(--text-editor-vim-command-line-panel-border-color);
+    padding: 4px 8px;
+    height: 32px;
+    background: var(--text-editor-vim-command-line-panel-background);
+}

@@ -47,6 +47,7 @@ import {
     type CodeMenu, useCodeLanguageMenu, useNoteCodeSettings, useTabWidthMenu
 } from "./code_menus";
 import { NoteSizeWidget, useNoteMetadata } from "./note_metadata";
+import { useVimStatus, VimCommandLineSlot, VimMessagePanel, VimStatusLine } from "./VimStatus";
 
 interface StatusBarContext {
     note: FNote;
@@ -76,20 +77,27 @@ export default function StatusBar() {
     };
     const isHiddenNote = note?.isHiddenCompletely();
     const canEditAttributes = note?.isContentWritable !== false;
+    const vimStatus = useVimStatus(noteContext);
+    const vimMessage = vimStatus?.message;
 
     // The note split comes before the bar in the DOM, so its corner rule keys on a body class.
     useBodyClass("status-bar-panel-open", !!activePane);
+    // Zen mode keeps the bar for Vim mode.
+    useBodyClass("vim-mode-active", !!vimStatus);
 
     return (
-        <div className="status-bar">
+        <div className={clsx("status-bar", vimStatus?.commandLine && "vim-command-line-open")}>
             {attributesContext && canEditAttributes && <AttributesPane {...attributesContext} />}
             {noteInfoContext && <SimilarNotesPane {...noteInfoContext} />}
+            {vimMessage?.isLong && <VimMessagePanel text={vimMessage.text} />}
 
             <div className="status-bar-main-row">
                 {context && attributesContext && noteInfoContext && <>
                     <Breadcrumb />
+                    {vimStatus && <VimCommandLineSlot />}
 
                     <div className="actions-row">
+                        {vimStatus && <VimStatusLine status={vimStatus} />}
                         <CodeCursorPosition {...context} />
                         <CodeNoteSwitcher {...context} />
                         <TabWidthSwitcher {...context} />

@@ -1,0 +1,60 @@
+:where(:root) {
+    --vim-status-line-color: var(--main-text-color);
+    --vim-status-line-pending-keys-color: var(--muted-text-color);
+    --vim-message-panel-background-color: var(--left-pane-background-color);
+    --vim-message-panel-border-color: var(--main-border-color);
+}
+
+.status-bar {
+    .vim-command-line-slot {
+        display: flex;
+        min-width: 0;
+    }
+
+    &.vim-command-line-open {
+        .breadcrumb {
+            display: none;
+        }
+
+        .vim-command-line-slot {
+            flex-grow: 1;
+            padding-inline: 0.5em;
+        }
+    }
+
+    .vim-status-line {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        padding-inline: 0.5em;
+        min-width: 0;
+        color: var(--vim-status-line-color);
+        font-family: var(--monospace-font-family);
+        white-space: nowrap;
+
+        .vim-message {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vim-pending-keys {
+            color: var(--vim-status-line-pending-keys-color);
+        }
+
+        .vim-mode {
+            font-weight: 600;
+        }
+    }
+
+    > .vim-message-panel {
+        margin: 0;
+        border-top: 1px solid var(--vim-message-panel-border-color);
+        padding: 0.5em 1em;
+        max-height: 40vh;
+        overflow: auto;
+        background-color: var(--vim-message-panel-background-color);
+        font-family: var(--monospace-font-family);
+        font-size: 0.85em;
+        white-space: pre;
+    }
+}

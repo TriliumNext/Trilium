@@ -13,12 +13,14 @@ import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
 import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
+import FormTextArea from "../../react/FormTextArea";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { getHtml } from "../../react/RawHtml";
 import { QUOTE_MARK_PRESETS } from "../text/quotes";
 import { type CustomReplacement, parseCustomReplacements } from "../text/replacements";
+import { showVimModeNotice } from "../text/vim_mode";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
@@ -160,6 +162,8 @@ function EditorFeatures() {
 
     return (
         <Card heading={t("editorfeatures.title")}>
+            <VimModeOption />
+
             <OptionCardSection
                 name="mathlive-enabled"
                 label={t("editorfeatures.mathlive_enabled")}
@@ -249,6 +253,62 @@ function EditorFeatures() {
                 <FormToggle currentValue={htmlSupportEnabled} onChange={setHtmlSupportEnabled} />
             </OptionCardSection>
         </Card>
+    );
+}
+
+function VimModeOption() {
+    const [ isEnabled, setEnabled ] = useTriliumOptionBool("textNoteVimModeEnabled");
+    const [ isNoticeShown, setNoticeShown ] = useTriliumOptionBool("textNoteVimModeNoticeShown");
+    const [ areInsertKeysEnabled, setInsertKeysEnabled ] =
+        useTriliumOptionBool("textNoteVimInsertKeysEnabled");
+    const [ startupCommands, setStartupCommands ] = useTriliumOption("textNoteVimStartupCommands");
+
+    function toggle(isOn: boolean) {
+        void setEnabled(isOn);
+        if (isOn && !isNoticeShown) {
+            void setNoticeShown(true);
+            showVimModeNotice();
+        }
+    }
+
+    return (
+        <OptionCardSection
+            name="vim-mode-enabled"
+            label={t("vim_mode.option")}
+            description={t("vim_mode.option_description")}
+            subSectionsVisible={isEnabled}
+            subSections={[
+                <OptionCardSection
+                    key="insert-keys"
+                    name="vim-insert-keys-enabled"
+                    label={t("vim_mode.insert_keys")}
+                    description={t("vim_mode.insert_keys_description")}
+                >
+                    <FormToggle
+                        currentValue={areInsertKeysEnabled}
+                        onChange={setInsertKeysEnabled}
+                    />
+                </OptionCardSection>,
+                <OptionCardSection
+                    key="startup-commands"
+                    name="vim-startup-commands"
+                    label={t("vim_mode.startup_commands")}
+                    description={t("vim_mode.startup_commands_description")}
+                    stacked
+                >
+                    <FormTextArea
+                        className="vim-startup-commands"
+                        currentValue={startupCommands}
+                        onBlur={setStartupCommands}
+                        rows={4}
+                        spellcheck={false}
+                        placeholder={t("vim_mode.startup_commands_placeholder")}
+                    />
+                </OptionCardSection>
+            ]}
+        >
+            <FormToggle currentValue={isEnabled} onChange={toggle} />
+        </OptionCardSection>
     );
 }
 

@@ -45,6 +45,9 @@ export interface HiddenBlocksProvider {
  */
 export default class HiddenBlocks extends Plugin {
 
+    /** Counts the reveals that show or hide blocks without a change of the model. */
+    revealVersion = 0;
+
     private readonly providers: HiddenBlocksProvider[] = [];
     /** The elements with a collapse attribute, with their provider. Can have stale entries. */
     private readonly collapsedOwners = new Map<ModelElement, HiddenBlocksProvider>();
@@ -571,6 +574,8 @@ export default class HiddenBlocks extends Plugin {
             void Promise.resolve().then(() => {
                 this.isFindClosing = false;
             });
+        } else {
+            this.isFindClosing = false;
         }
 
         const owners = new Set(position && this.collapsedOwners.size
@@ -586,6 +591,7 @@ export default class HiddenBlocks extends Plugin {
 
     /** Applies a change of the reveals to the editing view. */
     private refreshView() {
+        this.revealVersion++;
         this.revealedCache = null;
         this.isViewStale = true;
         this.editor.editing.view.forceRender();

@@ -4799,7 +4799,17 @@
       "default": "Default",
       "collapse-or-expand-the-section-of-a-heading": "Collapse or expand the section of a heading",
       "section-collapsed": "Section collapsed",
-      "section-expanded": "Section expanded"
+      "section-expanded": "Section expanded",
+      "a-widget-cannot-be-put-into-a-code-block": "A widget cannot be put into a code block",
+      "the-count-stopped-at-a-heading": "The count stopped at a heading",
+      "nothing-to-fold-here": "Nothing to fold here",
+      "visual-block-mode-is-not-available-in-text-notes": "Visual block mode is not available in text notes",
+      "not-an-editor-command-0": "Not an editor command: %0",
+      "the-editor-command-0-is-not-available-here": "The editor command %0 is not available here",
+      "nothing-to-discard-notes-are-saved-as-you-type": "Nothing to discard: notes are saved as you type",
+      "this-tab-cannot-be-closed": "This tab cannot be closed",
+      "invalid-arguments-of-sort": "Invalid arguments of :sort",
+      "only-whole-paragraphs-of-one-kind-or-whole-list-items-can-be-sorted": "Only whole paragraphs of one kind or whole list items can be sorted"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -5134,5 +5144,24 @@
     "not_a_video": "This is not a web address.",
     "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again.",
     "description": "Enter the address of the video or audio to embed: a YouTube video, or any audio or video file that can be reached over HTTP or HTTPS."
+  },
+  "vim_mode": {
+    "option": "Vim mode",
+    "option_description": "Modal editing with Vim motions, operators and commands in text notes, on this device. Desktop layout only. Inside the editor, Vim takes over some Ctrl shortcuts of the app.",
+    "insert_keys": "Vim keys in Insert mode",
+    "insert_keys_description": "Ctrl+U, Ctrl+E, Ctrl+Y, Ctrl+K, Ctrl+V and Ctrl+A follow Vim while typing, instead of the editor.",
+    "startup_commands": "Startup commands",
+    "startup_commands_description": "Ex commands that run when Vim mode starts, one per line, such as mappings.",
+    "startup_commands_placeholder": "imap jk <Esc>",
+    "notice_title": "Vim mode is on",
+    "notice": "Notes already open are in Insert mode; a note opened from now on starts in Normal mode. Press Esc for commands, and i in Normal mode to type.",
+    "normal": "NORMAL",
+    "insert": "INSERT",
+    "replace": "REPLACE",
+    "visual": "VISUAL",
+    "visual_line": "VISUAL LINE",
+    "one_command": "(INSERT)",
+    "one_command_in": "(INSERT) {{mode}}",
+    "recording": "recording @{{register}}"
   }
 }

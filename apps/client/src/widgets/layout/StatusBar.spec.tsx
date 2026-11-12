@@ -217,6 +217,45 @@ describe("StatusBar panels", () => {
         expect(container.querySelector(".cursor-position")).toBeNull();
     });
 
+    it("shows Vim mode before the buttons, and its command line in place of the breadcrumb", () => {
+        const listeners = new Set<() => void>();
+        const vim = {
+            status: {
+                mode: "normal", isOneCommand: false, pendingKeys: "", recording: null,
+                message: null, commandLine: null
+            } as Record<string, unknown>,
+            on: (_event: string, callback: () => void) => listeners.add(callback),
+            off: (_event: string, callback: () => void) => listeners.delete(callback)
+        };
+        const setStatus = (status: Record<string, unknown>) => act(() => {
+            vim.status = { ...vim.status, ...status };
+            for (const listener of listeners) {
+                listener();
+            }
+        });
+        contextData.set("vimMode", vim);
+
+        renderBar();
+        const statusLine = container.querySelector(".actions-row > .vim-status-line");
+        expect(statusLine?.textContent).toBe("vim_mode.normal");
+        expect(statusLine?.previousElementSibling).toBeNull();
+        expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
+        expect(document.body.classList.contains("vim-mode-active")).toBe(true);
+
+        setStatus({
+            commandLine: { element: document.createElement("div"), focus() {} },
+            message: { text: "a, b", isLong: true }
+        });
+        expect(container.querySelector(".status-bar.vim-command-line-open")).not.toBeNull();
+        expect(container.querySelector(".status-bar > .vim-message-panel")?.textContent)
+            .toBe("a, b");
+
+        setStatus({ mode: null, commandLine: null, message: null });
+        expect(container.querySelector(".vim-status-line, .vim-command-line-slot")).toBeNull();
+        expect(container.querySelector(".vim-command-line-open, .vim-message-panel")).toBeNull();
+        expect(document.body.classList.contains("vim-mode-active")).toBe(false);
+    });
+
     function renderBar(isContentWritable = true, type: NoteType = "text") {
         shownNote.current = buildNote({ id: "note1", title: "A note", type });
         shownNote.current.isContentWritable = isContentWritable;

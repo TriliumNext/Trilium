@@ -2,7 +2,8 @@ import {
     type AttachmentUploadHost, type ContentEmbedDialogRequest, type ContentEmbedHost,
     type EditorConfig, getCkLocale,
     type IconPickerRequest, LINK_TOOLBAR, type LinkDialogRequest, type LinkEmbedHost,
-    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig
+    type InsertMediaRequest, type LinkMenuHost, SnippetDefinition, type TextTransformationConfig,
+    type VimConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
@@ -99,6 +100,8 @@ export interface BuildEditorOptions {
      * state of the component that hosts the editor, which changes as it renders.
      */
     getContentEmbedHandlers?: () => ContentEmbedHandlers | undefined;
+    /** The configuration of the Vim mode of the editor. */
+    vim?: VimConfig;
 }
 
 /** The members of `contentEmbed` that the component hosting the editor implements. */
@@ -331,6 +334,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         snippets: {
             definitions: opts.templates
         },
+        vim: opts.vim,
         aiAssistant: {
             stream: aiAssistantStream,
             // The "Changes" review view: a block-aware inline diff, so that a response which

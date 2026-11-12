@@ -24,8 +24,20 @@ body.zen {
         display: none !important;
     }
 
-    .status-bar {
+    &:not(.vim-mode-active) .status-bar {
         display: none;
+    }
+
+    &.vim-mode-active .status-bar {
+        > :not(.status-bar-main-row, .vim-message-panel),
+        .breadcrumb,
+        .actions-row > :not(.vim-status-line) {
+            display: none !important;
+        }
+
+        .actions-row {
+            margin-inline-start: auto;
+        }
     }
 
     #vertical-main-container {

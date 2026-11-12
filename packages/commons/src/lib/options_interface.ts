@@ -337,6 +337,14 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
      * so an imported note shows them correctly until it is edited.
      */
     textNoteHtmlSupportEnabled: boolean;
+    /** Whether text notes are edited with the keys of Vim, on this device. */
+    textNoteVimModeEnabled: boolean;
+    /** Whether the notice that explains Vim mode was shown when it was first turned on. */
+    textNoteVimModeNoticeShown: boolean;
+    /** Whether six more Ctrl keys of Insert mode, such as `Ctrl+V`, follow Vim. */
+    textNoteVimInsertKeysEnabled: boolean;
+    /** The Ex commands that Vim mode runs when it starts, one per line, such as mappings. */
+    textNoteVimStartupCommands: string;
     /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
     clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;
