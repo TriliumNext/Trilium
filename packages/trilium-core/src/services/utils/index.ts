@@ -91,7 +91,9 @@ export function removeDiacritic(str: string) {
         return "";
     }
     str = str.toString();
-    return str.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    // NFC recomposes what NFD split apart without a diacritic, such as Hangul syllables into jamo,
+    // so `normalizePreservingLength()` keeps the same characters it does one at a time.
+    return str.normalize("NFD").replace(/\p{Diacritic}/gu, "").normalize("NFC");
 }
 
 export function normalize(str: string) {
