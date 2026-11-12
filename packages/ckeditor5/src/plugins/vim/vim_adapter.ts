@@ -389,7 +389,8 @@ export default class VimAdapter {
     /**
      * Replaces the text from `from` to `to` with `text`. Text with as many lines as the text it
      * replaces changes in place, line by line. A caret inside the replaced text goes to the end of
-     * the new text. Returns the position after the new text.
+     * the new text, and one in removed lines to the start of the line that takes their place.
+     * Returns the position after the new text.
      */
     replaceRange(text: string, from: Pos, to?: Pos): ModelPosition | null {
         if (this.editor.isReadOnly) {
@@ -400,7 +401,13 @@ export default class VimAdapter {
         const index = this.index();
         const wholeLines = text ? null : getWholeLines(index, start, end);
         if (wholeLines) {
+            const cursor = this.getCursor();
+            const isCursorInside = this.editor.model.document.selection.isCollapsed
+                && cursor.line >= wholeLines.first && cursor.line <= wholeLines.last;
             removeLines(this.editor, index, wholeLines.first, wholeLines.last);
+            if (isCursorInside) {
+                this.setCursor(Math.min(wholeLines.first, this.lastLine()), 0);
+            }
             return null;
         }
 
@@ -661,7 +668,7 @@ export default class VimAdapter {
 
     scrollIntoView(position?: Pos | null, margin = 0) {
         if (!position) {
-            this.editor.editing.view.scrollToTheSelection();
+            this.scrollWithoutAnimation(() => this.editor.editing.view.scrollToTheSelection());
             return;
         }
         const scroller = this.getScroller();
@@ -877,9 +884,10 @@ export default class VimAdapter {
 
     /**
      * Runs `fn`, a change that the engine asked for, in an operation of the engine, which then
-     * does not take the change for one of the user, as it does with a selection made outside.
+     * does not take the change for one of the user, as it does with a selection made outside, and
+     * scrolls the cursor into view after it.
      */
-    private asVimOperation<T>(fn: () => T): T {
+    asVimOperation<T>(fn: () => T): T {
         if (this.curOp) {
             return fn();
         }
@@ -964,7 +972,8 @@ export default class VimAdapter {
 
     /**
      * Passes the changes to the engine, which records the text typed in Insert mode, and keeps the
-     * end of the last change that undo can take back, as the last edit.
+     * end of the last change that undo can take back, as the last edit: the end of inserted text,
+     * or the start of an inserted block.
      */
     private recordChanges(changes: DifferItem[], isEdit: boolean) {
         const model = this.editor.model;
@@ -975,7 +984,8 @@ export default class VimAdapter {
             let text = "";
             if (change.type === "insert") {
                 const end = change.position.getShiftedBy(change.length);
-                lastEnd = end;
+                const isBlock = change.name !== "$text" && !model.schema.isInline(change.name);
+                lastEnd = isBlock ? change.position : end;
                 if (change.name === "$text") {
                     for (const item of model.createRange(change.position, end).getItems()) {
                         text += (item as ModelTextProxy).data;
@@ -1147,6 +1157,27 @@ export default class VimAdapter {
         const domElement = view.domConverter.mapViewToDom(
             mapper.toViewElement(element) as ViewElement) as HTMLElement;
         return domElement.getBoundingClientRect();
+    }
+
+    /**
+     * Runs `scroll`, which scrolls the ancestors of the editing root, with their `scroll-behavior`
+     * set to `auto` for the moment, so that a jump lands at once.
+     */
+    private scrollWithoutAnimation(scroll: () => void) {
+        const smooth: [ HTMLElement, string ][] = [];
+        for (let element = this.root.parentElement; element; element = element.parentElement) {
+            if (getComputedStyle(element).scrollBehavior === "smooth") {
+                smooth.push([ element, element.style.scrollBehavior ]);
+                element.style.scrollBehavior = "auto";
+            }
+        }
+        try {
+            scroll();
+        } finally {
+            for (const [ element, value ] of smooth) {
+                element.style.scrollBehavior = value;
+            }
+        }
     }
 
     /** The element that scrolls the note, the closest scrolling ancestor of the editing root. */

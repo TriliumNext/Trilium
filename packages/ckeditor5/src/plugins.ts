@@ -15,6 +15,7 @@ import InsertDateTimePlugin from "./plugins/insert_date_time.js";
 import ReferenceLink from "./plugins/referencelink.js";
 import NoPoweredByBadge from "./plugins/no_powered_by_badge.js";
 import InlineFillerSpellcheck from "./plugins/inline_filler_spellcheck.js";
+import KeepViewMappings from "./plugins/keep_view_mappings.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
 import MarkdownImportPlugin from "./plugins/markdownimport.js";
@@ -217,7 +218,8 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     MentionCustomization,
     ReferenceLink,
     NoPoweredByBadge,
-    InlineFillerSpellcheck
+    InlineFillerSpellcheck,
+    KeepViewMappings
 ];
 
 /**

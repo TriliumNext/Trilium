@@ -1,4 +1,4 @@
-import type { Editor, ModelElement } from "ckeditor5";
+import type { Editor, ModelApplyOperationEvent, ModelElement } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -67,6 +67,34 @@ describe("Vim mode line editing", () => {
             press(editor, "jjjdd");
             expect(getLines(editor)).toBe("|b||c2|T|");
             expect(getContent(editor)).toContain("<tabPanel><paragraph></paragraph></tabPanel>");
+        });
+
+        it("keeps a table whose lines all go, and takes it with a line outside it", async () => {
+            const editor = await createVimEditor(table([ [ "[]a" ] ]) + paragraphs("z"));
+            press(editor, "dd");
+            expect(getContent(editor)).toBe(table([ [ "" ] ]) + paragraphs("z"));
+            press(editor, "u2dd");
+            expect(getContent(editor)).toBe(paragraphs(""));
+
+            setVimData(editor, table([ [ "[]a" ] ]));
+            press(editor, "dd");
+            expect(getContent(editor)).toBe(table([ [ "" ] ]));
+
+            setVimData(editor, paragraphs("[]z", "y") + table([ [ "a" ] ]));
+            press(editor, "jdj");
+            expect(getContent(editor)).toBe(paragraphs("z"));
+        });
+
+        it("puts a collapsed heading back collapsed on undo", async () => {
+            const editor = await createVimEditor(
+                "<heading2 headingCollapsed=\"true\">[]Head</heading2>" + paragraphs("a", "b")
+                + "<heading2>Next</heading2>");
+            for (const keys of [ "dd", "Vd" ]) {
+                press(editor, keys);
+                expect(getLines(editor), keys).toBe("a|b|Next");
+                press(editor, "u");
+                expect(getLines(editor), keys).toBe("Head|Next");
+            }
         });
 
         it("clears the title of a collapsible block and keeps an empty body line", async () => {
@@ -313,6 +341,23 @@ describe("Vim mode line editing", () => {
             expect(getContent(editor)).toBe(
                 "<paragraph>A<$text bold=\"true\">SS</$text></paragraph>");
         });
+
+        it("rewrite each part of a line between objects in one removal and one insertion",
+            async () => {
+            const image = "<imageInline src=\"a.png\"></imageInline>";
+            const editor = await createVimEditor(
+                "<paragraph>[]one <$text bold=\"true\">two</$text> three</paragraph>"
+                + `<paragraph>a b${image}c d</paragraph>`);
+            let operations = 0;
+            editor.model.on<ModelApplyOperationEvent>("applyOperation", (_evt, [ operation ]) => {
+                operations += operation.isDocumentOperation ? 1 : 0;
+            });
+            press(editor, "gUG");
+            expect(getContent(editor)).toBe(
+                "<paragraph>ONE <$text bold=\"true\">TWO</$text> THREE</paragraph>"
+                + `<paragraph>A B${image}C D</paragraph>`);
+            expect(operations).toBe(6);
+        });
     });
 
     describe("o and O", () => {
@@ -446,6 +491,16 @@ describe("Vim mode line editing", () => {
             expect(getContent(editor)).toBe(before);
         });
 
+        it("do nothing on a collapsed list item", async () => {
+            const editor = await createVimEditor(item("[]one", "a") + item("nested a", "b", 1)
+                + item("nested b", "c", 1) + item("two", "d"));
+            editor.execute("toggleListCollapse" as never);
+            const before = getContent(editor);
+            expect(getLines(editor)).toBe("one|two");
+            press(editor, "J");
+            expect(getContent(editor)).toBe(before);
+        });
+
         it("join the lines of a Visual selection", async () => {
             const editor = await createVimEditor(paragraphs("[]a", "b", "c", "d"));
             press(editor, "VjjJ");
@@ -562,6 +617,38 @@ describe("Vim mode line editing", () => {
             const version = model.document.version;
             expect(replaceText(editor, range, "ab", "ab")?.isEqual(range.end)).toBe(true);
             expect(model.document.version).toBe(version);
+        });
+
+        it("joins the line that a deletion ends at the start of", async () => {
+            const editor = await createVimEditor(paragraphs("[]a1", "b2", "", "d4", "e5"));
+            press(editor, "3D");
+            expect(getLines(editor)).toBe("|d4|e5");
+            press(editor, "uvjjd");
+            expect(getLines(editor)).toBe("|d4|e5");
+
+            setVimData(editor, paragraphs("[]a1", "", "c3"));
+            press(editor, "2C");
+            typeText(editor, "X");
+            press(editor, "<Esc>");
+            expect(getLines(editor)).toBe("X|c3");
+
+            // A range of nothing but the end of a block joins in the first deletion.
+            const model = editor.model;
+            const [ first, second ] = [ 0, 1 ].map((index) =>
+                root(editor).getChild(index) as ModelElement);
+            replaceText(editor, model.createRange(model.createPositionAt(first, "end"),
+                model.createPositionAt(second, 0)), "", "\n");
+            expect(getLines(editor)).toBe("Xc3");
+        });
+
+        it("splits a line at a carriage return", async () => {
+            const editor = await createVimEditor(paragraphs("one two"));
+            const model = editor.model;
+            const block = root(editor).getChild(0) as ModelElement;
+            const range = model.createRange(model.createPositionAt(block, 3),
+                model.createPositionAt(block, 4));
+            replaceText(editor, range, "\r", " ");
+            expect(getContent(editor)).toBe(paragraphs("one", "two"));
         });
     });
 

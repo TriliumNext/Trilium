@@ -50,6 +50,17 @@ describe("Vim mode search", () => {
         expect(getHighlights(editor)).toEqual([]);
     });
 
+    it("keeps the last Ex command in the : register when Escape clears the highlights",
+        async () => {
+        const editor = await createVimEditor(paragraphs("[]abc", "def"));
+        press(editor, ":s/a/A/<CR>/e<CR>");
+        await vi.waitFor(() => expect(getHighlights(editor)).toEqual([ "1:1-2" ]));
+        press(editor, "<Esc>");
+        expect(getHighlights(editor)).toEqual([]);
+        press(editor, "\":p");
+        expect(getLines(editor)).toBe("Abc|des/a/A/f");
+    });
+
     it("follows the changes of the note with the highlights", async () => {
         vi.useFakeTimers();
         try {
@@ -146,6 +157,8 @@ describe("Vim mode search", () => {
             expect(getContent(editor)).toBe(
                 `${paragraphs("value=key [key=value] $")}<heading2>x</heading2>`
                     + `<heading2>y</heading2>`);
+            press(editor, ":1s/ /\\r/g<CR>");
+            expect(getLines(editor)).toBe("value=key|[key=value]|$|x|y");
         });
 
         it("keeps the formatting of the replaced text", async () => {

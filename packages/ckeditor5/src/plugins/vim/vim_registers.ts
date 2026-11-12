@@ -3,6 +3,7 @@ import {
     type ModelWriter, uid
 } from "ckeditor5";
 
+import { isTitle } from "./vim_editing.js";
 import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
 
 /** The most rich contents remembered, the oldest forgotten first. */
@@ -121,9 +122,11 @@ function cloneNode(writer: ModelWriter, node: ModelNode): ModelNode {
 /**
  * Puts the blocks of `content`, or a paragraph for each line of `text`, `count` times after line
  * `line` of `index`, or before it. A block takes the kind that its place gives it: an item of a
- * list, a code line in a code block, a paragraph inside a quote, an admonition or a cell. A widget
- * put into a list joins the item, and one put into a code block is left out. Returns the position
- * at the start of the first block put, or `null` when nothing was put.
+ * list, a code line in a code block, a paragraph inside a quote, an admonition or a cell. A code
+ * line outside a code block and a title, such as that of a tab, become paragraphs, and lines put
+ * on a title go to the start of the content under it. A widget put into a list joins the item,
+ * and one put into a code block is left out. Returns the position at the start of the first block
+ * put, or `null` when nothing was put.
  */
 export function putLines(
     editor: Editor, index: LineIndex, line: number, isAfter: boolean,
@@ -143,7 +146,11 @@ export function putLines(
         for (let time = 0; time < count; time++) {
             if (content?.isBlocks) {
                 const copy = cloneFragment(writer, content.fragment);
-                blocks.push(...copy.getChildren() as Iterable<ModelElement>);
+                for (const block of [ ...copy.getChildren() ] as ModelElement[]) {
+                    blocks.push(...(block.is("element", "codeBlock")
+                        ? splitCodeBlock(writer, block)
+                        : [ block ]));
+                }
             } else {
                 for (const lineText of lines) {
                     const paragraph = writer.createElement("paragraph");
@@ -155,9 +162,7 @@ export function putLines(
 
         const anchor = entry.kind === "text" ? entry.block : entry.element;
         const destination = entry.kind === "text" ? entry.block : null;
-        let position = isAfter
-            ? writer.createPositionAfter(anchor)
-            : writer.createPositionBefore(anchor);
+        let position = getPutPosition(writer, anchor, isAfter);
         const fitter = new BlockFitter(writer, destination, blocks);
         let firstPut: ModelElement | null = null;
         for (const block of blocks) {
@@ -169,6 +174,39 @@ export function putLines(
         }
         return firstPut ? getStartOf(writer, firstPut) : null;
     });
+}
+
+/**
+ * Where blocks put after `anchor`, or before it, go. Nothing goes beside a title: the blocks go to
+ * the start of the content after it, such as the panel of a tab, or else after its container.
+ */
+function getPutPosition(writer: ModelWriter, anchor: ModelElement, isAfter: boolean) {
+    const schema = writer.model.schema;
+    if (!isTitle(schema, anchor)) {
+        return isAfter ? writer.createPositionAfter(anchor) : writer.createPositionBefore(anchor);
+    }
+    const body = anchor.nextSibling;
+    const bodyStart = body?.is("element") ? writer.createPositionAt(body, 0) : null;
+    if (bodyStart && schema.checkChild(bodyStart, "paragraph")) {
+        return bodyStart;
+    }
+    const afterTitle = writer.createPositionAfter(anchor);
+    return schema.checkChild(afterTitle, "paragraph")
+        ? afterTitle
+        : writer.createPositionAfter(anchor.parent as ModelElement);
+}
+
+/** The lines of `codeBlock` as paragraphs. */
+function splitCodeBlock(writer: ModelWriter, codeBlock: ModelElement): ModelElement[] {
+    const paragraphs = [ writer.createElement("paragraph") ];
+    for (const child of [ ...codeBlock.getChildren() ]) {
+        if (child.is("element", "softBreak")) {
+            paragraphs.push(writer.createElement("paragraph"));
+        } else {
+            writer.append(cloneNode(writer, child), paragraphs[paragraphs.length - 1]);
+        }
+    }
+    return paragraphs;
 }
 
 /** Adds `lines` as code lines after the code line `entry`, or before it. */

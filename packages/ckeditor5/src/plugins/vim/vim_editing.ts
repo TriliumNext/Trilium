@@ -1,8 +1,10 @@
 import {
     BubblingEventInfo, type Editor, type ModelElement, ModelLivePosition, type ModelPosition,
-    type ModelRange, type ModelSchema, type ModelWriter, ViewDocumentDomEventData, type ViewRange
+    type ModelRange, type ModelSchema, type ModelTextProxy, type ModelWriter,
+    ViewDocumentDomEventData, type ViewRange
 } from "ckeditor5";
 
+import CollapsibleListItems from "../collapsible_list_items.js";
 import HiddenBlocks from "../hidden_blocks.js";
 import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
 
@@ -37,10 +39,10 @@ export function getWholeLines(
 
 /**
  * Removes the lines from `first` to `last`. A block goes with its last line, and a container goes
- * with its content, such as a quote with its last block or a table with the lines of all its
- * cells. A limit, such as a table cell or a column, otherwise keeps one empty block, and a title,
- * such as that of a collapsible block, is cleared. A part of a block between soft breaks goes with
- * one of its soft breaks.
+ * with its content, such as a quote with its last block, or a table with the lines of all its
+ * cells when lines outside it go too. A limit, such as a table cell or a column, otherwise keeps
+ * one empty block, and a title, such as that of a collapsible block, is cleared. A part of a block
+ * between soft breaks goes with one of its soft breaks.
  */
 export function removeLines(editor: Editor, index: LineIndex, first: number, last: number) {
     const model = editor.model;
@@ -59,10 +61,15 @@ export function removeLines(editor: Editor, index: LineIndex, first: number, las
         }
         line = removed[removed.length - 1] + 1;
     }
+    const isAllInside = (container: ModelElement) => {
+        const span = index.getSpan(container) as { first: number; last: number };
+        return first >= span.first && last <= span.last;
+    };
     const units = new Set<ModelElement>();
     for (const removal of removals) {
         if ("element" in removal) {
-            removal.element = getRemovalUnit(model.schema, removal.element, removedElements);
+            removal.element = getRemovalUnit(model.schema, removal.element, removedElements,
+                isAllInside);
         }
     }
     const lifts = getNestedItemLifts(removedElements);
@@ -86,14 +93,19 @@ export function removeLines(editor: Editor, index: LineIndex, first: number, las
 /**
  * The outermost element around `element` whose content all goes with `removed`, such as the
  * collapsible block of a removed title and body. A table cell or a column goes only with its table
- * or its layout.
+ * or its layout, and the table or the layout only when `isAllInside()` says that the removed lines
+ * are not all inside it.
  */
 function getRemovalUnit(
-    schema: ModelSchema, element: ModelElement, removed: Set<ModelElement>
+    schema: ModelSchema, element: ModelElement, removed: Set<ModelElement>,
+    isAllInside: (container: ModelElement) => boolean
 ): ModelElement {
     let unit = element;
     for (let parent = element.parent as ModelElement | null; parent && !parent.is("rootElement")
         && isRemovedWhole(parent, removed); parent = parent.parent as ModelElement | null) {
+        if (schema.isObject(parent) && isAllInside(parent)) {
+            break;
+        }
         if (!schema.isLimit(parent) || schema.isObject(parent)) {
             unit = parent;
         }
@@ -163,7 +175,7 @@ function getSegmentRange(
  * Removes `block`, or clears it when it is a title. A limit that it leaves empty keeps a paragraph.
  */
 function removeBlock(writer: ModelWriter, block: ModelElement) {
-    if (isTitle(writer, block)) {
+    if (isTitle(writer.model.schema, block)) {
         writer.remove(writer.createRangeIn(block));
         return;
     }
@@ -175,16 +187,15 @@ function removeBlock(writer: ModelWriter, block: ModelElement) {
 }
 
 /** Whether `block` is a title that its container cannot do without, such as a table caption. */
-function isTitle(writer: ModelWriter, block: ModelElement) {
-    const schema = writer.model.schema;
+export function isTitle(schema: ModelSchema, block: ModelElement) {
     return block.is("element", "summary") || (schema.isLimit(block) && !schema.isObject(block));
 }
 
 /**
- * Replaces `range`, which holds `oldText`, with `text`. A line break in `text` splits the block, or
- * adds a soft break in a code block or a title. The new text takes the formatting of the text it
- * replaces, as typed text would. Returns the position after the new text, or `null` when nothing
- * changed: an object is never replaced by text.
+ * Replaces `range`, which holds `oldText`, with `text`. A line break in `text`, `\n` or `\r`,
+ * splits the block, or adds a soft break in a code block or a title. The new text takes the
+ * formatting of the text it replaces, as typed text would. Returns the position after the new
+ * text, or `null` when nothing changed: an object is never replaced by text.
  */
 export function replaceText(
     editor: Editor, range: ModelRange, text: string, oldText: string
@@ -202,13 +213,31 @@ export function replaceText(
         const attributes = getTextAttributes(range);
         let position = range.start;
         if (!range.isCollapsed) {
-            const selection = writer.createSelection(range);
-            model.deleteContent(selection, { doNotResetEntireContent: true });
-            position = selection.getFirstPosition() as ModelPosition;
+            position = deleteRange(editor, writer, range);
         }
-        end = insertLines(writer, position, text.split("\n"), attributes);
+        end = insertLines(writer, position, text.split(/\r\n?|\n/), attributes);
     });
     return end;
+}
+
+/**
+ * Deletes `range` and joins the blocks at its ends, as Backspace would. `deleteContent()` leaves
+ * out a block that the range ends at the start of, which then joins in a second deletion. Returns
+ * where the range was.
+ */
+function deleteRange(editor: Editor, writer: ModelWriter, range: ModelRange): ModelPosition {
+    const model = editor.model;
+    const endBlock = range.end.offset === 0 ? range.end.parent as ModelElement : null;
+    const selection = writer.createSelection(range);
+    model.deleteContent(selection, { doNotResetEntireContent: true });
+    const position = selection.getFirstPosition() as ModelPosition;
+    if (!endBlock || endBlock.root !== position.root) {
+        return position;
+    }
+    const join = writer.createSelection(
+        writer.createRange(position, writer.createPositionAt(endBlock, 0)));
+    model.deleteContent(join, { doNotResetEntireContent: true });
+    return join.getFirstPosition() as ModelPosition;
 }
 
 /**
@@ -238,55 +267,64 @@ function rewriteLine(
     if (oldText === text) {
         return;
     }
-    if (oldText.length === text.length) {
-        for (const [ from, to ] of getChangedRuns(oldText, text).reverse()) {
-            rewriteText(writer, rangeOf(from, to), (offset, data) =>
-                text.slice(from + offset, from + offset + data.length));
-        }
+    const isSameLength = oldText.length === text.length;
+    const changeCase = isSameLength
+        ? null
+        : [ toUpperCase, toLowerCase ].find((change) => change(oldText) === text);
+    if (!isSameLength && !changeCase) {
+        replaceText(editor, rangeOf(0, oldText.length), text, oldText);
         return;
     }
-    const changeCase = [ toUpperCase, toLowerCase ].find((change) => change(oldText) === text);
-    if (changeCase) {
-        rewriteText(writer, rangeOf(0, oldText.length), (_offset, data) => changeCase(data));
-    } else {
-        replaceText(editor, rangeOf(0, oldText.length), text, oldText);
+    for (const [ from, to ] of getChangedSpans(oldText, text, !isSameLength).reverse()) {
+        rewriteText(writer, rangeOf(from, to), (offset, data) => changeCase
+            ? changeCase(data)
+            : text.slice(from + offset, from + offset + data.length));
     }
-}
-
-/** The runs of characters that differ between `oldText` and `text`, objects left out. */
-function getChangedRuns(oldText: string, text: string): [ number, number ][] {
-    const runs: [ number, number ][] = [];
-    for (let ch = 0; ch < text.length; ch++) {
-        if (oldText[ch] === text[ch] || oldText[ch] === OBJECT_CHARACTER) {
-            continue;
-        }
-        const last = runs.at(-1);
-        if (last?.[1] === ch) {
-            last[1]++;
-        } else {
-            runs.push([ ch, ch + 1 ]);
-        }
-    }
-    return runs;
 }
 
 /**
- * Writes the text that `getText` gives for each text node in `range` over it, with the formatting
- * of that node. `offset` is where the node starts in `range`.
+ * The spans from the first to the last character that differs between `oldText` and `text` in
+ * each part of the line between two objects, or with `isWhole`, each such part whole.
+ */
+function getChangedSpans(oldText: string, text: string, isWhole: boolean): [ number, number ][] {
+    const spans: [ number, number ][] = [];
+    let partStart = 0;
+    for (let ch = 0; ch <= oldText.length; ch++) {
+        if (ch < oldText.length && oldText[ch] !== OBJECT_CHARACTER) {
+            continue;
+        }
+        let first = partStart;
+        let last = ch;
+        while (!isWhole && first < last && oldText[first] === text[first]) {
+            first++;
+        }
+        while (!isWhole && last > first && oldText[last - 1] === text[last - 1]) {
+            last--;
+        }
+        if (first < last) {
+            spans.push([ first, last ]);
+        }
+        partStart = ch + 1;
+    }
+    return spans;
+}
+
+/**
+ * Writes the text that `getText` gives for each text node in `range`, which holds text only, over
+ * that node, with its formatting. `offset` is where the node starts in `range`. It takes one
+ * removal and one insertion, since undo transforms each operation against every later one.
  */
 function rewriteText(
     writer: ModelWriter, range: ModelRange, getText: (offset: number, data: string) => string
 ) {
-    const nodes = [ ...range.getItems() ].filter((item) => item.is("$textProxy"));
-    for (const node of nodes.reverse()) {
-        const offset = node.startOffset as number;
-        const data = getText(offset - range.start.offset, node.data);
-        if (data !== node.data) {
-            const position = writer.createPositionAt(node.parent as ModelElement, offset);
-            writer.remove(writer.createRange(position, position.getShiftedBy(node.data.length)));
-            writer.insertText(data, node.getAttributes(), position);
-        }
+    const fragment = writer.createDocumentFragment();
+    for (const node of range.getItems()) {
+        const text = node as ModelTextProxy;
+        const data = getText((text.startOffset as number) - range.start.offset, text.data);
+        writer.append(writer.createText(data, text.getAttributes()), fragment);
     }
+    writer.remove(range);
+    writer.insert(fragment, range.start);
 }
 
 function toUpperCase(text: string) {
@@ -321,7 +359,7 @@ function insertLines(
 function insertBreak(writer: ModelWriter, position: ModelPosition): ModelPosition {
     const block = position.parent as ModelElement;
     const isSplittable = block.is("element") && !block.is("rootElement")
-        && !block.is("element", "codeBlock") && !isTitle(writer, block);
+        && !block.is("element", "codeBlock") && !isTitle(writer.model.schema, block);
     if (isSplittable) {
         const { position: between } = writer.split(position);
         return writer.createPositionAt(between.nodeAfter as ModelElement, 0);
@@ -458,8 +496,14 @@ function canJoin(editor: Editor, current: TextLine, next: TextLine): boolean {
         return true;
     }
     const model = editor.model;
-    const hiddenBlocks = editor.plugins.has(HiddenBlocks) ? editor.plugins.get(HiddenBlocks) : null;
-    if (hiddenBlocks?.getHiddenRunAfter(current.block).length) {
+    const plugins = editor.plugins;
+    const hiddenBlocks = plugins.has(HiddenBlocks) ? plugins.get(HiddenBlocks) : null;
+    const hiddenItems = plugins.has(CollapsibleListItems)
+        ? plugins.get(CollapsibleListItems).getHiddenSnapshot()
+        : null;
+    const blockAfter = current.block.nextSibling;
+    if (hiddenBlocks?.getHiddenRunAfter(current.block).length
+        || (blockAfter && hiddenItems?.(blockAfter))) {
         return false;
     }
     const currentLimit = model.schema.getLimitElement(model.createPositionAt(current.block, 0));

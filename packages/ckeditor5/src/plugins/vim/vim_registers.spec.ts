@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press
+    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press,
+    setVimData
 } from "../../../test/vim-kit.js";
+import TriliumVim from "./vim.js";
 import { forgetRichContents, getRichContent, rememberRichContent } from "./vim_registers.js";
 
 const BODY = paragraphs("body");
-const CODE = "<codeBlock language=\"plaintext\">code</codeBlock>";
 const HEADING = "<heading2>Heading</heading2>";
 const HR = "<horizontalLine></horizontalLine>";
 
@@ -89,14 +90,62 @@ describe("Vim mode registers", () => {
                 + `<blockQuote>${paragraphs("quote")}${HR}</blockQuote>` + after);
         });
 
-        it("puts a whole code block as a code block, and as a paragraph where it cannot go",
-            async () => {
+        it("puts the lines of a whole code block as paragraphs outside a code block", async () => {
+            const single = await createVimEditor(code("[]c1") + BODY);
+            press(single, "yyjp");
+            expect(getContent(single)).toBe(code("c1") + BODY + paragraphs("c1"));
+
             const editor = await createVimEditor(
-                `${CODE.replace("code<", "[]code<")}${item("item", "x")}${BODY}`);
+                `${code("[]one", "two")}${item("item", "x")}${BODY}`);
+            press(editor, "2yyGp");
+            expect(getContent(editor)).toBe(
+                code("one", "two") + item("item", "a") + BODY + paragraphs("one", "two"));
+            press(editor, "u3Gp");
+            expect(getContent(editor)).toBe(code("one", "two") + item("item", "a")
+                + item("one", "b") + item("two", "c") + BODY);
+        });
+
+        it("leaves out a block that its place refuses, and the attributes a paragraph cannot have",
+            async () => {
+            const editor = await createVimEditor(`[${HR}]${quote("q")}`);
+            editor.model.schema.addChildCheck((context, definition) =>
+                definition.name === "horizontalLine" && context.endsWith("blockQuote")
+                    ? false
+                    : undefined);
+            press(editor, "yyjp");
+            expect(getContent(editor)).toBe(HR + quote("q"));
+            expect(getStatus(editor).message?.text).not.toContain("code block");
+
+            editor.model.schema.extend("heading2", { allowAttributes: "headingOnly" });
+            setVimData(editor, "<heading2 headingOnly=\"x\">[]H</heading2>" + item("i", "a"));
+            press(editor, "yyjp");
+            expect(getContent(editor)).toBe("<heading2 headingOnly=\"x\">H</heading2>"
+                + item("i", "a") + item("H", "b"));
+        });
+
+        it("puts a title as a paragraph, and on a title into the content under it", async () => {
+            const tabs = (...panel: string[]) => "<tabs><tab><tabTitle>[]Plan</tabTitle>"
+                + `<tabPanel>${paragraphs(...panel)}</tabPanel></tab></tabs>`;
+            const editor = await createVimEditor(tabs("body") + paragraphs("z"));
+            press(editor, "yyP");
+            expect(getContent(editor)).toBe(tabs("Plan", "body").replace("[]", "")
+                + paragraphs("z"));
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "Gp");
+            expect(getContent(editor)).toContain(paragraphs("z", "Plan"));
+
+            const details = (...body: string[]) =>
+                `<details open="true"><summary>Title</summary>${paragraphs(...body)}</details>`;
+            setVimData(editor, details("body").replace("Title", "[]Title"));
+            press(editor, "yyjp");
+            expect(getContent(editor)).toBe(details("body", "Title"));
+            press(editor, "ggP");
+            expect(getContent(editor)).toBe(details("Title", "body", "Title"));
+
+            setVimData(editor, paragraphs("[]x") + "<table><tableRow><tableCell>"
+                + paragraphs("c") + "</tableCell></tableRow><caption>Cap</caption></table>");
             press(editor, "yyGp");
-            expect(getContent(editor)).toBe(CODE + item("item", "a") + BODY + CODE);
-            press(editor, "u2Gp");
-            expect(getContent(editor)).toBe(CODE + item("item", "a") + item("code", "b") + BODY);
+            expect(getLines(editor)).toBe("x|c|Cap|x");
         });
 
         it("puts above, a count of times, and lands on the first non-blank character", async () => {
@@ -247,6 +296,19 @@ describe("Vim mode registers", () => {
             readClipboard.mockResolvedValue("x");
             press(editor, "\"*P");
             await vi.waitFor(() => expect(getLines(editor)).toBe("a|xline"));
+        });
+
+        it("put nothing when Vim mode is off by the time the clipboard is read", async () => {
+            let resolve: (text: string) => void = () => undefined;
+            const readClipboard = vi.fn(() => new Promise<string>((done) => {
+                resolve = done;
+            }));
+            const editor = await createVimEditor(paragraphs("[]a"), { host: { readClipboard } });
+            press(editor, "\"+p");
+            await editor.plugins.get(TriliumVim).setEnabled(false);
+            resolve("late");
+            await new Promise((done) => setTimeout(done));
+            expect(editor.getData()).toBe("<p>a</p>");
         });
 
         it("put the register when the clipboard cannot be read", async () => {

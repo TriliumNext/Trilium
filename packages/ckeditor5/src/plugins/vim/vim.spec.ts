@@ -1,11 +1,13 @@
 import type { Vim } from "@replit/codemirror-vim-core";
 import { type Editor, env, ImageBlock, ViewDocumentDomEventData } from "ckeditor5";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
     press, typeText
 } from "../../../test/vim-kit.js";
+import HostedBalloon from "../../hosted_balloon.js";
 import ContentEmbed from "../content_embed/content_embed.js";
 import TriliumVim from "./vim.js";
 import { getLoadedVimEngine } from "./vim_engine.js";
@@ -17,6 +19,28 @@ function getRoot(editor: Editor) {
 function getMarkers(editor: Editor) {
     return [ ...editor.model.markers ].map((marker) => marker.name).filter(
         (name) => name.startsWith("vimCursor"));
+}
+
+/** Pastes `data`, by type, in the editing root, as `Ctrl+V` does. */
+function paste(editor: Editor, data: Record<string, string>) {
+    const clipboardData = new DataTransfer();
+    for (const [ type, value ] of Object.entries(data)) {
+        clipboardData.setData(type, value);
+    }
+    getRoot(editor).dispatchEvent(
+        new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData }));
+}
+
+/** Presses `Ctrl` with `key` in `target`. Returns whether a listener took the key. */
+function pressCtrl(target: Element, key: string): boolean {
+    const event = new KeyboardEvent("keydown",
+        { key, ctrlKey: true, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
+}
+
+function wait(milliseconds: number) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 describe("Vim mode", () => {
@@ -93,6 +117,52 @@ describe("Vim mode", () => {
             await vi.waitFor(() => expect(getStatus(editor).mode).toBe("normal"));
             getRoot(editor).dispatchEvent(copy());
         });
+
+        it("paste where the cursor is, and leave it on the last character pasted", async () => {
+            const editor = await createVimEditor(paragraphs("[]abc def ghi", "x"));
+            press(editor, "w");
+            paste(editor, { "text/plain": "PASTED" });
+            expect(getLines(editor)).toBe("abc PASTEDdef ghi|x");
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(getCursor(editor)).toBe("0:9");
+            press(editor, "x");
+            expect(getLines(editor)).toBe("abc PASTEdef ghi|x");
+
+            press(editor, "j");
+            paste(editor, { "text/html": "<table><tr><td>t1</td><td>t2</td></tr></table>" });
+            expect(getLines(editor)).toBe("abc PASTEdef ghi|t1|t2|x");
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(editor.model.document.selection.isCollapsed).toBe(true);
+            expect(getCursor(editor)).toBe("2:1");
+
+            press(editor, "ggvl");
+            paste(editor, { "text/plain": "Z" });
+            expect(getLines(editor)).toBe("Zc PASTEdef ghi|t1|t2|x");
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(getCursor(editor)).toBe("0:0");
+
+            press(editor, "i");
+            paste(editor, { "text/plain": "Y" });
+            expect(getStatus(editor).mode).toBe("insert");
+            expect(getLines(editor)).toBe("YZc PASTEdef ghi|t1|t2|x");
+        });
+
+        it("keep the editor working after a search, an append and a counted motion", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("[]d e f"));
+            editor.editing.view.focus();
+            await userEvent.keyboard("/e{Enter}");
+            await wait(50);
+            await userEvent.keyboard("Axyz");
+            // The highlights of the search follow the typing once it pauses.
+            await wait(200);
+            await userEvent.keyboard("{Escape}0");
+            await wait(50);
+            await userEvent.keyboard("4lx");
+            expect(getLines(editor)).toBe("d e xyz");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
     });
 
     describe("keys in Insert mode", () => {
@@ -122,6 +192,47 @@ describe("Vim mode", () => {
             expect(getStatus(editor).mode).toBe("normal");
             press(editor, "a<C-c>");
             expect(getStatus(editor).mode).toBe("normal");
+        });
+
+        it("close a balloon of the editor with Ctrl+[, and with Ctrl+C when nothing is selected",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]abc"));
+            const hosted = new HostedBalloon(editor, "vim-spec-balloon");
+            const open = <T extends HTMLElement>(tagName: string) => {
+                const field = document.createElement(tagName) as T;
+                hosted.show((container) => {
+                    container.append(field);
+                    return () => field.remove();
+                });
+                field.focus();
+                return field;
+            };
+            const isOpen = () => !!document.querySelector(".vim-spec-balloon");
+            editor.editing.view.focus();
+            press(editor, "A");
+
+            const input = open<HTMLInputElement>("input");
+            expect(pressCtrl(input, "[")).toBe(true);
+            expect(isOpen()).toBe(false);
+            expect(document.activeElement).toBe(getRoot(editor));
+            expect(getStatus(editor).mode).toBe("insert");
+
+            const selected = open<HTMLInputElement>("input");
+            selected.value = "https://";
+            selected.select();
+            expect(pressCtrl(selected, "c")).toBe(false);
+            expect(pressCtrl(selected, "x")).toBe(false);
+            expect(isOpen()).toBe(true);
+            selected.setSelectionRange(8, 8);
+            expect(pressCtrl(selected, "c")).toBe(true);
+            expect(isOpen()).toBe(false);
+
+            const button = open<HTMLButtonElement>("button");
+            expect(pressCtrl(button, "c")).toBe(true);
+            expect(isOpen()).toBe(false);
+            expect(pressCtrl(button, "[")).toBe(false);
+            expect(pressCtrl(document.body, "[")).toBe(false);
+            expect(pressCtrl(editor.ui.view.body.bodyCollectionContainer, "[")).toBe(false);
         });
 
         it("follow Vim for the insert keys when they are on", async () => {
@@ -309,6 +420,28 @@ describe("Vim mode", () => {
             error.mockRestore();
         });
 
+        it("scrolls to the cursor after a search or a line number, at once", async () => {
+            const texts = Array.from({ length: 100 }, (_, index) => `line ${index}`);
+            const editor = await createVimEditor(paragraphs(`[]${texts[0]}`, ...texts.slice(1)));
+            const scroller = document.createElement("div");
+            scroller.style.cssText = "height: 200px; overflow: auto; scroll-behavior: smooth";
+            document.body.append(scroller);
+            scroller.append(editor.ui.element as HTMLElement);
+            try {
+                press(editor, "/line 90<CR>");
+                expect(getCursor(editor)).toBe("90:0");
+                expect(scroller.scrollTop).toBeGreaterThan(1000);
+                press(editor, "gg");
+                expect(scroller.scrollTop).toBeLessThan(100);
+                press(editor, ":50<CR>");
+                expect(getCursor(editor)).toBe("49:0");
+                expect(scroller.scrollTop).toBeGreaterThan(500);
+                expect(scroller.style.scrollBehavior).toBe("smooth");
+            } finally {
+                scroller.remove();
+            }
+        });
+
         it("leaves the cursor on a character after an Ex command", async () => {
             const editor = await createVimEditor(paragraphs("[]one two", "three four", "five six"));
             press(editor, ":1,3normal Ax<CR>");
@@ -482,6 +615,17 @@ describe("Vim mode", () => {
             expect(getLines(editor)).toBe("ONE two three");
             press(editor, "u");
             expect(getLines(editor)).toBe("one two three");
+        });
+
+        it("redoes a change in Normal mode, with the cursor on the changed line", async () => {
+            for (const keys of [ ">>", "gUU", "V>", "VU", "cc<Esc>", "S<Esc>", "cw<Esc>" ]) {
+                const editor = await createVimEditor(
+                    paragraphs("alpha one", "[]beta two", "gamma three"));
+                press(editor, `${keys}u<C-r>`);
+                expect(getStatus(editor).mode, keys).toBe("normal");
+                expect(editor.model.document.selection.isCollapsed, keys).toBe(true);
+                expect(getCursor(editor).split(":")[0], keys).toBe("1");
+            }
         });
     });
 

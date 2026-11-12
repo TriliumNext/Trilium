@@ -1,8 +1,9 @@
 import "../../theme/vim.css";
 
-import type { Vim, vimState } from "@replit/codemirror-vim-core";
+import type { Pos, Vim, vimState } from "@replit/codemirror-vim-core";
 import {
-    type Editor, env, keyCodes, type ModelElement, Plugin, type ViewDocumentKeyDownEvent
+    ClipboardPipeline, type ClipboardContentInsertionEvent, type Editor, env, keyCodes,
+    type ModelElement, ModelLiveRange, type ModelRange, Plugin, type ViewDocumentKeyDownEvent
 } from "ckeditor5";
 
 import ContentEmbedCaret from "../content_embed/content_embed_caret.js";
@@ -121,6 +122,10 @@ export default class TriliumVim extends Plugin {
 
     static get pluginName() {
         return "TriliumVim" as const;
+    }
+
+    static get requires() {
+        return [ ClipboardPipeline ] as const;
     }
 
     init() {
@@ -247,7 +252,7 @@ class VimSession {
                 this.showMessage(getMessageText(template), duration),
             notify: (message) => this.showMessage(message, 5000),
             undo: () => this.undo.undo(),
-            redo: () => this.undo.redo(),
+            redo: () => this.redo(),
             onOperationEnd: () => this.onOperationEnd(),
             save: () => this.getHost()?.save?.(),
             closeTab: () => this.closeTab(),
@@ -258,6 +263,9 @@ class VimSession {
         });
 
         engine.enterVimMode(this.adapter as never);
+        // The engine enters Insert mode on a paste. `onPaste()` keeps the mode instead.
+        const { onPasteFn } = this.vim as vimState & { onPasteFn: () => void };
+        this.root.removeEventListener("paste", onPasteFn);
         this.adapter.on("vim-mode-change",
             (event: { mode: string; subMode?: string }) => this.onModeChange(event));
         this.adapter.on("vim-command-done", () => {
@@ -363,12 +371,49 @@ class VimSession {
         };
         this.root.addEventListener("copy", onCopy);
         this.stopListening.push(() => this.root.removeEventListener("copy", onCopy));
+
+        const clipboard = editor.plugins.get(ClipboardPipeline);
+        const onInsertion = (_evt: unknown, data: ClipboardContentInsertionEvent["args"][0]) => {
+            // `ClipboardPipeline` sets the range in its listener of the "low" priority.
+            this.onPaste(data.resultRange as ModelRange);
+        };
+        clipboard.on<ClipboardContentInsertionEvent>("contentInsertion", onInsertion,
+            { priority: "lowest" });
+        this.stopListening.push(() => clipboard.off("contentInsertion", onInsertion));
+    }
+
+    /**
+     * Puts the cursor on the last character that a paste or a drop put outside Insert mode, once
+     * the change is done. The mode stays.
+     */
+    private onPaste(resultRange: ModelRange) {
+        if (this.vim.insertMode) {
+            return;
+        }
+        const pasted = ModelLiveRange.fromRange(resultRange);
+        this.editor.model.enqueueChange(() => {
+            const start = this.adapter.locatePosition(pasted.start);
+            const end = this.adapter.locatePosition(pasted.end);
+            pasted.detach();
+            let cursor: Pos = new VimPosition(end.line, end.ch - 1);
+            if (end.ch === 0) {
+                const line = Math.max(end.line - 1, start.line);
+                cursor = new VimPosition(line, this.adapter.getLine(line).length - 1);
+            }
+            this.adapter.operation(() => this.adapter.setCursor(cursor));
+            this.updateStatus();
+            this.updateCursor();
+        });
     }
 
     private onKeyDown(event: KeyboardEvent) {
         const vim = this.vim;
-        if (event.defaultPrevented || !isFromEditable(this.editor, event)
-            || event.isComposing || [ "Process", "Unidentified", "Dead" ].includes(event.key)) {
+        if (event.defaultPrevented || event.isComposing
+            || [ "Process", "Unidentified", "Dead" ].includes(event.key)) {
+            return;
+        }
+        if (!isFromEditable(this.editor, event)) {
+            this.onBalloonKey(event, vim);
             return;
         }
         if (vim.insertMode && this.typeInsertSequence(event)) {
@@ -382,6 +427,24 @@ class VimSession {
             this.onInsertKey(event, key, vim);
         } else {
             this.onCommandKey(event, key, vim);
+        }
+    }
+
+    /**
+     * Closes a balloon of the editor, such as that of a link, on `Ctrl+[`, and on `Ctrl+C` with no
+     * text selected in it, as Escape does.
+     */
+    private onBalloonKey(event: KeyboardEvent, vim: vimState) {
+        const target = event.target as HTMLInputElement;
+        if (!this.editor.ui.view.body.bodyCollectionContainer.contains(target)) {
+            return;
+        }
+        const key = this.engine.vimKeyFromEvent(event, vim);
+        const hasSelectedText = typeof target.selectionStart === "number"
+            && target.selectionStart !== target.selectionEnd;
+        if ((key === "<C-[>" || (key === "<C-c>" && !hasSelectedText)) && this.dismissEditorUi()) {
+            consume(event);
+            this.editor.editing.view.focus();
         }
     }
 
@@ -618,7 +681,11 @@ class VimSession {
             return true;
         }
         if (this.adapter.highlights.isShown) {
+            // `handleEx()` records `nohlsearch` in the `:` register, so the last command goes back.
+            const register = this.engine.getRegisterController().getRegister(":");
+            const lastCommand = register.toString();
             this.adapter.operation(() => this.engine.handleEx(this.adapter as never, "nohlsearch"));
+            register.setText(lastCommand);
             return true;
         }
         this.leaveEmbed();
@@ -697,6 +764,12 @@ class VimSession {
         }
         const position = caption && editor.model.createPositionAt(caption, isAtEnd ? "end" : 0);
         return position ? { kind: "caption", position } : null;
+    }
+
+    /** Redoes one step, and leaves the cursor at the start of what it changed, as `u` does. */
+    private redo() {
+        this.undo.redo();
+        this.adapter.setCursor(this.adapter.getCursor("start"));
     }
 
     private closeTab() {
@@ -924,7 +997,7 @@ class VimSession {
             try {
                 // The command, or the operator that a search completes, runs as a key does.
                 if (isEnter && onEnter) {
-                    this.adapter.operation(() => onEnter(input.value));
+                    this.adapter.asVimOperation(() => onEnter(input.value));
                 }
             } finally {
                 if (event.key === "Escape" || (isEnter && options.closeOnEnter !== false)) {

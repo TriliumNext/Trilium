@@ -261,7 +261,10 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
         const register = vim.getRegisterController().getRegister(registerName);
         if (registerName === "+" || registerName === "*") {
             void readClipboard(adapter, register).then((text) => {
-                adapter.operation(() => put(adapter, this, actionArgs, state, register, text));
+                // Vim mode can be off by the time the clipboard is read.
+                if (adapter.state.vim) {
+                    adapter.operation(() => put(adapter, this, actionArgs, state, register, text));
+                }
             });
             return;
         }

@@ -203,7 +203,9 @@ export default class HiddenBlocks extends Plugin {
     /**
      * Drops the collapsed state of the owners that have nothing to hide, and expands the owners
      * whose blocks a change hid. After a change, a block can be hidden only if it was hidden
-     * before, its owner was collapsed in the change, or both came in with the change.
+     * before, its owner was collapsed in the change, or both came in with the change. Undo and
+     * redo bring back a state that the note had, so the blocks they hide stay hidden, as those of
+     * a collapsed heading that undo puts back alone.
      */
     private fixCollapsedOwners(writer: ModelWriter): boolean {
         const changes = this.editor.model.document.differ.getChanges();
@@ -219,7 +221,7 @@ export default class HiddenBlocks extends Plugin {
                 isFixed = true;
             }
         }
-        return isFixed || this.expandNewlyHidden(writer, changes);
+        return isFixed || (!writer.batch.isUndo && this.expandNewlyHidden(writer, changes));
     }
 
     private expandNewlyHidden(writer: ModelWriter, changes: DifferItem[]) {

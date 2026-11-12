@@ -277,6 +277,16 @@ describe("CollapsibleHeadings", () => {
             expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
         });
 
+        it("keeps a heading collapsed when undo puts it back without its section", () => {
+            editor.model.change((writer) => writer.remove(findBlock(editor, "Alpha")));
+            expect(outline(editor)).toBe("intro, a1, a2, Beta, b1");
+
+            editor.execute("undo");
+            expect(outline(editor)).toBe("intro, ▸Alpha, (a1), (a2), Beta, b1");
+            editor.execute("redo");
+            expect(outline(editor)).toBe("intro, a1, a2, Beta, b1");
+        });
+
         it("keeps a section collapsed when its copy and removal happen in one change", () => {
             const model = editor.model;
             const section = model.createRange(

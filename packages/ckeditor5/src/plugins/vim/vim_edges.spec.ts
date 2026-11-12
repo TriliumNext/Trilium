@@ -66,10 +66,38 @@ describe("Vim mode edge cases", () => {
             expect(destroyed.plugins.get(TriliumVim).isActive).toBe(false);
         });
 
+        it("leaves no paste listener of the engine behind, even after the engine renewed its state",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]abc"));
+            const adapter = getAdapter(editor);
+            // The engine starts a new state when a command throws.
+            adapter.state.vim = undefined;
+            engine().maybeInitVimState_(adapter as never);
+            await editor.plugins.get(TriliumVim).setEnabled(false);
+            const errors: string[] = [];
+            const onError = (event: ErrorEvent) => {
+                errors.push(event.message);
+                event.preventDefault();
+            };
+            window.addEventListener("error", onError);
+            try {
+                const clipboardData = new DataTransfer();
+                clipboardData.setData("text/plain", "X");
+                const event = new ClipboardEvent("paste",
+                    { bubbles: true, cancelable: true, clipboardData });
+                (editor.editing.view.getDomRoot() as HTMLElement).dispatchEvent(event);
+                expect(errors).toEqual([]);
+                expect(editor.getData()).toBe("<p>Xabc</p>");
+            } finally {
+                window.removeEventListener("error", onError);
+            }
+        });
+
         it("ignores modifier keys alone, passes unknown Ctrl keys and swallows Ctrl+Backspace",
             async () => {
             const editor = await createVimEditor(paragraphs("[]ab cd"));
             expect(press(editor, "<Shift>")).toBe(false);
+            expect(press(editor, "<Dead>")).toBe(false);
             expect(press(editor, "<C-g>")).toBe(false);
             expect(press(editor, "<C-BS>")).toBe(true);
             expect(press(editor, "<C-Del>")).toBe(true);
@@ -410,7 +438,8 @@ describe("Vim mode edge cases", () => {
             expect(getLines(editor)).toBe("ab|a");
         });
 
-        it("put lines next to a widget, before code lines and nowhere in a tab title", async () => {
+        it("put lines next to a widget, before code lines and into the panel under a tab title",
+            async () => {
             const editor = await createVimEditor(paragraphs("[]x", "")
                 + "<horizontalLine></horizontalLine><codeBlock language=\"plaintext\">c</codeBlock>"
                 + "<tabs><tab><tabTitle>T</tabTitle><tabPanel>"
@@ -422,7 +451,28 @@ describe("Vim mode edge cases", () => {
             press(editor, "8GP");
             expect(getLines(editor)).toBe("x||x||\u{FFFC}|x||x||c|T|p");
             press(editor, "11Gp");
-            expect(getLines(editor)).toBe("x||x||\u{FFFC}|x||x||c|T|p");
+            expect(getLines(editor)).toBe("x||x||\u{FFFC}|x||x||c|T|x||p");
+            expect(getCursor(editor)).toBe("11:0");
+        });
+
+        it("leave the cursor of :d on the next line, and the '. mark on the line put", async () => {
+            const editor = await createVimEditor(paragraphs("[]a1", "b2", "c3", "d4", "e5"));
+            press(editor, "jj:d<CR>");
+            expect(getLines(editor)).toBe("a1|b2|d4|e5");
+            expect(getCursor(editor)).toBe("2:0");
+            press(editor, "G:d<CR>");
+            expect(getCursor(editor)).toBe("2:0");
+            press(editor, "gg:2d<CR>");
+            expect(getCursor(editor)).toBe("0:0");
+            setVimData(editor, paragraphs("[]a1", "b2", "c3", "d4"));
+            press(editor, "G:1d<CR>");
+            expect(getCursor(editor)).toBe("2:0");
+
+            setVimData(editor, paragraphs("[]a1", "b2", "c3"));
+            press(editor, "ddpgg'.");
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "gg`.");
+            expect(getCursor(editor)).toBe("1:0");
         });
 
         it("keep the alignment of a heading put into a list", async () => {
