@@ -142,6 +142,33 @@ describe("the command line with key hints", () => {
         press(editor, "<C-c>");
     });
 
+    it("paints the list in the opaque menu color unless background and backdrop effects are on",
+        async () => {
+        const style = document.createElement("style");
+        style.textContent = `:root {
+            --menu-background-color: rgb(1, 1, 1);
+            --menu-background-color-no-backdrop: rgb(2, 2, 2);
+        }`;
+        document.head.append(style);
+        try {
+            const editor = await createHintEditor(paragraphs("[]a"));
+            press(editor, ":<Tab>");
+            const list = document.querySelector(".ck-vim-completion");
+            if (!list) {
+                throw new Error("The completion list did not open.");
+            }
+            expect(getComputedStyle(list).backgroundColor).toBe("rgb(2, 2, 2)");
+            document.body.classList.add("background-effects");
+            expect(getComputedStyle(list).backgroundColor).toBe("rgb(1, 1, 1)");
+            document.body.classList.add("backdrop-effects-disabled");
+            expect(getComputedStyle(list).backgroundColor).toBe("rgb(2, 2, 2)");
+            press(editor, "<Esc>");
+        } finally {
+            document.body.classList.remove("background-effects", "backdrop-effects-disabled");
+            style.remove();
+        }
+    });
+
     it("forgets a prompt once it closes", async () => {
         vi.useFakeTimers();
         const editor = await createHintEditor(paragraphs("[]a"));

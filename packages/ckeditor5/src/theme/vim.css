@@ -77,6 +77,12 @@
     color: var(--text-editor-vim-completion-color);
     font-size: 0.85em;
 
+    body:not(.background-effects) &,
+    body.backdrop-effects-disabled & {
+        --text-editor-vim-completion-background:
+            var(--menu-background-color-no-backdrop, var(--menu-background-color, #fff));
+    }
+
     .ck-vim-completion__row {
         display: flex;
         align-items: center;
