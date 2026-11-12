@@ -342,6 +342,8 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteVimModeNoticeShown", value: "false", isSynced: false },
     { name: "textNoteVimInsertKeysEnabled", value: "false", isSynced: true },
     { name: "textNoteVimStartupCommands", value: "", isSynced: true },
+    { name: "vimModeHintsEnabled", value: "true", isSynced: true },
+    { name: "vimModeHintStripShown", value: "true", isSynced: true },
     { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
 
     // HTML import configuration

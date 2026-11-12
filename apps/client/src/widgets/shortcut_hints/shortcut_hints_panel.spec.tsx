@@ -10,7 +10,9 @@ vi.mock("../../services/keyboard_actions.js", () => ({
 import Component from "../../components/component.js";
 import type { ShortcutHintSection } from "../../services/shortcut_hints.js";
 import { ParentComponent } from "../react/react_utils.js";
-import ShortcutHintsPanel, { ShortcutHintsSections } from "./shortcut_hints_panel.js";
+import ShortcutHintsPanel, {
+    closeShortcutHints, ShortcutHintsSections
+} from "./shortcut_hints_panel.js";
 
 let container: HTMLDivElement;
 
@@ -99,6 +101,31 @@ describe("ShortcutHintsPanel", () => {
 
             act(() => { vi.advanceTimersByTime(5000); });
             expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("renders a live section, stays open for it, and closes on request", () => {
+        vi.useFakeTimers();
+        try {
+            const host = mountPanel();
+            expect(closeShortcutHints()).toBe(false);
+            request(host, [ ...SECTIONS, {
+                hints: [], content: () => <p className="live-section">live</p>, isPersistent: true
+            } ]);
+            expect(document.querySelector(".shortcut-hints-panel .live-section")?.textContent)
+                .toBe("live");
+            const panel = document.querySelector(".shortcut-hints-panel");
+            act(() => { panel?.dispatchEvent(new MouseEvent("mouseleave")); });
+            act(() => { vi.advanceTimersByTime(60000); });
+            expect(document.querySelector(".shortcut-hints-panel")).not.toBeNull();
+
+            let wasOpen = false;
+            act(() => { wasOpen = closeShortcutHints(); });
+            expect(wasOpen).toBe(true);
+            expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
+            expect(closeShortcutHints()).toBe(false);
         } finally {
             vi.useRealTimers();
         }

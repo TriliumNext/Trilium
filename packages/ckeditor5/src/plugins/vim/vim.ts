@@ -15,11 +15,19 @@ import { isFromEditable } from "../move_block_updown.js";
 import VimAdapter, {
     type CloseDialog, type DialogOptions, VimPosition, type WidgetEntry
 } from "./vim_adapter.js";
+import { isUserMapped } from "./vim_commands.js";
 import { getDigraph } from "./vim_digraphs.js";
 import { getLoadedVimEngine, loadVimEngine, runStartupCommands } from "./vim_engine.js";
+import { getPromptKind, PromptAssistant, type PromptKind } from "./vim_command_line.js";
+import {
+    getAfterSearchHints, getCancelHint, getCommandHints, getKeyLabel, getModeHints, HINT_LIMIT,
+    HINT_PAUSE, type HintContext, type PendingCommand, splitKeys, type VimHint, type VimHints
+} from "./vim_hints.js";
 import { createJumpList } from "./vim_jumps.js";
+import { getKeyReference, type VimHintSection } from "./vim_key_reference.js";
 import { OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import { SEARCH_MARKER } from "./vim_search.js";
+import { canFold, getParagraphObjectKind } from "./vim_structure.js";
 import VimUndo from "./vim_undo.js";
 
 /** The modes of Vim, as the status line names them. */
@@ -30,6 +38,8 @@ export interface VimMessage {
     text: string;
     /** Whether the message is a list that stays until the next key, rather than a short note. */
     isLong: boolean;
+    /** Keys to show in place of the text, such as those that follow a search. */
+    hints?: VimHint[];
 }
 
 /** The command line of `:`, `/` and `?`, which the host shows in place of the breadcrumb. */
@@ -51,6 +61,8 @@ export interface VimStatus {
     message: VimMessage | null;
     /** The command line while it is open. */
     commandLine: VimCommandLine | null;
+    /** The key hints that the status bar shows, or `null`. */
+    hints: VimHints | null;
 }
 
 /** What the app does for the Vim mode of an editor. */
@@ -72,6 +84,15 @@ export interface VimHost {
     readClipboard?(): Promise<string>;
     /** Puts `text` on the system clipboard, with `html` as its formatted form, for `"+y`. */
     writeClipboard?(text: string, html: string | null): void;
+    /**
+     * Switches between the keys of the mode and the breadcrumb, for `Esc` in Normal mode with
+     * nothing else to do.
+     */
+    toggleHintStrip?(): void;
+    /** Turns the key hints on or off, for `:set hints` and `:set nohints`. */
+    setHintsEnabled?(isEnabled: boolean): void;
+    /** Closes the full key list of the Shortcut Hints panel. Returns whether it was open. */
+    closeKeyReference?(): boolean;
 }
 
 /** The configuration of the Vim mode, `config.vim`. */
@@ -86,14 +107,17 @@ export interface VimConfig {
      * mode.
      */
     isInsertKeysEnabled?(): boolean;
+    /** Whether the status bar shows key hints. */
+    areHintsEnabled?(): boolean;
+    /** Whether Normal and Visual mode show their keys in place of the breadcrumb. */
+    isHintStripShown?(): boolean;
 }
 
 /** The status of an editor with Vim mode off. */
 const OFF_STATUS: VimStatus = {
     mode: null, isOneCommand: false, pendingKeys: "", recording: null, message: null,
-    commandLine: null
+    commandLine: null, hints: null
 };
-
 /** The marker of the block cursor on a character, and the one on an empty line. */
 const CURSOR_MARKER = "vimCursor";
 const EMPTY_CURSOR_MARKER = "vimCursorEmpty";
@@ -190,6 +214,19 @@ export default class TriliumVim extends Plugin {
         this.session?.runStartupCommands();
     }
 
+    /** Shows the key hints again, after the options that govern them changed. */
+    refreshHints() {
+        this.session?.refreshHints();
+    }
+
+    /**
+     * The full key list of the state of the editor, by topic, for the Shortcut Hints panel. Empty
+     * while Vim mode is off.
+     */
+    getKeyReference(): VimHintSection[] {
+        return this.session?.getKeyReference() ?? [];
+    }
+
     /** Puts the editor in Insert mode at its caret, as `i` does. */
     enterInsertMode() {
         this.session?.enterInsertMode();
@@ -238,6 +275,26 @@ class VimSession {
     private replaced: { line: number; ch: number; original: string }[] = [];
     private readonly stopListening: (() => void)[] = [];
     private readonly jumpList = createJumpList();
+    private hintTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Whether the hints for the command being typed show, once a pause brought them. */
+    private areCommandHintsShown = false;
+    private promptKind: PromptKind | null = null;
+    /** The hints of the open prompt, or `null` for a prompt without hints. */
+    private promptHints: VimHints | null = null;
+    private readonly modeHints = new Map<"normal" | "visual", VimHints>();
+    private readonly translate = (message: string, values?: string[]) =>
+        this.editor.t(message, values);
+    private readonly hintContext: HintContext = {
+        isOnLink: () => {
+            const selection = this.editor.model.document.selection;
+            return selection.getSelectedElement()?.name === "reference"
+                || selection.hasAttribute("linkHref");
+        },
+        canFold: () => canFold(this.adapter, this.adapter.getCursor().line),
+        getParagraphObjectKind: () =>
+            getParagraphObjectKind(this.adapter, this.adapter.getCursor().line),
+        isMapped: isUserMapped
+    };
 
     constructor(
         private readonly plugin: TriliumVim, private readonly engine: Vim, mode: "normal" | "insert"
@@ -316,6 +373,7 @@ class VimSession {
         this.adapter.destroy();
         this.undo.destroy();
         this.clearMessageTimer();
+        this.clearHintTimer();
         this.setCommandModeClass(false);
         this.editor.model.enqueueChange((writer) => {
             for (const name of [ CURSOR_MARKER, EMPTY_CURSOR_MARKER ]) {
@@ -630,6 +688,8 @@ class VimSession {
     /** Runs `keys` in the engine as one undo step. Returns whether the engine took them. */
     private runKeys(keys: string[]): boolean {
         let isHandled = false;
+        const pendingBefore = this.pendingKeys;
+        const messageBefore = this.plugin.status.message;
         this.engine.getVimGlobalState_().jumpList = this.jumpList;
         this.undo.open();
         try {
@@ -645,9 +705,154 @@ class VimSession {
         } finally {
             this.undo.close();
         }
+        this.followCommandHints();
+        this.followSearchMessage(keys, pendingBefore, messageBefore);
         this.updateStatus();
         this.updateCursor();
         return isHandled;
+    }
+
+    /**
+     * Shows the keys that follow a search after `*` and `#`, and keeps them while `n` and `N`
+     * move through the matches. Any other key, or a message of the search, takes them away.
+     */
+    private followSearchMessage(keys: string[], pendingBefore: string, before: VimMessage | null) {
+        if (this.plugin.status.message !== before) {
+            return;
+        }
+        const isWordSearch = /^\d*g?$/u.test(pendingBefore) && /^[*#]$/u.test(keys.join(""));
+        const isRepeat = !!before?.hints && keys.every((key) => key === "n" || key === "N");
+        if (isWordSearch || isRepeat) {
+            this.showSearchMessage();
+        } else if (before?.hints) {
+            this.closeMessage(before);
+        }
+    }
+
+    /** Shows the keys that follow a search next to the mode, for five seconds. */
+    private showSearchMessage() {
+        if (this.areHintsEnabled()) {
+            this.showMessage("", 5000, getAfterSearchHints(this.translate));
+        }
+    }
+
+    /** Shows the key hints again, for options that changed. */
+    refreshHints() {
+        if (!this.areHintsEnabled()) {
+            this.clearHintTimer();
+            this.areCommandHintsShown = false;
+        }
+        this.updateStatus();
+    }
+
+    /**
+     * Shows the hints for the command being typed after a pause, and from then on at once after
+     * each key, until the command ends. Only keys that the user presses come here.
+     */
+    private followCommandHints() {
+        if (!this.areHintsEnabled() || !this.resolveCommandHints()) {
+            this.clearHintTimer();
+            this.areCommandHintsShown = false;
+            return;
+        }
+        if (this.areCommandHintsShown) {
+            return;
+        }
+        this.clearHintTimer();
+        this.hintTimer = setTimeout(() => {
+            this.hintTimer = null;
+            this.areCommandHintsShown = true;
+            this.updateStatus();
+        }, HINT_PAUSE);
+    }
+
+    private clearHintTimer() {
+        if (this.hintTimer) {
+            clearTimeout(this.hintTimer);
+            this.hintTimer = null;
+        }
+    }
+
+    private areHintsEnabled(): boolean {
+        return this.editor.config.get("vim")?.areHintsEnabled?.() ?? false;
+    }
+
+    /** The hints that the status bar shows in `mode`. */
+    private getHints(mode: VimMode): VimHints | null {
+        if (!this.areHintsEnabled() || this.vim.insertModeReturn) {
+            return null;
+        }
+        if (this.commandLine) {
+            return this.promptHints;
+        }
+        const commandHints = this.areCommandHintsShown ? this.resolveCommandHints() : null;
+        if (commandHints) {
+            return commandHints;
+        }
+        const isStripShown = this.editor.config.get("vim")?.isHintStripShown?.() ?? true;
+        if (!isStripShown || mode === "insert" || mode === "replace") {
+            return null;
+        }
+        const context = mode === "normal" ? "normal" : "visual";
+        let hints = this.modeHints.get(context);
+        if (!hints) {
+            hints = { kind: "mode", typedKeys: [], hints: getModeHints(context, this.translate) };
+            this.modeHints.set(context, hints);
+        }
+        return hints;
+    }
+
+    /** The hints for the command being typed, or `null` when it waits for nothing they know. */
+    private resolveCommandHints(): VimHints | null {
+        const hints = this.getPendingHints();
+        if (!hints) {
+            return null;
+        }
+        return {
+            kind: "command",
+            typedKeys: splitKeys(this.pendingKeys || this.vim.inputState.keyBuffer.join(""))
+                .map(getKeyLabel),
+            hints: [ ...hints.slice(0, HINT_LIMIT), getCancelHint(this.translate) ]
+        };
+    }
+
+    /** Every key that can follow the command being typed, or `null`. */
+    private getPendingHints(): VimHint[] | null {
+        const vim = this.vim;
+        const input = vim.inputState;
+        const buffer = input.keyBuffer.join("");
+        const [ , digits, keys ] = /^(\d*)(.*)$/su.exec(buffer) as RegExpExecArray;
+        const command: PendingCommand = {
+            context: vim.insertMode ? "insert" : vim.visualMode ? "visual" : "normal",
+            keyBuffer: keys,
+            operator: getOperatorKeys(input),
+            hasCount: !!digits || input.prefixRepeat.length > 0 || input.motionRepeat.length > 0,
+            registerName: input.registerName ?? ""
+        };
+        const hints = getCommandHints(command, this.hintContext, this.translate);
+        return hints?.length ? hints : null;
+    }
+
+    /** The full key list of the state of the editor, for the Shortcut Hints panel. */
+    getKeyReference(): VimHintSection[] {
+        const vim = this.vim;
+        const t = this.translate;
+        if (this.commandLine) {
+            const kind = this.promptKind === "command" || this.promptKind === "confirm"
+                ? this.promptKind
+                : "search";
+            return getKeyReference({ kind }, t);
+        }
+        const pending = this.getPendingHints();
+        if (pending) {
+            return getKeyReference({ kind: "pending", hints: pending }, t);
+        }
+        if (vim.insertMode) {
+            const areInsertKeysEnabled =
+                !!this.editor.config.get("vim")?.isInsertKeysEnabled?.();
+            return getKeyReference({ kind: "insert", areInsertKeysEnabled }, t);
+        }
+        return getKeyReference({ kind: vim.visualMode ? "visual" : "normal" }, t);
     }
 
     /** Adds `key` to the keys of the command being typed, or starts again after a command. */
@@ -663,12 +868,23 @@ class VimSession {
     }
 
     /**
-     * Does what Escape does, one thing at a time: closes the open balloon or list, cancels the keys
-     * of a command, leaves Visual or Insert mode, clears the search highlights, and in the editor
-     * of an embed, goes back to the editor around it. Returns whether it did something.
+     * Does what Escape does, one thing at a time: closes the open balloon, list or long message,
+     * cancels the keys of a command, leaves Visual or Insert mode, clears the search highlights, in
+     * the editor of an embed goes back to the editor around it, and else switches between the keys
+     * of the mode and the breadcrumb. Returns whether it did something.
      */
     private escape(): boolean {
-        if (this.dismissEditorUi()) {
+        const message = this.plugin.status.message;
+        if (message?.hints) {
+            this.closeMessage(message);
+        }
+        if (this.getHost()?.closeKeyReference?.() || this.dismissEditorUi()) {
+            return true;
+        }
+        const closeLongMessage = this.adapter.state.closeVimNotification as (() => void) | null;
+        if (closeLongMessage) {
+            this.adapter.state.closeVimNotification = null;
+            closeLongMessage();
             return true;
         }
         const vim = this.vim;
@@ -688,7 +904,10 @@ class VimSession {
             register.setText(lastCommand);
             return true;
         }
-        this.leaveEmbed();
+        if (!this.leaveEmbed() && this.areHintsEnabled()) {
+            this.getHost()?.toggleHintStrip?.();
+            this.updateStatus();
+        }
         return true;
     }
 
@@ -832,12 +1051,14 @@ class VimSession {
             mode = vim.visualLine ? "visual-line" : "visual";
         }
         const previous = this.plugin.status;
+        const hints = this.getHints(mode);
         const next: VimStatus = {
             ...previous,
             mode,
             isOneCommand: !!vim.insertModeReturn,
             pendingKeys: this.pendingKeys,
-            commandLine: this.commandLine
+            commandLine: this.commandLine,
+            hints: areHintsEqual(previous.hints, hints) ? previous.hints : hints
         };
         if (!shallowEqual(previous, next)) {
             this.plugin.status = next;
@@ -908,20 +1129,22 @@ class VimSession {
     /**
      * Shows `text` in the status line for `duration` milliseconds, or until the next key with 0.
      */
-    private showMessage(text: string, duration: number): () => void {
-        const message: VimMessage = { text, isLong: duration === 0 };
+    private showMessage(text: string, duration: number, hints?: VimHint[]): () => void {
+        const message: VimMessage = { text, isLong: duration === 0, ...hints ? { hints } : {} };
         this.clearMessageTimer();
         this.plugin.status = { ...this.plugin.status, message };
-        const close = () => {
-            if (this.plugin.status.message === message) {
-                this.clearMessageTimer();
-                this.plugin.status = { ...this.plugin.status, message: null };
-            }
-        };
+        const close = () => this.closeMessage(message);
         if (duration > 0) {
             this.messageTimer = setTimeout(close, duration);
         }
         return close;
+    }
+
+    private closeMessage(message: VimMessage) {
+        if (this.plugin.status.message === message) {
+            this.clearMessageTimer();
+            this.plugin.status = { ...this.plugin.status, message: null };
+        }
     }
 
     private clearMessageTimer() {
@@ -966,6 +1189,20 @@ class VimSession {
         let isClosed = false;
         let fallbackPanel: HTMLElement | null = null;
         const commandLine: VimCommandLine = { element, focus: () => input.focus() };
+        const kind = getPromptKind(prefix.textContent);
+        this.promptKind = kind;
+        const assistant = new PromptAssistant(kind, input, element, {
+            translate: this.translate,
+            areHintsEnabled: () => this.areHintsEnabled(),
+            isJavaScriptRegex: () => this.engine.getOption("pcre") !== false,
+            getEditorCommands: () => [ ...this.editor.commands.names() ].map((name) => ({
+                name, isEnabled: !!this.editor.commands.get(name)?.isEnabled
+            })),
+            showHints: (hints) => {
+                this.promptHints = hints.length ? { kind: "prompt", typedKeys: [], hints } : null;
+                this.updateStatus();
+            }
+        });
         const close: CloseDialog = (value) => {
             if (typeof value === "string") {
                 input.value = value;
@@ -975,12 +1212,14 @@ class VimSession {
                 return;
             }
             isClosed = true;
+            assistant.destroy();
             this.undo.close();
             element.remove();
             fallbackPanel?.remove();
             if (this.commandLine === commandLine) {
                 this.commandLine = null;
                 this.closeCommandLine = null;
+                this.promptHints = null;
                 this.updateStatus();
                 this.adapter.focus();
                 this.onOperationEnd();
@@ -990,14 +1229,19 @@ class VimSession {
 
         input.addEventListener("keydown", (event) => {
             event.stopPropagation();
-            if (options.onKeyDown?.(event, input.value, close)) {
+            if (assistant.onKeyDown(event) || options.onKeyDown?.(event, input.value, close)) {
                 return;
             }
             const isEnter = event.key === "Enter";
             try {
                 // The command, or the operator that a search completes, runs as a key does.
                 if (isEnter && onEnter) {
+                    const isCursorSearch = kind === "search" && !this.vim.inputState.operator;
+                    const messageBefore = this.plugin.status.message;
                     this.adapter.asVimOperation(() => onEnter(input.value));
+                    if (isCursorSearch && this.plugin.status.message === messageBefore) {
+                        this.showSearchMessage();
+                    }
                 }
             } finally {
                 if (event.key === "Escape" || (isEnter && options.closeOnEnter !== false)) {
@@ -1010,8 +1254,12 @@ class VimSession {
         input.addEventListener("keyup", (event) => {
             event.stopPropagation();
             options.onKeyUp?.(event, input.value, close);
+            assistant.update();
         });
-        input.addEventListener("input", (event) => options.onInput?.(event, input.value, close));
+        input.addEventListener("input", (event) => {
+            options.onInput?.(event, input.value, close);
+            assistant.update();
+        });
         input.addEventListener("blur", () => setTimeout(() => {
             if (document.activeElement !== input) {
                 close();
@@ -1024,9 +1272,11 @@ class VimSession {
         this.closeCommandLine?.();
         this.commandLine = commandLine;
         this.closeCommandLine = () => close();
+        this.promptHints = null;
         if (!this.getHost()?.mountCommandLine?.(element, this.editor)) {
             fallbackPanel = this.mountCommandLineUnderEditor(element);
         }
+        assistant.update();
         this.updateStatus();
         input.focus();
         return close;
@@ -1092,6 +1342,36 @@ function isTypingKey(event: KeyboardEvent): boolean {
 function consume(event: KeyboardEvent) {
     event.preventDefault();
     event.stopImmediatePropagation();
+}
+
+/**
+ * The keys of the operator that waits for its motion, such as `d` or `gu`. The engine keeps the
+ * keys of an operator of two keys only, and the name of the others.
+ */
+function getOperatorKeys(input: vimState["inputState"]): string {
+    if (!input.operator) {
+        return "";
+    }
+    if (input.operatorShortcut) {
+        return input.operatorShortcut;
+    }
+    switch (input.operator) {
+        case "delete":
+            return "d";
+        case "yank":
+            return "y";
+        case "change":
+            return "c";
+        case "indent":
+            return input.operatorArgs?.indentRight ? ">" : "<";
+        default:
+            return input.operator;
+    }
+}
+
+/** Whether `a` and `b` show the same, so that the status keeps the hints it has. */
+function areHintsEqual(a: VimHints | null, b: VimHints | null): boolean {
+    return a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
 }
 
 function shallowEqual(a: object, b: object): boolean {

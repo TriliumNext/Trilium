@@ -158,6 +158,7 @@ describe("Vim mode", () => {
         };
         mocks.saved = [];
         open();
+        act(() => toggle("vim-hints-enabled")?.click());
         act(() => toggle("vim-insert-keys-enabled")?.click());
         const commands = host.querySelector<HTMLTextAreaElement>("textarea.vim-startup-commands");
         expect(commands?.value).toBe("imap jk <Esc>");
@@ -167,7 +168,8 @@ describe("Vim mode", () => {
             commands.dispatchEvent(new Event("focusout", { bubbles: true }));
         });
         expect(mocks.saved).toEqual([
-            [ "textNoteVimInsertKeysEnabled", true ], [ "textNoteVimStartupCommands", "nmap Y y$" ]
+            [ "vimModeHintsEnabled", true ], [ "textNoteVimInsertKeysEnabled", true ],
+            [ "textNoteVimStartupCommands", "nmap Y y$" ]
         ]);
     });
 });

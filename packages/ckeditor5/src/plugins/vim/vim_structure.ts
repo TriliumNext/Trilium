@@ -12,6 +12,7 @@ import {
 import { LIST_COLLAPSED_ATTRIBUTE } from "../collapsible_list_items.js";
 import type VimAdapter from "./vim_adapter.js";
 import { VimPosition } from "./vim_adapter.js";
+import type { ParagraphObjectKind } from "./vim_hints.js";
 
 /** The containers whose lines `ip` takes, and whose block with the next empty line `ap` takes. */
 const WRAPPING_CONTAINERS = new Set([ "blockQuote", "aside", "details" ]);
@@ -190,6 +191,43 @@ export function fold(cm: VimAdapter, line: number, action: FoldAction, isNested:
         }
     });
     return true;
+}
+
+/** Whether a fold command collapses or expands something around line `line`. */
+export function canFold(cm: VimAdapter, line: number): boolean {
+    return !!findFoldOwner(cm, cm.index().getElement(line) as ModelElement);
+}
+
+/** The block that `ip` and `ap` take around line `line`, by the rule of `findParagraphObject()`. */
+export function getParagraphObjectKind(cm: VimAdapter, line: number): ParagraphObjectKind {
+    const element = cm.index().getElement(line) as ModelElement;
+    if (element.root.document?.model.schema.isObject(element)) {
+        return "widget";
+    }
+    if (getSectionLevel(element) !== null) {
+        return "heading";
+    }
+    if (element.hasAttribute("listItemId")) {
+        return "listItem";
+    }
+    if (element.is("element", "codeBlock")) {
+        return "codeBlock";
+    }
+    if (element.is("element", "summary")) {
+        return "collapsibleTitle";
+    }
+    for (const ancestor of element.getAncestors().reverse() as ModelElement[]) {
+        if (ancestor.is("element", "details")) {
+            return "collapsibleBody";
+        }
+        if (WRAPPING_CONTAINERS.has(ancestor.name)) {
+            return ancestor.is("element", "aside") ? "admonition" : "quote";
+        }
+        if (BOX_CONTAINERS.has(ancestor.name)) {
+            return "box";
+        }
+    }
+    return "paragraph";
 }
 
 /** The units of the level of `place`, and the place of the container around them. */

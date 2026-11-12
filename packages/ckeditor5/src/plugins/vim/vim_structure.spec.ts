@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs, press
 } from "../../../test/vim-kit.js";
+import { canFold, getParagraphObjectKind } from "./vim_structure.js";
 
 const BODY = paragraphs("a") + "<heading2>H</heading2>" + paragraphs("s1") + item("i1", "x")
     + item("i2", "y")
@@ -315,6 +316,27 @@ describe("Vim mode structure", () => {
             expect(getCursor(editor)).toBe("0:0");
             press(editor, "G]z");
             expect(getCursor(editor)).toBe("6:0");
+        });
+    });
+
+    describe("what the key hints read", () => {
+        it("name the block of the paragraph object and whether a fold can act, per line",
+            async () => {
+            const editor = await createVimEditor(BODY + "<codeBlock language=\"plaintext\">c"
+                + `</codeBlock><aside admonitionType="note">${paragraphs("n")}</aside>`);
+            const adapter = getAdapter(editor);
+            const lines = getLines(editor).split("|");
+            const read = (text: string) => {
+                const line = lines.indexOf(text);
+                return [ getParagraphObjectKind(adapter, line), canFold(adapter, line) ];
+            };
+            expect([ "a", "H", "s1", "i1", "a1", "q1", "T", "d", "c1", "p", "\u{FFFC}", "c", "n" ]
+                .map(read)).toEqual([
+                [ "paragraph", false ], [ "heading", true ], [ "paragraph", true ],
+                [ "listItem", true ], [ "box", true ], [ "quote", true ],
+                [ "collapsibleTitle", true ], [ "collapsibleBody", true ], [ "box", true ],
+                [ "box", true ], [ "widget", true ], [ "codeBlock", true ], [ "admonition", true ]
+            ]);
         });
     });
 

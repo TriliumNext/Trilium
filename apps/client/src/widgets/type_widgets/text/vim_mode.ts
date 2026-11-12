@@ -9,8 +9,12 @@ import { t } from "../../../services/i18n";
 import options from "../../../services/options";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useNoteLabel, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import {
+    useContextualShortcutHints, useNoteLabel, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
+import { closeShortcutHints } from "../../shortcut_hints/shortcut_hints_panel";
 import { findTextEditorAround } from "./editable_embed";
+import { getVimHintSection } from "./vim_key_reference";
 
 interface VimConfigOptions {
     /** The element that holds the editor. */
@@ -37,10 +41,16 @@ export function buildVimConfig({ getContainer, triggerHostCommand }: VimConfigOp
             },
             followLink: () => void triggerHostCommand("followLinkUnderCursor"),
             readClipboard: readClipboardText,
-            writeClipboard: (text, html) => void (html ? copyHtml(html, text) : copyText(text))
+            writeClipboard: (text, html) => void (html ? copyHtml(html, text) : copyText(text)),
+            toggleHintStrip: () => void options.toggle("vimModeHintStripShown"),
+            setHintsEnabled: (isEnabled) =>
+                void options.save("vimModeHintsEnabled", String(isEnabled)),
+            closeKeyReference: closeShortcutHints
         },
         getStartupCommands: () => options.get("textNoteVimStartupCommands") ?? "",
-        isInsertKeysEnabled: () => options.is("textNoteVimInsertKeysEnabled")
+        isInsertKeysEnabled: () => options.is("textNoteVimInsertKeysEnabled"),
+        areHintsEnabled: () => options.is("vimModeHintsEnabled"),
+        isHintStripShown: () => options.is("vimModeHintStripShown")
     };
 }
 
@@ -80,6 +90,8 @@ export function useVimMode(
 ) {
     const [ isOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
     const [ startupCommands ] = useTriliumOption("textNoteVimStartupCommands");
+    const [ areHintsEnabled ] = useTriliumOptionBool("vimModeHintsEnabled");
+    const [ isHintStripShown ] = useTriliumOptionBool("vimModeHintStripShown");
     // Re-renders when the label changes. The value is read from the note because, for one render
     // after a note switch, the hook still holds the label of the previous note.
     useNoteLabel(note, "vimMode");
@@ -110,7 +122,16 @@ export function useVimMode(
         }
     }, [ editor, startupCommands ]);
 
-    usePublishedVim(noteContext, noteId, useFocusedVim(editor));
+    useEffect(() => {
+        if (editor?.plugins.has("TriliumVim")) {
+            editor.plugins.get("TriliumVim").refreshHints();
+        }
+    }, [ editor, areHintsEnabled, isHintStripShown ]);
+
+    const focusedVim = useFocusedVim(editor);
+    usePublishedVim(noteContext, noteId, focusedVim);
+    useContextualShortcutHints(() =>
+        (focusedVim?.isActive ? [ getVimHintSection(focusedVim) ] : []));
 }
 
 /** Shows the command line in the status bar, when the status bar shows the Vim mode of `editor`. */

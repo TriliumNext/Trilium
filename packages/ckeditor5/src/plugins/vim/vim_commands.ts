@@ -8,6 +8,7 @@ import {
 
 import VimAdapter, { getActiveAdapter, VimPosition } from "./vim_adapter.js";
 import { joinLine, openLine, setTypingFormatting } from "./vim_editing.js";
+import type { VimKeyContext } from "./vim_hints.js";
 import { OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import {
     cloneFragment, getRichContent, putLines, rememberRichContent, type RichContent
@@ -46,6 +47,9 @@ const CHARACTER_SEARCHES = [
 
 /** Whether a motion of the macro being played failed, which stops the rest of it, as in Vim. */
 let isMacroStopped = false;
+
+/** The keys that the user mapped, by the mode they apply in, or under `all` for every mode. */
+const userMappings = new Map<VimKeyContext | "all", Set<string>>();
 
 /** The keys that Trilium adds to the engine. `:mapclear` removes them, so they are added again. */
 const TRILIUM_KEYS: vimKey[] = [
@@ -91,6 +95,31 @@ export function installTriliumCommands(vim: Vim) {
     addTriliumKeys(vim);
     wrapRegisters(vim);
     stopMacrosAtFailures(vim);
+    recordMappings(vim, builtIns.exCommands);
+    defineHintsOption(vim);
+}
+
+/**
+ * `:set hints` and `:set nohints`, which turn the key hints on and off through the host, so the
+ * change stays. `:set hints?` reads the option of the editor that runs the command.
+ */
+function defineHintsOption(vim: Vim) {
+    vim.defineOption("hints", undefined, "boolean", null, (value, cm) => {
+        const adapter = (cm as unknown as VimAdapter | undefined) ?? getActiveAdapter();
+        const config = adapter?.editor.config.get("vim");
+        if (value === undefined) {
+            return config?.areHintsEnabled?.() ?? false;
+        }
+        if (cm) {
+            config?.host?.setHintsEnabled?.(value);
+        }
+        return undefined;
+    });
+}
+
+/** Whether the user mapped `keys` in `context`, with `:map` or one of its variants. */
+export function isUserMapped(keys: string, context: VimKeyContext): boolean {
+    return !!userMappings.get(context)?.has(keys) || !!userMappings.get("all")?.has(keys);
 }
 
 /** Adds the keys of Trilium, the ones `:mapclear` removes included. */
@@ -676,6 +705,60 @@ function stopMacrosAtFailures(vim: Vim) {
             return true;
         }
         return handleKey(cm, key, origin);
+    };
+}
+
+/**
+ * Keeps track of the keys that `:map`, `:unmap` and `:mapclear` and their variants map, which the
+ * engine keeps in a list of its own.
+ */
+function recordMappings(vim: Vim, exCommands: ExCommands) {
+    type MapCommand =
+        (cm: CodeMirrorV, params: ExParams, context?: string, ...rest: unknown[]) => void;
+    const getKeys = (context: string | undefined) => {
+        const key = (context ?? "all") as VimKeyContext | "all";
+        let keys = userMappings.get(key);
+        if (!keys) {
+            keys = new Set();
+            userMappings.set(key, keys);
+        }
+        return keys;
+    };
+    const map = exCommands.map as MapCommand;
+    exCommands.map = function (this: unknown, cm, params, ...rest: unknown[]) {
+        map.call(this, cm, params, ...rest as [ string | undefined ]);
+        const [ lhs, rhs ] = params.args ?? [];
+        if (lhs && rhs) {
+            getKeys(rest[0] as string | undefined).add(lhs);
+        }
+    } as ExCommand;
+    const unmap = exCommands.unmap as MapCommand;
+    exCommands.unmap = function (this: unknown, cm, params, ...rest: unknown[]) {
+        unmap.call(this, cm, params, ...rest as [ string | undefined ]);
+        const lhs = params.args?.[0];
+        if (lhs) {
+            getKeys(rest[0] as string | undefined).delete(lhs);
+        }
+    } as ExCommand;
+    const mapclear = vim.mapclear.bind(vim);
+    vim.mapclear = (context?: string) => {
+        mapclear(context);
+        const everyMode = userMappings.get("all");
+        if (!context) {
+            userMappings.clear();
+            return;
+        }
+        userMappings.delete(context as VimKeyContext);
+        userMappings.delete("all");
+        // A mapping of every mode stays in the other modes, as the engine copies it there.
+        if (!everyMode) {
+            return;
+        }
+        for (const other of [ "normal", "visual", "insert" ].filter((each) => each !== context)) {
+            for (const keys of everyMode) {
+                getKeys(other).add(keys);
+            }
+        }
     };
 }
 

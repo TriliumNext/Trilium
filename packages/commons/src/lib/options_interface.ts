@@ -345,6 +345,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteVimInsertKeysEnabled: boolean;
     /** The Ex commands that Vim mode runs when it starts, one per line, such as mappings. */
     textNoteVimStartupCommands: string;
+    /** Whether Vim mode shows key hints, in text notes now and in code notes later. */
+    vimModeHintsEnabled: boolean;
+    /**
+     * Whether Normal and Visual mode show their keys in place of the breadcrumb. `Esc` in Normal
+     * mode with nothing pending switches it.
+     */
+    vimModeHintStripShown: boolean;
     /** Whether copying note content embeds internal images as data: URIs so they paste into external apps (internal paste stays reference-based). Hidden kill-switch. */
     clipboardImageEmbedEnabled: boolean;
     backgroundEffects: boolean;

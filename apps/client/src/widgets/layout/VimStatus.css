@@ -3,6 +3,7 @@
     --vim-status-line-pending-keys-color: var(--muted-text-color);
     --vim-message-panel-background-color: var(--left-pane-background-color);
     --vim-message-panel-border-color: var(--main-border-color);
+    --vim-hint-description-color: var(--muted-text-color);
 }
 
 .status-bar {
@@ -17,8 +18,86 @@
         }
 
         .vim-command-line-slot {
-            flex-grow: 1;
+            flex: 1 1 auto;
             padding-inline: 0.5em;
+            min-width: 12ch;
+        }
+
+        .ck-vim-command-line__input {
+            field-sizing: content;
+            min-width: 4ch;
+        }
+
+        .vim-hint-strip {
+            flex: 0 1000 auto;
+        }
+    }
+
+    &.vim-hints-shown .breadcrumb {
+        display: none;
+    }
+
+    .vim-hint-strip {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 0.75em;
+        padding-inline: 0.5em;
+        min-width: 0;
+        white-space: nowrap;
+
+        .vim-hint-typed-keys {
+            display: flex;
+            flex-shrink: 0;
+            gap: 0.25em;
+        }
+
+        .vim-hints {
+            min-width: 0;
+        }
+
+        kbd {
+            font-family: var(--monospace-font-family);
+            font-size: 0.9em;
+        }
+    }
+
+    .vim-hint {
+        margin-inline-end: 1em;
+
+        &:last-child {
+            margin-inline-end: 0;
+        }
+
+        .vim-hint-keys :is(kbd, code) + :is(kbd, code) {
+            margin-inline-start: 0.2em;
+        }
+
+        .vim-hint-keys code {
+            padding: 0;
+            background: none;
+            color: inherit;
+            font-size: 0.9em;
+        }
+
+        .vim-hint-keys + .vim-hint-description {
+            margin-inline-start: 0.4em;
+        }
+
+        .vim-hint-description {
+            color: var(--vim-hint-description-color);
+
+            strong {
+                color: var(--vim-status-line-color);
+            }
+        }
+    }
+
+    .vim-recording .vim-hint {
+        margin-inline-start: 0.75em;
+
+        kbd {
+            font-family: var(--monospace-font-family);
         }
     }
 
@@ -42,7 +121,13 @@
         }
 
         .vim-mode {
+            border: 0;
+            padding: 0;
+            background: none;
+            color: inherit;
+            font: inherit;
             font-weight: 600;
+            cursor: pointer;
         }
     }
 

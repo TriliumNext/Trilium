@@ -262,6 +262,7 @@ function VimModeOption() {
     const [ areInsertKeysEnabled, setInsertKeysEnabled ] =
         useTriliumOptionBool("textNoteVimInsertKeysEnabled");
     const [ startupCommands, setStartupCommands ] = useTriliumOption("textNoteVimStartupCommands");
+    const [ areHintsEnabled, setHintsEnabled ] = useTriliumOptionBool("vimModeHintsEnabled");
 
     function toggle(isOn: boolean) {
         void setEnabled(isOn);
@@ -278,6 +279,14 @@ function VimModeOption() {
             description={t("vim_mode.option_description")}
             subSectionsVisible={isEnabled}
             subSections={[
+                <OptionCardSection
+                    key="hints"
+                    name="vim-hints-enabled"
+                    label={t("vim_mode.hints")}
+                    description={t("vim_mode.hints_description")}
+                >
+                    <FormToggle currentValue={areHintsEnabled} onChange={setHintsEnabled} />
+                </OptionCardSection>,
                 <OptionCardSection
                     key="insert-keys"
                     name="vim-insert-keys-enabled"

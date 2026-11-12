@@ -7,4 +7,6 @@ Code notes have had Vim key bindings for years, but text notes, where most of th
 
 Motions, operators, text objects, counts, repeating with `.`, registers, marks, macros, search and `:s` all work, inside included notes too. Trilium commands join them: `:w` saves the note, `:q` closes it, `gf` follows the link under the cursor, `za` folds a heading, list item or collapsible block, `:sort` sorts lines, `:ck` runs any editor command, and `"+y` copies to the system clipboard with the formatting. The status bar shows the mode, the keys of a pending command and macro recording, and `:`, `/` and `?` open the command line in place of the breadcrumb. Zen mode keeps both.
 
+Key hints help while you learn and stay quiet otherwise. Normal and Visual mode show their keys in the status bar, and a pause in the middle of a command shows the keys that can follow it. The command line completes command names with `Tab`, the search prompt tells how the pattern is read, and `Alt+F1` or a click on the mode lists every key. `Esc` in Normal mode switches between the keys and the breadcrumb, and the Key hints option turns them off.
+
 Turn it on in Options → Text Notes → Editor features → Vim mode, on each device where you want it. A `#vimMode` label turns it on or off for a single note, and startup commands set up mappings such as `imap jk <Esc>`.

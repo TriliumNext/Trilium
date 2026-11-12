@@ -18,7 +18,10 @@ const mocks = vi.hoisted(() => ({
     copyHtml: vi.fn(),
     copyText: vi.fn(),
     readClipboardText: vi.fn(),
-    showPersistent: vi.fn()
+    showPersistent: vi.fn(),
+    save: vi.fn(),
+    closeShortcutHints: vi.fn(() => true),
+    shortcutHints: undefined as (() => unknown[]) | undefined
 }));
 
 vi.mock("../../../components/app_context", () => ({ default: { tabManager: mocks.tabManager } }));
@@ -31,15 +34,29 @@ vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../../../services/options", () => ({
     default: {
         get: (name: string) => mocks.stored[name],
-        is: (name: string) => mocks.stored[name] === true
+        is: (name: string) => mocks.stored[name] === true,
+        toggle: (name: string) => {
+            mocks.stored[name] = mocks.stored[name] !== true;
+            return Promise.resolve();
+        },
+        save: mocks.save
     }
 }));
 vi.mock("../../../services/toast", () => ({ default: { showPersistent: mocks.showPersistent } }));
 vi.mock("../../../services/utils", () => ({ isMobile: () => mocks.isMobile }));
 vi.mock("../../react/hooks", () => ({
+    useContextualShortcutHints: (hints: () => unknown[]) => {
+        mocks.shortcutHints = hints;
+    },
     useNoteLabel: vi.fn(),
     useTriliumOption: (name: string) => [ mocks.stored[name] ?? "" ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true ]
+}));
+vi.mock("../../shortcut_hints/shortcut_hints_panel", () => ({
+    closeShortcutHints: mocks.closeShortcutHints
+}));
+vi.mock("./vim_key_reference", () => ({
+    getVimHintSection: (vim: unknown) => ({ hints: [], vim })
 }));
 vi.mock("./editable_embed", () => ({
     findTextEditorAround: (element: HTMLElement | null) =>
@@ -111,6 +128,27 @@ describe("useVimMode", () => {
         mocks.stored.textNoteVimStartupCommands = "imap jj <Esc>";
         show(editor, createNote("a"));
         expect(vim.refreshStartupCommands).toHaveBeenCalledTimes(2);
+    });
+
+    it("offers the full key list of its Vim mode to the Shortcut Hints panel", () => {
+        const { editor, vim } = createEditor();
+        show(editor, createNote("a"));
+        expect(mocks.shortcutHints?.()).toEqual([]);
+        vim.isActive = true;
+        expect(mocks.shortcutHints?.()).toEqual([ { hints: [], vim } ]);
+    });
+
+    it("shows the key hints again when their options change", () => {
+        const { editor, vim } = createEditor();
+        show(editor, createNote("a"));
+        expect(vim.refreshHints).toHaveBeenCalledTimes(1);
+
+        show(editor, createNote("a"));
+        mocks.stored.vimModeHintStripShown = true;
+        show(editor, createNote("a"));
+        mocks.stored.vimModeHintsEnabled = true;
+        show(editor, createNote("a"));
+        expect(vim.refreshHints).toHaveBeenCalledTimes(3);
     });
 
     it("publishes the Vim mode for its note, again after a note switch, and clears its own", () => {
@@ -199,6 +237,17 @@ describe("buildVimConfig", () => {
         expect([ getStartupCommands?.(), isInsertKeysEnabled?.() ]).toEqual([ "nmap Y y$", true ]);
         delete mocks.stored.textNoteVimStartupCommands;
         expect(getStartupCommands?.()).toBe("");
+
+        const { areHintsEnabled, isHintStripShown } = buildVimConfig({
+            getContainer: () => null, triggerHostCommand
+        });
+        mocks.stored.vimModeHintsEnabled = true;
+        expect([ areHintsEnabled?.(), isHintStripShown?.() ]).toEqual([ true, false ]);
+        host?.toggleHintStrip?.();
+        expect(isHintStripShown?.()).toBe(true);
+        host?.setHintsEnabled?.(false);
+        expect(mocks.save).toHaveBeenCalledWith("vimModeHintsEnabled", "false");
+        expect(host?.closeKeyReference?.()).toBe(true);
 
         mocks.readClipboardText.mockResolvedValue("pasted");
         await expect(host?.readClipboard?.()).resolves.toBe("pasted");
@@ -306,7 +355,10 @@ function createNote(noteId: string, vimMode?: string) {
 function createEditor({ hasVim = true } = {}) {
     const root = document.createElement("div");
     root.className = "ck-editor__editable";
-    const vim = { setEnabled: vi.fn(), refreshStartupCommands: vi.fn() };
+    const vim = {
+        setEnabled: vi.fn(), refreshStartupCommands: vi.fn(), refreshHints: vi.fn(),
+        isActive: false
+    };
     const listeners = new Map<string, () => void>();
     const editor = {
         plugins: { has: () => hasVim, get: () => vim },

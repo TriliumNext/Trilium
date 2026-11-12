@@ -241,6 +241,12 @@ describe("StatusBar panels", () => {
         expect(statusLine?.previousElementSibling).toBeNull();
         expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
         expect(document.body.classList.contains("vim-mode-active")).toBe(true);
+        expect(container.querySelector(".vim-hint-strip, .vim-hints-shown")).toBeNull();
+
+        setStatus({ hints: { kind: "mode", typedKeys: [], hints: [] } });
+        expect(container.querySelector(".status-bar.vim-hints-shown")).not.toBeNull();
+        expect(container.querySelector(".vim-command-line-slot + .vim-hint-strip")).not.toBeNull();
+        setStatus({ hints: null });
 
         setStatus({
             commandLine: { element: document.createElement("div"), focus() {} },

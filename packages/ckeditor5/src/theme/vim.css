@@ -4,6 +4,12 @@
     --text-editor-vim-cursor-unfocused-outline-color: var(--muted-text-color, #808080);
     --text-editor-vim-command-line-panel-background: var(--main-background-color, #fff);
     --text-editor-vim-command-line-panel-border-color: var(--main-border-color, #ccc);
+    --text-editor-vim-completion-background: var(--menu-background-color, #fff);
+    --text-editor-vim-completion-border-color: var(--main-border-color, #ccc);
+    --text-editor-vim-completion-color: var(--menu-text-color, #000);
+    --text-editor-vim-completion-muted-color: var(--muted-text-color, #808080);
+    --text-editor-vim-completion-selected-background: var(--hover-item-background-color, #eee);
+    --text-editor-vim-completion-shadow: 0 2px 8px rgb(0 0 0 / 15%);
 }
 
 .ck.ck-editor__editable.ck-vim-command-mode {
@@ -54,6 +60,55 @@
         background: transparent;
         color: inherit;
         font: inherit;
+    }
+}
+
+.ck-vim-completion {
+    position: fixed;
+    z-index: 1001;
+    border: 1px solid var(--text-editor-vim-completion-border-color);
+    border-radius: 4px;
+    padding: 2px 0;
+    max-width: min(40em, 90vw);
+    max-height: calc(5 * 1.8em + 4px);
+    overflow-y: auto;
+    background: var(--text-editor-vim-completion-background);
+    box-shadow: var(--text-editor-vim-completion-shadow);
+    color: var(--text-editor-vim-completion-color);
+    font-size: 0.85em;
+
+    .ck-vim-completion__row {
+        display: flex;
+        align-items: center;
+        gap: 1.5em;
+        padding: 0 8px;
+        height: 1.8em;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &[aria-selected="true"] {
+            background: var(--text-editor-vim-completion-selected-background);
+        }
+    }
+
+    .ck-vim-completion__name {
+        min-width: 9em;
+        font-family: var(--monospace-font-family, monospace);
+    }
+
+    .ck-vim-completion__summary,
+    .ck-vim-completion__row_muted {
+        color: var(--text-editor-vim-completion-muted-color);
+    }
+
+    .ck-vim-completion__summary {
+        flex-grow: 1;
+        font-style: italic;
+    }
+
+    .ck-vim-completion__default {
+        margin-inline-start: auto;
+        color: var(--text-editor-vim-completion-muted-color);
     }
 }
 

@@ -3,7 +3,7 @@ import "./shortcut_hints_panel.css";
 
 import { autoUpdate } from "@floating-ui/dom";
 import clsx from "clsx";
-import { createPortal } from "preact";
+import { createPortal, Fragment } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n.js";
@@ -17,6 +17,9 @@ import { renderShortcutKbds } from "../react/shortcut_kbd.js";
 const AUTO_DISMISS_MS = 5000;
 /** Gap between an anchor (help button) and the dropdown. */
 const ANCHOR_GAP = 6;
+
+/** Closes the panel that is open, or `null` while none is. */
+let closeOpenPanel: (() => void) | null = null;
 
 interface OpenState {
     sections: ShortcutHintSection[];
@@ -52,12 +55,16 @@ export default function ShortcutHintsPanel() {
     useTriliumEvent("activeContextChanged", close);
 
     const isOpen = state !== undefined;
+    const isPersistent = !!state?.sections.some((section) => section.isPersistent);
     useEffect(() => {
         if (!isOpen) {
             clearTimer();
             return;
         }
-        startTimer();
+        if (!isPersistent) {
+            startTimer();
+        }
+        closeOpenPanel = close;
 
         function onKeyDown(e: KeyboardEvent) {
             if (e.key === "Escape") close();
@@ -72,10 +79,13 @@ export default function ShortcutHintsPanel() {
         document.addEventListener("mousedown", onMouseDown);
         return () => {
             clearTimer();
+            if (closeOpenPanel === close) {
+                closeOpenPanel = null;
+            }
             document.removeEventListener("keydown", onKeyDown);
             document.removeEventListener("mousedown", onMouseDown);
         };
-    }, [ isOpen, startTimer, clearTimer, close ]);
+    }, [ isOpen, isPersistent, startTimer, clearTimer, close ]);
 
     // Under the anchor with the right edges lined up, flipped and shifted as the window requires,
     // and following the anchor while it moves.
@@ -100,7 +110,7 @@ export default function ShortcutHintsPanel() {
             ref={panelRef}
             className={clsx("shortcut-hints-panel tn-shortcut-hints-kbd", state.anchor && "anchored")}
             onMouseEnter={clearTimer}
-            onMouseLeave={startTimer}
+            onMouseLeave={isPersistent ? undefined : startTimer}
         >
             <ShortcutHintsSections sections={state.sections} />
             {/* Keyboard users get the Esc reminder; mouse users (opened via the button) click away. */}
@@ -114,17 +124,26 @@ export default function ShortcutHintsPanel() {
     );
 }
 
+/** Closes the open panel, as Escape does. Returns whether one was open. */
+export function closeShortcutHints(): boolean {
+    const close = closeOpenPanel;
+    close?.();
+    return !!close;
+}
+
 export function ShortcutHintsSections({ sections }: { sections: ShortcutHintSection[] }) {
     return (
         <>
-            {sections.map((section, i) => (
-                <div className="shortcut-hints-section" key={i}>
-                    {section.titleKey && <div className="shortcut-hints-section-title">{t(section.titleKey)}</div>}
-                    <dl className="shortcut-hints-list">
-                        {section.hints.map((hint, j) => <HintRow hint={hint} key={j} />)}
-                    </dl>
-                </div>
-            ))}
+            {sections.map((section, i) => section.content
+                ? <Fragment key={i}>{section.content()}</Fragment>
+                : (
+                    <div className="shortcut-hints-section" key={i}>
+                        {section.titleKey && <div className="shortcut-hints-section-title">{t(section.titleKey)}</div>}
+                        <dl className="shortcut-hints-list">
+                            {section.hints.map((hint, j) => <HintRow hint={hint} key={j} />)}
+                        </dl>
+                    </div>
+                ))}
         </>
     );
 }

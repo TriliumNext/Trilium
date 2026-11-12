@@ -57,6 +57,8 @@ export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins
 export type {
     default as TriliumVim, VimCommandLine, VimConfig, VimHost, VimMessage, VimMode, VimStatus
 } from "./plugins/vim/vim.js";
+export type { VimHint, VimHintKind, VimHints } from "./plugins/vim/vim_hints.js";
+export type { VimHintSection } from "./plugins/vim/vim_key_reference.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";

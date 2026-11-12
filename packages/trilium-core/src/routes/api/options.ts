@@ -145,6 +145,8 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteVimModeNoticeShown",
     "textNoteVimInsertKeysEnabled",
     "textNoteVimStartupCommands",
+    "vimModeHintsEnabled",
+    "vimModeHintStripShown",
     "clipboardImageEmbedEnabled",
     "layoutOrientation",
     "noteTitleStyle",
