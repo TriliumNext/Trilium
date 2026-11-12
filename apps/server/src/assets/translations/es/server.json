@@ -614,5 +614,12 @@
   "open_custom": {
     "choose_application": "Elija una aplicación con la que abrir el archivo.",
     "applications_filter": "Aplicaciones"
+  },
+  "open-executable-dialog": {
+    "title": "Abrir programa",
+    "message": "¿Abrir «{{- name}}»?",
+    "detail": "{{- path}}\n\nEste archivo puede ejecutar un programa en su ordenador. Ábralo solo si ha creado usted mismo este enlace y confía en el archivo.",
+    "cancel": "Cancelar",
+    "open": "Abrir"
   }
 }
