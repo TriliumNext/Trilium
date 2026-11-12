@@ -22,7 +22,8 @@
         "password-confirmation": "비밀번호 확인",
         "button": "비밀번호 설정",
         "password-too-short": "비밀번호는 최소 {{length}}자 이상이어야 합니다.",
-        "passwords-dont-match": "입력된 비밀번호가 일치하지 않습니다."
+        "passwords-dont-match": "입력된 비밀번호가 일치하지 않습니다.",
+        "desktop-description": "이 Trilium 데스크톱 앱에는 아직 비밀번호가 설정되어 있지 않아 브라우저에서 접속할 수 없습니다. 데스크톱 앱에서 옵션 → 비밀번호 및 인증으로 이동하여 비밀번호를 설정한 다음, 이 페이지를 새로고침하여 로그인하세요."
     },
     "setup": {
         "heading": "Trilium 시작하기",
