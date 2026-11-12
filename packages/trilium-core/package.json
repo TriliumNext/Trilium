@@ -29,7 +29,7 @@
     "mime-types": "3.0.2",
     "node-html-parser": "9.0.7",
     "officeparser": "8.7.0",
-    "sanitize-filename": "1.6.4",
+    "sanitize-filename": "1.6.5",
     "sanitize-html": "2.18.1",
     "sax": "1.6.1",
     "sucrase": "3.35.1",
