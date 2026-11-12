@@ -14,6 +14,12 @@ The Options can be accessed via:
 
 Once in the options section, simply select one of the option categories using the <a class="reference-link" href="Note%20Tree.md">Note Tree</a>.
 
+## Language and region
+
+To change the interface language, open _Language & Region_ in the options tree and select _Language_. Hungarian is listed as _Magyar_. The date and number format and the default content language can be configured separately from the interface language.
+
+<figure class="image image-style-align-center"><img style="aspect-ratio:1440/1000;" src="1_Options_image.png" width="1440" height="1000"></figure>
+
 ## Exiting options
 
 When entering the options, they are opened in a new [tab](Tabs.md). To close them, simply close the tab.
