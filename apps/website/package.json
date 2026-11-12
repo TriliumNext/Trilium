@@ -13,7 +13,7 @@
 		"preact": "11.2.0",
 		"preact-iso": "2.12.2",
 		"preact-render-to-string": "6.8.2",
-		"react-i18next": "17.1.12"
+		"react-i18next": "18.0.1"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.6",
