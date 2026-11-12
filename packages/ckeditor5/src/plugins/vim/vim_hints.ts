@@ -96,24 +96,29 @@ export function getKeyLabel(key: string): string {
     return [ ...modifiers, name ].join("+");
 }
 
-/** The keys of Normal mode, or of Visual mode, while nothing is pending. */
-export function getModeHints(context: "normal" | "visual", t: Translate): VimHint[] {
-    if (context === "visual") {
-        return [
+/**
+ * The keys of Normal mode, or of Visual mode, while nothing is pending. Hints for keys that the
+ * user mapped to something else are left out.
+ */
+export function getModeHints(
+    context: "normal" | "visual", isMapped: HintContext["isMapped"], t: Translate
+): VimHint[] {
+    const hints = context === "visual"
+        ? [
             hint("y", t("yank (copy)")),
             hint("d", t("delete")),
             hint("c", t("change")),
             hint([ ">", "<" ], t("indent, outdent")),
             hint([ "i", "a" ], t("select inside, around…"))
+        ]
+        : [
+            hint("i", t("insert")),
+            hint("v", t("select")),
+            hint("u", t("undo")),
+            hint("/", t("search")),
+            hint(":", t("command"))
         ];
-    }
-    return [
-        hint("i", t("insert")),
-        hint("v", t("select")),
-        hint("u", t("undo")),
-        hint("/", t("search")),
-        hint(":", t("command"))
-    ];
+    return withoutMappedKeys(hints, "", context, isMapped);
 }
 
 /**
@@ -124,13 +129,8 @@ export function getCommandHints(
     command: PendingCommand, context: HintContext, t: Translate
 ): VimHint[] | null {
     const hints = resolveCommandHints(command, context, t);
-    if (!hints) {
-        return null;
-    }
-    const prefix = command.operator + command.keyBuffer;
-    const mappingContext = command.context;
-    return hints.filter((each) => each.isRange || !each.keys.length
-        || !each.keys.some((key) => context.isMapped(prefix + key, mappingContext)));
+    return hints && withoutMappedKeys(hints, command.operator + command.keyBuffer,
+        command.context, context.isMapped);
 }
 
 /** The keys of the confirm prompt of `:s///c`. */
@@ -229,6 +229,14 @@ function resolveCommandHints(
     }
     return getCharacterHints(keyBuffer, operator ? "operator" : command.context, t)
         ?? (operator ? null : getNameHints(keyBuffer, t));
+}
+
+/** `hints` without the ones whose keys, after `prefix`, the user mapped in `context`. */
+function withoutMappedKeys(
+    hints: VimHint[], prefix: string, context: VimKeyContext, isMapped: HintContext["isMapped"]
+): VimHint[] {
+    return hints.filter((each) => each.isRange || !each.keys.length
+        || !each.keys.some((key) => isMapped(prefix + key, context)));
 }
 
 /** The keys after an operator: the line, the most used motions, and the text objects. */

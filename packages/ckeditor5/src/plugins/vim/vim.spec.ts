@@ -1,5 +1,5 @@
 import type { Vim } from "@replit/codemirror-vim-core";
-import { type Editor, env, ImageBlock, ViewDocumentDomEventData } from "ckeditor5";
+import { type Editor, env, ImageBlock, Plugin, ViewDocumentDomEventData } from "ckeditor5";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
@@ -574,6 +574,17 @@ describe("Vim mode", () => {
             plugin.on("change:status", () => modes.push(plugin.status.mode));
             plugin.destroy();
             expect(modes).toEqual([ null ]);
+        });
+
+        it("starts in the mode of the last request", async () => {
+            /** Asks for Insert mode while the editor starts, after the configuration asked. */
+            class InsertModeRequest extends Plugin {
+                init() {
+                    void this.editor.plugins.get(TriliumVim).setEnabled(true, "insert");
+                }
+            }
+            const editor = await createVimEditor(paragraphs("[]a"), {}, [ InsertModeRequest ]);
+            expect(getStatus(editor).mode).toBe("insert");
         });
 
         it("starts with the editor when the configuration turns it on", async () => {

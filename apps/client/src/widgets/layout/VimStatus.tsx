@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../components/note_context";
 import { t } from "../../services/i18n";
+import Button from "../react/Button";
 import { useGetContextDataFrom, useStaticTooltip, useTriliumOptionBool } from "../react/hooks";
 import ScrollableLabel from "../react/ScrollableLabel";
 import { toggleVimKeyReference } from "../type_widgets/text/vim_key_reference";
@@ -70,19 +71,18 @@ export function VimStatusLine({ status, vim }: { status: VimStatus; vim?: Triliu
                 </span>
             )}
             {isPendingShown && <span className="vim-pending-keys">{pendingKeys}</span>}
-            <button
-                ref={modeRef}
-                type="button"
+            <Button
+                buttonRef={modeRef}
+                kind="lowProfile"
                 className="vim-mode"
+                text={getModeName(status)}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                     if (vim && modeRef.current) {
                         toggleVimKeyReference(vim, modeRef.current);
                     }
                 }}
-            >
-                {getModeName(status)}
-            </button>
+            />
         </span>
     );
 }

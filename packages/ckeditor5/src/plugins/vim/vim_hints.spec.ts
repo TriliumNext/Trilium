@@ -217,6 +217,22 @@ describe("key hints", () => {
             expect(getStrip(editor)?.hints).toEqual(NORMAL_KEYS);
         });
 
+        it("leaves out the keys of a mode that :map gives another meaning", async () => {
+            const { editor } = await createHintEditor(paragraphs("[]ab", "cd"));
+            try {
+                press(editor, ":nmap u dd<CR>");
+                expect(getStrip(editor)?.hints).toEqual(
+                    NORMAL_KEYS.filter((hint) => hint !== "[u] undo"));
+                press(editor, ":vmap > dd<CR>v");
+                expect(getStrip(editor)?.hints).toEqual(
+                    VISUAL_KEYS.filter((hint) => !hint.startsWith("[>]")));
+                press(editor, "<Esc>:nmapclear<CR>");
+                expect(getStrip(editor)?.hints).toEqual(NORMAL_KEYS);
+            } finally {
+                getLoadedVimEngine()?.mapclear();
+            }
+        });
+
         it("shows the keys that can follow after a pause, and keeps them for the command",
             async () => {
             vi.useFakeTimers();
@@ -244,7 +260,6 @@ describe("key hints", () => {
             expect(getStrip(editor)?.hints).toHaveLength(6);
             press(editor, "w");
             expect(getStrip(editor)?.hints).toEqual(NORMAL_KEYS);
-            expect(getStatus(editor).hints).toBe(modeHints);
 
             press(editor, "g");
             vi.advanceTimersByTime(400);

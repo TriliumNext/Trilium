@@ -334,6 +334,15 @@ describe("Vim mode line editing", () => {
                 "<paragraph>x <$text bold=\"true\">BO</$text>ld Y</paragraph>");
         });
 
+        it("keep the marks of the line at their columns", async () => {
+            const editor = await createVimEditor(paragraphs("[]a B c", "x"));
+            press(editor, "llma$mbgUUj`a");
+            expect(getLines(editor)).toBe("A B C|x");
+            expect(getCursor(editor)).toBe("0:2");
+            press(editor, "j`b");
+            expect(getCursor(editor)).toBe("0:4");
+        });
+
         it("change a word that ends with a longer upper case", async () => {
             const editor = await createVimEditor(
                 "<paragraph>[]A<$text bold=\"true\">ß</$text></paragraph>");

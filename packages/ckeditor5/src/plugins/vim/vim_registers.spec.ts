@@ -1,3 +1,4 @@
+import type { ModelElement } from "ckeditor5";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -5,7 +6,7 @@ import {
     setVimData
 } from "../../../test/vim-kit.js";
 import TriliumVim from "./vim.js";
-import { forgetRichContents, getRichContent, rememberRichContent } from "./vim_registers.js";
+import { forgetRichContents } from "./vim_registers.js";
 
 const BODY = paragraphs("body");
 const HEADING = "<heading2>Heading</heading2>";
@@ -311,6 +312,37 @@ describe("Vim mode registers", () => {
             expect(editor.getData()).toBe("<p>a</p>");
         });
 
+        it("put nothing when the cursor, the mode or the note changed while the clipboard was read",
+            async () => {
+            let resolve: (text: string) => void = () => undefined;
+            const readClipboard = vi.fn(() => new Promise<string>((done) => {
+                resolve = done;
+            }));
+            const editor = await createVimEditor(paragraphs("[]a", "b", ""),
+                { host: { readClipboard } });
+            const secondLine = editor.model.document.getRoot()?.getChild(1) as ModelElement;
+            const answer = async () => {
+                resolve("x");
+                await new Promise((done) => setTimeout(done));
+            };
+            press(editor, "\"+p");
+            editor.model.change((writer) => writer.setSelection(secondLine, 0));
+            await answer();
+            press(editor, "gg\"+p");
+            editor.model.change((writer) => writer.insertText("c", secondLine, "end"));
+            await answer();
+            press(editor, "\"+pi");
+            await answer();
+            press(editor, "<Esc>v\"+pj");
+            await answer();
+            press(editor, "<Esc>G\"+pv");
+            await answer();
+            expect(getLines(editor)).toBe("a|bc|");
+            press(editor, "<Esc>gg\"+p");
+            await answer();
+            expect(getLines(editor)).toBe("ax|bc|");
+        });
+
         it("put the register when the clipboard cannot be read", async () => {
             const readClipboard = vi.fn().mockRejectedValue(new Error("denied"));
             const editor = await createVimEditor(paragraphs("[]a"),
@@ -334,19 +366,37 @@ describe("Vim mode registers", () => {
     });
 
     describe("rich contents", () => {
-        it("forgets the oldest of too many", async () => {
-            const editor = await createVimEditor(paragraphs("a"));
-            const content = editor.model.change(
-                (writer) => ({ fragment: writer.createDocumentFragment(), isBlocks: false }));
-            for (let index = 0; index <= 50; index++) {
-                rememberRichContent(`text ${index}`, content);
-            }
-            expect(getRichContent("text 0")).toBeUndefined();
-            expect(getRichContent("text 1")).toBe(content);
-            rememberRichContent("text 1", content);
-            rememberRichContent("text 51", content);
-            expect(getRichContent("text 1")).toBe(content);
-            expect(getRichContent("text 2")).toBeUndefined();
+        const IMAGE_A = "<imageBlock src=\"a.png\"></imageBlock>";
+        const IMAGE_B = "<imageBlock src=\"b.png\"></imageBlock>";
+        const BOLD_WORD = "<$text bold=\"true\">word</$text>";
+
+        it("belong to the register they were read into, whatever the others hold", async () => {
+            const editor = await createVimEditor(paragraphs("[]x") + IMAGE_A + IMAGE_B
+                + `<paragraph>${BOLD_WORD} word</paragraph>`);
+            press(editor, "j\"ayyj\"byyj\"cyiww\"dyiwgg\"ap");
+            expect(getContent(editor)).toBe(paragraphs("x") + IMAGE_A + IMAGE_A + IMAGE_B
+                + `<paragraph>${BOLD_WORD} word</paragraph>`);
+            press(editor, "G$\"cp");
+            expect(getContent(editor)).toContain(`<paragraph>${BOLD_WORD} word${BOLD_WORD}`);
+        });
+
+        it("are left behind when the text of the register changes", async () => {
+            const editor = await createVimEditor(`<paragraph>${BOLD_WORD} []word</paragraph>`);
+            press(editor, "0yiwwviwp$p");
+            expect(getContent(editor)).toBe(`<paragraph>${BOLD_WORD} wordword</paragraph>`);
+            press(editor, "0\"ayiw\"Ayl$p$\"ap");
+            expect(getContent(editor)).toBe(
+                `<paragraph>${BOLD_WORD} wordwordwordwwordw</paragraph>`);
+        });
+
+        it("come back from the clipboard while it holds their text", async () => {
+            const readClipboard = vi.fn().mockResolvedValue("word");
+            const editor = await createVimEditor(
+                `<paragraph>${BOLD_WORD.replace("word", "[]word")} x</paragraph>`,
+                { host: { readClipboard, writeClipboard: vi.fn() } });
+            press(editor, "\"+yiw$\"+p");
+            await vi.waitFor(() => expect(getContent(editor)).toBe(
+                `<paragraph>${BOLD_WORD} x${BOLD_WORD}</paragraph>`));
         });
     });
 });

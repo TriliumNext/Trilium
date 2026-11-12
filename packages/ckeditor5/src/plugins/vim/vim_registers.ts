@@ -6,9 +6,6 @@ import {
 import { isTitle } from "./vim_editing.js";
 import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
 
-/** The most rich contents remembered, the oldest forgotten first. */
-const MAX_REMEMBERED = 50;
-
 /** The containers whose blocks are paragraphs, whatever is put in them. */
 const PARAGRAPH_CONTAINERS = new Set([ "blockQuote", "aside", "tableCell" ]);
 
@@ -20,29 +17,35 @@ export interface RichContent {
 }
 
 /**
- * The rich content of the registers, by the text they hold. The registers keep text only, so a
- * register whose text is one of these puts the content instead. Shared by every text editor, as
- * the registers are.
+ * A register of the engine. The engine gives it a new `keyBuffer` whenever it sets its text, and
+ * adds to the buffer it has when it appends text.
  */
-const remembered = new Map<string, RichContent>();
-
-/** Remembers `content` as what a register holding `text` puts. */
-export function rememberRichContent(text: string, content: RichContent) {
-    remembered.delete(text);
-    remembered.set(text, content);
-    if (remembered.size > MAX_REMEMBERED) {
-        remembered.delete(remembered.keys().next().value as string);
-    }
+export interface VimRegister {
+    keyBuffer: string[];
+    toString(): string;
 }
 
-/** The rich content of a register that holds `text`, if it was read from a note. */
-export function getRichContent(text: string): RichContent | undefined {
-    return remembered.get(text);
+/**
+ * The rich content of the registers, by the text buffer of the register that holds it, with the
+ * text of the register then. The registers keep text only, so a register puts the content instead
+ * while it holds that text in that buffer. Shared by every text editor, as the registers are.
+ */
+let remembered = new WeakMap<string[], { text: string; content: RichContent }>();
+
+/** Remembers `content` as what `register` puts while it holds its text. */
+export function rememberRichContent(register: VimRegister, content: RichContent) {
+    remembered.set(register.keyBuffer, { text: register.toString(), content });
+}
+
+/** The rich content that `register` puts as `text`, if it was read from a note. */
+export function getRichContent(register: VimRegister, text: string): RichContent | undefined {
+    const entry = remembered.get(register.keyBuffer);
+    return entry?.text === text ? entry.content : undefined;
 }
 
 /** Forgets every rich content. */
 export function forgetRichContents() {
-    remembered.clear();
+    remembered = new WeakMap();
 }
 
 /**

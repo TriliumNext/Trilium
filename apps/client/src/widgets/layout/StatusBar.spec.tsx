@@ -237,7 +237,7 @@ describe("StatusBar panels", () => {
 
         renderBar();
         const statusLine = container.querySelector(".actions-row > .vim-status-line");
-        expect(statusLine?.textContent).toBe("vim_mode.normal");
+        expect(statusLine?.textContent?.trim()).toBe("vim_mode.normal");
         expect(statusLine?.previousElementSibling).toBeNull();
         expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
         expect(document.body.classList.contains("vim-mode-active")).toBe(true);

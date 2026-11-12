@@ -142,7 +142,8 @@ export default class TriliumVim extends Plugin {
     declare status: VimStatus;
 
     private session: VimSession | null = null;
-    private isWanted = false;
+    /** The mode that the last call of `setEnabled()` asks for, or `null` when it turns Vim off. */
+    private wantedMode: "normal" | "insert" | null = null;
 
     static get pluginName() {
         return "TriliumVim" as const;
@@ -183,10 +184,10 @@ export default class TriliumVim extends Plugin {
 
     /**
      * Turns Vim mode on or off in place: the content, the cursor and the undo history stay. Vim
-     * mode starts in `mode`.
+     * mode starts in the `mode` of the last call, which counts when several wait for the engine.
      */
     async setEnabled(isEnabled: boolean, mode: "normal" | "insert" = "normal"): Promise<void> {
-        this.isWanted = isEnabled;
+        this.wantedMode = isEnabled ? mode : null;
         if (!isEnabled) {
             this.session?.destroy();
             this.session = null;
@@ -198,8 +199,8 @@ export default class TriliumVim extends Plugin {
         }
         const engine = getLoadedVimEngine() ?? await loadVimEngine();
         const start = () => {
-            if (this.isWanted && !this.session && this.editor.state === "ready") {
-                this.session = new VimSession(this, engine, mode);
+            if (this.wantedMode && !this.session && this.editor.state === "ready") {
+                this.session = new VimSession(this, engine, this.wantedMode);
             }
         };
         if (this.editor.state === "initializing") {
@@ -281,7 +282,6 @@ class VimSession {
     private promptKind: PromptKind | null = null;
     /** The hints of the open prompt, or `null` for a prompt without hints. */
     private promptHints: VimHints | null = null;
-    private readonly modeHints = new Map<"normal" | "visual", VimHints>();
     private readonly translate = (message: string, values?: string[]) =>
         this.editor.t(message, values);
     private readonly hintContext: HintContext = {
@@ -794,12 +794,11 @@ class VimSession {
             return null;
         }
         const context = mode === "normal" ? "normal" : "visual";
-        let hints = this.modeHints.get(context);
-        if (!hints) {
-            hints = { kind: "mode", typedKeys: [], hints: getModeHints(context, this.translate) };
-            this.modeHints.set(context, hints);
-        }
-        return hints;
+        return {
+            kind: "mode",
+            typedKeys: [],
+            hints: getModeHints(context, isUserMapped, this.translate)
+        };
     }
 
     /** The hints for the command being typed, or `null` when it waits for nothing they know. */

@@ -58,10 +58,10 @@ describe("useVimStatus", () => {
 
         const vim = createVim({ ...OFF, mode: "normal" });
         show(vim);
-        expect(getLine()?.textContent).toBe("vim_mode.normal");
+        expect(getLine()?.textContent?.trim()).toBe("vim_mode.normal");
 
         act(() => vim.setStatus({ ...OFF, mode: "insert", pendingKeys: "\"a3d" }));
-        expect(getLine()?.textContent).toBe("\"a3dvim_mode.insert");
+        expect(getLine()?.textContent?.trim()).toBe("\"a3dvim_mode.insert");
 
         act(() => vim.setStatus(OFF));
         expect(getLine()).toBeNull();
@@ -74,8 +74,10 @@ describe("VimStatusLine", () => {
     it("names the mode, Insert mode for one command and what is pending or recorded", () => {
         const parts = (status: Partial<VimStatus>) => {
             act(() => render(<VimStatusLine status={{ ...OFF, ...status }} />, container));
-            return [ ...container.querySelectorAll(".vim-status-line > *") ]
-                .map((part) => [ part.className, part.textContent ]);
+            return [ ...container.querySelectorAll(".vim-status-line > *") ].map((part) => [
+                [ ...part.classList ].find((name) => name.startsWith("vim-")),
+                part.textContent?.trim()
+            ]);
         };
 
         expect(parts({ mode: "visual-line" })).toEqual([ [ "vim-mode", "vim_mode.visual_line" ] ]);
@@ -192,14 +194,19 @@ describe("the command line slot and the message panel", () => {
     });
 });
 
-function Harness() {
+/**
+ * Shows the status of `vim`, which the mocked `useGetContextDataFrom()` returns. A new `vim` is a
+ * new prop, since `@preact/signals` skips the render of a component with hook state whose props
+ * are the same.
+ */
+function Harness({ vim }: { vim: unknown }) {
+    mocks.vim = vim;
     const status = useVimStatus({} as NoteContext);
     return status && <VimStatusLine status={status} />;
 }
 
 function show(vim: unknown) {
-    mocks.vim = vim;
-    act(() => render(<Harness />, container));
+    act(() => render(<Harness vim={vim} />, container));
 }
 
 function getLine() {

@@ -289,9 +289,10 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
         const registerName = actionArgs.registerName;
         const register = vim.getRegisterController().getRegister(registerName);
         if (registerName === "+" || registerName === "*") {
+            const place = getPutPlace(adapter, state);
             void readClipboard(adapter, register).then((text) => {
-                // Vim mode can be off by the time the clipboard is read.
-                if (adapter.state.vim) {
+                // Vim mode, the note or the cursor can change while the clipboard is read.
+                if (adapter.state.vim === state && getPutPlace(adapter, state) === place) {
                     adapter.operation(() => put(adapter, this, actionArgs, state, register, text));
                 }
             });
@@ -366,7 +367,7 @@ function put(
     }
     // The engine names the flag of `:put` `lineWise`.
     const isLinewise = !!(actionArgs as { lineWise?: boolean }).lineWise || register.linewise;
-    const content = getRichContent(text);
+    const content = getRichContent(register, text);
     if (state.visualMode) {
         actions.continuePaste(adapter as unknown as CodeMirrorV, actionArgs, state, text, register);
         return;
@@ -388,6 +389,13 @@ function put(
         return;
     }
     actions.continuePaste(adapter as unknown as CodeMirrorV, actionArgs, state, text, register);
+}
+
+/** Where a put goes: the version of the note, the mode and the selection, as one key. */
+function getPutPlace(adapter: VimAdapter, state: vimState): string {
+    const { insertMode, visualMode, visualLine } = state;
+    return JSON.stringify([ adapter.editor.model.document.version, insertMode, visualMode,
+        visualLine, adapter.getCursor("anchor"), adapter.getCursor("head") ]);
 }
 
 /** Puts `content` after the cursor, or before it, `count` times, with its formatting. */
@@ -770,8 +778,8 @@ function stopMacro(vim: Vim) {
 }
 
 /**
- * Keeps the rich content of what a register command read with the text it stores, and sends the
- * clipboard registers `"+` and `"*` to the system clipboard.
+ * Keeps the rich content of what a register command read with each register it sets, and sends
+ * the clipboard registers `"+` and `"*` to the system clipboard.
  */
 function wrapRegisters(vim: Vim) {
     const controller = vim.getRegisterController();
@@ -783,6 +791,8 @@ function wrapRegisters(vim: Vim) {
         const adapter = getActiveAdapter() as VimAdapter;
         const content = adapter.takeReadContent(text, !!isLinewise);
         const stored = isLinewise && !text.endsWith("\n") ? `${text}\n` : text;
+        const buffers = new Map(Object.values(controller.registers)
+            .map((register) => [ register, register.keyBuffer ]));
         if (registerName === "+" || registerName === "*") {
             controller.getRegister(registerName).setText(stored, isLinewise, isBlockwise);
             controller.unnamedRegister.setText(stored, isLinewise);
@@ -790,8 +800,14 @@ function wrapRegisters(vim: Vim) {
         } else {
             pushText(registerName, operator, text, isLinewise, isBlockwise);
         }
-        if (content && registerName !== "_") {
-            rememberRichContent(stored, content);
+        if (!content) {
+            return;
+        }
+        // The registers that the push set to `stored`, which the engine gives new buffers.
+        for (const register of Object.values(controller.registers)) {
+            if (register.keyBuffer !== buffers.get(register) && register.toString() === stored) {
+                rememberRichContent(register, content);
+            }
         }
     };
 }
@@ -807,7 +823,10 @@ async function readClipboard(adapter: VimAdapter, register: Register): Promise<s
     try {
         const text = await adapter.host.readClipboard();
         if (typeof text === "string") {
-            register.setText(text, text.endsWith("\n"));
+            // Setting the same text again gives the register a new buffer, without rich content.
+            if (text !== register.toString()) {
+                register.setText(text, text.endsWith("\n"));
+            }
             return text;
         }
     } catch {

@@ -422,7 +422,7 @@ export default class VimAdapter {
         const lines = text.split("\n");
         let newEnd: ModelPosition | null;
         if (oldText && lines.length === oldText.split("\n").length) {
-            rewriteLines(this.editor, index, clippedStart, oldText, text);
+            this.keepBookmarks(() => rewriteLines(this.editor, index, clippedStart, oldText, text));
             const last = lines.length - 1;
             const ch = (last ? 0 : clippedStart.ch) + lines[last].length;
             newEnd = this.index().positionAt(clippedStart.line + last, ch);
@@ -837,6 +837,23 @@ export default class VimAdapter {
         };
     }
 
+    /**
+     * Runs `rewrite`, which writes over lines in place, and puts each mark whose text it deleted
+     * back at its line and column, as Vim keeps the marks of a changed line.
+     */
+    private keepBookmarks(rewrite: () => void) {
+        const places: [ Bookmark, Pos | null ][] = [];
+        for (const bookmark of this.bookmarks) {
+            places.push([ bookmark, bookmark.find() ]);
+        }
+        rewrite();
+        for (const [ bookmark, place ] of places) {
+            if (place && bookmark.isDeleted()) {
+                bookmark.moveTo(this.toModelPosition(this.clipPos(place)));
+            }
+        }
+    }
+
     private select(from: Pos, to: Pos) {
         const index = this.index();
         const model = this.editor.model;
@@ -1198,7 +1215,7 @@ class Bookmark {
     private isCleared = false;
 
     constructor(
-        private readonly cm: VimAdapter, private readonly position: ModelLivePosition,
+        private readonly cm: VimAdapter, private position: ModelLivePosition,
         private readonly bookmarks: Set<Bookmark>
     ) {
         bookmarks.add(this);
@@ -1212,10 +1229,22 @@ class Bookmark {
 
     /** The place of the bookmark, or `null` once it is cleared or its text is deleted. */
     find(): Pos | null {
-        if (this.isCleared || this.position.root.rootName === "$graveyard") {
+        if (this.isCleared || this.isDeleted()) {
             return null;
         }
         return this.cm.locatePosition(this.position.toPosition());
+    }
+
+    /** Whether the text that the bookmark was in is deleted. */
+    isDeleted(): boolean {
+        return this.position.root.rootName === "$graveyard";
+    }
+
+    /** Puts the bookmark at `position`. */
+    moveTo(position: ModelPosition) {
+        const stickiness = this.position.stickiness;
+        this.position.detach();
+        this.position = ModelLivePosition.fromPosition(position, stickiness);
     }
 }
 

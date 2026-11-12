@@ -69,8 +69,9 @@
             margin-inline-end: 0;
         }
 
-        .vim-hint-keys :is(kbd, code) + :is(kbd, code) {
-            margin-inline-start: 0.2em;
+        .vim-hint-keys {
+            display: inline-flex;
+            gap: 0.2em;
         }
 
         .vim-hint-keys code {
@@ -121,13 +122,9 @@
         }
 
         .vim-mode {
-            border: 0;
-            padding: 0;
-            background: none;
             color: inherit;
             font: inherit;
             font-weight: 600;
-            cursor: pointer;
         }
     }
 

@@ -661,6 +661,7 @@
     "hide_promoted_attributes": "Hide promoted attributes on this note.",
     "read_only": "Editor is in read only mode. Works only for text and code notes.",
     "auto_read_only_disabled": "Text/code notes can be set automatically into read mode when they are too large. You can disable this behavior on per-note basis by adding this label to the note.",
+    "vim_mode": "Turns Vim mode on in this text note, or off with the value <code>false</code>, whatever the Vim mode option of this device says.",
     "app_css": "Marks CSS notes which are loaded into the Trilium application and can thus be used to modify Trilium's looks.",
     "app_theme": "Marks CSS notes which are full Trilium themes and are thus available in Trilium options.",
     "app_theme_base": "Set to \"next\", \"next-light\", or \"next-dark\" to use the corresponding TriliumNext theme (auto, light or dark) as the base for a custom theme, instead of the legacy one.",
