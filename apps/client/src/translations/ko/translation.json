@@ -5046,5 +5046,13 @@
     "block_count_other": "블록 {{count}}개",
     "collapse_section": "섹션 접기",
     "expand_section": "섹션 펼치기"
+  },
+  "protect_subtree": {
+    "protect_intro": "다음 노트는 비밀번호로 암호화됩니다. 암호화된 노트의 제목, 내용, 첨부 파일 및 수정 이력은 보호된 세션에서만 읽을 수 있습니다.",
+    "unprotect_intro": "다음 노트의 암호화가 해제됩니다. 암호화가 해제된 노트의 내용, 첨부 파일 및 수정 이력은 암호화되지 않은 상태로 저장되며, 데이터베이스, 백업 또는 동기화 서버에 접근할 수 있는 누구나 읽을 수 있습니다.",
+    "subtree": "및 그 아래의 모든 하위 노트",
+    "untitled": "보호된 노트",
+    "password": "비밀번호",
+    "password_description": "보호된 노트에 사용하는 비밀번호입니다."
   }
 }
