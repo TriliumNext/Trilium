@@ -5224,5 +5224,13 @@
     },
     "collapse_section": "Contraer sección",
     "expand_section": "Expandir sección"
+  },
+  "protect_subtree": {
+    "protect_intro": "Las siguientes notas se cifrarán con su contraseña. Sus títulos, contenido, archivos adjuntos y revisiones solo podrán leerse entonces en una sesión protegida.",
+    "unprotect_intro": "Las siguientes notas se descifrarán. Su contenido, archivos adjuntos y revisiones se almacenarán entonces sin cifrado, legibles por cualquiera que tenga acceso a la base de datos, a sus copias de seguridad o a un servidor de sincronización.",
+    "subtree": "y todas las notas situadas debajo",
+    "untitled": "Nota protegida",
+    "password": "Contraseña",
+    "password_description": "La contraseña que usa para las notas protegidas."
   }
 }
