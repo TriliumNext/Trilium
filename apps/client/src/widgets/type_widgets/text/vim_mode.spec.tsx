@@ -174,6 +174,18 @@ describe("useVimMode", () => {
         expect(published()).toBeUndefined();
     });
 
+    it("clears its Vim mode while its type widget is hidden, and publishes it once displayed",
+        () => {
+        const { editor, vim } = createEditor();
+        show(editor, createNote("a"));
+        expect(published()).toBe(vim);
+
+        show(editor, createNote("a"), false);
+        expect(published()).toBeUndefined();
+        show(editor, createNote("a"), true);
+        expect(published()).toBe(vim);
+    });
+
     it("publishes the Vim mode of the editor, or of a focused embed until its editor goes", () => {
         const main = createEditor();
         const nested = createEditor();
@@ -317,9 +329,13 @@ describe("showVimModeNotice", () => {
     });
 });
 
-function Harness({ editor, note }: { editor: FakeEditor | undefined; note: FNote }) {
+function Harness({ editor, note, isVisible }: {
+    editor: FakeEditor | undefined;
+    note: FNote;
+    isVisible?: boolean;
+}) {
     const noteContext = mocks.noteContext as unknown as NoteContext;
-    useVimMode(editor as unknown as CKTextEditor, note, noteContext);
+    useVimMode(editor as unknown as CKTextEditor, note, noteContext, isVisible);
     return null;
 }
 
@@ -338,8 +354,8 @@ function createNoteContext(noteId: string) {
     };
 }
 
-function show(editor: FakeEditor | undefined, note: FNote) {
-    act(() => render(<Harness editor={editor} note={note} />, container));
+function show(editor: FakeEditor | undefined, note: FNote, isVisible?: boolean) {
+    act(() => render(<Harness editor={editor} note={note} isVisible={isVisible} />, container));
 }
 
 function focusIn(element: HTMLElement) {

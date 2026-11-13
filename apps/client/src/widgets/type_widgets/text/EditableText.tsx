@@ -551,6 +551,7 @@ export default function EditableText({
                 showLinkDialog={showLinkDialog}
                 showContentEmbedDialog={showContentEmbedDialog}
                 isExcerpt={block !== undefined}
+                isVisible={isVisible}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();

@@ -98,13 +98,15 @@ interface CKEditorProps extends Pick<HTMLAttributes<HTMLDivElement>, "className"
     showContentEmbedDialog?: (request: ContentEmbedDialogRequest) => (() => void) | null;
     /** Whether the editor holds only some blocks of its note, as the editor of an excerpt does. */
     isExcerpt?: boolean;
+    /** Whether the type widget of the editor is displayed. Only a displayed one shows Vim mode. */
+    isVisible?: boolean;
 }
 
 export default function CKEditor({
     containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor,
     editorRef: externalEditorRef, onNotificationWarning, onNotificationInfo, onEditorError,
     onChange, onEditorInitialized, editorApi, templates, rebuildKey, contentEmbedHandlers,
-    showLinkDialog, showContentEmbedDialog, isExcerpt
+    showLinkDialog, showContentEmbedDialog, isExcerpt, isVisible
 }: CKEditorProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const editorRef = useRef<CKTextEditor>(null);
@@ -213,7 +215,7 @@ export default function CKEditor({
     }
 
     useKeyboardShortcuts("text-detail", containerRef, parentComponent, ntxId);
-    useVimMode(editor, note, noteContext);
+    useVimMode(editor, note, noteContext, isVisible);
 
     useImperativeHandle(editorApi, () => ({
         hasSelection() {

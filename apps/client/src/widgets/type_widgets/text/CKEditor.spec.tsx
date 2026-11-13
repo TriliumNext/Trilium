@@ -203,17 +203,19 @@ describe("CKEditor", () => {
         expect(opts?.isExcerpt?.()).toBe(false);
         expect(opts?.vim).toBe(mocks.vimConfig);
         await vi.waitFor(() => expect(mocks.useVimMode).toHaveBeenLastCalledWith(
-            props.editorRef.current, mocks.note, { ntxId: "context1" }));
+            props.editorRef.current, mocks.note, { ntxId: "context1" }, undefined));
         expect(props.editorRef.current).not.toBeNull();
         expect(mocks.buildVimConfig.mock.lastCall?.[0].getContainer()).toBe(host.firstChild);
 
         mocks.note = { noteId: "host2", title: "Other" };
         await act(async () => {
-            render(<CKEditor {...props} className="force-rerender" isExcerpt />, host);
+            render(<CKEditor {...props} className="force-rerender" isExcerpt isVisible={false} />,
+                host);
         });
 
         expect(opts?.getNoteId?.()).toBe("host2");
         expect(opts?.isExcerpt?.()).toBe(true);
+        expect(mocks.useVimMode.mock.lastCall?.[3]).toBe(false);
     });
 
     it("lists the headings of its editor and gives one a block id, while it has one", async () => {

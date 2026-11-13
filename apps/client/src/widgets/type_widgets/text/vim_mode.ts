@@ -82,11 +82,12 @@ export function isVimModeWanted(label: string | null | undefined, isOptionOn: bo
 
 /**
  * Turns the Vim mode of `editor` on or off as the option and the label of `note` say, and publishes
- * in `noteContext` the Vim mode that the status bar shows.
+ * in `noteContext` the Vim mode that the status bar shows while `isVisible`. A hidden type widget,
+ * such as the editable one of a note shown read-only, leaves the status bar to the displayed one.
  */
 export function useVimMode(
     editor: CKTextEditor | undefined, note: FNote | null | undefined,
-    noteContext: NoteContext | null | undefined
+    noteContext: NoteContext | null | undefined, isVisible = true
 ) {
     const [ isOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
     const [ startupCommands ] = useTriliumOption("textNoteVimStartupCommands");
@@ -129,7 +130,7 @@ export function useVimMode(
     }, [ editor, areHintsEnabled, isHintStripShown ]);
 
     const focusedVim = useFocusedVim(editor);
-    usePublishedVim(noteContext, noteId, focusedVim);
+    usePublishedVim(noteContext, noteId, isVisible ? focusedVim : undefined);
     useContextualShortcutHints(() =>
         (focusedVim?.isActive ? [ getVimHintSection(focusedVim) ] : []));
 }
