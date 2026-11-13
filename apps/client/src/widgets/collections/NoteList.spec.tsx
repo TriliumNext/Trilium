@@ -561,7 +561,7 @@ describe("CustomNoteList visibility latch", () => {
         expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
     });
 
-    it("waits for the note content before observing, and drops the latch when a new load starts", async () => {
+    it("waits for the note content before observing, and drops the latch only for another note", async () => {
         const note = buildNote({ title: "Parent", type: "text" });
         // A note froca holds, since the list renders it and asks froca for it by id.
         const child = buildNote({ title: "Child", type: "text" });
@@ -573,16 +573,16 @@ describe("CustomNoteList visibility latch", () => {
         container = mountPoint;
         document.body.appendChild(mountPoint);
 
-        const renderList = async (contentReady: boolean) => {
+        const renderList = async (contentReady: boolean, shownNote = note) => {
             await act(async () => {
                 render(
                     <ParentComponent.Provider value={parent}>
                         <CustomNoteList
-                            note={note}
+                            note={shownNote}
                             viewType="grid"
                             isEnabled={true}
                             contentReady={contentReady}
-                            notePath={`root/${note.noteId}`}
+                            notePath={`root/${shownNote.noteId}`}
                             ntxId="ntx-1"
                             media="screen"
                         />
@@ -608,7 +608,21 @@ describe("CustomNoteList visibility latch", () => {
         await act(async () => observer.fire(true));
         expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
 
-        // A new load (e.g. a note switch) resets the latch instead of keeping the list mounted.
+        // The editor fetching the same note's content again leaves the rendered list in place.
+        await renderList(false);
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+        await renderList(true);
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+
+        // Another note resets the latch, so its list waits for its own content.
+        const other = buildNote({ title: "Other", type: "text" });
+        other.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ child.noteId ]);
+        other.getAttachmentsByRole = vi.fn(async () => []);
+        await renderList(false, other);
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
+
+        // Coming back to the first note waits for its content again too.
+        await renderList(true, other);
         await renderList(false);
         expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
     });
