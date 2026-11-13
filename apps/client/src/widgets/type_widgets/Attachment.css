@@ -156,6 +156,14 @@
         padding: 0;
     }
 
+    .attachment-content-wrapper .office-preview-body:has(.spreadsheet-table) {
+        padding: 0;
+
+        .spreadsheet-table {
+            margin-top: 0;
+        }
+    }
+
     .attachment-content-wrapper img,
     .attachment-content-wrapper video {
         max-width: 100%;
