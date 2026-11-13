@@ -23,10 +23,12 @@ import SidebarChatButton from "./SidebarChatButton";
 import SpacerWidget from "./SpacerWidget";
 import SyncStatus from "./SyncStatus";
 
-export default function LauncherContainer({ isHorizontalLayout, showLabels }: {
+export default function LauncherContainer({ isHorizontalLayout, showLabels, onPopupShown }: {
     isHorizontalLayout: boolean;
     /** Shows each launcher's title under its icon, as the mobile navigation rail does. */
     showLabels?: boolean;
+    /** Called as a launcher's popup opens, see `LaunchBarContext`. */
+    onPopupShown?: () => void;
 }) {
     const childNotes = useLauncherChildNotes();
     const containerRef = useLauncherScrollbarCompensation(isHorizontalLayout, childNotes);
@@ -49,7 +51,8 @@ export default function LauncherContainer({ isHorizontalLayout, showLabels }: {
         >
             <LaunchBarContext.Provider value={{
                 isHorizontalLayout,
-                showLabels
+                showLabels,
+                onPopupShown
             }}>
                 {childNotes?.map(childNote => {
                     if (!isDesktop() && childNote.isLabelTruthy("desktopOnly")) {

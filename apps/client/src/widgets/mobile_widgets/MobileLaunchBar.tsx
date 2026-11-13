@@ -19,6 +19,8 @@ export default function MobileLaunchBar() {
     const isNavigationRail = useNavigationRail();
     const parentComponent = useContext(ParentComponent);
     useBodyClass("navigation-rail", isNavigationRail);
+    // The global menu and a launcher's popup open in the panel of the note tree.
+    const hideTree = () => parentComponent?.triggerCommand("hideLeftPane");
 
     if (!isNavigationRail) {
         return (
@@ -31,16 +33,11 @@ export default function MobileLaunchBar() {
 
     return (
         <div id="launcher-pane" className="component vertical navigation-rail">
-            <GlobalMenu
-                isHorizontalLayout
-                showLabel
-                // The menu opens in the panel of the tree.
-                onShown={() => parentComponent?.triggerCommand("hideLeftPane")}
-            />
+            <GlobalMenu isHorizontalLayout showLabel onShown={hideTree} />
             <LaunchBarContext.Provider value={RAIL_CONTEXT}>
                 <NoteTreeButton />
             </LaunchBarContext.Provider>
-            <LauncherContainer isHorizontalLayout={false} showLabels />
+            <LauncherContainer isHorizontalLayout={false} showLabels onPopupShown={hideTree} />
         </div>
     );
 }

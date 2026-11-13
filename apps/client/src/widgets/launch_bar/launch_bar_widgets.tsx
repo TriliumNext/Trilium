@@ -20,6 +20,8 @@ export const LaunchBarContext = createContext<{
     isHorizontalLayout: boolean;
     /** Whether the buttons show their titles under their icons, as in the mobile navigation rail. */
     showLabels?: boolean;
+    /** Called as a launcher's popup opens: the navigation rail hides the note tree, whose place it takes. */
+    onPopupShown?: () => void;
 }>({
     isHorizontalLayout: false
 });
@@ -60,7 +62,7 @@ export function LaunchBarActionButton({ className, launcherNote, onContextMenu, 
 }
 
 export function LaunchBarDropdownButton({
-    children, icon, launcherNote, parentNoteId, buttonProps, panel, ...props
+    children, icon, launcherNote, parentNoteId, buttonProps, panel, onShown, ...props
 }: Pick<
     DropdownProps, "title" | "children" | "onShown" | "autoClose" | "dropdownRef" | "buttonProps"
         | "filterable" | "keepOrder"
@@ -72,7 +74,7 @@ export function LaunchBarDropdownButton({
     /** Opens a {@link DropdownPanel} rather than a menu, for content other than `FormList` rows. */
     panel?: boolean
 }) {
-    const { isHorizontalLayout } = useContext(LaunchBarContext);
+    const { isHorizontalLayout, onPopupShown } = useContext(LaunchBarContext);
     const titlePosition = getTitlePosition(isHorizontalLayout);
 
     const resolvedButtonProps = launcherNote && !buttonProps?.onContextMenu
@@ -91,6 +93,10 @@ export function LaunchBarDropdownButton({
             placement={titlePosition}
             mobileBackdrop
             buttonProps={resolvedButtonProps}
+            onShown={onPopupShown || onShown ? () => {
+                onPopupShown?.();
+                onShown?.();
+            } : undefined}
             {...props}
         >{children}</Component>
     );

@@ -84,10 +84,24 @@ body.mobile.navigation-rail {
             line-height: 1.2;
         }
 
-        .launcher-button.active,
+        /* A touch screen keeps :hover on the last button pressed; the marked states below follow it. */
+        .launcher-button:is(:hover, :focus, :focus-visible),
+        .global-menu-button:is(:hover, :focus, :focus-visible) {
+            background: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            border-color: transparent;
+            color: var(--launcher-pane-text-color);
+        }
+
+        .launcher-button:is(.active, .show),
         .global-menu-button.show {
-            background: var(--launcher-pane-button-hover-background, var(--hover-item-background-color)) !important;
+            background: var(--launcher-pane-button-hover-background, var(--more-accented-background-color)) !important;
             color: var(--launcher-pane-button-hover-color, var(--launcher-pane-text-color));
+        }
+
+        .launcher-button.show:not(:active) {
+            transform: none;
         }
 
         /* Centers the count of `TabSwitcher.css` on the icon, which sits at the top of the button. */
@@ -112,7 +126,7 @@ body.mobile.navigation-rail {
         min-width: 0;
     }
 
-    .tn-dropdown-portal:is(.global-menu, .note-actions) > .dropdown-menu {
+    .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget, .note-actions) > .dropdown-menu {
         position: fixed !important;
         inset-block: var(--safe-area-inset-top, env(safe-area-inset-top)) var(--mobile-bottom-offset) !important;
         transform: none !important;
@@ -128,7 +142,7 @@ body.mobile.navigation-rail {
         background: var(--left-pane-background-color) !important;
     }
 
-    .tn-dropdown-portal.global-menu > .dropdown-menu {
+    .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu {
         inset-inline: var(--navigation-rail-width) auto !important;
         border-inline-end: 1px solid var(--main-border-color) !important;
     }
@@ -142,7 +156,7 @@ body.mobile.navigation-rail {
         }
     }
 
-    &:has(.tn-dropdown-portal.global-menu > .dropdown-menu) #mobile-rest-container {
+    &:has(.tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu) #mobile-rest-container {
         margin-inline-start: var(--navigation-rail-panel-width);
     }
 

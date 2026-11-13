@@ -8,8 +8,12 @@ import { ParentComponent } from "../react/react_utils";
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../launch_bar/LauncherContainer", () => ({
-    default: ({ isHorizontalLayout, showLabels }: { isHorizontalLayout: boolean, showLabels?: boolean }) => (
-        <div id="launcher-container" data-horizontal={`${isHorizontalLayout}`} data-labels={`${!!showLabels}`} />
+    default: ({ isHorizontalLayout, showLabels, onPopupShown }: {
+        isHorizontalLayout: boolean, showLabels?: boolean, onPopupShown?: () => void
+    }) => (
+        <div id="launcher-container" data-horizontal={`${isHorizontalLayout}`} data-labels={`${!!showLabels}`}>
+            {onPopupShown && <button type="button" className="launcher-with-popup" onClick={onPopupShown} />}
+        </div>
     )
 }));
 vi.mock("../buttons/global_menu", () => ({
@@ -62,6 +66,7 @@ describe("MobileLaunchBar", () => {
             expect(pane?.querySelector("#launcher-container")?.getAttribute("data-labels")).toBe("false");
             expect(pane?.querySelector(".global-menu")?.getAttribute("data-label")).toBe("false");
             expect(pane?.querySelector(".note-tree-launcher")).toBeNull();
+            expect(pane?.querySelector(".launcher-with-popup")).toBeNull();
             expect(document.body.classList.contains("navigation-rail")).toBe(false);
             vi.restoreAllMocks();
         }
@@ -83,9 +88,12 @@ describe("MobileLaunchBar", () => {
         await act(async () => tree.click());
         expect(triggerCommand).toHaveBeenCalledWith("toggleLeftPane");
 
-        // The menu opens in the place of the tree.
+        // The menu, and the popup of a launcher such as Bookmarks, open in the place of the tree.
         triggerCommand.mockClear();
         await act(async () => (items[0] as HTMLButtonElement).click());
+        expect(triggerCommand).toHaveBeenCalledWith("hideLeftPane");
+        triggerCommand.mockClear();
+        await act(async () => pane?.querySelector<HTMLButtonElement>(".launcher-with-popup")?.click());
         expect(triggerCommand).toHaveBeenCalledWith("hideLeftPane");
 
         // The tree button is marked only while the tree is open.
