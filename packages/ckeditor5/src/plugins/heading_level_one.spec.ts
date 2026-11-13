@@ -46,4 +46,12 @@ describe("HeadingLevelOne", () => {
         editor.execute("enter");
         expect(getModelData(editor.model)).toBe("<heading1>Ti</heading1><heading1>[]tle</heading1>");
     });
+
+    it("loads in an editor without the enter command", async () => {
+        const plainEditor = await createTestEditor([ Paragraph, HeadingLevelOne ]);
+
+        expect(plainEditor.commands.get("enter")).toBeUndefined();
+        plainEditor.setData("<h1>Title</h1>");
+        expect(plainEditor.getData()).toBe("<h1>Title</h1>");
+    });
 });
