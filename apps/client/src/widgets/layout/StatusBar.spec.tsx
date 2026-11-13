@@ -241,7 +241,7 @@ describe("StatusBar panels", () => {
         expect(statusLine?.textContent?.trim()).toBe("vim_mode.normal");
         expect(statusLine?.previousElementSibling).toBeNull();
         expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
-        expect(document.body.classList.contains("vim-mode-active")).toBe(true);
+        expect(document.body.classList.contains("vim-status-shown")).toBe(true);
         expect(container.querySelector(".vim-hint-strip, .vim-hints-shown")).toBeNull();
 
         setStatus({ hints: { kind: "mode", typedKeys: [], hints: [] } });
@@ -260,7 +260,7 @@ describe("StatusBar panels", () => {
         setStatus({ mode: null, commandLine: null, message: null });
         expect(container.querySelector(".vim-status-line, .vim-command-line-slot")).toBeNull();
         expect(container.querySelector(".vim-command-line-open, .vim-message-panel")).toBeNull();
-        expect(document.body.classList.contains("vim-mode-active")).toBe(false);
+        expect(document.body.classList.contains("vim-status-shown")).toBe(false);
     });
 
     it("shows the Vim mode badge before the mode while the Vim mode option is on", () => {
@@ -282,16 +282,18 @@ describe("StatusBar panels", () => {
             expect(badge?.nextElementSibling?.classList.contains("vim-status-line")).toBe(true);
             act(() => render(null, container));
 
-            // Vim mode off for the note: the badge stays, to turn it back on.
+            // Vim mode off for the note: the badge stays, to turn it back on, in Zen mode too.
             vim.status = { mode: null };
             renderBar();
             expect(container.querySelector(".vim-mode-badge")).not.toBeNull();
             expect(container.querySelector(".vim-status-line")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(true);
             act(() => render(null, container));
 
             contextData.clear();
             renderBar();
             expect(container.querySelector(".vim-mode-badge")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(false);
         } finally {
             options.load({});
         }

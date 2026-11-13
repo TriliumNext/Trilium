@@ -27,7 +27,7 @@ Vim mode uses three places of the <a class="reference-link" href="../../Basic%2
 *   The **mode indicator**, after the badge, shows the current mode: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` or `REPLACE`. Beside it appear the keys of a command that is not complete yet, short messages and the macro being recorded.
 *   The area of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">Breadcrumb</a> is used for two things: the key hints, described below, and the command line, which opens there when you press `:`, `/` or `?`.
 
-<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a> keeps the mode indicator and the area of the breadcrumb.
+In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a>, the key hints, the _Vim_ badge and the mode indicator are visible.
 
 ## Settings
 

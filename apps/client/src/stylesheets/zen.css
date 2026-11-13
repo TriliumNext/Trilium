@@ -1,3 +1,8 @@
+:where(:root) {
+    --zen-status-bar-background-color:
+        var(--note-split-background-color, var(--main-background-color));
+}
+
 body.zen {
     --tab-bar-height: 0;
 
@@ -24,20 +29,40 @@ body.zen {
         display: none !important;
     }
 
-    &:not(.vim-mode-active) .status-bar {
+    &:not(.vim-status-shown) .status-bar {
         display: none;
     }
 
-    &.vim-mode-active .status-bar {
-        > :not(.status-bar-main-row, .vim-message-panel),
-        .breadcrumb,
-        .vim-hint-breadcrumb,
-        .actions-row > :not(.vim-status-line) {
-            display: none !important;
+    &.vim-status-shown {
+        #horizontal-main-container {
+            --note-split-bottom-border-radius: 0;
         }
 
-        .actions-row {
-            margin-inline-start: auto;
+        .vertical-layout #center-pane .note-split {
+            border-bottom: none;
+        }
+
+        .status-bar {
+            > :not(.status-bar-main-row, .vim-message-panel),
+            .breadcrumb,
+            .vim-hint-breadcrumb,
+            .actions-row > :not(.vim-mode-badge, .vim-status-line) {
+                display: none !important;
+            }
+
+            > .status-bar-main-row {
+                border-top: none;
+                background-color: var(--zen-status-bar-background-color);
+            }
+
+            .actions-row {
+                margin-inline-start: auto;
+            }
+        }
+
+        /* 20px above the status bar, whose row is 28px high (`StatusBar.css`). */
+        .classic-toolbar-widget {
+            bottom: 48px;
         }
     }
 

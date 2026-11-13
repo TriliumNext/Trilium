@@ -82,13 +82,14 @@ export default function StatusBar() {
     const vimStatus = useVimStatus(noteContext);
     const shownVim = useGetContextDataFrom(noteContext, "vimMode");
     const [ isVimModeOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
+    const isVimBadgeShown = !!shownVim && isVimModeOptionOn;
     const vimMessage = vimStatus?.message;
     const vimHints = vimStatus?.hints;
 
     // The note split comes before the bar in the DOM, so its corner rule keys on a body class.
     useBodyClass("status-bar-panel-open", !!activePane);
-    // Zen mode keeps the bar for Vim mode.
-    useBodyClass("vim-mode-active", !!vimStatus);
+    // Zen mode keeps the bar for Vim mode, and for its badge while the note has Vim mode off.
+    useBodyClass("vim-status-shown", !!vimStatus || isVimBadgeShown);
 
     return (
         <div className={clsx("status-bar", vimStatus?.commandLine && "vim-command-line-open",
@@ -104,7 +105,7 @@ export default function StatusBar() {
                     {vimHints && <VimHintStrip hints={vimHints} />}
 
                     <div className="actions-row">
-                        {shownVim && isVimModeOptionOn && <VimModeBadge note={context.note} />}
+                        {isVimBadgeShown && <VimModeBadge note={context.note} />}
                         {vimStatus && <VimStatusLine status={vimStatus} vim={shownVim} />}
                         <CodeCursorPosition {...context} />
                         <CodeNoteSwitcher {...context} />
