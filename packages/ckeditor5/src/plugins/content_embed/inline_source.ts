@@ -15,14 +15,13 @@ import {
 	type ViewElement
 } from 'ckeditor5';
 
+import { getPositionAttributes, getPositionOfView } from '../positioned_widgets.js';
 import { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import {
 	getCodeViewAttributes,
 	getCodeViewOfView,
 	getDisplayModeAttributes,
 	getDisplayModeOfView,
-	getPositionAttributes,
-	getPositionOfView,
 	toDisplayMode
 } from './content_embed.js';
 

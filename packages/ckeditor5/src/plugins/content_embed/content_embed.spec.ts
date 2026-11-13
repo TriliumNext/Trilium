@@ -25,11 +25,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import LinkEmbed from "../link_embed/link_embed.js";
+import { POSITIONS, type WidgetPositionCommand } from "../positioned_widgets.js";
 import ReferenceLink from "../referencelink.js";
 import ContentEmbed, {
     BOX_SIZE_COMMAND_NAME,
     CODE_VIEW_COMMAND_NAME,
-    type ContentEmbedPositionCommand,
     DEFAULT_BOX_SIZE_COMMAND_NAME,
     type EmbedContentInfo,
     COMMAND_NAME,
@@ -44,7 +44,6 @@ import ContentEmbed, {
     DISPLAY_MODES,
     getCaption,
     POSITION_COMMAND_NAME,
-    POSITIONS,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -2143,7 +2142,7 @@ describe("ContentEmbed position", () => {
     });
 
     it("places a Resizable embed anywhere, an Expandable one across the text, others nowhere", () => {
-        const positions = () => (getCommand() as ContentEmbedPositionCommand).positions;
+        const positions = () => (getCommand() as WidgetPositionCommand).positions;
         insertContentEmbed(editor, "n1", "resizable");
         editor.execute(POSITION_COMMAND_NAME, { value: "wrap-left" });
         expect(positions()).toEqual([ "left", "center", "right", "wrap-left", "wrap-right" ]);

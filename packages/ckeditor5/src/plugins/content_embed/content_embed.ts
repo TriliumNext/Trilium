@@ -44,10 +44,11 @@ import {
 	normalizeMimeTypeForCKEditor, parseBlockRange, readBoxSize
 } from '@triliumnext/commons';
 import HostedBalloon from '../../hosted_balloon.js';
+import PositionedWidgets, {
+	getPositionAttributes, getPositionOfView, NO_POSITIONS, POSITIONS, type PositionValue
+} from '../positioned_widgets.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
-import ResizableWidgets, {
-	type ResizeAnchor, SIZE_ATTRIBUTES
-} from '../resizable_widgets/resizable_widgets.js';
+import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import { restoreRendererFocusOnInput } from '../widget_utils.js';
 import type { EmbedEdge } from './content_embed_caret.js';
 import EmbedHistory from './embed_history.js';
@@ -95,24 +96,11 @@ const DISPLAY_MODE_ICONS: Record<DisplayModeValue, string> = {
 	preview: showIcon
 };
 
-/**
- * Where an embed is placed in the text: on lines of its own, at the left, the center or the right
- * ("Break text"), or with the text wrapped around it, at the left or the right ("Wrap text").
- */
-export const POSITIONS = [ 'left', 'center', 'right', 'wrap-left', 'wrap-right' ] as const;
-
-export type PositionValue = typeof POSITIONS[number];
-
-/** The positions that an embed saves as `data-position`. Centered, the default, saves nothing. */
-const SAVED_POSITIONS: unknown[] = [ 'left', 'right', 'wrap-left', 'wrap-right' ];
-
 /** The box sizes that a position places in the text. Compact and Full fit their content. */
 const POSITIONED_BOX_SIZES: unknown[] = [ 'resizable', 'expandable' ];
 
 /** The positions of an Expandable embed, which takes the full width: the text breaks around it. */
 const BREAK_TEXT_POSITIONS: readonly PositionValue[] = [ 'left', 'center', 'right' ];
-
-const NO_POSITIONS: readonly PositionValue[] = [];
 
 /** The least size that an embed can be resized to, in `em`. */
 export const MIN_EMBED_SIZE = { width: 10, height: 3 };
@@ -530,7 +518,7 @@ class ContentEmbedUI extends Plugin {
 
 class ContentEmbedEditing extends Plugin {
 	static get requires() {
-		return [ Widget, ResizableWidgets ];
+		return [ Widget, ResizableWidgets, PositionedWidgets ];
 	}
 
 	static get pluginName() {
@@ -551,13 +539,14 @@ class ContentEmbedEditing extends Plugin {
 		this._defineConverters();
 
 		const editor = this.editor;
+		const positionedWidgets = editor.plugins.get( PositionedWidgets );
 		editor.plugins.get( ResizableWidgets ).register( 'contentEmbed', {
 			propertyPrefix: '--include-note',
 			// An Expandable embed takes the full width.
 			isWidthResizable: embed => embed.getAttribute( 'boxSize' ) === 'resizable',
 			// A video takes its height from its width, and an audio file from its controls.
 			isHeightResizable: embed => !isMediaEmbed( embed ),
-			getAnchor: getEmbedAnchor,
+			getAnchor: embed => positionedWidgets.getAnchor( embed ),
 			heightTarget: '.include-note-content',
 			minWidth: MIN_EMBED_SIZE.width,
 			minHeight: MIN_EMBED_SIZE.height,
@@ -578,7 +567,14 @@ class ContentEmbedEditing extends Plugin {
 		commands.add( CODE_VIEW_COMMAND_NAME, new SetContentEmbedCodeViewCommand( editor ) );
 		commands.add(
 			CONTENT_EMBED_DISPLAY_MODE_COMMAND, new ContentEmbedDisplayModeCommand( editor ) );
-		commands.add( POSITION_COMMAND_NAME, new ContentEmbedPositionCommand( editor ) );
+		const positionCommand = positionedWidgets.register( 'contentEmbed', {
+			commandName: POSITION_COMMAND_NAME,
+			getPositions: embed => getEmbedPositions( editor, embed ),
+			getPosition: getEmbedPosition
+		} );
+		// Refreshes on `ui#update` too: the content's tools register after it renders.
+		positionCommand.listenTo(
+			editor.ui, 'update', () => positionCommand.refresh(), { priority: 'high' } );
 		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.fixTitleOnlyEmbeds( writer ) );
@@ -622,7 +618,7 @@ class ContentEmbedEditing extends Plugin {
 			// `FileUploadEditing` is uploading carries the upload attributes instead of its id.
 			allowAttributes: [
 				'noteId', 'block', 'attachmentId', 'boxSize', 'hideTitle', 'editable',
-				'displayMode', 'position', 'uploadId', 'uploadStatus', 'uploadFileName',
+				'displayMode', 'uploadId', 'uploadStatus', 'uploadFileName',
 				...CODE_VIEW_ATTRIBUTES.map( ( [ setting ] ) => setting )
 			],
 
@@ -774,10 +770,10 @@ class ContentEmbedEditing extends Plugin {
 			// Marks the view of the embed without drawing the content again. Content with an
 			// editable mode reads `data-editable` from the embed, content with display modes
 			// `data-display-mode`, a code file the `data-code-*` attributes, and an extended code
-			// block `data-language`. The stylesheet places the embed by `data-position`.
+			// block `data-language`.
 			const markedAttributes = [
 				...FLAG_ATTRIBUTES, DISPLAY_MODE_ATTRIBUTE, ...CODE_VIEW_ATTRIBUTES,
-				[ 'language', 'data-language' ] as const, [ 'position', 'data-position' ] as const
+				[ 'language', 'data-language' ] as const
 			];
 			for ( const [ attribute, dataAttribute ] of markedAttributes ) {
 				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
@@ -1288,51 +1284,6 @@ export class ContentEmbedDisplayModeCommand extends Command {
 }
 
 /**
- * Sets where the selected embed is placed in the text, for content that has positions. Centered
- * removes the position.
- */
-export class ContentEmbedPositionCommand extends Command {
-	/** The position of the selected embed, or `null`. */
-	declare value: PositionValue | null;
-	/** The positions that the selected embed can take, as its box size allows, or none. */
-	declare positions: readonly PositionValue[];
-
-	constructor( editor: Editor ) {
-		super( editor );
-		this.set( 'positions', NO_POSITIONS );
-		// Content declares its positions once it renders, which changes nothing in the model.
-		this.listenTo( editor.ui, 'update', () => this.refresh(), { priority: 'high' } );
-	}
-
-	override refresh() {
-		const embed = getSelectedContentEmbed( this.editor );
-
-		this.isEnabled = !!embed && hasEmbedPositions( this.editor, embed );
-		this.value = embed && this.isEnabled ? getEmbedPosition( embed ) : null;
-		this.positions = embed ? getEmbedPositions( this.editor, embed ) : NO_POSITIONS;
-	}
-
-	override execute( { value }: { value: PositionValue } ) {
-		const embed = getSelectedContentEmbed( this.editor );
-		if ( !embed ) {
-			return;
-		}
-
-		if ( !getEmbedPositions( this.editor, embed ).includes( value ) ) {
-			return;
-		}
-
-		this.editor.model.change( writer => {
-			if ( SAVED_POSITIONS.includes( value ) ) {
-				writer.setAttribute( 'position', value, embed );
-			} else {
-				writer.removeAttribute( 'position', embed );
-			}
-		} );
-	}
-}
-
-/**
  * The model attribute to set for `language`, a MIME type: `language` for an extended code block,
  * which always has one, otherwise `codeLanguage`, the language that a code file shows in.
  */
@@ -1687,18 +1638,6 @@ function getEmbedPosition( embed: ModelElement ): PositionValue {
 	return position && positions.includes( position ) ? position : 'center';
 }
 
-/**
- * The edge that the stylesheet places `embed` against, which stays in place while it is resized
- * and which its toolbar is level with.
- */
-export function getEmbedAnchor( embed: ModelElement ): ResizeAnchor {
-	const position = getEmbedPosition( embed );
-	if ( position === 'left' || position === 'wrap-left' ) {
-		return 'left';
-	}
-	return position === 'right' || position === 'wrap-right' ? 'right' : 'center';
-}
-
 /** Whether `embed` can have a caption now. A Compact embed that shows a title only has none. */
 function isEmbedCaptionToggleable( editor: Editor, embed: ModelElement ) {
 	return isTitleOnlyEmbed( editor, embed ) !== true && hasCaptionSupport( embed )
@@ -1848,18 +1787,6 @@ export function getDisplayModeOfView(
 ): { displayMode?: DisplayModeValue } {
 	const mode = toDisplayMode( viewElement.getAttribute( 'data-display-mode' ) );
 	return mode ? { displayMode: mode } : {};
-}
-
-/** The `data-position` attribute of `element`, when it is not centered. */
-export function getPositionAttributes( element: ModelElement ): Record<string, string> {
-	const position = element.getAttribute( 'position' );
-	return SAVED_POSITIONS.includes( position ) ? { 'data-position': position as string } : {};
-}
-
-/** The position in the `data-position` attribute of a saved embed, when not centered. */
-export function getPositionOfView( viewElement: ViewElement ): { position?: PositionValue } {
-	const position = viewElement.getAttribute( 'data-position' );
-	return SAVED_POSITIONS.includes( position ) ? { position: position as PositionValue } : {};
 }
 
 /**

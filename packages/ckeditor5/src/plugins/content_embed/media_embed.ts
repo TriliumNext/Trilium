@@ -15,8 +15,8 @@ import {
     type UpcastElementEvent
 } from "ckeditor5";
 
+import { getPositionAttributes, getPositionOfView } from "../positioned_widgets.js";
 import { SIZE_ATTRIBUTES } from "../resizable_widgets/resizable_widgets.js";
-import { getPositionAttributes, getPositionOfView } from "./content_embed.js";
 
 /** The height of a new video, in em, as high as a Resizable box starts. */
 const VIDEO_DEFAULT_HEIGHT = 20;
