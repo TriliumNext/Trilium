@@ -318,6 +318,7 @@ function getToolbarName(editor: Editor, source: ContextToolbarSource | null) {
         case "admonition": return t("Admonition");
         case "tabs": return t("Tabs");
         case "multicolumnLayout": return t("Columns");
+        case "aside": return t("Aside");
         case "contentEmbed": return getContentEmbedName(editor) ?? t("Embed");
         // A link preview, which is a link whatever its shape.
         case "link":

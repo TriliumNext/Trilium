@@ -98,6 +98,10 @@ export function sanitizeHtml(dirtyHtml: string) {
             section: {
                 "--include-note-width": sizeRegex
             },
+            // The width of a resized aside.
+            aside: {
+                "--aside-width": sizeRegex
+            },
             img: {
                 // Allow fractional ratios too (e.g. OneNote reports 577.5×277.5 screen clippings).
                 "aspect-ratio": [ /^\d+(\.\d+)?\/\d+(\.\d+)?$/ ],

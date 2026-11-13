@@ -169,6 +169,20 @@ describe("sliceToBlockReference", () => {
         expect(across.childNodes).toHaveLength(2);
     });
 
+    it("puts an aside that is the only block in the flow, and leaves one among others", () => {
+        const aside = (id: string) => el("aside",
+            { [BLOCK_ID_ATTRIBUTE]: id, "data-position": "wrap-right" }, el("p", {}, text("A")));
+        const only = aside("a");
+        const root = el("div", {}, el("p", {}, text("Before")), only);
+
+        expect(sliceToBlockReference(root, "a")).toBe(true);
+        expect(render(root)).toBe(`<div><aside ${BLOCK_ID_ATTRIBUTE}="a"><p>A</p></aside></div>`);
+
+        const among = aside("b");
+        sliceToBlockReference(el("div", {}, block("p", "x"), among, block("p", "y")), "x:y");
+        expect(among.getAttribute("data-position")).toBe("wrap-right");
+    });
+
     it("changes nothing when a block is missing", () => {
         const root = el("div", {}, block("p", "a"), el("p", {}));
 
@@ -312,6 +326,10 @@ class TestElement implements BlockNode {
 
     setAttribute(name: string, value: string) {
         this.attributes[name] = value;
+    }
+
+    removeAttribute(name: string) {
+        delete this.attributes[name];
     }
 
     remove() {

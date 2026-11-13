@@ -475,6 +475,14 @@ body:not(.math-loaded) .math-tex {
         margin: 1em 0;
         width: auto;
     }
+
+    /* Outweighs the placement rules of `aside.css`, which loads after this file. */
+    :root .ck-content aside:not(.admonition)[data-position] {
+        float: none;
+        clear: both;
+        margin: 1em 0;
+        width: auto;
+    }
 }
 
 .ck-content :is(.include-note, .captioned-content-embed) > figcaption {

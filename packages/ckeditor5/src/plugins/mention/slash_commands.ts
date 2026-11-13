@@ -42,6 +42,7 @@ import {
     BookmarkUI, type Editor, type MentionFeedObjectItem, type ModelElement, Plugin
 } from "ckeditor5";
 
+import asideIcon from "../../icons/aside.svg?raw";
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
 import dateTimeIcon from "../../icons/date-time.svg?raw";
 import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
@@ -485,6 +486,16 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             commandName: "tabs"
         },
         ...buildMulticolumnSlashCommands(editor),
+        {
+            id: "aside",
+            title: t("Aside"),
+            description: t("Insert a box of text that the main text wraps around."),
+            aliases: [ "sidebar", "side note", "margin note", "text box", "float" ],
+            icon: asideIcon,
+            willInsert: true,
+            willWrap: true,
+            commandName: "insertAside"
+        },
         {
             id: "footnote",
             title: t("Footnote"),

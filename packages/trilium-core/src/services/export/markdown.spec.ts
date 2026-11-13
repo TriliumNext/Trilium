@@ -1150,4 +1150,35 @@ describe("Markdown export", () => {
                 </div>`);
         });
     });
+
+    describe("asides", () => {
+        it("writes the blocks of an aside as Markdown between its HTML tags", () => {
+            const html = "<p>Before</p>" +
+                "<aside style=\"--aside-width:18em;\" data-position=\"wrap-right\">" +
+                "<p>Side <strong>note</strong></p><ul><li>One</li></ul></aside><p>After</p>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                Before
+
+                <aside style="--aside-width:18em;" data-position="wrap-right">
+
+                Side **note**
+
+                *   One
+
+                </aside>
+
+                After`);
+        });
+
+        it("keeps an empty aside that Turndown would drop, apart from an admonition", () => {
+            const html = "<aside><p>&nbsp;</p></aside>" +
+                "<aside class=\"admonition tip\"><p>A tip.</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside>
+                </aside>
+
+                > [!TIP]
+                > A tip.`);
+        });
+    });
 });

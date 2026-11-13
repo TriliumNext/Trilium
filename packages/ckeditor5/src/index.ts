@@ -89,6 +89,7 @@ import "./plugins/markdownimport.js";
 import "./plugins/math/math.js";
 import "./plugins/tabs/tabs.js";
 import "./plugins/multicolumn/multicolumn.js";
+import "./plugins/aside/aside.js";
 import "./plugins/mermaid/mermaid.js";
 import "./plugins/referencelink.js";
 import "./plugins/sort_selection/sort_selection.js";

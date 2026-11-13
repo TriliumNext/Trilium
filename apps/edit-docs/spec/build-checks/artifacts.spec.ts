@@ -32,7 +32,8 @@ describe("Check artifacts are present", () => {
             "share-theme",
             "ckeditor5-content.css",
             "ckeditor5-content-colors.css",
-            "ckeditor5-multicolumn.css"
+            "ckeditor5-multicolumn.css",
+            "ckeditor5-aside.css"
         ];
 
         ensurePathsExist(paths);

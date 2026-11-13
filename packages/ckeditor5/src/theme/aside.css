@@ -1,0 +1,90 @@
+:where(:root) {
+    --aside-focus-border-color: var(--input-focus-outline-color, var(--ck-color-focus-border));
+
+    --aside-border-radius: 8px;
+    --aside-default-width: 22em;
+}
+
+.ck-content aside:not(.admonition) {
+    --_aside-width: var(--aside-width, var(--aside-default-width));
+
+    clear: both;
+    margin: 1em auto;
+    box-sizing: border-box;
+    max-width: 100%;
+    width: var(--aside-width, auto);
+    break-inside: avoid;
+
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+        width: var(--_aside-width);
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+        width: var(--_aside-width);
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        --_aside-wrap-gap: clamp(0px, 100% - var(--_aside-width),
+            var(--ck-content-image-style-spacing, 1.5em));
+
+        clear: none;
+        margin-top: 0;
+        width: var(--_aside-width);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_aside-wrap-gap);
+        margin-left: 0;
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-right: 0;
+        margin-left: var(--_aside-wrap-gap);
+    }
+}
+
+.ck-content aside:not(.admonition),
+.ck-content aside:not(.admonition) > .aside-content {
+    > :first-child {
+        margin-top: 0;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+}
+
+.ck-content aside:not(.admonition).ck-widget {
+    border-radius: var(--aside-border-radius);
+
+    > .ck-widget__selection-handle {
+        margin-inline-start: var(--aside-border-radius);
+    }
+
+    > .aside-content {
+        box-shadow: none;
+        border: 0;
+        border-radius: inherit;
+    }
+
+    &.trilium-aside--focused {
+        outline: var(--ck-widget-outline-thickness, 3px) solid var(--aside-focus-border-color);
+    }
+}
+
+body.mobile .ck-content aside:not(.admonition)[data-position] {
+    float: none;
+    clear: both;
+    margin: 1em 0;
+    width: auto;
+
+    > .ck-widget__resize-handles > .ck-widget__resize-handle {
+        display: none;
+    }
+}

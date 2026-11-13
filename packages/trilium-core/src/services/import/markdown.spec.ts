@@ -801,5 +801,23 @@ $$`;
                 "</section></div>";
             expect(roundTrip(original)).toStrictEqual(original);
         });
+
+        it("round-trips asides, empty ones and those in a column, unchanged", () => {
+            const original =
+                "<p>Before</p>" +
+                "<aside data-position=\"wrap-right\"><p>Side <strong>note</strong></p>" +
+                "<ul><li>One</li><li>Two</li></ul></aside>" +
+                "<p>Beside</p>" +
+                "<aside><p>&nbsp;</p></aside>" +
+                layout("1-1",
+                    "<aside data-position=\"left\"><h2>In a column</h2></aside>", "<p>B</p>");
+            const markdown = markdownExportService.toMarkdown(original);
+
+            expect(roundTrip(original)).toStrictEqual(original);
+            expect(markdownExportService.toMarkdown(roundTrip(original))).toStrictEqual(markdown);
+
+            const resized = "<aside style=\"--aside-width:18em;\"><p>A</p></aside>";
+            expect(roundTrip(resized)).toStrictEqual(resized);
+        });
     });
 });
