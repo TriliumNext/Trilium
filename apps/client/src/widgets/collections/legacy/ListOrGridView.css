@@ -276,6 +276,10 @@
     overflow: hidden;
     user-select: none;
 
+    .note-list.grid-view & {
+        height: 300px;
+    }
+
     body.mobile & {
         flex-basis: 150px;
     }
