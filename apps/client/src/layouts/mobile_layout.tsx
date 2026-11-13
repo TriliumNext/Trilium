@@ -2,7 +2,6 @@ import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
-import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
@@ -10,13 +9,13 @@ import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import FindWidget from "../widgets/find.js";
-import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import { NoteTypeSwitcherBar } from "../widgets/layout/NoteTypeSwitcher.jsx";
 import HideKeyboardButton from "../widgets/mobile_widgets/hide_keyboard_button.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
+import MobileLaunchBar from "../widgets/mobile_widgets/MobileLaunchBar.jsx";
 import MobileNoteNavigator from "../widgets/mobile_widgets/MobileNoteNavigator.jsx";
 import MobileNotePanel from "../widgets/mobile_widgets/MobileNotePanel.jsx";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
@@ -103,12 +102,7 @@ export default class MobileLayout {
                 new FlexContainer("column")
                     .contentSized()
                     .id("mobile-bottom-bar")
-                    .child(new FlexContainer("row")
-                        .class("horizontal")
-                        .css("height", "53px")
-                        .child(<LauncherContainer isHorizontalLayout />)
-                        .child(<GlobalMenuWidget isHorizontalLayout />)
-                        .id("launcher-pane"))
+                    .child(<MobileLaunchBar />)
             )
             .child(<CloseZenModeButton />)
             .child(<HideKeyboardButton />);

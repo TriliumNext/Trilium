@@ -5,16 +5,18 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext } from "../react/hooks";
+import { useNavigationRail, useNoteContext } from "../react/hooks";
 
 export default function ToggleSidebarButton() {
     const { noteContext, parentComponent } = useNoteContext();
     const [ isPhone, setPhone ] = useState(isNarrowLayout);
     useEffect(() => onNarrowLayoutChange(() => setPhone(isNarrowLayout())), []);
+    // The navigation rail has a button of its own for the tree.
+    const isNavigationRail = useNavigationRail();
 
     return (
         <div className="toggle-sidebar-button">
-            { noteContext?.isMainContext() && <ActionButton
+            { noteContext?.isMainContext() && !isNavigationRail && <ActionButton
                 icon={isPhone ? `bx ${glob.isRtl ? "bx-chevron-right" : "bx-chevron-left"}` : "bx bx-sidebar"}
                 text={isPhone ? t("note_tree.back-to-tree") : t("note_tree.toggle-sidebar")}
                 onClick={(e) => {

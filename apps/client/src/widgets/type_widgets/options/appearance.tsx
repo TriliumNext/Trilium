@@ -93,6 +93,7 @@ function UserInterface() {
     const customThemes = useUserThemes();
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
     const [ noteTitleStyle, setNoteTitleStyle ] = useTriliumOption("noteTitleStyle");
+    const [ navigationRail, setNavigationRail ] = useTriliumOptionBool("mobileNavigationRail");
 
     const resolved = useMemo(() => resolveTheme(theme ?? null), [theme]);
     const isCustom = resolved.isCustom;
@@ -193,6 +194,19 @@ function UserInterface() {
                     onChange={setEditedNotesOpenInRibbon}
                 />
             </OptionCardSection>
+
+            {isMobile() && (
+                <OptionCardSection
+                    name="mobile-navigation-rail"
+                    label={t("theme.navigation_rail")}
+                    description={t("theme.navigation_rail_description")}
+                >
+                    <FormToggle
+                        currentValue={navigationRail}
+                        onChange={setNavigationRail}
+                    />
+                </OptionCardSection>
+            )}
         </Card>
     );
 }

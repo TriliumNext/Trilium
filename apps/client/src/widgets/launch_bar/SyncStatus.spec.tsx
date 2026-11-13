@@ -46,8 +46,12 @@ vi.mock("../react/hooks", async (importOriginal) => {
             hooks.useStaticTooltip(args[0], { ...args[1], animation: false })
     };
 });
-vi.mock("./launch_bar_widgets", () => ({ launcherContextMenuHandler: () => undefined }));
+vi.mock("./launch_bar_widgets", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./launch_bar_widgets")>()),
+    launcherContextMenuHandler: () => undefined
+}));
 
+import { LaunchBarContext } from "./launch_bar_widgets";
 import SyncStatus from "./SyncStatus";
 
 let container: HTMLDivElement;
@@ -107,6 +111,22 @@ describe("SyncStatus", () => {
         expect(body.textContent).toContain("Sync status will be known");
         expect(body.textContent).not.toContain("https://effective.example/");
         expect(body.textContent).not.toContain("https://stored.example/");
+    });
+
+    it("shows the launcher's title under the icon in the navigation rail", () => {
+        const label = () => container.querySelector(".sync-status-widget .launcher-button-label")?.textContent;
+        mount();
+        expect(label()).toBeUndefined();
+
+        act(() => {
+            render(
+                <LaunchBarContext.Provider value={{ isHorizontalLayout: false, showLabels: true }}>
+                    <SyncStatus launcherNote={{ title: "Sync status" } as FNote} />
+                </LaunchBarContext.Provider>,
+                container
+            );
+        });
+        expect(label()).toBe("Sync status");
     });
 
     it("shows the button when a config override supplies the address, whatever is stored", () => {

@@ -8,6 +8,11 @@ import type BasicWidget from "../basic_widget.js";
 import FlexContainer, { type FlexDirection } from "../containers/flex_container.js";
 import { forgetTabs, getTabNavigation, setTabScreen } from "./tab_navigation.js";
 
+/** The scrolling content of the note, under the title row of its split. */
+const NOTE_CONTENT = "#detail-container .scrolling-container";
+/** What keeps its press in the note's content. */
+const NOTE_CONTROLS = "button, a, input, select, textarea, label, [role='button'], [role='toolbar']";
+
 const DRAG_STATE_NONE = 0;
 const DRAG_STATE_INITIAL_DRAG = 1;
 const DRAG_STATE_DRAGGING = 2;
@@ -41,6 +46,8 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private screenWidth: number;
     /** Whether the sidebar is shown in tablet mode, where it sits next to the note (same option as the left pane on desktop). */
     private leftPaneVisible: boolean;
+    /** Aborts the listeners this widget adds to the document, once it is cleaned up. */
+    private documentListeners = new AbortController();
 
     constructor(screenName: Screen, direction: FlexDirection) {
         super(direction);
@@ -68,9 +75,35 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             return true;
         });
 
-        document.addEventListener("touchstart", (e) => this.#onDragStart(e));
-        document.addEventListener("touchmove", (e) => this.#onDragMove(e), { passive: false });
-        document.addEventListener("touchend", (e) => this.#onDragEnd(e));
+        this.documentListeners.abort();
+        this.documentListeners = new AbortController();
+        const { signal } = this.documentListeners;
+        document.addEventListener("touchstart", (e) => this.#onDragStart(e), { signal });
+        document.addEventListener("touchmove", (e) => this.#onDragMove(e), { passive: false, signal });
+        document.addEventListener("touchend", (e) => this.#onDragEnd(e), { signal });
+        document.addEventListener("pointerdown", (e) => this.#closeOnNotePress(e), { capture: true, signal });
+    }
+
+    cleanup() {
+        this.documentListeners.abort();
+    }
+
+    /**
+     * In the navigation rail (`mobileNavigationRail` option on a tablet) the tree opens beside the
+     * note to pick one, and a press on the note's content closes it. The press does nothing else: it
+     * places no caret and draws no stroke, and its click does not reach the note. The title row and
+     * the controls in the content, such as a canvas's tools or a link, keep their presses.
+     */
+    #closeOnNotePress(e: PointerEvent) {
+        if (!this.leftPaneVisible || isNarrowLayout() || !options.is("mobileNavigationRail")) return;
+        if (!this.$widget[0].isConnected) return;
+        if (!(e.target instanceof Element) || !e.target.closest(NOTE_CONTENT)) return;
+        if (e.target.closest(NOTE_CONTROLS)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        swallowNextClick();
+        this.setLeftPaneVisibilityEvent({ leftPaneVisible: false });
     }
 
     #onDragStart(e: TouchEvent | MouseEvent) {
@@ -267,4 +300,19 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         this.#setInitialState();
         this.#setSidebarOpen(activeScreen === this.screenName);
     }
+}
+
+/** Stops the click that follows a press, up to the next press. */
+function swallowNextClick() {
+    const onClick = (e: MouseEvent) => {
+        stop();
+        e.preventDefault();
+        e.stopPropagation();
+    };
+    const stop = () => {
+        window.removeEventListener("click", onClick, true);
+        window.removeEventListener("pointerdown", stop, true);
+    };
+    window.addEventListener("click", onClick, true);
+    window.addEventListener("pointerdown", stop, true);
 }

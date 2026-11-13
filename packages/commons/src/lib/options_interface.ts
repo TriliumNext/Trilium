@@ -108,6 +108,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     layoutOrientation: string;
     /** How a text note shows its title: `large` above the content, or `compact` in the title row only. */
     noteTitleStyle: "large" | "compact";
+    /** Whether the mobile layout shows its launch bar as a navigation rail with labels on a tablet-wide screen. */
+    mobileNavigationRail: boolean;
     allowedHtmlTags: string;
     /** JSON: what the Content Manager's cleanup tool was last set to erase — see `CleanupToolOptions`. */
     cleanupToolOptions: string;
