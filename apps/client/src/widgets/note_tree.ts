@@ -1434,7 +1434,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        const follow = this.treeScrollFollowNavigation;
+        // An active note that stayed in place keeps its ancestors as the user left them;
+        // only a moved one is revealed under its new parent.
+        const follow = this.treeScrollFollowNavigation && !!movedActiveNode;
         let node: Fancytree.FancytreeNode | null | undefined = await this.getNodeFromPath(activeNotePath, follow, false);
 
         if (node && node.data.noteId !== treeService.getNoteIdFromUrl(activeNotePath)) {

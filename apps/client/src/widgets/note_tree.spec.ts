@@ -4,12 +4,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import appContext from "../components/app_context.js";
 import type { EventData } from "../components/app_context.js";
 import type TabManager from "../components/tab_manager.js";
+import FBranch from "../entities/fbranch.js";
 import froca from "../services/froca.js";
 import hoistedNoteService from "../services/hoisted_note.js";
+import LoadResults from "../services/load_results.js";
 import noteCreateService from "../services/note_create.js";
 import options from "../services/options.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
+import type { EntityChange } from "../server_types.js";
 import treeService from "../services/tree.js";
 import ws from "../services/ws.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -227,11 +230,94 @@ describe("NoteTreeWidget", () => {
             expect(activeVisibleOnActivation).toBe(false);
         });
 
-        it("expands to the active note when the tree follows it", async () => {
-            const { getNodeFromPath, node, activeVisibleOnActivation } = await reload(true);
-            expect(getNodeFromPath).toHaveBeenCalledWith("root/parent/child", true, false);
-            expect(node.setActive).toHaveBeenCalled();
-            expect(activeVisibleOnActivation).toBe(true);
+        /** Renders a real fancytree over `root → Parent → Child` and `root → Other`, with Child active. */
+        async function renderTreeWithActiveChild() {
+            vi.spyOn(options, "is").mockImplementation((name) => name === "treeScrollFollowNavigation");
+            vi.spyOn(server, "put").mockResolvedValue(undefined);
+            vi.spyOn(appContext, "tabManager", "get")
+                .mockReturnValue({ getActiveContext: () => null } as unknown as TabManager);
+            vi.spyOn(froca, "loadSubTree").mockImplementation(async (noteId) => froca.notes[noteId]);
+            const root = buildNote({
+                id: "root",
+                title: "root",
+                children: [
+                    { id: "parent", title: "Parent", children: [{ id: "child", title: "Child" }] },
+                    { id: "other", title: "Other" }
+                ]
+            });
+            froca.branches.none_root = new FBranch(froca, {
+                branchId: "none_root", noteId: "root", parentNoteId: "none", notePosition: 0, fromSearchNote: false
+            });
+            const parentBranch = froca.getBranch("root_parent");
+            if (parentBranch) parentBranch.isExpanded = true;
+
+            const widget = await renderWidget();
+            vi.mocked(widget.initFancyTree).mockRestore();
+            vi.spyOn(widget, "activityDetected").mockImplementation(() => {});
+            (widget as { noteContext?: unknown }).noteContext = {
+                notePath: "root/parent/child", hoistedNoteId: "root"
+            };
+            widget.$widget.appendTo(document.body);
+            widget.initFancyTree();
+            // happy-dom does not match jQuery UI's `:ui-fancytree` pseudo, so `$.ui.fancytree.getTree()` returns null.
+            const internals = widget as unknown as { tree: Fancytree.Fancytree; $tree: JQuery };
+            internals.tree = internals.$tree.fancytree("getTree");
+
+            const childNode = await widget.getNodeFromPath("root/parent/child");
+            expect(childNode?.data.noteId).toBe("child");
+            await childNode?.setActive(true, { noEvents: true, noFocus: true });
+
+            return { widget, root, parentBranch };
+        }
+
+        function addBranch(branchId: string, noteId: string, parentNoteId: string) {
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId, parentNoteId, notePosition: 10, fromSearchNote: false
+            });
+            froca.getNoteFromCache(parentNoteId)?.addChild(noteId, branchId, false);
+            froca.getNoteFromCache(noteId)?.addParent(parentNoteId, branchId, false);
+            return { entityName: "branches", entityId: branchId, entity: { branchId, noteId, parentNoteId, notePosition: 10 } };
+        }
+
+        it("keeps a collapsed ancestor of the active note collapsed when a note is created elsewhere (#6641)", async () => {
+            const { widget, parentBranch } = await renderTreeWithActiveChild();
+            await widget.getNodesByNoteId("parent")[0].setExpanded(false, { noAnimation: true });
+            expect(parentBranch?.isExpanded).toBe(false);
+
+            // The note created under root reaches the tree before the note context switches to it.
+            buildNote({ id: "newNote", title: "New note" });
+            const loadResults = new LoadResults([addBranch("root_newNote", "newNote", "root") as unknown as EntityChange]);
+            loadResults.addBranch("root_newNote", "none");
+            loadResults.addNote("newNote");
+            await widget.entitiesReloadedEvent({ loadResults });
+
+            expect(widget.getNodesByNoteId("newNote")).toHaveLength(1);
+            expect(widget.getNodesByNoteId("parent")[0].isExpanded()).toBe(false);
+            expect(parentBranch?.isExpanded).toBe(false);
+        });
+
+        it("reveals the active note under its new parent when it is moved and the tree follows it", async () => {
+            const { widget } = await renderTreeWithActiveChild();
+
+            const parent = froca.notes.parent;
+            const child = froca.notes.child;
+            parent.children = [];
+            parent.childToBranch = {};
+            child.parents = [];
+            child.parentToBranch = {};
+            delete froca.branches.parent_child;
+            const deleted = { entityName: "branches", entityId: "parent_child", entity: {
+                branchId: "parent_child", noteId: "child", parentNoteId: "parent", isDeleted: true
+            } };
+            const added = addBranch("other_child", "child", "other");
+            const loadResults = new LoadResults([deleted, added] as unknown as EntityChange[]);
+            loadResults.addBranch("parent_child", "none");
+            loadResults.addBranch("other_child", "none");
+            await widget.entitiesReloadedEvent({ loadResults });
+
+            const otherNode = widget.getNodesByNoteId("other")[0];
+            expect(otherNode.isExpanded()).toBe(true);
+            expect(widget.getActiveNode()?.getParent()).toBe(otherNode);
         });
     });
 });
