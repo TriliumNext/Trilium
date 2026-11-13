@@ -181,6 +181,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
             {showsPreview && (
                 <CardSection className="note-content-preview">
                     <NoteContent note={note}
+                                 trim
                                  highlightedTokens={highlightedTokens}
                                  noChildrenList
                                  includeArchivedNotes={includeArchived}

@@ -260,9 +260,9 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
 
     function refresh() {
         if (!rendersItself) {
-            // The full-detail view has a pane to itself, so it gets the pdf.js toolbar; a list-view preview
-            // stays bare.
-            content_renderer.getRenderedContent(attachment, { pdfToolbar: !!isFullDetail })
+            // The full-detail view has a pane to itself, so it gets the pdf.js toolbar and the whole
+            // document; a list-view preview stays bare and shows only the corner of a workbook.
+            content_renderer.getRenderedContent(attachment, { pdfToolbar: !!isFullDetail, trim: !isFullDetail })
                 .then(({ $renderedContent }) => {
                     disposeContent();
                     contentWrapper.current?.replaceChildren(...$renderedContent);

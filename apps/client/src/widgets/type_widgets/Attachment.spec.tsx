@@ -11,6 +11,7 @@ import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
 
 const CANVAS_MIME = "application/vnd.excalidraw+json";
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const { getRenderedContent, drawingMounts, uploadFiles } = vi.hoisted(() => ({
     getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
     drawingMounts: vi.fn(),
@@ -101,6 +102,15 @@ describe("AttachmentList", () => {
         await vi.waitFor(() => expect(container.querySelector(".file-preview-content")).not.toBeNull());
         expect(container.querySelectorAll(".file-preview-content")).toHaveLength(1);
         expect(drawingBlob).not.toHaveBeenCalled();
+    });
+
+    it("previews only the corner of a workbook in the list", async () => {
+        getRenderedContent.mockClear();
+        const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
+        await mount([ workbook ]);
+
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: true }));
     });
 
     it("files a transcript with the app's own, shown as its conversation", async () => {
@@ -218,6 +228,25 @@ describe("AttachmentDetail", () => {
         await reloadAttachment(component, "otherAttachment", "otherComponent");
         expect(drawingMounts).toHaveBeenCalledOnce();
         expect(getRenderedContent).not.toHaveBeenCalled();
+    });
+
+    it("previews the whole workbook opened on its own", async () => {
+        const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);
+        getRenderedContent.mockClear();
+
+        const props = {
+            note: { noteId: "note1" },
+            viewScope: { viewMode: "attachments", attachmentId: workbook.attachmentId }
+        } as unknown as Parameters<typeof AttachmentDetail>[0];
+        renderInto(
+            <ParentComponent.Provider value={new Component()}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+
+        await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
+        expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: false }));
     });
 });
 
