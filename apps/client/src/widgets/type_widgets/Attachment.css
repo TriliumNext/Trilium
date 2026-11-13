@@ -56,8 +56,7 @@
     flex-grow: 1;
     flex-basis: 300px;
     /* Overrides the height:100% the widget carries for the full-detail page, where it is the pane. */
-    height: auto;
-    max-height: 300px;
+    height: 300px;
     min-width: 0;
 
     body.mobile & {
