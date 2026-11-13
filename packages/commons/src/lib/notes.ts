@@ -332,7 +332,8 @@ export function isFullWidthNoteType(type: string, mime: string) {
     }
 
     return type === "file"
-        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
+        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/")
+            || mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 }
 
 /** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */

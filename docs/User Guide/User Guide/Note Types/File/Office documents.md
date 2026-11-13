@@ -28,7 +28,7 @@ To keep links readable regardless of the theme, the default hyperlink color appl
 
 ### Excel workbooks
 
-A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet, the same view as a <a class="reference-link" href="../Spreadsheets.md">Spreadsheet</a> note that cannot be edited: the sheets are listed in tabs at the bottom, and the grid scrolls in both directions however large the workbook is.
+A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet, the same view as a <a class="reference-link" href="../Spreadsheets.md">Spreadsheet</a> note that cannot be edited: the sheets are listed in tabs at the bottom, and the grid scrolls in both directions however large the workbook is. Like a Spreadsheet note, it always takes the full width of the window, whatever the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a>.
 
 If the file cannot be read as a workbook, the simplified preview described above is shown instead. A workbook stored as an attachment is still shown as the simplified preview.
 
