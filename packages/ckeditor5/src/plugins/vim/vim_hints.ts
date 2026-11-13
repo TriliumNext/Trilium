@@ -14,6 +14,8 @@ export interface VimHint {
     description: string;
     /** The part of the description being typed, such as `pattern` in `pattern/replacement`. */
     emphasis?: { start: number; end: number };
+    /** A name that the status bar finds the hint by, such as `breadcrumb`. */
+    id?: "breadcrumb";
 }
 
 /**
@@ -147,6 +149,11 @@ export function getConfirmHints(t: Translate): VimHint[] {
 /** The hint that ends the hints of a command. */
 export function getCancelHint(t: Translate): VimHint {
     return hint("<Esc>", t("cancel"));
+}
+
+/** The hint that ends the keys of Normal mode: `Esc` switches them with the breadcrumb. */
+export function getBreadcrumbHint(t: Translate): VimHint {
+    return { ...hint("<Esc>", t("breadcrumb")), id: "breadcrumb" };
 }
 
 /**

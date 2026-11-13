@@ -239,7 +239,8 @@ describe("VimHintStrip", () => {
             hints: [
                 { keys: [ "a", "z" ], isRange: true, description: "a named register" },
                 { keys: [ "j", "k" ], description: "screen line down, up" },
-                { keys: [], description: "then" }
+                { keys: [], description: "then" },
+                { keys: [ "Esc" ], description: "breadcrumb", id: "breadcrumb" }
             ]
         }} />, container));
         const strip = container.querySelector(".vim-hint-strip.vim-hint-strip-command");
@@ -248,8 +249,11 @@ describe("VimHintStrip", () => {
         expect([ ...container.querySelectorAll(".scrollable-label .vim-hint") ]
             .map((hint) => [ hint.querySelectorAll("kbd").length, hint.textContent ]))
             .toEqual([
-                [ 2, "a-za named register" ], [ 2, "jkscreen line down, up" ], [ 0, "then" ]
+                [ 2, "a-za named register" ], [ 2, "jkscreen line down, up" ], [ 0, "then" ],
+                [ 1, "Escbreadcrumb" ]
             ]);
+        expect([ ...container.querySelectorAll(".vim-hint.vim-hint-breadcrumb") ]
+            .map((hint) => hint.textContent)).toEqual([ "Escbreadcrumb" ]);
     });
 
     it("moves its hints with a vertical wheel", () => {

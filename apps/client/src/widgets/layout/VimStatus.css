@@ -91,10 +91,8 @@
     }
 
     .vim-hint {
-        margin-inline-end: 1em;
-
-        &:last-child {
-            margin-inline-end: 0;
+        & + .vim-hint {
+            margin-inline-start: 1em;
         }
 
         .vim-hint-keys {

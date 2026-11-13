@@ -155,12 +155,12 @@ export function VimHintStrip({ hints }: { hints: VimHints }) {
  * of an argument being typed is emphasized.
  */
 function VimHintItem({ hint }: { hint: VimHint }) {
-    const { keys, isRange, isLiteral, description, emphasis } = hint;
+    const { keys, isRange, isLiteral, description, emphasis, id } = hint;
     const [ first, last ] = keys;
     const Key = isLiteral ? "code" : "kbd";
 
     return (
-        <span className="vim-hint">
+        <span className={clsx("vim-hint", id && `vim-hint-${id}`)}>
             {isRange && <span className="vim-hint-keys"><kbd>{first}</kbd>-<kbd>{last}</kbd></span>}
             {!isRange && keys.length > 0 && (
                 <span className="vim-hint-keys">

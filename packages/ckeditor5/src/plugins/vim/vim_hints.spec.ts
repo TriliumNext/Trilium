@@ -40,7 +40,9 @@ async function createHintEditor(data: string, config: VimConfig = {}, isStripSho
     return { editor, toggleHintStrip };
 }
 
-const NORMAL_KEYS = [ "[i] insert", "[v] select", "[u] undo", "[/] search", "[:] command" ];
+const NORMAL_KEYS = [
+    "[i] insert", "[v] select", "[u] undo", "[/] search", "[:] command", "[Esc] breadcrumb"
+];
 const VISUAL_KEYS = [
     "[y] yank (copy)", "[d] delete", "[c] change", "[>] [<] indent, outdent",
     "[i] [a] select inside, around…"
@@ -421,6 +423,32 @@ describe("key hints", () => {
                 { areHintsEnabled: () => false });
             press(off.editor, "<Esc>");
             expect(off.toggleHintStrip).not.toHaveBeenCalled();
+        });
+
+        it("leaves out the Esc hint while Esc clears the highlights or leaves an embed",
+            async () => {
+            vi.useFakeTimers();
+            const { editor, toggleHintStrip } = await createHintEditor(paragraphs("[]ab", "cd"));
+            const breadcrumbHint = getStatus(editor).hints?.hints.at(-1);
+            expect(breadcrumbHint).toMatchObject({ keys: [ "Esc" ], id: "breadcrumb" });
+            const withoutEsc = NORMAL_KEYS.slice(0, -1);
+            press(editor, "/c<CR>");
+            vi.advanceTimersByTime(50);
+            expect(getStrip(editor)?.hints).toEqual(withoutEsc);
+            press(editor, "<Esc>");
+            expect(toggleHintStrip).not.toHaveBeenCalled();
+            expect(getStrip(editor)?.hints).toEqual(NORMAL_KEYS);
+
+            const parent = editor.editing.view.getDomRoot()?.parentElement;
+            expect(parent).toBeInstanceOf(HTMLElement);
+            parent?.classList.add("ck-editor__editable");
+            Object.assign(parent ?? {}, { ckeditorInstance: editor });
+            try {
+                editor.plugins.get("TriliumVim").refreshHints();
+                expect(getStrip(editor)?.hints).toEqual(withoutEsc);
+            } finally {
+                parent?.classList.remove("ck-editor__editable");
+            }
         });
 
         it("starts without the keys of the mode when the strip is hidden", async () => {

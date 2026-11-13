@@ -62,6 +62,8 @@ export interface VimAdapterHost {
     redo(): void;
     /** Runs at the end of each operation, once the engine knows of its changes. */
     onOperationEnd(): void;
+    /** Runs when the search highlights show or hide. */
+    onHighlightsChange(): void;
     /** Saves the note now, for `:w`. */
     save(): void;
     /** Closes the tab of the note, for `:q`. */
@@ -623,11 +625,13 @@ export default class VimAdapter {
 
     addOverlay(overlay: { query: RegExp }) {
         this.highlights.show(overlay.query);
+        this.host.onHighlightsChange();
         return overlay;
     }
 
     removeOverlay() {
         this.highlights.hide();
+        this.host.onHighlightsChange();
     }
 
     findMatchingBracket(position: Pos): { to: Pos | undefined } {

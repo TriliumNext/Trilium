@@ -21,7 +21,8 @@ import { getDigraph } from "./vim_digraphs.js";
 import { getLoadedVimEngine, loadVimEngine, runStartupCommands } from "./vim_engine.js";
 import { getPromptKind, PromptAssistant, type PromptKind } from "./vim_command_line.js";
 import {
-    getAfterSearchHints, getCancelHint, getCommandHints, getKeyLabel, getModeHints, HINT_LIMIT,
+    getAfterSearchHints, getBreadcrumbHint, getCancelHint, getCommandHints, getKeyLabel,
+    getModeHints, HINT_LIMIT,
     HINT_PAUSE, type HintContext, type PendingCommand, splitKeys, type VimHint, type VimHints
 } from "./vim_hints.js";
 import { createJumpList } from "./vim_jumps.js";
@@ -324,6 +325,7 @@ class VimSession {
             undo: () => this.undo.undo(),
             redo: () => this.redo(),
             onOperationEnd: () => this.onOperationEnd(),
+            onHighlightsChange: () => this.updateStatus(),
             save: () => this.getHost()?.save?.(),
             closeTab: () => this.closeTab(),
             followLink: () => this.getHost()?.followLink?.(),
@@ -885,11 +887,12 @@ class VimSession {
             return null;
         }
         const context = mode === "normal" ? "normal" : "visual";
-        return {
-            kind: "mode",
-            typedKeys: [],
-            hints: getModeHints(context, isUserMapped, this.translate)
-        };
+        const hints = getModeHints(context, isUserMapped, this.translate);
+        // `Esc` clears the search highlights or leaves the embed before it shows the breadcrumb.
+        if (context === "normal" && !this.adapter.highlights.isShown && !this.getOuterEditor()) {
+            hints.push(getBreadcrumbHint(this.translate));
+        }
+        return { kind: "mode", typedKeys: [], hints };
     }
 
     /** The hints for the command being typed, or `null` when it waits for nothing they know. */
@@ -1024,8 +1027,7 @@ class VimSession {
 
     /** Leaves the editor of an embed for the editor around it, which then selects the embed. */
     private leaveEmbed(): boolean {
-        const outerRoot = this.root.parentElement?.closest<HTMLElement>(".ck-editor__editable");
-        const outer = (outerRoot as { ckeditorInstance?: Editor } | null)?.ckeditorInstance;
+        const outer = this.getOuterEditor();
         if (!outer) {
             return false;
         }
@@ -1034,6 +1036,12 @@ class VimSession {
         }
         return outer.plugins.has(ContentEmbedCaret)
             && outer.plugins.get(ContentEmbedCaret).leaveEmbed(this.root, "end");
+    }
+
+    /** The editor around this one when this is the editor of an embed, else `undefined`. */
+    private getOuterEditor(): Editor | undefined {
+        const outerRoot = this.root.parentElement?.closest<HTMLElement>(".ck-editor__editable");
+        return (outerRoot as { ckeditorInstance?: Editor } | null)?.ckeditorInstance;
     }
 
     /**
