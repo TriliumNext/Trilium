@@ -6,10 +6,12 @@ import { Request, Response } from "../../http_interface";
 import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
+import appInfo from "../../services/app_info.js";
 import noteService from "../../services/notes.js";
 import { convertOfficeToHtml, convertXlsxToWorkbook } from "../../services/office_preview.js";
 import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
+import { isDev } from "../../services/utils/index.js";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
 
@@ -181,15 +183,23 @@ async function sendConversion(req: Request, res: Response, entity: BNote | BAtta
 
 /**
  * Changes whenever the conversion could: with the content (`blobId` is its hash), the MIME type
- * that picks the converter, the variant, and the server process, since a restart can bring a
- * different converter.
+ * that picks the converter, the variant, and the code that converts.
  */
 function getConversionEtag(entity: BNote | BAttachment, variant: string) {
     const mime = encodeURIComponent(entity.mime);
-    return `"${entity.blobId}-${mime}-${variant}-${PROCESS_TOKEN}"`;
+    return `"${entity.blobId}-${mime}-${variant}-${getConverterToken()}"`;
 }
 
-const PROCESS_TOKEN = Date.now().toString(36);
+/**
+ * Identifies the code that converts. A build carries its version and the commit it was built
+ * from, which outlive a restart. A dev checkout's build info is a placeholder that stays the same
+ * as the converter changes, so it uses the time the server started instead.
+ */
+function getConverterToken() {
+    return isDev() ? DEV_SERVER_START : `${appInfo.appVersion}-${appInfo.buildRevision}`;
+}
+
+const DEV_SERVER_START = Date.now().toString(36);
 
 /** Whether an `If-None-Match` header names `etag`, compared weakly as RFC 9110 requires for it. */
 function matchesEtag(header: string | string[] | undefined, etag: string) {

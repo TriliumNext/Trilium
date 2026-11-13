@@ -1,9 +1,10 @@
 import { CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle } from "@triliumnext/commons";
 import type { PersistedData } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import ExcelJS from "exceljs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
+import appInfo from "../../services/app_info.js";
 import * as cls from "../../services/context.js";
 import { getPlatform } from "../../services/platform.js";
 import protectedSessionService from "../../services/protected_session";
@@ -587,6 +588,20 @@ describe("Files API (core)", () => {
             expect(changed.body).toContain("Changed");
         });
 
+        it("keys a release's ETag to its build, so the cache outlives a restart", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+            const build = `${appInfo.appVersion}-${appInfo.buildRevision}`;
+
+            // A dev checkout's build info is a placeholder, so its ETag does not rely on it.
+            const devEtag = await withEnv("dev", async () => (await api.get(url)).headers.ETag);
+            expect(devEtag).not.toContain(build);
+
+            const releaseEtag = await withEnv("production", async () => (await api.get(url)).headers.ETag);
+            expect(releaseEtag).toContain(build);
+            expect(await withEnv("production", async () => (await api.get(url)).headers.ETag)).toBe(releaseEtag);
+        });
+
         it("keeps the preview of a protected note out of the browser's cache", async () => {
             const noteId = await createRtfNote();
             protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
@@ -693,6 +708,19 @@ describe("Files API (core)", () => {
         });
     });
 });
+
+/** Runs `fn` with `TRILIUM_ENV` reading `env`. */
+async function withEnv<T>(env: string, fn: () => Promise<T>): Promise<T> {
+    const platform = getPlatform();
+    const getEnv = platform.getEnv.bind(platform);
+    const spy = vi.spyOn(platform, "getEnv")
+        .mockImplementation((key) => key === "TRILIUM_ENV" ? env : getEnv(key));
+    try {
+        return await fn();
+    } finally {
+        spy.mockRestore();
+    }
+}
 
 /**
  * Creates a file note holding a binary `.xlsx` workbook. The JSON note-creation API cannot
