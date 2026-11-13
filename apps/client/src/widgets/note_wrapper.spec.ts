@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../components/note_context";
+import type FAttachment from "../entities/fattachment";
 import type FNote from "../entities/fnote";
+import froca from "../services/froca";
 import { buildNote } from "../test/easy-froca";
 import NoteWrapperWidget, {
-    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthNote, markVisibleSplits
+    hasBackgroundEffects, isAlwaysFullWidthByType, isFullWidthAttachment, isFullWidthNote, markVisibleSplits
 } from "./note_wrapper";
 
 describe("NoteWrapperWidget", () => {
@@ -216,6 +218,61 @@ describe("isAlwaysFullWidthByType", () => {
     });
 });
 
+describe("isFullWidthAttachment", () => {
+    it("takes the full width for an attachment the matching note type would", () => {
+        const attachment = (role: string, mime: string) => ({ role, mime }) as FAttachment;
+        for (const mime of [ "application/pdf", "video/mp4", "audio/ogg",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ]) {
+            expect(isFullWidthAttachment(attachment("file", mime))).toBe(true);
+        }
+        expect(isFullWidthAttachment(attachment("image", "image/png"))).toBe(true);
+        expect(isFullWidthAttachment(attachment("file", "application/vnd.excalidraw+json"))).toBe(true);
+
+        expect(isFullWidthAttachment(attachment("file", "application/zip"))).toBe(false);
+        expect(isFullWidthAttachment(attachment("file", "text/plain"))).toBe(false);
+        expect(isFullWidthAttachment(null)).toBe(false);
+    });
+});
+
+describe("NoteWrapperWidget attachment width", () => {
+    afterEach(() => {
+        delete froca.attachments.pdfAttachment;
+        delete froca.attachments.zipAttachment;
+        vi.restoreAllMocks();
+    });
+
+    it("widens the split for an attachment opened on its own, not for its note", () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        froca.attachments.pdfAttachment = { attachmentId: "pdfAttachment", role: "file", mime: "application/pdf" } as FAttachment;
+        froca.attachments.zipAttachment = { attachmentId: "zipAttachment", role: "file", mime: "application/zip" } as FAttachment;
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        showAttachment(widget, note, "pdfAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(true);
+        showAttachment(widget, note, "zipAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+        showNote(widget, note);
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+    });
+
+    it("widens the split once an attachment it does not hold yet has loaded", async () => {
+        const note = buildNote({ title: "Owner", type: "text" });
+        vi.spyOn(froca, "getAttachment").mockImplementation(async (attachmentId) => {
+            const loaded = { attachmentId, role: "file", mime: "application/pdf" } as FAttachment;
+            froca.attachments[attachmentId] = loaded;
+            return loaded;
+        });
+        const widget = new NoteWrapperWidget();
+        widget.render();
+
+        showAttachment(widget, note, "pdfAttachment");
+        expect(widget.$widget.hasClass("full-content-width")).toBe(false);
+        await vi.waitFor(() => expect(widget.$widget.hasClass("full-content-width")).toBe(true));
+        expect(froca.getAttachment).toHaveBeenCalledOnce();
+    });
+});
+
 describe("isFullWidthNote", () => {
     it("opts a regular text note into full width via the fullContentWidth label", () => {
         expect(isFullWidthNote(buildNote({ title: "Plain", type: "text" }))).toBe(false);
@@ -257,6 +314,11 @@ describe("isFullWidthNote", () => {
         expect(isFullWidthNote(buildNote({ title: "Calendar", type: "search", "#viewType": "calendar" }))).toBe(true);
     });
 });
+
+function showAttachment(widget: NoteWrapperWidget, note: FNote, attachmentId: string) {
+    const noteContext = { note, viewScope: { viewMode: "attachments", attachmentId } } as unknown as NoteContext;
+    widget.setNoteContextEvent({ noteContext });
+}
 
 function showNote(widget: NoteWrapperWidget, note: FNote) {
     const noteContext = { note, viewScope: { viewMode: "default" } } as unknown as NoteContext;

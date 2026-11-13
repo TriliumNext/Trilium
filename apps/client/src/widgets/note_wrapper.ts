@@ -1,9 +1,11 @@
-import { isFullWidthNoteType } from "@triliumnext/commons";
+import { CANVAS_ATTACHMENT_MIME, isFullWidthNoteType, isImageAttachmentRole } from "@triliumnext/commons";
 
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
+import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import attributeService from "../services/attributes.js";
+import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import { isContentRightToLeft } from "../utils/formatters.js";
 import type BasicWidget from "./basic_widget.js";
@@ -95,7 +97,9 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             `view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`,
             note.getColorClass()
         );
-        if (isFullWidthNote(note)) classes.push("full-content-width");
+        if (isFullWidthNote(note) || isFullWidthAttachment(this.getOpenedAttachment())) {
+            classes.push("full-content-width");
+        }
         if (note.isOptions()) classes.push("options");
         if (hasBackgroundEffects(note)) classes.push("bgfx");
         if (note.isProtected) classes.push("protected");
@@ -104,6 +108,32 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         if (isContentRightToLeft(note.getLabelValue("language"))) classes.push("rtl");
 
         return classes;
+    }
+
+    /** The attachment last asked of froca, so one that does not exist is not asked for again. */
+    private requestedAttachmentId?: string;
+
+    /**
+     * The attachment shown on its own in the split, if froca holds it. One it does not hold yet is
+     * loaded, and the split refreshes once it arrives.
+     */
+    private getOpenedAttachment() {
+        const viewScope = this.noteContext?.viewScope;
+        const attachmentId = viewScope?.viewMode === "attachments" ? viewScope.attachmentId : undefined;
+        if (!attachmentId) {
+            return null;
+        }
+
+        const attachment = froca.attachments[attachmentId];
+        if (!attachment && this.requestedAttachmentId !== attachmentId) {
+            this.requestedAttachmentId = attachmentId;
+            void froca.getAttachment(attachmentId, true).then((loaded) => {
+                if (loaded && this.noteContext?.viewScope?.attachmentId === attachmentId) {
+                    this.refresh();
+                }
+            });
+        }
+        return attachment ?? null;
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
@@ -234,6 +264,22 @@ export function isAlwaysFullWidthByType(note: FNote) {
     }
 
     return false;
+}
+
+/**
+ * Whether an attachment shown on its own takes the full width, as a note of the matching type
+ * would: a picture as an image note, a drawing as a canvas, anything else as a file note.
+ * Exported as a pure function for unit testing.
+ */
+export function isFullWidthAttachment(attachment: FAttachment | null | undefined) {
+    if (!attachment) {
+        return false;
+    }
+
+    const type = isImageAttachmentRole(attachment.role) ? "image"
+        : attachment.mime === CANVAS_ATTACHMENT_MIME ? "canvas"
+            : "file";
+    return isFullWidthNoteType(type, attachment.mime);
 }
 
 /**
