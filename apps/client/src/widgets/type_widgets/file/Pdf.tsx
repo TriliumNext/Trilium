@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
@@ -282,6 +282,18 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
             window.removeEventListener("message", handleMessage);
         };
     }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
+
+    // The viewer reads its history from here as soon as pdf.js asks for it, which can happen before the
+    // iframe's `onLoad` handler below has run. The iframe only mounts after this layout effect.
+    const historyKey = `${note.noteId}|${noteContext.ntxId ?? ""}`;
+    const history = historyConfig?.config;
+    useLayoutEffect(() => {
+        if (!history) return;
+        (window.TRILIUM_PDF_VIEW_HISTORY ??= {})[historyKey] = history;
+    }, [ historyKey, history ]);
+    useEffect(() => () => {
+        if (window.TRILIUM_PDF_VIEW_HISTORY) delete window.TRILIUM_PDF_VIEW_HISTORY[historyKey];
+    }, [ historyKey ]);
 
     // A different PDF reloads the viewer, which sends everything again.
     useEffect(() => () => publishedRef.current.clear(), [ note.noteId ]);

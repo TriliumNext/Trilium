@@ -405,6 +405,13 @@ describe("PdfPreview", () => {
         expect(activateNoteContext).toHaveBeenCalledWith("ntx-1");
     });
 
+    it("keeps the history on the parent window for the viewer to read before it loads, and drops it on unmount", () => {
+        expect(window.TRILIUM_PDF_VIEW_HISTORY?.["note-1|ntx-1"]).toEqual({ files: [] });
+
+        act(() => render(null, container));
+        expect(window.TRILIUM_PDF_VIEW_HISTORY?.["note-1|ntx-1"]).toBeUndefined();
+    });
+
     it("stores the view history and the signature library the viewer hands back", () => {
         const save = vi.spyOn(options, "save").mockResolvedValue(undefined as never);
 
