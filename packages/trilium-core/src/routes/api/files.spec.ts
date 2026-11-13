@@ -557,6 +557,49 @@ describe("Files API (core)", () => {
             expect(corner.body.length).toBeLessThan(whole.body.length / 5);
         });
 
+        it("answers a preview the browser already holds with 304, per content and per trim", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+
+            const first = await api.get<string>(url);
+            const etag = first.headers.ETag;
+            expect(etag).toMatch(/^".+"$/);
+            expect(first.headers["Cache-Control"]).toBe("no-cache");
+
+            const again = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(again.status).toBe(304);
+            expect(again.body).toBeFalsy();
+            expect(again.headers.ETag).toBe(etag);
+
+            const corner = await api.get<string>(`${url}?trim=1`, { headers: { "if-none-match": etag } });
+            expect(corner.status).toBe(200);
+            expect(corner.headers.ETag).not.toBe(etag);
+
+            const update = await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: String.raw`{\rtf1\ansi Changed}` }
+            });
+            expect(update.status).toBe(204);
+            const changed = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(changed.status).toBe(200);
+            expect(changed.body).toContain("Changed");
+        });
+
+        it("keeps the preview of a protected note out of the browser's cache", async () => {
+            const noteId = await createRtfNote();
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
+            try {
+                expect((await api.put(`/api/notes/${noteId}/protect/1`)).status).toBe(204);
+
+                const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
+                expect(res.status).toBe(200);
+                expect(res.body).toContain("Hello");
+                expect(res.headers.ETag).toBeUndefined();
+                expect(res.headers["Cache-Control"]).toBe("no-store");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+        });
+
         it("rejects an unsupported MIME type with 400", async () => {
             const { noteId } = await createTextNote(api, { content: "<p>not office</p>" });
 

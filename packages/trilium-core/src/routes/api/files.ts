@@ -119,17 +119,57 @@ function updateAttachment(req: Request<{ attachmentId: string }>) {
  *
  * `?trim=1` answers with the corner of a workbook instead of the whole of it, for a caller
  * showing a card rather than the document.
+ *
+ * A preview carries an ETag the server knows before converting anything, so a browser that
+ * already holds it gets a 304 without the document being parsed again.
  */
-async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
-
-    return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
+async function getNoteOfficePreview(req: Request<{ noteId: string }>, res: Response) {
+    await sendOfficePreview(req, res, becca.getNoteOrThrow(req.params.noteId));
 }
 
-async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
-    const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
+async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>, res: Response) {
+    await sendOfficePreview(req, res, becca.getAttachmentOrThrow(req.params.attachmentId));
+}
 
-    return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
+async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
+    const trim = isTrimmed(req);
+
+    if (entity.isProtected) {
+        // Decrypted content must not reach the browser's disk cache.
+        res.setHeader("Cache-Control", "no-store");
+    } else {
+        const etag = getOfficePreviewEtag(entity, trim);
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("ETag", etag);
+        if (matchesEtag(req.headers["if-none-match"], etag)) {
+            res.status(304).send();
+            return;
+        }
+    }
+
+    const html = await convertOfficeToHtml(entity.getContent(), entity.mime, { trim });
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(html);
+}
+
+/**
+ * Changes whenever the preview could: with the content (`blobId` is its hash), the MIME type that
+ * picks the converter, the trim, and the server process, since a restart can bring a different
+ * converter.
+ */
+function getOfficePreviewEtag(entity: BNote | BAttachment, trim: boolean) {
+    const mime = encodeURIComponent(entity.mime);
+    return `"${entity.blobId}-${mime}-${trim ? "trim" : "full"}-${PROCESS_TOKEN}"`;
+}
+
+const PROCESS_TOKEN = Date.now().toString(36);
+
+/** Whether an `If-None-Match` header names `etag`, compared weakly as RFC 9110 requires for it. */
+function matchesEtag(header: string | string[] | undefined, etag: string) {
+    const values = (Array.isArray(header) ? header.join(",") : header ?? "")
+        .split(",")
+        .map((value) => value.trim().replace(/^W\//, ""));
+    return values.includes(etag) || values.includes("*");
 }
 
 /**

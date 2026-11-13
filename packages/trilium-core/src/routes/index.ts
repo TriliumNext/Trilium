@@ -348,8 +348,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     // What the media players stream from: same content as /open, but answering byte ranges so they can seek.
     route(GET, "/api/notes/:noteId/open-partial", [checkApiAuthOrElectron], filesRoute.openPartialFile);
     route(GET, "/api/attachments/:attachmentId/open-partial", [checkApiAuthOrElectron], filesRoute.openPartialAttachment);
-    asyncApiRoute(GET, "/api/notes/:noteId/office-preview", filesRoute.getNoteOfficePreview);
-    asyncApiRoute(GET, "/api/attachments/:attachmentId/office-preview", filesRoute.getAttachmentOfficePreview);
+    asyncRouteWithoutTransaction(GET, "/api/notes/:noteId/office-preview", [checkApiAuth, csrfMiddleware], filesRoute.getNoteOfficePreview);
+    asyncRouteWithoutTransaction(GET, "/api/attachments/:attachmentId/office-preview", [checkApiAuth, csrfMiddleware], filesRoute.getAttachmentOfficePreview);
     route(GET, "/api/notes/:noteId/download", [checkApiAuthOrElectron], filesRoute.downloadFile);
     // this "hacky" path is used for easier referencing of CSS resources
     route(GET, "/api/notes/download/:noteId", [checkApiAuthOrElectron], filesRoute.downloadFile);
