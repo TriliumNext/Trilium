@@ -9,4 +9,4 @@ Motions, operators, text objects, counts, repeating with `.`, registers, marks, 
 
 Key hints help while you learn and stay quiet otherwise. Normal and Visual mode show their keys in the status bar, and a pause in the middle of a command shows the keys that can follow it. The command line completes command names with `Tab`, the search prompt tells how the pattern is read, and `Alt+F1` or a click on the mode lists every key. `Esc` in Normal mode switches between the keys and the breadcrumb, and the Key hints option turns them off.
 
-Turn it on in Options → Text Notes → Editor features → Vim mode, on each device where you want it. The Vim badge in the status bar, or a `#vimMode` label, turns it on or off for a single note, and startup commands set up mappings such as `imap jk <Esc>`.
+Turn it on in Options → Text Notes → Features → Vim mode, on each device where you want it. The Vim badge in the status bar, or a `#vimMode` label, turns it on or off for a single note, and startup commands set up mappings such as `imap jk <Esc>`.
