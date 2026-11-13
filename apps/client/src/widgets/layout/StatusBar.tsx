@@ -105,7 +105,9 @@ export default function StatusBar() {
                     {vimHints && <VimHintStrip hints={vimHints} />}
 
                     <div className="actions-row">
-                        {isVimBadgeShown && <VimModeBadge note={context.note} />}
+                        {isVimBadgeShown && (
+                            <VimModeBadge note={context.note} ntxId={context.noteContext.ntxId} />
+                        )}
                         {vimStatus && <VimStatusLine status={vimStatus} vim={shownVim} />}
                         <CodeCursorPosition {...context} />
                         <CodeNoteSwitcher {...context} />

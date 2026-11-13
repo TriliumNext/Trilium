@@ -10,6 +10,7 @@ import NoteTitleWidget from "../note_title";
 import { useNoteContext, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoteBadges from "./NoteBadges";
+import { VimTitleStatus } from "./VimStatus";
 
 
 /**
@@ -34,6 +35,7 @@ export default function TitleRow({ compact }: {
         <div className={className}>
             <NoteIcon />
             <NoteTitleWidget />
+            <VimTitleStatus />
             <NoteBadges />
         </div>
     );

@@ -13,28 +13,54 @@
     --vim-mode-badge-on-color: var(--main-background-color);
 }
 
-.status-bar {
-    .status-bar-main-row .actions-row .btn.vim-mode-badge {
-        margin-block: 4px;
-        border-radius: 4px;
-        font-size: 0.85em;
-        font-weight: 500;
-        letter-spacing: 0.05em;
+:is(.status-bar .status-bar-main-row .actions-row, .vim-title-status) .btn.vim-mode-badge {
+    margin-block: 4px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+    letter-spacing: 0.05em;
 
-        &:hover {
-            background: var(--vim-mode-badge-hover-background-color);
-        }
-
-        &[aria-pressed="true"] {
-            background: var(--vim-mode-badge-on-background-color);
-            color: var(--vim-mode-badge-on-color);
-
-            &:hover {
-                background: var(--vim-mode-badge-on-hover-background-color);
-            }
-        }
+    &:hover {
+        background: var(--vim-mode-badge-hover-background-color);
     }
 
+    &[aria-pressed="true"] {
+        background: var(--vim-mode-badge-on-background-color);
+        color: var(--vim-mode-badge-on-color);
+
+        &:hover {
+            background: var(--vim-mode-badge-on-hover-background-color);
+        }
+    }
+}
+
+.vim-title-status {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 5px;
+    margin-inline-end: 5px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    opacity: 0.75;
+
+    .btn {
+        display: flex;
+        align-items: center;
+        border: 0;
+        padding: 0 0.5em;
+        height: 1.9em;
+    }
+
+    .vim-mode {
+        color: inherit;
+        font-family: var(--monospace-font-family);
+        font-size: inherit;
+        font-weight: 600;
+    }
+}
+
+.status-bar {
     .vim-command-line-slot {
         display: flex;
         min-width: 0;

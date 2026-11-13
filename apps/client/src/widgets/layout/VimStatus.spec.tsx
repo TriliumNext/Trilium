@@ -12,13 +12,16 @@ import options from "../../services/options";
 const mocks = vi.hoisted(() => ({
     vim: undefined as unknown,
     areHintsEnabled: false,
+    isVimModeOptionOn: false,
+    isMobile: false,
+    note: null as FNote | null,
     vimModeLabel: null as string | null,
     setLabelValueWithInheritance: vi.fn(),
     setCommandLineSlot: vi.fn(),
     useStaticTooltip: vi.fn(),
     toggleVimKeyReference: vi.fn(),
     showContextMenu: vi.fn(),
-    openInAppHelpFromUrl: vi.fn()
+    openHelpPageFor: vi.fn()
 }));
 
 vi.mock("../../services/i18n", () => ({
@@ -27,8 +30,12 @@ vi.mock("../../services/i18n", () => ({
 }));
 vi.mock("../react/hooks", () => ({
     useGetContextDataFrom: () => mocks.vim,
+    useNoteContext: () => ({ note: mocks.note, noteContext: { ntxId: "_popup-editor" } }),
     useNoteLabel: () => [ mocks.vimModeLabel, vi.fn() ],
-    useTriliumOptionBool: () => [ mocks.areHintsEnabled, vi.fn() ],
+    useTriliumOptionBool: (name: string) => [
+        name === "textNoteVimModeEnabled" ? mocks.isVimModeOptionOn : mocks.areHintsEnabled,
+        vi.fn()
+    ],
     useTrackedElement: (ref: { current: HTMLElement | null }) => ref.current,
     useStaticTooltip: mocks.useStaticTooltip
 }));
@@ -42,7 +49,11 @@ vi.mock("../../menus/context_menu", async (importOriginal) => ({
 }));
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/utils")>()),
-    openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
+    isMobile: () => mocks.isMobile
+}));
+vi.mock("../react/HelpButton", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/HelpButton")>()),
+    openHelpPageFor: mocks.openHelpPageFor
 }));
 vi.mock("../type_widgets/text/vim_key_reference", () => ({
     toggleVimKeyReference: mocks.toggleVimKeyReference
@@ -50,7 +61,8 @@ vi.mock("../type_widgets/text/vim_key_reference", () => ({
 vi.mock("../type_widgets/text/vim_mode", () => ({ setCommandLineSlot: mocks.setCommandLineSlot }));
 
 import {
-    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine
+    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine,
+    VimTitleStatus
 } from "./VimStatus";
 
 const OFF: VimStatus = {
@@ -63,6 +75,9 @@ let container: HTMLElement;
 beforeEach(() => {
     mocks.vim = undefined;
     mocks.areHintsEnabled = false;
+    mocks.isVimModeOptionOn = false;
+    mocks.isMobile = false;
+    mocks.note = null;
     mocks.vimModeLabel = null;
     container = document.body.appendChild(document.createElement("div"));
 });
@@ -152,6 +167,8 @@ describe("the mode", () => {
             "vim_mode.normal_tooltip", "vim_mode.insert_tooltip", "vim_mode.visual_tooltip",
             "vim_mode.visual_tooltip", "vim_mode.replace_tooltip"
         ]);
+        expect(mocks.useStaticTooltip.mock.lastCall?.[1])
+            .toMatchObject({ placement: "top", fallbackPlacements: [ "top" ] });
 
         const button = container.querySelector<HTMLButtonElement>("button.vim-mode");
         button?.click();
@@ -176,7 +193,7 @@ describe("VimModeBadge", () => {
         const showBadge = (label: string | null) => {
             mocks.vimModeLabel = label;
             note = {} as FNote;
-            act(() => render(<VimModeBadge note={note} />, container));
+            act(() => render(<VimModeBadge note={note} ntxId="main" />, container));
             return container.querySelector<HTMLButtonElement>("button.vim-mode-badge");
         };
 
@@ -184,6 +201,7 @@ describe("VimModeBadge", () => {
         expect(badge?.textContent?.trim()).toBe("vim_mode.badge");
         expect(badge?.getAttribute("aria-pressed")).toBe("true");
         expect(getTooltip()).toBe("vim_mode.badge_on_tooltip");
+        expect(mocks.useStaticTooltip.mock.lastCall?.[1].placement).toBe("top");
         const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
         badge?.dispatchEvent(mouseDown);
         expect(mouseDown.defaultPrevented).toBe(true);
@@ -208,20 +226,10 @@ describe("VimModeBadge", () => {
         mocks.vimModeLabel = "false";
         const ownedLabel = { isInheritable: false };
         const note = { getOwnedLabel: () => ownedLabel } as unknown as FNote;
-        act(() => render(<VimModeBadge note={note} />, container));
-        const openMenu = () => {
-            const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
-            container.querySelector(".vim-mode-badge")?.dispatchEvent(event);
-            expect(event.defaultPrevented).toBe(true);
-            const items: MenuItem<unknown>[] = mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
-            return items;
-        };
+        act(() => render(<VimModeBadge note={note} ntxId="main" />, container));
 
-        const items = openMenu();
-        expect(items.map((item) => ("kind" in item
-            ? item.kind
-            : [ item.title, !!item.isSwitch, item.checked ])))
-            .toEqual([
+        const items = openBadgeMenu();
+        expect(getMenuRows(items)).toEqual([
                 [ "vim_mode.menu_note", true, false ],
                 "separator",
                 [ "vim_mode.hints", true, true ],
@@ -235,21 +243,80 @@ describe("VimModeBadge", () => {
             .toBe("vim_mode.menu_note_description");
         // The switch changes the owned label, which an inheritable one passes to the subtree.
         ownedLabel.isInheritable = true;
-        const [ subtreeItem ] = openMenu();
+        const [ subtreeItem ] = openBadgeMenu();
         expect("description" in subtreeItem && subtreeItem.description)
             .toBe("vim_mode.menu_note_description_subtree");
 
-        for (const item of items) {
-            if (!("kind" in item)) {
-                item.handler?.(item, new MouseEvent("click"));
-            }
-        }
+        runMenuItems(items);
         expect(mocks.setLabelValueWithInheritance)
             .toHaveBeenCalledWith(expect.anything(), "vimMode", "true", "true");
         expect(toggleOption).toHaveBeenCalledWith("vimModeHintsEnabled");
         expect(triggerCommand)
             .toHaveBeenCalledWith("showOptions", { section: "_optionsTextNotes" });
-        expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledWith("enVNpi1Njswq");
+        expect(mocks.openHelpPageFor).toHaveBeenCalledWith("enVNpi1Njswq", "main");
+    });
+});
+
+describe("VimTitleStatus", () => {
+    it("shows the badge while the option is on and the mode while Vim runs, tooltips below", () => {
+        // A new mount each time, as the component has no props that change between the renders.
+        const showTitle = () => {
+            act(() => render(null, container));
+            act(() => render(<VimTitleStatus />, container));
+            return getTitleParts();
+        };
+        mocks.note = {} as FNote;
+        mocks.isVimModeOptionOn = true;
+        expect(showTitle()).toBeNull();
+
+        const vim = createVim(OFF);
+        mocks.vim = vim;
+        expect(showTitle()).toEqual([ "vim_mode.badge" ]);
+        act(() => vim.setStatus({
+            ...OFF, mode: "insert", pendingKeys: "2", message: { text: "Hi", isLong: false }
+        }));
+        expect(getTitleParts()).toEqual([ "vim_mode.badge", "vim_mode.insert" ]);
+        const tooltips = mocks.useStaticTooltip.mock.calls.map(([ , options ]) =>
+            [ options.title, options.placement, options.fallbackPlacements ]);
+        expect(tooltips).toContainEqual([ "vim_mode.badge_on_tooltip", "bottom", [ "bottom" ] ]);
+        expect(tooltips).toContainEqual([ "vim_mode.insert_tooltip", "bottom", [ "bottom" ] ]);
+        expect(tooltips.filter(([ , placement ]) => placement !== "bottom")).toEqual([]);
+        const mode = container.querySelector<HTMLButtonElement>(".vim-title-status .vim-mode");
+        mode?.click();
+        expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, mode);
+
+        // A note with `#vimMode=true` runs Vim while the option is off.
+        mocks.isVimModeOptionOn = false;
+        expect(showTitle()).toEqual([ "vim_mode.insert" ]);
+
+        mocks.isVimModeOptionOn = true;
+        mocks.isMobile = true;
+        act(() => vim.setStatus(OFF));
+        expect(showTitle()).toBeNull();
+        mocks.isMobile = false;
+        mocks.note = null;
+        expect(showTitle()).toBeNull();
+    });
+
+    it("leaves the key hints out of the badge menu, and opens the help from the popup", () => {
+        vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
+        const toggleOption = vi.spyOn(options, "toggle").mockResolvedValue(undefined);
+        mocks.note = { getOwnedLabel: () => null } as unknown as FNote;
+        mocks.isVimModeOptionOn = true;
+        mocks.vim = createVim(OFF);
+        act(() => render(<VimTitleStatus />, container));
+
+        const items = openBadgeMenu();
+        expect(getMenuRows(items)).toEqual([
+            [ "vim_mode.menu_note", true, true ],
+            "separator",
+            [ "vim_mode.menu_settings", false, undefined ],
+            "separator",
+            [ "vim_mode.menu_help", false, undefined ]
+        ]);
+        runMenuItems(items);
+        expect(toggleOption).not.toHaveBeenCalled();
+        expect(mocks.openHelpPageFor).toHaveBeenCalledWith("enVNpi1Njswq", "_popup-editor");
     });
 });
 
@@ -334,6 +401,35 @@ function show(vim: unknown) {
 
 function getLine() {
     return container.querySelector(".vim-status-line");
+}
+
+/** Opens the menu of the Vim mode badge with a right click, and returns its items. */
+function openBadgeMenu(): MenuItem<unknown>[] {
+    const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    container.querySelector(".vim-mode-badge")?.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    return mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
+}
+
+/** The title, switch flag and checked state of each item of a menu, or the kind of a separator. */
+function getMenuRows(items: MenuItem<unknown>[]) {
+    return items.map((item) => ("kind" in item
+        ? item.kind
+        : [ item.title, !!item.isSwitch, item.checked ]));
+}
+
+function runMenuItems(items: MenuItem<unknown>[]) {
+    for (const item of items) {
+        if (!("kind" in item)) {
+            item.handler?.(item, new MouseEvent("click"));
+        }
+    }
+}
+
+/** The texts of the parts of the Vim status in the title row, or `null` while it is not shown. */
+function getTitleParts() {
+    const title = container.querySelector(".vim-title-status");
+    return title && [ ...title.children ].map((part) => part.textContent?.trim());
 }
 
 function createVim(initial: VimStatus) {
