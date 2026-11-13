@@ -3995,8 +3995,8 @@
       "remove-layout": "移除布局",
       "convert-image-to-a-drawing-canvas": "将图片转换为绘图画布",
       "tab-alignment": "标签页对齐",
-      "align-tabs-at-top": "顶部对齐标签页",
-      "align-tabs-at-bottom": "底部对齐标签页",
+      "align-tabs-at-top": "顶部对齐",
+      "align-tabs-at-bottom": "底部对齐",
       "type-the-content-of-the-first-column": "输入第一栏的内容",
       "type-the-content-of-the-second-column": "输入第二栏的内容",
       "type-the-content-of-the-third-column": "输入第三栏的内容",
@@ -5046,5 +5046,13 @@
     },
     "collapse_section": "折叠区块",
     "expand_section": "展开区块"
+  },
+  "protect_subtree": {
+    "protect_intro": "以下笔记将使用你的密码加密。此后，它们的标题、内容、附件和修订版本只能通过受保护会话读取。",
+    "unprotect_intro": "以下笔记将被解密。此后，它们的内容、附件和修订版本将以未加密的形式存储，任何能访问数据库、其备份或同步服务器的人都可以读取。",
+    "subtree": "以及它下面的所有笔记",
+    "untitled": "受保护的笔记",
+    "password": "密码",
+    "password_description": "你用于受保护笔记的密码。"
   }
 }
