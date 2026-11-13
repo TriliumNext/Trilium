@@ -1,8 +1,9 @@
 import { FUniver, IWorkbookData, LocaleType } from "@univerjs/presets";
 import { RefObject } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
+import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { randomString } from "../../../services/utils";
@@ -128,28 +129,25 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
 }
 
 /**
- * Shows the workbook of an XLSX file note, which the server parses into the JSON a spreadsheet
- * note stores. Calls `onError` when the file cannot be read as a workbook.
+ * Shows the workbook of an XLSX file note or attachment, which the server parses into the JSON a
+ * spreadsheet note stores. Calls `onError` when the file cannot be read as a workbook.
+ *
+ * A note's workbook loads through `useNoteBlob()`, so the note detail sees it load and it follows
+ * the note's content. An attachment's loads once; its view remounts when the attachment changes.
  */
-export function useWorkbookFile(note: FNote, noteContext: NoteContext | null | undefined, componentId: string | undefined,
-    apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>, onError: () => void) {
+export function useWorkbookFile(entity: FNote | FAttachment, noteContext: NoteContext | null | undefined,
+    componentId: string | undefined, apiRef: RefObject<FUniver | undefined>,
+    containerRef: RefObject<HTMLDivElement | null>, onError: () => void) {
     const onErrorRef = useRef(onError);
     onErrorRef.current = onError;
     const display = useWorkbookDisplay(apiRef, containerRef);
-    const workbook = useNoteBlob<{ content: string; failed?: boolean }>(note, componentId, {
+    const attachment = "attachmentId" in entity ? entity : null;
+    const noteWorkbook = useNoteBlob<WorkbookFile>(attachment ? null : entity as FNote, componentId, {
         reportLoadStateTo: noteContext,
-        // A file that is no workbook is answered by the caller's fallback, not by the note
-        // detail's load error, so the failure resolves as a loaded result.
-        load: async (loadedNote) => {
-            try {
-                const content = await server.getWithSilentErrors<string>(
-                    `notes/${loadedNote.noteId}/spreadsheet-workbook`, undefined, true);
-                return { content };
-            } catch {
-                return { content: "", failed: true };
-            }
-        }
+        load: (note) => fetchWorkbook("notes", note.noteId)
     });
+    const attachmentWorkbook = useAttachmentWorkbook(attachment);
+    const workbook = attachment ? attachmentWorkbook : noteWorkbook;
 
     useEffect(() => {
         if (workbook?.failed) {
@@ -159,6 +157,43 @@ export function useWorkbookFile(note: FNote, noteContext: NoteContext | null | u
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `display` holds refs only
     }, [ workbook ]);
+}
+
+interface WorkbookFile {
+    content: string;
+    failed?: boolean;
+}
+
+function useAttachmentWorkbook(attachment: FAttachment | null) {
+    const [ workbook, setWorkbook ] = useState<WorkbookFile>();
+    const attachmentId = attachment?.attachmentId;
+
+    useEffect(() => {
+        if (!attachmentId) return;
+        let cancelled = false;
+        void fetchWorkbook("attachments", attachmentId).then((loaded) => {
+            if (!cancelled) setWorkbook(loaded);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [ attachmentId ]);
+
+    return workbook;
+}
+
+/**
+ * A file that is no workbook is answered by the caller's fallback, not by the note detail's load
+ * error, so the failure resolves as a result marked `failed`.
+ */
+async function fetchWorkbook(entityType: "notes" | "attachments", entityId: string): Promise<WorkbookFile> {
+    try {
+        const content = await server.getWithSilentErrors<string>(
+            `${entityType}/${entityId}/spreadsheet-workbook`, undefined, true);
+        return { content };
+    } catch {
+        return { content: "", failed: true };
+    }
 }
 
 function saveViewState(univerAPI: FUniver): SpreadsheetViewState {

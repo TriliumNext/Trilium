@@ -5,6 +5,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../../components/note_context";
+import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
@@ -48,8 +49,19 @@ describe("useWorkbookFile", () => {
         expect(states).toEqual([ "loading", "loaded" ]);
     });
 
-    async function mount() {
-        const note = buildNote({ title: "Budget.xlsx", type: "file" });
+    it("loads an attachment's workbook from the attachment, leaving the note detail's state alone", async () => {
+        const workbook = { sheetOrder: [ "s1" ], name: "Attached", sheets: {} };
+        vi.spyOn(server, "getWithSilentErrors").mockResolvedValue(JSON.stringify({ version: 1, workbook }));
+        const attachment = { attachmentId: "att1", title: "Attached.xlsx" } as unknown as FAttachment;
+        const { univerAPI, states } = await mount(attachment);
+
+        await vi.waitFor(() => expect(univerAPI.createWorkbook).toHaveBeenCalledOnce());
+        expect(univerAPI.createWorkbook).toHaveBeenCalledWith(expect.objectContaining({ name: "Attached" }));
+        expect(server.getWithSilentErrors).toHaveBeenCalledWith("attachments/att1/spreadsheet-workbook", undefined, true);
+        expect(states).toEqual([]);
+    });
+
+    async function mount(entity: FNote | FAttachment = buildNote({ title: "Budget.xlsx", type: "file" })) {
         const univerAPI = {
             getActiveWorkbook: vi.fn(() => null),
             createWorkbook: vi.fn(() => ({})),
@@ -64,15 +76,15 @@ describe("useWorkbookFile", () => {
         const onError = vi.fn();
 
         await act(async () => {
-            render(<Harness note={note} noteContext={noteContext} univerAPI={univerAPI as unknown as FUniver} onError={onError} />, container);
+            render(<Harness entity={entity} noteContext={noteContext} univerAPI={univerAPI as unknown as FUniver} onError={onError} />, container);
         });
         return { univerAPI, states, onError };
     }
 });
 
-function Harness({ note, noteContext, univerAPI, onError }: { note: FNote; noteContext: NoteContext; univerAPI: FUniver; onError: () => void }) {
+function Harness({ entity, noteContext, univerAPI, onError }: { entity: FNote | FAttachment; noteContext: NoteContext; univerAPI: FUniver; onError: () => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<FUniver | undefined>(univerAPI);
-    useWorkbookFile(note, noteContext, undefined, apiRef, containerRef, onError);
+    useWorkbookFile(entity, noteContext, undefined, apiRef, containerRef, onError);
     return <div ref={containerRef} />;
 }

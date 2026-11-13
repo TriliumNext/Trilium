@@ -136,9 +136,16 @@ async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>
  * shows in a read-only spreadsheet. Answers 400 for anything that is not a workbook.
  */
 async function getNoteSpreadsheetWorkbook(req: Request<{ noteId: string }>, res: Response) {
-    const note = becca.getNoteOrThrow(req.params.noteId);
-    await sendConversion(req, res, note, "workbook", "application/json; charset=utf-8",
-        () => convertXlsxToWorkbook(note.getContent(), note.mime));
+    await sendWorkbook(req, res, becca.getNoteOrThrow(req.params.noteId));
+}
+
+async function getAttachmentSpreadsheetWorkbook(req: Request<{ attachmentId: string }>, res: Response) {
+    await sendWorkbook(req, res, becca.getAttachmentOrThrow(req.params.attachmentId));
+}
+
+async function sendWorkbook(req: Request, res: Response, entity: BNote | BAttachment) {
+    await sendConversion(req, res, entity, "workbook", "application/json; charset=utf-8",
+        () => convertXlsxToWorkbook(entity.getContent(), entity.mime));
 }
 
 async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
@@ -243,4 +250,5 @@ export default {
     getNoteOfficePreview,
     getAttachmentOfficePreview,
     getNoteSpreadsheetWorkbook,
+    getAttachmentSpreadsheetWorkbook,
 }

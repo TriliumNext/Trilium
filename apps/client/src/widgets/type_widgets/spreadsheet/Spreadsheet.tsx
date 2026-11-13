@@ -27,6 +27,8 @@ import { RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
+import type FAttachment from "../../../entities/fattachment";
+import type FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
@@ -119,11 +121,19 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     return <div ref={containerRef} className="spreadsheet" />;
 }
 
+interface SpreadsheetFileProps {
+    /** The XLSX file note or attachment to show. */
+    entity: FNote | FAttachment;
+    noteContext: NoteContext | null | undefined;
+    componentId?: string;
+    onError: () => void;
+}
+
 /**
- * Shows the workbook of an XLSX file note in a read-only spreadsheet. Calls `onError` when the
- * file cannot be read as a workbook, so the caller can fall back to the HTML preview.
+ * Shows the workbook of an XLSX file note or attachment in a read-only spreadsheet. Calls `onError`
+ * when the file cannot be read as a workbook, so the caller can fall back to the HTML preview.
  */
-export function SpreadsheetFile(props: TypeWidgetProps & { onError: () => void }) {
+export function SpreadsheetFile(props: SpreadsheetFileProps) {
     const locale = useUniverLocale();
 
     if (!locale) {
@@ -133,14 +143,14 @@ export function SpreadsheetFile(props: TypeWidgetProps & { onError: () => void }
     return <SpreadsheetFileViewer {...props} locale={locale} />;
 }
 
-function SpreadsheetFileViewer({ note, noteContext, parentComponent, locale, onError }: TypeWidgetProps & { locale: UniverLocale; onError: () => void }) {
+function SpreadsheetFileViewer({ entity, noteContext, componentId, locale, onError }: SpreadsheetFileProps & { locale: UniverLocale }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<FUniver | undefined>(undefined);
 
     useInitializeSpreadsheet(containerRef, apiRef, true, locale);
     useClampEdgeNavigation(apiRef);
     useDarkMode(apiRef);
-    useWorkbookFile(note, noteContext, parentComponent?.componentId, apiRef, containerRef, onError);
+    useWorkbookFile(entity, noteContext, componentId, apiRef, containerRef, onError);
     useSearchIntegration(apiRef, noteContext);
     useDismissDialogsOnNoteSwitch(apiRef);
     useFixRadixPortals();
@@ -362,7 +372,7 @@ function useDarkMode(apiRef: RefObject<FUniver | undefined>) {
     }, [ colorScheme, apiRef ]);
 }
 
-function useSearchIntegration(apiRef: RefObject<FUniver | undefined>, noteContext: NoteContext | undefined) {
+function useSearchIntegration(apiRef: RefObject<FUniver | undefined>, noteContext: NoteContext | null | undefined) {
     useTriliumEvent("findInText", ({ ntxId }) => {
         if (!noteContext?.isCommandTarget(ntxId)) return;
 

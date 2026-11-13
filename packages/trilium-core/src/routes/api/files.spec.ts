@@ -21,6 +21,8 @@ import { CoreApiTester } from "../../test/api_tester";
  */
 let api: CoreApiTester;
 
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
 interface AttachmentPojo {
     attachmentId: string;
     title: string;
@@ -631,6 +633,29 @@ describe("Files API (core)", () => {
             const etag = res.headers.ETag;
             expect(etag).not.toBe((await api.get(`/api/notes/${noteId}/office-preview`)).headers.ETag);
             expect((await api.get(url, { headers: { "if-none-match": etag } })).status).toBe(304);
+        });
+
+        it("answers an XLSX attachment with its workbook too", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Attached").getCell("A1").value = "from an attachment";
+            const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+            const { noteId } = await createTextNote(api, { title: "Has workbook attachment" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: XLSX_MIME, title: "attached.xlsx", content: "" }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const attachmentId = list.body[0].attachmentId;
+            cls.init(() => getSql().transactional(() => {
+                becca.getAttachmentOrThrow(attachmentId).setContent(xlsxBuffer, { forceSave: true });
+            }));
+
+            const res = await api.get<string>(`/api/attachments/${attachmentId}/spreadsheet-workbook`);
+            expect(res.status).toBe(200);
+            const { workbook } = JSON.parse(res.body) as PersistedData;
+            expect(workbook.sheets[workbook.sheetOrder[0]]?.cellData?.[0]?.[0]?.v).toBe("from an attachment");
+            expect((await api.get(`/api/attachments/${attachmentId}/spreadsheet-workbook`,
+                { headers: { "if-none-match": res.headers.ETag } })).status).toBe(304);
         });
 
         it("rejects a note that holds no workbook with 400", async () => {

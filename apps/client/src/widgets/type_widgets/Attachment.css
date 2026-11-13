@@ -365,6 +365,10 @@ body[dir=rtl] .attachment-icon-marker {
     height: 100%;
 }
 
+.attachment-content-wrapper.attachment-spreadsheet > .spreadsheet {
+    height: 100%;
+}
+
 .attachment-detail-wrapper.list-view .attachment-content-wrapper pre {
     max-height: 400px;
     padding: 0;

@@ -35,6 +35,13 @@ vi.mock("../../services/content_renderer", () => ({
     },
     hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
 }));
+const spreadsheetErrors = vi.hoisted(() => [] as (() => void)[]);
+vi.mock("./spreadsheet/Spreadsheet", () => ({
+    SpreadsheetFile: ({ onError }: { onError: () => void }) => {
+        spreadsheetErrors.push(onError);
+        return <div className="spreadsheet-file-stub" />;
+    }
+}));
 // Counts the mounts of the drawing editor, which loads a change saved elsewhere in place.
 vi.mock("./canvas/CanvasDrawing", () => ({
     CanvasDrawingDetail: () => {
@@ -230,7 +237,7 @@ describe("AttachmentDetail", () => {
         expect(getRenderedContent).not.toHaveBeenCalled();
     });
 
-    it("previews the whole workbook opened on its own", async () => {
+    it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview", async () => {
         const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);
         getRenderedContent.mockClear();
@@ -239,14 +246,20 @@ describe("AttachmentDetail", () => {
             note: { noteId: "note1" },
             viewScope: { viewMode: "attachments", attachmentId: workbook.attachmentId }
         } as unknown as Parameters<typeof AttachmentDetail>[0];
-        renderInto(
+        const container = renderInto(
             <ParentComponent.Provider value={new Component()}>
                 <AttachmentDetail {...props} />
             </ParentComponent.Provider>
         );
 
+        await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
+        expect(getRenderedContent).not.toHaveBeenCalled();
+
+        // A file that is no workbook falls back to the whole HTML preview.
+        await act(async () => spreadsheetErrors.at(-1)?.());
         await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
         expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: false }));
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
     });
 });
 

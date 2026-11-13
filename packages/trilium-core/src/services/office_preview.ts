@@ -1,4 +1,4 @@
-import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS } from "@triliumnext/commons";
+import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS, XLSX_MIME } from "@triliumnext/commons";
 
 import { ValidationError } from "../errors.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
@@ -11,14 +11,10 @@ import { getZipProvider } from "./zip_provider.js";
  */
 const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
 
-// MIME of an `.xlsx` upload (Office Open XML spreadsheet), previewed through the native
-// spreadsheet pipeline rather than officeparser.
 export interface OfficePreviewOptions {
     /** Renders the corner of the first sheet only, for a preview shown in a card or a list. */
     trim?: boolean;
 }
-
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
  * Converts an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and EPUB) to an embeddable

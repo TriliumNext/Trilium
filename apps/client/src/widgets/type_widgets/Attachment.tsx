@@ -1,7 +1,7 @@
 import "./Attachment.css";
 
 import {
-    type AttachmentRow, attachmentIcon, CANVAS_ATTACHMENT_MIME, isImageAttachmentRole
+    type AttachmentRow, attachmentIcon, CANVAS_ATTACHMENT_MIME, isImageAttachmentRole, XLSX_MIME
 } from "@triliumnext/commons";
 import { t } from "i18next";
 import { Fragment } from "preact";
@@ -50,6 +50,8 @@ import { TypeWidgetProps } from "./type_widget";
 
 const CanvasDrawingDetail = lazy(() =>
     import("./canvas/CanvasDrawing").then((module) => module.CanvasDrawingDetail));
+const SpreadsheetFile = lazy(() =>
+    import("./spreadsheet/Spreadsheet").then((module) => ({ default: module.SpreadsheetFile })));
 
 /**
  * Displays the full list of attachments of a note and allows the user to interact with them.
@@ -248,7 +250,11 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && attachment.mime === CANVAS_ATTACHMENT_MIME
         && (!attachment.isProtected || protected_session_holder.isProtectedSessionAvailable());
     const isTranscript = attachment.role === "transcript";
-    const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript;
+    // A workbook gets the read-only spreadsheet, and its whole HTML preview if it cannot be read as one.
+    const [ workbookFailedFor, setWorkbookFailedFor ] = useState<string>();
+    const isWorkbook = !!isFullDetail && attachment.mime === XLSX_MIME
+        && workbookFailedFor !== attachment.attachmentId;
+    const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
 
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
@@ -370,6 +376,17 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                                 attachment={attachment}
                                 note={ownerNote}
                                 noteContext={noteContext}
+                            />
+                        </Suspense>
+                    </div>
+                ) : isWorkbook ? (
+                    <div key="spreadsheet" className="attachment-content-wrapper attachment-spreadsheet">
+                        <Suspense fallback={null}>
+                            <SpreadsheetFile
+                                key={`${attachment.attachmentId}-${modified}`}
+                                entity={attachment}
+                                noteContext={noteContext}
+                                onError={() => setWorkbookFailedFor(attachment.attachmentId)}
                             />
                         </Suspense>
                     </div>

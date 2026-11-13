@@ -1,6 +1,6 @@
 import "./File.css";
 
-import { isFontMimeType, isOfficeMimeType } from "@triliumnext/commons";
+import { isFontMimeType, isOfficeMimeType, XLSX_MIME } from "@triliumnext/commons";
 import { lazy, Suspense } from "preact/compat";
 import { useState } from "preact/hooks";
 
@@ -17,12 +17,11 @@ import PdfPreview from "./file/Pdf";
 import { TypeWidgetProps } from "./type_widget";
 
 const TEXT_MAX_NUM_CHARS = 5000;
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 const SpreadsheetFile = lazy(() =>
     import("./spreadsheet/Spreadsheet").then((module) => ({ default: module.SpreadsheetFile })));
 
-export default function FileTypeWidget({ note, parentComponent, noteContext, ntxId, viewScope, isVisible }: TypeWidgetProps) {
+export default function FileTypeWidget({ note, parentComponent, noteContext, isVisible }: TypeWidgetProps) {
     // Office previews are server-rendered, so don't fetch the blob for them — it would
     // download the document a second time without being used.
     const isOffice = isOfficeMimeType(note.mime);
@@ -36,8 +35,7 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, ntx
     if (note.mime === XLSX_MIME && workbookFailedFor !== note.noteId) {
         return (
             <Suspense fallback={null}>
-                <SpreadsheetFile note={note} noteContext={noteContext} parentComponent={parentComponent}
-                    ntxId={ntxId} viewScope={viewScope} isVisible={isVisible}
+                <SpreadsheetFile entity={note} noteContext={noteContext} componentId={parentComponent?.componentId}
                     onError={() => setWorkbookFailedFor(note.noteId)} />
             </Suspense>
         );
