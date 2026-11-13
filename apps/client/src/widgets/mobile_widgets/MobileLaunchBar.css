@@ -1,0 +1,133 @@
+body.mobile #launcher-pane {
+    display: flex;
+
+    &.horizontal {
+        flex-direction: row;
+    }
+}
+
+body.mobile.navigation-rail {
+    --navigation-rail-width: 80px;
+    --navigation-rail-panel-width: 340px;
+
+    #root-widget {
+        flex-direction: row-reverse !important;
+    }
+
+    #mobile-bottom-bar,
+    #root-widget.virtual-keyboard-opened #mobile-bottom-bar {
+        display: flex !important;
+        border-top: 0;
+        border-inline-end: 1px solid var(--main-border-color);
+        padding-bottom: var(--mobile-bottom-offset);
+        background-color: var(--launcher-pane-vert-background-color);
+    }
+
+    #launcher-pane.navigation-rail {
+        --launcher-pane-size: var(--navigation-rail-width);
+        --launcher-pane-button-margin: 6px;
+        --launcher-pane-button-gap: 2px;
+        --navigation-rail-icon-top: 10px;
+
+        flex-direction: column;
+        flex-grow: 1;
+        padding-block: 8px;
+
+        .launcher-button,
+        .global-menu-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 4px;
+            padding-top: var(--navigation-rail-icon-top) !important;
+        }
+
+        .global-menu-button {
+            width: 100%;
+            height: 100%;
+            font-size: var(--launcher-pane-icon-size);
+        }
+
+        .launcher-button-label {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            max-width: 100%;
+            overflow: hidden;
+            text-align: center;
+            font-family: var(--main-font-family);
+            font-size: 0.7rem;
+            font-weight: normal;
+            line-height: 1.2;
+        }
+
+        .launcher-button.active,
+        .global-menu-button.show {
+            background: var(--launcher-pane-button-hover-background) !important;
+            color: var(--launcher-pane-button-hover-color);
+        }
+
+        /* Centers the count of `TabSwitcher.css` on the icon, which sits at the top of the button. */
+        .mobile-tab-switcher::after {
+            top: calc(var(--navigation-rail-icon-top) + var(--launcher-pane-icon-size) / 2);
+        }
+
+        .sync-status-widget {
+            margin-block-start: auto;
+        }
+    }
+
+    #mobile-rest-container > #mobile-sidebar-wrapper {
+        flex: 0 0 var(--navigation-rail-panel-width);
+        width: var(--navigation-rail-panel-width);
+        max-width: var(--navigation-rail-panel-width);
+    }
+
+    #mobile-rest-container > #detail-container {
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+    }
+
+    .tn-dropdown-portal:is(.global-menu, .note-actions) > .dropdown-menu {
+        position: fixed !important;
+        inset-block: var(--safe-area-inset-top, env(safe-area-inset-top)) var(--mobile-bottom-offset) !important;
+        transform: none !important;
+        width: var(--navigation-rail-panel-width) !important;
+        max-height: none !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow-x: hidden;
+        overflow-y: auto;
+        background: var(--left-pane-background-color) !important;
+    }
+
+    .tn-dropdown-portal.global-menu > .dropdown-menu {
+        inset-inline: var(--navigation-rail-width) auto !important;
+        border-inline-end: 1px solid var(--main-border-color) !important;
+    }
+
+    .tn-dropdown-portal.note-actions > .dropdown-menu {
+        inset-inline: auto 0 !important;
+        border-inline-start: 1px solid var(--main-border-color) !important;
+
+        .form-list-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    &:has(.tn-dropdown-portal.global-menu > .dropdown-menu) #mobile-rest-container {
+        margin-inline-start: var(--navigation-rail-panel-width);
+    }
+
+    &:has(.tn-dropdown-portal.note-actions > .dropdown-menu) #mobile-rest-container {
+        margin-inline-end: var(--navigation-rail-panel-width);
+    }
+
+    #context-menu-cover.global-menu-cover {
+        inset-inline-start: var(--navigation-rail-width);
+    }
+}

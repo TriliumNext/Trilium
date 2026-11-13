@@ -89,6 +89,20 @@ describe("the layout orientation", () => {
         open();
         expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
     });
+
+    it("gives the mobile layout its navigation rail toggle, off unless stored", () => {
+        const toggle = () => host.querySelector<HTMLInputElement>("input.switch-toggle[id^='mobile-navigation-rail-']");
+        open();
+        expect(toggle()).toBeNull();
+
+        mocks.mobile = true;
+        open();
+        expect(toggle()?.checked).toBe(false);
+
+        mocks.stored.mobileNavigationRail = true;
+        open();
+        expect(toggle()?.checked).toBe(true);
+    });
 });
 
 describe("the note title style", () => {

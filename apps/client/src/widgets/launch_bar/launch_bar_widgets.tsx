@@ -18,6 +18,8 @@ const DROPDOWN_TITLE_OPTIONS = { animation: false } as const;
 
 export const LaunchBarContext = createContext<{
     isHorizontalLayout: boolean;
+    /** Whether the buttons show their titles under their icons, as in the mobile navigation rail. */
+    showLabels?: boolean;
 }>({
     isHorizontalLayout: false
 });
@@ -41,7 +43,7 @@ export function launcherContextMenuHandler(
     return (e: MouseEvent) => showLauncherContextMenu(launcherNote, e, { parentNoteId });
 }
 
-export function LaunchBarActionButton({ className, launcherNote, onContextMenu, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition"> & { launcherNote?: FNote }) {
+export function LaunchBarActionButton({ className, launcherNote, onContextMenu, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition" | "children"> & { launcherNote?: FNote }) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
 
     return (
@@ -51,7 +53,9 @@ export function LaunchBarActionButton({ className, launcherNote, onContextMenu, 
             titlePosition={getTitlePosition(isHorizontalLayout)}
             onContextMenu={onContextMenu ?? launcherContextMenuHandler(launcherNote)}
             {...props}
-        />
+        >
+            <LauncherLabel text={props.text} />
+        </ActionButton>
     );
 }
 
@@ -81,7 +85,7 @@ export function LaunchBarDropdownButton({
             className="right-dropdown-widget"
             buttonClassName="right-dropdown-button launcher-button"
             hideToggleArrow
-            text={<Icon icon={icon} />}
+            text={<><Icon icon={icon} /><LauncherLabel text={props.title} /></>}
             titlePosition={titlePosition}
             titleOptions={DROPDOWN_TITLE_OPTIONS}
             placement={titlePosition}
@@ -90,6 +94,13 @@ export function LaunchBarDropdownButton({
             {...props}
         >{children}</Component>
     );
+}
+
+/** A launcher's title under its icon, shown only where the launch bar asks for labels (see {@link LaunchBarContext}). */
+export function LauncherLabel({ text }: { text: string | undefined }) {
+    const { showLabels } = useContext(LaunchBarContext);
+    if (!showLabels || !text) return null;
+    return <span className="launcher-button-label">{text}</span>;
 }
 
 export function useLauncherIconAndTitle(note: FNote) {
@@ -113,7 +124,7 @@ export function useLaunchBarTitlePosition() {
 
 function getTitlePosition(isHorizontalLayout: boolean) {
     if (cachedIsMobile) {
-        return "top";
+        return isHorizontalLayout ? "top" : "right";
     }
     return isHorizontalLayout ? "bottom" : "right";
 }

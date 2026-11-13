@@ -2006,7 +2006,9 @@
     "note_title_style": "Note title",
     "note_title_style_description": "The compact title shows only in the bar above the note, leaving more room for the content. The creation and modification dates are not shown.",
     "note_title_style_large": "Large",
-    "note_title_style_compact": "Compact"
+    "note_title_style_compact": "Compact",
+    "navigation_rail": "Navigation rail",
+    "navigation_rail_description": "On a tablet in landscape, the launch bar becomes a column beside the note, with a label under each button. The menu, the note tree and the note's actions open as panels next to the note."
   },
   "ui-performance": {
     "title": "Performance",

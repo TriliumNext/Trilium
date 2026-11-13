@@ -12,7 +12,7 @@ import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, OpenNoteFooter, PreviewSlot, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
+import { BookmarkList, ForwardToNoteButton, getChevronIcon, getListedChildCount, getPreviewNoteIds, OpenNoteFooter, PreviewSlot, showOpenedNote, TitleWithIndicators, UnhoistButton, WorkspaceCards } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -269,6 +269,20 @@ describe("ForwardToNoteButton", () => {
 
         button?.click();
         expect(triggerCommand).toHaveBeenCalledWith("setActiveScreen", { screen: "detail" });
+    });
+});
+
+describe("showOpenedNote", () => {
+    it("shows the note opened from the tree, and closes the tree in the navigation rail", () => {
+        const triggerCommand = vi.fn();
+        const parent = { triggerCommand } as unknown as Component;
+
+        showOpenedNote(parent, false);
+        expect(triggerCommand.mock.calls).toEqual([ [ "setActiveScreen", { screen: "detail" } ] ]);
+
+        triggerCommand.mockClear();
+        showOpenedNote(parent, true);
+        expect(triggerCommand.mock.calls).toEqual([ [ "setActiveScreen", { screen: "detail" } ], [ "hideLeftPane" ] ]);
     });
 });
 

@@ -9,7 +9,7 @@ import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
 import { useStaticTooltip, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
-import { launcherContextMenuHandler, LauncherNoteProps } from "./launch_bar_widgets";
+import { launcherContextMenuHandler, LauncherLabel, LauncherNoteProps } from "./launch_bar_widgets";
 
 type SyncState = "unknown" | "in-progress"
     | "connected-with-changes" | "connected-no-changes"
@@ -90,6 +90,7 @@ export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
                     )}
                 </span>
             </div>
+            <LauncherLabel text={launcherNote.title} />
             {pullProgress && <SyncPullProgressBar {...pullProgress} />}
         </div>
     );

@@ -1699,6 +1699,17 @@ export function useMediaQuery(query: string) {
 }
 
 /**
+ * Whether the mobile layout shows its launch bar as a navigation rail: the `mobileNavigationRail`
+ * option, on a screen wide enough for the tablet mode (see {@link utils.isNarrowLayout}).
+ */
+export function useNavigationRail() {
+    const [ enabled ] = useTriliumOptionBool("mobileNavigationRail");
+    const [ narrow, setNarrow ] = useState(utils.isNarrowLayout);
+    useEffect(() => utils.onNarrowLayoutChange(() => setNarrow(utils.isNarrowLayout())), []);
+    return enabled && !narrow;
+}
+
+/**
  * Registers this widget's contextual shortcut hints on its host component. When the user requests
  * contextual shortcut help (Alt+F1 by default), the dispatcher walks up from the focused element
  * and asks each component in the chain to contribute its hints — so these appear only while this
