@@ -21,12 +21,13 @@ Once Vim mode is on:
 
 ### Where Vim mode shows
 
-Vim mode uses two places of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, at the bottom of the window:
+Vim mode uses three places of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, at the bottom of the window:
 
-*   The **mode indicator**, next to the other indicators of the status bar, shows the current mode: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` or `REPLACE`. Beside it appear the keys of a command that is not complete yet, short messages and the macro being recorded.
+*   The _Vim_ badge, before the other indicators of the status bar, is highlighted while Vim mode is on for the current note. Click it to turn Vim mode off or on for that note, see _Vim mode for a single note_ below. Right-click it for a menu with the same switch, a switch for the key hints, the settings and this page.
+*   The **mode indicator**, after the badge, shows the current mode: `NORMAL`, `INSERT`, `VISUAL`, `VISUAL LINE` or `REPLACE`. Beside it appear the keys of a command that is not complete yet, short messages and the macro being recorded.
 *   The area of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Breadcrumb.md">Breadcrumb</a> is used for two things: the key hints, described below, and the command line, which opens there when you press `:`, `/` or `?`.
 
-<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a> keeps both.
+<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Zen%20mode.md">Zen mode</a> keeps the mode indicator and the area of the breadcrumb.
 
 ## Settings
 
@@ -60,6 +61,8 @@ To decide for one note, whatever the option says, add a [label](../../Advanced%2
 *   `#vimMode=false` keeps that note in the regular editor.
 
 The label can be inherited, so one label can cover a whole subtree. A label set on the note itself wins over an inherited one: with an inheritable `#vimMode` on a parent note, a child note that has `#vimMode=false` stays in the regular editor.
+
+While the _Vim mode_ option is on, the _Vim_ badge in the status bar sets this label for you: a click on it gives the current note `#vimMode=false`, and another click `#vimMode=true`.
 
 ## Key hints
 

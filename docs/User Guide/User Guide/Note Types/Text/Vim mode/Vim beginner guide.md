@@ -29,7 +29,7 @@ Vim mode can take some time to get used to. If it does not suit you, turning the
 
 Text notes and code notes each have their own option, and both apply to the current device only:
 
-*   For text notes, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_ and turn on _Vim mode_. See <a class="reference-link" href="../Vim%20mode.md">Vim mode</a> for its settings.
+*   For text notes, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Features_ and turn on _Vim mode_. To turn it off for a single note, click the _Vim_ badge in the status bar. See <a class="reference-link" href="../Vim%20mode.md">Vim mode</a> for its settings.
 *   For code notes, go to <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ and turn on _Vim keybindings_.
 
 ## The modes

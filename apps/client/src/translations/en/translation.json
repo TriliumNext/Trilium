@@ -5432,6 +5432,13 @@
     "normal_tooltip": "Normal mode: keys are commands. Press i to type. Click for the keys.",
     "insert_tooltip": "Insert mode: keys type. Press Esc for commands. Click for the keys.",
     "visual_tooltip": "Visual mode: motions extend the selection. Press Esc to leave. Click for the keys.",
-    "replace_tooltip": "Replace mode: typed characters overwrite. Press Esc to leave. Click for the keys."
+    "replace_tooltip": "Replace mode: typed characters overwrite. Press Esc to leave. Click for the keys.",
+    "badge": "Vim",
+    "badge_on_tooltip": "Vim mode enabled for this note. Click to turn off.",
+    "badge_off_tooltip": "Vim mode disabled for this note. Click to turn on.",
+    "menu_note": "Vim mode",
+    "menu_settings": "Settings",
+    "menu_help": "Help",
+    "menu_note_description": "Applies just for this note."
   }
 }

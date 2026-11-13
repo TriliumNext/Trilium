@@ -52,6 +52,7 @@ vi.mock("../attribute_widgets/AttributeEditor", async () => {
 
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
+import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
@@ -260,6 +261,40 @@ describe("StatusBar panels", () => {
         expect(container.querySelector(".vim-status-line, .vim-command-line-slot")).toBeNull();
         expect(container.querySelector(".vim-command-line-open, .vim-message-panel")).toBeNull();
         expect(document.body.classList.contains("vim-mode-active")).toBe(false);
+    });
+
+    it("shows the Vim mode badge before the mode while the Vim mode option is on", () => {
+        const vim = {
+            status: { mode: "normal" } as Record<string, unknown>,
+            on: () => {},
+            off: () => {}
+        };
+        contextData.set("vimMode", vim);
+        renderBar();
+        expect(container.querySelector(".vim-mode-badge")).toBeNull();
+        act(() => render(null, container));
+
+        options.load({ textNoteVimModeEnabled: "true" });
+        try {
+            renderBar();
+            const badge = container.querySelector(".actions-row > .vim-mode-badge");
+            expect(badge?.previousElementSibling).toBeNull();
+            expect(badge?.nextElementSibling?.classList.contains("vim-status-line")).toBe(true);
+            act(() => render(null, container));
+
+            // Vim mode off for the note: the badge stays, to turn it back on.
+            vim.status = { mode: null };
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).not.toBeNull();
+            expect(container.querySelector(".vim-status-line")).toBeNull();
+            act(() => render(null, container));
+
+            contextData.clear();
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).toBeNull();
+        } finally {
+            options.load({});
+        }
     });
 
     function renderBar(isContentWritable = true, type: NoteType = "text") {

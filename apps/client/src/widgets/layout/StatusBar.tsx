@@ -31,7 +31,7 @@ import HelpDropdown from "../react/HelpDropdown";
 import {
     useActiveNoteContext, useAttachments, useBodyClass, useGetContextDataFrom,
     useLegacyImperativeHandlers, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent,
-    useTriliumEvents
+    useTriliumEvents, useTriliumOptionBool
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
@@ -48,7 +48,7 @@ import {
 } from "./code_menus";
 import { NoteSizeWidget, useNoteMetadata } from "./note_metadata";
 import {
-    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimStatusLine
+    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine
 } from "./VimStatus";
 
 interface StatusBarContext {
@@ -81,6 +81,7 @@ export default function StatusBar() {
     const canEditAttributes = note?.isContentWritable !== false;
     const vimStatus = useVimStatus(noteContext);
     const shownVim = useGetContextDataFrom(noteContext, "vimMode");
+    const [ isVimModeOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
     const vimMessage = vimStatus?.message;
     const vimHints = vimStatus?.hints;
 
@@ -103,6 +104,7 @@ export default function StatusBar() {
                     {vimHints && <VimHintStrip hints={vimHints} />}
 
                     <div className="actions-row">
+                        {shownVim && isVimModeOptionOn && <VimModeBadge note={context.note} />}
                         {vimStatus && <VimStatusLine status={vimStatus} vim={shownVim} />}
                         <CodeCursorPosition {...context} />
                         <CodeNoteSwitcher {...context} />

@@ -6,10 +6,17 @@ import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
+import type FNote from "../../entities/fnote";
+import contextMenu from "../../menus/context_menu";
 import { t } from "../../services/i18n";
+import options from "../../services/options";
+import { openInAppHelpFromUrl } from "../../services/utils";
 import Button from "../react/Button";
-import { useGetContextDataFrom, useStaticTooltip, useTriliumOptionBool } from "../react/hooks";
+import {
+    useGetContextDataFrom, useNoteLabel, useStaticTooltip, useTriliumOptionBool
+} from "../react/hooks";
 import ScrollableLabel from "../react/ScrollableLabel";
 import { toggleVimKeyReference } from "../type_widgets/text/vim_key_reference";
 import { setCommandLineSlot } from "../type_widgets/text/vim_mode";
@@ -31,6 +38,37 @@ export function useVimStatus(noteContext: NoteContext | null | undefined): VimSt
     }, [ vim ]);
 
     return status?.mode ? status : null;
+}
+
+/**
+ * Turns Vim mode on or off for `note` with its `#vimMode` label. A right click opens the menu of
+ * Vim mode. The status bar shows it while the Vim mode option is on, so only `#vimMode=false`
+ * turns Vim mode off.
+ */
+export function VimModeBadge({ note }: { note: FNote }) {
+    const [ label, setLabel ] = useNoteLabel(note, "vimMode");
+    const isEnabled = label !== "false";
+    const badgeRef = useRef<HTMLButtonElement>(null);
+    const tooltip = isEnabled ? t("vim_mode.badge_on_tooltip") : t("vim_mode.badge_off_tooltip");
+    const tooltipOptions = useMemo(() => ({ ...TOOLTIP_OPTIONS, title: tooltip }), [ tooltip ]);
+    useStaticTooltip(badgeRef, tooltipOptions);
+    const toggle = () => setLabel(isEnabled ? "false" : "true");
+
+    return (
+        <Button
+            buttonRef={badgeRef}
+            kind="lowProfile"
+            className="vim-mode-badge"
+            text={t("vim_mode.badge")}
+            aria-pressed={isEnabled}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={toggle}
+            onContextMenu={(event) => {
+                event.preventDefault();
+                void showVimModeMenu(event, isEnabled, toggle);
+            }}
+        />
+    );
 }
 
 /**
@@ -160,13 +198,55 @@ const MODE_NAMES: Record<VimMode, () => string> = {
     "visual-line": () => t("vim_mode.visual_line")
 };
 
-/** The tooltip options of the mode, which opens above the bar as those of the status bar items. */
+/** The tooltip options of the badge and the mode, which open above the bar. */
 const TOOLTIP_OPTIONS: Partial<Tooltip.Options> = {
     placement: "top",
     fallbackPlacements: [ "top" ],
     popperConfig: { strategy: "fixed" },
     animation: false
 };
+
+/** The User Guide page of Vim mode in text notes. */
+const VIM_MODE_HELP_PAGE = "enVNpi1Njswq";
+
+/** Opens the menu of the Vim mode badge at the pointer. */
+function showVimModeMenu(event: MouseEvent, isEnabled: boolean, toggle: () => void) {
+    return contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items: [
+            {
+                title: t("vim_mode.menu_note"),
+                description: t("vim_mode.menu_note_description"),
+                uiIcon: "bx bx-terminal",
+                isSwitch: true,
+                checked: isEnabled,
+                handler: toggle
+            },
+            { kind: "separator" },
+            {
+                title: t("vim_mode.hints"),
+                uiIcon: "bx bx-bulb",
+                isSwitch: true,
+                checked: options.is("vimModeHintsEnabled"),
+                handler: () => void options.toggle("vimModeHintsEnabled")
+            },
+            {
+                title: t("vim_mode.menu_settings"),
+                uiIcon: "bx bx-cog",
+                handler: () =>
+                    void appContext.triggerCommand("showOptions", { section: "_optionsTextNotes" })
+            },
+            { kind: "separator" },
+            {
+                title: t("vim_mode.menu_help"),
+                uiIcon: "bx bx-help-circle",
+                handler: () => openInAppHelpFromUrl(VIM_MODE_HELP_PAGE)
+            }
+        ],
+        selectMenuItemHandler: () => {}
+    });
+}
 
 /** What the mode means, the key that leaves it, and that a click shows the keys. */
 function getModeTooltip(mode: VimMode | null) {

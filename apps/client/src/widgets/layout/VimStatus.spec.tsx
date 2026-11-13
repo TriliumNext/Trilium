@@ -3,14 +3,22 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
+import type FNote from "../../entities/fnote";
+import type { MenuItem } from "../../menus/context_menu";
+import options from "../../services/options";
 
 const mocks = vi.hoisted(() => ({
     vim: undefined as unknown,
     areHintsEnabled: false,
+    vimModeLabel: null as string | null,
+    setVimModeLabel: vi.fn(),
     setCommandLineSlot: vi.fn(),
     useStaticTooltip: vi.fn(),
-    toggleVimKeyReference: vi.fn()
+    toggleVimKeyReference: vi.fn(),
+    showContextMenu: vi.fn(),
+    openInAppHelpFromUrl: vi.fn()
 }));
 
 vi.mock("../../services/i18n", () => ({
@@ -19,9 +27,18 @@ vi.mock("../../services/i18n", () => ({
 }));
 vi.mock("../react/hooks", () => ({
     useGetContextDataFrom: () => mocks.vim,
+    useNoteLabel: () => [ mocks.vimModeLabel, mocks.setVimModeLabel ],
     useTriliumOptionBool: () => [ mocks.areHintsEnabled, vi.fn() ],
     useTrackedElement: (ref: { current: HTMLElement | null }) => ref.current,
     useStaticTooltip: mocks.useStaticTooltip
+}));
+vi.mock("../../menus/context_menu", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../menus/context_menu")>()),
+    default: { show: mocks.showContextMenu }
+}));
+vi.mock("../../services/utils", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/utils")>()),
+    openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
 }));
 vi.mock("../type_widgets/text/vim_key_reference", () => ({
     toggleVimKeyReference: mocks.toggleVimKeyReference
@@ -29,7 +46,7 @@ vi.mock("../type_widgets/text/vim_key_reference", () => ({
 vi.mock("../type_widgets/text/vim_mode", () => ({ setCommandLineSlot: mocks.setCommandLineSlot }));
 
 import {
-    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimStatusLine
+    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine
 } from "./VimStatus";
 
 const OFF: VimStatus = {
@@ -42,6 +59,7 @@ let container: HTMLElement;
 beforeEach(() => {
     mocks.vim = undefined;
     mocks.areHintsEnabled = false;
+    mocks.vimModeLabel = null;
     container = document.body.appendChild(document.createElement("div"));
 });
 
@@ -142,6 +160,74 @@ describe("the mode", () => {
         expect(mouseDown.defaultPrevented).toBe(true);
         button?.click();
         expect(mocks.toggleVimKeyReference).toHaveBeenCalledWith(vim, button);
+    });
+});
+
+describe("VimModeBadge", () => {
+    it("shows whether the note has Vim mode, and writes its label on a click", () => {
+        const getTooltip = () => mocks.useStaticTooltip.mock.lastCall?.[1].title;
+        // A new note each time, as a component with hook state skips a render with the same props.
+        const showBadge = (label: string | null) => {
+            mocks.vimModeLabel = label;
+            act(() => render(<VimModeBadge note={{} as FNote} />, container));
+            return container.querySelector<HTMLButtonElement>("button.vim-mode-badge");
+        };
+
+        const badge = showBadge(null);
+        expect(badge?.textContent?.trim()).toBe("vim_mode.badge");
+        expect(badge?.getAttribute("aria-pressed")).toBe("true");
+        expect(getTooltip()).toBe("vim_mode.badge_on_tooltip");
+        const mouseDown = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        badge?.dispatchEvent(mouseDown);
+        expect(mouseDown.defaultPrevented).toBe(true);
+        badge?.click();
+        expect(mocks.setVimModeLabel).toHaveBeenLastCalledWith("false");
+
+        expect(showBadge("")?.getAttribute("aria-pressed")).toBe("true");
+        expect(showBadge("false")?.getAttribute("aria-pressed")).toBe("false");
+        expect(getTooltip()).toBe("vim_mode.badge_off_tooltip");
+        badge?.click();
+        expect(mocks.setVimModeLabel).toHaveBeenLastCalledWith("true");
+    });
+
+    it("opens a menu of the note's Vim mode, the key hints, the settings and the help", () => {
+        const isOption = vi.spyOn(options, "is").mockReturnValue(true);
+        const toggleOption = vi.spyOn(options, "toggle").mockResolvedValue(undefined);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockResolvedValue(undefined);
+        mocks.vimModeLabel = "false";
+        act(() => render(<VimModeBadge note={{} as FNote} />, container));
+        const contextMenuEvent = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+        container.querySelector(".vim-mode-badge")?.dispatchEvent(contextMenuEvent);
+        expect(contextMenuEvent.defaultPrevented).toBe(true);
+
+        const items: MenuItem<unknown>[] = mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
+        expect(items.map((item) => ("kind" in item
+            ? item.kind
+            : [ item.title, !!item.isSwitch, item.checked ])))
+            .toEqual([
+                [ "vim_mode.menu_note", true, false ],
+                "separator",
+                [ "vim_mode.hints", true, true ],
+                [ "vim_mode.menu_settings", false, undefined ],
+                "separator",
+                [ "vim_mode.menu_help", false, undefined ]
+            ]);
+        expect(isOption).toHaveBeenCalledWith("vimModeHintsEnabled");
+        const [ noteItem ] = items;
+        expect("description" in noteItem && noteItem.description)
+            .toBe("vim_mode.menu_note_description");
+
+        for (const item of items) {
+            if (!("kind" in item)) {
+                item.handler?.(item, new MouseEvent("click"));
+            }
+        }
+        expect(mocks.setVimModeLabel).toHaveBeenCalledWith("true");
+        expect(toggleOption).toHaveBeenCalledWith("vimModeHintsEnabled");
+        expect(triggerCommand)
+            .toHaveBeenCalledWith("showOptions", { section: "_optionsTextNotes" });
+        expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledWith("enVNpi1Njswq");
     });
 });
 
