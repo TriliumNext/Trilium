@@ -87,6 +87,8 @@ Text notes are usually opened in edit mode. However, they may open in read-only 
 
 There are numerous keyboard shortcuts to format the text without having to use the mouse. For a reference of all the key combinations, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md">Keyboard Shortcuts</a>. In addition, see <a class="reference-link" href="Text/Markdown-like%20formatting.md">Markdown-like formatting</a> as an alternative to the keyboard shortcuts.
 
+To edit with the keys of the Vim text editor, see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
+
 ## Content width
 
 For readability purposes on wider screens, the width of text notes is limited via a configurable option. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a> for more information.

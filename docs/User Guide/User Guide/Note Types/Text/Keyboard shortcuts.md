@@ -1,4 +1,7 @@
 # Keyboard shortcuts
+> [!NOTE]
+> With <a class="reference-link" href="Vim%20mode.md">Vim mode</a> turned on, some of these shortcuts follow Vim instead, such as <kbd>Ctrl</kbd>+<kbd>B</kbd>, which scrolls a page up in Normal mode. See _Shortcuts that change in the editor_ on that page.
+
 ## Trilium-specific shortcuts
 
 | Action | PC | Mac |
