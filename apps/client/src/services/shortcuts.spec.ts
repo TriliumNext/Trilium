@@ -703,6 +703,61 @@ describe("shortcuts", () => {
         });
     });
 
+    describe("Ctrl+Alt+digit (QWERTZ layouts, numpad)", () => {
+        // A keydown as Firefox on Windows reports Ctrl+Alt+2 on the German layout, where the
+        // chord is AltGr+2 and types "²": both modifier flags off, only the AltGraph state on.
+        const firefoxAltGr = (key: string, code: string) => ({
+            key,
+            code,
+            ctrlKey: false,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            getModifierState: (state: string) => state === "AltGraph"
+        } as unknown as KeyboardEvent);
+
+        const ctrlAlt = (key: string, code: string) => ({
+            key,
+            code,
+            ctrlKey: true,
+            altKey: true,
+            shiftKey: false,
+            metaKey: false,
+            getModifierState: () => false
+        } as unknown as KeyboardEvent);
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it("reads AltGr as Ctrl+Alt on Windows", () => {
+            vi.stubGlobal("navigator", { platform: "Win32" });
+
+            expect(matchesShortcut(firefoxAltGr("²", "Digit2"), "ctrl+alt+2")).toBe(true);
+            expect(matchesShortcut(firefoxAltGr("}", "Digit0"), "ctrl+alt+0")).toBe(true);
+            expect(matchesShortcut(firefoxAltGr("²", "Digit2"), "ctrl+2")).toBe(false);
+            expect(matchesShortcut(firefoxAltGr("²", "Digit2"), "alt+2")).toBe(false);
+        });
+
+        it("leaves AltGr to type its character outside Windows", () => {
+            vi.stubGlobal("navigator", { platform: "Linux x86_64" });
+
+            expect(matchesShortcut(firefoxAltGr("²", "Digit2"), "ctrl+alt+2")).toBe(false);
+        });
+
+        it("matches the Ctrl+Alt+digit Chromium reports for the same chord", () => {
+            vi.stubGlobal("navigator", { platform: "Win32" });
+
+            expect(matchesShortcut(ctrlAlt("³", "Digit3"), "ctrl+alt+3")).toBe(true);
+        });
+
+        it("matches numpad digits while NumLock is on", () => {
+            expect(matchesShortcut(ctrlAlt("3", "Numpad3"), "ctrl+alt+3")).toBe(true);
+            expect(matchesShortcut(ctrlAlt("PageDown", "Numpad3"), "ctrl+alt+3")).toBe(false);
+            expect(matchesShortcut(ctrlAlt("3", "Numpad3"), "ctrl+alt+4")).toBe(false);
+        });
+    });
+
     describe("matchesShortcut empty-key guard", () => {
         it("should warn and return false when the key part is only whitespace", () => {
             const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
