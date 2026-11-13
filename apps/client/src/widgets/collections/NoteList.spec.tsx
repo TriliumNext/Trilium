@@ -21,7 +21,7 @@ import LoadResults from "../../services/load_results";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
 import type { ViewTypeOptions } from "./interface";
-import { CustomNoteList, shouldRenderNoteList, useNoteIds, useViewModeConfig } from "./NoteList";
+import { CustomNoteList, isNoteContentReady, shouldRenderNoteList, useNoteIds, useViewModeConfig } from "./NoteList";
 
 const wsHandlers = vi.hoisted(() => new Set<(message: unknown) => void>());
 vi.mock("../../services/ws", () => {
@@ -66,6 +66,23 @@ function branchEntitiesReloaded(parentNoteId: string, childNoteId: string) {
     loadResults.addBranch(branchId, "comp-1");
     return loadResults;
 }
+
+describe("isNoteContentReady", () => {
+    it("waits until the note's type widget shows it and has loaded what it loads", () => {
+        const note = buildNote({ title: "Note", type: "text" });
+        const loaded = { state: "loaded", retry: () => {} } as const;
+        const loading = { state: "loading", retry: () => {} } as const;
+
+        // The type is resolved, but the widget has not received the note yet.
+        expect(isNoteContentReady(note, loaded, undefined)).toBe(false);
+        expect(isNoteContentReady(note, loaded, { noteId: "previous" })).toBe(false);
+        // The widget shows the note and is still fetching its content.
+        expect(isNoteContentReady(note, loading, { noteId: note.noteId })).toBe(false);
+        expect(isNoteContentReady(note, loaded, { noteId: note.noteId })).toBe(true);
+        // A failed load does not hold the list back.
+        expect(isNoteContentReady(note, { state: "error", retry: () => {} }, { noteId: note.noteId })).toBe(true);
+    });
+});
 
 describe("shouldRenderNoteList", () => {
     const searchNote = buildNote({ title: "Search", type: "search" });

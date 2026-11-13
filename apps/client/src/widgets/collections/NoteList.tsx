@@ -5,6 +5,7 @@ import { Component, VNode } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import type { NoteContextDataMap } from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
@@ -78,12 +79,26 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
     const viewType = useNoteViewType(note);
     const noteType = useNoteProperty(note, "type");
     const contentLoad = useGetContextDataFrom(noteContext, "contentLoad");
+    const typeWidgetNote = useGetContextDataFrom(noteContext, "typeWidgetNote");
     const [ enabled, setEnabled ] = useState(noteContext?.hasNoteList());
     useEffect(() => {
         setEnabled(noteContext?.hasNoteList());
     }, [ note, noteContext, viewType, viewScope?.viewMode, noteType ]);
     return <CustomNoteList viewType={viewType} note={note} isEnabled={!!enabled} notePath={notePath} ntxId={ntxId}
-                           contentReady={contentLoad?.state !== "loading"} {...props} />;
+                           contentReady={isNoteContentReady(note, contentLoad, typeWidgetNote)} {...props} />;
+}
+
+/**
+ * Whether the note's own content has loaded, so the note list below it can start: the type widget
+ * shows the note and nothing it loads is pending. Resolving the type alone is not enough, since the
+ * widget's code and its content are still to come.
+ */
+export function isNoteContentReady(
+    note: FNote | null | undefined,
+    contentLoad: NoteContextDataMap["contentLoad"] | undefined,
+    typeWidgetNote: NoteContextDataMap["typeWidgetNote"] | undefined
+) {
+    return !!note && typeWidgetNote?.noteId === note.noteId && contentLoad?.state !== "loading";
 }
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {

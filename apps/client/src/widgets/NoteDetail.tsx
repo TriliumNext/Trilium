@@ -328,6 +328,15 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
         // When not visible, keep the old props to avoid re-rendering in the background.
     }, [ props, isVisible ]);
 
+    // Runs after the widget's own effects, so a widget that loads its content (`useNoteBlob()`)
+    // has already reported `contentLoad` as loading.
+    const shownNoteId = cachedProps.note?.noteId;
+    useEffect(() => {
+        if (isVisible && shownNoteId) {
+            cachedProps.noteContext?.setContextData("typeWidgetNote", { noteId: shownNoteId });
+        }
+    }, [ isVisible, shownNoteId, cachedProps.noteContext ]);
+
     // This widget stays mounted (just hidden) when the user switches note type —
     // e.g. read-only ↔ editable text — and also when an enclosing dialog such as the quick-edit
     // popup is closed but kept in the DOM. A hidden but still-mounted embedded player keeps playing
