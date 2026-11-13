@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
     vim: undefined as unknown,
     areHintsEnabled: false,
     vimModeLabel: null as string | null,
-    setVimModeLabel: vi.fn(),
+    setLabelValueWithInheritance: vi.fn(),
     setCommandLineSlot: vi.fn(),
     useStaticTooltip: vi.fn(),
     toggleVimKeyReference: vi.fn(),
@@ -27,10 +27,14 @@ vi.mock("../../services/i18n", () => ({
 }));
 vi.mock("../react/hooks", () => ({
     useGetContextDataFrom: () => mocks.vim,
-    useNoteLabel: () => [ mocks.vimModeLabel, mocks.setVimModeLabel ],
+    useNoteLabel: () => [ mocks.vimModeLabel, vi.fn() ],
     useTriliumOptionBool: () => [ mocks.areHintsEnabled, vi.fn() ],
     useTrackedElement: (ref: { current: HTMLElement | null }) => ref.current,
     useStaticTooltip: mocks.useStaticTooltip
+}));
+vi.mock("../../services/attributes", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/attributes")>()),
+    setLabelValueWithInheritance: mocks.setLabelValueWithInheritance
 }));
 vi.mock("../../menus/context_menu", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../menus/context_menu")>()),
@@ -164,12 +168,15 @@ describe("the mode", () => {
 });
 
 describe("VimModeBadge", () => {
-    it("shows whether the note has Vim mode, and writes its label on a click", () => {
+    it("shows whether the note has Vim mode, and sets its label only where needed on a click",
+        () => {
         const getTooltip = () => mocks.useStaticTooltip.mock.lastCall?.[1].title;
+        let note = {} as FNote;
         // A new note each time, as a component with hook state skips a render with the same props.
         const showBadge = (label: string | null) => {
             mocks.vimModeLabel = label;
-            act(() => render(<VimModeBadge note={{} as FNote} />, container));
+            note = {} as FNote;
+            act(() => render(<VimModeBadge note={note} />, container));
             return container.querySelector<HTMLButtonElement>("button.vim-mode-badge");
         };
 
@@ -181,13 +188,16 @@ describe("VimModeBadge", () => {
         badge?.dispatchEvent(mouseDown);
         expect(mouseDown.defaultPrevented).toBe(true);
         badge?.click();
-        expect(mocks.setVimModeLabel).toHaveBeenLastCalledWith("false");
+        // The badge shows while the option is on, so a note without the label has Vim mode.
+        expect(mocks.setLabelValueWithInheritance)
+            .toHaveBeenLastCalledWith(note, "vimMode", "false", "true");
 
         expect(showBadge("")?.getAttribute("aria-pressed")).toBe("true");
         expect(showBadge("false")?.getAttribute("aria-pressed")).toBe("false");
         expect(getTooltip()).toBe("vim_mode.badge_off_tooltip");
         badge?.click();
-        expect(mocks.setVimModeLabel).toHaveBeenLastCalledWith("true");
+        expect(mocks.setLabelValueWithInheritance)
+            .toHaveBeenLastCalledWith(note, "vimMode", "true", "true");
     });
 
     it("opens a menu of the note's Vim mode, the key hints, the settings and the help", () => {
@@ -223,7 +233,8 @@ describe("VimModeBadge", () => {
                 item.handler?.(item, new MouseEvent("click"));
             }
         }
-        expect(mocks.setVimModeLabel).toHaveBeenCalledWith("true");
+        expect(mocks.setLabelValueWithInheritance)
+            .toHaveBeenCalledWith(expect.anything(), "vimMode", "true", "true");
         expect(toggleOption).toHaveBeenCalledWith("vimModeHintsEnabled");
         expect(triggerCommand)
             .toHaveBeenCalledWith("showOptions", { section: "_optionsTextNotes" });

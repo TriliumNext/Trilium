@@ -10,6 +10,7 @@ import appContext from "../../components/app_context";
 import type NoteContext from "../../components/note_context";
 import type FNote from "../../entities/fnote";
 import contextMenu from "../../menus/context_menu";
+import { setLabelValueWithInheritance } from "../../services/attributes";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import { openInAppHelpFromUrl } from "../../services/utils";
@@ -42,17 +43,19 @@ export function useVimStatus(noteContext: NoteContext | null | undefined): VimSt
 
 /**
  * Turns Vim mode on or off for `note` with its `#vimMode` label. A right click opens the menu of
- * Vim mode. The status bar shows it while the Vim mode option is on, so only `#vimMode=false`
- * turns Vim mode off.
+ * Vim mode. The status bar shows it while the Vim mode option is on, so a note without the label
+ * has Vim mode: turning it on removes `#vimMode=false`, and writes `#vimMode=true` only over a
+ * `false` that the note inherits.
  */
 export function VimModeBadge({ note }: { note: FNote }) {
-    const [ label, setLabel ] = useNoteLabel(note, "vimMode");
+    const [ label ] = useNoteLabel(note, "vimMode");
     const isEnabled = label !== "false";
     const badgeRef = useRef<HTMLButtonElement>(null);
     const tooltip = isEnabled ? t("vim_mode.badge_on_tooltip") : t("vim_mode.badge_off_tooltip");
     const tooltipOptions = useMemo(() => ({ ...TOOLTIP_OPTIONS, title: tooltip }), [ tooltip ]);
     useStaticTooltip(badgeRef, tooltipOptions);
-    const toggle = () => setLabel(isEnabled ? "false" : "true");
+    const toggle = () =>
+        void setLabelValueWithInheritance(note, "vimMode", isEnabled ? "false" : "true", "true");
 
     return (
         <Button
