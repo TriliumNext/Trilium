@@ -390,6 +390,33 @@ describe("isIOS (named export)", () => {
     });
 });
 
+describe("isAppleTouchDevice", () => {
+    it("matches an iPhone and an iPad that reports a Mac, but not a Mac or Windows", async () => {
+        const { isAppleTouchDevice } = await import("./utils.js");
+        const ua = vi.spyOn(navigator, "userAgent", "get");
+        const setTouchPoints = (count: number) =>
+            Object.defineProperty(navigator, "maxTouchPoints", {
+                value: count, configurable: true
+            });
+        try {
+            ua.mockReturnValue("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)");
+            setTouchPoints(5);
+            expect(isAppleTouchDevice()).toBe(true);
+
+            ua.mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15");
+            expect(isAppleTouchDevice()).toBe(true);
+            setTouchPoints(0);
+            expect(isAppleTouchDevice()).toBe(false);
+
+            ua.mockReturnValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            setTouchPoints(10);
+            expect(isAppleTouchDevice()).toBe(false);
+        } finally {
+            setTouchPoints(0);
+        }
+    });
+});
+
 describe("electron-aware helpers", () => {
     it("reloadFrontendApp uses electronApi when present and logs the reason", () => {
         const reloadAllWindows = vi.fn();
