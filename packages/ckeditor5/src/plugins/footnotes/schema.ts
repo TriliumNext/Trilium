@@ -26,8 +26,9 @@ export const defineSchema = (schema: ModelSchema): void => {
         allowAttributes: [ATTRIBUTES.footnoteSection, ATTRIBUTES.footnoteId, ATTRIBUTES.footnoteIndex]
     });
 
-    /** Editable footnote item content container. */
+    /** Editable footnote item content container, a limit as the nested editable of a widget is. */
     schema.register(ELEMENTS.footnoteContent, {
+        isLimit: true,
         allowIn: ELEMENTS.footnoteItem,
         allowContentOf: "$root",
         allowAttributes: [ATTRIBUTES.footnoteSection]

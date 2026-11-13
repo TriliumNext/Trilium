@@ -1,6 +1,6 @@
 import type { Editor, ModelPosition, ModelRange } from "ckeditor5";
 
-import type { LineIndex, LinePosition } from "./vim_lines.js";
+import { type LineIndex, type LinePosition, toCharacterEdge } from "./vim_lines.js";
 
 /** The most matches that show highlighted at once. */
 const MAX_HIGHLIGHTS = 1000;
@@ -56,6 +56,10 @@ export class SearchCursor {
         return this.find(false);
     }
 
+    findPrevious() {
+        return this.find(true);
+    }
+
     find(isBackward?: boolean): string[] | null {
         const index = this.host.getFullIndex();
         const last = this.last;
@@ -88,10 +92,13 @@ export class SearchCursor {
             return;
         }
         const index = this.host.getFullIndex();
-        const start = index.positionAt(last.line, last.start);
-        const end = index.positionAt(last.line, last.end);
-        const oldText = index.getText(last.line).slice(last.start, last.end);
-        const newEnd = this.host.replace(start, end, text, oldText);
+        const lineText = index.getText(last.line);
+        // A match that ends inside a character, as before a combining accent, takes all of it.
+        const from = toCharacterEdge(lineText, last.start, false);
+        const to = toCharacterEdge(lineText, last.end, true);
+        const newText = lineText.slice(from, last.start) + text + lineText.slice(last.end, to);
+        const newEnd = this.host.replace(index.positionAt(last.line, from),
+            index.positionAt(last.line, to), newText, lineText.slice(from, to));
         if (!newEnd) {
             return;
         }

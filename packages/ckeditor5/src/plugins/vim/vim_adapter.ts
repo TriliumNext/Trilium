@@ -3,8 +3,9 @@ import type {
 } from "@replit/codemirror-vim-core";
 import {
     type Batch, type DifferItem, type Editor, EmitterMixin, env, type ModelDocumentChangeEvent,
-    type ModelElement, ModelLivePosition, type ModelPosition, type ModelRange, type ModelTextProxy,
-    TableUtils, TableWalker, type ViewElement
+    type ModelDocumentSelectionChangeRangeEvent, type ModelElement, ModelLivePosition,
+    type ModelPosition, type ModelRange, type ModelTextProxy, TableUtils, TableWalker,
+    type ViewElement
 } from "ckeditor5";
 
 import { OPEN_ATTRIBUTE } from "../collapsible/constants.js";
@@ -174,6 +175,8 @@ export default class VimAdapter {
     private lastReadContent:
         { text: string; lines: RichContent; range: RichContent | null } | null = null;
     private isRevealing = false;
+    /** The gravity override of `leaveTwoStepBoundary()`, until it is restored. */
+    private gravityOverride: string | null = null;
     private readonly bookmarks = new Set<Bookmark>();
     /**
      * The selection that the engine made last, the range that it became in the model, which the
@@ -188,9 +191,11 @@ export default class VimAdapter {
         this.highlights = new SearchHighlights(editor, () => this.getFullIndex());
         this.root = editor.editing.view.getDomRoot() as HTMLElement;
         const document = editor.model.document;
-        this.emitter.listenTo(document.selection, "change:range", () => {
-            this.isSelectionChanged = true;
-        });
+        this.emitter.listenTo<ModelDocumentSelectionChangeRangeEvent>(document.selection,
+            "change:range", (_evt, { directChange }) => {
+                this.isSelectionChanged = true;
+                this.restoreGravity(directChange);
+            });
         this.emitter.listenTo<ModelDocumentChangeEvent>(document, "change",
             (_evt, batch) => this.onDocumentChange(batch), { priority: "low" });
         if (editor.plugins.has(FindReveal)) {
@@ -434,6 +439,16 @@ export default class VimAdapter {
 
         const clippedStart = this.toCharacterEdge(this.clipPos(start), false);
         const clippedEnd = this.toCharacterEdge(this.clipPos(end), true);
+        // Text to the end of a later line goes as `d` takes the later lines, whole, and then the
+        // rest of the first line. CKEditor's undo of a merge puts the merged block after one put
+        // back at its place since.
+        const { line } = clippedStart;
+        const isToLineEnd = clippedEnd.ch >= index.getText(clippedEnd.line).length;
+        if (!text && isToLineEnd && clippedEnd.line > line && index.lines[line].kind === "text") {
+            removeLines(this.editor, index, line + 1, clippedEnd.line);
+            const lineEnd = new VimPosition(line, this.getLine(line).length);
+            return this.replaceRange("", clippedStart, lineEnd);
+        }
         const range = this.toModelRange(clippedStart, clippedEnd);
         const selection = this.editor.model.document.selection;
         const focus = selection.focus;
@@ -599,8 +614,10 @@ export default class VimAdapter {
         return new SearchCursor({
             getFullIndex: () => this.getFullIndex(),
             toShownPosition: (modelPosition) => this.toShownPosition(modelPosition),
-            replace: (start, end, text, oldText) => this.asVimOperation(() => replaceText(
-                this.editor, this.editor.model.createRange(start, end), text, oldText))
+            replace: (start, end, text, oldText) => this.editor.isReadOnly
+                ? null
+                : this.asVimOperation(() => replaceText(
+                    this.editor, this.editor.model.createRange(start, end), text, oldText))
         }, query, this.toModelPosition(position));
     }
 
@@ -775,6 +792,7 @@ export default class VimAdapter {
 
     destroy() {
         this.emitter.stopListening();
+        this.restoreGravity(true);
         this.highlights.hide();
         this.releaseLineHandles();
         for (const bookmark of [ ...this.bookmarks ]) {
@@ -819,9 +837,26 @@ export default class VimAdapter {
     leaveTwoStepBoundary() {
         const model = this.editor.model;
         const selection = model.document.selection;
-        if (selection.isCollapsed && selection.focus && isAtTwoStepBoundary(selection.focus)) {
-            model.change((writer) => writer.overrideSelectionGravity());
+        if (!this.gravityOverride && selection.isCollapsed && selection.focus
+            && isAtTwoStepBoundary(selection.focus)) {
+            model.change((writer) => {
+                this.gravityOverride = writer.overrideSelectionGravity();
+            });
         }
+    }
+
+    /**
+     * Gives the selection back the gravity that `leaveTwoStepBoundary()` took, once the caret
+     * moves, or typing takes it away from the boundary, as `TwoStepCaretMovement` does.
+     */
+    private restoreGravity(isDirectChange: boolean) {
+        const uid = this.gravityOverride;
+        const focus = this.editor.model.document.selection.focus;
+        if (!uid || (!isDirectChange && focus && isAtTwoStepBoundary(focus))) {
+            return;
+        }
+        this.gravityOverride = null;
+        this.editor.model.change((writer) => writer.restoreSelectionGravity(uid));
     }
 
     /** The line of the object that the selection is on, or `null`. */

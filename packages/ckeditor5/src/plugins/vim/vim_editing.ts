@@ -4,9 +4,12 @@ import {
     ViewDocumentDomEventData, type ViewRange
 } from "ckeditor5";
 
+import { OPEN_ATTRIBUTE } from "../collapsible/constants.js";
 import CollapsibleListItems from "../collapsible_list_items.js";
 import HiddenBlocks from "../hidden_blocks.js";
-import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
+import {
+    type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine, toCharacterEdge
+} from "./vim_lines.js";
 
 /** The attributes whose boundary the caret steps over in two presses, as at the end of a link. */
 const TWO_STEP_ATTRIBUTES = [ "linkHref", "code" ];
@@ -65,7 +68,6 @@ export function removeLines(editor: Editor, index: LineIndex, first: number, las
         const span = index.getSpan(container) as { first: number; last: number };
         return first >= span.first && last <= span.last;
     };
-    const units = new Set<ModelElement>();
     for (const removal of removals) {
         if ("element" in removal) {
             removal.element = getRemovalUnit(model.schema, removal.element, removedElements,
@@ -79,15 +81,44 @@ export function removeLines(editor: Editor, index: LineIndex, first: number, las
             writer.setAttribute("listIndent", Number(block.getAttribute("listIndent")) - levels,
                 block);
         }
-        for (const removal of removals.reverse()) {
-            if (!("element" in removal)) {
-                writer.remove(removal.range);
-            } else if (!units.has(removal.element)) {
-                units.add(removal.element);
-                removeBlock(writer, removal.element);
+        for (const group of groupRemovals(model.schema, removals).reverse()) {
+            if ("range" in group) {
+                writer.remove(group.range);
+            } else {
+                removeBlocks(writer, group.blocks);
             }
         }
     });
+}
+
+/**
+ * `removals` in the order of the note, each element once, with the blocks that follow one another
+ * as siblings in one group. A title is a group of its own.
+ */
+function groupRemovals(
+    schema: ModelSchema, removals: Removal[]
+): ({ blocks: ModelElement[] } | { range: ModelRange })[] {
+    const groups: ({ blocks: ModelElement[] } | { range: ModelRange })[] = [];
+    const grouped = new Set<ModelElement>();
+    for (const removal of removals) {
+        if (!("element" in removal)) {
+            groups.push(removal);
+            continue;
+        }
+        const block = removal.element;
+        if (grouped.has(block)) {
+            continue;
+        }
+        grouped.add(block);
+        const last = groups.at(-1);
+        const isNextTo = !!last && "blocks" in last && last.blocks.at(-1)?.nextSibling === block;
+        if (isNextTo && !isTitle(schema, block) && !isTitle(schema, last.blocks[0])) {
+            last.blocks.push(block);
+        } else {
+            groups.push({ blocks: [ block ] });
+        }
+    }
+    return groups;
 }
 
 /**
@@ -172,15 +203,19 @@ function getSegmentRange(
 }
 
 /**
- * Removes `block`, or clears it when it is a title. A limit that it leaves empty keeps a paragraph.
+ * Removes `blocks`, siblings that follow one another, with one operation, since undo transforms
+ * each operation against every later one. A title is cleared instead. A limit that they leave
+ * empty keeps a paragraph.
  */
-function removeBlock(writer: ModelWriter, block: ModelElement) {
-    if (isTitle(writer.model.schema, block)) {
-        writer.remove(writer.createRangeIn(block));
+function removeBlocks(writer: ModelWriter, blocks: ModelElement[]) {
+    const [ first ] = blocks;
+    if (isTitle(writer.model.schema, first)) {
+        writer.remove(writer.createRangeIn(first));
         return;
     }
-    const parent = block.parent as ModelElement;
-    writer.remove(block);
+    const parent = first.parent as ModelElement;
+    writer.remove(writer.createRange(
+        writer.createPositionBefore(first), writer.createPositionAfter(blocks[blocks.length - 1])));
     if (!parent.is("rootElement") && parent.isEmpty) {
         writer.insertElement("paragraph", parent, 0);
     }
@@ -193,14 +228,19 @@ export function isTitle(schema: ModelSchema, block: ModelElement) {
 
 /**
  * Where blocks go after `anchor`, or before it. Nothing goes beside a title: the blocks go to the
- * start of the content after it, such as the panel of a tab, or else after its container.
+ * start of the content after it, such as the panel of a tab, or else after its container. Blocks
+ * go around a closed collapsible block, whose body does not show.
  */
 export function getBlockPosition(
     writer: ModelWriter, anchor: ModelElement, isAfter: boolean
 ): ModelPosition {
     const schema = writer.model.schema;
-    if (!isTitle(schema, anchor)) {
-        return isAfter ? writer.createPositionAfter(anchor) : writer.createPositionBefore(anchor);
+    const container = anchor.parent as ModelElement;
+    const isClosedTitle = anchor.is("element", "summary")
+        && !container.getAttribute(OPEN_ATTRIBUTE);
+    if (!isTitle(schema, anchor) || isClosedTitle) {
+        const block = isClosedTitle ? container : anchor;
+        return isAfter ? writer.createPositionAfter(block) : writer.createPositionBefore(block);
     }
     const body = anchor.nextSibling;
     const bodyStart = body?.is("element") ? writer.createPositionAt(body, 0) : null;
@@ -210,14 +250,15 @@ export function getBlockPosition(
     const afterTitle = writer.createPositionAfter(anchor);
     return schema.checkChild(afterTitle, "paragraph")
         ? afterTitle
-        : writer.createPositionAfter(anchor.parent as ModelElement);
+        : writer.createPositionAfter(container);
 }
 
 /**
  * Replaces `range`, which holds `oldText`, with `text`. A line break in `text`, `\n` or `\r`,
  * splits the block, or adds a soft break in a code block or a title. The new text takes the
  * formatting of the text it replaces, as typed text would. Returns the position after the new
- * text, or `null` when nothing changed: an object is never replaced by text.
+ * text, where the changes that follow it, such as those of autoformat, leave it, or `null` when
+ * nothing changed: an object is never replaced by text.
  */
 export function replaceText(
     editor: Editor, range: ModelRange, text: string, oldText: string
@@ -230,16 +271,18 @@ export function replaceText(
         return range.end;
     }
 
-    let end: ModelPosition | null = null;
-    model.change((writer) => {
+    const end = model.change((writer) => {
         const attributes = getTextAttributes(range);
         let position = range.start;
         if (!range.isCollapsed) {
             position = deleteRange(editor, writer, range);
         }
-        end = insertLines(writer, position, text.split(/\r\n?|\n/), attributes);
+        const inserted = insertLines(writer, position, text.split(/\r\n?|\n/), attributes);
+        return ModelLivePosition.fromPosition(inserted, "toPrevious");
     });
-    return end;
+    const position = end.toPosition();
+    end.detach();
+    return position;
 }
 
 /**
@@ -306,7 +349,8 @@ function rewriteLine(
 
 /**
  * The spans from the first to the last character that differs between `oldText` and `text` in
- * each part of the line between two objects, or with `isWhole`, each such part whole.
+ * each part of the line between two objects, or with `isWhole`, each such part whole. A span takes
+ * whole characters, such as a letter with its combining accent.
  */
 function getChangedSpans(oldText: string, text: string, isWhole: boolean): [ number, number ][] {
     const spans: [ number, number ][] = [];
@@ -324,7 +368,9 @@ function getChangedSpans(oldText: string, text: string, isWhole: boolean): [ num
             last--;
         }
         if (first < last) {
-            spans.push([ first, last ]);
+            spans.push([
+                toCharacterEdge(oldText, first, false), toCharacterEdge(oldText, last, true)
+            ]);
         }
         partStart = ch + 1;
     }
@@ -499,8 +545,19 @@ export function joinLine(
         model.createPositionAt(current.block, current.end), "toPrevious");
     const leftText = index.getText(line);
     const rightText = index.getText(line + 1);
-    model.change((writer) => writer.setSelection(writer.createPositionAt(next.block, next.start)));
-    fireViewEvent(editor, "delete", { direction: "backward", unit: "character", sequence: 1 });
+    if (canMoveInto(editor, current.block, next.block)) {
+        // Undo of a merge puts the block back after a block inserted in its place since.
+        model.change((writer) => {
+            const end = writer.createPositionAt(current.block, "end");
+            writer.move(writer.createRangeIn(next.block), end);
+            writer.remove(next.block);
+            writer.setSelection(joinPoint.toPosition());
+        });
+    } else {
+        model.change((writer) =>
+            writer.setSelection(writer.createPositionAt(next.block, next.start)));
+        fireViewEvent(editor, "delete", { direction: "backward", unit: "character", sequence: 1 });
+    }
 
     const position = joinPoint.toPosition();
     joinPoint.detach();
@@ -521,6 +578,20 @@ export function joinLine(
         });
     }
     return position;
+}
+
+/**
+ * Whether `next`, the block after `current`, joins `current` as Backspace would merge it, by its
+ * content moving in: neither is a list item or a code block, which Backspace treats in ways of
+ * their own, `current` is not empty, which Backspace removes instead, and it takes every node of
+ * `next`.
+ */
+function canMoveInto(editor: Editor, current: ModelElement, next: ModelElement): boolean {
+    const schema = editor.model.schema;
+    const isPlain = (block: ModelElement) =>
+        !block.hasAttribute("listItemId") && !block.is("element", "codeBlock");
+    return current.nextSibling === next && !current.isEmpty && isPlain(current) && isPlain(next)
+        && [ ...next.getChildren() ].every((child) => schema.checkChild(current, child));
 }
 
 /** Whether Backspace at the start of `next` would merge it into `current` or move blocks. */

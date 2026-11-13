@@ -124,6 +124,21 @@ describe("Vim mode registers", () => {
                 + item("i", "a") + item("H", "b"));
         });
 
+        it("puts lines around a closed collapsible block, whose body does not show", async () => {
+            const closed = "<details><summary>Closed</summary>"
+                + `${paragraphs("hidden one", "hidden two")}</details>`;
+            const editor = await createVimEditor(paragraphs("[]five") + closed);
+            press(editor, "ddp");
+            expect(getContent(editor)).toBe(closed + paragraphs("five"));
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "kyyP");
+            expect(getContent(editor)).toBe(paragraphs("Closed") + closed + paragraphs("five"));
+            expect(getCursor(editor)).toBe("0:0");
+            press(editor, "jyyp");
+            expect(getContent(editor)).toBe(paragraphs("Closed") + closed
+                + paragraphs("Closed", "five"));
+        });
+
         it("puts a title as a paragraph, and on a title into the content under it", async () => {
             const tabs = (...panel: string[]) => "<tabs><tab><tabTitle>[]Plan</tabTitle>"
                 + `<tabPanel>${paragraphs(...panel)}</tabPanel></tab></tabs>`;
@@ -383,10 +398,37 @@ describe("Vim mode registers", () => {
         it("are left behind when the text of the register changes", async () => {
             const editor = await createVimEditor(`<paragraph>${BOLD_WORD} []word</paragraph>`);
             press(editor, "0yiwwviwp$p");
-            expect(getContent(editor)).toBe(`<paragraph>${BOLD_WORD} wordword</paragraph>`);
+            expect(getContent(editor)).toBe(`<paragraph>${BOLD_WORD} ${BOLD_WORD}word</paragraph>`);
             press(editor, "0\"ayiw\"Ayl$p$\"ap");
             expect(getContent(editor)).toBe(
-                `<paragraph>${BOLD_WORD} wordwordwordwwordw</paragraph>`);
+                `<paragraph>${BOLD_WORD} ${BOLD_WORD}wordwordwwordw</paragraph>`);
+        });
+
+        it("go over a Visual selection with their formatting", async () => {
+            const editor = await createVimEditor(
+                `<paragraph>aa ${BOLD_WORD.replace("word", "[]word")} bb</paragraph>`
+                + "<paragraph>one <$text italic=\"true\">two</$text> three</paragraph>");
+            press(editor, "yiwjwviwp");
+            expect(getContent(editor)).toContain(`<paragraph>one ${BOLD_WORD} three</paragraph>`);
+            expect(getCursor(editor)).toBe("1:7");
+            expect(getStatus(editor).mode).toBe("normal");
+            press(editor, "$p");
+            expect(getContent(editor)).toContain(
+                `<paragraph>one ${BOLD_WORD} three<$text italic="true">two</$text></paragraph>`);
+
+            setVimData(editor, `<paragraph>[]${BOLD_WORD} x</paragraph>${paragraphs("y", "z")}`);
+            press(editor, "yyjVjp");
+            expect(getContent(editor)).toBe(`<paragraph>${BOLD_WORD} x</paragraph>`.repeat(2));
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "p");
+            expect(getLines(editor)).toBe("word x|word x|y|z");
+
+            setVimData(editor, `[${HR}]${code("c")}`);
+            press(editor, "yyjVp");
+            expect(getLines(editor)).toBe("\u{FFFC}|c");
+            expect(getStatus(editor).message?.text)
+                .toBe("A widget cannot be put into a code block");
+            expect(getStatus(editor).mode).toBe("normal");
         });
 
         it("come back from the clipboard while it holds their text", async () => {

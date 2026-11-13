@@ -3,7 +3,8 @@ import type {
     MotionArgs, OperatorArgs, OperatorFn, Pos, Vim, vimActions, vimKey, vimMotions, vimState
 } from "@replit/codemirror-vim-core";
 import {
-    isHighSurrogateHalf, isLowSurrogateHalf, type ModelElement, type ModelPosition
+    isHighSurrogateHalf, isLowSurrogateHalf, type ModelElement, ModelLivePosition,
+    type ModelPosition
 } from "ckeditor5";
 
 import VimAdapter, { getActiveAdapter, VimPosition } from "./vim_adapter.js";
@@ -49,11 +50,48 @@ const CHARACTER_SEARCHES = [
 /** Whether a motion of the macro being played failed, which stops the rest of it, as in Vim. */
 let isMacroStopped = false;
 
+/** A macro being played: how many of its keys are left, and the macro its last keys call. */
+interface MacroRun {
+    keysLeft: number;
+    next: { name: string; repeat: number } | null;
+}
+
+/** The macros being played, the innermost last. */
+const macroRuns: MacroRun[] = [];
+
+/** How many macros one call of a macro plays at most, and how many inside one another. */
+const MAX_MACRO_CALLS = 10000;
+const MAX_NESTED_MACROS = 100;
+
 /**
  * Whether the operator about to run follows `j`, `k` or another line motion, which in a table move
  * down and up a column.
  */
 let isColumnMotion = false;
+
+/**
+ * The arguments that `:ck` gives the editor commands that take their value in another shape than
+ * `{ value }`, from the text after the name of the command.
+ */
+const COMMAND_ARGUMENTS: Record<string, (value: string) => unknown[]> = {
+    link: (href) => [ href ],
+    insertText: (text) => [ { text } ],
+    codeBlock: (language) => [ { language, forceValue: true } ],
+    admonition: (forceValue) => [ { forceValue } ],
+    listStyle: (type) => [ { type } ],
+    referenceLink: (href) => [ { href } ],
+    insertImage: (source) => [ { source } ],
+    imageInsert: (source) => [ { source } ],
+    insertLinkEmbed: (url) => [ { url } ],
+    insertTable: (size) => {
+        const [ rows, columns = rows ] = size.split(/[\sx,]+/u).map(Number);
+        return [ { rows, columns } ];
+    },
+    textPartLanguage: (language) => {
+        const [ languageCode, textDirection ] = language.split(/[\s:]+/u);
+        return [ { languageCode, textDirection } ];
+    }
+};
 
 /** The keys that the user mapped, by the mode they apply in, or under `all` for every mode. */
 const userMappings = new Map<VimKeyContext | "all", Set<string>>();
@@ -96,15 +134,61 @@ const TRILIUM_KEYS: vimKey[] = [
 export function installTriliumCommands(vim: Vim) {
     const builtIns = captureBuiltIns(vim);
     defineEditingCommands(vim, builtIns.actions, builtIns.operators);
+    defineMacroReplay(vim, builtIns.actions);
     defineColumnOperators(vim, builtIns.operators);
     defineMotions(vim, builtIns.motions);
     defineActions(vim);
-    defineExCommands(vim, builtIns.exCommands);
+    defineExCommands(vim, builtIns.exCommands, builtIns.actions);
     addTriliumKeys(vim);
     wrapRegisters(vim);
     stopMacrosAtFailures(vim);
     recordMappings(vim, builtIns.exCommands);
     defineHintsOption(vim);
+    checkExRanges(builtIns.exCommands);
+}
+
+/**
+ * Checks the range of every Ex command as Vim does: a backward range is swapped, line 0 is the
+ * first line, and a line outside the note is an error. A range alone goes to the last line at
+ * most.
+ */
+function checkExRanges(exCommands: ExCommands) {
+    for (const [ name, command ] of Object.entries(exCommands)) {
+        exCommands[name] = function (this: unknown, cm, params, ...rest: unknown[]) {
+            const adapter = cm as unknown as VimAdapter;
+            const range = getExRange(adapter, params, name === "move");
+            if (!range) {
+                adapter.host.notify(adapter.editor.t("Invalid range"));
+                return;
+            }
+            (command as (...args: unknown[]) => void).call(this, cm, { ...params, ...range },
+                ...rest);
+        } as ExCommand;
+    }
+}
+
+/**
+ * The lines of the range of `params` in the order of the note, or `null` when one is outside the
+ * note. Line 0 of Vim, -1 for the engine, is the first line. With `isClamped`, a line past the last
+ * line is the last line.
+ */
+function getExRange(
+    adapter: VimAdapter, params: ExParams, isClamped: boolean
+): Partial<ExParams> | null {
+    if (params.line === undefined) {
+        return {};
+    }
+    const last = adapter.lastLine();
+    const ends = [ params.line, params.lineEnd ?? params.line ].map((line) => {
+        const fixed = line === -1 ? 0 : line;
+        return isClamped ? Math.min(fixed, last) : fixed;
+    });
+    if (ends.some((line) => line < 0 || line > last)) {
+        return null;
+    }
+    const [ line, lineEnd ] = ends.sort((a, b) => a - b);
+    const end = params.lineEnd === undefined ? undefined : lineEnd;
+    return { line, lineEnd: end, selectionLine: line, selectionLineEnd: end };
 }
 
 /**
@@ -128,6 +212,12 @@ function defineHintsOption(vim: Vim) {
 /** Whether the user mapped `keys` in `context`, with `:map` or one of its variants. */
 export function isUserMapped(keys: string, context: VimKeyContext): boolean {
     return !!userMappings.get(context)?.has(keys) || !!userMappings.get("all")?.has(keys);
+}
+
+/** Whether `keys` start a longer mapping of the user in `context`. */
+export function startsUserMapping(keys: string, context: VimKeyContext): boolean {
+    return [ ...userMappings.get(context) ?? [], ...userMappings.get("all") ?? [] ]
+        .some((mapped) => mapped.length > keys.length && mapped.startsWith(keys));
 }
 
 /** Adds the keys of Trilium, the ones `:mapclear` removes included. */
@@ -301,12 +391,13 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
             void readClipboard(adapter, register).then((text) => {
                 // Vim mode, the note or the cursor can change while the clipboard is read.
                 if (adapter.state.vim === state && getPutPlace(adapter, state) === place) {
-                    adapter.operation(() => put(adapter, this, actionArgs, state, register, text));
+                    adapter.operation(() =>
+                        put(vim, adapter, this, actionArgs, state, register, text));
                 }
             });
             return;
         }
-        put(adapter, this, actionArgs, state, register, register.toString());
+        put(vim, adapter, this, actionArgs, state, register, register.toString());
     });
 
     // The engine removes the last line from the end of the line before, which in a note would take
@@ -469,18 +560,22 @@ function yankParts(
  * a rich content.
  */
 function put(
-    adapter: VimAdapter, actions: Actions, actionArgs: ActionArgs, state: vimState,
-        register: Register,
-    text: string
+    vim: Vim, adapter: VimAdapter, actions: Actions, actionArgs: ActionArgs, state: vimState,
+    register: Register, text: string
 ) {
-    if (!text) {
+    if (!text || adapter.editor.isReadOnly) {
         return;
     }
     // The engine names the flag of `:put` `lineWise`.
     const isLinewise = !!(actionArgs as { lineWise?: boolean }).lineWise || register.linewise;
     const content = getRichContent(register, text);
     if (state.visualMode) {
-        actions.continuePaste(adapter as unknown as CodeMirrorV, actionArgs, state, text, register);
+        if (content && isLinewise === state.visualLine) {
+            putOverSelection(vim, adapter, state, content, text, actionArgs.repeat);
+        } else {
+            actions.continuePaste(adapter as unknown as CodeMirrorV, actionArgs, state, text,
+                register);
+        }
         return;
     }
     if (isLinewise) {
@@ -488,10 +583,9 @@ function put(
         const start = putLines(adapter.editor, adapter.index(), cursorLine,
             !!actionArgs.after, content, text, actionArgs.repeat);
         if (start) {
-            const { line } = adapter.locatePosition(start);
-            adapter.setCursor(line, Math.max(adapter.getLine(line).search(/\S/), 0));
-        } else if (adapter.index().getElement(cursorLine)?.is("element", "codeBlock")) {
-            adapter.host.notify(adapter.editor.t("A widget cannot be put into a code block"));
+            setCursorOnLineOf(adapter, start);
+        } else {
+            notifyNothingPut(adapter, cursorLine);
         }
         return;
     }
@@ -500,6 +594,58 @@ function put(
         return;
     }
     actions.continuePaste(adapter as unknown as CodeMirrorV, actionArgs, state, text, register);
+}
+
+/**
+ * Puts `content`, which holds `text`, `count` times over the Visual selection: text over the
+ * selected text, or lines over the lines of Visual Line mode. The selection goes to the unnamed
+ * register with its formatting, as in Vim.
+ */
+function putOverSelection(
+    vim: Vim, adapter: VimAdapter, state: vimState, content: RichContent, text: string,
+    count: number
+) {
+    const isLines = state.visualLine;
+    const first = Math.min(state.sel.anchor.line, state.sel.head.line);
+    const last = Math.max(state.sel.anchor.line, state.sel.head.line);
+    const start = adapter.getCursor("start");
+    const end = adapter.getCursor("end");
+    const replaced = isLines
+        ? adapter.readLines([ { first, last } ])
+        : adapter.getRange(start, end);
+    const replacedContent = adapter.takeReadContent(replaced, isLines);
+    const unnamed = vim.getRegisterController().unnamedRegister;
+    unnamed.setText(replaced, isLines);
+    rememberRichContent(unnamed, replacedContent as RichContent);
+    vim.exitVisualMode(adapter as unknown as CodeMirrorV, false);
+    if (!isLines) {
+        adapter.replaceRange("", start, end);
+        putInline(adapter, content, false, count);
+        return;
+    }
+    const put = putLines(adapter.editor, adapter.index(), last, true, content, text, count);
+    if (!put) {
+        adapter.setCursor(start);
+        notifyNothingPut(adapter, last);
+        return;
+    }
+    const putStart = ModelLivePosition.fromPosition(put, "toNext");
+    adapter.replaceRange("", new VimPosition(first, 0), new VimPosition(last + 1, 0));
+    setCursorOnLineOf(adapter, putStart.toPosition());
+    putStart.detach();
+}
+
+/** Puts the cursor on the first character that is not a space of the line of `position`. */
+function setCursorOnLineOf(adapter: VimAdapter, position: ModelPosition) {
+    const { line } = adapter.locatePosition(position);
+    adapter.setCursor(line, Math.max(adapter.getLine(line).search(/\S/), 0));
+}
+
+/** Says why lines were not put at line `line`, a code line that takes no widget. */
+function notifyNothingPut(adapter: VimAdapter, line: number) {
+    if (adapter.index().getElement(line)?.is("element", "codeBlock")) {
+        adapter.host.notify(adapter.editor.t("A widget cannot be put into a code block"));
+    }
 }
 
 /** Where a put goes: the version of the note, the mode and the selection, as one key. */
@@ -549,7 +695,8 @@ function defineMotions(vim: Vim, motions: Motions) {
         const text = cm.getLine(head.line);
         const isForward = !!motionArgs.forward;
         let ch = head.ch;
-        for (let step = 0; step < motionArgs.repeat; step++) {
+        // The steps stop one past the edge of the line, however large the count.
+        for (let step = 0; step < motionArgs.repeat && ch >= 0 && ch <= text.length; step++) {
             ch = toCharacterEdge(text, ch + (isForward ? 1 : -1), isForward);
         }
         const isAtEdge = isForward ? ch > Math.max(text.length - 1, 0) : head.ch <= 0;
@@ -568,15 +715,42 @@ function defineMotions(vim: Vim, motions: Motions) {
     });
 
     // `j`, `k` and the other line motions stop the macro being played at the first or last line.
+    // As in Vim, an operator takes the lines up to the edge of the note with a count that passes
+    // it, and none when the cursor is on the edge.
     vim.defineMotion("moveByLines", function (
         this: Motions, cm, head, motionArgs, state, inputState
     ) {
         isColumnMotion = !!inputState.operator;
+        const isMove = !!(motionArgs.repeat + (motionArgs.repeatOffset ?? 0));
+        const isAtEdge = motionArgs.forward ? head.line >= cm.lastLine() : head.line <= 0;
+        if (isMove && isAtEdge && inputState.operator) {
+            stopMacro(vim);
+            return null;
+        }
         const found = motions.moveByLines.call(this, cm, head, motionArgs, state);
-        if (motionArgs.repeat + (motionArgs.repeatOffset ?? 0) && found.line === head.line) {
+        if (isMove && found.line === head.line) {
             stopMacro(vim);
         }
-        return found;
+        const line = Math.min(Math.max(found.line, 0), cm.lastLine());
+        return line === found.line ? found : new VimPosition(line, found.ch);
+    });
+
+    // An operator with `)` in the last sentence of the note takes its last character too, as the
+    // cursor of Vim goes past it.
+    vim.defineMotion("moveBySentence", function (
+        this: Motions, cm, head, motionArgs, state, inputState
+    ) {
+        const found = motions.moveBySentence.call(this, cm, head, motionArgs, state, inputState);
+        if (!inputState.operator || !motionArgs.forward || found.line !== cm.lastLine()) {
+            return found;
+        }
+        const text = cm.getLine(found.line);
+        const isMoved = found.line !== head.line || found.ch !== head.ch;
+        const isSentenceStart = isMoved && /[.!?][)\]"']*\s+$/u.test(text.slice(0, found.ch));
+        const isLastCharacter = !text.slice(found.ch + 1).trim();
+        return isLastCharacter && !isSentenceStart
+            ? new VimPosition(found.line, text.length)
+            : found;
     });
 
     // The engine keeps the second half of a character of two units, such as an emoji, as the
@@ -677,6 +851,43 @@ function moveByDisplayLines(
     return current;
 }
 
+/**
+ * The number at or after column `ch` of `text`, a hexadecimal, a binary or a decimal one, and
+ * where it starts. Only a decimal number takes the minus sign before it.
+ */
+function findNumber(text: string, ch: number): { start: number; text: string } | null {
+    for (const match of text.matchAll(/(-?)(0[xX][\da-fA-F]+|0[bB][01]+|\d+)/gu)) {
+        const [ whole, sign, digits ] = match;
+        if (match.index + whole.length > ch) {
+            return /^0[xXbB]/u.test(digits)
+                ? { start: match.index + sign.length, text: digits }
+                : { start: match.index, text: whole };
+        }
+    }
+    return null;
+}
+
+/**
+ * `number`, which `findNumber()` found, with `step` added. A number that starts with 0 keeps its
+ * width, and a hexadecimal one the case of its last letter. Hexadecimal and binary numbers are
+ * unsigned numbers of 64 bits, as in Vim.
+ */
+function addToNumber(number: string, step: number): string {
+    const prefixed = /^0([xXbB])(.+)$/u.exec(number);
+    if (!prefixed) {
+        const value = Number(number) + step;
+        const digits = number.replace("-", "");
+        const width = digits.startsWith("0") ? digits.length : 0;
+        return `${value < 0 ? "-" : ""}${String(Math.abs(value)).padStart(width, "0")}`;
+    }
+    const [ , kind, digits ] = prefixed;
+    const size = 2n ** 64n;
+    const value = ((BigInt(`0${kind.toLowerCase()}${digits}`) + BigInt(step)) % size + size) % size;
+    const result = value.toString(/x/iu.test(kind) ? 16 : 2).padStart(digits.length, "0");
+    const isUpperCase = /[A-F]/u.test(digits.match(/[a-f]/giu)?.at(-1) ?? "");
+    return `0${kind}${isUpperCase ? result.toUpperCase() : result}`;
+}
+
 /** The line before the next heading after `line`, or before the heading before it. */
 function findSectionEnd(adapter: VimAdapter, line: number, isForward: boolean): number {
     if (isForward) {
@@ -688,12 +899,38 @@ function findSectionEnd(adapter: VimAdapter, line: number, isForward: boolean): 
 }
 
 function defineActions(vim: Vim) {
+    // `Ctrl+A` and `Ctrl+X` read a number that starts with 0 as a decimal one, as Vim does by
+    // default, and keep the width of a number with leading zeros.
+    vim.defineAction("incrementNumberToken", (cm, actionArgs) => {
+        const adapter = cm as unknown as VimAdapter;
+        const cursor = adapter.getCursor();
+        const found = findNumber(adapter.getLine(cursor.line), cursor.ch);
+        if (!found) {
+            return;
+        }
+        const text = addToNumber(found.text, (actionArgs.increase ? 1 : -1) * actionArgs.repeat);
+        adapter.replaceRange(text, new VimPosition(cursor.line, found.start),
+            new VimPosition(cursor.line, found.start + found.text.length));
+        adapter.setCursor(cursor.line, found.start + text.length - 1);
+    });
     vim.defineAction("triliumFold", (cm, actionArgs) => {
         const adapter = cm as unknown as VimAdapter;
         const { fold: action, isNested } = actionArgs as ActionArgs & FoldArgs;
         if (!fold(adapter, adapter.getCursor().line, action, isNested)) {
             adapter.host.notify(adapter.editor.t("Nothing to fold here"));
         }
+    });
+    // The Ex command of a mapping, on the Visual selection or on the lines of a count, as `:`
+    // would offer it.
+    vim.defineAction("triliumRunEx", (cm, actionArgs, state) => {
+        const { input } = actionArgs as unknown as { input: string };
+        let range = "";
+        if (state.visualMode) {
+            range = "'<,'>";
+        } else if (actionArgs.repeatIsExplicit) {
+            range = `.,.+${actionArgs.repeat - 1}`;
+        }
+        vim.handleEx(cm, `${range}${input}`);
     });
     vim.defineAction("triliumFollowLink", (cm) => (cm as unknown as VimAdapter).host.followLink());
     vim.defineAction("triliumQuit", (cm) => (cm as unknown as VimAdapter).host.closeTab());
@@ -704,10 +941,56 @@ function defineActions(vim: Vim) {
     });
 }
 
-function defineExCommands(vim: Vim, exCommands: ExCommands) {
+function defineExCommands(vim: Vim, exCommands: ExCommands, actions: Actions) {
     const substitute = exCommands.substitute;
     exCommands.substitute = function (this: unknown, cm, params) {
+        const adapter = cm as unknown as VimAdapter;
+        const [ pattern, , flags ] = params.argString ? splitSubstitute(params.argString) : [];
+        if (!pattern && !vim.getVimGlobalState_().query) {
+            adapter.host.notify(adapter.editor.t("No previous regular expression"));
+            return;
+        }
+        if (pattern && vim.getOption("pcre") && !isRegExp(pattern)) {
+            adapter.host.notify(adapter.editor.t("Invalid regex: %0", [ pattern ]));
+            return;
+        }
+        if (flags && !/^[&cegiInp#lr]*\s*\d*\s*$/u.test(flags)) {
+            adapter.host.notify(adapter.editor.t("Trailing characters: %0", [ flags.trim() ]));
+            return;
+        }
         substitute.call(this, cm, { ...params, argString: toEngineReplacement(params.argString) });
+    };
+    const global = exCommands.global;
+    exCommands.global = function (this: unknown, cm, params) {
+        const adapter = cm as unknown as VimAdapter;
+        const argString = params.argString?.replace(/^!/u, "");
+        if (argString?.startsWith("/") && !splitSubstitute(argString)[0]
+            && !vim.getVimGlobalState_().query) {
+            adapter.host.notify(adapter.editor.t("No previous regular expression"));
+            return;
+        }
+        global.call(this, cm, params);
+    };
+    const normal = exCommands.normal;
+    exCommands.normal = function (this: unknown, cm, params) {
+        if (!params.argString?.replace(/^!/u, "").trim()) {
+            const adapter = cm as unknown as VimAdapter;
+            adapter.host.notify(adapter.editor.t("Argument required"));
+            return;
+        }
+        normal.call(this, cm, params);
+    };
+    // `:join` joins the lines of its range, or the line with the next one, and nothing with a
+    // range of one line.
+    exCommands.join = (cm, params) => {
+        const line = params.selectionLine as number;
+        const lineEnd = params.selectionLineEnd;
+        const joins = lineEnd === undefined ? 1 : lineEnd - line;
+        if (joins) {
+            cm.setCursor(new VimPosition(line, 0));
+            const joinArgs = { repeat: joins + 1, keepSpaces: !!params.argString?.startsWith("!") };
+            actions.joinLines(cm, joinArgs as ActionArgs, cm.state.vim);
+        }
     };
 
     const save = (cm: CodeMirrorV) => (cm as unknown as VimAdapter).host.save();
@@ -763,6 +1046,36 @@ function toEngineReplacement(argString: string): string {
 }
 
 /**
+ * The parts of `argString`, the arguments of `:s` or `:g`, between the separators, the first
+ * character being one, as the engine splits them: the pattern, the replacement and the flags.
+ */
+function splitSubstitute(argString: string): string[] {
+    const separator = argString.charAt(0);
+    const parts = [ "" ];
+    for (let index = 1; index < argString.length; index++) {
+        const character = argString.charAt(index);
+        if (character === separator) {
+            parts.push("");
+            continue;
+        }
+        const escaped = character === "\\" ? argString.slice(index, index + 2) : character;
+        parts[parts.length - 1] += escaped;
+        index += escaped.length - 1;
+    }
+    return parts;
+}
+
+/** Whether `pattern` is a regular expression of JavaScript. */
+function isRegExp(pattern: string): boolean {
+    try {
+        new RegExp(pattern);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Runs the editor command of `:ck`, named by the first argument, with the rest of the arguments as
  * its value. With a range, the command acts on its lines, or on the Visual selection it came from.
  */
@@ -785,7 +1098,18 @@ function runEditorCommand(adapter: VimAdapter, params: ExParams) {
         adapter.setSelection(range.from, range.to);
     }
     if (command.isEnabled) {
-        editor.execute(name, ...(rest.length ? [ { value: rest.join(" ") } ] : []));
+        const notifyFailure = () =>
+            adapter.host.notify(editor.t("The editor command %0 failed", [ name ]));
+        const value = rest.join(" ");
+        const toArguments = COMMAND_ARGUMENTS[name] ?? ((each: string) => [ { value: each } ]);
+        try {
+            const result: unknown = editor.execute(name, ...(value ? toArguments(value) : []));
+            if (result instanceof Promise) {
+                result.catch(notifyFailure);
+            }
+        } catch {
+            notifyFailure();
+        }
     } else {
         adapter.host.notify(editor.t("The editor command %0 is not available here", [ name ]));
     }
@@ -829,14 +1153,108 @@ function isOnlyWidgets(adapter: VimAdapter, from: Pos, to: Pos): boolean {
     return true;
 }
 
-/** Skips the keys of a macro once one of its motions failed, until the next key of the user. */
+/**
+ * Plays macros. `@@` does nothing before a macro ran. A macro that calls a macro with its last keys
+ * goes on to that macro rather than holding it in a call, so that one that calls itself, as a
+ * macro repeated up to a motion that fails does, plays in a loop. The calls stop after
+ * `MAX_MACRO_CALLS` macros, or `MAX_NESTED_MACROS` macros played one inside the other.
+ */
+function defineMacroReplay(vim: Vim, actions: Actions) {
+    const replayMacro = actions.replayMacro;
+    vim.defineAction("replayMacro", function (this: Actions, cm, actionArgs, state) {
+        const adapter = cm as unknown as VimAdapter;
+        const macroState = vim.getVimGlobalState_().macroModeState;
+        const name = actionArgs.selectedCharacter === "@"
+            ? macroState.latestRegister
+            : actionArgs.selectedCharacter;
+        if (!name) {
+            return;
+        }
+        const repeat = actionArgs.repeat;
+        const outer = macroRuns.at(-1);
+        if (outer && !outer.keysLeft) {
+            outer.next = { name, repeat };
+            return;
+        }
+        if (macroRuns.length >= MAX_NESTED_MACROS) {
+            stopMacroCalls(adapter);
+            return;
+        }
+        const queue = [ { name, repeat } ];
+        let calls = 0;
+        while (queue.length) {
+            const call = queue[queue.length - 1];
+            if (!call.repeat) {
+                queue.pop();
+                continue;
+            }
+            call.repeat--;
+            if (++calls > MAX_MACRO_CALLS) {
+                stopMacroCalls(adapter);
+                return;
+            }
+            const run: MacroRun = { keysLeft: countMacroKeys(vim, call.name), next: null };
+            macroRuns.push(run);
+            try {
+                playRegister(vim, call.name, run.keysLeft, () => replayMacro.call(this, cm,
+                    { ...actionArgs, selectedCharacter: call.name, repeat: 1 }, state));
+            } finally {
+                macroRuns.pop();
+            }
+            if (run.next) {
+                queue.push(run.next);
+            }
+        }
+    });
+}
+
+/**
+ * Plays register `name`, which has `keyCount` keys, with `play`. A register of text, which no
+ * recording filled, has no typing for the keys that enter Insert mode, which then type nothing.
+ */
+function playRegister(vim: Vim, name: string, keyCount: number, play: () => void) {
+    const register = vim.getRegisterController().getRegister(name);
+    const recorded = register.insertModeChanges;
+    const nothing = Array.from({ length: keyCount }, () => ({ changes: [] }));
+    register.insertModeChanges = [ ...recorded, ...nothing ] as typeof recorded;
+    try {
+        play();
+    } finally {
+        register.insertModeChanges = recorded;
+    }
+}
+
+/** The number of keys that playing register `name` presses, as the engine splits them. */
+function countMacroKeys(vim: Vim, name: string): number {
+    if (name === ":") {
+        return 0;
+    }
+    const register = vim.getRegisterController().getRegister(name);
+    return register.keyBuffer.reduce((count, text) =>
+        count + [ ...text.matchAll(/<(?:[CSMA]-)*\w+>|./gi) ].length, 0);
+}
+
+/** Stops the macros being played, which called macros too many times, with a message. */
+function stopMacroCalls(adapter: VimAdapter) {
+    adapter.host.notify(adapter.editor.t("The macro called itself too many times"));
+    isMacroStopped = true;
+}
+
+/**
+ * Skips the keys of a macro once one of its motions failed, until the next key of the user, and
+ * counts the keys of the macro being played.
+ */
 function stopMacrosAtFailures(vim: Vim) {
     const handleKey = vim.handleKey.bind(vim);
     vim.handleKey = (cm, key, origin) => {
         if (origin !== "macro") {
             isMacroStopped = false;
-        } else if (isMacroStopped) {
-            return true;
+        } else {
+            // Only the macros that `defineMacroReplay()` plays press keys of a macro.
+            (macroRuns.at(-1) as MacroRun).keysLeft--;
+            if (isMacroStopped) {
+                return true;
+            }
         }
         return handleKey(cm, key, origin);
     };
@@ -858,12 +1276,26 @@ function recordMappings(vim: Vim, exCommands: ExCommands) {
         }
         return keys;
     };
+    // The target is the rest of the line, spaces included. A target that starts with `:` runs
+    // that command, with or without `<CR>` after it.
     const map = exCommands.map as MapCommand;
     exCommands.map = function (this: unknown, cm, params, ...rest: unknown[]) {
-        map.call(this, cm, params, ...rest as [ string | undefined ]);
-        const [ lhs, rhs ] = params.args ?? [];
-        if (lhs && rhs) {
-            getKeys(rest[0] as string | undefined).add(lhs);
+        const context = rest[0] as string | undefined;
+        const [ lhs = "" ] = params.args ?? [];
+        const rhs = lhs ? (params.argString as string).trim().slice(lhs.length).trimStart() : "";
+        const input = /^:(.+?)(?:<CR>)?$/isu.exec(rhs)?.[1];
+        if (input && !lhs.startsWith(":") && !/<CR>/iu.test(input)) {
+            const actionArgs = { input } as unknown as ActionArgsPartial;
+            vim._mapCommand({
+                keys: lhs, type: "action", action: "triliumRunEx", actionArgs,
+                ...context ? { context: context as vimKey["context"] } : {}
+            });
+        } else {
+            map.call(this, cm, { ...params, args: rhs ? [ lhs, rhs ] : params.args },
+                ...rest as [ string | undefined ]);
+        }
+        if (rhs) {
+            getKeys(context).add(lhs);
         }
     } as ExCommand;
     const unmap = exCommands.unmap as MapCommand;

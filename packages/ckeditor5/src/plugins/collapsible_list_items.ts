@@ -417,7 +417,9 @@ export default class CollapsibleListItems extends Plugin {
 
             let changed = false;
             for (const block of changedBlocks) {
-                for (const ancestor of getCollapsedAncestors(block)) {
+                // Undo brings back the collapsed state that the change it takes back expanded.
+                const ancestors = writer.batch.isUndo ? [] : getCollapsedAncestors(block);
+                for (const ancestor of ancestors) {
                     // An ancestor inserted in the same change set arrived together with its
                     // hidden children (data load, paste of a collapsed subtree) — keep it.
                     if (insertedNodes.has(ancestor)) {

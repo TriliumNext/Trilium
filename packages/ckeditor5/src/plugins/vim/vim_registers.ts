@@ -178,17 +178,20 @@ export function putLines(
 
         const anchor = entry.kind === "text" ? entry.block : entry.element;
         const destination = entry.kind === "text" ? entry.block : null;
-        let position = getBlockPosition(writer, anchor, isAfter);
+        const position = getBlockPosition(writer, anchor, isAfter);
         const fitter = new BlockFitter(writer, destination, blocks);
-        let firstPut: ModelElement | null = null;
-        for (const block of blocks) {
-            if (fitter.fit(block, position)) {
-                writer.insert(block, position);
-                firstPut ??= block;
-                position = writer.createPositionAfter(block);
-            }
+        const fitting = blocks.filter((block) => fitter.fit(block, position));
+        if (!fitting.length) {
+            return null;
         }
-        return firstPut ? getStartOf(writer, firstPut) : null;
+        // One insertion puts them all, since undo transforms each operation against every later
+        // one.
+        const fragment = writer.createDocumentFragment();
+        for (const block of fitting) {
+            writer.append(block, fragment);
+        }
+        writer.insert(fragment, position);
+        return getStartOf(writer, fitting[0]);
     });
 }
 

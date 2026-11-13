@@ -136,6 +136,18 @@ describe("VimAdapter", () => {
     });
 
     describe("positions", () => {
+        it("deletes text to the end of a later line as whole lines, and to the start of one",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]ab", "x", "cd", "ef"));
+            const adapter = getAdapter(editor);
+            adapter.operation(() => adapter.replaceRange("", new VimPosition(0, 1),
+                new VimPosition(2, 0)));
+            expect(getLines(editor)).toBe("acd|ef");
+            adapter.operation(() => adapter.replaceRange("", new VimPosition(0, 1),
+                new VimPosition(1, 2)));
+            expect(getLines(editor)).toBe("a");
+        });
+
         it("matches brackets across lines", async () => {
             const editor = await createVimEditor(paragraphs("[]f(a, (b", "c)) (", ")"));
             press(editor, "f(%");

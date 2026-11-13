@@ -8,6 +8,7 @@ import Admonition from "../src/plugins/admonition/admonition.js";
 import Collapsible from "../src/plugins/collapsible/collapsible.js";
 import CollapsibleHeadings from "../src/plugins/collapsible_headings/collapsible_headings.js";
 import CollapsibleListItems from "../src/plugins/collapsible_list_items.js";
+import DropDisallowedAttributes from "../src/plugins/drop_disallowed_attributes.js";
 import KeepViewMappings from "../src/plugins/keep_view_mappings.js";
 import Multicolumn from "../src/plugins/multicolumn/multicolumn.js";
 import SortSelection from "../src/plugins/sort_selection/sort_selection.js";
@@ -25,7 +26,7 @@ export const VIM_PLUGINS: Plugins = [
     Essentials, Paragraph, Heading, Bold, Italic, Code, Link, List, BlockQuote, CodeBlock, Table,
     TableCaption, HorizontalLine, Image, ImageCaption, ImageInline, Indent, IndentBlock, Alignment,
     Admonition, Collapsible, CollapsibleHeadings, CollapsibleListItems, Multicolumn, Tabs,
-    SortSelection, TestBoxPlugin, KeepViewMappings, TriliumVim
+    SortSelection, TestBoxPlugin, KeepViewMappings, DropDisallowedAttributes, TriliumVim
 ];
 
 /** An editor with Vim mode on, and the content `data` in the model data format. */

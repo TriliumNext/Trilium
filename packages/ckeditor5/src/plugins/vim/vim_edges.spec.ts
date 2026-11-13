@@ -1,11 +1,13 @@
 import type { Vim } from "@replit/codemirror-vim-core";
 import {
-    type Editor, Enter, ImageBlock, MentionEditing, MutationObserver as ViewMutationObserver,
-    Paragraph, Plugin, ShiftEnter, Typing, ViewDocumentDomEventData
+    Autoformat, type ClassicEditor, Command, type Editor, Enter, ImageBlock, MentionEditing,
+    type ModelElement, MutationObserver as ViewMutationObserver, Paragraph, Plugin, ShiftEnter,
+    Typing, ViewDocumentDomEventData
 } from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
+import { seedFootnotes } from "../../../test/footnotes-kit.js";
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
     press, setVimData, typeText
@@ -13,6 +15,7 @@ import {
 import ContentEmbed from "../content_embed/content_embed.js";
 import ContentEmbedCaret from "../content_embed/content_embed_caret.js";
 import FindReveal from "../find_reveal.js";
+import Footnotes from "../footnotes/footnotes.js";
 import TriliumMentionUI from "../mention/trilium_mention_ui.js";
 import TriliumVim from "./vim.js";
 import VimAdapter, { VimPosition } from "./vim_adapter.js";
@@ -331,9 +334,16 @@ describe("Vim mode edge cases", () => {
             expect(getLines(editor)).toBe("xcab|x");
             press(editor, "==");
             expect(getLines(editor)).toBe("xcab|x");
+            engine().getRegisterController().getRegister("z").setText("Q");
+            editor.model.change((writer) => writer.setSelection(writer.createRange(
+                writer.createPositionAt(block as never, 0),
+                    writer.createPositionAt(block as never, 1))));
+            press(editor, "\"zp");
+            expect(getLines(editor)).toBe("Qcab|x");
+            engine().getRegisterController().getRegister("z").setText("");
             editor.enableReadOnlyMode("spec");
             press(editor, "r<CR>");
-            expect(getLines(editor)).toBe("xcab|x");
+            expect(getLines(editor)).toBe("Qcab|x");
         });
 
         it("reads a Visual selection of a widget from its start to its end", async () => {
@@ -519,6 +529,123 @@ describe("Vim mode edge cases", () => {
             expect(getContent(editor)).toContain("<$text italic=\"true\"> a</$text>");
         });
 
+        it("give each editor command of :ck its value in the shape it takes", async () => {
+            const editor = await createVimEditor(paragraphs("[]alpha beta"));
+            const message = () => getStatus(editor).message?.text;
+            press(editor, "viw:ck link https://example.com<CR>");
+            expect(getContent(editor)).toBe("<paragraph><$text linkHref=\"https://example.com\">"
+                + "alpha</$text> beta</paragraph>");
+            for (const [ command, expected ] of [
+                [ "codeBlock python", "<codeBlock language=\"python\">x</codeBlock>" ],
+                [ "admonition warning",
+                    "<aside admonitionType=\"warning\"><paragraph>x</paragraph></aside>" ],
+                [ "insertText hi", "<paragraph>hix</paragraph>" ]
+            ]) {
+                setVimData(editor, paragraphs("[]x"));
+                press(editor, `:ck ${command}<CR>`);
+                expect(getContent(editor), command).toBe(expected);
+            }
+            setVimData(editor, paragraphs("[]x"));
+            press(editor, ":ck insertTable 2 3<CR>");
+            const table = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+            expect(table.is("element", "table")).toBe(true);
+            expect(table.childCount).toBe(2);
+            expect((table.getChild(0) as ModelElement).childCount).toBe(3);
+            press(editor, ":ck insertTable 2<CR>");
+            const square = editor.model.document.selection.getFirstPosition()
+                ?.findAncestor("table") as ModelElement;
+            expect([ square.childCount, (square.getChild(0) as ModelElement).childCount ])
+                .toEqual([ 2, 2 ]);
+
+            const addCommand = (name: string, execute: () => unknown) => {
+                const command = Object.assign(new Command(editor), { execute });
+                command.refresh();
+                editor.commands.add(name, command);
+            };
+            for (const [ name, value, args ] of [
+                [ "listStyle", "square", { type: "square" } ],
+                [ "referenceLink", "#root/abc", { href: "#root/abc" } ],
+                [ "insertImage", "a.png", { source: "a.png" } ],
+                [ "imageInsert", "a.png", { source: "a.png" } ],
+                [ "insertLinkEmbed", "https://a.org", { url: "https://a.org" } ],
+                [ "textPartLanguage", "ar:rtl", { languageCode: "ar", textDirection: "rtl" } ]
+            ] as const) {
+                const execute = vi.fn();
+                addCommand(name, execute);
+                press(editor, `:ck ${name} ${value}<CR>`);
+                expect(execute, name).toHaveBeenCalledWith(args);
+            }
+
+            const error = vi.spyOn(console, "error");
+            setVimData(editor, paragraphs("[]x"));
+            press(editor, ":ck heading<CR>");
+            expect(message()).toBe("The editor command heading failed");
+            addCommand("failing", vi.fn().mockRejectedValue(new Error("no")));
+            press(editor, ":ck failing<CR>");
+            await vi.waitFor(() => expect(message()).toBe("The editor command failing failed"));
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("drop the attributes of a code block that a heading or a paragraph cannot have",
+            async () => {
+            const editor = await createVimEditor(
+                "<codeBlock language=\"plaintext\">[]a<softBreak></softBreak>b</codeBlock>");
+            press(editor, ":ck heading heading3<CR>");
+            expect(getContent(editor)).toBe("<heading3>a<softBreak></softBreak>b</heading3>");
+            setVimData(editor, "<codeBlock language=\"plaintext\">[]a</codeBlock>");
+            await editor.plugins.get(TriliumVim).setEnabled(false);
+            editor.execute("paragraph");
+            expect(getContent(editor)).toBe("<paragraph>a</paragraph>");
+        });
+
+        it("run the Ex command of a mapping, all of it, on a count of lines or a selection",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]a", "b", "c", "d", "e"));
+            press(editor, ":map ,d :d<CR>");
+            press(editor, ",d");
+            expect(getLines(editor)).toBe("b|c|d|e");
+            press(editor, ":mapclear<CR>:nmap ,d :d<CR>");
+            press(editor, "2,d");
+            expect(getLines(editor)).toBe("d|e");
+            press(editor, ":nmap ,s :s/d/D/<lt>CR><CR>,s");
+            expect(getLines(editor)).toBe("D|e");
+            press(editor, ":vmap gb :ck bold<CR>viwgb");
+            expect(getContent(editor)).toBe(
+                `<paragraph><$text bold="true">D</$text></paragraph>${paragraphs("e")}`);
+            expect(getStatus(editor).mode).toBe("normal");
+            press(editor, ":nmap ,j j:s/e/E E/<lt>CR>k<CR>,j");
+            expect(getLines(editor)).toBe("D|E E");
+            expect(getCursor(editor)).toBe("0:0");
+            press(editor, ":nmapclear<CR>:vmapclear<CR>,d<Esc>");
+            expect(getLines(editor)).toBe("D|E E");
+        });
+
+        it("wait a second for the rest of a mapping after keys that are a command of their own",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]xax ax", "y"));
+            vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
+            try {
+                press(editor, ":nmap ,d :d<CR>fa;,");
+                expect(getCursor(editor)).toBe("0:4");
+                expect(getStatus(editor).pendingKeys).toBe(",");
+                vi.advanceTimersByTime(1000);
+                expect(getCursor(editor)).toBe("0:1");
+                expect(getStatus(editor).pendingKeys).toBe("");
+                press(editor, ";,l");
+                expect(getCursor(editor)).toBe("0:2");
+                press(editor, "2,<Esc>");
+                vi.advanceTimersByTime(1000);
+                expect(getLines(editor)).toBe("xax ax|y");
+                expect(getCursor(editor)).toBe("0:2");
+                press(editor, ",d");
+                expect(getLines(editor)).toBe("y");
+            } finally {
+                press(editor, ":nmapclear<CR>");
+                vi.useRealTimers();
+            }
+        });
+
         it("change nothing on widgets selected backward", async () => {
             const editor = await createVimEditor(
                 "<horizontalLine></horizontalLine>[<horizontalLine></horizontalLine>]");
@@ -615,6 +742,27 @@ describe("Vim mode edge cases", () => {
     });
 
     describe("structure", () => {
+        it("keep an empty line in the text of a footnote that its lines leave", async () => {
+            const editor = await createVimEditor(undefined, {}, [ Footnotes ]);
+            const text = "text\u{FFFC}\u{FFFC}";
+            for (const [ keys, lines ] of [
+                [ "jdd", `${text}||note 2` ],
+                [ "jVd", `${text}||note 2` ],
+                [ "j:d<CR>", `${text}||note 2` ],
+                [ "jdj", `${text}||` ],
+                [ "jVjd", `${text}||` ],
+                [ "jddjx", `${text}||ote 2` ]
+            ]) {
+                seedFootnotes(editor as unknown as ClassicEditor, 2);
+                editor.model.change((writer) => writer.setSelection(
+                    editor.model.document.getRoot()?.getChild(0) as ModelElement, 0));
+                press(editor, keys);
+                expect(getLines(editor), keys).toBe(lines);
+            }
+            expect(getContent(editor))
+                .toContain("<footnoteContent><paragraph></paragraph></footnoteContent>");
+        });
+
         it("skips a collapsed section, and finds section edges without headings", async () => {
             const editor = await createVimEditor(
                 "<heading2 headingCollapsed=\"true\">[]H</heading2>" + paragraphs("a", "b")
@@ -676,6 +824,30 @@ describe("Vim mode edge cases", () => {
             await editor.plugins.get(TriliumVim).setEnabled(true);
             press(editor, "u");
             expect(getLines(editor)).toBe("ab");
+        });
+
+        it("puts the lines that J and c joined back in their place after a later deletion",
+            async () => {
+            const editor = await createVimEditor();
+            for (const keys of [ "J", ":1,3j<CR>", "cjx<Esc>", "c2jx<Esc>", "Vjcx<Esc>" ]) {
+                setVimData(editor, paragraphs("[]A", "B", "C", "D"));
+                press(editor, keys);
+                press(editor, "jdduu");
+                expect(getLines(editor), keys).toBe("A|B|C|D");
+            }
+        });
+
+        it("collapses a nested list item again", async () => {
+            const collapsed = (text: string, id: string, indent: number) =>
+                item(text, id, indent).replace("<paragraph ", "<paragraph listCollapsed=\"true\" ");
+            const editor = await createVimEditor("<heading2>H</heading2>" + collapsed("D1", "a", 0)
+                + item("D2", "b", 1) + collapsed("D3", "c", 1) + item("D4", "d", 2)
+                + paragraphs("D5", "[]D6"));
+            const before = getContent(editor);
+            press(editor, "d[[");
+            expect(getLines(editor)).toBe("D2|D3|D4|D6");
+            press(editor, "u");
+            expect(getContent(editor)).toBe(before);
         });
     });
 
@@ -746,6 +918,243 @@ describe("Vim mode edge cases", () => {
             expect(getLines(editor)).toBe("caf");
             expect(error).not.toHaveBeenCalled();
             error.mockRestore();
+        });
+
+        it("change the case of a letter with a combining accent as one character", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("caf[]é x"));
+            const selection = editor.model.document.selection;
+            press(editor, "~");
+            expect(getLines(editor)).toBe("cafÉ x");
+            expect(getCursor(editor)).toBe("0:5");
+            expect(selection.isCollapsed).toBe(true);
+            for (const keys of [ "0g~iw", "0gUiw", "03lvU", ":s/e/E/<CR>" ]) {
+                press(editor, "u");
+                expect(getLines(editor), keys).toBe("café x");
+                press(editor, keys);
+                expect(getLines(editor).toUpperCase(), keys).toBe("CAFÉ X");
+                expect(getStatus(editor).mode, keys).toBe("normal");
+                expect(getStatus(editor).pendingKeys, keys).toBe("");
+                expect(selection.isCollapsed, keys).toBe(true);
+            }
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+    });
+
+    describe("the edges of the note", () => {
+        it("take the lines up to the edge with a count that passes it, and none without room",
+            async () => {
+            const error = vi.spyOn(console, "error");
+            const lines = [ "first", "second", "third", "fourth", "fifth" ];
+            const at = (line: number) => paragraphs(...lines.map((text, index) =>
+                index === line ? `[]${text}` : text));
+            const editor = await createVimEditor(at(1));
+            const selection = editor.model.document.selection;
+            press(editor, "d9j");
+            expect(getLines(editor)).toBe("first");
+            expect(selection.isCollapsed).toBe(true);
+            expect(getStatus(editor).pendingKeys).toBe("");
+            press(editor, "x");
+            expect(getLines(editor)).toBe("irst");
+
+            setVimData(editor, at(1));
+            press(editor, "y2kGp");
+            expect(getLines(editor)).toBe("first|second|third|fourth|fifth|first|second");
+            setVimData(editor, at(3));
+            press(editor, "gU2j");
+            expect(getLines(editor)).toBe("first|second|third|FOURTH|FIFTH");
+            setVimData(editor, at(2));
+            press(editor, "4>k");
+            expect(getContent(editor))
+                .toContain("<paragraph blockIndent=\"40px\">third</paragraph>");
+
+            setVimData(editor, at(0));
+            press(editor, "jyykdkd2kckgUkykp");
+            expect(getLines(editor)).toBe("first|second|second|third|fourth|fifth");
+            expect(getStatus(editor).mode).toBe("normal");
+            setVimData(editor, at(4));
+            press(editor, "kyyjdjcjgUjyjp");
+            expect(getLines(editor)).toBe("first|second|third|fourth|fifth|fourth");
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("delete to the end of the note with ) on the last sentence", async () => {
+            const editor = await createVimEditor(paragraphs("One. []Two end."));
+            press(editor, "d)");
+            expect(getLines(editor)).toBe("One. ");
+            for (const [ text, keys, expected ] of [
+                [ "[]One. Two end.", ")", "One. Two end." ],
+                [ "[]One. Two end.", "d)", "Two end." ],
+                [ "One. Two end[].", "d)", "One. Two end" ],
+                [ "One. []X", "d)", "One. " ]
+            ]) {
+                setVimData(editor, paragraphs(text));
+                press(editor, keys);
+                expect(getLines(editor), `${text} ${keys}`).toBe(expected);
+            }
+            setVimData(editor, paragraphs("[]One. Two", "x"));
+            press(editor, "d)");
+            expect(getLines(editor)).toBe("Two|x");
+            setVimData(editor, paragraphs("a[]b", "cd"));
+            press(editor, "d/cd<CR>");
+            expect(getLines(editor)).toBe("a|cd");
+        });
+    });
+
+    describe("bad input", () => {
+        it("lets typing take the formatting of the text after `A` left a link", async () => {
+            const editor = await createVimEditor("<paragraph>[]Read the "
+                + "<$text linkHref=\"https://example.com\">handbook</$text></paragraph>"
+                + "<paragraph>Some text with a <$text bold=\"true\">bold word</$text></paragraph>");
+            press(editor, "A");
+            typeText(editor, "x");
+            press(editor, "<Esc>");
+            expect(editor.model.document.selection.isGravityOverridden).toBe(false);
+            press(editor, "j$ciw");
+            typeText(editor, "xyz");
+            press(editor, "<Esc>");
+            expect(getContent(editor)).toBe("<paragraph>Read the "
+                + "<$text linkHref=\"https://example.com\">handbook</$text>x</paragraph>"
+                + "<paragraph>Some text with a <$text bold=\"true\">bold xyz</$text></paragraph>");
+
+            setVimData(editor, "<paragraph>[]a <$text linkHref=\"x\">b</$text></paragraph>");
+            press(editor, "A");
+            expect(editor.model.document.selection.isGravityOverridden).toBe(true);
+            await editor.plugins.get(TriliumVim).setEnabled(false);
+            expect(editor.model.document.selection.isGravityOverridden).toBe(false);
+        });
+
+        it("count numbers that start with 0 in tens and keep their width", async () => {
+            const editor = await createVimEditor();
+            for (const [ text, keys, expected, cursor ] of [
+                [ "date 2026-[]08-09", "<C-a>", "date 2026-07-09", "0:11" ],
+                [ "date 2026-08-[]09", "<C-x>", "date 2026-08-10", "0:14" ],
+                [ "[]C08 level", "<C-a>", "C09 level", "0:2" ],
+                [ "[]007", "<C-a>", "008", "0:2" ],
+                [ "[]099", "<C-a>", "100", "0:2" ],
+                [ "[]-1", "<C-a>", "0", "0:0" ],
+                [ "[]9", "3<C-x>", "6", "0:0" ],
+                [ "[]0x0f", "<C-a>", "0x10", "0:3" ],
+                [ "[]0x1E", "<C-a>", "0x1F", "0:3" ],
+                [ "[]-0x10", "<C-a>", "-0x11", "0:4" ],
+                [ "[]0b101", "<C-a>", "0b110", "0:4" ],
+                [ "no number[]", "<C-a>", "no number", "0:8" ]
+            ]) {
+                setVimData(editor, paragraphs(text));
+                press(editor, keys);
+                expect(getLines(editor), text).toBe(expected);
+                expect(getCursor(editor), text).toBe(cursor);
+            }
+        });
+
+        it("do nothing for `@@` before any macro, and stop a macro that calls itself",
+            async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("[]abc"));
+            engine().getVimGlobalState_().macroModeState.latestRegister = undefined;
+            press(editor, "x@@");
+            expect(getLines(editor)).toBe("bc");
+            press(editor, "qaqqa@aq@a");
+            expect(getLines(editor)).toBe("bc");
+            expect(getStatus(editor).message?.text).toBe("The macro called itself too many times");
+            press(editor, "\"byl@b");
+            expect(getStatus(editor).mode).toBe("normal");
+            setVimData(editor, paragraphs("[]ix"));
+            press(editor, "yiw0@0");
+            expect(getLines(editor)).toBe("x");
+            expect(getStatus(editor).mode).toBe("normal");
+            setVimData(editor, paragraphs("[]ab", "ab"));
+            press(editor, ":s/a/A/<CR>j@:");
+            expect(getLines(editor)).toBe("Ab|Ab");
+            press(editor, "qcqqc@cjq@c");
+            expect(getLines(editor)).toBe("Ab|Ab");
+            expect(getStatus(editor).message?.text).toBe("The macro called itself too many times");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("answer patterns and commands that are empty or wrong with a message", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("zzz", "[]a(b"));
+            const message = () => getStatus(editor).message?.text;
+            (engine().getVimGlobalState_() as { query?: RegExp }).query = undefined;
+            press(editor, ":s/(/x/<CR>");
+            expect(message()).toBe("Invalid regex: (");
+            press(editor, ":s//x/<CR>");
+            expect(message()).toBe("No previous regular expression");
+            press(editor, ":g/<CR>");
+            expect(message()).toBe("No previous regular expression");
+            press(editor, ":normal<CR>");
+            expect(message()).toBe("Argument required");
+            expect(getLines(editor)).toBe("zzz|a(b");
+            press(editor, ":?zzz?d<CR>");
+            expect(getLines(editor)).toBe("a(b");
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("swap a backward range, take line 0 for the first line and refuse lines past the note",
+            async () => {
+            const editor = await createVimEditor(
+                paragraphs("one", "two", "[]three", "four", "five", "six"));
+            const message = () => getStatus(editor).message?.text;
+            for (const [ command, expected ] of [
+                [ ":5,3d", "one|two|six" ],
+                [ ":0d", "two|three|four|five|six" ],
+                [ ":0,2d", "three|four|five|six" ],
+                [ ":3,1j", "one two three|four|five|six" ],
+                [ ":3<CR>:j", "one|two|three four|five|six" ],
+                [ ":2,2j", "one|two|three|four|five|six" ],
+                [ ":3,2y<CR>Gp", "one|two|three|four|five|six|two|three" ]
+            ]) {
+                press(editor, `${command}<CR>`);
+                expect(getLines(editor), command).toBe(expected);
+                press(editor, "u");
+                expect(getLines(editor), command).toBe("one|two|three|four|five|six");
+            }
+            for (const command of [ ":.,$-9d", ":2,99d", ":.,.+99999d" ]) {
+                press(editor, `${command}<CR>`);
+                expect(message(), command).toBe("Invalid range");
+            }
+            press(editor, ":%s/e/E/ x<CR>");
+            expect(message()).toBe("Trailing characters: x");
+            expect(getLines(editor)).toBe("one|two|three|four|five|six");
+            press(editor, ":99<CR>");
+            expect(getCursor(editor)).toBe("5:0");
+            press(editor, ":0<CR>");
+            expect(getCursor(editor)).toBe("0:0");
+        });
+
+        it("repeat a counted insert after typing that autoformat changed", async () => {
+            const error = vi.spyOn(console, "error");
+            const editor = await createVimEditor(paragraphs("[]a"), {}, [ Autoformat ]);
+            const bold = "<paragraph><$text bold=\"true\">bold</$text></paragraph>";
+            for (const keys of [ "3O", "2o" ]) {
+                setVimData(editor, paragraphs("[]a"));
+                press(editor, keys);
+                typeText(editor, "**bold**");
+                press(editor, "<Esc>");
+                expect(getStatus(editor).mode, keys).toBe("normal");
+                const count = Number(keys[0]);
+                expect(getContent(editor), keys).toBe(keys.endsWith("O")
+                    ? bold.repeat(count) + paragraphs("a")
+                    : paragraphs("a") + bold.repeat(count));
+            }
+            expect(error).not.toHaveBeenCalled();
+            error.mockRestore();
+        });
+
+        it("change nothing in a read-only editor", async () => {
+            const editor = await createVimEditor(paragraphs("[]ab", "cd"));
+            editor.enableReadOnlyMode("spec");
+            for (const keys of [ "yyp", "yyP", "ylp", "xp", ":s/a/x/<CR>", ":%s/c/y/g<CR>" ]) {
+                press(editor, keys);
+                expect(getLines(editor), keys).toBe("ab|cd");
+            }
+            editor.disableReadOnlyMode("spec");
         });
     });
 });

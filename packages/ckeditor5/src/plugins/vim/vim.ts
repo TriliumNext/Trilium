@@ -16,7 +16,7 @@ import { isFromEditable } from "../move_block_updown.js";
 import VimAdapter, {
     type CloseDialog, type DialogOptions, VimPosition, type WidgetEntry
 } from "./vim_adapter.js";
-import { isUserMapped } from "./vim_commands.js";
+import { isUserMapped, startsUserMapping } from "./vim_commands.js";
 import { getDigraph } from "./vim_digraphs.js";
 import { getLoadedVimEngine, loadVimEngine, runStartupCommands } from "./vim_engine.js";
 import { getPromptKind, PromptAssistant, type PromptKind } from "./vim_command_line.js";
@@ -136,6 +136,8 @@ const INSERT_KEYS = new Set([ "<C-w>", "<C-r>", "<C-o>", "<C-t>", "<C-d>" ]);
 const SWALLOWED_INSERT_KEYS = new Set([ "<C-p>", "<C-n>" ]);
 /** The Ctrl keys that follow Vim in Insert mode when the insert keys are turned on. */
 const OPTIONAL_INSERT_KEYS = new Set([ "<C-u>", "<C-e>", "<C-y>", "<C-k>", "<C-v>", "<C-a>" ]);
+/** How long keys that start a mapping wait for the rest of it, in milliseconds. */
+const MAPPING_TIMEOUT = 1000;
 /** The keys that move down or up a line, which leave the editor of an embed at its edges. */
 const DOWN_KEYS = new Set([ "j", "<Down>", "<C-n>", "+", "<CR>" ]);
 const UP_KEYS = new Set([ "k", "<Up>", "<C-p>", "-" ]);
@@ -292,6 +294,11 @@ class VimSession {
     private promptHints: VimHints | null = null;
     /** Whether the last keys moved the focus to another editable, until the next input. */
     private isFocusMoved = false;
+    /** Whether keys wait in the engine for the rest of a mapping that they start. */
+    private isHoldingKeys = false;
+    private mappingTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Whether the keys held for a mapping run, which then wait for nothing. */
+    private isReleasing = false;
     private readonly translate = (message: string, values?: string[]) =>
         this.editor.t(message, values);
     private readonly hintContext: HintContext = {
@@ -380,6 +387,7 @@ class VimSession {
         this.undo.destroy();
         this.clearMessageTimer();
         this.clearHintTimer();
+        this.clearMappingTimer();
         this.setCommandModeClass(false);
         this.editor.model.enqueueChange((writer) => {
             for (const name of [ CURSOR_MARKER, EMPTY_CURSOR_MARKER ]) {
@@ -721,8 +729,12 @@ class VimSession {
         try {
             for (const key of keys) {
                 this.isCommandDone = false;
-                isHandled = !!this.engine.multiSelectHandleKey(this.adapter as never, key, "user")
-                    || isHandled;
+                if (this.holdForMapping(key)) {
+                    isHandled = true;
+                } else {
+                    isHandled = !!this.engine.multiSelectHandleKey(this.adapter as never, key,
+                        "user") || isHandled;
+                }
                 this.trackPendingKey(key);
             }
         } catch (error) {
@@ -737,6 +749,58 @@ class VimSession {
         this.updateStatus();
         this.updateCursor();
         return isHandled;
+    }
+
+    /**
+     * Keeps `key` with the keys of the command being typed, without running them, while they start
+     * a mapping of the user that they are a command of their own before, such as `,` before `,d`.
+     * The last key of the mapping runs it. Another key, or a second without one, runs the keys
+     * held as they were typed, as Vim does after 'timeoutlen'. Returns whether it kept the key.
+     */
+    private holdForMapping(key: string): boolean {
+        this.clearMappingTimer();
+        const vim = this.vim;
+        const buffer = vim.inputState.keyBuffer;
+        const context = vim.visualMode ? "visual" : "normal";
+        const typed = `${buffer.join("")}${key}`.replace(/^[1-9]\d*/u, "");
+        const wasHolding = this.isHoldingKeys;
+        this.isHoldingKeys = false;
+        if (vim.insertMode || vim.inputState.operator || key === "<Esc>" || this.isReleasing) {
+            return false;
+        }
+        if (startsUserMapping(typed, context)) {
+            buffer.push(key);
+            this.isHoldingKeys = true;
+            this.mappingTimer = setTimeout(() => this.releaseHeldKeys(), MAPPING_TIMEOUT);
+            return true;
+        }
+        if (wasHolding && !isUserMapped(typed, context)) {
+            for (const held of buffer.splice(0)) {
+                this.engine.multiSelectHandleKey(this.adapter as never, held, "user");
+            }
+            this.isCommandDone = false;
+        }
+        return false;
+    }
+
+    /** Runs the keys that wait for the rest of a mapping as they were typed. */
+    private releaseHeldKeys() {
+        this.mappingTimer = null;
+        this.isHoldingKeys = false;
+        this.pendingKeys = "";
+        this.isReleasing = true;
+        try {
+            this.runKeys(this.vim.inputState.keyBuffer.splice(0));
+        } finally {
+            this.isReleasing = false;
+        }
+    }
+
+    private clearMappingTimer() {
+        if (this.mappingTimer) {
+            clearTimeout(this.mappingTimer);
+            this.mappingTimer = null;
+        }
     }
 
     /**

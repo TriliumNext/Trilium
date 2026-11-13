@@ -169,6 +169,27 @@ describe("CollapsibleListItems", () => {
         expect(getBlock(editor, 0).hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
     });
 
+    it("keeps the collapsed state that undo brings back to a nested item", () => {
+        setModelData(editor.model,
+            '<paragraph listCollapsed="true" listIndent="0" listItemId="i-a" listType="bulleted">'
+            + "Parent</paragraph>"
+            + '<paragraph listCollapsed="true" listIndent="1" listItemId="i-b" listType="bulleted">'
+            + "Child</paragraph>"
+            + '<paragraph listIndent="2" listItemId="i-c" listType="bulleted">Grandchild</paragraph>'
+            + "<paragraph>[]Outside</paragraph>");
+        const child = getBlock(editor, 1);
+        editor.model.change((writer) => {
+            writer.remove(getBlock(editor, 0));
+            writer.setAttribute("listIndent", 0, child);
+            writer.setAttribute("listIndent", 1, getBlock(editor, 1));
+        });
+        expect(child.hasAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(false);
+
+        editor.execute("undo");
+        expect(getBlock(editor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+        expect(getBlock(editor, 1).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
+    });
+
     it("drops the collapsed attribute from new items that have nothing to collapse", () => {
         // Simulates e.g. an Enter split copying the attribute onto the new block.
         editor.model.change((writer) => {
@@ -674,9 +695,8 @@ describe("CollapsibleListItems", () => {
             expect(getBlock(findEditor, 0).hasAttribute("listItemId")).toBe(false);
             expect(() => state?.clear(findEditor.model)).not.toThrow();
 
-            // Undo expands the parent, as its children return under it.
+            // Undo brings the parent back collapsed, with its children under it.
             findEditor.execute("undo");
-            findEditor.execute("toggleListCollapse");
             expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
             findEditor.execute("find", "child");
             const { li, nested } = collapsedItem(findEditor);
