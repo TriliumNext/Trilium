@@ -77,6 +77,22 @@ describe("SqlService (real DB)", () => {
             expect(getSql().getValue<number>(`SELECT COUNT(*) FROM "${table}"`)).toBe(1);
         });
 
+        it("insert, replace and upsert refuse a table or column name that is not a plain identifier", () => {
+            const table = createTempTable();
+            const smuggled = `"${table}" (name, val) SELECT 'smuggled', 1 WHERE ? IS NOT NULL /*`;
+
+            const attempts = [
+                () => getSql().insert(smuggled, { val: 1 }),
+                () => getSql().replace(smuggled, { val: 1 }),
+                () => getSql().insert(table, { "name) SELECT 'smuggled' WHERE ? IS NOT NULL /*": 1 }),
+                () => getSql().upsert(table, "id", { id: 1, "name = 'smuggled', val": 1 }),
+                () => getSql().upsert(table, "id) DO NOTHING /*", { id: 1 })
+            ];
+
+            expect(attempts.map(outcomeOf)).toEqual(attempts.map(() => "refused"));
+            expect(getSql().getValue<number>(`SELECT COUNT(*) FROM "${table}" WHERE name = 'smuggled'`)).toBe(0);
+        });
+
         it("upsert is a no-op for an empty record", () => {
             const table = createTempTable();
             getSql().upsert(table, "id", {});
@@ -594,4 +610,15 @@ function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, 
         ...overrides
     };
     return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback, onSavepointRollback }, getLog());
+}
+
+/** Whether `attempt` was refused for its identifiers, ran, or failed for another reason. */
+function outcomeOf(attempt: () => unknown): string {
+    try {
+        attempt();
+        return "ran";
+    } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        return /identifier/.test(message) ? "refused" : message;
+    }
 }

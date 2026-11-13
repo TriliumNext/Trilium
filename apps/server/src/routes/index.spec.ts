@@ -156,7 +156,7 @@ describe("bootstrap payloads", () => {
 
         const browser = makeRes();
         bootstrap(makeReq(), browser.res);
-        expect(browser.body()).toMatchObject({ passwordSet: false, hasNativeTitleBar: false });
+        expect(browser.body()).toMatchObject({ passwordSet: false, setPasswordInDesktopApp: true, hasNativeTitleBar: false });
 
         state.current.config.General = { noAuthentication: true };
         const open = makeRes();

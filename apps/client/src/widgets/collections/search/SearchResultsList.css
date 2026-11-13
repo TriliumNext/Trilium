@@ -130,6 +130,10 @@
         flex-wrap: wrap;
         gap: 4px;
         margin-top: 6px;
+
+        .ext-badge {
+            --color: var(--muted-text-color);
+        }
     }
 
     /* The server-injected <b> highlights of the snippet and the attribute badges. */

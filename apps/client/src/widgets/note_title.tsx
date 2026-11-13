@@ -1,19 +1,30 @@
 import "./note_title.css";
 
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../components/app_context";
+import type NoteContext from "../components/note_context";
 import branches from "../services/branches";
 import froca from "../services/froca";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import server from "../services/server";
 import { isIMEComposing } from "../services/shortcuts";
+import { shouldShowInlineTitle } from "./layout/InlineTitle";
 import FormTextBox from "./react/FormTextBox";
-import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvent, useTriliumEvents } from "./react/hooks";
+import { useNoteContext, useNoteProperty, useSpacedUpdate, useTriliumEvents, useTriliumOption } from "./react/hooks";
 
-export default function NoteTitleWidget(props: {className?: string}) {
+/**
+ * Where a title sits in a note split, which has one in its title row and one in `InlineTitle`.
+ * Elsewhere (popups, embedded panes) the title is the only one and has no placement.
+ */
+export type TitlePlacement = "split" | "inline";
+
+export default function NoteTitleWidget({ className, placement }: {
+    className?: string;
+    placement?: TitlePlacement;
+}) {
     const { note, noteId, componentId, viewScope, noteContext, parentComponent } = useNoteContext();
     const title = useNoteProperty(note, "title", componentId);
     const isProtected = useNoteProperty(note, "isProtected");
@@ -76,27 +87,72 @@ export default function NoteTitleWidget(props: {className?: string}) {
         }
     }, [title]);
 
+    const pendingFocus = useRef<FocusRequest | null>(null);
+    const [ titleStyle ] = useTriliumOption("noteTitleStyle");
+
+    function focusIfVisible(request: FocusRequest) {
+        const textBox = textBoxRef.current;
+        // A split has two NoteTitleWidget instances, the title row's and InlineTitle's; the hidden
+        // one stays out.
+        if (!textBox?.checkVisibility({ checkOpacity: true })) {
+            return false;
+        }
+
+        textBox.focus();
+        if (request.select) {
+            textBox.select();
+            pendingSelect.current = true;
+        }
+        isNewNote.current = request.isNewNote;
+        return true;
+    }
+
     useTriliumEvents([ "focusOnTitle", "focusAndSelectTitle" ], (e, eventName) => {
         // When the event targets a specific context (e.g. a popup's own context, which is never
         // "active" in the tab manager), match on it; otherwise fall back to the active context.
         const isTargeted = e.ntxId ? e.ntxId === noteContext?.ntxId : noteContext?.isActive();
-        if (isTargeted && textBoxRef.current) {
-            // A note context has two NoteTitleWidget instances, the title row's and InlineTitle's. Only handle if visible.
-            if (!textBoxRef.current.checkVisibility({ checkOpacity: true })) {
-                return;
-            }
+        if (!isTargeted || !noteContext?.noteId) {
+            return;
+        }
 
-            textBoxRef.current.focus();
-            if (eventName === "focusAndSelectTitle") {
-                textBoxRef.current.select();
-                pendingSelect.current = true;
-            }
-            isNewNote.current = ("isNewNote" in e ? e.isNewNote : false);
+        const request: FocusRequest = {
+            noteId: noteContext.noteId,
+            select: eventName === "focusAndSelectTitle",
+            isNewNote: ("isNewNote" in e ? e.isNewNote : false) ?? false
+        };
+        // `note_create` asks for the title right after `setNote()`, which can come before this
+        // widget and `InlineTitle` render the new note; the request then waits for that render.
+        const isRendered = note?.noteId === request.noteId;
+        pendingFocus.current = isRendered ? null : request;
+        if (isRendered) {
+            focusIfVisible(request);
         }
     });
 
+    useLayoutEffect(() => {
+        const request = pendingFocus.current;
+        if (!request || !noteContext || note?.noteId !== noteContext.noteId) {
+            return;
+        }
+        pendingFocus.current = null;
+        if (request.noteId !== noteContext.noteId || !ownsTitle(placement, noteContext, titleStyle)) {
+            return;
+        }
+
+        // `InlineTitle` shows its title and hides the title row's a render after the note arrives,
+        // and that render leaves this widget alone, so the visibility check retries on later frames.
+        let frame = 0;
+        let framesLeft = MAX_FOCUS_FRAMES;
+        const tryFocus = () => {
+            if (focusIfVisible(request) || --framesLeft <= 0) return;
+            frame = requestAnimationFrame(tryFocus);
+        };
+        tryFocus();
+        return () => cancelAnimationFrame(frame);
+    }, [ note ]);
+
     return (
-        <div className={clsx("note-title-widget", props.className)}>
+        <div className={clsx("note-title-widget", className)}>
             {note && <FormTextBox
                 inputRef={textBoxRef}
                 autocomplete="off"
@@ -145,4 +201,23 @@ export default function NoteTitleWidget(props: {className?: string}) {
             />}
         </div>
     );
+}
+
+/** How many frames a title waits to become visible before a focus request for it is dropped. */
+const MAX_FOCUS_FRAMES = 10;
+
+interface FocusRequest {
+    noteId: string;
+    select: boolean;
+    isNewNote: boolean;
+}
+
+/** Whether the title at `placement` is the one a split shows for its current note. */
+function ownsTitle(placement: TitlePlacement | undefined, noteContext: NoteContext, titleStyle: string) {
+    if (!placement) {
+        return true;
+    }
+    const note = noteContext.note;
+    const showsInlineTitle = shouldShowInlineTitle(note, note?.type, noteContext.viewScope, titleStyle);
+    return showsInlineTitle === (placement === "inline");
 }

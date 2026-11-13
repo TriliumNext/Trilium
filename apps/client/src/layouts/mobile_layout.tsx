@@ -76,7 +76,7 @@ export default class MobileLayout {
                                                 .css("align-items", "center")
                                                 .child(<ToggleSidebarButton />)
                                                 .child(<NoteIconWidget />)
-                                                .child(<NoteTitleWidget />)
+                                                .child(<NoteTitleWidget placement="split" />)
                                                 .child(<NoteBadges />)
                                                 .child(<MobileNotePanel widgetsByParent={this.customWidgets} />)
                                                 .child(<MobileDetailMenu />)

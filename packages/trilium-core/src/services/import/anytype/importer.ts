@@ -363,7 +363,7 @@ function createNotes(importRootNote: BNote, pages: ParsedObject[], targets: Map<
             ({ note } = noteService.createNewNote({ noteId, parentNoteId, title: page.title, content: page.content, type: "text", mime: "text/html", isProtected, utcDateCreated: page.dateCreated }));
         }
 
-        applyProperties(note, page.properties);
+        applyProperties(note, page.properties, !!taskContext.data?.safeImport);
         applyFiles(note, page, fileObjects, files);
         applyInlineFiles(note, fileObjects, files, shrinkImages);
         applyDates(note, page);

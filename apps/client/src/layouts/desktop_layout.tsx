@@ -125,7 +125,7 @@ export default class DesktopLayout {
                                                             .class("title-row note-split-title")
                                                             .cssBlock(".title-row > * { margin: 5px; }")
                                                             .child(<NoteIconWidget />)
-                                                            .child(<NoteTitleWidget />)
+                                                            .child(<NoteTitleWidget placement="split" />)
                                                             .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
                                                             .child(<NoteActions />))

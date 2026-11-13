@@ -84,11 +84,11 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             content = renderNoteForExport(note, branch, basePath, ancestors, this.iconPacks,
                 getLink);
             if (typeof content === "string") {
-                // Rewrite attachment download links
-                content = content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g, (match, attachmentId) => {
+                // Rewrite attachment download links and the sources of media players
+                content = content.replace(/(href|src)="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g, (match, attrName, attachmentId) => {
                     const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === attachmentId);
                     if (attachmentMeta?.dataFileName) {
-                        return `href="${attachmentMeta.dataFileName}"`;
+                        return `${attrName}="${attachmentMeta.dataFileName}"`;
                     }
                     return match;
                 });
@@ -141,7 +141,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
         // An attachment keeps its file; an image or file note becomes a page, with its file
         // written beside it.
-        if (type === null && (mime.startsWith("image/") || existingExtension === ".zip")) {
+        if (type === null && (/^(image|video|audio)\//.test(mime) || existingExtension === ".zip")) {
             return null;
         }
 

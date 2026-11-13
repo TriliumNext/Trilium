@@ -7,9 +7,9 @@ import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import DescendantOfExp from "./descendant_of.js";
 import Expression from "./expression.js";
 import NoteSet from "../note_set.js";
+import SearchContext from "../search_context.js";
 
-// SearchContext-like argument is unused by execute(), so we pass an empty object.
-const dummySearchContext = {} as any;
+const searchContext = new SearchContext({ ignoreHoistedNote: true });
 
 /** A stub sub-expression that records its inputs and returns a predetermined note set. */
 class StubExp extends Expression {
@@ -62,7 +62,7 @@ describe("DescendantOfExp", () => {
         const exp = new DescendantOfExp(new StubExp(new NoteSet([ancestor.note])));
         const input = new NoteSet([child.note, grandchild.note, outside.note]);
 
-        expect(noteIds(exp.execute(input, {}, dummySearchContext))).toEqual(
+        expect(noteIds(exp.execute(input, {}, searchContext))).toEqual(
             [child.note.noteId, grandchild.note.noteId].sort()
         );
     });
@@ -79,7 +79,7 @@ describe("DescendantOfExp", () => {
         const executionContext = { marker: true };
         // The input set deliberately omits most notes; the sub-expression must still see all of
         // becca (root, ancestor, child) so it can locate ancestors anywhere in the tree.
-        exp.execute(new NoteSet([child.note]), executionContext, dummySearchContext);
+        exp.execute(new NoteSet([child.note]), executionContext, searchContext);
 
         expect(stub.calls).toHaveLength(1);
         expect(noteIds(stub.calls[0].inputNoteSet)).toEqual(
@@ -100,7 +100,7 @@ describe("DescendantOfExp", () => {
         const exp = new DescendantOfExp(new StubExp(new NoteSet([ancestor.note])));
         const input = new NoteSet([ancestor.note, child.note]);
 
-        expect(noteIds(exp.execute(input, {}, dummySearchContext))).toEqual(
+        expect(noteIds(exp.execute(input, {}, searchContext))).toEqual(
             [ancestor.note.noteId, child.note.noteId].sort()
         );
     });
@@ -115,7 +115,7 @@ describe("DescendantOfExp", () => {
         const exp = new DescendantOfExp(new StubExp(new NoteSet([ancestor.note])));
         const input = new NoteSet([included.note]);
 
-        expect(noteIds(exp.execute(input, {}, dummySearchContext))).toEqual([included.note.noteId]);
+        expect(noteIds(exp.execute(input, {}, searchContext))).toEqual([included.note.noteId]);
     });
 
     it("de-duplicates a descendant reachable through multiple matched ancestors (clones)", () => {
@@ -130,7 +130,7 @@ describe("DescendantOfExp", () => {
         const exp = new DescendantOfExp(new StubExp(new NoteSet([ancestorA.note, ancestorB.note])));
         const input = new NoteSet([child.note]);
 
-        const result = exp.execute(input, {}, dummySearchContext);
+        const result = exp.execute(input, {}, searchContext);
         // NoteSet.add de-duplicates, so the cloned child appears only once.
         expect(noteIds(result)).toEqual([child.note.noteId]);
         expect(result.notes).toHaveLength(1);
@@ -143,7 +143,7 @@ describe("DescendantOfExp", () => {
         rootNote.child(ancestor);
 
         const exp = new DescendantOfExp(new StubExp(new NoteSet()));
-        const result = exp.execute(new NoteSet([child.note]), {}, dummySearchContext);
+        const result = exp.execute(new NoteSet([child.note]), {}, searchContext);
 
         expect(result).toBeInstanceOf(NoteSet);
         expect(result.notes).toHaveLength(0);
@@ -158,7 +158,7 @@ describe("DescendantOfExp", () => {
 
         // Ancestor is matched, but the input set holds only an unrelated note.
         const exp = new DescendantOfExp(new StubExp(new NoteSet([ancestor.note])));
-        const result = exp.execute(new NoteSet([unrelated.note]), {}, dummySearchContext);
+        const result = exp.execute(new NoteSet([unrelated.note]), {}, searchContext);
 
         expect(result.notes).toHaveLength(0);
     });
@@ -174,7 +174,7 @@ describe("DescendantOfExp", () => {
 
         const exp = new DescendantOfExp(boom);
 
-        expect(() => exp.execute(new NoteSet([child.note]), {}, dummySearchContext)).toThrow(
+        expect(() => exp.execute(new NoteSet([child.note]), {}, searchContext)).toThrow(
             "sub-expression failure"
         );
     });

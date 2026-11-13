@@ -116,9 +116,12 @@ describe("ShareThemeExportProvider", () => {
     });
 
     describe("mapExtension", () => {
-        it("keeps an attachment's image or .zip file, js for javascript, html otherwise", () => {
+        it("keeps an attachment's image, media or .zip file, js for javascript, html otherwise", () => {
             const p = makeProvider();
             expect(p.mapExtension(null, "image/png", ".png", "share")).toBeNull();
+            expect(p.mapExtension(null, "video/mp4", ".mp4", "share")).toBeNull();
+            expect(p.mapExtension(null, "audio/mpeg", ".mp3", "share")).toBeNull();
+            expect(p.mapExtension(null, "text/plain", ".txt", "share")).toBe("html");
             expect(p.mapExtension(null, "application/zip", ".zip", "share")).toBeNull();
             expect(p.mapExtension("code", "application/javascript", "", "share")).toBe("js");
             expect(p.mapExtension("image", "image/png", ".png", "share")).toBe("html");
@@ -152,6 +155,7 @@ describe("ShareThemeExportProvider", () => {
             // Render output exercises both the attachment and note link rewrites.
             mockContentRenderer.renderNoteForExport.mockReturnValue(
                 `<a href="api/attachments/att123456/download">f</a>` +
+                `<video src="api/attachments/att123456/download"></video>` +
                 `<a href="x./otherNote123">n</a>` +
                 `<a href="x./assets/keepme12345">keep</a>`
             );
@@ -167,6 +171,7 @@ describe("ShareThemeExportProvider", () => {
 
             // Attachment download link rewritten to its data file name.
             expect(out).toContain('href="files/att.png"');
+            expect(out).toContain('<video src="files/att.png">');
             // Plain note link rewritten to a hash anchor.
             expect(out).toContain('href="#root/otherNote123"');
             // /assets/ links are preserved untouched.

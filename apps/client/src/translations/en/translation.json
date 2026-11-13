@@ -4796,7 +4796,10 @@
       "display-as": "Display as",
       "compact": "Compact",
       "resizable": "Resizable",
-      "default": "Default"
+      "default": "Default",
+      "collapse-or-expand-the-section-of-a-heading": "Collapse or expand the section of a heading",
+      "section-collapsed": "Section collapsed",
+      "section-expanded": "Section expanded"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -4976,7 +4979,9 @@
       "link_preview": "Link preview",
       "embed": "Embed",
       "block": "Block"
-    }
+    },
+    "collapse_section": "Collapse section",
+    "expand_section": "Expand section"
   },
   "record_meeting": {
     "note_title": "Meeting {{date}}",
@@ -5129,5 +5134,13 @@
     "not_a_video": "This is not a web address.",
     "insert_failed": "The media could not be embedded. Check that the address is that of a YouTube video, an audio or a video file, and the connection, then try again.",
     "description": "Enter the address of the video or audio to embed: a YouTube video, or any audio or video file that can be reached over HTTP or HTTPS."
+  },
+  "protect_subtree": {
+    "protect_intro": "The following notes will be encrypted with your password. Their titles, content, attachments and revisions can then only be read in a protected session.",
+    "unprotect_intro": "The following notes will be decrypted. Their content, attachments and revisions will then be stored without encryption, readable by anyone with access to the database, its backups or a sync server.",
+    "subtree": "and every note beneath it",
+    "untitled": "Protected note",
+    "password": "Password",
+    "password_description": "The password you use for protected notes."
   }
 }

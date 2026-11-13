@@ -275,6 +275,7 @@ export type CommandMappings = {
 
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
+    showProtectSubtreeDialog: CommandData & { noteId: string; protect: boolean };
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showContentEmbedDialog: CommandData & ContentEmbedOpts;
     showEditLinkDialog: CommandData & EditLinkOpts;

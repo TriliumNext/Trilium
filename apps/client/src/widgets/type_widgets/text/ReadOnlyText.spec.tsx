@@ -766,6 +766,36 @@ describe("ReadOnlyText lists", () => {
     });
 });
 
+describe("ReadOnlyText headings", () => {
+    const html = "<h2 data-trilium-collapsed=\"true\">A</h2><p>a1</p><h2>B</h2><p>b1</p>";
+    const isHidden = (container: Element, text: string) => [ ...container.querySelectorAll("p") ]
+        .find((paragraph) => paragraph.textContent === text)
+        ?.classList.contains("trilium-heading-section-hidden");
+
+    it("hides the sections of the headings that the note saves as collapsed", async () => {
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({ content: html }) as never;
+
+        await harness.mount();
+
+        expect([ isHidden(harness.container, "a1"), isHidden(harness.container, "b1") ])
+            .toEqual([ true, false ]);
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+    });
+
+    it("leaves the headings of other content, such as a Markdown preview, expanded", async () => {
+        const container = document.createElement("div");
+        document.body.append(container);
+
+        await act(async () => render(<ReadOnlyTextContent html={html} />, container));
+
+        expect(isHidden(container, "a1")).toBe(false);
+        await act(async () => render(null, container));
+        container.remove();
+    });
+});
+
 describe("ReadOnlyText tables", () => {
     it("sizes its tables for scrolling and keeps their header rows in view", async () => {
         const harness = setupHarness({ isVisible: true });

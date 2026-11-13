@@ -848,6 +848,12 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("drops data-trilium-collapsed from a heading but keeps its section", () => {
+        const html = `<h2 data-trilium-collapsed="true">Heading</h2><p>Text under it.</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe("## Heading\n\nText under it.");
+    });
+
     it("exports jQuery code in table properly", () => {
         const html = trimIndentation`\
             <figure class="table">

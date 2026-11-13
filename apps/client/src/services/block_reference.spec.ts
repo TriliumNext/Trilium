@@ -482,6 +482,47 @@ describe("buildReferenceConfig", () => {
             .toBeLessThan(save.mock.invocationCallOrder[0]);
     });
 
+    it("names a collapsed section by its heading, and collapses or expands it", () => {
+        const { config, editor } = buildSource();
+        const heading = buildBlock("heading2");
+        const hidden = [ buildBlock("paragraph"), buildBlock("paragraph") ];
+        vi.mocked(editor.plugins.has)
+            .mockImplementation(((name: string) => name === "HiddenBlocks") as never);
+        vi.mocked(editor.plugins.get).mockReturnValue({
+            isHidden: (block: ModelElement) => hidden.includes(block)
+        } as never);
+        const command = { isEnabled: true, value: true };
+        vi.mocked(editor.commands.get).mockImplementation(((name: string) => (
+            name === "toggleHeadingCollapse" ? command : undefined
+        )) as never);
+        const openMenu = (blocks: ModelElement[]) => {
+            config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), blocks, vi.fn());
+            return showMenu.mock.lastCall?.[0].items as MenuCommandItem<CommandNames>[];
+        };
+
+        const items = openMenu([ heading, ...hidden ]);
+        expect(items[0]).toEqual(expect.objectContaining({
+            kind: "header", title: "block_handle_menu.types.heading:2"
+        }));
+        expect(items.slice(1, 3)).toEqual([
+            expect.objectContaining({
+                title: "block_handle_menu.expand_section", uiIcon: "bx bx-expand-vertical"
+            }),
+            { kind: "separator" }
+        ]);
+        runItem(items[1]);
+        expect(editor.execute).toHaveBeenCalledWith("toggleHeadingCollapse");
+        expect(editor.editing.view.focus).toHaveBeenCalled();
+
+        command.value = false;
+        expect(openMenu([ heading ])[1].title).toBe("block_handle_menu.collapse_section");
+
+        // Several shown blocks, or a heading without blocks under it, have no such item.
+        expect(openMenu([ heading, buildBlock("paragraph") ])[1].title).not.toContain("section");
+        command.isEnabled = false;
+        expect(openMenu([ heading ])[1].title).not.toContain("section");
+    });
+
     it("opens the block handle menu, which copies, asks AI about or deletes the blocks", async () => {
         const { config, editor, save, openHelpPage } = buildSource();
         const event = new MouseEvent("contextmenu");
@@ -587,7 +628,9 @@ describe("buildReferenceConfig", () => {
     }) {
         const { config, editor } = buildSource();
         vi.mocked(editor.plugins.has).mockReturnValue(true);
-        vi.mocked(editor.plugins.get).mockReturnValue(palette as never);
+        vi.mocked(editor.plugins.get).mockImplementation(((name: string) => (
+            name === "HiddenBlocks" ? { isHidden: () => false } : palette
+        )) as never);
         vi.mocked(editor.commands.get).mockImplementation(((name: string) =>
             ({ isEnabled: enabled.includes(name) })) as never);
         config.blockReference?.openHandleMenu?.(new MouseEvent("contextmenu"), blocks, vi.fn());

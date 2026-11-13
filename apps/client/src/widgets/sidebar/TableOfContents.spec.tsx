@@ -53,6 +53,18 @@ describe("useActiveHeading", () => {
         update(probe, null, headingLookup({ first: 0, second: 0 }));
         expect(activeOf(probe)).toBe("");
     });
+
+    it("skips a heading hidden in a collapsed section", () => {
+        const container = scrollingContainer();
+        const lookup = headingLookup({ first: 0, second: 0 });
+        const second = lookup(HEADINGS[1]);
+        if (!second) throw new Error("the second heading is missing");
+        second.style.visibility = "hidden";
+
+        const probe = mount(container, lookup);
+        scroll(container);
+        expect(activeOf(probe)).toBe("first");
+    });
 });
 
 function ActiveHeadingProbe({ container, getHeadingElement }: {
@@ -96,10 +108,14 @@ function activeOf(probe: HTMLElement) {
     return probe.firstElementChild?.getAttribute("data-active");
 }
 
-/** happy-dom reports zeroes for every rect, so each element is given the top the test needs. */
+/**
+ * happy-dom reports zeroes for every rect, so each element is given the top the test needs. It is
+ * in the document, as `checkVisibility()` finds a detached element hidden.
+ */
 function elementAt(top: number) {
     const el = document.createElement("h1");
     el.getBoundingClientRect = () => ({ top }) as DOMRect;
+    document.body.appendChild(el);
     return el;
 }
 

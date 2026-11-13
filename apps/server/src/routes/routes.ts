@@ -13,6 +13,7 @@ import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import auth from "../services/auth.js";
+import { requireExtensionOrigin } from "../services/desktop_network_gate.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
@@ -135,7 +136,7 @@ function register(app: express.Application) {
     apiRoute(DEL, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.deleteToken);
 
     // in case of local electron, local calls are allowed unauthenticated, for server they need auth
-    const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];
+    const clipperMiddleware = isElectron ? [requireExtensionOrigin] : [auth.checkEtapiToken];
 
     route(GET, "/api/clipper/handshake", clipperMiddleware, clipperRoute.handshake, apiResultHandler);
     asyncRoute(PST, "/api/clipper/clippings", clipperMiddleware, clipperRoute.addClipping, apiResultHandler);

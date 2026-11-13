@@ -14,6 +14,7 @@ import InternalLinkPlugin from "./plugins/internallink.js";
 import InsertDateTimePlugin from "./plugins/insert_date_time.js";
 import ReferenceLink from "./plugins/referencelink.js";
 import NoPoweredByBadge from "./plugins/no_powered_by_badge.js";
+import DragOutOfEditor from "./plugins/drag_out_of_editor.js";
 import InlineFillerSpellcheck from "./plugins/inline_filler_spellcheck.js";
 import RemoveFormatLinksPlugin from "./plugins/remove_format_links.js";
 import IndentBlockShortcutPlugin from "./plugins/indent_block_shortcut.js";
@@ -77,6 +78,8 @@ import NoteLinkToolbar from "./plugins/note_link_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
 import CollapsibleListItems from "./plugins/collapsible_list_items.js";
+import CollapsibleHeadings from "./plugins/collapsible_headings/collapsible_headings.js";
+import HeadingLevelOne from "./plugins/heading_level_one.js";
 import ListItemAlignment from "./plugins/list_item_alignment.js";
 import ListItemInsert from "./plugins/list_item_insert.js";
 import TableIndent from "./plugins/table_indent.js";
@@ -142,6 +145,8 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     LinkMenu,
     TodoListMultistate,
     CollapsibleListItems,
+    CollapsibleHeadings,
+    HeadingLevelOne,
     ListItemAlignment,
     ListItemInsert,
     TableIndent,
@@ -211,7 +216,8 @@ export const CORE_PLUGINS: typeof Plugin[] = [
     MentionCustomization,
     ReferenceLink,
     NoPoweredByBadge,
-    InlineFillerSpellcheck
+    InlineFillerSpellcheck,
+    DragOutOfEditor
 ];
 
 /**

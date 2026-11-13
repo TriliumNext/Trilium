@@ -1,6 +1,6 @@
 import type { PreviewThemeSlot } from "@triliumnext/codemirror/src/code_preview.js";
 import {
-    BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
+    attachmentIcon, BLOCK_ID_ATTRIBUTE, CANVAS_ATTACHMENT_MIME, CAPTIONED_CONTENT_EMBED_CLASS,
     CONTENT_EMBED_KIND_ATTRIBUTE, encodeBlockParameter, getAttachmentEmbedHref,
     getDrawingPictureTitle, getEmbedKey, getLinkPreviewPlayer, getNestedEmbedOptions,
     getNoteEmbedHref, getVideoAspectRatio, isEmbedShownAsLink, isHttpUrl, isImageAttachmentRole,
@@ -410,8 +410,13 @@ export function preparePageContent(
     const slugs = utils.slugifyHeadings(unnamed.map((element) => element.innerHTML),
         document.querySelectorAll("[id]").map((element) => element.id));
     let slugIndex = 0;
-    const headings = elements.map((element) => {
+    const headings = elements.flatMap((element) => {
         const slug = element.id || slugs[slugIndex++];
+        // A heading of an Expandable embed starts hidden, so it gets an ID for links but no entry.
+        if (element.closest(`.${EXPANDABLE_EMBED_CLASS}`)) {
+            element.setAttribute("id", slug);
+            return [];
+        }
         const text = element.text.replace(/\s+/g, " ").trim();
         const html = sanitize.sanitizeHtmlCustom(element.innerHTML, HEADING_FORMATTING)
             .replace(/\s+/g, " ").trim();
@@ -687,7 +692,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
                 embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             } else {
                 const html = renderAttachmentEmbed(embed.attachmentId, attachment, getNote);
-                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes);
+                const title = embed.boxSize === "expandable" ? {
+                    icon: `tn-icon ${attachmentIcon(attachment.role, attachment.mime)}`,
+                    text: attachment.title
+                } : null;
+                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes, title);
             }
             continue;
         }
@@ -727,10 +736,14 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         for (const linkEl of embeddedContent.querySelectorAll("a")) {
             embeddedLinks.add(linkEl);
         }
-        replaceEmbedContent(embedEl, embeddedContent.childNodes);
+        const title = embed.boxSize === "expandable"
+            ? { icon: embeddedNote.getIcon(), text: embeddedNote.title }
+            : null;
+        replaceEmbedContent(embedEl, embeddedContent.childNodes, title);
     }
 
-    result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
+    result.isEmpty = document.textContent?.trim().length === 0
+        && document.querySelectorAll("img, video, audio").length === 0;
 
     if (!result.isEmpty) {
         // Process attachment links.
@@ -779,12 +792,33 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     }
 }
 
-/** Puts `content` in an embed, followed by the embed's caption, as the app does. */
-function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
+/**
+ * Puts `content` in an embed, followed by the embed's caption, as the app does. With a `title`,
+ * the content goes in a closed `<details>` that shows the title, the share page's form of an
+ * Expandable embed; the caption after it shows under the title until the content is opened.
+ */
+function replaceEmbedContent(
+    embedEl: HTMLElement, content: ParsedNode[], title: { icon: string; text: string } | null
+) {
     const caption = embedEl.childNodes.find((child) =>
         child instanceof HTMLElement && child.tagName === "FIGCAPTION");
-    embedEl.set_content(caption ? [ ...content, caption ] : content);
+    let shown = content;
+    if (title) {
+        const details = new HTMLElement("details", {}, `class="${EXPANDABLE_EMBED_CLASS}"`);
+        details.set_content([
+            ...parse(`<summary class="include-note-summary">`
+                + `<span class="tn-icon bx bx-chevron-right" aria-hidden="true"></span>`
+                + `<span class="${utils.escapeHtml(title.icon)}" aria-hidden="true"></span>`
+                + `${utils.escapeHtml(title.text)}</summary>`).childNodes,
+            ...content
+        ]);
+        shown = [ details ];
+    }
+    embedEl.set_content(caption ? [ ...shown, caption ] : shown);
 }
+
+/** The class of the `<details>` that holds the content of an Expandable embed. */
+const EXPANDABLE_EMBED_CLASS = "include-note-expandable";
 
 /**
  * Replaces an embed that cannot show its content with a message that tells nothing about it: the
@@ -840,16 +874,23 @@ function moveBoxToCaptionedFigure(element: HTMLElement) {
 }
 
 /**
- * What an embedded attachment shows: a picture as an image, a canvas drawing as the picture that
- * its note keeps of it, in a box that the share theme sizes as the app sizes the drawing, and
- * anything else, or a drawing without a picture, as the attachment link that
- * `handleAttachmentLink` then resolves.
+ * What an embedded attachment shows: a picture as an image, a video or audio file as a player, a
+ * canvas drawing as the picture that its note keeps of it, in a box that the share theme sizes as
+ * the app sizes the drawing, and anything else, or a drawing without a picture, as the attachment
+ * link that `handleAttachmentLink` then resolves.
  */
 function renderAttachmentEmbed(
     attachmentId: string,
     attachment: BAttachment | SAttachment,
     getNote: GetNoteFunction
 ) {
+    const player = attachment.role === "file"
+        ? renderMediaPlayer(`api/attachments/${attachmentId}/download`, attachment)
+        : null;
+    if (player) {
+        return player;
+    }
+
     const isDrawing = attachment.mime === CANVAS_ATTACHMENT_MIME;
     const image = isDrawing
         ? getNote(attachment.ownerId)?.getAttachmentByTitle(getDrawingPictureTitle(attachmentId))
@@ -1306,12 +1347,38 @@ function renderImage(result: Result, note: SNote | BNote) {
 }
 
 function renderFile(note: SNote | BNote, result: Result) {
+    const player = renderMediaPlayer(`api/notes/${note.noteId}/view`, note);
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
         result.isFullHeight = true;
+    } else if (player) {
+        result.content = player;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
+}
+
+/**
+ * A native player for the video or audio file of `entity` at `src`, or `null` for a file of
+ * another type. Until the visitor presses play, the player reads only the file's metadata.
+ */
+function renderMediaPlayer(src: string, entity: { mime: string; title: string }) {
+    const tag = getMediaTag(entity.mime);
+    if (!tag) {
+        return null;
+    }
+
+    const label = utils.escapeHtml(entity.title);
+    const playsInline = tag === "video" ? " playsinline" : "";
+    return `<${tag} class="media-player" src="${src}" controls preload="metadata"${playsInline}`
+        + ` aria-label="${label}"></${tag}>`;
+}
+
+function getMediaTag(mime: string) {
+    if (mime.startsWith("video/")) {
+        return "video";
+    }
+    return mime.startsWith("audio/") ? "audio" : null;
 }
 
 function renderSpreadsheet(result: Result) {

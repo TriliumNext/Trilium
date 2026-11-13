@@ -13,6 +13,7 @@ html:root {
     --ck-content-table-caption-text-color: var(--main-text-color);
     --ck-content-table-caption-background-color: var(--accented-background-color);
     --ck-color-table-caption-highlighted-background: var(--accented-background-color);
+    --ck-code-block-label-text-color: var(--main-text-color);
 
     /* -- Overrides the default .ck-button class colors. ---------------------------------------- */
 
@@ -219,6 +220,26 @@ div.ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__panel {
 :root .ck.ck-dropdown__panel .ck-dropdown-menu-list__nested-menu > .ck-button,
 :root .ck.ck-dropdown-menu__nested-menu__panel .ck.ck-list__item > .ck-button {
     min-height: var(--ck-dropdown-item-height);
+}
+
+:root .ck.ck-heading_heading2 .ck-button__label {
+    font-size: 1.4em;
+}
+
+:root .ck.ck-heading_heading3 .ck-button__label {
+    font-size: 1.3em;
+}
+
+:root .ck.ck-heading_heading4 .ck-button__label {
+    font-size: 1.2em;
+}
+
+:root .ck.ck-heading_heading5 .ck-button__label {
+    font-size: 1.1em;
+}
+
+:root .ck.ck-heading_heading6 .ck-button__label {
+    font-size: 1em;
 }
 
 :root .ck.ck-button.ck-dropdown-menu-list__nested-menu__button > .ck-dropdown-menu-list__nested-menu__button__arrow {
