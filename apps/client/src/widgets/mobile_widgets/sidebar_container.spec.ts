@@ -338,5 +338,13 @@ describe("SidebarContainer", () => {
             expect(press(content).reached).toHaveBeenCalledTimes(2);
             expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
         });
+
+        it("stops listening to the page once cleaned up", () => {
+            const sidebar = renderShown(true);
+            sidebar.cleanup();
+
+            expect(press(content).reached).toHaveBeenCalledTimes(2);
+            expect(sidebar.$widget.hasClass("left-pane-hidden")).toBe(false);
+        });
     });
 });

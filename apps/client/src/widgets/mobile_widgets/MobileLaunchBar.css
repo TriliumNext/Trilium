@@ -3,6 +3,7 @@ body.mobile #launcher-pane {
 
     &.horizontal {
         flex-direction: row;
+        height: 53px;
     }
 }
 
@@ -20,7 +21,7 @@ body.mobile.navigation-rail {
         border-top: 0;
         border-inline-end: 1px solid var(--main-border-color);
         padding-bottom: var(--mobile-bottom-offset);
-        background-color: var(--launcher-pane-vert-background-color);
+        background-color: var(--launcher-pane-vert-background-color, var(--launcher-pane-background-color));
     }
 
     #launcher-pane.navigation-rail {
@@ -28,10 +29,31 @@ body.mobile.navigation-rail {
         --launcher-pane-button-margin: 6px;
         --launcher-pane-button-gap: 2px;
         --navigation-rail-icon-top: 10px;
+        --navigation-rail-button-size: calc(var(--navigation-rail-width) - 2 * var(--launcher-pane-button-margin));
 
+        width: var(--navigation-rail-width);
+        min-width: var(--navigation-rail-width);
         flex-direction: column;
         flex-grow: 1;
         padding-block: 8px;
+
+        #launcher-container {
+            min-height: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .launcher-button,
+        .right-dropdown-widget,
+        .global-menu {
+            width: var(--navigation-rail-button-size);
+            height: var(--navigation-rail-button-size);
+            margin: var(--launcher-pane-button-gap) var(--launcher-pane-button-margin);
+        }
+
+        .right-dropdown-widget .launcher-button {
+            margin: 0;
+        }
 
         .launcher-button,
         .global-menu-button {
@@ -46,7 +68,7 @@ body.mobile.navigation-rail {
         .global-menu-button {
             width: 100%;
             height: 100%;
-            font-size: var(--launcher-pane-icon-size);
+            font-size: var(--launcher-pane-icon-size, 24px);
         }
 
         .launcher-button-label {
@@ -64,13 +86,13 @@ body.mobile.navigation-rail {
 
         .launcher-button.active,
         .global-menu-button.show {
-            background: var(--launcher-pane-button-hover-background) !important;
-            color: var(--launcher-pane-button-hover-color);
+            background: var(--launcher-pane-button-hover-background, var(--hover-item-background-color)) !important;
+            color: var(--launcher-pane-button-hover-color, var(--launcher-pane-text-color));
         }
 
         /* Centers the count of `TabSwitcher.css` on the icon, which sits at the top of the button. */
         .mobile-tab-switcher::after {
-            top: calc(var(--navigation-rail-icon-top) + var(--launcher-pane-icon-size) / 2);
+            top: calc(var(--navigation-rail-icon-top) + var(--launcher-pane-icon-size, 24px) / 2);
         }
 
         .sync-status-widget {
@@ -95,6 +117,7 @@ body.mobile.navigation-rail {
         inset-block: var(--safe-area-inset-top, env(safe-area-inset-top)) var(--mobile-bottom-offset) !important;
         transform: none !important;
         width: var(--navigation-rail-panel-width) !important;
+        min-width: 0;
         max-height: none !important;
         margin: 0 !important;
         border: 0 !important;

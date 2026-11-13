@@ -12,14 +12,8 @@ import { ParentComponent } from "../react/react_utils";
 const RAIL_CONTEXT = { isHorizontalLayout: false, showLabels: true } as const;
 
 /**
- * The launch bar of the mobile layout. It is a bar along the bottom edge, or the top edge of a
- * tablet, with the global menu at its end. With the `mobileNavigationRail` option on a tablet-wide
- * screen it is a rail along the start edge instead: the global menu and the note tree come first,
- * and every button shows its title under its icon. `MobileLaunchBar.css` then opens the global menu,
- * the note tree and the note's actions as panels beside the note.
- *
- * `component` stays in the class list because `BasicWidget` adds it to this element, and a change of
- * `className` here would drop it.
+ * The mobile launch bar: a bar along the edge, or a labeled navigation rail on a tablet-wide screen
+ * with the `mobileNavigationRail` option on. `component` is the class `BasicWidget` gives it.
  */
 export default function MobileLaunchBar() {
     const isNavigationRail = useNavigationRail();

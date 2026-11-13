@@ -46,6 +46,8 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private screenWidth: number;
     /** Whether the sidebar is shown in tablet mode, where it sits next to the note (same option as the left pane on desktop). */
     private leftPaneVisible: boolean;
+    /** Aborts the listeners this widget adds to the document, once it is cleaned up. */
+    private documentListeners = new AbortController();
 
     constructor(screenName: Screen, direction: FlexDirection) {
         super(direction);
@@ -73,10 +75,17 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             return true;
         });
 
-        document.addEventListener("touchstart", (e) => this.#onDragStart(e));
-        document.addEventListener("touchmove", (e) => this.#onDragMove(e), { passive: false });
-        document.addEventListener("touchend", (e) => this.#onDragEnd(e));
-        document.addEventListener("pointerdown", (e) => this.#closeOnNotePress(e), true);
+        this.documentListeners.abort();
+        this.documentListeners = new AbortController();
+        const { signal } = this.documentListeners;
+        document.addEventListener("touchstart", (e) => this.#onDragStart(e), { signal });
+        document.addEventListener("touchmove", (e) => this.#onDragMove(e), { passive: false, signal });
+        document.addEventListener("touchend", (e) => this.#onDragEnd(e), { signal });
+        document.addEventListener("pointerdown", (e) => this.#closeOnNotePress(e), { capture: true, signal });
+    }
+
+    cleanup() {
+        this.documentListeners.abort();
     }
 
     /**
