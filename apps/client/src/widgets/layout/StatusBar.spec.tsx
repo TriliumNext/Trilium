@@ -52,6 +52,7 @@ vi.mock("../attribute_widgets/AttributeEditor", async () => {
 
 import appContext from "../../components/app_context";
 import type Component from "../../components/component";
+import options from "../../services/options";
 import server from "../../services/server";
 import { buildNote } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
@@ -215,6 +216,87 @@ describe("StatusBar panels", () => {
         renderBar(true, "text");
         expect(container.querySelector(".actions-row")).not.toBeNull();
         expect(container.querySelector(".cursor-position")).toBeNull();
+    });
+
+    it("shows Vim mode before the buttons, and its command line in place of the breadcrumb", () => {
+        const listeners = new Set<() => void>();
+        const vim = {
+            status: {
+                mode: "normal", isOneCommand: false, pendingKeys: "", recording: null,
+                message: null, commandLine: null
+            } as Record<string, unknown>,
+            on: (_event: string, callback: () => void) => listeners.add(callback),
+            off: (_event: string, callback: () => void) => listeners.delete(callback)
+        };
+        const setStatus = (status: Record<string, unknown>) => act(() => {
+            vim.status = { ...vim.status, ...status };
+            for (const listener of listeners) {
+                listener();
+            }
+        });
+        contextData.set("vimMode", vim);
+
+        renderBar();
+        const statusLine = container.querySelector(".actions-row > .vim-status-line");
+        expect(statusLine?.textContent?.trim()).toBe("vim_mode.normal");
+        expect(statusLine?.previousElementSibling).toBeNull();
+        expect(container.querySelector(".breadcrumb + .vim-command-line-slot")).not.toBeNull();
+        expect(document.body.classList.contains("vim-status-shown")).toBe(true);
+        expect(container.querySelector(".vim-hint-strip, .vim-hints-shown")).toBeNull();
+
+        setStatus({ hints: { kind: "mode", typedKeys: [], hints: [] } });
+        expect(container.querySelector(".status-bar.vim-hints-shown")).not.toBeNull();
+        expect(container.querySelector(".vim-command-line-slot + .vim-hint-strip")).not.toBeNull();
+        setStatus({ hints: null });
+
+        setStatus({
+            commandLine: { element: document.createElement("div"), focus() {} },
+            message: { text: "a, b", isLong: true }
+        });
+        expect(container.querySelector(".status-bar.vim-command-line-open")).not.toBeNull();
+        expect(container.querySelector(".status-bar > .vim-message-panel")?.textContent)
+            .toBe("a, b");
+
+        setStatus({ mode: null, commandLine: null, message: null });
+        expect(container.querySelector(".vim-status-line, .vim-command-line-slot")).toBeNull();
+        expect(container.querySelector(".vim-command-line-open, .vim-message-panel")).toBeNull();
+        expect(document.body.classList.contains("vim-status-shown")).toBe(false);
+    });
+
+    it("shows the Vim mode badge before the mode while the Vim mode option is on", () => {
+        const vim = {
+            status: { mode: "normal" } as Record<string, unknown>,
+            on: () => {},
+            off: () => {}
+        };
+        contextData.set("vimMode", vim);
+        renderBar();
+        expect(container.querySelector(".vim-mode-badge")).toBeNull();
+        act(() => render(null, container));
+
+        options.load({ textNoteVimModeEnabled: "true" });
+        try {
+            renderBar();
+            const badge = container.querySelector(".actions-row > .vim-mode-badge");
+            expect(badge?.previousElementSibling).toBeNull();
+            expect(badge?.nextElementSibling?.classList.contains("vim-status-line")).toBe(true);
+            act(() => render(null, container));
+
+            // Vim mode off for the note: the badge stays, to turn it back on, in Zen mode too.
+            vim.status = { mode: null };
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).not.toBeNull();
+            expect(container.querySelector(".vim-status-line")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(true);
+            act(() => render(null, container));
+
+            contextData.clear();
+            renderBar();
+            expect(container.querySelector(".vim-mode-badge")).toBeNull();
+            expect(document.body.classList.contains("vim-status-shown")).toBe(false);
+        } finally {
+            options.load({});
+        }
     });
 
     function renderBar(isContentWritable = true, type: NoteType = "text") {

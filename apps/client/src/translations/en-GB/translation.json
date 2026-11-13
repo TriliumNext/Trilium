@@ -257,6 +257,9 @@
     "color-menu": {
       "text-color": "Text colour",
       "background-color": "Background colour"
+    },
+    "ck": {
+      "center-this-line": "centre this line"
     }
   },
   "link_context_menu": {

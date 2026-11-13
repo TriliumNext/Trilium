@@ -9,7 +9,9 @@ import {
     TableUtils,
     TableWalker
 } from "ckeditor5";
-import type { Editor, ModelElement, ViewDocumentMouseDownEvent } from "ckeditor5";
+import type {
+    Editor, ModelElement, ViewDocumentMouseDownEvent, ViewDocumentTabEvent
+} from "ckeditor5";
 
 import { DistributeTableColumnsCommand } from "./table_distribute_columns.js";
 
@@ -26,6 +28,9 @@ import { DistributeTableColumnsCommand } from "./table_distribute_columns.js";
  * act on the whole selection.
  */
 export default class TableContextMenu extends Plugin {
+
+    /** Whether a Tab key is being handled, which moves the caret into the row it adds itself. */
+    private isTabbing = false;
 
     static get requires() {
         return [Table, TableColumnResize, TableSelection, TableUtils] as const;
@@ -60,6 +65,13 @@ export default class TableContextMenu extends Plugin {
         }
 
         const view = editor.editing.view;
+        // `Tab` in the last cell adds a row, and `Widget` then moves the caret to its first cell.
+        this.listenTo<ViewDocumentTabEvent>(view.document, "tab", () => {
+            this.isTabbing = true;
+            queueMicrotask(() => {
+                this.isTabbing = false;
+            });
+        }, { context: "$capture" });
         const tableMouse = editor.plugins.get(TableMouse);
         view.addObserver(MouseObserver);
         this.listenTo<ViewDocumentMouseDownEvent>(view.document, "mousedown", (evt, data) => {
@@ -123,7 +135,7 @@ export default class TableContextMenu extends Plugin {
             const cells = tableUtils.getSelectionAffectedTableCells(selection);
             const [ cell ] = cells;
             // The command inserts nothing when it runs with the selection outside a table.
-            if (!cell) {
+            if (!cell || this.isTabbing) {
                 return;
             }
 

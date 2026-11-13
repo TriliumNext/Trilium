@@ -11,6 +11,7 @@ On the right side, specific sections will show depending on the type of the curr
     1.  Before it, the position of the cursor is shown as a line and a column, such as _Ln: 12 Col: 32_. It updates as the cursor moves. While text is selected, the number of selected characters follows, such as _Selected: 120_.
 2.  For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, the content language is displayed and can be changed, thus configuring the spell-check and the right-to-left support.
     1.  Note that this applies to the entire note and not the selection, unlike some text editors.
+    2.  While <a class="reference-link" href="../../Note%20Types/Text/Vim%20mode.md">Vim mode</a> is turned on in the options, a _Vim_ badge turns it on or off for the note, followed by the current mode of Vim.
 3.  If a note is placed in multiple places in the tree (cloned), the number of the note paths will be displayed.
     1.  Clicking it opens a popup with the full list of note paths, from which the note can also be cloned to a new location. The same list is available in the sidebar's <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a>.
 4.  If a note has attachments, their number will be displayed.

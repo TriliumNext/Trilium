@@ -10,7 +10,9 @@ vi.mock("../../services/keyboard_actions.js", () => ({
 import Component from "../../components/component.js";
 import type { ShortcutHintSection } from "../../services/shortcut_hints.js";
 import { ParentComponent } from "../react/react_utils.js";
-import ShortcutHintsPanel, { ShortcutHintsSections } from "./shortcut_hints_panel.js";
+import ShortcutHintsPanel, {
+    closeShortcutHints, ShortcutHintsSections
+} from "./shortcut_hints_panel.js";
 
 let container: HTMLDivElement;
 
@@ -104,6 +106,31 @@ describe("ShortcutHintsPanel", () => {
         }
     });
 
+    it("renders a live section, stays open for it, and closes on request", () => {
+        vi.useFakeTimers();
+        try {
+            const host = mountPanel();
+            expect(closeShortcutHints()).toBe(false);
+            request(host, [ ...SECTIONS, {
+                hints: [], content: () => <p className="live-section">live</p>, isPersistent: true
+            } ]);
+            expect(document.querySelector(".shortcut-hints-panel .live-section")?.textContent)
+                .toBe("live");
+            const panel = document.querySelector(".shortcut-hints-panel");
+            act(() => { panel?.dispatchEvent(new MouseEvent("mouseleave")); });
+            act(() => { vi.advanceTimersByTime(60000); });
+            expect(document.querySelector(".shortcut-hints-panel")).not.toBeNull();
+
+            let wasOpen = false;
+            act(() => { wasOpen = closeShortcutHints(); });
+            expect(wasOpen).toBe(true);
+            expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
+            expect(closeShortcutHints()).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("closes when the active note context changes", () => {
         const host = mountPanel();
         request(host, SECTIONS);
@@ -164,6 +191,25 @@ describe("ShortcutHintsPanel", () => {
             // A mousedown elsewhere dismisses it.
             act(() => { document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); });
             expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
+        } finally {
+            anchor.remove();
+        }
+    });
+
+    it("keeps the tooltip of its anchor from showing over it while open", () => {
+        const host = mountPanel();
+        const anchor = document.createElement("button");
+        document.body.appendChild(anchor);
+        const isTooltipShown = () => anchor.dispatchEvent(
+            new Event("show.bs.tooltip", { cancelable: true }));
+        try {
+            expect(isTooltipShown()).toBe(true);
+            act(() => {
+                host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor });
+            });
+            expect(isTooltipShown()).toBe(false);
+            act(() => { closeShortcutHints(); });
+            expect(isTooltipShown()).toBe(true);
         } finally {
             anchor.remove();
         }

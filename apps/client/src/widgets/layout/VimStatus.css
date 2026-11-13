@@ -1,0 +1,194 @@
+:where(:root) {
+    --vim-status-line-color: var(--main-text-color);
+    --vim-status-line-pending-keys-color: var(--muted-text-color);
+    --vim-message-panel-background-color: var(--left-pane-background-color);
+    --vim-message-panel-border-color: var(--main-border-color);
+    --vim-hint-description-color: var(--muted-text-color);
+
+    --vim-mode-badge-hover-background-color:
+        var(--icon-button-hover-background, var(--input-background-color));
+    --vim-mode-badge-on-background-color: var(--input-action-button-color, var(--main-text-color));
+    --vim-mode-badge-on-hover-background-color:
+        var(--input-action-button-hover, var(--main-text-color));
+    --vim-mode-badge-on-color: var(--main-background-color);
+}
+
+:is(.status-bar .status-bar-main-row .actions-row, .vim-title-status) .btn.vim-mode-badge {
+    margin-block: 4px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+
+    &:hover {
+        background: var(--vim-mode-badge-hover-background-color);
+    }
+
+    &[aria-pressed="true"] {
+        background: var(--vim-mode-badge-on-background-color);
+        color: var(--vim-mode-badge-on-color);
+
+        &:hover {
+            background: var(--vim-mode-badge-on-hover-background-color);
+        }
+    }
+}
+
+.vim-title-status {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 5px;
+    margin-inline-end: 5px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    opacity: 0.75;
+
+    .btn {
+        display: flex;
+        align-items: center;
+        border: 0;
+        padding: 0 0.5em;
+        height: 1.9em;
+    }
+
+    .vim-mode {
+        color: inherit;
+        font-family: var(--monospace-font-family);
+        font-size: inherit;
+        font-weight: 600;
+    }
+}
+
+.status-bar {
+    .vim-command-line-slot {
+        display: flex;
+        min-width: 0;
+    }
+
+    &.vim-command-line-open {
+        .breadcrumb {
+            display: none;
+        }
+
+        .vim-command-line-slot {
+            flex: 1 1 auto;
+            padding-inline: 0.5em;
+            min-width: 12ch;
+        }
+
+        .ck-vim-command-line__input {
+            field-sizing: content;
+            min-width: 4ch;
+        }
+
+        .vim-hint-strip {
+            flex: 0 1000 auto;
+        }
+    }
+
+    &.vim-hints-shown .breadcrumb {
+        display: none;
+    }
+
+    .vim-hint-strip {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: center;
+        gap: 0.75em;
+        padding-inline: 0.5em;
+        min-width: 0;
+        white-space: nowrap;
+
+        .vim-hint-typed-keys {
+            display: flex;
+            flex-shrink: 0;
+            gap: 0.25em;
+        }
+
+        .vim-hints {
+            min-width: 0;
+        }
+
+        kbd {
+            font-family: var(--monospace-font-family);
+            font-size: 0.9em;
+        }
+    }
+
+    .vim-hint {
+        & + .vim-hint {
+            margin-inline-start: 1em;
+        }
+
+        .vim-hint-keys {
+            display: inline-flex;
+            gap: 0.2em;
+        }
+
+        .vim-hint-keys code {
+            padding: 0;
+            background: none;
+            color: inherit;
+            font-size: 0.9em;
+        }
+
+        .vim-hint-keys + .vim-hint-description {
+            margin-inline-start: 0.4em;
+        }
+
+        .vim-hint-description {
+            color: var(--vim-hint-description-color);
+
+            strong {
+                color: var(--vim-status-line-color);
+            }
+        }
+    }
+
+    .vim-recording .vim-hint {
+        margin-inline-start: 0.75em;
+
+        kbd {
+            font-family: var(--monospace-font-family);
+        }
+    }
+
+    .vim-status-line {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        padding-inline: 0.5em;
+        min-width: 0;
+        color: var(--vim-status-line-color);
+        font-family: var(--monospace-font-family);
+        white-space: nowrap;
+
+        .vim-message {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vim-pending-keys {
+            color: var(--vim-status-line-pending-keys-color);
+        }
+
+        .vim-mode {
+            color: inherit;
+            font: inherit;
+            font-weight: 600;
+        }
+    }
+
+    > .vim-message-panel {
+        margin: 0;
+        border-top: 1px solid var(--vim-message-panel-border-color);
+        padding: 0.5em 1em;
+        max-height: 40vh;
+        overflow: auto;
+        background-color: var(--vim-message-panel-background-color);
+        font-family: var(--monospace-font-family);
+        font-size: 0.85em;
+        white-space: pre;
+    }
+}

@@ -54,6 +54,13 @@ export type { BlockReferenceHost } from "./plugins/block_reference/block_referen
 export type { BlockDragHandleHost } from "./plugins/block_drag_handle.js";
 export type { SortTargetKind } from "./plugins/sort_selection/sort_targets.js";
 export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
+export type {
+    LinkUnderCursor, default as TriliumVim, VimCommandLine, VimConfig, VimHost, VimMessage, VimMode,
+    VimStatus
+} from "./plugins/vim/vim.js";
+export { getLinkUnderCursor } from "./plugins/vim/vim.js";
+export type { VimHint, VimHintKind, VimHints } from "./plugins/vim/vim_hints.js";
+export type { VimHintSection } from "./plugins/vim/vim_key_reference.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";
@@ -88,6 +95,7 @@ import "./plugins/table_column_bar/table_column_bar.js";
 import "./plugins/table_context_menu.js";
 import "./plugins/table_paste_rows.js";
 import "./plugins/insert_media.js";
+import "./plugins/vim/vim.js";
 
 window[Symbol.for("cke distribution")] = "trilium";
 

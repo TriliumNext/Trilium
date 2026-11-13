@@ -8,7 +8,9 @@ import {
     type ContentEmbedDialogRequest,
     type FileUploadData,
     type FileUploadEvent,
+    getLinkUnderCursor,
     type LinkDialogRequest,
+    type LinkUnderCursor,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import {
@@ -335,30 +337,7 @@ export default function EditableText({
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
             const editor = await waitForEditor();
-            const selection = editor?.model.document.selection;
-            const selectedElement = selection?.getSelectedElement();
-
-            if (selectedElement?.name === "reference") {
-                const { notePath } = parseNavigationStateFromUrl(selectedElement.getAttribute("href") as string | undefined);
-
-                if (notePath) {
-                    await appContext.tabManager.getActiveContext()?.setNote(notePath);
-                    return;
-                }
-            }
-
-            if (!selection?.hasAttribute("linkHref")) {
-                return;
-            }
-
-            const selectedLinkUrl = selection.getAttribute("linkHref") as string;
-            const notePath = link.getNotePathFromUrl(selectedLinkUrl);
-
-            if (notePath) {
-                await appContext.tabManager.getActiveContext()?.setNote(notePath);
-            } else {
-                window.open(selectedLinkUrl, "_blank");
-            }
+            await followLink(editor ? getLinkUnderCursor(editor) : null);
         },
         async cutIntoNoteCommand() {
             // The note this editor is showing, not whichever one the tab manager considers active: the
@@ -572,6 +551,7 @@ export default function EditableText({
                 showLinkDialog={showLinkDialog}
                 showContentEmbedDialog={showContentEmbedDialog}
                 isExcerpt={block !== undefined}
+                isVisible={isVisible}
                 onChange={() => {
                     // `getData()` serializes the whole note, so saves wait for typing to pause.
                     spacedUpdate.resetUpdateTimer();
@@ -747,6 +727,24 @@ export function parseLinkHref(
     const rest = params.toString();
     const notePath = rest ? `${path}?${rest}` : path;
     return { currentLink: { notePath }, currentBookmark: bookmark };
+}
+
+/**
+ * Opens what `target`, the link under the cursor, links to: a note in the active tab, or the web
+ * page of a link in the text in a new window.
+ */
+export async function followLink(target: LinkUnderCursor | null) {
+    if (!target?.href) {
+        return;
+    }
+    const notePath = target.isReference
+        ? parseNavigationStateFromUrl(target.href).notePath
+        : link.getNotePathFromUrl(target.href);
+    if (notePath) {
+        await appContext.tabManager.getActiveContext()?.setNote(notePath);
+    } else if (!target.isReference) {
+        window.open(target.href, "_blank");
+    }
 }
 
 export function getBlockData(editor: CKTextEditor, block: string) {

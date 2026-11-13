@@ -659,8 +659,9 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     if (row.isSwitch) {
         return (
             <FormListToggleableItem
-                icon={uiIcon} title={title} currentValue={!!checked} disabled={enabled === false}
-                helpTooltip={tooltip} className={className} closeOnSelect={false}
+                icon={uiIcon} title={title} description={description} currentValue={!!checked}
+                disabled={enabled === false} helpTooltip={tooltip} className={className}
+                closeOnSelect={false}
                 onChange={(_, e) => select(e)}
             />
         );

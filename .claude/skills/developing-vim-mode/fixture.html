@@ -1,0 +1,49 @@
+<h2>A00 Plain text</h2>
+<p>A01 The quick brown fox jumps over the lazy dog.</p>
+<p>A02 Formats: <strong>bold</strong>, <i>italic</i>, <u>underline</u>, <s>strike</s>, <code>code</code>, <a href="https://example.com/">a link</a> and <strong><i>both at once</i></strong>.</p>
+<p>A03 A line that ends in <a href="https://example.com/end">a link</a></p>
+<p>A04 First part of a line<br>A05 second part after a soft break</p>
+<p>A06 Emoji 😀 and 👍 beside a letter with a combining mark: cafe&#x301;.</p>
+<p>A07 A note reference <a class="reference-link" href="#root">root</a> inside a sentence.</p>
+<p>A08 Numbers 7, 08, 0x1f and 2026-01-09 for the number keys.</p>
+<p>A09 Brackets (round [square {curly}]) and "quoted text" for text objects.</p>
+<p>&nbsp;</p>
+<h2>B00 Headings</h2>
+<p>B01 text under a heading</p>
+<h3>B02 A subsection</h3>
+<p>B03 first paragraph of the subsection</p>
+<p>B04 second paragraph of the subsection</p>
+<h3 data-trilium-collapsed="true">B05 A collapsed subsection</h3>
+<p>B06 hidden paragraph</p>
+<p>B07 another hidden paragraph</p>
+<h2>C00 Lists</h2>
+<ul><li>C01 first item</li><li>C02 second item<ul><li>C03 nested item<ul><li>C04 deeper item</li></ul></li><li>C05 nested sibling</li></ul></li><li><p>C06 item with two paragraphs</p><p>C07 its second paragraph</p></li></ul>
+<ol><li>C08 numbered one</li><li>C09 numbered two</li><li>C10 numbered three</li></ol>
+<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled="disabled"><span class="todo-list__label__description">C11 open task</span></label></li><li><label class="todo-list__label"><input type="checkbox" checked="checked" disabled="disabled"><span class="todo-list__label__description">C12 done task</span></label></li></ul>
+<ul><li data-trilium-collapsed="true">C13 collapsed item<ul><li>C14 hidden child</li></ul></li><li>C15 item after the collapsed one</li></ul>
+<h2>D00 Containers</h2>
+<blockquote><p>D01 first line of a quote</p><p>D02 second line of the quote</p></blockquote>
+<aside class="admonition note"><p>D03 an admonition</p><p>D04 its second paragraph</p></aside>
+<pre><code class="language-text-plain">D05 first code line
+D06     indented code line
+D07 last code line</code></pre>
+<p>D08 paragraph after the code block</p>
+<h2>E00 Tables</h2>
+<figure class="table"><table><thead><tr><th>E01 head a</th><th>E02 head b</th></tr></thead><tbody><tr><td>E03 cell a</td><td><p>E04 cell b, line one</p><p>E05 cell b, line two</p></td></tr><tr><td>E06 cell c</td><td>E07 cell d</td></tr></tbody></table><figcaption>E08 the caption of the table</figcaption></figure>
+<p>E09 paragraph after the table</p>
+<h2>F00 Widgets</h2>
+<p>F01 paragraph before the horizontal line</p>
+<hr>
+<p>F02 paragraph between two widgets</p>
+<div class="page-break" style="page-break-after:always;"><span style="display:none;">&nbsp;</span></div>
+<p>F03 paragraph after the page break</p>
+<h2>G00 Boxes</h2>
+<details class="trilium-collapsible" open=""><summary>G01 an open collapsible block</summary><p>G02 first body paragraph</p><p>G03 second body paragraph</p></details>
+<details class="trilium-collapsible"><summary>G04 a closed collapsible block</summary><p>G05 hidden body paragraph</p></details>
+<div class="trilium-tabs"><section class="trilium-tab"><p class="trilium-tab-title">G06 First tab</p><div class="trilium-tab-panel"><p>G07 first tab, line one</p><p>G08 first tab, line two</p></div></section><section class="trilium-tab"><p class="trilium-tab-title">G09 Second tab</p><div class="trilium-tab-panel"><p>G10 second tab text</p></div></section></div>
+<div class="trilium-multicolumn-layout" data-trilium-column-ratios="1-1"><div class="trilium-multicolumn-column"><p>G11 left column, line one</p><p>G12 left column, line two</p></div><div class="trilium-multicolumn-column"><p>G13 right column</p></div></div>
+<p>G14 paragraph after the boxes</p>
+<h2>Z00 Footnotes</h2>
+<p>Z01 A sentence with a footnote<span class="footnote-reference" data-footnote-reference="" data-footnote-index="1" data-footnote-id="fa" role="doc-noteref" id="fnreffa"><sup><a href="#fnfa">[1]</a></sup></span> in it.</p>
+<p>Z02 the last paragraph of the note</p>
+<ol class="footnote-section footnotes" data-footnote-section="" role="doc-endnotes"><li class="footnote-item" data-footnote-item="" data-footnote-index="1" data-footnote-id="fa" role="doc-endnote" id="fnfa"><span class="footnote-back-link" data-footnote-back-link="" data-footnote-id="fa"><sup><strong><a href="#fnreffa">^</a></strong></sup></span><div class="footnote-content" data-footnote-content=""><p>Z03 the text of the footnote</p></div></li></ol>

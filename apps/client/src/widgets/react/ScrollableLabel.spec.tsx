@@ -19,14 +19,17 @@ afterEach(() => {
  * writable already; the two widths are not, and stand for a line of the given length in a 100px box.
  */
 function renderLabel(
-    text: ComponentChildren, scrollWidth: number, clientWidth = 100, autoScroll = false
+    text: ComponentChildren, scrollWidth: number, clientWidth = 100, autoScroll = false,
+    isScrolledByWheel = false
 ) {
     const mountPoint = document.body.appendChild(document.createElement("div"));
     container = mountPoint;
     // Flushed here: the fade attaches its listeners from an effect, which Preact defers past the
     // render, and a test that scrolled before that would be scrolling at nothing.
     act(() => {
-        render(<ScrollableLabel autoScroll={autoScroll}>{text}</ScrollableLabel>, mountPoint);
+        render(<ScrollableLabel autoScroll={autoScroll} isScrolledByWheel={isScrolledByWheel}>
+            {text}
+        </ScrollableLabel>, mountPoint);
     });
 
     const label = mountPoint.querySelector<HTMLDivElement>(".scrollable-label");
@@ -62,6 +65,13 @@ function pointer(target: Element, type: string, clientX: number, init: PointerEv
 /** Dispatches a cancelable `type` event on `target` and tells whether the label canceled it. */
 function isPrevented(target: Element, type: string) {
     const event = new MouseEvent(type, { bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
+}
+
+/** Turns the wheel over `target` and tells whether the label took the turn. */
+function wheel(target: Element, init: WheelEventInit) {
+    const event = new WheelEvent("wheel", { bubbles: true, cancelable: true, ...init });
     target.dispatchEvent(event);
     return event.defaultPrevented;
 }
@@ -261,6 +271,36 @@ describe("ScrollableLabel", () => {
                 mountPoint.remove();
             }
         }
+    });
+
+    it("scrolls along with a vertical wheel when asked to, in the unit the wheel counts in", () => {
+        const label = renderLabel("a line too long for its box", 300, 100, false, true);
+        Object.defineProperty(label, "clientHeight", { value: 20, configurable: true });
+
+        expect(wheel(label, { deltaY: 50 })).toBe(true);
+        expect(label.scrollLeft).toBe(50);
+        expect(wheel(label, { deltaY: -1, deltaMode: WheelEvent.DOM_DELTA_LINE })).toBe(true);
+        expect(label.scrollLeft).toBe(30);
+        expect(wheel(label, { deltaY: 1, deltaMode: WheelEvent.DOM_DELTA_PAGE })).toBe(true);
+        expect(label.scrollLeft).toBe(130);
+        // A horizontal wheel scrolls the line as it does anywhere.
+        expect(wheel(label, { deltaX: 40, deltaY: 10 })).toBe(false);
+
+        label.style.direction = "rtl";
+        label.scrollLeft = 0;
+        expect(wheel(label, { deltaY: 50 })).toBe(true);
+        expect(label.scrollLeft).toBe(-50);
+    });
+
+    it("leaves the vertical wheel to the page by default", () => {
+        const label = renderLabel("a line too long for its box", 300);
+        expect(wheel(label, { deltaY: 50 })).toBe(false);
+        expect(label.scrollLeft).toBe(0);
+    });
+
+    it("leaves the vertical wheel to the page over a label that fits", () => {
+        const label = renderLabel("short", 80, 100, false, true);
+        expect(wheel(label, { deltaY: 50 })).toBe(false);
     });
 
     it("leaves a label that fits alone, fading nothing", async () => {

@@ -134,6 +134,35 @@ describe("FindInLinkWidgets", () => {
         }
     });
 
+    it("puts the classes and attributes of other highlights on the widget", () => {
+        const conversion = editor.conversion.for("editingDowncast");
+        conversion.markerToHighlight({ model: "classes", view: { classes: "probe" } });
+        conversion.markerToHighlight(
+            { model: "attributes", view: { attributes: { "data-probe": "yes" } } });
+        setModelData(
+            editor.model, '<paragraph><reference href="#root/ref"></reference></paragraph>');
+        const reference = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+        const item = editor.model.document.getRoot()?.getChild(0)?.getChild(0) as ModelElement;
+        const toggle = (name: string, isOn: boolean) => editor.model.change((writer) => {
+            if (isOn) {
+                writer.addMarker(name, {
+                    range: writer.createRangeOn(item), usingOperation: false, affectsData: false
+                });
+            } else {
+                writer.removeMarker(name);
+            }
+        });
+
+        toggle("classes", true);
+        expect(reference?.classList.contains("probe")).toBe(true);
+        toggle("classes", false);
+        expect(reference?.classList.contains("probe")).toBe(false);
+        toggle("attributes", true);
+        expect(reference?.getAttribute("data-probe")).toBe("yes");
+        toggle("attributes", false);
+        expect(reference?.hasAttribute("data-probe")).toBe(false);
+    });
+
     it("wraps every match in place and restores the text when the search changes", () => {
         setModelData(
             editor.model,

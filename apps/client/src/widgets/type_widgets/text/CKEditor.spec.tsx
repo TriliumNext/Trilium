@@ -18,7 +18,10 @@ const mocks = vi.hoisted(() => ({
     reportingEditor: undefined as unknown,
     note: undefined as { noteId: string; title: string } | undefined,
     getHeadings: vi.fn((_editor: unknown): DocumentHeading[] => []),
-    assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new")
+    assignBlockId: vi.fn((_model: unknown, _element: unknown) => "new"),
+    vimConfig: { host: {} },
+    buildVimConfig: vi.fn(),
+    useVimMode: vi.fn()
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
@@ -56,7 +59,8 @@ vi.mock("../../react/hooks", () => ({
         parentComponent: undefined,
         ntxId: undefined,
         note: mocks.note,
-        notePath: undefined
+        notePath: undefined,
+        noteContext: mocks.note && { ntxId: "context1" }
     }),
     useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue),
     useTriliumOption: (name: string) => [ String(mocks.options[name] ?? ""), vi.fn() ],
@@ -69,6 +73,10 @@ vi.mock("./ai_quick_actions", () => ({
 }));
 
 vi.mock("./config", () => ({ buildConfig: vi.fn() }));
+vi.mock("./vim_mode", () => ({
+    buildVimConfig: mocks.buildVimConfig.mockImplementation(() => mocks.vimConfig),
+    useVimMode: mocks.useVimMode
+}));
 
 let host: HTMLElement;
 
@@ -193,14 +201,21 @@ describe("CKEditor", () => {
         const opts = vi.mocked(buildConfig).mock.lastCall?.[0];
         expect(opts?.getNoteId?.()).toBe("host1");
         expect(opts?.isExcerpt?.()).toBe(false);
+        expect(opts?.vim).toBe(mocks.vimConfig);
+        await vi.waitFor(() => expect(mocks.useVimMode).toHaveBeenLastCalledWith(
+            props.editorRef.current, mocks.note, { ntxId: "context1" }, undefined));
+        expect(props.editorRef.current).not.toBeNull();
+        expect(mocks.buildVimConfig.mock.lastCall?.[0].getContainer()).toBe(host.firstChild);
 
         mocks.note = { noteId: "host2", title: "Other" };
         await act(async () => {
-            render(<CKEditor {...props} className="force-rerender" isExcerpt />, host);
+            render(<CKEditor {...props} className="force-rerender" isExcerpt isVisible={false} />,
+                host);
         });
 
         expect(opts?.getNoteId?.()).toBe("host2");
         expect(opts?.isExcerpt?.()).toBe(true);
+        expect(mocks.useVimMode.mock.lastCall?.[3]).toBe(false);
     });
 
     it("lists the headings of its editor and gives one a block id, while it has one", async () => {

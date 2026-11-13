@@ -544,7 +544,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             id: "child-note",
             title: t("Create a new child note"),
             description: t("Create a new child note and insert a link to it"),
-            aliases: [ "new note", "subnote", "sub-note", "page" ],
+            aliases: [ "new note", "subnote", "sub-note", "new page", "subpage" ],
             icon: bxSubdirectoryRight,
             willInsert: true,
             commandName: CHILD_NOTE_COMMAND

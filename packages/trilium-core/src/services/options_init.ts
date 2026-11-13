@@ -338,6 +338,12 @@ const defaultOptions: DefaultOption[] = [
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
     { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
+    { name: "textNoteVimModeEnabled", value: "false", isSynced: false },
+    { name: "textNoteVimModeNoticeShown", value: "false", isSynced: false },
+    { name: "textNoteVimInsertKeysEnabled", value: "false", isSynced: true },
+    { name: "textNoteVimStartupCommands", value: "", isSynced: true },
+    { name: "vimModeHintsEnabled", value: "true", isSynced: true },
+    { name: "vimModeHintStripShown", value: "true", isSynced: true },
     { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
 
     // HTML import configuration

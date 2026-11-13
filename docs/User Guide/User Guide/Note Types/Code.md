@@ -102,6 +102,15 @@ The commands of the first two groups change every line that the selection touche
 *   _Remove diacritics_ turns letters such as `é`, `ș` and `ł` into `e`, `s` and `l`, and removes the vowel points of Hebrew and Arabic. Letters such as `ß` and `æ` stay as they are.
 *   Sorting and the case changes follow the language set in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Language & Region_ → _Default content language_. In Turkish, for example, an uppercase `i` is `İ`.
 
+## Vim keybindings
+
+Code notes can be edited with Vim-style keybindings, which imitate the keys of the [Vim](https://www.vim.org/) text editor. To turn them on, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Editor_ and turn on _Vim keybindings_. The option applies to the current device only.
+
+*   If you are new to Vim, start with the <a class="reference-link" href="Text/Vim%20mode/Vim%20beginner%20guide.md">Vim beginner guide</a>.
+*   For the keys and commands, see the <a class="reference-link" href="Text/Vim%20mode/Vim%20full%20reference.md">Vim full reference</a>. Its rows marked **Text notes only** do not apply to code notes.
+
+Text notes have a Vim mode of their own, with its own option and settings: see <a class="reference-link" href="Text/Vim%20mode.md">Vim mode</a>.
+
 ## Color schemes
 
 Since Trilium 0.94.0 the colors of code notes can be customized by going <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → Code Notes and looking for the _Appearance_ section.

@@ -31,7 +31,7 @@ import HelpDropdown from "../react/HelpDropdown";
 import {
     useActiveNoteContext, useAttachments, useBodyClass, useGetContextDataFrom,
     useLegacyImperativeHandlers, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent,
-    useTriliumEvents
+    useTriliumEvents, useTriliumOptionBool
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
@@ -47,6 +47,9 @@ import {
     type CodeMenu, useCodeLanguageMenu, useNoteCodeSettings, useTabWidthMenu
 } from "./code_menus";
 import { NoteSizeWidget, useNoteMetadata } from "./note_metadata";
+import {
+    useVimStatus, VimCommandLineSlot, VimHintStrip, VimMessagePanel, VimModeBadge, VimStatusLine
+} from "./VimStatus";
 
 interface StatusBarContext {
     note: FNote;
@@ -76,20 +79,36 @@ export default function StatusBar() {
     };
     const isHiddenNote = note?.isHiddenCompletely();
     const canEditAttributes = note?.isContentWritable !== false;
+    const vimStatus = useVimStatus(noteContext);
+    const shownVim = useGetContextDataFrom(noteContext, "vimMode");
+    const [ isVimModeOptionOn ] = useTriliumOptionBool("textNoteVimModeEnabled");
+    const isVimBadgeShown = !!shownVim && isVimModeOptionOn;
+    const vimMessage = vimStatus?.message;
+    const vimHints = vimStatus?.hints;
 
     // The note split comes before the bar in the DOM, so its corner rule keys on a body class.
     useBodyClass("status-bar-panel-open", !!activePane);
+    // Zen mode keeps the bar for Vim mode, and for its badge while the note has Vim mode off.
+    useBodyClass("vim-status-shown", !!vimStatus || isVimBadgeShown);
 
     return (
-        <div className="status-bar">
+        <div className={clsx("status-bar", vimStatus?.commandLine && "vim-command-line-open",
+            vimHints && "vim-hints-shown")}>
             {attributesContext && canEditAttributes && <AttributesPane {...attributesContext} />}
             {noteInfoContext && <SimilarNotesPane {...noteInfoContext} />}
+            {vimMessage?.isLong && <VimMessagePanel text={vimMessage.text} />}
 
             <div className="status-bar-main-row">
                 {context && attributesContext && noteInfoContext && <>
                     <Breadcrumb />
+                    {vimStatus && <VimCommandLineSlot />}
+                    {vimHints && <VimHintStrip hints={vimHints} />}
 
                     <div className="actions-row">
+                        {isVimBadgeShown && (
+                            <VimModeBadge note={context.note} ntxId={context.noteContext.ntxId} />
+                        )}
+                        {vimStatus && <VimStatusLine status={vimStatus} vim={shownVim} />}
                         <CodeCursorPosition {...context} />
                         <CodeNoteSwitcher {...context} />
                         <TabWidthSwitcher {...context} />

@@ -1042,6 +1042,9 @@ importers:
       '@ckeditor/ckeditor5-icons':
         specifier: 49.1.0
         version: 49.1.0
+      '@replit/codemirror-vim-core':
+        specifier: 0.1.0
+        version: 0.1.0
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../commons

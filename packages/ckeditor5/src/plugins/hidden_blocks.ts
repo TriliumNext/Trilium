@@ -45,6 +45,9 @@ export interface HiddenBlocksProvider {
  */
 export default class HiddenBlocks extends Plugin {
 
+    /** Counts the reveals that show or hide blocks without a change of the model. */
+    revealVersion = 0;
+
     private readonly providers: HiddenBlocksProvider[] = [];
     /** The elements with a collapse attribute, with their provider. Can have stale entries. */
     private readonly collapsedOwners = new Map<ModelElement, HiddenBlocksProvider>();
@@ -200,7 +203,9 @@ export default class HiddenBlocks extends Plugin {
     /**
      * Drops the collapsed state of the owners that have nothing to hide, and expands the owners
      * whose blocks a change hid. After a change, a block can be hidden only if it was hidden
-     * before, its owner was collapsed in the change, or both came in with the change.
+     * before, its owner was collapsed in the change, or both came in with the change. Undo and
+     * redo bring back a state that the note had, so the blocks they hide stay hidden, as those of
+     * a collapsed heading that undo puts back alone.
      */
     private fixCollapsedOwners(writer: ModelWriter): boolean {
         const changes = this.editor.model.document.differ.getChanges();
@@ -216,7 +221,7 @@ export default class HiddenBlocks extends Plugin {
                 isFixed = true;
             }
         }
-        return isFixed || this.expandNewlyHidden(writer, changes);
+        return isFixed || (!writer.batch.isUndo && this.expandNewlyHidden(writer, changes));
     }
 
     private expandNewlyHidden(writer: ModelWriter, changes: DifferItem[]) {
@@ -571,6 +576,8 @@ export default class HiddenBlocks extends Plugin {
             void Promise.resolve().then(() => {
                 this.isFindClosing = false;
             });
+        } else {
+            this.isFindClosing = false;
         }
 
         const owners = new Set(position && this.collapsedOwners.size
@@ -586,6 +593,7 @@ export default class HiddenBlocks extends Plugin {
 
     /** Applies a change of the reveals to the editing view. */
     private refreshView() {
+        this.revealVersion++;
         this.revealedCache = null;
         this.isViewStale = true;
         this.editor.editing.view.forceRender();

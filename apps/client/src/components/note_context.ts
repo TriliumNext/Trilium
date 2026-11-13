@@ -1,4 +1,4 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, TriliumVim } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 
 import type FNote from "../entities/fnote.js";
@@ -111,6 +111,11 @@ export interface NoteContextDataMap {
     };
     /** Published by the code editor of the note, so the status bar can show the cursor position. */
     codeEditor: CodeMirror;
+    /**
+     * Published by the text editor of the note, so the status bar can show the mode and the
+     * command line of its Vim mode, or of the one in the focused embed.
+     */
+    vimMode: TriliumVim;
     /** Published by content widgets (via `useNoteBlob`) while the note's content is being fetched,
      * so the note detail can show a loading state instead of the previous note's content. */
     contentLoad: {
