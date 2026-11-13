@@ -105,7 +105,7 @@ export function VimHintStrip({ hints }: { hints: VimHints }) {
                     {typedKeys.map((key, index) => <kbd key={index}>{key}</kbd>)}
                 </span>
             )}
-            <ScrollableLabel key={JSON.stringify(hints)} className="vim-hints">
+            <ScrollableLabel key={JSON.stringify(hints)} className="vim-hints" isScrolledByWheel>
                 {hints.hints.map((hint, index) => <VimHintItem key={index} hint={hint} />)}
             </ScrollableLabel>
         </div>

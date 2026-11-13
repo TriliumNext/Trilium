@@ -195,4 +195,23 @@ describe("ShortcutHintsPanel", () => {
             anchor.remove();
         }
     });
+
+    it("keeps the tooltip of its anchor from showing over it while open", () => {
+        const host = mountPanel();
+        const anchor = document.createElement("button");
+        document.body.appendChild(anchor);
+        const isTooltipShown = () => anchor.dispatchEvent(
+            new Event("show.bs.tooltip", { cancelable: true }));
+        try {
+            expect(isTooltipShown()).toBe(true);
+            act(() => {
+                host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor });
+            });
+            expect(isTooltipShown()).toBe(false);
+            act(() => { closeShortcutHints(); });
+            expect(isTooltipShown()).toBe(true);
+        } finally {
+            anchor.remove();
+        }
+    });
 });

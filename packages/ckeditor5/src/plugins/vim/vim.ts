@@ -3,7 +3,8 @@ import "../../theme/vim.css";
 import type { Pos, Vim, vimState } from "@replit/codemirror-vim-core";
 import {
     ClipboardPipeline, type ClipboardContentInsertionEvent, type Editor, env, keyCodes,
-    type ModelElement, ModelLiveRange, type ModelRange, Plugin, type ViewDocumentKeyDownEvent
+    type ModelElement, ModelLiveRange, type ModelPosition, type ModelRange, Plugin,
+    type ViewDocumentKeyDownEvent
 } from "ckeditor5";
 
 import ContentEmbedCaret from "../content_embed/content_embed_caret.js";
@@ -111,6 +112,13 @@ export interface VimConfig {
     areHintsEnabled?(): boolean;
     /** Whether Normal and Visual mode show their keys in place of the breadcrumb. */
     isHintStripShown?(): boolean;
+}
+
+/** A link that "follow the link" opens. */
+export interface LinkUnderCursor {
+    href: string | undefined;
+    /** Whether the link is a note reference, rather than linked text. */
+    isReference: boolean;
 }
 
 /** The status of an editor with Vim mode off. */
@@ -282,14 +290,12 @@ class VimSession {
     private promptKind: PromptKind | null = null;
     /** The hints of the open prompt, or `null` for a prompt without hints. */
     private promptHints: VimHints | null = null;
+    /** Whether the last keys moved the focus to another editable, until the next input. */
+    private isFocusMoved = false;
     private readonly translate = (message: string, values?: string[]) =>
         this.editor.t(message, values);
     private readonly hintContext: HintContext = {
-        isOnLink: () => {
-            const selection = this.editor.model.document.selection;
-            return selection.getSelectedElement()?.name === "reference"
-                || selection.hasAttribute("linkHref");
-        },
+        isOnLink: () => getLinkUnderCursor(this.editor) !== null,
         canFold: () => canFold(this.adapter, this.adapter.getCursor().line),
         getParagraphObjectKind: () =>
             getParagraphObjectKind(this.adapter, this.adapter.getCursor().line),
@@ -392,6 +398,24 @@ class VimSession {
         this.stopListening.push(
             () => document.removeEventListener("keydown", onKeyDown, { capture: true }));
 
+        // Focusing another editable, as when a key leaves a tab panel, can make the browser report
+        // its own caret at the start of the note once the key is done. The selection of Vim stays.
+        const onSelectionChange = (evt: { stop(): void }) => {
+            if (this.isFocusMoved) {
+                this.isFocusMoved = false;
+                evt.stop();
+                editor.editing.view.forceRender();
+            }
+        };
+        viewDocument.on("selectionChange", onSelectionChange, { priority: "highest" });
+        this.stopListening.push(() => viewDocument.off("selectionChange", onSelectionChange));
+        const onPointerDown = () => {
+            this.isFocusMoved = false;
+        };
+        document.addEventListener("pointerdown", onPointerDown, { capture: true });
+        this.stopListening.push(
+            () => document.removeEventListener("pointerdown", onPointerDown, { capture: true }));
+
         // Escape belongs to the open balloon or list first, and comes before `Widget`, which
         // selects the widget around a caption or a cell.
         const onEscape = (evt: { stop(): void }, data: ViewDocumentKeyDownEvent["args"][0]) => {
@@ -466,6 +490,7 @@ class VimSession {
 
     private onKeyDown(event: KeyboardEvent) {
         const vim = this.vim;
+        this.isFocusMoved = false;
         if (event.defaultPrevented || event.isComposing
             || [ "Process", "Unidentified", "Dead" ].includes(event.key)) {
             return;
@@ -690,6 +715,7 @@ class VimSession {
         let isHandled = false;
         const pendingBefore = this.pendingKeys;
         const messageBefore = this.plugin.status.message;
+        const focused = document.activeElement;
         this.engine.getVimGlobalState_().jumpList = this.jumpList;
         this.undo.open();
         try {
@@ -705,6 +731,7 @@ class VimSession {
         } finally {
             this.undo.close();
         }
+        this.isFocusMoved = document.activeElement !== focused;
         this.followCommandHints();
         this.followSearchMessage(keys, pendingBefore, messageBefore);
         this.updateStatus();
@@ -1315,6 +1342,28 @@ class VimSession {
     private getHost(): VimHost | undefined {
         return this.editor.config.get("vim")?.host;
     }
+}
+
+/**
+ * The link that "follow the link" opens: the selected note reference, or the link of the text at
+ * the caret. In Normal mode of Vim, the reference or the linked character under the block cursor,
+ * which the caret is before.
+ */
+export function getLinkUnderCursor(editor: Editor): LinkUnderCursor | null {
+    const selection = editor.model.document.selection;
+    const vim = editor.plugins.has(TriliumVim) ? editor.plugins.get(TriliumVim) : null;
+    const isBlockCursor = vim?.status.mode === "normal" && selection.isCollapsed;
+    const position = selection.getFirstPosition() as ModelPosition;
+    const node = isBlockCursor
+        ? position.textNode ?? position.nodeAfter
+        : selection.getSelectedElement();
+    if (node?.is("element", "reference")) {
+        return { href: node.getAttribute("href") as string | undefined, isReference: true };
+    }
+    const href = isBlockCursor
+        ? node?.getAttribute("linkHref")
+        : selection.getAttribute("linkHref");
+    return typeof href === "string" ? { href, isReference: false } : null;
 }
 
 /** The text of a message of the engine, its lines kept. */

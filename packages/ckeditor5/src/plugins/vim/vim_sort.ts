@@ -4,8 +4,7 @@ import {
 
 import { blockText } from "../sort_selection/sort_runs.js";
 import type VimAdapter from "./vim_adapter.js";
-import type { LineIndex, TextLine } from "./vim_lines.js";
-import type { LineSpan } from "./vim_structure.js";
+import type { LineIndex, LineSpan, TextLine } from "./vim_lines.js";
 import StringStream from "./vim_string_stream.js";
 
 /** How `:sort` compares lines, from its arguments. */

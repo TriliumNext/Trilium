@@ -4806,6 +4806,7 @@
       "nothing-to-fold-here": "Nothing to fold here",
       "visual-block-mode-is-not-available-in-text-notes": "Visual block mode is not available in text notes",
       "not-an-editor-command-0": "Not an editor command: %0",
+      "type-the-name-of-an-editor-command-after-ck": "Type the name of an editor command after :ck",
       "the-editor-command-0-is-not-available-here": "The editor command %0 is not available here",
       "nothing-to-discard-notes-are-saved-as-you-type": "Nothing to discard: notes are saved as you type",
       "this-tab-cannot-be-closed": "This tab cannot be closed",

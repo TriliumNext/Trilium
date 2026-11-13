@@ -1,7 +1,7 @@
 import type { Pos } from "@replit/codemirror-vim-core";
 import {
     _getAllListItemBlocks as getAllListItemBlocks, type Editor, type ModelElement,
-    type ModelPosition, type ModelWriter
+    type ModelPosition, type ModelWriter, TableWalker
 } from "ckeditor5";
 
 import { OPEN_ATTRIBUTE } from "../collapsible/constants.js";
@@ -13,6 +13,7 @@ import { LIST_COLLAPSED_ATTRIBUTE } from "../collapsible_list_items.js";
 import type VimAdapter from "./vim_adapter.js";
 import { VimPosition } from "./vim_adapter.js";
 import type { ParagraphObjectKind } from "./vim_hints.js";
+import type { LineSpan } from "./vim_lines.js";
 
 /** The containers whose lines `ip` takes, and whose block with the next empty line `ap` takes. */
 const WRAPPING_CONTAINERS = new Set([ "blockQuote", "aside", "details" ]);
@@ -45,12 +46,6 @@ interface Level {
     up: Place | null;
     /** Whether the units are the items of a list rather than the blocks of a container. */
     isListLevel: boolean;
-}
-
-/** The lines from `first` to `last`. */
-export interface LineSpan {
-    first: number;
-    last: number;
 }
 
 /**
@@ -228,6 +223,73 @@ export function getParagraphObjectKind(cm: VimAdapter, line: number): ParagraphO
         }
     }
     return "paragraph";
+}
+
+/**
+ * The parts of the lines from `first` to `last` that an operator takes after `j` or `k`, which move
+ * down and up the columns of a table: in a table that holds an end, only the cells in the columns
+ * of the ends. `null` when that leaves out no line.
+ */
+export function getColumnParts(cm: VimAdapter, first: number, last: number): LineSpan[] | null {
+    const index = cm.index();
+    // The cells that the ends are in, by their table.
+    const ends = new Map<ModelElement, ModelElement[]>();
+    for (const line of [ first, last ]) {
+        for (const cell of getCells(index.getElement(line) as ModelElement)) {
+            const table = getTableOf(cell);
+            ends.set(table, [ ...ends.get(table) ?? [], cell ]);
+        }
+    }
+    if (!ends.size) {
+        return null;
+    }
+    const leftOut = new Set<ModelElement>();
+    for (const [ table, cells ] of ends) {
+        for (const cell of getCellsOutside(table, cells)) {
+            leftOut.add(cell);
+        }
+    }
+
+    const parts: LineSpan[] = [];
+    let isAnyLeftOut = false;
+    for (let line = first; line <= last; line++) {
+        const cells = getCells(index.getElement(line) as ModelElement);
+        if (cells.some((cell) => leftOut.has(cell))) {
+            isAnyLeftOut = true;
+            continue;
+        }
+        const previous = parts.at(-1);
+        if (previous?.last === line - 1) {
+            previous.last = line;
+        } else {
+            parts.push({ first: line, last: line });
+        }
+    }
+    return isAnyLeftOut ? parts : null;
+}
+
+/** The table cells around `element`. */
+function getCells(element: ModelElement): ModelElement[] {
+    return element.getAncestors({ includeSelf: true })
+        .filter((ancestor) => ancestor.is("element", "tableCell")) as ModelElement[];
+}
+
+function getTableOf(cell: ModelElement): ModelElement {
+    return (cell.parent as ModelElement).parent as ModelElement;
+}
+
+/**
+ * The cells of `table` that lie wholly outside the columns of `cells`. A merged cell that reaches
+ * into those columns is inside them.
+ */
+function getCellsOutside(table: ModelElement, cells: ModelElement[]): ModelElement[] {
+    const slots = [ ...new TableWalker(table, { includeAllSlots: true }) ];
+    const columns = slots.filter((slot) => cells.includes(slot.cell)).map((slot) => slot.column);
+    const firstColumn = Math.min(...columns);
+    const lastColumn = Math.max(...columns);
+    const inside = new Set(slots.filter((slot) => slot.column >= firstColumn
+        && slot.column <= lastColumn).map((slot) => slot.cell));
+    return slots.map((slot) => slot.cell).filter((cell) => !inside.has(cell));
 }
 
 /** The units of the level of `place`, and the place of the container around them. */

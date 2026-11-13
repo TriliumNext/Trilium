@@ -166,6 +166,17 @@ describe("VimHintStrip", () => {
             ]);
     });
 
+    it("moves its hints with a vertical wheel", () => {
+        act(() => render(<VimHintStrip hints={{
+            kind: "mode", typedKeys: [], hints: [ { keys: [ "i" ], description: "insert" } ]
+        }} />, container));
+        const label = container.querySelector(".scrollable-label") as HTMLElement;
+        Object.defineProperty(label, "scrollWidth", { value: 300 });
+        Object.defineProperty(label, "clientWidth", { value: 100 });
+        label.dispatchEvent(new WheelEvent("wheel", { deltaY: 40, cancelable: true }));
+        expect(label.scrollLeft).toBe(40);
+    });
+
     it("keeps the focus where it is when pressed", () => {
         act(() => render(<VimHintStrip hints={{
             kind: "mode", typedKeys: [], hints: [ { keys: [ "i" ], description: "insert" } ]

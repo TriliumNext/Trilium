@@ -132,6 +132,24 @@ describe("Vim mode line editing", () => {
             expect(getCursor(editor)).toBe("1:2");
         });
 
+        it("takes no lines with a count from the last line, and the lines left before it",
+            async () => {
+            const editor = await createVimEditor(paragraphs("a", "b", "c", "[]d"));
+            press(editor, "kyyj");
+            for (const keys of [ "2dd", "2yy", "2Y", "2cc", "2S", "2>>", "2gUU" ]) {
+                press(editor, keys);
+                expect(getLines(editor), keys).toBe("a|b|c|d");
+                expect(getStatus(editor).mode).toBe("normal");
+                expect(getStatus(editor).pendingKeys).toBe("");
+            }
+            press(editor, "p");
+            expect(getLines(editor)).toBe("a|b|c|d|c");
+            press(editor, "uGyyp");
+            expect(getLines(editor)).toBe("a|b|c|d|d");
+            press(editor, "kk5dd");
+            expect(getLines(editor)).toBe("a|b");
+        });
+
         it("removes list paragraphs and keeps the nested items", async () => {
             const editor = await createVimEditor(item("[]P1", "a") + item("P2", "a")
                 + item("N1", "b", 1) + item("X", "c"));
@@ -179,6 +197,81 @@ describe("Vim mode line editing", () => {
             press(editor, "u");
             press(editor, "dG");
             expect(getContent(editor)).toBe(paragraphs(""));
+        });
+    });
+
+    describe("operators down a table column", () => {
+        const COLUMNS = paragraphs("top")
+            + table([ [ "<$text bold=\"true\">a</$text>" ], [ "b" ] ], [ [ "c" ], [ "d" ] ],
+                [ [ "e" ], [ "f" ] ])
+            + paragraphs("after");
+
+        it("take the cells that j and k move through, not those between in reading order",
+            async () => {
+            const editor = await createVimEditor(COLUMNS);
+            const run = (keys: string) => {
+                press(editor, `${keys}`);
+                const lines = getLines(editor);
+                press(editor, "<Esc>u");
+                expect(getLines(editor), `undo of ${keys}`).toBe("top|a|b|c|d|e|f|after");
+                return lines;
+            };
+            expect(run("2Gdj")).toBe("top||b||d|e|f|after");
+            expect(run("2Gd2j")).toBe("top||b||d||f|after");
+            expect(run("4Gdk")).toBe("top||b||d|e|f|after");
+            expect(run("2GVjd")).toBe("top||b||d|e|f|after");
+            expect(run("2GgUj")).toBe("top|A|b|C|d|e|f|after");
+            expect(run("2GVjU")).toBe("top|A|b|C|d|e|f|after");
+            expect(run("6Gdj")).toBe("top|a|b|c|d||f");
+            expect(run("Gd2k")).toBe("top|a|b|c||e|");
+            expect(run("ggd2j")).toBe("|b||d|e|f|after");
+
+            press(editor, "2GdjP");
+            expect(getLines(editor)).toBe("top|a|c||b||d|e|f|after");
+            press(editor, "uu");
+            expect(getLines(editor)).toBe("top|a|b|c|d|e|f|after");
+            press(editor, "4GVky");
+            expect(getStatus(editor).message?.text).toBe("2 lines yanked");
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "\"ayj");
+            expect(getStatus(editor).message?.text).toBe("2 lines yanked into \"a");
+            press(editor, "P");
+            expect(getLines(editor)).toBe("top|a|c|a|b|c|d|e|f|after");
+            expect(getContent(editor)).toContain(
+                `<tableCell>${paragraphs("<$text bold=\"true\">a</$text>", "c")}<paragraph>`);
+            press(editor, "u2Gcj");
+            typeText(editor, "X");
+            press(editor, "<Esc>");
+            expect(getLines(editor)).toBe("top|X|b||d|e|f|after");
+        });
+
+        it("leave the lines of one cell to the operators of the engine", async () => {
+            const editor = await createVimEditor(table([ [ "··[]a1", "a2" ], [ "b" ] ]));
+            press(editor, "cj");
+            typeText(editor, "X");
+            press(editor, "<Esc>");
+            expect(getLines(editor)).toBe("  X|b");
+        });
+
+        it("take a merged cell that reaches into the columns of the ends", async () => {
+            const editor = await createVimEditor("<table>"
+                + `<tableRow>${cell("a")}${cell("b")}${cell("[]c")}</tableRow>`
+                + `<tableRow>${cell("x")}<tableCell colspan="2">${paragraphs("m")}</tableCell>`
+                + `</tableRow><tableRow>${cell("g")}${cell("h")}${cell("i")}</tableRow></table>`);
+            press(editor, "VGd");
+            expect(getLines(editor)).toBe("a|b||x||g|h|");
+            // `j` from the merged cell goes on in its first column.
+            press(editor, "u3Gd2j");
+            expect(getLines(editor)).toBe("a|b||x||g||i");
+        });
+
+        it("take whole lines in one cell, and across a table that the range leaves", async () => {
+            const editor = await createVimEditor(
+                paragraphs("top") + table([ [ "[]a1", "a2" ], [ "b" ] ]) + paragraphs("after"));
+            press(editor, "dj");
+            expect(getLines(editor)).toBe("top||b|after");
+            press(editor, "u3Gd2j");
+            expect(getLines(editor)).toBe("top|a1|b");
         });
     });
 
@@ -417,6 +510,43 @@ describe("Vim mode line editing", () => {
             press(editor, "<Esc>");
             expect(getContent(editor)).toBe(
                 `${paragraphs("x")}<heading2>Title</heading2>${paragraphs("y", "a")}`);
+        });
+
+        it("open the first line of the panel under a tab title, and a line after a table caption",
+            async () => {
+            const tab = (title: string, panel: string) =>
+                `<tab><tabTitle>${title}</tabTitle><tabPanel>${paragraphs(panel)}</tabPanel></tab>`;
+            const tabs = `<tabs>${tab("[]Plan", "p1")}${tab("Risks", "p2")}</tabs>`;
+            const editor = await createVimEditor(paragraphs("x") + tabs);
+            for (const [ line, keys, lines ] of [
+                [ 2, "o", "x|Plan|X|p1|Risks|p2" ], [ 2, "O", "x|Plan|X|p1|Risks|p2" ],
+                [ 4, "o", "x|Plan|p1|Risks|X|p2" ], [ 4, "O", "x|Plan|p1|Risks|X|p2" ]
+            ] as const) {
+                press(editor, `${line}G${keys}`);
+                typeText(editor, "X");
+                press(editor, "<Esc>");
+                expect(getLines(editor), `${keys} on line ${line}`).toBe(lines);
+                press(editor, "u");
+                expect(getLines(editor)).toBe("x|Plan|p1|Risks|p2");
+            }
+
+            setVimData(editor, `<table><tableRow>${cell("[]c")}</tableRow>`
+                + `<caption>Cap</caption></table>${paragraphs("y")}`);
+            for (const keys of [ "o", "O" ]) {
+                press(editor, `2G${keys}`);
+                typeText(editor, "X");
+                press(editor, "<Esc>");
+                expect(getLines(editor), keys).toBe("c|Cap|X|y");
+                press(editor, "u");
+            }
+
+            setVimData(editor, details("[]Title", paragraphs("body")));
+            press(editor, "o");
+            typeText(editor, "X");
+            press(editor, "<Esc>ggO");
+            typeText(editor, "Y");
+            press(editor, "<Esc>");
+            expect(getLines(editor)).toBe("Y|Title|X|body");
         });
 
         it("open a line above the first line", async () => {

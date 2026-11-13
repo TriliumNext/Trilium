@@ -33,6 +33,12 @@ export interface LinePosition {
     ch: number;
 }
 
+/** The lines from `first` to `last`. */
+export interface LineSpan {
+    first: number;
+    last: number;
+}
+
 /** What shows of the note. The lines of a `LineIndex` leave out what does not. */
 export interface LineVisibility {
     /** Whether `node`, a block, is hidden, as the section of a collapsed heading is. */

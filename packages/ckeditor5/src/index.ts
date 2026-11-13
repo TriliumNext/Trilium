@@ -55,8 +55,10 @@ export type { BlockDragHandleHost } from "./plugins/block_drag_handle.js";
 export type { SortTargetKind } from "./plugins/sort_selection/sort_targets.js";
 export type { ColorMenuHost, ColorMenuRequest, ColorMenuTarget } from "./plugins/color_menu.js";
 export type {
-    default as TriliumVim, VimCommandLine, VimConfig, VimHost, VimMessage, VimMode, VimStatus
+    LinkUnderCursor, default as TriliumVim, VimCommandLine, VimConfig, VimHost, VimMessage, VimMode,
+    VimStatus
 } from "./plugins/vim/vim.js";
+export { getLinkUnderCursor } from "./plugins/vim/vim.js";
 export type { VimHint, VimHintKind, VimHints } from "./plugins/vim/vim_hints.js";
 export type { VimHintSection } from "./plugins/vim/vim_key_reference.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";

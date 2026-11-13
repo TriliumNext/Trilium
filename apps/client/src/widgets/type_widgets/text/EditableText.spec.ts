@@ -86,9 +86,11 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
     useTriliumOptionBool: () => [ false ]
 }));
 
+const { default: appContext } = await import("../../../components/app_context");
 const {
     default: EditableText,
     applyPendingAttachmentChanges,
+    followLink,
     getEditLinkOpts,
     getBlockData,
     isCaretInFocus,
@@ -363,6 +365,31 @@ describe("notifyAttachmentChanges", () => {
         applyPendingAttachmentChanges(editor, "note1", pending);
 
         expect(updateAttachmentLinks).not.toHaveBeenCalled();
+    });
+});
+
+describe("followLink", () => {
+    it("opens the note of a reference or a link in the active tab, and a web link in a window",
+        async () => {
+        const setNote = vi.fn();
+        const tabManager = appContext.tabManager;
+        appContext.tabManager = {
+            getActiveContext: () => ({ setNote })
+        } as unknown as typeof tabManager;
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
+        try {
+            await followLink({ href: "#root/abcd?viewMode=attachments", isReference: true });
+            await followLink({ href: "#root/efgh", isReference: false });
+            await followLink({ href: "https://example.com/", isReference: false });
+            await followLink({ href: "https://example.com/", isReference: true });
+            await followLink({ href: undefined, isReference: true });
+            await followLink(null);
+            expect(setNote.mock.calls).toEqual([ [ "root/abcd" ], [ "root/efgh" ] ]);
+            expect(open.mock.calls).toEqual([ [ "https://example.com/", "_blank" ] ]);
+        } finally {
+            appContext.tabManager = tabManager;
+            open.mockRestore();
+        }
     });
 });
 

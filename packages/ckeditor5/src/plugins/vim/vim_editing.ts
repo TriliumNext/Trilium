@@ -192,6 +192,28 @@ export function isTitle(schema: ModelSchema, block: ModelElement) {
 }
 
 /**
+ * Where blocks go after `anchor`, or before it. Nothing goes beside a title: the blocks go to the
+ * start of the content after it, such as the panel of a tab, or else after its container.
+ */
+export function getBlockPosition(
+    writer: ModelWriter, anchor: ModelElement, isAfter: boolean
+): ModelPosition {
+    const schema = writer.model.schema;
+    if (!isTitle(schema, anchor)) {
+        return isAfter ? writer.createPositionAfter(anchor) : writer.createPositionBefore(anchor);
+    }
+    const body = anchor.nextSibling;
+    const bodyStart = body?.is("element") ? writer.createPositionAt(body, 0) : null;
+    if (bodyStart && schema.checkChild(bodyStart, "paragraph")) {
+        return bodyStart;
+    }
+    const afterTitle = writer.createPositionAfter(anchor);
+    return schema.checkChild(afterTitle, "paragraph")
+        ? afterTitle
+        : writer.createPositionAfter(anchor.parent as ModelElement);
+}
+
+/**
  * Replaces `range`, which holds `oldText`, with `text`. A line break in `text`, `\n` or `\r`,
  * splits the block, or adds a soft break in a code block or a title. The new text takes the
  * formatting of the text it replaces, as typed text would. Returns the position after the new
@@ -409,8 +431,9 @@ function getTextAttributes(range: ModelRange): [ string, unknown ][] {
 
 /**
  * Opens a new line below line `line`, or above it, as Enter at its end or at its start does. On a
- * widget, Enter adds a paragraph after it, and Shift+Enter before it. A heading opened this way is
- * a paragraph. `getIndex()` returns the lines as they are after a change.
+ * widget, Enter adds a paragraph after it, and Shift+Enter before it. On a title that Enter does
+ * not split, such as that of a tab, the line opens where `p` puts lines. A heading opened this way
+ * is a paragraph. `getIndex()` returns the lines as they are after a change.
  */
 export function openLine(
     editor: Editor, getIndex: () => LineIndex, line: number, isAfter: boolean
@@ -423,6 +446,16 @@ export function openLine(
     if (entry.kind === "object") {
         model.change((writer) => writer.setSelection(entry.element, "on"));
         fireViewEvent(editor, "enter", { isSoft: !isAfter });
+        return;
+    }
+    // The title of a collapsible block is left to Enter, which opens a line in its body or before
+    // the block.
+    if (isTitle(model.schema, entry.block) && !entry.block.is("element", "summary")) {
+        model.change((writer) => {
+            const paragraph = writer.createElement("paragraph");
+            writer.insert(paragraph, getBlockPosition(writer, entry.block, isAfter));
+            writer.setSelection(paragraph, 0);
+        });
         return;
     }
 

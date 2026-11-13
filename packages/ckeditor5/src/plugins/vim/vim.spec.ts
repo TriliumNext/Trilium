@@ -1,15 +1,20 @@
 import type { Vim } from "@replit/codemirror-vim-core";
-import { type Editor, env, ImageBlock, Plugin, ViewDocumentDomEventData } from "ckeditor5";
+import {
+    _setModelData as setModelData, type Editor, env, ImageBlock, Paragraph, Plugin,
+    ViewDocumentDomEventData
+} from "ckeditor5";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
+import { createTestEditor } from "../../../test/editor-kit.js";
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
     press, typeText
 } from "../../../test/vim-kit.js";
 import HostedBalloon from "../../hosted_balloon.js";
 import ContentEmbed from "../content_embed/content_embed.js";
-import TriliumVim from "./vim.js";
+import ReferenceLink from "../referencelink.js";
+import TriliumVim, { getLinkUnderCursor } from "./vim.js";
 import { getLoadedVimEngine } from "./vim_engine.js";
 
 function getRoot(editor: Editor) {
@@ -490,7 +495,8 @@ describe("Vim mode", () => {
             press(editor, ":ck heading heading2<CR>");
             expect(getContent(editor)).toContain("<heading2>");
             press(editor, ":ck<CR>");
-            expect(getStatus(editor).message?.text).toBe("Not an editor command: ");
+            expect(getStatus(editor).message?.text).toBe(
+                "Type the name of an editor command after :ck");
             press(editor, ":ck nothing<CR>");
             expect(getStatus(editor).message?.text).toBe("Not an editor command: nothing");
             editor.commands.get("bold")?.forceDisabled("spec");
@@ -637,6 +643,79 @@ describe("Vim mode", () => {
                 expect(editor.model.document.selection.isCollapsed, keys).toBe(true);
                 expect(getCursor(editor).split(":")[0], keys).toBe("1");
             }
+        });
+    });
+
+    describe("focus", () => {
+        it("keeps the selection when the browser answers a key that left a tab panel",
+            async () => {
+            const editor = await createVimEditor(paragraphs("top")
+                + "<tabs><tab><tabTitle>T</tabTitle><tabPanel>" + paragraphs("[]p")
+                + "</tabPanel></tab></tabs>" + paragraphs("after"));
+            const view = editor.editing.view;
+            view.focus();
+            const panel = document.activeElement;
+            const echo = () => {
+                const start = view.createPositionAt(
+                    view.document.getRoot()?.getChild(0) as never, 0);
+                view.document.fire("selectionChange", {
+                    oldSelection: view.document.selection,
+                    newSelection: view.createSelection(start),
+                    domSelection: null
+                });
+            };
+            press(editor, "Vj");
+            expect(document.activeElement).not.toBe(panel);
+            const topText = getRoot(editor).querySelector("p")?.firstChild as Node;
+            document.getSelection()?.collapse(topText, 0);
+            echo();
+            expect(getStatus(editor).mode).toBe("visual-line");
+            expect(getCursor(editor)).toBe("3:5");
+            expect(document.getSelection()?.anchorNode).not.toBe(topText);
+            echo();
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(getCursor(editor)).toBe("0:0");
+
+            press(editor, "3G");
+            expect(document.activeElement).toBe(panel);
+            press(editor, "j");
+            document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            echo();
+            expect(getCursor(editor)).toBe("0:0");
+        });
+    });
+
+    describe("links", () => {
+        it("are the note reference or the linked text under the block cursor", async () => {
+            vi.useFakeTimers();
+            const editor = await createVimEditor("<paragraph>[]a<reference href=\"#r\"></reference>"
+                + "b<$text linkHref=\"#l\">cd</$text></paragraph>" + paragraphs(""),
+                { areHintsEnabled: () => true }, [ ReferenceLink ]);
+            const read = (keys: string) => {
+                press(editor, `${keys}g`);
+                vi.advanceTimersByTime(400);
+                const isHinted = !!getStatus(editor).hints?.hints
+                    .some((hint) => hint.description === "follow the link");
+                press(editor, "<Esc>");
+                return [ getLinkUnderCursor(editor), isHinted ];
+            };
+            const reference = { href: "#r", isReference: true };
+            const link = { href: "#l", isReference: false };
+            expect(read("")).toEqual([ null, false ]);
+            expect(read("l")).toEqual([ reference, true ]);
+            expect(read("l")).toEqual([ null, false ]);
+            expect(read("l")).toEqual([ link, true ]);
+            expect(read("l")).toEqual([ link, true ]);
+            expect(read("j")).toEqual([ null, false ]);
+            press(editor, "k0li");
+            expect(getLinkUnderCursor(editor)).toBeNull();
+            press(editor, "<Esc>3lv");
+            expect(getLinkUnderCursor(editor)).toEqual(link);
+
+            const plain = await createTestEditor([ Paragraph, ReferenceLink ]);
+            setModelData(plain.model,
+                "<paragraph>[<reference href=\"#r\"></reference>]</paragraph>");
+            expect(getLinkUnderCursor(plain)).toEqual(reference);
         });
     });
 

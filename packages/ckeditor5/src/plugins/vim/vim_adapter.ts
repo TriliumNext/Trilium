@@ -15,9 +15,10 @@ import {
     getWholeLines, indentLines, isAtTwoStepBoundary, removeLines, replaceText, rewriteLines
 } from "./vim_editing.js";
 import {
-    EVERYTHING_SHOWN, LineIndex, type LinePosition, type LineVisibility, toCharacterEdge
+    EVERYTHING_SHOWN, LineIndex, type LinePosition, type LineSpan, type LineVisibility,
+    toCharacterEdge
 } from "./vim_lines.js";
-import { readRichContent, type RichContent } from "./vim_registers.js";
+import { readBlocks, readRichContent, type RichContent } from "./vim_registers.js";
 import { SearchCursor, SearchHighlights } from "./vim_search.js";
 import StringStream from "./vim_string_stream.js";
 
@@ -36,13 +37,12 @@ export interface DialogOptions {
     closeOnBlur?: boolean;
 }
 
-/** Text that the engine read, from where to where, and the version of the note it read. */
-interface ReadText {
-    from: LinePosition;
-    to: LinePosition;
-    text: string;
-    version: number;
-}
+/**
+ * Text that the engine read, from where to where or as the lines of some spans, and the version of
+ * the note it read.
+ */
+type ReadText = { text: string; version: number }
+    & ({ from: LinePosition; to: LinePosition } | { spans: LineSpan[] });
 
 /** Closes a dialog, or with a string, sets the value of its input. */
 export type CloseDialog = (value?: string) => void;
@@ -169,9 +169,10 @@ export default class VimAdapter {
     private isSelectionChanged = false;
     private lastEditEnd: ModelLivePosition | null = null;
     private lineHandles: (LineHandle & { position: ModelLivePosition })[] = [];
-    /** What `getRange()` read last, for the register that the engine fills next. */
+    /** What the engine read last, for the register that it fills next. */
     private lastRead: ReadText | null = null;
-    private lastReadContent: { text: string; lines: RichContent; range: RichContent } | null = null;
+    private lastReadContent:
+        { text: string; lines: RichContent; range: RichContent | null } | null = null;
     private isRevealing = false;
     private readonly bookmarks = new Set<Bookmark>();
     /**
@@ -265,6 +266,23 @@ export default class VimAdapter {
         this.lastRead = {
             from: start, to: end, text, version: this.editor.model.document.version
         };
+        this.lastReadContent = null;
+        return text;
+    }
+
+    /**
+     * The text of the lines of `spans`, each line ending with a line break, as a register of whole
+     * lines holds it.
+     */
+    readLines(spans: LineSpan[]): string {
+        const index = this.index();
+        let text = "";
+        for (const { first, last } of spans) {
+            for (let line = first; line <= last; line++) {
+                text += `${index.getText(line)}\n`;
+            }
+        }
+        this.lastRead = { spans, text, version: this.editor.model.document.version };
         this.lastReadContent = null;
         return text;
     }
@@ -402,7 +420,10 @@ export default class VimAdapter {
         const wholeLines = text ? null : getWholeLines(index, start, end);
         if (wholeLines) {
             const cursor = this.getCursor();
-            const isCursorInside = this.editor.model.document.selection.isCollapsed
+            // A selected widget is the cursor on its line, as a caret is.
+            const isCaret = this.editor.model.document.selection.isCollapsed
+                || this.getSelectedObjectLine() !== null;
+            const isCursorInside = isCaret
                 && cursor.line >= wholeLines.first && cursor.line <= wholeLines.last;
             removeLines(this.editor, index, wholeLines.first, wholeLines.last);
             if (isCursorInside) {
@@ -830,11 +851,13 @@ export default class VimAdapter {
             return;
         }
         const index = this.index();
-        this.lastReadContent = {
-            text: read.text,
-            lines: readRichContent(this.editor, index, read.from, read.to, true),
-            range: readRichContent(this.editor, index, read.from, read.to, false)
-        };
+        this.lastReadContent = "spans" in read
+            ? { text: read.text, lines: readBlocks(this.editor, index, read.spans), range: null }
+            : {
+                text: read.text,
+                lines: readRichContent(this.editor, index, read.from, read.to, true),
+                range: readRichContent(this.editor, index, read.from, read.to, false)
+            };
     }
 
     /**

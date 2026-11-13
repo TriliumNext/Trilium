@@ -1,6 +1,6 @@
 import type {
-    ActionArgs, ActionArgsPartial, CodeMirrorV, ExParams, InputStateInterface, MotionArgs,
-    OperatorFn, Pos, Vim, vimActions, vimKey, vimMotions, vimState
+    ActionArgs, ActionArgsPartial, CM5RangeInterface, CodeMirrorV, ExParams, InputStateInterface,
+    MotionArgs, OperatorArgs, OperatorFn, Pos, Vim, vimActions, vimKey, vimMotions, vimState
 } from "@replit/codemirror-vim-core";
 import {
     isHighSurrogateHalf, isLowSurrogateHalf, type ModelElement, type ModelPosition
@@ -9,13 +9,14 @@ import {
 import VimAdapter, { getActiveAdapter, VimPosition } from "./vim_adapter.js";
 import { joinLine, openLine, setTypingFormatting } from "./vim_editing.js";
 import type { VimKeyContext } from "./vim_hints.js";
-import { OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
+import { type LineSpan, OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import {
     cloneFragment, getRichContent, putLines, rememberRichContent, type RichContent
 } from "./vim_registers.js";
 import { sortLines } from "./vim_sort.js";
 import {
-    findHeading, findParagraphObject, findSectionEdge, findStructuralBlock, fold, type FoldAction
+    findHeading, findParagraphObject, findSectionEdge, findStructuralBlock, fold, type FoldAction,
+    getColumnParts
 } from "./vim_structure.js";
 
 type Actions = vimActions;
@@ -47,6 +48,12 @@ const CHARACTER_SEARCHES = [
 
 /** Whether a motion of the macro being played failed, which stops the rest of it, as in Vim. */
 let isMacroStopped = false;
+
+/**
+ * Whether the operator about to run follows `j`, `k` or another line motion, which in a table move
+ * down and up a column.
+ */
+let isColumnMotion = false;
 
 /** The keys that the user mapped, by the mode they apply in, or under `all` for every mode. */
 const userMappings = new Map<VimKeyContext | "all", Set<string>>();
@@ -89,6 +96,7 @@ const TRILIUM_KEYS: vimKey[] = [
 export function installTriliumCommands(vim: Vim) {
     const builtIns = captureBuiltIns(vim);
     defineEditingCommands(vim, builtIns.actions, builtIns.operators);
+    defineColumnOperators(vim, builtIns.operators);
     defineMotions(vim, builtIns.motions);
     defineActions(vim);
     defineExCommands(vim, builtIns.exCommands);
@@ -305,6 +313,10 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
     // that line as well, so the last line goes by itself here.
     vim.defineOperator("delete", function (this: Operators, cm, args, ranges, oldAnchor, newHead) {
         const adapter = cm as unknown as VimAdapter;
+        const parts = takeColumnParts(adapter, args, ranges);
+        if (parts) {
+            return deleteParts(vim, adapter, args, parts);
+        }
         const { anchor, head } = ranges[0];
         const last = adapter.lastLine();
         if (!args.linewise || cm.state.vim.visualBlock || anchor.line !== last
@@ -326,11 +338,12 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
     vim.defineOperator("change", function (this: Operators, cm, args, ranges, oldAnchor, newHead) {
         const adapter = cm as unknown as VimAdapter;
         const state = cm.state.vim;
+        const parts = takeColumnParts(adapter, args, ranges);
         if (isOnlyWidgets(adapter, ranges[0].anchor, ranges[0].head)) {
             return oldAnchor;
         }
         let changed = ranges;
-        if (state.visualMode && state.visualLine && args.linewise) {
+        if (!parts && state.visualMode && state.visualLine && args.linewise) {
             const first = Math.min(ranges[0].anchor.line, ranges[0].head.line);
             const last = Math.max(ranges[0].anchor.line, ranges[0].head.line) - 1;
             const head = new VimPosition(last, adapter.getLine(last).length);
@@ -345,12 +358,110 @@ function defineEditingCommands(vim: Vim, actions: Actions, operators: Operators)
         const position = adapter.toModelPosition(firstCharacter);
         const node = position.textNode ?? position.nodeAfter;
         const formatting = node?.is("$text") ? [ ...node.getAttributes() ] : null;
-        const result = change.call(this, cm, args, changed, oldAnchor, newHead);
+        const result = parts
+            ? changeParts(vim, actions, adapter, args, parts)
+            : change.call(this, cm, args, changed, oldAnchor, newHead);
         if (formatting) {
             setTypingFormatting(adapter.editor, formatting);
         }
         return result;
     });
+}
+
+/**
+ * Makes the other operators that take whole lines, such as `y`, `gU` and `>`, take the parts of a
+ * table column that `j` and `k` move through.
+ */
+function defineColumnOperators(vim: Vim, operators: Operators) {
+    for (const [ name, operator ] of Object.entries(operators)) {
+        if (name === "delete" || name === "change") {
+            continue;
+        }
+        vim.defineOperator(name, function (this: Operators, cm, args, ranges, oldAnchor, newHead) {
+            const adapter = cm as unknown as VimAdapter;
+            const parts = takeColumnParts(adapter, args, ranges);
+            if (!parts) {
+                return operator.call(this, cm, args, ranges, oldAnchor, newHead);
+            }
+            if (name === "yank") {
+                return yankParts(vim, adapter, args, parts, oldAnchor);
+            }
+            const runOn = ({ first, last }: LineSpan) => {
+                const anchor = new VimPosition(first, 0);
+                const part = { anchor, head: new VimPosition(last + 1, 0) };
+                cm.setSelections([ part ]);
+                return operator.call(this, cm, args, [ part ], oldAnchor, newHead);
+            };
+            const [ top, ...rest ] = parts;
+            for (const part of rest.reverse()) {
+                runOn(part);
+            }
+            return runOn(top);
+        });
+    }
+}
+
+/**
+ * The parts of the whole lines of `ranges` that an operator after `j` or `k`, or in Visual Line
+ * mode, takes down a table column, or `null` when it takes them all. Resets `isColumnMotion`.
+ */
+function takeColumnParts(
+    adapter: VimAdapter, args: OperatorArgs, ranges: CM5RangeInterface[]
+): LineSpan[] | null {
+    const isAfterLineMotion = isColumnMotion;
+    isColumnMotion = false;
+    const state = adapter.state.vim as vimState;
+    if (!args.linewise || !(isAfterLineMotion || (state.visualMode && state.visualLine))) {
+        return null;
+    }
+    // The engine ends a range of whole lines at the start of the line after the last one.
+    const { anchor, head } = ranges[0];
+    return getColumnParts(adapter, anchor.line, head.line - 1);
+}
+
+/** Deletes the lines of `parts` into one register entry, as `d` deletes lines. */
+function deleteParts(vim: Vim, adapter: VimAdapter, args: OperatorArgs, parts: LineSpan[]): Pos {
+    const text = adapter.readLines(parts);
+    for (const { first, last } of [ ...parts ].reverse()) {
+        adapter.replaceRange("", new VimPosition(first, 0), new VimPosition(last + 1, 0));
+    }
+    vim.getRegisterController().pushText(args.registerName, "delete", text, true, false);
+    const line = Math.min(parts[0].first, adapter.lastLine());
+    return new VimPosition(line, Math.max(adapter.getLine(line).search(/\S/), 0));
+}
+
+/**
+ * Deletes the lines of `parts` into one register entry and keeps an empty line in place of the
+ * first part to type in, as `c` changes lines.
+ */
+function changeParts(
+    vim: Vim, actions: Actions, adapter: VimAdapter, args: OperatorArgs, parts: LineSpan[]
+) {
+    const text = adapter.readLines(parts);
+    const [ top, ...rest ] = parts;
+    for (const { first, last } of rest.reverse()) {
+        adapter.replaceRange("", new VimPosition(first, 0), new VimPosition(last + 1, 0));
+    }
+    adapter.replaceRange("", new VimPosition(top.first, 0),
+        new VimPosition(top.last, adapter.getLine(top.last).length));
+    vim.getRegisterController().pushText(args.registerName, "change", text, true, false);
+    const insertArgs = { head: new VimPosition(top.first, 0) } as unknown as ActionArgs;
+    actions.enterInsertMode(adapter as unknown as CodeMirrorV, insertArgs,
+        adapter.state.vim as vimState);
+}
+
+/** Yanks the lines of `parts` into one register entry, as `y` yanks lines. */
+function yankParts(
+    vim: Vim, adapter: VimAdapter, args: OperatorArgs, parts: LineSpan[], oldAnchor: Pos
+): Pos {
+    const text = adapter.readLines(parts);
+    vim.getRegisterController().pushText(args.registerName, "yank", text, true, false);
+    const count = text.split("\n").length - 1;
+    const into = args.registerName ? ` into "${args.registerName}` : "";
+    adapter.openNotification(document.createTextNode(`${count} lines yanked${into}`),
+        { duration: 1500 });
+    const isVisual = (adapter.state.vim as vimState).visualMode;
+    return isVisual ? new VimPosition(parts[0].first, 0) : oldAnchor;
 }
 
 /**
@@ -448,8 +559,19 @@ function defineMotions(vim: Vim, motions: Motions) {
         return new VimPosition(head.line, ch);
     });
 
+    // A count of lines from the last line takes none, as in Vim: `2dd` there does nothing.
+    vim.defineMotion("expandToLine", function (this: Motions, cm, head, motionArgs) {
+        if (motionArgs.repeat > 1 && head.line >= cm.lastLine()) {
+            return null;
+        }
+        return motions.expandToLine.call(this, cm, head, motionArgs);
+    });
+
     // `j`, `k` and the other line motions stop the macro being played at the first or last line.
-    vim.defineMotion("moveByLines", function (this: Motions, cm, head, motionArgs, state) {
+    vim.defineMotion("moveByLines", function (
+        this: Motions, cm, head, motionArgs, state, inputState
+    ) {
+        isColumnMotion = !!inputState.operator;
         const found = motions.moveByLines.call(this, cm, head, motionArgs, state);
         if (motionArgs.repeat + (motionArgs.repeatOffset ?? 0) && found.line === head.line) {
             stopMacro(vim);
@@ -647,9 +769,13 @@ function toEngineReplacement(argString: string): string {
 function runEditorCommand(adapter: VimAdapter, params: ExParams) {
     const editor = adapter.editor;
     const [ name, ...rest ] = params.args ?? [];
-    const command = name ? editor.commands.get(name) : undefined;
-    if (!name || !command) {
-        adapter.host.notify(editor.t("Not an editor command: %0", [ name ?? "" ]));
+    if (!name) {
+        adapter.host.notify(editor.t("Type the name of an editor command after :ck"));
+        return;
+    }
+    const command = editor.commands.get(name);
+    if (!command) {
+        adapter.host.notify(editor.t("Not an editor command: %0", [ name ]));
         return;
     }
     const range = params.line === undefined

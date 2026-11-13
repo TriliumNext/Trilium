@@ -90,6 +90,13 @@ export default function ShortcutHintsPanel() {
     // Under the anchor with the right edges lined up, flipped and shifted as the window requires,
     // and following the anchor while it moves.
     const anchor = state?.anchor;
+    // The tooltip of the anchor would cover the panel, so it stays hidden while the panel is open.
+    useEffect(() => {
+        if (!anchor) return;
+        const preventTooltip = (event: Event) => event.preventDefault();
+        anchor.addEventListener("show.bs.tooltip", preventTooltip);
+        return () => anchor.removeEventListener("show.bs.tooltip", preventTooltip);
+    }, [ anchor ]);
     useLayoutEffect(() => {
         const panel = panelRef.current;
         if (!panel || !anchor) return;

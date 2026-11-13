@@ -475,6 +475,31 @@ describe("Vim mode edge cases", () => {
             expect(getCursor(editor)).toBe("1:0");
         });
 
+        it("leave the cursor of :d on a widget on the line that takes its place", async () => {
+            const editor = await createVimEditor();
+            for (const before of [
+                "<table><tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow>"
+                    + "</table>",
+                "<tabs><tab><tabTitle>T</tabTitle><tabPanel><paragraph>p</paragraph></tabPanel>"
+                    + "</tab></tabs>",
+                "<multicolumnLayout columnRatios=\"1-1\"><multicolumnColumn><paragraph>c1"
+                    + "</paragraph></multicolumnColumn><multicolumnColumn><paragraph>c2"
+                    + "</paragraph></multicolumnColumn></multicolumnLayout>",
+                paragraphs("w"),
+                "<horizontalLine></horizontalLine>"
+            ]) {
+                setVimData(editor, `${paragraphs("top")}${before}[<testBox></testBox>]`
+                    + paragraphs("after"));
+                press(editor, ":d<CR>");
+                const lines = getLines(editor).split("|");
+                expect(lines.at(-1)).toBe("after");
+                expect(editor.model.document.selection.isCollapsed, before).toBe(true);
+                expect(getCursor(editor), before).toBe(`${lines.length - 1}:0`);
+                press(editor, "x");
+                expect(getContent(editor)).toBe(paragraphs("top") + before + paragraphs("fter"));
+            }
+        });
+
         it("keep the alignment of a heading put into a list", async () => {
             const editor = await createVimEditor("<heading2 alignment=\"center\">[]H</heading2>"
                 + item("i", "a"));

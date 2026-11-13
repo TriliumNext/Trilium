@@ -3,8 +3,10 @@ import {
     type ModelWriter, uid
 } from "ckeditor5";
 
-import { isTitle } from "./vim_editing.js";
-import { type LineIndex, type LinePosition, OBJECT_CHARACTER, type TextLine } from "./vim_lines.js";
+import { getBlockPosition } from "./vim_editing.js";
+import {
+    type LineIndex, type LinePosition, type LineSpan, OBJECT_CHARACTER, type TextLine
+} from "./vim_lines.js";
 
 /** The containers whose blocks are paragraphs, whatever is put in them. */
 const PARAGRAPH_CONTAINERS = new Set([ "blockQuote", "aside", "tableCell" ]);
@@ -67,21 +69,32 @@ export function readRichContent(
     const first = Math.min(from.line, index.lastLine);
     const isEndOut = to.ch === 0 && to.line > from.line;
     const last = Math.min(isEndOut ? to.line - 1 : to.line, index.lastLine);
-    return model.change((writer) => {
+    return readBlocks(editor, index, [ { first, last } ]);
+}
+
+/**
+ * Reads the blocks of the lines of `spans`, with the parts of a block between soft breaks as blocks
+ * of their own.
+ */
+export function readBlocks(editor: Editor, index: LineIndex, spans: LineSpan[]): RichContent {
+    return editor.model.change((writer) => {
         const fragment = writer.createDocumentFragment();
-        let line = first;
-        while (line <= last) {
-            const element = index.getElement(line) as ModelElement;
-            const elementLines = index.getLinesOf(element);
-            const read = elementLines.filter((each) => each >= first && each <= last);
-            if (read.length === elementLines.length) {
-                writer.append(writer.cloneElement(element, true), fragment);
-            } else {
-                for (const segment of read) {
-                    writer.append(cloneSegment(writer, index.lines[segment] as TextLine), fragment);
+        for (const { first, last } of spans) {
+            let line = first;
+            while (line <= last) {
+                const element = index.getElement(line) as ModelElement;
+                const elementLines = index.getLinesOf(element);
+                const read = elementLines.filter((each) => each >= first && each <= last);
+                if (read.length === elementLines.length) {
+                    writer.append(writer.cloneElement(element, true), fragment);
+                } else {
+                    for (const segment of read) {
+                        writer.append(
+                            cloneSegment(writer, index.lines[segment] as TextLine), fragment);
+                    }
                 }
+                line = read[read.length - 1] + 1;
             }
-            line = read[read.length - 1] + 1;
         }
         return { fragment, isBlocks: true };
     });
@@ -165,7 +178,7 @@ export function putLines(
 
         const anchor = entry.kind === "text" ? entry.block : entry.element;
         const destination = entry.kind === "text" ? entry.block : null;
-        let position = getPutPosition(writer, anchor, isAfter);
+        let position = getBlockPosition(writer, anchor, isAfter);
         const fitter = new BlockFitter(writer, destination, blocks);
         let firstPut: ModelElement | null = null;
         for (const block of blocks) {
@@ -177,26 +190,6 @@ export function putLines(
         }
         return firstPut ? getStartOf(writer, firstPut) : null;
     });
-}
-
-/**
- * Where blocks put after `anchor`, or before it, go. Nothing goes beside a title: the blocks go to
- * the start of the content after it, such as the panel of a tab, or else after its container.
- */
-function getPutPosition(writer: ModelWriter, anchor: ModelElement, isAfter: boolean) {
-    const schema = writer.model.schema;
-    if (!isTitle(schema, anchor)) {
-        return isAfter ? writer.createPositionAfter(anchor) : writer.createPositionBefore(anchor);
-    }
-    const body = anchor.nextSibling;
-    const bodyStart = body?.is("element") ? writer.createPositionAt(body, 0) : null;
-    if (bodyStart && schema.checkChild(bodyStart, "paragraph")) {
-        return bodyStart;
-    }
-    const afterTitle = writer.createPositionAfter(anchor);
-    return schema.checkChild(afterTitle, "paragraph")
-        ? afterTitle
-        : writer.createPositionAfter(anchor.parent as ModelElement);
 }
 
 /** The lines of `codeBlock` as paragraphs. */
