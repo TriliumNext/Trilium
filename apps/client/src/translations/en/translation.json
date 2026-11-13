@@ -4802,6 +4802,8 @@
       "section-collapsed": "Section collapsed",
       "section-expanded": "Section expanded",
       "a-widget-cannot-be-put-into-a-code-block": "A widget cannot be put into a code block",
+      "0-lines-yanked": "%0 lines yanked",
+      "0-lines-yanked-into-1": "%0 lines yanked into \"%1",
       "the-count-stopped-at-a-heading": "The count stopped at a heading",
       "nothing-to-fold-here": "Nothing to fold here",
       "visual-block-mode-is-not-available-in-text-notes": "Visual block mode is not available in text notes",
@@ -5440,6 +5442,7 @@
     "menu_note": "Vim mode",
     "menu_settings": "Settings",
     "menu_help": "Help",
-    "menu_note_description": "Applies just for this note."
+    "menu_note_description": "Applies just for this note.",
+    "menu_note_description_subtree": "Applies to this note and the notes under it."
   }
 }

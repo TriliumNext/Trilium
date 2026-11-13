@@ -206,12 +206,18 @@ describe("VimModeBadge", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand")
             .mockResolvedValue(undefined);
         mocks.vimModeLabel = "false";
-        act(() => render(<VimModeBadge note={{} as FNote} />, container));
-        const contextMenuEvent = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
-        container.querySelector(".vim-mode-badge")?.dispatchEvent(contextMenuEvent);
-        expect(contextMenuEvent.defaultPrevented).toBe(true);
+        const ownedLabel = { isInheritable: false };
+        const note = { getOwnedLabel: () => ownedLabel } as unknown as FNote;
+        act(() => render(<VimModeBadge note={note} />, container));
+        const openMenu = () => {
+            const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+            container.querySelector(".vim-mode-badge")?.dispatchEvent(event);
+            expect(event.defaultPrevented).toBe(true);
+            const items: MenuItem<unknown>[] = mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
+            return items;
+        };
 
-        const items: MenuItem<unknown>[] = mocks.showContextMenu.mock.lastCall?.[0].items ?? [];
+        const items = openMenu();
         expect(items.map((item) => ("kind" in item
             ? item.kind
             : [ item.title, !!item.isSwitch, item.checked ])))
@@ -227,6 +233,11 @@ describe("VimModeBadge", () => {
         const [ noteItem ] = items;
         expect("description" in noteItem && noteItem.description)
             .toBe("vim_mode.menu_note_description");
+        // The switch changes the owned label, which an inheritable one passes to the subtree.
+        ownedLabel.isInheritable = true;
+        const [ subtreeItem ] = openMenu();
+        expect("description" in subtreeItem && subtreeItem.description)
+            .toBe("vim_mode.menu_note_description_subtree");
 
         for (const item of items) {
             if (!("kind" in item)) {

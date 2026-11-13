@@ -62,7 +62,7 @@ To decide for one note, whatever the option says, add a [label](../../Advanced%2
 
 The label can be inherited, so one label can cover a whole subtree. A label set on the note itself wins over an inherited one: with an inheritable `#vimMode` on a parent note, a child note that has `#vimMode=false` stays in the regular editor.
 
-While the _Vim mode_ option is on, the _Vim_ badge in the status bar sets this label for you: a click on it gives the current note `#vimMode=false`, and another click `#vimMode=true`.
+While the _Vim mode_ option is on, the _Vim_ badge in the status bar sets this label for you: a click on it gives the current note `#vimMode=false`, and another click removes that label again, or sets `#vimMode=true` where the note would inherit `#vimMode=false`. When the label of the note is inheritable, the click changes Vim mode for the notes under it too, and its menu says so.
 
 ## Key hints
 

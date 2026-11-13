@@ -68,7 +68,7 @@ export function VimModeBadge({ note }: { note: FNote }) {
             onClick={toggle}
             onContextMenu={(event) => {
                 event.preventDefault();
-                void showVimModeMenu(event, isEnabled, toggle);
+                void showVimModeMenu(event, note, isEnabled, toggle);
             }}
         />
     );
@@ -212,15 +212,21 @@ const TOOLTIP_OPTIONS: Partial<Tooltip.Options> = {
 /** The User Guide page of Vim mode in text notes. */
 const VIM_MODE_HELP_PAGE = "enVNpi1Njswq";
 
-/** Opens the menu of the Vim mode badge at the pointer. */
-function showVimModeMenu(event: MouseEvent, isEnabled: boolean, toggle: () => void) {
+/**
+ * Opens the menu of the Vim mode badge of `note` at the pointer. Its switch changes the label that
+ * `note` owns, which also reaches the notes under it when the label is inheritable.
+ */
+function showVimModeMenu(event: MouseEvent, note: FNote, isEnabled: boolean, toggle: () => void) {
+    const isSubtree = !!note.getOwnedLabel("vimMode")?.isInheritable;
     return contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items: [
             {
                 title: t("vim_mode.menu_note"),
-                description: t("vim_mode.menu_note_description"),
+                description: isSubtree
+                    ? t("vim_mode.menu_note_description_subtree")
+                    : t("vim_mode.menu_note_description"),
                 uiIcon: "bx bx-terminal",
                 isSwitch: true,
                 checked: isEnabled,

@@ -245,6 +245,33 @@ describe("Vim mode line editing", () => {
             expect(getLines(editor)).toBe("top|X|b||d|e|f|after");
         });
 
+        it("put lines over the cells of a column in Visual Line mode", async () => {
+            const editor = await createVimEditor(COLUMNS);
+            press(editor, "1Gyy2GVjp");
+            expect(getLines(editor)).toBe("top||b|top|d|e|f|after");
+            press(editor, "Gp");
+            expect(getLines(editor)).toBe("top||b|top|d|e|f|after|a|c");
+            expect(getContent(editor)).toContain(
+                `${paragraphs("after", "<$text bold=\"true\">a</$text>", "c")}`);
+        });
+
+        it("report the lines yanked in the language of the editor, as yy does", async () => {
+            const dictionary = {
+                "%0 lines yanked": "%0 Zeilen kopiert",
+                "%0 lines yanked into \"%1": "%0 Zeilen in \"%1 kopiert"
+            };
+            const editor = await createVimEditor(COLUMNS, {}, [],
+                { translations: { en: { dictionary } } });
+            press(editor, "2Gyj");
+            expect(getStatus(editor).message?.text).toBe("2 Zeilen kopiert");
+            press(editor, "\"ayj");
+            expect(getStatus(editor).message?.text).toBe("2 Zeilen in \"a kopiert");
+            press(editor, "Gyy");
+            expect(getStatus(editor).message?.text).toBe("1 Zeilen kopiert");
+            press(editor, "gg\"b3yy");
+            expect(getStatus(editor).message?.text).toBe("3 Zeilen in \"b kopiert");
+        });
+
         it("leave the lines of one cell to the operators of the engine", async () => {
             const editor = await createVimEditor(table([ [ "··[]a1", "a2" ], [ "b" ] ]));
             press(editor, "cj");

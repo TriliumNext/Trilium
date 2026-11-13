@@ -16,14 +16,15 @@ import { isFromEditable } from "../move_block_updown.js";
 import VimAdapter, {
     type CloseDialog, type DialogOptions, VimPosition, type WidgetEntry
 } from "./vim_adapter.js";
-import { isUserMapped, startsUserMapping } from "./vim_commands.js";
+import { getYankedMessage, isUserMapped, startsUserMapping } from "./vim_commands.js";
 import { getDigraph } from "./vim_digraphs.js";
 import { getLoadedVimEngine, loadVimEngine, runStartupCommands } from "./vim_engine.js";
 import { getPromptKind, PromptAssistant, type PromptKind } from "./vim_command_line.js";
 import {
     getAfterSearchHints, getBreadcrumbHint, getCancelHint, getCommandHints, getKeyLabel,
     getModeHints, HINT_LIMIT,
-    HINT_PAUSE, type HintContext, type PendingCommand, splitKeys, type VimHint, type VimHints
+    HINT_PAUSE, type HintContext, type PendingCommand, splitKeys, type Translate, type VimHint,
+    type VimHints
 } from "./vim_hints.js";
 import { createJumpList } from "./vim_jumps.js";
 import { getKeyReference, type VimHintSection } from "./vim_key_reference.js";
@@ -320,7 +321,8 @@ class VimSession {
         this.adapter = new VimAdapter(editor, {
             openDialog: (template, onEnter, options) => this.openDialog(template, onEnter, options),
             openNotification: (template, duration) =>
-                this.showMessage(getMessageText(template), duration),
+                this.showMessage(translateMessage(getMessageText(template), this.translate),
+                    duration),
             notify: (message) => this.showMessage(message, 5000),
             undo: () => this.undo.undo(),
             redo: () => this.redo(),
@@ -1444,6 +1446,12 @@ function getMessageText(template: Node): string {
     return blocks.length > 1
         ? blocks.map((block) => block.textContent).join("\n")
         : template.textContent as string;
+}
+
+/** `text`, a message of the engine, in the language of the editor when it is a yank message. */
+function translateMessage(text: string, t: Translate): string {
+    const yanked = /^(\d+) lines yanked(?: into "(.))?$/u.exec(text);
+    return yanked ? getYankedMessage(t, Number(yanked[1]), yanked[2]) : text;
 }
 
 /** The editor in the content of the embed `dom`, once it shows. */

@@ -9,7 +9,7 @@ import {
 
 import VimAdapter, { getActiveAdapter, VimPosition } from "./vim_adapter.js";
 import { joinLine, openLine, setTypingFormatting } from "./vim_editing.js";
-import type { VimKeyContext } from "./vim_hints.js";
+import type { Translate, VimKeyContext } from "./vim_hints.js";
 import { type LineSpan, OBJECT_CHARACTER, toCharacterEdge } from "./vim_lines.js";
 import {
     cloneFragment, getRichContent, putLines, rememberRichContent, type RichContent
@@ -548,11 +548,22 @@ function yankParts(
     const text = adapter.readLines(parts);
     vim.getRegisterController().pushText(args.registerName, "yank", text, true, false);
     const count = text.split("\n").length - 1;
-    const into = args.registerName ? ` into "${args.registerName}` : "";
-    adapter.openNotification(document.createTextNode(`${count} lines yanked${into}`),
-        { duration: 1500 });
+    const message = getYankedMessage(adapter.editor.t, count, args.registerName);
+    adapter.openNotification(document.createTextNode(message), { duration: 1500 });
     const isVisual = (adapter.state.vim as vimState).visualMode;
     return isVisual ? new VimPosition(parts[0].first, 0) : oldAnchor;
+}
+
+/**
+ * The message that `count` lines were yanked, into `registerName` when one was given, in the words
+ * of the engine.
+ */
+export function getYankedMessage(
+    t: Translate, count: number, registerName?: string | null
+): string {
+    return registerName
+        ? t("%0 lines yanked into \"%1", [ String(count), registerName ])
+        : t("%0 lines yanked", [ String(count) ]);
 }
 
 /**
@@ -598,8 +609,9 @@ function put(
 
 /**
  * Puts `content`, which holds `text`, `count` times over the Visual selection: text over the
- * selected text, or lines over the lines of Visual Line mode. The selection goes to the unnamed
- * register with its formatting, as in Vim.
+ * selected text, or lines over the lines of Visual Line mode, which in a table are the cells of the
+ * columns that `j` and `k` move through. The selection goes to the unnamed register with its
+ * formatting, as in Vim.
  */
 function putOverSelection(
     vim: Vim, adapter: VimAdapter, state: vimState, content: RichContent, text: string,
@@ -608,11 +620,10 @@ function putOverSelection(
     const isLines = state.visualLine;
     const first = Math.min(state.sel.anchor.line, state.sel.head.line);
     const last = Math.max(state.sel.anchor.line, state.sel.head.line);
+    const parts = isLines ? getColumnParts(adapter, first, last) ?? [ { first, last } ] : [];
     const start = adapter.getCursor("start");
     const end = adapter.getCursor("end");
-    const replaced = isLines
-        ? adapter.readLines([ { first, last } ])
-        : adapter.getRange(start, end);
+    const replaced = isLines ? adapter.readLines(parts) : adapter.getRange(start, end);
     const replacedContent = adapter.takeReadContent(replaced, isLines);
     const unnamed = vim.getRegisterController().unnamedRegister;
     unnamed.setText(replaced, isLines);
@@ -630,7 +641,9 @@ function putOverSelection(
         return;
     }
     const putStart = ModelLivePosition.fromPosition(put, "toNext");
-    adapter.replaceRange("", new VimPosition(first, 0), new VimPosition(last + 1, 0));
+    for (const part of [ ...parts ].reverse()) {
+        adapter.replaceRange("", new VimPosition(part.first, 0), new VimPosition(part.last + 1, 0));
+    }
     setCursorOnLineOf(adapter, putStart.toPosition());
     putStart.detach();
 }
