@@ -106,6 +106,17 @@ describe("Vim mode registers", () => {
                 + item("one", "b") + item("two", "c") + BODY);
         });
 
+        it("puts each copy of a list item as an item of its own, with all its blocks", async () => {
+            const editor = await createVimEditor(item("[]one", "x"));
+            press(editor, "yy2p");
+            expect(getContent(editor)).toBe(item("one", "a") + item("one", "b") + item("one", "c"));
+
+            setVimData(editor, `${item("[]one", "x")}${item("two", "x")}`);
+            press(editor, "yjG2p");
+            expect(getContent(editor)).toBe(item("one", "a") + item("two", "a")
+                + item("one", "b") + item("two", "b") + item("one", "c") + item("two", "c"));
+        });
+
         it("leaves out a block that its place refuses, and the attributes a paragraph cannot have",
             async () => {
             const editor = await createVimEditor(`[${HR}]${quote("q")}`);
@@ -312,6 +323,20 @@ describe("Vim mode registers", () => {
             readClipboard.mockResolvedValue("x");
             press(editor, "\"*P");
             await vi.waitFor(() => expect(getLines(editor)).toBe("a|xline"));
+        });
+
+        it("put what they copied with its widgets and formatting", async () => {
+            let clipboard = "";
+            const host = {
+                writeClipboard: vi.fn((text: string) => {
+                    clipboard = text;
+                }),
+                readClipboard: vi.fn(async () => clipboard)
+            };
+            const lines = `${HR}<paragraph><$text bold="true">b</$text></paragraph>`;
+            const editor = await createVimEditor(`[${HR}]${lines.slice(HR.length)}`, { host });
+            press(editor, "\"+yjG\"+p");
+            await vi.waitFor(() => expect(getContent(editor)).toBe(lines.repeat(2)));
         });
 
         it("put nothing when Vim mode is off by the time the clipboard is read", async () => {

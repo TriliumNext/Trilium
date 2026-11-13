@@ -109,7 +109,8 @@ them after every case:
 5. **Undo gives the note back, and redo the change.** Undoing until nothing is left must restore
    the content exactly; redoing everything must give the result again. Fold states are outside
    this rule.
-6. **Bounded time.** A command slower than `--slow` is reported.
+6. **Bounded time.** A command slower than `--slow` is reported. A command that takes more than
+   two minutes is recorded and ends the run, since the page cannot be read while it is stuck.
 
 An invariant says that the note survived, not that the result is right. For that, see _Oracles_.
 

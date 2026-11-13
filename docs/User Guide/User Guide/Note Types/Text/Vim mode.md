@@ -151,7 +151,7 @@ Yanked text keeps its formatting, such as bold, links and colors.
 
 *   `:w`: save the note now. Trilium also saves by itself.
 *   `:q` or `ZZ`: close the tab of the note, or its split.
-*   `gf`: follow the link under the cursor.
+*   `gf`: follow the link or link preview under the cursor.
 *   `]]` / `[[`: go to the next / previous heading.
 *   `za`: collapse or expand the heading, list item or collapsible block at the cursor.
 *   `:sort`: sort the selected paragraphs or list items, or the ones around the cursor.

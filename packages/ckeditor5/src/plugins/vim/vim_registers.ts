@@ -158,8 +158,9 @@ export function putLines(
             return codeLines.length ? putCodeLines(writer, entry, isAfter, codeLines) : null;
         }
 
-        const blocks: ModelElement[] = [];
+        const copies: ModelElement[][] = [];
         for (let time = 0; time < count; time++) {
+            const blocks: ModelElement[] = [];
             if (content?.isBlocks) {
                 const copy = cloneFragment(writer, content.fragment);
                 for (const block of [ ...copy.getChildren() ] as ModelElement[]) {
@@ -174,13 +175,17 @@ export function putLines(
                     blocks.push(paragraph);
                 }
             }
+            copies.push(blocks);
         }
 
         const anchor = entry.kind === "text" ? entry.block : entry.element;
         const destination = entry.kind === "text" ? entry.block : null;
         const position = getBlockPosition(writer, anchor, isAfter);
-        const fitter = new BlockFitter(writer, destination, blocks);
-        const fitting = blocks.filter((block) => fitter.fit(block, position));
+        const fitter = new BlockFitter(writer, destination, copies.flat());
+        const fitting = copies.flatMap((blocks) => {
+            fitter.startCopy();
+            return blocks.filter((block) => fitter.fit(block, position));
+        });
         if (!fitting.length) {
             return null;
         }
@@ -236,7 +241,7 @@ function putCodeLines(
 
 /**
  * Gives put blocks the kind of the place they land in. A list keeps its items together: blocks
- * that came from one item stay one item.
+ * that came from one item stay one item within each copy of a counted put.
  */
 class BlockFitter {
 
@@ -251,6 +256,11 @@ class BlockFitter {
         const indents = blocks.filter((block) => block.hasAttribute("listItemId"))
             .map((block) => block.getAttribute("listIndent") as number);
         this.lowestIndent = indents.length ? Math.min(...indents) : 0;
+    }
+
+    /** Starts the next copy of a counted put, whose blocks make new items again. */
+    startCopy() {
+        this.itemIds.clear();
     }
 
     /** Fits `block` to `position`. Returns `false` when the schema allows no such block there. */

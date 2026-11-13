@@ -300,7 +300,7 @@ These keys act on [collapsible headings](../Collapsible%20headings.md), collapsi
 
 | Keys | Action |
 | --- | --- |
-| `gf` | Follow the [link](../Links.md) under the cursor. **Trilium-exclusive** **Text notes only** |
+| `gf` | Follow the [link](../Links.md) or [link preview](../Link%20Previews.md) under the cursor. **Trilium-exclusive** **Text notes only** |
 | `ZZ` | Close the tab of the note, or its split. **Trilium-exclusive** **Text notes only** |
 
 ## Insert mode

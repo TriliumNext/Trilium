@@ -7,12 +7,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
+import { createLinkEmbedHost } from "../../../test/link-embed-kit.js";
 import {
     createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
     press, typeText
 } from "../../../test/vim-kit.js";
 import HostedBalloon from "../../hosted_balloon.js";
 import ContentEmbed from "../content_embed/content_embed.js";
+import LinkEmbed from "../link_embed/link_embed.js";
 import ReferenceLink from "../referencelink.js";
 import TriliumVim, { getLinkUnderCursor } from "./vim.js";
 import { getLoadedVimEngine } from "./vim_engine.js";
@@ -716,6 +718,25 @@ describe("Vim mode", () => {
             setModelData(plain.model,
                 "<paragraph>[<reference href=\"#r\"></reference>]</paragraph>");
             expect(getLinkUnderCursor(plain)).toEqual(reference);
+        });
+
+        it("are the web address of a link preview under the cursor", async () => {
+            const preview = (name: string, url: string) =>
+                `<${name} url="${url}" embedType="opengraph"></${name}>`;
+            const editor = await createVimEditor(
+                `<paragraph>[]a${preview("linkMention", "https://e.co/")}</paragraph>`
+                + preview("linkEmbed", "https://f.co/")
+                + `<paragraph>${preview("linkMention", "javascript:alert(1)")}</paragraph>`,
+                {}, [ LinkEmbed ], { linkEmbed: createLinkEmbedHost() });
+            const web = (href: string) => ({ href, isReference: false });
+            expect(getLinkUnderCursor(editor)).toBeNull();
+            press(editor, "l");
+            expect(getLinkUnderCursor(editor)).toEqual(web("https://e.co/"));
+            press(editor, "j");
+            expect(getLinkUnderCursor(editor)).toEqual(web("https://f.co/"));
+            press(editor, "j");
+            expect(getCursor(editor)).toBe("2:0");
+            expect(getLinkUnderCursor(editor)).toBeNull();
         });
     });
 

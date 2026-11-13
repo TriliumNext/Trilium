@@ -11,8 +11,12 @@ const SPECIAL_KEYS = {
 };
 const MODIFIERS = { C: "Control", S: "Shift", A: "Alt", M: "Meta" };
 
-/** The requests that only read, although they are not GET requests. */
-const READ_REQUESTS = /\/api\/(tree\/load|search)/u;
+/**
+ * The POST requests that only read. `search-and-execute-note` also starts with `search` and runs
+ * bulk actions, so each path is matched whole.
+ */
+const READ_REQUESTS =
+    /\/api\/(tree\/load|search-note\/[^/]+\/result-details|search-related|search\/lint)$/u;
 
 /** The elements that can hold the focus while keys go to Vim mode. */
 const FOCUS_ROOTS = ".note-split, .vim-command-line-slot, .ck-vim-command-line-panel, "
@@ -123,7 +127,7 @@ export async function openSession(options) {
             const response = await route.fetch();
             const json = { ...await response.json(), ...options.options };
             await route.fulfill({ response, json });
-        } else if (method === "GET" || READ_REQUESTS.test(path)) {
+        } else if (method === "GET" || (method === "POST" && READ_REQUESTS.test(path))) {
             await route.fallback();
         } else if (allowedCreations > 0 && /\/api\/notes\/root\/children$/u.test(path)) {
             allowedCreations--;
@@ -255,7 +259,10 @@ export async function openSession(options) {
             }
             return isPass;
         },
-        /** Closes the browser and prints the summary. Returns whether something failed. */
+        /**
+         * Closes the browser and prints the summary. Returns whether something failed: a check
+         * or the page.
+         */
         async close() {
             await browser.close();
             const failed = checks.filter((each) => !each.isPass);
@@ -267,7 +274,7 @@ export async function openSession(options) {
             for (const error of errors.slice(0, 20)) {
                 console.log(`  ${error}`);
             }
-            return failed.length > 0;
+            return failed.length > 0 || errors.length > 0;
         }
     };
 

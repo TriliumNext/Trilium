@@ -116,6 +116,12 @@ const EXPECTED_WRITES = /\/api\/(options|notes\/[^/]+\/(data|revision)|recent-no
 /** How long a command can take before the page counts as stuck. */
 const COMMAND_TIMEOUT = 120_000;
 
+/**
+ * A command that did not finish within `COMMAND_TIMEOUT`. `page.evaluate()` has no timeout, so a
+ * read from the stuck page waits forever: the case is recorded and the run stops.
+ */
+class StuckPageError extends Error {}
+
 /** How many uncaught errors the page had when the last replay of `reduce` started. */
 let errorsBeforeReplay = 0;
 
@@ -226,6 +232,11 @@ async function sweep({ session, html, run }) {
                 console.log(`FAIL line ${line} (${kinds[line]}) ${command}: `
                     + result.problems.join("; "));
             }
+            if (result.isStuck) {
+                console.log(`\nThe page stopped answering, so the run stops here. `
+                    + `records: ${record}`);
+                return true;
+            }
             if (cases % 100 === 0) {
                 console.log(`… ${cases} cases, ${failures} failed`);
             }
@@ -279,6 +290,9 @@ async function runCase(session, html, base, command, line, slow) {
     try {
         await typeCommand(session, command);
     } catch (error) {
+        if (error instanceof StuckPageError) {
+            return { problems: [ error.message ], ms: COMMAND_TIMEOUT, isStuck: true };
+        }
         problems.push(String(error.message ?? error));
     }
     const after = await session.evaluate(async () => ({
@@ -366,6 +380,10 @@ async function fuzz({ session, html, run }) {
         if (hard.length) {
             failed++;
         }
+        if (result.problems.some((each) => each.isStuck)) {
+            console.log(`\nThe page stopped answering, so the run stops here. records: ${record}`);
+            return true;
+        }
         // An uncaught error can leave the editor unusable, so the next session gets a new page.
         if (countPageErrors(session) > pageErrors) {
             pageErrors = countPageErrors(session);
@@ -401,6 +419,7 @@ async function runSession(session, html, seed, steps, slow) {
         }
     }
     const end = await session.evaluate(() => window.__vim.hash());
+    const beforeRevert = { errors: session.errors.length, writes: session.heldWrites.length };
     const undone = await revertAll(session, "u", "undo");
     if (await session.evaluate(() => window.__vim.hash()) !== base) {
         problems.push({ step: -1, command: "UNDO",
@@ -410,6 +429,9 @@ async function runSession(session, html, seed, steps, slow) {
         if (await session.evaluate(() => window.__vim.hash()) !== end) {
             problems.push({ step: -1, command: "REDO", problem: "redo gave another note" });
         }
+    }
+    for (const problem of newErrors(session, beforeRevert)) {
+        problems.push({ step: -1, command: "UNDO", problem: `during undo or redo: ${problem}` });
     }
     return { seed, startLine, commands, problems };
 }
@@ -422,6 +444,9 @@ async function runStep(session, command, slow) {
     try {
         await typeCommand(session, command);
     } catch (error) {
+        if (error instanceof StuckPageError) {
+            return [ { problem: error.message, isStuck: true } ];
+        }
         problems.push({ problem: String(error.message ?? error) });
     }
     const after = await session.evaluate(async () => ({
@@ -499,6 +524,9 @@ async function showsProblem(session, html, startLine, commands, needle) {
     await session.evaluate((at) => window.__vim.goto(at), startLine);
     for (const command of commands) {
         const found = await runStep(session, command, Infinity);
+        if (found.some((each) => each.isStuck)) {
+            throw new Error(`The page stopped answering at ${command}, so the replays stop here.`);
+        }
         if (found.some((each) => each.problem.includes(needle))) {
             return true;
         }
@@ -607,7 +635,7 @@ function createCommand(random) {
 async function typeCommand(session, command) {
     let timer;
     const timeout = new Promise((_resolve, reject) => {
-        timer = setTimeout(() => reject(new Error(`the page did not answer within `
+        timer = setTimeout(() => reject(new StuckPageError(`the page did not answer within `
             + `${COMMAND_TIMEOUT / 1000} s`)), COMMAND_TIMEOUT);
     });
     try {

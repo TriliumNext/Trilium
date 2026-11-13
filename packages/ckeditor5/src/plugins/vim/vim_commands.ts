@@ -1373,10 +1373,12 @@ async function readClipboard(adapter: VimAdapter, register: Register): Promise<s
     try {
         const text = await adapter.host.readClipboard();
         if (typeof text === "string") {
-            // Setting the same text again gives the register a new buffer, without rich content.
-            if (text !== register.toString()) {
-                register.setText(text, text.endsWith("\n"));
+            // `writeClipboard()` leaves out the widgets, and setting the text of the register again
+            // would give it a new buffer without its rich content.
+            if (text === register.toString().replaceAll(OBJECT_CHARACTER, "")) {
+                return register.toString();
             }
+            register.setText(text, text.endsWith("\n"));
             return text;
         }
     } catch {

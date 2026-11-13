@@ -1,6 +1,7 @@
 import "../../theme/vim.css";
 
 import type { Pos, Vim, vimState } from "@replit/codemirror-vim-core";
+import { isHttpUrl } from "@triliumnext/commons";
 import {
     ClipboardPipeline, type ClipboardContentInsertionEvent, type Editor, env, keyCodes,
     type ModelElement, ModelLiveRange, type ModelPosition, type ModelRange, Plugin,
@@ -1419,9 +1420,9 @@ class VimSession {
 }
 
 /**
- * The link that "follow the link" opens: the selected note reference, or the link of the text at
- * the caret. In Normal mode of Vim, the reference or the linked character under the block cursor,
- * which the caret is before.
+ * The link that "follow the link" opens: the selected note reference or link preview, or the link
+ * of the text at the caret. In Normal mode of Vim, the reference, link preview or linked character
+ * under the block cursor, which the caret is before. A link preview counts only with a web address.
  */
 export function getLinkUnderCursor(editor: Editor): LinkUnderCursor | null {
     const selection = editor.model.document.selection;
@@ -1433,6 +1434,10 @@ export function getLinkUnderCursor(editor: Editor): LinkUnderCursor | null {
         : selection.getSelectedElement();
     if (node?.is("element", "reference")) {
         return { href: node.getAttribute("href") as string | undefined, isReference: true };
+    }
+    if (node?.is("element", "linkMention") || node?.is("element", "linkEmbed")) {
+        const url = node.getAttribute("url") as string | undefined;
+        return isHttpUrl(url) ? { href: url, isReference: false } : null;
     }
     const href = isBlockCursor
         ? node?.getAttribute("linkHref")

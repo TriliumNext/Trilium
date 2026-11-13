@@ -192,8 +192,9 @@ system clipboard, so keep clipboard checks headless.
 **What keeps it safe.**
 
 - Every request to `/api/` that is not a read is answered `200 {}` in the page and listed as a
-  held write. Reads are GET requests, `tree/load` and `search`. Nothing reaches the server: not
-  the note, not the options, not the open tabs.
+  held write. Reads are GET requests and the four POST requests that only read: `tree/load`,
+  `search-note/…/result-details`, `search-related` and `search/lint`. Nothing reaches the
+  server: not the note, not the options, not the open tabs.
 - The options of the page are the server's plus `textNoteVimModeEnabled=true` and each
   `--option name=value`.
 - The note opens in a tab of its own, and every lookup is scoped to that tab's `.note-split`.
@@ -225,7 +226,7 @@ export default async ({ keys, state, setContent, check, evaluate, reload }) => {
 - `state()` returns the mode, the cursor, pending keys, the message, the command line, whether
   the selection is collapsed, the lines and the HTML; `state(true)` leaves out the last two.
 - `check(name, actual, expected)` compares as JSON, or calls `expected(actual)`. A failed check
-  makes the exit code 1.
+  makes the exit code 1, and so does an error of the page, even with every check passed.
 - In the page, `window.__vimEditor()` is the editor of the test tab, and `window.__vim` has the
   helpers that [live-simulation.md](live-simulation.md) lists: `lines()`, `kinds()`, `goto()`,
   `validate()`, `hash()` and the rest.
