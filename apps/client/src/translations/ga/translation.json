@@ -1527,7 +1527,11 @@
     "color_scheme_switcher_dark": "Mód dorcha",
     "color_scheme_switcher_hint": "Cliceáil chun an scéim dathanna a athrú.",
     "color_scheme_switcher_unsupported": "Ní thacaíonn an téama reatha le hathrú na scéime dathanna.",
-    "edited_notes_expanded": "Leathnaigh \"Nótaí curtha in eagar an lá seo\" i nótaí an lae"
+    "edited_notes_expanded": "Leathnaigh \"Nótaí curtha in eagar an lá seo\" i nótaí an lae",
+    "note_title_style": "Teideal an nóta",
+    "note_title_style_description": "Ní thaispeántar an teideal dlúth ach sa bharra os cionn an nóta, rud a fhágann níos mó spáis don ábhar. Ní thaispeántar na dátaí cruthaithe ná na dátaí modhnaithe.",
+    "note_title_style_large": "Mór",
+    "note_title_style_compact": "Dlúth"
   },
   "ui-performance": {
     "title": "Feidhmíocht",
@@ -3573,7 +3577,7 @@
     "font-size": "Méid",
     "font-size-small": "Beag",
     "font-size-medium": "Meán",
-    "font-size-large": "Mór",
+    "font-size-large": "L",
     "font-size-extra-large": "XL",
     "icons": "Deilbhíní",
     "add-icon": "Cuir deilbhín leis",
@@ -4281,7 +4285,10 @@
       "display-as": "Taispeáin mar",
       "compact": "Dlúth",
       "resizable": "Inathraithe méide",
-      "default": "Réamhshocrú"
+      "default": "Réamhshocrú",
+      "collapse-or-expand-the-section-of-a-heading": "Dún nó leathnaigh an chuid a bhaineann le ceannteideal",
+      "section-collapsed": "Rannán fillte",
+      "section-expanded": "Rannán leathnaithe"
     },
     "task-state-dropped-title": "Stádas tascanna neamhbhailí",
     "task-state-dropped-message_one": "Tá sainmhíniú stádais tasc saincheaptha neamhbhailí agus níor tugadh aird air.",
@@ -5331,7 +5338,9 @@
       "link_preview": "Réamhamharc ar an nasc",
       "embed": "Leabaigh",
       "block": "Bloc"
-    }
+    },
+    "collapse_section": "Dún an rannán",
+    "expand_section": "Leathnaigh an rannán"
   },
   "template_properties": {
     "title": "Airíonna teimpléid",
@@ -5393,5 +5402,13 @@
     "not_a_video": "Ní seoladh gréasáin é seo.",
     "insert_failed": "Níorbh fhéidir an meán a leabú. Deimhnigh gur seoladh físeáin YouTube, comhaid fuaime nó comhaid físe atá i gceist, seiceáil an nasc, agus bain triail as arís.",
     "description": "Cuir isteach seoladh an fhíseáin nó an ábhair fuaime atá leabaithe le cur leis: físeán YouTube, nó aon chomhad fuaime nó físeáin ar féidir rochtain a fháil air trí HTTP nó HTTPS."
+  },
+  "protect_subtree": {
+    "protect_intro": "Déanfar na nótaí seo a leanas a chriptiú le do phasfhocal. Ní féidir a dteidil, a n-ábhar, a gceangaltáin ná a leasuithe a léamh ina dhiaidh sin ach amháin i seisiún cosanta.",
+    "unprotect_intro": "Díghrifteofar na nótaí seo a leanas. Stórálfar a n-ábhar, a gceangaltáin agus a leasuithe gan ghrioftáil ina dhiaidh sin, ionas go mbeidh siad inléite ag aon duine a bhfuil rochtain aige ar an mbunachar sonraí, ar a chúltacaí, nó ar fhreastalaí sioncronaithe.",
+    "subtree": "agus gach nóta faoina bhun",
+    "untitled": "Nóta cosanta",
+    "password": "Focal faire",
+    "password_description": "An focal faire a úsáideann tú le haghaidh nótaí cosanta."
   }
 }
