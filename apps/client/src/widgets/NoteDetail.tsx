@@ -328,14 +328,25 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
         // When not visible, keep the old props to avoid re-rendering in the background.
     }, [ props, isVisible ]);
 
-    // Runs after the widget's own effects, so a widget that loads its content (`useNoteBlob()`)
-    // has already reported `contentLoad` as loading.
+    const typeMapping = TYPE_MAPPINGS[type];
     const shownNoteId = cachedProps.note?.noteId;
-    useEffect(() => {
+    const shownRef = useRef({ isVisible, shownNoteId, noteContext: cachedProps.noteContext });
+    shownRef.current = { isVisible, shownNoteId, noteContext: cachedProps.noteContext };
+    const reportContentShown = useCallback(() => {
+        const { isVisible, shownNoteId, noteContext } = shownRef.current;
         if (isVisible && shownNoteId) {
-            cachedProps.noteContext?.setContextData("typeWidgetNote", { noteId: shownNoteId });
+            noteContext?.setContextData("typeWidgetNote", { noteId: shownNoteId });
         }
-    }, [ isVisible, shownNoteId, cachedProps.noteContext ]);
+    }, []);
+
+    // Runs after the widget's own effects, so a widget that loads its content (`useNoteBlob()`)
+    // has already reported `contentLoad` as loading. A widget that draws its content later calls
+    // `onContentShown` itself.
+    useEffect(() => {
+        if (!typeMapping.reportsContentShown) {
+            reportContentShown();
+        }
+    }, [ isVisible, shownNoteId, cachedProps.noteContext, typeMapping, reportContentShown ]);
 
     // This widget stays mounted (just hidden) when the user switches note type —
     // e.g. read-only ↔ editable text — and also when an enclosing dialog such as the quick-edit
@@ -347,7 +358,6 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
         }
     }, [ isVisible, containerVisible ]);
 
-    const typeMapping = TYPE_MAPPINGS[type];
     return (
         <div
             ref={wrapperRef}
@@ -361,6 +371,7 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
                     {...cachedProps}
                     parentComponent={eventGate}
                     isVisible={isVisible && containerVisible}
+                    onContentShown={reportContentShown}
                 />
             </ParentComponent.Provider>
         </div>

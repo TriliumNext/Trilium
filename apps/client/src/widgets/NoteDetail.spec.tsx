@@ -8,6 +8,7 @@ import type NoteContext from "../components/note_context";
 import type FNote from "../entities/fnote";
 import { buildNote } from "../test/easy-froca";
 import { NoteDetailWrapper } from "./NoteDetail";
+import type { ExtendedNoteType } from "./note_types";
 import { ParentComponent } from "./react/react_utils";
 import type { TypeWidgetProps } from "./type_widgets/type_widget";
 
@@ -27,24 +28,39 @@ describe("NoteDetailWrapper", () => {
         const first = buildNote({ title: "First", type: "text" });
         const second = buildNote({ title: "Second", type: "text" });
 
-        await mountWrapper(first, noteContext, true);
+        await mountWrapper(first, noteContext);
         expect(calls).toEqual([ "contentLoad:loading", `typeWidgetNote:${first.noteId}` ]);
 
         // A cached widget receives the next note one render later; until then nothing is reported
         // for it, so a note list cannot start ahead of the widget's own content.
         calls.length = 0;
-        await mountWrapper(second, noteContext, true);
+        await mountWrapper(second, noteContext);
         expect(calls).toEqual([ "contentLoad:loading", `typeWidgetNote:${second.noteId}` ]);
+    });
+
+    it("waits for a widget that draws its content later to say it is shown", async () => {
+        const { calls, noteContext } = recordContextData();
+        const note = buildNote({ title: "Editable", type: "text" });
+
+        await mountWrapper(note, noteContext, { type: "editableText" });
+        expect(calls).toEqual([ "contentLoad:loading" ]);
+
+        await act(async () => shownCallbacks.at(-1)?.());
+        expect(calls).toEqual([ "contentLoad:loading", `typeWidgetNote:${note.noteId}` ]);
     });
 
     it("reports nothing from a widget kept mounted for another note type", async () => {
         const { calls, noteContext } = recordContextData();
 
-        await mountWrapper(buildNote({ title: "Hidden", type: "text" }), noteContext, false);
+        await mountWrapper(buildNote({ title: "Hidden", type: "text" }), noteContext, { isVisible: false });
+        await mountWrapper(buildNote({ title: "Hidden editor", type: "text" }), noteContext,
+            { type: "editableText", isVisible: false });
+        await act(async () => shownCallbacks.at(-1)?.());
         expect(calls.filter((call) => call.startsWith("typeWidgetNote"))).toEqual([]);
     });
 
-    async function mountWrapper(note: FNote, noteContext: NoteContext, isVisible: boolean) {
+    async function mountWrapper(note: FNote, noteContext: NoteContext,
+        { type = "readOnlyText", isVisible = true }: { type?: ExtendedNoteType; isVisible?: boolean } = {}) {
         if (!container) {
             container = document.createElement("div");
             document.body.appendChild(container);
@@ -54,7 +70,7 @@ describe("NoteDetailWrapper", () => {
         await act(async () => {
             render(
                 <ParentComponent.Provider value={new Component()}>
-                    <NoteDetailWrapper Element={LoadingWidget} type="editableText" isVisible={isVisible}
+                    <NoteDetailWrapper Element={LoadingWidget} type={type} isVisible={isVisible}
                         isFullHeight={false} props={props} />
                 </ParentComponent.Provider>,
                 mountPoint
@@ -67,8 +83,12 @@ describe("NoteDetailWrapper", () => {
     }
 });
 
+/** The `onContentShown` callbacks the widgets were given, latest last. */
+const shownCallbacks: (() => void)[] = [];
+
 /** Starts loading the note's content from an effect, as `useNoteBlob()` does. */
-function LoadingWidget({ note, noteContext }: TypeWidgetProps) {
+function LoadingWidget({ note, noteContext, onContentShown }: TypeWidgetProps) {
+    if (onContentShown) shownCallbacks.push(onContentShown);
     useEffect(() => {
         noteContext?.setContextData("contentLoad", { state: "loading", retry: () => {} });
     }, [ note.noteId ]);

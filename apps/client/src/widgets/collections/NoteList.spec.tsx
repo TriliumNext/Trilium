@@ -79,8 +79,9 @@ describe("isNoteContentReady", () => {
         // The widget shows the note and is still fetching its content.
         expect(isNoteContentReady(note, loading, { noteId: note.noteId })).toBe(false);
         expect(isNoteContentReady(note, loaded, { noteId: note.noteId })).toBe(true);
-        // A failed load does not hold the list back.
-        expect(isNoteContentReady(note, { state: "error", retry: () => {} }, { noteId: note.noteId })).toBe(true);
+        // A failed load does not hold the list back, though a widget that draws its content then
+        // never reports it shown.
+        expect(isNoteContentReady(note, { state: "error", retry: () => {} }, undefined)).toBe(true);
     });
 });
 

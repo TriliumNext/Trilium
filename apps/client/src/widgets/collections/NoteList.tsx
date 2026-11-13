@@ -98,7 +98,10 @@ export function isNoteContentReady(
     contentLoad: NoteContextDataMap["contentLoad"] | undefined,
     typeWidgetNote: NoteContextDataMap["typeWidgetNote"] | undefined
 ) {
-    return !!note && typeWidgetNote?.noteId === note.noteId && contentLoad?.state !== "loading";
+    if (!note) return false;
+    // A widget that draws its content never reports a failed load as shown.
+    if (contentLoad?.state === "error") return true;
+    return typeWidgetNote?.noteId === note.noteId && contentLoad?.state !== "loading";
 }
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
