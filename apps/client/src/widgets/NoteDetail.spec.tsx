@@ -47,6 +47,14 @@ describe("NoteDetailWrapper", () => {
 
         await act(async () => shownCallbacks.at(-1)?.());
         expect(calls).toEqual([ "contentLoad:loading", `typeWidgetNote:${note.noteId}` ]);
+
+        // Another type takes over for a child note, then the same note comes back: the editor
+        // kept its content while hidden, so it has nothing to draw and nothing to report.
+        const child = buildNote({ title: "Child", type: "file" });
+        await mountWrapper(child, noteContext, { type: "editableText", isVisible: false });
+        calls.length = 0;
+        await mountWrapper(note, noteContext, { type: "editableText" });
+        expect(calls).toEqual([ `typeWidgetNote:${note.noteId}` ]);
     });
 
     it("reports nothing from a widget kept mounted for another note type", async () => {
