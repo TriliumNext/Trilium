@@ -151,8 +151,7 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-/* Thin launcher-rail scrollbar; the padding below (set from the JS-measured
- * `--launcher-scrollbar-size`) offsets its width so it never shifts the centred buttons. */
+/* Thin launcher-rail scrollbar. */
 #launcher-container {
     --scrollbar-thickness: 4px;
     --scrollbar-thumb-thickness: 4px;
@@ -193,14 +192,6 @@ body.layout-horizontal > .horizontal {
     padding-bottom: var(--launcher-pane-button-gap);
 }
 
-#launcher-pane.vertical #launcher-container {
-    width: var(--launcher-pane-size);
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-inline-start: var(--launcher-scrollbar-size, 0px);
-}
-
 #launcher-pane.horizontal {
     --launcher-pane-border-color: var(--launcher-pane-horiz-border-color);
     --launcher-pane-background-color: var(--launcher-pane-horiz-background-color);
@@ -217,14 +208,6 @@ body.layout-horizontal > .horizontal {
 
     height: var(--launcher-pane-size) !important;
     align-items: center;
-}
-
-#launcher-pane.horizontal #launcher-container {
-    width: 100%;
-    height: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-block-start: var(--launcher-scrollbar-size, 0px);
 }
 
 @media (max-width: 991px) {
