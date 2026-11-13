@@ -351,6 +351,12 @@ export default defineConfig(() => ({
                 find: "@client",
                 replacement: join(__dirname, "../client/src")
             },
+            // The readable browser bundle rather than the `browser` entry, `exceljs.min.js`:
+            // `patches/exceljs@4.4.0.patch` edits this file and leaves the minified one alone.
+            {
+                find: /^exceljs$/,
+                replacement: join(__dirname, "../../node_modules/exceljs/dist/exceljs.js")
+            },
             // Bypass officeparser's `browser` entry — a prebuilt ~2.7 MB monolith that
             // inlines pdfjs-dist for its PDF-parsing feature. The wrapper bundles the
             // package's Node ESM entry instead (plus the Buffer polyfill it needs),

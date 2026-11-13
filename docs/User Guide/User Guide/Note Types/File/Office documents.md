@@ -26,6 +26,12 @@ The preview generally preserves:
 
 To keep links readable regardless of the theme, the default hyperlink color applied automatically by word processors is ignored; links that were deliberately given a custom color by the author keep it.
 
+### Excel workbooks
+
+A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet, the same view as a <a class="reference-link" href="../Spreadsheets.md">Spreadsheet</a> note that cannot be edited: the sheets are listed in tabs at the bottom, and the grid scrolls in both directions however large the workbook is. Like a Spreadsheet note, it always takes the full width of the window, whatever the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a>.
+
+A workbook stored as an <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">attachment</a> opens the same way once the attachment is opened on its own. If the file cannot be read as a workbook, the simplified preview described above is shown instead.
+
 ## Limitations
 
 *   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.
@@ -35,6 +41,6 @@ To keep links readable regardless of the theme, the default hyperlink color appl
 
 ## Relation with other features
 
-*   The same preview is used when an office document is displayed in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> or embedded in a text note via <a class="reference-link" href="../Text/Include%20Note.md">Include Note</a>, as well as for office documents stored as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>.
+*   The same preview is used when an office document is displayed in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> or embedded in a text note via <a class="reference-link" href="../Text/Include%20Note.md">Include Note</a>, as well as for office documents stored as <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a>. For a spreadsheet, the Note List and the list of attachments show only the top-left corner of its first sheet (20 rows by 15 columns); open the note or the attachment to see all of it in the read-only spreadsheet.
 *   Independently of the preview, the text content of office documents is also extracted in the background so that it can be found with <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> via <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>.
 *   `.csv` and `.xlsx` files can be converted to <a class="reference-link" href="../Spreadsheets.md">Spreadsheets</a> via the [import](../../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) function.

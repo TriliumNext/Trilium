@@ -372,16 +372,18 @@ describe("getMimeIcon", () => {
 });
 
 describe("isFullWidthNoteType", () => {
-    it("takes the full width for canvas-like types and for PDF, video and audio files", () => {
+    it("takes the full width for canvas-like types and for PDF, video, audio and workbook files", () => {
         for (const type of [ "code", "image", "mermaid", "book", "canvas", "webView", "mindMap", "spreadsheet" ]) {
             expect(isFullWidthNoteType(type, "")).toBe(true);
         }
         expect(isFullWidthNoteType("file", "application/pdf")).toBe(true);
         expect(isFullWidthNoteType("file", "video/mp4")).toBe(true);
         expect(isFullWidthNoteType("file", "audio/ogg")).toBe(true);
+        expect(isFullWidthNoteType("file", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe(true);
 
         expect(isFullWidthNoteType("text", "text/html")).toBe(false);
         expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
+        expect(isFullWidthNoteType("file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")).toBe(false);
         expect(isFullWidthNoteType("search", "")).toBe(false);
     });
 });

@@ -5,6 +5,7 @@ import { Component, VNode } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import type { NoteContextDataMap } from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
@@ -78,12 +79,29 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
     const viewType = useNoteViewType(note);
     const noteType = useNoteProperty(note, "type");
     const contentLoad = useGetContextDataFrom(noteContext, "contentLoad");
+    const typeWidgetNote = useGetContextDataFrom(noteContext, "typeWidgetNote");
     const [ enabled, setEnabled ] = useState(noteContext?.hasNoteList());
     useEffect(() => {
         setEnabled(noteContext?.hasNoteList());
     }, [ note, noteContext, viewType, viewScope?.viewMode, noteType ]);
     return <CustomNoteList viewType={viewType} note={note} isEnabled={!!enabled} notePath={notePath} ntxId={ntxId}
-                           contentReady={contentLoad?.state !== "loading"} {...props} />;
+                           contentReady={isNoteContentReady(note, contentLoad, typeWidgetNote)} {...props} />;
+}
+
+/**
+ * Whether the note's own content has loaded, so the note list below it can start: the type widget
+ * shows the note and nothing it loads is pending. Resolving the type alone is not enough, since the
+ * widget's code and its content are still to come.
+ */
+export function isNoteContentReady(
+    note: FNote | null | undefined,
+    contentLoad: NoteContextDataMap["contentLoad"] | undefined,
+    typeWidgetNote: NoteContextDataMap["typeWidgetNote"] | undefined
+) {
+    if (!note) return false;
+    // A widget that draws its content never reports a failed load as shown.
+    if (contentLoad?.state === "error") return true;
+    return typeWidgetNote?.noteId === note.noteId && contentLoad?.state !== "loading";
 }
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
@@ -104,21 +122,23 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, conten
     const widgetRef = useRef<HTMLDivElement>(null);
     const noteIds = useNoteIds(shouldEnable ? note : null, viewType, ntxId);
     const isFullHeight = (viewType && viewType !== "list" && viewType !== "grid" && viewType !== "searchPreview");
-    const [ isIntersecting, setIsIntersecting ] = useState(false);
+    // The note the list was latched visible for, so a later load of the same note's content (the
+    // editor fetching its blob) keeps the list mounted, while another note waits for its own.
+    const [ latchedNote, setLatchedNote ] = useState<FNote | null>(null);
+    const isIntersecting = !!note && latchedNote === note;
     const shouldRender = shouldRenderNoteList(note, viewType, isIntersecting, media);
     const isEnabled = (note && shouldEnable && !!viewType && shouldRender);
     useParentClass(widgetRef, "list-full-height", !!(isFullHeight && isEnabled));
 
     useEffect(() => {
+        setLatchedNote((latched) => (latched === note ? latched : null));
+
         if (isFullHeight || displayOnlyCollections || note?.type === "book") {
             // Double role: no need to check if the note list is visible if the view is full-height or book, but also prevent legacy views if `displayOnlyCollections` is true.
             return;
         }
 
-        if (!contentReady) {
-            // Drop any previous latch and wait for the load to finish before observing — a note
-            // switch reports "loading" again, so this also resets the latch across note switches.
-            setIsIntersecting(false);
+        if (!note || !contentReady || isIntersecting) {
             return;
         }
 
@@ -128,7 +148,7 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, conten
                 // widget is hidden (background tab) or below the viewport, so only latch-and-stop
                 // once the widget actually becomes visible (#7901).
                 if (entries[0].isIntersecting) {
-                    setIsIntersecting(true);
+                    setLatchedNote(note);
                     observer.disconnect();
                 }
             },
@@ -145,7 +165,7 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, conten
             clearTimeout(observeTimeout);
             observer.disconnect();
         };
-    }, [ widgetRef, isFullHeight, displayOnlyCollections, note, contentReady ]);
+    }, [ widgetRef, isFullHeight, displayOnlyCollections, note, contentReady, isIntersecting ]);
 
     // Preload the configuration.
     let props: ViewModeProps<any> | undefined | null = null;

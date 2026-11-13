@@ -12,7 +12,10 @@ import "exceljs";
 
 declare module "exceljs" {
     interface DataValidations {
-        /** Validation config keyed by cell address; exceljs expands a range's `sqref` per cell. */
+        /**
+         * Validation config keyed by each token of a rule's `sqref`, a cell or a range; the patch in
+         * `patches/exceljs@4.4.0.patch` stops exceljs from expanding a range into one key per cell.
+         */
         model: Record<string, DataValidation | undefined>;
         add(address: string, validation: DataValidation): DataValidation;
         find(address: string): DataValidation | undefined;

@@ -71,8 +71,6 @@ interface EditableTextProps extends TypeWidgetProps {
     block?: string;
     /** Receives the blocks that the editor of `block` holds, each time they change. */
     onBlockChange?: (block: string) => void;
-    /** Called each time the editor shows the content of the note, once it has loaded. */
-    onContentShown?: () => void;
 }
 
 export default function EditableText({

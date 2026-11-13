@@ -328,6 +328,29 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
         // When not visible, keep the old props to avoid re-rendering in the background.
     }, [ props, isVisible ]);
 
+    const typeMapping = TYPE_MAPPINGS[type];
+    const shownNoteId = cachedProps.note?.noteId;
+    const shownRef = useRef({ isVisible, shownNoteId, noteContext: cachedProps.noteContext });
+    shownRef.current = { isVisible, shownNoteId, noteContext: cachedProps.noteContext };
+    /** The note whose content the widget last reported drawn, kept while it is hidden. */
+    const drawnNoteIdRef = useRef<string | undefined>(undefined);
+    const reportContentShown = useCallback(() => {
+        const { isVisible, shownNoteId, noteContext } = shownRef.current;
+        drawnNoteIdRef.current = shownNoteId;
+        if (isVisible && shownNoteId) {
+            noteContext?.setContextData("typeWidgetNote", { noteId: shownNoteId });
+        }
+    }, []);
+
+    // Runs after the widget's own effects, so a widget that loads its content (`useNoteBlob()`)
+    // has already reported `contentLoad` as loading. A widget that draws its content later calls
+    // `onContentShown` itself, except when it is shown again with the note it already holds.
+    useEffect(() => {
+        if (!typeMapping.reportsContentShown || drawnNoteIdRef.current === shownNoteId) {
+            reportContentShown();
+        }
+    }, [ isVisible, shownNoteId, cachedProps.noteContext, typeMapping, reportContentShown ]);
+
     // This widget stays mounted (just hidden) when the user switches note type —
     // e.g. read-only ↔ editable text — and also when an enclosing dialog such as the quick-edit
     // popup is closed but kept in the DOM. A hidden but still-mounted embedded player keeps playing
@@ -338,7 +361,6 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
         }
     }, [ isVisible, containerVisible ]);
 
-    const typeMapping = TYPE_MAPPINGS[type];
     return (
         <div
             ref={wrapperRef}
@@ -352,6 +374,7 @@ export function NoteDetailWrapper({ Element, type, isVisible, isFullHeight, prop
                     {...cachedProps}
                     parentComponent={eventGate}
                     isVisible={isVisible && containerVisible}
+                    onContentShown={reportContentShown}
                 />
             </ParentComponent.Provider>
         </div>

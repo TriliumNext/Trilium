@@ -1,4 +1,4 @@
-import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS } from "@triliumnext/commons";
+import { isOfficeMimeType, OFFICE_FILE_TYPE_HINTS, XLSX_MIME } from "@triliumnext/commons";
 
 import { ValidationError } from "../errors.js";
 import { wrapStringOrBuffer } from "./utils/binary.js";
@@ -11,14 +11,10 @@ import { getZipProvider } from "./zip_provider.js";
  */
 const MAX_OFFICE_PREVIEW_BYTES = 20 * 1024 * 1024;
 
-// MIME of an `.xlsx` upload (Office Open XML spreadsheet), previewed through the native
-// spreadsheet pipeline rather than officeparser.
 export interface OfficePreviewOptions {
     /** Renders the corner of the first sheet only, for a preview shown in a card or a list. */
     trim?: boolean;
 }
-
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
  * Converts an office document (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and EPUB) to an embeddable
@@ -77,6 +73,28 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
     // fallback arm is unreachable unless the library breaks its own contract.
     /* v8 ignore next */
     return typeof value === "string" ? value : "";
+}
+
+/**
+ * Parses an `.xlsx` workbook into the JSON a spreadsheet note stores, for the read-only
+ * spreadsheet that shows a workbook file. Anything that is not a workbook is refused with a
+ * `ValidationError`, so the client falls back to the HTML preview.
+ */
+export async function convertXlsxToWorkbook(content: string | Uint8Array, mime: string): Promise<string> {
+    if (mime !== XLSX_MIME) {
+        throw new ValidationError(`MIME type '${mime}' is not an XLSX workbook.`);
+    }
+
+    const buffer = wrapStringOrBuffer(content);
+    if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
+        throw new ValidationError(`Workbook is too large to preview (${buffer.byteLength} bytes).`);
+    }
+    if (!await isSpreadsheetPackage(buffer)) {
+        throw new ValidationError("The file is not an XLSX workbook.");
+    }
+
+    const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    return JSON.stringify(await parseXlsxToWorkbook(buffer));
 }
 
 /**

@@ -118,6 +118,12 @@ export interface NoteContextDataMap {
         /** Re-attempts the content fetch (e.g. from a "Retry" button after an error). */
         retry: () => void;
     };
+    /** Published by the note detail once its type widget shows the note: after the widget has
+     * started loading the content, or once it has drawn it (`reportsContentShown`), so the note
+     * list waits for that content. */
+    typeWidgetNote: {
+        noteId: string;
+    };
 }
 
 type ContextDataKey = keyof NoteContextDataMap;

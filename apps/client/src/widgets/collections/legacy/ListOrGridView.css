@@ -137,6 +137,14 @@
         max-height: 100%;
         object-fit: contain;
     }
+
+    .office-preview-body:has(.spreadsheet-table) {
+        padding: 0;
+
+        .spreadsheet-table {
+            margin-top: 0;
+        }
+    }
 }
 
 .note-content-preview:has(.note-book-content:empty) {
@@ -275,6 +283,10 @@
     padding: 0;
     overflow: hidden;
     user-select: none;
+
+    .note-list.grid-view & {
+        height: 300px;
+    }
 
     body.mobile & {
         flex-basis: 150px;

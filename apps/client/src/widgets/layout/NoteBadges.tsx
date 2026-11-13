@@ -76,9 +76,9 @@ export function ReadOnlyBadge() {
 }
 
 /**
- * Marks a file note that `OfficePreview` renders as HTML (DOCX/XLSX/PPTX, ODT/ODS/ODP, RTF and
- * EPUB). The preview is a rendering of the document, not an editor, so the badge tells the reader
- * why nothing can be typed into it. Unlike `ReadOnlyBadge` there is nothing to unlock.
+ * Marks a file note that holds an office document, which `OfficePreview` renders as HTML or, for
+ * an XLSX workbook, `SpreadsheetFile` shows read-only. Neither is an editor, so the badge tells the
+ * reader why nothing can be typed into it. Unlike `ReadOnlyBadge` there is nothing to unlock.
  */
 export function OfficePreviewBadge() {
     const { note, viewScope } = useNoteContext();

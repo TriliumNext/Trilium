@@ -1,8 +1,10 @@
 import { CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle } from "@triliumnext/commons";
+import type { PersistedData } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import ExcelJS from "exceljs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";
+import appInfo from "../../services/app_info.js";
 import * as cls from "../../services/context.js";
 import { getPlatform } from "../../services/platform.js";
 import protectedSessionService from "../../services/protected_session";
@@ -19,6 +21,8 @@ import { CoreApiTester } from "../../test/api_tester";
  * standalone (WASM) suites.
  */
 let api: CoreApiTester;
+
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 interface AttachmentPojo {
     attachmentId: string;
@@ -557,6 +561,63 @@ describe("Files API (core)", () => {
             expect(corner.body.length).toBeLessThan(whole.body.length / 5);
         });
 
+        it("answers a preview the browser already holds with 304, per content and per trim", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+
+            const first = await api.get<string>(url);
+            const etag = first.headers.ETag;
+            expect(etag).toMatch(/^".+"$/);
+            expect(first.headers["Cache-Control"]).toBe("no-cache");
+
+            const again = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(again.status).toBe(304);
+            expect(again.body).toBeFalsy();
+            expect(again.headers.ETag).toBe(etag);
+
+            const corner = await api.get<string>(`${url}?trim=1`, { headers: { "if-none-match": etag } });
+            expect(corner.status).toBe(200);
+            expect(corner.headers.ETag).not.toBe(etag);
+
+            const update = await api.put(`/api/notes/${noteId}/data`, {
+                body: { content: String.raw`{\rtf1\ansi Changed}` }
+            });
+            expect(update.status).toBe(204);
+            const changed = await api.get<string>(url, { headers: { "if-none-match": etag } });
+            expect(changed.status).toBe(200);
+            expect(changed.body).toContain("Changed");
+        });
+
+        it("keys a release's ETag to its build, so the cache outlives a restart", async () => {
+            const noteId = await createRtfNote();
+            const url = `/api/notes/${noteId}/office-preview`;
+            const build = `${appInfo.appVersion}-${appInfo.buildRevision}`;
+
+            // A dev checkout's build info is a placeholder, so its ETag does not rely on it.
+            const devEtag = await withEnv("dev", async () => (await api.get(url)).headers.ETag);
+            expect(devEtag).not.toContain(build);
+
+            const releaseEtag = await withEnv("production", async () => (await api.get(url)).headers.ETag);
+            expect(releaseEtag).toContain(build);
+            expect(await withEnv("production", async () => (await api.get(url)).headers.ETag)).toBe(releaseEtag);
+        });
+
+        it("keeps the preview of a protected note out of the browser's cache", async () => {
+            const noteId = await createRtfNote();
+            protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef")); // exactly 16 bytes
+            try {
+                expect((await api.put(`/api/notes/${noteId}/protect/1`)).status).toBe(204);
+
+                const res = await api.get<string>(`/api/notes/${noteId}/office-preview`);
+                expect(res.status).toBe(200);
+                expect(res.body).toContain("Hello");
+                expect(res.headers.ETag).toBeUndefined();
+                expect(res.headers["Cache-Control"]).toBe("no-store");
+            } finally {
+                protectedSessionService.resetDataKey();
+            }
+        });
+
         it("rejects an unsupported MIME type with 400", async () => {
             const { noteId } = await createTextNote(api, { content: "<p>not office</p>" });
 
@@ -567,6 +628,58 @@ describe("Files API (core)", () => {
         it("404s for a missing note", async () => {
             const res = await api.get("/api/notes/missingNote123/office-preview");
             expect(res.status).toBe(404);
+        });
+
+        it("answers an XLSX note with the workbook a spreadsheet note stores, revalidated by ETag", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Data").getCell("B2").value = "in a cell";
+            const noteId = await createXlsxNote(Buffer.from(await wb.xlsx.writeBuffer()));
+            const url = `/api/notes/${noteId}/spreadsheet-workbook`;
+
+            const res = await api.get<string>(url);
+            expect(res.status).toBe(200);
+            expect(res.headers["Content-Type"]).toContain("application/json");
+            const { version, workbook } = JSON.parse(res.body) as PersistedData;
+            expect(version).toBe(1);
+            const sheet = workbook.sheets[workbook.sheetOrder[0]];
+            expect(sheet?.name).toBe("Data");
+            expect(sheet?.cellData?.[1]?.[1]?.v).toBe("in a cell");
+
+            const etag = res.headers.ETag;
+            expect(etag).not.toBe((await api.get(`/api/notes/${noteId}/office-preview`)).headers.ETag);
+            expect((await api.get(url, { headers: { "if-none-match": etag } })).status).toBe(304);
+        });
+
+        it("answers an XLSX attachment with its workbook too", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Attached").getCell("A1").value = "from an attachment";
+            const xlsxBuffer = Buffer.from(await wb.xlsx.writeBuffer());
+            const { noteId } = await createTextNote(api, { title: "Has workbook attachment" });
+            const save = await api.post(`/api/notes/${noteId}/attachments`, {
+                body: { role: "file", mime: XLSX_MIME, title: "attached.xlsx", content: "" }
+            });
+            expect(save.status).toBe(204);
+            const list = await api.get<AttachmentPojo[]>(`/api/notes/${noteId}/attachments`);
+            const attachmentId = list.body[0].attachmentId;
+            cls.init(() => getSql().transactional(() => {
+                becca.getAttachmentOrThrow(attachmentId).setContent(xlsxBuffer, { forceSave: true });
+            }));
+
+            const res = await api.get<string>(`/api/attachments/${attachmentId}/spreadsheet-workbook`);
+            expect(res.status).toBe(200);
+            const { workbook } = JSON.parse(res.body) as PersistedData;
+            expect(workbook.sheets[workbook.sheetOrder[0]]?.cellData?.[0]?.[0]?.v).toBe("from an attachment");
+            expect((await api.get(`/api/attachments/${attachmentId}/spreadsheet-workbook`,
+                { headers: { "if-none-match": res.headers.ETag } })).status).toBe(304);
+        });
+
+        it("rejects a note that holds no workbook with 400", async () => {
+            const noteId = await createRtfNote();
+            expect((await api.get(`/api/notes/${noteId}/spreadsheet-workbook`)).status).toBe(400);
+
+            // A document labelled as a workbook, which exceljs would open as an empty one.
+            const mislabelled = await createXlsxNote(Buffer.from("not a zip"));
+            expect((await api.get(`/api/notes/${mislabelled}/spreadsheet-workbook`)).status).toBe(400);
         });
 
         it("renders an XLSX note through the native spreadsheet pipeline", async () => {
@@ -595,6 +708,19 @@ describe("Files API (core)", () => {
         });
     });
 });
+
+/** Runs `fn` with `TRILIUM_ENV` reading `env`. */
+async function withEnv<T>(env: string, fn: () => Promise<T>): Promise<T> {
+    const platform = getPlatform();
+    const getEnv = platform.getEnv.bind(platform);
+    const spy = vi.spyOn(platform, "getEnv")
+        .mockImplementation((key) => key === "TRILIUM_ENV" ? env : getEnv(key));
+    try {
+        return await fn();
+    } finally {
+        spy.mockRestore();
+    }
+}
 
 /**
  * Creates a file note holding a binary `.xlsx` workbook. The JSON note-creation API cannot
