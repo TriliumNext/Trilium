@@ -80,6 +80,28 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
 }
 
 /**
+ * Parses an `.xlsx` workbook into the JSON a spreadsheet note stores, for the read-only
+ * spreadsheet that shows a workbook file. Anything that is not a workbook is refused with a
+ * `ValidationError`, so the client falls back to the HTML preview.
+ */
+export async function convertXlsxToWorkbook(content: string | Uint8Array, mime: string): Promise<string> {
+    if (mime !== XLSX_MIME) {
+        throw new ValidationError(`MIME type '${mime}' is not an XLSX workbook.`);
+    }
+
+    const buffer = wrapStringOrBuffer(content);
+    if (buffer.byteLength > MAX_OFFICE_PREVIEW_BYTES) {
+        throw new ValidationError(`Workbook is too large to preview (${buffer.byteLength} bytes).`);
+    }
+    if (!await isSpreadsheetPackage(buffer)) {
+        throw new ValidationError("The file is not an XLSX workbook.");
+    }
+
+    const { parseXlsxToWorkbook } = await import("@triliumnext/commons/src/lib/spreadsheet/parse_from_xlsx.js");
+    return JSON.stringify(await parseXlsxToWorkbook(buffer));
+}
+
+/**
  * Reports whether `buffer` is a zip holding `xl/workbook.xml`, the part exceljs reads a
  * workbook from. Only the central directory is read; no entry is decompressed.
  */

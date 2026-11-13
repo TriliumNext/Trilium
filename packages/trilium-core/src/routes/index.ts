@@ -350,6 +350,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     route(GET, "/api/attachments/:attachmentId/open-partial", [checkApiAuthOrElectron], filesRoute.openPartialAttachment);
     asyncRouteWithoutTransaction(GET, "/api/notes/:noteId/office-preview", [checkApiAuth, csrfMiddleware], filesRoute.getNoteOfficePreview);
     asyncRouteWithoutTransaction(GET, "/api/attachments/:attachmentId/office-preview", [checkApiAuth, csrfMiddleware], filesRoute.getAttachmentOfficePreview);
+    asyncRouteWithoutTransaction(GET, "/api/notes/:noteId/spreadsheet-workbook", [checkApiAuth, csrfMiddleware], filesRoute.getNoteSpreadsheetWorkbook);
     route(GET, "/api/notes/:noteId/download", [checkApiAuthOrElectron], filesRoute.downloadFile);
     // this "hacky" path is used for easier referencing of CSS resources
     route(GET, "/api/notes/download/:noteId", [checkApiAuthOrElectron], filesRoute.downloadFile);

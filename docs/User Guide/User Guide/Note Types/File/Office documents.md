@@ -26,6 +26,12 @@ The preview generally preserves:
 
 To keep links readable regardless of the theme, the default hyperlink color applied automatically by word processors is ignored; links that were deliberately given a custom color by the author keep it.
 
+### Excel workbooks
+
+A File note holding an Excel workbook (`.xlsx`) opens in a read-only spreadsheet, the same view as a <a class="reference-link" href="../Spreadsheets.md">Spreadsheet</a> note that cannot be edited: the sheets are listed in tabs at the bottom, and the grid scrolls in both directions however large the workbook is.
+
+If the file cannot be read as a workbook, the simplified preview described above is shown instead. A workbook stored as an attachment is still shown as the simplified preview.
+
 ## Limitations
 
 *   The preview is read-only. To edit the document, download it or open it in an external application; the content of the note is not affected by the preview. Alternatively copy and paste it into a text note.

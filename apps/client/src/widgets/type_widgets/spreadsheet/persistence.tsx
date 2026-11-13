@@ -1,31 +1,17 @@
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { SHEET_DRAWING_RESOURCE } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
-import { CommandType, FUniver, IDisposable, IWorkbookData, LocaleType } from "@univerjs/presets";
+import { CommandType, FUniver, IDisposable, IWorkbookData } from "@univerjs/presets";
 import { RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import { uploadImageAttachment } from "../../../services/image_upload";
-import { randomString } from "../../../services/utils";
 import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
-
-interface PersistedData {
-    version: number;
-    workbook: Parameters<FUniver["createWorkbook"]>[0];
-}
-
-interface SpreadsheetViewState {
-    activeSheetId?: string;
-    cursorRow?: number;
-    cursorCol?: number;
-    scrollRow?: number;
-    scrollCol?: number;
-}
+import { useWorkbookDisplay } from "./loading";
 
 export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>) {
     const changeListener = useRef<IDisposable>(null);
-    const pendingContent = useRef<string | null>(null);
     // Set when a value edit has been made whose formula recalculation hasn't been
     // applied yet. getData() waits for that pending recalc before serializing, so a
     // save can't persist pre-recalc (stale) formula results.
@@ -37,121 +23,34 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
     // inserted images to attachments — existing notes are not migrated).
     const preexistingImageSources = useRef<Set<string>>(new Set());
 
-    function saveViewState(univerAPI: FUniver): SpreadsheetViewState {
-        const state: SpreadsheetViewState = {};
-        try {
-            const workbook = univerAPI.getActiveWorkbook();
-            if (!workbook) return state;
-
-            const activeSheet = workbook.getActiveSheet();
-            state.activeSheetId = activeSheet?.getSheetId();
-
-            const currentCell = activeSheet?.getSelection()?.getCurrentCell();
-            if (currentCell) {
-                state.cursorRow = currentCell.actualRow;
-                state.cursorCol = currentCell.actualColumn;
+    const display = useWorkbookDisplay(apiRef, containerRef, {
+        prepare(workbookData) {
+            // Snapshot the base64 images already in the loaded content so the save-time upload
+            // leaves them untouched (only newly inserted images become attachments), and start
+            // the per-session base64 -> attachment-URL map fresh for this workbook.
+            preexistingImageSources.current = collectBase64DrawingSources(workbookData);
+            uploadedImageUrls.current = new Map();
+        },
+        loaded(workbook) {
+            if (changeListener.current) {
+                changeListener.current.dispose();
             }
+            changeListener.current = workbook.onCommandExecuted(command => {
+                if (command.type !== CommandType.MUTATION) return;
 
-            const scrollState = activeSheet?.getScrollState?.();
-            if (scrollState) {
-                state.scrollRow = scrollState.sheetViewStartRow;
-                state.scrollCol = scrollState.sheetViewStartColumn;
-            }
-        } catch {
-            // Ignore errors when reading state from a workbook being disposed.
-        }
-        return state;
-    }
-
-    function restoreViewState(workbook: ReturnType<FUniver["createWorkbook"]>, state: SpreadsheetViewState) {
-        try {
-            if (state.activeSheetId) {
-                const targetSheet = workbook.getSheetBySheetId(state.activeSheetId);
-                if (targetSheet) {
-                    workbook.setActiveSheet(targetSheet);
+                // A value write triggered by a command (a user edit, paste, fill, …) will be
+                // followed by a formula recalc. Mark it so the next save waits for that recalc
+                // to be applied before serializing. Recalc *result* writes carry no trigger,
+                // so they don't re-arm this (the completion handler below clears it).
+                const params = (command as { params?: { trigger?: string } }).params;
+                if (command.id === "sheet.mutation.set-range-values" && params?.trigger) {
+                    recalcPending.current = true;
                 }
-            }
-            if (state.cursorRow !== undefined && state.cursorCol !== undefined) {
-                workbook.getActiveSheet().getRange(state.cursorRow, state.cursorCol).activate();
-            }
-            if (state.scrollRow !== undefined && state.scrollCol !== undefined) {
-                workbook.getActiveSheet().scrollToCell(state.scrollRow, state.scrollCol);
-            }
-        } catch {
-            // Ignore errors when restoring state (e.g. sheet no longer exists).
+
+                spacedUpdate.scheduleUpdate();
+            });
         }
-    }
-
-    function applyContent(univerAPI: FUniver, newContent: string) {
-        const viewState = saveViewState(univerAPI);
-        const existingWorkbook = univerAPI.getActiveWorkbook();
-
-        let workbookData: Partial<IWorkbookData> = {};
-        if (newContent) {
-            try {
-                const parsedContent = JSON.parse(newContent) as unknown;
-                if (parsedContent && typeof parsedContent === "object" && "workbook" in parsedContent) {
-                    const persistedData = parsedContent as PersistedData;
-                    workbookData = persistedData.workbook;
-                }
-            } catch (e) {
-                console.error("Failed to parse spreadsheet content", e);
-            }
-        }
-
-        // Snapshot the base64 images already in the loaded content so the save-time upload leaves them
-        // untouched (only newly inserted images become attachments), and start the per-session
-        // base64 -> attachment-URL map fresh for this workbook.
-        preexistingImageSources.current = collectBase64DrawingSources(workbookData);
-        uploadedImageUrls.current = new Map();
-
-        // Always assign a fresh unit id. The persisted id is reused verbatim, but the
-        // new workbook is created below BEFORE the old one is disposed, so a stale or
-        // shared id (e.g. a duplicated/cloned note, or this note's content being
-        // re-applied) would collide in Univer's unit registry and throw. The id is
-        // ephemeral — view state keys off the sheet id, not the workbook id.
-        workbookData.id = randomString();
-
-        // Pin the workbook locale to the only locale bundle the editor registers (see
-        // Spreadsheet.tsx). Univer's workbook model otherwise defaults a missing locale
-        // to "zhCN", which mismatches the English UI; pinning it here keeps new and
-        // loaded workbooks consistent and lets the persisted value be dropped on save.
-        workbookData.locale = LocaleType.EN_US;
-
-        // Create the new workbook BEFORE disposing the old one so the formula
-        // engine transitions cleanly without a gap where stale state could leak.
-        const workbook = univerAPI.createWorkbook(workbookData);
-
-        if (existingWorkbook) {
-            univerAPI.disposeUnit(existingWorkbook.getId());
-        }
-
-        restoreViewState(workbook, viewState);
-
-        if (changeListener.current) {
-            changeListener.current.dispose();
-        }
-        changeListener.current = workbook.onCommandExecuted(command => {
-            if (command.type !== CommandType.MUTATION) return;
-
-            // A value write triggered by a command (a user edit, paste, fill, …) will be
-            // followed by a formula recalc. Mark it so the next save waits for that recalc
-            // to be applied before serializing. Recalc *result* writes carry no trigger,
-            // so they don't re-arm this (the completion handler below clears it).
-            const params = (command as { params?: { trigger?: string } }).params;
-            if (command.id === "sheet.mutation.set-range-values" && params?.trigger) {
-                recalcPending.current = true;
-            }
-
-            spacedUpdate.scheduleUpdate();
-        });
-    }
-
-    function isContainerVisible() {
-        const el = containerRef.current;
-        if (!el) return false;
-        return el.offsetWidth > 0 && el.offsetHeight > 0;
-    }
+    });
 
     const spacedUpdate = useEditorSpacedUpdate({
         noteType: "spreadsheet",
@@ -219,39 +118,9 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
             };
         },
         onContentChange(newContent) {
-            const univerAPI = apiRef.current;
-            if (!univerAPI) return undefined;
-
-            // Defer content application if the container is hidden (zero size),
-            // since the spreadsheet library cannot calculate layout in that state.
-            if (!isContainerVisible()) {
-                pendingContent.current = newContent;
-                return;
-            }
-
-            pendingContent.current = null;
-            applyContent(univerAPI, newContent);
+            display.show(newContent);
         },
     });
-
-    // Apply pending content once the container becomes visible (non-zero size).
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        const observer = new ResizeObserver(() => {
-            if (pendingContent.current === null || !isContainerVisible()) return;
-
-            const univerAPI = apiRef.current;
-            if (!univerAPI) return;
-
-            const content = pendingContent.current;
-            pendingContent.current = null;
-            applyContent(univerAPI, content);
-        });
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally stable: applyContent/isContainerVisible use refs
-    }, [ containerRef ]);
 
     useEffect(() => {
         return () => {
@@ -317,7 +186,7 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
  * Trims fields from the workbook data that are dead weight in the saved payload:
  *
  * - The top-level workbook `id` and `locale` are both reassigned on every load (see
- *   `applyContent`), so the persisted values are never read — dropping them is lossless.
+ *   `useWorkbookDisplay()`), so the persisted values are never read — dropping them is lossless.
  * - Plugin resources whose `data` carries no information (empty string or "{}") are
  *   removed. Univer leaves an absent resource's plugin at its default (empty) state
  *   on load, which is identical to restoring these.

@@ -7,7 +7,7 @@ import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
 import noteService from "../../services/notes.js";
-import { convertOfficeToHtml } from "../../services/office_preview.js";
+import { convertOfficeToHtml, convertXlsxToWorkbook } from "../../services/office_preview.js";
 import { getPlatform } from "../../services/platform.js";
 import protected_session from "../../services/protected_session";
 import { downloadData, downloadNoteInt } from "../helpers";
@@ -131,14 +131,34 @@ async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>
     await sendOfficePreview(req, res, becca.getAttachmentOrThrow(req.params.attachmentId));
 }
 
+/**
+ * Parses an XLSX file note into the workbook JSON a spreadsheet note stores, which the client
+ * shows in a read-only spreadsheet. Answers 400 for anything that is not a workbook.
+ */
+async function getNoteSpreadsheetWorkbook(req: Request<{ noteId: string }>, res: Response) {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+    await sendConversion(req, res, note, "workbook", "application/json; charset=utf-8",
+        () => convertXlsxToWorkbook(note.getContent(), note.mime));
+}
+
 async function sendOfficePreview(req: Request, res: Response, entity: BNote | BAttachment) {
     const trim = isTrimmed(req);
+    await sendConversion(req, res, entity, trim ? "trim" : "full", "text/html; charset=utf-8",
+        () => convertOfficeToHtml(entity.getContent(), entity.mime, { trim }));
+}
 
+/**
+ * Sends what `convert` makes of the entity's content, under an ETag the server knows before
+ * converting anything, so a browser that already holds it gets a 304 without the document being
+ * parsed again. `variant` tells apart the conversions of one entity.
+ */
+async function sendConversion(req: Request, res: Response, entity: BNote | BAttachment, variant: string,
+    contentType: string, convert: () => Promise<string>) {
     if (entity.isProtected) {
         // Decrypted content must not reach the browser's disk cache.
         res.setHeader("Cache-Control", "no-store");
     } else {
-        const etag = getOfficePreviewEtag(entity, trim);
+        const etag = getConversionEtag(entity, variant);
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("ETag", etag);
         if (matchesEtag(req.headers["if-none-match"], etag)) {
@@ -147,19 +167,19 @@ async function sendOfficePreview(req: Request, res: Response, entity: BNote | BA
         }
     }
 
-    const html = await convertOfficeToHtml(entity.getContent(), entity.mime, { trim });
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.send(html);
+    const body = await convert();
+    res.setHeader("Content-Type", contentType);
+    res.send(body);
 }
 
 /**
- * Changes whenever the preview could: with the content (`blobId` is its hash), the MIME type that
- * picks the converter, the trim, and the server process, since a restart can bring a different
- * converter.
+ * Changes whenever the conversion could: with the content (`blobId` is its hash), the MIME type
+ * that picks the converter, the variant, and the server process, since a restart can bring a
+ * different converter.
  */
-function getOfficePreviewEtag(entity: BNote | BAttachment, trim: boolean) {
+function getConversionEtag(entity: BNote | BAttachment, variant: string) {
     const mime = encodeURIComponent(entity.mime);
-    return `"${entity.blobId}-${mime}-${trim ? "trim" : "full"}-${PROCESS_TOKEN}"`;
+    return `"${entity.blobId}-${mime}-${variant}-${PROCESS_TOKEN}"`;
 }
 
 const PROCESS_TOKEN = Date.now().toString(36);
@@ -222,4 +242,5 @@ export default {
     downloadAttachment,
     getNoteOfficePreview,
     getAttachmentOfficePreview,
+    getNoteSpreadsheetWorkbook,
 }

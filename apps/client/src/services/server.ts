@@ -55,6 +55,13 @@ async function get<T>(url: string, componentId?: string, raw?: boolean) {
     return await call<T>("GET", url, componentId, { raw });
 }
 
+/** Gets without an error toast for a 400, 404 or 500, for a caller that handles the failure. */
+async function getWithSilentErrors<T>(url: string, componentId?: string, raw?: boolean) {
+    return await call<T>("GET", url, componentId, {
+        raw, silentBadRequest: true, silentNotFound: true, silentInternalServerError: true
+    });
+}
+
 async function getWithSilentUnauthorized<T>(url: string, componentId?: string) {
     return await call<T>("GET", url, componentId, { silentUnauthorized: true });
 }
@@ -552,6 +559,7 @@ async function reportError(method: string, url: string, statusCode: number, resp
 export default {
     get,
     getWithSilentNotFound,
+    getWithSilentErrors,
     getWithSilentUnauthorized,
     getWithTimeout,
     post,

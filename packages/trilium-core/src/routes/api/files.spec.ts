@@ -1,4 +1,5 @@
 import { CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle } from "@triliumnext/commons";
+import type { PersistedData } from "@triliumnext/commons/src/lib/spreadsheet/workbook_model";
 import ExcelJS from "exceljs";
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -610,6 +611,35 @@ describe("Files API (core)", () => {
         it("404s for a missing note", async () => {
             const res = await api.get("/api/notes/missingNote123/office-preview");
             expect(res.status).toBe(404);
+        });
+
+        it("answers an XLSX note with the workbook a spreadsheet note stores, revalidated by ETag", async () => {
+            const wb = new ExcelJS.Workbook();
+            wb.addWorksheet("Data").getCell("B2").value = "in a cell";
+            const noteId = await createXlsxNote(Buffer.from(await wb.xlsx.writeBuffer()));
+            const url = `/api/notes/${noteId}/spreadsheet-workbook`;
+
+            const res = await api.get<string>(url);
+            expect(res.status).toBe(200);
+            expect(res.headers["Content-Type"]).toContain("application/json");
+            const { version, workbook } = JSON.parse(res.body) as PersistedData;
+            expect(version).toBe(1);
+            const sheet = workbook.sheets[workbook.sheetOrder[0]];
+            expect(sheet?.name).toBe("Data");
+            expect(sheet?.cellData?.[1]?.[1]?.v).toBe("in a cell");
+
+            const etag = res.headers.ETag;
+            expect(etag).not.toBe((await api.get(`/api/notes/${noteId}/office-preview`)).headers.ETag);
+            expect((await api.get(url, { headers: { "if-none-match": etag } })).status).toBe(304);
+        });
+
+        it("rejects a note that holds no workbook with 400", async () => {
+            const noteId = await createRtfNote();
+            expect((await api.get(`/api/notes/${noteId}/spreadsheet-workbook`)).status).toBe(400);
+
+            // A document labelled as a workbook, which exceljs would open as an empty one.
+            const mislabelled = await createXlsxNote(Buffer.from("not a zip"));
+            expect((await api.get(`/api/notes/${mislabelled}/spreadsheet-workbook`)).status).toBe(400);
         });
 
         it("renders an XLSX note through the native spreadsheet pipeline", async () => {

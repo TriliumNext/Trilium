@@ -144,6 +144,10 @@ function mockServer() {
             // in how it reports 404s, which the mock never produces, so share the same routing.
             getWithSilentNotFound: get,
 
+            // The workbook of an XLSX file is fetched through this variant, which differs from
+            // `get` only in the failures it leaves to the caller.
+            getWithSilentErrors: get,
+
             // A backend script run goes through this variant so its failure is reported against the
             // note rather than as a request that went wrong; it differs from `post` only in how it
             // reports a 500, which the mock never produces.

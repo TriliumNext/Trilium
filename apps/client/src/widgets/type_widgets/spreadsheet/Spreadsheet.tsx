@@ -34,6 +34,7 @@ import { TypeWidgetProps } from "../type_widget";
 import useStripPastedFontFamily from "./clipboard";
 import useSpreadsheetExport from "./export";
 import { loadUniverLocale, UniverLocale } from "./locales";
+import { useWorkbookFile } from "./loading";
 import useClampEdgeNavigation from "./navigation";
 import usePersistence from "./persistence";
 import useFixRadixPortals from "./radix_portals";
@@ -114,6 +115,35 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
             focusable.focus();
         }
     });
+
+    return <div ref={containerRef} className="spreadsheet" />;
+}
+
+/**
+ * Shows the workbook of an XLSX file note in a read-only spreadsheet. Calls `onError` when the
+ * file cannot be read as a workbook, so the caller can fall back to the HTML preview.
+ */
+export function SpreadsheetFile(props: TypeWidgetProps & { onError: () => void }) {
+    const locale = useUniverLocale();
+
+    if (!locale) {
+        return <div className="spreadsheet" />;
+    }
+
+    return <SpreadsheetFileViewer {...props} locale={locale} />;
+}
+
+function SpreadsheetFileViewer({ note, noteContext, parentComponent, locale, onError }: TypeWidgetProps & { locale: UniverLocale; onError: () => void }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const apiRef = useRef<FUniver | undefined>(undefined);
+
+    useInitializeSpreadsheet(containerRef, apiRef, true, locale);
+    useClampEdgeNavigation(apiRef);
+    useDarkMode(apiRef);
+    useWorkbookFile(note, noteContext, parentComponent?.componentId, apiRef, containerRef, onError);
+    useSearchIntegration(apiRef, noteContext);
+    useDismissDialogsOnNoteSwitch(apiRef);
+    useFixRadixPortals();
 
     return <div ref={containerRef} className="spreadsheet" />;
 }
