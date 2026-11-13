@@ -12,6 +12,12 @@ By default, notes are unprotected. To protect a note, simply click on the shield
 
 ![example animation of unlocking protected notes](Protected%20Notes_protecting-note.gif)
 
+To protect or unprotect a whole subtree at once, right-click its top note in the note tree and choose _Protect subtree_ or _Unprotect subtree_. If no protected session is running, a dialog explains what the action does and asks for your password, so you don't have to start a protected session beforehand.
+
+### Removing protection
+
+Unprotecting decrypts the notes: their content, attachments and revisions are stored without encryption from then on, also in backups and on the sync server. Because of this, _Unprotect subtree_ always asks for confirmation first, even while a protected session is running.
+
 ## What is Encrypted?
 
 Trilium encrypts the data within protected notes but not their metadata. Specifically:

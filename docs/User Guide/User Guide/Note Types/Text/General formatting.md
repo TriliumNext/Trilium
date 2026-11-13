@@ -5,7 +5,7 @@
 
 Trilium provides headings to define sections within text. Headings are numbered from 2 to 6.
 
-The reason why Heading 1 is missing from the list is that it is being reserved for the title of note.
+The reason why Heading 1 is missing from the list is that it is being reserved for the title of note. A Heading 1 that is already in the text, for example in text pasted from another application, is kept as a heading.
 
 To turn a heading back into a normal text, select _Paragraph_ from the list.
 

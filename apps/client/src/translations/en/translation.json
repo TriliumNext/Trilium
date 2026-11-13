@@ -5444,5 +5444,13 @@
     "menu_help": "Help",
     "menu_note_description": "Applies just for this note.",
     "menu_note_description_subtree": "Applies to this note and the notes under it."
+  },
+  "protect_subtree": {
+    "protect_intro": "The following notes will be encrypted with your password. Their titles, content, attachments and revisions can then only be read in a protected session.",
+    "unprotect_intro": "The following notes will be decrypted. Their content, attachments and revisions will then be stored without encryption, readable by anyone with access to the database, its backups or a sync server.",
+    "subtree": "and every note beneath it",
+    "untitled": "Protected note",
+    "password": "Password",
+    "password_description": "The password you use for protected notes."
   }
 }

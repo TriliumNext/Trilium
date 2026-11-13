@@ -222,6 +222,7 @@ html[data-tab-slide="right"] {
 
                     p { margin-bottom: 0.2em;}
                     hr { margin-block: 0.1em; height: 1px; }
+                    h1 { font-size: 1.25em; }
                     h2 { font-size: 1.20em; }
                     h3 { font-size: 1.15em; }
                     h4 { font-size: 1.10em; }

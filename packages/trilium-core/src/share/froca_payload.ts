@@ -42,7 +42,8 @@ export function buildFrocaPayload(note: SNote, canAccess?: (note: SNote) => bool
  * `#calendar:title` relations), with their owned attributes and the branches between them. Shaca
  * holds only shared notes, so a relation to a note outside the share is left out, as is every note
  * that is protected or that `canAccess` refuses. A built-in template such as `_template_calendar`
- * is read from becca instead, as it lives in the hidden subtree, so the notes inherit its labels.
+ * is read from becca instead, as it lives in the hidden subtree, so the notes inherit its labels;
+ * a note outside the hidden subtree is never read this way, whatever its ID.
  * `#shareCredentials` is always left out, as it holds the password of the notes.
  *
  * The roots are shaca's notes on a shared page and becca's in the static export, whose relations
@@ -82,7 +83,7 @@ export function buildFrocaRows<T extends PayloadNote>(
         for (const relation of owner.ownedAttributes) {
             const template = relation.type === "relation" && relation.value.startsWith("_template_")
                 ? becca.getNote(relation.value) : null;
-            if (template && !notes.has(template.noteId)) {
+            if (template && isBuiltInTemplate(template) && !notes.has(template.noteId)) {
                 templates.set(template.noteId, template);
             }
         }
@@ -90,7 +91,9 @@ export function buildFrocaRows<T extends PayloadNote>(
     for (const template of templates.values()) {
         rows.notes.push(getNoteRow(template));
         for (const attribute of template.getOwnedAttributes()) {
-            rows.attributes.push(getAttributeRow(attribute));
+            if (attribute.name !== "shareCredentials") {
+                rows.attributes.push(getAttributeRow(attribute));
+            }
         }
     }
 
@@ -203,6 +206,14 @@ export function buildVisibleScriptBundle(note: BNote, isVisible: IsVisibleNote) 
         return undefined;
     }
     return bundle && (bundle.allNoteIds ?? []).every(isVisible) ? bundle : undefined;
+}
+
+/**
+ * Whether `note` is a template of the hidden subtree. ETAPI accepts a caller-supplied note ID, so a
+ * `_template_` prefix alone can name any note of the database.
+ */
+function isBuiltInTemplate(note: BNote) {
+    return !note.isProtected && note.isInHiddenSubtree();
 }
 
 /** Returns the IDs of the notes a relation map's content places on the map. */

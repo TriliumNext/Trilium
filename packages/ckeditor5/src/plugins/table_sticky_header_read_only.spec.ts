@@ -71,9 +71,28 @@ describe("applyStickyTableHeaders", () => {
 
             await scrollTo(scroller, offsetIn(scroller, thead) + 150);
             expect(getComputedStyle(thead).backgroundColor).toBe("rgb(1, 2, 3)");
+            // The borders reach 1px past the cells, where translucent border colors would let the
+            // rows show through. The cells paint their borders over one background behind them
+            // all, so none covers the border of its neighbor.
+            const ring = getComputedStyle(thead, "::before");
+            expect(ring.display).toBe("block");
+            expect(ring.backgroundColor).toBe("rgb(1, 2, 3)");
+            expect([ ring.top, ring.right, ring.bottom, ring.left, ring.zIndex ])
+                .toEqual([ "-1px", "-1px", "-1px", "-1px", "-1" ]);
+            const cells = [ ...thead.querySelectorAll("th") ];
+            expect(cells).toHaveLength(3);
+            // One cell draws each border between two cells.
+            const borders = cells.map((cell) => getComputedStyle(cell, "::before"));
+            expect(borders.map((style) => [ style.borderLeftWidth, style.borderRightWidth ]))
+                .toEqual([ [ "1px", "0px" ], [ "1px", "0px" ], [ "1px", "1px" ] ]);
+            expect(borders.map((style) => [ style.borderTopWidth, style.borderBottomWidth ]))
+                .toEqual([ [ "1px", "1px" ], [ "1px", "1px" ], [ "1px", "1px" ] ]);
+            expect(borders.map((style) => [ style.backgroundColor, style.zIndex ]))
+                .toEqual(Array(3).fill([ "rgba(0, 0, 0, 0)", "-1" ]));
 
             await scrollTo(scroller, 0);
             expect(getComputedStyle(thead).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+            expect(getComputedStyle(thead, "::before").display).toBe("none");
         });
 
     it("leaves the header rows in place while `sticky-table-headers-disabled` is set", async () => {

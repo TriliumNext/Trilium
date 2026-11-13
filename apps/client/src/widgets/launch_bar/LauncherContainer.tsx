@@ -191,7 +191,7 @@ function getVisibleLaunchersRootId() {
 }
 
 // Measures the scrollbar's actual consumed size (which varies by browser and the OS "show scroll
-// bars" setting) and publishes it as `--launcher-scrollbar-size`; shell.css reserves that much on
+// bars" setting) and publishes it as `--launcher-scrollbar-size`; LauncherContainer.css reserves that much on
 // the opposite edge so the bar never shifts the centred buttons. Recomputed on resize and whenever
 // the set of launchers changes; scroll position doesn't affect the measurement.
 // Recomputed on resize and whenever the set of launchers changes (which is what makes the rail

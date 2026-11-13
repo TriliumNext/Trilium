@@ -124,7 +124,7 @@ describe("setupProtectedSession", () => {
         server.post = vi.fn(async () => ({ success: true })) as typeof server.post;
         protectedSessionHolder.enableProtectedSession = vi.fn();
 
-        await protectedSession.setupProtectedSession("secret");
+        expect(await protectedSession.setupProtectedSession("secret")).toBe(true);
 
         expect(server.post).toHaveBeenCalledWith("login/protected", { password: "secret" });
         expect(protectedSessionHolder.enableProtectedSession).toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe("setupProtectedSession", () => {
         protectedSessionHolder.enableProtectedSession = vi.fn();
         const showError = vi.spyOn(toastService, "showError").mockReturnValue(undefined as any);
 
-        await protectedSession.setupProtectedSession("wrong");
+        expect(await protectedSession.setupProtectedSession("wrong")).toBe(false);
 
         expect(showError).toHaveBeenCalled();
         expect(protectedSessionHolder.enableProtectedSession).not.toHaveBeenCalled();

@@ -1642,6 +1642,19 @@ describe("Search", () => {
             expect(emptyResult.highlightedNoteTitle).toBe("");
             expect(manyResult.highlightedNoteTitle?.match(/<b>a<\/b>/g)).toHaveLength(50);
         });
+
+        it("shows the attribute and highlights the title a Hangul query matched (#12601)", () => {
+            const gpu = note("그래픽 GPU").label("alias", "Graphic Card").label("alias", "그래픽카드");
+            rootNote.child(gpu);
+            const searchContext = new SearchContext();
+
+            const results = searchService.findResultsWithQuery("그래픽", searchContext);
+            const [ details ] = searchService.buildSearchResultDetails(results, searchContext);
+
+            expect(details.noteId).toBe(gpu.note.noteId);
+            expect(details.highlightedNoteTitle).toBe("<b>그래픽</b> GPU");
+            expect(details.attributeSnippet).toBe(`#alias="그래픽카드"`);
+        });
     });
 
     // FIXME: test what happens when we order without any filter criteria

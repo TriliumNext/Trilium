@@ -1,4 +1,5 @@
 import becca from "../../../becca/becca.js";
+import BAttribute from "../../../becca/entities/battribute.js";
 import { saveLinks } from "../../../services/notes.js";
 import * as becca_easy_mocking from "../../../test/becca_easy_mocking.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -311,6 +312,42 @@ describe("note_tools — write tools return post-write content", () => {
                 edits: [{ oldText: "zzz", newText: "y" }]
             })).toMatchObject({ error: expect.stringContaining("not found") });
         });
+    });
+
+    describe("disableVersioning label", () => {
+        const calls: Array<[string, Record<string, unknown>]> = [
+            ["set_note_content", { content: "new" }],
+            ["append_to_note", { content: "more" }],
+            ["edit_note_content", { edits: [{ oldText: "a", newText: "z" }] }]
+        ];
+
+        for (const [tool, args] of calls) {
+            it(`${tool} snapshots only a note with no own or inherited #disableVersioning`, () => {
+                const codeNote = { type: "code" as const, mime: "text/plain", content: "a\nb" };
+                const owner = buildNote({ id: "ver-owner", ...codeNote, "#disableVersioning": "" });
+                buildNote({ id: "ver-parent", children: [ { id: "ver-heir", ...codeNote } ] });
+                new BAttribute({
+                    attributeId: "ver-parent-label",
+                    noteId: "ver-parent",
+                    type: "label",
+                    name: "disableVersioning",
+                    value: "",
+                    isInheritable: true
+                });
+                const heir = becca.getNoteOrThrow("ver-heir");
+                const plain = buildNote({ id: "ver-plain", ...codeNote });
+
+                for (const note of [ owner, heir, plain ]) {
+                    withMutableContent(note, "a\nb");
+                    expect(getTool(tool).execute({ noteId: note.noteId, ...args })).toMatchObject({ success: true });
+                    expect(note.setContent).toHaveBeenCalled();
+                }
+
+                expect(owner.saveRevision).not.toHaveBeenCalled();
+                expect(heir.saveRevision).not.toHaveBeenCalled();
+                expect(plain.saveRevision).toHaveBeenCalledWith({ source: "llm" });
+            });
+        }
     });
 
     describe("create_note", () => {

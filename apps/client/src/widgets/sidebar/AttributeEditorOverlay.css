@@ -27,9 +27,15 @@
     & .form-select {
         min-width: 0;
         height: auto;
-        padding: 0 6px;
+        padding-block: 0;
+        padding-inline-start: 6px;
         font-size: inherit;
         line-height: 1.5;
+    }
+
+    /* A select keeps the theme's trailing padding, which holds its chevron. */
+    & .form-control:not(.label-color-picker, .form-select) {
+        padding-inline-end: 6px;
     }
 
     /* A checkbox is its own size; the field class would stretch it across the row. */
