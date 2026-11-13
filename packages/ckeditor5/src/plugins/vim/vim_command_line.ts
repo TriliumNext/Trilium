@@ -39,8 +39,8 @@ export function getPromptKind(prefix: string): PromptKind {
 
 /**
  * Assists a prompt of the command line: hints at its right end, and for `:` a list of the commands
- * and arguments that complete the text. The list opens after a pause or on `Tab`, and `Tab` and
- * `Shift+Tab` walk it. `Enter` runs the text in the prompt, never a row.
+ * and arguments that complete the text. The list opens after a pause or on `Tab`; `Tab`,
+ * `Shift+Tab`, `↓` and `↑` walk it. `Enter` runs the text in the prompt, never a row.
  */
 export class PromptAssistant {
 
@@ -50,6 +50,10 @@ export class PromptAssistant {
     private selected = -1;
     private timer: ReturnType<typeof setTimeout> | null = null;
     private text: string | null = null;
+    /** The text of the prompt after the last `input` event, which the user's edits fire. */
+    private typedText = "";
+    /** Whether the last `↑` or `↓` brought back an earlier command. */
+    private isRecalling = false;
     private isDestroyed = false;
     private readonly listId = `ck-vim-completion-${++listCount}`;
 
@@ -93,22 +97,39 @@ export class PromptAssistant {
         }
     }
 
-    /** Takes `Tab` and `Shift+Tab` in the prompt of `:`. Returns whether it took the key. */
+    /** Follows an edit of the prompt by the user. */
+    onInput() {
+        this.typedText = this.input.value;
+        this.isRecalling = false;
+        this.update();
+    }
+
+    /**
+     * Takes `Tab`, `Shift+Tab`, `↓` and `↑` in the prompt of `:`. Returns whether it took the key;
+     * an arrow it leaves brings back an earlier command.
+     */
     onKeyDown(event: KeyboardEvent): boolean {
-        if (this.kind !== "command" || event.key !== "Tab" || event.ctrlKey || event.altKey
-            || event.metaKey) {
+        if (this.kind !== "command" || event.ctrlKey || event.altKey || event.metaKey) {
+            return false;
+        }
+        if (event.key === "Tab") {
+            event.preventDefault();
+            if (!this.list) {
+                this.openList();
+            }
+            this.walk(event.shiftKey ? -1 : 1);
+            return true;
+        }
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp" || event.shiftKey) {
+            return false;
+        }
+        const isDown = event.key === "ArrowDown";
+        if (!this.isWalkedByArrow(isDown)) {
+            this.isRecalling = true;
             return false;
         }
         event.preventDefault();
-        if (!this.list) {
-            this.openList();
-        }
-        const count = this.rows.length;
-        if (count) {
-            const step = event.shiftKey ? -1 : 1;
-            const start = this.selected === -1 && event.shiftKey ? count : this.selected;
-            this.select((start + step + count) % count);
-        }
+        this.walk(isDown ? 1 : -1);
         return true;
     }
 
@@ -136,6 +157,28 @@ export class PromptAssistant {
         }
     }
 
+    /**
+     * Whether `↓` (`isDown`) or `↑` walks the open list. Until the user types or selects a row, `↑`
+     * brings back earlier commands, as in Vim, and so does `↓` after it.
+     */
+    private isWalkedByArrow(isDown: boolean): boolean {
+        if (!this.list) {
+            return false;
+        }
+        const value = this.input.value;
+        const isTyped = value !== "" && value === this.typedText;
+        return this.selected !== -1 || isTyped || isDown && !this.isRecalling;
+    }
+
+    /** Selects the next row, or the previous one for a negative `step`, wrapping at the ends. */
+    private walk(step: 1 | -1) {
+        const count = this.rows.length;
+        if (count) {
+            const start = this.selected === -1 && step < 0 ? count : this.selected;
+            this.select((start + step + count) % count);
+        }
+    }
+
     /** Shows the rows for the text typed, or closes the list once the name is complete. */
     private openList() {
         this.clearTimer();
@@ -160,6 +203,7 @@ export class PromptAssistant {
             return;
         }
         this.selected = index;
+        this.isRecalling = false;
         this.input.value = fillIn(this.input.value, row.value, this.areArgumentRows);
         this.text = this.input.value;
         this.host.showHints(

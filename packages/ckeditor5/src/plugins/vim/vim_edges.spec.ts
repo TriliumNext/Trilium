@@ -599,26 +599,27 @@ describe("Vim mode edge cases", () => {
             expect(getContent(editor)).toBe("<paragraph>a</paragraph>");
         });
 
-        it("run the Ex command of a mapping, all of it, on a count of lines or a selection",
+        it("run a mapping to a command of the command line, all of it, on a count or a selection",
             async () => {
             const editor = await createVimEditor(paragraphs("[]a", "b", "c", "d", "e"));
-            press(editor, ":map ,d :d<CR>");
+            press(editor, ":map ,d :d<lt>CR><CR>");
             press(editor, ",d");
             expect(getLines(editor)).toBe("b|c|d|e");
-            press(editor, ":mapclear<CR>:nmap ,d :d<CR>");
+            press(editor, ":mapclear<CR>:nmap ,d :d<lt>CR><CR>");
             press(editor, "2,d");
             expect(getLines(editor)).toBe("d|e");
-            press(editor, ":nmap ,s :s/d/D/<lt>CR><CR>,s");
-            expect(getLines(editor)).toBe("D|e");
-            press(editor, ":vmap gb :ck bold<CR>viwgb");
+            press(editor, ":vmap gb :ck bold<lt>CR><CR>viwgb");
             expect(getContent(editor)).toBe(
-                `<paragraph><$text bold="true">D</$text></paragraph>${paragraphs("e")}`);
+                `<paragraph><$text bold="true">d</$text></paragraph>${paragraphs("e")}`);
             expect(getStatus(editor).mode).toBe("normal");
             press(editor, ":nmap ,j j:s/e/E E/<lt>CR>k<CR>,j");
-            expect(getLines(editor)).toBe("D|E E");
+            expect(getLines(editor)).toBe("d|E E");
             expect(getCursor(editor)).toBe("0:0");
-            press(editor, ":nmapclear<CR>:vmapclear<CR>,d<Esc>");
-            expect(getLines(editor)).toBe("D|E E");
+            press(editor, ":nmap ,s :s/d/D/<CR>,s");
+            const input = getStatus(editor).commandLine?.element.querySelector("input");
+            expect(input?.value).toBe("s/d/D/");
+            press(editor, "<Esc>:nmapclear<CR>:vmapclear<CR>,d<Esc>");
+            expect(getLines(editor)).toBe("d|E E");
         });
 
         it("wait a second for the rest of a mapping after keys that are a command of their own",
@@ -626,7 +627,7 @@ describe("Vim mode edge cases", () => {
             const editor = await createVimEditor(paragraphs("[]xax ax", "y"));
             vi.useFakeTimers({ toFake: [ "setTimeout", "clearTimeout" ] });
             try {
-                press(editor, ":nmap ,d :d<CR>fa;,");
+                press(editor, ":nmap ,d :d<lt>CR><CR>fa;,");
                 expect(getCursor(editor)).toBe("0:4");
                 expect(getStatus(editor).pendingKeys).toBe(",");
                 vi.advanceTimersByTime(1000);
@@ -761,6 +762,14 @@ describe("Vim mode edge cases", () => {
             }
             expect(getContent(editor))
                 .toContain("<footnoteContent><paragraph></paragraph></footnoteContent>");
+        });
+
+        it("clear a title and remove the line after it", async () => {
+            const editor = await createVimEditor(
+                `<details open="true"><summary>[]T</summary>${paragraphs("a", "b")}</details>`);
+            press(editor, "dj");
+            expect(getContent(editor)).toBe(
+                `<details open="true"><summary></summary>${paragraphs("b")}</details>`);
         });
 
         it("skips a collapsed section, and finds section edges without headings", async () => {
@@ -1053,7 +1062,7 @@ describe("Vim mode edge cases", () => {
         it("do nothing for `@@` before any macro, and stop a macro that calls itself",
             async () => {
             const error = vi.spyOn(console, "error");
-            const editor = await createVimEditor(paragraphs("[]abc"));
+            const editor = await createVimEditor(paragraphs("[]xbc"));
             engine().getVimGlobalState_().macroModeState.latestRegister = undefined;
             press(editor, "x@@");
             expect(getLines(editor)).toBe("bc");
@@ -1072,6 +1081,10 @@ describe("Vim mode edge cases", () => {
             press(editor, "qcqqc@cjq@c");
             expect(getLines(editor)).toBe("Ab|Ab");
             expect(getStatus(editor).message?.text).toBe("The macro called itself too many times");
+            const lines = Array.from({ length: 150 }, (_, index) => `x${index}`);
+            setVimData(editor, paragraphs(...lines));
+            press(editor, "qaqqaxj@aq@a");
+            expect(getLines(editor)).toBe(lines.map((line) => line.slice(1)).join("|"));
             expect(error).not.toHaveBeenCalled();
             error.mockRestore();
         });

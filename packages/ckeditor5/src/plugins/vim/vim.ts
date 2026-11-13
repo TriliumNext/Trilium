@@ -1348,7 +1348,7 @@ class VimSession {
         });
         input.addEventListener("input", (event) => {
             options.onInput?.(event, input.value, close);
-            assistant.update();
+            assistant.onInput();
         });
         input.addEventListener("blur", () => setTimeout(() => {
             if (document.activeElement !== input) {

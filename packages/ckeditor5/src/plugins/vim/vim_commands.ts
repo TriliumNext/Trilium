@@ -740,7 +740,7 @@ function defineMotions(vim: Vim, motions: Motions) {
     vim.defineMotion("moveBySentence", function (
         this: Motions, cm, head, motionArgs, state, inputState
     ) {
-        const found = motions.moveBySentence.call(this, cm, head, motionArgs, state, inputState);
+        const found = motions.moveBySentence.call(this, cm, head, motionArgs);
         if (!inputState.operator || !motionArgs.forward || found.line !== cm.lastLine()) {
             return found;
         }
@@ -919,18 +919,6 @@ function defineActions(vim: Vim) {
         if (!fold(adapter, adapter.getCursor().line, action, isNested)) {
             adapter.host.notify(adapter.editor.t("Nothing to fold here"));
         }
-    });
-    // The Ex command of a mapping, on the Visual selection or on the lines of a count, as `:`
-    // would offer it.
-    vim.defineAction("triliumRunEx", (cm, actionArgs, state) => {
-        const { input } = actionArgs as unknown as { input: string };
-        let range = "";
-        if (state.visualMode) {
-            range = "'<,'>";
-        } else if (actionArgs.repeatIsExplicit) {
-            range = `.,.+${actionArgs.repeat - 1}`;
-        }
-        vim.handleEx(cm, `${range}${input}`);
     });
     vim.defineAction("triliumFollowLink", (cm) => (cm as unknown as VimAdapter).host.followLink());
     vim.defineAction("triliumQuit", (cm) => (cm as unknown as VimAdapter).host.closeTab());
@@ -1167,7 +1155,9 @@ function defineMacroReplay(vim: Vim, actions: Actions) {
         const name = actionArgs.selectedCharacter === "@"
             ? macroState.latestRegister
             : actionArgs.selectedCharacter;
-        if (!name) {
+        // The register being recorded holds nothing to play until the recording ends, as in Vim.
+        const isRecorded = macroState.isRecording && name === macroState.latestRegister;
+        if (!name || isRecorded) {
             return;
         }
         const repeat = actionArgs.repeat;
@@ -1276,26 +1266,15 @@ function recordMappings(vim: Vim, exCommands: ExCommands) {
         }
         return keys;
     };
-    // The target is the rest of the line, spaces included. A target that starts with `:` runs
-    // that command, with or without `<CR>` after it.
+    // The target is the rest of the line, spaces included, as `:nmap gb :ck bold<CR>` has it.
     const map = exCommands.map as MapCommand;
     exCommands.map = function (this: unknown, cm, params, ...rest: unknown[]) {
-        const context = rest[0] as string | undefined;
         const [ lhs = "" ] = params.args ?? [];
         const rhs = lhs ? (params.argString as string).trim().slice(lhs.length).trimStart() : "";
-        const input = /^:(.+?)(?:<CR>)?$/isu.exec(rhs)?.[1];
-        if (input && !lhs.startsWith(":") && !/<CR>/iu.test(input)) {
-            const actionArgs = { input } as unknown as ActionArgsPartial;
-            vim._mapCommand({
-                keys: lhs, type: "action", action: "triliumRunEx", actionArgs,
-                ...context ? { context: context as vimKey["context"] } : {}
-            });
-        } else {
-            map.call(this, cm, { ...params, args: rhs ? [ lhs, rhs ] : params.args },
-                ...rest as [ string | undefined ]);
-        }
+        map.call(this, cm, { ...params, args: rhs ? [ lhs, rhs ] : params.args },
+            ...rest as [ string | undefined ]);
         if (rhs) {
-            getKeys(context).add(lhs);
+            getKeys(rest[0] as string | undefined).add(lhs);
         }
     } as ExCommand;
     const unmap = exCommands.unmap as MapCommand;

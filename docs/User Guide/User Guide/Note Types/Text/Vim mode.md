@@ -67,7 +67,7 @@ Key hints help while you learn, and can be turned off once the keys are familiar
 
 *   In Normal and Visual mode, the most used keys of the mode take the place of the breadcrumb. To switch between the keys and the breadcrumb, press <kbd>Esc</kbd> in Normal mode. This is the last thing <kbd>Esc</kbd> does: when something else applies, such as search highlights to clear, that happens first and it takes another press. See _The Esc key_ below.
 *   After a pause in the middle of a command, such as after `d` or `g`, the keys that can follow are shown.
-*   The command line suggests the commands that match what is typed, and <kbd>Tab</kbd> completes them. The search prompt tells how the pattern is read.
+*   The command line suggests the commands that match what is typed, and <kbd>Tab</kbd> or the arrow keys complete them. The search prompt tells how the pattern is read.
 *   To see every key of the current mode, click the mode indicator or press <kbd>Alt</kbd>+<kbd>F1</kbd>.
 
 To turn the hints off, use the _Key hints_ setting or type `:set nohints`. `:set hints` turns them back on.

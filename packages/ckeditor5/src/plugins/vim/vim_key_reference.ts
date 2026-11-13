@@ -196,7 +196,7 @@ function getCommandLineReference(t: Translate): VimHintSection[] {
             hints: [
                 hint([ "<Tab>", "<S-Tab>" ], t("next, previous suggestion")),
                 hint("<CR>", t("run the command")),
-                hint([ "<Up>", "<Down>" ], t("earlier commands")),
+                hint([ "<Up>", "<Down>" ], t("earlier commands, or suggestions after typing")),
                 hint("<C-u>", t("clear the prompt")),
                 hint("<Esc>", t("cancel"))
             ]

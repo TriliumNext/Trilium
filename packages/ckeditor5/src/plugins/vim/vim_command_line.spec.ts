@@ -123,6 +123,40 @@ describe("the command line with key hints", () => {
         expect(getRows()).toBeNull();
     });
 
+    it("walks the list with Down and Up, and leaves Up to the history until something is typed",
+        async () => {
+        vi.useFakeTimers();
+        const editor = await createHintEditor(paragraphs("[]a"));
+        press(editor, ":noh<CR>:nohlsearch<CR>:<Up>");
+        expect(getInput(editor)?.value).toBe("nohlsearch");
+        vi.advanceTimersByTime(400);
+        expect(getRows()).toEqual([ "noh[lsearch] ⏎" ]);
+        press(editor, "<Up>");
+        expect(getInput(editor)?.value).toBe("noh");
+        press(editor, "<Down>");
+        expect(getInput(editor)?.value).toBe("nohlsearch");
+        expect(getRows()).toEqual([ "noh[lsearch] ⏎" ]);
+        press(editor, "<Tab><C-u><Down>");
+        expect(getInput(editor)?.value).toBe("substitute");
+        expect(getRows()?.slice(0, 2)).toEqual([ "> s[ubstitute]", "w[rite]" ]);
+        press(editor, "<C-u><Up>");
+        expect(getInput(editor)?.value).toBe("noh");
+        press(editor, "<BS><BS><BS><Down>");
+        expect(getInput(editor)?.value).toBe("substitute");
+
+        press(editor, "<Esc>:s");
+        vi.advanceTimersByTime(400);
+        press(editor, "<Up>");
+        expect(getInput(editor)?.value).toBe("startinsert");
+        expect(getRows()?.at(-1)).toBe("> start[insert]");
+        press(editor, "<Down><Down><S-Up>");
+        expect(getInput(editor)?.value).toBe("sort");
+        expect(getRows()).toEqual([ "s[ubstitute] ⏎", "> sor[t]", "se[t]", "start[insert]" ]);
+        press(editor, "<Up><Up>");
+        expect(getInput(editor)?.value).toBe("startinsert");
+        press(editor, "<Esc>");
+    });
+
     it("completes with Tab while the hints are off, and fills a clicked row", async () => {
         vi.useFakeTimers();
         const editor = await createHintEditor(paragraphs("[]a"), { areHintsEnabled: () => false });

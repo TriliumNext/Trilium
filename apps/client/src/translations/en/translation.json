@@ -5071,7 +5071,7 @@
       "the-last-inserted-text": "the last inserted text",
       "next-previous-suggestion": "next, previous suggestion",
       "run-the-command": "run the command",
-      "earlier-commands": "earlier commands",
+      "earlier-commands-or-suggestions-after-typing": "earlier commands, or suggestions after typing",
       "commands": "Commands"
     },
     "task-state-dropped-title": "Invalid task states",

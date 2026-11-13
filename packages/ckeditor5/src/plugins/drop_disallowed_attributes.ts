@@ -21,7 +21,7 @@ export default class DropDisallowedAttributes extends Plugin {
                 }
                 for (const key of [ ...element.getAttributeKeys() ]) {
                     if (!model.schema.checkAttribute(element, key)) {
-                        void key;
+                        writer.removeAttribute(key, element);
                         isChanged = true;
                     }
                 }

@@ -342,6 +342,7 @@ Code notes have no such setting. There, <kbd>Ctrl</kbd>+<kbd>U</kbd> always foll
 | <kbd>↑</kbd> / <kbd>↓</kbd> | Bring back earlier commands. |
 | <kbd>Ctrl</kbd>+<kbd>U</kbd> | Clear the command line. |
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Go to the next / previous suggestion. **Text notes only** |
+| <kbd>↓</kbd> / <kbd>↑</kbd> | Go to the next / previous suggestion while they are shown. Until you type or pick a suggestion, <kbd>↑</kbd> brings back earlier commands instead, as does <kbd>↓</kbd> after it. **Text notes only** |
 
 ### Ranges
 
