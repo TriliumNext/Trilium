@@ -125,6 +125,7 @@ ignoredOptionalDependencies:
 
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch
+  exceljs@4.4.0: patches/exceljs@4.4.0.patch
   react-zoom-pan-pinch@4.2.0: patches/react-zoom-pan-pinch@4.2.0.patch
 
 allowBuilds:
