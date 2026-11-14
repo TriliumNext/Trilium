@@ -96,16 +96,20 @@ describe("aside styles", () => {
             expect(centered.left).toBe(centered.right);
         });
 
-    it("stacks a wrapped aside in the text on a phone, across the whole width", () => {
+    it("stacks a wrapped or resized aside in the text on a phone, across the whole width", () => {
         const container = renderContent(
             "<aside data-position=\"wrap-left\"><p>A</p></aside><p>Text</p>");
         expect(measureAside(container).float).toBe("left");
+        const centered = renderContent("<aside style=\"--aside-width:20em;\"><p>A</p></aside>");
+        const resized = measureAside(centered);
+        expect(resized.width).toBe(20 * resized.em);
 
         document.body.classList.add("mobile");
         onTestFinished(() => document.body.classList.remove("mobile"));
         const stacked = measureAside(container);
         expect(stacked).toMatchObject({ float: "none", left: 0, right: 0, width: WIDTH });
         expect(stacked.marginBlock).toEqual([ stacked.em / 2, stacked.em / 2 ]);
+        expect(measureAside(centered)).toMatchObject({ left: 0, right: 0, width: WIDTH });
     });
 
     it("shows no buttons that insert a paragraph beside a selected aside", async () => {

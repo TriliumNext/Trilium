@@ -91,7 +91,7 @@
     }
 }
 
-body.mobile .ck-content aside:not(.admonition)[data-position] {
+body.mobile .ck-content aside:not(.admonition) {
     float: none;
     clear: both;
     margin: var(--aside-margin-block) 0;
