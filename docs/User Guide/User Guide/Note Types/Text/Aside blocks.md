@@ -25,3 +25,7 @@ To change the width of an aside block, put the cursor inside it and drag the han
 
 *   To remove the box but keep what's in it, click the <span class="tn-icon cke cke-remove"></span> _Remove aside_ button in its toolbar. The content goes back into the main text, where the block was.
 *   To delete the aside along with everything in it, click the handle at its top-left corner and press <kbd>Delete</kbd>.
+
+## Markdown
+
+Aside blocks are kept when a note is exported to Markdown and imported back. For writing them by hand, see the aside section of <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/Supported%20syntax.md">Supported syntax</a>.

@@ -382,6 +382,15 @@ const BLANK_LINE_AT_END = /\n[ \t]*\n$/;
 /** What CKEditor downcasts for the empty paragraph that separates two lists. */
 const EMPTY_PARAGRAPH = "<p>&nbsp;</p>";
 
+/** The position of an aside written as a bare `<aside>` in Markdown, the default of a new aside. */
+export const BARE_ASIDE_POSITION = "wrap-right";
+
+/**
+ * Matches the opening tag of an aside alone in its HTML block, followed by its closing tag when the
+ * aside is empty. Group 1 is set for `data-position="center"`, an aside in the flow.
+ */
+const LONE_ASIDE = /^<aside(\s+data-position="center")?\s*>(\s*<\/aside>)?$/i;
+
 /**
  * Keep renderer code up to date with https://github.com/markedjs/marked/blob/master/src/Renderer.ts.
  *
@@ -590,6 +599,23 @@ export class CustomMarkdownRenderer extends Renderer {
 
     override codespan({ text }: Tokens.Codespan): string {
         return `<code>${escapeHtml(text)}</code>`;
+    }
+
+    /**
+     * Gives a bare `<aside>` the position of a new aside, and drops `data-position="center"`,
+     * which the editor does not save. Only a tag alone in its HTML block counts: its content is
+     * Markdown. An aside of raw text, such as a Notion callout, stays in the flow.
+     */
+    override html(token: Tokens.HTML | Tokens.Tag): string {
+        const html = super.html(token);
+        const aside = token.block ? LONE_ASIDE.exec(html) : null;
+        if (!aside) {
+            return html;
+        }
+
+        const [ , isInFlow, closingTag = "" ] = aside;
+        const position = isInFlow ? "" : ` data-position="${BARE_ASIDE_POSITION}"`;
+        return `<aside${position}>${closingTag}`;
     }
 
 }

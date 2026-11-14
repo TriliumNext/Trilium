@@ -819,5 +819,12 @@ $$`;
             const resized = "<aside style=\"--aside-width:18em;\"><p>A</p></aside>";
             expect(roundTrip(resized)).toStrictEqual(resized);
         });
+
+        it("reads a bare aside as wrapped on the right, and one of raw text in the flow", () => {
+            expect(markdownService.renderToHtml("<aside>\n\nA *side* note\n\n</aside>", "Title"))
+                .toBe("<aside data-position=\"wrap-right\"><p>A <em>side</em> note</p></aside>");
+            expect(markdownService.renderToHtml("<aside>\nA callout\n\n</aside>", "Title"))
+                .toBe("<aside>\nA callout</aside>");
+        });
     });
 });

@@ -1170,11 +1170,42 @@ describe("Markdown export", () => {
                 After`);
         });
 
+        it("writes an aside wrapped on the right as a bare tag, and marks one in the flow", () => {
+            const html = "<aside data-position=\"wrap-right\"><p>Wrapped</p></aside>" +
+                "<aside><p>In the flow</p></aside>" +
+                "<aside data-position=\"left\"><p>Left</p></aside>" +
+                "<aside style=\"--aside-width:18em;\"><p>Resized</p></aside>";
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                <aside>
+
+                Wrapped
+
+                </aside>
+
+                <aside data-position="center">
+
+                In the flow
+
+                </aside>
+
+                <aside data-position="left">
+
+                Left
+
+                </aside>
+
+                <aside style="--aside-width:18em;">
+
+                Resized
+
+                </aside>`);
+        });
+
         it("keeps an empty aside that Turndown would drop, apart from an admonition", () => {
             const html = "<aside><p>&nbsp;</p></aside>" +
                 "<aside class=\"admonition tip\"><p>A tip.</p></aside>";
             expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
-                <aside>
+                <aside data-position="center">
                 </aside>
 
                 > [!TIP]

@@ -2,7 +2,9 @@ import {
     CAPTIONED_CONTENT_EMBED_CLASS, getMarkdownNameFromCKEditorLanguage, MIME_TYPE_AUTO,
     MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
-import { ADMONITION_TYPE_MAPPINGS } from "@triliumnext/commons/src/lib/markdown_renderer.js";
+import {
+    ADMONITION_TYPE_MAPPINGS, BARE_ASIDE_POSITION
+} from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
 import { parse as parseHtml } from "node-html-parser";
@@ -515,7 +517,24 @@ function buildAsideFilter(): Rule {
 
 function asideReplacement(node: Element, content: string): string {
     const body = content.trim();
-    return `\n\n${getOpeningTag(node)}\n${body ? `\n${body}\n\n` : ""}</aside>\n\n`;
+    return `\n\n${getAsideOpeningTag(node)}\n${body ? `\n${body}\n\n` : ""}</aside>\n\n`;
+}
+
+/**
+ * The opening tag of an aside in Markdown, where a bare `<aside>` is placed at
+ * `BARE_ASIDE_POSITION`. An aside in the flow, saved without attributes, gets
+ * `data-position="center"`.
+ */
+function getAsideOpeningTag(node: Element): string {
+    const attributes = Array.from(node.attributes);
+    if (!attributes.length) {
+        return `<aside data-position="center">`;
+    }
+
+    const [ { name, value } ] = attributes;
+    const isBare = attributes.length === 1 && name === "data-position"
+        && value === BARE_ASIDE_POSITION;
+    return isBare ? "<aside>" : getOpeningTag(node);
 }
 
 /** Whether `node` is an aside, which an admonition is not, although it is saved as `<aside>`. */
