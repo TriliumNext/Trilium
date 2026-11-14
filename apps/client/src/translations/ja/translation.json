@@ -4263,7 +4263,10 @@
       "pattern": "パターン",
       "replacement": "置換文字列",
       "flags": "フラグ",
-      "reverse": "逆順"
+      "reverse": "逆順",
+      "ignore-case": "大文字・小文字を区別しない",
+      "by-number": "数値順",
+      "drop-duplicates": "重複を削除"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
