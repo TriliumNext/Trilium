@@ -142,6 +142,8 @@ describe("AsideEditing", () => {
                     "ck-widget_resize-anchor-right", "ck-widget_fixed-height"
                 ]));
                 expect(widget.getAttribute("data-position")).toBe("wrap-right");
+                const corner = widget.querySelector(".ck-widget__resize-handle_corner");
+                expect(corner && getComputedStyle(corner).cursor).toBe("ew-resize");
                 const content = widget.querySelector(":scope > .aside-content");
                 expect(content?.getAttribute("contenteditable")).toBe("true");
                 expect(content?.getAttribute("aria-label")).toBe("Aside");

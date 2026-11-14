@@ -150,6 +150,14 @@
     }
 }
 
+.ck .ck-widget_fixed-height > .ck-widget__resize-handles > .ck-widget__resize-handle_corner {
+    cursor: ew-resize;
+}
+
+.ck .ck-widget_fixed-width > .ck-widget__resize-handles > .ck-widget__resize-handle_corner {
+    cursor: ns-resize;
+}
+
 .ck .ck-widget_resizing iframe {
     pointer-events: none;
 }
