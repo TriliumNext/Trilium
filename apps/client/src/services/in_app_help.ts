@@ -53,7 +53,7 @@ export const byBlockType: Record<BlockType, string | null> = {
     collapsible: "4n4oQUVbnOxa",
     tabs: "EK2ckIZ74tbT",
     columns: "wYDzQ1fBFgfT",
-    aside: null,
+    aside: "dDYOyeOGdZRS",
     math: "YfYAtQBcfo5V",
     footnotes: "AgjCISero73a",
     footnote: "AgjCISero73a",
