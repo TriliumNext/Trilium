@@ -2112,14 +2112,55 @@ paths:
                 type: array
                 items:
                   type: object
+                  required:
+                    - notePath
+                    - noteTitle
+                    - notePathTitle
+                    - icon
                   properties:
                     noteId:
                       type: string
-                    title:
+                      example: "_help_gcI7RPbaNSh3"
+                    notePath:
                       type: string
-                    path:
+                      example: "root/_hidden/_help/_help_CdNpE2pqjmI6/_help_yIhgI5H7A2Sm/_help_4Gn3psZKsfSm/_help_gcI7RPbaNSh3"
+                    noteTitle:
                       type: string
-                      
+                      example: "Analog Watch"
+                    notePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog Watch"
+                    highlightedNotePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog <b>Wat</b>ch"
+                    highlightedNoteTitle:
+                      type: string
+                      example: "Analog <b>Wat</b>ch"
+                    highlightedParentPathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets"
+                    contentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog watch in the launch bar."
+                    highlightedContentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog <b>wat</b>ch in the launch bar."
+                    contentSnippetTruncated:
+                      type: boolean
+                      example: true
+                    attributeSnippet:
+                      type: string
+                      example: ""
+                    matchedTerms:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - "wat"
+                    icon:
+                      type: string
+                      example: "tn-icon bx bx-file"
+
   /api/similar-notes/{noteId}:
     get:
       tags: [Search]
