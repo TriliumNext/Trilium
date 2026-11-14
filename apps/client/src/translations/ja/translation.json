@@ -4260,7 +4260,10 @@
       "from-this-line-to-the-end": "この行から末尾まで",
       "this-line-and-the-next-0": "この行と、続く%0 行",
       "lines-0-to-1": "%0 行目から %1 行目まで",
-      "pattern": "パターン"
+      "pattern": "パターン",
+      "replacement": "置換文字列",
+      "flags": "フラグ",
+      "reverse": "逆順"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
