@@ -1,6 +1,13 @@
 :where(:root) {
     --aside-border-radius: 8px;
     --aside-default-width: 22em;
+    --aside-markdown-default-width: max(33.3%, 250px);
+}
+
+/* Markdown note content: `.markdown-preview` in the client, `.type-code` on a share page. */
+.markdown-preview,
+.ck-content.type-code {
+    --aside-default-width: var(--aside-markdown-default-width);
 }
 
 .ck-content aside:not(.admonition) {
