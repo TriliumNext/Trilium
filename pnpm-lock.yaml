@@ -465,8 +465,8 @@ importers:
         specifier: 6.0.5
         version: 6.0.5
       electron:
-        specifier: 45.2.3
-        version: 45.2.3(supports-color@7.2.0)
+        specifier: 45.3.0
+        version: 45.3.0(supports-color@7.2.0)
       gifenc:
         specifier: 1.0.3
         version: 1.0.3
@@ -527,8 +527,8 @@ importers:
         specifier: workspace:*
         version: link:../desktop
       electron:
-        specifier: 45.2.3
-        version: 45.2.3(supports-color@7.2.0)
+        specifier: 45.3.0
+        version: 45.3.0(supports-color@7.2.0)
       typedoc:
         specifier: 0.28.20
         version: 0.28.20(typescript@6.0.3)
@@ -6941,8 +6941,8 @@ packages:
     resolution: {integrity: sha512-j9ETcBGJaXxAY/b6UBpR7LZfjdU4BAO+yvr4ifqHEdyuc3UNCy91PDGkWKY5UQ4coHNYfnwFggrqD6QPeFGAlg==}
     engines: {node: '>=8.0.0'}
 
-  electron@45.2.3:
-    resolution: {integrity: sha512-Vurzu5UOA5nTGT4LqIwXD16QFGrOZdiXxF+1UP4KNsAOo/YtDcT3/u0jhP4WSwNJ0iLrLDi85hzBJ0arnGDhyw==}
+  electron@45.3.0:
+    resolution: {integrity: sha512-JpSzTaZkNaai4B3pUSICIfXiKwl+a7XyvHpWmA3O7SZbWDXNgYSyc7cmhNhlAARMzNAh9nOdZq5DgTZ/T9rlfA==}
     engines: {node: '>= 22.12.0'}
     hasBin: true
 
@@ -18502,7 +18502,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron@45.2.3(supports-color@7.2.0):
+  electron@45.3.0(supports-color@7.2.0):
     dependencies:
       '@electron-internal/extract-zip': 1.0.5
       '@electron/get': 5.1.0(supports-color@7.2.0)
