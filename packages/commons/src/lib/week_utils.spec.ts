@@ -239,7 +239,10 @@ describe("week_utils", () => {
                     const start = getFirstDayOfWeek1(year, settings);
                     const days = Array.from({ length: 7 }, (_, i) => start.add(i, "day"));
                     expect(start.isoWeekday()).toBe(firstDayOfWeek);
-                    const thursday = days.find((day) => day.isoWeekday() === 4)!;
+                    const thursday = days.find((day) => day.isoWeekday() === 4);
+                    if (!thursday) {
+                        throw new Error("Week 1 must contain a Thursday");
+                    }
                     expect(thursday.year()).toBe(year);
                     expect(thursday.date()).toBeLessThanOrEqual(7);
                 }
