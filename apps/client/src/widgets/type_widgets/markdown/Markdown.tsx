@@ -317,10 +317,7 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
             const moving = !!current && !!match && current !== match;
             preview.classList.toggle("markdown-preview-marker-moving", moving);
             current = match;
-
-            // `offsetTop` and the marker's containing block are both the preview's padding box.
-            preview.style.setProperty("--markdown-preview-marker-top", `${match?.offsetTop ?? 0}px`);
-            preview.style.setProperty("--markdown-preview-marker-height", `${match?.offsetHeight ?? 0}px`);
+            placeBlockMarker(preview, match);
         }
 
         // A resize leaves the tabs alone, so a tab picked in the preview stays shown.
@@ -337,6 +334,20 @@ export function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTML
             unsubscribe();
         };
     }, [ view, preview, html ]);
+}
+
+/** Writes the geometry of the marker of `block`, the active block, for `Markdown.css` to draw. */
+export function placeBlockMarker(preview: HTMLElement, block: HTMLElement | null) {
+    // `offsetTop` and the marker's containing block are both the preview's padding box.
+    preview.style.setProperty("--markdown-preview-marker-top", `${block?.offsetTop ?? 0}px`);
+    preview.style.setProperty("--markdown-preview-marker-height", `${block?.offsetHeight ?? 0}px`);
+
+    // An aside can be far from the gutter, so its marker is beside the aside.
+    if (block?.matches("aside:not(.admonition)")) {
+        preview.style.setProperty("--markdown-preview-marker-left", `${block.offsetLeft}px`);
+    } else {
+        preview.style.removeProperty("--markdown-preview-marker-left");
+    }
 }
 
 /**
@@ -611,16 +622,14 @@ const NON_RENDERED_TOKENS = new Set([ "space", "def" ]);
  * positions (markedjs/marked#1267) so we count newlines in `raw` ourselves.
  */
 export function renderWithSourceLines(src: string): { html: string; headings: MarkdownHeading[]; highlights: MarkdownHighlight[] } {
-    // Compute the start line of each renderable top-level token in source order.
     const tokens = marked.lexer(src);
-    const lines: number[] = [];
+    const lines = getBlockLines(tokens);
     const headings: MarkdownHeading[] = [];
     let line = 1;
     let headingIdx = 0;
     for (const token of tokens) {
         const startLine = line;
-        line += (token.raw.match(/\n/g) ?? []).length;
-        if (!NON_RENDERED_TOKENS.has(token.type)) lines.push(startLine);
+        line += countNewlines(token.raw);
         if (token.type === "heading") {
             const rawText = token.text ?? "";
             const inlineHtml = DOMPurify.sanitize(marked.parseInline(rawText) as string);
@@ -664,6 +673,42 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
 
     return { html: container.innerHTML, headings, highlights: extractHighlights(container) };
 }
+
+/**
+ * Returns the 1-indexed line of every top-level element of the preview, in order. Raw HTML can
+ * open an element that the next tokens render inside, such as `<aside>` or `<details>` around
+ * Markdown, and one HTML token can render several elements or none. So the tokens are parsed as
+ * HTML: a marker with the line, then the token's HTML, or a `<p>` for a token of another type.
+ */
+function getBlockLines(tokens: Token[]): number[] {
+    let outline = "";
+    let line = 1;
+    for (const token of tokens) {
+        if (!NON_RENDERED_TOKENS.has(token.type)) {
+            const block = token.type === "html" ? token.raw : "<p></p>";
+            outline += `<div ${LINE_MARKER}="${line}"></div>${block}`;
+        }
+        line += countNewlines(token.raw);
+    }
+
+    // A template parses its content without loading the images of the raw HTML.
+    const template = document.createElement("template");
+    template.innerHTML = DOMPurify.sanitize(outline);
+
+    const lines: number[] = [];
+    let blockLine = 1;
+    for (const element of template.content.children) {
+        const markerLine = element.getAttribute(LINE_MARKER);
+        if (markerLine) {
+            blockLine = Number(markerLine);
+        } else {
+            lines.push(blockLine);
+        }
+    }
+    return lines;
+}
+
+const LINE_MARKER = "data-line-marker";
 
 /**
  * Returns the 1-indexed line of every tab header, in the order of the rendered

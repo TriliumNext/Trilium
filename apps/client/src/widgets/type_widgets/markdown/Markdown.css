@@ -13,7 +13,9 @@
         background-image: linear-gradient(var(--main-text-color), var(--main-text-color));
         background-attachment: local;
         background-repeat: no-repeat;
-        background-position: 0.5em var(--markdown-preview-marker-top, 0);
+        background-position:
+            calc(var(--markdown-preview-marker-left, 1em) - 0.5em)
+            var(--markdown-preview-marker-top, 0);
         background-size: 2px var(--markdown-preview-marker-height, 0);
 
         /* Only while the cursor moves to another block: the hook adds the class for that update

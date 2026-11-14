@@ -7,7 +7,9 @@ import type VanillaCodeMirror from "@triliumnext/codemirror";
 import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { findActiveBlock, renderWithSourceLines, revealTabAtLine, scrollToSourceLine } from "./Markdown.js";
+import {
+    findActiveBlock, placeBlockMarker, renderWithSourceLines, revealTabAtLine, scrollToSourceLine
+} from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -53,6 +55,53 @@ describe("renderWithSourceLines", () => {
         ].join("\n");
 
         expect(extractLines(src)).toEqual([ 1, 6 ]);
+    });
+
+    it("gives raw HTML around Markdown one line, and the blocks after it their own", () => {
+        const src = [
+            "Intro",                                    // 1
+            "",
+            "<aside>",                                  // 3
+            "",
+            "A side note",                              // 5
+            "",
+            "# Heading in the aside",                   // 7
+            "",
+            "</aside>",                                 // 9
+            "",
+            "After the aside",                          // 11
+            "",
+            '<details class="trilium-collapsible">',    // 13
+            "<summary>Summary</summary>",
+            "",
+            "Details",                                  // 16
+            "",
+            "</details>",                               // 18
+            "",
+            "<!-- A comment renders nothing -->",       // 20
+            "",
+            "After the comment",                        // 22
+            "",
+            "<div>One HTML block,</div>",               // 24
+            "<div>two elements</div>",
+            "",
+            "Last"                                      // 27
+        ].join("\n");
+
+        const container = document.createElement("div");
+        container.innerHTML = renderWithSourceLines(src).html;
+        const blocks = container.querySelectorAll<HTMLElement>("[data-source-line]");
+        expect(Array.from(blocks, (block) => [ block.tagName, block.dataset.sourceLine ])).toEqual([
+            [ "P", "1" ], [ "ASIDE", "3" ], [ "P", "11" ], [ "DETAILS", "13" ], [ "P", "22" ],
+            [ "DIV", "24" ], [ "DIV", "24" ], [ "P", "27" ]
+        ]);
+
+        // The caret on any line of the aside marks the aside.
+        for (const line of [ 3, 5, 7, 9 ]) {
+            expect(findActiveBlock(blocks, line)?.tagName).toBe("ASIDE");
+        }
+        expect(findActiveBlock(blocks, 11)?.textContent).toBe("After the aside");
+        expect(renderWithSourceLines(src).headings).toMatchObject([ { line: 7 } ]);
     });
 
     it("renders standard markdown constructs", () => {
@@ -355,6 +404,39 @@ describe("findActiveBlock", () => {
     it("matches nothing above the first block or in an empty preview", () => {
         expect(findActiveBlock(blocks(3), 1)).toBeNull();
         expect(findActiveBlock([], 1)).toBeNull();
+    });
+});
+
+describe("placeBlockMarker", () => {
+    /** A block of the preview with the given tag and class, laid out at `left` and `top`. */
+    function block(tagName: string, className: string, left: number, top: number) {
+        const el = document.createElement(tagName);
+        el.className = className;
+        Object.defineProperties(el, {
+            offsetLeft: { value: left },
+            offsetTop: { value: top },
+            offsetHeight: { value: 30 }
+        });
+        return el;
+    }
+
+    it("marks an aside at its own left edge, and any other block at the gutter", () => {
+        const preview = document.createElement("div");
+        const marker = () => [ "left", "top", "height" ]
+            .map((name) => preview.style.getPropertyValue(`--markdown-preview-marker-${name}`));
+
+        placeBlockMarker(preview, block("aside", "", 400, 50));
+        expect(marker()).toEqual([ "400px", "50px", "30px" ]);
+
+        placeBlockMarker(preview, block("p", "", 16, 90));
+        expect(marker()).toEqual([ "", "90px", "30px" ]);
+
+        placeBlockMarker(preview, block("aside", "admonition note", 16, 130));
+        expect(marker()).toEqual([ "", "130px", "30px" ]);
+
+        placeBlockMarker(preview, block("aside", "", 400, 50));
+        placeBlockMarker(preview, null);
+        expect(marker()).toEqual([ "", "0px", "0px" ]);
     });
 });
 
