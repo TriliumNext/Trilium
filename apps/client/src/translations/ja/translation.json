@@ -4266,7 +4266,9 @@
       "reverse": "逆順",
       "ignore-case": "大文字・小文字を区別しない",
       "by-number": "数値順",
-      "drop-duplicates": "重複を削除"
+      "drop-duplicates": "重複を削除",
+      "for-example-0": "例: %0",
+      "typed-on-each-line-of-the-range": "範囲内の各行に入力するキー"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
