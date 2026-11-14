@@ -280,7 +280,7 @@ eventService.subscribeBeccaLoader([eventService.ENTITY_CHANGE_SYNCED], ({ entity
 
 /** Brings becca's copy of an entity in line with its row, creating the entity if becca lacks it. */
 function applyEntityRow(entityName: string, entityRow: any) {
-    if (CACHED_ENTITY_NAMES.includes(entityName)) {
+    if (CACHED_ENTITY_NAME_SET.has(entityName)) {
         const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
         const primaryKeyName = EntityClass.primaryKeyName;
 
@@ -504,9 +504,6 @@ function etapiTokenDeleted(etapiTokenId: string) {
  * work — changes made before the savepoint, or by savepoints that succeeded, are kept. An entity
  * whose row is gone (it was created inside the savepoint) or deleted is dropped from becca, and
  * one the savepoint deleted is brought back.
- *
- * A note's content change writes its blob before the note row, so a failure between the two
- * leaves only the blob recorded; notes still pointing at a rolled-back blob are re-read as well.
  */
 function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
     if (!becca.loaded || writes.length === 0) {
@@ -515,43 +512,54 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
 
     const sql = getSql();
     const toRestore = new Map<string, Set<string>>();
-    const add = (entityName: string, entityId: string) => {
+
+    for (const { entityName, entityId } of writes) {
+        if (!CACHED_ENTITY_NAME_SET.has(entityName)) {
+            continue;
+        }
+
         let ids = toRestore.get(entityName);
         if (!ids) {
             ids = new Set();
             toRestore.set(entityName, ids);
         }
         ids.add(entityId);
-    };
-
-    const rolledBackBlobIds = new Set<string>();
-    for (const { entityName, entityId } of writes) {
-        if (CACHED_ENTITY_NAMES.includes(entityName)) {
-            add(entityName, entityId);
-        } else if (entityName === "blobs") {
-            rolledBackBlobIds.add(entityId);
-        }
-    }
-
-    if (rolledBackBlobIds.size > 0) {
-        for (const note of Object.values(becca.notes)) {
-            if (note.blobId && rolledBackBlobIds.has(note.blobId)) {
-                add("notes", note.noteId);
-            }
-        }
     }
 
     // Notes first, so that a branch or attribute brought back finds the note it belongs to.
     for (const entityName of CACHED_ENTITY_NAMES) {
+        const ids = toRestore.get(entityName);
+        if (!ids || ids.size === 0) {
+            continue;
+        }
+
         const EntityClass = entityConstructor.getEntityFromEntityName(entityName);
+        const pk = EntityClass.primaryKeyName;
+        const idList = Array.from(ids);
+        const foundIds = new Set<string>();
 
-        for (const entityId of toRestore.get(entityName) ?? []) {
-            const row = sql.getRowOrNull<Record<string, unknown>>(
-                `SELECT * FROM ${entityName} WHERE ${EntityClass.primaryKeyName} = ?`, [entityId]);
+        for (let i = 0; i < idList.length; i += 500) {
+            const chunk = idList.slice(i, i + 500);
+            const placeholders = chunk.map(() => "?").join(", ");
+            const rows = sql.getRows<Record<string, unknown>>(
+                `SELECT * FROM ${entityName} WHERE ${pk} IN (${placeholders})`,
+                chunk
+            );
 
-            if (row && !row.isDeleted) {
-                applyEntityRow(entityName, row);
-            } else {
+            for (const row of rows) {
+                const entityId = row[pk] as string;
+                foundIds.add(entityId);
+
+                if (!row.isDeleted) {
+                    applyEntityRow(entityName, row);
+                } else {
+                    removeEntity(entityName, entityId);
+                }
+            }
+        }
+
+        for (const entityId of idList) {
+            if (!foundIds.has(entityId)) {
                 removeEntity(entityName, entityId);
             }
         }
@@ -560,6 +568,7 @@ function restoreAfterSavepointRollback(writes: SavepointWrite[]) {
 
 /** Entity types becca keeps in memory, in the order they have to be restored. */
 const CACHED_ENTITY_NAMES = ["notes", "branches", "attributes", "etapi_tokens", "options"];
+const CACHED_ENTITY_NAME_SET = new Set(CACHED_ENTITY_NAMES);
 
 
 eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {

@@ -328,6 +328,21 @@ describe("etapi/notes/bulk-update", () => {
             .send({ items: [] })
             .expect(200);
         expect(emptyResp.body.total).toStrictEqual(0);
+
+        // Non-string noteId is rejected cleanly in both atomic and non-atomic modes
+        await supertest(app)
+            .post("/etapi/notes/bulk-update?atomic=true")
+            .auth(USER, token, { type: "basic" })
+            .send({ items: [ { noteId: 123, content: "<p>bad</p>" } ] })
+            .expect(400);
+
+        const nonStringResp = await supertest(app)
+            .post("/etapi/notes/bulk-update")
+            .auth(USER, token, { type: "basic" })
+            .send({ items: [ { noteId: { bad: true }, content: "<p>bad</p>" } ] })
+            .expect(200);
+        expect(nonStringResp.body.failed).toStrictEqual(1);
+        expect(nonStringResp.body.errors[0].noteId).toStrictEqual("unknown");
     });
 
     it("rejects oversized content upfront without scheduling pictures for deletion", async () => {
