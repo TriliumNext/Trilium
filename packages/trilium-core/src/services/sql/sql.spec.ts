@@ -546,6 +546,40 @@ describe("SqlService (real DB)", () => {
             await expect(getContext().init(() => sql.transactionalAsync(async () => "nested"))).resolves.toBe("nested");
             expect(onTransactionCommit).not.toHaveBeenCalled();
         });
+
+        it("does not report a rollback while an outer transaction is still open", () => {
+            const onTransactionRollback = vi.fn();
+            const onSavepointRollback = vi.fn();
+            const sql = buildService({
+                inTransaction: true,
+                transaction: (cb: any) => {
+                    const fn = () => cb();
+                    fn.deferred = () => cb();
+                    return fn;
+                }
+            }, false, () => {}, onTransactionRollback, onSavepointRollback);
+
+            getContext().init(() => {
+                getContext().set("entityChangeIds", [10]);
+
+                expect(() => sql.transactional(() => {
+                    getContext().set("entityChangeIds", [10, 11]);
+                    sql.transactional(() => {
+                        sql.recordSavepointWrite("notes", "n1");
+                    });
+                    sql.recordSavepointWrite("notes", "n2");
+                    throw new Error("failed inside savepoint");
+                })).toThrow("failed inside savepoint");
+
+                expect(getContext().get("entityChangeIds")).toEqual([10]);
+            });
+
+            expect(onTransactionRollback).not.toHaveBeenCalled();
+            expect(onSavepointRollback).toHaveBeenCalledWith([
+                { entityName: "notes", entityId: "n1" },
+                { entityName: "notes", entityId: "n2" }
+            ]);
+        });
     });
 });
 
@@ -561,7 +595,7 @@ function fakeStatement(): Statement {
     return statement;
 }
 
-function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, onTransactionCommit = () => {}) {
+function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, onTransactionCommit = () => {}, onTransactionRollback = () => {}, onSavepointRollback = () => {}) {
     const provider: DatabaseProvider = {
         loadFromFile: () => {},
         loadFromMemory: () => {},
@@ -575,7 +609,7 @@ function buildService(overrides: Partial<DatabaseProvider>, isReadOnly = false, 
         close: () => {},
         ...overrides
     };
-    return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback: () => {} }, getLog());
+    return new SqlService({ provider, isReadOnly, onTransactionCommit, onTransactionRollback, onSavepointRollback }, getLog());
 }
 
 /** Whether `attempt` was refused for its identifiers, ran, or failed for another reason. */

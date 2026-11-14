@@ -135,6 +135,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
         const sql = getSql();
         sql.transactional(() => {
+            sql.recordSavepointWrite(entityName, (this as any)[primaryKeyName]);
             sql.upsert(entityName, primaryKeyName, pojo);
 
             if (entityName === "recent_notes") {
@@ -200,7 +201,10 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             }
         }
 
-        getSql().transactional(() => {
+        const constructorData = this.constructor as unknown as ConstructorData<T>;
+        const sql = getSql();
+        sql.transactional(() => {
+            sql.recordSavepointWrite(constructorData.entityName, (this as any)[constructorData.primaryKeyName]);
             const newBlobId = this.saveBlob(content, unencryptedContentForHashCalculation, opts);
             const oldBlobId = this.blobId;
 

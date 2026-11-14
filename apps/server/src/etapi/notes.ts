@@ -1,8 +1,8 @@
-import { type ExportFormat, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
-import { becca } from "@triliumnext/core";
+import { becca, BNote, checkImageAttachments, exceedsBlobContentLimit, type ExportFormat, MAX_BLOB_CONTENT_LENGTH, note_service as noteService, NoteParams, search as searchService, SearchContext, SearchParams, TaskContext, zipExportService, zipImportService } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
 
+import sql from "../services/sql.js";
 import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
 import type { ValidatorMap } from "./etapi-interface.js";
@@ -165,6 +165,123 @@ function register(router: Router) {
         return res.sendStatus(204);
     });
 
+    eu.route(router, "post", "/etapi/notes/bulk-update", (req, res) => {
+        const { items } = req.body || {};
+        const skipFts = req.query.skipFts === "true" || req.query.skipFts === "1";
+        const atomic = req.query.atomic === "true" || req.query.atomic === "1";
+
+        if (!Array.isArray(items)) {
+            throw new eu.EtapiError(400, "INVALID_BODY", "Request body must contain an 'items' array.");
+        }
+
+        if (items.length === 0) {
+            return res.json({ total: 0, updated: 0, failed: 0, errors: [] });
+        }
+
+        if (items.length > 1000) {
+            throw new eu.EtapiError(400, "BATCH_TOO_LARGE", "Maximum batch size is 1,000 items per request.");
+        }
+
+        if (atomic) {
+            // Validate all items before mutating to prevent partial updates and keep cache clean
+            const validatedItems = items.map(validateBulkUpdateItem);
+
+            const originalNoteStates = new Map<
+                string,
+                {
+                    note: BNote;
+                    originalBlobId: string | undefined;
+                    originalUtcDateModified: string | undefined;
+                    originalDateModified: string | undefined;
+                }
+            >();
+            const postProcessNotes = new Map<string, { note: BNote; content: string }>();
+
+            try {
+                for (const { note, content } of validatedItems) {
+                    if (!originalNoteStates.has(note.noteId)) {
+                        originalNoteStates.set(note.noteId, {
+                            note,
+                            originalBlobId: note.blobId,
+                            originalUtcDateModified: note.utcDateModified,
+                            originalDateModified: note.dateModified
+                        });
+                    }
+
+                    applyBulkNoteContentUpdate(note, content, skipFts, postProcessNotes);
+                }
+            } catch (err) {
+                for (const { note, originalBlobId, originalUtcDateModified, originalDateModified } of originalNoteStates.values()) {
+                    note.blobId = originalBlobId;
+                    note.utcDateModified = originalUtcDateModified;
+                    note.dateModified = originalDateModified;
+                }
+                throw err;
+            }
+
+            runBulkPostProcessing(postProcessNotes);
+
+            return res.json({
+                total: items.length,
+                updated: items.length,
+                failed: 0,
+                errors: []
+            });
+        }
+
+        // Non-atomic mode: process each item, collecting errors for failed items
+        const errors: Array<{ noteId: string; error: string }> = [];
+        const postProcessNotes = new Map<string, { note: BNote; content: string }>();
+        let updatedCount = 0;
+
+        for (const item of items) {
+            const rawNoteId = (item as Record<string, unknown> | null | undefined)?.noteId;
+            const errorNoteId = typeof rawNoteId === "string" && rawNoteId ? rawNoteId : "unknown";
+
+            let validated: { note: BNote; content: string };
+            try {
+                validated = validateBulkUpdateItem(item);
+            } catch (err) {
+                errors.push({
+                    noteId: errorNoteId,
+                    error: err instanceof Error ? err.message : "Invalid item."
+                });
+                continue;
+            }
+
+            const { note, content } = validated;
+            const previousPostProcessNote = postProcessNotes.get(note.noteId);
+
+            try {
+                sql.transactional(() => {
+                    applyBulkNoteContentUpdate(note, content, skipFts, postProcessNotes);
+                });
+
+                updatedCount++;
+            } catch (err) {
+                if (previousPostProcessNote) {
+                    postProcessNotes.set(note.noteId, previousPostProcessNote);
+                } else {
+                    postProcessNotes.delete(note.noteId);
+                }
+
+                errors.push({
+                    noteId: note.noteId,
+                    error: err instanceof Error ? err.message : "Failed to update note content."
+                });
+            }
+        }
+
+        runBulkPostProcessing(postProcessNotes);
+
+        return res.json({
+            total: items.length,
+            updated: updatedCount,
+            failed: errors.length,
+            errors
+        });
+    });
+
     eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/export", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
         const format = req.query.format || "html";
@@ -289,3 +406,71 @@ function parseInteger(obj: any, name: string) {
 export default {
     register
 };
+
+function validateBulkUpdateItem(item: unknown): { note: BNote; content: string } {
+    const { noteId, content } = (item as Record<string, unknown>) || {};
+
+    if (typeof noteId !== "string" || !noteId || typeof content !== "string") {
+        throw new eu.EtapiError(400, "INVALID_ITEM", "Item must contain 'noteId' string and 'content' string.");
+    }
+
+    const note = becca.getNote(noteId);
+    if (!note) {
+        throw new eu.EtapiError(404, "NOTE_NOT_FOUND", `Note '${noteId}' not found.`);
+    }
+
+    if (note.isProtected) {
+        throw new eu.EtapiError(
+            400,
+            "NOTE_IS_PROTECTED",
+            `Note '${noteId}' is protected and cannot be modified through ETAPI.`
+        );
+    }
+
+    if (exceedsBlobContentLimit(content)) {
+        throw new eu.EtapiError(
+            400,
+            "CONTENT_TOO_LARGE",
+            `Content exceeds maximum blob length of ${MAX_BLOB_CONTENT_LENGTH} bytes.`
+        );
+    }
+
+    return { note, content };
+}
+
+function applyBulkNoteContentUpdate(
+    note: BNote,
+    content: string,
+    skipFts: boolean,
+    postProcessNotes: Map<string, { note: BNote; content: string }>
+) {
+    let finalContent = content;
+    let forceFrontendReload = false;
+
+    if (skipFts) {
+        if (shouldCheckImageAttachments(note)) {
+            ({ content: finalContent, forceFrontendReload } = checkImageAttachments(note, finalContent));
+        }
+    } else {
+        postProcessNotes.set(note.noteId, { note, content });
+    }
+
+    noteService.saveRevisionIfNeeded(note);
+    note.setContent(finalContent, { forceFrontendReload });
+}
+
+function runBulkPostProcessing(postProcessNotes: Map<string, { note: BNote; content: string }>) {
+    for (const { note, content } of postProcessNotes.values()) {
+        void noteService.asyncPostProcessContent(note, content);
+    }
+}
+
+function shouldCheckImageAttachments(note: BNote): boolean {
+    return (
+        note.type === "text" ||
+        note.isMarkdown() ||
+        note.type === "spreadsheet" ||
+        note.type === "canvas" ||
+        note.type === "mindMap"
+    );
+}

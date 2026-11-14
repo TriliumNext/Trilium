@@ -6,6 +6,8 @@ import LogService, { getLog, initLog } from "./services/log";
 import BackupService, { initBackup, type BackupOptionsService } from "./services/backup";
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
+import entityChangesService from "./services/entity_changes";
+import { restoreAfterSavepointRollback } from "./becca/becca_loader";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
 import { initRequest, RequestProvider } from "./services/request";
 import { initTranslations, TranslationProvider } from "./services/i18n";
@@ -116,7 +118,7 @@ export { default as BNote } from "./becca/entities/bnote";
 export { default as BOption } from "./becca/entities/boption";
 export { default as BRecentNote } from "./becca/entities/brecent_note";
 export { default as BRevision } from "./becca/entities/brevision";
-export { default as AbstractBeccaEntity, MAX_BLOB_CONTENT_LENGTH } from "./becca/entities/abstract_becca_entity";
+export { default as AbstractBeccaEntity, exceedsBlobContentLimit, MAX_BLOB_CONTENT_LENGTH } from "./becca/entities/abstract_becca_entity";
 export { default as Becca } from "./becca/becca-interface";
 export type { NotePojo } from "./becca/becca-interface";
 
@@ -245,7 +247,17 @@ export async function initializeCore({ dbConfig, executionContext, crypto, zip, 
         // resolve dbReady, which triggers the becca load that injects virtual subtrees.
         initInAppHelp(inAppHelp);
     }
-    await initSql(new SqlService(dbConfig, getLog()));
+    await initSql(new SqlService({
+        ...dbConfig,
+        // Handled here rather than by each platform, and synchronously, because the outer
+        // transaction carries on and later work in it must already see the restored cache.
+        onSavepointRollback(writes) {
+            restoreAfterSavepointRollback(writes);
+            // Change IDs handed out inside the savepoint were rolled back with it.
+            entityChangesService.recalculateMaxEntityChangeId();
+            dbConfig.onSavepointRollback?.(writes);
+        }
+    }, getLog()));
     initSchema(schema);
     initImageProvider(image);
     if (getDemoArchive) {

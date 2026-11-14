@@ -307,6 +307,75 @@ paths:
             responses:
                 "204":
                     description: note content updated
+    /notes/bulk-update:
+        post:
+            summary: Bulk update note contents
+            description: Updates the content of multiple notes within a single database transaction.
+            tags: [Notes]
+            operationId: postNotesBulkUpdate
+            parameters:
+                - name: skipFts
+                  in: query
+                  required: false
+                  schema:
+                      type: boolean
+                      default: false
+                  description: If true, omits asynchronous link scanning and search post-processing for maximum write throughput.
+                - name: atomic
+                  in: query
+                  required: false
+                  schema:
+                      type: boolean
+                      default: false
+                  description: If true, rolls back the entire batch if any note update fails.
+            requestBody:
+                description: Array of notes and their new contents to update
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - items
+                            properties:
+                                items:
+                                    type: array
+                                    maxItems: 1000
+                                    items:
+                                        type: object
+                                        required:
+                                            - noteId
+                                            - content
+                                        properties:
+                                            noteId:
+                                                type: string
+                                                description: ID of the note to update
+                                            content:
+                                                type: string
+                                                description: New text content for the note
+            responses:
+                "200":
+                    description: Bulk update summary
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    total:
+                                        type: integer
+                                    updated:
+                                        type: integer
+                                    failed:
+                                        type: integer
+                                    errors:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                noteId:
+                                                    type: string
+                                                error:
+                                                    type: string
     /notes/{noteId}/export:
         parameters:
             - name: noteId
