@@ -360,7 +360,6 @@ Trilium would not be possible without the technologies behind it:
 * [Mermaid](https://github.com/mermaid-js/mermaid) - renders the diagrams of
   Mermaid notes; its parsers are the model for their syntax highlighting.
 * [codemirror-lang-mermaid](https://github.com/inspirnathan/codemirror-lang-mermaid)
-  - the base of the Mermaid syntax highlighting.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
   whiteboard used in Canvas notes.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
