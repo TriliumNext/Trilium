@@ -88,7 +88,7 @@
     "tslib": "2.9.1",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.1",
+    "typescript-eslint": "8.72.2",
     "vite": "8.3.7",
     "vitest": "5.1.0"
   },
