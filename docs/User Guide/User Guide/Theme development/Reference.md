@@ -230,6 +230,6 @@ The defaults are:
 | `background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
 | `table-border` | `max-lightness: 60`, `max-chroma: 150` | `min-lightness: 47`, `max-chroma: 150` |
 | `table-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
-| `aside-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
+| `aside-background` | `min-lightness: 95`, `max-chroma: 24` | `max-lightness: 23`, `max-chroma: 13` |
 
 The limits apply while a note is displayed, so a change to them affects every note at once. The note itself keeps each color as it was picked, in its `color`, `background-color` or `border-color` style, and a second time in a `--tn-color`, `--tn-background` or `--tn-border-color` variable, which the adaptation reads.

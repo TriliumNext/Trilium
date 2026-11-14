@@ -126,8 +126,8 @@ color: lch(from var(--tn-color)
 - The 20 public limits, `--adaptive-<role>-<light|dark>-<limit>`, sit in `:where(:root)`. Its zero
   specificity lets a theme's `:root` win whatever the load order. The role is `text`, `background`,
   `table-border`, `table-background` or `aside-background`; the limit is `min-lightness`,
-  `max-lightness` or `max-chroma`. The aside's defaults equal the background's, so that a theme can
-  tune either alone. Each half has one moving lightness limit; the other end is fixed at 0 or 100.
+  `max-lightness` or `max-chroma`. The aside's limits are its own, so a theme can tune them apart
+  from the highlight's. Each half has one moving lightness limit; the other end is fixed at 0 or 100.
   The defaults are in the CSS and in the Reference page of the User Guide, which documents them for
   theme authors.
 - The share theme raises `--adaptive-table-border-dark-min-lightness` to 52 on `:root`, for the

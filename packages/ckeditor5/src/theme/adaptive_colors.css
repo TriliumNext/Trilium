@@ -36,10 +36,10 @@
     --adaptive-table-background-dark-max-chroma: 30;
 
     /* Adaptive aside background color limits */
-    --adaptive-aside-background-light-min-lightness: 90;
-    --adaptive-aside-background-light-max-chroma: 20;
-    --adaptive-aside-background-dark-max-lightness: 30;
-    --adaptive-aside-background-dark-max-chroma: 30;
+    --adaptive-aside-background-light-min-lightness: 95;
+    --adaptive-aside-background-light-max-chroma: 24;
+    --adaptive-aside-background-dark-max-lightness: 23;
+    --adaptive-aside-background-dark-max-chroma: 13;
 }
 
 :root {
