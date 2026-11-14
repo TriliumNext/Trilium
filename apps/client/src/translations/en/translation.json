@@ -5083,7 +5083,8 @@
       "type-the-content-of-the-aside": "Type the content of the aside",
       "remove-aside": "Remove aside",
       "aside-toolbar": "Aside toolbar",
-      "insert-a-box-of-text-that-the-main-text-wraps-around": "Insert a box of text that the main text wraps around."
+      "insert-a-box-of-text-that-the-main-text-wraps-around": "Insert a box of text that the main text wraps around.",
+      "background-color": "Background color"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

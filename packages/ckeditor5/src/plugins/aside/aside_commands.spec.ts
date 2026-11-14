@@ -12,8 +12,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import Aside from "./aside.js";
 
-/** An aside in model notation, with `blocks` and the model `attributes`. */
-function aside(blocks: string, attributes = " position=\"wrap-right\"") {
+const WRAPPED = " position=\"wrap-right\"";
+
+/** An aside in model notation, with `blocks` and the model `attributes`, those of a new one. */
+function aside(blocks: string, attributes = ` backgroundColor="#555555"${WRAPPED}`) {
     return `<asideBlock${attributes}><asideContent>${blocks}</asideContent></asideBlock>`;
 }
 
@@ -55,7 +57,7 @@ describe("aside commands", () => {
             setModelData(editor.model, `<paragraph${listAttributes}>It[]em</paragraph>`);
             editor.execute("insertAside");
             expect(getModelData(editor.model)).toBe(
-                aside(paragraph("[]"), `${listAttributes} position="wrap-right"`) +
+                aside(paragraph("[]"), ` backgroundColor="#555555"${listAttributes}${WRAPPED}`) +
                 `<paragraph${listAttributes}>Item</paragraph>`);
         });
 
@@ -134,7 +136,7 @@ describe("aside commands", () => {
     });
 
     it("sets the position of an aside in one undo step", () => {
-        setModelData(editor.model, `[${aside(paragraph("A"))}]`);
+        setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]`);
         const command = editor.commands.get("asidePosition");
         expect([ command?.isEnabled, command?.value ]).toEqual([ true, "wrap-right" ]);
 
@@ -143,5 +145,56 @@ describe("aside commands", () => {
 
         editor.execute("undo");
         expect(editor.getData()).toBe("<aside data-position=\"wrap-right\"><p>A</p></aside>");
+    });
+
+    describe("asideColor", () => {
+        function getCommand() {
+            const command = editor.commands.get("asideColor");
+            if (!command) {
+                throw new Error("The aside plugin registers no asideColor command.");
+            }
+            return command;
+        }
+
+        it("sets and removes the color of the aside, from inside it or with it selected", () => {
+            setModelData(editor.model, aside(paragraph("A[]")));
+            const command = getCommand();
+            expect([ command.isEnabled, command.value ]).toEqual([ true, "#555555" ]);
+
+            editor.execute("asideColor", { value: "#e64d4d" });
+            expect(getModelData(editor.model))
+                .toBe(aside(paragraph("A[]"), ` backgroundColor="#e64d4d"${WRAPPED}`));
+            expect(command.value).toBe("#e64d4d");
+
+            // The Remove color button of the dropdown.
+            editor.execute("asideColor", { value: null });
+            expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), WRAPPED));
+            expect(command.value).toBeUndefined();
+
+            setModelData(editor.model, `[${aside(paragraph("A"), WRAPPED)}]`);
+            editor.execute("asideColor", { value: "#4d99e6" });
+            expect(getModelData(editor.model, { withoutSelection: true }))
+                .toBe(aside(paragraph("A"), ` backgroundColor="#4d99e6"${WRAPPED}`));
+        });
+
+        it("is disabled outside an aside", () => {
+            setModelData(editor.model, paragraph("[]") + aside(paragraph("A")));
+            expect(getCommand().isEnabled).toBe(false);
+        });
+
+        it("is one undo step, also for the colors the picker sets in one batch", () => {
+            setModelData(editor.model, aside(paragraph("A[]")));
+            const command = getCommand();
+            editor.execute("asideColor", { value: "#e64d4d" });
+            editor.execute("undo");
+            expect(command.value).toBe("#555555");
+
+            const batch = editor.model.createBatch();
+            editor.execute("asideColor", { value: "#e64d4d", batch });
+            editor.execute("asideColor", { value: "#4d99e6", batch });
+            expect(command.value).toBe("#4d99e6");
+            editor.execute("undo");
+            expect(command.value).toBe("#555555");
+        });
     });
 });

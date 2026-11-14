@@ -9,8 +9,14 @@ export const ELEMENTS = {
 export const COMMANDS = {
     insert: "insertAside",
     remove: "removeAside",
-    position: "asidePosition"
+    position: "asidePosition",
+    color: "asideColor"
 } as const;
+
+/** Model attribute of the background color of an aside, saved as `background-color`. */
+export const COLOR_ATTRIBUTE = "backgroundColor";
+/** The background color of a new aside: Dim grey of the text editor palette. */
+export const DEFAULT_COLOR = "#555555";
 
 /** Editing-view class of the nested editable that holds the blocks of an aside. */
 export const CONTENT_CLASS = "aside-content";

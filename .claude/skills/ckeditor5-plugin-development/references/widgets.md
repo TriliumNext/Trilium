@@ -187,8 +187,9 @@ blocks (`fixAside()`), and `insertAside` is disabled inside an aside and on a se
 
 `packages/ckeditor5/src/plugins/aside/` keeps the editing/UI/glue split: `aside_editing.ts`
 (schema, converters, post-fixer, and the registrations with the shared parts below),
-`aside_commands.ts` (`insertAside`, `removeAside`), `aside_ui.ts` (the insert button, the position
-dropdown and the toolbar) and `constants.ts`. Its stylesheet is `src/theme/aside.css`.
+`aside_commands.ts` (`insertAside`, `removeAside`, `asideColor`), `aside_ui.ts` (the insert
+button, the background color and position dropdowns and the toolbar) and `constants.ts`. Its
+stylesheet is `src/theme/aside.css`.
 
 - **A saved form without the editable.** The model is `asideBlock > asideContent > blocks`, the
   editing view an `<aside>` widget (with a selection handle) around the nested editable
@@ -205,6 +206,14 @@ dropdown and the toolbar) and `constants.ts`. Its stylesheet is `src/theme/aside
 - **Nesting** is allowed by the schema and undone by the post-fixer (above).
 - **Placing, resizing and the selected look** come from the shared parts below; the aside only
   registers with them.
+- **A color dropdown from CKEditor's own.** `AsideColorUI` extends `FontColorUIBase`, so the
+  `asideColor` dropdown is the font background color's: the palette of `asideColor` in the editor
+  configuration, _Remove color_, and the color picker with its undo batch, which
+  `AsideColorCommand` takes as `{ value, batch }` like a font color command. The color is the
+  `backgroundColor` attribute, saved as `background-color`; `AdaptiveColors` adds
+  `--tn-background` and the stylesheet adapts it in the `aside-background` role (see the
+  `working-with-adaptive-colors` skill). A phone's context bar opens dropdowns as menus of rows, so
+  the toolbar leaves the color out there (`hasContextToolbar()`).
 
 ## Shared parts for block widgets
 

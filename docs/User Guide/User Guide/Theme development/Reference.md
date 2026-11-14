@@ -207,7 +207,7 @@ This will affect the behavior of the Electron application by informing the opera
 
 ## Adaptive text and table colors
 
-Colors applied in a text note, from the font color and background color buttons (see <a class="reference-link" href="../Note%20Types/Text/General%20formatting.md">General formatting</a>) or from the table and cell properties (see <a class="reference-link" href="../Note%20Types/Text/Tables.md">Tables</a>), are shown in a shade that suits the theme: the hue stays, while the lightness and the saturation are kept within limits. A theme can change these limits, for example if its page background is much darker or lighter than the one of the built-in themes:
+Colors applied in a text note, from the font color and background color buttons (see <a class="reference-link" href="../Note%20Types/Text/General%20formatting.md">General formatting</a>), from the table and cell properties (see <a class="reference-link" href="../Note%20Types/Text/Tables.md">Tables</a>) or to an aside block (see <a class="reference-link" href="../Note%20Types/Text/Aside%20blocks.md">Aside blocks</a>), are shown in a shade that suits the theme: the hue stays, while the lightness and the saturation are kept within limits. A theme can change these limits, for example if its page background is much darker or lighter than the one of the built-in themes:
 
 ```css
 :root {
@@ -218,7 +218,7 @@ Colors applied in a text note, from the font color and background color buttons 
 
 Each variable is named `--adaptive-<role>-<light|dark>-<limit>`:
 
-*   The role is `text` (font color), `background` (font background color), `table-border` or `table-background` (tables and cells).
+*   The role is `text` (font color), `background` (font background color), `table-border` or `table-background` (tables and cells), or `aside-background` (aside blocks).
 *   `light` or `dark` is the kind of theme the limit applies to, as declared by `--theme-style`.
 *   The limit is `min-lightness` or `max-lightness` (the CIELAB lightness, from 0 for black to 100 for white), or `max-chroma` (how saturated the color can be; `150` sets no practical limit). Each value must be a plain number, otherwise the colors lose their adaptation.
 
@@ -230,5 +230,6 @@ The defaults are:
 | `background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
 | `table-border` | `max-lightness: 60`, `max-chroma: 150` | `min-lightness: 47`, `max-chroma: 150` |
 | `table-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
+| `aside-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
 
 The limits apply while a note is displayed, so a change to them affects every note at once. The note itself keeps each color as it was picked, in its `color`, `background-color` or `border-color` style, and a second time in a `--tn-color`, `--tn-background` or `--tn-border-color` variable, which the adaptation reads.

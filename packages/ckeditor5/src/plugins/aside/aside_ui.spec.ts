@@ -1,3 +1,4 @@
+import colorFillIcon from "boxicons/svg/regular/bx-color-fill.svg?raw";
 import {
     _getModelData as getModelData,
     _setModelData as setModelData,
@@ -6,6 +7,7 @@ import {
     ContextualBalloon,
     type DropdownView,
     Essentials,
+    type FontColorSelectorDropdownView,
     IconRemove,
     type ModelElement,
     Paragraph,
@@ -21,16 +23,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getListRows, pickListRow } from "../../../test/dropdown-kit.js";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import asideIcon from "../../icons/aside.svg?raw";
+import ContextToolbar from "../context_toolbar.js";
 import Aside from "./aside.js";
 
 interface ToolbarDefinition {
     view: ToolbarView;
     positions: PositioningFunction[];
+    balloonClassName: string;
+    itemsConfig: string[];
     getRelatedElement(selection: ViewDocumentSelection): ViewElement | null;
 }
 
+const WRAPPED = " position=\"wrap-right\"";
+
 /** An aside in model notation, with `blocks` and the model `attributes`. */
-function aside(blocks: string, attributes = " position=\"wrap-right\"") {
+function aside(blocks: string, attributes = WRAPPED) {
     return `<asideBlock${attributes}><asideContent>${blocks}</asideContent></asideBlock>`;
 }
 
@@ -63,9 +70,61 @@ describe("AsideUI", () => {
 
         button.fire("execute");
 
-        expect(getModelData(editor.model)).toBe(aside(paragraph("[]")));
+        expect(getModelData(editor.model))
+            .toBe(aside(paragraph("[]"), ` backgroundColor="#555555"${WRAPPED}`));
         expect(focus).toHaveBeenCalled();
         expect(button.isEnabled).toBe(false);
+    });
+
+    describe("background color dropdown", () => {
+        /** Renders and opens the dropdown, which builds its color grids. */
+        function openColorDropdown() {
+            const dropdown = editor.ui.componentFactory.create("asideColor") as
+                FontColorSelectorDropdownView;
+            dropdown.render();
+            dropdown.isOpen = true;
+            const fragment = dropdown.colorSelectorView?.colorGridsFragmentView;
+            if (!fragment?.staticColorsGrid) {
+                throw new Error("The dropdown has no color grid.");
+            }
+            return { dropdown, fragment, tiles: [ ...fragment.staticColorsGrid.items ] };
+        }
+
+        it("is the dropdown of the font background color, with Dim grey by default", () => {
+            setModelData(editor.model, aside(paragraph("A[]"), ` backgroundColor="#555555"`));
+            const { dropdown, fragment, tiles } = openColorDropdown();
+
+            expect([ dropdown.buttonView.label, dropdown.buttonView.icon, dropdown.isEnabled ])
+                .toEqual([ "Background color", colorFillIcon, true ]);
+            expect(dropdown.element?.classList.contains("ck-color-ui-dropdown")).toBe(true);
+            expect(tiles.map(({ color, label, isOn }) => [ color, label, isOn ]))
+                .toEqual([ [ "#555555", "Dim grey", true ] ]);
+            expect(fragment.removeColorButtonView.label).toBe("Remove color");
+            expect(fragment.documentColorsGrid).toBeUndefined();
+
+            setModelData(editor.model, paragraph("[]"));
+            expect(dropdown.isEnabled).toBe(false);
+        });
+
+        it("colors the aside from a swatch, and makes it transparent with Remove color",
+            async () => {
+                editor = await createTestEditor([ Essentials, Paragraph, Aside ], {
+                    asideColor: { colors: [ "#e64d4d", "#4d99e6" ] }
+                });
+                setModelData(editor.model, aside(paragraph("A[]"), ` backgroundColor="#555555"`));
+                const focus = vi.spyOn(editor.editing.view, "focus");
+                const { fragment, tiles } = openColorDropdown();
+                expect(tiles.map(({ color, isOn }) => [ color, isOn ]))
+                    .toEqual([ [ "#e64d4d", false ], [ "#4d99e6", false ] ]);
+
+                tiles[1]?.fire("execute");
+                expect(getModelData(editor.model))
+                    .toBe(aside(paragraph("A[]"), ` backgroundColor="#4d99e6"`));
+                expect(focus).toHaveBeenCalled();
+
+                fragment.removeColorButtonView.fire("execute");
+                expect(getModelData(editor.model)).toBe(aside(paragraph("A[]"), ""));
+            });
     });
 
     it("removes the aside from its button, keeping its blocks", () => {
@@ -109,7 +168,7 @@ describe("AsideUI", () => {
             return toolbarDefinition().getRelatedElement(editor.editing.view.document.selection);
         }
 
-        it("shows the position dropdown and the remove button while the aside is selected",
+        it("shows the color and position dropdowns and the remove button while it is selected",
             () => {
                 setModelData(editor.model, aside(paragraph("A")) + paragraph("[]"));
                 selectAside();
@@ -119,11 +178,22 @@ describe("AsideUI", () => {
                 const toolbar = toolbarDefinition().view;
                 expect(editor.plugins.get(ContextualBalloon).visibleView).toBe(toolbar);
                 expect(toolbar.ariaLabel).toBe("Aside toolbar");
+                expect(toolbarDefinition().balloonClassName)
+                    .toBe("ck-toolbar-container aside-toolbar");
                 const items = [ ...toolbar.items ] as (DropdownView | ButtonView)[];
                 const labels = items.map((item) =>
                     "buttonView" in item ? item.buttonView.label : item.label);
-                expect(labels).toEqual([ "Box position", "Remove aside" ]);
+                expect(labels).toEqual([ "Background color", "Box position", "Remove aside" ]);
                 expect(getRelatedElement()?.name).toBe("aside");
+            });
+
+        it("leaves the color out of a phone's context bar, which opens dropdowns as menus",
+            async () => {
+                editor = await createTestEditor([ Essentials, Paragraph, ContextToolbar, Aside ], {
+                    toolbar: [ "contextToolbar" ]
+                });
+
+                expect(toolbarDefinition().itemsConfig).toEqual([ "asidePosition", "removeAside" ]);
             });
 
         it("shows while the caret is in the aside, and not outside one", () => {

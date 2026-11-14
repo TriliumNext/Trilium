@@ -807,6 +807,10 @@ $$`;
                 "<p>Before</p>" +
                 "<aside data-position=\"wrap-right\"><p>Side <strong>note</strong></p>" +
                 "<ul><li>One</li><li>Two</li></ul></aside>" +
+                "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\">" +
+                "<p>Red</p></aside>" +
                 "<p>Beside</p>" +
                 "<aside><p>&nbsp;</p></aside>" +
                 layout("1-1",
@@ -820,9 +824,10 @@ $$`;
             expect(roundTrip(resized)).toStrictEqual(resized);
         });
 
-        it("reads a bare aside as wrapped on the right, and one of raw text in the flow", () => {
+        it("reads a bare aside as a new one, and one of raw text in the flow", () => {
             expect(markdownService.renderToHtml("<aside>\n\nA *side* note\n\n</aside>", "Title"))
-                .toBe("<aside data-position=\"wrap-right\"><p>A <em>side</em> note</p></aside>");
+                .toBe("<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                    "data-position=\"wrap-right\"><p>A <em>side</em> note</p></aside>");
             expect(markdownService.renderToHtml("<aside>\nA callout\n\n</aside>", "Title"))
                 .toBe("<aside>\nA callout</aside>");
         });

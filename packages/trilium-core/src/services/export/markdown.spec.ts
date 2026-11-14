@@ -1170,15 +1170,31 @@ describe("Markdown export", () => {
                 After`);
         });
 
-        it("writes an aside wrapped on the right as a bare tag, and marks one in the flow", () => {
-            const html = "<aside data-position=\"wrap-right\"><p>Wrapped</p></aside>" +
+        it("writes an aside as inserted as a bare tag, and marks one in the flow", () => {
+            const html = "<aside style=\"--tn-background:#555555;background-color:#555555;\" " +
+                "data-position=\"wrap-right\"><p>As inserted</p></aside>" +
+                "<aside style=\"background-color: #555555\" data-position=\"wrap-right\">" +
+                "<p>Without its variable</p></aside>" +
+                "<aside data-position=\"wrap-right\"><p>Transparent</p></aside>" +
                 "<aside><p>In the flow</p></aside>" +
                 "<aside data-position=\"left\"><p>Left</p></aside>" +
                 "<aside style=\"--aside-width:18em;\"><p>Resized</p></aside>";
             expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
                 <aside>
 
-                Wrapped
+                As inserted
+
+                </aside>
+
+                <aside>
+
+                Without its variable
+
+                </aside>
+
+                <aside data-position="wrap-right">
+
+                Transparent
 
                 </aside>
 
@@ -1199,6 +1215,11 @@ describe("Markdown export", () => {
                 Resized
 
                 </aside>`);
+
+            const red = "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\" " +
+                "data-position=\"wrap-right\">";
+            expect(markdownExportService.toMarkdown(`${red}<p>Red</p></aside>`))
+                .toBe(`${red}\n\nRed\n\n</aside>`);
         });
 
         it("keeps an empty aside that Turndown would drop, apart from an admonition", () => {

@@ -1,7 +1,7 @@
 ---
 name: working-with-adaptive-colors
 description: >-
-  Use when changing, debugging or reviewing the theme-adaptive colors of text notes: font color, highlight (font background color) and table or cell border and background colors, which are shown in a shade that suits the light or dark theme. Covers the storage contract (each color saved again as `--tn-color`, `--tn-background` or `--tn-border-color`), the `AdaptiveColors` CKEditor plugin (`packages/ckeditor5/src/plugins/adaptive_colors.ts`) and its font color dropdown tiles, the shared stylesheet `packages/ckeditor5/src/theme/adaptive_colors.css` with its `lch(from …)` rules and the 16 theme-overridable `--adaptive-*` limits, the dark-mode switches of the app and the share theme, print, the text editor palette (`color_palette.ts`), every other reader and writer (sanitizer, Markdown `==highlight==` import and export, the Highlights list), making a new surface adapt, a color that is unreadable or wrong in one theme, retuning a limit, and measuring contrast. Includes measure.mjs, which measures the adapted shades and the WCAG contrast in headless Chromium; don't write a new contrast probe.
+  Use when changing, debugging or reviewing the theme-adaptive colors of text notes: font color, highlight (font background color), table or cell border and background colors and the background color of aside blocks, which are shown in a shade that suits the light or dark theme. Covers the storage contract (each color saved again as `--tn-color`, `--tn-background` or `--tn-border-color`), the `AdaptiveColors` CKEditor plugin (`packages/ckeditor5/src/plugins/adaptive_colors.ts`) and its color dropdown tiles, the shared stylesheet `packages/ckeditor5/src/theme/adaptive_colors.css` with its `lch(from …)` rules and the 20 theme-overridable `--adaptive-*` limits, the dark-mode switches of the app and the share theme, print, the text editor palette (`color_palette.ts`), every other reader and writer (sanitizer, Markdown `==highlight==` import and export, the Highlights list), making a new surface adapt, a color that is unreadable or wrong in one theme, retuning a limit, and measuring contrast. Includes measure.mjs, which measures the adapted shades and the WCAG contrast in headless Chromium; don't write a new contrast probe.
 ---
 
 # Working with adaptive colors
@@ -16,6 +16,7 @@ the color as picked.
 <span style="color:#e64d4d;--tn-color:#e64d4d;">red text</span>
 <span style="background-color:#e5e64d;--tn-background:#e5e64d;">highlight</span>
 <table style="border:2px solid #4d99e6;--tn-border-color:#4d99e6;background-color:#e5e64d;--tn-background:#e5e64d;">
+<aside style="--tn-background:#555555;background-color:#555555;" data-position="wrap-right">
 ```
 
 The adaptation happens only in CSS, at display time. A theme switch or a new limit therefore moves
@@ -27,8 +28,9 @@ every color in every note at once, and the note keeps the color the user chose.
 | --- | --- | --- |
 | Writing and dropping the variables | `packages/ckeditor5/src/plugins/adaptive_colors.ts` | `AdaptiveColors`: `convertTextColor`, `addVariable`, `dropVariablesOnLoad`, `addVariablesToDropdownTiles`, `VARIABLES`, `DROPDOWN_VARIABLES` |
 | Registration | `packages/ckeditor5/src/plugins.ts` | `TRILIUM_PLUGINS` |
-| The rules and the limits | `packages/ckeditor5/src/theme/adaptive_colors.css` | 16 `--adaptive-*` limits, private `--_adaptive-*` light ranges, four rules |
-| App dark switch, dropdown tile face | `apps/client/src/stylesheets/adaptive-colors.css` (imported by `style.css`) | `body.dark-theme`, `.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"])` |
+| The rules and the limits | `packages/ckeditor5/src/theme/adaptive_colors.css` | 20 `--adaptive-*` limits, private `--_adaptive-*` light ranges, five rules |
+| App dark switch, dropdown tile face | `apps/client/src/stylesheets/adaptive-colors.css` (imported by `style.css`) | `body.dark-theme`, `.ck-color-grid__tile:is([style*="--tn-color"], [style*="--tn-background"])`, `.ck-balloon-panel.aside-toolbar .ck-color-grid__tile` |
+| Aside background color | `packages/ckeditor5/src/plugins/aside/` | `COLOR_ATTRIBUTE`, `DEFAULT_COLOR`, `AsideColorCommand`, `AsideColorUI` (on `FontColorUIBase`) |
 | Share dark switch | `packages/share-theme/src/content/adaptive_colors.css` (imported by `index.ts`) | `html.theme-dark`, the share-only `--adaptive-table-border-dark-min-lightness` |
 | Loading in the app and in print | `apps/client/src/index.ts`, `apps/client/src/print.css` | `import`/`@import` of the shared file |
 | Dark class | `apps/client/src/services/theme.ts`, `packages/share-theme/src/page/theme_switch.ts` | `updateColorSchemeClasses()` from `--theme-style`; `theme-dark` |
@@ -68,16 +70,18 @@ All in `AdaptiveColors`:
   `tableCellBackgroundColor`. It tests the consumable without consuming it, sets the variable on the
   `<table>` inside the widget's `<figure>` (or on the cell), and removes it with the color. A border
   whose sides differ has an object value and gets no variable.
+- **Asides.** The same `addVariable()` writes `--tn-background` next to the `background-color`
+  that the aside plugin downcasts from its `backgroundColor` attribute.
 - **Loading.** `dropVariablesOnLoad()` consumes the three variables on every element at `"highest"`
   priority, so General HTML Support cannot keep a stale one. CKEditor's own converter reads the
   color back, and the next save writes the variable again. A note saved before the variables existed
   therefore adapts after its next edit.
 - **Dropdown tiles.** `addVariablesToDropdownTiles()` wraps `editor.ui.componentFactory.create()`,
-  since the factory has no hook for the dropdowns it creates. On every opening of `fontColor` or
-  `fontBackgroundColor` it sets `--tn-color` or `--tn-background` on the tiles of the palette and of
-  the document colors, which CKEditor rebuilds on each opening. Its `change:isOpen` listener is
-  registered after CKEditor's own, so the grids exist when it runs. Tiles of a dropdown opened
-  before it renders have no element, hence `tile.element?.`.
+  since the factory has no hook for the dropdowns it creates. On every opening of `fontColor`,
+  `fontBackgroundColor` or the aside's `asideColor` it sets `--tn-color` or `--tn-background` on the
+  tiles of the palette and of the document colors, which CKEditor rebuilds on each opening. Its
+  `change:isOpen` listener is registered after CKEditor's own, so the grids exist when it runs.
+  Tiles of a dropdown opened before it renders have no element, hence `tile.element?.`.
 - **Saving** stores the HTML as the editor produced it. The sanitizer runs on imports and the web
   clipper, not on editor saves.
 
@@ -89,9 +93,11 @@ All in `AdaptiveColors`:
 | `[style*="--tn-background"]` | `background-color` | `background` |
 | `:is(table, td, th)[style*="--tn-border-color"]` | `border-color` | `table-border` |
 | `:is(table, td, th)[style*="--tn-background"]` | `background-color` | `table-background` |
+| `aside[style*="--tn-background"]` | `background-color` | `aside-background` |
 
-The table background rule wins over the text background rule by specificity. Each rule has this
-shape, with `MIN`, `MAX` and `CHROMA` read from the role's `--_adaptive-<role>-min|max|chroma`:
+The table and aside background rules win over the text background rule by specificity. Each rule
+has this shape, with `MIN`, `MAX` and `CHROMA` read from the role's
+`--_adaptive-<role>-min|max|chroma`:
 
 ```css
 color: lch(from var(--tn-color)
@@ -109,16 +115,17 @@ color: lch(from var(--tn-color)
 
 ### Scheme and limits
 
-- The light ranges sit on `:root` as twelve private `--_adaptive-*` properties, so a page with no
+- The light ranges sit on `:root` as fifteen private `--_adaptive-*` properties, so a page with no
   dark class gets light shades rather than an undefined variable.
 - Each page repoints them at the dark limits under its own selector: `body.dark-theme` in the app,
   `html.theme-dark` on share pages. Print and PDF export import only the shared file and get no
   dark class, so they always use the light shades, which suit paper.
-- The 16 public limits, `--adaptive-<role>-<light|dark>-<limit>`, sit in `:where(:root)`. Its zero
+- The 20 public limits, `--adaptive-<role>-<light|dark>-<limit>`, sit in `:where(:root)`. Its zero
   specificity lets a theme's `:root` win whatever the load order. The role is `text`, `background`,
-  `table-border` or `table-background`; the limit is `min-lightness`, `max-lightness` or
-  `max-chroma`. Each half has one moving lightness limit; the other end is fixed at 0 or 100. The
-  defaults are in the CSS and in the Reference page of the User Guide, which documents them for
+  `table-border`, `table-background` or `aside-background`; the limit is `min-lightness`,
+  `max-lightness` or `max-chroma`. The aside's defaults equal the background's, so that a theme can
+  tune either alone. Each half has one moving lightness limit; the other end is fixed at 0 or 100.
+  The defaults are in the CSS and in the Reference page of the User Guide, which documents them for
   theme authors.
 - The share theme raises `--adaptive-table-border-dark-min-lightness` to 52 on `:root`, for the
   `#333333` dark page it had when the value was chosen. Since ef7d03c457 the share dark page is
@@ -137,6 +144,7 @@ color: lch(from var(--tn-color)
 | Other imports, pasted HTML | The color as picked until the note is saved from the editor |
 | Highlights sidebar | Adapted: `HighlightItem` sets both variables next to the colors |
 | Font color and background color dropdowns | Each tile shows a bold "Ab" (a `::before`, so its accessible name stays the color label): adapted text on a transparent tile for font colors (`--icon-button-hover-background` on hover, except the selected tile), `--main-text-color` on the adapted background for background colors. The check icon is hidden, and the tiles are 30px (`--ck-color-grid-tile-size` on `.ck-color-ui-dropdown` in `ckeditor-theme.css`). In the Next theme the selection ring keeps the original color, except black and white, whose ring uses `--main-text-color`, and font-color tiles lose the black and white frame |
+| Background color dropdown of an aside | The face of the background color tiles; `.ck-balloon-panel.aside-toolbar` repoints the tiles' `--_adaptive-background-*` at the aside range, so they show the shades of an aside. Left out of a phone's context bar, which opens dropdowns as menus of rows |
 | Table and cell property pickers, the mobile color menu (`color_menu.tsx`) | The color as picked |
 | Default table borders | Not adaptive: `--text-note-table-border-color` in `style.css`, the text color mixed 25% with transparent; a border set on the table or cell wins |
 

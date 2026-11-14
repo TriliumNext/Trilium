@@ -480,7 +480,7 @@ body:not(.math-loaded) .math-tex {
     :root .ck-content aside:not(.admonition)[data-position] {
         float: none;
         clear: both;
-        margin: 1em 0;
+        margin: var(--aside-margin-block) 0;
         width: auto;
     }
 }

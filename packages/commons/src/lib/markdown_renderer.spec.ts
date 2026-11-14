@@ -549,8 +549,9 @@ describe("renderToHtml", () => {
     });
 
     describe("asides (CustomMarkdownRenderer.html)", () => {
-        it("wraps a bare aside at the right, and keeps one marked as centered in the flow", () => {
-            const wrapped = '<aside data-position="wrap-right">';
+        it("places and colors a bare aside as a new one, and a centered one in the flow", () => {
+            const wrapped = '<aside style="--tn-background:#555555;background-color:#555555;" '
+                + 'data-position="wrap-right">';
             expect(render("<aside>\n\nSide **note**\n\n</aside>"))
                 .toBe(`${wrapped}<p>Side <strong>note</strong></p></aside>`);
             expect(render("<aside>\n</aside>")).toBe(`${wrapped}\n</aside>`);

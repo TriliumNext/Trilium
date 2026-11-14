@@ -225,10 +225,11 @@ describe("renderWithSourceLines", () => {
         expect(result).toContain("<p>After the break</p>");
     });
 
-    it("renders the /aside template wrapped at the right, and the text after it", () => {
+    it("renders the /aside template as a new aside, and the text after it", () => {
         const result = html("<aside>\n\nA **side** note\n\n</aside>\n\nAfter the aside");
         expect(result).toContain(
-            '<aside data-position="wrap-right"><p>A <strong>side</strong> note</p></aside>'
+            '<aside style="--tn-background:#555555;background-color:#555555;" '
+            + 'data-position="wrap-right"><p>A <strong>side</strong> note</p></aside>'
         );
         expect(result).toContain("<p>After the aside</p>");
     });

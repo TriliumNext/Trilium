@@ -385,6 +385,13 @@ const EMPTY_PARAGRAPH = "<p>&nbsp;</p>";
 /** The position of an aside written as a bare `<aside>` in Markdown, the default of a new aside. */
 export const BARE_ASIDE_POSITION = "wrap-right";
 
+/** The background color of an aside written as a bare `<aside>` in Markdown, as of a new aside. */
+export const BARE_ASIDE_BACKGROUND = "#555555";
+
+/** The style of an aside written as a bare `<aside>`, as the text editor saves it. */
+export const BARE_ASIDE_STYLE =
+    `--tn-background:${BARE_ASIDE_BACKGROUND};background-color:${BARE_ASIDE_BACKGROUND};`;
+
 /**
  * Matches the opening tag of an aside alone in its HTML block, followed by its closing tag when the
  * aside is empty. Group 1 is set for `data-position="center"`, an aside in the flow.
@@ -602,9 +609,10 @@ export class CustomMarkdownRenderer extends Renderer {
     }
 
     /**
-     * Gives a bare `<aside>` the position of a new aside, and drops `data-position="center"`,
-     * which the editor does not save. Only a tag alone in its HTML block counts: its content is
-     * Markdown. An aside of raw text, such as a Notion callout, stays in the flow.
+     * Gives a bare `<aside>` the position and the background color of a new aside, and drops
+     * `data-position="center"`, which the editor does not save. Only a tag alone in its HTML block
+     * counts: its content is Markdown. An aside of raw text, such as a Notion callout, stays in the
+     * flow.
      */
     override html(token: Tokens.HTML | Tokens.Tag): string {
         const html = super.html(token);
@@ -614,8 +622,10 @@ export class CustomMarkdownRenderer extends Renderer {
         }
 
         const [ , isInFlow, closingTag = "" ] = aside;
-        const position = isInFlow ? "" : ` data-position="${BARE_ASIDE_POSITION}"`;
-        return `<aside${position}>${closingTag}`;
+        const attributes = isInFlow
+            ? ""
+            : ` style="${BARE_ASIDE_STYLE}" data-position="${BARE_ASIDE_POSITION}"`;
+        return `<aside${attributes}>${closingTag}`;
     }
 
 }

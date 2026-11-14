@@ -8,6 +8,14 @@ An aside block sets content apart from the main text of a note, in a box that th
 
 If you select content before inserting an aside, that content is relocated into the newly created block.
 
+## Color
+
+A new aside block has a gray background, _Dim grey_ in the palette. To change it, put the cursor inside the block and click the <span class="tn-icon bx bx-color-fill"></span> _Background color_ button in the toolbar that appears above it. It offers the palette and the color picker (<span class="tn-icon cke cke-color-palette"></span>) of the text background color, described in <a class="reference-link" href="General%20formatting.md">General formatting</a>. _Remove color_ makes the block transparent.
+
+Like the colors of text, the background color adapts to the [theme](../../Basic%20Concepts%20and%20Features/Themes.md): Trilium shows it in a lighter or darker shade, so the text stays readable in both light and dark themes.
+
+The _Background color_ button is not available in the mobile layout.
+
 ## Positioning
 
 A new aside block sits at the right, with the main text wrapping around it. To place it elsewhere, put the cursor inside it and use the _Box position_ button in the toolbar that appears above it. The menu has two groups:

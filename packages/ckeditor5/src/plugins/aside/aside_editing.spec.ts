@@ -8,7 +8,8 @@ import {
     type ModelElement,
     Paragraph,
     Table,
-    TableCaption
+    TableCaption,
+    type UpcastElementEvent
 } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -71,6 +72,24 @@ describe("AsideEditing", () => {
             expect(editor.getData()).toBe(data);
         });
 
+        it("loads the background color of an aside, and saves it as its style", () => {
+            const data = "<aside style=\"background-color:#e64d4d;\" " +
+                "data-position=\"wrap-right\"><p>A</p></aside><aside><p>B</p></aside>";
+            // Whether a later converter, such as General HTML Support, can still take the style.
+            const consumableColors: (boolean | null)[] = [];
+            editor.data.upcastDispatcher.on<UpcastElementEvent>("element:aside",
+                (_evt, { viewItem }, api) => {
+                    consumableColors.push(
+                        api.consumable.test(viewItem, { styles: "background-color" }));
+                }, { priority: "low" });
+            editor.setData(data);
+
+            expect(model()).toBe(aside(paragraph("A"), ` backgroundColor="#e64d4d"${WRAPPED}`) +
+                aside(paragraph("B")));
+            expect(editor.getData()).toBe(data);
+            expect(consumableColors).toEqual([ false, null ]);
+        });
+
         it("loads an aside without a position in the flow, with text, nothing or classes", () => {
             editor.setData(
                 "<aside>Text</aside><aside></aside>" +
@@ -115,17 +134,20 @@ describe("AsideEditing", () => {
             expect(copy()).toBe("<p>Before</p><aside><p>A</p></aside><p>After</p>");
         });
 
-        it("takes the element before General HTML Support", async () => {
+        it("takes the element and its color before General HTML Support", async () => {
             editor = await createTestEditor([
                 Essentials, Paragraph, GeneralHtmlSupport, Admonition, Aside
             ], {
-                htmlSupport: { allow: [ { name: /.*/, attributes: true, classes: true } ] }
+                htmlSupport: {
+                    allow: [ { name: /.*/, attributes: true, classes: true, styles: true } ]
+                }
             });
-            const data = "<aside data-position=\"left\"><p>A</p></aside>" +
-                "<aside class=\"admonition note\"><p>B</p></aside>";
+            const data = "<aside style=\"background-color:#e64d4d;\" data-position=\"left\">" +
+                "<p>A</p></aside><aside class=\"admonition note\"><p>B</p></aside>";
             editor.setData(data);
 
-            expect(model()).toBe(aside(paragraph("A"), " position=\"left\"") +
+            expect(model()).toBe(
+                aside(paragraph("A"), " backgroundColor=\"#e64d4d\" position=\"left\"") +
                 `<aside admonitionType="note">${paragraph("B")}</aside>`);
             expect(editor.getData()).toBe(data);
         });
@@ -154,6 +176,20 @@ describe("AsideEditing", () => {
                 expect(widget.getAttribute("data-position")).toBe("wrap-left");
                 expect(widget.classList.contains("ck-widget_resize-anchor-left")).toBe(true);
             });
+
+        it("paints the background color of the aside, and none once it is removed", () => {
+            setModelData(editor.model,
+                aside(paragraph("A[]"), ` backgroundColor="#e64d4d"${WRAPPED}`));
+            const widget = getWidget();
+            expect(widget.style.backgroundColor).toBe("rgb(230, 77, 77)");
+
+            editor.execute("asideColor", { value: "#4d99e6" });
+            expect(widget.style.backgroundColor).toBe("rgb(77, 153, 230)");
+
+            editor.execute("asideColor", { value: null });
+            expect(getWidget()).toBe(widget);
+            expect(widget.style.backgroundColor).toBe("");
+        });
 
         it("looks selected while it holds the selection, as while it is selected", () => {
             setModelData(editor.model, aside(paragraph("A[]")) + paragraph("B"));

@@ -3,7 +3,7 @@ import {
     MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, safeLinkPreviewHref, type TaskStateDef
 } from "@triliumnext/commons";
 import {
-    ADMONITION_TYPE_MAPPINGS, BARE_ASIDE_POSITION
+    ADMONITION_TYPE_MAPPINGS, BARE_ASIDE_BACKGROUND, BARE_ASIDE_POSITION
 } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { HIGHLIGHT_BACKGROUND } from "@triliumnext/commons/src/lib/marked_extensions.js";
 import { gfm, serializeStructuralHtml } from "@triliumnext/turndown-plugin-gfm";
@@ -522,19 +522,28 @@ function asideReplacement(node: Element, content: string): string {
 
 /**
  * The opening tag of an aside in Markdown, where a bare `<aside>` is placed at
- * `BARE_ASIDE_POSITION`. An aside in the flow, saved without attributes, gets
- * `data-position="center"`.
+ * `BARE_ASIDE_POSITION` in `BARE_ASIDE_BACKGROUND`. An aside in the flow, saved without
+ * attributes, gets `data-position="center"`.
  */
 function getAsideOpeningTag(node: Element): string {
-    const attributes = Array.from(node.attributes);
-    if (!attributes.length) {
+    if (!node.attributes.length) {
         return `<aside data-position="center">`;
     }
+    return isBareAside(node) ? "<aside>" : getOpeningTag(node);
+}
 
-    const [ { name, value } ] = attributes;
-    const isBare = attributes.length === 1 && name === "data-position"
-        && value === BARE_ASIDE_POSITION;
-    return isBare ? "<aside>" : getOpeningTag(node);
+/** Whether `node` has only the position and the background color of a new aside. */
+function isBareAside(node: Element): boolean {
+    const names = Array.from(node.attributes, ({ name }) => name).sort();
+    // The text editor repeats the color in a `--tn-*` variable for the theme to adapt.
+    const declarations = parseStyleDeclarations(node.getAttribute("style"))
+        .filter(({ property }) => !property.startsWith("--tn-"));
+    const [ declaration ] = declarations;
+
+    return names.join(" ") === "data-position style"
+        && node.getAttribute("data-position") === BARE_ASIDE_POSITION
+        && declarations.length === 1 && declaration.property === "background-color"
+        && normalizeColor(declaration.value) === normalizeColor(BARE_ASIDE_BACKGROUND);
 }
 
 /** Whether `node` is an aside, which an admonition is not, although it is saved as `<aside>`. */

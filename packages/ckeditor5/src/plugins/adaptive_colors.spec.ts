@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import AdaptiveColors from "./adaptive_colors.js";
+import Aside from "./aside/aside.js";
 
 describe("AdaptiveColors", () => {
     let editor: ClassicEditor;
@@ -122,6 +123,32 @@ describe("AdaptiveColors", () => {
         expect(saved).toContain("border-style:solid;");
         expect(saved).not.toContain("--tn-border-color");
     });
+
+    it("writes the variable of the background color of an aside, and of its swatches",
+        async () => {
+            const withAside = await createTestEditor([
+                Essentials, Paragraph, Aside, AdaptiveColors
+            ]);
+            const saved = "<aside style=\"--tn-background:#e64d4d;background-color:#e64d4d;\">" +
+                "<p>A</p></aside>";
+            withAside.setData(saved);
+            expect(getModelData(withAside.model, { withoutSelection: true })).toBe(
+                "<asideBlock backgroundColor=\"#e64d4d\"><asideContent><paragraph>A</paragraph>" +
+                "</asideContent></asideBlock>");
+            expect(withAside.getData()).toBe(saved);
+            const widget = withAside.editing.view.getDomRoot()?.querySelector("aside");
+            expect(widget?.style.getPropertyValue("--tn-background")).toBe("#e64d4d");
+
+            const aside = withAside.model.document.getRoot()?.getChild(0) as ModelElement;
+            withAside.model.change((writer) => writer.setSelection(aside, "on"));
+            withAside.execute("asideColor", { value: null });
+            expect(withAside.getData()).toBe("<aside><p>A</p></aside>");
+            expect(widget?.style.getPropertyValue("--tn-background")).toBe("");
+
+            const { staticColorsGrid } = openColorDropdown(withAside, "asideColor");
+            expect(tileStyles(staticColorsGrid, "--tn-background"))
+                .toEqual([ [ "#555555", "rgb(85, 85, 85)" ] ]);
+        });
 
     it("keeps a variable out of the model, also with General HTML Support", async () => {
         const withGhs = await createTestEditor(

@@ -1,10 +1,12 @@
-import { Plugin } from "ckeditor5";
+import { type FontColorConfig, Plugin } from "ckeditor5";
 
 import "../../theme/aside.css";
 import type { WidgetPositionCommand } from "../positioned_widgets.js";
-import type { InsertAsideCommand, RemoveAsideCommand } from "./aside_commands.js";
+import type {
+    AsideColorCommand, InsertAsideCommand, RemoveAsideCommand
+} from "./aside_commands.js";
 import AsideEditing from "./aside_editing.js";
-import AsideUI from "./aside_ui.js";
+import AsideUI, { AsideColorUI } from "./aside_ui.js";
 
 /**
  * The aside: a box of block content beside the main text, which wraps around it, placed and
@@ -28,11 +30,18 @@ declare module "ckeditor5" {
         [ Aside.pluginName ]: Aside;
         [ AsideEditing.pluginName ]: AsideEditing;
         [ AsideUI.pluginName ]: AsideUI;
+        [ AsideColorUI.pluginName ]: AsideColorUI;
     }
 
     interface CommandsMap {
         insertAside: InsertAsideCommand;
         removeAside: RemoveAsideCommand;
         asidePosition: WidgetPositionCommand;
+        asideColor: AsideColorCommand;
+    }
+
+    interface EditorConfig {
+        /** The swatches of the background color dropdown of an aside. */
+        asideColor?: FontColorConfig;
     }
 }

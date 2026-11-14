@@ -8,11 +8,13 @@ import {
     type ViewElement
 } from "ckeditor5";
 
+import { COLOR_ATTRIBUTE, COMMANDS, ELEMENTS } from "./aside/constants.js";
+
 /**
- * Saves the colors of text and tables a second time as CSS variables: `--tn-color`,
+ * Saves the colors of text, tables and asides a second time as CSS variables: `--tn-color`,
  * `--tn-background` and `--tn-border-color`. The app's and the share theme's stylesheets derive a
  * shade that suits the theme from them; everything else shows the color itself, which stays in the
- * markup. The variables never reach the model. The tiles of the font color dropdowns get the same
+ * markup. The variables never reach the model. The tiles of the color dropdowns get the same
  * variables, so they show the shades of the note.
  */
 export default class AdaptiveColors extends Plugin {
@@ -28,6 +30,7 @@ export default class AdaptiveColors extends Plugin {
         this.addVariable("table", "tableBorderColor", "--tn-border-color");
         this.addVariable("tableCell", "tableCellBackgroundColor", "--tn-background");
         this.addVariable("tableCell", "tableCellBorderColor", "--tn-border-color");
+        this.addVariable(ELEMENTS.aside, COLOR_ATTRIBUTE, "--tn-background");
         this.dropVariablesOnLoad();
         this.addVariablesToDropdownTiles();
     }
@@ -47,8 +50,8 @@ export default class AdaptiveColors extends Plugin {
     }
 
     /**
-     * Sets the variable on the `<table>` or the cell next to the style CKEditor writes for the
-     * attribute, leaving CKEditor's conversion in place. A border whose sides differ gets none.
+     * Sets the variable next to the style that another converter writes for the attribute, on the
+     * `<table>`, the cell or the aside. A border whose sides differ gets none.
      */
     private addVariable(modelElement: string, attribute: string, variable: string) {
         this.editor.conversion.for("downcast").add((dispatcher) => {
@@ -96,7 +99,7 @@ export default class AdaptiveColors extends Plugin {
     }
 
     /**
-     * Sets the variable of each font color dropdown on its tiles whenever it opens. The component
+     * Sets the variable of each color dropdown on its tiles whenever it opens. The component
      * factory has no hook for the dropdowns it creates, so `create()` is wrapped.
      */
     private addVariablesToDropdownTiles() {
@@ -122,10 +125,11 @@ export default class AdaptiveColors extends Plugin {
 
 const VARIABLES = [ "--tn-color", "--tn-background", "--tn-border-color" ];
 
-/** The variable that the tiles of each font color dropdown get. */
-const DROPDOWN_VARIABLES = new Map([
+/** The variable that the tiles of each color dropdown get. */
+const DROPDOWN_VARIABLES = new Map<string, string>([
     [ "fontColor", "--tn-color" ],
-    [ "fontBackgroundColor", "--tn-background" ]
+    [ "fontBackgroundColor", "--tn-background" ],
+    [ COMMANDS.color, "--tn-background" ]
 ]);
 
 /** Sets the variable on the tiles of the palette and of the document colors. */

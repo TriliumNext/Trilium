@@ -131,7 +131,7 @@ export default class ContextToolbar extends Plugin {
 
     afterInit() {
         const editor = this.editor;
-        if (!hasItem(editor.config.get("toolbar"), "contextToolbar")) {
+        if (!hasContextToolbar(editor)) {
             return;
         }
 
@@ -409,6 +409,14 @@ function getLinkToolbarItems(editor: Editor): ToolbarConfigItem[] {
 /** Whether `node` is the element of a link, as the link plugin's own `isLinkElement()` tells. */
 function isLinkElement(node: ViewNode | ViewDocumentFragment): node is ViewElement {
     return node.is("attributeElement") && !!node.getCustomProperty("link");
+}
+
+/**
+ * Whether the toolbar of `editor` has the `contextToolbar` button, as on a phone. The widget
+ * toolbars then show in the context bar, where their dropdowns open as menus.
+ */
+export function hasContextToolbar(editor: Editor): boolean {
+    return hasItem(editor.config.get("toolbar"), "contextToolbar");
 }
 
 /** Whether a toolbar configuration holds `name`, at its top level or in a group. */

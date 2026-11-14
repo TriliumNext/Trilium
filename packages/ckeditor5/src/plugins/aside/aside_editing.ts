@@ -21,15 +21,16 @@ import PositionedWidgets, {
 } from "../positioned_widgets.js";
 import ResizableWidgets from "../resizable_widgets/resizable_widgets.js";
 import { markWidgetOfSelection } from "../widget_utils.js";
-import { InsertAsideCommand, RemoveAsideCommand } from "./aside_commands.js";
+import { AsideColorCommand, InsertAsideCommand, RemoveAsideCommand } from "./aside_commands.js";
 import {
-    ASIDE_WIDGET_PROPERTY, COMMANDS, CONTENT_CLASS, ELEMENTS, MIN_WIDTH, WIDTH_PROPERTY_PREFIX
+    ASIDE_WIDGET_PROPERTY, COLOR_ATTRIBUTE, COMMANDS, CONTENT_CLASS, ELEMENTS, MIN_WIDTH,
+    WIDTH_PROPERTY_PREFIX
 } from "./constants.js";
 
 /**
  * Schema, conversion and commands of asides. An aside is saved as an `<aside>` that holds its
- * blocks, while the model keeps them in an `asideContent` element, which the editing view draws as
- * a nested editable.
+ * blocks, with its background color in its `background-color` style, while the model keeps the
+ * blocks in an `asideContent` element, which the editing view draws as a nested editable.
  */
 export default class AsideEditing extends Plugin {
 
@@ -45,11 +46,16 @@ export default class AsideEditing extends Plugin {
         const editor = this.editor;
         editor.commands.add(COMMANDS.insert, new InsertAsideCommand(editor));
         editor.commands.add(COMMANDS.remove, new RemoveAsideCommand(editor));
+        editor.commands.add(COMMANDS.color, new AsideColorCommand(editor));
 
         this.registerSchema();
         this.registerUpcast();
         this.registerDataDowncast();
         this.registerEditingDowncast();
+        editor.conversion.for("downcast").attributeToAttribute({
+            model: { name: ELEMENTS.aside, key: COLOR_ATTRIBUTE },
+            view: (color: string) => ({ key: "style", value: { "background-color": color } })
+        });
         this.registerPostFixer();
 
         const positionedWidgets = editor.plugins.get(PositionedWidgets);
@@ -67,7 +73,10 @@ export default class AsideEditing extends Plugin {
 
     private registerSchema() {
         const schema = this.editor.model.schema;
-        schema.register(ELEMENTS.aside, { inheritAllFrom: "$blockObject" });
+        schema.register(ELEMENTS.aside, {
+            inheritAllFrom: "$blockObject",
+            allowAttributes: [ COLOR_ATTRIBUTE ]
+        });
         schema.register(ELEMENTS.content, {
             allowIn: ELEMENTS.aside,
             allowContentOf: "$root",
@@ -89,6 +98,10 @@ export default class AsideEditing extends Plugin {
 
                 const { writer } = api;
                 const aside = writer.createElement(ELEMENTS.aside, getPositionOfView(view));
+                const color = view.getStyle("background-color");
+                if (color) {
+                    writer.setAttribute(COLOR_ATTRIBUTE, color, aside);
+                }
                 const content = writer.createElement(ELEMENTS.content);
                 writer.append(content, aside);
                 if (!api.safeInsert(aside, data.modelCursor)) {
@@ -96,6 +109,9 @@ export default class AsideEditing extends Plugin {
                 }
 
                 api.consumable.consume(view, { name: true });
+                if (color) {
+                    api.consumable.consume(view, { styles: "background-color" });
+                }
                 api.convertChildren(view, content);
                 api.updateConversionResult(aside, data);
             }, { priority: "high" });

@@ -73,7 +73,7 @@ A **side note** at the right of the text.
 </aside>
 ```
 
-A plain `<aside>` tag is placed like a newly inserted aside block: at the right, with the text wrapping around it. For another position, add a `data-position` attribute with one of these values:
+A plain `<aside>` tag is placed and colored like a newly inserted aside block: at the right, with the text wrapping around it, on a gray background. A tag with attributes takes only what they set. For another position, add a `data-position` attribute with one of these values:
 
 | Value | Position |
 | --- | --- |
@@ -82,6 +82,8 @@ A plain `<aside>` tag is placed like a newly inserted aside block: at the right,
 | `left` | _Break text_ → _Align left_ |
 | `center` | _Break text_ → _Align center_ |
 | `right` | _Break text_ → _Align right_ |
+
+For a background color, add a `style` attribute such as `style="background-color:#4d99e6"`. Without one, a tag with attributes gives a transparent aside block.
 
 The export follows the same rules, and also keeps the width of a resized aside block.
 
