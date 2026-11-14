@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press
+    aside, createVimEditor, getContent, getCursor, getLines, getStatus, item, paragraphs, press
 } from "../../../test/vim-kit.js";
 import { parseSortOptions, sortUnits } from "./vim_sort.js";
 
@@ -76,6 +76,19 @@ describe("Vim mode :sort", () => {
             `<blockQuote>${paragraphs("[]b")}</blockQuote>${paragraphs("a")}`);
         press(apart, ":%sort<CR>");
         expect(getLines(apart)).toBe("b|a");
+    });
+
+    it("sorts the paragraphs of an aside, and refuses a range across its edge", async () => {
+        const editor = await createVimEditor(paragraphs("z") + aside(paragraphs("[]c", "a", "b"))
+            + paragraphs("y"));
+        press(editor, ":sort<CR>");
+        expect(getContent(editor)).toBe(paragraphs("z") + aside(paragraphs("a", "b", "c"))
+            + paragraphs("y"));
+        for (const command of [ "%sort", "1,2sort", "4,5sort!" ]) {
+            press(editor, `:${command}<CR>`);
+            expect(getLines(editor), command).toBe("z|a|b|c|y");
+        }
+        expect(getStatus(editor).message?.text).toBe(REFUSED);
     });
 
     it("sorts the lines of a code block as text", async () => {

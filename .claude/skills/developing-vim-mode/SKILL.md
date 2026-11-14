@@ -76,7 +76,7 @@ list of names, so most new structures get lines without code:
 | --- | --- |
 | A block that takes text (`schema.checkChild(block, "$text")`): paragraph, heading, list item block, code block, caption, `summary` | One line, or one per part between `softBreak` elements. A code block is one block with a line per code line |
 | An object with no block to write in (`schema.isObject()` and not `isContainerObject()`): image with its caption, horizontal line, embed | One line of one character, `OBJECT_CHARACTER` |
-| Anything else: quote, admonition, table, row, cell, column layout, tabs, collapsible block | No line of its own. Its blocks add theirs in document order |
+| Anything else: quote, admonition, table, row, cell, column layout, tabs, collapsible block, aside | No line of its own. Its blocks add theirs in document order |
 | An inline object in a text line: note reference, inline image | One `OBJECT_CHARACTER` in the text, so `ch` equals the model offset |
 | Hidden content: the section of a collapsed heading, the nested items of a collapsed list item, the body of a closed collapsible block | No lines in `index()`. A closed `details` shows its `summary` |
 
@@ -87,7 +87,10 @@ list of names, so most new structures get lines without code:
   change of its text and drops both indexes after anything else. Ask the adapter again after every
   model change instead of keeping an index in a variable; `openLine()` takes `getIndex` for that.
 - **An object line has two columns**: 0 is before the widget and 1 after it. A selected widget is
-  the cursor on its line (`getSelectedObjectLine()`).
+  the cursor on its line (`getSelectedObjectLine()`). A selected widget that holds lines, such as
+  an aside or a table selected by its handle, is the cursor at the start of its first line
+  (`getSelectedContainerLine()`). The selection, and with it the toolbar of the widget, stays until
+  a key moves the cursor.
 - **Characters of two units.** `toCharacterEdge()` keeps a column off the inside of an emoji or of
   a letter with a combining mark. CKEditor throws `document-selection-wrong-position` for a
   position there, so every column that becomes a model position goes through it.
@@ -95,14 +98,15 @@ list of names, so most new structures get lines without code:
   table caption or a tab title. A title is cleared, never removed; a line break in it is a soft
   break; nothing is put beside it (`getBlockPosition()` sends blocks to the start of the content
   under it). A limit that loses all its blocks keeps one empty paragraph. A container goes with
-  its last line, except that a cell or a column goes only with its whole table or layout
-  (`getRemovalUnit()`).
+  its last line, except that a cell or a column goes only with its whole table or layout, and a
+  table, a layout or an aside only with lines outside it (`getRemovalUnit()`).
 - **Tables.** `j` and `k` move down and up a column (`getVerticalNeighbor()`). A linewise operator
   after them, or in Visual Line mode, takes only the cells in the columns of its two ends
   (`takeColumnParts()`, `getColumnParts()`). Ex ranges such as `:2,4d` stay in reading order.
-- **`ap` and `ip`** go by the innermost container: `WRAPPING_CONTAINERS` (`blockQuote`, `aside`,
-  `details`), `BOX_CONTAINERS` (`tableCell`, `multicolumnColumn`, `tabPanel`), list items,
-  headings with their sections. `ParagraphObjectKind` names the cases for the key hints.
+- **`ap` and `ip`** go by the innermost container: `WRAPPING_CONTAINERS` (`blockQuote`, the
+  `aside` of an admonition, `details`), `BOX_CONTAINERS` (`tableCell`, `multicolumnColumn`,
+  `tabPanel`, `asideContent`), list items, headings with their sections. `ParagraphObjectKind`
+  names the cases for the key hints.
 
 ## How a key travels
 
@@ -236,8 +240,8 @@ else: other browsers distort the numbers.
 
 Each of these reads as a bug and is by design. Change one only with the User Guide.
 
-- `dd` on a title clears it, and on the only line of a cell, column or tab panel leaves an empty
-  line. `dd` on a heading removes the heading line, not its section.
+- `dd` on a title clears it, and on the only line of a cell, column, tab panel or aside leaves an
+  empty line. `dd` on a heading removes the heading line, not its section.
 - A put next to a title lands at the start of the content under it, and around a closed
   collapsible block.
 - `yy` and `y{motion}` leave the cursor where it was. A count that passes the edge of the note
