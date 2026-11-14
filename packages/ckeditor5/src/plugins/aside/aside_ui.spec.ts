@@ -126,9 +126,9 @@ describe("AsideUI", () => {
                 expect(getRelatedElement()?.name).toBe("aside");
             });
 
-        it("does not show while the caret is in the aside or outside one", () => {
+        it("shows while the caret is in the aside, and not outside one", () => {
             setModelData(editor.model, aside(paragraph("A[]")) + paragraph("B"));
-            expect(getRelatedElement()).toBeNull();
+            expect(getRelatedElement()?.name).toBe("aside");
 
             editor.model.change((writer) => writer.setSelection(
                 editor.model.document.getRoot()?.getChild(1) as ModelElement, 0));

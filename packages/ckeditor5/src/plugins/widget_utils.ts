@@ -1,4 +1,8 @@
-import { type Editor, isWidget, type Plugin, type ViewDocumentSelection, type ViewElement } from "ckeditor5";
+import {
+    type DowncastCleanSelectionEvent, type DowncastSelectionEvent, type Editor, isWidget,
+    type ModelElement, type ModelPosition, type Plugin, type ViewDocumentSelection,
+    type ViewElement, WIDGET_SELECTED_CLASS_NAME
+} from "ckeditor5";
 
 /**
  * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
@@ -135,4 +139,32 @@ export function markFocusedContainers(
         marked = containers;
         return isChanged;
     });
+}
+
+/**
+ * Marks the widget that `findWidget()` returns for the selection as selected, as `Widget` marks
+ * the widget that the selection is on: an embed whose caption holds the selection, or an aside that
+ * holds it.
+ */
+export function markWidgetOfSelection(
+    editor: Editor, findWidget: (position: ModelPosition | null) => ModelElement | null
+) {
+    const dispatcher = editor.editing.downcastDispatcher;
+    let marked: ViewElement | null = null;
+
+    dispatcher.on<DowncastCleanSelectionEvent>("cleanSelection", (_evt, _data, api) => {
+        if (marked) {
+            api.writer.removeClass(WIDGET_SELECTED_CLASS_NAME, marked);
+            marked = null;
+        }
+    });
+    // After `Widget` marks the widgets in the selection.
+    dispatcher.on<DowncastSelectionEvent>("selection", (_evt, { selection }, api) => {
+        const widget = findWidget(selection.getFirstPosition());
+        const view = widget && api.mapper.toViewElement(widget);
+        if (view) {
+            api.writer.addClass(WIDGET_SELECTED_CLASS_NAME, view);
+            marked = view;
+        }
+    }, { priority: "lowest" });
 }

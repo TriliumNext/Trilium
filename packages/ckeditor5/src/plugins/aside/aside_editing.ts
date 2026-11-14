@@ -12,7 +12,6 @@ import {
     toWidgetEditable,
     type UpcastElementEvent,
     type ViewEditableElement,
-    type ViewElement,
     Widget
 } from "ckeditor5";
 
@@ -21,11 +20,10 @@ import PositionedWidgets, {
     getPositionAttributes, getPositionOfView
 } from "../positioned_widgets.js";
 import ResizableWidgets from "../resizable_widgets/resizable_widgets.js";
-import { markFocusedContainers } from "../widget_utils.js";
+import { markWidgetOfSelection } from "../widget_utils.js";
 import { InsertAsideCommand, RemoveAsideCommand } from "./aside_commands.js";
 import {
-    ASIDE_WIDGET_PROPERTY, COMMANDS, CONTENT_CLASS, ELEMENTS, FOCUSED_ASIDE_CLASS, MIN_WIDTH,
-    WIDTH_PROPERTY_PREFIX
+    ASIDE_WIDGET_PROPERTY, COMMANDS, CONTENT_CLASS, ELEMENTS, MIN_WIDTH, WIDTH_PROPERTY_PREFIX
 } from "./constants.js";
 
 /**
@@ -64,7 +62,7 @@ export default class AsideEditing extends Plugin {
             getAnchor: (aside) => positionedWidgets.getAnchor(aside),
             minWidth: MIN_WIDTH
         });
-        markFocusedContainers(editor, FOCUSED_ASIDE_CLASS, isAsideWidget);
+        markWidgetOfSelection(editor, (position) => position?.findAncestor(ELEMENTS.aside) ?? null);
     }
 
     private registerSchema() {
@@ -185,10 +183,6 @@ export default class AsideEditing extends Plugin {
             return changed;
         });
     }
-}
-
-function isAsideWidget(element: ViewElement) {
-    return !!element.getCustomProperty(ASIDE_WIDGET_PROPERTY);
 }
 
 function collectAsidesAround(position: ModelPosition, asides: Set<ModelElement>) {

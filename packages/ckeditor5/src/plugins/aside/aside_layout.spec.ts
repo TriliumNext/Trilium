@@ -101,6 +101,21 @@ describe("aside styles", () => {
             .toMatchObject({ float: "none", left: 0, right: 0, width: WIDTH });
     });
 
+    it("shows no buttons that insert a paragraph beside a selected aside", async () => {
+        const editor = await createTestEditor([ Essentials, Paragraph, Aside ]);
+        setModelData(editor.model, "[<asideBlock position=\"wrap-right\"><asideContent>" +
+            "<paragraph>A</paragraph></asideContent></asideBlock>]");
+        const typeAround = editor.editing.view.getDomRoot()
+            ?.querySelector<HTMLElement>("aside > .ck-widget__type-around");
+        const buttons = [
+            ...typeAround?.querySelectorAll(".ck-widget__type-around__button") ?? []
+        ].map((button) => getComputedStyle(button).display);
+
+        expect(buttons).toEqual([ "none", "none" ]);
+        // The fake caret that the arrow keys show beside the aside stays.
+        expect(typeAround && getComputedStyle(typeAround).display).not.toBe("none");
+    });
+
     it("sets the blocks of an aside against its edges, saved and in the editor", async () => {
         const saved = renderContent(
             "<aside data-position=\"wrap-right\"><p>First</p><p>Last</p></aside>");

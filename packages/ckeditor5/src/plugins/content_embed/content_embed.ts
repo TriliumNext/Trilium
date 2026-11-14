@@ -4,10 +4,8 @@ import {
 	ContextualBalloon,
 	type DomEmitter,
 	DomEmitterMixin,
-	type DowncastCleanSelectionEvent,
 	type DowncastConversionApi,
 	type DowncastInsertEvent,
-	type DowncastSelectionEvent,
 	type Editor,
 	enableViewPlaceholder,
 	IconCaption,
@@ -29,7 +27,6 @@ import {
 	type ViewElement,
 	ViewPosition,
 	Widget,
-	WIDGET_SELECTED_CLASS_NAME,
 	type Observable
 } from 'ckeditor5';
 import codeIcon from 'boxicons/svg/regular/bx-code.svg?raw';
@@ -49,7 +46,7 @@ import PositionedWidgets, {
 } from '../positioned_widgets.js';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
-import { restoreRendererFocusOnInput } from '../widget_utils.js';
+import { markWidgetOfSelection, restoreRendererFocusOnInput } from '../widget_utils.js';
 import type { EmbedEdge } from './content_embed_caret.js';
 import EmbedHistory from './embed_history.js';
 import ContentEmbedInlineSource, {
@@ -578,7 +575,7 @@ class ContentEmbedEditing extends Plugin {
 		commands.add( DELETE_COMMAND_NAME, new DeleteContentEmbedCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.fixTitleOnlyEmbeds( writer ) );
-		this.markEmbedOfSelectedCaption();
+		markWidgetOfSelection( editor, getCaptionedEmbed );
 
 		restoreRendererFocusOnInput( this );
 		fireFrameFocusEvents( editor, this.windowEmitter );
@@ -958,31 +955,6 @@ class ContentEmbedEditing extends Plugin {
 			data.modelRange = api.writer.createRange( modelRange.start, modelCursor );
 			data.modelCursor = modelCursor;
 		}, { priority: 'high' } );
-	}
-
-	/**
-	 * Marks the embed whose caption has the selection as selected, as `Widget` marks the embed
-	 * that the selection is on, such as one whose player has the focus.
-	 */
-	private markEmbedOfSelectedCaption() {
-		const dispatcher = this.editor.editing.downcastDispatcher;
-		let marked: ViewElement | null = null;
-
-		dispatcher.on<DowncastCleanSelectionEvent>( 'cleanSelection', ( _evt, _data, api ) => {
-			if ( marked ) {
-				api.writer.removeClass( WIDGET_SELECTED_CLASS_NAME, marked );
-				marked = null;
-			}
-		} );
-		// After `Widget` marks the widgets in the selection.
-		dispatcher.on<DowncastSelectionEvent>( 'selection', ( _evt, { selection }, api ) => {
-			const embed = getCaptionedEmbed( selection.getFirstPosition() );
-			const view = embed && api.mapper.toViewElement( embed );
-			if ( view ) {
-				api.writer.addClass( WIDGET_SELECTED_CLASS_NAME, view );
-				marked = view;
-			}
-		}, { priority: 'lowest' } );
 	}
 
 	/**

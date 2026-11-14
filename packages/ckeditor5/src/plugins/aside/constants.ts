@@ -14,8 +14,6 @@ export const COMMANDS = {
 
 /** Editing-view class of the nested editable that holds the blocks of an aside. */
 export const CONTENT_CLASS = "aside-content";
-/** Editing-view class of an aside that holds the focused editable. */
-export const FOCUSED_ASIDE_CLASS = "trilium-aside--focused";
 /** Custom property that marks the editing-view widget element of an aside. */
 export const ASIDE_WIDGET_PROPERTY = "asideWidget";
 

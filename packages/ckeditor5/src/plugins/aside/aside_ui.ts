@@ -3,8 +3,6 @@ import {
     type Command,
     IconRemove,
     Plugin,
-    type ViewDocumentSelection,
-    type ViewElement,
     WidgetToolbarRepository
 } from "ckeditor5";
 
@@ -12,13 +10,13 @@ import asideIcon from "../../icons/aside.svg?raw";
 import PositionedWidgets, {
     createWidgetPositionDropdown, getAnchoredToolbarPositions
 } from "../positioned_widgets.js";
+import { findSelectedWidget } from "../widget_utils.js";
 import { getSelectedAside } from "./aside_commands.js";
 import { ASIDE_WIDGET_PROPERTY, COMMANDS } from "./constants.js";
 
 /**
- * The insert button of the aside, and the toolbar of a selected aside, with the position dropdown
- * and the remove button. The toolbar does not show while the caret is in the aside, where it would
- * cover the text above.
+ * The insert button of the aside, and the toolbar of the aside that is selected or holds the caret,
+ * with the position dropdown and the remove button.
  */
 export default class AsideUI extends Plugin {
 
@@ -53,7 +51,7 @@ export default class AsideUI extends Plugin {
             ariaLabel: editor.t("Aside toolbar"),
             items: [ COMMANDS.position, COMMANDS.remove ],
             positions: getAnchoredToolbarPositions(getAnchor),
-            getRelatedElement: findSelectedAside
+            getRelatedElement: (selection) => findSelectedWidget(selection, ASIDE_WIDGET_PROPERTY)
         });
     }
 
@@ -74,10 +72,4 @@ export default class AsideUI extends Plugin {
             return button;
         });
     }
-}
-
-/** The aside that is selected as a whole, or `null`. */
-function findSelectedAside(selection: ViewDocumentSelection): ViewElement | null {
-    const selected = selection.getSelectedElement();
-    return selected?.getCustomProperty(ASIDE_WIDGET_PROPERTY) ? selected : null;
 }

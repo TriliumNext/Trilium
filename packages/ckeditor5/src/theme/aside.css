@@ -1,6 +1,4 @@
 :where(:root) {
-    --aside-focus-border-color: var(--input-focus-outline-color, var(--ck-color-focus-border));
-
     --aside-border-radius: 8px;
     --aside-default-width: 22em;
 }
@@ -73,8 +71,8 @@
         border-radius: inherit;
     }
 
-    &.trilium-aside--focused {
-        outline: var(--ck-widget-outline-thickness, 3px) solid var(--aside-focus-border-color);
+    > .ck-widget__type-around > .ck-widget__type-around__button {
+        display: none;
     }
 }
 

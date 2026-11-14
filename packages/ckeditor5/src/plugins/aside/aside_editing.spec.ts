@@ -153,13 +153,16 @@ describe("AsideEditing", () => {
                 expect(widget.classList.contains("ck-widget_resize-anchor-left")).toBe(true);
             });
 
-        it("marks the aside that holds the focused editable", () => {
-            editor.editing.view.document.isFocused = true;
+        it("looks selected while it holds the selection, as while it is selected", () => {
             setModelData(editor.model, aside(paragraph("A[]")) + paragraph("B"));
-            expect(getWidget().classList.contains("trilium-aside--focused")).toBe(true);
+            const isMarked = () => getWidget().classList.contains("ck-widget_selected");
+            expect(isMarked()).toBe(true);
 
             editor.model.change((writer) => writer.setSelection(getRoot().getChild(1), 0));
-            expect(getWidget().classList.contains("trilium-aside--focused")).toBe(false);
+            expect(isMarked()).toBe(false);
+
+            editor.model.change((writer) => writer.setSelection(getRoot().getChild(0), "on"));
+            expect(isMarked()).toBe(true);
         });
 
         it("shows a placeholder while the aside holds only an empty block", () => {
