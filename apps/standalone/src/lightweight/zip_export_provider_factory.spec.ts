@@ -4,8 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import BrowserZipProvider from "./zip_provider.js";
 import { standaloneZipExportProviderFactory } from "./zip_export_provider_factory.js";
 
-// Vitest imports a stylesheet with `?raw` as an empty string, so the three stand in with markers.
+// Vitest imports a stylesheet with `?raw` as an empty string, so the four stand in with markers.
 vi.mock("@triliumnext/ckeditor5/src/theme/admonitions.css?raw", () => ({ default: ".admonition {}" }));
+vi.mock("@triliumnext/ckeditor5/src/theme/aside.css?raw", () => ({ default: ".aside {}" }));
 vi.mock("@triliumnext/ckeditor5/src/theme/ck-content.css?raw", () => ({ default: ".content {}" }));
 vi.mock("@triliumnext/ckeditor5/src/theme/multicolumn.css?raw", () => ({ default: ".columns {}" }));
 
@@ -32,14 +33,14 @@ afterEach(() => {
 });
 
 describe("standaloneZipExportProviderFactory", () => {
-    it("creates an HTML export provider with content, admonition and column styles", async () => {
+    it("creates an HTML export provider with the styles of content and its blocks", async () => {
         const data = makeData();
         const provider = await standaloneZipExportProviderFactory("html", data);
         expect(provider.constructor.name).toBe("HtmlExportProvider");
         expect(provider.branch).toBe(data.branch);
 
         const { options } = provider as unknown as { options: { contentCss?: string } };
-        expect(options.contentCss).toBe(".content {}\n.admonition {}\n.columns {}");
+        expect(options.contentCss).toBe(".content {}\n.admonition {}\n.columns {}\n.aside {}");
     });
 
     it("creates a Markdown export provider", async () => {

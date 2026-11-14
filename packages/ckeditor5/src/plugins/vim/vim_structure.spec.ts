@@ -2,7 +2,8 @@ import type { Editor } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import {
-    createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs, press
+    aside, createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item,
+    paragraphs, press
 } from "../../../test/vim-kit.js";
 import { canFold, getParagraphObjectKind } from "./vim_structure.js";
 
@@ -130,6 +131,19 @@ describe("Vim mode structure", () => {
             expect(moves(editor, "{", 2)).toEqual([ "4:0", "3:0" ]);
         });
 
+        it("move past an aside as one block, and inside it block by block, as j and k do",
+            async () => {
+            const editor = await createVimEditor(paragraphs("[]a") + aside(paragraphs("s1", "s2"))
+                + paragraphs("b"));
+            expect(moves(editor, "}", 4)).toEqual([ "1:0", "2:0", "3:0", "3:0" ]);
+            expect(moves(editor, "{", 2)).toEqual([ "1:0", "0:0" ]);
+            press(editor, "3G{");
+            expect(getCursor(editor)).toBe("1:0");
+            press(editor, "gg");
+            expect(moves(editor, "j", 3)).toEqual([ "1:0", "2:0", "3:0" ]);
+            expect(moves(editor, "k", 3)).toEqual([ "2:0", "1:0", "0:0" ]);
+        });
+
         it("go back to the start of the block first", async () => {
             const editor = await createVimEditor(paragraphs("a", "b[]c"));
             press(editor, "{");
@@ -218,6 +232,14 @@ describe("Vim mode structure", () => {
             press(editor, "jjdip");
             expect(getLines(editor)).toBe("|c||f");
             expect(getContent(editor)).toContain("<table>");
+
+            const box = await createVimEditor(paragraphs("x") + aside(paragraphs("[]s1", "s2"))
+                + paragraphs("", "y"));
+            const emptied = paragraphs("x") + aside(paragraphs("")) + paragraphs("", "y");
+            press(box, "dap");
+            expect(getContent(box)).toBe(emptied);
+            press(box, "ujdip");
+            expect(getContent(box)).toBe(emptied);
         });
 
         it("take the title or the body of a collapsible block, or the whole block", async () => {
@@ -323,19 +345,22 @@ describe("Vim mode structure", () => {
         it("name the block of the paragraph object and whether a fold can act, per line",
             async () => {
             const editor = await createVimEditor(BODY + "<codeBlock language=\"plaintext\">c"
-                + `</codeBlock><aside admonitionType="note">${paragraphs("n")}</aside>`);
+                + `</codeBlock><aside admonitionType="note">${paragraphs("n")}</aside>`
+                + aside(paragraphs("s")));
             const adapter = getAdapter(editor);
             const lines = getLines(editor).split("|");
             const read = (text: string) => {
                 const line = lines.indexOf(text);
                 return [ getParagraphObjectKind(adapter, line), canFold(adapter, line) ];
             };
-            expect([ "a", "H", "s1", "i1", "a1", "q1", "T", "d", "c1", "p", "\u{FFFC}", "c", "n" ]
-                .map(read)).toEqual([
+            expect([
+                "a", "H", "s1", "i1", "a1", "q1", "T", "d", "c1", "p", "\u{FFFC}", "c", "n", "s"
+            ].map(read)).toEqual([
                 [ "paragraph", false ], [ "heading", true ], [ "paragraph", true ],
                 [ "listItem", true ], [ "box", true ], [ "quote", true ],
                 [ "collapsibleTitle", true ], [ "collapsibleBody", true ], [ "box", true ],
-                [ "box", true ], [ "widget", true ], [ "codeBlock", true ], [ "admonition", true ]
+                [ "box", true ], [ "widget", true ], [ "codeBlock", true ], [ "admonition", true ],
+                [ "box", true ]
             ]);
         });
     });

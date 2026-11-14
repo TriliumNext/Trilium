@@ -19,7 +19,7 @@ import type { LineSpan } from "./vim_lines.js";
 const WRAPPING_CONTAINERS = new Set([ "blockQuote", "aside", "details" ]);
 
 /** The containers whose lines `ip` and `ap` both take. */
-const BOX_CONTAINERS = new Set([ "tableCell", "multicolumnColumn", "tabPanel" ]);
+const BOX_CONTAINERS = new Set([ "tableCell", "multicolumnColumn", "tabPanel", "asideContent" ]);
 
 /** The attributes of the owners that hide their content while collapsed. */
 const COLLAPSE_ATTRIBUTES = [ HEADING_COLLAPSED, LIST_COLLAPSED_ATTRIBUTE ];
@@ -99,9 +99,9 @@ export function findStructuralBlock(
 /**
  * The lines of the text object `ap` or `ip` around line `line`, `count` structural blocks of it.
  * The innermost container around the line decides: a list item, a quote, an admonition, a cell, a
- * code block, a column, a content tab, a collapsible block, a widget, a heading with its section
- * for `ap`, or a paragraph. Collapsed content in the result is expanded first, as part of the
- * change when `isChange` is set.
+ * code block, a column, a content tab, an aside, a collapsible block, a widget, a heading with its
+ * section for `ap`, or a paragraph. Collapsed content in the result is expanded first, as part of
+ * the change when `isChange` is set.
  */
 export function findParagraphObject(
     cm: VimAdapter, line: number, count: number, isInner: boolean, isChange: boolean

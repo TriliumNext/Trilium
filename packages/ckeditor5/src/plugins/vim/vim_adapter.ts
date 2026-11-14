@@ -329,6 +329,10 @@ export default class VimAdapter {
             const isEnd = !!this.state.vim?.visualMode && (which === "head" || which === "end");
             return new VimPosition(objectLine, isEnd ? 1 : 0);
         }
+        const containerLine = this.getSelectedContainerLine();
+        if (containerLine !== null) {
+            return new VimPosition(containerLine, 0);
+        }
         const selected = this.getEngineSelection();
         if (selected) {
             const [ start, end ] = order(selected.anchor, selected.head);
@@ -358,7 +362,7 @@ export default class VimAdapter {
 
     somethingSelected(): boolean {
         const selection = this.editor.model.document.selection;
-        if (selection.isCollapsed) {
+        if (selection.isCollapsed || this.getSelectedContainerLine() !== null) {
             return false;
         }
         return this.getSelectedObjectLine() === null || !!this.state.vim?.visualMode;
@@ -868,6 +872,21 @@ export default class VimAdapter {
         const selected = this.editor.model.document.selection.getSelectedElement();
         const line = selected ? this.index().getFirstLine(selected) : undefined;
         return line !== undefined && this.index().lines[line].kind === "object" ? line : null;
+    }
+
+    /**
+     * The first line of the block widget without a line of its own that the selection is on, such
+     * as an aside or a table selected by its handle, or `null`. A selection that the engine made
+     * stays the engine's.
+     */
+    private getSelectedContainerLine(): number | null {
+        const selected = this.editor.model.document.selection.getSelectedElement();
+        if (!selected || this.editor.model.schema.isInline(selected) || this.getEngineSelection()) {
+            return null;
+        }
+        const index = this.index();
+        const span = index.has(selected) ? null : index.getSpan(selected);
+        return span ? span.first : null;
     }
 
     private readText(from: Pos, to: Pos): string {

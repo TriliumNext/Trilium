@@ -61,6 +61,34 @@ Tabs use the syntax of [Material for MkDocs](https://squidfunk.github.io/mkdocs-
 
 Tabs can be nested by indenting the inner tabs inside the content of a tab. A tab title is plain text, so its formatting is not kept on export. For how tabs blocks work in a text note, see <a class="reference-link" href="../../../Note%20Types/Text/Content%20tabs.md">Content tabs</a>.
 
+## Aside blocks
+
+<a class="reference-link" href="../../../Note%20Types/Text/Aside%20blocks.md">Aside blocks</a> are written as `<aside>` tags on lines of their own, with the content between them in Markdown:
+
+```
+<aside>
+
+A **side note** at the right of the text.
+
+</aside>
+```
+
+A plain `<aside>` tag is placed and colored like a newly inserted aside block: at the right, with the text wrapping around it, on a gray background. A tag with attributes takes only what they set. For another position, add a `data-position` attribute with one of these values:
+
+| Value | Position |
+| --- | --- |
+| `wrap-left` | _Wrap text_ → _Align left_ |
+| `wrap-right` | _Wrap text_ → _Align right_, the default |
+| `left` | _Break text_ → _Align left_ |
+| `center` | _Break text_ → _Align center_ |
+| `right` | _Break text_ → _Align right_ |
+
+For a background color, add a `style` attribute such as `style="background-color:#4d99e6"`. Without one, a tag with attributes gives a transparent aside block.
+
+The export follows the same rules, and also keeps the width of a resized aside block.
+
+The blank line after the opening tag is required. Without it, the content is read as plain text instead of Markdown, and the aside block takes the full width of the note.
+
 ## Wikilinks
 
 Basic support for wikilinks has been added in v0.96.0:

@@ -1,9 +1,6 @@
-import {
-    type Command, IconObjectCenter, IconObjectInlineLeft, IconObjectInlineRight, IconObjectLeft,
-    IconObjectRight, Plugin
-} from "ckeditor5";
+import { type Command, Plugin } from "ckeditor5";
 
-import { createPositionDropdown } from "../position_dropdown.js";
+import { createWidgetPositionDropdown } from "../positioned_widgets.js";
 import ContentEmbed, { isToolbarItemHidden, POSITION_COMMAND_NAME } from "./content_embed.js";
 
 export const CONTENT_EMBED_POSITION_DROPDOWN = "contentEmbedPositionDropdown";
@@ -25,38 +22,13 @@ export default class ContentEmbedPositionDropdown extends Plugin {
 
     init() {
         const editor = this.editor;
-        const t = editor.t;
         const command = editor.commands.get(POSITION_COMMAND_NAME) as Command;
         const contentEmbed = editor.plugins.get(ContentEmbed);
 
         editor.ui.componentFactory.add(CONTENT_EMBED_POSITION_DROPDOWN, (locale) => {
-            const dropdown = createPositionDropdown(editor, locale, {
+            const dropdown = createWidgetPositionDropdown(editor, locale, {
                 commandName: POSITION_COMMAND_NAME,
-                label: t("Box position"),
-                offeredProperty: "positions",
-                groups: [
-                    {
-                        label: t("Break text"),
-                        rows: [
-                            { value: "left", label: t("Align left"), icon: IconObjectLeft },
-                            { value: "center", label: t("Align center"), icon: IconObjectCenter },
-                            { value: "right", label: t("Align right"), icon: IconObjectRight }
-                        ]
-                    },
-                    {
-                        label: t("Wrap text"),
-                        rows: [
-                            {
-                                value: "wrap-left", label: t("Align left"),
-                                icon: IconObjectInlineLeft
-                            },
-                            {
-                                value: "wrap-right", label: t("Align right"),
-                                icon: IconObjectInlineRight
-                            }
-                        ]
-                    }
-                ]
+                label: editor.t("Box position")
             });
             dropdown.bind("class").to(
                 command, "isEnabled",

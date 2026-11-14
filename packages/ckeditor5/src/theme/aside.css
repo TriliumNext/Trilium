@@ -1,0 +1,103 @@
+:where(:root) {
+    --aside-margin-block: .5em;
+    --aside-wrap-gap: 1em;
+    --aside-border-radius: 8px;
+    --aside-padding: .5em 1em;
+    --aside-default-width: 22em;
+    --aside-markdown-default-width: max(33.3%, 250px);
+    --aside-font-size: .85em;
+}
+
+/* Markdown note content: `.markdown-preview` in the client, `.type-code` on a share page. */
+.markdown-preview,
+.ck-content.type-code {
+    --aside-default-width: var(--aside-markdown-default-width);
+}
+
+.ck-content aside:not(.admonition) {
+    --_aside-width: var(--aside-width, var(--aside-default-width));
+
+    clear: both;
+    margin: var(--aside-margin-block) auto;
+    border-radius: var(--aside-border-radius);
+    padding: var(--aside-padding);
+    box-sizing: border-box;
+    max-width: 100%;
+    width: var(--aside-width, auto);
+    font-size: var(--aside-font-size);
+    break-inside: avoid;
+
+    &[data-position="left"] {
+        margin-right: auto;
+        margin-left: 0;
+        width: var(--_aside-width);
+    }
+
+    &[data-position="right"] {
+        margin-right: 0;
+        margin-left: auto;
+        width: var(--_aside-width);
+    }
+
+    &:is([data-position="wrap-left"], [data-position="wrap-right"]) {
+        --_aside-wrap-gap: clamp(0px, 100% - var(--_aside-width), var(--aside-wrap-gap));
+
+        clear: none;
+        margin-top: 0;
+        width: var(--_aside-width);
+    }
+
+    &[data-position="wrap-left"] {
+        float: left;
+        margin-right: var(--_aside-wrap-gap);
+        margin-left: 0;
+    }
+
+    &[data-position="wrap-right"] {
+        float: right;
+        margin-right: 0;
+        margin-left: var(--_aside-wrap-gap);
+    }
+}
+
+.ck-content aside:not(.admonition),
+.ck-content aside:not(.admonition) > .aside-content {
+    > :first-child {
+        margin-top: 0;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+}
+
+.ck-content aside:not(.admonition).ck-widget {
+    padding: 0;
+
+    > .ck-widget__selection-handle {
+        margin-inline-start: var(--aside-border-radius);
+    }
+
+    > .aside-content {
+        box-shadow: none;
+        border: 0;
+        border-radius: inherit;
+        padding: var(--aside-padding);
+        background-color: transparent;
+    }
+
+    > .ck-widget__type-around > .ck-widget__type-around__button {
+        display: none;
+    }
+}
+
+body.mobile .ck-content aside:not(.admonition) {
+    float: none;
+    clear: both;
+    margin: var(--aside-margin-block) 0;
+    width: auto;
+
+    > .ck-widget__resize-handles > .ck-widget__resize-handle {
+        display: none;
+    }
+}

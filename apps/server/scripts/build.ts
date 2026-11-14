@@ -22,6 +22,7 @@ async function main() {
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
     build.copy("/packages/ckeditor5/src/theme/content_colors.css", "ckeditor5-content-colors.css");
     build.copy("/packages/ckeditor5/src/theme/multicolumn.css", "ckeditor5-multicolumn.css");
+    build.copy("/packages/ckeditor5/src/theme/aside.css", "ckeditor5-aside.css");
 
     build.buildFrontend();
 }

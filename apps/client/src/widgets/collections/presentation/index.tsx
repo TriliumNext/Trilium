@@ -1,5 +1,6 @@
 import "./index.css";
 
+import asideStylesheet from "@triliumnext/ckeditor5/src/theme/aside.css?raw";
 import multicolumnStylesheet from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
 import codePreviewStylesheet from "@triliumnext/codemirror/src/code_preview.css?raw";
 import { createPortal, RefObject } from "preact";
@@ -359,6 +360,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
                 themeStylesheet,
                 katexStylesheet,
                 multicolumnStylesheet,
+                asideStylesheet,
                 codePreviewStylesheet,
                 codeThemeStylesheet,
                 slideCustomStylesheet

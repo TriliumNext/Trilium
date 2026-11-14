@@ -233,9 +233,15 @@ describe("buildMarkdownCommands", () => {
         });
     }
 
-    /** Puts `doc` in the editor and runs the command `id` on the command typed at its end. */
-    function run(id: string, doc: string, taskStates: TaskStateDef[] = []) {
-        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: doc }, selection: { anchor: doc.length } });
+    /**
+     * Puts `doc` in the editor, followed by `after`, and runs the command `id` on the command
+     * typed at the end of `doc`.
+     */
+    function run(id: string, doc: string, taskStates: TaskStateDef[] = [], after = "") {
+        editor.dispatch({
+            changes: { from: 0, to: editor.state.doc.length, insert: doc + after },
+            selection: { anchor: doc.length }
+        });
         const entry = commands(taskStates).find((candidate) => candidate.id === id);
         if (!entry) throw new Error(`no command ${id}`);
         entry.apply(editor, doc.lastIndexOf("/"), doc.length);
@@ -289,6 +295,24 @@ describe("buildMarkdownCommands", () => {
         expect([ from, to ]).toEqual([ 5, 5 + "markdown_slash_commands.placeholders.tab_title".length ]);
 
         expect(run("tabs", "Intro /tabs")).toBe(`Intro\n\n${tabs}`);
+    });
+
+    it("inserts an aside on lines of its own, a blank line from the text after it", () => {
+        const text = "markdown_slash_commands.placeholders.aside";
+        const aside = `<aside>\n\n${text}\n\n</aside>`;
+        expect(commands().find((entry) => entry.id === "aside")).toMatchObject({
+            title: "markdown_slash_commands.titles.aside",
+            aliases: expect.arrayContaining([ "aside", "sidebar", "side note" ])
+        });
+
+        const textsAfter = [ "", "\nNext", "\n\nNext", "\n\n\nNext", " more" ];
+        expect(textsAfter.map((after) => run("aside", "/aside", [], after))).toEqual([
+            aside, `${aside}\n\nNext`, `${aside}\n\nNext`, `${aside}\n\n\nNext`, `${aside}\n\n more`
+        ]);
+
+        expect(run("aside", "Intro /aside")).toBe(`Intro\n\n${aside}`);
+        const { from, to } = editor.state.selection.main;
+        expect(editor.state.sliceDoc(from, to)).toBe(text);
     });
 
     it("uploads an image picked to the note shown once the file arrives", () => {

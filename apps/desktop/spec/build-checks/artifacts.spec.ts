@@ -30,7 +30,8 @@ describe("Check artifacts are present", () => {
         const paths = [
             "assets",
             "share-theme",
-            "ckeditor5-multicolumn.css"
+            "ckeditor5-multicolumn.css",
+            "ckeditor5-aside.css"
         ];
 
         ensurePathsExist(paths);

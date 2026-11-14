@@ -423,7 +423,7 @@ describe("ContextToolbar", () => {
         const plugin = editor.plugins.get(ContextToolbar);
         const names: Record<string, string | undefined> = {
             codeblock: "Code block", inlineCode: "Code", admonition: "Admonition", tabs: "Tabs",
-            multicolumnLayout: "Columns", contentEmbed: "Embed", other: undefined
+            multicolumnLayout: "Columns", aside: "Aside", contentEmbed: "Embed", other: undefined
         };
         // Stand-ins for the toolbars of those widgets, each for the paragraph while it is the current one.
         let current = "";

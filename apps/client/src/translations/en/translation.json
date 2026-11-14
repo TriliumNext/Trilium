@@ -427,6 +427,7 @@
     "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
     "collapsible": "Insert a collapsible block",
     "tabs": "Insert titled tabs that show one panel at a time",
+    "aside": "Insert a box of text that the main text wraps around",
     "page_break": "Insert a page break (for printing)",
     "table": "Insert a table",
     "admonition": "Insert {{type}} admonition",
@@ -443,6 +444,7 @@
       "mermaid_template": "Mermaid diagram: {{name}}",
       "collapsible": "Collapsible block",
       "tabs": "Tabs",
+      "aside": "Aside",
       "page_break": "Page break",
       "table": "Table",
       "note": "Note",
@@ -458,6 +460,7 @@
       "collapsible_details": "Details",
       "tab_title": "Tab {{number}}",
       "tab_content": "Content",
+      "aside": "Side note",
       "table_column": "Column {{number}}"
     }
   },
@@ -5075,7 +5078,13 @@
       "next-previous-suggestion": "next, previous suggestion",
       "run-the-command": "run the command",
       "earlier-commands-or-suggestions-after-typing": "earlier commands, or suggestions after typing",
-      "commands": "Commands"
+      "commands": "Commands",
+      "aside": "Aside",
+      "type-the-content-of-the-aside": "Type the content of the aside",
+      "remove-aside": "Remove aside",
+      "aside-toolbar": "Aside toolbar",
+      "insert-a-box-of-text-that-the-main-text-wraps-around": "Insert a box of text that the main text wraps around.",
+      "background-color": "Background color"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -5254,7 +5263,8 @@
       "audio": "Audio",
       "link_preview": "Link preview",
       "embed": "Embed",
-      "block": "Block"
+      "block": "Block",
+      "aside": "Aside"
     },
     "collapse_section": "Collapse section",
     "expand_section": "Expand section"

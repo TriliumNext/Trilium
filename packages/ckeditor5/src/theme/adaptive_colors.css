@@ -1,7 +1,8 @@
 /*
- * Theme-adaptive text and table colors. The text editor saves each color again as `--tn-color`,
- * `--tn-background` or `--tn-border-color`; these rules keep its hue, move its CIELAB lightness
- * into the role's range and cap its chroma. Greys (chroma below 1.5) spread over the range.
+ * Theme-adaptive text, table and aside colors. The text editor saves each color again as
+ * `--tn-color`, `--tn-background` or `--tn-border-color`; these rules keep its hue, move its CIELAB
+ * lightness into the role's range and cap its chroma. Greys (chroma below 1.5) spread over the
+ * range.
  *
  * The rules read the light ranges. A page in dark mode points the `--_adaptive-*` variables at the
  * dark limits under its own dark-mode selector: the app's `stylesheets/adaptive-colors.css` and
@@ -33,6 +34,12 @@
     --adaptive-table-background-light-max-chroma: 20;
     --adaptive-table-background-dark-max-lightness: 30;
     --adaptive-table-background-dark-max-chroma: 30;
+
+    /* Adaptive aside background color limits */
+    --adaptive-aside-background-light-min-lightness: 95;
+    --adaptive-aside-background-light-max-chroma: 24;
+    --adaptive-aside-background-dark-max-lightness: 23;
+    --adaptive-aside-background-dark-max-chroma: 13;
 }
 
 :root {
@@ -48,6 +55,9 @@
     --_adaptive-table-background-min: var(--adaptive-table-background-light-min-lightness);
     --_adaptive-table-background-max: 100;
     --_adaptive-table-background-chroma: var(--adaptive-table-background-light-max-chroma);
+    --_adaptive-aside-background-min: var(--adaptive-aside-background-light-min-lightness);
+    --_adaptive-aside-background-max: 100;
+    --_adaptive-aside-background-chroma: var(--adaptive-aside-background-light-max-chroma);
 }
 
 /* `!important` beats the inline color, which browsers without relative colors keep showing. */
@@ -84,4 +94,13 @@
             + (1 - min(1, c / 1.5)) * (var(--_adaptive-table-background-min) + l / 100
                 * (var(--_adaptive-table-background-max) - var(--_adaptive-table-background-min))))
         min(c, var(--_adaptive-table-background-chroma)) h) !important;
+}
+
+aside[style*="--tn-background"] {
+    background-color: lch(from var(--tn-background)
+        calc(min(1, c / 1.5) * clamp(var(--_adaptive-aside-background-min), l,
+                var(--_adaptive-aside-background-max))
+            + (1 - min(1, c / 1.5)) * (var(--_adaptive-aside-background-min) + l / 100
+                * (var(--_adaptive-aside-background-max) - var(--_adaptive-aside-background-min))))
+        min(c, var(--_adaptive-aside-background-chroma)) h) !important;
 }

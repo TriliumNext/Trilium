@@ -548,6 +548,28 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("asides (CustomMarkdownRenderer.html)", () => {
+        it("places and colors a bare aside as a new one, and a centered one in the flow", () => {
+            const wrapped = '<aside style="--tn-background:#555555;background-color:#555555;" '
+                + 'data-position="wrap-right">';
+            expect(render("<aside>\n\nSide **note**\n\n</aside>"))
+                .toBe(`${wrapped}<p>Side <strong>note</strong></p></aside>`);
+            expect(render("<aside>\n</aside>")).toBe(`${wrapped}\n</aside>`);
+            expect(render('<aside data-position="center">\n\nIn the flow\n\n</aside>'))
+                .toBe("<aside><p>In the flow</p></aside>");
+            expect(render('<aside data-position="center">\n</aside>')).toBe("<aside>\n</aside>");
+        });
+
+        it("leaves an aside of raw text, one with attributes and an inline tag as written", () => {
+            expect(render("<aside>\n💡 A Notion callout\n\n</aside>"))
+                .toBe("<aside>\n💡 A Notion callout</aside>");
+            expect(render('<aside class="note">\n\nBody\n\n</aside>'))
+                .toBe('<aside class="note"><p>Body</p></aside>');
+            expect(render("Inline <aside>x</aside> tag"))
+                .toBe("<p>Inline <aside>x</aside> tag</p>");
+        });
+    });
+
     describe("formulas", () => {
         it("renders an inline formula", () => {
             expect(render("$x^2$")).toBe('<span class="math-tex">\\(x^2\\)</span>');

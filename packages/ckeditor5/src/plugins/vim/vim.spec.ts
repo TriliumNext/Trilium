@@ -9,8 +9,8 @@ import { userEvent } from "vitest/browser";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { createLinkEmbedHost } from "../../../test/link-embed-kit.js";
 import {
-    createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
-    press, typeText
+    aside, createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item,
+    paragraphs, press, setVimData, typeText
 } from "../../../test/vim-kit.js";
 import HostedBalloon from "../../hosted_balloon.js";
 import ContentEmbed from "../content_embed/content_embed.js";
@@ -791,6 +791,45 @@ describe("Vim mode", () => {
             expect(enter).toHaveBeenCalledWith(expect.any(HTMLElement), "end");
             expect(getStatus(nested).mode).toBe("insert");
             expect(getStatus(editor).mode).toBe("normal");
+        });
+
+        it("read a selected container as the cursor at the start of its first line", async () => {
+            const box = aside(paragraphs("s1", "s2"));
+            const editor = await createVimEditor();
+            const select = (content = box) =>
+                setVimData(editor, `${paragraphs("a")}[${content}]${paragraphs("b")}`);
+            const selection = editor.model.document.selection;
+
+            select();
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(getCursor(editor)).toBe("1:0");
+            expect(selection.getSelectedElement()?.name).toBe("asideBlock");
+            for (const [ keys, lines, cursor ] of [
+                [ "j", "a|s1|s2|b", "2:0" ], [ "x", "a|1|s2|b", "1:0" ], [ "dd", "a|s2|b", "1:0" ]
+            ]) {
+                select();
+                press(editor, keys);
+                expect(getLines(editor), keys).toBe(lines);
+                expect(getCursor(editor), keys).toBe(cursor);
+                expect(selection.isCollapsed, keys).toBe(true);
+            }
+            select();
+            press(editor, "i");
+            typeText(editor, "X");
+            press(editor, "<Esc>");
+            expect(getLines(editor)).toBe("a|Xs1|s2|b");
+
+            select("<table><tableRow><tableCell>" + paragraphs("t1", "t2")
+                + "</tableCell></tableRow></table>");
+            press(editor, "x");
+            expect(getLines(editor)).toBe("a|1|t2|b");
+
+            setVimData(editor, `${paragraphs("[]a")}${box}`);
+            press(editor, "v");
+            editor.model.change((writer) =>
+                writer.setSelection(editor.model.document.getRoot()?.getChild(1) as never, "on"));
+            expect(getStatus(editor).mode).toBe("normal");
+            expect(getCursor(editor)).toBe("1:0");
         });
     });
 

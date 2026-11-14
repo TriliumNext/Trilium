@@ -21,6 +21,7 @@ export interface BlockNode {
     textContent?: string | null;
     getAttribute?(name: string): string | null | undefined;
     setAttribute?(name: string, value: string): unknown;
+    removeAttribute?(name: string): unknown;
     remove?(): unknown;
     replaceWith?(...nodes: unknown[]): unknown;
 }
@@ -94,7 +95,8 @@ export function resolveBlockReference<T extends BlockNode>(root: BlockNode, valu
 
 /**
  * Keeps in `root` only the blocks that `value`, a `block` link parameter, points at, inside their
- * ancestors. A multicolumn layout left with one column is replaced by the column's content.
+ * ancestors. A multicolumn layout left with one column is replaced by the column's content, and an
+ * aside that is the only block loses its position, as no text is left to sit beside it.
  * Returns `false` and changes nothing when a block is missing.
  */
 export function sliceToBlockReference(root: BlockNode, value: string) {
@@ -104,6 +106,9 @@ export function sliceToBlockReference(root: BlockNode, value: string) {
     }
 
     sliceToBlockRange(root, start, end);
+    if (start === end && isTag(start, "ASIDE")) {
+        start.removeAttribute?.("data-position");
+    }
     return true;
 }
 

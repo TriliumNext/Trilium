@@ -5,6 +5,7 @@ import {
 } from "ckeditor5";
 
 import Admonition from "../src/plugins/admonition/admonition.js";
+import Aside from "../src/plugins/aside/aside.js";
 import Collapsible from "../src/plugins/collapsible/collapsible.js";
 import CollapsibleHeadings from "../src/plugins/collapsible_headings/collapsible_headings.js";
 import CollapsibleListItems from "../src/plugins/collapsible_list_items.js";
@@ -25,7 +26,7 @@ type Plugins = NonNullable<Parameters<typeof createTestEditor>[0]>;
 export const VIM_PLUGINS: Plugins = [
     Essentials, Paragraph, Heading, Bold, Italic, Code, Link, List, BlockQuote, CodeBlock, Table,
     TableCaption, HorizontalLine, Image, ImageCaption, ImageInline, Indent, IndentBlock, Alignment,
-    Admonition, Collapsible, CollapsibleHeadings, CollapsibleListItems, Multicolumn, Tabs,
+    Admonition, Aside, Collapsible, CollapsibleHeadings, CollapsibleListItems, Multicolumn, Tabs,
     SortSelection, TestBoxPlugin, KeepViewMappings, DropDisallowedAttributes, TriliumVim
 ];
 
@@ -87,6 +88,11 @@ export function item(text: string, id: string, indent = 0, type = "bulleted") {
 /** Paragraphs in the model data format, one per text. */
 export function paragraphs(...texts: string[]) {
     return texts.map((text) => `<paragraph>${text}</paragraph>`).join("");
+}
+
+/** An aside around `content`, blocks in the model data format. */
+export function aside(content: string) {
+    return `<asideBlock position="wrap-right"><asideContent>${content}</asideContent></asideBlock>`;
 }
 
 /** The adapter that the Vim engine drives in `editor`. */

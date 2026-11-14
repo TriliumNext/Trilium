@@ -486,8 +486,10 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .note-split.with-hue *::selection,
 .quick-edit-dialog-wrapper.with-hue *::selection,
+.ck-content aside.with-hue *::selection,
 .note-split.with-hue .table :is(td, th).ck-editor__editable_selected,
-.quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected {
+.quick-edit-dialog-wrapper.with-hue .table :is(td, th).ck-editor__editable_selected,
+.ck-content aside.with-hue .table :is(td, th).ck-editor__editable_selected {
     --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
 }
 

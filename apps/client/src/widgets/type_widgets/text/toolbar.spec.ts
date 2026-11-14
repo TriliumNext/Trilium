@@ -24,6 +24,20 @@ function setDevice(device: "mobile" | "desktop") {
     (window as unknown as { glob?: { device?: string } }).glob = { device };
 }
 
+/** The items of the Insert group of the classic toolbar, the block toolbar and the mobile one. */
+function getInsertGroups() {
+    const toolbars = [
+        buildClassicToolbar(false, true).toolbar.items,
+        buildFloatingToolbar(true).blockToolbar,
+        buildMobileToolbar(true).toolbar.items
+    ];
+    return toolbars.map((items) => {
+        const group = items.find((item) => typeof item === "object"
+            && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+        return (group as { items: string[] } | undefined)?.items ?? [];
+    });
+}
+
 describe("CKEditor config", () => {
     it("has same toolbar items for fixed and floating", () => {
         function traverseItems(config: ToolbarConfig): string[] {
@@ -74,23 +88,17 @@ describe("the Insert group", () => {
             expect(items).not.toContain("drawingCanvas");
         }
     });
+
+    it("offers the aside right above the math equation, in every toolbar", () => {
+        for (const items of getInsertGroups()) {
+            const index = items.indexOf("aside");
+            expect(items.slice(index, index + 2)).toEqual([ "aside", "math" ]);
+        }
+    });
 });
 
 describe("the extended code block", () => {
     afterEach(() => experimentalState.enabled.clear());
-
-    function getInsertGroups() {
-        const toolbars = [
-            buildClassicToolbar(false, true).toolbar.items,
-            buildFloatingToolbar(true).blockToolbar,
-            buildMobileToolbar(true).toolbar.items
-        ];
-        return toolbars.map((items) => {
-            const group = items.find((item) => typeof item === "object"
-                && "label" in item && item.label === "text-editor.toolbar-groups.insert");
-            return (group as { items: string[] } | undefined)?.items ?? [];
-        });
-    }
 
     it("follows the columns in the Insert group of every toolbar, while its feature is on", () => {
         experimentalState.enabled.add("extendedCodeBlocks");
@@ -259,7 +267,7 @@ describe("buildMobileToolbar", () => {
                 "|",
                 "horizontalLine", "pageBreak", "footnote",
                 "|",
-                "math", "drawingCanvas", "mermaid", "insertMedia",
+                "aside", "math", "drawingCanvas", "mermaid", "insertMedia",
                 "|",
                 "bookmark", "childNote", "contentEmbed",
                 "|",

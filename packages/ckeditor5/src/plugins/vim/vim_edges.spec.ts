@@ -9,8 +9,8 @@ import { describe, expect, it, vi } from "vitest";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { seedFootnotes } from "../../../test/footnotes-kit.js";
 import {
-    createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item, paragraphs,
-    press, setVimData, typeText
+    aside, createVimEditor, getAdapter, getContent, getCursor, getLines, getStatus, item,
+    paragraphs, press, setVimData, typeText
 } from "../../../test/vim-kit.js";
 import ContentEmbed from "../content_embed/content_embed.js";
 import ContentEmbedCaret from "../content_embed/content_embed_caret.js";
@@ -495,6 +495,7 @@ describe("Vim mode edge cases", () => {
                 "<multicolumnLayout columnRatios=\"1-1\"><multicolumnColumn><paragraph>c1"
                     + "</paragraph></multicolumnColumn><multicolumnColumn><paragraph>c2"
                     + "</paragraph></multicolumnColumn></multicolumnLayout>",
+                aside(paragraphs("s")),
                 paragraphs("w"),
                 "<horizontalLine></horizontalLine>"
             ]) {
