@@ -1279,8 +1279,8 @@ importers:
         specifier: 1.4.0
         version: 1.4.0(marked@18.1.3)
       numfmt:
-        specifier: 4.1.2
-        version: 4.1.2
+        specifier: 4.1.3
+        version: 4.1.3
     devDependencies:
       happy-dom:
         specifier: 21.0.4
@@ -9230,8 +9230,8 @@ packages:
     resolution: {integrity: sha512-GX0gsdbGVCgnRgbeGaubfjpBXyYRWOOCVeYh08bSQvDZqxz5ndXs1OTfAt/h36G1xvI94YIspsI0sVFqAV9+RQ==}
     engines: {node: '>=20.19.0'}
 
-  numfmt@4.1.2:
-    resolution: {integrity: sha512-3K7lWeRKIcxAuqvfQYt/2NGkSAz7zJ5JgGqL0mTEC4AyHYo+IVGWcWSNhZspPjCQvI1g5zBjEif1qiwsKdncBw==}
+  numfmt@4.1.3:
+    resolution: {integrity: sha512-rXt3x9KTNIlk4mqMUPpkBVUVBYv1uVOYOcotJ7mjbBOyerljLwTsEMdhW0c/tF2bc2nc3a7dszTo+QBYzv6eDQ==}
 
   nypm@0.6.10:
     resolution: {integrity: sha512-W72Hrj1petq+b3Hk2aAC+9zswetlIFTnDW4s5djseZh2nYqBbyQLOtj472HwcbcWykPBUW1WpWpjOd4nK6gMRw==}
@@ -21393,7 +21393,7 @@ snapshots:
     dependencies:
       boolbase: 2.0.0
 
-  numfmt@4.1.2: {}
+  numfmt@4.1.3: {}
 
   nypm@0.6.10:
     dependencies:
