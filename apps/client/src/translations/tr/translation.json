@@ -174,7 +174,15 @@
     "anchor": "Bağlantı (isteğe bağlı)",
     "anchor_none": "Yok (not bağlantısı)",
     "edit_link": "Bağlantıyı düzenle",
-    "button_edit_link": "Bağlantıyı kaydet"
+    "button_edit_link": "Bağlantıyı kaydet",
+    "fix_link": "Linki düzelt",
+    "page_title": "Web sayfası başlığı",
+    "title_from_url": "URL ile aynı",
+    "title_from_note": "Eğer ayarlanmamışsa her zaman notun başlığını yansıtır",
+    "description": "Açıklama",
+    "page_description": "Web sayfasının açıklaması",
+    "headings": "Başlıklar",
+    "title_from_heading": "Eğer ayarlanmamışsa her zaman başlığın metnini yansıtır"
   },
   "bulk_actions": {
     "bulk_actions": "Toplu eylemler",
