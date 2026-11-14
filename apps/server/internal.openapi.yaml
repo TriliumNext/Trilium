@@ -74,9 +74,6 @@ tags:
   - name: Database
     description: Database operations
     x-icon: bx bx-data
-  - name: LLM
-    description: AI/LLM integration
-    x-icon: bx bx-bot
   - name: Security
     description: Security features (2FA, tokens)
     x-icon: bx bx-shield-quarter
@@ -2115,14 +2112,55 @@ paths:
                 type: array
                 items:
                   type: object
+                  required:
+                    - notePath
+                    - noteTitle
+                    - notePathTitle
+                    - icon
                   properties:
                     noteId:
                       type: string
-                    title:
+                      example: "_help_gcI7RPbaNSh3"
+                    notePath:
                       type: string
-                    path:
+                      example: "root/_hidden/_help/_help_CdNpE2pqjmI6/_help_yIhgI5H7A2Sm/_help_4Gn3psZKsfSm/_help_gcI7RPbaNSh3"
+                    noteTitle:
                       type: string
-                      
+                      example: "Analog Watch"
+                    notePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog Watch"
+                    highlightedNotePathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets › Analog <b>Wat</b>ch"
+                    highlightedNoteTitle:
+                      type: string
+                      example: "Analog <b>Wat</b>ch"
+                    highlightedParentPathTitle:
+                      type: string
+                      example: "Hidden Notes › User Guide › Scripting › Frontend Basics › Launch Bar Widgets"
+                    contentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog watch in the launch bar."
+                    highlightedContentSnippet:
+                      type: string
+                      example: "This is a more intricate example of a basic widget, which displays an analog <b>wat</b>ch in the launch bar."
+                    contentSnippetTruncated:
+                      type: boolean
+                      example: true
+                    attributeSnippet:
+                      type: string
+                      example: ""
+                    matchedTerms:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - "wat"
+                    icon:
+                      type: string
+                      example: "tn-icon bx bx-file"
+
   /api/similar-notes/{noteId}:
     get:
       tags: [Search]
@@ -3772,312 +3810,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Note'
 
-  # LLM endpoints
-  /api/llm/chat:
-    post:
-      tags: [LLM]
-      summary: Create new chat session
-      operationId: createChatSession
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                systemPrompt:
-                  type: string
-                temperature:
-                  type: number
-                  minimum: 0
-                  maximum: 1
-                maxTokens:
-                  type: integer
-                model:
-                  type: string
-                provider:
-                  type: string
-                  enum: [openai, anthropic, ollama]
-                contextNoteId:
-                  type: string
-      responses:
-        '201':
-          description: Chat session created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-    get:
-      tags: [LLM]
-      summary: List all chat sessions
-      operationId: listChatSessions
-      responses:
-        '200':
-          description: Chat sessions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ChatSession'
-                  
-  /api/llm/chat/{sessionId}:
-    get:
-      tags: [LLM]
-      summary: Get specific chat session
-      operationId: getChatSession
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Chat session details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-    patch:
-      tags: [LLM]
-      summary: Update chat session
-      operationId: updateChatSession
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                title:
-                  type: string
-                systemPrompt:
-                  type: string
-                temperature:
-                  type: number
-                maxTokens:
-                  type: integer
-                model:
-                  type: string
-                provider:
-                  type: string
-                contextNoteId:
-                  type: string
-      responses:
-        '200':
-          description: Session updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatSession'
-                
-  /api/llm/chat/{chatNoteId}:
-    delete:
-      tags: [LLM]
-      summary: Delete chat session
-      operationId: deleteChatSession
-      parameters:
-        - name: chatNoteId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: Session deleted
-          
-  /api/llm/chat/{chatNoteId}/messages:
-    post:
-      tags: [LLM]
-      summary: Send message to LLM
-      operationId: sendChatMessage
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [message]
-              properties:
-                message:
-                  type: string
-                options:
-                  type: object
-                  properties:
-                    temperature:
-                      type: number
-                    maxTokens:
-                      type: integer
-                    model:
-                      type: string
-                    provider:
-                      type: string
-                includeContext:
-                  type: boolean
-                useNoteContext:
-                  type: boolean
-      responses:
-        '200':
-          description: LLM response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  response:
-                    type: string
-                  sources:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        noteId:
-                          type: string
-                        title:
-                          type: string
-                        similarity:
-                          type: number
-                          
-  /api/llm/chat/{chatNoteId}/messages/stream:
-    post:
-      tags: [LLM]
-      summary: Stream message to LLM
-      operationId: streamChatMessage
-      parameters:
-        - name: sessionId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [content]
-              properties:
-                content:
-                  type: string
-                useAdvancedContext:
-                  type: boolean
-                showThinking:
-                  type: boolean
-                mentions:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '200':
-          description: Streaming started
-          
-  /api/llm/providers/ollama/models:
-    get:
-      tags: [LLM]
-      summary: List Ollama models
-      operationId: listOllamaModels
-      parameters:
-        - name: baseUrl
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Ollama models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  models:
-                    type: array
-                    items:
-                      type: object
-                      
-  /api/llm/providers/openai/models:
-    get:
-      tags: [LLM]
-      summary: List OpenAI models
-      operationId: listOpenAIModels
-      responses:
-        '200':
-          description: OpenAI models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  chatModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-                  embeddingModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-                          
-  /api/llm/providers/anthropic/models:
-    get:
-      tags: [LLM]
-      summary: List Anthropic models
-      operationId: listAnthropicModels
-      responses:
-        '200':
-          description: Anthropic models
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  chatModels:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        name:
-                          type: string
-                        type:
-                          type: string
-
   # TOTP/2FA
   /api/totp/generate:
     get:
@@ -4933,35 +4665,6 @@ components:
         utcDateTime:
           type: string
           format: date-time
-          
-    ChatSession:
-      type: object
-      properties:
-        sessionId:
-          type: string
-        title:
-          type: string
-        messages:
-          type: array
-          items:
-            type: object
-            properties:
-              role:
-                type: string
-                enum: [user, assistant, system]
-              content:
-                type: string
-              timestamp:
-                type: string
-                format: date-time
-        createdAt:
-          type: string
-          format: date-time
-        lastActive:
-          type: string
-          format: date-time
-        messageCount:
-          type: integer
           
     EtapiToken:
       type: object
