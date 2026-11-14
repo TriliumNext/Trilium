@@ -191,6 +191,30 @@ describe("AsideEditing", () => {
             expect(widget.style.backgroundColor).toBe("");
         });
 
+        it("gives a colored aside the hue of its color for the theme tints, without saving it",
+            () => {
+                setModelData(editor.model,
+                    aside(paragraph("A[]"), ` backgroundColor="#e64d4d"${WRAPPED}`));
+                const widget = getWidget();
+                const hue = () => [
+                    widget.style.getPropertyValue("--custom-color-hue"),
+                    widget.classList.contains("with-hue")
+                ];
+                expect(hue()).toEqual([ "0", true ]);
+                expect(editor.getData()).not.toMatch(/hue/);
+
+                const colors = [ "hsl(210, 75%, 60%)", "rgb(153, 77, 230)", "#555555",
+                    "transparent", "inherit", null ];
+                expect(colors.map((value) => {
+                    editor.execute("asideColor", { value });
+                    return hue();
+                })).toEqual([
+                    [ "210", true ], [ "270", true ], [ "", false ], [ "", false ], [ "", false ],
+                    [ "", false ]
+                ]);
+                expect(getWidget()).toBe(widget);
+            });
+
         it("looks selected while it holds the selection, as while it is selected", () => {
             setModelData(editor.model, aside(paragraph("A[]")) + paragraph("B"));
             const isMarked = () => getWidget().classList.contains("ck-widget_selected");

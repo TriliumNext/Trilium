@@ -71,7 +71,10 @@ All in `AdaptiveColors`:
   `<table>` inside the widget's `<figure>` (or on the cell), and removes it with the color. A border
   whose sides differ has an object value and gets no variable.
 - **Asides.** The same `addVariable()` writes `--tn-background` next to the `background-color`
-  that the aside plugin downcasts from its `backgroundColor` attribute.
+  that the aside plugin downcasts from its `backgroundColor` attribute. In the editing view only,
+  `AsideEditing` also sets `--custom-color-hue` and the `with-hue` class from the color's HSL hue
+  (`getHue()` through CKEditor's `_convertColor`; none for a gray, `transparent` or no color), so
+  the Next themes tint the selection inside the aside as in a colored note. Nothing of it is saved.
 - **Loading.** `dropVariablesOnLoad()` consumes the three variables on every element at `"highest"`
   priority, so General HTML Support cannot keep a stale one. CKEditor's own converter reads the
   color back, and the next save writes the variable again. A note saved before the variables existed

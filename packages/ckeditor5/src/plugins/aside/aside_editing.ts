@@ -1,4 +1,6 @@
 import {
+    _convertColor as convertColor,
+    type DowncastAttributeEvent,
     type DowncastInsertEvent,
     enableViewPlaceholder,
     type MapperModelToViewPositionEvent,
@@ -56,6 +58,7 @@ export default class AsideEditing extends Plugin {
             model: { name: ELEMENTS.aside, key: COLOR_ATTRIBUTE },
             view: (color: string) => ({ key: "style", value: { "background-color": color } })
         });
+        this.registerColorHue();
         this.registerPostFixer();
 
         const positionedWidgets = editor.plugins.get(PositionedWidgets);
@@ -174,6 +177,33 @@ export default class AsideEditing extends Plugin {
     }
 
     /**
+     * Gives a colored aside in the editing view the hue of its color, in `--custom-color-hue` with
+     * the `with-hue` class, so the theme tints the selection inside it. A gray gets neither.
+     */
+    private registerColorHue() {
+        this.editor.conversion.for("editingDowncast").add((dispatcher) => {
+            dispatcher.on<DowncastAttributeEvent<ModelElement>>(
+                `attribute:${COLOR_ATTRIBUTE}:${ELEMENTS.aside}`,
+                (_evt, { item, attributeNewValue }, { mapper, writer }) => {
+                    const aside = mapper.toViewElement(item);
+                    /* v8 ignore next -- CKEditor gives every aside a view element. */
+                    if (!aside) {
+                        return;
+                    }
+
+                    const hue = getHue(attributeNewValue);
+                    if (hue === undefined) {
+                        writer.removeStyle("--custom-color-hue", aside);
+                        writer.removeClass("with-hue", aside);
+                    } else {
+                        writer.setStyle("--custom-color-hue", String(hue), aside);
+                        writer.addClass("with-hue", aside);
+                    }
+                });
+        });
+    }
+
+    /**
      * Keeps every aside valid however it was produced (paste, import, undo): it has one content,
      * which holds at least one block. An aside cannot hold another, so one inside an aside, as a
      * paste or a drop can put it, is replaced by its blocks.
@@ -199,6 +229,13 @@ export default class AsideEditing extends Plugin {
             return changed;
         });
     }
+}
+
+/** The hue of `color` in degrees, or `undefined` for a gray, transparent or no color. */
+function getHue(color: unknown): number | undefined {
+    const hsl = typeof color === "string" ? convertColor(color, "hsl") : "";
+    const [ hue, saturation ] = hsl.match(/-?[\d.]+/g)?.map(Number) ?? [];
+    return saturation ? hue : undefined;
 }
 
 function collectAsidesAround(position: ModelPosition, asides: Set<ModelElement>) {
