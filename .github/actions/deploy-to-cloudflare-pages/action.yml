@@ -20,7 +20,7 @@ runs:
     # pin (see customManagers in renovate.json).
     - name: Install Wrangler
       shell: bash
-      run: npm install -g wrangler@4.158.0
+      run: npm install -g wrangler@4.160.1
 
     # Deploy using Wrangler (use pre-installed wrangler)
     - name: Deploy to Cloudflare Pages
