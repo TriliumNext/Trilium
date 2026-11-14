@@ -217,6 +217,35 @@ describe("week_utils", () => {
     });
 
     describe("getFirstDayOfWeek1 (additional branches)", () => {
+        it("with firstWeekOfYear=1 and weeks starting on Sunday, week 1 contains Jan 1 when it is a Thursday", () => {
+            const settings: WeekSettings = {
+                firstDayOfWeek: 7,
+                firstWeekOfYear: 1,
+                minDaysInFirstWeek: 4
+            };
+            // 2026-01-01 is the first Thursday, so its week (Sunday 2025-12-28 to Saturday 2026-01-03) is week 1,
+            // even though it does not contain Jan 4
+            expect(getFirstDayOfWeek1(2026, settings).format("YYYY-MM-DD")).toBe("2025-12-28");
+            expect(getWeekString(dayjs("2026-01-01"), settings)).toBe("2026-W01");
+            expect(getWeekString(dayjs("2026-01-04"), settings)).toBe("2026-W02");
+            expect(getWeekString(dayjs("2025-12-27"), settings)).toBe("2025-W52");
+            expect(parseWeekString("2026-W01", settings).format("YYYY-MM-DD")).toBe("2025-12-28");
+        });
+
+        it("with firstWeekOfYear=1, the first day of week 1 always starts the week holding the first Thursday", () => {
+            for (let firstDayOfWeek = 1; firstDayOfWeek <= 7; firstDayOfWeek++) {
+                const settings: WeekSettings = { firstDayOfWeek, firstWeekOfYear: 1, minDaysInFirstWeek: 4 };
+                for (let year = 2020; year <= 2032; year++) {
+                    const start = getFirstDayOfWeek1(year, settings);
+                    const days = Array.from({ length: 7 }, (_, i) => start.add(i, "day"));
+                    expect(start.isoWeekday()).toBe(firstDayOfWeek);
+                    const thursday = days.find((day) => day.isoWeekday() === 4)!;
+                    expect(thursday.year()).toBe(year);
+                    expect(thursday.date()).toBeLessThanOrEqual(7);
+                }
+            }
+        });
+
         it("with firstWeekOfYear=1 (ISO 8601) for 2026, week 1 starts 2025-12-29", () => {
             const settings: WeekSettings = {
                 firstDayOfWeek: 1,
