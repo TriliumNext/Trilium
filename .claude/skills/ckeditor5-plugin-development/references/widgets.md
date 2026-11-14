@@ -234,7 +234,9 @@ A block widget that the user places in the text, resizes or types in reuses thes
   - `propertyPrefix` names the CSS custom properties that save the size, `<prefix>-width` and
     `<prefix>-height` in `em` (model attributes `customWidth` and `customHeight`). The widget's
     stylesheet applies them, and the import sanitizer must allow them on the widget's element
-    (see the checklist at the end).
+    (see the checklist at the end). The `em` is the widget's own: a widget with its own
+    `font-size`, as the aside's `--aside-font-size`, saves sizes in its ems, so a change to that
+    font size rescales every saved size.
   - `isWidthResizable` and `isHeightResizable` take a boolean or a function of the element;
     `getAnchor` (usually `PositionedWidgets#getAnchor`) gives the edge that stays in place;
     `isResizable`, `heightTarget`, `minWidth` and `minHeight` are optional. Double-clicking a

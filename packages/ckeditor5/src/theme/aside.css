@@ -5,6 +5,7 @@
     --aside-padding: .5em 1em;
     --aside-default-width: 22em;
     --aside-markdown-default-width: max(33.3%, 250px);
+    --aside-font-size: .85em;
 }
 
 /* Markdown note content: `.markdown-preview` in the client, `.type-code` on a share page. */
@@ -23,6 +24,7 @@
     box-sizing: border-box;
     max-width: 100%;
     width: var(--aside-width, auto);
+    font-size: var(--aside-font-size);
     break-inside: avoid;
 
     &[data-position="left"] {

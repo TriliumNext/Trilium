@@ -52,7 +52,8 @@ describe("aside styles", () => {
             const text = "<p>Text beside the aside.</p>";
             const right = measureAside(renderContent(
                 `<aside data-position="wrap-right"><p>A</p></aside>${text}`));
-            expect(right).toMatchObject({ float: "right", right: 0, width: 22 * right.em });
+            expect(right).toMatchObject(
+                { float: "right", right: 0, width: Math.round(22 * right.em) });
 
             const left = renderContent("<aside data-position=\"wrap-left\" " +
                 `style="--aside-width:10em;"><p>A</p></aside>${text}`);
@@ -79,12 +80,14 @@ describe("aside styles", () => {
         () => {
             const left = measureAside(renderContent(
                 "<aside data-position=\"left\"><p>A</p></aside><p>Text</p>"));
-            expect(left).toMatchObject({ float: "none", left: 0, width: 22 * left.em });
+            expect(left).toMatchObject(
+                { float: "none", left: 0, width: Math.round(22 * left.em) });
             expect(left.marginBlock).toEqual([ left.em / 2, left.em / 2 ]);
 
             const right = measureAside(renderContent(
                 "<aside data-position=\"right\"><p>A</p></aside><p>Text</p>"));
-            expect(right).toMatchObject({ float: "none", right: 0, width: 22 * right.em });
+            expect(right).toMatchObject(
+                { float: "none", right: 0, width: Math.round(22 * right.em) });
 
             expect(measureAside(renderContent("<aside><p>A</p></aside>")))
                 .toMatchObject({ float: "none", left: 0, right: 0, width: WIDTH });
@@ -146,7 +149,7 @@ describe("aside styles", () => {
                 Math.round((first?.top ?? 0) - box.top),
                 Math.round(box.bottom - (last?.bottom ?? 0)),
                 Math.round((first?.left ?? 0) - box.left)
-            ]).toEqual([ em / 2, em / 2, em ]);
+            ]).toEqual([ em / 2, em / 2, em ].map(Math.round));
             expect(getComputedStyle(aside).borderTopLeftRadius).toBe("8px");
         }
 
@@ -164,4 +167,19 @@ describe("aside styles", () => {
         expect(focused?.classList.contains("ck-editor__nested-editable_focused")).toBe(true);
         expect(focused && getComputedStyle(focused).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     });
+
+    it("sets the text of an aside at .85 of the text around it, saved and in the editor",
+        async () => {
+            const saved = renderContent("<aside><p>Aside</p></aside><p>Text</p>");
+            const editor = await createTestEditor([ Essentials, Paragraph, Aside ]);
+            setModelData(editor.model, "<asideBlock><asideContent><paragraph>Aside</paragraph>" +
+                "</asideContent></asideBlock><paragraph>Text</paragraph>");
+            const fontSize = (element: Element | null | undefined) =>
+                element ? parseFloat(getComputedStyle(element).fontSize) : NaN;
+
+            for (const root of [ saved, editor.editing.view.getDomRoot() ]) {
+                expect(fontSize(root?.querySelector("aside p")))
+                    .toBeCloseTo(.85 * fontSize(root?.querySelector(":scope > p")));
+            }
+        });
 });
