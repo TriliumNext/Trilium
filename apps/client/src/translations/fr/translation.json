@@ -2895,6 +2895,8 @@
     "note_title": "Réunion du {{date}}"
   },
   "doc_notes": {
-    "share": "<p>Vous pouvez trouver ici toutes les notes partagées.</p>"
+    "share": "<p>Vous pouvez trouver ici toutes les notes partagées.</p>",
+    "launchbar_command_launcher": "Le raccourci clavier pour cette action de lanceur peut être configuré dans: - Options ; : Raccourcis.",
+    "launchbar_history_navigation": "Les boutons Retour et Avancement vous permettent de vous déplacer dans l'historique de navigation.Ces lanceurs ne sont actifs que dans la version du bureau et seront ignorés dans l'édition serveur où vous pouvez utiliser les boutons de navigation du navigateur natif à la place."
   }
 }

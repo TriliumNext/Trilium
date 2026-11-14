@@ -620,5 +620,12 @@
   "open_custom": {
     "choose_application": "Roghnaigh feidhmchlár chun an comhad a oscailt leis.",
     "applications_filter": "Feidhmchláir"
+  },
+  "open-executable-dialog": {
+    "title": "Oscail clár",
+    "message": "Oscail \"{{- name}}\"?",
+    "detail": "{{- path}}\n\nIs féidir leis an gcomhad seo clár a rith ar do ríomhaire. Ná hoscail é ach amháin má chruthaigh tú an nasc seo tú féin agus má tá muinín agat as an gcomhad.",
+    "cancel": "Cealaigh",
+    "open": "Oscailte"
   }
 }
