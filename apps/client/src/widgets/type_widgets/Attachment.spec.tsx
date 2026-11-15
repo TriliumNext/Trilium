@@ -237,7 +237,7 @@ describe("AttachmentDetail", () => {
         expect(getRenderedContent).not.toHaveBeenCalled();
     });
 
-    it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview", async () => {
+    it("shows a workbook opened on its own in the read-only spreadsheet, else its whole preview until it changes", async () => {
         const workbook = { ...role("file"), mime: XLSX_MIME } as FAttachment;
         vi.spyOn(froca, "getAttachment").mockResolvedValue(workbook);
         getRenderedContent.mockClear();
@@ -246,8 +246,9 @@ describe("AttachmentDetail", () => {
             note: { noteId: "note1" },
             viewScope: { viewMode: "attachments", attachmentId: workbook.attachmentId }
         } as unknown as Parameters<typeof AttachmentDetail>[0];
+        const parent = new Component();
         const container = renderInto(
-            <ParentComponent.Provider value={new Component()}>
+            <ParentComponent.Provider value={parent}>
                 <AttachmentDetail {...props} />
             </ParentComponent.Provider>
         );
@@ -260,6 +261,11 @@ describe("AttachmentDetail", () => {
         await vi.waitFor(() => expect(getRenderedContent).toHaveBeenCalledOnce());
         expect(getRenderedContent).toHaveBeenCalledWith(workbook, expect.objectContaining({ trim: false }));
         expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+
+        // A replaced file gets the spreadsheet again.
+        workbook.utcDateModified = "2026-02-01 00:00:00Z";
+        await reloadAttachment(parent, workbook.attachmentId, "elsewhere");
+        await vi.waitFor(() => expect(container.querySelector(".attachment-spreadsheet .spreadsheet-file-stub")).not.toBeNull());
     });
 });
 

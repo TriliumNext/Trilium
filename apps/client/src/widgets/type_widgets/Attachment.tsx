@@ -250,10 +250,12 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && attachment.mime === CANVAS_ATTACHMENT_MIME
         && (!attachment.isProtected || protected_session_holder.isProtectedSessionAvailable());
     const isTranscript = attachment.role === "transcript";
-    // A workbook gets the read-only spreadsheet, and its whole HTML preview if it cannot be read as one.
+    // A workbook gets the read-only spreadsheet, and its whole HTML preview if it cannot be read as
+    // one, until its content changes.
     const [ workbookFailedFor, setWorkbookFailedFor ] = useState<string>();
+    const workbookKey = `${attachment.attachmentId}-${modified}`;
     const isWorkbook = !!isFullDetail && attachment.mime === XLSX_MIME
-        && workbookFailedFor !== attachment.attachmentId;
+        && workbookFailedFor !== workbookKey;
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing || isTranscript || isWorkbook;
     const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
 
@@ -383,10 +385,10 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
                     <div key="spreadsheet" className="attachment-content-wrapper attachment-spreadsheet">
                         <Suspense fallback={null}>
                             <SpreadsheetFile
-                                key={`${attachment.attachmentId}-${modified}`}
+                                key={workbookKey}
                                 entity={attachment}
                                 noteContext={noteContext}
-                                onError={() => setWorkbookFailedFor(attachment.attachmentId)}
+                                onError={() => setWorkbookFailedFor(workbookKey)}
                             />
                         </Suspense>
                     </div>

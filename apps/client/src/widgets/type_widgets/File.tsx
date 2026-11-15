@@ -27,16 +27,17 @@ export default function FileTypeWidget({ note, parentComponent, noteContext, isV
     const isOffice = isOfficeMimeType(note.mime);
     const blob = useNoteBlob(isOffice ? null : note, parentComponent?.componentId);
 
-    // A workbook that cannot be read as one falls back to the HTML preview, until another note.
+    // A workbook that cannot be read as one falls back to the HTML preview until its content changes.
     const [ workbookFailedFor, setWorkbookFailedFor ] = useState<string>();
+    const workbookKey = `${note.noteId}-${note.blobId}`;
 
     // Office formats are checked first: RTF can arrive as text/rtf (string content), which
     // would otherwise be caught by the blob.content branch below and shown as raw markup.
-    if (note.mime === XLSX_MIME && workbookFailedFor !== note.noteId) {
+    if (note.mime === XLSX_MIME && workbookFailedFor !== workbookKey) {
         return (
             <Suspense fallback={null}>
                 <SpreadsheetFile entity={note} noteContext={noteContext} componentId={parentComponent?.componentId}
-                    isVisible={isVisible} onError={() => setWorkbookFailedFor(note.noteId)} />
+                    isVisible={isVisible} onError={() => setWorkbookFailedFor(workbookKey)} />
             </Suspense>
         );
     } else if (isOffice) {

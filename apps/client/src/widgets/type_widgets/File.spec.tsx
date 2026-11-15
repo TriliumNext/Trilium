@@ -121,6 +121,20 @@ describe("FileTypeWidget", () => {
         }
     });
 
+    it("tries the spreadsheet again once the failed workbook's content changes", async () => {
+        vi.mocked(useNoteBlob).mockReturnValue(null);
+        await showWorkbook("blob1");
+        await vi.waitFor(() => expect(container.querySelector(".spreadsheet-file-stub")).not.toBeNull());
+
+        await act(async () => spreadsheetProps.at(-1)?.onError());
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+        await showWorkbook("blob1");
+        expect(container.querySelector(".spreadsheet-file-stub")).toBeNull();
+
+        await showWorkbook("blob2");
+        expect(container.querySelector(".spreadsheet-file-stub")).not.toBeNull();
+    });
+
     const showWorkbook = (blobId: string, isVisible = true) => act(async () => {
         const props = { note: { noteId: "note1", mime: XLSX_MIME, blobId }, isVisible } as unknown as Parameters<typeof FileTypeWidget>[0];
         render(<FileTypeWidget {...props} />, container);
