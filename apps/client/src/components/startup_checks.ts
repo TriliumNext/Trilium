@@ -15,10 +15,14 @@ export class StartupChecks extends Component {
 
     constructor() {
         super();
-        this.checkCpuArchMismatch();
         // Shared by desktop and mobile (both reach here via startAppAroundLayout()), so the
         // post-enrollment toast lives here rather than being duplicated in each entry point.
         showOAuthEnrollmentResultToast();
+    }
+
+    /** Once the startup has attached this component, so that its command reaches `appContext`. */
+    initialRenderCompleteEvent() {
+        void this.checkCpuArchMismatch();
     }
 
     async checkCpuArchMismatch() {

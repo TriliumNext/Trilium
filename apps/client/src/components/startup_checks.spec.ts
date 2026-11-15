@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import server from "../services/server";
 import toast from "../services/toast";
 
+import Component from "./component";
 import { showOAuthEnrollmentResultToast, StartupChecks } from "./startup_checks";
 
 vi.mock("../services/server", () => ({ default: { get: vi.fn() } }));
@@ -84,12 +85,16 @@ describe("StartupChecks", () => {
 
     it("warns of a CPU architecture mismatch that /bootstrap reports, without asking the server", async () => {
         setGlob({ isCpuArchMismatch: true });
-        const triggerCommand = vi.spyOn(StartupChecks.prototype, "triggerCommand").mockReturnValue(undefined);
-
-        await new StartupChecks().checkCpuArchMismatch();
+        // Attached as `initComponents()` attaches it, then told that the first render is complete.
+        const parent = new (class extends Component {
+            showCpuArchWarningCommand = vi.fn();
+        })();
+        parent.child(new StartupChecks());
+        await parent.handleEventInChildren("initialRenderComplete", {});
+        await new Promise((resolve) => setTimeout(resolve));
 
         expect(serverGet).not.toHaveBeenCalledWith("system-checks");
-        expect(triggerCommand).toHaveBeenCalledWith("showCpuArchWarning", {});
+        expect(parent.showCpuArchWarningCommand).toHaveBeenCalledOnce();
     });
 
     it("asks the server when /bootstrap does not know yet", async () => {
