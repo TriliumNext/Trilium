@@ -107,8 +107,10 @@ describe("SearchResult", () => {
         shownNote.current = searchNote;
         await mount();
         // The first test pays the cold import of the lazily loaded view, which can outlast `settle()`.
-        await vi.waitFor(() => expect(container.querySelectorAll(".search-result-card")).toHaveLength(2));
-        expect(post).toHaveBeenCalledWith("search-note/searchNote/result-details", expect.anything());
+        await vi.waitFor(() => {
+            expect(container.querySelectorAll(".search-result-card")).toHaveLength(2);
+            expect(post).toHaveBeenCalledWith("search-note/searchNote/result-details", expect.anything());
+        });
 
         await settle(() => {
             shownNote.current = resultNote;
