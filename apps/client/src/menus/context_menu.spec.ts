@@ -1,7 +1,6 @@
 import { h } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../services/note_tooltip", () => ({ default: { dismissAllTooltips: vi.fn() } }));
 vi.mock("../services/keyboard_actions", () => ({
     getActionSync: (name: string) => ({
         effectiveShortcuts: name === "copyNotesToClipboard" ? [ "Ctrl+C", "Ctrl+Insert" ] : []
@@ -1883,6 +1882,20 @@ describe("contextMenu", () => {
         tooltip.dispose();
         button.remove();
         field.remove();
+    });
+
+    it("tells its listeners that it opens, before the menu is up", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+        const { onContextMenuShow } = await import("./context_menu");
+        const wasShown: boolean[] = [];
+        onContextMenuShow(() => wasShown.push(contextMenu.isShown));
+
+        await contextMenu.show({ x: 10, y: 10, items, selectMenuItemHandler: () => {} });
+
+        expect(wasShown).toEqual([ false ]);
+        expect(contextMenu.isShown).toBe(true);
+        await contextMenu.hide();
     });
 
     it("says whether it is up, for a host whose own press would otherwise not know", async () => {

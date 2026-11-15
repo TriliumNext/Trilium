@@ -3,6 +3,7 @@ import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_referen
 import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
+import { onContextMenuShow } from "../menus/context_menu.js";
 import attributeRenderer from "./attribute_renderer.js";
 import { revealHighlightedBlocks } from "./block_reference.js";
 import froca from "./froca.js";
@@ -15,6 +16,8 @@ import utils from "./utils.js";
 // Track all elements that open tooltips
 let openTooltipElements: JQuery<HTMLElement>[] = [];
 let dismissTimer: ReturnType<typeof setTimeout>;
+
+onContextMenuShow(dismissAllTooltips);
 
 function setupGlobalTooltip() {
     $(document).on("pointerenter", "a:not(.no-tooltip-preview)", mouseEnterHandler);

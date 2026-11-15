@@ -3,7 +3,6 @@ import { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { h, JSX, render } from "preact";
 
-import note_tooltip from "../services/note_tooltip.js";
 import type { NotePresetId } from "../services/note_presets.js";
 import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
@@ -216,7 +215,9 @@ class ContextMenu {
     }
 
     async show<T>(options: ContextMenuOptions<T>) {
-        note_tooltip.dismissAllTooltips();
+        for (const listener of showListeners) {
+            listener();
+        }
         hideShownTooltips();
 
         const request = ++this.lastShowRequest;
@@ -331,6 +332,16 @@ class ContextMenu {
 const contextMenu = new ContextMenu();
 
 export default contextMenu;
+
+const showListeners = new Set<() => void>();
+
+/**
+ * Calls `listener` each time a context menu is about to open. `note_tooltip` disposes its
+ * previews through it, which keeps the preview renderer out of this module's imports.
+ */
+export function onContextMenuShow(listener: () => void) {
+    showListeners.add(listener);
+}
 
 // Bootstrap sets `aria-describedby` on a trigger while its tooltip is shown. `hide()` also clears
 // the hover and focus triggers that keep the tooltip up.
