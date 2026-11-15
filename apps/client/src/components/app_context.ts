@@ -772,24 +772,18 @@ export class AppContext extends Component {
     removeBeforeUnloadListener(listener: (() => boolean)) {
         this.beforeUnloadListeners = this.beforeUnloadListeners.filter(l => l !== listener);
     }
-}
 
-const appContext = reuseAcrossHotReloads(import.meta.hot, () => {
-    const context = new AppContext(window.glob.isMainWindow);
-    registerWindowHandlers(context);
-    return context;
-});
-
-export default appContext;
-
-function registerWindowHandlers(appContext: AppContext) {
-    // we should save all outstanding changes before the page/app is closed
-    $(window).on("beforeunload", () => {
+    /**
+     * Whether every before-unload listener has saved its state. Each listener that has not starts
+     * saving, so a later call can return `true`.
+     */
+    isAllSaved() {
         let allSaved = true;
 
-        appContext.beforeUnloadListeners = appContext.beforeUnloadListeners.filter((wr) => typeof wr === "function" || !!wr.deref());
+        this.beforeUnloadListeners = this.beforeUnloadListeners
+            .filter((wr) => typeof wr === "function" || !!wr.deref());
 
-        for (const listener of appContext.beforeUnloadListeners) {
+        for (const listener of this.beforeUnloadListeners) {
             if (typeof listener === "object") {
                 const component = listener.deref();
 
@@ -806,7 +800,22 @@ function registerWindowHandlers(appContext: AppContext) {
             }
         }
 
-        if (!allSaved) {
+        return allSaved;
+    }
+}
+
+const appContext = reuseAcrossHotReloads(import.meta.hot, () => {
+    const context = new AppContext(window.glob.isMainWindow);
+    registerWindowHandlers(context);
+    return context;
+});
+
+export default appContext;
+
+function registerWindowHandlers(appContext: AppContext) {
+    // we should save all outstanding changes before the page/app is closed
+    $(window).on("beforeunload", () => {
+        if (!appContext.isAllSaved()) {
             toast.showMessage(t("app_context.please_wait_for_save"), 10000);
             return "some string";
         }
