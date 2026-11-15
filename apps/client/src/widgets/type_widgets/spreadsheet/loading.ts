@@ -25,6 +25,8 @@ interface SpreadsheetViewState {
 }
 
 export interface WorkbookDisplayHooks {
+    /** Makes each workbook read-only and its cells unselectable. */
+    readOnly?: boolean;
     /** Called with the parsed workbook data before Univer creates the workbook from it. */
     prepare?(workbookData: Partial<IWorkbookData>): void;
     /** Called with the workbook once it is created and shown. */
@@ -89,6 +91,9 @@ export function useWorkbookDisplay(apiRef: RefObject<FUniver | undefined>, conta
         }
 
         restoreViewState(workbook, viewState);
+        if (hooksRef.current.readOnly) {
+            makeReadOnly(univerAPI, workbook);
+        }
         hooksRef.current.loaded?.(workbook);
     }
 
@@ -139,7 +144,7 @@ export function useWorkbookFile({ entity, noteContext, componentId, isVisible }:
     apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>, onError: () => void) {
     const onErrorRef = useRef(onError);
     onErrorRef.current = onError;
-    const display = useWorkbookDisplay(apiRef, containerRef);
+    const display = useWorkbookDisplay(apiRef, containerRef, { readOnly: true });
     const attachment = "attachmentId" in entity ? entity : null;
     const noteWorkbook = useNoteBlob<WorkbookFile>(attachment ? null : entity as FNote, componentId, {
         reportLoadStateTo: noteContext,
@@ -203,6 +208,30 @@ async function fetchWorkbook(entityType: "notes" | "attachments", entityId: stri
     } catch {
         return { content: "", failed: true };
     }
+}
+
+/**
+ * Makes `workbook` read-only. Univer applies permissions only once it has rendered, so a workbook
+ * created before that waits for the `Rendered` stage and then applies them to the active workbook.
+ */
+function makeReadOnly(univerAPI: FUniver, workbook: FWorkbook) {
+    const { Rendered } = univerAPI.Enum.LifecycleStages;
+    if (univerAPI.getCurrentLifecycleStage() >= Rendered) {
+        applyReadOnly(workbook);
+        return;
+    }
+
+    const listener = univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({ stage }) => {
+        if (stage !== Rendered) return;
+        listener.dispose();
+        const activeWorkbook = univerAPI.getActiveWorkbook();
+        if (activeWorkbook) applyReadOnly(activeWorkbook);
+    });
+}
+
+function applyReadOnly(workbook: FWorkbook) {
+    workbook.disableSelection();
+    workbook.getWorkbookPermission().setReadOnly();
 }
 
 function saveViewState(univerAPI: FUniver): SpreadsheetViewState {

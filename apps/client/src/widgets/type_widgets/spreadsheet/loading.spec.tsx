@@ -61,6 +61,39 @@ describe("useWorkbookFile", () => {
         expect(states).toEqual([]);
     });
 
+    it("makes every workbook it shows read-only, not only the first", async () => {
+        vi.spyOn(server, "getWithSilentErrors").mockImplementation(async (url: string) =>
+            JSON.stringify({ version: 1, workbook: { name: url, sheets: {} } }));
+        const { univerAPI, rerender } = await mount();
+        await vi.waitFor(() => expect(univerAPI.createWorkbook).toHaveBeenCalledOnce());
+
+        await rerender(buildNote({ title: "Other.xlsx", type: "file" }));
+        await vi.waitFor(() => expect(univerAPI.createWorkbook).toHaveBeenCalledTimes(2));
+
+        const workbooks = univerAPI.createWorkbook.mock.results.map((result) => result.value as MockWorkbook);
+        for (const workbook of workbooks) {
+            expect(workbook.disableSelection).toHaveBeenCalledOnce();
+            expect(workbook.setReadOnly).toHaveBeenCalledOnce();
+        }
+    });
+
+    it("waits for Univer to render before making the first workbook read-only", async () => {
+        vi.spyOn(server, "getWithSilentErrors").mockResolvedValue(JSON.stringify({ version: 1, workbook: {} }));
+        const { univerAPI, enterStage } = await mount(undefined, { stage: LIFECYCLE_STAGES.Ready });
+        await vi.waitFor(() => expect(univerAPI.createWorkbook).toHaveBeenCalledOnce());
+        const workbook = univerAPI.createWorkbook.mock.results[0]?.value as MockWorkbook;
+        expect(workbook.setReadOnly).not.toHaveBeenCalled();
+
+        enterStage(LIFECYCLE_STAGES.Ready);
+        expect(workbook.setReadOnly).not.toHaveBeenCalled();
+        univerAPI.getActiveWorkbook.mockReturnValue(workbook);
+        enterStage(LIFECYCLE_STAGES.Rendered);
+        expect(workbook.setReadOnly).toHaveBeenCalledOnce();
+        expect(workbook.disableSelection).toHaveBeenCalledOnce();
+        enterStage(LIFECYCLE_STAGES.Steady);
+        expect(workbook.setReadOnly).toHaveBeenCalledOnce();
+    });
+
     it("leaves the note detail's load state alone while the viewer is hidden", async () => {
         vi.spyOn(server, "getWithSilentErrors").mockResolvedValue(JSON.stringify({ version: 1, workbook: {} }));
         const { univerAPI, states } = await mount(undefined, { isVisible: false });

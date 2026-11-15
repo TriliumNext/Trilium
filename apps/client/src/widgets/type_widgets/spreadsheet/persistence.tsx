@@ -10,7 +10,7 @@ import { uploadImageAttachment } from "../../../services/image_upload";
 import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
 import { useWorkbookDisplay } from "./loading";
 
-export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>) {
+export default function usePersistence(note: FNote, noteContext: NoteContext | null | undefined, apiRef: RefObject<FUniver | undefined>, containerRef: RefObject<HTMLDivElement | null>, readOnly: boolean) {
     const changeListener = useRef<IDisposable>(null);
     // Set when a value edit has been made whose formula recalculation hasn't been
     // applied yet. getData() waits for that pending recalc before serializing, so a
@@ -24,6 +24,7 @@ export default function usePersistence(note: FNote, noteContext: NoteContext | n
     const preexistingImageSources = useRef<Set<string>>(new Set());
 
     const display = useWorkbookDisplay(apiRef, containerRef, {
+        readOnly,
         prepare(workbookData) {
             // Snapshot the base64 images already in the loaded content so the save-time upload
             // leaves them untouched (only newly inserted images become attachments), and start

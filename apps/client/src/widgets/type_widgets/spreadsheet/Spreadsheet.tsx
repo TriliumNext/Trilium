@@ -102,7 +102,7 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     useAnchorCellEditorOnScroll(apiRef);
     useStripPastedFontFamily(apiRef);
     useDarkMode(apiRef);
-    const spacedUpdate = usePersistence(note, noteContext, apiRef, containerRef);
+    const spacedUpdate = usePersistence(note, noteContext, apiRef, containerRef, readOnly);
     useSpreadsheetExport(apiRef, note, noteContext, spacedUpdate);
     useSearchIntegration(apiRef, noteContext);
     useDismissDialogsOnNoteSwitch(apiRef);
@@ -307,18 +307,6 @@ function useInitializeSpreadsheet(containerRef: RefObject<HTMLDivElement | null>
             // (see toMobilePresets); the remaining feature plugins are platform-agnostic.
             presets: isMobile() ? toMobilePresets(presets) : presets,
         });
-        if (readOnly) {
-            univerAPI.addEvent(univerAPI.Event.LifeCycleChanged, ({ stage }) => {
-                if (stage === univerAPI.Enum.LifecycleStages.Rendered) {
-                    const workbook = univerAPI.getActiveWorkbook();
-                    if (!workbook) return;
-
-                    workbook.disableSelection();
-                    workbook.getWorkbookPermission().setReadOnly();
-                }
-            });
-        }
-
         apiRef.current = univerAPI;
         return () => univerAPI.dispose();
     }, [ apiRef, containerRef, readOnly, locale ]);
