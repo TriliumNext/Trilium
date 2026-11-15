@@ -5,11 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 const setupLeftPaneResizer = vi.hoisted(() => vi.fn());
 vi.mock("../../services/resizer", () => ({ default: { setupLeftPaneResizer } }));
 vi.mock("../note_tree", async () => {
-    const { default: BasicWidget } = await import("../basic_widget");
+    const { default: NoteContextAwareWidget } = await import("../note_context_aware_widget");
     return {
-        default: class extends BasicWidget {
+        default: class extends NoteContextAwareWidget {
             doRender() {
                 this.$widget = $(`<div class="tree-stub" tabindex="-1">`);
+            }
+
+            isEnabled() {
+                return !!this.noteContext;
             }
         }
     };
@@ -85,11 +89,16 @@ describe("LeftPane", () => {
     });
 
     it("starts docked where the option says so, and its peek edge hides it", async () => {
+        // The tabs are restored before the tree has loaded, so it missed `activeContextChanged`.
+        const activeContext = { ntxId: "main" };
+        appContext.tabManager = { getActiveContext: () => activeContext } as unknown as typeof appContext.tabManager;
         await mount(true);
         expect(getHost().classList.contains("hidden-int")).toBe(false);
         expect(getMainContainer().classList.contains("left-pane-hidden")).toBe(false);
         expect(setupLeftPaneResizer).toHaveBeenLastCalledWith("docked");
         await vi.waitFor(() => expect(getHost().querySelector(".tree-stub")).not.toBeNull());
+        expect(appContext.noteTreeWidget?.noteContext).toBe(activeContext);
+        expect(getHost().querySelector(".tree-stub")?.classList.contains("hidden-int")).toBe(false);
         expect(getHost().querySelector(".quick-search-stub")).toBeNull();
 
         await trigger("peekLeftPane", {});

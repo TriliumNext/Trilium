@@ -8,6 +8,7 @@ import resizer from "../../services/resizer";
 import ShowAllNotesButton from "../buttons/show_all_notes_button";
 import { useTriliumEvent } from "../react/hooks/events";
 import { useLegacyWidget } from "../react/hooks/legacy";
+import { useActiveNoteContext } from "../react/hooks/tree";
 import LazyComponent, { useLazyModule } from "../react/LazyComponent";
 import {
     type PaneAction, type PaneModeController, reducePaneMode, usePaneMode, usePeekDismiss
@@ -122,10 +123,12 @@ function NoteTree() {
 }
 
 function LoadedNoteTree({ NoteTreeWidget }: { NoteTreeWidget: typeof import("../note_tree").default }) {
+    // The tabs can be restored before the tree loads, so it would miss `activeContextChanged`.
+    const { noteContext } = useActiveNoteContext();
     const [ tree ] = useLegacyWidget(() => {
         const widget = new NoteTreeWidget();
         appContext.noteTreeWidget = widget;
         return widget;
-    }, { containerClassName: "note-tree-host" });
+    }, { containerClassName: "note-tree-host", noteContext });
     return tree;
 }
