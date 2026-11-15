@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../../becca/becca";
 import { load } from "../../becca/becca_loader";
 import { getContext } from "../../services/context";
+import optionService from "../../services/options";
 import { registerVirtualNoteProvider, unregisterVirtualNoteProvider } from "../../services/virtual_notes";
 import { createTextNote } from "../../test/api_fixtures";
 import { CoreApiTester } from "../../test/api_tester";
@@ -74,6 +75,37 @@ describe("Tree API (core)", () => {
             }
         } finally {
             if (hiddenBranch) hiddenBranch.isExpanded = wasExpanded;
+        }
+    });
+
+    it("includes the notes of the saved tabs with their ancestors, which the client restores at startup", async () => {
+        // Below a collapsed note, which the tree would otherwise stop at.
+        const parent = await createTextNote(api, { title: "Collapsed parent" });
+        const tabNote = await createTextNote(api, { parentNoteId: parent.noteId, title: "Open in a tab" });
+        const hoistedParent = await createTextNote(api, { parentNoteId: parent.noteId, title: "Hoisted parent" });
+        const hoisted = await createTextNote(api, { parentNoteId: hoistedParent.noteId, title: "Hoisted" });
+        const savedTabs = optionService.getOption("openNoteContexts");
+        const tabs = [
+            { ntxId: "a", notePath: `root/${parent.noteId}/${tabNote.noteId}`, hoistedNoteId: hoisted.noteId, active: true },
+            { ntxId: "b", notePath: "root/noLongerThere", hoistedNoteId: "root", active: false }
+        ];
+        await api.put("/api/options", { body: { openNoteContexts: JSON.stringify(tabs) } });
+        try {
+            const res = await api.get<TreeResponse>("/api/tree");
+            const noteIds = new Set(res.body.notes.map((n) => n.noteId));
+
+            for (const noteId of [ tabNote.noteId, parent.noteId, hoisted.noteId, hoistedParent.noteId ]) {
+                expect(noteIds.has(noteId)).toBe(true);
+            }
+            expect(noteIds.has("noLongerThere")).toBe(false);
+
+            // A value the client did not write leaves the tree as it is.
+            for (const openNoteContexts of [ "not json", "{}" ]) {
+                await api.put("/api/options", { body: { openNoteContexts } });
+                expect((await api.get<TreeResponse>("/api/tree")).status).toBe(200);
+            }
+        } finally {
+            await api.put("/api/options", { body: { openNoteContexts: savedTabs } });
         }
     });
 
