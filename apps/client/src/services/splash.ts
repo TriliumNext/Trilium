@@ -98,10 +98,17 @@ export function updateSplashStatus(status: string): void {
     }
 }
 
-/** Switches the splash to its error state: the progress bar goes away and the message shows. */
+/**
+ * Switches the splash to its error state: the progress bar goes away and the message shows. A
+ * page without a splash gets the message as an alert at the top of the body.
+ */
 export function showSplashError(message: string): void {
     const splashEl = document.getElementById("splash");
     if (!splashEl) {
+        const alertEl = document.createElement("p");
+        alertEl.setAttribute("role", "alert");
+        alertEl.textContent = message;
+        document.body.prepend(alertEl);
         return;
     }
     splashEl.classList.add("splash-error");

@@ -110,7 +110,7 @@ describe("splash", () => {
         expect(document.getElementById("splash")).toBeNull();
     });
 
-    it("does nothing when the splash is not in the document", async () => {
+    it("reports only an error when the splash is not in the document", async () => {
         const {
             initSplashProgress, reportSplashPhase, updateSplashStatus, showSplashError, hideSplash
         } = await freshSplash();
@@ -120,8 +120,12 @@ describe("splash", () => {
             initSplashProgress(PHASES);
             reportSplashPhase("first");
             updateSplashStatus("status");
-            showSplashError("error");
             hideSplash();
         }).not.toThrow();
+        expect(document.body.childElementCount).toBe(0);
+
+        showSplashError("something broke");
+        const alert = document.body.querySelector("[role=alert]");
+        expect(alert?.textContent).toBe("something broke");
     });
 });
