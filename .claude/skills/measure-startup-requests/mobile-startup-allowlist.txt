@@ -81,6 +81,7 @@
 /packages/commons/src/lib/shared_constants.ts
 /packages/commons/src/lib/utils.ts
 /packages/splitjs/src/split.js
+/src/assets/icon-color.svg?import&url
 /src/components/app_context.ts
 /src/components/app_startup.ts
 /src/components/component.ts
@@ -180,6 +181,7 @@
 /src/services/shortcuts.ts
 /src/services/source_embeds.ts
 /src/services/spaced_update.ts
+/src/services/splash.css
 /src/services/splash.ts
 /src/services/startup_requests.ts
 /src/services/sync.ts
