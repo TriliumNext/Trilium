@@ -202,8 +202,10 @@ function loadStylesheets() {
         stylesheets.push(appendStylesheet(ref, { theme: true }));
     }
     stylesheets.push(appendStylesheet({ href: `${stylesheetsPath}/style.css` }));
-    // The notes labelled `#appCss`, after the stylesheets they override.
-    for (const noteId of window.glob.appCssNoteIds ?? []) {
+    // The notes labelled `#appCss`, after the stylesheets they override. The setup, password and
+    // login pages have no session to download them with.
+    const hasSession = glob.dbInitialized && glob.passwordSet !== false && glob.loggedIn !== false;
+    for (const noteId of hasSession ? window.glob.appCssNoteIds ?? [] : []) {
         appendStylesheet({ href: `api/notes/download/${noteId}` });
     }
     void rememberRootBackground(stylesheets);
