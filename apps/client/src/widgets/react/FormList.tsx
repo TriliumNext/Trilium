@@ -17,7 +17,7 @@ import FormToggle from "./FormToggle";
 import { useSyncedRef, useUniqueName } from "./hooks/dom";
 import { useStaticTooltip } from "./hooks/tooltip";
 import Icon, { SvgIcon } from "./Icon";
-import { MasterDetailHeader } from "./master_detail";
+import MasterDetailHeader from "./MasterDetailHeader";
 import {
     isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext,
     MenuLevelContext, type OpenSubmenu, pointerMoved, shouldDropStart, useMenu

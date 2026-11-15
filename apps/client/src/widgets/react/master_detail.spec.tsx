@@ -42,7 +42,6 @@ vi.mock("./ActionButton", () => ({
 
 import {
     DetailPane,
-    MasterDetailHeader,
     MasterDetailModal,
     MasterPane,
     type MobileMasterDetail,
@@ -50,6 +49,7 @@ import {
     useMasterDetailPage,
     useMobileMasterDetail
 } from "./master_detail";
+import MasterDetailHeader from "./MasterDetailHeader";
 
 let container: HTMLDivElement;
 /** The flow's API, as the host component last saw it. */

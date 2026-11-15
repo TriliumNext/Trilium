@@ -15,9 +15,8 @@ import { useTriliumEvent } from "../react/hooks/events";
 import { useChildNotes } from "../react/hooks/note";
 import { useDetachedNoteContext, useNoteContext } from "../react/hooks/note_context";
 import { useContainedLinkNavigation } from "../react/hooks/content";
-import {
-    DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail
-} from "../react/master_detail";
+import { DetailPane, MasterPane, useMobileMasterDetail } from "../react/master_detail";
+import MasterDetailHeader from "../react/MasterDetailHeader";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
 import { PageHelpSlot } from "../type_widgets/options/components/OptionsPageHeader";
