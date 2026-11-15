@@ -1,4 +1,4 @@
-import { encodeBlockParameter } from "@triliumnext/commons";
+import { encodeBlockParameter } from "@triliumnext/commons/src/lib/block_reference.js";
 
 import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";

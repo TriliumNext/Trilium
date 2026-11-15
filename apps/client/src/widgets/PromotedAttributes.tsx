@@ -1,6 +1,9 @@
 import "./PromotedAttributes.css";
 
-import { DefinitionObject, extractAttributeDefinitionTypeAndName, UpdateAttributeResponse } from "@triliumnext/commons";
+import type { DefinitionObject, UpdateAttributeResponse } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import clsx from "clsx";
 import { ComponentChild } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useState } from "preact/hooks";

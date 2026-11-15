@@ -1,6 +1,7 @@
 import "./NoteBadges.css";
 
-import { isOfficeMimeType, safeHostname } from "@triliumnext/commons";
+import { safeHostname } from "@triliumnext/commons/src/lib/link_embed.js";
+import { isOfficeMimeType } from "@triliumnext/commons/src/lib/office.js";
 import { clsx } from "clsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 

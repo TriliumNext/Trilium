@@ -2,7 +2,7 @@ import "./Menu.css";
 import "./NoteAutocomplete.css";
 
 import type { ReferenceElement } from "@floating-ui/dom";
-import { NOTE_TYPE_ICONS } from "@triliumnext/commons";
+import { NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
 import clsx from "clsx";
 import {
     type ComponentChildren, createPortal, type CSSProperties, type RefObject, render, type VNode

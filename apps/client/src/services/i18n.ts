@@ -1,4 +1,6 @@
-import { getEnglishName, type Locale, LOCALE_IDS, LOCALES, setDayjsLocale } from "@triliumnext/commons";
+import type { Locale, LOCALE_IDS } from "@triliumnext/commons";
+import { setDayjsLocale } from "@triliumnext/commons/src/lib/dayjs.js";
+import { getEnglishName, LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import i18next from "i18next";
 import i18nextHttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";

@@ -1,4 +1,4 @@
-import { MEDIA_EMBED_CLASS } from "@triliumnext/commons";
+import { MEDIA_EMBED_CLASS } from "@triliumnext/commons/src/lib/content_embeds.js";
 import {
     BalloonPanelView, isWidget, Plugin, type PositioningFunction, type ViewDocumentSelection,
     type ViewElement, WidgetToolbarRepository

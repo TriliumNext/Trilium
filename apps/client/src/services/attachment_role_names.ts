@@ -1,4 +1,5 @@
-import { attachmentRoleTraits, type NamedAttachmentRole } from "@triliumnext/commons";
+import type { NamedAttachmentRole } from "@triliumnext/commons";
+import { attachmentRoleTraits } from "@triliumnext/commons/src/lib/attachment_roles.js";
 
 import { t } from "./i18n.js";
 

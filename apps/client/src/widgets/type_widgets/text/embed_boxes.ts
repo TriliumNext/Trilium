@@ -1,9 +1,11 @@
 import {
     EXTENDED_CODE_BLOCK_CLASS, EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE, getEmbedKey,
-    getLinkPreviewPlayer, getMediaEmbedClasses, getNoteEmbedHref, getVideoAspectRatio,
-    INLINE_BOX_SIZES, normalizeEmbedBox, readLinkPreviewData, readMediaEmbedBox,
+    getMediaEmbedClasses, getNoteEmbedHref, INLINE_BOX_SIZES, normalizeEmbedBox
+} from "@triliumnext/commons/src/lib/content_embeds.js";
+import {
+    getLinkPreviewPlayer, getVideoAspectRatio, readLinkPreviewData, readMediaEmbedBox,
     VIDEO_ASPECT_RATIO_PROPERTY
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/link_embed_markup.js";
 import clsx from "clsx";
 
 import {

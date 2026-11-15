@@ -1,5 +1,5 @@
 import rrulePlugin from "@fullcalendar/rrule";
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import { Calendar, EventInput } from "fullcalendar";
 import dayGridPlugin from "fullcalendar/daygrid";
 import themePlugin from "fullcalendar/themes/forma";

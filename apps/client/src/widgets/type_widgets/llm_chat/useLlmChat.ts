@@ -1,4 +1,10 @@
-import { LLM_PERMISSION_MODES, LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmMessagePart, type LlmModelInfo, type LlmPermissionMode, type LlmReasoningEffort, type LlmStreamStatus, type LlmToolApprovalAnswer, type LlmUsage } from "@triliumnext/commons";
+import type {
+    LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmPermissionMode, LlmReasoningEffort,
+    LlmStreamStatus, LlmToolApprovalAnswer, LlmUsage
+} from "@triliumnext/commons";
+import {
+    LLM_PERMISSION_MODES, LLM_REASONING_EFFORTS
+} from "@triliumnext/commons/src/lib/llm_api.js";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 

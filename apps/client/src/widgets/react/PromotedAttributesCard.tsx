@@ -3,7 +3,9 @@ import "./PromotedAttributesCard.css";
 import { createPortal } from "preact";
 import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 
-import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import type FNote from "../../entities/fnote";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { removeOwnedAttributesByNameOrType } from "../../services/attributes";

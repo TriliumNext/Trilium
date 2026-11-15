@@ -1,6 +1,7 @@
 import "./llm.css";
 
-import { isProviderOfKind, type LlmProviderKind, type NetworkAddressesResponse } from "@triliumnext/commons";
+import type { LlmProviderKind, NetworkAddressesResponse } from "@triliumnext/commons";
+import { isProviderOfKind } from "@triliumnext/commons/src/lib/llm_api.js";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";

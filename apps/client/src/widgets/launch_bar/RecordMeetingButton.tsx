@@ -1,9 +1,11 @@
 import "./RecordMeetingButton.css";
 
-import {
-    dayjs, getTranscriptionResources, MEETING_RECORDING_LABEL, type TranscriptionState,
-    type TranscriptionStatus, type TranscriptSource, type TranscriptSourceIssue
+import type {
+    TranscriptionState, TranscriptionStatus, TranscriptSource, TranscriptSourceIssue
 } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { MEETING_RECORDING_LABEL } from "@triliumnext/commons/src/lib/notes.js";
+import { getTranscriptionResources } from "@triliumnext/commons/src/lib/transcript.js";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 

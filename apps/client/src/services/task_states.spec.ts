@@ -1,11 +1,7 @@
 import {
-    DEFAULT_TASK_STATES,
-    DONE_STATE_ID,
-    DONE_TASK_STATE,
-    NONE_STATE_ID,
-    NONE_TASK_STATE,
+    DEFAULT_TASK_STATES, DONE_STATE_ID, DONE_TASK_STATE, NONE_STATE_ID, NONE_TASK_STATE,
     TASK_STATES_CONTAINER_ID
-} from "@triliumnext/commons";
+} from "@triliumnext/commons/src/lib/task_states.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../components/app_context.js";

@@ -1,6 +1,7 @@
 import "./NoteTypeSwitcher.css";
 
-import { getCodeLanguageIcon, type MimeType, type NoteType } from "@triliumnext/commons";
+import type { MimeType, NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
 import { type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";

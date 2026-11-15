@@ -1,5 +1,5 @@
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";

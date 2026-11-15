@@ -1,5 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
-import { attachmentIcon } from "@triliumnext/commons";
+import { attachmentIcon } from "@triliumnext/commons/src/lib/attachment_roles.js";
 import type { VNode } from "preact";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

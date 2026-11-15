@@ -1,4 +1,4 @@
-import { MIME_TYPES_DICT } from "@triliumnext/commons";
+import { MIME_TYPES_DICT } from "@triliumnext/commons/src/lib/mime_type.js";
 import { Tooltip } from "bootstrap";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

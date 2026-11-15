@@ -1,4 +1,5 @@
-import { dayjs, type InboxTargetResponse } from "@triliumnext/commons";
+import type { InboxTargetResponse } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 
 import type { FNoteRow } from "../entities/fnote.js";
 import froca from "./froca.js";

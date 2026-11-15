@@ -1,4 +1,5 @@
-import { customFontFamily, customFontNoteId, type UserFont } from "@triliumnext/commons";
+import type { UserFont } from "@triliumnext/commons";
+import { customFontFamily, customFontNoteId } from "@triliumnext/commons/src/lib/custom_fonts.js";
 
 import froca from "./froca.js";
 import type LoadResults from "./load_results.js";

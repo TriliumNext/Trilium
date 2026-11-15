@@ -1,6 +1,8 @@
 import "./UserAttributesList.css";
 
-import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import type { DefinitionObject } from "@triliumnext/commons";
 import { ComponentChildren, CSSProperties } from "preact";
 import { useEffect, useState } from "preact/hooks";

@@ -1,4 +1,4 @@
-import { imageExtensionForMime } from "@triliumnext/commons";
+import { imageExtensionForMime } from "@triliumnext/commons/src/lib/image_mimes.js";
 
 import { t } from "./i18n.js";
 import { stripNoteImageVersion } from "./image_urls.js";

@@ -1,6 +1,6 @@
 import "./WebView.css";
 
-import { WEBVIEW_SESSION_PARTITION } from "@triliumnext/commons";
+import { WEBVIEW_SESSION_PARTITION } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";

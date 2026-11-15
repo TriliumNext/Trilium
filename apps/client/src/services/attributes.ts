@@ -1,4 +1,8 @@
-import { AttributeType, BUILTIN_ATTRIBUTES, type BuiltinLabel, type DefinitionObject, type LabelType, promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import type {
+    AttributeType, BuiltinLabel, DefinitionObject, LabelType
+} from "@triliumnext/commons";
+import BUILTIN_ATTRIBUTES from "@triliumnext/commons/src/lib/builtin_attributes.js";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 
 import type FAttribute from "../entities/fattribute.js";
 import type FNote from "../entities/fnote.js";

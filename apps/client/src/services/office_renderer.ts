@@ -1,4 +1,4 @@
-import { OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons";
+import { OFFICE_PREVIEW_TOO_LARGE_MESSAGE } from "@triliumnext/commons/src/lib/office.js";
 
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import server from "./server.js";

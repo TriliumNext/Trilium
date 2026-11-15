@@ -1,14 +1,8 @@
+import type { TaskStateDef, TaskStateValidationError } from "@triliumnext/commons";
 import {
-    DEFAULT_TASK_STATES,
-    DONE_STATE_ID,
-    DONE_TASK_STATE,
-    NONE_STATE_ID,
-    NONE_TASK_STATE,
-    TASK_STATES_CONTAINER_ID,
-    type TaskStateDef,
-    type TaskStateValidationError,
-    validateTaskStates
-} from "@triliumnext/commons";
+    DEFAULT_TASK_STATES, DONE_STATE_ID, DONE_TASK_STATE, NONE_STATE_ID, NONE_TASK_STATE,
+    TASK_STATES_CONTAINER_ID, validateTaskStates
+} from "@triliumnext/commons/src/lib/task_states.js";
 
 import appContext from "../components/app_context.js";
 import froca from "./froca.js";

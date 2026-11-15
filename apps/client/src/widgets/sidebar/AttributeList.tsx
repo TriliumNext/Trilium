@@ -1,7 +1,7 @@
 import "../attribute_widgets/attribute_kind.css";
 import "./AttributeList.css";
 
-import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import promotedAttributeDefinitionParser from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, HTMLAttributes } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";

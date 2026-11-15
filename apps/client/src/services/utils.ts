@@ -1,4 +1,7 @@
-import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
+import {
+    filterAttributeName, isValidAttributeName
+} from "@triliumnext/commons/src/lib/attribute_names.js";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import type { ViteHotContext } from "vite/types/hot.js";
 
 import FNote from "../entities/fnote";

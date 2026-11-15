@@ -1,4 +1,6 @@
-import { EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE } from "@triliumnext/commons";
+import {
+    EXTENDED_CODE_BLOCK_DEFAULT_LANGUAGE
+} from "@triliumnext/commons/src/lib/content_embeds.js";
 import bxCodeBlock from "boxicons/svg/regular/bx-code-block.svg?raw";
 import {
     ButtonView, Command, type DowncastAttributeEvent, type Editor, type ModelElement, Plugin

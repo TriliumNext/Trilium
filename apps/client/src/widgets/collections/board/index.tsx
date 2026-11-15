@@ -9,7 +9,8 @@ import {
     Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState
 } from "preact/hooks";
 
-import { type HighlightedTokenInfo, normalizeBoardGroupBy } from "@triliumnext/commons";
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+import { normalizeBoardGroupBy } from "@triliumnext/commons/src/lib/board_columns.js";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";

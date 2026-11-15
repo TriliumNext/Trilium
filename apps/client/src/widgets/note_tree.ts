@@ -5,7 +5,9 @@ import "jquery.fancytree/dist/modules/jquery.fancytree.filter.js";
 import "../stylesheets/tree.css";
 import "./note_tree.css";
 
-import { GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE } from "@triliumnext/commons";
+import {
+    GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE
+} from "@triliumnext/commons/src/lib/notes.js";
 import { h } from "preact";
 
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";

@@ -1,4 +1,4 @@
-import { KATEX_MACROS } from "@triliumnext/commons";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
 import katex from "katex";
 import { describe, expect, it } from "vitest";
 

@@ -13,7 +13,7 @@ vi.mock("../services/i18n", async () => {
     };
 });
 
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 
 import options from "../services/options";
 import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, isContentRightToLeft, resolveContentLanguage } from "./formatters";

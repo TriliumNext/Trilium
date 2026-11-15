@@ -1,7 +1,7 @@
+import type { AttachmentRole, NoteType } from "@triliumnext/commons";
 import {
-    type AttachmentRole, CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle,
-    NOTE_TYPE_IMAGE_ATTACHMENTS, type NoteType
-} from "@triliumnext/commons";
+    CANVAS_ATTACHMENT_MIME, getDrawingPictureTitle, NOTE_TYPE_IMAGE_ATTACHMENTS
+} from "@triliumnext/commons/src/lib/notes.js";
 
 /**
  * Which half of the attachment list an attachment belongs in.

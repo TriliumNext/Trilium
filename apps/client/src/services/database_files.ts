@@ -1,4 +1,4 @@
-import { dayjs } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 
 import { formatDateTime } from "../utils/formatters.js";
 import { t } from "./i18n.js";

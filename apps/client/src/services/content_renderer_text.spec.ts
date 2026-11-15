@@ -3,8 +3,10 @@
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import {
-    KATEX_MACROS, MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS, trimIndentation
-} from "@triliumnext/commons";
+    MULTICOLUMN_COLUMN_CLASS, MULTICOLUMN_LAYOUT_CLASS
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import { trimIndentation } from "@triliumnext/commons/src/lib/test-utils.js";
 import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -1,6 +1,12 @@
 import "./appearance_fonts.css";
 
-import { customFontFamily, customFontNoteId, customFontOption, FontFamily, MONOSPACE_FONT_FAMILY, OptionNames, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK, UserFont } from "@triliumnext/commons";
+import type { FontFamily, OptionNames, UserFont } from "@triliumnext/commons";
+import {
+    customFontFamily, customFontNoteId, customFontOption
+} from "@triliumnext/commons/src/lib/custom_fonts.js";
+import {
+    MONOSPACE_FONT_FAMILY, SYSTEM_MONOSPACE_FONT_STACK, SYSTEM_SANS_SERIF_FONT_STACK
+} from "@triliumnext/commons/src/lib/options_interface.js";
 import clsx from "clsx";
 import { ComponentChildren, createPortal, Fragment } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";

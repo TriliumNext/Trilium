@@ -1,5 +1,6 @@
 import type { EmbedEdge } from "@triliumnext/ckeditor5";
-import { deferred, type DeferredPromise } from "@triliumnext/commons";
+import type { DeferredPromise } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";

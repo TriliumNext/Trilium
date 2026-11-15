@@ -1,7 +1,9 @@
 import "../launch_bar/CalendarWidget.css";
 import "./DatePicker.css";
 
-import { dayjs, type Dayjs, getWeekStartDate } from "@triliumnext/commons";
+import type { Dayjs } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { getWeekStartDate } from "@triliumnext/commons/src/lib/week_utils.js";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";

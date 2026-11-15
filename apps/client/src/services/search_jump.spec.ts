@@ -1,4 +1,4 @@
-import { deferred } from "@triliumnext/commons";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const triggerCommand = vi.fn();

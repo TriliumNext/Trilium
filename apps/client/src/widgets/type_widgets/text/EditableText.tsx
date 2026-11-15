@@ -14,8 +14,9 @@ import {
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import {
-    deferred, encodeBlockParameter, formatBlockRange, parseBlockRange
-} from "@triliumnext/commons";
+    encodeBlockParameter, formatBlockRange, parseBlockRange
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 

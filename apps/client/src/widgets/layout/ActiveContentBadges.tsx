@@ -1,4 +1,4 @@
-import { BUILTIN_ATTRIBUTES } from "@triliumnext/commons";
+import BUILTIN_ATTRIBUTES from "@triliumnext/commons/src/lib/builtin_attributes.js";
 import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 

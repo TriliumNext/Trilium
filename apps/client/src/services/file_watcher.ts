@@ -1,4 +1,5 @@
-import { dayjs, type WebSocketMessage } from "@triliumnext/commons";
+import type { WebSocketMessage } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 
 import froca from "./froca.js";
 import { t } from "./i18n.js";

@@ -1,6 +1,7 @@
 import "./content_embed.css";
 
-import { BOX_SIZES, type BoxSize, hasCompactContent } from "@triliumnext/commons";
+import type { BoxSize } from "@triliumnext/commons";
+import { BOX_SIZES, hasCompactContent } from "@triliumnext/commons/src/lib/content_embeds.js";
 import clsx from "clsx";
 import type { JSX } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";

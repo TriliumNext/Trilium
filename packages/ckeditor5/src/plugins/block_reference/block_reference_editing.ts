@@ -1,4 +1,7 @@
-import { BLOCK_ID_ATTRIBUTE, type BlockRange, isValidBlockId } from "@triliumnext/commons";
+import type { BlockRange } from "@triliumnext/commons";
+import {
+    BLOCK_ID_ATTRIBUTE, isValidBlockId
+} from "@triliumnext/commons/src/lib/block_reference.js";
 import {
     Command, type Model, type ModelElement, type ModelWriter, Plugin, type ViewElement
 } from "ckeditor5";

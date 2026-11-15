@@ -1,6 +1,6 @@
 import type { ContentEmbedCodeView } from "@triliumnext/ckeditor5";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons";
+import { getMimeTypeFromCKEditorLanguage } from "@triliumnext/commons/src/lib/mime_type.js";
 import moveVerticalIcon from "boxicons/svg/regular/bx-move-vertical.svg?raw";
 import { createPortal, type RefObject } from "preact";
 import { lazy, Suspense, useSyncExternalStore } from "preact/compat";

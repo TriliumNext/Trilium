@@ -1,4 +1,4 @@
-import { safeHostname } from "@triliumnext/commons";
+import { safeHostname } from "@triliumnext/commons/src/lib/link_embed.js";
 import {
     _setModelData as setModelData,
     ClassicEditor,

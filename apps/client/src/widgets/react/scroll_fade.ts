@@ -1,9 +1,9 @@
 import "@triliumnext/commons/src/lib/scroll_fade.css";
 
+import type { ScrollFadeWatch, ScrollFadeWatchOptions } from "@triliumnext/commons";
 import {
-    getScrollFadeClasses, NO_SCROLL_FADE, type ScrollFadeWatch, type ScrollFadeWatchOptions,
-    watchScrollFade
-} from "@triliumnext/commons";
+    getScrollFadeClasses, NO_SCROLL_FADE, watchScrollFade
+} from "@triliumnext/commons/src/lib/scroll_fade.js";
 import { CSSProperties, RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 

@@ -1,4 +1,4 @@
-import { Mutex } from "@triliumnext/commons";
+import { Mutex } from "@triliumnext/commons/src/lib/utils.js";
 
 import Component from "./component.js";
 import SpacedUpdate from "../services/spaced_update.js";

@@ -1,6 +1,7 @@
 import "./ChatToolsDropdown.css";
 
-import { LLM_PERMISSION_MODES, type LlmPermissionMode } from "@triliumnext/commons";
+import type { LlmPermissionMode } from "@triliumnext/commons";
+import { LLM_PERMISSION_MODES } from "@triliumnext/commons/src/lib/llm_api.js";
 import clsx from "clsx";
 import { useMemo } from "preact/hooks";
 

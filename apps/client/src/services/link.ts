@@ -1,6 +1,7 @@
 import {
-    ALLOWED_PROTOCOLS, encodeBlockParameter, resolveBlockReference
-} from "@triliumnext/commons";
+    encodeBlockParameter, resolveBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";

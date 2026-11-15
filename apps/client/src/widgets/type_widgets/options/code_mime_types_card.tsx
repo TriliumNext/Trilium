@@ -1,7 +1,7 @@
 import "./code_mime_types_card.css";
 
 import { default as codeNoteMimeTypes } from "@triliumnext/codemirror/src/syntax_highlighting";
-import { getCodeLanguageIcon } from "@triliumnext/commons";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
 import { byMimeType as codeBlockMimeTypes } from "@triliumnext/highlightjs/src/syntax_highlighting";
 import clsx from "clsx";
 import { useCallback, useMemo } from "preact/hooks";

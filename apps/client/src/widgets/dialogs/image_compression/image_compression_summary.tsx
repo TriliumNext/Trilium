@@ -1,11 +1,9 @@
 import "./image_compression_summary.css";
 
-import {
-    IMAGE_COMPRESSIBLE_FORMATS,
-    type ImageCompressibleFormat,
-    type ImageInfoResponse,
-    type ImageInventoryResponse
+import type {
+    ImageCompressibleFormat, ImageInfoResponse, ImageInventoryResponse
 } from "@triliumnext/commons";
+import { IMAGE_COMPRESSIBLE_FORMATS } from "@triliumnext/commons/src/lib/server_api.js";
 
 import { t } from "../../../services/i18n";
 import { formatSize } from "../../../services/utils";

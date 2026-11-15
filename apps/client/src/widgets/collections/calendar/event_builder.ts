@@ -1,4 +1,5 @@
-import { dayjs, evaluateTemplate } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { evaluateTemplate } from "@triliumnext/commons/src/lib/safe_template.js";
 import clsx from "clsx";
 import { EventInput, EventSourceFuncInfo, EventSourceInput } from "fullcalendar";
 import * as rruleLib from 'rrule';

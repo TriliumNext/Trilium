@@ -2,7 +2,8 @@ import "./StatusBar.css";
 
 import type CodeMirror from "@triliumnext/codemirror";
 import type { CursorPosition } from "@triliumnext/codemirror";
-import { Locale, NOTE_TYPE_ICONS, NoteType, SimilarNoteResponse } from "@triliumnext/commons";
+import type { Locale, NoteType, SimilarNoteResponse } from "@triliumnext/commons";
+import { NOTE_TYPE_ICONS } from "@triliumnext/commons/src/lib/notes.js";
 import type { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { type ComponentChildren, createPortal, RefObject } from "preact";

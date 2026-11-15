@@ -8,9 +8,9 @@ import {
     AppState, BinaryFileData, BinaryFiles, ExcalidrawImperativeAPI, ExcalidrawInitialDataState,
     ExcalidrawProps, LibraryItem
 } from "@excalidraw/excalidraw/types";
-import {
-    deferred, type DeferredPromise, type DrawingFrame, getDrawingPictureTitle, readDrawingFrame
-} from "@triliumnext/commons";
+import type { DeferredPromise, DrawingFrame } from "@triliumnext/commons";
+import { getDrawingPictureTitle, readDrawingFrame } from "@triliumnext/commons/src/lib/notes.js";
+import { deferred } from "@triliumnext/commons/src/lib/utils.js";
 import { RefObject } from "preact";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 

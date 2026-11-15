@@ -2,7 +2,8 @@ import "./edit_link.css";
 
 import type { LinkDisplayMode } from "@triliumnext/ckeditor5";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
-import { ALLOWED_PROTOCOLS, isHttpUrl } from "@triliumnext/commons";
+import { isHttpUrl } from "@triliumnext/commons/src/lib/link_embed.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import clsx from "clsx";
 import type { ComponentProps } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";

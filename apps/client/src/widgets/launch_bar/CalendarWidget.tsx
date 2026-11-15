@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import { LaunchBarDropdownButton, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
-import { Dayjs, dayjs } from "@triliumnext/commons";
+import { Dayjs, dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
 import appContext from "../../components/app_context";
 import "./CalendarWidget.css";
 import Calendar, { CalendarArgs } from "./Calendar";

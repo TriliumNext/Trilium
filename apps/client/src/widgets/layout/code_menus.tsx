@@ -1,5 +1,5 @@
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { getCodeLanguageIcon } from "@triliumnext/commons";
+import { getCodeLanguageIcon } from "@triliumnext/commons/src/lib/notes.js";
 import { createPortal } from "preact";
 import { useMemo, useState } from "preact/hooks";
 

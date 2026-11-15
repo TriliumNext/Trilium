@@ -1,6 +1,6 @@
 import "./other.css";
 
-import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { useMemo, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";

@@ -1,4 +1,6 @@
-import { dayjs, formatLogMessage, type ToMarkdownResponse } from "@triliumnext/commons";
+import type { ToMarkdownResponse } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { formatLogMessage } from "@triliumnext/commons/src/lib/utils.js";
 import type { FrontendApi as PublicFrontendApi, ScriptFNote as PublicScriptFNote, ScriptLinkOptions } from "@triliumnext/commons/src/lib/script_api.js";
 import DOMPurify from "dompurify";
 

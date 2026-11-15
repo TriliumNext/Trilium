@@ -1,7 +1,7 @@
 import type {
     HostedCompletionApply
 } from "@triliumnext/codemirror/src/extensions/hosted_completion";
-import { isMarkdownMime } from "@triliumnext/commons";
+import { isMarkdownMime } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote.js";

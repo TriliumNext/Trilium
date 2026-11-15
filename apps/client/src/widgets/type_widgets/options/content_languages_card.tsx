@@ -1,6 +1,6 @@
 import "./content_languages_card.css";
 
-import { LOCALES } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 import type { ComponentChildren } from "preact";
 import { useCallback, useMemo } from "preact/hooks";
 

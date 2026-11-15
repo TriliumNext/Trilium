@@ -6,7 +6,16 @@ import {
     type VimConfig
 } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, formatShortcut, IMAGE_UPLOAD_SUBTYPES, joinShortcut, KATEX_MACROS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { IMAGE_UPLOAD_SUBTYPES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
+import {
+    formatShortcut, joinShortcut
+} from "@triliumnext/commons/src/lib/keyboard_shortcut_display.js";
+import {
+    MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor
+} from "@triliumnext/commons/src/lib/mime_type.js";
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import i18next from "i18next";
 
 import type { CommandMappings, CommandNames } from "../../../components/app_context.js";

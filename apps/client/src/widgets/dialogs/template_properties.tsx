@@ -1,6 +1,7 @@
 import "./template_properties.css";
 
-import { dayjs, evaluateTemplate } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { evaluateTemplate } from "@triliumnext/commons/src/lib/safe_template.js";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";

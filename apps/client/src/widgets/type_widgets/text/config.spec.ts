@@ -1,7 +1,10 @@
 import type { EditorConfig, InlineEmbedSource } from "@triliumnext/ckeditor5";
 import { getEmbedContentInfo } from "../../../services/content_renderer.js";
 import froca from "../../../services/froca.js";
-import { DISPLAYABLE_LOCALE_IDS, IMAGE_MIMES, LOCALES, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import { IMAGE_MIMES } from "@triliumnext/commons/src/lib/image_mimes.js";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import linkContextMenu from "../../../menus/link_context_menu.js";

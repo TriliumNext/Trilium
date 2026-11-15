@@ -3,7 +3,9 @@ import "./revisions.css";
 import {
     applyListItemAlignment
 } from "@triliumnext/ckeditor5/src/plugins/list_item_alignment_read_only.js";
-import { dayjs, type RevisionItem, type RevisionPojo, safeHostname, safeLinkPreviewHref } from "@triliumnext/commons";
+import type { RevisionItem, RevisionPojo } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { safeHostname, safeLinkPreviewHref } from "@triliumnext/commons/src/lib/link_embed.js";
 import clsx from "clsx";
 import { diffWords } from "diff";
 import { type CSSProperties, Fragment } from "preact";

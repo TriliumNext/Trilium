@@ -1,4 +1,4 @@
-import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

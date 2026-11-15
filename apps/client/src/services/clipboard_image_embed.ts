@@ -1,4 +1,4 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 
 import { embedReferenceImageAsDataUrl, resetImageEmbedBudget } from "./image.js";
 import options from "./options.js";

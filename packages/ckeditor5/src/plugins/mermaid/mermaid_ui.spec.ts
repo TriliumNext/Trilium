@@ -1,4 +1,4 @@
-import { NEW_MERMAID_CONTENT } from "@triliumnext/commons";
+import { NEW_MERMAID_CONTENT } from "@triliumnext/commons/src/lib/notes.js";
 import {
     ButtonView,
     ClassicEditor,

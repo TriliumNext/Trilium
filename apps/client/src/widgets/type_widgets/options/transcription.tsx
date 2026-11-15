@@ -1,9 +1,9 @@
 import "./transcription.css";
 
+import type { ResourcesStatusResponse, TranscriptionModelId } from "@triliumnext/commons";
 import {
-    getTranscriptionModel, type ResourcesStatusResponse, TRANSCRIPTION_MODELS,
-    type TranscriptionModelId
-} from "@triliumnext/commons";
+    getTranscriptionModel, TRANSCRIPTION_MODELS
+} from "@triliumnext/commons/src/lib/transcript.js";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";

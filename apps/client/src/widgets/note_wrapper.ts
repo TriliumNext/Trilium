@@ -1,4 +1,4 @@
-import { isFullWidthNoteType } from "@triliumnext/commons";
+import { isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
 
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";

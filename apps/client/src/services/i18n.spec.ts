@@ -1,5 +1,9 @@
 import { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "@triliumnext/ckeditor5";
-import { dayjs, findDuplicateJsonKeys, findMalformedPluralGroups, findPluralKeyConflicts, LOCALES } from "@triliumnext/commons";
+import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
+import {
+    findDuplicateJsonKeys, findMalformedPluralGroups, findPluralKeyConflicts
+} from "@triliumnext/commons/src/lib/test-utils.js";
 import { readdirSync, readFileSync } from "fs";
 import i18next from "i18next";
 import { join } from "path";

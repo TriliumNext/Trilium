@@ -1,4 +1,5 @@
-import { LOCALES, OptionNames } from "@triliumnext/commons";
+import type { OptionNames } from "@triliumnext/commons";
+import { LOCALES } from "@triliumnext/commons/src/lib/i18n.js";
 
 import { EventData } from "../../components/app_context.js";
 import { getEnabledExperimentalFeatureIds } from "../../services/experimental_features.js";

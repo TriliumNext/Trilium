@@ -1,7 +1,7 @@
 import "mind-elixir/style";
 import "./MindMap.css";
 
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import { t } from "i18next";
 import { DARK_THEME, default as VanillaMindElixir, MindElixirData, NodeObj, Operation, Theme, THEME as LIGHT_THEME } from "mind-elixir";
 import { ComponentChildren, createPortal, HTMLAttributes, RefObject } from "preact";

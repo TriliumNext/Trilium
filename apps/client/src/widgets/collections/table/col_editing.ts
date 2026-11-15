@@ -1,4 +1,6 @@
-import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
+import {
+    extractAttributeDefinitionTypeAndName
+} from "@triliumnext/commons/src/lib/promoted_attribute_definition_parser.js";
 import { t } from "i18next";
 import { RefObject } from "preact";
 import { useRef } from "preact/hooks";

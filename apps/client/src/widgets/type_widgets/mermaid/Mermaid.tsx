@@ -1,5 +1,5 @@
 import type CodeMirror from "@triliumnext/codemirror";
-import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons/src/lib/notes.js";
 import { useCallback } from "preact/hooks";
 
 import { t } from "../../../services/i18n";

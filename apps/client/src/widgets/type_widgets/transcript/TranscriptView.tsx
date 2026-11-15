@@ -1,9 +1,12 @@
 import "./TranscriptView.css";
 
+import type {
+    TranscriptSource, TranscriptSourceIssue, TranscriptUtterance
+} from "@triliumnext/commons";
 import {
     cleanUtteranceText, getSpeakerKey, markDisfluencies, MAX_SPEAKER_NAME_LENGTH, parseTranscript,
-    setSpeakerName, type TranscriptSource, type TranscriptSourceIssue, type TranscriptUtterance
-} from "@triliumnext/commons";
+    setSpeakerName
+} from "@triliumnext/commons/src/lib/transcript.js";
 import clsx from "clsx";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";

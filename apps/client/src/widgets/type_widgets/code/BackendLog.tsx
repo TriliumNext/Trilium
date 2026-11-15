@@ -1,6 +1,6 @@
 import "./code.css";
 
-import { MIME_TYPE_TRILIUM_LOG } from "@triliumnext/commons";
+import { MIME_TYPE_TRILIUM_LOG } from "@triliumnext/commons/src/lib/mime_type.js";
 import CodeMirror from "@triliumnext/codemirror";
 import { useEffect, useRef, useState } from "preact/hooks";
 

@@ -1,6 +1,8 @@
 import { type Diagnostic, linter } from "@codemirror/lint";
 import type { Extension } from "@codemirror/state";
-import { allowedSearchOperators, NO_SEARCH_OPERATORS, TEXT_SEARCH_OPERATORS } from "@triliumnext/commons";
+import {
+    allowedSearchOperators, NO_SEARCH_OPERATORS, TEXT_SEARCH_OPERATORS
+} from "@triliumnext/commons/src/lib/search_syntax.js";
 
 import { type SearchToken, tokenizeSearchQuery } from "./trilium_search_highlighter.js";
 

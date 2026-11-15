@@ -5,12 +5,16 @@ import { applyTableScroll } from "@triliumnext/ckeditor5/src/plugins/table_scrol
 import {
     applyStickyTableHeaders
 } from "@triliumnext/ckeditor5/src/plugins/table_sticky_header_read_only.js";
+import type { ContentEmbedContext } from "@triliumnext/commons";
 import {
-    BLOCK_ID_ATTRIBUTE, CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE,
-    type ContentEmbedContext, getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions,
-    getNoteEmbedHref, isEmbedShownAsLink, KATEX_MACROS, normalizeEmbedBox, resolveContentEmbed,
-    sliceToBlockReference
-} from "@triliumnext/commons";
+    BLOCK_ID_ATTRIBUTE, sliceToBlockReference
+} from "@triliumnext/commons/src/lib/block_reference.js";
+import {
+    CAPTIONED_CONTENT_EMBED_CLASS, CONTENT_EMBED_KIND_ATTRIBUTE, getAttachmentEmbedHref,
+    getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, isEmbedShownAsLink, normalizeEmbedBox,
+    resolveContentEmbed
+} from "@triliumnext/commons/src/lib/content_embeds.js";
+import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
 
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";

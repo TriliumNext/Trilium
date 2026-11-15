@@ -1,7 +1,7 @@
 import "../../theme/vim.css";
 
 import type { Pos, Vim, vimState } from "@replit/codemirror-vim-core";
-import { isHttpUrl } from "@triliumnext/commons";
+import { isHttpUrl } from "@triliumnext/commons/src/lib/link_embed.js";
 import {
     ClipboardPipeline, type ClipboardContentInsertionEvent, type Editor, env, keyCodes,
     type ModelElement, ModelLiveRange, type ModelPosition, type ModelRange, Plugin,

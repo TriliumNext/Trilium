@@ -1,4 +1,5 @@
-import { attachmentIcon, CONTENT_RENDERER_GROUPS } from "@triliumnext/commons";
+import { attachmentIcon } from "@triliumnext/commons/src/lib/attachment_roles.js";
+import { CONTENT_RENDERER_GROUPS } from "@triliumnext/commons/src/lib/notes.js";
 import { h, render, VNode } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { act } from "preact/test-utils";

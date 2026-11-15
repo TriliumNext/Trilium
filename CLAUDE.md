@@ -199,6 +199,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
 ### Shared Types Policy
 - Types shared between client and server belong in `@triliumnext/commons` (`packages/commons/src/lib/`)
 - Import shared types directly from `@triliumnext/commons` - do not re-export them from app-specific modules
+- **In code the browser loads** (`apps/client`, `packages/ckeditor5`, `packages/codemirror`, `packages/share-theme`), only `import type` comes from the `@triliumnext/commons` index. A value comes from its own file: `import { dayjs } from "@triliumnext/commons/src/lib/dayjs.js"`. The dev server serves modules one by one, so one value import from the index loads all of its ~60 files
 - Keep app-specific types (e.g., `LlmProvider` for server, `StreamCallbacks` for client) in their respective apps
 
 ## Important Patterns

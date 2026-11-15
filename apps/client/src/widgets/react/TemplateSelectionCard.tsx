@@ -1,6 +1,6 @@
 import "./TemplateSelectionCard.css";
 
-import { buildTemplateId } from "@triliumnext/commons";
+import { buildTemplateId } from "@triliumnext/commons/src/lib/note_type_ids.js";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import type FNote from "../../entities/fnote";

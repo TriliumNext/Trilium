@@ -1,4 +1,4 @@
-import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons";
+import { TRILIUM_SRC_ATTRIBUTE } from "@triliumnext/commons/src/lib/shared_constants.js";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setupClipboardImageEmbed } from "./clipboard_image_embed.js";

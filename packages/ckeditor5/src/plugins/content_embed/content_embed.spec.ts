@@ -20,7 +20,7 @@ import bxCode from "boxicons/svg/regular/bx-code.svg?raw";
 import bxEditAlt from "boxicons/svg/regular/bx-edit-alt.svg?raw";
 import bxShow from "boxicons/svg/regular/bx-show.svg?raw";
 import bxsDockLeft from "boxicons/svg/solid/bxs-dock-left.svg?raw";
-import { BOX_SIZES } from "@triliumnext/commons";
+import { BOX_SIZES } from "@triliumnext/commons/src/lib/content_embeds.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";

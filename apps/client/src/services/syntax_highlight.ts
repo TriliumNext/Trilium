@@ -1,4 +1,5 @@
-import { MimeType, shouldSyntaxHighlight } from "@triliumnext/commons";
+import type { MimeType } from "@triliumnext/commons";
+import { shouldSyntaxHighlight } from "@triliumnext/commons/src/lib/mime_type.js";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";

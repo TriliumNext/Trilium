@@ -10,14 +10,11 @@
  * verbatim by every caller.
  */
 
+import type { ShortcutTranslate } from "@triliumnext/commons";
 import {
-    formatShortcut as formatShortcutCore,
-    formatShortcutKey as formatShortcutKeyCore,
-    joinShortcut as joinShortcutCore,
-    SHORTCUT_KEY_PREFIX,
-    splitShortcutForDisplay,
-    type ShortcutTranslate
-} from "@triliumnext/commons";
+    formatShortcut as formatShortcutCore, formatShortcutKey as formatShortcutKeyCore,
+    joinShortcut as joinShortcutCore, SHORTCUT_KEY_PREFIX, splitShortcutForDisplay
+} from "@triliumnext/commons/src/lib/keyboard_shortcut_display.js";
 
 import { t } from "./i18n.js";
 import { isMac } from "./utils.js";
