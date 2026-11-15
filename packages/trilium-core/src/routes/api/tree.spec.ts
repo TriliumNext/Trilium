@@ -52,6 +52,31 @@ describe("Tree API (core)", () => {
         }
     });
 
+    it("includes the history launchers and the task states, which the client asks for at startup", async () => {
+        // Collapsed, as in a database where nobody opened the hidden subtree; this one has it expanded.
+        const hiddenBranch = becca.getBranchFromChildAndParent("_hidden", "root");
+        const wasExpanded = !!hiddenBranch?.isExpanded;
+        if (hiddenBranch) hiddenBranch.isExpanded = false;
+        try {
+            const res = await api.get<TreeResponse>("/api/tree");
+            const noteIds = new Set(res.body.notes.map((n) => n.noteId));
+            const attributeIds = new Set((res.body.attributes as { attributeId: string }[]).map((a) => a.attributeId));
+
+            const taskStates = becca.getNoteOrThrow("_taskStates");
+            expect(taskStates.children.length).toBeGreaterThan(0);
+            const historyLaunchers = [ "_lbBackInHistory", "_lbForwardInHistory" ].map((noteId) => becca.getNoteOrThrow(noteId));
+            for (const note of [ ...historyLaunchers, taskStates, ...taskStates.children ]) {
+                expect(noteIds.has(note.noteId)).toBe(true);
+                // The labels the client reads off them, such as a state's `stateId`, come along.
+                for (const attribute of note.ownedAttributes) {
+                    expect(attributeIds.has(attribute.attributeId)).toBe(true);
+                }
+            }
+        } finally {
+            if (hiddenBranch) hiddenBranch.isExpanded = wasExpanded;
+        }
+    });
+
     it("scopes the tree to a subtree via subTreeNoteId", async () => {
         const res = await api.get<TreeResponse>("/api/tree", {
             query: { subTreeNoteId: "_hidden" }

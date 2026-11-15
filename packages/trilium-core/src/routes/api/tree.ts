@@ -7,11 +7,16 @@ import { getLog } from "../../services/log.js";
 import type BNote from "../../becca/entities/bnote.js";
 
 /**
- * Notes whose children the client shows as soon as it starts, whether or not they are expanded in
- * the tree: the launch bar of each layout and its bookmarks. The initial tree carries them, so
- * the launch bar renders without a request of its own.
+ * Notes whose children the client reads as soon as it starts, whether or not they are expanded in
+ * the tree: the launch bar of each layout, its bookmarks, and the task states the text editor
+ * offers. The initial tree carries them, so none of them takes a request of its own.
  */
-const STARTUP_PARENT_NOTE_IDS = [ "_lbVisibleLaunchers", "_lbMobileVisibleLaunchers", "_lbBookmarks" ];
+const STARTUP_PARENT_NOTE_IDS = [
+    "_lbVisibleLaunchers", "_lbMobileVisibleLaunchers", "_lbBookmarks", "_taskStates"
+];
+
+/** Notes the client reads as soon as it starts: the launchers of the tab bar's history buttons. */
+const STARTUP_NOTE_IDS = [ "_lbBackInHistory", "_lbForwardInHistory" ];
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
@@ -213,6 +218,9 @@ function getTree(req: Request) {
             for (const childNote of note.children) {
                 collectedNoteIds.add(childNote.noteId);
             }
+        }
+        for (const noteId of STARTUP_NOTE_IDS) {
+            if (noteId in becca.notes) collectedNoteIds.add(noteId);
         }
     }
 
