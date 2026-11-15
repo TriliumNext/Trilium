@@ -4,7 +4,7 @@
 import "./content.css";
 
 import { requestCatalogues } from "./services/catalogue_requests";
-import { createFontStylesheetLink } from "./services/font";
+import { createFontPreloadLink, createFontStylesheetLink } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
 } from "./services/splash";
@@ -179,6 +179,10 @@ function loadStylesheets() {
     const { device, assetPath, theme, themeBase, customThemeCssUrl } = window.glob;
     if (device === "print") {
         return;
+    }
+
+    for (const href of window.glob.preloadFonts ?? []) {
+        document.head.appendChild(createFontPreloadLink(href));
     }
 
     const stylesheetsPath = `${assetPath}/stylesheets`;

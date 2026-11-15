@@ -1103,6 +1103,8 @@ export type BootstrapDefinition = {
     themeBase?: "next" | "next-light" | "next-dark";
     customThemeCssUrl?: string;
     iconPackCss: string;
+    /** The font files the first render uses, for the client to preload. */
+    preloadFonts?: string[];
     iconRegistry: IconRegistry;
     device: "mobile" | "desktop" | "print" | false;
     csrfToken?: string;

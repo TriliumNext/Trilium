@@ -172,6 +172,49 @@ describe("bootstrap_utils (real DB)", () => {
         }
     });
 
+    it("preloads the icon font, and Inter while a Next-based theme draws the main font", () => {
+        const boxicons = `${ASSET_PATH}/fonts/boxicons.woff2`;
+        const inter = `${ASSET_PATH}/fonts/Inter/Inter-VariableFont_opsz,wght.woff2`;
+        expect(getSharedBootstrapItems(ASSET_PATH, false).preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("next-dark").preloadFonts).toEqual([ boxicons, inter ]);
+        expect(fullPayload("light").preloadFonts).toEqual([ boxicons ]);
+
+        cls.init(() => {
+            const { note } = notes.createNewNote({
+                parentNoteId: "root",
+                title: "Next-based Theme",
+                content: "body {}",
+                type: "code",
+                mime: "text/css"
+            });
+            attributes.createLabel(note.noteId, "appTheme", "myNextBasedTheme");
+            attributes.createLabel(note.noteId, "appThemeBase", "next-light");
+        });
+        expect(fullPayload("myNextBasedTheme").preloadFonts).toEqual([ boxicons, inter ]);
+
+        const previous = [ "overrideThemeFonts", "mainFontFamily" ].map((name) => [ name, options.getOption(name as "mainFontFamily") ] as const);
+        try {
+            cls.init(() => {
+                options.setOption("overrideThemeFonts", "true");
+                options.setOption("mainFontFamily", "theme");
+            });
+            expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+
+            cls.init(() => options.setOption("mainFontFamily", "Arial"));
+            expect(fullPayload("next").preloadFonts).toEqual([ boxicons ]);
+
+            cls.init(() => options.setOption("overrideThemeFonts", "false"));
+            expect(fullPayload("next").preloadFonts).toEqual([ boxicons, inter ]);
+        } finally {
+            cls.init(() => {
+                for (const [ name, value ] of previous) {
+                    options.setOption(name as "mainFontFamily", value);
+                }
+            });
+        }
+    });
+
     it("falls back to the baseline light theme for an unknown theme with no matching note", () => {
         const items = fullPayload("ghostThemeWithoutNote");
         expect(items.themeCssUrl).toBe(false);

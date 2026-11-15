@@ -14,6 +14,20 @@ export function createFontStylesheetLink(): HTMLLinkElement {
 }
 
 /**
+ * Creates a link that downloads a font file before any text needs it. `crossorigin` is required
+ * because fonts are fetched in CORS mode, and a preload in another mode is downloaded again.
+ */
+export function createFontPreloadLink(href: string): HTMLLinkElement {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "font";
+    link.type = "font/woff2";
+    link.crossOrigin = "anonymous";
+    link.href = href;
+    return link;
+}
+
+/**
  * Re-fetches the server-generated fonts stylesheet and swaps it in without reloading. The server returns an empty
  * stylesheet when font overrides are disabled, so this also correctly reverts to the theme defaults. The previous
  * stylesheet is removed only once the new one has loaded, keeping the swap free of a flash of unstyled content.
