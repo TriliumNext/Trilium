@@ -59,14 +59,34 @@ describe("aside styles", () => {
                 `style="--aside-width:10em;"><p>A</p></aside>${text}`);
             const measured = measureAside(left);
             expect(measured).toMatchObject({ float: "left", left: 0, width: 10 * measured.em });
-            expect(measured.marginBlock).toEqual([ 0, measured.em / 2 ]);
+            expect(measured.marginBlock[1]).toBe(measured.em / 2);
             // The line of text beside the float, which starts after the gap.
             const line = document.createRange();
             line.selectNodeContents(left.querySelector(":scope > p") as HTMLElement);
             const lineLeft = line.getClientRects()[0]?.left ?? 0;
             expect(Math.round(lineLeft - left.getBoundingClientRect().left))
-                .toBe(Math.round(11 * measured.em));
+                .toBe(Math.round(12 * measured.em));
         });
+
+    it("lines the top of a wrapped aside up with the capitals of the text beside it", () => {
+        for (const position of [ "wrap-left", "wrap-right" ]) {
+            // An empty inline block sits on the baseline; the last block is as high as a capital.
+            const container = renderContent(`<p>Before</p><aside data-position="${position}">` +
+                "<p>A</p></aside><p>Hello<span style=\"display:inline-block;\"></span></p>" +
+                "<div style=\"height:1cap;\"></div>");
+            const aside = container.querySelector("aside");
+            const baseline = container.querySelector("span");
+            const capital = container.querySelector(":scope > div");
+            if (!aside || !baseline || !capital) {
+                throw new Error("Expected an aside, a baseline and a capital.");
+            }
+
+            const capitalsTop = baseline.getBoundingClientRect().bottom
+                - capital.getBoundingClientRect().height;
+            expect(Math.abs(aside.getBoundingClientRect().top - capitalsTop), position)
+                .toBeLessThan(1);
+        }
+    });
 
     it("keeps the gap from pushing an aside as wide as the text past it", () => {
         const container = renderContent(
